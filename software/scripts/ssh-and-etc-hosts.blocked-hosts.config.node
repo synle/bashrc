@@ -48,7 +48,7 @@ async function doWork() {
 
   await Promise.allSettled(promises);
 
-  res = [...new Set(res)];
+  res = [...new Set(res)].sort();
 
   console.log("Total Hosts", res.length);
 
