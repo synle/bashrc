@@ -14,14 +14,20 @@ async function doWork() {
     return;
   }
 
-  const files = filesToTest
+  const softwareFiles = filesToTest
     .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
     .map((s) => s.trim())
     .filter((s) => !!s);
 
-  console.log(`echo '''>> Parsed Scripts: \n${files.join("\n")}'''`);
+  console.log(
+    `echo '''>> Parsed Scripts: ${softwareFiles.length} \n${softwareFiles.join(
+      "\n"
+    )}'''`
+  );
 
-  for (let file of files) {
+  for (let i = 0; i < softwareFiles.length; i++) {
+    const file = softwareFiles[i];
+
     // add the prefix if needed
     if (!file.includes("software/scripts/")) {
       file = `software/scripts/${file}`;
@@ -29,7 +35,11 @@ async function doWork() {
 
     const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}`;
 
-    console.log(echoColor1(`>> ${file}`));
+    console.log(
+      echoColor1(
+        `>> ${file} (${(((i + 1) * 100) / softwareFiles.length).toFixed(2)}%)`
+      )
+    );
     processScriptFile(file, url);
   }
 }

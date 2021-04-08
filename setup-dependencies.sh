@@ -1,6 +1,6 @@
 #! /bin/sh
 echo '>> loading...'
-. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/base-bash-script.sh)"
+. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh)"
 clear
 
 echo """

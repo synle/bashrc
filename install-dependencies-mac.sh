@@ -1,6 +1,6 @@
 #! /bin/sh
 # os flags are set in this file
-# https://github.com/synle/bashrc/blob/master/base-bash-script.sh
+# https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
 
 function installMacPackageWithHomebrew(){
   echo "  >> $@"

@@ -8,7 +8,7 @@ echo """
 """
 
 echo '>> Loading synle/bashrc script from upstream...'
-. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/base-bash-script.sh?$(date +%s))"
+. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh?$(date +%s))"
 
 echo """
 =======================================================
