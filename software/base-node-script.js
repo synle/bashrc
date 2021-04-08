@@ -272,13 +272,14 @@ async function getSoftwareScriptFiles() {
   // therefore it needs to be done last
   const lastFiles = convertTextToList(`
     software/scripts/bash-syle-content.js
-    software/scripts/ssh-and-etc-hosts.su.js
+    software/scripts/etc-hosts.su.js
   `);
 
   let softwareFiles = files.filter(
     (f) =>
       !!f.match("software/scripts/") &&
       (f.includes(".js") || f.includes(".sh")) &&
+      !f.includes("config.js") &&
       firstFiles.indexOf(f) === -1 &&
       lastFiles.indexOf(f) === -1
   );
@@ -341,15 +342,15 @@ function echo(str) {
 }
 
 function echoColor1(str) {
-  return `echo -e $'\\e[32m${str}\\e[m'`;
+  return `echo -e $'\\e[31m${str}\\e[m'`;
 }
 
 function echoColor2(str) {
-  return `echo -e $'\\e[33m${str}\\e[m'`;
+  return `echo -e $'\\e[32m${str}\\e[m'`;
 }
 
 function echoColor3(str) {
-  return `echo -e $'\\e[34m${str}\\e[m'`;
+  return `echo -e $'\\e[33m${str}\\e[m'`;
 }
 
 // script utils

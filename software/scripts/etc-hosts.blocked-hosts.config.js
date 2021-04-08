@@ -53,7 +53,7 @@ async function doWork() {
   console.log("Total Hosts", res.length);
 
   const targetPath =
-    "./software/scripts/ssh-and-etc-hosts.blocked-hosts.config";
+    "./software/scripts/etc-hosts.blocked-hosts.config";
 
   console.log("Update the hosts", targetPath);
   writeText(targetPath, res.join("\n"));

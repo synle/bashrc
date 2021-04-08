@@ -57,6 +57,6 @@ curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | s
 ```
 
 export TEST_SCRIPT_FILES="git.js" \
-
 && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-live.sh | bash
+
 ```

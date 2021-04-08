@@ -10,7 +10,7 @@ npx prettier --parser babel --write \
 && echo '>> DONE Formatting JS Scripts'
 
 echo '>> Build Assets - Host Mappings'
-cat software/scripts/ssh-and-etc-hosts.blocked-hosts.config.node | node
+cat software/scripts/etc-hosts.blocked-hosts.config.js | node
 
 
 echo '>> DONE Building'
