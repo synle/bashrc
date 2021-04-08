@@ -15,12 +15,12 @@ async function doWork() {
       file = `software/scripts/${file}`;
     }
 
-    const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}?cacheBust=${Date.now()}`;
     console.log(
       echoColor1(
-        `>> ${file} (${(((i + 1) * 100) / softwareFiles.length).toFixed(2)}%)`
+        `>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`
       )
     );
-    processScriptFile(file, url);
+
+    processScriptFile(file);
   }
 }

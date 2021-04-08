@@ -222,6 +222,10 @@ function convertTextToHosts(text) {
     );
 }
 
+function calculatePercentage(count, total) {
+  return ((count * 100) / total).toFixed(2);
+}
+
 function mkdir(targetPath) {
   try {
     fs.mkdirSync(targetPath, { recursive: true });
@@ -345,8 +349,10 @@ function echoColor2(str) {
 }
 
 // script utils
-function processScriptFile(file, url) {
+function processScriptFile(file) {
   let scriptToUse;
+
+  const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}?cacheBust=${Date.now()}`;
 
   // check against only mac or only window
   if (file.includes("software/scripts/windows") && !is_os_window) {
