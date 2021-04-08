@@ -348,6 +348,10 @@ function echoColor2(str) {
   return `echo -e $'\\e[33m${str}\\e[m'`;
 }
 
+function echoColor3(str) {
+  return `echo -e $'\\e[34m${str}\\e[m'`;
+}
+
 // script utils
 function processScriptFile(file) {
   let scriptToUse;
@@ -356,13 +360,13 @@ function processScriptFile(file) {
 
   // check against only mac or only window
   if (file.includes("software/scripts/windows") && !is_os_window) {
-    console.log(echoColor2("  >> Skipped - Only applicable for Windows"));
+    console.log(echoColor3("  >> Skipped - Only applicable for Windows"));
     return;
   }
 
   // check against only mac or only window
   if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
-    console.log(echoColor2("  >> Skipped - Only applicable for Mac"));
+    console.log(echoColor3("  >> Skipped - Only applicable for Mac"));
     return;
   }
 

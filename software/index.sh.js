@@ -16,7 +16,7 @@ async function doWork() {
     }
 
     console.log(
-      echoColor1(
+      echoColor2(
         `>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`
       )
     );
