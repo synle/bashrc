@@ -26,7 +26,7 @@ async function doWork() {
   );
 
   for (let i = 0; i < softwareFiles.length; i++) {
-    const file = softwareFiles[i];
+    let file = softwareFiles[i];
 
     // add the prefix if needed
     if (!file.includes("software/scripts/")) {
