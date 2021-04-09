@@ -125,7 +125,7 @@ code-list-extensions(){
   if [ $is_os_wsl == "1" ]
   then
     # for windows
-    echo 'Not supported for wsl'
+    cmd.exe /c "code --list-extensions"
   elif  [ $is_os_darwin_mac == "1" ]
   then
     code --list-extensions
@@ -136,10 +136,10 @@ code-install-extension(){
   if [ $is_os_wsl == "1" ]
   then
     # for windows
-    echo 'Not supported for wsl'
+    cmd.exe /c "code --install-extension $1"
   elif  [ $is_os_darwin_mac == "1" ]
   then
-    code --install-extension $@
+    code --install-extension "$1"
   fi
 }
 
