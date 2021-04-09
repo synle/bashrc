@@ -10,6 +10,8 @@ echo """
 echo '>> Loading synle/bashrc script from upstream...'
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh?$(date +%s))"
 
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/_common-one-time-run.sh | bash
+
 echo """
 =======================================================
 =  is_os_darwin_mac : $is_os_darwin_mac
@@ -28,6 +30,7 @@ echo -e """
 =======================================================
 
 >> End time: $(date)...
-"""
 
+# to refresh to this
 . ~/.bash_syle
+"""

@@ -12,7 +12,7 @@ export TEST_SCRIPT_FILES="""
   _bash-rc-bootstrap.js
   git.js
   vim.js
-  vundle.js
+  vim-vundle.sh
   bash-inputrc.js
   bash-autocomplete.js
   bash-syle-content.js
@@ -26,4 +26,7 @@ echo """
 =======================================================
 
 >> End time: $(date)...
+
+# to refresh to this
+. ~/.bash_syle
 """

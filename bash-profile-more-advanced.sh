@@ -173,8 +173,8 @@ viewFile(){
       editorCmd=vim;
     fi
 
-    echo "$editorCmd $@"
-    $editorCmd $@
+    echo "$editorCmd $1"
+    $editorCmd "$1"
 }
 
 

@@ -165,7 +165,7 @@ alias fcd=fuzzyDirectory
 
 # simple view file alias - will be overriden by advanced bash
 viewFile(){
-  vim $@
+  vim "$@"
 }
 
 fuzzyVim(){
@@ -176,8 +176,10 @@ fuzzyVim(){
   )
 
   if [ -n "$OUT" ]; then
-    echo "vim $(realpath $OUT)";
-    vim $OUT
+    echo """
+vim \"$OUT\"
+    """
+    vim "$OUT"
   fi
 }
 
@@ -189,8 +191,10 @@ fuzzyViewFile(){
   )
 
   if [ -n "$OUT" ]; then
-    echo "vim $(realpath $OUT)";
-    viewFile $OUT
+    echo """
+vim \"$OUT\"
+    """
+    viewFile "$OUT"
   fi
 }
 
@@ -203,8 +207,10 @@ fuzzyDirectory(){
   );
 
   if [ -n "$OUT" ]; then
-    echo "PWD: $PWD"
-    echo "New_Dir: $OUT";
+    echo """
+PWD: $PWD
+New_Dir: \"$OUT\"
+    """
     cd "$OUT"
   fi
 }
