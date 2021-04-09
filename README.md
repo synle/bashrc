@@ -4,6 +4,8 @@ This is my personal bash profile
 
 ## Using this URL to install:
 
+Refer to this webapp for the configuration
+
 https://synle.github.io/app/setup-bash-profile.html
 
 ## Supported Platforms
@@ -11,6 +13,7 @@ https://synle.github.io/app/setup-bash-profile.html
 - OSX
 - Ubuntu / Debian
 - Windows Sub Linux System (WSL) - Debian based only
+- Android Termux (lightweight)
 
 ## Installation
 
@@ -31,32 +34,5 @@ Run this on full system - eg, Mac OSX, Ubuntu or Windows Sublinux System (WSL)
 ```
 
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"
-
-```
-
-#### Install Lightweight Profile for Git Bash on Windows
-
-```
-
-. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
-
-```
-
-#### Other minor script to run
-
-##### Install etc hosts
-
-```
-
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo bash
-
-```
-
-##### Test a single script live
-
-```
-
-export TEST_SCRIPT_FILES="git.js" \
-&& curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-live.sh | bash
 
 ```
