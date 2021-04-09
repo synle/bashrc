@@ -263,7 +263,6 @@ async function getSoftwareScriptFiles() {
 
   const firstFiles = convertTextToList(`
     software/scripts/_bash-rc-bootstrap.js
-    software/scripts/_common-one-time-run.sh
     software/scripts/_nvm-symlink.sh.js
   `);
 
