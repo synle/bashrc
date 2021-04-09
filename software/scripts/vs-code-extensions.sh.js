@@ -1,11 +1,5 @@
 async function doWork() {
-  const targetPath = _getPath();
-  if (!fs.existsSync(targetPath)) {
-    console.log("Not supported - Exit - targetPath not found: ", targetPath);
-    process.exit();
-  }
-
-  const TO_PLUGINS = convertTextToList(`
+  const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(`
     2gua.rainbow-brackets
     aaron-bond.better-comments
     abusaidm.html-snippets
@@ -48,36 +42,31 @@ async function doWork() {
     wmaurer.change-case
   `);
 
-  const vsCodeBinary = is_os_window
-    ? `"c:\\Program Files\\Microsoft VS Code\\bin\\code"`
-    : "code";
-
-  const extensionInstallShell = TO_PLUGINS.map(
-    (plugin) => `${vsCodeBinary} --install-extension ${plugin} --force`
-  ).join("\n");
-
-  const extensionInstallPath = path.join(
-    BASE_SY_CUSTOM_TWEAKS_DIR,
-    "install-vs-code.extensions.txt"
+  console.log(
+    echo(
+      `  >> Setting up VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`
+    )
   );
+
+  for (const plugin of VS_CODE_EXTENSIONS_TO_INSTALL) {
+    console.log(`echo  "    >> ${plugin}" && \\`);
+
+    if (is_os_window) {
+      // mac
+      console.log(
+        `cmd.exe /c "code --install-extension ${plugin} --force" &> /dev/null && \\`
+      );
+    } else {
+      // mac
+      console.log(
+        `code --install-extension ${plugin} --force &> /dev/null && \\`
+      );
+    }
+  }
 
   console.log(
-    `  >> Installing VS Code extensions script: ${TO_PLUGINS.length.toLocaleString()}`
+    echo(
+      `  >> Installed VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`
+    )
   );
-  console.log(
-    `    >> Need to manually install the plugins, the content is here`
-  );
-  console.log(`      cat ${extensionInstallPath}`);
-
-  fs.writeFileSync(extensionInstallPath, extensionInstallShell);
-}
-
-function _getPath() {
-  if (is_os_window) {
-    return path.join(getWindowAppDataRoamingUserPath(), "Code/User");
-  }
-  if (is_os_darwin_mac) {
-    return path.join(getOsxApplicationSupportCodeUserPath(), "Code/User");
-  }
-  return null;
 }
