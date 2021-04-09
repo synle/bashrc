@@ -122,11 +122,25 @@ Full Path: $(realpath "$@")
 }
 
 code-list-extensions(){
-  code --list-extensions
+  if [ $is_os_wsl == "1" ]
+  then
+    # for windows
+    echo 'Not supported for wsl'
+  elif  [ $is_os_darwin_mac == "1" ]
+  then
+    code --list-extensions
+  fi
 }
 
 code-install-extension(){
-  code --install-extension $@
+  if [ $is_os_wsl == "1" ]
+  then
+    # for windows
+    echo 'Not supported for wsl'
+  elif  [ $is_os_darwin_mac == "1" ]
+  then
+    code --install-extension $@
+  fi
 }
 
 ##########################################################
