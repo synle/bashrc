@@ -105,9 +105,12 @@ code()
   then
     # for windows
     vs_code_win32_binary_path="/mnt/c/Program Files/Microsoft VS Code/Code.exe"
-    "$vs_code_win32_binary_path" $(findResolvedPathForWsl1 "$@") > /dev/null 2>&1 &
+
+{ echo "\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
 
     echo """
+  \"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\"
+
 Full Path: $(realpath "$@")
  WSL Path: $(findResolvedPathForWsl1 "$@")
     """
