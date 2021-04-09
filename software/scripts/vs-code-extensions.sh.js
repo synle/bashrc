@@ -49,7 +49,9 @@ async function doWork() {
   );
 
   for (const plugin of VS_CODE_EXTENSIONS_TO_INSTALL) {
-    console.log(`echo  "    >> ${plugin}" && \\`);
+    console.log(
+      `echo  "    >> code --install-extension ${plugin} --force" && \\`
+    );
 
     if (is_os_window) {
       // mac
