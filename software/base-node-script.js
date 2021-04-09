@@ -273,6 +273,7 @@ async function getSoftwareScriptFiles() {
   const lastFiles = convertTextToList(`
     software/scripts/bash-syle-content.js
     software/scripts/etc-hosts.su.js
+    software/scripts/vs-code-extensions.sh.js
   `);
 
   let softwareFiles = files.filter(
