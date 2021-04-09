@@ -4,9 +4,6 @@ npx prettier --parser babel --write \
   **/*.js \
   **/**/*.js \
   **/**/**/*.js \
-  **/*.node \
-  **/**/*.node \
-  **/**/**/*.node \
 && echo '>> DONE Formatting JS Scripts'
 
 echo '>> Build Assets - Host Mappings'
