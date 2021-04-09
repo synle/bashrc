@@ -1,20 +1,3 @@
-// how to use
-// cat build-blocked-hosts.js | node
-(async () => {
-  let rawData = "";
-  require("https").get(
-    "https://raw.githubusercontent.com/synle/bashrc/master/software/base-node-script.js?cacheBust=" +
-      Date.now(),
-    (res) => {
-      res
-        .on("data", (chunk) => (rawData += chunk))
-        .on("end", () => {
-          require("vm").runInThisContext(rawData);
-        });
-    }
-  );
-})();
-
 async function doWork() {
   let h;
   let res = [];
