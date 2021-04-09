@@ -10,7 +10,8 @@ echo """
 echo '>> Loading synle/bashrc script from upstream...'
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh?$(date +%s))"
 
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/_common-one-time-run.sh | bash
+
+. /dev/stdin <<< "$(curl -s curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-first-and-only-one-time.sh?$(date +%s))"
 
 echo """
 =======================================================
