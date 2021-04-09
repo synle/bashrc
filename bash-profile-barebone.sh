@@ -192,7 +192,7 @@ fuzzyViewFile(){
 
   if [ -n "$OUT" ]; then
     echo """
-vim \"$OUT\"
+viewFile \"$OUT\"
     """
     viewFile "$OUT"
   fi

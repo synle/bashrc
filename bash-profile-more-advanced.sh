@@ -73,9 +73,12 @@ subl()
   then
     # for windows
     sublime_win32_binary_path="/mnt/c/Program Files/Sublime Text 3/subl.exe";
-    "$sublime_win32_binary_path" $(findResolvedPathForWsl1 "$@") &> /dev/null 2>&1;
+
+    { echo "\"$sublime_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
 
     echo """
+\"$sublime_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\"
+
 Full Path: $(realpath "$@")
  WSL Path: $(findResolvedPathForWsl1 "$@")
     """
@@ -109,7 +112,7 @@ code()
 { echo "\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
 
     echo """
-  \"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\"
+\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\"
 
 Full Path: $(realpath "$@")
  WSL Path: $(findResolvedPathForWsl1 "$@")
