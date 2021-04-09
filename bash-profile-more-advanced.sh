@@ -91,14 +91,6 @@ Full Path: $(realpath "$@")
     echo """
 Full Path: $(realpath "$@")
     """
-  else
-    # for rhel
-    sublime_rhel_binary_path="/opt/sublime_text/sublime_text";
-    $sublime_rhel_binary_path $@ &> /dev/null 2>&1;
-
-    echo """
-Full Path: $(realpath "$@")
-    """
   fi
 }
 
@@ -122,14 +114,6 @@ Full Path: $(realpath "$@")
     # for osx darwin
     vs_code_osx_darwin_binary_path="/usr/local/bin/code";
     "$vs_code_osx_darwin_binary_path" $@ &> /dev/null 2>&1
-
-    echo """
-Full Path: $(realpath "$@")
-    """
-  else
-    # for rhel
-    vs_code_rhel_binary_path="/opt/sublime_text/sublime_text"
-    "$vs_code_rhel_binary_path" $@ &> /dev/null 2>&1
 
     echo """
 Full Path: $(realpath "$@")
