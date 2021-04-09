@@ -4,6 +4,7 @@ async function doWork() {
     aaron-bond.better-comments
     abusaidm.html-snippets
     alefragnani.project-manager
+    bajdzis.vscode-database
     bibhasdn.unique-lines
     bierner.folder-source-actions
     christian-kohler.npm-intellisense
