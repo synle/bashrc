@@ -13,6 +13,6 @@ async function doWork() {
     files.push(file);
   }
 
-  const targetPath = "./software/script-list.config";
+  const targetPath = "./software/metadata/script-list.config";
   writeText(targetPath, files.join("\n"));
 }

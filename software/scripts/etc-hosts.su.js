@@ -247,7 +247,7 @@ async function doWorkEtcHost() {
 
 async function _getBlockedHostNames() {
   const url =
-    "https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/etc-hosts.blocked-hosts.config";
+    "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/blocked-hosts.config";
   try {
     let h = await fetchUrlAsString(url);
     h = convertTextToHosts(h);
