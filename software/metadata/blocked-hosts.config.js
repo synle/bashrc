@@ -1,19 +1,24 @@
+let BLOCKED_HOST_SOURCE_URLS;
+
+async function doInit() {
+  BLOCKED_HOST_SOURCE_URLS = convertTextToList(`
+    https://adaway.org/hosts.txt
+    http://winhelp2002.mvps.org/hosts.txt
+    https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
+    https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+  `);
+}
+
 async function doWork() {
   let h;
   let res = [];
 
-  const urls = convertTextToList(`
-    https://adaway.org/hosts.txt
-    http://winhelp2002.mvps.org/hosts.txt
-    https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
-  `);
-
-  console.log(urls);
+  console.log("BLOCKED_HOST_SOURCE_URLS: ", BLOCKED_HOST_SOURCE_URLS);
 
   // don't block it
   const promises = [];
 
-  for (let url of urls) {
+  for (let url of BLOCKED_HOST_SOURCE_URLS) {
     url = url.toLowerCase();
 
     promises.push(
