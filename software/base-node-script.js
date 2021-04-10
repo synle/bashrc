@@ -226,6 +226,14 @@ function calculatePercentage(count, total) {
   return ((count * 100) / total).toFixed(2);
 }
 
+function getRootDomainFrom(url) {
+  const lastDotIndex = url.lastIndexOf(".");
+  const partialUrl = url.substr(0, lastDotIndex);
+  const secondLastDotIdx = partialUrl.lastIndexOf(".") || 0;
+
+  return url.substr(secondLastDotIdx + 1);
+}
+
 function mkdir(targetPath) {
   try {
     fs.mkdirSync(targetPath, { recursive: true });

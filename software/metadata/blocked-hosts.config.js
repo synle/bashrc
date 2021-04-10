@@ -13,7 +13,9 @@ async function doWork() {
   // don't block it
   const promises = [];
 
-  for (const url of urls) {
+  for (let url of urls) {
+    url = url.toLowerCase();
+
     promises.push(
       new Promise(async (resolve) => {
         try {
@@ -31,7 +33,32 @@ async function doWork() {
 
   await Promise.allSettled(promises);
 
-  res = [...new Set(res)].sort();
+  res = [...new Set(res)].sort((a, b) => {
+    const ha = getRootDomainFrom(a);
+    const hb = getRootDomainFrom(b);
+
+    if (ha > hb) {
+      return 1;
+    }
+
+    if (ha < hb) {
+      return -1;
+    }
+
+    if (ha === hb) {
+      if (a > b) {
+        return 1;
+      }
+
+      if (a < b) {
+        return -1;
+      }
+
+      if (a === b) {
+        return 0;
+      }
+    }
+  });
 
   console.log("Total Hosts", res.length);
 
