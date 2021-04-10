@@ -23,7 +23,7 @@ echo """
 """
 
 ###########################################################
-export TEST_SCRIPT_FILES="""etc-hosts.su.js"""; curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
 
 
 ##########################################################

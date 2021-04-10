@@ -21,16 +21,37 @@ globalThis.HOME_HOST_NAMES = [
 ];
 
 // flags
-globalThis.is_os_ubuntu = parseInt(process.env.is_os_ubuntu) > 0 || false;
-globalThis.is_os_darwin_mac =
-  parseInt(process.env.is_os_darwin_mac) > 0 || fs.existsSync("/Applications");
-globalThis.is_os_window =
-  parseInt(process.env.is_os_darwin_mac) > 0 || fs.existsSync(BASE_WINDOW);
-globalThis.is_os_mingw64 =
-  parseInt(process.env.is_os_darwin_mac) > 0 || fs.existsSync("/mingw64");
-globalThis.is_os_wsl =
-  parseInt(process.env.is_os_darwin_mac) > 0 ||
-  (fs.existsSync("/lib") && fs.existsSync("/mnt/c/Users"));
+try {
+  globalThis.is_os_ubuntu = false || parseInt(process.env.is_os_ubuntu) > 0;
+} catch (err) {}
+
+try {
+  globalThis.is_os_darwin_mac =
+    false ||
+    parseInt(process.env.is_os_darwin_mac) > 0 ||
+    fs.existsSync("/Applications");
+} catch (err) {}
+
+try {
+  globalThis.is_os_window =
+    false ||
+    parseInt(process.env.is_os_window) > 0 ||
+    fs.existsSync(BASE_WINDOW);
+} catch (err) {}
+
+try {
+  globalThis.is_os_mingw64 =
+    false ||
+    parseInt(process.env.is_os_mingw64) > 0 ||
+    fs.existsSync("/mingw64");
+} catch (err) {}
+
+try {
+  globalThis.is_os_wsl =
+    false ||
+    parseInt(process.env.is_os_wsl) > 0 ||
+    (fs.existsSync("/mnt/c/Users") && fs.existsSync("/usr/local/bin"));
+} catch (err) {}
 
 // setting up the path for the extra tweaks
 globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = is_os_window
@@ -442,11 +463,16 @@ except:
   } catch (err) {}
 
   // create the sy tweak folder
-  [
-    BASE_SY_CUSTOM_TWEAKS_DIR,
+  const pathsToCreateDir = [
     path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
     path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),
-  ].forEach(mkdir);
+  ];
+
+  for (const aPath of pathsToCreateDir) {
+    try {
+      await mkdir(aPath);
+    } catch (err) {}
+  }
 
   // for debugging
   if (process.env.DEBUG) {
