@@ -30,6 +30,7 @@ alias mergeMaster="merge origin/master"
 alias g=git
 alias s='ssh -4'
 alias distroName='python -c "import platform; print platform.linux_distribution()';
+alias mk='make'
 
 br(){
   clear &&  echo $'\e[32m======================================================\e[m' && echo '''

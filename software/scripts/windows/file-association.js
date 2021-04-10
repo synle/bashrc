@@ -3,7 +3,8 @@ async function doWork() {
 
   const targetPath = path.join(
     BASE_SY_CUSTOM_TWEAKS_DIR,
-    "sy-custom-file-association.cmd"
+    "windows",
+    "file-association.cmd"
   );
   console.log("  >> Windows File Associations", targetPath);
   writeText(

@@ -3,7 +3,8 @@ async function doWork() {
 
   const targetPath = path.join(
     BASE_SY_CUSTOM_TWEAKS_DIR,
-    "sy-custom-autohotkey.ahk"
+    "windows",
+    "autohotkey.ahk"
   );
   console.log("    >> Hotkeys (Autohotkey) Configs", targetPath);
   writeText(

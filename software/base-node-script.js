@@ -444,7 +444,13 @@ except:
   } catch (err) {}
 
   // create the sy tweak folder
-  mkdir(path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "themes"));
+  [
+    path.join(BASE_HOMEDIR_LINUX, ".ssh"),
+    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "themes"),
+    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "rdp"),
+    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
+    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),
+  ].forEach(mkdir);
 
   // for debugging
   if (process.env.DEBUG) {

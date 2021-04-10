@@ -9,10 +9,6 @@ async function doWorkSshConfig() {
   const basePath = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "rdp");
   console.log("  >> Setting up Remote Desktop (RDP) Connections");
 
-  await execBashSilent(`
-    mkdir -p ${basePath}
-  `);
-
   const windowsPcNames = convertTextToList(`
     sy-alienware-15
     sy-asus-g15

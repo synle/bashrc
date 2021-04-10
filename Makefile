@@ -13,6 +13,9 @@ setup_hosts:
 prebuild:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh | bash
 
+build:
+	sh build.sh
+
 test_full_run_live:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
 

@@ -141,7 +141,6 @@ async function doWorkSshConfig() {
 
   console.log("    >> Setting up SSH Client config", targetPath);
   await execBashSilent(`
-    mkdir -p ${baseSshPath}
     touch ${targetPath} && chmod 611 ${targetPath}
   `);
 
