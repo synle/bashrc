@@ -446,7 +446,7 @@ except:
   // create the sy tweak folder
   [
     path.join(BASE_HOMEDIR_LINUX, ".ssh"),
-    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "themes"),
+    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "fonts"),
     path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "rdp"),
     path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
     path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),

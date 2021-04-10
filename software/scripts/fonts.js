@@ -1,5 +1,5 @@
 async function doWork() {
-  const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "themes");
+  const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
 
   console.log(
     "  >> Download Ligatures Fonts Fira Code and Cascadia Code:",

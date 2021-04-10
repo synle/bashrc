@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <Settings component="StartMenu" version="4.3.1">
 	<MenuStyle value="Win7"/>
-	<ShiftClick value="Nothing"/>
+	<ShiftClick value="ClassicMenu"/>
 	<WinKey value="ClassicMenu"/>
-	<ShiftWin value="Nothing"/>
+	<ShiftWin value="ClassicMenu"/>
 	<Hover value="Nothing"/>
 	<Documents value="Hide"/>
+	<ConfirmLogOff value="1"/>
 	<Undock value="0"/>
 	<Search value="0"/>
 	<Help value="0"/>
@@ -57,7 +58,7 @@
 		<Line>OPAQUE=1</Line>
 	</SkinOptionsW7>
 	<EnableStartButton value="0"/>
-	<StartButtonType value="AeroButton"/>
+	<StartButtonType value="CustomButton"/>
 	<CustomTaskbar value="1"/>
 	<TaskbarLook value="Opaque"/>
 	<TaskbarColor value="10053171"/>
@@ -140,13 +141,13 @@
 		<Line>Item1.Settings=NOEXPAND</Line>
 		<Line>Item2.Command=user_files</Line>
 		<Line>Item2.Label=~</Line>
+		<Line>Item2.Tip=$Menu.UserFilesTip</Line>
 		<Line>Item2.Settings=NOEXPAND</Line>
 		<Line>Item3.Command=user_documents</Line>
 		<Line>Item3.Label=~/Documents</Line>
 		<Line>Item3.Settings=NOEXPAND</Line>
 		<Line>Item4.Command=downloads</Line>
 		<Line>Item4.Label=~/Downloads</Line>
-		<Line>Item4.Tip=$Menu.DownloadTip</Line>
 		<Line>Item4.Icon=imageres.dll, 5303</Line>
 		<Line>Item4.Settings=NOEXPAND</Line>
 		<Line>Item5.Command=explorer "C:\Users\syle\git"</Line>
@@ -161,13 +162,15 @@
 		<Line>Item8.Label=Settings &gt; New</Line>
 		<Line>Item8.Icon=%windir%\ImmersiveControlPanel\SystemSettings.exe,10</Line>
 		<Line>Item9.Command=control_panel</Line>
-		<Line>Item9.Label=Settings &gt; Old Control Panel</Line>
+		<Line>Item9.Label=Settings &gt; Control Panel</Line>
 		<Line>Item9.Tip=$Menu.ControlPanelTip</Line>
 		<Line>Item9.Settings=NOEXPAND</Line>
-		<Line>Item10.Command=separator</Line>
-		<Line>Item11.Command=explorer ms-settings:personalization-background</Line>
-		<Line>Item11.Label=Personalization</Line>
-		<Line>Item11.Icon=shell32.dll, 239</Line>
+		<Line>Item10.Command=explorer ms-settings:personalization-background</Line>
+		<Line>Item10.Label=Settings &gt; Personalization</Line>
+		<Line>Item10.Icon=shell32.dll, 239</Line>
+		<Line>Item11.Command=ms-settings:bluetooth</Line>
+		<Line>Item11.Label=Device &gt; Bluetooth</Line>
+		<Line>Item11.Icon=shell32.dll, 16826</Line>
 		<Line>Item12.Command=ms-settings:mousetouchpad</Line>
 		<Line>Item12.Label=Device &gt; Mouse</Line>
 		<Line>Item12.Icon=shell32.dll, 15</Line>
@@ -175,14 +178,14 @@
 		<Line>Item13.Label=Device &gt; Touchpad</Line>
 		<Line>Item13.Icon=shell32.dll, 15</Line>
 		<Line>Item14.Command=WFS.exe</Line>
-		<Line>Item14.Label=Windows Fax and Scan</Line>
+		<Line>Item14.Label=Fax and Scan</Line>
 		<Line>Item14.Icon=shell32.dll, 196</Line>
 		<Line>Item15.Command=separator</Line>
 		<Line>Item16.Command=%windir%\system32\compmgmt.msc /s</Line>
 		<Line>Item16.Label=Computer Management</Line>
 		<Line>Item16.Icon=shell32.dll, 36</Line>
 		<Line>Item17.Command=rundll32 sysdm.cpl,EditEnvironmentVariables</Line>
-		<Line>Item17.Label=Environment Variables</Line>
+		<Line>Item17.Label=Env Variables</Line>
 		<Line>Item17.Icon=shell32.dll, 1001</Line>
 		<Line>Item18.Command=sysdm.cpl</Line>
 		<Line>Item18.Label=System Properties</Line>
@@ -195,14 +198,18 @@
 		<Line>Item20.Tip=$Menu.RunTip</Line>
 		<Line>Item20.Icon=imageres.dll,100</Line>
 		<Line>Item21.Command=separator</Line>
-		<Line>Item22.Command=explorer ms-settings:windowsupdate-action</Line>
-		<Line>Item22.Label=Updates</Line>
-		<Line>Item22.Icon=shell32.dll, 16739</Line>
-		<Line>Item23.Command=separator</Line>
-		<Line>Item24.Command=bash</Line>
-		<Line>Item24.Label=Bash WSL Tmux</Line>
-		<Line>Item24.Icon=shell32.dll, 3</Line>
-		<Line>Item25.Link=C:\Users\lengu\AppData\Local\Microsoft\WindowsApps\wt.exe</Line>
-		<Line>Item25.Label=Terminal</Line>
+		<Line>Item22.Link=%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\wt.exe</Line>
+		<Line>Item22.Label=Terminal</Line>
+		<Line>Item23.Command="%SystemDrive%\Program Files\Microsoft VS Code\Code.exe"</Line>
+		<Line>Item23.Label=Visual Studio Code</Line>
+		<Line>Item24.Command=C:\Program Files\Sublime Text 3\sublime_text.exe</Line>
+		<Line>Item24.Label=Sublime Text</Line>
+		<Line>Item25.Command=separator</Line>
+		<Line>Item26.Command=ms-windows-store:updates</Line>
+		<Line>Item26.Label=App Store</Line>
+		<Line>Item27.Command=explorer ms-settings:windowsupdate-action</Line>
+		<Line>Item27.Label=Updates</Line>
+		<Line>Item27.Icon=shell32.dll, 16739</Line>
 	</MenuItems7>
+	<EnableExit value="0"/>
 </Settings>

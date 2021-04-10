@@ -8,7 +8,7 @@ async function doWork() {
 
   const targetPath = path.join(
     BASE_SY_CUSTOM_TWEAKS_DIR,
-    "themes",
+    "mac",
     "iterm.Dracula.itermcolors"
   );
 
