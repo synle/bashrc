@@ -4,7 +4,7 @@ async function doWork() {
   const targetPath = path.join(
     BASE_SY_CUSTOM_TWEAKS_DIR,
     "windows",
-    "classic_start.xml"
+    "classic-start.xml"
   );
   const res = await fetchUrlAsString(
     "https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/windows/classic_start.config.xml"

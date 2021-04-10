@@ -1,12 +1,18 @@
-async function doWork() {
-  console.log("  >> Setting up SSH Configs");
+const BASE_REMOTE_CONNECTIONS_PATH = path.join(
+  globalThis.BASE_SY_CUSTOM_TWEAKS_DIR,
+  "remote-connections"
+);
 
-  // do works
-  await doWorkSshConfig();
+const DEFAULT_CONNECTION_USER = "syle";
+
+async function doWork() {
+  await mkdir(BASE_REMOTE_CONNECTIONS_PATH);
+
+  doWorkVnc();
+  doWorkRdp();
 }
 
-async function doWorkSshConfig() {
-  const basePath = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "rdp");
+async function doWorkRdp() {
   console.log("  >> Setting up Remote Desktop (RDP) Connections");
 
   const windowsPcNames = convertTextToList(`
@@ -19,7 +25,10 @@ async function doWorkSshConfig() {
   );
 
   for (const [hostName, hostIp] of hosts) {
-    const targetPath = path.join(basePath, hostName + ".rdp");
+    const targetPath = path.join(
+      BASE_REMOTE_CONNECTIONS_PATH,
+      hostName + ".rdp"
+    );
 
     console.log("    >> RDP: ", targetPath);
 
@@ -65,6 +74,41 @@ gatewaybrokeringtype:i:0
 use redirection server name:i:0
 rdgiskdcproxy:i:0
 kdcproxyname:s:
+    `;
+
+    writeText(targetPath, content);
+  }
+}
+
+async function doWorkVnc() {
+  console.log("  >> Setting up VNC Connections");
+
+  const windowsPcNames = convertTextToList(`
+    sy-macpro
+  `);
+
+  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp]) =>
+    windowsPcNames.includes(hostName)
+  );
+
+  for (const [hostName, hostIp] of hosts) {
+    const targetPath = path.join(
+      BASE_REMOTE_CONNECTIONS_PATH,
+      hostName + ".vnc"
+    );
+
+    console.log("    >> VNC: ", targetPath);
+
+    const content = `
+AuthCertificate=
+FriendlyName=${hostName}
+Host=${hostIp}
+FullScreen=0
+RelativePtr=0
+Scaling=FitAutoAspect
+SingleSignOn=0
+UpdateScreenshot=0
+UserName=${DEFAULT_CONNECTION_USER}
     `;
 
     writeText(targetPath, content);

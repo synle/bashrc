@@ -235,9 +235,7 @@ function getRootDomainFrom(url) {
 }
 
 function mkdir(targetPath) {
-  try {
-    fs.mkdirSync(targetPath, { recursive: true });
-  } catch (err) {}
+  return execBashSilent(`mkdir -p ${targetPath}`);
 }
 
 // api utils
@@ -445,9 +443,7 @@ except:
 
   // create the sy tweak folder
   [
-    path.join(BASE_HOMEDIR_LINUX, ".ssh"),
-    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "fonts"),
-    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "rdp"),
+    BASE_SY_CUSTOM_TWEAKS_DIR,
     path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
     path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),
   ].forEach(mkdir);

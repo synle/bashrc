@@ -1,19 +1,14 @@
 async function doWork() {
   console.log("  >> Setting up SSH Configs");
 
-  // do works
-  await doWorkSshConfig();
-}
-
-async function doWorkSshConfig() {
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, ".ssh");
   const targetPath = path.join(baseSshPath, "config");
 
   console.log("    >> Setting up SSH Client config", targetPath);
-  await execBashSilent(`
-    mkdir -p ${baseSshPath}
-    touch ${targetPath} && chmod 611 ${targetPath}
-  `);
+
+  await mkdir(baseSshPath);
+
+  await execBashSilent(`touch ${targetPath} && chmod 611 ${targetPath}`);
 
   console.log("    >> Updating SSH Client Config", targetPath);
 

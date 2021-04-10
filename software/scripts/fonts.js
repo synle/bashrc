@@ -1,9 +1,11 @@
 async function doWork() {
-  const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
+  const targetFontPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
+
+  await mkdir(targetFontPath);
 
   console.log(
     "  >> Download Ligatures Fonts Fira Code and Cascadia Code:",
-    targetPath
+    targetFontPath
   );
 
   if (!is_os_window && !is_os_darwin_mac) {
@@ -29,7 +31,7 @@ async function doWork() {
         try {
           const url = `https://raw.githubusercontent.com/synle/bashrc/master/${font}`;
           const destination = path.join(
-            targetPath,
+            targetFontPath,
             "Font-" + path.basename(font)
           );
           await downloadFile(url, destination);
