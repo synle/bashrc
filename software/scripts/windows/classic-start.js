@@ -7,7 +7,7 @@ async function doWork() {
     "classic_start.xml"
   );
   const res = await fetchUrlAsString(
-    "https://raw.githubusercontent.com/synle/bashrc/master/windows/classic_start.xml"
+    "https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/windows/classic_start.config1.xml"
   );
 
   console.log("    >> Classic Start Configs", targetPath);
