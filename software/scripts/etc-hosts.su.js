@@ -245,6 +245,10 @@ async function doWorkEtcHost() {
 }
 
 async function _getBlockedHostNames() {
+  if(is_os_window){
+    return STATIC_BLOCK_HOST_NAMES;
+  }
+
   const url =
     "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/blocked-hosts.config";
   try {
