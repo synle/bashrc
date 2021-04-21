@@ -1,8 +1,8 @@
-let SUPER_KEY;
+let OS_KEY;
 let COMMON_KEY_BINDINGS;
 
 async function doInit() {
-  SUPER_KEY = is_os_darwin_mac ? "super" : "alt";
+  OS_KEY = is_os_darwin_mac ? "super" : "alt";
 
   COMMON_KEY_BINDINGS = [
     { keys: ["f5"], command: "refresh_folder_list" },
@@ -46,25 +46,25 @@ async function doInit() {
       },
     },
     {
-      keys: [`${SUPER_KEY}+'`],
+      keys: [`${OS_KEY}+'`],
       command: "show_overlay",
       args: { overlay: "goto", text: "@" },
     },
     {
-      keys: [`${SUPER_KEY}+;`],
+      keys: [`${OS_KEY}+;`],
       command: "show_overlay",
       args: { overlay: "goto", text: ":" },
     },
     {
-      keys: [`${SUPER_KEY}+\\`],
+      keys: [`${OS_KEY}+\\`],
       command: "toggle_side_bar",
     },
     {
-      keys: [`${SUPER_KEY}+shift+enter`],
+      keys: [`${OS_KEY}+shift+enter`],
       command: "goto_definition",
     },
     {
-      keys: [`${SUPER_KEY}+enter`],
+      keys: [`${OS_KEY}+enter`],
       command: "quick_goto_variable",
     },
   ];

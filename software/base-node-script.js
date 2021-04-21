@@ -379,6 +379,10 @@ function echoColor3(str) {
   return `echo -e $'\\e[33m${str}\\e[m'`;
 }
 
+function consoleLogColor1(str){
+  return str;
+}
+
 // script utils
 function processScriptFile(file) {
   let scriptToUse;

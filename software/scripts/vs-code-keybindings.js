@@ -1,13 +1,54 @@
-let SUPER_KEY;
+let OS_KEY;
 let COMMON_KEY_BINDINGS;
 
 async function doInit() {
-  SUPER_KEY = is_os_darwin_mac ? "cmd" : "alt";
+  OS_KEY = is_os_darwin_mac ? "cmd" : "alt";
 
   COMMON_KEY_BINDINGS = [
     {
       key: `f5`,
       command: "workbench.files.action.refreshFilesExplorer",
+    },
+    {
+      key: `${OS_KEY}+\\`,
+      command: "workbench.action.toggleSidebarVisibility",
+    },
+    {
+      key: `${OS_KEY}+shift+l`,
+      command: "editor.action.insertCursorAtEndOfEachLineSelected",
+      when: "editorTextFocus",
+    },
+    {
+      key: `${OS_KEY}+shift+\\`,
+      command: "workbench.view.explorer",
+    },
+    {
+      key: `${OS_KEY}+;`,
+      command: "workbench.action.gotoLine",
+    },
+    {
+      key: `${OS_KEY}+'`,
+      command: "workbench.action.gotoSymbol",
+    },
+    {
+      key: `${OS_KEY}+shift+'`,
+      command: "workbench.action.showAllSymbols",
+    },
+    {
+      key: `${OS_KEY}+shift+g`,
+      command: "editor.action.selectHighlights",
+    },
+    {
+      key: `${OS_KEY}+ctrl+p`,
+      command: "workbench.action.openWorkspace",
+    },
+    {
+      key: `${OS_KEY}+ctrl+p`,
+      command: "projectManager.listProjects",
+    },
+    {
+      key: `${OS_KEY}+ctrl+c`,
+      command: "workbench.files.action.compareWithSaved",
     },
   ];
 }
@@ -31,40 +72,6 @@ async function doWork() {
 
     writeJson(targetFile, [
       ...COMMON_KEY_BINDINGS,
-      {
-        key: `alt+\\`,
-        command: "workbench.action.toggleSidebarVisibility",
-      },
-      {
-        key: `alt+;`,
-        command: "workbench.action.gotoLine",
-      },
-      {
-        key: `alt+'`,
-        command: "workbench.action.gotoSymbol",
-      },
-      {
-        key: `ctrl+alt+l`,
-        command: "editor.action.insertCursorAtEndOfEachLineSelected",
-        when: "editorTextFocus",
-      },
-      {
-        key: `shift+alt+l`,
-        command: "editor.action.insertCursorAtEndOfEachLineSelected",
-        when: "editorTextFocus",
-      },
-      {
-        key: `ctrl+alt+\\`,
-        command: "workbench.view.explorer",
-      },
-      {
-        key: `ctrl+alt+'`,
-        command: "workbench.action.showAllSymbols",
-      },
-      {
-        key: `ctrl+alt+g`,
-        command: "editor.action.selectHighlights",
-      },
       {
         key: `shift+alt+p`,
         command: "workbench.action.showCommands",
@@ -267,54 +274,7 @@ async function doWork() {
     targetFile = path.join(targetPath, "keybindings.json");
     console.log(`    >> Keyboard shortcuts (Mac Only)`, targetFile);
 
-    writeJson(targetFile, [
-      ...COMMON_KEY_BINDINGS,
-      {
-        key: `cmd+\\`,
-        command: "workbench.action.toggleSidebarVisibility",
-      },
-      {
-        key: `shift+cmd+l`,
-        command: "editor.action.insertCursorAtEndOfEachLineSelected",
-        when: "editorTextFocus",
-      },
-      {
-        key: `shift+cmd+\\`,
-        command: "workbench.view.explorer",
-      },
-      {
-        key: `cmd+;`,
-        command: "workbench.action.gotoLine",
-      },
-      {
-        key: `cmd+'`,
-        command: "workbench.action.gotoSymbol",
-      },
-      {
-        key: `shift+cmd+'`,
-        command: "workbench.action.showAllSymbols",
-      },
-      {
-        key: `shift+cmd+g`,
-        command: "editor.action.selectHighlights",
-      },
-      {
-        key: `ctrl+cmd+p`,
-        command: "workbench.action.openWorkspace",
-      },
-      {
-        key: `ctrl+cmd+p`,
-        command: "projectManager.listProjects",
-      },
-      {
-        key: `alt+cmd+p`,
-        command: "-projectManager.listProjects",
-      },
-      {
-        key: `ctrl+cmd+c`,
-        command: "workbench.files.action.compareWithSaved",
-      },
-    ]);
+    writeJson(targetFile, [...COMMON_KEY_BINDINGS]);
     // end of Mac OSX only key bindings
   }
 }
