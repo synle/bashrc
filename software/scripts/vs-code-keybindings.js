@@ -213,8 +213,28 @@ async function doWork() {
         when: "textInputFocus",
       },
       {
+        key: `ctrl+alt+up`,
+        command: "cursorTop",
+        when: "textInputFocus",
+      },
+      {
+        key: `ctrl+alt+shift+up`,
+        command: "cursorTopSelect",
+        when: "textInputFocus",
+      },
+      {
         key: `ctrl+alt+right`,
         command: "cursorBottom",
+        when: "textInputFocus",
+      },
+      {
+        key: `ctrl+alt+down`,
+        command: "cursorBottom",
+        when: "textInputFocus",
+      },
+      {
+        key: `ctrl+alt+shift+down`,
+        command: "cursorBottomSelect",
         when: "textInputFocus",
       },
       {

@@ -314,6 +314,26 @@ async function doWork() {
         args: { to: "eof", extend: false },
       },
       {
+        keys: ["ctrl+alt+up"],
+        command: "move_to",
+        args: { to: "bof", extend: false },
+      },
+      {
+        keys: ["ctrl+alt+down"],
+        command: "move_to",
+        args: { to: "eof", extend: false },
+      },
+      {
+        keys: ["ctrl+alt+shift+up"],
+        command: "move_to",
+        args: { to: "bof", extend: true },
+      },
+      {
+        keys: ["ctrl+alt+shift+down"],
+        command: "move_to",
+        args: { to: "eof", extend: true },
+      },
+      {
         keys: [`shift+alt+up`],
         command: "move",
         args: { by: "pages", forward: false, extend: true },

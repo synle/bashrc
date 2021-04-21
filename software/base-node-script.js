@@ -399,21 +399,19 @@ function processScriptFile(file) {
 
   // check against only mac or only window
   if (file.includes("software/scripts/windows") && !is_os_window) {
-    console.log(consoleLogColor1("  >> Skipped - Only Windows"));
+    console.log(echoColor3("  >> Skipped - Only Windows"));
     return;
   }
 
   // check against only mac or only window
   if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
-    console.log(consoleLogColor1("  >> Skipped - Only Mac"));
+    console.log(echoColor3("  >> Skipped - Only Mac"));
     return;
   }
 
   function _generateScript(file, url) {
-    const startScriptUrl = `https://raw.githubusercontent.com/synle/bashrc/master/software/base-node-script.js?${Date.now()}`;
-
     if (file.includes(".js")) {
-      return `curl -s ${startScriptUrl} && ${_generateRawScript(file, url)}`;
+      return `${_generateStartScript()} && ${_generateRawScript(file, url)}`;
     }
     return `${_generateRawScript(file, url)}`;
   }
@@ -424,6 +422,13 @@ function processScriptFile(file) {
     }
 
     return `curl -s ${url}`;
+  }
+
+  function _generateStartScript() {
+    const startScriptFilePath = "software/base-node-script.js";
+    const startScriptUrl = `https://raw.githubusercontent.com/synle/bashrc/master/${startScriptFilePath}?${Date.now()}`;
+
+    return _generateRawScript(startScriptFilePath, startScriptUrl);
   }
 
   function _generatePipeOutput(file, url) {
