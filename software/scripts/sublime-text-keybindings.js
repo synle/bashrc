@@ -92,7 +92,7 @@ async function doWork() {
   console.log("  >> Setting up Sublime Text 3 keybindings:", targetPath);
 
   if (!fs.existsSync(targetPath)) {
-    console.log(echoColor3("    >> Skipped : Target path not found"));
+    console.log(consoleLogColor1("    >> Skipped : Target path not found"));
     process.exit();
   }
 
@@ -104,7 +104,7 @@ async function doWork() {
 
   console.log("    >> Default (Windows).sublime-keymap");
   if (!fs.existsSync(windowsKeymapPath)) {
-    console.log(echoColor3("      >> Skipped "));
+    console.log(consoleLogColor1("      >> Skipped "));
   } else {
     writeJson(windowsKeymapPath, [
       ...COMMON_KEY_BINDINGS,
@@ -333,7 +333,7 @@ async function doWork() {
 
   console.log("    >> Default (OSX).sublime-keymap");
   if (!fs.existsSync(macKeymapPath)) {
-    console.log(echoColor3("      >> Skipped "));
+    console.log(consoleLogColor1("      >> Skipped "));
   } else {
     writeJson(macKeymapPath, [...COMMON_KEY_BINDINGS]);
   }

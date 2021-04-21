@@ -379,7 +379,15 @@ function echoColor3(str) {
   return `echo -e $'\\e[33m${str}\\e[m'`;
 }
 
-function consoleLogColor1(str){
+function consoleLogColor1(str) {
+  return str;
+}
+
+function consoleLogColor2(str) {
+  return str;
+}
+
+function consoleLogColor3(str) {
   return str;
 }
 
@@ -391,13 +399,13 @@ function processScriptFile(file) {
 
   // check against only mac or only window
   if (file.includes("software/scripts/windows") && !is_os_window) {
-    console.log(echoColor3("  >> Skipped - Only Windows"));
+    console.log(consoleLogColor1("  >> Skipped - Only Windows"));
     return;
   }
 
   // check against only mac or only window
   if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
-    console.log(echoColor3("  >> Skipped - Only Mac"));
+    console.log(consoleLogColor1("  >> Skipped - Only Mac"));
     return;
   }
 

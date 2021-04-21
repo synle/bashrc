@@ -9,7 +9,7 @@ async function doWork() {
   );
 
   if (!is_os_window && !is_os_darwin_mac) {
-    console.log(echoColor3("  >> Skipped : Only Mac or Windows"));
+    console.log(consoleLogColor1("  >> Skipped : Only Mac or Windows"));
     return;
   }
 
@@ -20,7 +20,7 @@ async function doWork() {
   console.log("  >> Downloading fonts", fonts.length);
 
   if (fonts.length.length === 0) {
-    console.log(echoColor3("    >> Skipped : No fonts found"));
+    console.log(consoleLogColor1("    >> Skipped : No fonts found"));
     process.exit();
   }
 

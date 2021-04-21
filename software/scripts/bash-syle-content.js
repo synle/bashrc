@@ -36,7 +36,7 @@ ${contentBaseBashScript}
 ${contentCommonAliasScript}
   `.trim();
   } else {
-    console.log(echoColor3("      >> Skipped : Only Mac or Windows"));
+    console.log(consoleLogColor1("      >> Skipped : Only Mac or Windows"));
   }
 
   // remove double new lines

@@ -20,7 +20,7 @@ async function doWork() {
   console.log("  >> Setting up Sublime Text 3 configurations:", targetPath);
 
   if (!fs.existsSync(targetPath)) {
-    console.log(echoColor3("    >> Skipped : Target path not found"));
+    console.log(consoleLogColor1("    >> Skipped : Target path not found"));
     process.exit();
   }
 
