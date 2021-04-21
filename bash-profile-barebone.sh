@@ -16,6 +16,9 @@ export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
 #############  SECTION BREAK
 ##########################################################
 
+#used to refresh
+alias bashrcRefresh='. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"'
+alias refreshBashrc='bashrcRefresh'
 
 ##########################################################
 # common aliases

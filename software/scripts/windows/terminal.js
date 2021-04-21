@@ -3,11 +3,6 @@
 // https://docs.microsoft.com/en-us/windows/terminal/customize-settings/key-bindings#accepted-modifiers-and-keys
 
 async function doWork() {
-  if (!is_os_window) {
-    console.log("  >> Skipped Windows Terminal Config - (Only Windows)");
-    process.exit();
-  }
-
   const targetPath = path.join(_getPath(), "LocalState/settings.json");
   if (!fs.existsSync(targetPath)) {
     console.log(

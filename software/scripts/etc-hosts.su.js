@@ -239,13 +239,13 @@ async function doWorkEtcHost() {
     }
   } catch (err) {
     console.log(
-      "      >> Skipped permission denied: (needs to run as Admin for Windows WSL)"
+      "      >> Skipped : Permission denied (needs to Run as Admin for Windows WSL)"
     );
   }
 }
 
 async function _getBlockedHostNames() {
-  if(is_os_window){
+  if (is_os_window) {
     return STATIC_BLOCK_HOST_NAMES;
   }
 

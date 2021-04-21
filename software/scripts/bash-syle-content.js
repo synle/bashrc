@@ -14,7 +14,7 @@ async function doWork() {
   res += `\n\n\n`;
 
   // barebone script
-  console.log("    >> barebone profile");
+  console.log("    >> Barebone profile");
   res += `
 ##########################################################
 ## barebone profile
@@ -24,9 +24,9 @@ ${contentBaseBashScript}
   `.trim();
 
   // append more advanced script only for fancier OS
-  console.log("    >> more advanced profile");
+  console.log("    >> More advanced profile");
   if (is_os_window || is_os_darwin_mac) {
-    console.log("      >> installed only for more advanced OS");
+    console.log("      >> Installed only for more advanced OS");
 
     res += `
 ##########################################################
@@ -36,7 +36,7 @@ ${contentBaseBashScript}
 ${contentCommonAliasScript}
   `.trim();
   } else {
-    console.log("      >> skipped");
+    console.log(echoColor3("      >> Skipped : Only Mac or Windows"));
   }
 
   // remove double new lines

@@ -98,7 +98,6 @@ function readText(aDir) {
 function parseJsonWithComments(oldText) {
   oldText = (oldText || "").trim();
   if (!oldText) {
-    console.log(">> Skipped - JSON blob is empty");
     process.exit();
   }
   return eval(`var ___temp = ${oldText}; ___temp;`);
@@ -388,13 +387,13 @@ function processScriptFile(file) {
 
   // check against only mac or only window
   if (file.includes("software/scripts/windows") && !is_os_window) {
-    console.log(echoColor3("  >> Skipped - Only applicable for Windows"));
+    console.log(echoColor3("  >> Skipped - Only Windows"));
     return;
   }
 
   // check against only mac or only window
   if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
-    console.log(echoColor3("  >> Skipped - Only applicable for Mac"));
+    console.log(echoColor3("  >> Skipped - Only Mac"));
     return;
   }
 

@@ -86,10 +86,10 @@ Full Path: $(realpath "$@")
   then
     # for osx darwin
     sublime_osx_darwin_binary_path="/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl";
-    $sublime_osx_darwin_binary_path $@ &> /dev/null 2>&1
+    $sublime_osx_darwin_binary_path "$@" &> /dev/null 2>&1
 
     echo """
-Full Path: $(realpath "$@")
+Full Path: $(echo "$@")
     """
   fi
 }
@@ -113,10 +113,10 @@ Full Path: $(realpath "$@")
   then
     # for osx darwin
     vs_code_osx_darwin_binary_path="/usr/local/bin/code";
-    "$vs_code_osx_darwin_binary_path" $@ &> /dev/null 2>&1
+    "$vs_code_osx_darwin_binary_path" "$@" &> /dev/null 2>&1
 
     echo """
-Full Path: $(realpath "$@")
+Full Path: $(echo "$@")
     """
   fi
 }
