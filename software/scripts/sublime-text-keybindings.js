@@ -5,8 +5,7 @@ let MAC_ONLY_KEY_BINDINGS;
 
 function _formatKey(keybindings) {
   for (const keybinding of keybindings) {
-    keybinding.keys = [].concat(keybinding.key.replace("OS_KEY", OS_KEY));
-    delete keybinding.key;
+    keybinding.keys = [].concat(keybinding.keys.replace("OS_KEY", OS_KEY));
   }
 
   return keybindings;
@@ -18,11 +17,11 @@ async function doInit() {
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
     {
-      key: "f5",
+      keys: "f5",
       command: "refresh_folder_list",
     },
     {
-      key: "OS_KEY+'",
+      keys: "OS_KEY+'",
       command: "show_overlay",
       args: {
         overlay: "goto",
@@ -30,7 +29,7 @@ async function doInit() {
       },
     },
     {
-      key: "OS_KEY+;",
+      keys: "OS_KEY+;",
       command: "show_overlay",
       args: {
         overlay: "goto",
@@ -38,15 +37,15 @@ async function doInit() {
       },
     },
     {
-      key: "OS_KEY+\\",
+      keys: "OS_KEY+\\",
       command: "toggle_side_bar",
     },
     {
-      key: "OS_KEY+shift+enter",
+      keys: "OS_KEY+shift+enter",
       command: "goto_definition",
     },
     {
-      key: "OS_KEY+enter",
+      keys: "OS_KEY+enter",
       command: "quick_goto_variable",
     },
   ];
@@ -55,7 +54,7 @@ async function doInit() {
   // begin WINDOWS_ONLY_KEY_BINDINGS
   WINDOWS_ONLY_KEY_BINDINGS = [
     {
-      key: "alt+r",
+      keys: "alt+r",
       command: "show_overlay",
       args: {
         overlay: "goto",
@@ -63,7 +62,7 @@ async function doInit() {
       },
     },
     {
-      key: "alt+p",
+      keys: "alt+p",
       command: "show_overlay",
       args: {
         overlay: "goto",
@@ -71,22 +70,22 @@ async function doInit() {
       },
     },
     {
-      key: "alt+shift+p",
+      keys: "alt+shift+p",
       command: "show_overlay",
       args: {
         overlay: "command_palette",
       },
     },
     {
-      key: "alt+ctrl+p",
+      keys: "alt+ctrl+p",
       command: "prompt_select_workspace",
     },
     {
-      key: "ctrl+shift+g",
+      keys: "ctrl+shift+g",
       command: "find_prev",
     },
     {
-      key: "ctrl+up",
+      keys: "ctrl+up",
       command: "move",
       args: {
         by: "pages",
@@ -94,7 +93,7 @@ async function doInit() {
       },
     },
     {
-      key: "ctrl+down",
+      keys: "ctrl+down",
       command: "move",
       args: {
         by: "pages",
@@ -102,163 +101,163 @@ async function doInit() {
       },
     },
     {
-      key: "alt+shift+l",
+      keys: "alt+shift+l",
       command: "split_selection_into_lines",
     },
     {
-      key: "ctrl+shift+[",
+      keys: "ctrl+shift+[",
       command: "prev_view",
     },
     {
-      key: "ctrl+shift+]",
+      keys: "ctrl+shift+]",
       command: "next_view",
     },
     {
-      key: "alt+ctrl+g",
+      keys: "alt+ctrl+g",
       command: "find_all_under",
     },
     {
-      key: "ctrl+shift+l",
+      keys: "ctrl+shift+l",
       command: "split_selection_into_lines",
     },
     {
-      key: "a",
+      keys: "a",
     },
     {
-      key: "a",
+      keys: "a",
     },
     {
-      key: "alt+ctrl+g",
+      keys: "alt+ctrl+g",
       command: "find_all_under",
     },
     {
-      key: "alt+1",
+      keys: "alt+1",
       command: "select_by_index",
       args: {
         index: 0,
       },
     },
     {
-      key: "alt+2",
+      keys: "alt+2",
       command: "select_by_index",
       args: {
         index: 1,
       },
     },
     {
-      key: "alt+3",
+      keys: "alt+3",
       command: "select_by_index",
       args: {
         index: 2,
       },
     },
     {
-      key: "alt+4",
+      keys: "alt+4",
       command: "select_by_index",
       args: {
         index: 3,
       },
     },
     {
-      key: "alt+5",
+      keys: "alt+5",
       command: "select_by_index",
       args: {
         index: 4,
       },
     },
     {
-      key: "alt+6",
+      keys: "alt+6",
       command: "select_by_index",
       args: {
         index: 5,
       },
     },
     {
-      key: "alt+7",
+      keys: "alt+7",
       command: "select_by_index",
       args: {
         index: 6,
       },
     },
     {
-      key: "alt+8",
+      keys: "alt+8",
       command: "select_by_index",
       args: {
         index: 7,
       },
     },
     {
-      key: "alt+9",
+      keys: "alt+9",
       command: "select_by_index",
       args: {
         index: 8,
       },
     },
     {
-      key: "alt+0",
+      keys: "alt+0",
       command: "select_by_index",
       args: {
         index: 9,
       },
     },
     {
-      key: "alt+shift+a",
+      keys: "alt+shift+a",
       command: "alignment",
     },
     {
-      key: "alt+x",
+      keys: "alt+x",
       command: "cut",
     },
     {
-      key: "alt+c",
+      keys: "alt+c",
       command: "copy",
     },
     {
-      key: "alt+v",
+      keys: "alt+v",
       command: "paste",
     },
     {
-      key: "alt+a",
+      keys: "alt+a",
       command: "select_all",
     },
     {
-      key: "alt+z",
+      keys: "alt+z",
       command: "undo",
     },
     {
-      key: "alt+s",
+      keys: "alt+s",
       command: "save",
     },
     {
-      key: "alt+shift+s",
+      keys: "alt+shift+s",
       command: "prompt_save_as",
     },
     {
-      key: "alt+backspace",
+      keys: "alt+backspace",
       command: "left_delete",
     },
     {
-      key: "alt+=",
+      keys: "alt+=",
       command: "increase_font_size",
     },
     {
-      key: "alt+keypad_plus",
+      keys: "alt+keypad_plus",
       command: "increase_font_size",
     },
     {
-      key: "alt+-",
+      keys: "alt+-",
       command: "decrease_font_size",
     },
     {
-      key: "alt+keypad_minus",
+      keys: "alt+keypad_minus",
       command: "decrease_font_size",
     },
     {
-      key: "alt+d",
+      keys: "alt+d",
       command: "find_under_expand",
     },
     {
-      key: "alt+f",
+      keys: "alt+f",
       command: "show_panel",
       args: {
         panel: "find",
@@ -266,36 +265,36 @@ async function doInit() {
       },
     },
     {
-      key: "alt+shift+f",
+      keys: "alt+shift+f",
       command: "show_panel",
       args: {
         panel: "find_in_files",
       },
     },
     {
-      key: "a",
+      keys: "a",
     },
     {
-      key: "a",
+      keys: "a",
     },
     {
-      key: "alt+shift+n",
+      keys: "alt+shift+n",
       command: "new_window",
     },
     {
-      key: "alt+n",
+      keys: "alt+n",
       command: "new_file",
     },
     {
-      key: "alt+w",
+      keys: "alt+w",
       command: "close",
     },
     {
-      key: "alt+y",
+      keys: "alt+y",
       command: "redo_or_repeat",
     },
     {
-      key: "alt+up",
+      keys: "alt+up",
       command: "move",
       args: {
         by: "pages",
@@ -303,7 +302,7 @@ async function doInit() {
       },
     },
     {
-      key: "alt+down",
+      keys: "alt+down",
       command: "move",
       args: {
         by: "pages",
@@ -311,7 +310,7 @@ async function doInit() {
       },
     },
     {
-      key: "alt+left",
+      keys: "alt+left",
       command: "move_to",
       args: {
         to: "bol",
@@ -319,7 +318,7 @@ async function doInit() {
       },
     },
     {
-      key: "alt+right",
+      keys: "alt+right",
       command: "move_to",
       args: {
         to: "eol",
@@ -327,7 +326,7 @@ async function doInit() {
       },
     },
     {
-      key: "shift+alt+left",
+      keys: "shift+alt+left",
       command: "move_to",
       args: {
         to: "bol",
@@ -335,7 +334,7 @@ async function doInit() {
       },
     },
     {
-      key: "shift+alt+right",
+      keys: "shift+alt+right",
       command: "move_to",
       args: {
         to: "eol",
@@ -343,7 +342,7 @@ async function doInit() {
       },
     },
     {
-      key: "ctrl+alt+left",
+      keys: "ctrl+alt+left",
       command: "move_to",
       args: {
         to: "bof",
@@ -351,7 +350,7 @@ async function doInit() {
       },
     },
     {
-      key: "ctrl+alt+right",
+      keys: "ctrl+alt+right",
       command: "move_to",
       args: {
         to: "eof",
@@ -359,7 +358,7 @@ async function doInit() {
       },
     },
     {
-      key: "ctrl+alt+up",
+      keys: "ctrl+alt+up",
       command: "move_to",
       args: {
         to: "bof",
@@ -367,7 +366,7 @@ async function doInit() {
       },
     },
     {
-      key: "ctrl+alt+down",
+      keys: "ctrl+alt+down",
       command: "move_to",
       args: {
         to: "eof",
@@ -375,7 +374,7 @@ async function doInit() {
       },
     },
     {
-      key: "ctrl+alt+shift+up",
+      keys: "ctrl+alt+shift+up",
       command: "move_to",
       args: {
         to: "bof",
@@ -383,7 +382,7 @@ async function doInit() {
       },
     },
     {
-      key: "ctrl+alt+shift+down",
+      keys: "ctrl+alt+shift+down",
       command: "move_to",
       args: {
         to: "eof",
@@ -391,7 +390,7 @@ async function doInit() {
       },
     },
     {
-      key: "shift+alt+up",
+      keys: "shift+alt+up",
       command: "move",
       args: {
         by: "pages",
@@ -400,7 +399,7 @@ async function doInit() {
       },
     },
     {
-      key: "shift+alt+down",
+      keys: "shift+alt+down",
       command: "move",
       args: {
         by: "pages",
@@ -409,7 +408,7 @@ async function doInit() {
       },
     },
     {
-      key: "alt+/",
+      keys: "alt+/",
       command: "toggle_comment",
       args: {
         block: false,
@@ -419,7 +418,12 @@ async function doInit() {
   // end WINDOWS_ONLY_KEY_BINDINGS
 
   // begin MAC_ONLY_KEY_BINDINGS
-  MAC_ONLY_KEY_BINDINGS = [];
+  MAC_ONLY_KEY_BINDINGS = [
+    {
+      keys: "ctrl+d",
+      command: "find_under_expand",
+    },
+  ];
   // end MAC_ONLY_KEY_BINDINGS
 }
 

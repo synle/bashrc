@@ -33,6 +33,10 @@ async function doInit() {
       command: "workbench.action.gotoSymbol",
     },
     {
+      key: "OS_KEY+r",
+      command: "workbench.action.gotoSymbol",
+    },
+    {
       key: "OS_KEY+shift+l",
       command: "editor.action.insertCursorAtEndOfEachLineSelected",
       when: "editorTextFocus",
@@ -285,7 +289,12 @@ async function doInit() {
   // end WINDOWS_ONLY_KEY_BINDINGS
 
   // begin MAC_ONLY_KEY_BINDINGS
-  MAC_ONLY_KEY_BINDINGS = [];
+  MAC_ONLY_KEY_BINDINGS = [
+    {
+      key: "ctrl+d",
+      command: "workbench.action.splitEditor",
+    },
+  ];
   // end MAC_ONLY_KEY_BINDINGS
 }
 
