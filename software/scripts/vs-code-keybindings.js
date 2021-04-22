@@ -29,12 +29,13 @@ async function doInit() {
       command: "workbench.action.gotoLine",
     },
     {
-      key: "OS_KEY+'",
+      key: "OS_KEY+r",
       command: "workbench.action.gotoSymbol",
     },
     {
-      key: "OS_KEY+r",
-      command: "workbench.action.gotoSymbol",
+      key: "OS_KEY+m",
+      command: "editor.action.jumpToBracket",
+      when: "editorFocus",
     },
     {
       key: "OS_KEY+shift+l",
@@ -258,11 +259,6 @@ async function doInit() {
       command: "editor.action.addSelectionToNextFindMatch",
     },
     {
-      key: "alt+d",
-      command: "editor.action.addSelectionToNextFindMatch",
-      when: "editorFocus",
-    },
-    {
       key: "alt+/",
       command: "editor.action.commentLine",
       when: "editorTextFocus && !editorReadonly",
@@ -285,16 +281,20 @@ async function doInit() {
       key: "alt+-",
       command: "workbench.action.zoomOut",
     },
+    {
+      key: "alt+o",
+      command: "workbench.action.files.openFile",
+    },
+    {
+      key: "alt+`",
+      command: "workbench.action.terminal.toggleTerminal",
+      when: "terminal.active",
+    },
   ];
   // end WINDOWS_ONLY_KEY_BINDINGS
 
   // begin MAC_ONLY_KEY_BINDINGS
-  MAC_ONLY_KEY_BINDINGS = [
-    {
-      key: "ctrl+d",
-      command: "workbench.action.splitEditor",
-    },
-  ];
+  MAC_ONLY_KEY_BINDINGS = [];
   // end MAC_ONLY_KEY_BINDINGS
 }
 
