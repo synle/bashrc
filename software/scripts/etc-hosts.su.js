@@ -32,94 +32,167 @@ async function doInit() {
     45.55.255.55
     45.55.41.223
 
-    // Spotify
+    // ad hosts to blocked
+    // https://www.reddit.com/r/privacy/comments/3tz3ph/blocking_most_advertising_servers_via_factory/
+    207.net
+    247realmedia.com
+    2mdn.net
+    2o7.net
+    33across.com
+    abmr.net
+    acoda.net
+    adblade.com
+    adbrite.com
+    adbureau.net
+    adchemy.com
     adclick.g.doublecklick.net
+    addthis.com
+    addthisedge.com
     adeventtracker.spotify.com
+    admeld.com
+    admob.com
     ads-fa.spotify.com
+    adsense.com
+    adsonar.com
+    adthis.com
+    advertising.com
+    afy11.net
     analytics.spotify.com
+    aquantive.com
+    atdmt.com
+    atwola.com
     audio2.spotify.com
     b.scorecardresearch.com
     bounceexchange.com
     bs.serving-sys.com
+    channelintelligence.com
+    cmcore.com
     content.bitsontherun.com
     core.insightexpressai.com
+    coremetrics.com
     crashdump.spotify.com
+    crowdscience.com
     d2gi7ultltnc2u.cloudfront.net
     d3rt1990lpmkn.cloudfront.net
+    decdna.net
+    decideinteractive.com
+    doubleclick.com
     doubleclick.net
     ds.serving-sys.com
-    googleadservices.com
+    esomniture.com
+    fimserve.com
+    flingwebads.com
+    foxnetworks.com
+    google-analytics.com
     googleads.g.doubleclick.net
+    googleadservices.com
+    googlesyndication.com
+    googletagservices.com
+    gravity.com
     gtssl2-ocsp.geotrust.com
+    hitbox.com
+    imiclk.com
+    imrworldwide.com
+    insightexpress.com
+    insightexpressai.com
+    intellitxt.com
+    invitemedia.com
     js.moatads.com
+    leadback.com
+    lindwd.net
     log.spotify.com
     media-match.com
+    mookie1.com
+    myads.com
+    netconversions.com
+    nexac.com
+    nextaction.net
+    nielsen-online.com
+    offermatica.com
     omaze.com
-    pagead46.l.doubleclick.net
+    omniture.com
+    omtrdc.net
     pagead2.googlesyndication.com
+    pagead46.l.doubleclick.net
     partner.googleadservices.com
+    pm14.com
     pubads.g.doubleclick.net
+    quantcast.com
+    quantserve.com
+    realmedia.com
     redirector.gvt1.com
+    revsci.net
+    rightmedia.com
+    rmxads.com
+    ru4.com
+    rubiconproject.com
     s0.2mdn.net
+    samsungadhub.com
+    scorecardresearch.com
     securepubads.g.doubleclick.net
+    sharethis.com
+    shopthetv.com
+    targetingmarketplace.com
+    themig.com
     tpc.googlesyndication.com
+    trendnetcloud.com
     v.jwpcdn.com
     video-ad-stats.googlesyndication.com
     weblb-wg.gslb.spotify.com
     www.googleadservices.com
-    googleadservices.com
     www.googletagservices.com
-    googletagservices.com
+    yieldmanager.com
+    yieldmanager.net
+    yldmgrimg.net
+    youknowbest.com
+    yumenetworks.com
   `);
 
   WHITE_LIST_HOST_NAMES = new Set(
     convertTextToList(`
-      tkqlhce.com
-      tradedoubler.com
-      searchmarketing.com
-      googleadservices.com
-      marinsm.com
-      webgains.com
-      dotomi.com
-      dpbolvw.net
-      evyy.net
-      doubleclick.net
-      avantlink.com
-      tkqlhce.com
-      pjatr.com
-      shareasale.com
-      pntrack.com
-      ojrq.net
-      cc-dt.com
-      jdoqocy.com
-      pntrac.com
+      7eer.net
+      ad.doubleclick.net
       affiliatefuture.com
       anrdoezrs.net
-      emjcd.com
-      commission-junction.com
-      cj.com
       apmebf.com
-      gopjn.com
+      avantlink.com
       bfast.com
-      redirect.at
-      redirectingat.com
-      7eer.net
-      linksynergy.com
-      kqzyfj.com
-      mediaplex.com
-      onenetworkdirect.net
-      go2jump.org
-      pntra.com
-      pjtra.com
-      qksrv.net
-      gan.doubleclick.net
-      redirect.viglink.com
-      po.st
-      clickserve.cc-dt.com
-      pntrs.com
-      ad.doubleclick.net
+      cc-dt.com
+      cj.com
       cj.dotomi.com
+      clickserve.cc-dt.com
+      commission-junction.com
+      dotomi.com
+      dpbolvw.net
+      emjcd.com
+      evyy.net
+      gan.doubleclick.net
+      go2jump.org
+      gopjn.com
+      jdoqocy.com
+      kqzyfj.com
+      linksynergy.com
+      marinsm.com
+      mediaplex.com
+      ojrq.net
+      onenetworkdirect.net
+      pjatr.com
+      pjtra.com
+      pntra.com
+      pntrac.com
+      pntrack.com
+      pntrs.com
+      po.st
       qksrv.ne
+      qksrv.net
+      redirect.at
+      redirect.viglink.com
+      redirectingat.com
+      searchmarketing.com
+      shareasale.com
+      tkqlhce.com
+      tradedoubler.com
+      webgains.com
   `)
   );
 
