@@ -30,6 +30,7 @@ ${gitAutocompleteScript}
 # auto complete for git with this short hand 'g' and 'git'
 __git_complete g __git_main
 __git_complete git __git_main
+__git_complete gl git_log
 
 
 # ssh server autocomplete
