@@ -135,8 +135,12 @@ async function doInit() {
       command: "prompt_select_workspace",
     },
     {
-      key: "ctrl+shift+g",
+      key: "alt+shift+g",
       command: "find_prev",
+    },
+    {
+      key: "alt+g",
+      command: "find_next",
     },
     {
       key: "ctrl+up",
@@ -159,20 +163,12 @@ async function doInit() {
       command: "split_selection_into_lines",
     },
     {
-      key: "ctrl+shift+[",
+      key: "alt+shift+[",
       command: "prev_view",
     },
     {
-      key: "ctrl+shift+]",
+      key: "alt+shift+]",
       command: "next_view",
-    },
-    {
-      key: "alt+ctrl+g",
-      command: "find_all_under",
-    },
-    {
-      key: "ctrl+shift+l",
-      command: "split_selection_into_lines",
     },
     {
       key: "alt+ctrl+g",

@@ -157,6 +157,8 @@ alias gbranch=gco
 alias gbr=gco
 alias glog=fuzzyGitShow
 alias gl=glog
+alias gp=g push
+
 
 # override viewfile with more advanced function
 viewFile(){
