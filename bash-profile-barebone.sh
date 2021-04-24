@@ -26,6 +26,7 @@ alias refreshBashrc='bashrcRefresh'
 ##########################################################
 alias ..="cd .."
 alias v="vim"
+alias vi="vim"
 alias l="ls -a"
 alias ls="ls -1"
 alias ll="ls -la"

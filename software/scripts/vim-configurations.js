@@ -128,8 +128,8 @@ async function doWork() {
     " uses vim :e . 
     " uses fzf :Files
     " ctrl x or ctrl q to close splits
-    nnoremap <silent> <C-x> <c-w>q
-    nnoremap <silent> <C-q> <c-w>q
+    nnoremap <C-x> :q<CR>
+    nnoremap <C-q> :q<CR>
     nnoremap <C-d> :vsplit<CR>
 
     " comma s and v to do split
