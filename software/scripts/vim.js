@@ -25,6 +25,9 @@ async function doWork() {
     Plugin 'vim-airline/vim-airline-themes'
     Plugin 'VundleVim/Vundle.vim'
 		Plugin 'AutoComplPop' " autocomplete pop
+    " fzf vim
+    Plugin 'junegunn/fzf'
+    Plugin 'junegunn/fzf.vim'
     " =================================================
     call vundle#end()            " required
 
@@ -84,9 +87,17 @@ async function doWork() {
     " \ to toggle line number
     nnoremap \\ :set nonumber!<CR>
 
+
+		" to open a different file in split - 
+			" uses vim :e . 
+			" uses fzf :Files
     " ctrl v and ctrl h to create splits
     nnoremap <C-s> :split<enter>
     nnoremap <C-d> :vsplit<enter>
+
+		" ctrl x or ctrl q to close splits
+		nnoremap <silent> <C-x> <c-w>q
+    nnoremap <silent> <C-q> <c-w>q
 
 		" ctrl arrows to navigate split
 		" https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
