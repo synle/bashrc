@@ -405,34 +405,42 @@ function processScriptFile(file) {
 
   const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}?cacheBust=${Date.now()}`;
 
+  // check against only android termux
+  if (file.includes("software/scripts/android-termux") && !is_os_android_termux) {
+    // console.log(echoColor3(`  >> ${file} - Skipped - Only Android Termux`));
+    return;
+  } else if (!scriptDebugMode && !file.includes("software/scripts/android-termux") && is_os_android_termux) {
+    // when run in an android termux env, only run script in that folder
+    const whitelistAndroidTermuxScripts = convertTextToList(`
+      software/scripts/vim-configurations.js
+      software/scripts/vim-vundle.sh
+    `)
+
+    if(whitelistAndroidTermuxScripts.indexOf(file) === -1){
+      console.log(echoColor3(`>> ${file} - Skipped - Not applicable for Android Termux Env`));
+      return;
+    }
+  }
+
   // check against only mac or only window
   if (file.includes("software/scripts/windows") && !is_os_window) {
-    console.log(echoColor3("  >> Skipped - Only Windows"));
+    console.log(echoColor3(`>> ${file} - Skipped - Only Windows`));
     return;
   }
 
   // check against only mac or only window
   if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
-    console.log(echoColor3("  >> Skipped - Only Mac"));
+    console.log(echoColor3(`>> ${file} - Skipped - Only Mac`));
     return;
   }
 
-  // check against only android termux
-  if (file.includes("software/scripts/android-termux") && !is_os_android_termux) {
-    console.log(echoColor3("  >> Skipped - Only Android Termux"));
-    return;
-  } else if (!scriptDebugMode && !file.includes("software/scripts/android-termux") && is_os_android_termux) {
-    // when run in an android termux env, only run script in that folder
-    const whitelistAndroidTermuxScripts = convertTextToList(`
-      software/scripts/vim.js
-      software/scripts/vim-vundle.sh
-    `)
 
-    if(whitelistAndroidTermuxScripts.indexOf(file) === -1){
-      console.log(echoColor3("  >> Skipped - Not applicable for Android Termux Env"));
-      return;
-    }
-  }
+
+  console.log(
+    echoColor2(
+      `>> ${file} - Running this script`
+    )
+  );
 
   function _generateScript(file, url) {
     if (file.includes(".js")) {
