@@ -45,15 +45,24 @@ complete -F __ssh_complete s
 # make autocomplete
 __make_complete ()
 {
-    local cur prev opts;
-    COMPREPLY=();
     cur="${COMP_WORDS[COMP_CWORD]}";
-    opts=$(cat Makefile | grep -v " " | uniq | cut -d ":" -f 1);
+    opts=$(cat Makefile | grep -v " " | cut -d ":" -f 1) | uniq ;
     COMPREPLY=($(compgen -W "$opts" -- ${cur}));
     return 0
 }
 complete -F __make_complete make
-  `;
+
+
+# npm autocomplete
+__npm_complete ()
+{
+    cur="${COMP_WORDS[COMP_CWORD]}";
+    opts=$(cat package.json | jq .scripts | grep "\"" | cut -d "\"" -f 2 | uniq);
+    COMPREPLY=($(compgen -W "$opts" -- ${cur}));
+    return 0
+}
+complete -F __npm_complete npm
+`;
 
   writeText(targetPath, res);
 
