@@ -78,6 +78,9 @@ async function doWork() {
     "set number      " display line number
     set showmatch
 
+    " display tab as special char
+    set list
+    set listchars=tab:>-
 
     " tab stops
     set sts=2 sw=2 ts=2
