@@ -62,7 +62,11 @@ async function doWork() {
     hi WebBrowser ctermfg=204 guifg=#56B6C2
     hi ReactLifeCycleMethods ctermfg=204 guifg=#D19A66
 
-    " options
+    
+
+    """"""""""""""""""""""""""""""""""""""""""""""""
+    " synax highlight options
+    """"""""""""""""""""""""""""""""""""""""""""""""
     filetype on
     let g:airline#extensions#tabline#enabled = 1
     let g:airline#extensions#tabline#formatter = 'default'
@@ -70,7 +74,12 @@ async function doWork() {
     let g:airline#extensions#tabline#left_sep = ' '
     let g:xml_syntax_folding = 1
 
+
+
+
+    """"""""""""""""""""""""""""""""""""""""""""""""
     " editor options
+    """"""""""""""""""""""""""""""""""""""""""""""""
     set shell=/bin/bash
     set hlsearch    " highlight all search results
     set ignorecase  " do case insensitive search
@@ -103,10 +112,17 @@ async function doWork() {
       autocmd WinLeave * setlocal nocursorline
     augroup END  
 
+
+
+
     """"""""""""""""""""""""""""""""""""""""""""""""
     " keyboard shortcuts
+    """"""""""""""""""""""""""""""""""""""""""""""""
     " \ to toggle line number
-    nnoremap \\ :set nonumber!<CR>
+    nnoremap \ :set nonumber!<CR>
+    
+    " ] to show or hide special character
+    nnoremap ] :set list!<CR>
 
     " to open a different file in split - 
     " uses vim :e . 
@@ -114,10 +130,11 @@ async function doWork() {
     " ctrl x or ctrl q to close splits
     nnoremap <silent> <C-x> <c-w>q
     nnoremap <silent> <C-q> <c-w>q
-    
+    nnoremap <C-d> :vsplit<CR>
+
     " comma s and v to do split
-    nnoremap <silent> ,v <c-w>s
-    nnoremap <silent> ,s <c-w>v
+    nnoremap <silent> ,v :vsplit<CR>
+    nnoremap <silent> ,s :split<CR>
     nnoremap <silent> ,w <c-w>q
     nnoremap <silent> ,x <c-w>q
    
