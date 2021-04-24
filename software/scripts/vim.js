@@ -84,6 +84,10 @@ async function doWork() {
     " \ to toggle line number
     nnoremap \\ :set nonumber!<CR>
 
+    " ctrl v and ctrl h to create splits
+    nnoremap <C-s> :split<enter>
+    nnoremap <C-d> :vsplit<enter>
+
 		" ctrl arrows to navigate split
 		" https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
     nnoremap <silent> <C-Right> <c-w>l
