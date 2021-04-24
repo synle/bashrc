@@ -163,6 +163,7 @@ alias calcChmod='chmodCalculator'
 ##########################################################
 # all the view file aliases
 alias fv=fuzzyVim
+alias fvim=fuzzyVim
 alias fview=fuzzyViewFile
 
 # other fzf aliases

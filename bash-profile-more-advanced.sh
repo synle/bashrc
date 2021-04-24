@@ -157,7 +157,7 @@ alias gbranch=gco
 alias gbr=gco
 alias glog=fuzzyGitShow
 alias gl=glog
-alias gp=g push
+alias gp="git push"
 
 
 # override viewfile with more advanced function
