@@ -297,6 +297,8 @@ async function getSoftwareScriptFiles() {
   const firstFiles = convertTextToList(`
     software/scripts/_bash-rc-bootstrap.js
     software/scripts/_nvm-symlink.sh.js
+    software/scripts/vim.js
+    software/scripts/vim-vundle.sh
   `);
 
   // this is a list of file to do last
