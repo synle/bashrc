@@ -134,6 +134,7 @@ async function doWork() {
     nnoremap <C-x> :q<CR>
     nnoremap <C-q> :q<CR>
     nnoremap <C-d> :vsplit<CR>
+    "nnoremap <C-5> :split<CR>
 
     " comma s and v to do split
     nnoremap <silent> ,v :vsplit<CR>

@@ -325,6 +325,7 @@ async function getSoftwareScriptFiles() {
         const whitelistAndroidTermuxScripts = convertTextToList(`
             software/scripts/vim-configurations.js
             software/scripts/vim-vundle.sh
+            software/scripts/tmux.js
           `);
 
         if (whitelistAndroidTermuxScripts.indexOf(file) === -1) {
