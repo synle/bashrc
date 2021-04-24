@@ -82,6 +82,9 @@ async function doWork() {
     set list
     set listchars=tab:>-
 
+    " display whitespace as a special char
+    set listchars+=space:␣
+
     " tab stops
     set sts=2 sw=2 ts=2
 
