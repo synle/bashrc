@@ -16,6 +16,9 @@ prebuild:
 build:
 	sh build.sh
 
+test:
+	sh test-full-run.sh
+
 test_full_run_live:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
 

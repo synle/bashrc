@@ -15,6 +15,12 @@ async function doWork() {
       file = `software/scripts/${file}`;
     }
 
+    console.log(
+      echoColor2(
+        `>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`
+      )
+    );
+
     processScriptFile(file);
   }
 }
