@@ -403,6 +403,7 @@ function consoleLogColor3(str) {
 // script utils
 function processScriptFile(file) {
   let scriptToUse;
+  const scriptDebugMode = process.env.USE_CAT_FOR_SOURCE_FILE;
 
   const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}?cacheBust=${Date.now()}`;
 
@@ -422,7 +423,7 @@ function processScriptFile(file) {
   if (file.includes("software/scripts/android-termux") && !is_os_android_termux) {
     console.log(echoColor3("  >> Skipped - Only Android Termux"));
     return;
-  } else if (!file.includes("software/scripts/android-termux") && is_os_android_termux) {
+  } else if (!scriptDebugMode && !file.includes("software/scripts/android-termux") && is_os_android_termux) {
     // when run in an android termux env, only run script in that folder
     console.log(echoColor3("  >> Skipped - Not applicable for Android Termux Env"));
     return;
@@ -436,7 +437,7 @@ function processScriptFile(file) {
   }
 
   function _generateRawScript(file, url) {
-    if (process.env.USE_CAT_FOR_SOURCE_FILE) {
+    if (scriptDebugMode) {
       return `cat ${file}`;
     }
 
