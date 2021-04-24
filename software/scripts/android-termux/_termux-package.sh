@@ -14,6 +14,10 @@ packageInstall bat
 packageInstall perl 
 
 
+# create the termux prop dir
+mkdir -p ~/.termux
+
+
 # change root
 # note that android termux does not have /tmp mapped correctly - this allow us to do things with git clone 
 # https://wiki.termux.com/wiki/Differences_from_Linux
