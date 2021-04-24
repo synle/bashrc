@@ -83,7 +83,14 @@ async function doWork() {
     " shortcut
     " \ to toggle line number
     nnoremap \\ :set nonumber!<CR>
-  `;
+
+		" ctrl arrows to navigate split
+		" https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
+    nnoremap <silent> <C-Right> <c-w>l
+    nnoremap <silent> <C-Left> <c-w>h
+    nnoremap <silent> <C-Up> <c-w>k
+    nnoremap <silent> <C-Down> <c-w>j
+	`;
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, ".vimrc");
   console.log("  >> Setting up vimrc on Linux / Mac / WSL", targetPath);
