@@ -14,6 +14,9 @@ packageInstall bat
 packageInstall perl 
 packageInstall jq 
 
+# clean loose packages
+pkg clean  &> /dev/null
+pkg autoclean  &> /dev/null
 
 # create the termux prop dir
 mkdir -p ~/.termux
