@@ -12,6 +12,7 @@ packageInstall tig
 packageInstall python
 packageInstall bat
 packageInstall perl 
+packageInstall jq 
 
 
 # create the termux prop dir
