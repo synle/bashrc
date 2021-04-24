@@ -105,6 +105,10 @@ async function doWork() {
     nnoremap <silent> <C-Left> <c-w>h
     nnoremap <silent> <C-Up> <c-w>k
     nnoremap <silent> <C-Down> <c-w>j
+
+    " fzf key bindings
+    " https://dev.to/iggredible/how-to-search-faster-in-vim-with-fzf-vim-36ko
+    nnoremap <silent> <C-t> :Files<CR>
 	`;
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, ".vimrc");
