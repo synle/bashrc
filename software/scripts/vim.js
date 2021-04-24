@@ -71,7 +71,7 @@ async function doWork() {
     set hlsearch    " highlight all search results
     set ignorecase  " do case insensitive search
     set noswapfile  " disable swap file
-    set number      " display line number
+    "set number      " display line number
     set showmatch
 
 
