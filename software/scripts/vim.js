@@ -84,6 +84,11 @@ async function doWork() {
 
     " tab stops
     set sts=2 sw=2 ts=2
+
+    " always use spaces as indentation instead of tab
+    set expandtab
+
+    " set syntax highlight
     syntax on
 
     " shortcut
