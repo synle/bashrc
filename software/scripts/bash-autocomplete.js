@@ -41,6 +41,18 @@ __ssh_complete(){
 }
 complete -F __ssh_complete ssh
 complete -F __ssh_complete s
+
+# make autocomplete
+__make_complete ()
+{
+    local cur prev opts;
+    COMPREPLY=();
+    cur="${COMP_WORDS[COMP_CWORD]}";
+    opts=$(cat Makefile | grep -v " " | uniq | cut -d ":" -f 1);
+    COMPREPLY=($(compgen -W "$opts" -- ${cur}));
+    return 0
+}
+complete -F __make_complete make
   `;
 
   writeText(targetPath, res);
