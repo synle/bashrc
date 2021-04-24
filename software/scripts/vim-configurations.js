@@ -87,6 +87,9 @@ async function doWork() {
     "set number      " display line number
     set showmatch
 
+    " automatically remove whitespaces on save
+    autocmd BufWritePre * %s/\s\+$//e
+
     " display tab as special char
     set list
     set listchars=tab:>-
