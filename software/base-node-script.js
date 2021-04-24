@@ -297,8 +297,6 @@ async function getSoftwareScriptFiles() {
   const firstFiles = convertTextToList(`
     software/scripts/_bash-rc-bootstrap.js
     software/scripts/_nvm-symlink.sh.js
-    software/scripts/vim.js
-    software/scripts/vim-vundle.sh
   `);
 
   // this is a list of file to do last
@@ -318,9 +316,9 @@ async function getSoftwareScriptFiles() {
       firstFiles.indexOf(f) === -1 &&
       lastFiles.indexOf(f) === -1
   );
-  softwareFiles = [...firstFiles, ...softwareFiles, ...lastFiles];
+  softwareFiles = [...firstFiles, ...[...softwareFiles].sort(), ...lastFiles];
 
-  return [...new Set(softwareFiles)].sort();
+  return [...new Set(softwareFiles)];
 }
 
 async function fetchUrlAsString(url) {
@@ -425,8 +423,15 @@ function processScriptFile(file) {
     return;
   } else if (!scriptDebugMode && !file.includes("software/scripts/android-termux") && is_os_android_termux) {
     // when run in an android termux env, only run script in that folder
-    console.log(echoColor3("  >> Skipped - Not applicable for Android Termux Env"));
-    return;
+    const whitelistAndroidTermuxScripts = convertTextToList(`
+      software/scripts/vim.js
+      software/scripts/vim-vundle.sh
+    `)
+
+    if(whitelistAndroidTermuxScripts.indexOf(file) === -1){
+      console.log(echoColor3("  >> Skipped - Not applicable for Android Termux Env"));
+      return;
+    }
   }
 
   function _generateScript(file, url) {
