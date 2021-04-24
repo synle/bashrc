@@ -13,7 +13,7 @@ https://synle.github.io/app/setup-bash-profile.html
 - OSX
 - Ubuntu / Debian
 - Windows Sub Linux System (WSL) - Debian based only
-- Android Termux (lightweight)
+- Android Termux
 
 ## Installation
 

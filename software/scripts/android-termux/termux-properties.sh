@@ -1,9 +1,6 @@
-pkg install nodejs
-pkg install fzf
-pkg install vim
-pkg install git
-pkg install python
+echo '  >> Setup termux properties'
 
+# termux config
 echo '''
 # Send the Escape key.
 back-key=escape

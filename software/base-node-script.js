@@ -33,6 +33,13 @@ try {
 } catch (err) {}
 
 try {
+  globalThis.is_os_android_termux =
+    false ||
+    parseInt(process.env.is_os_android_termux) > 0 ||
+    fs.existsSync("/data/data/com.termux");
+} catch (err) {}
+
+try {
   globalThis.is_os_window =
     false ||
     parseInt(process.env.is_os_window) > 0 ||
@@ -311,7 +318,7 @@ async function getSoftwareScriptFiles() {
   );
   softwareFiles = [...firstFiles, ...softwareFiles, ...lastFiles];
 
-  return [...new Set(softwareFiles)];
+  return [...new Set(softwareFiles)].sort();
 }
 
 async function fetchUrlAsString(url) {
@@ -406,6 +413,16 @@ function processScriptFile(file) {
   // check against only mac or only window
   if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
     console.log(echoColor3("  >> Skipped - Only Mac"));
+    return;
+  }
+
+  // check against only android termux
+  if (file.includes("software/scripts/android-termux") && !is_os_android_termux) {
+    console.log(echoColor3("  >> Skipped - Only Android Termux"));
+    return;
+  } else if (!file.includes("software/scripts/android-termux") && is_os_android_termux) {
+    // when run in an android termux env, only run script in that folder
+    console.log(echoColor3("  >> Skipped - Not applicable for Android Termux Env"));
     return;
   }
 
