@@ -1,6 +1,6 @@
 async function doWork() {
-  const bashAndroidTmuxFileName = ".bash_syle_only_android_termux"
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, bashAndroidTmuxFileName); 
+  const bashAndroidTmuxFileName = ".bash_syle_only_android_termux";
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, bashAndroidTmuxFileName);
 
   console.log("  >> Register Android Termux Only profile", BASE_BASH_SYLE);
   let textContent = readText(BASE_BASH_SYLE);

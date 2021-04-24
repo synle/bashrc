@@ -318,35 +318,33 @@ async function getSoftwareScriptFiles() {
   );
   softwareFiles = [...firstFiles, ...[...softwareFiles].sort(), ...lastFiles];
 
-  return [...new Set(softwareFiles)].filter(file => 
-    {
-      if(is_os_android_termux){
-        if (!file.includes("software/scripts/android-termux")) {
-          // when run in an android termux env, only run script in that folder
-          const whitelistAndroidTermuxScripts = convertTextToList(`
+  return [...new Set(softwareFiles)].filter((file) => {
+    if (is_os_android_termux) {
+      if (!file.includes("software/scripts/android-termux")) {
+        // when run in an android termux env, only run script in that folder
+        const whitelistAndroidTermuxScripts = convertTextToList(`
             software/scripts/vim-configurations.js
             software/scripts/vim-vundle.sh
-          `)
+          `);
 
-          if(whitelistAndroidTermuxScripts.indexOf(file) === -1){
-            return false;
-          }
+        if (whitelistAndroidTermuxScripts.indexOf(file) === -1) {
+          return false;
         }
       }
+    }
 
-      // check against only mac or only window
-      if (file.includes("software/scripts/windows") && !is_os_window) {
-        return false;
-      }
+    // check against only mac or only window
+    if (file.includes("software/scripts/windows") && !is_os_window) {
+      return false;
+    }
 
-      // check against only mac or only window
-      if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
-        return false;
-      }
+    // check against only mac or only window
+    if (file.includes("software/scripts/mac") && !is_os_darwin_mac) {
+      return false;
+    }
 
-
-      return true;
-    });
+    return true;
+  });
 }
 
 async function fetchUrlAsString(url) {
