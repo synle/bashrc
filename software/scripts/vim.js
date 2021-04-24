@@ -91,24 +91,33 @@ async function doWork() {
     " set syntax highlight
     syntax on
 
-    " shortcut
+
+    " highlight active vertical split with current row changes color
+    " https://superuser.com/questions/385553/making-the-active-window-in-vim-more-obvious
+    augroup CursorLineOnlyInActiveWindow
+      autocmd!
+      autocmd VimEnter,WinEnter,BufWinEnter * setlocal cursorline
+      autocmd WinLeave * setlocal nocursorline
+    augroup END  
+
+    """"""""""""""""""""""""""""""""""""""""""""""""
+    " keyboard shortcuts
     " \ to toggle line number
     nnoremap \\ :set nonumber!<CR>
 
-
-		" to open a different file in split - 
-			" uses vim :e . 
-			" uses fzf :Files
+    " to open a different file in split - 
+    " uses vim :e . 
+    " uses fzf :Files
     " ctrl v and ctrl h to create splits
     nnoremap <C-s> :split<enter>
     nnoremap <C-d> :vsplit<enter>
 
-		" ctrl x or ctrl q to close splits
-		nnoremap <silent> <C-x> <c-w>q
+    " ctrl x or ctrl q to close splits
+    nnoremap <silent> <C-x> <c-w>q
     nnoremap <silent> <C-q> <c-w>q
-
-		" ctrl arrows to navigate split
-		" https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
+   
+    " ctrl arrows to navigate split
+    " https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
     nnoremap <silent> <C-Right> <c-w>l
     nnoremap <silent> <C-Left> <c-w>h
     nnoremap <silent> <C-Up> <c-w>k
