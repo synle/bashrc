@@ -34,7 +34,7 @@ __git_complete git __git_main
 
 # ssh server autocomplete
 __ssh_complete(){
-  opts=$(grep "^Host" ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null | grep -v "[?*]" | cut -d " " -f 2-)
+  opts=$([ -f ~/.ssh/config ] && grep "^Host" ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null | grep -v "[?*]" | cut -d " " -f 2-)
   cur="\${COMP_WORDS[COMP_CWORD]}"
   COMPREPLY=( $(compgen -W "$opts" -- \${cur}) )
 }
@@ -44,7 +44,7 @@ complete -F __ssh_complete s
 # make autocomplete
 __make_complete ()
 {
-    opts=$(cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
+    opts=$([ -f Makefile ] && cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
     cur="\${COMP_WORDS[COMP_CWORD]}";
     COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
