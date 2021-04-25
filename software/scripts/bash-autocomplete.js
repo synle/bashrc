@@ -54,8 +54,24 @@ complete -F __make_complete make
 # npm autocomplete
 __npm_complete ()
 {
-    opts=$(cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
     cur="\${COMP_WORDS[COMP_CWORD]}";
+    prev="\${COMP_WORDS[COMP_CWORD-1]}";
+
+    if [[ $prev == "run" ]]
+    then
+      # npm run => then shows all package.json script
+      opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
+    else
+      # npm => then shows run start test
+      opts=$(
+        echo '''
+          run
+          test
+          start
+        ''' | tr -d " \t"
+      )
+    fi
+
     COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
 complete -F __npm_complete npm
