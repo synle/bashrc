@@ -91,7 +91,9 @@ async function doWork() {
     autocmd BufWritePre * %s/\s\+$//e
 
     " display tab as special char
-    set list
+    " For now - don't show special whitespace char in vim 
+    " instead toggle with ]
+    "set list
     set listchars=tab:>-
 
     " display whitespace as a special char
