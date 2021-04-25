@@ -65,6 +65,8 @@ globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = is_os_window
   ? path.join(getWindowUserBaseDir(), "...sy", "_extra")
   : path.join(globalThis.BASE_HOMEDIR_LINUX, "_extra");
 
+const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
+
 //////////////////////////////////////////////////////
 // begin common
 function writeText(aDir, text) {
@@ -334,6 +336,14 @@ async function getSoftwareScriptFiles() {
       }
     }
 
+    // check against only android termux
+    if (
+      file.includes("software/scripts/android-termux") &&
+      !is_os_android_termux
+    ) {
+      return false;
+    }
+
     // check against only mac or only window
     if (file.includes("software/scripts/windows") && !is_os_window) {
       return false;
@@ -428,7 +438,6 @@ function consoleLogColor3(str) {
 // script utils
 function processScriptFile(file) {
   let scriptToUse;
-  const scriptDebugMode = process.env.USE_CAT_FOR_SOURCE_FILE;
 
   const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}?cacheBust=${Date.now()}`;
 
@@ -440,7 +449,7 @@ function processScriptFile(file) {
   }
 
   function _generateRawScript(file, url) {
-    if (scriptDebugMode) {
+    if (isTestScriptMode) {
       return `cat ${file}`;
     }
 

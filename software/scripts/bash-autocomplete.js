@@ -34,10 +34,9 @@ __git_complete git __git_main
 
 # ssh server autocomplete
 __ssh_complete(){
-  cur="\${COMP_WORDS[COMP_CWORD]}"
   opts=$(grep "^Host" ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null | grep -v "[?*]" | cut -d " " -f 2-)
+  cur="\${COMP_WORDS[COMP_CWORD]}"
   COMPREPLY=( $(compgen -W "$opts" -- \${cur}) )
-  return 0
 }
 complete -F __ssh_complete ssh
 complete -F __ssh_complete s
@@ -45,10 +44,9 @@ complete -F __ssh_complete s
 # make autocomplete
 __make_complete ()
 {
-    cur="${COMP_WORDS[COMP_CWORD]}";
-    opts=$(cat Makefile | grep -v " " | cut -d ":" -f 1) | uniq ;
-    COMPREPLY=($(compgen -W "$opts" -- ${cur}));
-    return 0
+    opts=$(cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
+    cur="\${COMP_WORDS[COMP_CWORD]}";
+    COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
 complete -F __make_complete make
 
@@ -56,10 +54,9 @@ complete -F __make_complete make
 # npm autocomplete
 __npm_complete ()
 {
-    cur="${COMP_WORDS[COMP_CWORD]}";
-    opts=$(cat package.json | jq .scripts | grep "\"" | cut -d "\"" -f 2 | uniq);
-    COMPREPLY=($(compgen -W "$opts" -- ${cur}));
-    return 0
+    opts=$(cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
+    cur="\${COMP_WORDS[COMP_CWORD]}";
+    COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
 complete -F __npm_complete npm
 `;

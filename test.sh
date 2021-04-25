@@ -12,7 +12,7 @@
 # vundle.js
 # """
 
-export USE_CAT_FOR_SOURCE_FILE=1
+export TEST_SCRIPT_MODE=1
 
 if [ -n "$1" ]; then
   # provided, then use that provided var
