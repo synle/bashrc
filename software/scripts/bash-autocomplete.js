@@ -84,6 +84,7 @@ __npm_run_complete ()
       # npm run => then shows all package.json script
       opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
       COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+      ;;
     2)
       return 0
       ;;
