@@ -83,24 +83,19 @@ Searching:  $@
 
   #universal option
   grep -r "$@" \
-    --include=*.js \
-    --include=*.jsx \
-    --include=*.ts \
-    --include=*.tsx \
-    --include=*.json \
-    --include=*.html \
-    --include=*.scss \
-    --include=*.css \
-    --include=*.less \
-    --include=*.java \
-    --include=*.json \
-    --include=*.xml \
-    --include=*.yml \
+    --exclude-dir={node_modules,.git} \
   . | filterUnwanted
 }
 
 searchFile(){
   find . -type f -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
+}
+
+searchFileWithGit(){
+  # use either ls tree or find
+  git ls-tree -r --name-only HEAD 2> /dev/null || \
+  find . -type f 2>/dev/null \
+  | uniq
 }
 
 searchDirWithGit(){
@@ -113,24 +108,19 @@ searchDir(){
   find . -type d -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
 }
 
-searchFileWithGit(){
-  # use either ls tree or find
-  git ls-tree -r --name-only HEAD 2> /dev/null || \
-  find . -type f 2>/dev/null \
-  | uniq
-}
-
 alias search='searchText'
-alias searchFiles='searchFile'
 
 filterUnwantedLight(){
   grep -v "\.DS_Store" \
   | grep -v "\.git/" \
-  | grep -v "\.log" \
+  | grep -v "node_modules" \
+  | uniq
+}
+filterTextFilesOnly(){
+  filterUnwantedLight \
   | grep -v "\.jpeg" \
   | grep -v "\.jpg" \
   | grep -v "\.png" \
-  | grep -v "node_modules" \
   | uniq
 }
 alias filterUnwanted='filterUnwantedLight'
@@ -179,7 +169,7 @@ viewFile(){
 fuzzyVim(){
   local OUT=$( \
     searchFileWithGit | \
-    filterUnwanted | \
+    filterTextFilesOnly | \
     fzf \
   )
 
@@ -194,7 +184,7 @@ vim \"$OUT\"
 fuzzyViewFile(){
   local OUT=$( \
     searchFileWithGit | \
-    filterUnwanted | \
+    filterTextFilesOnly | \
     fzf \
   )
 

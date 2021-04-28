@@ -152,12 +152,12 @@ code-install-extension(){
 # fzf - more advanced functions
 # https://github.com/junegunn/fzf/wiki/examples
 ##########################################################
-alias gco=fuzzyGitCobranch
-alias gbranch=gco
-alias gbr=gco
-alias glog=fuzzyGitShow
-alias gl=glog
-alias gp="git push"
+alias gco='fuzzyGitCobranch'
+alias gbranch='gco'
+alias gbr='gco'
+alias glog='fuzzyGitShow'
+alias gl='glog'
+alias gp='git push'
 
 
 # override viewfile with more advanced function
