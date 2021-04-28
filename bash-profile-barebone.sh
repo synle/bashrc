@@ -36,6 +36,7 @@ alias g=git
 alias s='ssh -4'
 alias distroName='python -c "import platform; print platform.linux_distribution()';
 alias mk='make'
+alias npm-run='npm run'
 alias setWorkEmail='git config user.email $WORK_EMAIL_ADDRESS'
 
 br(){
