@@ -126,8 +126,11 @@ alias searchFiles='searchFile'
 filterUnwantedLight(){
   grep -v "\.DS_Store" \
   | grep -v "\.git/" \
+  | grep -v "\.log" \
+  | grep -v "\.jpeg" \
+  | grep -v "\.jpg" \
+  | grep -v "\.png" \
   | grep -v "node_modules" \
-  | grep -v "npm-debug\.log" \
   | uniq
 }
 alias filterUnwanted='filterUnwantedLight'
