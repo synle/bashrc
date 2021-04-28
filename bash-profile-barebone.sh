@@ -123,10 +123,10 @@ alias search='searchText'
 alias searchFiles='searchFile'
 
 filterUnwantedLight(){
-  grep -v .DS_Store \
-  | grep -v .git \
-  | grep -v node_modules \
-  | grep -v npm-debug.log \
+  grep -v "\.DS_Store" \
+  | grep -v "\.git/" \
+  | grep -v "node_modules" \
+  | grep -v "npm-debug\.log" \
   | uniq
 }
 alias filterUnwanted='filterUnwantedLight'

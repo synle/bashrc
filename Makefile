@@ -14,6 +14,7 @@ prebuild:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh | bash
 
 build:
+	sh format.sh
 	sh build.sh
 
 test:
