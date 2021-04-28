@@ -44,9 +44,9 @@ complete -F __ssh_complete s
 # make autocomplete
 __make_complete ()
 {
-    opts=$([ -f Makefile ] && cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
-    cur="\${COMP_WORDS[COMP_CWORD]}";
-    COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+  opts=$([ -f Makefile ] && cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
+  cur="\${COMP_WORDS[COMP_CWORD]}";
+  COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
 complete -F __make_complete make
 
@@ -54,26 +54,27 @@ complete -F __make_complete make
 # npm autocomplete
 __npm_complete ()
 {
-    cur="\${COMP_WORDS[COMP_CWORD]}";
-    prev="\${COMP_WORDS[COMP_CWORD-1]}";
+  cur="\${COMP_WORDS[COMP_CWORD]}";
+  prev="\${COMP_WORDS[COMP_CWORD-1]}";
 
-    if [[ $prev == "run" ]]
-    then
-      # npm run => then shows all package.json script
-      opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
-    else
-      # npm => then shows run start test
-      opts=$(
-        echo '''
-          run
-          test
-          start
-        ''' | tr -d " \t"
-      )
-    fi
+  if [[ $prev == "run" ]]
+  then
+    # npm run => then shows all package.json script
+    opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
+  else
+    # npm => then shows run start test
+    opts=$(
+      echo '''
+        run
+        test
+        start
+      ''' | tr -d " \t"
+    )
+  fi
 
-    COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+  COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
+complete -F __npm_complete npm
 __npm_run_complete ()
 {
       cur="\${COMP_WORDS[COMP_CWORD]}";
@@ -83,21 +84,27 @@ __npm_run_complete ()
 
       COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
-complete -F __npm_complete npm
 complete -F __npm_run_complete npm-run
 
 # npx
- __npx_complete ()
+__npx_complete ()
 {
-      cur="\${COMP_WORDS[COMP_CWORD]}";
+  cur="\${COMP_WORDS[COMP_CWORD]}";
 
-      opts=$(
+  case \$COMP_CWORD in
+    1)
+      opts=\$(
         echo '''
           prettier
         ''' | tr -d " \t"
       )
 
-      COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+      COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
+      ;;
+    2)
+      return 0
+      ;;
+  esac
 }
 complete -F __npx_complete npx
 `;
