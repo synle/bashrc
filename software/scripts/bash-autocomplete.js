@@ -74,7 +74,7 @@ __npm_complete ()
 
     COMPREPLY=($(compgen -W "$opts" -- \${cur}));
 }
- __npm_run_complete ()
+__npm_run_complete ()
 {
       cur="\${COMP_WORDS[COMP_CWORD]}";
 
@@ -85,6 +85,21 @@ __npm_complete ()
 }
 complete -F __npm_complete npm
 complete -F __npm_run_complete npm-run
+
+# npx
+ __npx_complete ()
+{
+      cur="\${COMP_WORDS[COMP_CWORD]}";
+
+      opts=$(
+        echo '''
+          prettier
+        ''' | tr -d " \t"
+      )
+
+      COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+}
+complete -F __npx_complete npx
 `;
 
   writeText(targetPath, res);
