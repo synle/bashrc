@@ -43,6 +43,7 @@ installPackageWithAptGet jq;
 installPackageWithAptGet figlet;
 installPackageWithAptGet curl;
 installPackageWithAptGet redis-server;
+installPackageWithAptGet make;
 #   installPackageWithAptGet dialog;
 
   ##########################################################################################################
