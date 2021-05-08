@@ -45,4 +45,8 @@ then
 
   echo ">> Installing Fira Code Font"
   installMacPackageWithHomebrew font-fira-code
+
+  echo '>> Kill all dock icons'
+  defaults write com.apple.dock persistent-apps -array
+  killall Dock
 fi
