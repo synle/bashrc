@@ -18,6 +18,7 @@ async function doWorkRdp() {
   const windowsPcNames = convertTextToList(`
     sy-alienware-15
     sy-asus-g15
+    sy-asus-g14
   `);
 
   const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp]) =>
