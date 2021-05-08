@@ -49,4 +49,13 @@ then
   echo '>> Kill all dock icons'
   defaults write com.apple.dock persistent-apps -array
   killall Dock
+
+  echo '>> bootstrap the Bash Shell'
+  chsh -sh /bin/bash
+  touch ~/.bashrc
+  touch ~/.bash_profile
+
+  echo '''
+source ~/.bashrc
+''' >> ~/.bash_profile
 fi
