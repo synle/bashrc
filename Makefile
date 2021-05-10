@@ -17,6 +17,9 @@ build:
 	sh format.sh
 	sh build.sh
 
+format:
+	sh format.sh
+
 test:
 	sh test-full-run.sh
 
