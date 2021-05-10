@@ -50,7 +50,7 @@ then
   defaults write com.apple.dock persistent-apps -array
   killall Dock
 
-  echo '>> bootstrap the Bash Shell'
+  echo ">> Set default shell as BASH (Catalina Mods)"
   chsh -sh /bin/bash
   touch ~/.bashrc
   touch ~/.bash_profile

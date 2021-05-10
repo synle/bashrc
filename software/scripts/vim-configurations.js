@@ -62,7 +62,7 @@ async function doWork() {
     hi WebBrowser ctermfg=204 guifg=#56B6C2
     hi ReactLifeCycleMethods ctermfg=204 guifg=#D19A66
 
-    
+
 
     """"""""""""""""""""""""""""""""""""""""""""""""
     " synax highlight options
@@ -91,7 +91,7 @@ async function doWork() {
     autocmd BufWritePre * %s/\s\+$//e
 
     " display tab as special char
-    " For now - don't show special whitespace char in vim 
+    " For now - don't show special whitespace char in vim
     " instead toggle with ]
     "set list
     set listchars=tab:>-
@@ -115,7 +115,7 @@ async function doWork() {
       autocmd!
       autocmd VimEnter,WinEnter,BufWinEnter * setlocal cursorline
       autocmd WinLeave * setlocal nocursorline
-    augroup END  
+    augroup END
 
 
 
@@ -124,13 +124,14 @@ async function doWork() {
     " keyboard shortcuts
     """"""""""""""""""""""""""""""""""""""""""""""""
     " \ to toggle line number
-    nnoremap \ :set nonumber!<CR>
-    
+    nnoremap \\ :set nonumber!<CR>
+    nnoremap [ :set nonumber!<CR>
+
     " ] to show or hide special character
     nnoremap ] :set list!<CR>
 
-    " to open a different file in split - 
-    " uses vim :e . 
+    " to open a different file in split -
+    " uses vim :e .
     " uses fzf :Files
     " ctrl x or ctrl q to close splits
     nnoremap <C-x> :q<CR>
@@ -143,7 +144,7 @@ async function doWork() {
     nnoremap <silent> ,s :split<CR>
     nnoremap <silent> ,w <c-w>q
     nnoremap <silent> ,x <c-w>q
-   
+
     " ctrl arrows to navigate split
     " https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
     nnoremap <silent> <C-Right> <c-w>l
