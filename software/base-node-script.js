@@ -12,7 +12,7 @@ globalThis.CONFIGS = {
 };
 
 globalThis.HOME_HOST_NAMES = [
-  ["sy-router", "192.168.1.201"],
+  ["sy-router", "192.168.1.1"],
   ["sy-mp", "192.168.1.202"],
   ["sy-mbp-16", "192.168.1.203"],
   ["sy-asus-g14", "192.168.1.204"],
