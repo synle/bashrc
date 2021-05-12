@@ -103,11 +103,8 @@ async function doWork() {
         "files.insertFinalNewline": true,
         "files.trimTrailingWhitespace": true,
         "javascript.updateImportsOnFileMove.enabled": "always",
-        "python.jediEnabled": false,
         "terminal.integrated.shell.windows": "C:\\Windows\\System32\\wsl.exe",
         "typescript.updateImportsOnFileMove.enabled": "always",
-        "vsintellicode.modify.editor.suggestSelection":
-          "automaticallyOverrodeDefaultValue",
         "window.zoomLevel": 1,
         "workbench.colorTheme": "Dracula Soft",
         "workbench.editor.showTabs": true,
