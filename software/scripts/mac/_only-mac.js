@@ -41,6 +41,9 @@ defaults write com.apple.mail DisableSendAnimations -bool true
 #9. Disable the standard delay in rendering a Web page.
 defaults write com.apple.Safari WebKitInitialTimedLayoutDelay 0.25
 
+
+# Add Visual Studio Code (code)
+export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
     `.trim()
   );
 }
