@@ -41,6 +41,9 @@ function _getGitConfig({ email, extraCoreConfigs }) {
 name = Sy Le
 ###EMAIL
 
+[pull]
+rebase = false
+
 [push]
 default = current
 
