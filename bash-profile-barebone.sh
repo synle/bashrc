@@ -38,6 +38,8 @@ alias distroName='python -c "import platform; print platform.linux_distribution(
 alias mk='make'
 alias npm-run='npm run'
 alias setWorkEmail='git config user.email $WORK_EMAIL_ADDRESS'
+alias gulp="./node_modules/.bin/gulp"
+alias grunt="./node_modules/.bin/grunt"
 
 br(){
   clear &&  echo $'\e[32m======================================================\e[m' && echo '''
