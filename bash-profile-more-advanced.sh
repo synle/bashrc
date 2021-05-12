@@ -67,8 +67,7 @@ gitCompare(){
   fi
 }
 
-subl()
-{
+subl(){
   if [ $is_os_wsl == "1" ]
   then
     # for windows
@@ -92,6 +91,8 @@ Full Path: $(realpath "$@")
 Full Path: $(echo "$@")
     """
   fi
+
+  echo "subl \"$@\""
 }
 
 code()
@@ -119,6 +120,8 @@ Full Path: $(realpath "$@")
 Full Path: $(echo "$@")
     """
   fi
+
+  echo "code \"$@\""
 }
 
 code-list-extensions(){
