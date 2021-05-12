@@ -34,9 +34,9 @@ __git_complete git __git_main
 
 # ssh server autocomplete
 __ssh_complete(){
-  opts=$([ -f ~/.ssh/config ] && grep "^Host" ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null | grep -v "[?*]" | cut -d " " -f 2-)
+  opts=\$([ -f ~/.ssh/config ] && grep "^Host" ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null | grep -v "[?*]" | cut -d " " -f 2-)
   cur="\${COMP_WORDS[COMP_CWORD]}"
-  COMPREPLY=( $(compgen -W "$opts" -- \${cur}) )
+  COMPREPLY=( \$(compgen -W "\$opts" -- \${cur}) )
 }
 complete -F __ssh_complete ssh
 complete -F __ssh_complete s
@@ -44,9 +44,9 @@ complete -F __ssh_complete s
 # make autocomplete
 __make_complete ()
 {
-  opts=$([ -f Makefile ] && cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
+  opts=\$([ -f Makefile ] && cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
   cur="\${COMP_WORDS[COMP_CWORD]}";
-  COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+  COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
 }
 complete -F __make_complete make
 
@@ -72,7 +72,7 @@ __npm_complete ()
     )
   fi
 
-  COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+  COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
 }
 complete -F __npm_complete npm
 __npm_run_complete ()
@@ -83,7 +83,7 @@ __npm_run_complete ()
     1)
       # npm run => then shows all package.json script
       opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
-      COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+      COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
       ;;
     2)
       return 0
@@ -117,8 +117,8 @@ complete -F __npx_complete npx
 __gulp_complete()
 {
   opts=$([ -f ./node_modules/.bin/gulp ] && ./node_modules/.bin/gulp --tasks | grep -v "gulpfile" | cut -d " " -f 3 | uniq);
-  cur="\${COMP_WORDS[COMP_CWORD]}";
-  COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+  cur="\${COMP_WORDS[COMP_CWORD]}"
+  COMPREPLY=( \$(compgen -W "\$opts" -- \${cur}) )
 }
 complete -F __gulp_complete gulp
 `;
