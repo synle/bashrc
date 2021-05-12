@@ -113,6 +113,14 @@ __npx_complete ()
   esac
 }
 complete -F __npx_complete npx
+
+__gulp_complete()
+{
+  opts=$([ -f ./node_modules/.bin/gulp ] && ./node_modules/.bin/gulp --tasks | grep -v "gulpfile" | cut -d " " -f 3 | uniq);
+  cur="\${COMP_WORDS[COMP_CWORD]}";
+  COMPREPLY=($(compgen -W "$opts" -- \${cur}));
+}
+complete -F __gulp_complete gulp
 `;
 
   writeText(targetPath, res);
