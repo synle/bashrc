@@ -10,10 +10,8 @@ async function doWork() {
   console.log(`  >> Setting up Microsoft VS Code Configurations:`, targetPath);
 
   // get os specific settings
-  let fontFamilyToUse = "FiraCode-Retina";
-  if (is_os_window === true) {
-    fontFamilyToUse = CONFIGS.fontFamily;
-  }
+  let fontFamilyToUse = CONFIGS.fontFamily;
+
   const osSpecificSettings = {
     "editor.fontFamily": fontFamilyToUse,
   };
