@@ -1,23 +1,37 @@
-async function doWork() {
-  function _getPathSublimeText3() {
+let SUBLIME_VERSION;
+
+async function _getPathSublimeText() {
+  const url =
+    "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/sublime-text.config.json";
+  try {
+    let config = await fetchUrlAsJson(url);
+
+    SUBLIME_VERSION = config.sublime_version;
+
     if (is_os_window) {
-      return path.join(
-        getWindowAppDataRoamingUserPath(),
-        "Sublime Text 3/Packages/User"
-      );
+      return path.join(getWindowAppDataRoamingUserPath(), config.sublime_path);
     }
     if (is_os_darwin_mac) {
       return path.join(
         getOsxApplicationSupportCodeUserPath(),
-        "Sublime Text 3/Packages/User"
+        config.sublime_path
       );
     }
-    return null;
+  } catch (err) {
+    console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
 
-  let targetPath = _getPathSublimeText3();
+  process.exit();
+  return null;
+}
 
-  console.log("  >> Setting up Sublime Text 3 configurations:", targetPath);
+async function doWork() {
+  let targetPath = await _getPathSublimeText();
+
+  console.log(
+    `  >> Setting up Sublime Text ${SUBLIME_VERSION} configurations:`,
+    targetPath
+  );
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1("    >> Skipped : Target path not found"));
@@ -29,23 +43,23 @@ async function doWork() {
     bootstrapped: true,
     in_process_packages: [],
     installed_packages: [
-      "Alignment",
+      //       "Alignment",
       "All Autocomplete",
-      "Babel",
+      //       "Babel",
       "BracketHighlighter",
       "Case Conversion",
       "CodeFormatter",
       "Compare Side-By-Side",
       "DocBlockr",
       "Dracula Color Scheme",
-      "LESS",
+      // "LESS",
       "Markdown Preview",
-      "Package Control",
+      // "Package Control",
       "SCSS",
       "SideBarEnhancements",
       "SublimeCodeIntel",
       "SyncedSideBar",
-      // "Tabnine",
+      //       "Tabnine",
       "TodoReview",
       "TypeScript",
     ],
@@ -55,8 +69,7 @@ async function doWork() {
   writeJson(path.join(targetPath, "Default.sublime-theme"), [
     {
       class: "sidebar_label",
-      "font.size": 12,
-      color: [0, 0, 0],
+      "font.size": 15,
     },
     {
       class: "tab_label",
@@ -98,6 +111,7 @@ async function doWork() {
     scroll_speed: 0.0,
     font_options: ["gray_antialias", "subpixel_antialias"],
     font_face: CONFIGS.fontFamily,
+    hardware_acceleration: "opengl",
     file_exclude_patterns: [
       "*.class",
       "*.db",
@@ -118,22 +132,22 @@ async function doWork() {
       "*.ogg",
       "*.pdb",
       "*.pdf",
+      "*.pid",
+      "*.pid.lock",
       "*.psd",
       "*.pyc",
       "*.pyo",
       "*.sdf",
+      "*.seed",
+      "*.sln",
       "*.so",
       "*.suo",
       "*.swf",
-      "*.zip",
       "*.swp",
+      "*.zip",
       ".DS_Store",
-      "*.pid",
-      "*.seed",
-      "*.pid.lock",
       ".eslintcache",
       "npm-debug.log",
-      "*.sln",
     ],
     folder_exclude_patterns: [
       "*min*.js",
@@ -141,16 +155,16 @@ async function doWork() {
       ".ebextensions",
       ".generated",
       ".git",
+      ".gradle",
       ".hg",
+      ".idea",
       ".sass-cache",
       ".svn",
       "bower_components",
       "build",
       "CVS",
       "node_modules",
-      ".gradle",
       "tmp",
-      ".idea",
     ],
     // The mid-line characters to align in a multi-line selection, changing
     // this to an empty array will disable mid-line alignment

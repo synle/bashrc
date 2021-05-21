@@ -1,3 +1,30 @@
+let SUBLIME_VERSION;
+
+async function _getPathSublimeText() {
+  const url =
+    "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/sublime-text.config.json";
+  try {
+    let config = await fetchUrlAsJson(url);
+
+    SUBLIME_VERSION = config.sublime_version;
+
+    if (is_os_window) {
+      return path.join(getWindowAppDataRoamingUserPath(), config.sublime_path);
+    }
+    if (is_os_darwin_mac) {
+      return path.join(
+        getOsxApplicationSupportCodeUserPath(),
+        config.sublime_path
+      );
+    }
+  } catch (err) {
+    console.log("      >> Failed to get the path for Sublime Text", url, err);
+  }
+
+  process.exit();
+  return null;
+}
+
 let OS_KEY;
 let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
@@ -461,25 +488,12 @@ async function doInit() {
 }
 
 async function doWork() {
-  function _getPathSublimeText3() {
-    if (is_os_window) {
-      return path.join(
-        getWindowAppDataRoamingUserPath(),
-        "Sublime Text 3/Packages/User"
-      );
-    }
-    if (is_os_darwin_mac) {
-      return path.join(
-        getOsxApplicationSupportCodeUserPath(),
-        "Sublime Text 3/Packages/User"
-      );
-    }
-    return null;
-  }
+  let targetPath = await _getPathSublimeText();
 
-  let targetPath = _getPathSublimeText3();
-
-  console.log("  >> Setting up Sublime Text 3 keybindings:", targetPath);
+  console.log(
+    `  >> Setting up Sublime Text ${SUBLIME_VERSION} keybindings:`,
+    targetPath
+  );
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1("    >> Skipped : Target path not found"));
