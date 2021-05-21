@@ -12,12 +12,17 @@ globalThis.CONFIGS = {
 };
 
 globalThis.HOME_HOST_NAMES = [
+  // main router
   ["sy-router", "192.168.1.1"],
+  // machines
   ["sy-mp", "192.168.1.202"],
   ["sy-mbp-16", "192.168.1.203"],
   ["sy-asus-g14", "192.168.1.204"],
   ["sy-asus-g15", "192.168.1.205"],
   ["sy-alienware-15", "192.168.1.206"],
+  // printers
+  ["sy-brother-printer", "192.168.1.222"],
+  ["sy-dell-printer", "192.168.1.211"],
 ];
 
 // flags
