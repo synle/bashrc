@@ -11,20 +11,15 @@ globalThis.CONFIGS = {
   fontFamily: "Fira Code Retina",
 };
 
-globalThis.HOME_HOST_NAMES = [
-  // main router
-  ["sy-router-main", "192.168.1.1"],
-  ["sy-router-secondary", "192.168.1.2"],
-  // machines
-  ["sy-mp", "192.168.1.202"],
-  ["sy-mbp-16", "192.168.1.203"],
-  ["sy-asus-g14", "192.168.1.204"],
-  ["sy-asus-g15", "192.168.1.205"],
-  ["sy-alienware-15", "192.168.1.206"],
-  // printers
-  ["sy-brother-printer", "192.168.1.222"],
-  ["sy-dell-printer", "192.168.1.211"],
-];
+/**
+ * The host config is located here:
+ *
+ * https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.json
+ *
+ * host name => host ip
+ * @type {Array}
+ */
+globalThis.HOME_HOST_NAMES = [];
 
 // flags
 try {
@@ -515,6 +510,24 @@ except:
       .toLowerCase()
       .includes("ubuntu");
   } catch (err) {}
+
+  // getting the ip address mapping
+  try {
+    globalThis.HOME_HOST_NAMES = JSON.parse(
+      await fetchUrlAsString(
+        "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.json"
+      )
+    );
+  } catch (err) {
+    globalThis.HOME_HOST_NAMES = [];
+  } finally {
+    globalThis.HOME_HOST_NAMES = globalThis.HOME_HOST_NAMES.filter(
+      (hostSplits) =>
+        hostSplits.length === 2 &&
+        hostSplits[0].length > 0 &&
+        hostSplits[1].length > 0
+    );
+  }
 
   // create the sy tweak folder
   const pathsToCreateDir = [
