@@ -13,7 +13,8 @@ globalThis.CONFIGS = {
 
 globalThis.HOME_HOST_NAMES = [
   // main router
-  ["sy-router", "192.168.1.1"],
+  ["sy-router-main", "192.168.1.1"],
+  ["sy-router-secondary", "192.168.1.2"],
   // machines
   ["sy-mp", "192.168.1.202"],
   ["sy-mbp-16", "192.168.1.203"],
