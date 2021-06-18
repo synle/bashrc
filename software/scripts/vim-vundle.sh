@@ -8,4 +8,4 @@ git clone https://github.com/VundleVim/Vundle.vim.git $VUNDLE_DIR &> /dev/null;
 
 echo '  >> Installing Vundle Plugins:'
 echo '  vim +PluginInstall +qall'
-vim +PluginInstall +qall &>/dev/null;
+vim +PluginInstall +qall
