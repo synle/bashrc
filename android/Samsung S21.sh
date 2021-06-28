@@ -49,7 +49,7 @@ pm uninstall -k --user 0 com.samsung.systemui.bixby2
 pm uninstall -k --user 0 com.sec.android.easyMover.Agent
 pm uninstall -k --user 0 com.sec.android.easyonehand
 pm uninstall -k --user 0 com.sec.android.emergencylauncher
-pm uninstall -k --user 0 com.sec.phone
+# pm uninstall -k --user 0 com.sec.phone
 pm uninstall -k --user 0 com.sec.spp.push
 pm uninstall -k --user 0 com.wsomacp
 pm uninstall -k --user 0 com.samsung.SMT
