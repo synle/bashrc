@@ -136,12 +136,21 @@ async function doWork() {
       
       
       ; other weird placement for small keyboards
-      ; pause and shift + pause to display ` and ~
+      ; pause and shift + pause to display \` and ~
       break::
-      Send, ``
+      Send, \`\`
       return
 
       +break::
+      Send, ~
+      return
+
+      ; Ctrl + escape and shift escape to display \` and ~
+      ^escape::
+      Send, \`\`
+      return
+
+      +escape::
       Send, ~
       return
     `
