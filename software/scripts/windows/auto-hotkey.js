@@ -133,6 +133,17 @@ async function doWork() {
       >!]::send !{Right}
 
       ; --end Alt shortcuts--
+      
+      
+      ; other weird placement for small keyboards
+      ; pause and shift + pause to display ` and ~
+      break::
+      Send, ``
+      return
+
+      +break::
+      Send, ~
+      return
     `
   );
 }
