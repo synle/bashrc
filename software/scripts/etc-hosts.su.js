@@ -147,7 +147,8 @@ async function doInit() {
     youknowbest.com
     yumenetworks.com
     
-    // Blocked hosts
+    // Blocked hosts from TP Link Trend Micro
+    // copy([...$$('.info-detail')].map(s => s.innerText).join('\n'))
     tj.ke.com
     api.movcloud.net
     bj.ke.com
