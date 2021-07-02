@@ -146,6 +146,15 @@ async function doInit() {
     yldmgrimg.net
     youknowbest.com
     yumenetworks.com
+    
+    // Blocked hosts
+    tj.ke.com
+    api.movcloud.net
+    bj.ke.com
+    midoweb.offerstrack.net
+    gmial.com
+    www.seyrade.com
+    hrb.ke.com
   `);
 
   WHITE_LIST_HOST_NAMES = new Set(
