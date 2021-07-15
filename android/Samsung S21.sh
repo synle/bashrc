@@ -39,7 +39,7 @@ pm uninstall -k --user 0 com.samsung.android.kidsinstaller
 pm uninstall -k --user 0 com.samsung.android.location
 pm uninstall -k --user 0 com.samsung.android.lool
 pm uninstall -k --user 0 com.samsung.android.mateagent
-pm uninstall -k --user 0 com.samsung.android.messaging
+# pm uninstall -k --user 0 com.samsung.android.messaging
 pm uninstall -k --user 0 com.samsung.android.samsungpass
 pm uninstall -k --user 0 com.samsung.android.samsungpassautofill
 pm uninstall -k --user 0 com.samsung.android.video
