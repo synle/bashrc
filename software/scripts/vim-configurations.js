@@ -141,9 +141,12 @@ async function doWork() {
 
     " comma s and v to do split
     nnoremap <silent> ,v :vsplit<CR>
-    nnoremap <silent> ,s :split<CR>
+    nnoremap <silent> ,5 :vsplit<CR>
+    nnoremap <silent> ,s :split<CR>    
+    nnoremap <silent> ,d :split<CR>
     nnoremap <silent> ,w <c-w>q
     nnoremap <silent> ,x <c-w>q
+    nnoremap <silent> ,t :Files<CR>    
 
     " ctrl arrows to navigate split
     " https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
