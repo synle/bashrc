@@ -25,6 +25,7 @@ globalThis.HOME_HOST_NAMES = [];
 const osFlags = {
   is_os_darwin_mac: false,
   is_os_window: false,
+  is_os_wsl: false,
   is_os_ubuntu: false,
   is_os_chromeos: false,
   is_os_mingw64: false,
