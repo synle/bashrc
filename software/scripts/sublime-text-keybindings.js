@@ -494,8 +494,20 @@ async function doWork() {
     `  >> Setting up Sublime Text ${SUBLIME_VERSION} keybindings:`,
     targetPath
   );
+  
+  if(DEBUG_WRITE_TO_HOME){
+    console.log(consoleLogColor1("    >> DEBUG Mode: write to file"));
+    
+    // non -mac keybinding
+    writeJson(
+      'sublime_non_mac_keybindings',
+      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
+    );
+    
+    process.exit();
+  }
 
-  if (!fs.existsSync(targetPath) && !DEBUG_WRITE_TO_HOME) {
+  if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1("    >> Skipped : Target path not found"));
     process.exit();
   }
