@@ -1,12 +1,8 @@
 sudo apt-get update
 sudo apt-get install -y curl git vim python
 
-# vim
-export TEST_SCRIPT_FILES="""
-software/scripts/vim-configurations.js
-software/scripts/vim-vundle.sh
-""" && export DEBUG_WRITE_TO_HOME='0' && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-live.sh | bash
-
+# set up as lightweight
+. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
 
 # setting up sublime
 export TEST_SCRIPT_FILES="""
