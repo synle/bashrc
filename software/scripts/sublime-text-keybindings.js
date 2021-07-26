@@ -495,7 +495,7 @@ async function doWork() {
     targetPath
   );
 
-  if (!fs.existsSync(targetPath)) {
+  if (!fs.existsSync(targetPath) && !DEBUG_WRITE_TO_HOME) {
     console.log(consoleLogColor1("    >> Skipped : Target path not found"));
     process.exit();
   }

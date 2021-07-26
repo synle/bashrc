@@ -73,11 +73,14 @@ const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 //////////////////////////////////////////////////////
 // begin common
 function _getFilePath(aDir){
+  let pathToUse = aDir;
   if(globalThis.DEBUG_WRITE_TO_HOME === true){
-    return path.join(globalThis.BASE_HOMEDIR_LINUX, 'script_' + aDir.replace(/\//g, '_').replace(/\\/g, '_'));
+     pathToUse = path.join(globalThis.BASE_HOMEDIR_LINUX, 'test_script_' + aDir.replace(/[\/\\\(\)]/g, '_').replace(/ /g, '_').replace(/_\./g, '.').replace(/__+/g, ''));
+
+     console.log('<< Debug File Path: ', pathToUse);
   }
 
-  return aDir;
+  return pathToUse;
 }
 function writeText(aDir, text) {
   fs.writeFileSync(_getFilePath(aDir), text);
