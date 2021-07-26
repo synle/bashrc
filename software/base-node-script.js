@@ -339,6 +339,30 @@ async function getSoftwareScriptFiles() {
       }
     }
 
+    if(is_os_chromeos){
+      if (!file.includes("software/scripts/chromeos")) {
+        // when run in an android termux env, only run script in that folder
+        const whitelistAndroidTermuxScripts = convertTextToList(`
+            software/scripts/_bash-rc-bootstrap.js
+            software/scripts/git.js
+            software/scripts/vim-configurations.js
+            software/scripts/vim-vundle.sh
+            software/scripts/bash-inputrc.js
+            software/scripts/bash-autocomplete.js
+            software/scripts/bash-syle-content.js
+            software/scripts/tmux.js
+            software/scripts/sublime-text-configurations.js
+            software/scripts/sublime-text-keybindings.js
+            software/scripts/vim-configurations.js
+            software/scripts/vim-vundle.sh
+          `);
+
+        if (whitelistAndroidTermuxScripts.indexOf(file) === -1) {
+          return false;
+        }
+      }
+    }
+
     // check against only android termux
     if (
       file.includes("software/scripts/android-termux") &&
