@@ -21,6 +21,8 @@ async function _getPathSublimeText() {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
   
+  // TODO - linux support - chrome os (debian linux) - /home/syle/.config/sublime-text-3/Packages/User/Default (Linux).sublime-keymap
+  
   return null;
 }
 
