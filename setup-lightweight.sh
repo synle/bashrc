@@ -11,7 +11,7 @@ echo """
 export TEST_SCRIPT_FILES="""
   _bash-rc-bootstrap.js
   git.js
-  vim.js
+  vim-configurations.js
   vim-vundle.sh
   bash-inputrc.js
   bash-autocomplete.js
