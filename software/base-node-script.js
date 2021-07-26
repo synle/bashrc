@@ -70,17 +70,24 @@ const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
 //////////////////////////////////////////////////////
 // begin common
+function _getFilePath(aDir){
+  if((process.env.WRITE_TO_HOME || '').toLowerCase() === '1' || (process.env.WRITE_TO_HOME || '').toLowerCase() === 'true'){
+    return path.join(globalThis.BASE_HOMEDIR_LINUX, 'script_' + aDir.replace(/\//g, '_').replace(/\\/g, '_'));
+  }
+
+  return aDir;
+}
 function writeText(aDir, text) {
-  fs.writeFileSync(aDir, text);
+  fs.writeFileSync(_getFilePath(aDir), text);
 }
 
 function writeJson(aDir, json) {
-  fs.writeFileSync(aDir, JSON.stringify(json, null, 2));
+  fs.writeFileSync(_getFilePath(aDir), JSON.stringify(json, null, 2));
 }
 
 function appendText(aDir, text) {
   const oldText = readText(aDir);
-  fs.writeFileSync(aDir, oldText + "\n" + text);
+  fs.writeFileSync(_getFilePath(aDir), oldText + "\n" + text);
 }
 
 function writeJsonWithMerge(aDir, json) {
