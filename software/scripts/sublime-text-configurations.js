@@ -94,12 +94,19 @@ async function _getPathSublimeText() {
     if (is_os_window) {
       return path.join(getWindowAppDataRoamingUserPath(), config.sublime_path);
     }
+
     if (is_os_darwin_mac) {
       return path.join(
         getOsxApplicationSupportCodeUserPath(),
         config.sublime_path
       );
     }
+
+    // for debian or chrome os debian linux
+    return path.join(
+      globalThis.BASE_HOMEDIR_LINUX,
+      ".config/sublime-text-3/Packages/User"
+    );
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
@@ -129,33 +136,6 @@ async function doWork() {
     process.exit();
   }
 
-  console.log("    >> Package Control.sublime-settings");
-  writeJson(path.join(targetPath, "Package Control.sublime-settings"), {
-    bootstrapped: true,
-    in_process_packages: [],
-    installed_packages: [
-      //       "Alignment",
-      "All Autocomplete",
-      //       "Babel",
-      "BracketHighlighter",
-      "Case Conversion",
-      "CodeFormatter",
-      "Compare Side-By-Side",
-      "DocBlockr",
-      "Dracula Color Scheme",
-      // "LESS",
-      "Markdown Preview",
-      // "Package Control",
-      "SCSS",
-      "SideBarEnhancements",
-      "SublimeCodeIntel",
-      "SyncedSideBar",
-      //       "Tabnine",
-      "TodoReview",
-      "TypeScript",
-    ],
-  });
-
   console.log("    >> Default.sublime-theme");
   writeJson(path.join(targetPath, "Default.sublime-theme"), [
     {
@@ -169,14 +149,15 @@ async function doWork() {
   ]);
 
   console.log("    >> Preferences.sublime-settings");
-  let osSpecificSettings;
+  let osSpecificSettings = {};
   if (is_os_window) {
     osSpecificSettings = {
       color_scheme: "Packages/Dracula Color Scheme/Dracula.tmTheme",
     };
   }
-  if (is_os_darwin_mac) {
-    osSpecificSettings = {};
+  else if (is_os_darwin_mac) {
+  }
+  else {
   }
 
   writeJsonWithMerge(path.join(targetPath, "Preferences.sublime-settings"), {

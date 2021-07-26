@@ -11,6 +11,7 @@ async function _getPathSublimeText() {
     if (is_os_window) {
       return path.join(getWindowAppDataRoamingUserPath(), config.sublime_path);
     }
+
     if (is_os_darwin_mac) {
       return path.join(
         getOsxApplicationSupportCodeUserPath(),
@@ -18,7 +19,7 @@ async function _getPathSublimeText() {
       );
     }
 
-    // for debian (chrome os)
+    // for debian or chrome os debian linux
     return path.join(
       globalThis.BASE_HOMEDIR_LINUX,
       ".config/sublime-text-3/Packages/User"
