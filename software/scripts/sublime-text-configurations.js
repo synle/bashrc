@@ -154,10 +154,8 @@ async function doWork() {
     osSpecificSettings = {
       color_scheme: "Packages/Dracula Color Scheme/Dracula.tmTheme",
     };
-  }
-  else if (is_os_darwin_mac) {
-  }
-  else {
+  } else if (is_os_darwin_mac) {
+  } else {
   }
 
   writeJsonWithMerge(path.join(targetPath, "Preferences.sublime-settings"), {
