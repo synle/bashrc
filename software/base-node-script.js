@@ -66,12 +66,14 @@ globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = is_os_window
   ? path.join(getWindowUserBaseDir(), "...sy", "_extra")
   : path.join(globalThis.BASE_HOMEDIR_LINUX, "_extra");
 
+globalThis.DEBUG_WRITE_TO_HOME = (process.env.WRITE_TO_HOME || '').toLowerCase() === '1' || (process.env.WRITE_TO_HOME || '').toLowerCase() === 'true';
+
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
 //////////////////////////////////////////////////////
 // begin common
 function _getFilePath(aDir){
-  if((process.env.WRITE_TO_HOME || '').toLowerCase() === '1' || (process.env.WRITE_TO_HOME || '').toLowerCase() === 'true'){
+  if(globalThis.DEBUG_WRITE_TO_HOME === true){
     return path.join(globalThis.BASE_HOMEDIR_LINUX, 'script_' + aDir.replace(/\//g, '_').replace(/\\/g, '_'));
   }
 
