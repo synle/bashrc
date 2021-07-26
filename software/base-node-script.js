@@ -31,14 +31,14 @@ const osFlags = {
   is_os_mingw64: false,
   is_os_android_termux: false,
 };
-for(const envKey of Object.keys(process.env)){
-  if(envKey.indexOf('is_os_') === 0){
+for (const envKey of Object.keys(process.env)) {
+  if (envKey.indexOf("is_os_") === 0) {
     try {
-    osFlags[envKey] = false || parseInt(process.env[envKey]) > 0;
-  } catch (err) {}
+      osFlags[envKey] = false || parseInt(process.env[envKey]) > 0;
+    } catch (err) {}
   }
 }
-for(const envKey of Object.keys(osFlags)){
+for (const envKey of Object.keys(osFlags)) {
   globalThis[envKey] = osFlags[envKey];
 }
 
@@ -340,7 +340,7 @@ async function getSoftwareScriptFiles() {
       }
     }
 
-    if(is_os_chromeos){
+    if (is_os_chromeos) {
       if (!file.includes("software/scripts/chromeos")) {
         // when run in an android termux env, only run script in that folder
         const whitelistAndroidTermuxScripts = convertTextToList(`
