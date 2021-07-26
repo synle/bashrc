@@ -1,14 +1,10 @@
 #! /bin/sh
 echo '>> Build Assets - Host Mappings'
-{ \
-  cat software/base-node-script.js && \
-  cat software/metadata/blocked-hosts.config.js ;
-} | node
+export TEST_SCRIPT_FILES="software/metadata/blocked-hosts.config.js"  \
+  && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
 
 echo '>> Generate Script List Indexes'
-{ \
-  cat software/base-node-script.js && \
-  cat software/metadata/script-list.config.js ; \
-} | node
+export TEST_SCRIPT_FILES="software/metadata/script-list.config.js"  \
+  && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
 
 echo '>> DONE Building'

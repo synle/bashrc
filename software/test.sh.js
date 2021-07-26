@@ -30,8 +30,7 @@ async function doWork() {
 
     if (file.includes("software/")) {
       // does not includes the proper prefix
-    }
-    else {
+    } else {
       // add the prefix if needed
       file = `software/scripts/${file}`;
     }
