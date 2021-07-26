@@ -21,45 +21,25 @@ globalThis.CONFIGS = {
  */
 globalThis.HOME_HOST_NAMES = [];
 
-// flags
-try {
-  globalThis.is_os_ubuntu = false || parseInt(process.env.is_os_ubuntu) > 0;
-} catch (err) {}
-
-try {
-  globalThis.is_os_darwin_mac =
-    false ||
-    parseInt(process.env.is_os_darwin_mac) > 0 ||
-    fs.existsSync("/Applications");
-} catch (err) {}
-
-try {
-  globalThis.is_os_android_termux =
-    false ||
-    parseInt(process.env.is_os_android_termux) > 0 ||
-    fs.existsSync("/data/data/com.termux");
-} catch (err) {}
-
-try {
-  globalThis.is_os_window =
-    false ||
-    parseInt(process.env.is_os_window) > 0 ||
-    fs.existsSync(BASE_WINDOW);
-} catch (err) {}
-
-try {
-  globalThis.is_os_mingw64 =
-    false ||
-    parseInt(process.env.is_os_mingw64) > 0 ||
-    fs.existsSync("/mingw64");
-} catch (err) {}
-
-try {
-  globalThis.is_os_wsl =
-    false ||
-    parseInt(process.env.is_os_wsl) > 0 ||
-    (fs.existsSync("/mnt/c/Users") && fs.existsSync("/usr/local/bin"));
-} catch (err) {}
+// os flags
+const osFlags = {
+  is_os_darwin_mac: false,
+  is_os_window: false,
+  is_os_ubuntu: false,
+  is_os_chromeos: false,
+  is_os_mingw64: false,
+  is_os_android_termux: false,
+};
+for(const envKey of Object.keys(process.env)){
+  if(envKey.indexOf('is_os_') === 0){
+    try {
+    osFlags[envKey] = false || parseInt(process.env[envKey]) > 0;
+  } catch (err) {}
+  }
+}
+for(const envKey of Object.keys(osFlags)){
+  globalThis[envKey] = osFlags[envKey];
+}
 
 // setting up the path for the extra tweaks
 globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = is_os_window
