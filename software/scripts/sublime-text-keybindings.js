@@ -500,7 +500,7 @@ async function doWork() {
     
     // non -mac keybinding
     writeJson(
-      'sublime_non_mac_keybindings',
+      'sublime_common_keybindings',
       _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
     );
     
