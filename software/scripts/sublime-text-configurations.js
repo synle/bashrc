@@ -24,6 +24,7 @@ const sublimeSetings = {
   font_options: ["gray_antialias", "subpixel_antialias"],
   font_face: CONFIGS.fontFamily,
   hardware_acceleration: "opengl",
+  theme: "Adaptive.sublime-theme",
   file_exclude_patterns: [
     "*.class",
     "*.db",
@@ -150,12 +151,12 @@ async function doWork() {
 
   console.log("    >> Preferences.sublime-settings");
   let osSpecificSettings = {};
-  if (is_os_window) {
+  if (is_os_darwin_mac) {
+    osSpecificSettings = {};
+  } else {
     osSpecificSettings = {
       color_scheme: "Packages/Dracula Color Scheme/Dracula.tmTheme",
     };
-  } else if (is_os_darwin_mac) {
-  } else {
   }
 
   writeJsonWithMerge(path.join(targetPath, "Preferences.sublime-settings"), {
