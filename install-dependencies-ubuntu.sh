@@ -49,8 +49,8 @@ installPackageWithAptGet make;
   ##########################################################################################################
   # ubuntu gui tweaks
   ##########################################################################################################
-  echo '>> Installing lubuntu-rc tweak'
   [ -s $HOME/.config/openbox/lubuntu-rc.xml ] && \
+  echo '>> Installing lubuntu-rc tweak' && \
   sed -i "s/<animateIconify>yes<\/animateIconify>/<animateIconify>no<\/animateIconify>/g" \
   $HOME/.config/openbox/lubuntu-rc.xml
 fi
