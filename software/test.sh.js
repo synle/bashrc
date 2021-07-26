@@ -28,8 +28,11 @@ async function doWork() {
   for (let i = 0; i < softwareFiles.length; i++) {
     let file = softwareFiles[i];
 
-    // add the prefix if needed
-    if (!file.includes("software/scripts/")) {
+    if (file.includes("software/")) {
+      // does not includes the proper prefix
+    }
+    else {
+      // add the prefix if needed
       file = `software/scripts/${file}`;
     }
 
