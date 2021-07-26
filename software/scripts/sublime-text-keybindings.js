@@ -20,9 +20,9 @@ async function _getPathSublimeText() {
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
-  
+
   // TODO - linux support - chrome os (debian linux) - /home/syle/.config/sublime-text-3/Packages/User/Default (Linux).sublime-keymap
-  
+
   return null;
 }
 
@@ -495,16 +495,16 @@ async function doWork() {
     `  >> Setting up Sublime Text ${SUBLIME_VERSION} keybindings:`,
     targetPath
   );
-  
-  if(DEBUG_WRITE_TO_HOME){
+
+  if (DEBUG_WRITE_TO_HOME) {
     console.log(consoleLogColor1("    >> DEBUG Mode: write to file"));
-    
+
     // non -mac keybinding
     writeJson(
-      'sublime_common_keybindings',
+      "sublime_common_keybindings",
       _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
     );
-    
+
     process.exit();
   }
 

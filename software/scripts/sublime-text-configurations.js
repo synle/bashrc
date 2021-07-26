@@ -81,7 +81,7 @@ const sublimeSetings = {
   // The mid-line characters to align in a multi-line selection, changing
   // this to an empty array will disable mid-line alignment
   alignment_chars: ["=", ":"],
-}
+};
 
 async function _getPathSublimeText() {
   const url =
@@ -114,16 +114,13 @@ async function doWork() {
     `  >> Setting up Sublime Text ${SUBLIME_VERSION} configurations:`,
     targetPath
   );
-  
-  if(DEBUG_WRITE_TO_HOME){
+
+  if (DEBUG_WRITE_TO_HOME) {
     console.log(consoleLogColor1("    >> DEBUG Mode: write to file"));
-    
+
     // non -mac keybinding
-    writeJson(
-      'sublime_common_settings',
-      sublimeSetings
-    );
-    
+    writeJson("sublime_common_settings", sublimeSetings);
+
     process.exit();
   }
 
