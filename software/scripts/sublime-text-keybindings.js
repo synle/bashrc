@@ -17,11 +17,15 @@ async function _getPathSublimeText() {
         config.sublime_path
       );
     }
+
+    // for debian (chrome os)
+    return path.join(
+      globalThis.BASE_HOMEDIR_LINUX,
+      ".config/sublime-text-3/Packages/User"
+    );
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
-
-  // TODO - linux support - chrome os (debian linux) - /home/syle/.config/sublime-text-3/Packages/User/Default (Linux).sublime-keymap
 
   return null;
 }
@@ -524,6 +528,21 @@ async function doWork() {
   } else {
     writeJson(
       windowsKeymapPath,
+      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
+    );
+  }
+
+  // linux only key bindings
+  console.log("    >> Default (Linux).sublime-keymap");
+  const linuxKeymapPath = path.join(
+    targetPath,
+    "Default (Linux).sublime-keymap"
+  );
+  if (!fs.existsSync(linuxKeymapPath)) {
+    console.log(consoleLogColor1("      >> Skipped : Linux Only"));
+  } else {
+    writeJson(
+      linuxKeymapPath,
       _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
     );
   }
