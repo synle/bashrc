@@ -4,12 +4,13 @@ export EDITOR='vim'
 export BASH_PATH=~/.bashrc
 
 # os flags
-export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
 export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
 export is_os_window=0 && [ -d /mnt/c/Users ] && export is_os_window=1
-export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
-export is_os_wsl=0 && [ -d /lib ] && [ -d /mnt/c/Users ] && export is_os_wsl=1
 export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
+export is_os_chromeos=0
+export is_os_wsl=0 && [ -d /lib ] && [ -d /mnt/c/Users ] && export is_os_wsl=1
+export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
+export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
 # export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
 # end os flag
 
