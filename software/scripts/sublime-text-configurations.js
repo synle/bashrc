@@ -104,7 +104,6 @@ async function _getPathSublimeText() {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
 
-  process.exit();
   return null;
 }
 
