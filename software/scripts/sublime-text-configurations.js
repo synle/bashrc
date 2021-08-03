@@ -17,8 +17,9 @@ const sublimeSetings = {
   animation_enabled: false,
   highlight_modified_tabs: true,
   translate_tabs_to_spaces: true,
-  tab_size: 2,
   trim_trailing_white_space_on_save: true,
+  auto_hide_menu: true,
+  tab_size: 2,
   rulers: [100],
   scroll_speed: 0.0,
   font_options: ["gray_antialias", "subpixel_antialias"],
@@ -93,21 +94,15 @@ async function _getPathSublimeText() {
     SUBLIME_VERSION = config.sublime_version;
 
     if (is_os_window) {
-      return path.join(getWindowAppDataRoamingUserPath(), config.sublime_path);
+      return findDir(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Text/i, true);
     }
 
     if (is_os_darwin_mac) {
-      return path.join(
-        getOsxApplicationSupportCodeUserPath(),
-        config.sublime_path
-      );
+      return findDir(getOsxApplicationSupportCodeUserPath(), /Sublime[ ]*Text/i, true);
     }
 
     // for debian or chrome os debian linux
-    return path.join(
-      globalThis.BASE_HOMEDIR_LINUX,
-      ".config/sublime-text-3/Packages/User"
-    );
+    return findDir(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i, true);
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
@@ -137,8 +132,9 @@ async function doWork() {
     process.exit();
   }
 
-  console.log("    >> Default.sublime-theme");
-  writeJson(path.join(targetPath, "Default.sublime-theme"), [
+  const sublimeThemeConfigPath = path.join(targetPath, "Packages/User/Default.sublime-theme");
+  console.log("    >> Default.sublime-theme", sublimeThemeConfigPath);
+  writeJson(sublimeThemeConfigPath, [
     {
       class: "sidebar_label",
       "font.size": 15,
@@ -149,7 +145,12 @@ async function doWork() {
     },
   ]);
 
-  console.log("    >> Preferences.sublime-settings");
+
+  //
+  const sublimeMainConfigPath = path.join(targetPath, "Preferences.sublime-settings");
+  console.log("    >> Preferences.sublime-settings", sublimeMainConfigPath);
+  console.log("      >> Installing", sublimeMainConfigPath);
+
   let osSpecificSettings = {};
   if (is_os_darwin_mac) {
     osSpecificSettings = {};
@@ -159,7 +160,7 @@ async function doWork() {
     };
   }
 
-  writeJsonWithMerge(path.join(targetPath, "Preferences.sublime-settings"), {
+  writeJsonWithMerge(sublimeMainConfigPath, {
     ...sublimeSetings,
     ...osSpecificSettings,
   });

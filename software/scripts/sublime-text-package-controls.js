@@ -9,14 +9,15 @@ async function _getPathSublimeText() {
     SUBLIME_VERSION = config.sublime_version;
 
     if (is_os_window) {
-      return path.join(getWindowAppDataRoamingUserPath(), config.sublime_path);
+      return findDir(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Text/i, true);
     }
+
     if (is_os_darwin_mac) {
-      return path.join(
-        getOsxApplicationSupportCodeUserPath(),
-        config.sublime_path
-      );
+      return findDir(getOsxApplicationSupportCodeUserPath(), /Sublime[ ]*Text/i, true);
     }
+
+    // for debian or chrome os debian linux
+    return findDir(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i, true);
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
@@ -37,8 +38,12 @@ async function doWork() {
     process.exit();
   }
 
-  console.log("    >> Package Control.sublime-settings");
-  writeJson(path.join(targetPath, "Package Control.sublime-settings"), {
+  
+  //
+  const sublimePackageControlConfigPath = path.join(targetPath, "Packages/User/Package Control.sublime-settings");
+  console.log("    >> Package Control.sublime-settings", sublimePackageControlConfigPath);
+
+  writeJson(sublimePackageControlConfigPath, {
     bootstrapped: true,
     in_process_packages: [],
     installed_packages: [

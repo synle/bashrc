@@ -1,15 +1,12 @@
 async function doWork() {
   function _getPathSublimeMerge() {
     if (is_os_window) {
-      return path.join(
-        getWindowAppDataRoamingUserPath(),
-        "Sublime Merge/Packages/User"
-      );
+      return findDir(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Merge/, true);
     }
     if (is_os_darwin_mac) {
       return path.join(
         getOsxApplicationSupportCodeUserPath(),
-        "Sublime Merge/Packages/User"
+        "Sublime Merge"
       );
     }
     return null;
@@ -24,8 +21,9 @@ async function doWork() {
     process.exit();
   }
 
-  console.log("    >> Preferences.sublime-settings");
-  writeJson(path.join(targetPath, "Preferences.sublime-settings"), {
+  const sublimeMergeConfigPath = path.join(targetPath, "Packages/User/Preferences.sublime-settings");
+  console.log("    >> ", sublimeMergeConfigPath);
+  writeJson(sublimeMergeConfigPath, {
     expand_merge_commits_by_default: false,
     font_face: "Courier News",
     font_size: 12,

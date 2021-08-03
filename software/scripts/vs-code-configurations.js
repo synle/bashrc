@@ -17,10 +17,10 @@ async function doWork() {
   };
 
   // settings.json
-  targetFile = path.join(targetPath, "settings.json");
-  console.log(`    >> Settings`, targetFile);
+  const vsCodeMainConfigPath = path.join(targetPath, "User/settings.json");
+  console.log(`    >> `, vsCodeMainConfigPath);
   writeJsonWithMerge(
-    targetFile,
+    vsCodeMainConfigPath,
     Object.assign(
       {
         "[javascriptreact]": {
@@ -121,10 +121,10 @@ async function doWork() {
 
 function _getPath() {
   if (is_os_window) {
-    return path.join(getWindowAppDataRoamingUserPath(), "Code/User");
+    return findDir(getWindowAppDataRoamingUserPath(), /Code/, true);
   }
   if (is_os_darwin_mac) {
-    return path.join(getOsxApplicationSupportCodeUserPath(), "Code/User");
+    return findDir(getOsxApplicationSupportCodeUserPath(), /Code/, true);
   }
   return null;
 }

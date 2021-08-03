@@ -307,38 +307,35 @@ async function doWork() {
     process.exit();
   }
 
-  console.log("  >> Setting up Microsoft VS Code keybindings");
+  const vsCodeKeybindingConfigPath = path.join(targetPath, "User/keybindings.json");
+  let compiledKeyBindings ;
+  console.log("  >> Setting up Microsoft VS Code keybindings", vsCodeKeybindingConfigPath);
 
   // Windows key binding
-  if (is_os_window) {
-    // windows only key bindings
-    targetFile = path.join(targetPath, "keybindings.json");
-    console.log("    >> Keyboard shortcuts (Windows Only)", targetFile);
-
-    writeJson(
-      targetFile,
-      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
-    );
-    // end of windows only key bindings
-  } else if (is_os_darwin_mac) {
+  if (is_os_darwin_mac) {
     // Mac OSX only key bindings
-    targetFile = path.join(targetPath, "keybindings.json");
-    console.log("    >> Keyboard shortcuts (Mac Only)", targetFile);
-
+    console.log("    >> Mac Only", vsCodeKeybindingConfigPath);
+    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS]);
+  } else if (is_os_window) {
+    // windows only key bindings
+    console.log("    >> Windows Only");
+    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]);
+  }
+  
+  if(compiledKeyBindings){
     writeJson(
-      targetFile,
-      _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS])
+      vsCodeKeybindingConfigPath,
+      compiledKeyBindings
     );
-    // end of Mac OSX only key bindings
   }
 }
 
 function _getPath() {
   if (is_os_window) {
-    return path.join(getWindowAppDataRoamingUserPath(), "Code/User");
+    return findDir(getWindowAppDataRoamingUserPath(), /Code/, true);
   }
   if (is_os_darwin_mac) {
-    return path.join(getOsxApplicationSupportCodeUserPath(), "Code/User");
+    return findDir(getOsxApplicationSupportCodeUserPath(), /Code/, true);
   }
   return null;
 }

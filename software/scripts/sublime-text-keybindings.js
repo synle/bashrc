@@ -9,21 +9,15 @@ async function _getPathSublimeText() {
     SUBLIME_VERSION = config.sublime_version;
 
     if (is_os_window) {
-      return path.join(getWindowAppDataRoamingUserPath(), config.sublime_path);
+      return findDir(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Text/i, true);
     }
 
     if (is_os_darwin_mac) {
-      return path.join(
-        getOsxApplicationSupportCodeUserPath(),
-        config.sublime_path
-      );
+      return findDir(getOsxApplicationSupportCodeUserPath(), /Sublime[ ]*Text/i, true);
     }
 
     // for debian or chrome os debian linux
-    return path.join(
-      globalThis.BASE_HOMEDIR_LINUX,
-      ".config/sublime-text-3/Packages/User"
-    );
+    return findDir(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i, true);
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
@@ -519,44 +513,32 @@ async function doWork() {
   }
 
   // windows only key bindings
-  console.log("    >> Default (Windows).sublime-keymap");
   const windowsKeymapPath = path.join(
     targetPath,
-    "Default (Windows).sublime-keymap"
+    "Packages/User/Default (Windows).sublime-keymap"
   );
-  if (!fs.existsSync(windowsKeymapPath) || !is_os_window) {
-    console.log(consoleLogColor1("      >> Skipped : Windows Only"));
-  } else {
-    writeJson(
-      windowsKeymapPath,
-      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
-    );
-  }
+  console.log("    >> ", windowsKeymapPath);
+  writeJson(
+    windowsKeymapPath,
+    _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
+  );
 
   // linux only key bindings
-  console.log("    >> Default (Linux).sublime-keymap");
   const linuxKeymapPath = path.join(
     targetPath,
-    "Default (Linux).sublime-keymap"
+    "Packages/User/Default (Linux).sublime-keymap"
   );
-  if (!fs.existsSync(linuxKeymapPath)) {
-    console.log(consoleLogColor1("      >> Skipped : Linux Only"));
-  } else {
-    writeJson(
-      linuxKeymapPath,
-      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
-    );
-  }
+  console.log("    >> ", linuxKeymapPath);
+  writeJson(
+    linuxKeymapPath,
+    _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS])
+  );
 
   // mac only key bindings
-  console.log("    >> Default (OSX).sublime-keymap");
-  const macKeymapPath = path.join(targetPath, "Default (OSX).sublime-keymap");
-  if (!fs.existsSync(macKeymapPath) || !is_os_darwin_mac) {
-    console.log(consoleLogColor1("      >> Skipped : Mac Only"));
-  } else {
-    writeJson(
-      macKeymapPath,
-      _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS])
-    );
-  }
+  const macKeymapPath = path.join(targetPath, "Packages/User/Default (OSX).sublime-keymap");
+  console.log("    >> ", macKeymapPath);
+  writeJson(
+    macKeymapPath,
+    _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS])
+  );
 }
