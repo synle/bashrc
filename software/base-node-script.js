@@ -73,6 +73,19 @@ function _getFilePath(aDir) {
 
   return pathToUse;
 }
+
+function findDir(srcDir, targetMatch, returnFirstMatch) {
+    const dirFiles = fs.readdirSync(srcDir, {
+        withFileTypes: true
+    }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name).filter(d => d.match(targetMatch)).map(d => path.join(srcDir, d));
+
+    if(returnFirstMatch){
+      return dirFiles[0];
+    }
+
+    return dirFiles;
+}
+
 function writeText(aDir, text) {
   fs.writeFileSync(_getFilePath(aDir), text);
 }
