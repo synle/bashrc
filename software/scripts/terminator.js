@@ -1,16 +1,18 @@
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/terminator/config");
-
-  console.log("  >> Updating Terminator", targetPath);
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/terminator");
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1("    >> Skipped : Target path not found"));
     process.exit();
   }
 
+  // setting up the config
+  const terminatorConfigPath = path.join(targetPath, "config");
+  console.log("    >> Updating Terminator", terminatorConfigPath);
+
   // write if there are change
   writeText(
-    targetPath,
+    terminatorConfigPath,
     `
 [global_config]
 window_state = maximise
