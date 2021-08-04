@@ -3,15 +3,6 @@ echo '>> loading...'
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh)"
 clear
 
-### Print OS Environments
-node -e """
-  console.log('===================== OS Flags ========================');
-  Object.keys(process.env)
-    .filter(envKey => envKey.indexOf('is_os_') === 0)
-    .forEach(envKey => console.log('= ', envKey + ': ', process.env[envKey]))
-  console.log('=======================================================');
-"""
-
 echo '>> started installing dependencies...'
 
 if [ $is_os_darwin_mac == "1" ]; then
