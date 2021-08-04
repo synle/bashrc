@@ -328,13 +328,6 @@ async function doWorkEtcHost() {
 }
 
 async function _getBlockedHostNames() {
-  console.log(
-    "echo ",
-    Object.keys(globalThis)
-      .filter((env) => env.includes("is_os"))
-      .map((env) => env + ":" + globalThis[env])
-  );
-
   if (is_os_window) {
     return STATIC_BLOCK_HOST_NAMES;
   }
