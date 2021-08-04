@@ -71,13 +71,25 @@ subl(){
   if [ $is_os_wsl == "1" ]
   then
     # for windows
-    sublime_win32_binary_path="/mnt/c/Program Files/Sublime Text 3/subl.exe";
+    # getting the path
+    sublime_win32_binary_path="/mnt/c/Program Files/Sublime Text/subl.exe";
+
+    if [ -f "$sublime_win32_binary_path" ]; then
+      :
+    else
+      sublime_win32_binary_path="/mnt/c/Program Files/Sublime Text 3/subl.exe";
+
+      if [ -f "$sublime_win32_binary_path" ]; then
+        :
+      else
+        sublime_win32_binary_path="/mnt/c/Program Files/Sublime Text 4/subl.exe";
+      fi
+    fi
 
     { echo "\"$sublime_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
 
     echo """
 \"$sublime_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\"
-
 Full Path: $(realpath "$@")
  WSL Path: $(findResolvedPathForWsl1 "$@")
     """
