@@ -14,6 +14,7 @@ echo """
 =======================================================
 =  is_os_darwin_mac     : $is_os_darwin_mac
 =  is_os_window         : $is_os_window
+=  is_os_wsl            : $is_os_wsl
 =  is_os_ubuntu         : $is_os_ubuntu
 =  is_os_chromeos       : $is_os_chromeos
 =  is_os_mingw64        : $is_os_mingw64
