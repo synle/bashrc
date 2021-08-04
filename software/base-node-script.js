@@ -22,34 +22,22 @@ globalThis.CONFIGS = {
 globalThis.HOME_HOST_NAMES = [];
 
 // os flags
-const osFlags = {
-  is_os_darwin_mac: false,
-  is_os_window: false,
-  is_os_wsl: false,
-  is_os_ubuntu: false,
-  is_os_chromeos: false,
-  is_os_mingw64: false,
-  is_os_android_termux: false,
-};
-for (const envKey of Object.keys(process.env)) {
-  if (envKey.indexOf("is_os_") === 0) {
-    try {
-      osFlags[envKey] = false || parseInt(process.env[envKey]) > 0;
-    } catch (err) {}
-  }
-}
-for (const envKey of Object.keys(osFlags)) {
-  globalThis[envKey] = osFlags[envKey];
-}
+Object.keys(process.env)
+  .filter((envKey) => envKey.indexOf("is_os_") === 0)
+  .forEach(
+    (envKey) => (globalThis[envKey] = parseInt(process.env[envKey] || "0") > 0)
+  );
 
 // setting up the path for the extra tweaks
-globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = is_os_window
-  ? path.join(getWindowUserBaseDir(), "...sy", "_extra")
-  : path.join(globalThis.BASE_HOMEDIR_LINUX, "_extra");
+globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
+  is_os_window === true
+    ? path.join(getWindowUserBaseDir(), "...sy", "_extra")
+    : path.join(globalThis.BASE_HOMEDIR_LINUX, "_extra");
 
 globalThis.DEBUG_WRITE_TO_HOME =
-  (process.env.DEBUG_WRITE_TO_HOME || "").toLowerCase() === "1" ||
-  (process.env.DEBUG_WRITE_TO_HOME || "").toLowerCase() === "true";
+  "1,true"
+    .split(",")
+    .indexOf((process.env.DEBUG_WRITE_TO_HOME || "").toLowerCase().trim()) >= 0;
 
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
@@ -525,7 +513,7 @@ function processScriptFile(file) {
       return `node | bash`;
     }
     if (file.includes(".su.js")) {
-      return `sudo node`;
+      return `sudo -E node`; // -E means preserve the env variable
     }
     if (file.includes(".sh.js")) {
       return `node | bash`;
@@ -534,7 +522,7 @@ function processScriptFile(file) {
       return `node`;
     }
     if (file.includes(".su.sh")) {
-      return `sudo bash`;
+      return `sudo -E bash`; // -E means preserve the env variable
     }
     if (file.includes(".sh")) {
       return `bash`;
@@ -549,24 +537,6 @@ function processScriptFile(file) {
 
 //////////////////////////////////////////////////////
 (async function () {
-  // set up the flags
-  // get whether or not this is ubuntu
-  try {
-    globalThis.is_os_ubuntu = (
-      await execBash(
-        `python -c """
-import platform;
-try:
-  print(platform.linux_distribution())
-except:
-  print('N/A')
-        """`
-      )
-    )
-      .toLowerCase()
-      .includes("ubuntu");
-  } catch (err) {}
-
   // getting the ip address mapping
   try {
     globalThis.HOME_HOST_NAMES = JSON.parse(

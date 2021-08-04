@@ -22,7 +22,8 @@ async function doWork() {
   console.log(
     `echo '''>> Parsed Scripts: ${softwareFiles.length} \n${softwareFiles.join(
       "\n"
-    )}'''`
+    )}'''
+    `
   );
 
   for (let i = 0; i < softwareFiles.length; i++) {

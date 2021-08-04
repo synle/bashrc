@@ -3,16 +3,13 @@ echo '>> loading...'
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh)"
 clear
 
-echo """
-=======================================================
-=  is_os_darwin_mac     : $is_os_darwin_mac
-=  is_os_window         : $is_os_window
-=  is_os_wsl            : $is_os_wsl
-=  is_os_ubuntu         : $is_os_ubuntu
-=  is_os_chromeos       : $is_os_chromeos
-=  is_os_mingw64        : $is_os_mingw64
-=  is_os_android_termux : $is_os_android_termux
-=======================================================
+### Print OS Environments
+node -e """
+  console.log('===================== OS Flags ========================');
+  Object.keys(process.env)
+    .filter(envKey => envKey.indexOf('is_os_') === 0)
+    .forEach(envKey => console.log('= ', envKey + ': ', process.env[envKey]))
+  console.log('=======================================================');
 """
 
 echo '>> started installing dependencies...'
