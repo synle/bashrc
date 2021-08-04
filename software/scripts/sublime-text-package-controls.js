@@ -3,26 +3,23 @@ let SUBLIME_VERSION;
 async function _getPathSublimeText() {
   try {
     if (is_os_window) {
-      return findDir(
+      return findDirSingle(
         getWindowAppDataRoamingUserPath(),
-        /Sublime[ ]*Text/i,
-        true
+        /Sublime[ ]*Text/i
       );
     }
 
     if (is_os_darwin_mac) {
-      return findDir(
+      return findDirSingle(
         getOsxApplicationSupportCodeUserPath(),
-        /Sublime[ ]*Text/i,
-        true
+        /Sublime[ ]*Text/i
       );
     }
 
     // for debian or chrome os debian linux
-    return findDir(
+    return findDirSingle(
       globalThis.BASE_HOMEDIR_LINUX + "/.config",
-      /Sublime[ ]*Text/i,
-      true
+      /Sublime[ ]*Text/i
     );
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);

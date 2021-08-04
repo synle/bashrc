@@ -74,7 +74,7 @@ function _getFilePath(aDir) {
   return pathToUse;
 }
 
-function findDir(srcDir, targetMatch, returnFirstMatch) {
+function findDirList(srcDir, targetMatch, returnFirstMatch) {
   try {
     const dirFiles = fs
       .readdirSync(srcDir, {
@@ -93,6 +93,10 @@ function findDir(srcDir, targetMatch, returnFirstMatch) {
   } catch (err) {
     return [];
   }
+}
+
+function findDirSingle(srcDir, targetMatch) {
+  return findDirList(srcDir, targetMatch, true);
 }
 
 function writeText(aDir, text) {

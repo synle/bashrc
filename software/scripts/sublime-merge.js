@@ -1,10 +1,9 @@
 async function doWork() {
   function _getPathSublimeMerge() {
     if (is_os_window) {
-      return findDir(
+      return findDirSingle(
         getWindowAppDataRoamingUserPath(),
-        /Sublime[ ]*Merge/,
-        true
+        /Sublime[ ]*Merge/
       );
     }
     if (is_os_darwin_mac) {

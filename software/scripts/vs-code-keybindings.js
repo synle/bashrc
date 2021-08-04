@@ -341,10 +341,10 @@ async function doWork() {
 
 function _getPath() {
   if (is_os_window) {
-    return findDir(getWindowAppDataRoamingUserPath(), /Code/, true);
+    return findDirSingle(getWindowAppDataRoamingUserPath(), /Code/);
   }
   if (is_os_darwin_mac) {
-    return findDir(getOsxApplicationSupportCodeUserPath(), /Code/, true);
+    return findDirSingle(getOsxApplicationSupportCodeUserPath(), /Code/);
   }
   return null;
 }
