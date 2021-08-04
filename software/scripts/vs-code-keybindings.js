@@ -307,26 +307,35 @@ async function doWork() {
     process.exit();
   }
 
-  const vsCodeKeybindingConfigPath = path.join(targetPath, "User/keybindings.json");
-  let compiledKeyBindings ;
-  console.log("  >> Setting up Microsoft VS Code keybindings", vsCodeKeybindingConfigPath);
+  const vsCodeKeybindingConfigPath = path.join(
+    targetPath,
+    "User/keybindings.json"
+  );
+  let compiledKeyBindings;
+  console.log(
+    "  >> Setting up Microsoft VS Code keybindings",
+    vsCodeKeybindingConfigPath
+  );
 
   // Windows key binding
   if (is_os_darwin_mac) {
     // Mac OSX only key bindings
     console.log("    >> Mac Only", vsCodeKeybindingConfigPath);
-    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS]);
+    compiledKeyBindings = _formatKey([
+      ...COMMON_KEY_BINDINGS,
+      ...MAC_ONLY_KEY_BINDINGS,
+    ]);
   } else if (is_os_window) {
     // windows only key bindings
     console.log("    >> Windows Only");
-    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]);
+    compiledKeyBindings = _formatKey([
+      ...COMMON_KEY_BINDINGS,
+      ...WINDOWS_ONLY_KEY_BINDINGS,
+    ]);
   }
-  
-  if(compiledKeyBindings){
-    writeJson(
-      vsCodeKeybindingConfigPath,
-      compiledKeyBindings
-    );
+
+  if (compiledKeyBindings) {
+    writeJson(vsCodeKeybindingConfigPath, compiledKeyBindings);
   }
 }
 

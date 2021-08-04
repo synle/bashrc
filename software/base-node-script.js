@@ -75,19 +75,24 @@ function _getFilePath(aDir) {
 }
 
 function findDir(srcDir, targetMatch, returnFirstMatch) {
-    try{
-      const dirFiles = fs.readdirSync(srcDir, {
-          withFileTypes: true
-      }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name).filter(d => d.match(targetMatch)).map(d => path.join(srcDir, d));
+  try {
+    const dirFiles = fs
+      .readdirSync(srcDir, {
+        withFileTypes: true,
+      })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name)
+      .filter((d) => d.match(targetMatch))
+      .map((d) => path.join(srcDir, d));
 
-      if(returnFirstMatch){
-        return dirFiles[0];
-      }
-
-      return dirFiles;
-    } catch(err){
-      return [];
+    if (returnFirstMatch) {
+      return dirFiles[0];
     }
+
+    return dirFiles;
+  } catch (err) {
+    return [];
+  }
 }
 
 function writeText(aDir, text) {
@@ -343,7 +348,7 @@ async function getSoftwareScriptFiles() {
 
   return [...new Set(softwareFiles)].filter((file) => {
     if (is_os_android_termux) {
-      if(file.includes("software/scripts/android-termux")){
+      if (file.includes("software/scripts/android-termux")) {
         return true;
       }
 

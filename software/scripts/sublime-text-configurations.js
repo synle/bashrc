@@ -88,15 +88,27 @@ const sublimeSetings = {
 async function _getPathSublimeText() {
   try {
     if (is_os_window) {
-      return findDir(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Text/i, true);
+      return findDir(
+        getWindowAppDataRoamingUserPath(),
+        /Sublime[ ]*Text/i,
+        true
+      );
     }
 
     if (is_os_darwin_mac) {
-      return findDir(getOsxApplicationSupportCodeUserPath(), /Sublime[ ]*Text/i, true);
+      return findDir(
+        getOsxApplicationSupportCodeUserPath(),
+        /Sublime[ ]*Text/i,
+        true
+      );
     }
 
     // for debian or chrome os debian linux
-    return findDir(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i, true);
+    return findDir(
+      globalThis.BASE_HOMEDIR_LINUX + "/.config",
+      /Sublime[ ]*Text/i,
+      true
+    );
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
@@ -126,7 +138,10 @@ async function doWork() {
     process.exit();
   }
 
-  const sublimeThemeConfigPath = path.join(targetPath, "Packages/User/Default.sublime-theme");
+  const sublimeThemeConfigPath = path.join(
+    targetPath,
+    "Packages/User/Default.sublime-theme"
+  );
   console.log("    >> Default.sublime-theme", sublimeThemeConfigPath);
   writeJson(sublimeThemeConfigPath, [
     {
@@ -139,9 +154,11 @@ async function doWork() {
     },
   ]);
 
-
   //
-  const sublimeMainConfigPath = path.join(targetPath, "Preferences.sublime-settings");
+  const sublimeMainConfigPath = path.join(
+    targetPath,
+    "Preferences.sublime-settings"
+  );
   console.log("    >> Preferences.sublime-settings", sublimeMainConfigPath);
   console.log("      >> Installing", sublimeMainConfigPath);
 

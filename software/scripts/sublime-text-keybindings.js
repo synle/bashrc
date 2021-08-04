@@ -3,15 +3,27 @@ let SUBLIME_VERSION;
 async function _getPathSublimeText() {
   try {
     if (is_os_window) {
-      return findDir(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Text/i, true);
+      return findDir(
+        getWindowAppDataRoamingUserPath(),
+        /Sublime[ ]*Text/i,
+        true
+      );
     }
 
     if (is_os_darwin_mac) {
-      return findDir(getOsxApplicationSupportCodeUserPath(), /Sublime[ ]*Text/i, true);
+      return findDir(
+        getOsxApplicationSupportCodeUserPath(),
+        /Sublime[ ]*Text/i,
+        true
+      );
     }
 
     // for debian or chrome os debian linux
-    return findDir(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i, true);
+    return findDir(
+      globalThis.BASE_HOMEDIR_LINUX + "/.config",
+      /Sublime[ ]*Text/i,
+      true
+    );
   } catch (err) {
     console.log("      >> Failed to get the path for Sublime Text", url, err);
   }
@@ -529,7 +541,10 @@ async function doWork() {
   );
 
   // mac only key bindings
-  const macKeymapPath = path.join(targetPath, "Packages/User/Default (OSX).sublime-keymap");
+  const macKeymapPath = path.join(
+    targetPath,
+    "Packages/User/Default (OSX).sublime-keymap"
+  );
   console.log("    >> ", macKeymapPath);
   writeJson(
     macKeymapPath,
