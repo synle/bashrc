@@ -75,15 +75,19 @@ function _getFilePath(aDir) {
 }
 
 function findDir(srcDir, targetMatch, returnFirstMatch) {
-    const dirFiles = fs.readdirSync(srcDir, {
-        withFileTypes: true
-    }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name).filter(d => d.match(targetMatch)).map(d => path.join(srcDir, d));
+    try{
+      const dirFiles = fs.readdirSync(srcDir, {
+          withFileTypes: true
+      }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name).filter(d => d.match(targetMatch)).map(d => path.join(srcDir, d));
 
-    if(returnFirstMatch){
-      return dirFiles[0];
+      if(returnFirstMatch){
+        return dirFiles[0];
+      }
+
+      return dirFiles;
+    } catch(err){
+      return [];
     }
-
-    return dirFiles;
 }
 
 function writeText(aDir, text) {
