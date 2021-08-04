@@ -86,13 +86,7 @@ const sublimeSetings = {
 };
 
 async function _getPathSublimeText() {
-  const url =
-    "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/sublime-text.config.json";
   try {
-    let config = await fetchUrlAsJson(url);
-
-    SUBLIME_VERSION = config.sublime_version;
-
     if (is_os_window) {
       return findDir(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Text/i, true);
     }
