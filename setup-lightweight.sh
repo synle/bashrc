@@ -24,8 +24,8 @@ export TEST_SCRIPT_FILES="""
 
 echo """
 =======================================================
-
->> End time: $(date)...
+= End time: $(date)
+=======================================================
 
 # to refresh to this
 . ~/.bash_syle

@@ -24,8 +24,8 @@ curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live
 ##########################################################
 echo -e """
 =======================================================
-
->> End time: $(date)...
+= End time: $(date)
+=======================================================
 
 # to refresh to this
 . ~/.bash_syle
