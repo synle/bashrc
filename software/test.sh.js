@@ -26,6 +26,17 @@ async function doWork() {
     `
   );
 
+  // Print OS Environments
+  console.log(`
+    node -e """
+      console.log('===================== OS Flags ========================');
+      Object.keys(process.env)
+        .filter(envKey => envKey.indexOf('is_os_') === 0)
+        .forEach(envKey => console.log('= ', envKey + ': ', process.env[envKey]))
+      console.log('=======================================================');
+    """
+  `);
+
   for (let i = 0; i < softwareFiles.length; i++) {
     let file = softwareFiles[i];
 
