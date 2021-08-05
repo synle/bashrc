@@ -14,8 +14,6 @@ async function doWork() {
     return;
   }
 
-  const sectionTextBreak = ''.padEnd(21, '=');
-
   const softwareFiles = filesToTest
     .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
     .map((s) => s.trim())
@@ -23,9 +21,9 @@ async function doWork() {
 
   console.log(
     `echo '''
-${sectionTextBreak} Parsed Scripts (${softwareFiles.length}) ${sectionTextBreak}
+===================== Parsed Scripts (${softwareFiles.length}) =====================
 ${softwareFiles.join("\n")}
-${sectionTextBreak}${sectionTextBreak}${sectionTextBreak}
+====================================================================================
 '''
     `
   );
@@ -33,11 +31,11 @@ ${sectionTextBreak}${sectionTextBreak}${sectionTextBreak}
   // Print OS Environments
   console.log(`
     node -e """
-      console.log('${sectionTextBreak} OS Flags ${sectionTextBreak}');
+      console.log('===================== OS Flags =====================');
       Object.keys(process.env)
         .filter(envKey => envKey.indexOf('is_os_') === 0)
         .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey]))
-      console.log('${sectionTextBreak}${sectionTextBreak}${sectionTextBreak}');
+      console.log('====================================================');
     """
   `);
 
