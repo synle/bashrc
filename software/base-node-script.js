@@ -535,6 +535,20 @@ function processScriptFile(file) {
   console.log(`{ ${scriptToUse} ;} | ${pipeOutput}`);
 }
 
+function printOsFlags() {
+  console.log(
+    echoColor2(`
+    node -e """
+      console.log('===================== OS Flags =====================');
+      Object.keys(process.env)
+        .filter(envKey => envKey.indexOf('is_os_') === 0)
+        .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey]))
+      console.log('====================================================');
+    """
+  `)
+  );
+}
+
 //////////////////////////////////////////////////////
 (async function () {
   // getting the ip address mapping

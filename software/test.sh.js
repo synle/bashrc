@@ -20,24 +20,17 @@ async function doWork() {
     .filter((s) => !!s);
 
   console.log(
-    `echo '''
-===================== Parsed Scripts (${softwareFiles.length}) =====================
+    echoColor1(
+      `
+>> Testing Configurations: ${softwareFiles.length} Files
+=============================================
 ${softwareFiles.join("\n")}
-====================================================================================
-'''
-    `
+=============================================
+`
+    )
   );
 
-  // Print OS Environments
-  console.log(`
-    node -e """
-      console.log('===================== OS Flags =====================');
-      Object.keys(process.env)
-        .filter(envKey => envKey.indexOf('is_os_') === 0)
-        .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey]))
-      console.log('====================================================');
-    """
-  `);
+  printOsFlags(); // Print OS Environments
 
   for (let i = 0; i < softwareFiles.length; i++) {
     let file = softwareFiles[i];
