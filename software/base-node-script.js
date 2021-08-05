@@ -14,7 +14,7 @@ globalThis.CONFIGS = {
 /**
  * The host config is located here:
  *
- * https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.json
+ * https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config
  *
  * host name => host ip
  * @type {Array}
@@ -541,13 +541,19 @@ function processScriptFile(file) {
   try {
     globalThis.HOME_HOST_NAMES = (
       await fetchUrlAsString(
-        "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.json"
+        "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config"
       )
-    ).split('\n').filter(s => !!s.trim() && s.indexOf('=') !== 0).reduce((res, s) => {
-      const [hostIp, ...hostNames] = s.split(/[\:,]/gi).map(s => s.trim()).filter(s => s);
-      hostNames.forEach(hostName => res.push([hostIp, hostName]))
-      return res;
-    }, [])
+    )
+      .split("\n")
+      .filter((s) => !!s.trim() && s.indexOf("=") !== 0)
+      .reduce((res, s) => {
+        const [hostIp, ...hostNames] = s
+          .split(/[\:,]/gi)
+          .map((s) => s.trim())
+          .filter((s) => s);
+        hostNames.forEach((hostName) => res.push([hostIp, hostName]));
+        return res;
+      }, []);
   } catch (err) {
     globalThis.HOME_HOST_NAMES = [];
   }

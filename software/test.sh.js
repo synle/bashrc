@@ -14,26 +14,30 @@ async function doWork() {
     return;
   }
 
+  const sectionTextBreak = ''.padEnd(21, '=');
+
   const softwareFiles = filesToTest
     .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
     .map((s) => s.trim())
     .filter((s) => !!s);
 
   console.log(
-    `echo '''>> Parsed Scripts: ${softwareFiles.length} \n${softwareFiles.join(
-      "\n"
-    )}'''
+    `echo '''
+${sectionTextBreak} Parsed Scripts (${softwareFiles.length}) ${sectionTextBreak}
+${softwareFiles.join("\n")}
+${sectionTextBreak}${sectionTextBreak}${sectionTextBreak}
+'''
     `
   );
 
   // Print OS Environments
   console.log(`
     node -e """
-      console.log('===================== OS Flags ========================');
+      console.log('${sectionTextBreak} OS Flags ${sectionTextBreak}');
       Object.keys(process.env)
         .filter(envKey => envKey.indexOf('is_os_') === 0)
         .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey]))
-      console.log('=======================================================');
+      console.log('${sectionTextBreak}${sectionTextBreak}${sectionTextBreak}');
     """
   `);
 
