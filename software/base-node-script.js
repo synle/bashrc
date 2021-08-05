@@ -539,20 +539,17 @@ function processScriptFile(file) {
 (async function () {
   // getting the ip address mapping
   try {
-    globalThis.HOME_HOST_NAMES = JSON.parse(
+    globalThis.HOME_HOST_NAMES = (
       await fetchUrlAsString(
         "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.json"
       )
-    );
+    ).split('\n').filter(s => !!s.trim() && s.indexOf('=') !== 0).reduce((res, s) => {
+      const [hostIp, ...hostNames] = s.split(/[\:,]/gi).map(s => s.trim()).filter(s => s);
+      hostNames.forEach(hostName => res.push([hostIp, hostName]))
+      return res;
+    }, [])
   } catch (err) {
     globalThis.HOME_HOST_NAMES = [];
-  } finally {
-    globalThis.HOME_HOST_NAMES = globalThis.HOME_HOST_NAMES.filter(
-      (hostSplits) =>
-        hostSplits.length === 2 &&
-        hostSplits[0].length > 0 &&
-        hostSplits[1].length > 0
-    );
   }
 
   // create the sy tweak folder
