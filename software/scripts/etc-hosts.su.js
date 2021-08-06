@@ -5,205 +5,18 @@ let ROUTED_BLOCKED_IP;
 
 async function doInit() {
   // initiate the vars
-  STATIC_BLOCK_HOST_NAMES = convertTextToList(`
-    // Adobe
-    lmlicenses.wip4.adobe.com
-    lm.licenses.adobe.com
-    na1r.services.adobe.com
-    hlrcv.stage.adobe.com
-    practivate.adobe.com
-    activate.adobe.com
-
-    // CCleaner
-    license.piriform.com
-    www.ccleaner.com
-
-    // Sublime
-    license.sublimehq.com
-    www.sublimemerge.com
-    www.sublimehq.com
-    sublimemerge.com
-    www.sublimetext.com
-    sublimetext.com
-    sublimehq.com
-    telemetry.sublimehq.com
-    download.sublimetext.com
-    download.sublimemerge.com
-    45.55.255.55
-    45.55.41.223
-
-    // ad hosts to blocked
-    // https://www.reddit.com/r/privacy/comments/3tz3ph/blocking_most_advertising_servers_via_factory/
-    207.net
-    247realmedia.com
-    2mdn.net
-    2o7.net
-    33across.com
-    abmr.net
-    acoda.net
-    adblade.com
-    adbrite.com
-    adbureau.net
-    adchemy.com
-    adclick.g.doublecklick.net
-    addthis.com
-    addthisedge.com
-    adeventtracker.spotify.com
-    admeld.com
-    admob.com
-    ads-fa.spotify.com
-    adsense.com
-    adsonar.com
-    adthis.com
-    advertising.com
-    afy11.net
-    analytics.spotify.com
-    aquantive.com
-    atdmt.com
-    atwola.com
-    audio2.spotify.com
-    b.scorecardresearch.com
-    bounceexchange.com
-    bs.serving-sys.com
-    channelintelligence.com
-    cmcore.com
-    content.bitsontherun.com
-    core.insightexpressai.com
-    coremetrics.com
-    crashdump.spotify.com
-    crowdscience.com
-    d2gi7ultltnc2u.cloudfront.net
-    d3rt1990lpmkn.cloudfront.net
-    decdna.net
-    decideinteractive.com
-    doubleclick.com
-    doubleclick.net
-    ds.serving-sys.com
-    esomniture.com
-    fimserve.com
-    flingwebads.com
-    foxnetworks.com
-    google-analytics.com
-    googleads.g.doubleclick.net
-    googleadservices.com
-    googlesyndication.com
-    googletagservices.com
-    gravity.com
-    gtssl2-ocsp.geotrust.com
-    hitbox.com
-    imiclk.com
-    imrworldwide.com
-    insightexpress.com
-    insightexpressai.com
-    intellitxt.com
-    invitemedia.com
-    js.moatads.com
-    leadback.com
-    lindwd.net
-    log.spotify.com
-    media-match.com
-    mookie1.com
-    myads.com
-    netconversions.com
-    nexac.com
-    nextaction.net
-    nielsen-online.com
-    offermatica.com
-    omaze.com
-    omniture.com
-    omtrdc.net
-    pagead2.googlesyndication.com
-    pagead46.l.doubleclick.net
-    partner.googleadservices.com
-    pm14.com
-    pubads.g.doubleclick.net
-    quantcast.com
-    quantserve.com
-    realmedia.com
-    redirector.gvt1.com
-    revsci.net
-    rightmedia.com
-    rmxads.com
-    ru4.com
-    rubiconproject.com
-    s0.2mdn.net
-    samsungadhub.com
-    scorecardresearch.com
-    securepubads.g.doubleclick.net
-    sharethis.com
-    shopthetv.com
-    targetingmarketplace.com
-    themig.com
-    tpc.googlesyndication.com
-    trendnetcloud.com
-    v.jwpcdn.com
-    video-ad-stats.googlesyndication.com
-    weblb-wg.gslb.spotify.com
-    www.googleadservices.com
-    www.googletagservices.com
-    yieldmanager.com
-    yieldmanager.net
-    yldmgrimg.net
-    youknowbest.com
-    yumenetworks.com
-    
-    // Blocked hosts from TP Link Trend Micro
-    // copy([...$$('.info-detail')].map(s => s.innerText).join('\n'))
-    tj.ke.com
-    api.movcloud.net
-    bj.ke.com
-    midoweb.offerstrack.net
-    gmial.com
-    www.seyrade.com
-    hrb.ke.com
-  `);
+  STATIC_BLOCK_HOST_NAMES = convertTextToList(
+    await fetchUrlAsString(
+      "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-whitelisted.config"
+    )
+  );
 
   WHITE_LIST_HOST_NAMES = new Set(
-    convertTextToList(`
-      7eer.net
-      ad.doubleclick.net
-      affiliatefuture.com
-      anrdoezrs.net
-      apmebf.com
-      avantlink.com
-      bfast.com
-      cc-dt.com
-      cj.com
-      cj.dotomi.com
-      clickserve.cc-dt.com
-      commission-junction.com
-      dotomi.com
-      dpbolvw.net
-      emjcd.com
-      evyy.net
-      gan.doubleclick.net
-      go2jump.org
-      gopjn.com
-      jdoqocy.com
-      kqzyfj.com
-      linksynergy.com
-      marinsm.com
-      mediaplex.com
-      ojrq.net
-      onenetworkdirect.net
-      pjatr.com
-      pjtra.com
-      pntra.com
-      pntrac.com
-      pntrack.com
-      pntrs.com
-      po.st
-      qksrv.ne
-      qksrv.net
-      redirect.at
-      redirect.viglink.com
-      redirectingat.com
-      searchmarketing.com
-      shareasale.com
-      tkqlhce.com
-      tradedoubler.com
-      webgains.com
-  `)
+    convertTextToList(
+      await fetchUrlAsString(
+        "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-blocked-manual.config"
+      )
+    )
   );
 
   ROUTED_BLOCKED_IP = "0.0.0.0";
@@ -328,25 +141,25 @@ async function doWorkEtcHost() {
 }
 
 async function _getBlockedHostNames() {
-  if (is_os_window) {
-    return STATIC_BLOCK_HOST_NAMES;
-  }
-
-  const url =
+  let mappingsToUse = [...STATIC_BLOCK_HOST_NAMES];
+  if (!is_os_window) {
+    // for non windows, we can more hosts from the blocked hosts...
+    const url =
     "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/blocked-hosts.config";
-  try {
-    let h = await fetchUrlAsString(url);
-    h = convertTextToHosts(h);
-    console.log("      >> URL fetch for host success", url);
-    console.log("        >> Total Hosts Found", h.length);
-    DYNAMIC_BLOCK_HOST_NAMES = [...DYNAMIC_BLOCK_HOST_NAMES, ...h];
-  } catch (err) {
-    console.log("      >> URL fetch for host failed", url, err);
+    try {
+      let h = await fetchUrlAsString(url);
+      h = convertTextToHosts(h);
+      console.log("      >> URL fetch for host success", url);
+      console.log("        >> Total Hosts Found", h.length);
+      DYNAMIC_BLOCK_HOST_NAMES = [...DYNAMIC_BLOCK_HOST_NAMES, ...h];
+    } catch (err) {
+      console.log("      >> URL fetch for host failed", url, err);
+    }
+
+    mappingsToUse = [...mappingsToUse, ...DYNAMIC_BLOCK_HOST_NAMES];
   }
 
-  return [
-    ...new Set([...STATIC_BLOCK_HOST_NAMES, ...DYNAMIC_BLOCK_HOST_NAMES]),
-  ];
+  return [...new Set([...mappingsToUse])];
 }
 
 function _getEtcHosts() {
