@@ -13,9 +13,6 @@ globalThis.CONFIGS = {
 
 /**
  * The host config is located here:
- *
- * https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config
- *
  * host name => host ip
  * @type {Array}
  */
@@ -563,7 +560,7 @@ function printOsFlags() {
           .split(/[\:,]/gi)
           .map((s) => s.trim())
           .filter((s) => s);
-        hostNames.forEach((hostName) => res.push([hostIp, hostName]));
+        hostNames.forEach((hostName) => res.push([hostName, hostIp]));
         return res;
       }, []);
   } catch (err) {
