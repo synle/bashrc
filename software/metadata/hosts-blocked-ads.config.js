@@ -67,7 +67,7 @@ async function doWork() {
 
   console.log("Total Hosts", res.length);
 
-  const targetPath = "./software/metadata/blocked-hosts.config";
+  const targetPath = "./software/metadata/hosts-blocked-ads.config";
 
   console.log("Update the hosts", targetPath);
   writeText(targetPath, res.join("\n"));

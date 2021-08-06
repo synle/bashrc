@@ -145,7 +145,7 @@ async function _getBlockedHostNames() {
   if (!is_os_window) {
     // for non windows, we can more hosts from the blocked hosts...
     const url =
-    "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/blocked-hosts.config";
+      "https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-blocked-ads.config";
     try {
       let h = await fetchUrlAsString(url);
       h = convertTextToHosts(h);
