@@ -98,3 +98,7 @@ pm uninstall -k --user 0 com.sec.enterprise.knox.cloudmdm.smdms
 pm uninstall -k --user 0 com.sec.enterprise.mdm.services.simpin
 pm uninstall -k --user 0 com.sec.factory
 pm uninstall -k --user 0 com.wssyncmldm
+
+
+# other app
+pm uninstall -k --user 0 com.samsung.android.messaging

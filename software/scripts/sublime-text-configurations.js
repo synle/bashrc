@@ -154,7 +154,7 @@ async function doWork() {
   //
   const sublimeMainConfigPath = path.join(
     targetPath,
-    "Preferences.sublime-settings"
+    "Packages/User/Preferences.sublime-settings"
   );
   console.log("    >> Preferences.sublime-settings", sublimeMainConfigPath);
   console.log("      >> Installing", sublimeMainConfigPath);

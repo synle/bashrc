@@ -10,7 +10,15 @@ function installMacPackageWithHomebrew(){
 
 if [[ $is_os_darwin_mac == "1" ]]
 then
-  touch ~/.bash_profile;
+  echo ">> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash"
+  touch ~/.bashrc
+  touch ~/.bash_profile
+  
+  if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
+     echo 'source ~/.bashrc' >> ~/.bash_profile
+  fi
+
+  chsh -s /bin/bash
 
   ####################################################################
   # homebrew
@@ -50,12 +58,6 @@ then
   defaults write com.apple.dock persistent-apps -array
   killall Dock
 
-  echo ">> Set default shell as BASH (Catalina Mods)"
-  chsh -sh /bin/bash
-  touch ~/.bashrc
-  touch ~/.bash_profile
-
-  echo '''
-source ~/.bashrc
-''' >> ~/.bash_profile
+# disable spotlight indexing
+sudo mdutil -i off
 fi

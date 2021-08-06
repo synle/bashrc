@@ -9,6 +9,14 @@ echo '>> loading...'
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh)"
 clear
 
+
+echo '>> checking if we have all the minimal deps before starting'
+
+if [ ! -f ~/.ssh/id_rsa ]; then
+  echo '  >> set up ssh keygen id_rsa'
+  ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa
+fi
+
 echo '>> started installing dependencies...'
 
 if [ $is_os_darwin_mac == "1" ]; then
