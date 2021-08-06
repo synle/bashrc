@@ -536,8 +536,7 @@ function processScriptFile(file) {
 }
 
 function printOsFlags() {
-  console.log(
-    echoColor2(`
+  console.log(`
     node -e """
       console.log('===================== OS Flags =====================');
       Object.keys(process.env)
@@ -545,8 +544,7 @@ function printOsFlags() {
         .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey]))
       console.log('====================================================');
     """
-  `)
-  );
+  `);
 }
 
 //////////////////////////////////////////////////////
