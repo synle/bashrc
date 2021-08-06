@@ -13,7 +13,13 @@ async function doWork() {
   let h;
   let res = [];
 
-  console.log("BLOCKED_HOST_SOURCE_URLS: ", BLOCKED_HOST_SOURCE_URLS);
+  console.log(
+    `
+============= BLOCKED_HOST_SOURCE_URLS =============
+${BLOCKED_HOST_SOURCE_URLS.join("\n")}
+====================================================
+`
+  );
 
   // don't block it
   const promises = [];

@@ -541,7 +541,7 @@ function printOsFlags() {
       console.log('===================== OS Flags =====================');
       Object.keys(process.env)
         .filter(envKey => envKey.indexOf('is_os_') === 0)
-        .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey]))
+        .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey] === '1' ? 'Yes': 'No'))
       console.log('====================================================');
     """
   `);
