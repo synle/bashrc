@@ -1,0 +1,26 @@
+/** * Disables the LibreOffice splash screen on Chrome OS and Arch Linux. */
+async function doWork() {
+  let targetPath = '/etc/libreoffice';
+
+  console.log('  >> Install libreoffice configs:', consoleLogColor4(targetPath));
+
+  if (!is_os_chromeos && !is_os_arch_linux) {
+    console.log(consoleLogColor1('    >> Skipped : Not Applicable'));
+    return process.exit();
+  }
+
+  exitIfPathNotFound(targetPath);
+
+  targetPath = path.join(targetPath, 'sofficerc');
+  console.log('    >> Update Configs:', consoleLogColor4(targetPath));
+
+  let newContent = readText(targetPath);
+
+  // disable splash screen
+  // https://www.howtogeek.com/287367/how-to-disable-libreoffices-startup-splash-screen-on-windows-and-linux
+  newContent = newContent.replace(/Logo=[0-9]/, '').trim();
+  newContent += `\nLogo=0`;
+  newContent = newContent.replace(/[\n][\n]+/, '\n');
+
+  writeText(targetPath, newContent);
+}

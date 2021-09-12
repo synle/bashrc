@@ -1,0 +1,35 @@
+{
+  "name": "bashrc-setup",
+  "version": "1.0.0",
+  "type": "module",
+  "private": "true",
+  "scripts": {
+    "predev": "bash build.sh && npm run format",
+    "dev": "bash -c 'source bootstrap/common-env.sh && vite'",
+    "prebuild": "npm run format",
+    "build": "bash -c 'source bootstrap/common-env.sh && vite build'",
+    "preview": "vite preview",
+    "start": "npx http-server --cors .",
+    "format": "prettier --write --cache --ignore-unknown --no-error-on-unmatched-pattern --print-width 140 .",
+    "clean": "rm -rf dist",
+    "setup:full": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts=\"bootstrap/profile-core.sh\"",
+    "setup:light": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js\"",
+    "setup:hosts": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"software/scripts/etc-hosts.su.js\"",
+    "test": "bash run.sh",
+    "test:hosts": "sh run.sh --files=\"software/scripts/etc-hosts.su.js\"",
+    "list:scripts": "cat software/metadata/script-list.config"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "toastify-js": "^1.12.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "prettier": "^3.8.1",
+    "sass": "^1.97.3",
+    "vite": "^4.4.0",
+    "vite-plugin-singlefile": "^0.13.5"
+  }
+}
