@@ -1,0 +1,52 @@
+[
+  {
+    "key": "f5",
+    "command": "workbench.files.action.refreshFilesExplorer"
+  },
+  {
+    "key": "cmd+\\",
+    "command": "workbench.action.toggleSidebarVisibility"
+  },
+  {
+    "key": "cmd+;",
+    "command": "workbench.action.gotoLine"
+  },
+  {
+    "key": "cmd+r",
+    "command": "workbench.action.gotoSymbol"
+  },
+  {
+    "key": "cmd+m",
+    "command": "editor.action.jumpToBracket",
+    "when": "editorFocus"
+  },
+  {
+    "key": "cmd+shift+l",
+    "command": "editor.action.insertCursorAtEndOfEachLineSelected",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "cmd+shift+\\",
+    "command": "workbench.view.explorer"
+  },
+  {
+    "key": "cmd+shift+'",
+    "command": "workbench.action.showAllSymbols"
+  },
+  {
+    "key": "cmd+ctrl+g",
+    "command": "editor.action.selectHighlights"
+  },
+  {
+    "key": "cmd+ctrl+p",
+    "command": "workbench.action.openWorkspace"
+  },
+  {
+    "key": "cmd+ctrl+p",
+    "command": "projectManager.listProjects"
+  },
+  {
+    "key": "cmd+ctrl+c",
+    "command": "workbench.files.action.compareWithSaved"
+  }
+]

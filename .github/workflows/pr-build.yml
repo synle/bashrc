@@ -1,0 +1,34 @@
+name: Pull Request Build
+
+on:
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: https://registry.npmjs.org/
+      - run: sh format.sh
+      - run: sh package.sh
+        env:
+          is_os_darwin_mac: 0
+          is_os_window: 0
+          is_os_wsl: 0
+          is_os_ubuntu: 1
+          is_os_chromeos: 0
+          is_os_mingw64: 0
+          is_os_android_termux: 0
+      - uses: EndBug/add-and-commit@v7
+        with:
+          message: 'Server Automated Build'
