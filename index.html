@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<!-- NOTE: this is the generator view for the script -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>synle/bashrc Setting up Bash Script</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        font-family: monospace !important;
+        font-size: 18px;
+        padding: 10px 20px;
+      }
+      h1 {
+        margin-bottom: 1rem;
+      }
+      #output {
+        width: 100%;
+        height: 400px;
+      }
+      label,
+      div {
+        user-select: none;
+      }
+      label,
+      input,
+      select {
+        cursor: pointer;
+      }
+      label,
+      div,
+      input,
+      textarea,
+      select {
+        font-size: 1rem;
+      }
+      input[type='text'],
+      textarea {
+        display: block;
+        width: 100%;
+      }
+      a,
+      button,
+      input[type='submit'] {
+        min-width: 100px;
+        border: 2px solid #ccc;
+        background: #000;
+        color: #fff;
+        cursor: pointer;
+        text-transform: uppercase;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.25s ease-out;
+      }
+      a:hover,
+      button:hover,
+      input[type='submit']:hover,
+      a:focus,
+      button:focus,
+      input[type='submit']:focus {
+        box-shadow: 0 0 0 3px #0c2d6b;
+        background: #161b22;
+      }
+      button,
+      label {
+        text-decoration: none;
+        font-weight: 600;
+      }
+      button,
+      input,
+      select,
+      textarea,
+      a {
+        padding: 0.5rem 0.75rem;
+      }
+      #container {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        grid-gap: 1rem 0.5rem;
+      }
+      #container .c1 {
+        grid-area: 1 / 1 / 2 / 2;
+        display: grid;
+        grid-auto-rows: 25px;
+        grid-gap: 1rem;
+      }
+      #container .c2 {
+        grid-area: 1 / 2 / 2 / 3;
+      }
+      #container .c3 {
+        grid-area: 2 / 1 / 3 / 3;
+        display: flex;
+        justify-content: space-around;
+      }
+      #container .c2-child {
+        display: grid;
+        grid-gap: 1rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1></h1>
+    </div>
+    <div id="container">
+      <section id="commands" class="c1"></section>
+      <form class="c2" onsubmit="selectCommands(); return false;">
+        <!--     script to run     -->
+        <div id="scriptToRunContainer" class="c2-child">
+          <label>Scripts To Run:</label>
+          <button id="btnAddScript" onclick="addScriptTextbox()" type="button" style="width: 150px">Add Script</button>
+          <datalist id="scriptToRunOptions"></datalist>
+          <label>Runner:</label>
+          <select id="runnerToUse" onchange="updateScript()">
+            <option value="test-live.sh" selected>Use Live Script</option>
+            <option value="test.sh">Use Local Script</option>
+          </select>
+          <label>Debug Write To File:</label>
+          <input
+            id="debugWriteToDir"
+            list="writeToFilePathOptions"
+            type="text"
+            onchange="updateScript()"
+            onblur="this.value = this.value.trim();"
+            placeholder="Debug Write To File Path" />
+          <datalist id="writeToFilePathOptions">
+            <option>$(pwd)</option>
+            <option>./</option>
+            <option>~</option>
+          </datalist>
+        </div>
+
+        <!--     os to run     -->
+        <div id="osToRunContainer" class="c2-child">
+          <label>OS Type:</label>
+          <select
+            id="osToRun"
+            onchange="updateScript()"
+            oninput="localStorage.osToRun = document.querySelector('#osToRun').value">
+            <option value="windows" selected>Windows with WSL</option>
+            <option value="ming_64">Windows with Ming_64</option>
+            <option value="mac">Mac OSX</option>
+            <option value="chrome_os">Chrome OS with Linux</option>
+            <option value="ubuntu">Ubuntu</option>
+            <option value="android_termux">Android Termux</option>
+          </select>
+        </div>
+
+        <textarea id="output" placeholder="Output" readonly="true" onfocus="selectCommands()"></textarea>
+      </form>
+
+      <div id="bot" class="c3">
+        <a href="https://github.com/synle/bashrc/blob/master/index.html" target="_blank">HTML Code</a>
+        <a href="https://github.com/synle/bashrc/find/master" target="_blank">Bashrc Code</a>
+      </div>
+    </div>
+
+    <script>
+      let idx = Date.now();
+      const configs = [
+        {
+          text: 'Setup Dependencies',
+          script: `<OS_FLAGS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh)"`,
+          shouldShowOsSelectionInput: true,
+        },
+        {
+          text: 'Setup Full Profile',
+          script: `<OS_FLAGS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"`,
+          checked: true,
+          shouldShowOsSelectionInput: true,
+        },
+        {
+          text: 'Setup Lightweight Profile',
+          script: `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"`,
+        },
+        {
+          text: 'Setup etc Hosts',
+          script: `curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash`,
+        },
+        {
+          text: 'Test Full Run live',
+          script: `curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash`,
+          shouldShowOsSelectionInput: true,
+        },
+        {
+          text: 'Test Single Script',
+          script: `<OS_FLAGS>\\\nexport TEST_SCRIPT_FILES="""\n<SELECT_SCRIPTS>\n""" <DEBUG_WRITE_TO_DIR> && \\\n\\\n curl -s https://raw.githubusercontent.com/synle/bashrc/master/<SELECTED_RUNNER_SCRIPT> | bash`,
+          shouldShowScriptNameInput: true,
+          shouldShowOsSelectionInput: true,
+        },
+      ].map((config) => ({
+        idx: `command-option-${++idx}`,
+        ...config,
+      }));
+
+      const configsByKey = {};
+      for (const config of configs) {
+        configsByKey[config.idx] = config;
+      }
+
+      async function init() {
+        // available scripts
+        let scriptToRunOptions = await fetch(
+          `https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/script-list.config`,
+        ).then((res) => res.text());
+        scriptToRunOptions = scriptToRunOptions
+          .split('\n')
+          .map((s) => s.replace('./', '').trim())
+          .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
+          .sort()
+          .map((scriptName) => `<option>${scriptName}</option>`)
+          .join('\n');
+        document.querySelector('#scriptToRunOptions').innerHTML = scriptToRunOptions;
+
+        // back it up
+        window.SCRIPT_TO_RUN_OPTIONS = document.querySelector('#scriptToRunOptions').innerHTML;
+
+        for (const config of configs) {
+          const domCommand = document.createElement('div');
+          domCommand.innerHTML = `
+          <input onchange='updateScript()' type='radio' name='choice-setup' id='${config.idx}' value='${config.idx}' ${
+            config.checked ? 'checked' : ''
+          } />
+          <label for='${config.idx}'>${config.text}</label>
+        `;
+          document.querySelector('#commands').appendChild(domCommand);
+        }
+
+        // select the previous
+        document.querySelector('#osToRun').value = localStorage.osToRun || 'windows';
+
+        // add the first script textbox
+        addScriptTextbox();
+
+        // initial setup to fix up the script
+        updateScript();
+      }
+
+      function updateScript() {
+        let newCommands = [];
+
+        const selectedScriptIdx = document.querySelector("[name='choice-setup']:checked").value;
+        const selectedScript = configsByKey[selectedScriptIdx];
+
+        let debugWriteToDirValue = '';
+        try {
+          debugWriteToDirValue = document.querySelector('#debugWriteToDir').value.trim();
+          if (debugWriteToDirValue) {
+            debugWriteToDirValue = `&& export DEBUG_WRITE_TO_DIR="${debugWriteToDirValue}"`;
+          }
+        } catch (err) {}
+
+        newCommands.push(
+          selectedScript.script
+            .replace(
+              '<SELECT_SCRIPTS>',
+              [...document.querySelectorAll('.scriptToUse')]
+                .map((s) => s.value.trim())
+                .filter((s) => !!s.trim())
+                .join('\n'),
+            )
+            .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
+            .replace('<SELECTED_RUNNER_SCRIPT>', document.querySelector('#runnerToUse').value.trim())
+            .replace('<OS_FLAGS>', _getOsFlags(document.querySelector('#osToRun').value.trim())),
+        );
+
+        document.querySelector('#scriptToRunContainer').style.display = selectedScript.shouldShowScriptNameInput
+          ? ''
+          : 'none';
+        document.querySelector('#osToRunContainer').style.display = selectedScript.shouldShowOsSelectionInput
+          ? ''
+          : 'none';
+        document.querySelector('#output').value = newCommands.join('\n');
+      }
+
+      function addScriptTextbox() {
+        const notEmptyScriptTextboxes = [...document.querySelectorAll('.scriptToUse')].filter((s) => !s.value.trim());
+        if (notEmptyScriptTextboxes.length > 0) {
+          notEmptyScriptTextboxes[0].focus();
+        }
+
+        document.querySelector('#btnAddScript').insertAdjacentHTML(
+          'beforeBegin',
+          `
+          <input
+            class="scriptToUse"
+            list="scriptToRunOptions"
+            type="text"
+            onchange="updateScript()"
+            onblur="this.value = this.value.trim(); updateAutoComplete(); cleanupUnusedScriptTextBox(this)"
+            placeholder="Script To Run"
+            autofocus
+            required
+            />
+        `,
+        );
+
+        // focus on the last one
+        [...document.querySelectorAll('.scriptToUse')].slice(-1)[0].focus();
+      }
+
+      function updateAutoComplete() {
+        const selectedScriptSet = new Set([...document.querySelectorAll('.scriptToUse')].map((s) => s.value.trim()));
+
+        document.querySelector('#scriptToRunOptions').innerHTML = window.SCRIPT_TO_RUN_OPTIONS;
+
+        [...document.querySelectorAll('#scriptToRunOptions option')].forEach((scriptElem) => {
+          if (selectedScriptSet.has(scriptElem.innerText.trim())) {
+            scriptElem.remove();
+          }
+        });
+      }
+
+      function cleanupUnusedScriptTextBox(elem) {
+        if (!elem.value.trim() && [...document.querySelectorAll('.scriptToUse')].length > 1) {
+          elem.remove();
+        }
+      }
+
+      function _getOsFlags(osFlag) {
+        const osFlags = {
+          is_os_darwin_mac: osFlag === 'mac' ? '1' : '0',
+          is_os_window: osFlag === 'windows' ? '1' : '0',
+          is_os_wsl: osFlag === 'windows' ? '1' : '0',
+          is_os_ubuntu: ['windows', 'chrome_os', 'ubuntu'].indexOf(osFlag) >= 0 ? '1' : '0',
+          is_os_chromeos: osFlag === 'chrome_os' ? '1' : '0',
+          is_os_mingw64: osFlag === 'ming_64' ? '1' : '0',
+          is_os_android_termux: osFlag === 'android_termux' ? '1' : '0',
+        };
+
+        const osKeys = Object.keys(osFlags);
+
+        return (
+          [
+            "sudo echo '> Initializing Environment'",
+            'NODE_VERSION_TO_USE=12.22.1',
+            'nvm install $NODE_VERSION_TO_USE',
+            'nvm use $NODE_VERSION_TO_USE',
+            `echo """\n${osKeys
+              .map((key) => `export ${key}='${osFlags[key]}'`)
+              .join('\n')}\n""" > ~/.bash_syle_os && source ~/.bash_syle_os`,
+          ].join(' && \\\n') + ' && '
+        ).trim();
+      }
+
+      function selectCommands() {
+        document.querySelector('#output').focus();
+        document.querySelector('#output').select();
+        document.execCommand('copy');
+      }
+
+      init();
+
+      // getting and setting the page title
+      try {
+        document.querySelector('h1').innerText = document.location.href
+          .match(/[a-z-A-Z0-9]+\/[a-z-A-Z0-9]+.html/)[0]
+          .trim();
+      } catch (err) {}
+    </script>
+  </body>
+</html>
