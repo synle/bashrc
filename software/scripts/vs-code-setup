@@ -1,0 +1,59 @@
+##################################################
+# for Linux using bash
+##################################################
+REMOTE_BASE="https://raw.githubusercontent.com/synle/bashrc/master/.build"
+CONFIG_FILE="vs-code-config"
+
+targets=(
+  "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User|vs-code-keys-windows"
+  "$HOME/.config/VSCodium/User|vs-code-keys-windows"
+  "$HOME/.config/Code/User|vs-code-keys-windows"
+  "$HOME/Library/Application Support/Code/User|vs-code-keys-macosx"
+  "$HOME/Library/Application Support/VSCodium/User|vs-code-keys-macosx"
+)
+
+download_if_exists() {
+  local dest_dir="$1"
+  local key_file="$2"
+
+  if [ -d "$dest_dir" ]; then
+    echo "Updating config in: $dest_dir"
+    curl -fsSL "$REMOTE_BASE/$CONFIG_FILE" -o "$dest_dir/settings.json"
+    curl -fsSL "$REMOTE_BASE/$key_file" -o "$dest_dir/keybindings.json"
+  else
+    echo "Skipped: $dest_dir does not exist."
+  fi
+}
+
+echo "Starting VSCode/VSCodium config sync..."
+
+for target in "${targets[@]}"; do
+  IFS="|" read -r dir key <<< "$target"
+  download_if_exists "$dir" "$key"
+done
+
+
+##################################################
+# for Windows using powershell
+##################################################
+$baseUrl     = "https://raw.githubusercontent.com/synle/bashrc/master/.build"
+$configFile  = "vs-code-config"
+$keybindings = "vs-code-keys-windows"
+
+$targets = @(
+    @{ Path = "$HOME\AppData\Roaming\VSCodium\User"; Keys = "vs-code-keys-windows" }
+    @{ Path = "$HOME\AppData\Roaming\Code\User"; Keys = "vs-code-keys-windows" }
+)
+
+Write-Host "Starting VSCode/VSCodium config sync..."
+
+foreach ($target in $targets) {
+    if (Test-Path $target.Path) {
+        Write-Host "Updating config in: $($target.Path)"
+
+        Invoke-WebRequest -Uri "$baseUrl/$configFile" -OutFile "$($target.Path)\settings.json" -UseBasicParsing
+        Invoke-WebRequest -Uri "$baseUrl/$($target.Keys)" -OutFile "$($target.Path)\keybindings.json" -UseBasicParsing
+    } else {
+        Write-Host "Skipped: $($target.Path) does not exist."
+    }
+}

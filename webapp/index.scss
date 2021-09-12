@@ -1,0 +1,328 @@
+// ============================================================================
+// Import Common Styles
+// ============================================================================
+
+@use 'common.scss' as *;
+
+// ============================================================================
+// bashrc/webapp Specific Variables
+// ============================================================================
+
+:root {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+// ============================================================================
+// bashrc/webapp Specific Responsive Breakpoints
+// ============================================================================
+
+@mixin tablet {
+  @media (min-width: #{$gridColumnWidth * 2}) {
+    @content;
+  }
+}
+
+@mixin mobile {
+  @media (max-width: #{$gridColumnWidth * 2 - 1}) {
+    @content;
+  }
+}
+
+@mixin mobile-small {
+  @media (max-width: #{$gridColumnWidth}) {
+    @content;
+  }
+}
+
+// ============================================================================
+// bashrc/webapp Specific Base Styles
+// ============================================================================
+
+body {
+  overflow-x: hidden;
+}
+
+#root {
+  margin-inline: var(--spaceSize4);
+  padding-bottom: var(--spaceSize4);
+}
+
+// ============================================================================
+// bashrc/webapp Specific Typography
+// ============================================================================
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--fontWeightBold);
+}
+
+hr {
+  border: none;
+  border-top: var(--borderSize1) solid var(--colorBorderSecondary);
+  margin: var(--spaceSize3) 0;
+}
+
+code {
+  font-family: var(--fontFamilyMonospace);
+  background: var(--colorBgSecondary);
+  padding: var(--spaceSize1) var(--spaceSize2);
+  border-radius: 4px;
+}
+
+// ============================================================================
+// bashrc/webapp Specific Forms
+// ============================================================================
+
+input[type='text'],
+input[type='email'],
+input[type='url'],
+textarea,
+select {
+  width: 100%;
+
+  @include mobile {
+    padding: var(--spaceSize1) var(--spaceSize2);
+  }
+}
+
+textarea {
+  min-height: 100px;
+
+  &.code {
+    font-family: var(--fontFamilyMonospace);
+    font-size: 0.9rem;
+  }
+}
+
+// ============================================================================
+// bashrc/webapp Specific Buttons
+// ============================================================================
+
+button,
+input[type='submit'],
+a[role='button'] {
+  @include mobile {
+    padding: var(--spaceSize1) var(--spaceSize2);
+  }
+}
+
+// ============================================================================
+// Layout
+// ============================================================================
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spaceSize4);
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+.app-clone-command {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spaceSize4);
+
+  code {
+    display: block;
+    white-space: nowrap;
+  }
+}
+
+#container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spaceSize4);
+  margin-top: var(--spaceSize4);
+  overflow-x: clip;
+}
+
+#topNavigationContainer,
+#mainBodyContainer,
+#bottomContainer {
+  width: 100%;
+  max-width: 100%;
+}
+
+#topNavigationContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spaceSize3);
+}
+
+#mainBodyContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spaceSize4);
+  overflow-x: clip;
+
+  > * {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+// ============================================================================
+// Form Elements
+// ============================================================================
+
+.form-label {
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorTextMain);
+  margin: var(--spaceSize3) 0 var(--spaceSize2);
+  overflow-wrap: break-word;
+  font-size: var(--fontSize3);
+  text-transform: uppercase;
+}
+
+.form-row {
+  display: flex;
+  gap: var(--spaceSize3);
+  align-items: center;
+  flex-wrap: wrap;
+
+  label {
+    font-weight: var(--fontWeightSemiBold);
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='url'] {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.editor-header {
+  display: flex;
+  gap: var(--spaceSize2);
+  align-items: center;
+  flex-wrap: wrap;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorTextMain);
+  margin: var(--spaceSize3) 0 var(--spaceSize2);
+  overflow-wrap: break-word;
+  font-size: var(--fontSize3);
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--colorBgMain);
+  padding: var(--spaceSize2) 0;
+
+  > span:first-child {
+    flex-shrink: 0;
+    flex-grow: 1;
+  }
+
+  @include mobile {
+    > span:first-child {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+  }
+}
+
+.editor-collapse-controls {
+  display: flex;
+  gap: var(--spaceSize2);
+  margin-bottom: var(--spaceSize2);
+}
+
+.editor-section {
+  border: var(--borderSize1) solid var(--colorBorderSecondary);
+  border-radius: var(--borderRadius2);
+  padding: var(--spaceSize2);
+  margin-bottom: var(--spaceSize2);
+  background: var(--colorBgMain);
+
+  .editor-header {
+    margin-top: 0;
+  }
+}
+
+.editor-collapsed {
+  .editor-header {
+    margin-bottom: 0;
+  }
+}
+
+// ============================================================================
+// Link Groups
+// ============================================================================
+
+.link-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spaceSize3);
+
+  @include tablet {
+    // Clamps the grid between 1 and 5 columns
+    // grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    // Optional: To strictly force a 5-column max limit even on huge screens
+    grid-template-columns: repeat(auto-fit, minmax(min(20%, 200px), 1fr));
+    gap: var(--gridGapWidth);
+  }
+
+  a {
+    display: block;
+    padding: var(--spaceSize2);
+    border: var(--borderSize1) solid var(--colorBorderSecondary);
+    border-radius: 6px;
+    background: var(--colorBgSecondary);
+    box-shadow: 0 2px 4px var(--colorShadow);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--colorBgHover);
+      text-decoration: none;
+      box-shadow: 0 4px 8px var(--colorShadow);
+    }
+  }
+}
+
+// ============================================================================
+// Monaco Editor
+// ============================================================================
+
+.monaco-editor,
+.monaco-editor .overflow-guard,
+.monaco-editor .monaco-scrollable-element {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+// ============================================================================
+// bashrc/webapp Specific Utilities
+// ============================================================================
+
+// Text color utilities
+.text-error,
+.text-danger {
+  color: #dc3545 !important;
+}
+
+.text-success,
+.text-info {
+  color: var(--colorTextLink) !important;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+}
+
+.text-muted {
+  color: var(--colorTextSecondary) !important;
+}

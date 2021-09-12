@@ -1,0 +1,10 @@
+# OS files
+.DS_Store
+*.Identifier
+# Editors & Backups
+*.swp
+*.swo
+*.rej
+# Environments & Dependencies
+venv/
+node_modules/

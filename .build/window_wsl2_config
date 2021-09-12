@@ -1,0 +1,17 @@
+[wsl2]
+guiApplications=false
+memory=8GB
+swap=24GB
+processors=2
+networkingMode=mirrored
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
+# .wslconfig
