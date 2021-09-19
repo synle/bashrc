@@ -494,8 +494,14 @@ async function doWork() {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
 
     // non -mac keybinding
-    writeJson('sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], 'alt'));
-    writeJson('sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], 'super'));
+    writeJson(
+      'sublime-text-keybindings-windows',
+      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], 'alt'),
+    );
+    writeJson(
+      'sublime-text-keybindings-macosx',
+      _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], 'super'),
+    );
 
     process.exit();
   }
