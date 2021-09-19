@@ -1,0 +1,150 @@
+[
+  {
+    "command": "refresh_folder_list",
+    "keys": [
+      "f5"
+    ]
+  },
+  {
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": "@"
+    },
+    "keys": [
+      "super+r"
+    ]
+  },
+  {
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": ":"
+    },
+    "keys": [
+      "super+;"
+    ]
+  },
+  {
+    "command": "move_to",
+    "args": {
+      "to": "brackets"
+    },
+    "keys": [
+      "super+m"
+    ]
+  },
+  {
+    "command": "prompt_open_file",
+    "keys": [
+      "super+o"
+    ]
+  },
+  {
+    "command": "toggle_side_bar",
+    "keys": [
+      "super+\\"
+    ]
+  },
+  {
+    "command": "goto_definition",
+    "keys": [
+      "super+shift+enter"
+    ]
+  },
+  {
+    "command": "quick_goto_variable",
+    "keys": [
+      "super+enter"
+    ]
+  },
+  {
+    "command": "set_layout",
+    "args": {
+      "cols": [
+        0,
+        1
+      ],
+      "rows": [
+        0,
+        1
+      ],
+      "cells": [
+        [
+          0,
+          0,
+          1,
+          1
+        ]
+      ]
+    },
+    "keys": [
+      "super+b",
+      "super+w"
+    ]
+  },
+  {
+    "command": "set_layout",
+    "args": {
+      "cols": [
+        0,
+        0.5,
+        1
+      ],
+      "rows": [
+        0,
+        1
+      ],
+      "cells": [
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          2,
+          1
+        ]
+      ]
+    },
+    "keys": [
+      "super+b",
+      "super+"
+    ]
+  },
+  {
+    "command": "set_layout",
+    "args": {
+      "cols": [
+        0,
+        1
+      ],
+      "rows": [
+        0,
+        0.5,
+        1
+      ],
+      "cells": [
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          2
+        ]
+      ]
+    },
+    "keys": [
+      "super+b",
+      "super+'"
+    ]
+  }
+]
