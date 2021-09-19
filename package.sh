@@ -5,6 +5,10 @@ mkdir -p .build
 
 export DEBUG_WRITE_TO_DIR="./.build" && \
 sh test.sh """
+software/scripts/sublime-text-configurations.js
 software/scripts/sublime-text-keybindings.js
+software/scripts/vs-code-configurations.js
 software/scripts/vs-code-keybindings.js
 """
+
+find .build

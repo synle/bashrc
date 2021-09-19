@@ -113,7 +113,7 @@ async function doWork() {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
 
     // non -mac keybinding
-    writeJson('sublime_common_settings', sublimeSetings);
+    writeJson('sublime-text-configurations', sublimeSetings);
 
     process.exit();
   }
