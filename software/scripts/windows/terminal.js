@@ -294,7 +294,7 @@ async function doWork() {
     profile = Object.assign(profile, {
       cursorShape: 'vintage',
       cursorHeight: 50,
-      fontFace: CONFIGS.fontFamily,
+      fontFace: EDITOR_CONFIGS.fontFamily,
       fontSize: 10,
       padding: '5 0 5 0',
       bellStyle: 'all',

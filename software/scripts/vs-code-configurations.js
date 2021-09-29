@@ -1,13 +1,8 @@
 const COMMON_CONFIGS = {
-  '[javascriptreact]': {
-    'editor.defaultFormatter': 'esbenp.prettier-vscode',
-  },
-  '[json]': {
-    'editor.defaultFormatter': 'esbenp.prettier-vscode',
-  },
   'breadcrumbs.enabled': true,
   'editor.fontLigatures': true,
-  'editor.fontSize': 14,
+  'editor.fontSize': EDITOR_CONFIGS.fontSize,
+  'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
   'editor.fontWeight': '500',
   'editor.formatOnPaste': true,
   'editor.maxTokenizationLineLength': 10000,
@@ -18,9 +13,9 @@ const COMMON_CONFIGS = {
   'editor.renderWhitespace': 'all',
   'editor.snippetSuggestions': 'top',
   'editor.suggestSelection': 'first',
-  'editor.tabSize': 2,
+  'editor.tabSize': EDITOR_CONFIGS.tabSize,
   'editor.wordWrap': 'wordWrapColumn',
-  'editor.wordWrapColumn': 120,
+  'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
   'files.eol': '\n', // LF Unix mode
   'files.exclude': {
     '**/*.class': true,
@@ -116,11 +111,7 @@ async function doWork() {
   console.log(`  >> Setting up Microsoft VS Code Configurations:`, targetPath);
 
   // get os specific settings
-  let fontFamilyToUse = CONFIGS.fontFamily;
-
-  const osSpecificSettings = {
-    'editor.fontFamily': fontFamilyToUse,
-  };
+  const osSpecificSettings = {};
 
   // settings.json
   const vsCodeMainConfigPath = path.join(targetPath, 'User/settings.json');

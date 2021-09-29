@@ -158,8 +158,6 @@ async function doWork() {
     " fzf key bindings
     " https://dev.to/iggredible/how-to-search-faster-in-vim-with-fzf-vim-36ko
     nnoremap <silent> <C-t> :Files<CR>
-
-
   `;
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, '.vimrc');

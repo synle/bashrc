@@ -3,7 +3,7 @@ let SUBLIME_VERSION;
 const sublimeSetings = {
   atomic_save: true,
   default_line_ending: 'unix',
-  font_size: 13,
+  font_size: EDITOR_CONFIGS.fontSize,
   show_tab_close_buttons: false,
   bold_folder_labels: true,
   draw_white_space: 'all',
@@ -19,11 +19,11 @@ const sublimeSetings = {
   translate_tabs_to_spaces: true,
   trim_trailing_white_space_on_save: true,
   auto_hide_menu: true,
-  tab_size: 2,
-  rulers: [100],
+  tab_size: EDITOR_CONFIGS.tabSize,
+  rulers: [EDITOR_CONFIGS.maxLineSize],
   scroll_speed: 0.0,
   font_options: ['gray_antialias', 'subpixel_antialias'],
-  font_face: CONFIGS.fontFamily,
+  font_face: EDITOR_CONFIGS.fontFamily,
   hardware_acceleration: 'opengl',
   theme: 'Adaptive.sublime-theme',
   file_exclude_patterns: [
@@ -128,11 +128,11 @@ async function doWork() {
   writeJson(sublimeThemeConfigPath, [
     {
       class: 'sidebar_label',
-      'font.size': 15,
+      'font.size': EDITOR_CONFIGS.fontSize,
     },
     {
       class: 'tab_label',
-      'font.size': 12,
+      'font.size': EDITOR_CONFIGS.fontSize,
     },
   ]);
 

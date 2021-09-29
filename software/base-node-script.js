@@ -7,8 +7,12 @@ globalThis.BASE_WINDOW = '/mnt/c/Users';
 globalThis.BASE_HOMEDIR_LINUX = require('os').homedir();
 globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
 
-globalThis.CONFIGS = {
+// configs used for editors
+globalThis.EDITOR_CONFIGS = {
+  fontSize: 13,
   fontFamily: 'Fira Code Retina',
+  tabSize: 2,
+  maxLineSize: 140,
 };
 
 /**
