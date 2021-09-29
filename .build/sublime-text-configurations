@@ -19,7 +19,7 @@
   "auto_hide_menu": true,
   "tab_size": 2,
   "rulers": [
-    100
+    140
   ],
   "scroll_speed": 0,
   "font_options": [
@@ -58,16 +58,17 @@
     "*.seed",
     "*.sln",
     "*.so",
+    "*.sqlite",
     "*.suo",
     "*.swf",
     "*.swp",
+    "*.woff",
+    "*.woff2",
     "*.zip",
     ".DS_Store",
-    ".eslintcache",
-    "npm-debug.log"
+    ".eslintcache"
   ],
   "folder_exclude_patterns": [
-    "*min*.js",
     ".cache",
     ".ebextensions",
     ".generated",

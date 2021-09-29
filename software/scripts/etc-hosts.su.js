@@ -6,16 +6,12 @@ let ROUTED_BLOCKED_IP;
 async function doInit() {
   // initiate the vars
   STATIC_BLOCK_HOST_NAMES = convertTextToList(
-    await fetchUrlAsString(
-      'https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-whitelisted.config',
-    ),
+    await fetchUrlAsString('https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-whitelisted.config'),
   );
 
   WHITE_LIST_HOST_NAMES = new Set(
     convertTextToList(
-      await fetchUrlAsString(
-        'https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-blocked-manual.config',
-      ),
+      await fetchUrlAsString('https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-blocked-manual.config'),
     ),
   );
 

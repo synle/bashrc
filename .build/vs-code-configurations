@@ -1,13 +1,8 @@
 {
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
   "breadcrumbs.enabled": true,
   "editor.fontLigatures": true,
-  "editor.fontSize": 14,
+  "editor.fontSize": 13,
+  "editor.fontFamily": "Fira Code Retina",
   "editor.fontWeight": "500",
   "editor.formatOnPaste": true,
   "editor.maxTokenizationLineLength": 10000,
@@ -20,7 +15,7 @@
   "editor.suggestSelection": "first",
   "editor.tabSize": 2,
   "editor.wordWrap": "wordWrapColumn",
-  "editor.wordWrapColumn": 120,
+  "editor.wordWrapColumn": 140,
   "files.eol": "\n",
   "files.exclude": {
     "**/*.class": true,
@@ -58,26 +53,27 @@
     "**/*.woff": true,
     "**/*.woff2": true,
     "**/*.zip": true,
-    "**/.cache": true,
     "**/.DS_Store": true,
-    "**/.ebextensions": true,
     "**/.eslintcache": true,
+    "**/.cache": true,
+    "**/.ebextensions": true,
     "**/.generated": true,
     "**/.git": true,
+    "**/.gradle": true,
     "**/.hg": true,
+    "**/.idea": true,
     "**/.sass-cache": true,
     "**/.svn": true,
-    "**/bin": true,
     "**/bower_components": true,
+    "**/build": true,
+    "**/CVS": true,
     "**/node_modules": true,
-    "**/npm-debug.log": true,
-    "**/obj": true
+    "**/tmp": true
   },
   "files.hotExit": "off",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
   "javascript.updateImportsOnFileMove.enabled": "always",
-  "terminal.integrated.shell.windows": "C:\\Windows\\System32\\wsl.exe",
   "typescript.updateImportsOnFileMove.enabled": "always",
   "window.zoomLevel": 1,
   "workbench.colorTheme": "Dracula Soft",

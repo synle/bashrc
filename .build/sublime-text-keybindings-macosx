@@ -146,5 +146,86 @@
       "super+b",
       "super+'"
     ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 0
+    },
+    "keys": [
+      "super+1"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 1
+    },
+    "keys": [
+      "super+2"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 2
+    },
+    "keys": [
+      "super+3"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 3
+    },
+    "keys": [
+      "super+4"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 4
+    },
+    "keys": [
+      "super+5"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 5
+    },
+    "keys": [
+      "super+6"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 6
+    },
+    "keys": [
+      "super+7"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 7
+    },
+    "keys": [
+      "super+8"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 8
+    },
+    "keys": [
+      "super+9"
+    ]
   }
 ]
