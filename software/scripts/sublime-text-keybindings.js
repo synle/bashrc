@@ -130,6 +130,15 @@ async function doInit() {
         ],
       },
     },
+    { key: ['OS_KEY+1'], command: 'select_by_index', args: { index: 0 } },
+    { key: ['OS_KEY+2'], command: 'select_by_index', args: { index: 1 } },
+    { key: ['OS_KEY+3'], command: 'select_by_index', args: { index: 2 } },
+    { key: ['OS_KEY+4'], command: 'select_by_index', args: { index: 3 } },
+    { key: ['OS_KEY+5'], command: 'select_by_index', args: { index: 4 } },
+    { key: ['OS_KEY+6'], command: 'select_by_index', args: { index: 5 } },
+    { key: ['OS_KEY+7'], command: 'select_by_index', args: { index: 6 } },
+    { key: ['OS_KEY+8'], command: 'select_by_index', args: { index: 7 } },
+    { key: ['OS_KEY+9'], command: 'select_by_index', args: { index: 8 } },
   ];
   // end COMMON_KEY_BINDINGS
 
@@ -201,76 +210,6 @@ async function doInit() {
     {
       key: 'alt+ctrl+g',
       command: 'find_all_under',
-    },
-    {
-      key: 'alt+1',
-      command: 'select_by_index',
-      args: {
-        index: 0,
-      },
-    },
-    {
-      key: 'alt+2',
-      command: 'select_by_index',
-      args: {
-        index: 1,
-      },
-    },
-    {
-      key: 'alt+3',
-      command: 'select_by_index',
-      args: {
-        index: 2,
-      },
-    },
-    {
-      key: 'alt+4',
-      command: 'select_by_index',
-      args: {
-        index: 3,
-      },
-    },
-    {
-      key: 'alt+5',
-      command: 'select_by_index',
-      args: {
-        index: 4,
-      },
-    },
-    {
-      key: 'alt+6',
-      command: 'select_by_index',
-      args: {
-        index: 5,
-      },
-    },
-    {
-      key: 'alt+7',
-      command: 'select_by_index',
-      args: {
-        index: 6,
-      },
-    },
-    {
-      key: 'alt+8',
-      command: 'select_by_index',
-      args: {
-        index: 7,
-      },
-    },
-    {
-      key: 'alt+9',
-      command: 'select_by_index',
-      args: {
-        index: 8,
-      },
-    },
-    {
-      key: 'alt+0',
-      command: 'select_by_index',
-      args: {
-        index: 9,
-      },
     },
     {
       key: 'alt+shift+a',
@@ -497,14 +436,8 @@ async function doWork() {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
 
     // non -mac keybinding
-    writeJson(
-      'sublime-text-keybindings-windows',
-      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
-    );
-    writeJson(
-      'sublime-text-keybindings-macosx',
-      _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
-    );
+    writeJson('sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
+    writeJson('sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
 
     process.exit();
   }

@@ -7,12 +7,70 @@ globalThis.BASE_WINDOW = '/mnt/c/Users';
 globalThis.BASE_HOMEDIR_LINUX = require('os').homedir();
 globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
 
-// configs used for editors
+/**
+ * config used for the editors
+ * @type {Object}
+ */
 globalThis.EDITOR_CONFIGS = {
   fontSize: 13,
   fontFamily: 'Fira Code Retina',
   tabSize: 2,
   maxLineSize: 140,
+  ignoredFiles: [
+    '*.class',
+    '*.db',
+    '*.dll',
+    '*.doc',
+    '*.docx',
+    '*.dylib',
+    '*.exe',
+    '*.idb',
+    '*.jar',
+    '*.js.map',
+    '*.lib',
+    '*.min.js',
+    '*.mp3',
+    '*.ncb',
+    '*.o',
+    '*.obj',
+    '*.ogg',
+    '*.pdb',
+    '*.pdf',
+    '*.pid',
+    '*.pid.lock',
+    '*.psd',
+    '*.pyc',
+    '*.pyo',
+    '*.sdf',
+    '*.seed',
+    '*.sln',
+    '*.so',
+    '*.sqlite',
+    '*.suo',
+    '*.swf',
+    '*.swp',
+    '*.woff',
+    '*.woff2',
+    '*.zip',
+    '.DS_Store',
+    '.eslintcache',
+  ],
+  ignoredFolders: [
+    '.cache',
+    '.ebextensions',
+    '.generated',
+    '.git',
+    '.gradle',
+    '.hg',
+    '.idea',
+    '.sass-cache',
+    '.svn',
+    'bower_components',
+    'build',
+    'CVS',
+    'node_modules',
+    'tmp',
+  ],
 };
 
 /**
@@ -29,9 +87,7 @@ Object.keys(process.env)
 
 // setting up the path for the extra tweaks
 globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
-  is_os_window === true
-    ? path.join(getWindowUserBaseDir(), '...sy', '_extra')
-    : path.join(globalThis.BASE_HOMEDIR_LINUX, '_extra');
+  is_os_window === true ? path.join(getWindowUserBaseDir(), '...sy', '_extra') : path.join(globalThis.BASE_HOMEDIR_LINUX, '_extra');
 
 globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || '').toLowerCase().trim();
 
@@ -140,9 +196,7 @@ function getWindowUserBaseDir() {
       .readdirSync(BASE_WINDOW)
       .filter(
         (dir) =>
-          dir.toLowerCase().indexOf('leng') >= 0 ||
-          dir.toLowerCase().indexOf('syle') >= 0 ||
-          dir.toLowerCase().indexOf('sy le') >= 0,
+          dir.toLowerCase().indexOf('leng') >= 0 || dir.toLowerCase().indexOf('syle') >= 0 || dir.toLowerCase().indexOf('sy le') >= 0,
       )[0],
   );
 }
@@ -163,9 +217,7 @@ function updateTextBlock(resultTextContent, configKey, configValue, commentPrefi
   commentPrefix = commentPrefix || '#';
   configValue = configValue.trim();
 
-  const regex = new RegExp(
-    `(\\n)*(${commentPrefix} ${configKey})(\\n)[\\S\\s]+(${commentPrefix} END ${configKey})(\\n)*`,
-  );
+  const regex = new RegExp(`(\\n)*(${commentPrefix} ${configKey})(\\n)[\\S\\s]+(${commentPrefix} END ${configKey})(\\n)*`);
 
   if (resultTextContent.match(regex)) {
     resultTextContent = resultTextContent
@@ -508,9 +560,7 @@ function printOsFlags() {
   // getting the ip address mapping
   try {
     globalThis.HOME_HOST_NAMES = (
-      await fetchUrlAsString(
-        'https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config',
-      )
+      await fetchUrlAsString('https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config')
     )
       .split('\n')
       .filter((s) => !!s.trim() && s.indexOf('=') !== 0)

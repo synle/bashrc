@@ -73,6 +73,15 @@ async function doInit() {
       key: 'OS_KEY+ctrl+c',
       command: 'workbench.files.action.compareWithSaved',
     },
+    { key: 'OS_KEY+1', command: 'workbench.action.openEditorAtIndex1' },
+    { key: 'OS_KEY+2', command: 'workbench.action.openEditorAtIndex2' },
+    { key: 'OS_KEY+3', command: 'workbench.action.openEditorAtIndex3' },
+    { key: 'OS_KEY+4', command: 'workbench.action.openEditorAtIndex4' },
+    { key: 'OS_KEY+5', command: 'workbench.action.openEditorAtIndex5' },
+    { key: 'OS_KEY+6', command: 'workbench.action.openEditorAtIndex6' },
+    { key: 'OS_KEY+7', command: 'workbench.action.openEditorAtIndex7' },
+    { key: 'OS_KEY+8', command: 'workbench.action.openEditorAtIndex8' },
+    { key: 'OS_KEY+9', command: 'workbench.action.openEditorAtIndex9' },
   ];
   // end COMMON_KEY_BINDINGS
 
@@ -313,14 +322,8 @@ async function doWork() {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
 
     // non -mac keybinding
-    writeJson(
-      'vs-code-keybindings-windows',
-      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
-    );
-    writeJson(
-      'vs-code-keybindings-macosx',
-      _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
-    );
+    writeJson('vs-code-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
+    writeJson('vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
 
     process.exit();
   }

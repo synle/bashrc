@@ -139,10 +139,7 @@
         <!--     os to run     -->
         <div id="osToRunContainer" class="c2-child">
           <label>OS Type:</label>
-          <select
-            id="osToRun"
-            onchange="updateScript()"
-            oninput="localStorage.osToRun = document.querySelector('#osToRun').value">
+          <select id="osToRun" onchange="updateScript()" oninput="localStorage.osToRun = document.querySelector('#osToRun').value">
             <option value="windows" selected>Windows with WSL</option>
             <option value="ming_64">Windows with Ming_64</option>
             <option value="mac">Mac OSX</option>
@@ -283,12 +280,8 @@
             .replace('<OS_FLAGS>', _getOsFlags(document.querySelector('#osToRun').value.trim())),
         );
 
-        document.querySelector('#scriptToRunContainer').style.display = selectedScript.shouldShowScriptNameInput
-          ? ''
-          : 'none';
-        document.querySelector('#osToRunContainer').style.display = selectedScript.shouldShowOsSelectionInput
-          ? ''
-          : 'none';
+        document.querySelector('#scriptToRunContainer').style.display = selectedScript.shouldShowScriptNameInput ? '' : 'none';
+        document.querySelector('#osToRunContainer').style.display = selectedScript.shouldShowOsSelectionInput ? '' : 'none';
         document.querySelector('#output').value = newCommands
           .join('\n')
           .split('\\')

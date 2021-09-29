@@ -316,9 +316,7 @@ async function doWork() {
     // set default profile
     if (
       !foundDefaultProfile &&
-      ['Debian', 'Ubuntu'].some((distroToUseForDefault) =>
-        profile.name.toLowerCase().includes(distroToUseForDefault.toLowerCase()),
-      )
+      ['Debian', 'Ubuntu'].some((distroToUseForDefault) => profile.name.toLowerCase().includes(distroToUseForDefault.toLowerCase()))
     ) {
       newProfiles.defaultProfile = profile.guid;
       foundDefaultProfile = true;
