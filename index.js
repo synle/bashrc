@@ -72,7 +72,7 @@ async function init() {
   document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
   document.querySelector('#addBootstrapScript').value = getStorage('addBootstrapScript', '');
   document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
-  document.querySelector('#runnerToUse').value = getStorage('runnerToUse', '');
+  document.querySelector('#runnerToUse').value = getStorage('runnerToUse', 'test-live.sh');
 
   getStorage('scriptToUse', '')
     .split('\n')
@@ -108,7 +108,7 @@ function updateScript() {
       )
       .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
       .replace('<SELECTED_RUNNER_SCRIPT>', document.querySelector('#runnerToUse').value.trim())
-      .replace('<OS_FLAGS>', _getOsFlags(document.querySelector('#osToRun').value.trim())),
+      .replace('<OS_FLAGS>', _getOsFlagScript()),
   );
 
   document.querySelector('#scriptToRunContainer').classList.toggle('hidden', selectedScript.shouldShowScriptNameInput !== true);
@@ -120,6 +120,9 @@ function updateScript() {
     .filter((s) => s.trim())
     .join('\\')
     .trim();
+
+  // fixed up the autocomplete
+  updateAutoComplete();
 }
 
 function addScriptTextbox(defaultValue = '') {
@@ -172,12 +175,20 @@ function keyDownScriptTextbox(e) {
 }
 
 function updateAutoComplete() {
+  const osFlags = _getOsFlags();
   const selectedScriptSet = new Set([...document.querySelectorAll('.scriptToUse')].map((s) => s.value.trim()));
 
   document.querySelector('#scriptToRunOptions').innerHTML = window.SCRIPT_TO_RUN_OPTIONS;
 
   [...document.querySelectorAll('#scriptToRunOptions option')].forEach((scriptElem) => {
-    if (selectedScriptSet.has(scriptElem.innerText.trim())) {
+    const scriptName = scriptElem.innerText.trim();
+    if (selectedScriptSet.has(scriptName)) {
+      scriptElem.remove();
+    } else if (!osFlags.is_os_window && scriptName.includes('/windows/')) {
+      scriptElem.remove();
+    } else if (!osFlags.is_os_darwin_mac && scriptName.includes('/mac/')) {
+      scriptElem.remove();
+    } else if (!osFlags.is_os_android_termux && scriptName.includes('/android-termux/')) {
       scriptElem.remove();
     }
   });
@@ -190,9 +201,6 @@ function cleanupUnusedScriptTextBox(elem) {
     elem.remove();
     return;
   }
-
-  //
-  updateAutoComplete();
 }
 
 function persistScriptToUse() {
@@ -206,22 +214,13 @@ function persistScriptToUse() {
   );
 }
 
-function _getOsFlags(osFlag) {
+function _getOsFlagScript() {
   if (!document.querySelector('#addBootstrapScript').value.trim()) {
     // don't add os bootstrap script
     return '';
   }
 
-  const osFlags = {
-    is_os_darwin_mac: osFlag === 'mac' ? '1' : '0',
-    is_os_window: osFlag === 'windows' ? '1' : '0',
-    is_os_wsl: osFlag === 'windows' ? '1' : '0',
-    is_os_ubuntu: ['windows', 'chrome_os', 'ubuntu'].indexOf(osFlag) >= 0 ? '1' : '0',
-    is_os_chromeos: osFlag === 'chrome_os' ? '1' : '0',
-    is_os_mingw64: osFlag === 'ming_64' ? '1' : '0',
-    is_os_android_termux: osFlag === 'android_termux' ? '1' : '0',
-  };
-
+  const osFlags = _getOsFlags();
   const osKeys = Object.keys(osFlags);
 
   return (
@@ -230,9 +229,27 @@ function _getOsFlags(osFlag) {
       'NODE_VERSION_TO_USE=12.22.1',
       'nvm install $NODE_VERSION_TO_USE',
       'nvm use $NODE_VERSION_TO_USE',
-      `echo """\n${osKeys.map((key) => `export ${key}='${osFlags[key]}'`).join('\n')}\n""" > ~/.bash_syle_os && source ~/.bash_syle_os`,
+      `echo """\n${osKeys
+        .map((key) => `export ${key}='${osFlags[key] ? '1' : '0'}'`)
+        .join('\n')}\n""" > ~/.bash_syle_os && source ~/.bash_syle_os`,
     ].join(' && \\\n') + ' && '
   ).trim();
+}
+
+function _getOsFlags() {
+  const osFlag = document.querySelector('#osToRun').value.trim();
+
+  const osFlags = {
+    is_os_darwin_mac: osFlag === 'mac',
+    is_os_window: osFlag === 'windows',
+    is_os_wsl: osFlag === 'windows',
+    is_os_ubuntu: ['windows', 'chrome_os', 'ubuntu'].indexOf(osFlag) >= 0,
+    is_os_chromeos: osFlag === 'chrome_os',
+    is_os_mingw64: osFlag === 'ming_64',
+    is_os_android_termux: osFlag === 'android_termux',
+  };
+
+  return osFlags;
 }
 
 async function selectCommands() {
