@@ -71,7 +71,7 @@ async function init() {
   // select the previous values from local storage
   document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
   document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
-  document.querySelector('#runnerToUse').value = getStorage('runnerToUse', 'test-live.sh');
+  document.scriptForm.runnerToUse.value = getStorage('runnerToUse', 'test-live.sh');
   document.scriptForm.addBootstrapScript.value = getStorage('addBootstrapScript') || 'no';
 
   getStorage('scriptToUse', '')
@@ -107,7 +107,7 @@ function updateScript() {
         [...new Set([...document.querySelectorAll('.scriptToUse')].map((s) => s.value.trim()).filter((s) => !!s.trim()))].join('\n'),
       )
       .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
-      .replace('<SELECTED_RUNNER_SCRIPT>', document.querySelector('#runnerToUse').value.trim())
+      .replace('<SELECTED_RUNNER_SCRIPT>', document.scriptForm.runnerToUse.value)
       .replace('<OS_FLAGS>', _getOsFlagScript()),
   );
 
