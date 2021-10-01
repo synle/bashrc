@@ -4,116 +4,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="index.css" />
     <title>Setting up Bash Script</title>
-    <style>
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-      html {
-        font-family: Helvetica, Tahoma, Geneva, sans-serif !important;
-        font-size: 12px;
-        padding: 1rem 2rem;
-      }
-      h1 {
-        padding: 0;
-      }
-      #output {
-        width: 100%;
-        height: 400px;
-      }
-      label,
-      div {
-        user-select: none;
-      }
-      label,
-      input,
-      select {
-        cursor: pointer;
-      }
-      label,
-      div,
-      input,
-      textarea,
-      select {
-        font-size: 1rem;
-      }
-      input[type='text'],
-      textarea {
-        display: block;
-        width: 100%;
-      }
-      a,
-      button,
-      input[type='submit'] {
-        min-width: 100px;
-        border: 2px solid #ccc;
-        background: #000;
-        color: #fff;
-        cursor: pointer;
-        text-transform: uppercase;
-        text-decoration: none;
-        font-weight: 600;
-        transition: all 0.25s ease-out;
-      }
-      a:hover,
-      button:hover,
-      input[type='submit']:hover,
-      a:focus,
-      button:focus,
-      input[type='submit']:focus {
-        box-shadow: 0 0 0 3px #0c2d6b;
-        background: #161b22;
-      }
-      button,
-      label {
-        text-decoration: none;
-        font-weight: 600;
-      }
-      button,
-      input,
-      select,
-      textarea,
-      a {
-        padding: 0.5rem 0.75rem;
-      }
-      #container {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        grid-gap: 1rem 0.5rem;
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-      }
-      #container .c1 {
-        grid-area: 1 / 1 / 2 / 2;
-        display: grid;
-        grid-auto-rows: 25px;
-        grid-gap: 1rem;
-        margin-right: 1rem;
-      }
-      #container .c2 {
-        grid-area: 1 / 2 / 2 / 3;
-      }
-      #container .c3 {
-        grid-area: 2 / 1 / 3 / 3;
-        display: flex;
-        justify-content: space-around;
-      }
-      #container .c2-child {
-        display: grid;
-        grid-gap: 1rem;
-        margin-bottom: 1rem;
-      }
-      .hidden {
-        display: none !important;
-      }
-      datalist{
-        max-height: 200px !important;
-        height: 200px  !important;
-        overflow-y: auto !important;
-      }
-    </style>
   </head>
   <body>
     <div>
@@ -125,10 +17,14 @@
         <!--     script to run     -->
         <div id="scriptToRunContainer" class="c2-child">
           <label>Scripts To Run:</label>
-          <button id="btnAddScript" onclick="addScriptTextbox()" type="button" style="width: 150px">Add Script</button>
-          <datalist id="scriptToRunOptions" style="overflow-y: auto!important">></datalist>
+          <div id="scriptToUseContainer"></div>
+          <div>
+            <button onclick="addScriptTextbox()" type="button">Add Script</button>
+            <button onclick="clearAllScriptTextBox()" type="button" style="margin-left: 40px">Clear All</button>
+          </div>
+          <datalist id="scriptToRunOptions" style="overflow-y: auto !important">></datalist>
           <label>Runner:</label>
-          <select id="runnerToUse" onchange="updateScript()">
+          <select id="runnerToUse" onchange="updateScript()" oninput="setStorage('runnerToUse', event.target.value)">
             <option value="test-live.sh" selected>Use Live Script</option>
             <option value="test.sh">Use Local Script</option>
           </select>
@@ -139,6 +35,7 @@
             type="text"
             onchange="updateScript()"
             onblur="this.value = this.value.trim();"
+            oninput="setStorage('debugWriteToDir', event.target.value)"
             placeholder="Debug Write To File Path" />
           <datalist id="writeToFilePathOptions">
             <option>$(pwd)</option>
@@ -150,7 +47,7 @@
         <!--     os to run     -->
         <div id="osToRunContainer" class="c2-child">
           <label>OS Type:</label>
-          <select id="osToRun" onchange="updateScript()" oninput="localStorage.osToRun = document.querySelector('#osToRun').value">
+          <select id="osToRun" onchange="updateScript()" oninput="setStorage('osToRun', event.target.value)">
             <option value="windows" selected>Windows with WSL</option>
             <option value="ming_64">Windows with Ming_64</option>
             <option value="mac">Mac OSX</option>
@@ -163,10 +60,7 @@
         <!-- add bootstrap script -->
         <div id="osToRunContainer" class="c2-child">
           <label>Add Bootstrap Script:</label>
-          <select
-            id="addBootstrapScript"
-            onchange="updateScript()"
-            oninput="localStorage.addBootstrapScript = document.querySelector('#addBootstrapScript').value">
+          <select id="addBootstrapScript" onchange="updateScript()" oninput="setStorage('addBootstrapScript', event.target.value)">
             <option value="yes">Yes</option>
             <option value="">No</option>
           </select>

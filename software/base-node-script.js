@@ -138,18 +138,18 @@ function findDirSingle(srcDir, targetMatch) {
 }
 
 function writeText(aDir, text) {
-  fs.writeFileSync(_getFilePath(aDir), text);
-}
-
-function writeJson(aDir, json) {
   const pathToUse = _getFilePath(aDir);
-  const newContent = JSON.stringify(json, null, 2);
+  const newContent = text;
   const oldContent = readText(pathToUse);
   if (oldContent.trim() === newContent.trim()) {
-    console.log('<< writeJson Content not changed', pathToUse);
+    console.log('<< writeText [NotModified]: ', pathToUse);
   } else {
     fs.writeFileSync(pathToUse, newContent);
   }
+}
+
+function writeJson(aDir, json) {
+  writeText(aDir, JSON.stringify(json, null, 2));
 }
 
 function appendText(aDir, text) {
@@ -326,8 +326,16 @@ async function listRepoDir() {
   }
 }
 
-async function getSoftwareScriptFiles() {
-  const files = await listRepoDir();
+async function getSoftwareScriptFiles(returnAllScripts = false) {
+  let files = await listRepoDir();
+
+  // clean up the files
+  files = files.filter((f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'));
+
+  //this is a special flags used to return all the script for index building
+  if (returnAllScripts) {
+    return files;
+  }
 
   const firstFiles = convertTextToList(`
     software/scripts/_bash-rc-bootstrap.js
@@ -344,12 +352,7 @@ async function getSoftwareScriptFiles() {
   `);
 
   let softwareFiles = files.filter(
-    (f) =>
-      !!f.match('software/scripts/') &&
-      (f.includes('.js') || f.includes('.sh')) &&
-      !f.includes('config.js') &&
-      firstFiles.indexOf(f) === -1 &&
-      lastFiles.indexOf(f) === -1,
+    (f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'),
   );
   softwareFiles = [...firstFiles, ...[...softwareFiles].sort(), ...lastFiles];
 
