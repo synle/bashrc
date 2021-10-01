@@ -122,7 +122,7 @@ function updateScript() {
     .trim();
 
   // fixed up the autocomplete
-  updateAutoComplete()
+  updateAutoComplete();
 }
 
 function addScriptTextbox(defaultValue = '') {
@@ -184,13 +184,13 @@ function updateAutoComplete() {
     const scriptName = scriptElem.innerText.trim();
     if (selectedScriptSet.has(scriptName)) {
       scriptElem.remove();
-    } else if(!osFlags.is_os_window && scriptName.includes('/windows/')){
-        scriptElem.remove();
-      } else if(!osFlags.is_os_darwin_mac && scriptName.includes('/mac/')){
-        scriptElem.remove();
-      } else if(!osFlags.is_os_android_termux && scriptName.includes('/android-termux/')){
-        scriptElem.remove();
-      }
+    } else if (!osFlags.is_os_window && scriptName.includes('/windows/')) {
+      scriptElem.remove();
+    } else if (!osFlags.is_os_darwin_mac && scriptName.includes('/mac/')) {
+      scriptElem.remove();
+    } else if (!osFlags.is_os_android_termux && scriptName.includes('/android-termux/')) {
+      scriptElem.remove();
+    }
   });
 }
 
@@ -229,22 +229,24 @@ function _getOsFlagScript() {
       'NODE_VERSION_TO_USE=12.22.1',
       'nvm install $NODE_VERSION_TO_USE',
       'nvm use $NODE_VERSION_TO_USE',
-      `echo """\n${osKeys.map((key) => `export ${key}='${osFlags[key] ? '1': '0'}'`).join('\n')}\n""" > ~/.bash_syle_os && source ~/.bash_syle_os`,
+      `echo """\n${osKeys
+        .map((key) => `export ${key}='${osFlags[key] ? '1' : '0'}'`)
+        .join('\n')}\n""" > ~/.bash_syle_os && source ~/.bash_syle_os`,
     ].join(' && \\\n') + ' && '
   ).trim();
 }
 
-function _getOsFlags(){
+function _getOsFlags() {
   const osFlag = document.querySelector('#osToRun').value.trim();
 
   const osFlags = {
-    is_os_darwin_mac: osFlag === 'mac' ,
-    is_os_window: osFlag === 'windows' ,
-    is_os_wsl: osFlag === 'windows' ,
-    is_os_ubuntu: ['windows', 'chrome_os', 'ubuntu'].indexOf(osFlag) >= 0 ,
-    is_os_chromeos: osFlag === 'chrome_os' ,
-    is_os_mingw64: osFlag === 'ming_64' ,
-    is_os_android_termux: osFlag === 'android_termux' ,
+    is_os_darwin_mac: osFlag === 'mac',
+    is_os_window: osFlag === 'windows',
+    is_os_wsl: osFlag === 'windows',
+    is_os_ubuntu: ['windows', 'chrome_os', 'ubuntu'].indexOf(osFlag) >= 0,
+    is_os_chromeos: osFlag === 'chrome_os',
+    is_os_mingw64: osFlag === 'ming_64',
+    is_os_android_termux: osFlag === 'android_termux',
   };
 
   return osFlags;
