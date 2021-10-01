@@ -330,12 +330,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false) {
   let files = await listRepoDir();
 
   // clean up the files
-  files = files.filter(
-    (f) =>
-      !!f.match('software/scripts/') &&
-      (f.includes('.js') || f.includes('.sh')) &&
-      !f.includes('config.js')
-  );
+  files = files.filter((f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'));
 
   //this is a special flags used to return all the script for index building
   if (returnAllScripts) {
@@ -357,10 +352,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false) {
   `);
 
   let softwareFiles = files.filter(
-    (f) =>
-      !!f.match('software/scripts/') &&
-      (f.includes('.js') || f.includes('.sh')) &&
-      !f.includes('config.js')
+    (f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'),
   );
   softwareFiles = [...firstFiles, ...[...softwareFiles].sort(), ...lastFiles];
 
