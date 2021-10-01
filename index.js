@@ -69,8 +69,15 @@ async function init() {
   }
 
   // select the previous values from local storage
-  document.querySelector('#osToRun').value = localStorage.osToRun || 'windows';
-  document.querySelector('#addBootstrapScript').value = localStorage.addBootstrapScript !== '' ? 'yes' : '';
+  document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
+  document.querySelector('#addBootstrapScript').value = getStorage('addBootstrapScript', '');
+  document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
+  document.querySelector('#runnerToUse').value = getStorage('runnerToUse', '');
+
+  getStorage('scriptToUse', '')
+    .split('\n')
+    .filter((s) => s.trim())
+    .forEach((s) => addScriptTextbox(s));
 
   // add the first script textbox
   addScriptTextbox();
@@ -115,31 +122,47 @@ function updateScript() {
     .trim();
 }
 
-function addScriptTextbox() {
+function addScriptTextbox(defaultValue = '') {
   const notEmptyScriptTextboxes = [...document.querySelectorAll('.scriptToUse')].filter((s) => !s.value.trim());
   if (notEmptyScriptTextboxes.length > 0) {
     notEmptyScriptTextboxes[0].focus();
   }
 
-  document.querySelector('#btnAddScript').insertAdjacentHTML(
+  document.querySelector('#scriptToUseContainer').insertAdjacentHTML(
     'beforeBegin',
     `
-          <input
-            class="scriptToUse"
-            list="scriptToRunOptions"
-            type="text"
-            onkeydown="keyDownScriptTextbox(event)"
-            onchange="updateScript()"
-            onblur="cleanupUnusedScriptTextBox(this)"
-            placeholder="Script To Run"
-            autofocus
-            required
-            />
-        `,
+      <input
+        class="scriptToUse"
+        list="scriptToRunOptions"
+        type="text"
+        onkeydown="keyDownScriptTextbox(event)"
+        onchange="updateScript()"
+        onblur="cleanupUnusedScriptTextBox(this)"
+        oninput="persistScriptToUse()"
+        placeholder="Script To Run"
+        autofocus
+        required
+        />
+    `,
   );
 
   // focus on the last one
-  [...document.querySelectorAll('.scriptToUse')].slice(-1)[0].focus();
+  const lastScriptBox = [...document.querySelectorAll('.scriptToUse')].slice(-1)[0];
+  lastScriptBox.value = defaultValue;
+  lastScriptBox.focus();
+}
+
+function clearAllScriptTextBox() {
+  // store it and create new list
+  const backupScript = getStorage('scriptToUse', '').trim();
+  if (backupScript) {
+    setStorage(`scriptToUse.${Date.now()}`, backupScript);
+  }
+
+  for (const scriptElem of document.querySelectorAll('.scriptToUse')) {
+    scriptElem.remove();
+  }
+  addScriptTextbox();
 }
 
 function keyDownScriptTextbox(e) {
@@ -170,6 +193,17 @@ function cleanupUnusedScriptTextBox(elem) {
 
   //
   updateAutoComplete();
+}
+
+function persistScriptToUse() {
+  // persist the script into memory for later use
+  setStorage(
+    'scriptToUse',
+    [...document.querySelectorAll('.scriptToUse')]
+      .map((s) => s.value.trim())
+      .filter((s) => s.trim())
+      .join('\n'),
+  );
 }
 
 function _getOsFlags(osFlag) {
@@ -208,6 +242,14 @@ async function selectCommands() {
   document.querySelector('#output').focus();
   document.querySelector('#output').select();
   document.execCommand('copy');
+}
+
+function setStorage(key, value) {
+  localStorage[key] = value;
+}
+
+function getStorage(key, defaultValue) {
+  return localStorage[key] || defaultValue;
 }
 
 init();

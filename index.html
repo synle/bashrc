@@ -108,9 +108,9 @@
       .hidden {
         display: none !important;
       }
-      datalist{
+      datalist {
         max-height: 200px !important;
-        height: 200px  !important;
+        height: 200px !important;
         overflow-y: auto !important;
       }
     </style>
@@ -125,10 +125,14 @@
         <!--     script to run     -->
         <div id="scriptToRunContainer" class="c2-child">
           <label>Scripts To Run:</label>
-          <button id="btnAddScript" onclick="addScriptTextbox()" type="button" style="width: 150px">Add Script</button>
-          <datalist id="scriptToRunOptions" style="overflow-y: auto!important">></datalist>
+          <div id="scriptToUseContainer"></div>
+          <div>
+            <button id="btnAddScript" onclick="addScriptTextbox()" type="button">Add Script</button>
+            <button onclick="clearAllScriptTextBox()" type="button" style="margin-left: 40px">Clear All</button>
+          </div>
+          <datalist id="scriptToRunOptions" style="overflow-y: auto !important">></datalist>
           <label>Runner:</label>
-          <select id="runnerToUse" onchange="updateScript()">
+          <select id="runnerToUse" onchange="updateScript()" oninput="setStorage('runnerToUse', event.target.value)">
             <option value="test-live.sh" selected>Use Live Script</option>
             <option value="test.sh">Use Local Script</option>
           </select>
@@ -139,6 +143,7 @@
             type="text"
             onchange="updateScript()"
             onblur="this.value = this.value.trim();"
+            oninput="setStorage('debugWriteToDir', event.target.value)"
             placeholder="Debug Write To File Path" />
           <datalist id="writeToFilePathOptions">
             <option>$(pwd)</option>
@@ -150,7 +155,7 @@
         <!--     os to run     -->
         <div id="osToRunContainer" class="c2-child">
           <label>OS Type:</label>
-          <select id="osToRun" onchange="updateScript()" oninput="localStorage.osToRun = document.querySelector('#osToRun').value">
+          <select id="osToRun" onchange="updateScript()" oninput="setStorage('osToRun', event.target.value)">
             <option value="windows" selected>Windows with WSL</option>
             <option value="ming_64">Windows with Ming_64</option>
             <option value="mac">Mac OSX</option>
@@ -163,10 +168,7 @@
         <!-- add bootstrap script -->
         <div id="osToRunContainer" class="c2-child">
           <label>Add Bootstrap Script:</label>
-          <select
-            id="addBootstrapScript"
-            onchange="updateScript()"
-            oninput="localStorage.addBootstrapScript = document.querySelector('#addBootstrapScript').value">
+          <select id="addBootstrapScript" onchange="updateScript()" oninput="setStorage('addBootstrapScript', event.target.value)">
             <option value="yes">Yes</option>
             <option value="">No</option>
           </select>
