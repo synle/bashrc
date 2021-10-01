@@ -1,5 +1,5 @@
 async function doWork() {
-  const softwareFiles = await getSoftwareScriptFiles();
+  const softwareFiles = await getSoftwareScriptFiles(true);
 
   const files = [];
   for (let i = 0; i < softwareFiles.length; i++) {
@@ -13,6 +13,6 @@ async function doWork() {
     files.push(file);
   }
 
-  const targetPath = './software/metadata/script-list.config';
+  const targetPath = process.env.SCRIPT_INDEX_CONFIG_FILE || './software/metadata/script-list.config';
   writeText(targetPath, files.join('\n'));
 }

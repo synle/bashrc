@@ -20,7 +20,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
       - run: sh format.sh
-      - run: sh package.sh
+      - run: sh build.sh
         env:
           is_os_darwin_mac: 0
           is_os_window: 0
