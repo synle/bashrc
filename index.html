@@ -12,8 +12,8 @@
         padding: 0;
       }
       html {
-        font-family: monospace !important;
-        font-size: 14px;
+        font-family: Helvetica, Tahoma, Geneva, sans-serif !important;
+        font-size: 12px;
         padding: 10px 20px;
       }
       h1 {
@@ -78,6 +78,26 @@
       a {
         padding: 0.5rem 0.75rem;
       }
+      autocomplete{
+        display:  none;
+      }
+      .autocompleteBox{
+        position: absolute;
+        left:  0;
+        right:  0;
+        height:  400px;
+        overflow:  auto;
+        background:  #333;
+        color:  #fff;
+      }
+      .autocompleteBox .option{
+        cursor: pointer;
+        border:  1px solid #000;
+        padding:  8px 10px;
+      }
+      .autocompleteBox .option:hover, .autocompleteBox .option:focus{
+        background: #666;
+      }
       #container {
         display: grid;
         grid-template-columns: auto 1fr;
@@ -120,7 +140,7 @@
         <div id="scriptToRunContainer" class="c2-child">
           <label>Scripts To Run:</label>
           <button id="btnAddScript" onclick="addScriptTextbox()" type="button" style="width: 150px">Add Script</button>
-          <datalist id="scriptToRunOptions"></datalist>
+          <autocomplete id="scriptToRunOptions"></autocomplete>
           <label>Runner:</label>
           <select id="runnerToUse" onchange="updateScript()">
             <option value="test-live.sh" selected>Use Live Script</option>
@@ -134,11 +154,11 @@
             onchange="updateScript()"
             onblur="this.value = this.value.trim();"
             placeholder="Debug Write To File Path" />
-          <datalist id="writeToFilePathOptions">
+          <autocomplete id="writeToFilePathOptions">
             <option>$(pwd)</option>
             <option>./</option>
             <option>~</option>
-          </datalist>
+          </autocomplete>
         </div>
 
         <!--     os to run     -->
@@ -304,22 +324,52 @@
         document.querySelector('#btnAddScript').insertAdjacentHTML(
           'beforeBegin',
           `
-          <input
-            class="scriptToUse"
-            list="scriptToRunOptions"
-            type="text"
-            onkeydown="keyDownScriptTextbox(event)"
-            onchange="updateScript()"
-            onblur="this.value = this.value.trim(); updateAutoComplete(); cleanupUnusedScriptTextBox(this)"
-            placeholder="Script To Run"
-            autofocus
-            required
-            />
+          <div style="position: relative;">
+            <input
+              class="scriptToUse"
+              list="scriptToRunOptions"
+              type="text"
+              onkeydown="keyDownScriptTextbox(event)"
+              onchange="updateScript()"
+              onblur="blurScriptToUsed(event)"
+              onfocus="showAutocompleteForScriptTextbox(event)"
+              placeholder="Script To Run"
+              required
+              />
+          </div>
         `,
         );
 
         // focus on the last one
         [...document.querySelectorAll('.scriptToUse')].slice(-1)[0].focus();
+      }
+
+      function blurScriptToUsed(e){
+        const target = e.target;
+        target.value = target.value.trim();
+        updateAutoComplete();
+        cleanupUnusedScriptTextBox(target);
+      }
+
+      function showAutocompleteForScriptTextbox(e){
+        const autocompleteOptions = [...document.querySelectorAll('#scriptToRunOptions option')]
+          .map(option => `<div class="option" tabIndex='0'>${option.innerText}</div>`)
+          .join('\n');
+
+        e.target.parentElement.insertAdjacentHTML(
+          'beforeend',
+          `
+          <div class='autocompleteBox'>
+            ${autocompleteOptions}
+          </div>
+        `,
+        );
+        for(const option of [...e.target.parentElement.querySelectorAll('.autocompleteBox .option')]){
+          option.addEventListener('click', (e2) => {
+          const autocomplete = e2.target.innerText.trim();
+          e.target.value = autocomplete;
+        })
+        }
       }
 
       function keyDownScriptTextbox(e){
@@ -342,8 +392,9 @@
 
       function cleanupUnusedScriptTextBox(elem) {
         if (!elem.value.trim() && [...document.querySelectorAll('.scriptToUse')].length > 1) {
-          elem.remove();
+          elem.parentElement.remove();
         }
+        setTimeout(() => elem.parentElement.querySelector('.autocompleteBox').remove(), 100)
       }
 
       function _getOsFlags(osFlag) {
