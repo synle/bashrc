@@ -70,9 +70,9 @@ async function init() {
 
   // select the previous values from local storage
   document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
-  document.querySelector('#addBootstrapScript').value = getStorage('addBootstrapScript', '');
   document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
   document.querySelector('#runnerToUse').value = getStorage('runnerToUse', 'test-live.sh');
+  document.scriptForm.addBootstrapScript.value = getStorage('addBootstrapScript') || 'no';
 
   getStorage('scriptToUse', '')
     .split('\n')
@@ -215,7 +215,7 @@ function persistScriptToUse() {
 }
 
 function _getOsFlagScript() {
-  if (!document.querySelector('#addBootstrapScript').value.trim()) {
+  if (document.scriptForm.addBootstrapScript.value.trim() !== 'yes') {
     // don't add os bootstrap script
     return '';
   }

@@ -13,7 +13,7 @@
     </div>
     <div id="container">
       <section id="commands" class="c1"><strong>Type of Script:</strong></section>
-      <div class="c2">
+      <form name='scriptForm' class="c2">
         <!--     script to run     -->
         <div id="scriptToRunContainer" class="c2-child">
           <label>Scripts To Run:</label>
@@ -58,16 +58,18 @@
         </div>
 
         <!-- add bootstrap script -->
-        <div id="osToRunContainer" class="c2-child">
+        <div class="c2-child">
           <label>Add Bootstrap Script:</label>
-          <select id="addBootstrapScript" onchange="updateScript()" oninput="setStorage('addBootstrapScript', event.target.value)">
-            <option value="yes">Yes</option>
-            <option value="">No</option>
-          </select>
+          <div>
+            <input type='radio' name='addBootstrapScript' id='addBootstrapScript-yes' value='yes' onchange="updateScript(); setStorage('addBootstrapScript', document.scriptForm.addBootstrapScript.value)" />
+            <label for='addBootstrapScript-yes'>Yes</label>
+            <input type='radio' name='addBootstrapScript' id='addBootstrapScript-no' value='no' onchange="updateScript(); setStorage('addBootstrapScript', document.scriptForm.addBootstrapScript.value)" />
+            <label for='addBootstrapScript-no'>No</label>
+          </div>
         </div>
 
         <textarea id="output" placeholder="Output" readonly="true" onfocus="selectCommands()"></textarea>
-      </div>
+      </form>
 
       <div id="bot" class="c3">
         <a href="https://github.com/synle/bashrc" target="_blank">Repo</a>
