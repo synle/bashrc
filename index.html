@@ -82,6 +82,8 @@
         display: grid;
         grid-template-columns: auto 1fr;
         grid-gap: 1rem 0.5rem;
+        border-top: 4px dashed #999;
+        padding-top:  1rem;
       }
       #container .c1 {
         grid-area: 1 / 1 / 2 / 2;
@@ -306,6 +308,7 @@
             class="scriptToUse"
             list="scriptToRunOptions"
             type="text"
+            onkeydown="keyDownScriptTextbox(event)"
             onchange="updateScript()"
             onblur="this.value = this.value.trim(); updateAutoComplete(); cleanupUnusedScriptTextBox(this)"
             placeholder="Script To Run"
@@ -317,6 +320,12 @@
 
         // focus on the last one
         [...document.querySelectorAll('.scriptToUse')].slice(-1)[0].focus();
+      }
+
+      function keyDownScriptTextbox(e){
+        if(e.key === 'Enter' && e.target.value){
+          addScriptTextbox();
+        }
       }
 
       function updateAutoComplete() {
