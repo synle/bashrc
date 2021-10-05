@@ -3,19 +3,19 @@ async function doWork() {
 
   if (!is_os_darwin_mac) {
     console.log('    >> Skipped - mac only');
-    process.exit();
+    return process.exit();
   }
 
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, 'mac');
 
-  console.log('    >> Iterm Dracula Theme Path', targetPath);
+  console.log('    >> Iterm Dracula Theme Path', consoleLogColor4(targetPath));
 
   await downloadFile(
     'https://raw.githubusercontent.com/synle/ubuntu-setup/master/themes/mac/iterm.Dracula.itermcolors',
     path.join(targetPath, 'iterm.Dracula.itermcolors'),
   );
 
-  console.log('    >> Iterm Keymap', targetPath);
+  console.log('    >> Iterm Keymap', consoleLogColor4(targetPath));
   writeText(
     path.join(targetPath, 'iterm.itermkeymap'),
     `

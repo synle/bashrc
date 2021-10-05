@@ -1,9 +1,9 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.synle-make-component');
 
-  console.log('  >> Download and installing synle-make-component:', targetPath);
+  console.log('  >> Download and installing synle-make-component:', consoleLogColor4(targetPath));
 
-  console.log('    >> Cloning and building', targetPath);
+  console.log('    >> Cloning and building', consoleLogColor4(targetPath));
   await execBashSilent(`
     rm -rf "${targetPath}"
     git clone --depth 1 -b master https://github.com/synle/make-component.git "${targetPath}"

@@ -1,5 +1,3 @@
-let SUBLIME_VERSION;
-
 async function _getPathSublimeText() {
   try {
     if (is_os_window) {
@@ -430,7 +428,7 @@ async function doInit() {
 async function doWork() {
   let targetPath = await _getPathSublimeText();
 
-  console.log(`  >> Setting up Sublime Text ${SUBLIME_VERSION} keybindings:`, targetPath);
+  console.log(`  >> Setting up Sublime Text keybindings:`, consoleLogColor4(targetPath));
 
   if (DEBUG_WRITE_TO_DIR) {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
@@ -439,26 +437,26 @@ async function doWork() {
     writeJson('sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
     writeJson('sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
 
-    process.exit();
+    return process.exit();
   }
 
   if (!fs.existsSync(targetPath)) {
-    console.log(consoleLogColor1('    >> Skipped : Target path not found'));
-    process.exit();
+    console.log(consoleLogColor1('    >> Skipped : Not Found'));
+    return process.exit();
   }
 
   // windows only key bindings
   const windowsKeymapPath = path.join(targetPath, 'Packages/User/Default (Windows).sublime-keymap');
-  console.log('    >> ', windowsKeymapPath);
+  console.log('    >> Windows', windowsKeymapPath);
   writeJson(windowsKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]));
 
   // linux only key bindings
   const linuxKeymapPath = path.join(targetPath, 'Packages/User/Default (Linux).sublime-keymap');
-  console.log('    >> ', linuxKeymapPath);
+  console.log('    >> Linux', linuxKeymapPath);
   writeJson(linuxKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]));
 
   // mac only key bindings
   const macKeymapPath = path.join(targetPath, 'Packages/User/Default (OSX).sublime-keymap');
-  console.log('    >> ', macKeymapPath);
+  console.log('    >> OSX', macKeymapPath);
   writeJson(macKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS]));
 }

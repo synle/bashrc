@@ -1,7 +1,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.fzf');
 
-  console.log('  >> Download and installing fzf:', targetPath);
+  console.log('  >> Download and installing fzf:', consoleLogColor4(targetPath));
 
   // clone it
   await execBashSilent(`

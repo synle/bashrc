@@ -31,12 +31,12 @@ async function doWorkSshConfig() {
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, '.ssh');
   const targetPath = path.join(baseSshPath, 'config');
 
-  console.log('    >> Setting up SSH Client config', targetPath);
+  console.log('    >> Setting up SSH Client config', consoleLogColor4(targetPath));
   await execBashSilent(`
     touch ${targetPath} && chmod 611 ${targetPath}
   `);
 
-  console.log('    >> Updating SSH Client Config', targetPath);
+  console.log('    >> Updating SSH Client Config', consoleLogColor4(targetPath));
 
   let sshConfigTextContent = readText(targetPath);
 
@@ -82,7 +82,7 @@ async function doWorkEtcHost() {
   const targetPath = _getEtcHosts();
   let etcHostTextContent = readText(targetPath);
 
-  console.log('    >> Updating ETC Host', targetPath);
+  console.log('    >> Updating ETC Host', consoleLogColor4(targetPath));
 
   // make a backup
   writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/etc_host.backup.${Date.now()}`), etcHostTextContent);
@@ -112,7 +112,7 @@ async function doWorkEtcHost() {
     console.log('        >> Total Blocked Hosts', BLOCK_HOST_NAMES.length);
 
     writeText(targetPath, etcHostTextContent.trim());
-    console.log('      >> Done updating etc hosts: ', targetPath);
+    console.log('      >> Done updating etc hosts: ', consoleLogColor4(targetPath));
 
     if (is_os_window) {
       console.log('        >> Only Windows run command: ipconfig /flushdns');

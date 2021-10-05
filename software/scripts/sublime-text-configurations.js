@@ -57,7 +57,7 @@ async function doInit() {
 async function doWork() {
   let targetPath = await _getPathSublimeText();
 
-  console.log(`  >> Setting up Sublime Text configurations:`, targetPath);
+  console.log(`  >> Setting up Sublime Text configurations:`, consoleLogColor4(targetPath));
 
   if (DEBUG_WRITE_TO_DIR) {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
@@ -65,31 +65,40 @@ async function doWork() {
     // non -mac keybinding
     writeJson('sublime-text-configurations', sublimeSetings);
 
-    process.exit();
+    return process.exit();
   }
 
   if (!fs.existsSync(targetPath)) {
-    console.log(consoleLogColor1('    >> Skipped : Target path not found'));
-    process.exit();
+    console.log(consoleLogColor1('    >> Skipped : Not Found'));
+    return process.exit();
   }
 
-  const sublimeThemeConfigPath = path.join(targetPath, 'Packages/User/Default.sublime-theme');
-  console.log('    >> Default.sublime-theme', sublimeThemeConfigPath);
-  writeJson(sublimeThemeConfigPath, [
+  const baseThemeConfig = [
     {
-      class: 'sidebar_label',
-      'font.size': EDITOR_CONFIGS.fontSize,
+      class: 'sidebar_tree',
+      'font.size': 12,
+      indent_offset: 0,
+      indent: 10,
+      row_padding: [5, 2, 4, 2],
     },
     {
       class: 'tab_label',
-      'font.size': EDITOR_CONFIGS.fontSize,
+      'font.size': 12,
     },
-  ]);
+  ];
+
+  const themeNames = ['Default', 'Default Dark', 'Adaptive'];
+
+  for (const themeName of themeNames) {
+    let sublimeThemeConfigPath;
+    sublimeThemeConfigPath = path.join(targetPath, `Packages/User/${themeName}.sublime-theme`);
+    console.log('    >> theme', sublimeThemeConfigPath);
+    writeJson(sublimeThemeConfigPath, baseThemeConfig);
+  }
 
   //
   const sublimeMainConfigPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
-  console.log('    >> Preferences.sublime-settings', sublimeMainConfigPath);
-  console.log('      >> Installing', sublimeMainConfigPath);
+  console.log('    >> settings', sublimeMainConfigPath);
 
   let osSpecificSettings = {};
   if (is_os_darwin_mac) {

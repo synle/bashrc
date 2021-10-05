@@ -11,7 +11,7 @@ async function doWork() {
   );
   writeText(BASE_BASH_SYLE, textContent);
 
-  console.log('  >> Installing Android Termux Only tweaks:', targetPath);
+  console.log('  >> Installing Android Termux Only tweaks:', consoleLogColor4(targetPath));
   writeText(
     targetPath,
     `

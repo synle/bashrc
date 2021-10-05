@@ -2,7 +2,7 @@ async function doWork() {
   console.log('  >> Installing Windows Only - File Associations');
 
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, 'windows', 'file-association.cmd');
-  console.log('  >> Windows File Associations', targetPath);
+  console.log('  >> Windows File Associations', consoleLogColor4(targetPath));
   writeText(
     targetPath,
     `

@@ -7,7 +7,7 @@ async function doWork() {
 
   if (!is_os_window && !is_os_darwin_mac) {
     console.log(consoleLogColor1('  >> Skipped : Only Mac or Windows'));
-    return;
+    return process.exit();
   }
 
   const files = await listRepoDir();
@@ -18,7 +18,7 @@ async function doWork() {
 
   if (fonts.length.length === 0) {
     console.log(consoleLogColor1('    >> Skipped : No fonts found'));
-    process.exit();
+    return process.exit();
   }
 
   const promises = [];
@@ -29,9 +29,9 @@ async function doWork() {
           const url = `https://raw.githubusercontent.com/synle/bashrc/master/${font}`;
           const destination = path.join(targetFontPath, 'Font-' + path.basename(font));
           await downloadFile(url, destination);
-          console.log('      >> Downloaded', destination);
+          console.log(consoleLogColor3('      >> Downloaded'), consoleLogColor4(destination));
         } catch (err) {
-          console.log('      >> Error Downloading', font);
+          console.log(consoleLogColor3('      >> Error Downloading'), consoleLogColor4(font));
         }
 
         resolve();

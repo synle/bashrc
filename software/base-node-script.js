@@ -12,7 +12,7 @@ globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
  * @type {Object}
  */
 globalThis.EDITOR_CONFIGS = {
-  fontSize: 13,
+  fontSize: 12,
   fontFamily: 'Fira Code Retina',
   tabSize: 2,
   maxLineSize: 140,
@@ -142,7 +142,7 @@ function writeText(aDir, text) {
   const newContent = text;
   const oldContent = readText(pathToUse);
   if (oldContent.trim() === newContent.trim()) {
-    console.log('<< writeText [NotModified]: ', pathToUse);
+    console.log(consoleLogColor3('      << writeText [NotModified]:'), consoleLogColor4(pathToUse));
   } else {
     fs.writeFileSync(pathToUse, newContent);
   }
@@ -462,33 +462,34 @@ function execBashSilent(cmd, options) {
   });
 }
 
-// console print
+// console print and colors
+const CONSOLE_COLORS = [
+  null, // 0 index is not used
+  '32m', // green
+  '33m', // yellow
+  '36m', // cyan
+  '2m', // dim silver
+];
+
 function echo(str) {
   return `echo '''${str}'''`;
 }
 
-function echoColor1(str) {
-  return `echo -e $'\\e[31m${str}\\e[m'`;
+function echoColor(str, color) {
+  return `echo -e $'\\e[${color}${str}\\e[m'`;
 }
 
-function echoColor2(str) {
-  return `echo -e $'\\e[32m${str}\\e[m'`;
+function consoleLogColor(str, color) {
+  return `\x1b[${color}${str}\x1b[0m`;
 }
 
-function echoColor3(str) {
-  return `echo -e $'\\e[33m${str}\\e[m'`;
-}
+for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
+  const color = CONSOLE_COLORS[idx];
 
-function consoleLogColor1(str) {
-  return str;
-}
-
-function consoleLogColor2(str) {
-  return str;
-}
-
-function consoleLogColor3(str) {
-  return str;
+  if (color) {
+    global['echoColor' + idx] = (str) => echoColor(str, color);
+    global['consoleLogColor' + idx] = (str) => consoleLogColor(str, color);
+  }
 }
 
 // script utils

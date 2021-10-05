@@ -23,7 +23,7 @@ async function doWorkRdp() {
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.rdp');
 
-    console.log('    >> RDP: ', targetPath);
+    console.log('    >> RDP: ', consoleLogColor4(targetPath));
 
     const content = `
 use multimon:i:0
@@ -85,7 +85,7 @@ async function doWorkVnc() {
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.vnc');
 
-    console.log('    >> VNC: ', targetPath);
+    console.log('    >> VNC: ', consoleLogColor4(targetPath));
 
     const content = `
 AuthCertificate=

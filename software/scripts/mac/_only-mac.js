@@ -10,7 +10,7 @@ async function doWork() {
   );
   writeText(BASE_BASH_SYLE, textContent);
 
-  console.log('  >> Installing Mac OSX Only tweaks: ', targetPath);
+  console.log('  >> Installing Mac OSX Only tweaks: ', consoleLogColor4(targetPath));
   writeText(
     targetPath,
     `

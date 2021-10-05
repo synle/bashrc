@@ -325,12 +325,12 @@ async function doWork() {
     writeJson('vs-code-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
     writeJson('vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
 
-    process.exit();
+    return process.exit();
   }
 
   if (!fs.existsSync(targetPath)) {
-    console.log('Not supported - Exit - targetPath not found: ', targetPath);
-    process.exit();
+    console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
+    return process.exit();
   }
 
   const vsCodeKeybindingConfigPath = path.join(targetPath, 'User/keybindings.json');

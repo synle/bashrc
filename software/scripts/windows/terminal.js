@@ -5,11 +5,11 @@
 async function doWork() {
   const targetPath = path.join(_getPath(), 'LocalState/settings.json');
   if (!fs.existsSync(targetPath)) {
-    console.log('  >> Skipped Windows Terminal Config - Settings Path Not Found: ', targetPath);
-    process.exit();
+    console.log('  >> Skipped Windows Terminal Config - Settings Path Not Found: ', consoleLogColor4(targetPath));
+    return process.exit();
   }
 
-  console.log('  >> Setting up Microsoft Windows Terminal', targetPath);
+  console.log('  >> Setting up Microsoft Windows Terminal', consoleLogColor4(targetPath));
 
   const oldProfiles = readJson(targetPath);
   const newProfiles = Object.assign(oldProfiles, {
@@ -295,8 +295,8 @@ async function doWork() {
       cursorShape: 'vintage',
       cursorHeight: 50,
       fontFace: EDITOR_CONFIGS.fontFamily,
-      fontSize: 10,
-      padding: '5 0 5 0',
+      fontSize: EDITOR_CONFIGS.fontSize,
+      padding: '2 0 2 0',
       bellStyle: 'all',
       // useAcrylic: true,
     });
@@ -346,6 +346,6 @@ function _getPath() {
     return null;
   } catch (e) {
     console.log('  >> Skipped Windows Terminal Config - Error');
-    process.exit();
+    return process.exit();
   }
 }

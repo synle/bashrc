@@ -2,7 +2,7 @@ async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bashrc');
   let bashrcTextContent = readText(targetPath);
 
-  console.log('  >> Updating .bashrc initial setup', targetPath);
+  console.log('  >> Updating .bashrc initial setup', consoleLogColor4(targetPath));
 
   // add tweaks...
   bashrcTextContent = appendTextBlock(

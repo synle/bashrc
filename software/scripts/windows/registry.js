@@ -2,7 +2,7 @@ async function doWork() {
   console.log('  >> Download and installing custom windows registry:');
 
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, 'windows', 'registries.reg');
-  console.log('    >> Registries: ', targetPath);
+  console.log('    >> Registries: ', consoleLogColor4(targetPath));
   writeText(
     targetPath,
     `

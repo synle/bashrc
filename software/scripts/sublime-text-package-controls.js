@@ -22,32 +22,33 @@ async function _getPathSublimeText() {
 async function doWork() {
   let targetPath = await _getPathSublimeText();
 
-  console.log(`  >> Setting up Sublime Text ${SUBLIME_VERSION} configurations:`, targetPath);
+  console.log(`  >> Setting up Sublime Text ${SUBLIME_VERSION} configurations:`, consoleLogColor4(targetPath));
 
   if (!fs.existsSync(targetPath)) {
-    console.log(consoleLogColor1('    >> Skipped : Target path not found'));
-    process.exit();
+    console.log(consoleLogColor1('    >> Skipped : Not Found'));
+    return process.exit();
   }
 
   const sublimePackageControlConfigPath = path.join(targetPath, 'Packages/User/Package Control.sublime-settings');
-  console.log('    >> Package Control.sublime-settings', sublimePackageControlConfigPath);
+  console.log('    >> Package Control', sublimePackageControlConfigPath);
   writeJson(sublimePackageControlConfigPath, {
     bootstrapped: true,
     in_process_packages: [],
-    installed_packages: [
-      'All Autocomplete',
-      'BracketHighlighter',
-      'Case Conversion',
-      'CodeFormatter',
-      'Compare Side-By-Side',
-      'DocBlockr',
-      'Dracula Color Scheme',
-      'LESS',
-      'SCSS',
-      'SideBarEnhancements',
-      'SyncedSideBar',
-      'TypeScript',
-    ],
+    installed_packages: convertTextToList(`
+      All Autocomplete
+      BracketHighlighter
+      Case Conversion
+      CodeFormatter
+      Compare Side-By-Side
+      DocBlockr
+      Dracula Color Scheme
+      FileIcons
+      LESS
+      SCSS
+      SideBarEnhancements
+      SyncedSideBar
+      TypeScript
+    `),
   });
 
   const sublimeCodeFormatConfigPath = path.join(targetPath, 'Packages/CodeFormatter/CodeFormatter.sublime-settings');

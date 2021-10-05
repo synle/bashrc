@@ -2,7 +2,7 @@ async function doWork() {
   console.log('  >> Installing Windows Only - Hotkeys (Autohotkey) Configs');
 
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, 'windows', 'autohotkey.ahk');
-  console.log('    >> Hotkeys (Autohotkey) Configs', targetPath);
+  console.log('    >> Hotkeys (Autohotkey) Configs', consoleLogColor4(targetPath));
   writeText(
     targetPath,
     `

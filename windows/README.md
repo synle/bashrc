@@ -131,8 +131,8 @@ net use z: \\wsl$\Ubuntu-20.04
 %USERPROFILE%\.vscode\extensions
 ```
 
-
 #### Downloading and installing WSL2
+
 https://docs.microsoft.com/en-us/windows/wsl/install-manual
 
 ```powershell

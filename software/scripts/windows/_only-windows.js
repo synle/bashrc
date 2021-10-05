@@ -10,7 +10,7 @@ async function doWork() {
   );
   writeText(BASE_BASH_SYLE, textContent);
 
-  console.log('  >> Installing Windows WSL Only tweaks:', targetPath);
+  console.log('  >> Installing Windows WSL Only tweaks:', consoleLogColor4(targetPath));
   writeText(
     targetPath,
     `

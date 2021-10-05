@@ -1,6 +1,6 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_autocomplete');
-  console.log('  >> Installing Bash Autocomplete', targetPath);
+  console.log('  >> Installing Bash Autocomplete', consoleLogColor4(targetPath));
 
   let res = '';
 

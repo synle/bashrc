@@ -2,7 +2,13 @@ async function doWork() {
   console.log('  >> Installing Windows Only - Sumatra Dracula Theme');
 
   const targetPath = path.join(getWindowAppDataLocalUserPath(), 'SumatraPDF', 'SumatraPDF-settings.txt');
-  console.log('    >> Configs', targetPath);
+  console.log('    >> Configs', consoleLogColor4(targetPath));
+
+  if (!fs.existsSync(targetPath)) {
+    console.log(consoleLogColor1('    >> Skipped : Not Found'));
+    return process.exit();
+  }
+
   writeText(
     targetPath,
     `

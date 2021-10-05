@@ -1,7 +1,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
 
-  console.log('  >> Download and installing nvm:', targetPath);
+  console.log('  >> Download and installing nvm:', consoleLogColor4(targetPath));
 
   // TODO: fix me add the block to install nvm
 

@@ -67,15 +67,15 @@ async function doWork() {
     // non -mac keybinding
     writeJson('vs-code-configurations', COMMON_CONFIGS);
 
-    process.exit();
+    return process.exit();
   }
 
   if (!fs.existsSync(targetPath)) {
-    console.log('Not supported - Exit - targetPath not found: ', targetPath);
-    process.exit();
+    console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
+    return process.exit();
   }
 
-  console.log(`  >> Setting up Microsoft VS Code Configurations:`, targetPath);
+  console.log(`  >> Setting up Microsoft VS Code Configurations:`, consoleLogColor4(targetPath));
 
   // get os specific settings
   const osSpecificSettings = {};

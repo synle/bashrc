@@ -6,6 +6,6 @@ async function doWork() {
     'https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/windows/classic_start.config.xml',
   );
 
-  console.log('    >> Classic Start Configs', targetPath);
+  console.log('    >> Classic Start Configs', consoleLogColor4(targetPath));
   writeText(targetPath, res);
 }

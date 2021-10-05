@@ -161,13 +161,13 @@ async function doWork() {
   `;
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, '.vimrc');
-  console.log('  >> Setting up vimrc on Linux / Mac / WSL', targetPath);
+  console.log('  >> Setting up vimrc on Linux / Mac / WSL', consoleLogColor4(targetPath));
   writeText(targetPath, contentOnlyFullVimrc + contentVimrc);
 
   if (is_os_window) {
     targetPath = path.join(getWindowUserBaseDir(), '.vimrc');
     if (fs.existsSync(targetPath)) {
-      console.log('  >> Setting up vimrc on Windows', targetPath);
+      console.log('  >> Setting up vimrc on Windows', consoleLogColor4(targetPath));
       writeText(targetPath, contentVimrc);
     }
   }
