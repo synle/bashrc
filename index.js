@@ -1,4 +1,5 @@
 let idx = Date.now();
+
 const configs = [
   {
     text: 'Setup Dependencies',
@@ -31,7 +32,7 @@ const configs = [
     shouldShowOsSelectionInput: true,
   },
 ].map((config) => ({
-  idx: `command-option-${++idx}`,
+  idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
   ...config,
 }));
 
@@ -60,19 +61,21 @@ async function init() {
   for (const config of configs) {
     const domCommand = document.createElement('div');
     domCommand.innerHTML = `
-          <input onchange='updateScript()' type='radio' name='choice-setup' id='${config.idx}' value='${config.idx}' ${
-      config.checked ? 'checked' : ''
-    } />
+          <input onchange='updateScript()' type='radio' name='commandChoice' id='${config.idx}' value='${config.idx}' />
           <label for='${config.idx}'>${config.text}</label>
         `;
     document.querySelector('#commands').appendChild(domCommand);
+
+    if (config.checked) {
+      document.scriptForm.commandChoice.value = config.idx;
+    }
   }
 
   // select the previous values from local storage
   document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
-  document.querySelector('#addBootstrapScript').value = getStorage('addBootstrapScript', '');
   document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
-  document.querySelector('#runnerToUse').value = getStorage('runnerToUse', 'test-live.sh');
+  document.scriptForm.runnerToUse.value = getStorage('runnerToUse', 'test-live.sh');
+  document.scriptForm.addBootstrapScript.value = getStorage('addBootstrapScript') || 'no';
 
   getStorage('scriptToUse', '')
     .split('\n')
@@ -89,7 +92,7 @@ async function init() {
 function updateScript() {
   let newCommands = [];
 
-  const selectedScriptIdx = document.querySelector("[name='choice-setup']:checked").value;
+  const selectedScriptIdx = document.scriptForm.commandChoice.value;
   const selectedScript = configsByKey[selectedScriptIdx];
 
   let debugWriteToDirValue = '';
@@ -107,7 +110,7 @@ function updateScript() {
         [...new Set([...document.querySelectorAll('.scriptToUse')].map((s) => s.value.trim()).filter((s) => !!s.trim()))].join('\n'),
       )
       .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
-      .replace('<SELECTED_RUNNER_SCRIPT>', document.querySelector('#runnerToUse').value.trim())
+      .replace('<SELECTED_RUNNER_SCRIPT>', document.scriptForm.runnerToUse.value)
       .replace('<OS_FLAGS>', _getOsFlagScript()),
   );
 
@@ -215,7 +218,7 @@ function persistScriptToUse() {
 }
 
 function _getOsFlagScript() {
-  if (!document.querySelector('#addBootstrapScript').value.trim()) {
+  if (document.scriptForm.addBootstrapScript.value.trim() !== 'yes') {
     // don't add os bootstrap script
     return '';
   }

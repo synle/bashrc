@@ -48,20 +48,20 @@ https://answers.microsoft.com/en-us/windows/forum/windows_10-other_settings/list
 ### Env Vars
 
 ```
-%APPDATA%\npm
+%SystemRoot%
+%SystemRoot%\System32
+%SystemRoot%\System32\OpenSSH
+%SystemRoot%\System32\Wbem
+%SystemRoot%\System32\WindowsPowerShell\v1.0
 %LOCALAPPDATA%\Android\sdk\platform-tools
 %LOCALAPPDATA%\Microsoft\WindowsApps
-%ProgramFiles%\Docker\Docker\resources\bin
-%ProgramFiles%\Git\cmd
 %ProgramFiles%\Microsoft VS Code
 %ProgramFiles%\Microsoft VS Code\bin
+%APPDATA%\npm
+%ProgramFiles%\Docker\Docker\resources\bin
+%ProgramFiles%\Git\cmd
 %ProgramFiles%\nodejs
 %ProgramFiles%\PuTTY
-C:\Windows
-C:\Windows\System32
-C:\Windows\System32\OpenSSH
-C:\Windows\System32\Wbem
-C:\Windows\System32\WindowsPowerShell\v1.0
 ```
 
 Java SDK
@@ -129,4 +129,13 @@ net use z: \\wsl$\Ubuntu-20.04
 
 # Windows
 %USERPROFILE%\.vscode\extensions
+```
+
+
+#### Downloading and installing WSL2
+https://docs.microsoft.com/en-us/windows/wsl/install-manual
+
+```powershell
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 ```

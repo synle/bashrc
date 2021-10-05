@@ -11,7 +11,7 @@
     <div>
       <h1></h1>
     </div>
-    <div id="container">
+    <form name="scriptForm" id="container">
       <section id="commands" class="c1"><strong>Type of Script:</strong></section>
       <div class="c2">
         <!--     script to run     -->
@@ -23,11 +23,26 @@
             <button onclick="clearAllScriptTextBox()" type="button" style="margin-left: 40px">Clear All</button>
           </div>
           <datalist id="scriptToRunOptions" style="overflow-y: auto !important">></datalist>
-          <label>Runner:</label>
-          <select id="runnerToUse" onchange="updateScript()" oninput="setStorage('runnerToUse', event.target.value)">
-            <option value="test-live.sh" selected>Use Live Script</option>
-            <option value="test.sh">Use Local Script</option>
-          </select>
+          <div class="c2-child">
+            <label>Runner:</label>
+            <div>
+              <input
+                type="radio"
+                name="runnerToUse"
+                id="runnerToUse-live"
+                value="test-live.sh"
+                onchange="updateScript(); setStorage('runnerToUse', document.scriptForm.runnerToUse.value)" />
+              <label for="runnerToUse-live">Live Script</label>
+              <input
+                type="radio"
+                name="runnerToUse"
+                id="runnerToUse-local"
+                value="test.sh"
+                onchange="updateScript(); setStorage('runnerToUse', document.scriptForm.runnerToUse.value)"
+                style="margin-left: 2rem" />
+              <label for="runnerToUse-local">Local Script</label>
+            </div>
+          </div>
           <label>Debug Write To File:</label>
           <input
             id="debugWriteToDir"
@@ -58,12 +73,25 @@
         </div>
 
         <!-- add bootstrap script -->
-        <div id="osToRunContainer" class="c2-child">
+        <div class="c2-child">
           <label>Add Bootstrap Script:</label>
-          <select id="addBootstrapScript" onchange="updateScript()" oninput="setStorage('addBootstrapScript', event.target.value)">
-            <option value="yes">Yes</option>
-            <option value="">No</option>
-          </select>
+          <div>
+            <input
+              type="radio"
+              name="addBootstrapScript"
+              id="addBootstrapScript-yes"
+              value="yes"
+              onchange="updateScript(); setStorage('addBootstrapScript', document.scriptForm.addBootstrapScript.value)" />
+            <label for="addBootstrapScript-yes">Yes</label>
+            <input
+              type="radio"
+              name="addBootstrapScript"
+              id="addBootstrapScript-no"
+              value="no"
+              onchange="updateScript(); setStorage('addBootstrapScript', document.scriptForm.addBootstrapScript.value)"
+              style="margin-left: 2rem" />
+            <label for="addBootstrapScript-no">No</label>
+          </div>
         </div>
 
         <textarea id="output" placeholder="Output" readonly="true" onfocus="selectCommands()"></textarea>
@@ -73,7 +101,7 @@
         <a href="https://github.com/synle/bashrc" target="_blank">Repo</a>
         <a href="https://github.com/synle/bashrc/find/master" target="_blank">Bashrc Code</a>
       </div>
-    </div>
+    </form>
 
     <script src="index.js"></script>
   </body>
