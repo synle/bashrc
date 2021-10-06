@@ -139,3 +139,9 @@ https://docs.microsoft.com/en-us/windows/wsl/install-manual
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 ```
+
+#### TightVNC Java Viewer
+
+Use this VNC viewer for Mac Remote Viewing or Ubuntu
+
+https://www.tightvnc.com/download/2.8.3/tvnjviewer-2.8.3-bin-gnugpl.zip

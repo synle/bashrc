@@ -1,8 +1,4 @@
 #! /bin/sh
-echo '> Build Assets - Host Mappings'
-export TEST_SCRIPT_FILES="software/metadata/hosts-blocked-ads.config.js"  \
-  && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
-
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="./software/metadata/script-list.config" && \
 export TEST_SCRIPT_FILES="software/metadata/script-list.config.js" && \
@@ -22,6 +18,10 @@ software/scripts/vs-code-configurations.js
 software/scripts/vs-code-keybindings.js
 """
 find $CONFIG_BUILD_PATH
+
+echo '> Build Host Mappings'
+export TEST_SCRIPT_FILES="software/metadata/hosts-blocked-ads.config.js"  \
+  && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
 
 
 echo '> DONE Building'
