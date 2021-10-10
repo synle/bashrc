@@ -37,7 +37,13 @@ findResolvedPathForWsl1(){
 
 
 open(){
+  echo "$@"
   explorer.exe "$@"
+}
+
+subl(){
+  echo "$@"
+  sublime_text.exe "$@"
 }
 
 cmd(){
