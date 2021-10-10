@@ -47,28 +47,7 @@ https://answers.microsoft.com/en-us/windows/forum/windows_10-other_settings/list
 
 ### Env Vars
 
-```
-%LOCALAPPDATA%\Android\sdk\platform-tools
-%LOCALAPPDATA%\Microsoft\WindowsApps
-%ProgramFiles% (x86)\NVIDIA Corporation\PhysX\Common
-%ProgramFiles%\Docker\Docker\resources\bin
-%ProgramFiles%\Microsoft VS Code
-%ProgramFiles%\Microsoft VS Code\bin
-%ProgramFiles%\Sublime Text
-%SystemRoot%
-%SystemRoot%\System32
-%SystemRoot%\System32\OpenSSH
-%SystemRoot%\System32\Wbem
-%SystemRoot%\System32\WindowsPowerShell\v1.0
-C:\ProgramData\DockerDesktop\version-bin
-%ProgramFiles%\Eclipse Foundation\jdk-11.0.12.7-hotspot\bin
-```
-
-Java SDK
-
-```
-%ProgramFiles%\Eclipse Foundation\jdk-11.0.12.7-hotspot\bin
-```
+Use the UI
 
 ```
 %APPDATA%\npm
@@ -111,12 +90,6 @@ Run powershell for super admin
 powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
 ```
 
-#### Windows Path Env Vars
-
-```
-%USERPROFILE%\AppData\Local\Android\sdk\platform-tools
-%USERPROFILE%\AppData\Local\Microsoft\WindowsApps
-```
 
 #### WSL root fs
 

@@ -71,6 +71,16 @@ async function init() {
     }
   }
 
+  document.querySelector('#commands').insertAdjacentHTML(
+    'beforeEnd',
+    `
+      <button
+        type='button'
+        onclick='convertEnvPath()'
+      >Windows Envs</button>
+    `,
+  );
+
   // select the previous values from local storage
   document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
   document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
@@ -262,6 +272,39 @@ async function selectCommands() {
   document.querySelector('#output').focus();
   document.querySelector('#output').select();
   document.execCommand('copy');
+}
+
+async function convertEnvPath() {
+  const defaultEnv = `
+    %LocalAppData%/Android/sdk/platform-tools
+    %LocalAppData%/Microsoft/WindowsApps
+    %ProgramFiles% (x86)/NVIDIA Corporation/PhysX/Common
+    %ProgramFiles%/Docker/Docker/resources/bin
+    %ProgramFiles%/Microsoft VS Code
+    %ProgramFiles%/Microsoft VS Code/bin
+    %ProgramFiles%/Sublime Text
+    %SystemRoot%
+    %SystemRoot%/System32
+    %SystemRoot%/System32/OpenSSH
+    %SystemRoot%/System32/Wbem
+    %SystemRoot%/System32/WindowsPowerShell/v1.0
+    C:/ProgramData/DockerDesktop/version-bin
+  `.split(/[\n;]/g);
+  const env = prompt('env?') || '';
+  const newEnv = [...env.split(/[\n;]/g), ...defaultEnv]
+    .map((s) =>
+      s
+        .trim()
+        .replace(/\//g, '\\')
+        .replace(/C:\\Windows/i, '%SystemRoot%')
+        .replace(/C:\\Program Files (x86)/i, '%ProgramFiles% (x86)')
+        .replace(/C:\\Program Files/i, '%ProgramFiles%')
+        .replace(/C:\\Users\\[a-z0-9]+\\AppData\\Local/i, '%LocalAppData%')
+        .replace(/C:\\Users\\[a-z0-9]+/i, '%UserProfile%'),
+    )
+    .filter((s) => s)
+    .sort();
+  prompt('New Env?', [...new Set(newEnv)].join(';'));
 }
 
 function setStorage(key, value) {
