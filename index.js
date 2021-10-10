@@ -74,10 +74,14 @@ async function init() {
   document.querySelector('#commands').insertAdjacentHTML(
     'beforeEnd',
     `
-      <button
-        type='button'
-        onclick='convertEnvPath()'
-      >Windows Envs</button>
+      <div>
+        <button
+          type='button'
+          onclick='convertEnvPath()'
+        >
+          Windows Envs
+        </button>
+      </div>
     `,
   );
 
@@ -291,10 +295,12 @@ async function convertEnvPath() {
     C:/ProgramData/DockerDesktop/version-bin
   `.split(/[\n;]/g);
   const env = prompt('env?') || '';
+
   const newEnv = [...env.split(/[\n;]/g), ...defaultEnv]
+    .map((s) => s.trim())
+    .filter((s) => s && (s.includes('\\') || s.includes('/')) && !s.includes('stdin'))
     .map((s) =>
       s
-        .trim()
         .replace(/\//g, '\\')
         .replace(/C:\\Windows/i, '%SystemRoot%')
         .replace(/C:\\Program Files (x86)/i, '%ProgramFiles% (x86)')
@@ -302,7 +308,6 @@ async function convertEnvPath() {
         .replace(/C:\\Users\\[a-z0-9]+\\AppData\\Local/i, '%LocalAppData%')
         .replace(/C:\\Users\\[a-z0-9]+/i, '%UserProfile%'),
     )
-    .filter((s) => s)
     .sort();
   prompt('New Env?', [...new Set(newEnv)].join(';'));
 }

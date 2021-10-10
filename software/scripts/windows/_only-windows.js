@@ -41,11 +41,6 @@ open(){
   explorer.exe "$@"
 }
 
-subl(){
-  echo "$@"
-  sublime_text.exe "$@"
-}
-
 cmd(){
   cmd.exe '/C' "$@"
 }
