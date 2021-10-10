@@ -37,9 +37,7 @@ findResolvedPathForWsl1(){
 
 
 open(){
-  fullPathToFile=$(findResolvedPathForWsl1 "$1")
-  echo explorer.exe "\"$fullPathToFile\""
-  explorer.exe "$fullPathToFile"
+  explorer.exe "$@"
 }
 
 cmd(){
