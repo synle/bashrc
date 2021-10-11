@@ -7,12 +7,7 @@ async function doWork() {
   console.log('  >> Download WSL2 Kernel Updates', targetPath);
 
   if (!is_os_window) {
-    console.log(consoleLogColor1('  >> Skipped : Only Windows'));
-    return process.exit();
-  }
-
-  if (fs.existsSync(targetPath)) {
-    console.log(consoleLogColor1('      >> Skipped : [NotModified]'));
+    console.log(consoleLogColor1('    >> Skipped : Only Windows'));
     return process.exit();
   }
 

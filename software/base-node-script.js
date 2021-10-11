@@ -302,13 +302,18 @@ function mkdir(targetPath) {
 }
 
 // api utils
-function downloadFile(url, dest) {
+function downloadFile(url, destination) {
   return new Promise((resolve, reject) => {
-    var file = fs.createWriteStream(dest);
+    if (fs.existsSync(destination)) {
+      console.log(consoleLogColor3('      >> Skipped : [NotModified]'), consoleLogColor4(destination));
+      return resolve(false);
+    }
+
+    var file = fs.createWriteStream(destination);
     https
       .get(url, function (response) {
         response.pipe(file);
-        file.on('finish', resolve);
+        file.on('finish', () => resolve(true));
       })
       .on('error', reject);
   });
