@@ -72,10 +72,9 @@ subl(){
   then
     # for windows
     # getting the path
-    sublime_text.exe "$@"
+    sublime_text.exe "$@" > /dev/null 2>&1 &
 
     echo """
-sublime_text.exe "$@"
 Full Path: $(realpath "$@")
  WSL Path: $(findResolvedPathForWsl1 "$@")
     """
@@ -98,13 +97,12 @@ code()
   if [ $is_os_wsl == "1" ]
   then
     # for windows
-    vs_code_win32_binary_path="/mnt/c/Program Files/Microsoft VS Code/Code.exe"
+    # vs_code_win32_binary_path="/mnt/c/Program Files/Microsoft VS Code/Code.exe"
+    # { echo "\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
 
-{ echo "\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
+    Code.exe "$@" > /dev/null 2>&1 &
 
     echo """
-\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\"
-
 Full Path: $(realpath "$@")
  WSL Path: $(findResolvedPathForWsl1 "$@")
     """

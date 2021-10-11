@@ -19,12 +19,13 @@ async function doWork() {
     useTabSwitcher: false,
     multiLinePasteWarning: false,
     rowsToScroll: 5,
-    initialCols: 110,
-    initialRows: 40,
+    initialCols: 120,
+    initialRows: 45,
     tabWidthMode: 'compact',
     initialPosition: '5,5',
     confirmCloseAllTabs: true,
     disableAnimations: true,
+    focusFollowMouse: true,
     'experimental.rendering.forceFullRepaint': true,
 
     // schema
@@ -100,6 +101,7 @@ async function doWork() {
 
     // keybindings
     keybindings: [
+      { command: 'commandPalette', keys: 'alt+shift+p' },
       {
         command: 'copy',
         keys: 'alt+c',
@@ -219,6 +221,7 @@ async function doWork() {
         command: 'closePane',
         keys: 'alt+w',
       },
+      { command: 'closeWindow', keys: 'alt+q' },
       {
         command: {
           action: 'splitPane',
@@ -295,7 +298,7 @@ async function doWork() {
       cursorShape: 'vintage',
       cursorHeight: 50,
       fontFace: EDITOR_CONFIGS.fontFamily,
-      fontSize: EDITOR_CONFIGS.fontSize,
+      fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),
       padding: '2 0 2 0',
       bellStyle: 'all',
       // useAcrylic: true,
@@ -316,7 +319,7 @@ async function doWork() {
     // set default profile
     if (
       !foundDefaultProfile &&
-      ['Debian', 'Ubuntu'].some((distroToUseForDefault) => profile.name.toLowerCase().includes(distroToUseForDefault.toLowerCase()))
+      [/Debian/i, /Ubuntu/i].some((distroToUseForDefault) => profile.name.match(distroToUseForDefault))
     ) {
       newProfiles.defaultProfile = profile.guid;
       foundDefaultProfile = true;
@@ -337,11 +340,7 @@ function _getPath() {
   try {
     if (is_os_window) {
       const localPackgesPath = path.join(getWindowUserBaseDir(), 'AppData/Local/Packages/');
-
-      return path.join(
-        localPackgesPath,
-        fs.readdirSync(localPackgesPath).filter((dir) => dir.indexOf('Microsoft.WindowsTerminal') >= 0)[0],
-      );
+      return findDirSingle(localPackgesPath, /Microsoft\.WindowsTerminal/i);
     }
     return null;
   } catch (e) {

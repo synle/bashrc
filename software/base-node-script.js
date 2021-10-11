@@ -142,7 +142,7 @@ function writeText(aDir, text) {
   const newContent = text;
   const oldContent = readText(pathToUse);
   if (oldContent.trim() === newContent.trim()) {
-    console.log(consoleLogColor3('      << writeText [NotModified]:'), consoleLogColor4(pathToUse));
+    console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
   } else {
     fs.writeFileSync(pathToUse, newContent);
   }
@@ -190,15 +190,7 @@ function clone(obj) {
 }
 
 function getWindowUserBaseDir() {
-  return path.join(
-    BASE_WINDOW,
-    fs
-      .readdirSync(BASE_WINDOW)
-      .filter(
-        (dir) =>
-          dir.toLowerCase().indexOf('leng') >= 0 || dir.toLowerCase().indexOf('syle') >= 0 || dir.toLowerCase().indexOf('sy le') >= 0,
-      )[0],
-  );
+  return findDirSingle(BASE_WINDOW, /(leng)|(sy[ ]*le)/i);
 }
 
 function getWindowAppDataRoamingUserPath() {
@@ -305,7 +297,7 @@ function mkdir(targetPath) {
 function downloadFile(url, destination) {
   return new Promise((resolve, reject) => {
     if (fs.existsSync(destination)) {
-      console.log(consoleLogColor3('      >> Skipped : [NotModified]'), consoleLogColor4(destination));
+      console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(destination));
       return resolve(false);
     }
 
