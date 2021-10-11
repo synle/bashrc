@@ -2,15 +2,11 @@ let idx = Date.now();
 
 const configs = [
   {
-    text: 'Setup Dependencies',
-    script: `<OS_FLAGS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh)"`,
-    shouldShowOsSelectionInput: true,
-  },
-  {
-    text: 'Setup Full Profile',
-    script: `<OS_FLAGS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"`,
+    text: 'Setup Profile',
+    script: `<OS_FLAGS> <SETUP_DEPS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"`,
     checked: true,
     shouldShowOsSelectionInput: true,
+    shouldShowSetupDependencies: true,
   },
   {
     text: 'Setup Lightweight Profile',
@@ -58,18 +54,21 @@ async function init() {
   // back it up
   window.SCRIPT_TO_RUN_OPTIONS = document.querySelector('#scriptToRunOptions').innerHTML;
 
+  let selectedIdx = '';
   for (const config of configs) {
     const domCommand = document.createElement('div');
     domCommand.innerHTML = `
-          <input onchange='updateScript()' type='radio' name='commandChoice' id='${config.idx}' value='${config.idx}' />
-          <label for='${config.idx}'>${config.text}</label>
-        `;
+      <input onchange='updateScript()' type='radio' name='commandChoice' id='${config.idx}' value='${config.idx}' />
+      <label for='${config.idx}'>${config.text}</label>
+    `;
     document.querySelector('#commands').appendChild(domCommand);
 
     if (config.checked) {
-      document.scriptForm.commandChoice.value = config.idx;
+      selectedIdx = config.idx;
     }
   }
+
+  document.scriptForm.commandChoice.value = selectedIdx;
 
   document.querySelector('#commands').insertAdjacentHTML(
     'beforeEnd',
@@ -90,6 +89,7 @@ async function init() {
   document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
   document.scriptForm.runnerToUse.value = getStorage('runnerToUse', 'test-live.sh');
   document.scriptForm.addBootstrapScript.value = getStorage('addBootstrapScript') || 'no';
+  document.scriptForm.setupDependencies.value = getStorage('setupDependencies') || 'yes';
 
   getStorage('scriptToUse', '')
     .split('\n')
@@ -125,11 +125,18 @@ function updateScript() {
       )
       .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
       .replace('<SELECTED_RUNNER_SCRIPT>', document.scriptForm.runnerToUse.value)
-      .replace('<OS_FLAGS>', _getOsFlagScript()),
+      .replace('<OS_FLAGS>', _getOsFlagScript())
+      .replace(
+        '<SETUP_DEPS>',
+        document.scriptForm.setupDependencies.value !== 'yes'
+          ? ''
+          : `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh)" && \\\n`,
+      ),
   );
 
   document.querySelector('#scriptToRunContainer').classList.toggle('hidden', selectedScript.shouldShowScriptNameInput !== true);
   document.querySelector('#osToRunContainer').classList.toggle('hidden', selectedScript.shouldShowOsSelectionInput !== true);
+  document.querySelector('#setupDependencies').classList.toggle('hidden', selectedScript.shouldShowSetupDependencies !== true);
 
   document.querySelector('#output').value = newCommands
     .join('\n')

@@ -72,6 +72,28 @@
           </select>
         </div>
 
+        <!-- setup dependencies -->
+        <div id="setupDependencies" class="c2-child">
+          <label>Setup Dependencies:</label>
+          <div>
+            <input
+              type="radio"
+              name="setupDependencies"
+              id="setupDependencies-yes"
+              value="yes"
+              onchange="updateScript(); setStorage('setupDependencies', document.scriptForm.setupDependencies.value)" />
+            <label for="setupDependencies-yes">Yes</label>
+            <input
+              type="radio"
+              name="setupDependencies"
+              id="setupDependencies-no"
+              value="no"
+              onchange="updateScript(); setStorage('setupDependencies', document.scriptForm.setupDependencies.value)"
+              style="margin-left: 2rem" />
+            <label for="setupDependencies-no">No</label>
+          </div>
+        </div>
+
         <!-- add bootstrap script -->
         <div class="c2-child">
           <label>Add Bootstrap Script:</label>

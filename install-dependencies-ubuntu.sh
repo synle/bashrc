@@ -2,7 +2,7 @@
 # os flags are set in this file
 # https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
 
-function installPackageWithAptGet(){
+function installPackage(){
   echo "  >> $@"
   sudo apt-get install -y --fix-missing $@ &> /dev/null
 }
@@ -12,45 +12,31 @@ then
   # non traditional (not in apt-get)
   pushd /tmp  &> /dev/null
 
-  #
   # bat https://github.com/sharkdp/bat
-  #
   echo '>> Installing bat'
-  wget https://github.com/sharkdp/bat/releases/download/v0.6.1/bat_0.6.1_amd64.deb &>/dev/null
-  sudo dpkg -i bat_0.6.1_amd64.deb &>/dev/null
-  wget https://github.com/sharkdp/bat/releases/download/v0.6.1/bat_0.6.1_i386.deb &>/dev/null
-  sudo dpkg -i bat_0.6.1_i386.deb &>/dev/null
+  wget https://github.com/sharkdp/bat/releases/download/v0.18.3/bat_0.18.3_amd64.deb &>/dev/null
+  sudo dpkg -i bat_*_amd64.deb &>/dev/null
 
   popd &> /dev/null
 
-#   TODO: fix me
-#   dbus-uuidgen > /tmp/machine-id
-#   sudo mv /tmp/machine-id /etc/machine-id
+  echo '>> update packages'
+  sudo apt-get update -y &> /dev/null;
 
 
-
-echo '>> update packages'
-sudo apt-get update -y &> /dev/null;
-
-
-echo '>> Installing packages with apt-get'
-installPackageWithAptGet git;
-installPackageWithAptGet vim;
-installPackageWithAptGet tmux;
-installPackageWithAptGet python;
-installPackageWithAptGet tig;
-installPackageWithAptGet jq;
-installPackageWithAptGet figlet;
-installPackageWithAptGet curl;
-installPackageWithAptGet redis-server;
-installPackageWithAptGet make;
-#   installPackageWithAptGet dialog;
-
-  ##########################################################################################################
-  # ubuntu gui tweaks
-  ##########################################################################################################
-  [ -s $HOME/.config/openbox/lubuntu-rc.xml ] && \
-  echo '>> Installing lubuntu-rc tweak' && \
-  sed -i "s/<animateIconify>yes<\/animateIconify>/<animateIconify>no<\/animateIconify>/g" \
-  $HOME/.config/openbox/lubuntu-rc.xml
+  echo '>> Installing packages with apt-get'
+  # installPackage dialog;
+  # installPackage figlet;
+  # installPackage redis-server;
+  # installPackage tig;
+  # installPackage tmux;
+  ###
+  installPackage curl;
+  installPackage make;
+  installPackage python;
+  installPackage vim;
+  ###
+  installPackage bat;
+  installPackage fzf;
+  installPackage git;
+  installPackage jq;
 fi

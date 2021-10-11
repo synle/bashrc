@@ -2,7 +2,7 @@
 # os flags are set in this file
 # https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
 
-function installMacPackageWithHomebrew(){
+function installPackage(){
   echo "  >> $@"
   brew install $@ &> /dev/null
   brew cask install &> /dev/null
@@ -10,7 +10,7 @@ function installMacPackageWithHomebrew(){
 
 if [[ $is_os_darwin_mac == "1" ]]
 then
-  echo ">> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash"
+  echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
   touch ~/.bashrc
   touch ~/.bash_profile
   
@@ -27,32 +27,36 @@ then
   type brew &> /dev/null || hasHomebrewInstalled=0
   if [[ $hasHomebrewInstalled == "0" ]]
   then
-    echo ">> Installing Homebrew Package Manager"
+    echo '>> Installing Homebrew Package Manager'
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
   fi
 
 
   echo '>> Installing homebrew repos (brew tap)'
   brew tap homebrew/cask-fonts &> /dev/null
-  brew tap heroku/brew &> /dev/null
+  # brew tap heroku/brew &> /dev/null
 
-  echo '>> update homebrew formulae'
+  echo '>> Update Homebrew'
   brew update &> /dev/null
 
 
   echo '>> Installing packages with Homebrew'
-  installMacPackageWithHomebrew jq;
-  installMacPackageWithHomebrew fzf;
-  installMacPackageWithHomebrew tig;
-  installMacPackageWithHomebrew bat;
-  installMacPackageWithHomebrew azure-cli;
-  installMacPackageWithHomebrew heroku;
+  # installPackage azure-cli;
+  # installPackage heroku;
+  # installPackage tig;
+  installPackage bat;
+  installPackage fzf;
+  installPackage git;
+  installPackage jq;
 
-  echo ">> Installing android-platform-tools"
-  installMacPackageWithHomebrew android-platform-tools
+  echo '  >> android-platform-tools'
+  installPackage android-platform-tools
 
-  echo ">> Installing Fira Code Font"
-  installMacPackageWithHomebrew font-fira-code
+  echo '  >> Fira Font'
+  installPackage font-fira-code
+
+  echo '  >> Cascadia Font'
+  installPackage font-cascadia
 
   echo '>> Kill all dock icons'
   defaults write com.apple.dock persistent-apps -array
