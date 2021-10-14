@@ -12,8 +12,8 @@ globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
  * @type {Object}
  */
 globalThis.EDITOR_CONFIGS = {
-  fontSize: 12,
-  fontFamily: 'Fira Code Retina',
+  fontSize: 10,
+  fontFamily: 'Fira Code',
   tabSize: 2,
   maxLineSize: 140,
   ignoredFiles: [

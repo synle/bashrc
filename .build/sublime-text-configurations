@@ -1,7 +1,7 @@
 {
   "atomic_save": true,
   "default_line_ending": "unix",
-  "font_size": 12,
+  "font_size": 10,
   "show_tab_close_buttons": false,
   "bold_folder_labels": true,
   "draw_white_space": "all",
@@ -26,7 +26,7 @@
     "gray_antialias",
     "subpixel_antialias"
   ],
-  "font_face": "Fira Code Retina",
+  "font_face": "Fira Code",
   "hardware_acceleration": "opengl",
   "theme": "Adaptive.sublime-theme",
   "file_exclude_patterns": [
