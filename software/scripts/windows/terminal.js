@@ -317,10 +317,7 @@ async function doWork() {
     }
 
     // set default profile
-    if (
-      !foundDefaultProfile &&
-      [/Debian/i, /Ubuntu/i].some((distroToUseForDefault) => profile.name.match(distroToUseForDefault))
-    ) {
+    if (!foundDefaultProfile && [/Debian/i, /Ubuntu/i].some((distroToUseForDefault) => profile.name.match(distroToUseForDefault))) {
       newProfiles.defaultProfile = profile.guid;
       foundDefaultProfile = true;
     }

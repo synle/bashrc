@@ -14,9 +14,10 @@ function _convertIgnoredFilesAndFolders(ignoredFiles) {
 async function doInit() {
   COMMON_CONFIGS = {
     'breadcrumbs.enabled': true,
+    'explorer.copyRelativePathSeparator': '/',
+    'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
     'editor.fontLigatures': true,
     'editor.fontSize': EDITOR_CONFIGS.fontSize,
-    'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
     'editor.fontWeight': '500',
     'editor.formatOnPaste': true,
     'editor.maxTokenizationLineLength': 10000,
@@ -38,8 +39,12 @@ async function doInit() {
     'files.hotExit': 'off',
     'files.insertFinalNewline': true,
     'files.trimTrailingWhitespace': true,
+    // specific to js
     'javascript.updateImportsOnFileMove.enabled': 'always',
+    'javascript.inlayHints.variableTypes.enabled': true,
+    // specific typescript
     'typescript.updateImportsOnFileMove.enabled': 'always',
+    'typescript.inlayHints.variableTypes.enabled': true,
     'window.zoomLevel': 1,
     'workbench.colorTheme': 'Dracula Soft',
     'workbench.editor.showTabs': true,

@@ -1,6 +1,5 @@
 async function doWork() {
   const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(`
-    2gua.rainbow-brackets
     aaron-bond.better-comments
     abusaidm.html-snippets
     andrejunges.Handlebars
