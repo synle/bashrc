@@ -44,6 +44,8 @@ open(){
 cmd(){
   cmd.exe '/C' "$@"
 }
+
+alias update='sudo apt-get update -y; sudo apt-get upgrade -y; sudo apt-get autoclean; sudo apt-get clean; sudo apt-get autoremove'
   `.trim(),
   );
 }
