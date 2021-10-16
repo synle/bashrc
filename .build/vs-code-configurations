@@ -1,6 +1,6 @@
 {
   "breadcrumbs.enabled": true,
-  "explorer.copyRelativePathSeparator": "/",
+  "editor.bracketPairColorization.enabled": true,
   "editor.fontFamily": "Fira Code",
   "editor.fontLigatures": true,
   "editor.fontSize": 10,
@@ -17,6 +17,7 @@
   "editor.tabSize": 2,
   "editor.wordWrap": "wordWrapColumn",
   "editor.wordWrapColumn": 140,
+  "explorer.copyRelativePathSeparator": "/",
   "files.eol": "\n",
   "files.exclude": {
     "**/*.class": true,
