@@ -19,7 +19,7 @@ async function doWork() {
   }
 
   const sublimeMergeConfigPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
-  console.log('    >> ', sublimeMergeConfigPath);
+  console.log('    >>', sublimeMergeConfigPath);
   writeJson(sublimeMergeConfigPath, {
     expand_merge_commits_by_default: false,
     font_face: EDITOR_CONFIGS.fontFamily,
