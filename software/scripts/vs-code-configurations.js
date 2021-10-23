@@ -14,7 +14,7 @@ function _convertIgnoredFilesAndFolders(ignoredFiles) {
 async function doInit() {
   COMMON_CONFIGS = {
     'breadcrumbs.enabled': true,
-    "editor.bracketPairColorization.enabled": true,
+    'editor.bracketPairColorization.enabled': true,
     'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
     'editor.fontLigatures': true,
     'editor.fontSize': EDITOR_CONFIGS.fontSize,
@@ -31,7 +31,7 @@ async function doInit() {
     'editor.tabSize': EDITOR_CONFIGS.tabSize,
     'editor.wordWrap': 'wordWrapColumn',
     'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
-    'explorer.copyRelativePathSeparator': '/',// always use / for path in all OS's
+    'explorer.copyRelativePathSeparator': '/', // always use / for path in all OS's
     'files.eol': '\n', // LF Unix mode
     'files.exclude': {
       ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFiles),

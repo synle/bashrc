@@ -1,5 +1,3 @@
-let SUBLIME_VERSION;
-
 async function _getPathSublimeText() {
   try {
     if (is_os_window) {
@@ -22,7 +20,7 @@ async function _getPathSublimeText() {
 async function doWork() {
   let targetPath = await _getPathSublimeText();
 
-  console.log(`  >> Setting up Sublime Text ${SUBLIME_VERSION} configurations:`, consoleLogColor4(targetPath));
+  console.log(`  >> Setting up Sublime Text Packages:`, consoleLogColor4(targetPath));
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));

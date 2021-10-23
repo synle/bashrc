@@ -428,7 +428,7 @@ async function doInit() {
 async function doWork() {
   let targetPath = await _getPathSublimeText();
 
-  console.log(`  >> Setting up Sublime Text keybindings:`, consoleLogColor4(targetPath));
+  console.log(`  >> Setting up Sublime Text Keybindings:`, consoleLogColor4(targetPath));
 
   if (DEBUG_WRITE_TO_DIR) {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
@@ -446,9 +446,9 @@ async function doWork() {
   }
 
   // windows only key bindings
-  const windowsKeymapPath = path.join(targetPath, 'Packages/User/Default (Windows).sublime-keymap');
-  console.log('    >> Windows', windowsKeymapPath);
-  writeJson(windowsKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]));
+  const winKeymapPath = path.join(targetPath, 'Packages/User/Default (Windows).sublime-keymap');
+  console.log('    >> Windows', winKeymapPath);
+  writeJson(winKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]));
 
   // linux only key bindings
   const linuxKeymapPath = path.join(targetPath, 'Packages/User/Default (Linux).sublime-keymap');
@@ -456,7 +456,7 @@ async function doWork() {
   writeJson(linuxKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]));
 
   // mac only key bindings
-  const macKeymapPath = path.join(targetPath, 'Packages/User/Default (OSX).sublime-keymap');
-  console.log('    >> OSX', macKeymapPath);
-  writeJson(macKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS]));
+  const osxKeymapPath = path.join(targetPath, 'Packages/User/Default (OSX).sublime-keymap');
+  console.log('    >> OSX', osxKeymapPath);
+  writeJson(osxKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS]));
 }
