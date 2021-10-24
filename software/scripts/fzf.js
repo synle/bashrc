@@ -5,7 +5,7 @@ async function doWork() {
 
   // clone it
   await execBashSilent(`
-    rm -rf ${targetPath};
+    rm -rf "${targetPath}";
     git clone https://github.com/junegunn/fzf.git ${targetPath} &>/dev/null;
     `);
 

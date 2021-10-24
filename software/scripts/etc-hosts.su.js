@@ -33,7 +33,7 @@ async function doWorkSshConfig() {
 
   console.log('    >> Setting up SSH Client config', consoleLogColor4(targetPath));
   await execBashSilent(`
-    touch ${targetPath} && chmod 611 ${targetPath}
+    touch "${targetPath}" && chmod 611 ${targetPath}
   `);
 
   console.log('    >> Updating SSH Client Config', consoleLogColor4(targetPath));

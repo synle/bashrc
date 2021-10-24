@@ -429,7 +429,7 @@ async function fetchUrlAsString(url) {
 }
 
 function gitClone(repo, pwd) {
-  return execBashSilent(`git clone --depth 1 -b master ${repo} ${pwd} &>/dev/null`);
+  return execBashSilent(`git clone --depth 1 -b master "${repo}" "${pwd}" &>/dev/null`);
 }
 
 async function fetchUrlAsJson(url) {
