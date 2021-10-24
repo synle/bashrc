@@ -290,7 +290,7 @@ function getRootDomainFrom(url) {
 }
 
 function mkdir(targetPath) {
-  return execBashSilent(`mkdir -p ${targetPath}`);
+  return execBashSilent(`mkdir -p "${targetPath}"`);
 }
 
 // api utils
