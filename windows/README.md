@@ -119,6 +119,10 @@ dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux 
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 ```
 
+## Open up the SSH Server
+
+- https://www.hanselman.com/blog/how-to-ssh-into-wsl2-on-windows-10-from-an-external-machine
+
 #### TightVNC Java Viewer
 
 Use this VNC viewer for Mac Remote Viewing or Ubuntu
