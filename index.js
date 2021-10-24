@@ -18,7 +18,7 @@ const configs = [
   },
   {
     text: 'Test Full Run live',
-    script: `curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash`,
+    script: `<OS_FLAGS> curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash`,
     shouldShowOsSelectionInput: true,
   },
   {
