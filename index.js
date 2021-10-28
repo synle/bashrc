@@ -1,43 +1,61 @@
 let idx = Date.now();
 
-const configs = [
-  {
-    text: 'Setup Profile',
-    script: `<OS_FLAGS> <SETUP_DEPS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"`,
-    checked: true,
-    shouldShowOsSelectionInput: true,
-    shouldShowSetupDependencies: true,
-  },
-  {
-    text: 'Setup Lightweight Profile',
-    script: `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"`,
-  },
-  {
-    text: 'Setup etc Hosts',
-    script: `curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash`,
-  },
-  {
-    text: 'Test Full Run live',
-    script: `<OS_FLAGS> curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash`,
-    shouldShowOsSelectionInput: true,
-  },
-  {
-    text: 'Test Single Script',
-    script: `<OS_FLAGS>\\\nexport TEST_SCRIPT_FILES="""\n<SELECT_SCRIPTS>\n""" <DEBUG_WRITE_TO_DIR> && \\\n\\\n curl -s https://raw.githubusercontent.com/synle/bashrc/master/<SELECTED_RUNNER_SCRIPT> | bash`,
-    shouldShowScriptNameInput: true,
-    shouldShowOsSelectionInput: true,
-  },
-].map((config) => ({
-  idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
-  ...config,
-}));
-
-const configsByKey = {};
-for (const config of configs) {
-  configsByKey[config.idx] = config;
-}
+let configs;
+let configsByKey = {};
 
 async function init() {
+  configs = [
+    {
+      text: 'Setup Profile',
+      script: `<OS_FLAGS> <SETUP_DEPS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"`,
+      checked: true,
+      shouldShowOsSelectionInput: true,
+      shouldShowSetupDependencies: true,
+    },
+    {
+      text: 'Setup Lightweight Profile',
+      script: `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"`,
+    },
+    {
+      text: 'Setup etc Hosts',
+      script: `
+        curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash
+
+        ${await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config`)
+          .then((res) => res.text())
+          .then((s) =>
+            s
+              .trim()
+              .split('\n')
+              .map((s) => '# ' + s.trim())
+              .join('\n'),
+          )}
+
+      `
+        .split('\n')
+        .map((s) => s.trim())
+        .join('\n'),
+    },
+    {
+      text: 'Test Full Run live',
+      script: `<OS_FLAGS> curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash`,
+      shouldShowOsSelectionInput: true,
+    },
+    {
+      text: 'Test Single Script',
+      script: `<OS_FLAGS>\\\nexport TEST_SCRIPT_FILES="""\n<SELECT_SCRIPTS>\n""" <DEBUG_WRITE_TO_DIR> && \\\n\\\n curl -s https://raw.githubusercontent.com/synle/bashrc/master/<SELECTED_RUNNER_SCRIPT> | bash`,
+      shouldShowScriptNameInput: true,
+      shouldShowOsSelectionInput: true,
+    },
+  ].map((config) => ({
+    idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
+    ...config,
+  }));
+
+  for (const config of configs) {
+    configsByKey[config.idx] = config;
+  }
+
   // available scripts
   let scriptToRunOptions = await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/script-list.config`).then(
     (res) => res.text(),
@@ -250,9 +268,9 @@ function _getOsFlagScript() {
   return (
     [
       "sudo echo '> Initializing Environment'",
-      'NODE_VERSION_TO_USE=12.22.1',
-      'nvm install $NODE_VERSION_TO_USE',
-      'nvm use $NODE_VERSION_TO_USE',
+      // 'NODE_VERSION_TO_USE=12.22.1',
+      // 'nvm install $NODE_VERSION_TO_USE',
+      // 'nvm use $NODE_VERSION_TO_USE',
       `echo """\n${osKeys
         .map((key) => `export ${key}='${osFlags[key] ? '1' : '0'}'`)
         .join('\n')}\n""" > ~/.bash_syle_os && source ~/.bash_syle_os`,
