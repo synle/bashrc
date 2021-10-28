@@ -162,21 +162,23 @@ function appendText(aDir, text) {
 function replaceTextLineByLine(aDir, replacements, makeAdditionalBackup = false) {
   const oldText = readText(aDir);
 
-  const newText = oldText.split('\n').map(line => {
-    let newLine = line;
+  const newText = oldText
+    .split('\n')
+    .map((line) => {
+      let newLine = line;
 
-    for(const [matchRegex, replaceWith] of replacements){
-      newLine = newLine.replace(matchRegex, replaceWith);
-    }
+      for (const [matchRegex, replaceWith] of replacements) {
+        newLine = newLine.replace(matchRegex, replaceWith);
+      }
 
-    return newLine;
-  }).join('\n');
-
+      return newLine;
+    })
+    .join('\n');
 
   // make backups
   writeText(`${aDir}.bak`, oldText, false);
 
-  if(makeAdditionalBackup === true){
+  if (makeAdditionalBackup === true) {
     writeText(`${aDir}.bak.${Date.now()}`, oldText);
   }
 

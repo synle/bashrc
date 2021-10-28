@@ -156,6 +156,41 @@ Optional initially the config is key based auth only, comment this one out to su
 
 - https://www.hanselman.com/blog/how-to-ssh-into-wsl2-on-windows-10-from-an-external-machine
 
+```
+#[Ports]
+#All the ports you want to forward separated by coma
+$ports=@(80,443,2222,3000,4000,8080,9000);
+
+$remoteport = bash.exe -c "ifconfig eth0 | grep 'inet '"
+$found = $remoteport -match '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}';
+
+if( $found ){
+  $remoteport = $matches[0];
+} else{
+  echo "The Script Exited, the ip address of WSL 2 cannot be found";
+  exit;
+}
+
+#[Static ip]
+#You can change the addr to your ip config to listen to a specific address
+$addr='0.0.0.0';
+$ports_a = $ports -join ",";
+
+
+#Remove Firewall Exception Rules
+iex "Remove-NetFireWallRule -DisplayName '_Sy Dev Port Unlocked' ";
+
+#adding Exception Rules for inbound and outbound Rules
+iex "New-NetFireWallRule -DisplayName '_Sy Dev Port Unlocked' -Direction Outbound -LocalPort $ports_a -Action Allow -Protocol TCP";
+iex "New-NetFireWallRule -DisplayName '_Sy Dev Port Unlocked' -Direction Inbound -LocalPort $ports_a -Action Allow -Protocol TCP";
+
+for( $i = 0; $i -lt $ports.length; $i++ ){
+  $port = $ports[$i];
+  iex "netsh interface portproxy delete v4tov4 listenport=$port listenaddress=$addr";
+  iex "netsh interface portproxy add v4tov4 listenport=$port listenaddress=$addr connectport=$port connectaddress=$remoteport";
+}
+```
+
 #### TightVNC Java Viewer
 
 Use this VNC viewer for Mac Remote Viewing or Ubuntu

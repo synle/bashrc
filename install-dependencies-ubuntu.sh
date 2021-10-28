@@ -39,4 +39,5 @@ then
   installPackage fzf;
   installPackage git;
   installPackage jq;
+  installPackage net-tools
 fi

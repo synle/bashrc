@@ -2,7 +2,8 @@ echo '>> Setting up WSL2 binary'
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
-
+echo '>> ssh-keygen for openssh'
+sudo ssh-keygen -A
 # TODO Chotolatey
 # https://chocolatey.org/install
 # powershell:
