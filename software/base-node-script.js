@@ -137,11 +137,13 @@ function findDirSingle(srcDir, targetMatch) {
   return findDirList(srcDir, targetMatch, true);
 }
 
-function writeText(aDir, text) {
+function writeText(aDir, text, override = true) {
   const pathToUse = _getFilePath(aDir);
   const newContent = text;
   const oldContent = readText(pathToUse);
-  if (oldContent.trim() === newContent.trim()) {
+  if (oldContent.trim() === newContent.trim() || override !== true) {
+    // if content don't change, then don't save
+    // if override is set to false, then don't override
     console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
   } else {
     fs.writeFileSync(pathToUse, newContent);
@@ -154,7 +156,32 @@ function writeJson(aDir, json) {
 
 function appendText(aDir, text) {
   const oldText = readText(aDir);
-  fs.writeFileSync(_getFilePath(aDir), oldText + '\n' + text);
+  writeText(aDir, oldText + '\n' + text);
+}
+
+function replaceTextLineByLine(aDir, replacements, makeAdditionalBackup = false) {
+  const oldText = readText(aDir);
+
+  const newText = oldText.split('\n').map(line => {
+    let newLine = line;
+
+    for(const [matchRegex, replaceWith] of replacements){
+      newLine = newLine.replace(matchRegex, replaceWith);
+    }
+
+    return newLine;
+  }).join('\n');
+
+
+  // make backups
+  writeText(`${aDir}.bak`, oldText, false);
+
+  if(makeAdditionalBackup === true){
+    writeText(`${aDir}.bak.${Date.now()}`, oldText);
+  }
+
+  // save with newText
+  writeText(aDir, newText);
 }
 
 function writeJsonWithMerge(aDir, json) {
