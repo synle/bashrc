@@ -1,3 +1,25 @@
+const sshPortMap = {};
+
+const portToIp = {
+  2222: `
+    192.168.1.24
+    192.168.1.25
+    192.168.1.26
+  `
+}
+
+const DEFAULT_SSH_PORT = '22';
+
+async function doInit() {
+  // setting up the ssh port map
+  for(const port of Object.keys(portToIp)){
+    const ips = portToIp[port].split('\n').map(s => s.trim()).filter(s => s);
+    for(const ip of ips){
+      sshPortMap[ip] = port;
+    }
+  }
+}
+
 async function doWork() {
   console.log('  >> Setting up SSH Configs');
 
@@ -42,6 +64,7 @@ Host *
       `
 Host ${hostName}
   HostName ${hostIp}
+  Port ${sshPortMap[hostIp] || DEFAULT_SSH_PORT}
       `.trim(),
     ).join('\n'),
   );
