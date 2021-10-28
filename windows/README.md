@@ -119,7 +119,40 @@ dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux 
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 ```
 
-## Open up the SSH Server
+## Allow SSH into WSL 2
+
+Enable it on port 2222,
+
+Run this commnad iif you have a host error `sshd: no hostkeys available -- exiting`
+
+```
+sudo ssh-keygen -A
+```
+
+Edit the sshd config
+
+```
+sudo vim /etc/ssh/sshd_config
+```
+
+Make sure the following is matching
+
+```
+Port 2222
+ListenAddress 0.0.0.0
+```
+
+Optional initially the config is key based auth only, comment this one out to support password auth
+
+```
+# PasswordAuthentication no
+```
+
+### Open up ports for WSL2
+
+- https://stackoverflow.com/questions/49835559/how-to-access-to-the-web-server-which-running-on-wslwindows-subsystem-for-linux/66890232#66890232
+
+### Open up the SSH Server
 
 - https://www.hanselman.com/blog/how-to-ssh-into-wsl2-on-windows-10-from-an-external-machine
 
