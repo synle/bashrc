@@ -1,7 +1,7 @@
 async function doWork() {
   const targetPath = '/etc/ssh/sshd_config';
 
-  console.log('  >> Updating Open SSH sshd_config', consoleLogColor4(targetPath));
+  console.log('  >> Setting up SSH Server sshd_config', consoleLogColor4(targetPath));
 
   if (!fs.existsSync(targetPath)) {
     console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
@@ -17,7 +17,7 @@ async function doWork() {
 
   replaceTextLineByLine(targetPath, [
     [new RegExp(`[# ]*Port[ ]*[0-9]+`), `Port ${portToUse}`],
-    [new RegExp(`[# ]*ListenAddress[ ]*0.0.0.0`), `ListenAddress 0.0.0.0`],
-    [new RegExp(`[# ]*PasswordAuthentication[ ]*no`), `PasswordAuthentication no`],
+    [new RegExp(`[# ]*ListenAddress[ ]*[0-9]+.[0-9]+.[0-9]+.[0-9]+`), `ListenAddress 0.0.0.0`],
+    [new RegExp(`[# ]*PasswordAuthentication[ ]*[a-zA-Z]+`), `PasswordAuthentication no`],
   ]);
 }

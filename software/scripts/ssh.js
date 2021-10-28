@@ -5,24 +5,25 @@ const portToIp = {
     192.168.1.24
     192.168.1.25
     192.168.1.26
-  `
-}
+  `,
+};
 
 const DEFAULT_SSH_PORT = '22';
 
 async function doInit() {
   // setting up the ssh port map
-  for(const port of Object.keys(portToIp)){
-    const ips = portToIp[port].split('\n').map(s => s.trim()).filter(s => s);
-    for(const ip of ips){
+  for (const port of Object.keys(portToIp)) {
+    const ips = portToIp[port]
+      .split('\n')
+      .map((s) => s.trim())
+      .filter((s) => s);
+    for (const ip of ips) {
       sshPortMap[ip] = port;
     }
   }
 }
 
 async function doWork() {
-  console.log('  >> Setting up SSH Configs');
-
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, '.ssh');
   const targetPath = path.join(baseSshPath, 'config');
 
@@ -37,7 +38,7 @@ async function doWork() {
   let sshConfigTextContent = readText(targetPath);
 
   // make a backup
-  writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/config.backup.${Date.now()}`), sshConfigTextContent);
+  writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/config.bak.${Date.now()}`), sshConfigTextContent);
 
   // add tweaks...
   sshConfigTextContent = appendTextBlock(
