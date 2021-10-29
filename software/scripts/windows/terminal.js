@@ -14,7 +14,7 @@ async function doWork() {
   const oldProfiles = readJson(targetPath);
   const newProfiles = Object.assign(oldProfiles, {
     // global config
-    copyOnSelect: true,
+    copyOnSelect: false,
     copyFormatting: false,
     useTabSwitcher: false,
     multiLinePasteWarning: false,

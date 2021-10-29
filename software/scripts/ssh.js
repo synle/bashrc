@@ -8,6 +8,8 @@ const portToIp = {
   `,
 };
 
+const IGNORED_HOST_IPS = ['192.168.1.1', '192.168.1.2', '192.168.1.11'];
+
 const DEFAULT_SSH_PORT = '22';
 
 async function doInit() {
@@ -58,13 +60,15 @@ Host *
   sshConfigTextContent = appendTextBlock(
     sshConfigTextContent,
     'SY CUSTOM CONFIG - Home Network Hosts', // key
-    HOME_HOST_NAMES.map(([hostName, hostIp]) =>
-      `
+    HOME_HOST_NAMES.filter(([hostName, hostIp]) => IGNORED_HOST_IPS.indexOf(hostIp) === -1)
+      .map(([hostName, hostIp]) =>
+        `
 Host ${hostName}
   HostName ${hostIp}
   Port ${sshPortMap[hostIp] || DEFAULT_SSH_PORT}
       `.trim(),
-    ).join('\n'),
+      )
+      .join('\n'),
   );
 
   sshConfigTextContent = sshConfigTextContent.trim();
