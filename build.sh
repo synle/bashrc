@@ -21,6 +21,7 @@ software/scripts/ssh.js
 find $CONFIG_BUILD_PATH
 
 echo '> Build Host Mappings'
+export DEBUG_WRITE_TO_DIR="" && \
 export TEST_SCRIPT_FILES="software/metadata/hosts-blocked-ads.config.js"  \
   && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
 
