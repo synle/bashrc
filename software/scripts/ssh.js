@@ -37,9 +37,6 @@ async function doWork() {
 
   let sshConfigTextContent = readText(targetPath);
 
-  // make a backup
-  writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/config.bak.${Date.now()}`), sshConfigTextContent);
-
   // add tweaks...
   sshConfigTextContent = appendTextBlock(
     sshConfigTextContent,
@@ -70,8 +67,22 @@ Host ${hostName}
     ).join('\n'),
   );
 
+  sshConfigTextContent = sshConfigTextContent.trim();
+
   // write if there are change
   console.log(HOME_HOST_NAMES.map(([hostName, hostIp]) => `      >> ${hostIp} ${hostName}`).join('\n'));
 
-  writeText(targetPath, sshConfigTextContent.trim());
+  if (DEBUG_WRITE_TO_DIR) {
+    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
+
+    // non -mac keybinding
+    writeText('ssh-config', sshConfigTextContent);
+
+    return process.exit();
+  }
+
+  // make a backup
+  writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/config.bak.${Date.now()}`), sshConfigTextContent);
+
+  writeText(targetPath, sshConfigTextContent);
 }

@@ -16,6 +16,7 @@ software/scripts/sublime-text-configurations.js
 software/scripts/sublime-text-keybindings.js
 software/scripts/vs-code-configurations.js
 software/scripts/vs-code-keybindings.js
+software/scripts/ssh.js
 """
 find $CONFIG_BUILD_PATH
 

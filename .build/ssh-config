@@ -1,0 +1,60 @@
+# SY CUSTOM CONFIG - All Hosts
+Host *
+  # reuse connection
+  ControlMaster auto
+  ControlPath /tmp/%r@%h:%p
+  ControlPersist 20m
+  # forward agent
+  ForwardAgent yes
+  # identity
+  User syle
+  IdentityFile ~/.ssh/id_rsa
+# END SY CUSTOM CONFIG - All Hosts
+
+# SY CUSTOM CONFIG - Home Network Hosts
+Host sy-router-main
+  HostName 192.168.1.1
+  Port 22
+Host sy-router-secondary
+  HostName 192.168.1.2
+  Port 22
+Host sy-printer
+  HostName 192.168.1.11
+  Port 22
+Host sy-printer-dell
+  HostName 192.168.1.11
+  Port 22
+Host sy-printer-dell-e525w
+  HostName 192.168.1.11
+  Port 22
+Host sy-mp
+  HostName 192.168.1.22
+  Port 22
+Host sy-macpro
+  HostName 192.168.1.22
+  Port 22
+Host sy-mbp
+  HostName 192.168.1.23
+  Port 22
+Host sy-macbookpro-16
+  HostName 192.168.1.23
+  Port 22
+Host sy-g14
+  HostName 192.168.1.24
+  Port 2222
+Host sy-asus-g14
+  HostName 192.168.1.24
+  Port 2222
+Host sy-g15
+  HostName 192.168.1.25
+  Port 2222
+Host sy-asus-g15
+  HostName 192.168.1.25
+  Port 2222
+Host sy-alienware
+  HostName 192.168.1.26
+  Port 2222
+Host sy-alienware-15
+  HostName 192.168.1.26
+  Port 2222
+# END SY CUSTOM CONFIG - Home Network Hosts
