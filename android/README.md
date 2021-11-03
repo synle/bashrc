@@ -6,10 +6,15 @@
 ######################################################################################
 ######################################################################################
 ### Core Commands
+pm list packages -d
+
+# disable the app
 pm disable-user --user 0  _some_package_
 pm uninstall -k --user 0 _some_package_
-pm list packages -d
-adb shell cmd package install-existing _some_package_
+
+# re-enable the apps
+cmd package install-existing _some_package_
+pm enable _some_package_
 
 
 ######################################################################################

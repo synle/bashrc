@@ -222,6 +222,10 @@ function getWindowUserBaseDir() {
   return findDirSingle(BASE_WINDOW, /(leng)|(sy[ ]*le)/i);
 }
 
+function getWindowsSyBinaryDir(){
+  return findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
+}
+
 function getWindowAppDataRoamingUserPath() {
   return path.join(getWindowUserBaseDir(), 'AppData/Roaming');
 }
