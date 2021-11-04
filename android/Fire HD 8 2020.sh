@@ -1,8 +1,4 @@
 ## packages removed
-pm disable-user com.amazon.venezia
-pm disable-user com.audible.application.kindle
-pm disable-user com.amazon.imdb.tv.mobile.app
-pm disable-user com.amazon.firelauncher
 pm disable-user amazon.alexa.tablet
 pm disable-user amazon.jackson19
 pm disable-user amazon.speech.audiostreamproviderservice
@@ -62,6 +58,7 @@ pm disable-user com.amazon.dp.fbcontacts
 pm disable-user com.amazon.dp.logger
 pm disable-user com.amazon.fireinputdevices
 pm disable-user com.amazon.firelauncher
+pm disable-user com.amazon.firelauncher
 pm disable-user com.amazon.geo.client.maps
 pm disable-user com.amazon.geo.kms.client
 pm disable-user com.amazon.geo.mapsv2
@@ -71,6 +68,7 @@ pm disable-user com.amazon.geo.mapsv3.services
 pm disable-user com.amazon.glorialist
 pm disable-user com.amazon.h2settingsfortablet
 pm disable-user com.amazon.identity.auth.device.authorization
+pm disable-user com.amazon.imdb.tv.mobile.app
 pm disable-user com.amazon.imp
 pm disable-user com.amazon.iris
 pm disable-user com.amazon.kindle
@@ -118,6 +116,7 @@ pm disable-user com.amazon.tcomm
 pm disable-user com.amazon.tcomm.client
 pm disable-user com.amazon.tv.launcher
 pm disable-user com.amazon.tv.ottssocompanionapp
+pm disable-user com.amazon.venezia
 pm disable-user com.amazon.virtual.dash.knight.app
 pm disable-user com.amazon.weather
 pm disable-user com.amazon.webapp
@@ -130,8 +129,10 @@ pm disable-user com.amazon.windowshop
 pm disable-user com.amazon.wirelessmetrics.service
 pm disable-user com.amazon.zico
 pm disable-user com.amazon.zordon
+pm disable-user com.android.calculator2
 pm disable-user com.android.calendar
 pm disable-user com.android.contacts
+pm disable-user com.android.deskclock
 pm disable-user com.android.email
 pm disable-user com.android.music
 pm disable-user com.android.musicfx
@@ -140,6 +141,7 @@ pm disable-user com.android.protips
 pm disable-user com.android.providers.downloads.ui
 pm disable-user com.android.quicksearchbox
 pm disable-user com.android.sharedstoragebackup
+pm disable-user com.audible.application.kindle
 pm disable-user com.audible.application.kindle
 pm disable-user com.fireos.arcus.proxy
 pm disable-user com.goodreads.kindle
