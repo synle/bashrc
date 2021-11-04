@@ -28,3 +28,6 @@ test_full_run_live:
 
 test_full_run_local:
 	sh test-full-run.sh
+
+test_single_run_local:
+	sh test.sh
