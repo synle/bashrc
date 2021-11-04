@@ -312,11 +312,12 @@ async function convertEnvPath() {
     %ProgramFiles%/Microsoft VS Code
     %ProgramFiles%/Microsoft VS Code/bin
     %ProgramFiles%/Sublime Text
-    %SystemRoot%
+    %SystemRoot%/
     %SystemRoot%/System32
     %SystemRoot%/System32/OpenSSH
     %SystemRoot%/System32/Wbem
     %SystemRoot%/System32/WindowsPowerShell/v1.0
+    %USERPROFILE%\AppData\Local\Microsoft\WindowsApps
     C:/ProgramData/DockerDesktop/version-bin
   `.split(/[\n;]/g);
   const env = prompt('env?') || '';
