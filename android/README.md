@@ -9,7 +9,7 @@
 pm list packages -d
 
 # disable the app
-pm disable-user --user 0  _some_package_
+pm disable-user --user 0 _some_package_
 pm uninstall -k --user 0 _some_package_
 
 # re-enable the apps
