@@ -47,6 +47,14 @@ async function init() {
       shouldShowScriptNameInput: true,
       shouldShowOsSelectionInput: true,
     },
+
+    {
+      text: 'Environment Vars',
+      script: `<ENV_VARS>`,
+      shouldShowOsSelectionInput: true,
+      shouldHideBootstrap: true,
+      shouldShowEnvInput: true,
+    },
   ].map((config) => ({
     idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
     ...config,
@@ -88,26 +96,13 @@ async function init() {
 
   document.scriptForm.commandChoice.value = selectedIdx;
 
-  document.querySelector('#commands').insertAdjacentHTML(
-    'beforeEnd',
-    `
-      <div>
-        <button
-          type='button'
-          onclick='convertEnvPath()'
-        >
-          Windows Envs
-        </button>
-      </div>
-    `,
-  );
-
   // select the previous values from local storage
   document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
   document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
   document.scriptForm.runnerToUse.value = getStorage('runnerToUse', 'test-live.sh');
   document.scriptForm.addBootstrapScript.value = getStorage('addBootstrapScript') || 'no';
   document.scriptForm.setupDependencies.value = getStorage('setupDependencies') || 'yes';
+  document.scriptForm.envInputValue.value = getStorage('envInput') || '';
 
   getStorage('scriptToUse', '')
     .split('\n')
@@ -149,12 +144,17 @@ function updateScript() {
         document.scriptForm.setupDependencies.value !== 'yes'
           ? ''
           : `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh)" && \\\n`,
-      ),
+      )
+      .replace('<ENV_VARS>', getEnvVars()),
   );
 
   document.querySelector('#scriptToRunContainer').classList.toggle('hidden', selectedScript.shouldShowScriptNameInput !== true);
   document.querySelector('#osToRunContainer').classList.toggle('hidden', selectedScript.shouldShowOsSelectionInput !== true);
   document.querySelector('#setupDependencies').classList.toggle('hidden', selectedScript.shouldShowSetupDependencies !== true);
+  document.querySelector('#osBootstrap').classList.toggle('hidden', selectedScript.shouldHideBootstrap === true);
+  document.querySelector('#envInput').classList.toggle('hidden', selectedScript.shouldShowEnvInput !== true);
+
+  document.querySelector('#envInputValue').value = getEnvVars('\n');
 
   document.querySelector('#output').value = newCommands
     .join('\n')
@@ -303,7 +303,7 @@ async function selectCommands() {
   document.execCommand('copy');
 }
 
-async function convertEnvPath() {
+function getEnvVars(envSepToReturn = ';') {
   const defaultEnv = `
     %LocalAppData%/Android/sdk/platform-tools
     %LocalAppData%/Microsoft/WindowsApps
@@ -312,7 +312,7 @@ async function convertEnvPath() {
     %ProgramFiles%/Microsoft VS Code
     %ProgramFiles%/Microsoft VS Code/bin
     %ProgramFiles%/Sublime Text
-    %SystemRoot%/
+    %SystemRoot%
     %SystemRoot%/System32
     %SystemRoot%/System32/OpenSSH
     %SystemRoot%/System32/Wbem
@@ -320,22 +320,44 @@ async function convertEnvPath() {
     %USERPROFILE%\AppData\Local\Microsoft\WindowsApps
     C:/ProgramData/DockerDesktop/version-bin
   `.split(/[\n;]/g);
-  const env = prompt('env?') || '';
+
+  const env = document.querySelector('#envInputValue').value.trim();
+
+  const osFlag = document.querySelector('#osToRun').value.trim();
+  const isWindows = osFlag === 'windows';
+  const pathSep = isWindows ? '\\' : '/';
 
   const newEnv = [...env.split(/[\n;]/g), ...defaultEnv]
     .map((s) => s.trim())
     .filter((s) => s && (s.includes('\\') || s.includes('/')) && !s.includes('stdin'))
-    .map((s) =>
-      s
-        .replace(/\//g, '\\')
+    .map((s) => {
+      s = s
+        .replace(/[/\\]/g, pathSep)
         .replace(/C:\\Windows/i, '%SystemRoot%')
         .replace(/C:\\Program Files (x86)/i, '%ProgramFiles% (x86)')
         .replace(/C:\\Program Files/i, '%ProgramFiles%')
         .replace(/C:\\Users\\[a-z0-9]+\\AppData\\Local/i, '%LocalAppData%')
-        .replace(/C:\\Users\\[a-z0-9]+/i, '%UserProfile%'),
-    )
+        .replace(/C:\\Users\\[a-z0-9]+/i, '%UserProfile%')
+        .replace(/%LocalAppData%/i, '%LocalAppData%')
+        .replace(/%ProgramFiles%/i, '%ProgramFiles%')
+        .replace(/%SystemRoot%/i, '%SystemRoot%')
+        .replace(/%SystemRoot%\\System32/i, '%SystemRoot%\\System32')
+        .replace(/%USERPROFILE%/i, '%UserProfile%');
+
+      s = s.replace(/[\\/]+$/, pathSep);
+
+      const lastChar = s[s.length - 1];
+      if (lastChar !== '/' && lastChar !== '\\') {
+        s += pathSep;
+      }
+
+      return s;
+    })
     .sort();
-  prompt('New Env?', [...new Set(newEnv)].join(';'));
+
+  const envItems = [...new Set(newEnv)];
+
+  return envItems.join(envSepToReturn);
 }
 
 function setStorage(key, value) {

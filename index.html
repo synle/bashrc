@@ -95,7 +95,7 @@
         </div>
 
         <!-- add bootstrap script -->
-        <div class="c2-child">
+        <div class="c2-child" id="osBootstrap">
           <label>Add Bootstrap Script:</label>
           <div>
             <input
@@ -114,6 +114,14 @@
               style="margin-left: 2rem" />
             <label for="addBootstrapScript-no">No</label>
           </div>
+        </div>
+
+        <div class="c2-child" id="envInput">
+          <label>Env Var Input:</label>
+          <textarea
+            id="envInputValue"
+            placeholder="Input"
+            onchange="updateScript(); setStorage('envInputValue', document.scriptForm.envInput.value)"></textarea>
         </div>
 
         <textarea id="output" placeholder="Output" readonly="true" ondblclick="selectCommands()"></textarea>
