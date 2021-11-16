@@ -20,17 +20,16 @@ fi
 ## install other nvm version
 echo "  >> Setting up nvm node versions"
 
+function nvmInstallNode(){
+  echo "    >> Install node $1"
+  nvm install "$1" &>/dev/null
+}
 
-DEFAULT_NVM_VERSION=v12.22.1
-echo "    >> Install node 8"
-nvm install 10 &>/dev/null
-echo "    >> Install node 10"
-nvm install 8 &>/dev/null
-echo "    >> Install node $DEFAULT_NVM_VERSION"
-nvm install $DEFAULT_NVM_VERSION &>/dev/null
-echo "    >> Install node LTS"
-nvm install lts &>/dev/null
+
+DEFAULT_NVM_VERSION=12
+nvmInstallNode $DEFAULT_NVM_VERSION
+nvmInstallNode lts
 
 echo "    >> nvm alias default $DEFAULT_NVM_VERSION"
-nvm alias default 12 &>/dev/null
+nvm alias default $DEFAULT_NVM_VERSION &>/dev/null
 nvm use default &>/dev/null

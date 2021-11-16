@@ -129,6 +129,9 @@ function findDirList(srcDir, targetMatch, returnFirstMatch) {
 
     return dirFiles;
   } catch (err) {
+    if (returnFirstMatch) {
+      return null;
+    }
     return [];
   }
 }
@@ -137,14 +140,16 @@ function findDirSingle(srcDir, targetMatch) {
   return findDirList(srcDir, targetMatch, true);
 }
 
-function writeText(aDir, text, override = true) {
+function writeText(aDir, text, override = true, suppressError) {
   const pathToUse = _getFilePath(aDir);
   const newContent = text;
   const oldContent = readText(pathToUse);
   if (oldContent.trim() === newContent.trim() || override !== true) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
-    console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
+    if (suppressError !== true) {
+      console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
+    }
   } else {
     fs.writeFileSync(pathToUse, newContent);
   }
@@ -369,6 +374,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false) {
 
   const firstFiles = convertTextToList(`
     software/scripts/_bash-rc-bootstrap.js
+    software/scripts/_nvm-binary.js
     software/scripts/_nvm-symlink.sh.js
   `);
 

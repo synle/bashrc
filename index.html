@@ -121,7 +121,10 @@
           <textarea
             id="envInputValue"
             placeholder="Input"
-            onchange="updateScript(); setStorage('envInputValue', document.scriptForm.envInput.value)"></textarea>
+            onchange="updateScript(); setStorage('envInputValue', document.scriptForm.envInputValue.value)"></textarea>
+          <label>Add Default Env:</label>
+          <input type="checkbox" id="checkboxAddDefaultEnvs" onchange="updateScript(); setStorage('envInputValue',
+          document.scriptForm.envInputValue.value)"" />
         </div>
 
         <textarea id="output" placeholder="Output" readonly="true" ondblclick="selectCommands()"></textarea>

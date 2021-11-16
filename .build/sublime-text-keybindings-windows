@@ -596,5 +596,11 @@
     "keys": [
       "alt+/"
     ]
+  },
+  {
+    "command": "redo_or_repeat",
+    "keys": [
+      "shift+alt+z"
+    ]
   }
 ]

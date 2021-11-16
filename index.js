@@ -102,7 +102,7 @@ async function init() {
   document.scriptForm.runnerToUse.value = getStorage('runnerToUse', 'test-live.sh');
   document.scriptForm.addBootstrapScript.value = getStorage('addBootstrapScript') || 'no';
   document.scriptForm.setupDependencies.value = getStorage('setupDependencies') || 'yes';
-  document.scriptForm.envInputValue.value = getStorage('envInput') || '';
+  document.scriptForm.envInputValue.value = getStorage('envInputValue') || '';
 
   getStorage('scriptToUse', '')
     .split('\n')
@@ -303,33 +303,80 @@ async function selectCommands() {
   document.execCommand('copy');
 }
 
-function getEnvVars(envSepToReturn = ';') {
-  const defaultEnv = `
-    %LocalAppData%/Android/sdk/platform-tools
-    %LocalAppData%/Microsoft/WindowsApps
-    %ProgramFiles% (x86)/NVIDIA Corporation/PhysX/Common
-    %ProgramFiles%/Docker/Docker/resources/bin
-    %ProgramFiles%/Microsoft VS Code
-    %ProgramFiles%/Microsoft VS Code/bin
-    %ProgramFiles%/Sublime Text
-    %SystemRoot%
-    %SystemRoot%/System32
-    %SystemRoot%/System32/OpenSSH
-    %SystemRoot%/System32/Wbem
-    %SystemRoot%/System32/WindowsPowerShell/v1.0
-    %USERPROFILE%\AppData\Local\Microsoft\WindowsApps
-    C:/ProgramData/DockerDesktop/version-bin
-  `.split(/[\n;]/g);
-
+function getEnvVars(envSepToReturn) {
   const env = document.querySelector('#envInputValue').value.trim();
-
   const osFlag = document.querySelector('#osToRun').value.trim();
-  const isWindows = osFlag === 'windows';
-  const pathSep = isWindows ? '\\' : '/';
+  const shouldUseDefaultEnvs = document.querySelector('#checkboxAddDefaultEnvs').checked;
 
-  const newEnv = [...env.split(/[\n;]/g), ...defaultEnv]
+  let pathSep = '/';
+  let defaultEnv = '';
+
+  switch (osFlag) {
+    case 'windows':
+      if (!envSepToReturn) {
+        envSepToReturn = ';';
+      }
+
+      pathSep = '\\';
+
+      defaultEnv = `
+        %SystemRoot%
+        %SystemRoot%/System32
+        %SystemRoot%/System32/OpenSSH
+        %SystemRoot%/System32/Wbem
+        %SystemRoot%/System32/WindowsPowerShell/v1.0
+        %UserProfile%/AppData/Local/Microsoft/WindowsApps
+        %LocalAppData%/Microsoft/WindowsApps
+      `;
+
+      if (shouldUseDefaultEnvs) {
+        defaultEnv += `
+          #### NVIDIA
+          %ProgramFiles% (x86)/NVIDIA Corporation/PhysX/Common
+
+          #### VS Code
+          %ProgramFiles%/Microsoft VS Code
+          %ProgramFiles%/Microsoft VS Code/bin
+
+          #### Sublime
+          %ProgramFiles%/Sublime Text
+        `;
+      }
+      break;
+    case 'mac':
+      if (!envSepToReturn) {
+        envSepToReturn = ':';
+      }
+
+      defaultEnv = `
+        /usr/local/bin
+        /usr/bin
+        /bin
+        /usr/sbin
+        /sbin
+      `;
+
+      if (shouldUseDefaultEnvs) {
+        defaultEnv += `
+          #### VS Code
+          /Applications/Visual Studio Code.app/Contents/Resources/app/bin
+        `;
+      }
+      break;
+    default:
+      if (!envSepToReturn) {
+        envSepToReturn = ';';
+      }
+      break;
+  }
+
+  // convert the env var into arrays
+  defaultEnv = defaultEnv.split(/[\n;\:]/g);
+
+  const newEnv = [...env.split(/[\n;\:]/g), ...defaultEnv]
     .map((s) => s.trim())
-    .filter((s) => s && (s.includes('\\') || s.includes('/')) && !s.includes('stdin'))
+    .filter((s) => s && !s.includes('#'))
+    .filter((s) => s.includes('\\') || s.includes('/'))
     .map((s) => {
       s = s
         .replace(/[/\\]/g, pathSep)
@@ -342,7 +389,7 @@ function getEnvVars(envSepToReturn = ';') {
         .replace(/%ProgramFiles%/i, '%ProgramFiles%')
         .replace(/%SystemRoot%/i, '%SystemRoot%')
         .replace(/%SystemRoot%\\System32/i, '%SystemRoot%\\System32')
-        .replace(/%USERPROFILE%/i, '%UserProfile%');
+        .replace(/%UserProfile%/i, '%UserProfile%');
 
       s = s.replace(/[\\/]+$/, pathSep);
 

@@ -166,6 +166,11 @@ async function doInit() {
       when: 'textInputFocus && !editorReadonly',
     },
     {
+      key: 'alt+y',
+      command: 'redo',
+      when: 'textInputFocus && !editorReadonly',
+    },
+    {
       key: 'alt+ctrl+c',
       command: 'workbench.files.action.compareWithSaved',
     },

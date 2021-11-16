@@ -417,6 +417,7 @@ async function doInit() {
         block: false,
       },
     },
+    { key: 'shift+alt+z', command: 'redo_or_repeat' },
   ];
   // end WINDOWS_ONLY_KEY_BINDINGS
 

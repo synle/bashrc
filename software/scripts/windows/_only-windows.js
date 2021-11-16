@@ -35,6 +35,29 @@ findResolvedPathForWsl1(){
   """
 }
 
+# To be run in WSL terminals to extract path envs
+function exportPathEnvs(){
+  echo $PATH | node -e """
+    let data = '';
+
+    process.openStdin().addListener('data', (d) => {
+      data += d.toString();
+    });
+
+    process.openStdin().addListener('end', (d) => {
+      const output = data.split(':').filter(s => s.includes('/mnt/')).map(s => {
+        s = s.replace('/mnt/c/', 'C:/');
+        s = s.replace('/mnt/d/', 'D:/');
+
+        return s
+      }).join('\n');
+
+      console.log(output);
+
+      process.exit();
+    });
+  """
+}
 
 open(){
   echo "$@"
