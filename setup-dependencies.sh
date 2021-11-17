@@ -6,7 +6,7 @@ echo """
 """
 
 echo '>> loading...'
-. /dev/stdin <<< "$(curl -s $SY_REPO_PREFIX/bash-profile-barebone.sh)"
+. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh)"
 clear
 
 
@@ -21,13 +21,13 @@ echo '>> started installing dependencies...'
 
 if [ $is_os_darwin_mac == "1" ]; then
   echo '>> started install-dependencies-mac.sh'
-  curl -s $SY_REPO_PREFIX/install-dependencies-mac.sh | bash -
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-mac.sh | bash -
 elif [ $is_os_chromeos == "1" ]; then
   echo '>> started install-dependencies-chrome-os-linux.sh'
-  curl -s $SY_REPO_PREFIX/install-dependencies-chrome-os-linux.sh | bash -
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-chrome-os-linux.sh | bash -
 elif [ $is_os_ubuntu == "1" ]; then
   echo '>> started install-dependencies-ubuntu.sh'
-  curl -s $SY_REPO_PREFIX/install-dependencies-ubuntu.sh | bash -
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-ubuntu.sh | bash -
 else
   echo '>> skipped - This OS is not supported'
 fi
@@ -36,7 +36,7 @@ fi
 if [ $is_os_window == "1" ]
 then
   echo '>> started install-dependencies-windows.sh'
-  curl -s $SY_REPO_PREFIX/install-dependencies-windows.sh | bash -
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-windows.sh | bash -
 fi
 
 ##########################################################

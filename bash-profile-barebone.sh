@@ -34,7 +34,7 @@ fi
 ##########################################################
 
 #used to refresh
-alias bashrcRefresh='. /dev/stdin <<< "$(curl -s $SY_REPO_PREFIX/setup-full.sh?$(date +%s))"'
+alias bashrcRefresh='. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"'
 alias refreshBashrc='bashrcRefresh'
 
 ##########################################################

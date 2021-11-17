@@ -271,7 +271,7 @@ function _getOsFlagScript() {
       // 'NODE_VERSION_TO_USE=12.22.1',
       // 'nvm install $NODE_VERSION_TO_USE',
       // 'nvm use $NODE_VERSION_TO_USE',
-      `echo """\nexport SY_REPO_PREFIX='https://raw.githubusercontent.com/synle/bashrc/master'\n\n${osKeys
+      `echo """\n${osKeys
         .map((key) => `export ${key}='${osFlags[key] ? '1' : '0'}'`)
         .join('\n')}\n""" > ~/.bash_syle_os && source ~/.bash_syle_os`,
     ].join(' && \\\n') + ' && '
