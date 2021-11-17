@@ -26,7 +26,7 @@ async function doWork() {
         const destination = path.join(targetPath, path.basename(file));
 
         try {
-          const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}`;
+          const url = `/${file}`;
           const downloaded = await downloadFile(url, destination);
           if (downloaded === true) {
             console.log(consoleLogColor3('      >> Downloaded'), consoleLogColor4(destination));

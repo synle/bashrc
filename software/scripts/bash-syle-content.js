@@ -3,11 +3,9 @@ async function doWork() {
 
   let res = readText(BASE_BASH_SYLE);
 
-  const contentBaseBashScript = await fetchUrlAsString('https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh');
+  const contentBaseBashScript = await fetchUrlAsString(`/bash-profile-barebone.sh`);
 
-  const contentCommonAliasScript = await fetchUrlAsString(
-    'https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-more-advanced.sh',
-  );
+  const contentCommonAliasScript = await fetchUrlAsString(`/bash-profile-more-advanced.sh`);
 
   res += `\n\n\n`;
 

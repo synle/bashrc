@@ -1,6 +1,6 @@
 #! /bin/sh
 # cat setup-hosts.sh | node
 { \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/base-node-script.js && \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/etc-hosts.su.js ;
+  curl -s $SY_REPO_PREFIX/software/base-node-script.js && \
+  curl -s $SY_REPO_PREFIX/software/scripts/etc-hosts.su.js ;
 } | node
