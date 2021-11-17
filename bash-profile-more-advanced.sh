@@ -3,13 +3,13 @@
 # aliases & functions
 ##########################################################
 # docker
-dexec_bash(){
+dexecBash(){
   echo "docker exec -it $@ /bin/bash";
   docker exec -it $@ /bin/bash
 }
 alias d='docker'
 alias drun='docker run'
-alias dexec='dexec_bash'
+alias dexec='dexecBash'
 
 
 ##########################################################
@@ -120,7 +120,7 @@ Full Path: $(echo "$@")
   echo "code \"$@\""
 }
 
-code-list-extensions(){
+codeListExtensions(){
   if [ $is_os_wsl == "1" ]
   then
     # for windows
@@ -131,7 +131,7 @@ code-list-extensions(){
   fi
 }
 
-code-install-extension(){
+codeInstallExtension(){
   if [ $is_os_wsl == "1" ]
   then
     # for windows
@@ -140,6 +140,14 @@ code-install-extension(){
   then
     code --install-extension "$1"
   fi
+}
+
+# copy command with progress bar
+cp2(){
+  echo "==== copy ===="
+  echo "src:" "$1"
+  echo "dest:" "$2";
+  pv "$1" > "$2"
 }
 
 ##########################################################
@@ -256,15 +264,13 @@ export FZF_COMPLETION_TRIGGER='*'
 ##########################################################
 #############  SECTION BREAK
 ##########################################################
-killAllDockerContainers(){
-  docker kill $(docker ps -q)
-}
+
 
 ##########################################################
 ####################  Prompt  ##############
 ##########################################################
 # get current branch in git repo
-parse_git_branch(){
+parseGitBranch(){
 python << END
 import commands
 try:
@@ -293,7 +299,7 @@ END
 }
 
 #short path
-shorter_pwd_path(){
+shorterPwdPath(){
 python << END
 import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -314,5 +320,5 @@ END
 export PS1="
 \[\e[31m\]====\[\e[m\]
 \[\e[33m\]\T\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\] - \`ifconfig2\`
-\[\e[33m\]\`shorter_pwd_path\`\[\e[m\] \[\e[31m\]\`parse_git_branch\`\[\e[m\]
+\[\e[33m\]\`shorterPwdPath\`\[\e[m\] \[\e[31m\]\`parseGitBranch\`\[\e[m\]
 \[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "

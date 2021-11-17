@@ -91,7 +91,10 @@ globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
 
 globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || '').toLowerCase().trim();
 
-globalThis.REPO_PREFIX_URL = 'https://raw.githubusercontent.com/synle/bashrc/master/';
+
+const repoName = 'synle/bashrc';
+const repoBranch = 'master';
+globalThis.REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
 
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
@@ -354,11 +357,7 @@ function downloadFile(url, destination) {
 }
 
 async function listRepoDir() {
-  let url = REPO_PREFIX_URL.replace('https://raw.githubusercontent.com', '').replace('/master', '/git/trees/master');
-  url = `https://api.github.com/repos${url}?recursive=1&cacheBust=${Date.now()}`;
-
-  // const url = 'https://api.github.com/repos/synle/bashrc/git/trees/master?recursive=1&cacheBust=$(date +%s)';
-
+  const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
 
   try {
     const json = await fetchUrlAsJson(url);

@@ -41,13 +41,14 @@ then
 
 
   echo '>> Installing packages with Homebrew'
-  # installPackage azure-cli;
-  # installPackage heroku;
-  # installPackage tig;
-  installPackage bat;
-  installPackage fzf;
-  installPackage git;
-  installPackage jq;
+  # installPackage azure-cli
+  # installPackage heroku
+  # installPackage tig
+  installPackage bat
+  installPackage fzf
+  installPackage git
+  installPackage jq
+  installPackage pv
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools
@@ -62,6 +63,6 @@ then
   defaults write com.apple.dock persistent-apps -array
   killall Dock
 
-# disable spotlight indexing
-sudo mdutil -i off
+  # disable spotlight indexing
+  sudo mdutil -i off
 fi

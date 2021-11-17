@@ -20,24 +20,25 @@ then
   popd &> /dev/null
 
   echo '>> update packages'
-  sudo apt-get update -y &> /dev/null;
+  sudo apt-get update -y &> /dev/null
 
 
   echo '>> Installing packages with apt-get'
-  # installPackage dialog;
-  # installPackage figlet;
-  # installPackage redis-server;
-  # installPackage tig;
-  # installPackage tmux;
+  # installPackage dialog
+  # installPackage figlet
+  # installPackage redis-server
+  # installPackage tig
+  # installPackage tmux
   ###
-  installPackage curl;
-  installPackage make;
-  installPackage python;
-  installPackage vim;
+  installPackage curl
+  installPackage make
+  installPackage python
+  installPackage vim
   ###
-  installPackage bat;
-  installPackage fzf;
-  installPackage git;
-  installPackage jq;
+  installPackage bat
+  installPackage fzf
+  installPackage git
+  installPackage jq
+  installPackage pv
   installPackage net-tools
 fi
