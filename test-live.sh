@@ -18,7 +18,7 @@ if [ -n "$1" ]; then
 fi
 
 { \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/base-node-script.js && \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/test.sh.js && \
+  curl -s $SY_REPO_PREFIX/software/base-node-script.js && \
+  curl -s $SY_REPO_PREFIX/software/test.sh.js && \
   echo "filesToTest = \`$TEST_SCRIPT_FILES\`;";
 } | node | bash

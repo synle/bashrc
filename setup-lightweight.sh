@@ -17,7 +17,7 @@ export TEST_SCRIPT_FILES="""
   bash-autocomplete.js
   bash-syle-content.js
 " \
-&& curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-live.sh | bash
+&& curl -s $SY_REPO_PREFIX/test-live.sh | bash
 
 # re-source
 # . ~/.bash_syle

@@ -1,5 +1,5 @@
 #! /bin/sh
 { \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/base-node-script.js && \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/index.sh.js ;
+  curl -s $SY_REPO_PREFIX/software/base-node-script.js && \
+  curl -s $SY_REPO_PREFIX/software/index.sh.js ;
 } | node | bash
