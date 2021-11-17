@@ -21,6 +21,6 @@ async function doWork() {
     return process.exit();
   }
 
-  const url = `https://raw.githubusercontent.com/synle/bashrc/master/binaries/tightvnc-jviewer.jar`;
+  const url = `binaries/tightvnc-jviewer.jar`;
   await downloadFile(url, targetPath);
 }

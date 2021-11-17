@@ -91,6 +91,8 @@ globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
 
 globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || '').toLowerCase().trim();
 
+globalThis.REPO_PREFIX_URL = 'https://raw.githubusercontent.com/synle/bashrc/master/';
+
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
 //////////////////////////////////////////////////////
@@ -333,6 +335,8 @@ function mkdir(targetPath) {
 
 // api utils
 function downloadFile(url, destination) {
+  url = getFullUrl(url);
+
   return new Promise((resolve, reject) => {
     if (fs.existsSync(destination)) {
       console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(destination));
@@ -350,7 +354,11 @@ function downloadFile(url, destination) {
 }
 
 async function listRepoDir() {
-  const url = 'https://api.github.com/repos/synle/bashrc/git/trees/master?recursive=1&cacheBust=$(date +%s)';
+  let url = REPO_PREFIX_URL.replace('https://raw.githubusercontent.com', '').replace('/master', '/git/trees/master');
+  url = `https://api.github.com/repos${url}?recursive=1&cacheBust=${Date.now()}`;
+
+  // const url = 'https://api.github.com/repos/synle/bashrc/git/trees/master?recursive=1&cacheBust=$(date +%s)';
+
 
   try {
     const json = await fetchUrlAsJson(url);
@@ -454,7 +462,16 @@ async function getSoftwareScriptFiles(returnAllScripts = false) {
   });
 }
 
+function getFullUrl(url) {
+  if (url.indexOf('http') !== 0) {
+    url = `${REPO_PREFIX_URL}${url}`;
+  }
+  return url;
+}
+
 async function fetchUrlAsString(url) {
+  url = getFullUrl(url);
+
   try {
     return execBash(`curl -s ${url}`);
   } catch (err) {
@@ -532,7 +549,7 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
 function processScriptFile(file) {
   let scriptToUse;
 
-  const url = `https://raw.githubusercontent.com/synle/bashrc/master/${file}?cacheBust=${Date.now()}`;
+  const url = getFullUrl(`${file}?${Date.now()}`);
 
   function _generateScript(file, url) {
     if (file.includes('.js')) {
@@ -551,7 +568,7 @@ function processScriptFile(file) {
 
   function _generateStartScript() {
     const startScriptFilePath = 'software/base-node-script.js';
-    const startScriptUrl = `https://raw.githubusercontent.com/synle/bashrc/master/${startScriptFilePath}?${Date.now()}`;
+    const startScriptUrl = getFullUrl(`${startScriptFilePath}?${Date.now()}`);
 
     return _generateRawScript(startScriptFilePath, startScriptUrl);
   }
@@ -599,9 +616,7 @@ function printOsFlags() {
 (async function () {
   // getting the ip address mapping
   try {
-    globalThis.HOME_HOST_NAMES = (
-      await fetchUrlAsString('https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config')
-    )
+    globalThis.HOME_HOST_NAMES = (await fetchUrlAsString(`software/metadata/ip-address.config`))
       .split('\n')
       .filter((s) => !!s.trim() && s.indexOf('=') !== 0)
       .reduce((res, s) => {

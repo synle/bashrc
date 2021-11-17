@@ -28,7 +28,7 @@ async function doWork() {
         const destination = path.join(targetFontPath, 'Font-' + path.basename(font));
 
         try {
-          const url = `https://raw.githubusercontent.com/synle/bashrc/master/${font}`;
+          const url = font;
           const downloaded = await downloadFile(url, destination);
           if (downloaded === true) {
             console.log(consoleLogColor3('      >> Downloaded'), consoleLogColor4(destination));

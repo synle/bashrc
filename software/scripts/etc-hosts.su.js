@@ -5,15 +5,9 @@ let ROUTED_BLOCKED_IP;
 
 async function doInit() {
   // initiate the vars
-  STATIC_BLOCK_HOST_NAMES = convertTextToList(
-    await fetchUrlAsString('https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-whitelisted.config'),
-  );
+  STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`));
 
-  WHITE_LIST_HOST_NAMES = new Set(
-    convertTextToList(
-      await fetchUrlAsString('https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-blocked-manual.config'),
-    ),
-  );
+  WHITE_LIST_HOST_NAMES = new Set(convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`)));
 
   ROUTED_BLOCKED_IP = '0.0.0.0';
 
@@ -68,9 +62,9 @@ async function _getBlockedHostNames() {
   let mappingsToUse = [...STATIC_BLOCK_HOST_NAMES];
   if (!is_os_window) {
     // for non windows, we can more hosts from the blocked hosts...
-    const url = 'https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/hosts-blocked-ads.config';
+    const url = `software/metadata/hosts-blocked-ads.config`;
     try {
-      let h = await fetchUrlAsString(url);
+      let h = await fetchUrlAsString(`software/metadata/hosts-blocked-ads.config`);
       h = convertTextToHosts(h);
       console.log('      >> URL fetch for host success', url);
       console.log('        >> Total Hosts Found', h.length);

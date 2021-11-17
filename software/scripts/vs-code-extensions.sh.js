@@ -36,10 +36,10 @@ async function doWork() {
     wmaurer.change-case
   `);
 
-  console.log(echo(`  >> Setting up VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
+  console.log(echo(`  >> Setting up VS Code Extensions (code --install-extension --force): ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
 
   for (const plugin of VS_CODE_EXTENSIONS_TO_INSTALL) {
-    console.log(`echo  "    >> code --install-extension ${plugin} --force" && \\`);
+    console.log(`echo  "    >> ${plugin} " && \\`);
 
     if (is_os_window) {
       // mac
@@ -50,5 +50,5 @@ async function doWork() {
     }
   }
 
-  console.log(echo(`  >> Installed VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
+  console.log(echo(`  >> Done Installed VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
 }
