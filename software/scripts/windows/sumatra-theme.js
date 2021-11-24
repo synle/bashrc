@@ -81,26 +81,6 @@ async function doWork() {
       UseTabs = true
 
       FileStates [
-        [
-          FilePath = D:\_downloads\Updated - Approved Update ARC Form 2020.pdf
-          Favorites [
-          ]
-          IsPinned = false
-          IsMissing = false
-          OpenCount = 1
-          UseDefaultState = false
-          DisplayMode = continuous
-          ScrollPos = -1 -1
-          PageNo = 1
-          Zoom = fit page
-          Rotation = 0
-          WindowState = 1
-          WindowPos = 739 0 1081 1400
-          ShowToc = false
-          SidebarDx = 0
-          DisplayR2L = false
-          ReparseIdx = 0
-        ]
       ]
       SessionData [
       ]

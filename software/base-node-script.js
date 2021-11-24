@@ -91,7 +91,6 @@ globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
 
 globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || '').toLowerCase().trim();
 
-
 const repoName = 'synle/bashrc';
 const repoBranch = 'master';
 globalThis.REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
@@ -393,6 +392,10 @@ async function getSoftwareScriptFiles(returnAllScripts = false) {
     software/scripts/etc-hosts.su.js
     software/scripts/vs-code-extensions.sh.js
   `);
+
+  if (is_os_window) {
+    firstFiles.push('software/scripts/windows/mkdir.js');
+  }
 
   let softwareFiles = files.filter(
     (f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'),
