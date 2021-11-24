@@ -196,3 +196,20 @@ for( $i = 0; $i -lt $ports.length; $i++ ){
 Use this VNC viewer for Mac Remote Viewing or Ubuntu
 
 https://www.tightvnc.com/download/2.8.3/tvnjviewer-2.8.3-bin-gnugpl.zip
+
+#### Path for shortcuts
+
+```
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs
+```
+
+
+#### Required Services
+`msconfig`
+
+
+```
+# Asus
+ASUS App Service
+ASUS Optimization
+```
