@@ -29,5 +29,6 @@ pm uninstall -k --user 0 com.google.android.apps.tv.dreamx
 
 # cautious!
 pm uninstall -k --user 0 com.mstar.android.tv.disclaimercustomization
-pm uninstall -k --user 0 com.mstar.netflixobserver
+pm uninstall -k --user 0 com.mstar.netflixobserver # can be replaced with button mapper
+pm disable-user --user 0 com.hisense.tv.protector
 # com.jamdeo.tv.mediacenterapplication
