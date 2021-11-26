@@ -310,9 +310,12 @@ function getEnvVars(envSepToReturn) {
 
   let pathSep = '/';
   let defaultEnv = '';
+  let envSep = /[\n;\:]/g;
 
   switch (osFlag) {
     case 'windows':
+      envSep = /[\n;]/g;
+
       if (!envSepToReturn) {
         envSepToReturn = ';';
       }
@@ -331,6 +334,9 @@ function getEnvVars(envSepToReturn) {
 
       if (shouldUseDefaultEnvs) {
         defaultEnv += `
+          #### JDK
+          %JAVA_HOME%/bin
+
           #### NVIDIA
           %ProgramFiles% (x86)/NVIDIA Corporation/PhysX/Common
 
@@ -340,7 +346,12 @@ function getEnvVars(envSepToReturn) {
 
           #### Sublime
           %ProgramFiles%/Sublime Text
+
+          #### Sy Custom Apps
+          %SY_APPS%/adb
+          %SY_APPS%/tightvnc
         `;
+
       }
       break;
     case 'mac':
@@ -371,9 +382,9 @@ function getEnvVars(envSepToReturn) {
   }
 
   // convert the env var into arrays
-  defaultEnv = defaultEnv.split(/[\n;\:]/g);
+  defaultEnv = defaultEnv.split(envSep);
 
-  const newEnv = [...env.split(/[\n;\:]/g), ...defaultEnv]
+  const newEnv = [...env.split(envSep), ...defaultEnv]
     .map((s) => s.trim())
     .filter((s) => s && !s.includes('#'))
     .filter((s) => s.includes('\\') || s.includes('/'))
