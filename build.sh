@@ -5,6 +5,11 @@ export TEST_SCRIPT_FILES="software/metadata/script-list.config.js" && \
   curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
 cat $SCRIPT_INDEX_CONFIG_FILE
 
+echo '> Prebuilding Host Mappings'
+export HOST_CONFIG_FILE='./software/metadata/ip-address.config'
+export TEST_SCRIPT_FILES="software/metadata/ip-address.config.js" && \
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
+
 # This script will compile all the common configs
 # used for sublime and vscode keybindings
 echo '> Build raw JSON configs for VSCode and Sublime'
