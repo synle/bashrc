@@ -18,7 +18,7 @@ async function doWork() {
   `);
 
   for (const pathToCreate of pathsToCreate) {
-    console.log('    >> mkdir', pathToCreate);
+    console.log('    >> ', pathToCreate);
     await mkdir(pathToCreate);
   }
 }

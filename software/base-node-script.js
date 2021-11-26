@@ -367,8 +367,16 @@ async function listRepoDir() {
   }
 }
 
-async function getSoftwareScriptFiles(returnAllScripts = false) {
-  let files = await listRepoDir();
+async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileListInstead = false) {
+  let files;
+
+  if (useLocalFileListInstead === true) {
+    // fetch from exec bash
+    files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
+  } else {
+    // fetch from APIS
+    files = await listRepoDir();
+  }
 
   // clean up the files
   files = files.filter((f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'));
@@ -618,17 +626,7 @@ function printOsFlags() {
 (async function () {
   // getting the ip address mapping
   try {
-    globalThis.HOME_HOST_NAMES = (await fetchUrlAsString(`software/metadata/ip-address.config`))
-      .split('\n')
-      .filter((s) => !!s.trim() && s.indexOf('=') !== 0)
-      .reduce((res, s) => {
-        const [hostIp, ...hostNames] = s
-          .split(/[\:,]/gi)
-          .map((s) => s.trim())
-          .filter((s) => s);
-        hostNames.forEach((hostName) => res.push([hostName, hostIp]));
-        return res;
-      }, []);
+    globalThis.HOME_HOST_NAMES = await fetchUrlAsJson(`software/metadata/ip-address.config.hostnamesFlattened`);
   } catch (err) {
     globalThis.HOME_HOST_NAMES = [];
   }

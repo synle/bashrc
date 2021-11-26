@@ -1,5 +1,5 @@
 async function doWork() {
-  const softwareFiles = await getSoftwareScriptFiles(true);
+  const softwareFiles = (await getSoftwareScriptFiles(true, true)).sort();
 
   const files = [];
   for (let i = 0; i < softwareFiles.length; i++) {
