@@ -346,10 +346,6 @@ function getEnvVars(envSepToReturn) {
 
           #### Sublime
           %ProgramFiles%/Sublime Text
-
-          #### Sy Custom Apps
-          %SY_APPS%/adb
-          %SY_APPS%/tightvnc
         `;
 
       }
