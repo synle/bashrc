@@ -347,7 +347,6 @@ function getEnvVars(envSepToReturn) {
           #### Sublime
           %ProgramFiles%/Sublime Text
         `;
-
       }
       break;
     case 'mac':

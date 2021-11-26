@@ -203,10 +203,9 @@ https://www.tightvnc.com/download/2.8.3/tvnjviewer-2.8.3-bin-gnugpl.zip
 C:\ProgramData\Microsoft\Windows\Start Menu\Programs
 ```
 
-
 #### Required Services
-`msconfig`
 
+`msconfig`
 
 ```
 # Asus
