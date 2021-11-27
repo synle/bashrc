@@ -53,7 +53,7 @@ async function doWork() {
       const WINDOWS_REMOTE = hostNames.some((s) => s === 'WINDOWS_REMOTE');
       hostNames = hostNames.filter((s) => UNWANTED_KEYWORDS.indexOf(s) === -1);
 
-      hostNames.forEach((hostName) =>
+      hostNames.forEach((hostName, idx) =>
         res.push([
           hostName,
           hostIp,
@@ -61,6 +61,7 @@ async function doWork() {
             NO_SSH,
             OSX_REMOTE,
             WINDOWS_REMOTE,
+            IS_FIRST_IP_IN_GROUP: idx === 0,
           },
         ]),
       );

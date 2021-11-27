@@ -5,7 +5,8 @@
     {
       "NO_SSH": true,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -14,7 +15,8 @@
     {
       "NO_SSH": true,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -23,7 +25,8 @@
     {
       "NO_SSH": true,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -32,7 +35,8 @@
     {
       "NO_SSH": true,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ],
   [
@@ -41,7 +45,8 @@
     {
       "NO_SSH": true,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ],
   [
@@ -50,7 +55,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -59,7 +65,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ],
   [
@@ -68,7 +75,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -77,7 +85,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ],
   [
@@ -86,7 +95,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -95,7 +105,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ],
   [
@@ -104,7 +115,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -113,7 +125,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ],
   [
@@ -122,7 +135,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -131,7 +145,8 @@
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ],
   [
@@ -140,7 +155,8 @@
     {
       "NO_SSH": true,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
@@ -149,7 +165,8 @@
     {
       "NO_SSH": true,
       "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
     }
   ]
 ]

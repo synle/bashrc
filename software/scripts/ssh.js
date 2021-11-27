@@ -86,7 +86,7 @@ Host ${hostName}
   }
 
   // make a backup
-  writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/config.bak.${Date.now()}`), sshConfigTextContent);
+  writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.config.${Date.now()}`), sshConfigTextContent);
 
   writeText(targetPath, sshConfigTextContent);
 }

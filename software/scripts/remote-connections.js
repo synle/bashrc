@@ -12,7 +12,7 @@ async function doWork() {
 async function doWorkRdp() {
   console.log('  >> Setting up Remote Desktop (RDP) Connections');
 
-  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE }]) => WINDOWS_REMOTE === true);
+  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) => WINDOWS_REMOTE === true && IS_FIRST_IP_IN_GROUP === true);
 
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.rdp');
@@ -70,7 +70,7 @@ kdcproxyname:s:
 async function doWorkVnc() {
   console.log('  >> Setting up VNC Connections');
 
-  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE }]) => OSX_REMOTE === true);
+  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) => OSX_REMOTE === true && IS_FIRST_IP_IN_GROUP === true);
 
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.vnc');
