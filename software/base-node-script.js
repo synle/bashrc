@@ -480,7 +480,12 @@ function getFullUrl(url) {
 }
 
 async function fetchUrlAsString(url) {
-  url = getFullUrl(url);
+  if (isTestScriptMode && !url.includes('http')) {
+    const file = url;
+    return execBash(`cat ${file}`);
+  } else {
+    url = getFullUrl(url);
+  }
 
   try {
     return execBash(`curl -s ${url}`);
