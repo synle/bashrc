@@ -42,10 +42,4 @@ Host sy-alienware
 Host sy-alienware-15
   HostName 192.168.1.26
   Port 2222
-Host sy-living-room-tv
-  HostName 192.168.1.231
-  Port 22
-Host sy-garage-room-tv
-  HostName 192.168.1.232
-  Port 22
 # END SY CUSTOM CONFIG - Home Network Hosts

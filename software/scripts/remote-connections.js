@@ -12,13 +12,7 @@ async function doWork() {
 async function doWorkRdp() {
   console.log('  >> Setting up Remote Desktop (RDP) Connections');
 
-  const windowsPcNames = convertTextToList(`
-    sy-alienware-15
-    sy-asus-g15
-    sy-asus-g14
-  `);
-
-  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp]) => windowsPcNames.includes(hostName));
+  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE }]) => WINDOWS_REMOTE === true);
 
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.rdp');
@@ -76,16 +70,12 @@ kdcproxyname:s:
 async function doWorkVnc() {
   console.log('  >> Setting up VNC Connections');
 
-  const windowsPcNames = convertTextToList(`
-    sy-macpro
-  `);
-
-  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp]) => windowsPcNames.includes(hostName));
+  const hosts = HOME_HOST_NAMES.filter(([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE }]) => OSX_REMOTE === true);
 
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.vnc');
 
-    console.log('    >> VNC: ', consoleLogColor4(targetPath));
+    console.log('    >> VNC: ', consoleLogColor4(hostName));
 
     const content = `
 AuthCertificate=

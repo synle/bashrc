@@ -1,70 +1,155 @@
 [
   [
     "sy-router-main",
-    "192.168.1.1"
+    "192.168.1.1",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-router-secondary",
-    "192.168.1.2"
+    "192.168.1.2",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-printer",
-    "192.168.1.11"
+    "192.168.1.11",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-printer-dell",
-    "192.168.1.11"
+    "192.168.1.11",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-printer-dell-e525w",
-    "192.168.1.11"
+    "192.168.1.11",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-mp",
-    "192.168.1.22"
+    "192.168.1.22",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-macpro",
-    "192.168.1.22"
+    "192.168.1.22",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-mbp",
-    "192.168.1.23"
+    "192.168.1.23",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-macbookpro-16",
-    "192.168.1.23"
+    "192.168.1.23",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-g14",
-    "192.168.1.24"
+    "192.168.1.24",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true
+    }
   ],
   [
     "sy-asus-g14",
-    "192.168.1.24"
+    "192.168.1.24",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true
+    }
   ],
   [
     "sy-g15",
-    "192.168.1.25"
+    "192.168.1.25",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true
+    }
   ],
   [
     "sy-asus-g15",
-    "192.168.1.25"
+    "192.168.1.25",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true
+    }
   ],
   [
     "sy-alienware",
-    "192.168.1.26"
+    "192.168.1.26",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true
+    }
   ],
   [
     "sy-alienware-15",
-    "192.168.1.26"
+    "192.168.1.26",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true
+    }
   ],
   [
     "sy-living-room-tv",
-    "192.168.1.231"
+    "192.168.1.231",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false
+    }
   ],
   [
     "sy-garage-room-tv",
-    "192.168.1.232"
+    "192.168.1.232",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false
+    }
   ]
 ]
