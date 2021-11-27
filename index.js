@@ -382,7 +382,7 @@ function getEnvVars(envSepToReturn) {
   const newEnv = [...env.split(envSep), ...defaultEnv]
     .map((s) => s.trim())
     .filter((s) => s && !s.includes('#'))
-    .filter((s) => s.includes('\\') || s.includes('/'))
+    .filter((s) => s.includes('\\') || s.includes('/') || (osFlag === 'windows' && s.includes('%')))
     .map((s) => {
       s = s
         .replace(/[/\\]/g, pathSep)
