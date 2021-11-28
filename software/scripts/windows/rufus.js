@@ -23,6 +23,6 @@ async function doWork() {
   }
 
   // refer to this link https://rufus.ie/en/
-  const url = `https://raw.githubusercontent.com/synle/bashrc/master/binaries/rufus.exe`;
+  const url = `binaries/rufus.exe`;
   await downloadFile(url, targetPath);
 }
