@@ -483,11 +483,11 @@ async function fetchUrlAsString(url) {
   if (isTestScriptMode && !url.includes('http')) {
     const file = url;
     return execBash(`cat ${file}`);
-  } else {
-    url = getFullUrl(url);
   }
 
+  // fetch as real url
   try {
+    url = getFullUrl(url);
     return execBash(`curl -s ${url}`);
   } catch (err) {
     return new Promise((resolve) => {
