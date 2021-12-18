@@ -1,3 +1,28 @@
+
+/**
+Different options and code styles
+// option 1 with no dependencies
+ opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
+
+// option 2 with node
+ opts=$(node -e """
+   try{
+     console.log(Object.keys(JSON.parse(fs.readFileSync('package.json')).scripts).join(' '));
+   } catch(err){}
+ """);
+
+// option 3 with python but more common than node
+    opts=$(
+        python -c """
+import json
+try:
+  with open('package.json') as f:
+    data = json.load(f)
+  print(' '.join(data['scripts'].keys()))
+except:
+  print('')
+        """
+ */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_autocomplete');
   console.log('  >> Installing Bash Autocomplete', consoleLogColor4(targetPath));
@@ -52,6 +77,18 @@ complete -F __make_complete make
 
 
 # npm autocomplete
+__npm_run_complete_options()
+{
+python -c """
+import json
+try:
+  with open('package.json') as f:
+    data = json.load(f)
+  print(' '.join(data['scripts'].keys()))
+except:
+  print('')
+"""
+}
 __npm_complete ()
 {
   cur="\${COMP_WORDS[COMP_CWORD]}";
@@ -59,8 +96,7 @@ __npm_complete ()
 
   if [[ $prev == "run" ]]
   then
-    # npm run => then shows all package.json script
-    opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
+    opts=$(__npm_run_complete_options)
   else
     # npm => then shows run start test
     opts=$(
@@ -81,8 +117,7 @@ __npm_run_complete ()
 
   case \$COMP_CWORD in
     1)
-      # npm run => then shows all package.json script
-      opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
+      opts=$(__npm_run_complete_options)
       COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
       ;;
     2)
@@ -102,6 +137,7 @@ __npx_complete ()
       opts=\$(
         echo '''
           prettier
+          ts-node
         ''' | tr -d " \t"
       )
 
