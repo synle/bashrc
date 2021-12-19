@@ -1,4 +1,3 @@
-
 /**
 Different options and code styles
 // option 1 with no dependencies
@@ -22,6 +21,7 @@ try:
 except:
   print('')
         """
+    )
  */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_autocomplete');
@@ -89,6 +89,7 @@ except:
   print('')
 """
 }
+
 __npm_complete ()
 {
   cur="\${COMP_WORDS[COMP_CWORD]}";
@@ -111,6 +112,7 @@ __npm_complete ()
   COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
 }
 complete -F __npm_complete npm
+
 __npm_run_complete ()
 {
   cur="\${COMP_WORDS[COMP_CWORD]}";
@@ -150,9 +152,21 @@ __npx_complete ()
 }
 complete -F __npx_complete npx
 
+# yarn
+__yarn_complete ()
+{
+  cur="\${COMP_WORDS[COMP_CWORD]}";
+  prev="\${COMP_WORDS[COMP_CWORD-1]}";
+
+  opts=\$(__npm_run_complete_options)
+
+  COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
+}
+complete -F __yarn_complete yarn
+
 __gulp_complete()
 {
-  opts=$([ -f ./node_modules/.bin/gulp ] && ./node_modules/.bin/gulp --tasks | grep -v "gulpfile" | cut -d " " -f 3 | uniq);
+  opts=\$([ -f ./node_modules/.bin/gulp ] && ./node_modules/.bin/gulp --tasks | grep -v "gulpfile" | cut -d " " -f 3 | uniq);
   cur="\${COMP_WORDS[COMP_CWORD]}"
   COMPREPLY=( \$(compgen -W "\$opts" -- \${cur}) )
 }

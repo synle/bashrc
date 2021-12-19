@@ -239,9 +239,10 @@ async function doWork() {
 </dict>
 </plist>
   `.trim(),
-
+  );
 
   console.log('    >> Iterm Keymap', consoleLogColor4(targetPath));
+
   writeText(
     path.join(targetPath, 'iterm.itermkeymap'),
     `
