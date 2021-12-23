@@ -31,3 +31,6 @@ test_full_run_local:
 
 test_single_run_local:
 	sh test.sh
+
+list_scripts:
+	cat software/metadata/script-list.config

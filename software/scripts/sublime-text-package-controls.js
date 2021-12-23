@@ -51,6 +51,12 @@ async function doWork() {
 
   const sublimeCodeFormatConfigPath = path.join(targetPath, 'Packages/CodeFormatter/CodeFormatter.sublime-settings');
   console.log('    >> CodeFormatter.sublime-settings', sublimeCodeFormatConfigPath);
+
+  if (!fs.existsSync(sublimeCodeFormatConfigPath)) {
+    console.log(consoleLogColor1('    >> Skipped : Not Found'));
+    return process.exit();
+  }
+
   const oldCodeFormatConfigs = readJson(sublimeCodeFormatConfigPath);
   const newCodeFormatConfigs = {
     ...oldCodeFormatConfigs,

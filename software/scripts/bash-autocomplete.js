@@ -171,6 +171,62 @@ __gulp_complete()
   COMPREPLY=( \$(compgen -W "\$opts" -- \${cur}) )
 }
 complete -F __gulp_complete gulp
+
+
+__docker_complete()
+{
+  cur="\${COMP_WORDS[COMP_CWORD]}";
+  prev="\${COMP_WORDS[COMP_CWORD-1]}";
+
+  opts=\$(
+        echo """container
+          build
+          commit
+          cp
+          create
+          diff
+          events
+          exec
+          export
+          history
+          images
+          import
+          info
+          inspect
+          kill
+          load
+          login
+          logout
+          logs
+          pause
+          port
+          ps
+          pull
+          push
+          rename
+          restart
+          rm
+          rmi
+          run
+          save
+          search
+          start
+          stats
+          stop
+          tag
+          top
+          unpause
+          update
+          version
+          wait
+          attach
+        """ | tr -d " \t"
+    )
+
+  COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
+}
+complete -F __docker_complete d
+complete -F __docker_complete docker
 `;
 
   writeText(targetPath, res);
