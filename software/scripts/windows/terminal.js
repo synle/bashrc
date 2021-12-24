@@ -104,7 +104,7 @@ async function doWork() {
       { command: 'commandPalette', keys: 'ctrl+shift+p' },
       {
         command: 'copy',
-        keys: 'alt+c',
+        keys: 'alt+x',
       },
       {
         command: 'paste',

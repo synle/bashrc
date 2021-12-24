@@ -45,8 +45,6 @@ const config = {
       { originalKeys: '164;90', newRemapKeys: '162;90' },
       { originalKeys: '164;187', newRemapKeys: '162;187' },
       { originalKeys: '164;189', newRemapKeys: '162;189' },
-      { originalKeys: '164;219', newRemapKeys: '165;37' },
-      { originalKeys: '164;221', newRemapKeys: '165;39' },
       { originalKeys: '164;160;70', newRemapKeys: '162;160;70' },
       { originalKeys: '164;160;78', newRemapKeys: '162;160;78' },
       { originalKeys: '164;160;79', newRemapKeys: '162;160;79' },
@@ -55,6 +53,13 @@ const config = {
       { originalKeys: '164;160;219', newRemapKeys: '162;33' },
       { originalKeys: '164;160;221', newRemapKeys: '162;34' },
     ],
-    appSpecific: [{ originalKeys: '164;67', newRemapKeys: '165;67', targetApp: 'windowsterminal.exe' }],
+    appSpecific: [
+      { originalKeys: '164;82', newRemapKeys: '162;82', targetApp: 'brave.exe' },
+      { originalKeys: '164;219', newRemapKeys: '165;37', targetApp: 'brave.exe' },
+      { originalKeys: '164;221', newRemapKeys: '165;39', targetApp: 'brave.exe' },
+      { originalKeys: '164;160;73', newRemapKeys: '162;160;73', targetApp: 'brave.exe' },
+      { originalKeys: '164;160;82', newRemapKeys: '162;160;82', targetApp: 'brave.exe' },
+      { originalKeys: '164;67', newRemapKeys: '164;88', targetApp: 'windowsterminal.exe' },
+    ],
   },
 };
