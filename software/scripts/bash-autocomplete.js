@@ -179,53 +179,41 @@ __docker_complete()
   prev="\${COMP_WORDS[COMP_CWORD-1]}";
 
   opts=\$(
-        echo """container
-          build
-          commit
-          cp
-          create
-          diff
-          events
-          exec
-          export
-          history
-          images
-          import
-          info
-          inspect
-          kill
-          load
-          login
-          logout
-          logs
-          pause
-          port
-          ps
-          pull
-          push
-          rename
-          restart
-          rm
-          rmi
-          run
-          save
-          search
-          start
-          stats
-          stop
-          tag
-          top
-          unpause
-          update
-          version
-          wait
-          attach
-        """ | tr -d " \t"
-    )
+  echo "\${COMP_WORDS[*]}" | node -e """
+    let data = '';
+
+    process.openStdin().addListener('data', (d) => data += d.toString());
+
+    process.openStdin().addListener('end', (d) => {
+      let input = data.trim();
+      doWork(input);
+      process.exit();
+    });
+
+    async function doWork(input){
+      const commands = \\\`
+${await fetchUrlAsString('software/metadata/bash-autocomplete.docker.config')}
+      \\\`.split('\\n').map( s => s.trim()).filter(s => s).map(s => s.split(/[|,]/g));
+
+
+      let matchingOptions = [];
+      let commandFound = false;
+      commands.forEach(([command, ...options])=> {
+        if(commandFound === false){
+          if(input.indexOf(command) === 0){
+            commandFound = true;
+            matchingOptions = options;
+          }
+        }
+      })
+
+      console.log(matchingOptions.join('\\n'))
+    }
+  """
+  )
 
   COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
 }
-complete -F __docker_complete d
 complete -F __docker_complete docker
 `;
 
