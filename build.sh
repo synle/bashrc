@@ -33,13 +33,11 @@ if [ "$CI" != "true" ]; then
   sh test.sh """
   software/metadata/bash-autocomplete.docker.js
   """
+
+  echo '> Build Host Mappings'
+  export DEBUG_WRITE_TO_DIR="" && \
+  export TEST_SCRIPT_FILES="software/metadata/hosts-blocked-ads.config.js"  \
+    && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
 fi
-
-
-echo '> Build Host Mappings'
-export DEBUG_WRITE_TO_DIR="" && \
-export TEST_SCRIPT_FILES="software/metadata/hosts-blocked-ads.config.js"  \
-  && curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
-
 
 echo '> DONE Building'
