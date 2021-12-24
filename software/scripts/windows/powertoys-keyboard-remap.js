@@ -2,7 +2,7 @@ async function doWork() {
   console.log('  >> Installing Powertoys Keyboard Config');
 
   // %LOCALAPPDATA%/Microsoft/PowerToys/Keyboard Manager
-  const targetPath = path.join(getWindowAppDataLocalUserPath(), '');
+  const targetPath = path.join(getWindowAppDataLocalUserPath(), 'Microsoft/PowerToys/Keyboard Manager');
   console.log('    >> Configs', consoleLogColor4(targetPath));
 
   if (!fs.existsSync(targetPath)) {
