@@ -2,7 +2,10 @@
 sy-router-main
 
 192.168.1.2
-sy-router-secondary
+sy-router-ap-garage
+
+192.168.1.2
+sy-router-ap-master-bedroom
 
 192.168.1.11
 sy-printer

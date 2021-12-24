@@ -140,7 +140,14 @@ searchDir(){
   find . -type d -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
 }
 
-alias cleanmaster='git stash; git fap; git checkout test; git checkout -b test; git del master; git checkout --track origin/master'
+function cleanmaster(){
+  git stash
+  git fap
+  git checkout test
+  git checkout -b test
+  git del master
+  git checkout --track origin/master
+}
 
 alias search='searchText'
 

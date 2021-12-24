@@ -10,7 +10,17 @@
     }
   ],
   [
-    "sy-router-secondary",
+    "sy-router-ap-garage",
+    "192.168.1.2",
+    {
+      "NO_SSH": true,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-router-ap-master-bedroom",
     "192.168.1.2",
     {
       "NO_SSH": true,

@@ -1,5 +1,6 @@
 192.168.1.1 sy-router-main
-192.168.1.2 sy-router-secondary
+192.168.1.2 sy-router-ap-garage
+192.168.1.2 sy-router-ap-master-bedroom
 192.168.1.11 sy-printer
 192.168.1.11 sy-printer-dell
 192.168.1.11 sy-printer-dell-e525w
