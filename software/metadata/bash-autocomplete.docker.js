@@ -22,7 +22,12 @@ function getOptionsForCommand(command) {
           }
         }
       }
-      resolve('docker ' + command + '|' + [...new Set(options)].join(','));
+
+      if (options.length > 0) {
+        resolve('docker ' + command + '|' + [...new Set(options)].join(','));
+      } else {
+        resolve('');
+      }
     });
   });
 }
@@ -52,7 +57,8 @@ async function doWork() {
       const res = [];
 
       for (const command of commands) {
-        res.push(await getOptionsForCommand(command));
+        const commandOptions = await getOptionsForCommand(command);
+        commandOptions && res.push(commandOptions);
       }
 
       res.push('docker' + '|' + commands.join(','));

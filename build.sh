@@ -26,11 +26,15 @@ software/scripts/sublime-merge.js
 """
 find $CONFIG_BUILD_PATH
 
-echo '> Build Autocomplete Config'
-export DEBUG_WRITE_TO_DIR="" && \
-sh test.sh """
-software/metadata/bash-autocomplete.docker.js
-"""
+
+if [ "$CI" != "true" ]; then
+  echo '> Build Autocomplete Config'
+  export DEBUG_WRITE_TO_DIR="" && \
+  sh test.sh """
+  software/metadata/bash-autocomplete.docker.js
+  """
+fi
+
 
 echo '> Build Host Mappings'
 export DEBUG_WRITE_TO_DIR="" && \
