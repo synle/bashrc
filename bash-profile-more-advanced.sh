@@ -252,7 +252,7 @@ fuzzyFavoriteCommand(){
   echo "$makeComponentCommand"
 
   # run the command
-  $makeComponentCommand
+  eval "$makeComponentCommand"
 
   # put the command into history
   history -s "$makeComponentCommand"

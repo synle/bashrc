@@ -38,6 +38,7 @@ const config = {
       { originalKeys: '164;78', newRemapKeys: '162;78' },
       { originalKeys: '164;79', newRemapKeys: '162;79' },
       { originalKeys: '164;80', newRemapKeys: '162;80' },
+      { originalKeys: '164;81', newRemapKeys: '165;115' },
       { originalKeys: '164;84', newRemapKeys: '162;84' },
       { originalKeys: '164;86', newRemapKeys: '162;86' },
       { originalKeys: '164;87', newRemapKeys: '162;87' },
@@ -52,6 +53,10 @@ const config = {
       { originalKeys: '164;160;90', newRemapKeys: '162;89' },
       { originalKeys: '164;160;219', newRemapKeys: '162;33' },
       { originalKeys: '164;160;221', newRemapKeys: '162;34' },
+      { originalKeys: '163;38', newRemapKeys: '33' },
+      { originalKeys: '163;40', newRemapKeys: '34' },
+      { originalKeys: '91;37', newRemapKeys: '162;37' },
+      { originalKeys: '91;39', newRemapKeys: '162;39' },
     ],
     appSpecific: [
       { originalKeys: '164;82', newRemapKeys: '162;82', targetApp: 'brave.exe' },
