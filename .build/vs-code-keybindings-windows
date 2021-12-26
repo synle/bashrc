@@ -86,6 +86,10 @@
     "command": "workbench.action.openEditorAtIndex9"
   },
   {
+    "key": "ctrl+g",
+    "command": "editor.action.selectHighlights"
+  },
+  {
     "key": "alt+shift+p",
     "command": "workbench.action.showCommands"
   },

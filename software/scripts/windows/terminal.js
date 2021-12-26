@@ -292,6 +292,12 @@ async function doWork() {
       },
       {
         command: {
+          action: 'toggleFocusMode',
+        },
+        keys: 'ctrl+\\',
+      },
+      {
+        command: {
           action: 'openTabRenamer',
         },
         keys: 'f6',

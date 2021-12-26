@@ -88,6 +88,10 @@ async function doInit() {
   // begin WINDOWS_ONLY_KEY_BINDINGS
   WINDOWS_ONLY_KEY_BINDINGS = [
     {
+      key: 'ctrl+g',
+      command: 'editor.action.selectHighlights',
+    },
+    {
       key: 'alt+shift+p',
       command: 'workbench.action.showCommands',
     },

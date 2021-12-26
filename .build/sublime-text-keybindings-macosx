@@ -227,5 +227,11 @@
     "keys": [
       "super+9"
     ]
+  },
+  {
+    "command": "find_all_under",
+    "keys": [
+      "super+g"
+    ]
   }
 ]

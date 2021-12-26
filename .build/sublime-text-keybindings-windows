@@ -320,6 +320,12 @@
     ]
   },
   {
+    "command": "find_all_under",
+    "keys": [
+      "ctrl+g"
+    ]
+  },
+  {
     "command": "alignment",
     "keys": [
       "alt+shift+a"
@@ -595,6 +601,12 @@
     },
     "keys": [
       "alt+/"
+    ]
+  },
+  {
+    "command": "toggle_side_bar",
+    "keys": [
+      "ctrl+\\"
     ]
   },
   {

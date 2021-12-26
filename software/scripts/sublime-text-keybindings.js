@@ -210,6 +210,10 @@ async function doInit() {
       command: 'find_all_under',
     },
     {
+      key: 'ctrl+g',
+      command: 'find_all_under',
+    },
+    {
       key: 'alt+shift+a',
       command: 'alignment',
     },
@@ -417,6 +421,10 @@ async function doInit() {
         block: false,
       },
     },
+    {
+      key: 'ctrl+\\',
+      command: 'toggle_side_bar',
+    },
     { key: 'shift+alt+z', command: 'redo_or_repeat' },
     { key: ['ctrl+1'], command: 'select_by_index', args: { index: 0 } },
     { key: ['ctrl+2'], command: 'select_by_index', args: { index: 1 } },
@@ -431,7 +439,12 @@ async function doInit() {
   // end WINDOWS_ONLY_KEY_BINDINGS
 
   // begin MAC_ONLY_KEY_BINDINGS
-  MAC_ONLY_KEY_BINDINGS = [];
+  MAC_ONLY_KEY_BINDINGS = [
+    {
+      key: 'super+g',
+      command: 'find_all_under',
+    },
+  ];
   // end MAC_ONLY_KEY_BINDINGS
 }
 
