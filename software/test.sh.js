@@ -19,16 +19,19 @@ async function doWork() {
     .map((s) => s.trim())
     .filter((s) => !!s);
 
-  console.log(
-    echoColor1(
-      `
+  if (softwareFiles.length > 1) {
+    console.log(
+      echoColor1(
+        `
+${''.padStart(90, '=')}
 >> Testing Configurations: ${softwareFiles.length} Files
-=============================================
+${''.padStart(90, '=')}
 ${softwareFiles.join('\n')}
-=============================================
+${''.padStart(90, '=')}
 `,
-    ),
-  );
+      ),
+    );
+  }
 
   printOsFlags(); // Print OS Environments
 

@@ -103,6 +103,12 @@ async function doWork() {
     keybindings: [
       { command: 'commandPalette', keys: 'alt+shift+p' },
       {
+        command: {
+          action: 'toggleFocusMode',
+        },
+        keys: 'alt+\\',
+      },
+      {
         command: 'copy',
         keys: 'alt+c',
       },

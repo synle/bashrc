@@ -4,6 +4,7 @@ export SCRIPT_INDEX_CONFIG_FILE="./software/metadata/script-list.config" && \
 export TEST_SCRIPT_FILES="software/metadata/script-list.config.js" && \
   curl -s https://raw.githubusercontent.com/synle/bashrc/master/test.sh | bash
 cat $SCRIPT_INDEX_CONFIG_FILE
+export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 
 echo '> Prebuilding Host Mappings'
 export HOST_CONFIG_FILE='./software/metadata/ip-address.config'
@@ -31,7 +32,7 @@ if [ "$CI" != "true" ]; then
   echo '> Build Autocomplete Config'
   export DEBUG_WRITE_TO_DIR="" && \
   sh test.sh """
-  software/metadata/bash-autocomplete.docker.js
+    software/metadata/bash-autocomplete.docker.js
   """
 
   echo '> Build Host Mappings'

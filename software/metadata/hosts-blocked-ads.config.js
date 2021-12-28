@@ -15,9 +15,11 @@ async function doWork() {
 
   console.log(
     `
-============= BLOCKED_HOST_SOURCE_URLS =============
+${''.padStart(90, '=')}
+>> BLOCKED_HOST_SOURCE_URLS
+${''.padStart(90, '=')}
 ${BLOCKED_HOST_SOURCE_URLS.join('\n')}
-====================================================
+${''.padStart(90, '=')}
 `,
   );
 

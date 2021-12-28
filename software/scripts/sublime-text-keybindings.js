@@ -16,7 +16,6 @@ async function _getPathSublimeText() {
 
   return null;
 }
-
 let OS_KEY;
 let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
@@ -87,6 +86,10 @@ async function doInit() {
     {
       key: 'OS_KEY+enter',
       command: 'quick_goto_variable',
+    },
+    {
+      key: 'OS_KEY+t',
+      command: 'new_file',
     },
 
     // splits

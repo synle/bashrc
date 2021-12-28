@@ -23,7 +23,7 @@ set visible-stats on
 "\\e[1;5B": end-of-line  # ctrl + down
 "\\e[1;5D": backward-word  # ctrl + left
 "\\e[1;5C": forward-word   # ctrl + right
-"\\C-H": shell-backward-kill-word # ctrl + backspace to delete
+#"\\C-H": shell-backward-kill-word # ctrl + backspace to delete
 ## option + key for cursor movements for Mac OSX
 "\\e\\e[C": forward-word # right
 "\\e\\e[D": backward-word # left
@@ -32,16 +32,16 @@ set visible-stats on
 ## this command uses TAB to autocomplete forward paths
 "\\t":menu-complete
 ## ctrl + key bindings for utils
-"\\C-o": "fcd\\r"
-"\\C-p": "fviewfile\\r"
+#"\\C-o": "fcd\\r"
+#"\\C-p": "fviewfile\\r"
 "\\C-b": "fuzzyFavoriteCommand\\r"
 "\\C-n": "fuzzyMakeComponent\\r"
 ## alt + key bindings for utils
-"\\er": "clear\\n" # alt r to clear (for WSL and linux)
-"\\eo": "fcd\\r" # alt o
-"\\ep": "fviewfile\\r" # alt o
-"\\eb": "fuzzyFavoriteCommand\\r" # alt b
-"\\en": "fuzzyMakeComponent\\r"
+#"\\er": "clear\\n" # alt r to clear (for WSL and linux)
+#"\\eo": "fcd\\r" # alt o
+#"\\ep": "fviewfile\\r" # alt o
+#"\\eb": "fuzzyFavoriteCommand\\r" # alt b
+#"\\en": "fuzzyMakeComponent\\r"
     `.trim(),
   );
 }

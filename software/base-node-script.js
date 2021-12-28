@@ -616,15 +616,19 @@ function processScriptFile(file) {
 }
 
 function printOsFlags() {
-  console.log(`
-    node -e """
-      console.log('===================== OS Flags =====================');
-      Object.keys(process.env)
-        .filter(envKey => envKey.indexOf('is_os_') === 0)
-        .forEach(envKey => console.log('= ', envKey.padEnd(23, ' ') + ':', process.env[envKey] === '1' ? 'Yes': 'No'))
-      console.log('====================================================');
-    """
-  `);
+  if (process.env.SHOULD_PRINT_OS_FLAGS !== 'false') {
+    console.log(`
+      node -e """
+        console.log(''.padStart(90, '='));
+        console.log('>> OS Flags'.padEnd(88, ' '));
+        console.log(''.padStart(90, '='));
+        Object.keys(process.env)
+          .filter(envKey => envKey.indexOf('is_os_') === 0)
+          .forEach(envKey => console.log(envKey.padEnd(20, ' ') + ':', process.env[envKey] === '1' ? 'Yes': 'No'))
+        console.log(''.padStart(90, '='));
+      """
+    `);
+  }
 }
 
 //////////////////////////////////////////////////////

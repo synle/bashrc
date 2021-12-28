@@ -73,6 +73,10 @@ async function doInit() {
       key: 'OS_KEY+ctrl+c',
       command: 'workbench.files.action.compareWithSaved',
     },
+    {
+      key: 'OS_KEY+n',
+      command: 'workbench.action.files.newUntitledFile',
+    },
     { key: 'OS_KEY+1', command: 'workbench.action.openEditorAtIndex1' },
     { key: 'OS_KEY+2', command: 'workbench.action.openEditorAtIndex2' },
     { key: 'OS_KEY+3', command: 'workbench.action.openEditorAtIndex3' },
