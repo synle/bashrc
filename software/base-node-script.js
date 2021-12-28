@@ -505,7 +505,7 @@ function gitClone(repo, pwd) {
 
 async function fetchUrlAsJson(url) {
   const json = await fetchUrlAsString(url);
-  return JSON.parse(json);
+  return parseJsonWithComments(json);
 }
 
 function execBash(cmd, options) {

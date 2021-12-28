@@ -59,6 +59,12 @@
     ]
   },
   {
+    "command": "new_file",
+    "keys": [
+      "super+t"
+    ]
+  },
+  {
     "command": "set_layout",
     "args": {
       "cols": [

@@ -50,6 +50,10 @@
     "command": "workbench.files.action.compareWithSaved"
   },
   {
+    "key": "cmd+n",
+    "command": "workbench.action.files.newUntitledFile"
+  },
+  {
     "key": "cmd+1",
     "command": "workbench.action.openEditorAtIndex1"
   },
