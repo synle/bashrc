@@ -86,7 +86,7 @@
     "command": "workbench.action.openEditorAtIndex9"
   },
   {
-    "key": "ctrl+g",
+    "key": "shift+ctrl+g",
     "command": "editor.action.selectHighlights"
   },
   {
@@ -312,5 +312,15 @@
     "key": "alt+`",
     "command": "workbench.action.terminal.toggleTerminal",
     "when": "terminal.active"
+  },
+  {
+    "key": "ctrl+]",
+    "command": "workbench.action.terminal.findNext",
+    "when": "terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
+  },
+  {
+    "key": "ctrl+[",
+    "command": "workbench.action.terminal.findPrevious",
+    "when": "terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
   }
 ]

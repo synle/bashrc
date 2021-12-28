@@ -229,9 +229,15 @@
     ]
   },
   {
-    "command": "find_all_under",
     "keys": [
-      "super+g"
-    ]
+      "super+]"
+    ],
+    "command": "find_next"
+  },
+  {
+    "keys": [
+      "super+["
+    ],
+    "command": "find_prev"
   }
 ]

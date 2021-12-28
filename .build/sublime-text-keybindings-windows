@@ -264,18 +264,6 @@
     ]
   },
   {
-    "command": "find_prev",
-    "keys": [
-      "alt+shift+g"
-    ]
-  },
-  {
-    "command": "find_next",
-    "keys": [
-      "alt+g"
-    ]
-  },
-  {
     "command": "move",
     "args": {
       "by": "pages",
@@ -316,14 +304,20 @@
   {
     "command": "find_all_under",
     "keys": [
-      "alt+ctrl+g"
+      "shift+ctrl+g"
     ]
   },
   {
-    "command": "find_all_under",
     "keys": [
-      "ctrl+g"
-    ]
+      "ctrl+]"
+    ],
+    "command": "find_next"
+  },
+  {
+    "keys": [
+      "ctrl+["
+    ],
+    "command": "find_prev"
   },
   {
     "command": "alignment",

@@ -170,14 +170,6 @@ async function doInit() {
       command: 'prompt_select_workspace',
     },
     {
-      key: 'alt+shift+g',
-      command: 'find_prev',
-    },
-    {
-      key: 'alt+g',
-      command: 'find_next',
-    },
-    {
       key: 'ctrl+up',
       command: 'move',
       args: {
@@ -206,13 +198,11 @@ async function doInit() {
       command: 'next_view',
     },
     {
-      key: 'alt+ctrl+g',
+      key: 'shift+ctrl+g',
       command: 'find_all_under',
     },
-    {
-      key: 'ctrl+g',
-      command: 'find_all_under',
-    },
+    { keys: ['ctrl+]'], command: 'find_next' },
+    { keys: ['ctrl+['], command: 'find_prev' },
     {
       key: 'alt+shift+a',
       command: 'alignment',
@@ -440,10 +430,8 @@ async function doInit() {
 
   // begin MAC_ONLY_KEY_BINDINGS
   MAC_ONLY_KEY_BINDINGS = [
-    {
-      key: 'super+g',
-      command: 'find_all_under',
-    },
+    { keys: ['super+]'], command: 'find_next' },
+    { keys: ['super+['], command: 'find_prev' },
   ];
   // end MAC_ONLY_KEY_BINDINGS
 }
