@@ -170,6 +170,14 @@ async function doInit() {
       command: 'prompt_select_workspace',
     },
     {
+      key: 'alt+shift+g',
+      command: 'find_prev',
+    },
+    {
+      key: 'alt+g',
+      command: 'find_next',
+    },
+    {
       key: 'ctrl+up',
       command: 'move',
       args: {
@@ -198,11 +206,9 @@ async function doInit() {
       command: 'next_view',
     },
     {
-      key: 'shift+ctrl+g',
+      key: 'alt+ctrl+g',
       command: 'find_all_under',
     },
-    { keys: ['ctrl+]'], command: 'find_next' },
-    { keys: ['ctrl+['], command: 'find_prev' },
     {
       key: 'alt+shift+a',
       command: 'alignment',
@@ -411,28 +417,12 @@ async function doInit() {
         block: false,
       },
     },
-    {
-      key: 'ctrl+\\',
-      command: 'toggle_side_bar',
-    },
     { key: 'shift+alt+z', command: 'redo_or_repeat' },
-    { key: ['ctrl+1'], command: 'select_by_index', args: { index: 0 } },
-    { key: ['ctrl+2'], command: 'select_by_index', args: { index: 1 } },
-    { key: ['ctrl+3'], command: 'select_by_index', args: { index: 2 } },
-    { key: ['ctrl+4'], command: 'select_by_index', args: { index: 3 } },
-    { key: ['ctrl+5'], command: 'select_by_index', args: { index: 4 } },
-    { key: ['ctrl+6'], command: 'select_by_index', args: { index: 5 } },
-    { key: ['ctrl+7'], command: 'select_by_index', args: { index: 6 } },
-    { key: ['ctrl+8'], command: 'select_by_index', args: { index: 7 } },
-    { key: ['ctrl+9'], command: 'select_by_index', args: { index: 8 } },
   ];
   // end WINDOWS_ONLY_KEY_BINDINGS
 
   // begin MAC_ONLY_KEY_BINDINGS
-  MAC_ONLY_KEY_BINDINGS = [
-    { keys: ['super+]'], command: 'find_next' },
-    { keys: ['super+['], command: 'find_prev' },
-  ];
+  MAC_ONLY_KEY_BINDINGS = [];
   // end MAC_ONLY_KEY_BINDINGS
 }
 

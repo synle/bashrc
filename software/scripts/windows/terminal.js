@@ -101,134 +101,134 @@ async function doWork() {
 
     // keybindings
     keybindings: [
-      { command: 'commandPalette', keys: 'ctrl+shift+p' },
+      { command: 'commandPalette', keys: 'alt+shift+p' },
       {
         command: 'copy',
-        keys: 'alt+x',
+        keys: 'alt+c',
       },
       {
         command: 'paste',
-        keys: 'ctrl+v',
+        keys: 'alt+v',
       },
       {
         command: 'nextTab',
-        keys: 'ctrl+pgdn',
+        keys: 'alt+shift+]',
       },
       {
         command: 'prevTab',
-        keys: 'ctrl+pgup',
+        keys: 'alt+shift+[',
       },
       {
         command: 'resetFontSize',
-        keys: 'ctrl+0',
+        keys: 'alt+0',
       },
       {
         command: 'find',
-        keys: 'ctrl+f',
+        keys: 'alt+f',
       },
       {
         command: 'decreaseFontSize',
-        keys: 'ctrl+-',
+        keys: 'alt+-',
       },
       {
         command: 'increaseFontSize',
-        keys: 'ctrl+=',
+        keys: 'alt+=',
       },
       {
         command: 'scrollDown',
-        keys: 'ctrl+down',
+        keys: 'alt+down',
       },
       {
         command: 'scrollDownPage',
-        keys: 'ctrl+right',
+        keys: 'alt+right',
       },
       {
         command: 'scrollUp',
-        keys: 'ctrl+up',
+        keys: 'alt+up',
       },
       {
         command: 'scrollUpPage',
-        keys: 'ctrl+left',
+        keys: 'alt+left',
       },
       {
         command: 'newTab',
-        keys: ['ctrl+t'],
+        keys: ['alt+t'],
       },
       {
         command: {
           action: 'switchToTab',
           index: 0,
         },
-        keys: 'ctrl+1',
+        keys: 'alt+1',
       },
       {
         command: {
           action: 'switchToTab',
           index: 1,
         },
-        keys: 'ctrl+2',
+        keys: 'alt+2',
       },
       {
         command: {
           action: 'switchToTab',
           index: 2,
         },
-        keys: 'ctrl+3',
+        keys: 'alt+3',
       },
       {
         command: {
           action: 'switchToTab',
           index: 3,
         },
-        keys: 'ctrl+4',
+        keys: 'alt+4',
       },
       {
         command: {
           action: 'switchToTab',
           index: 4,
         },
-        keys: 'ctrl+5',
+        keys: 'alt+5',
       },
       {
         command: {
           action: 'switchToTab',
           index: 5,
         },
-        keys: 'ctrl+6',
+        keys: 'alt+6',
       },
       {
         command: {
           action: 'switchToTab',
           index: 6,
         },
-        keys: 'ctrl+7',
+        keys: 'alt+7',
       },
       {
         command: {
           action: 'switchToTab',
           index: 7,
         },
-        keys: 'ctrl+8',
+        keys: 'alt+8',
       },
       {
         command: {
           action: 'switchToTab',
           index: 8,
         },
-        keys: 'ctrl+9',
+        keys: 'alt+9',
       },
       {
         command: 'closePane',
-        keys: 'ctrl+w',
+        keys: 'alt+w',
       },
-      { command: 'closeWindow', keys: 'ctrl+q' },
+      { command: 'closeWindow', keys: 'alt+q' },
       {
         command: {
           action: 'splitPane',
           split: 'horizontal',
           splitMode: 'duplicate',
         },
-        keys: "ctrl+'",
+        keys: "alt+'",
       },
       {
         command: {
@@ -236,47 +236,47 @@ async function doWork() {
           split: 'vertical',
           splitMode: 'duplicate',
         },
-        keys: 'ctrl+d',
+        keys: 'alt+d',
       },
-      { command: { action: 'moveFocus', direction: 'down' }, keys: 'ctrl+down' },
-      { command: { action: 'moveFocus', direction: 'left' }, keys: 'ctrl+left' },
+      { command: { action: 'moveFocus', direction: 'down' }, keys: 'alt+down' },
+      { command: { action: 'moveFocus', direction: 'left' }, keys: 'alt+left' },
       {
         command: { action: 'moveFocus', direction: 'right' },
-        keys: 'ctrl+right',
+        keys: 'alt+right',
       },
-      { command: { action: 'moveFocus', direction: 'up' }, keys: 'ctrl+up' },
+      { command: { action: 'moveFocus', direction: 'up' }, keys: 'alt+up' },
       {
         command: { action: 'resizePane', direction: 'down' },
-        keys: 'ctrl+shift+down',
+        keys: 'alt+shift+down',
       },
       {
         command: { action: 'resizePane', direction: 'left' },
-        keys: 'ctrl+shift+left',
+        keys: 'alt+shift+left',
       },
       {
         command: { action: 'resizePane', direction: 'right' },
-        keys: 'ctrl+shift+right',
+        keys: 'alt+shift+right',
       },
       {
         command: { action: 'resizePane', direction: 'up' },
-        keys: 'ctrl+shift+up',
+        keys: 'alt+shift+up',
       },
       {
         command: { action: 'adjustFontSize', delta: 1 },
-        keys: 'ctrl+=',
+        keys: 'alt+=',
       },
       {
         command: { action: 'adjustFontSize', delta: -1 },
-        keys: 'ctrl+-',
+        keys: 'alt+-',
       },
-      { command: 'resetFontSize', keys: 'ctrl+0' },
+      { command: 'resetFontSize', keys: 'alt+0' },
       {
         command: {
           action: 'splitPane',
           split: 'horizontal',
           splitMode: 'duplicate',
         },
-        keys: 'ctrl+shift+d',
+        keys: 'alt+shift+d',
       },
       {
         command: {
@@ -285,22 +285,8 @@ async function doWork() {
         keys: 'f11',
       },
       {
-        command: {
-          action: 'toggleFocusMode',
-        },
-        keys: 'alt+\\',
-      },
-      {
-        command: {
-          action: 'toggleFocusMode',
-        },
-        keys: 'ctrl+\\',
-      },
-      {
-        command: {
-          action: 'openTabRenamer',
-        },
-        keys: 'f6',
+        command: 'togglePaneZoom',
+        key: 'alt+z',
       },
     ],
   });

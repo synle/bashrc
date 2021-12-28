@@ -227,17 +227,5 @@
     "keys": [
       "super+9"
     ]
-  },
-  {
-    "keys": [
-      "super+]"
-    ],
-    "command": "find_next"
-  },
-  {
-    "keys": [
-      "super+["
-    ],
-    "command": "find_prev"
   }
 ]

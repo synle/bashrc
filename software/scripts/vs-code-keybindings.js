@@ -88,10 +88,6 @@ async function doInit() {
   // begin WINDOWS_ONLY_KEY_BINDINGS
   WINDOWS_ONLY_KEY_BINDINGS = [
     {
-      key: 'shift+ctrl+g',
-      command: 'editor.action.selectHighlights',
-    },
-    {
       key: 'alt+shift+p',
       command: 'workbench.action.showCommands',
     },
@@ -315,34 +311,11 @@ async function doInit() {
       command: 'workbench.action.terminal.toggleTerminal',
       when: 'terminal.active',
     },
-    {
-      key: 'ctrl+]',
-      command: 'workbench.action.terminal.findNext',
-      when: 'terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported',
-    },
-
-    {
-      key: 'ctrl+[',
-      command: 'workbench.action.terminal.findPrevious',
-      when: 'terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported',
-    },
   ];
   // end WINDOWS_ONLY_KEY_BINDINGS
 
   // begin MAC_ONLY_KEY_BINDINGS
-  MAC_ONLY_KEY_BINDINGS = [
-    {
-      key: 'super+]',
-      command: 'workbench.action.terminal.findNext',
-      when: 'terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported',
-    },
-
-    {
-      key: 'super+[',
-      command: 'workbench.action.terminal.findPrevious',
-      when: 'terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported',
-    },
-  ];
+  MAC_ONLY_KEY_BINDINGS = [];
   // end MAC_ONLY_KEY_BINDINGS
 }
 

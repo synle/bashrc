@@ -84,15 +84,5 @@
   {
     "key": "cmd+9",
     "command": "workbench.action.openEditorAtIndex9"
-  },
-  {
-    "key": "super+]",
-    "command": "workbench.action.terminal.findNext",
-    "when": "terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
-  },
-  {
-    "key": "super+[",
-    "command": "workbench.action.terminal.findPrevious",
-    "when": "terminalFindFocused && terminalHasBeenCreated || terminalFindFocused && terminalProcessSupported || terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
   }
 ]

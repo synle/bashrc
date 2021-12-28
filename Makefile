@@ -10,6 +10,9 @@ setup_light:
 setup_hosts:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | bash
 
+setup_key_bindings:
+	 sh test.sh "software/scripts/sublime-text-keybindings.js,software/scripts/vs-code-keybindings.js,software/scripts/windows/powertoys-keyboard-remap.js,software/scripts/windows/terminal.js"
+
 prebuild:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh | bash
 
