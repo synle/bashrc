@@ -159,6 +159,20 @@ function writeText(aDir, text, override = true, suppressError) {
   }
 }
 
+function backupText(aDir, text) {
+  const pathToUse = aDir;
+  const oldText = readText(pathToUse);
+  if (oldText !== text) {
+    // back it up
+    const backupPathToUse = pathToUse + '.' + Date.now();
+    writeText(pathToUse, text);
+    writeText(backupPathToUse, text);
+    console.log(consoleLogColor3('      << Backup Created'), consoleLogColor4(backupPathToUse));
+  } else {
+    console.log(consoleLogColor3('      << Backup Skipped [NotModified]'), consoleLogColor4(pathToUse));
+  }
+}
+
 function writeJson(aDir, json) {
   writeText(aDir, JSON.stringify(json, null, 2));
 }
@@ -405,12 +419,16 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
     firstFiles.push('software/scripts/windows/mkdir.js');
   }
 
-  let softwareFiles = files.filter(
-    (f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'),
-  );
-  softwareFiles = [...firstFiles, ...[...softwareFiles].sort(), ...lastFiles];
+  let softwareFiles = files
+    .filter(
+      (f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js') && !f.includes('.json'),
+    )
+    .filter((f) => firstFiles.indexOf(f) === -1 && lastFiles.indexOf(f) === -1)
+    .sort();
 
-  return [...new Set(softwareFiles)].filter((file) => {
+  softwareFiles = [...new Set([...firstFiles, ...softwareFiles, ...lastFiles])];
+
+  return softwareFiles.filter((file) => {
     if (is_os_android_termux) {
       if (file.includes('software/scripts/android-termux')) {
         return true;
@@ -589,20 +607,19 @@ function processScriptFile(file) {
   }
 
   function _generatePipeOutput(file, url) {
-    if (!file.includes('.json')) {
-      if (file.includes('.su.sh.js')) {
-        return `node | bash`;
-      }
-      if (file.includes('.su.js')) {
-        return `sudo -E node`; // -E means preserve the env variable
-      }
-      if (file.includes('.sh.js')) {
-        return `node | bash`;
-      }
-      if (file.includes('.js')) {
-        return `node`;
-      }
+    if (file.includes('.su.sh.js')) {
+      return `node | bash`;
     }
+    if (file.includes('.su.js')) {
+      return `sudo -E node`; // -E means preserve the env variable
+    }
+    if (file.includes('.sh.js')) {
+      return `node | bash`;
+    }
+    if (file.includes('.js')) {
+      return `node`;
+    }
+
     if (file.includes('.su.sh')) {
       return `sudo -E bash`; // -E means preserve the env variable
     }

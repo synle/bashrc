@@ -21,7 +21,7 @@ async function doWork() {
   console.log('  >> Updating ETC Host', consoleLogColor4(targetPath));
 
   // make a backup
-  writeText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.etc_host.${Date.now()}`), etcHostTextContent);
+  backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.etc_host`), etcHostTextContent);
 
   // add tweaks...
   etcHostTextContent = appendTextBlock(

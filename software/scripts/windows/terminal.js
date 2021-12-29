@@ -291,8 +291,10 @@ async function doWork() {
         keys: 'f11',
       },
       {
-        command: 'togglePaneZoom',
-        key: 'alt+z',
+        command: {
+          action: 'renameTab',
+        },
+        keys: 'f2',
       },
     ],
   });
