@@ -589,17 +589,19 @@ function processScriptFile(file) {
   }
 
   function _generatePipeOutput(file, url) {
-    if (file.includes('.su.sh.js')) {
-      return `node | bash`;
-    }
-    if (file.includes('.su.js')) {
-      return `sudo -E node`; // -E means preserve the env variable
-    }
-    if (file.includes('.sh.js')) {
-      return `node | bash`;
-    }
-    if (file.includes('.js')) {
-      return `node`;
+    if (!file.includes('.json')) {
+      if (file.includes('.su.sh.js')) {
+        return `node | bash`;
+      }
+      if (file.includes('.su.js')) {
+        return `sudo -E node`; // -E means preserve the env variable
+      }
+      if (file.includes('.sh.js')) {
+        return `node | bash`;
+      }
+      if (file.includes('.js')) {
+        return `node`;
+      }
     }
     if (file.includes('.su.sh')) {
       return `sudo -E bash`; // -E means preserve the env variable
