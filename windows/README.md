@@ -212,3 +212,8 @@ C:\ProgramData\Microsoft\Windows\Start Menu\Programs
 ASUS App Service
 ASUS Optimization
 ```
+
+
+
+### App List
+- Twinkle Tray (brightness control): https://twinkletray.com/
