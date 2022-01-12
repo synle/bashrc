@@ -213,7 +213,6 @@ ASUS App Service
 ASUS Optimization
 ```
 
-
-
 ### App List
+
 - Twinkle Tray (brightness control): https://twinkletray.com/
