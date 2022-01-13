@@ -14,3 +14,9 @@ curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Retina.ttf --outp
 curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-SemiBold.ttf --output FiraCode-SemiBold.ttf && \
 echo "Done"
 ```
+
+Source:
+```
+Trace.ttf
+https://www.fontspace.com/trace-font-f3625
+```
