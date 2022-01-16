@@ -10,7 +10,9 @@ async function doWork() {
       file = `software/scripts/${file}`;
     }
 
-    files.push(file);
+    if (!file.match(/.json/) && !file.match(/.config/)) {
+      files.push(file);
+    }
   }
 
   const targetPath = process.env.SCRIPT_INDEX_CONFIG_FILE || './software/metadata/script-list.config';
