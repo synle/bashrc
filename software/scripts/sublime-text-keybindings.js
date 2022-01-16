@@ -424,6 +424,287 @@ async function doInit() {
   ];
   // end WINDOWS_ONLY_KEY_BINDINGS
 
+  // begin LINUX_ONLY_KEYBINDING
+  LINUX_ONLY_KEYBINDING = [
+    {
+      key: 'alt+r',
+      command: 'show_overlay',
+      args: {
+        overlay: 'goto',
+        text: '@',
+      },
+    },
+    {
+      key: 'alt+p',
+      command: 'show_overlay',
+      args: {
+        overlay: 'goto',
+        show_files: true,
+      },
+    },
+    {
+      key: 'alt+shift+p',
+      command: 'show_overlay',
+      args: {
+        overlay: 'command_palette',
+      },
+    },
+    {
+      key: 'alt+ctrl+p',
+      command: 'prompt_select_workspace',
+    },
+    {
+      key: 'alt+shift+g',
+      command: 'find_prev',
+    },
+    {
+      key: 'alt+g',
+      command: 'find_next',
+    },
+    {
+      key: 'ctrl+up',
+      command: 'move',
+      args: {
+        by: 'pages',
+        forward: false,
+      },
+    },
+    {
+      key: 'ctrl+down',
+      command: 'move',
+      args: {
+        by: 'pages',
+        forward: true,
+      },
+    },
+    {
+      key: 'alt+shift+l',
+      command: 'split_selection_into_lines',
+    },
+    {
+      key: 'alt+shift+[',
+      command: 'prev_view',
+    },
+    {
+      key: 'alt+shift+]',
+      command: 'next_view',
+    },
+    {
+      key: 'alt+ctrl+g',
+      command: 'find_all_under',
+    },
+    {
+      key: 'alt+shift+a',
+      command: 'alignment',
+    },
+    {
+      key: 'alt+x',
+      command: 'cut',
+    },
+    {
+      key: 'alt+c',
+      command: 'copy',
+    },
+    {
+      key: 'alt+v',
+      command: 'paste',
+    },
+    {
+      key: 'alt+a',
+      command: 'select_all',
+    },
+    {
+      key: 'alt+z',
+      command: 'undo',
+    },
+    {
+      key: 'alt+s',
+      command: 'save',
+    },
+    {
+      key: 'alt+shift+s',
+      command: 'prompt_save_as',
+    },
+    {
+      key: 'alt+backspace',
+      command: 'left_delete',
+    },
+    {
+      key: 'alt+=',
+      command: 'increase_font_size',
+    },
+    {
+      key: 'alt+keypad_plus',
+      command: 'increase_font_size',
+    },
+    {
+      key: 'alt+-',
+      command: 'decrease_font_size',
+    },
+    {
+      key: 'alt+keypad_minus',
+      command: 'decrease_font_size',
+    },
+    {
+      key: 'alt+d',
+      command: 'find_under_expand',
+    },
+    {
+      key: 'alt+f',
+      command: 'show_panel',
+      args: {
+        panel: 'find',
+        reverse: false,
+      },
+    },
+    {
+      key: 'alt+shift+f',
+      command: 'show_panel',
+      args: {
+        panel: 'find_in_files',
+      },
+    },
+    {
+      key: 'alt+shift+n',
+      command: 'new_window',
+    },
+    {
+      key: 'alt+n',
+      command: 'new_file',
+    },
+    {
+      key: 'alt+w',
+      command: 'close',
+    },
+    {
+      key: 'alt+y',
+      command: 'redo_or_repeat',
+    },
+    {
+      key: 'alt+up',
+      command: 'move',
+      args: {
+        by: 'pages',
+        forward: false,
+      },
+    },
+    {
+      key: 'alt+down',
+      command: 'move',
+      args: {
+        by: 'pages',
+        forward: true,
+      },
+    },
+    {
+      key: 'alt+left',
+      command: 'move_to',
+      args: {
+        to: 'bol',
+        extend: false,
+      },
+    },
+    {
+      key: 'alt+right',
+      command: 'move_to',
+      args: {
+        to: 'eol',
+        extend: false,
+      },
+    },
+    {
+      key: 'shift+alt+left',
+      command: 'move_to',
+      args: {
+        to: 'bol',
+        extend: true,
+      },
+    },
+    {
+      key: 'shift+alt+right',
+      command: 'move_to',
+      args: {
+        to: 'eol',
+        extend: true,
+      },
+    },
+    {
+      key: 'ctrl+alt+left',
+      command: 'move_to',
+      args: {
+        to: 'bof',
+        extend: false,
+      },
+    },
+    {
+      key: 'ctrl+alt+right',
+      command: 'move_to',
+      args: {
+        to: 'eof',
+        extend: false,
+      },
+    },
+    {
+      key: 'ctrl+alt+up',
+      command: 'move_to',
+      args: {
+        to: 'bof',
+        extend: false,
+      },
+    },
+    {
+      key: 'ctrl+alt+down',
+      command: 'move_to',
+      args: {
+        to: 'eof',
+        extend: false,
+      },
+    },
+    {
+      key: 'ctrl+alt+shift+up',
+      command: 'move_to',
+      args: {
+        to: 'bof',
+        extend: true,
+      },
+    },
+    {
+      key: 'ctrl+alt+shift+down',
+      command: 'move_to',
+      args: {
+        to: 'eof',
+        extend: true,
+      },
+    },
+    {
+      key: 'shift+alt+up',
+      command: 'move',
+      args: {
+        by: 'pages',
+        forward: false,
+        extend: true,
+      },
+    },
+    {
+      key: 'shift+alt+down',
+      command: 'move',
+      args: {
+        by: 'pages',
+        forward: true,
+        extend: true,
+      },
+    },
+    {
+      key: 'alt+/',
+      command: 'toggle_comment',
+      args: {
+        block: false,
+      },
+    },
+    { key: 'shift+alt+z', command: 'redo_or_repeat' },
+  ];
+  // end LINUX_ONLY_KEYBINDING
+
   // begin MAC_ONLY_KEY_BINDINGS
   MAC_ONLY_KEY_BINDINGS = [];
   // end MAC_ONLY_KEY_BINDINGS
@@ -439,6 +720,7 @@ async function doWork() {
 
     // non -mac keybinding
     writeJson('sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
+    writeJson('sublime-text-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], WINDOWS_OS_KEY));
     writeJson('sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
 
     return process.exit();
@@ -457,7 +739,7 @@ async function doWork() {
   // linux only key bindings
   const linuxKeymapPath = path.join(targetPath, 'Packages/User/Default (Linux).sublime-keymap');
   console.log('    >> Linux', linuxKeymapPath);
-  writeJson(linuxKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]));
+  writeJson(linuxKeymapPath, _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING]));
 
   // mac only key bindings
   const osxKeymapPath = path.join(targetPath, 'Packages/User/Default (OSX).sublime-keymap');
