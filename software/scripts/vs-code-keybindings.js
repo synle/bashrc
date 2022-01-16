@@ -21,6 +21,10 @@ function _formatKey(keybindings, osKeyToUse) {
 async function doInit() {
   OS_KEY = is_os_darwin_mac ? MAC_OSX_KEY : WINDOWS_OS_KEY;
 
+  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.windows.json')) || [];
+  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.linux.json')) || [];
+  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.mac.json')) || [];
+
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
     {
@@ -88,239 +92,6 @@ async function doInit() {
     { key: 'OS_KEY+9', command: 'workbench.action.openEditorAtIndex9' },
   ];
   // end COMMON_KEY_BINDINGS
-
-  // begin WINDOWS_ONLY_KEY_BINDINGS
-  WINDOWS_ONLY_KEY_BINDINGS = [
-    {
-      key: 'alt+shift+p',
-      command: 'workbench.action.showCommands',
-    },
-    {
-      key: 'alt+p',
-      command: 'workbench.action.quickOpen',
-    },
-    {
-      key: 'alt+right',
-      command: 'cursorEnd',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+left',
-      command: 'cursorHome',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+f',
-      command: 'actions.find',
-    },
-    {
-      key: 'alt+shift+f',
-      command: 'workbench.action.findInFiles',
-    },
-    {
-      key: 'alt+shift+h',
-      command: 'workbench.action.replaceInFiles',
-    },
-    {
-      key: 'alt+a',
-      command: 'editor.action.selectAll',
-    },
-    {
-      key: 'alt+a',
-      command: 'editor.action.webvieweditor.selectAll',
-      when: "!editorFocus && !inputFocus && activeEditor == 'WebviewEditor'",
-    },
-    {
-      key: 'alt+a',
-      command: 'list.selectAll',
-      when: 'listFocus && listSupportsMultiselect && !inputFocus',
-    },
-    {
-      key: 'alt+c',
-      command: 'editor.action.clipboardCopyAction',
-    },
-    {
-      key: 'alt+x',
-      command: 'editor.action.clipboardCutAction',
-    },
-    {
-      key: 'alt+v',
-      command: 'editor.action.clipboardPasteAction',
-    },
-    {
-      key: 'alt+s',
-      command: 'workbench.action.files.save',
-    },
-    {
-      key: 'alt+l',
-      command: 'expandLineSelection',
-    },
-    {
-      key: 'alt+shift+s',
-      command: 'workbench.action.files.saveAll',
-    },
-    {
-      key: 'alt+z',
-      command: 'undo',
-      when: 'textInputFocus && !editorReadonly',
-    },
-    {
-      key: 'alt+shift+z',
-      command: 'redo',
-      when: 'textInputFocus && !editorReadonly',
-    },
-    {
-      key: 'alt+y',
-      command: 'redo',
-      when: 'textInputFocus && !editorReadonly',
-    },
-    {
-      key: 'alt+ctrl+c',
-      command: 'workbench.files.action.compareWithSaved',
-    },
-    {
-      key: 'alt+shift+]',
-      command: 'workbench.action.nextEditor',
-    },
-    {
-      key: 'alt+shift+[',
-      command: 'workbench.action.previousEditor',
-    },
-    {
-      key: 'alt+w',
-      command: 'workbench.action.closeActiveEditor',
-    },
-    {
-      key: 'alt+d',
-      command: 'workbench.action.splitEditor',
-    },
-    {
-      key: 'alt+shift+d',
-      command: 'workbench.action.splitEditorDown',
-    },
-    {
-      key: 'alt+down',
-      command: 'cursorPageDown',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+up',
-      command: 'cursorPageUp',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+shift+up',
-      command: 'cursorPageUpSelect',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+shift+down',
-      command: 'cursorPageDownSelect',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+shift+left',
-      command: 'cursorHomeSelect',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+shift+right',
-      command: 'cursorEndSelect',
-      when: 'textInputFocus',
-      args: {
-        sticky: false,
-      },
-    },
-    {
-      key: 'alt+ctrl+left',
-      command: 'cursorTop',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+ctrl+up',
-      command: 'cursorTop',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+ctrl+shift+up',
-      command: 'cursorTopSelect',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+ctrl+right',
-      command: 'cursorBottom',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+ctrl+down',
-      command: 'cursorBottom',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+ctrl+shift+down',
-      command: 'cursorBottomSelect',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+ctrl+shift+left',
-      command: 'cursorTopSelect',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+ctrl+shift+right',
-      command: 'cursorBottomSelect',
-      when: 'textInputFocus',
-    },
-    {
-      key: 'alt+n',
-      command: 'workbench.action.files.newUntitledFile',
-    },
-    {
-      key: 'alt+shift+n',
-      command: 'workbench.action.newWindow',
-    },
-    {
-      key: 'alt+d',
-      command: 'editor.action.addSelectionToNextFindMatch',
-    },
-    {
-      key: 'alt+/',
-      command: 'editor.action.commentLine',
-      when: 'editorTextFocus && !editorReadonly',
-    },
-    {
-      key: 'alt+[',
-      command: 'editor.action.outdentLines',
-      when: 'editorTextFocus && !editorReadonly',
-    },
-    {
-      key: 'alt+]',
-      command: 'editor.action.indentLines',
-      when: 'editorTextFocus && !editorReadonly',
-    },
-    {
-      key: 'alt+=',
-      command: 'workbench.action.zoomIn',
-    },
-    {
-      key: 'alt+-',
-      command: 'workbench.action.zoomOut',
-    },
-    {
-      key: 'alt+o',
-      command: 'workbench.action.files.openFile',
-    },
-    {
-      key: 'alt+`',
-      command: 'workbench.action.terminal.toggleTerminal',
-      when: 'terminal.active',
-    },
-  ];
-  // end WINDOWS_ONLY_KEY_BINDINGS
-
-  // begin MAC_ONLY_KEY_BINDINGS
-  MAC_ONLY_KEY_BINDINGS = [];
-  // end MAC_ONLY_KEY_BINDINGS
 }
 
 async function doWork() {
@@ -332,6 +103,7 @@ async function doWork() {
 
     // non -mac keybinding
     writeJson('vs-code-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
+    writeJson('vs-code-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], WINDOWS_OS_KEY));
     writeJson('vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
 
     return process.exit();
@@ -354,6 +126,10 @@ async function doWork() {
     // windows only key bindings
     console.log('    >> Windows Only');
     compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]);
+  } else {
+    // linux only key bindings
+    console.log('    >> Linux Only');
+    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING]);
   }
 
   if (compiledKeyBindings) {
