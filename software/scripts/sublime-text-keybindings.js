@@ -21,8 +21,9 @@ let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
 let MAC_ONLY_KEY_BINDINGS;
 
-const WINDOWS_OS_KEY = 'alt';
+const WINDOWS_OS_KEY = 'ctrl';
 const MAC_OSX_KEY = 'super';
+const LINUX_OS_KEY = 'alt';
 
 function _formatKey(keybindings, osKeyToUse) {
   osKeyToUse = osKeyToUse || OS_KEY;
@@ -42,7 +43,13 @@ function _formatKey(keybindings, osKeyToUse) {
 }
 
 async function doInit() {
-  OS_KEY = is_os_darwin_mac ? MAC_OSX_KEY : WINDOWS_OS_KEY;
+  if (is_os_darwin_mac) {
+    OS_KEY = MAC_OSX_KEY;
+  } else if (is_os_window) {
+    OS_KEY = WINDOWS_OS_KEY;
+  } else {
+    OS_KEY = LINUX_OS_KEY;
+  }
 
   WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.windows.json')) || [];
   LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.linux.json')) || [];
@@ -158,7 +165,7 @@ async function doWork() {
 
     // non -mac keybinding
     writeJson('sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
-    writeJson('sublime-text-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], WINDOWS_OS_KEY));
+    writeJson('sublime-text-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY));
     writeJson('sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
 
     return process.exit();
