@@ -216,3 +216,20 @@ ASUS Optimization
 ### App List
 
 - Twinkle Tray (brightness control): https://twinkletray.com/
+
+### Electron App with WSL2
+
+- https://stackoverflow.com/questions/70330023/i-have-not-been-able-to-get-electron-running-within-electron-to-run-in-wsl2-ubun
+- https://stackoverflow.com/questions/40402344/advanced-gpu-control-needed-for-browserwindows
+- https://www.reddit.com/r/openSUSE/comments/ptqlfu/psa_vscode_and_some_nonpatched_electron/
+
+```
+
+sudo apt-get install -y libxcursor1 libnss3 libgdk-pixbuf2.0-0 libgtk-3-0 libxss-dev libnss3-dev libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgbm-dev libasound2
+sudo apt-get autoclean -y
+sudo apt-get autoremove -y
+
+npm install --platform=win32
+
+./node_modules/.bin/electron --disable-gpu-sandbox .
+```
