@@ -41,4 +41,8 @@ then
   installPackage jq
   installPackage pv
   installPackage net-tools
+  ###
+  installPackage default-jdk
+  installPackage maven
+  installPackage unzip
 fi

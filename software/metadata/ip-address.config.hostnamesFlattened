@@ -160,6 +160,26 @@
     }
   ],
   [
+    "sy-yoga6",
+    "192.168.1.27",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-lenovo-yoga6",
+    "192.168.1.27",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
     "sy-living-room-tv",
     "192.168.1.231",
     {

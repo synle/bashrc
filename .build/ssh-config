@@ -42,4 +42,10 @@ Host sy-alienware
 Host sy-alienware-15
   HostName 192.168.1.26
   Port 2222
+Host sy-yoga6
+  HostName 192.168.1.27
+  Port 22
+Host sy-lenovo-yoga6
+  HostName 192.168.1.27
+  Port 22
 # END SY CUSTOM CONFIG - Home Network Hosts

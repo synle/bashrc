@@ -3,6 +3,8 @@
   "remapKeys": { "inProcess": [{ "originalKeys": "164", "newRemapKeys": "162" }] },
   "remapShortcuts": {
     "global": [
+      { "originalKeys": "161;112", "newRemapKeys": "174" },
+      { "originalKeys": "161;113", "newRemapKeys": "175" },
       { "originalKeys": "164;9", "newRemapKeys": "260;9" },
       { "originalKeys": "162;9", "newRemapKeys": "18;9" },
       { "originalKeys": "162;37", "newRemapKeys": "36" },

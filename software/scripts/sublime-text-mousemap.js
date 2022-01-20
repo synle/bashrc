@@ -4,6 +4,7 @@ let OS_KEY;
 
 const WINDOWS_OS_KEY = 'alt';
 const MAC_OSX_KEY = 'super';
+const LINUX_OS_KEY = 'alt';
 
 let MOUSE_MAPS = [
   {
@@ -66,7 +67,7 @@ async function doWork() {
 
   const linuxMouseMapPath = path.join(targetPath, 'Packages/User/Default (Linux).sublime-mousemap');
   console.log('    >> Linux', linuxMouseMapPath);
-  writeJson(linuxMouseMapPath, _formatKey(MOUSE_MAPS, WINDOWS_OS_KEY));
+  writeJson(linuxMouseMapPath, _formatKey(MOUSE_MAPS, LINUX_OS_KEY));
 
   const osxMouseMapPath = path.join(targetPath, 'Packages/User/Default (OSX).sublime-mousemap');
   console.log('    >> OSX', osxMouseMapPath);
