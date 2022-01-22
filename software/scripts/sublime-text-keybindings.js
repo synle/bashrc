@@ -91,11 +91,11 @@ async function doInit() {
       command: 'toggle_side_bar',
     },
     {
-      key: 'OS_KEY+shift+enter',
+      key: 'OS_KEY+enter',
       command: 'goto_definition',
     },
     {
-      key: 'OS_KEY+enter',
+      key: 'shift+enter',
       command: 'quick_goto_variable',
     },
     {

@@ -49,13 +49,13 @@
   {
     "command": "goto_definition",
     "keys": [
-      "alt+shift+enter"
+      "alt+enter"
     ]
   },
   {
     "command": "quick_goto_variable",
     "keys": [
-      "alt+enter"
+      "shift+enter"
     ]
   },
   {
