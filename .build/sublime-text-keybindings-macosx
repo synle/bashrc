@@ -65,92 +65,9 @@
     ]
   },
   {
-    "command": "set_layout",
-    "args": {
-      "cols": [
-        0,
-        1
-      ],
-      "rows": [
-        0,
-        1
-      ],
-      "cells": [
-        [
-          0,
-          0,
-          1,
-          1
-        ]
-      ]
-    },
+    "command": "find_all_under",
     "keys": [
-      "super+b",
-      "super+w"
-    ]
-  },
-  {
-    "command": "set_layout",
-    "args": {
-      "cols": [
-        0,
-        0.5,
-        1
-      ],
-      "rows": [
-        0,
-        1
-      ],
-      "cells": [
-        [
-          0,
-          0,
-          1,
-          1
-        ],
-        [
-          1,
-          0,
-          2,
-          1
-        ]
-      ]
-    },
-    "keys": [
-      "super+b",
-      "super+"
-    ]
-  },
-  {
-    "command": "set_layout",
-    "args": {
-      "cols": [
-        0,
-        1
-      ],
-      "rows": [
-        0,
-        0.5,
-        1
-      ],
-      "cells": [
-        [
-          0,
-          0,
-          1,
-          1
-        ],
-        [
-          0,
-          1,
-          1,
-          2
-        ]
-      ]
-    },
-    "keys": [
-      "super+b",
-      "super+'"
+      "super+shift+k"
     ]
   },
   {

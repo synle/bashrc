@@ -102,6 +102,10 @@ async function doInit() {
       key: 'OS_KEY+t',
       command: 'new_file',
     },
+    {
+      key: 'OS_KEY+shift+k',
+      command: 'find_all_under',
+    },
 
     // splits
     // split navigation
@@ -109,39 +113,39 @@ async function doInit() {
     // { key: "OS_KEY+ctrl+right", command: "focus_neighboring_group" },
     // { key: "OS_KEY+ctrl+up", command: "focus_neighboring_group" },
     // { key: "OS_KEY+ctrl+down", command: "focus_neighboring_group" },
-    {
-      key: ['OS_KEY+b', 'OS_KEY+w'],
-      command: 'set_layout',
-      args: {
-        cols: [0.0, 1.0],
-        rows: [0.0, 1.0],
-        cells: [[0, 0, 1, 1]],
-      },
-    },
-    {
-      key: ['OS_KEY+b', 'OS_KEY+'],
-      command: 'set_layout',
-      args: {
-        cols: [0.0, 0.5, 1.0],
-        rows: [0.0, 1.0],
-        cells: [
-          [0, 0, 1, 1],
-          [1, 0, 2, 1],
-        ],
-      },
-    },
-    {
-      key: ['OS_KEY+b', "OS_KEY+'"],
-      command: 'set_layout',
-      args: {
-        cols: [0.0, 1.0],
-        rows: [0.0, 0.5, 1.0],
-        cells: [
-          [0, 0, 1, 1],
-          [0, 1, 1, 2],
-        ],
-      },
-    },
+    // {
+    //   key: ['OS_KEY+b', 'OS_KEY+w'],
+    //   command: 'set_layout',
+    //   args: {
+    //     cols: [0.0, 1.0],
+    //     rows: [0.0, 1.0],
+    //     cells: [[0, 0, 1, 1]],
+    //   },
+    // },
+    // {
+    //   key: ['OS_KEY+b', 'OS_KEY+'],
+    //   command: 'set_layout',
+    //   args: {
+    //     cols: [0.0, 0.5, 1.0],
+    //     rows: [0.0, 1.0],
+    //     cells: [
+    //       [0, 0, 1, 1],
+    //       [1, 0, 2, 1],
+    //     ],
+    //   },
+    // },
+    // {
+    //   key: ['OS_KEY+b', "OS_KEY+'"],
+    //   command: 'set_layout',
+    //   args: {
+    //     cols: [0.0, 1.0],
+    //     rows: [0.0, 0.5, 1.0],
+    //     cells: [
+    //       [0, 0, 1, 1],
+    //       [0, 1, 1, 2],
+    //     ],
+    //   },
+    // },
     { key: ['OS_KEY+1'], command: 'select_by_index', args: { index: 0 } },
     { key: ['OS_KEY+2'], command: 'select_by_index', args: { index: 1 } },
     { key: ['OS_KEY+3'], command: 'select_by_index', args: { index: 2 } },
