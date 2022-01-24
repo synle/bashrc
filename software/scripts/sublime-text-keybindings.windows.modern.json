@@ -1,0 +1,8 @@
+[
+  {
+    "key": "ctrl+super+g",
+    "command": "find_all_under"
+  },
+  { "keys": ["ctrl+g"], "command": "find_next" },
+  { "keys": ["ctrl+shift+g"], "command": "find_prev" }
+]

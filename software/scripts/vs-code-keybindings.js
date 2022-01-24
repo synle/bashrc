@@ -3,7 +3,7 @@ let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
 let MAC_ONLY_KEY_BINDINGS;
 
-const WINDOWS_OS_KEY = 'ctrl';
+const WINDOWS_OS_KEY = 'alt'; // alt for modern mode
 const MAC_OSX_KEY = 'cmd';
 const LINUX_OS_KEY = 'alt';
 

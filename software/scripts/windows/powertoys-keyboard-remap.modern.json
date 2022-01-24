@@ -1,0 +1,33 @@
+// %USERPROFILE%\AppData\Local\Microsoft\PowerToys\Keyboard Manager\default.json
+{
+  "remapKeys": {
+    "inProcess": [
+      { "originalKeys": "164", "newRemapKeys": "162" },
+      { "originalKeys": "91", "newRemapKeys": "164" },
+      { "originalKeys": "162", "newRemapKeys": "91" }
+    ]
+  },
+  "remapShortcuts": {
+    "global": [
+      { "originalKeys": "16;112", "newRemapKeys": "174" },
+      { "originalKeys": "16;113", "newRemapKeys": "175" },
+      { "originalKeys": "18;8", "newRemapKeys": "17;8" },
+      { "originalKeys": "18;9", "newRemapKeys": "260;9" },
+      { "originalKeys": "18;68", "newRemapKeys": "260;68" },
+      { "originalKeys": "17;9", "newRemapKeys": "18;9" },
+      { "originalKeys": "17;37", "newRemapKeys": "36" },
+      { "originalKeys": "17;38", "newRemapKeys": "33" },
+      { "originalKeys": "17;39", "newRemapKeys": "35" },
+      { "originalKeys": "17;40", "newRemapKeys": "34" },
+      { "originalKeys": "17;81", "newRemapKeys": "18;115" },
+      { "originalKeys": "17;16;219", "newRemapKeys": "17;33" },
+      { "originalKeys": "17;16;221", "newRemapKeys": "17;34" },
+      { "originalKeys": "17;18;73", "newRemapKeys": "17;16;73" },
+      { "originalKeys": "260;65", "newRemapKeys": "17;65" },
+      { "originalKeys": "260;67", "newRemapKeys": "17;67" },
+      { "originalKeys": "260;69", "newRemapKeys": "17;69" },
+      { "originalKeys": "260;86", "newRemapKeys": "17;86" }
+    ],
+    "appSpecific": []
+  }
+}
