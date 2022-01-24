@@ -147,6 +147,7 @@ function cleanmaster(){
   git checkout -b test
   git del master
   git checkout --track origin/master
+  git checkout --track origin/main
 }
 
 alias search='searchText'

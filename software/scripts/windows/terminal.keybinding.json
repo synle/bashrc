@@ -16,11 +16,11 @@
   },
   {
     "command": "nextTab",
-    "keys": "ctrl+shift+]"
+    "keys": "ctrl+pgdn"
   },
   {
     "command": "prevTab",
-    "keys": "ctrl+shift+["
+    "keys": "ctrl+pgup"
   },
   {
     "command": "resetFontSize",
@@ -151,19 +151,19 @@
   { "command": { "action": "moveFocus", "direction": "up" }, "keys": "ctrl+up" },
   {
     "command": { "action": "resizePane", "direction": "down" },
-    "keys": "ctrl+shift+down"
+    "keys": "ctrl+down"
   },
   {
     "command": { "action": "resizePane", "direction": "left" },
-    "keys": "ctrl+shift+left"
+    "keys": "ctrl+left"
   },
   {
     "command": { "action": "resizePane", "direction": "right" },
-    "keys": "ctrl+shift+right"
+    "keys": "ctrl+right"
   },
   {
     "command": { "action": "resizePane", "direction": "up" },
-    "keys": "ctrl+shift+up"
+    "keys": "ctrl+up"
   },
   {
     "command": { "action": "adjustFontSize", "delta": 1 },
