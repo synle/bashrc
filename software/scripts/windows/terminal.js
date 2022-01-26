@@ -12,6 +12,11 @@ async function doWork() {
   console.log('  >> Setting up Microsoft Windows Terminal', consoleLogColor4(targetPath));
 
   const oldProfiles = readJson(targetPath);
+
+  // keep track of actions
+  const actions = oldProfiles.actions || [];
+  delete oldProfiles.actions;
+
   const newProfiles = Object.assign(oldProfiles, {
     // global config
     copyOnSelect: false,
@@ -100,7 +105,10 @@ async function doWork() {
     ],
 
     // keybindings
-    keybindings: [...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal.keybinding.json')) || [])],
+    keybindings: [
+      ...actions,
+      ...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal.keybinding.json')) || []),
+    ],
   });
 
   // setup the profile color scheme
