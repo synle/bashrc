@@ -151,6 +151,10 @@ function cleanmaster (){
     git checkout --track origin/main
 }
 
+function pwd2(){
+  echo "cd \"$(pwd)\""
+}
+
 alias search='searchText'
 
 filterUnwantedLight(){
