@@ -74,16 +74,11 @@ whitespace = red reverse
 
 [alias]
 a = add
-c = commit --no-verify
-c-with-verify = commit
+cleanfd = clean -f -d
 amend = commit --amend --no-verify
 amend-with-verify = commit --amend
-au = add -u
-ap = add -p
 app = add -p .
 b = branch
-br = branch -av
-branch = branch -av
 clone-shallow = clone --depth 1 -b master
 cm = commit
 cm-no-verify = commit --no-verify
@@ -93,9 +88,9 @@ cp = cherry-pick
 cpn = cherry-pick -n
 d = diff --word-diff -w
 del = branch -D
+del-tag = push -d tag
 del-branch-from-upstream = push -d
 fap = fetch --all --prune
-fix-author = commit --amend --reset-author
 it = !git init && git commit -m \"root\" --allow-empty
 l = log --oneline
 logs = log --oneline --decorate
@@ -107,10 +102,6 @@ pof2 = push origin2 --force
 r = rebase
 ri = rebase -i
 s = status -sb
-st = status -sb
-unstage = reset HEAD --
-undo = checkout origin/master --
-merge-master = !git fetch --all --prune $1 && git merge origin/master
 `
     .replace('###EMAIL', email)
     .replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs);
