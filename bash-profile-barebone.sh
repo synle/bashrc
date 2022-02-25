@@ -62,6 +62,25 @@ br(){
   '''
 }
 
+wget(){
+  echo "$1" | node -e """
+    let data = '';
+
+    process.openStdin().addListener('data', (d) => {
+      data += d.toString();
+    });
+
+    process.openStdin().addListener('end', (d) => {
+      const url = data.trim();
+      const filename = url.substr(url.lastIndexOf('/') + 1);
+
+      console.log('curl -o \"' + filename + '\" \"' + url + '\"')
+
+      process.exit();
+    });
+  """ | bash -e
+}
+
 isCommandExists(){
   type "$1" &> /dev/null ;
 }
