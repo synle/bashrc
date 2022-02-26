@@ -54,7 +54,7 @@ async function doInit() {
     'workbench.tree.indent': 4,
     'editor.codeActionsOnSave': {
       // "source.fixAll": true,
-      'source.organizeImports': true,
+      // 'source.organizeImports': true,
     },
     'telemetry.enableTelemetry': false,
     'telemetry.enableCrashReporter': false,

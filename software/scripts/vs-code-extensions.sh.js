@@ -27,11 +27,8 @@ async function doWork() {
     nicoespeon.abracadabra
     NuclleaR.vscode-extension-auto-import
     oderwat.indent-rainbow
-    redhat.java
-    redhat.vscode-yaml
     scala-lang.scala
     streetsidesoftware.code-spell-checker
-    TabNine.tabnine-vscode
     vscjava.vscode-maven
     wmaurer.change-case
   `);
