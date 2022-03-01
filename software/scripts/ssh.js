@@ -43,10 +43,10 @@ async function doWork() {
     'SY CUSTOM CONFIG - All Hosts', // key
     `
 Host *
-  # reuse connection
-  ControlMaster auto
-  ControlPath /tmp/%r@%h:%p
-  ControlPersist 20m
+  ### reuse connection
+  ##ControlMaster auto
+  ##ControlPath /tmp/%r@%h:%p
+  ##ControlPersist 20m
   # forward agent
   ForwardAgent yes
   # identity
