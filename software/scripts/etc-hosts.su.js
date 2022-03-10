@@ -5,9 +5,9 @@ let ROUTED_BLOCKED_IP;
 
 async function doInit() {
   // initiate the vars
-  STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`));
+  STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`));
 
-  WHITE_LIST_HOST_NAMES = new Set(convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`)));
+  WHITE_LIST_HOST_NAMES = new Set(convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`)));
 
   ROUTED_BLOCKED_IP = '0.0.0.0';
 
