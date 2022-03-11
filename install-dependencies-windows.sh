@@ -2,6 +2,9 @@ echo '>> Setting up WSL2 binary'
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
+# node-gyp - run this in powershell as admin
+# npm install --global windows-build-tools
+
 # TODO Chotolatey
 # https://chocolatey.org/install
 # powershell:
