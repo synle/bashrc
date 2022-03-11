@@ -3,6 +3,7 @@ dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux 
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
 # node-gyp - run this in powershell as admin
+# https://github.com/nodejs/node-gyp#on-windows
 # npm install --global windows-build-tools
 
 # TODO Chotolatey
