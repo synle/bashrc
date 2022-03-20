@@ -4,6 +4,7 @@ dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /nores
 
 # short alias
 New-Alias g git
+New-Alias br cls
 
 # node-gyp - run this in powershell as admin
 # https://github.com/nodejs/node-gyp#on-windows
