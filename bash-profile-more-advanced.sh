@@ -271,48 +271,26 @@ export FZF_COMPLETION_TRIGGER='*'
 ##########################################################
 # get current branch in git repo
 parseGitBranch(){
-python << END
-import commands
-try:
-  status, output = commands.getstatusoutput("git branch")
-  output = output.split('\n')
-  for branch in output:
-    if '*' in branch:
-      print('[' + branch[2:] + ']')
-except:
-  print('')
-END
+node -e """
+  const { exec } = require('child_process');
+  exec('git branch | grep \"*\"', (error, stdout, stderr) => !error && console.log('['+stdout.replace('*','').trim()+']'));
+"""
 }
-
 
 ifconfig2(){
-python << END
-import socket
-try:
-  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-  s.connect(('8.8.8.8', 1))
-  local_ip_address = s.getsockname()[0]
-  print(local_ip_address)
-except:
-  print('N/A')
-END
+node -e """
+  const { networkInterfaces } = require('os');
+  const nets = Object.values(networkInterfaces());
+  console.log([... new Set(JSON.stringify(nets, null, 1).split('\n').filter(line => line.includes('.') && line.includes('address') && line.includes('127.0.0.1') === false).map(line => line.substr(14).replace(/[\",]/g,'')))].join(', '))
+"""
 }
 
-#short path
+# short path
+# node version
 shorterPwdPath(){
-python << END
-import os
-dir_path = os.path.dirname(os.path.realpath(__file__))
-full_tokens = dir_path.split('/')
-short_tokens = []
-for idx, full_token in enumerate(full_tokens):
-  if full_token:
-    if idx != len(full_tokens) - 1:
-      short_tokens.append(full_token[0])
-    else:
-      short_tokens.append(full_token)
-print('/' + '/'.join(short_tokens))
-END
+node -e """
+  const splits = process.cwd().split('/'); console.log(splits.map((s,idx) => idx !== splits.length - 1 ? s[0] : s).join('/'));
+"""
 }
 
 
