@@ -2,7 +2,7 @@ echo '>> Setting up WSL2 binary'
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
-# $profile 
+# subl "$profile"
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
 # short alias
 New-Alias g git
