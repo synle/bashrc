@@ -6,7 +6,11 @@ dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /nores
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
 # short alias
 New-Alias g git
+New-Alias ll ls
 New-Alias br cls
+function gogit {
+  Set-Location D:\git
+}
 
 # node-gyp - run this in powershell as admin
 # https://github.com/nodejs/node-gyp#on-windows
