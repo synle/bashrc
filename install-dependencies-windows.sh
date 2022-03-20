@@ -8,6 +8,7 @@ dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /nores
 New-Alias g git
 New-Alias ll ls
 New-Alias br cls
+New-Alias open explorer
 function gogit {
   Set-Location D:\git
 }
