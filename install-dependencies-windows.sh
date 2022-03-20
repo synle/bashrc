@@ -2,6 +2,9 @@ echo '>> Setting up WSL2 binary'
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
+# short alias
+New-Alias g git
+
 # node-gyp - run this in powershell as admin
 # https://github.com/nodejs/node-gyp#on-windows
 # npm install --global windows-build-tools
