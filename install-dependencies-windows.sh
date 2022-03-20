@@ -10,7 +10,7 @@ New-Alias ll ls
 New-Alias br cls
 New-Alias open explorer
 function gogit {
-  Set-Location D:\git
+  Set-Location D:/git
 }
 
 # node-gyp - run this in powershell as admin
