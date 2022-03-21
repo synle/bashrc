@@ -32,21 +32,33 @@ async function doWork() {
   }
 
   let content = readText(targetPath);
+
+
+  // start with the required block
   content = appendTextBlock(
     content,
-    'SY CUSTOM POWERSHELL ALIASES', // key
+    'SY CUSTOM POWERSHELL CORE BLOCKS', // key
     trimLeftSpaces(`
       New-Alias g git
       New-Alias ll ls
       New-Alias br cls
       New-Alias open explorer
       New-Alias d docker
-
-      function gogit {
-        Set-Location D:/git
-      }
     `),
   );
+
+  // then add the optional block
+  if (fs.existsSync('/mnt/d')) {
+    content = appendTextBlock(
+      content,
+      'SY CUSTOM POWERSHELL OPTIONAL BLOCKS', // key
+      trimLeftSpaces(`
+        function gogit {
+          Set-Location D:/git
+        }
+      `),
+    );
+  }
 
   console.log('    >> Update Powershell Profile', targetPath);
   writeText(targetPath, content);
