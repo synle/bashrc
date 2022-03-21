@@ -102,10 +102,16 @@ async function doWork() {
 
   let osSpecificSettings = {};
   if (is_os_darwin_mac) {
-    osSpecificSettings = {};
+    osSpecificSettings = {
+      color_scheme: 'auto',
+      dark_color_scheme: 'Mariana.sublime-color-scheme',
+      light_color_scheme: 'Breakers.sublime-color-scheme',
+    };
   } else {
     osSpecificSettings = {
-      color_scheme: 'Packages/Dracula Color Scheme/Dracula.tmTheme',
+      color_scheme: 'auto',
+      dark_color_scheme: 'Packages/Dracula Color Scheme/Dracula.tmTheme',
+      light_color_scheme: 'Breakers.sublime-color-scheme',
     };
   }
 
