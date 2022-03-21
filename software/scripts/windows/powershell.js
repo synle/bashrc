@@ -3,11 +3,11 @@ async function _getPath() {
     let targetPath;
 
     // try it with D path
-    targetPath = findDirSingle('/mnt/d/', 'Documents');
-    if (!targetPath) {
-      // if it's not present, then try home dir in C drive
-      targetPath = findDirSingle(getWindowUserBaseDir(), 'Documents');
-    }
+    // if it's not present, then try home dir in C drive
+    targetPath = findFirstDirFromList([
+      ['/mnt/d/', 'Documents'],
+      [getWindowUserBaseDir(), 'Documents'],
+    ]);
 
     if (targetPath) {
       targetPath = path.join(targetPath, 'WindowsPowerShell');

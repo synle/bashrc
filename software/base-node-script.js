@@ -144,6 +144,23 @@ function findDirSingle(srcDir, targetMatch) {
   return findDirList(srcDir, targetMatch, true);
 }
 
+/**
+ * find and return the first dir that matches the prop
+ * @param  {array} findProps must contains "src" and "match"
+ * @return {string} the path of the first dir and undefined otherwise
+ */
+function findFirstDirFromList(findProps) {
+  for (const findProp of findProps) {
+    const [src, match] = findProp;
+    const matchedDir = findDirSingle(src, match);
+    if (matchedDir) {
+      return matchedDir;
+    }
+  }
+
+  return undefined;
+}
+
 function writeText(aDir, text, override = true, suppressError = false) {
   const pathToUse = _getFilePath(aDir);
   const newContent = text;
