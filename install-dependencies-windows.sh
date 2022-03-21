@@ -3,6 +3,7 @@ dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux 
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
 # subl "$profile"
+# needs to be enabled "Set-ExecutionPolicy Restricted"
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
 # short alias
 New-Alias g git
