@@ -41,18 +41,18 @@ async function doWork() {
   sshConfigTextContent = appendTextBlock(
     sshConfigTextContent,
     'SY CUSTOM CONFIG - All Hosts', // key
-    `
-Host *
-  ### reuse connection
-  ##ControlMaster auto
-  ##ControlPath /tmp/%r@%h:%p
-  ##ControlPersist 20m
-  # forward agent
-  ForwardAgent yes
-  # identity
-  User syle
-  IdentityFile ~/.ssh/id_rsa
-  `,
+    trimLeftSpaces(`
+      Host *
+        ### reuse connection
+        ## ControlMaster auto
+        ## ControlPath /tmp/%r@%h:%p
+        ## ControlPersist 20m
+        # forward agent
+        ForwardAgent yes
+        # identity
+        User syle
+        IdentityFile ~/.ssh/id_rsa
+    `),
   );
 
   const sshConnections = HOME_HOST_NAMES.filter(([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE }]) => NO_SSH !== true);
@@ -62,11 +62,11 @@ Host *
     'SY CUSTOM CONFIG - Home Network Hosts', // key
     sshConnections
       .map(([hostName, hostIp]) =>
-        `
-Host ${hostName}
-  HostName ${hostIp}
-  Port ${sshPortMap[hostIp] || DEFAULT_SSH_PORT}
-      `.trim(),
+        trimLeftSpaces(`
+          Host ${hostName}
+            HostName ${hostIp}
+            Port ${sshPortMap[hostIp] || DEFAULT_SSH_PORT}
+        `),
       )
       .join('\n'),
   );

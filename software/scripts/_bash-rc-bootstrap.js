@@ -8,7 +8,9 @@ async function doWork() {
   bashrcTextContent = appendTextBlock(
     bashrcTextContent,
     'Sy bashrc entry point', // key
-    `[ -s ~/.bash_syle ] && . ~/.bash_syle`,
+    trimLeftSpaces(`
+          [ -s ~/.bash_syle ] && . ~/.bash_syle
+        `),
   );
 
   // write if there are change
