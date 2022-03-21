@@ -144,7 +144,7 @@ function findDirSingle(srcDir, targetMatch) {
   return findDirList(srcDir, targetMatch, true);
 }
 
-function writeText(aDir, text, override = true, suppressError) {
+function writeText(aDir, text, override = true, suppressError = false) {
   const pathToUse = _getFilePath(aDir);
   const newContent = text;
   const oldContent = readText(pathToUse);
@@ -262,7 +262,6 @@ function getOsxApplicationSupportCodeUserPath() {
 }
 
 function updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, isPrepend) {
-  commentPrefix = commentPrefix || '#';
   configValue = configValue.trim();
 
   const regex = new RegExp(`(\\n)*(${commentPrefix} ${configKey})(\\n)[\\S\\s]+(${commentPrefix} END ${configKey})(\\n)*`);
@@ -307,11 +306,11 @@ ${resultTextContent}
   return cleanupExtraWhitespaces(resultTextContent);
 }
 
-function appendTextBlock(resultTextContent, configKey, configValue, commentPrefix) {
+function appendTextBlock(resultTextContent, configKey, configValue, commentPrefix = '#') {
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, false);
 }
 
-function prependTextBlock(resultTextContent, configKey, configValue, commentPrefix) {
+function prependTextBlock(resultTextContent, configKey, configValue, commentPrefix = '#') {
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, true);
 }
 
@@ -331,6 +330,32 @@ function convertTextToHosts(text) {
     .split('\n')
     .map((s) => s.replace(/^[0-9]+.[0-9]+.[0-9]+.[0-9]+[ ]*/, '').trim())
     .filter((s) => s.length > 0 && s.match(/^[0-9a-zA-Z-.]+/) && s.match(/^[0-9a-zA-Z-.]+/)[0] === s);
+}
+
+function trimLeftSpaces(text, spaceToTrim) {
+  try {
+    const lines = text.split('\n');
+
+    if (spaceToTrim === undefined) {
+      // if not present, we will attempt to look at the space to trim automatically
+      // look for the first non empty line
+      const firstLine = lines.filter((line) => line.trim())[0];
+      spaceToTrim = firstLine.match(/^[ ]+/g)[0].length;
+    }
+
+    return lines
+      .map((line) => {
+        let myLeftSpaces = 0;
+        try {
+          myLeftSpaces = firstLine.match(/^[ ]+/g)[0].length;
+        } catch (err) {}
+
+        return line.substr(Math.max(spaceToTrim, myLeftSpaces));
+      })
+      .join('\n');
+  } catch (err) {
+    return text;
+  }
 }
 
 function calculatePercentage(count, total) {

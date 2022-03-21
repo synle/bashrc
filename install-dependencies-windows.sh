@@ -4,15 +4,10 @@ dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /nores
 
 # subl "$profile"
 # needs to be enabled "Set-ExecutionPolicy Restricted"
+# powershell.exe -command "Set-ExecutionPolicy Restricted"
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
 # short alias
-New-Alias g git
-New-Alias ll ls
-New-Alias br cls
-New-Alias open explorer
-function gogit {
-  Set-Location D:/git
-}
+
 
 # node-gyp - run this in powershell as admin
 # https://github.com/nodejs/node-gyp#on-windows
