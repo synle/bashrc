@@ -41,6 +41,14 @@ async function doWork() {
       # tab autocomplete
       Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
 
+      # keybindings
+      # Import-Module PSReadLine
+      # Get-PSReadLineKeyHandler
+      # https://github.com/PowerShell/PSReadLine
+      Set-PSReadLineKeyHandler -Key Ctrl+a -Function BeginningOfLine
+      Set-PSReadLineKeyHandler -Key Ctrl+e -Function EndOfLine
+
+
       # Aliases
       New-Alias g git
       New-Alias ll ls
