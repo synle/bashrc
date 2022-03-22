@@ -79,14 +79,10 @@ complete -F __make_complete make
 # npm autocomplete
 __npm_run_complete_options()
 {
-python -c """
-import json
-try:
-  with open('package.json') as f:
-    data = json.load(f)
-  print(' '.join(data['scripts'].keys()))
-except:
-  print('')
+node -e """
+   try{
+     console.log(Object.keys(JSON.parse(fs.readFileSync('package.json')).scripts).join(' '));
+   } catch(err){}
 """
 }
 
