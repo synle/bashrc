@@ -47,7 +47,7 @@ async function doWork() {
       # https://github.com/PowerShell/PSReadLine
       Set-PSReadLineKeyHandler -Key Ctrl+a -Function BeginningOfLine
       Set-PSReadLineKeyHandler -Key Ctrl+e -Function EndOfLine
-
+      Set-PSReadLineKeyHandler -Key Ctrl+. -Function YankLastArg
 
       # Aliases
       New-Alias g git
