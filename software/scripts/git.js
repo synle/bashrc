@@ -74,10 +74,10 @@ whitespace = red reverse
 
 [alias]
 a = add
-aa = add -a
+aa = add -A
 amend = commit --amend --no-verify
 amend-with-verify = commit --amend
-ap = add -p .
+ap = add -p 
 app = add -p .
 au = add -u
 b = branch
@@ -99,6 +99,8 @@ empty-commit = commit --allow-empty -m "Empty commit"
 fap = fetch --all --prune
 l = log --oneline
 logs = log --oneline --decorate
+m = merge
+mc = merge --continue
 p = push
 po = push origin
 po2 = push origin2
