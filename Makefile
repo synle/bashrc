@@ -32,8 +32,10 @@ test_full_run_live:
 test_full_run_local:
 	sh test-full-run.sh
 
+# test a single file locally
+# make test_single_run_local file="software/scripts/sublime-text-keybindings.js"
 test_single_run_local:
-	sh test.sh
+	sh test.sh "$(file)"
 
 list_scripts:
 	cat software/metadata/script-list.config
