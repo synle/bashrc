@@ -26,7 +26,7 @@
     "gray_antialias",
     "subpixel_antialias"
   ],
-  "font_face": "Fira Code",
+  "font_face": "Fira Code Bold",
   "hardware_acceleration": "opengl",
   "theme": "Adaptive.sublime-theme",
   "file_exclude_patterns": [

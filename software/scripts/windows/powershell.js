@@ -38,6 +38,10 @@ async function doWork() {
     content,
     'SY CUSTOM POWERSHELL CORE BLOCKS', // key
     trimLeftSpaces(`
+      # tab autocomplete
+      Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
+
+      # Aliases
       New-Alias g git
       New-Alias ll ls
       New-Alias br cls
