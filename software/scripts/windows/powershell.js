@@ -33,7 +33,6 @@ async function doWork() {
 
   let content = readText(targetPath);
 
-
   // start with the required block
   content = appendTextBlock(
     content,
