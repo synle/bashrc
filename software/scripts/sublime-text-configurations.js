@@ -43,7 +43,7 @@ async function doInit() {
     rulers: [EDITOR_CONFIGS.maxLineSize],
     scroll_speed: 0.0,
     font_options: ['gray_antialias', 'subpixel_antialias'],
-    font_face: EDITOR_CONFIGS.fontFamily,
+    font_face: `Fira Code Bold`, // EDITOR_CONFIGS.fontFamily
     hardware_acceleration: 'opengl',
     theme: 'Adaptive.sublime-theme',
     file_exclude_patterns: [...EDITOR_CONFIGS.ignoredFiles],
