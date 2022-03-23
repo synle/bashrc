@@ -1,17 +1,29 @@
 /**
 Different options and code styles
-// option 1 with no dependencies
- opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
 
-// option 2 with node
- opts=$(node -e """
-   try{
-     console.log(Object.keys(JSON.parse(fs.readFileSync('package.json')).scripts).join(' '));
-   } catch(err){}
- """);
+// option 1 with static options
+opts=$(
+  echo '''
+    run
+    test
+    start
+  ''' | tr -d " \t"
+)
 
-// option 3 with python but more common than node
-    opts=$(
+// option 2 with no dependencies
+opts=$([ -f package.json ] && cat package.json | jq .scripts | grep '"' | cut -d '"' -f 2 | uniq);
+
+
+// option 3 with node
+opts=$(node -e """
+  try{
+   console.log(Object.keys(JSON.parse(fs.readFileSync('package.json')).scripts).join(' '));
+  } catch(err){}
+""");
+
+
+// option 4 with python but more common than node
+opts=$(
         python -c """
 import json
 try:
@@ -21,8 +33,57 @@ try:
 except:
   print('')
         """
-    )
+  )
  */
+
+async function _getAutoCompleteWithSpec(command, completeSpecURL){
+  const completeSpecContent = await fetchUrlAsString(completeSpecURL);
+
+  return `
+    ####################################
+    # ${command} Spec Tab Autocomplete
+    ####################################
+    ${command}_complete()
+    {
+      opts=\$(
+      echo "\${COMP_WORDS[*]}" | node -e """
+        let data = '';
+
+        process.openStdin().addListener('data', (d) => data += d.toString());
+
+        process.openStdin().addListener('end', (d) => {
+          process.exit();
+        });
+
+        async function doWork(input){
+          const commands = \\\`${completeSpecContent}\\\`
+            .split('\\n')
+            .map( s => s.trim())
+            .filter(s => s)
+            .map(s => s.split(/[|,]/g));
+
+
+          let matchingOptions = [];
+          for(const [command, ...options] of commands){
+            if(input.indexOf(command) === 0){
+              commandFound = true;
+              matchingOptions = [... new Set(options)];
+              break;
+            }
+          }
+
+          console.log(matchingOptions.join('\\n'))
+        }
+      """
+      )
+      cur="\${COMP_WORDS[COMP_CWORD]}";
+      prev="\${COMP_WORDS[COMP_CWORD-1]}";
+      COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
+    }
+    complete -F ${command}_complete docker
+  `
+}
+
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_autocomplete');
   console.log('  >> Installing Bash Autocomplete', consoleLogColor4(targetPath));
@@ -151,65 +212,14 @@ complete -F __npx_complete npx
 # yarn
 __yarn_complete ()
 {
+  opts=\$(__npm_run_complete_options)
   cur="\${COMP_WORDS[COMP_CWORD]}";
   prev="\${COMP_WORDS[COMP_CWORD-1]}";
-
-  opts=\$(__npm_run_complete_options)
-
   COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
 }
 complete -F __yarn_complete yarn
 
-__gulp_complete()
-{
-  opts=\$([ -f ./node_modules/.bin/gulp ] && ./node_modules/.bin/gulp --tasks | grep -v "gulpfile" | cut -d " " -f 3 | uniq);
-  cur="\${COMP_WORDS[COMP_CWORD]}"
-  COMPREPLY=( \$(compgen -W "\$opts" -- \${cur}) )
-}
-complete -F __gulp_complete gulp
-
-
-__docker_complete()
-{
-  cur="\${COMP_WORDS[COMP_CWORD]}";
-  prev="\${COMP_WORDS[COMP_CWORD-1]}";
-
-  opts=\$(
-  echo "\${COMP_WORDS[*]}" | node -e """
-    let data = '';
-
-    process.openStdin().addListener('data', (d) => data += d.toString());
-
-    process.openStdin().addListener('end', (d) => {
-      doWork(data.trim());
-      process.exit();
-    });
-
-    async function doWork(input){
-      const commands = \\\`
-${await fetchUrlAsString('software/metadata/bash-autocomplete.docker.config')}
-      \\\`.split('\\n').map( s => s.trim()).filter(s => s).map(s => s.split(/[|,]/g));
-
-
-      let matchingOptions = [];
-      let commandFound = false;
-      commands.forEach(([command, ...options])=> {
-        if(commandFound === false){
-          if(input.indexOf(command) === 0){
-            commandFound = true;
-            matchingOptions = options;
-          }
-        }
-      })
-
-      console.log(matchingOptions.join('\\n'))
-    }
-  """
-  )
-
-  COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
-}
-complete -F __docker_complete docker
+${await _getAutoCompleteWithSpec('docker', 'software/metadata/bash-autocomplete.docker.config')}
 `;
 
   writeText(targetPath, res);
