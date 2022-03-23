@@ -181,8 +181,7 @@ __docker_complete()
     process.openStdin().addListener('data', (d) => data += d.toString());
 
     process.openStdin().addListener('end', (d) => {
-      let input = data.trim();
-      doWork(input);
+      doWork(data.trim());
       process.exit();
     });
 
