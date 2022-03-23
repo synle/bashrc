@@ -36,7 +36,7 @@ except:
   )
  */
 
-async function _getAutoCompleteWithSpec(command, completeSpecURL){
+async function _getAutoCompleteWithSpec(command, completeSpecURL) {
   const completeSpecContent = await fetchUrlAsString(completeSpecURL);
 
   return trimLeftSpaces(`

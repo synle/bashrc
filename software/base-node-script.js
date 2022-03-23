@@ -364,7 +364,7 @@ function trimLeftSpaces(text, spaceToTrim) {
       .map((line) => {
         let myLeftSpaces = 0;
         try {
-          myLeftSpaces = firstLine.match(/^[ ]+/g)[0].length;
+          myLeftSpaces = line.match(/^[ ]+/g)[0].length;
         } catch (err) {}
 
         return line.substr(Math.min(spaceToTrim, myLeftSpaces));
