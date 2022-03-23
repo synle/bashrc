@@ -367,7 +367,7 @@ function trimLeftSpaces(text, spaceToTrim) {
           myLeftSpaces = firstLine.match(/^[ ]+/g)[0].length;
         } catch (err) {}
 
-        return line.substr(Math.max(spaceToTrim, myLeftSpaces));
+        return line.substr(Math.min(spaceToTrim, myLeftSpaces));
       })
       .join('\n');
   } catch (err) {

@@ -39,7 +39,7 @@ except:
 async function _getAutoCompleteWithSpec(command, completeSpecURL){
   const completeSpecContent = await fetchUrlAsString(completeSpecURL);
 
-  return `
+  return trimLeftSpaces(`
     ####################################
     # ${command} Spec Tab Autocomplete
     ####################################
@@ -52,6 +52,7 @@ async function _getAutoCompleteWithSpec(command, completeSpecURL){
         process.openStdin().addListener('data', (d) => data += d.toString());
 
         process.openStdin().addListener('end', (d) => {
+          doWork(data.trim());
           process.exit();
         });
 
@@ -64,13 +65,15 @@ async function _getAutoCompleteWithSpec(command, completeSpecURL){
 
 
           let matchingOptions = [];
-          for(const [command, ...options] of commands){
-            if(input.indexOf(command) === 0){
-              commandFound = true;
-              matchingOptions = [... new Set(options)];
-              break;
+          let commandFound = false;
+          commands.forEach(([command, ...options])=> {
+            if(commandFound === false){
+              if(input.indexOf(command) === 0){
+                commandFound = true;
+                matchingOptions = options;
+              }
             }
-          }
+          })
 
           console.log(matchingOptions.join('\\n'))
         }
@@ -81,7 +84,7 @@ async function _getAutoCompleteWithSpec(command, completeSpecURL){
       COMPREPLY=(\$(compgen -W "\$opts" -- \${cur}));
     }
     complete -F ${command}_complete docker
-  `
+  `);
 }
 
 async function doWork() {
