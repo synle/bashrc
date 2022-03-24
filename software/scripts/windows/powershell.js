@@ -51,10 +51,21 @@ async function doWork() {
 
       # Aliases
       New-Alias g git
+      New-Alias l ls
       New-Alias ll ls
       New-Alias br cls
       New-Alias open explorer
       New-Alias d docker
+      New-Alias .. cdup
+
+      # functions
+      function mkdir{
+        new-item -type directory -path $args
+      }
+
+      function cdup{
+        cd ..
+      }
     `),
   );
 

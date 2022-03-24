@@ -106,6 +106,7 @@ po = push origin
 po2 = push origin2
 pof = push origin --force
 pof2 = push origin2 --force
+pu = pull
 r = rebase
 ri = rebase -i
 s = status -sb
