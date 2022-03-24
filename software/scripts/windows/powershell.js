@@ -53,7 +53,6 @@ async function doWork() {
       New-Alias g git
       New-Alias l ls
       New-Alias ll ls
-      New-Alias br cls
       New-Alias open explorer
       New-Alias d docker
       New-Alias .. cdup
@@ -65,6 +64,11 @@ async function doWork() {
 
       function cdup{
         cd ..
+      }
+
+      function br{
+        clear;
+        Write-Host "====================="  -ForegroundColor Red -NoNewline;
       }
     `),
   );
