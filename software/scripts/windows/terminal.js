@@ -124,17 +124,25 @@ async function doWork() {
       // useAcrylic: true,
     });
 
+    let mainColorScheme;
     switch (profile.commandline) {
       case 'powershell.exe':
-        profile.colorScheme = 'Campbell';
+        mainColorScheme = 'Campbell';
         break;
       case 'cmd.exe':
-        profile.colorScheme = 'Retro';
+        mainColorScheme = 'Retro';
         break;
       default:
-        profile.colorScheme = 'Dracula';
+        mainColorScheme = 'Dracula';
         break;
     }
+    profile.colorScheme = mainColorScheme;
+
+    // TODO: this is for dark mode vs light mode switching
+    // will likely wait for Windows Terminal supports it
+    // profile.colorSchemeDark = 'One Half Dark';
+    // profile.colorSchemeLight = 'One Half Light';
+    // profile.colorScheme = profile.colorSchemeDark;
 
     // set default profile
     if (!foundDefaultProfile && [/Debian/i, /Ubuntu/i].some((distroToUseForDefault) => profile.name.match(distroToUseForDefault))) {
