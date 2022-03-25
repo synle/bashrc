@@ -3,10 +3,8 @@ dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux 
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
 # subl "$profile"
-# needs to be enabled "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
 # powershell.exe -command "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
-# short alias
 
 
 # node-gyp - run this in powershell as admin
