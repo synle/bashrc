@@ -77,6 +77,29 @@ async function doWork() {
         Get-ChildItem -Recurse $path | Select FullName
       }
 
+      function gco
+      {
+        param(
+          [Parameter(Mandatory)]
+          [ValidateNotNullOrEmpty()]
+          [ArgumentCompleter({
+            param($pCmd, $pParam, $pWord, $pAst, $pFakes)
+
+            $branchList = (git branch --format='%(refname:short)')
+
+            if ([string]::IsNullOrWhiteSpace($pWord)) {
+              return $branchList;
+            }
+
+            $branchList | Select-String "$pWord"
+          })]
+          [string] $branch
+        )
+
+        git checkout $branch;
+      }
+
+
       ### For the prompt
       function parseGitBranch () {
         try {
