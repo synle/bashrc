@@ -56,6 +56,7 @@ async function doWork() {
       New-Alias open explorer
       New-Alias d docker
       New-Alias .. cdup
+      New-Alias grep select-string
 
       # functions
       function mkdir{
