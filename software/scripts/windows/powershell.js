@@ -78,34 +78,43 @@ async function doWork() {
           if ($branch -eq "HEAD") {
             # we're probably in detached HEAD state, so print the SHA
             $branch = git rev-parse --short HEAD
-            Write-Host " ($branch)" -ForegroundColor "red"
+            Write-Host " [$branch]" -ForegroundColor "blue"
           }
           else {
             # we're on an actual branch, so print it
-            Write-Host " ($branch)" -ForegroundColor "blue"
+            Write-Host " [$branch]" -ForegroundColor "red"
           }
         } catch {
           # we'll end up here if we're in a newly initiated git repo
-          Write-Host " (no branches yet)" -ForegroundColor "yellow"
+          Write-Host " [no branches yet]" -ForegroundColor "yellow"
         }
       }
 
-      function prompt {
-        $base = "PS "
-        $path = "$($executionContext.SessionState.Path.CurrentLocation)"
-        $userPrompt = "$('>' * ($nestedPromptLevel + 3)) "
+      function shorterPwdPath(){
+        node -e """
+          const path = require('path');
+          const splits = process.cwd().split(path.sep);
+          const shortPath = splits.map((s, idx) => idx === 0 || idx === splits.length - 1? s : s[0]).join('/');
+          console.log(shortPath)
+        """
+      }
 
-        Write-Host "`n$base" -NoNewline
+      function prompt {
+        # $path = "$($executionContext.SessionState.Path.CurrentLocation)"
+        $path = "$(shorterPwdPath)"
+
+        Write-Host "\`n$base" -NoNewline
 
         if (Test-Path .git) {
-          Write-Host $path -NoNewline -ForegroundColor "green"
+          Write-Host $path -NoNewline -ForegroundColor "yellow"
           parseGitBranch
         }
         else {
           # we're not in a repo so don't bother displaying branch name/sha
-          Write-Host $path -ForegroundColor "green"
+          Write-Host $path -ForegroundColor "yellow"
         }
 
+        $userPrompt = "$('>' * ($nestedPromptLevel + 3)) "
         return $userPrompt
       }
     `),
