@@ -78,15 +78,15 @@ async function doWork() {
           if ($branch -eq "HEAD") {
             # we're probably in detached HEAD state, so print the SHA
             $branch = git rev-parse --short HEAD
-            Write-Host " [$branch]" -ForegroundColor "blue"
+            Write-Host -NoNewline " [$branch]" -ForegroundColor "blue"
           }
           else {
             # we're on an actual branch, so print it
-            Write-Host " [$branch]" -ForegroundColor "red"
+            Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
           }
         } catch {
           # we'll end up here if we're in a newly initiated git repo
-          Write-Host " [no branches yet]" -ForegroundColor "yellow"
+          Write-Host -NoNewline " [no branches yet]" -ForegroundColor "yellow"
         }
       }
 
@@ -99,11 +99,20 @@ async function doWork() {
         """
       }
 
+      function shorterTimestamp(){
+        node -e """
+          const date = new Date();
+          const format = (v) => (v + '').padStart(2, '0');
+          console.log(format(date.getHours()) + ':' + format(date.getMinutes()) + ':' + format(date.getSeconds()));
+        """
+      }
+
       function prompt {
         # $path = "$($executionContext.SessionState.Path.CurrentLocation)"
         $path = "$(shorterPwdPath)"
+        $timestamp = "$(shorterTimestamp)\n"
 
-        Write-Host "\`n$base" -NoNewline
+        Write-Host $timestamp -NoNewline -ForegroundColor "yellow"
 
         if (Test-Path .git) {
           Write-Host $path -NoNewline -ForegroundColor "yellow"
