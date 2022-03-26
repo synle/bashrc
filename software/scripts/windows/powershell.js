@@ -71,6 +71,12 @@ async function doWork() {
         Write-Host "====================="  -ForegroundColor Red -NoNewline;
       }
 
+      function find{
+        $path = $args
+        Get-ChildItem -Recurse $path | Select FullName
+      }
+
+      ### For the prompt
       function parseGitBranch () {
         try {
           $branch = git rev-parse --abbrev-ref HEAD
