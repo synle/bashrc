@@ -78,7 +78,7 @@ async function doWork() {
           if ($branch -eq "HEAD") {
             # we're probably in detached HEAD state, so print the SHA
             $branch = git rev-parse --short HEAD
-            Write-Host -NoNewline " [$branch]" -ForegroundColor "blue"
+            Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
           }
           else {
             # we're on an actual branch, so print it
@@ -110,9 +110,13 @@ async function doWork() {
       function prompt {
         # $path = "$($executionContext.SessionState.Path.CurrentLocation)"
         $path = "$(shorterPwdPath)"
-        $timestamp = "$(shorterTimestamp)\n"
 
-        Write-Host $timestamp -NoNewline -ForegroundColor "yellow"
+        Write-Host "====" -NoNewline -ForegroundColor "red"
+        Write-Host "\n" -NoNewline
+
+        Write-Host "$(shorterTimestamp)" -NoNewline -ForegroundColor "yellow"
+        Write-Host " $(whoami)" -NoNewline -ForegroundColor "green"
+        Write-Host "\n" -NoNewline
 
         if (Test-Path .git) {
           Write-Host $path -NoNewline -ForegroundColor "yellow"
@@ -120,12 +124,15 @@ async function doWork() {
         }
         else {
           # we're not in a repo so don't bother displaying branch name/sha
-          Write-Host $path -ForegroundColor "yellow"
+          Write-Host $path -NoNewline -ForegroundColor "yellow"
         }
+        Write-Host "\n" -NoNewline
 
         $userPrompt = "$('>' * ($nestedPromptLevel + 3)) "
         return $userPrompt
       }
+
+      clear; # clean up the prompt
     `),
   );
 
