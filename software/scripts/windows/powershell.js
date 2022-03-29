@@ -99,6 +99,10 @@ async function doWork() {
         git checkout $branch;
       }
 
+      function touch(){
+        fsutil file createnew "$@" 0
+      }
+
 
       ### For the prompt
       function parseGitBranch () {
