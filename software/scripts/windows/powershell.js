@@ -51,34 +51,45 @@ async function doWork() {
 
       # Aliases
       New-Alias g git
-      New-Alias l ls
-      New-Alias ll ls
       New-Alias open explorer
       New-Alias d docker
       New-Alias .. cdup
-      New-Alias grep select-string
 
       # functions
-      function mkdir{
-        new-item -type directory -path $args
+      function ls() {
+        wsl ls $args
       }
 
-      function cdup{
+      function ll() {
+        wsl ls -la $args
+      }
+
+      function grep() {
+        wsl grep $args
+      }
+
+      function vim() {
+        wsl vim $args
+      }
+
+      function mkdir() {
+        wsl mkdir $args
+      }
+
+      function cdup() {
         cd ..
       }
 
-      function br{
+      function br() {
         clear;
         Write-Host "====================="  -ForegroundColor Red -NoNewline;
       }
 
-      function find{
-        $path = $args
-        Get-ChildItem -Recurse $path | Select FullName
+      function find() {
+        wsl find $args
       }
 
-      function gco
-      {
+      function gco() {
         param(
           [Parameter(Mandatory)]
           [ValidateNotNullOrEmpty()]
@@ -99,13 +110,12 @@ async function doWork() {
         git checkout $branch;
       }
 
-      function touch(){
-        fsutil file createnew "$@" 0
+      function touch() {
+        wsl touch $args
       }
 
-
       ### For the prompt
-      function parseGitBranch () {
+      function parseGitBranch() {
         try {
           $branch = git rev-parse --abbrev-ref HEAD
 
@@ -124,7 +134,7 @@ async function doWork() {
         }
       }
 
-      function shorterPwdPath(){
+      function shorterPwdPath() {
         node -e """
           const path = require('path');
           const splits = process.cwd().split(path.sep);
@@ -133,7 +143,7 @@ async function doWork() {
         """
       }
 
-      function shorterTimestamp(){
+      function shorterTimestamp() {
         node -e """
           const date = new Date();
           const format = (v) => (v + '').padStart(2, '0');
@@ -141,7 +151,7 @@ async function doWork() {
         """
       }
 
-      function prompt {
+      function prompt() {
         # $path = "$($executionContext.SessionState.Path.CurrentLocation)"
         $path = "$(shorterPwdPath)"
 

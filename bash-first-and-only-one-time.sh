@@ -26,7 +26,7 @@ function nvmInstallNode(){
 }
 
 
-DEFAULT_NVM_VERSION=14
+DEFAULT_NVM_VERSION=14.19.1
 nvmInstallNode $DEFAULT_NVM_VERSION
 nvmInstallNode lts
 
