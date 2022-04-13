@@ -45,4 +45,5 @@ then
   installPackage default-jdk
   installPackage maven
   installPackage unzip
+  installPackage fd-find
 fi

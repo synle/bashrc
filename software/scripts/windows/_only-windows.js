@@ -71,6 +71,7 @@ cmd(){
 alias adb='adb.exe'
 alias fastboot='fastboot.exe'
 alias update='sudo apt-get update -y; sudo apt-get upgrade -y; sudo apt-get autoclean; sudo apt-get clean; sudo apt-get autoremove'
+alias find='fdfind'
   `.trim(),
   );
 }

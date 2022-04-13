@@ -49,6 +49,7 @@ then
   installPackage git
   installPackage jq
   installPackage pv
+  installPackage fd
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools
