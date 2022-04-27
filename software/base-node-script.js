@@ -262,6 +262,11 @@ function getWindowUserBaseDir() {
   return findDirSingle(BASE_WINDOW, /(leng)|(sy[ ]*le)/i);
 }
 
+/**
+ * @param  {String} applicationName Optional - the application name to be appended to the base path
+ * if present, we will attempt to make a new directory there
+ * @return {String} the full path to the application binary which can be used to install or download...
+ */
 async function getWindowsApplicationBinaryDir(applicationName) {
   let targetPath = findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
 
@@ -281,10 +286,16 @@ async function getWindowsApplicationBinaryDir(applicationName) {
   return targetPath;
 }
 
+/**
+ * @return {String} the path for app roaming dir for windows
+ */
 function getWindowAppDataRoamingUserPath() {
   return path.join(getWindowUserBaseDir(), 'AppData/Roaming');
 }
 
+/**
+ * @return {String} the path for app data local dir in windows
+ */
 function getWindowAppDataLocalUserPath() {
   return path.join(getWindowUserBaseDir(), 'AppData/Local');
 }
