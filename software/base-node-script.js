@@ -266,6 +266,25 @@ function getWindowsSyBinaryDir() {
   return findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
 }
 
+async function getNewWindowsSyBinaryDir(applicationName) {
+  let targetPath = findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
+
+  if (fs.existsSync(targetPath)) {
+    // push this binary into d drive
+    targetPath = path.join(targetPath, 'Applications');
+  } else {
+    // else use the extra folder
+    targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, 'windows');
+  }
+
+  if(applicationName){
+    targetPath = path.join(targetPath, applicationName);
+    await mkdir(targetPath);
+  }
+
+  return targetPath;
+}
+
 function getWindowAppDataRoamingUserPath() {
   return path.join(getWindowUserBaseDir(), 'AppData/Roaming');
 }
@@ -410,6 +429,36 @@ function downloadFile(url, destination) {
       .on('error', reject);
   });
 }
+
+async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
+  const files = await listRepoDir();
+
+  const filesToDownload = files.filter(findHandler);
+
+  const promises = [];
+  for (const file of filesToDownload) {
+    promises.push(
+      new Promise(async (resolve) => {
+        const destinationFile = path.join(destinationBaseDir, path.basename(file));
+
+        try {
+          const url = file;
+          const downloaded = await downloadFile(url, destinationFile);
+          if (downloaded === true) {
+            console.log(consoleLogColor3('      >> Downloaded'), consoleLogColor4(destinationFile));
+          }
+        } catch (err) {
+          console.log(consoleLogColor3('      >> Error Downloading'), consoleLogColor4(file));
+        }
+
+        resolve();
+      }),
+    );
+  }
+
+  return files;
+}
+
 
 async function listRepoDir() {
   const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
