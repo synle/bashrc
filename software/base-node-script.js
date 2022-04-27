@@ -262,11 +262,7 @@ function getWindowUserBaseDir() {
   return findDirSingle(BASE_WINDOW, /(leng)|(sy[ ]*le)/i);
 }
 
-function getWindowsSyBinaryDir() {
-  return findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
-}
-
-async function getNewWindowsSyBinaryDir(applicationName) {
+async function getWindowsApplicationBinaryDir(applicationName) {
   let targetPath = findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
 
   if (fs.existsSync(targetPath)) {
@@ -277,7 +273,7 @@ async function getNewWindowsSyBinaryDir(applicationName) {
     targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, 'windows');
   }
 
-  if(applicationName){
+  if (applicationName) {
     targetPath = path.join(targetPath, applicationName);
     await mkdir(targetPath);
   }
@@ -433,7 +429,7 @@ function downloadFile(url, destination) {
 async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
   const files = await listRepoDir();
 
-  const filesToDownload = files.filter(findHandler);
+  const filesToDownload = files.filter((s) => s.includes('binaries/') && !s.toLowerCase().includes('.md')).filter(findHandler);
 
   const promises = [];
   for (const file of filesToDownload) {
@@ -458,7 +454,6 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 
   return files;
 }
-
 
 async function listRepoDir() {
   const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;

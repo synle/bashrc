@@ -1,10 +1,11 @@
 async function doWork() {
-  const targetPath = await getNewWindowsSyBinaryDir('ngrok');
+  const applicationName = 'ngrok';
+  const targetPath = await getWindowsApplicationBinaryDir(applicationName);
 
-  console.log('  >> Download ngrok for Windows:', targetPath);
-  try{
-    downloadFilesFromMainRepo((f) => f.includes('ngrok.exe'), targetPath);
-  } catch(err){
+  console.log(`  >> Download ${applicationName} for Windows:`, targetPath);
+  try {
+    downloadFilesFromMainRepo((f) => f.includes(applicationName), targetPath);
+  } catch (err) {
     console.error('error', error);
   }
 }
