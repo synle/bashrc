@@ -1,9 +1,9 @@
-do_uninstall(){
+removeApp(){
   echo 'pm uninstall -k --user 0' $@
   pm uninstall -k --user 0 $@
 }
 
-do_setting(){
+changeSetting(){
   echo 'settings put' $@
   settings put $@
 }
@@ -14,80 +14,80 @@ do_setting(){
 pm grant com.google.android.dialer android.permission.WRITE_SECURE_SETTINGS
 
 # animation speed
-do_setting global window_animation_scale 0.33
-do_setting global transition_animation_scale 0.33
-do_setting global animator_duration_scale 0.33
+changeSetting global window_animation_scale 0.33
+changeSetting global transition_animation_scale 0.33
+changeSetting global animator_duration_scale 0.33
 
 # private dns
-do_setting global private_dns_mode hostname
-do_setting global private_dns_specifier security.cloudflare-dns.com # do_setting global private_dns_specifier one.one.one.one
+changeSetting global private_dns_mode hostname
+changeSetting global private_dns_specifier security.cloudflare-dns.com # changeSetting global private_dns_specifier one.one.one.one
 
 # tether dun fixed
-do_setting global tether_dun_required 0
+changeSetting global tether_dun_required 0
 
 # enable adb flags
-do_setting global adb_enabled 1
-do_setting global adb_wifi_enabled 0
+changeSetting global adb_enabled 1
+changeSetting global adb_wifi_enabled 0
 
 # enable auto time and tikmezone
-do_setting global auto_time 1
-do_setting global auto_time_zone 1
+changeSetting global auto_time 1
+changeSetting global auto_time_zone 1
 
 # enable data roaming
-do_setting global data_roaming 1
+changeSetting global data_roaming 1
 
 # enable cellular on boot
-do_setting global enable_cellular_on_boot 1
+changeSetting global enable_cellular_on_boot 1
 
 ######################################################################################
 ###### clean up bloats
 ######################################################################################
 ######################################################################################
-do_uninstall com.android.bips
-do_uninstall com.android.bookmarkprovider
-do_uninstall com.android.browser
-do_uninstall com.android.browser.provider
-do_uninstall com.android.chrome
-do_uninstall com.android.dreams.basic
-do_uninstall com.android.dreams.phototable
-do_uninstall com.android.egg
-do_uninstall com.android.galaxy4
-do_uninstall com.android.magicsmoke
-do_uninstall com.android.musicvis
-do_uninstall com.android.noisefield
-do_uninstall com.android.phasebeam
-do_uninstall com.android.quicksearchbox
-do_uninstall com.android.wallpapercropper
-do_uninstall com.audible.application
-do_uninstall com.example.android.notepad
-do_uninstall com.facebook.appmanager
-do_uninstall com.facebook.services
-do_uninstall com.facebook.system
-do_uninstall com.google.android.apps.tachyon
-do_uninstall com.google.android.googlequicksearchbox
-do_uninstall com.google.android.music
-do_uninstall com.google.android.printservice.recommendation
-do_uninstall com.google.android.projection.gearhead
-do_uninstall com.google.android.trichromelibrary_410410683
-do_uninstall com.google.android.trichromelibrary_438908634
-do_uninstall com.google.android.trichromelibrary_438909034
-do_uninstall com.google.android.trichromelibrary_438910534
-do_uninstall com.google.android.tts
-do_uninstall com.google.android.videos
-do_uninstall com.google.android.youtube
-do_uninstall com.google.ar.core
-do_uninstall com.google.audio.hearing.visualization.accessibility.scribe
-do_uninstall com.google.vr.vrcore
-do_uninstall com.microsoft.skydrive
-do_uninstall com.samsung.android.calendar
-do_uninstall com.sec.android.app.clockpackage
-do_uninstall com.sec.android.app.sbrowser
-do_uninstall flipboard.boxer.app
-do_uninstall com.dsi.ant.plugins.antplus
-do_uninstall com.dsi.ant.sample.acquirechannels
-do_uninstall com.dsi.ant.server
-do_uninstall com.dsi.ant.service.socket
-do_uninstall com.samsung.android.wellbeing
+removeApp com.android.bips
+removeApp com.android.bookmarkprovider
+removeApp com.android.browser
+removeApp com.android.browser.provider
+removeApp com.android.chrome
+removeApp com.android.dreams.basic
+removeApp com.android.dreams.phototable
+removeApp com.android.egg
+removeApp com.android.galaxy4
+removeApp com.android.magicsmoke
+removeApp com.android.musicvis
+removeApp com.android.noisefield
+removeApp com.android.phasebeam
+removeApp com.android.quicksearchbox
+removeApp com.android.wallpapercropper
+removeApp com.audible.application
+removeApp com.dsi.ant.plugins.antplus
+removeApp com.dsi.ant.sample.acquirechannels
+removeApp com.dsi.ant.server
+removeApp com.dsi.ant.service.socket
+removeApp com.example.android.notepad
+removeApp com.facebook.appmanager
+removeApp com.facebook.services
+removeApp com.facebook.system
+removeApp com.google.android.apps.tachyon
+removeApp com.google.android.googlequicksearchbox
+removeApp com.google.android.music
+removeApp com.google.android.printservice.recommendation
+removeApp com.google.android.projection.gearhead
+removeApp com.google.android.trichromelibrary_410410683
+removeApp com.google.android.trichromelibrary_438908634
+removeApp com.google.android.trichromelibrary_438909034
+removeApp com.google.android.trichromelibrary_438910534
+removeApp com.google.android.tts
+removeApp com.google.android.videos
+removeApp com.google.android.youtube
+removeApp com.google.ar.core
+removeApp com.google.audio.hearing.visualization.accessibility.scribe
+removeApp com.google.vr.vrcore
+removeApp com.microsoft.skydrive
+removeApp com.samsung.android.calendar
+removeApp com.samsung.android.wellbeing
+removeApp com.sec.android.app.clockpackage
+removeApp com.sec.android.app.sbrowser
+removeApp flipboard.boxer.app
 
 
 ######################################################################################

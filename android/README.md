@@ -2,11 +2,13 @@
 
 ```
 
-
-######################################################################################
-######################################################################################
+###########################################
 ### Core Commands
+# list disabled packages
 pm list packages -d
+
+# list users
+pm list users
 
 # disable the app
 pm disable-user --user 0 _some_package_
@@ -16,9 +18,14 @@ pm uninstall -k --user 0 _some_package_
 cmd package install-existing _some_package_
 pm enable _some_package_
 
+# Alias to know
+# function to remove an app
+function removeApp(){
+  echo "> Remove: " $@
+  pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
+}
 
-######################################################################################
-######################################################################################
+###########################################
 ###### Other commands
 settings list system
 settings list global
