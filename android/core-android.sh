@@ -14,9 +14,9 @@ changeSetting(){
 pm grant com.google.android.dialer android.permission.WRITE_SECURE_SETTINGS
 
 # animation speed
-changeSetting global window_animation_scale 0.33
-changeSetting global transition_animation_scale 0.33
-changeSetting global animator_duration_scale 0.33
+changeSetting global window_animation_scale 0.1
+changeSetting global transition_animation_scale 0.1
+changeSetting global animator_duration_scale 0.1
 
 # private dns
 changeSetting global private_dns_mode hostname
@@ -68,7 +68,7 @@ removeApp com.facebook.appmanager
 removeApp com.facebook.services
 removeApp com.facebook.system
 removeApp com.google.android.apps.tachyon
-removeApp com.google.android.googlequicksearchbox
+# removeApp com.google.android.googlequicksearchbox
 removeApp com.google.android.music
 removeApp com.google.android.printservice.recommendation
 removeApp com.google.android.projection.gearhead
@@ -82,13 +82,20 @@ removeApp com.google.android.youtube
 removeApp com.google.ar.core
 removeApp com.google.audio.hearing.visualization.accessibility.scribe
 removeApp com.google.vr.vrcore
-removeApp com.microsoft.skydrive
 removeApp com.samsung.android.calendar
 removeApp com.samsung.android.wellbeing
 removeApp com.sec.android.app.clockpackage
 removeApp com.sec.android.app.sbrowser
 removeApp flipboard.boxer.app
-
+removeApp com.swiftkey.swiftkeyconfigurator
+removeApp com.touchtype.swiftkey
+removeApp com.skype.raider # Skype
+removeApp com.microsoft.office.excel # Microsoft Excel
+removeApp com.microsoft.office.powerpoint # Microsoft PowerPoint
+removeApp com.microsoft.office.word # Microsoft Word
+removeApp com.microsoft.skydrive # Microsoft SkyDrive
+removeApp de.axelspringer.yana.zeropage # upday
+removeApp flipboard.boxer.app # Flipboard
 
 ######################################################################################
 ###### Done

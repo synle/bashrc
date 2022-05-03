@@ -35,5 +35,14 @@ settings list secure
 dumpsys package | grep "Package \[" | cut -d "\[" -f2 | cut -d "\]" -f1
 pm list packages | cut -d ":" -f2
 
+# https://adbshell.com/commands/adb-shell-pm-list-packages
+
+# list all packages including all uninstalled
+pm list packages -u
+
+# list all packages for a user
+pm list packages --user USER_ID
+
+
 ###### safe to remove
 ```

@@ -42,8 +42,10 @@ async function doWork() {
       Dracula Color Scheme
       FileIcons
       LESS
+      Package Control
       SCSS
       SideBarEnhancements
+      SublimeCodeIntel
       SyncedSideBar
       TypeScript
     `),
