@@ -18,7 +18,10 @@ pm uninstall -k --user 0 _some_package_
 cmd package install-existing _some_package_
 pm enable _some_package_
 
-# Alias to know
+# grant and revoke permission
+pm grant [package] android.permission.CAMERA
+pm revoke [package] android.permission.CAMERA
+
 # function to remove an app
 function removeApp(){
   echo "> Remove: " $@

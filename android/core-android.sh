@@ -14,9 +14,9 @@ changeSetting(){
 pm grant com.google.android.dialer android.permission.WRITE_SECURE_SETTINGS
 
 # animation speed
-changeSetting global window_animation_scale 0.1
-changeSetting global transition_animation_scale 0.1
-changeSetting global animator_duration_scale 0.1
+changeSetting global window_animation_scale 0.25
+changeSetting global transition_animation_scale 0.25
+changeSetting global animator_duration_scale 0.25
 
 # private dns
 changeSetting global private_dns_mode hostname

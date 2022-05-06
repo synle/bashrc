@@ -2,6 +2,8 @@ echo '>> Setting up WSL2 binary'
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
+echo '  >> wsl --set-default-version 2'
+
 # subl "$profile"
 # powershell.exe -command "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
