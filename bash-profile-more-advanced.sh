@@ -22,6 +22,9 @@ alias cd='z'
 # bat / cat setup
 alias cat='bat -p --paging=never'
 
+# fd
+alias find='fd'
+
 # entr setup
 # ls *.js | entr node main.js
 
