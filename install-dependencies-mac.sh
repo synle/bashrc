@@ -50,6 +50,8 @@ then
   installPackage jq
   installPackage pv
   installPackage fd
+  installPackage exa
+  installPackage zoxide
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools

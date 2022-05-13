@@ -47,4 +47,5 @@ then
   installPackage maven
   installPackage unzip
   installPackage fd-find
+  installPackage zoxide
 fi
