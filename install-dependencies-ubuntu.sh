@@ -36,6 +36,7 @@ then
   installPackage vim
   ###
   installPackage bat
+  installPackage exa
   installPackage fzf
   installPackage git
   installPackage jq

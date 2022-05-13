@@ -11,6 +11,10 @@ alias d='docker'
 alias drun='docker run'
 alias dexec='dexecBash'
 
+# other things
+alias ls="exa -1"
+alias ll="exa -la"
+
 
 ##########################################################
 # Pass a path to watch, a file filter, and a command to run when those files are updated
