@@ -52,6 +52,7 @@ then
   installPackage fd
   installPackage exa
   installPackage zoxide
+  installPackage entr
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools

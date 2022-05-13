@@ -15,6 +15,12 @@ alias dexec='dexecBash'
 alias ls="exa -1"
 alias ll="exa -la"
 
+# zoxide setup
+eval "$(zoxide init bash)"
+alias cd='z'
+
+# entr setup
+# ls *.js | entr node main.js
 
 ##########################################################
 # Pass a path to watch, a file filter, and a command to run when those files are updated

@@ -48,4 +48,5 @@ then
   installPackage unzip
   installPackage fd-find
   installPackage zoxide
+  installPackage entr
 fi
