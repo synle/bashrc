@@ -19,6 +19,9 @@ alias ll="exa -la"
 eval "$(zoxide init bash)"
 alias cd='z'
 
+# bat / cat setup
+alias cat='bat -p --paging=never'
+
 # entr setup
 # ls *.js | entr node main.js
 
