@@ -234,7 +234,6 @@ npm install --platform=win32
 ./node_modules/.bin/electron --disable-gpu-sandbox .
 ```
 
-
 ### Image / Video extensions
 
 These are extensions to view videos and images from newer iphones and android phones:
