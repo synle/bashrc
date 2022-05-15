@@ -1,10 +1,10 @@
 # Source: https://gist.githubusercontent.com/gsurrel/40cc506ac7e31134a87be4ba01a71103/raw/58fbcca4f05b3240fb045d671e82d3ded7d19f26/Galaxy_S8_Debloat.sh
 #
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/android/core-android.sh | sh
+curl -s "https://raw.githubusercontent.com/synle/bashrc/master/android/Core Android.sh" | sh
 
 function removeApp(){
   echo "> Remove:" $@
-  pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
+  pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
 ## Bloated apps

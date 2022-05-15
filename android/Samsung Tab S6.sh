@@ -1,8 +1,8 @@
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/android/core-android.sh | sh
+curl -s "https://raw.githubusercontent.com/synle/bashrc/master/android/Core Android.sh" | sh
 
 function removeApp(){
   echo "> Remove: " $@
-  pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
+  pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
 ## https://forum.xda-developers.com/galaxy-s10/how-to/galaxy-s10-s10-debloat-bloatware-t3912073

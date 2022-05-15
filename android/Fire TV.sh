@@ -1,6 +1,6 @@
 function removeApp(){
   echo "> Remove: " $@
-  pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
+  pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
 #https://www.techdoctoruk.com/firestick-debloat-tool/

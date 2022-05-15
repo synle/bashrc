@@ -1,9 +1,9 @@
-removeApp(){
+function removeApp(){
   echo 'pm uninstall -k --user 0' $@
   pm uninstall -k --user 0 $@
 }
 
-changeSetting(){
+function changeSetting(){
   echo 'settings put' $@
   settings put $@
 }
@@ -29,7 +29,7 @@ changeSetting global tether_dun_required 0
 changeSetting global adb_enabled 1
 changeSetting global adb_wifi_enabled 0
 
-# enable auto time and tikmezone
+# enable auto time and timezone
 changeSetting global auto_time 1
 changeSetting global auto_time_zone 1
 

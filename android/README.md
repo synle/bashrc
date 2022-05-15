@@ -25,7 +25,7 @@ pm revoke [package] android.permission.CAMERA
 # function to remove an app
 function removeApp(){
   echo "> Remove: " $@
-  pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
+  pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
 ###########################################
