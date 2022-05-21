@@ -96,6 +96,11 @@ removeApp com.microsoft.office.word # Microsoft Word
 removeApp com.microsoft.skydrive # Microsoft SkyDrive
 removeApp de.axelspringer.yana.zeropage # upday
 removeApp flipboard.boxer.app # Flipboard
+removeApp com.google.android.youtube
+removeApp com.microsoft.skydrive
+removeApp com.google.android.apps.tachyon
+removeApp com.microsoft.appmanager
+removeApp com.microsoft.skydrive
 
 ######################################################################################
 ###### Done
