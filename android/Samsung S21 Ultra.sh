@@ -49,6 +49,7 @@ removeApp com.swiftkey.swiftkeyconfigurator
 removeApp com.touchtype.swiftkey
 removeApp com.android.cts.ctsshim # Part of the Android Compatibility Test Suite: https://source.android.com/compatibility/cts/setup
 removeApp com.android.cts.priv.ctsshim ## Part of the Android Compatibility Test Suite: https://source.android.com/compatibility/cts/setup
+removeApp com.samsung.android.calendar # samsung calendar
 
 # Samsing SmartSwitch
 removeApp com.samsung.android.smartswitchassistant # Samsung SmartSwitch
