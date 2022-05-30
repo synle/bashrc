@@ -8,6 +8,7 @@ removeApp air.ITVMobilePlayer
 removeApp com.amazon.music.tv
 removeApp com.google.android.play.games
 removeApp com.google.android.videos
+removeApp com.google.android.videos
 removeApp com.google.android.youtube.tv
 removeApp com.google.android.youtube.tvkids
 removeApp com.google.android.youtube.tvmusic
@@ -19,4 +20,3 @@ removeApp com.nvidia.benchmarkblocker
 removeApp com.pandora.android.atv
 removeApp com.seraphic.browser
 removeApp com.zattoo.player
-removeApp com.google.android.videos
