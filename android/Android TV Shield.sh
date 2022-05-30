@@ -19,3 +19,4 @@ removeApp com.nvidia.benchmarkblocker
 removeApp com.pandora.android.atv
 removeApp com.seraphic.browser
 removeApp com.zattoo.player
+removeApp com.google.android.videos
