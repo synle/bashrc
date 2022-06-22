@@ -17,6 +17,7 @@ globalThis.EDITOR_CONFIGS = {
   tabSize: 2,
   maxLineSize: 140,
   ignoredFiles: [
+    '*.rej',
     '*.class',
     '*.db',
     '*.dll',
@@ -68,8 +69,10 @@ globalThis.EDITOR_CONFIGS = {
     'bower_components',
     'build',
     'CVS',
+    'dist',
     'node_modules',
     'tmp',
+    'webpack-dist',
   ],
 };
 
