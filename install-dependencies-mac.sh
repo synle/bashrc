@@ -28,7 +28,7 @@ then
   if [[ $hasHomebrewInstalled == "0" ]]
   then
     echo '>> Installing Homebrew Package Manager'
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
 
 
