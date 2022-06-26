@@ -55,6 +55,8 @@ globalThis.EDITOR_CONFIGS = {
     '*.zip',
     '.DS_Store',
     '.eslintcache',
+    "yarn.lock",
+    "package-lock.json",
   ],
   ignoredFolders: [
     '.cache',
