@@ -10,11 +10,28 @@ globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
 /**
  * config used for the editors
  * @type {Object}
+
+ *if you need to override these with your local settings, use the following
+ export FONT_SIZE=15;
+ export FONT_FAMILY='Fira Code'
+ export TAB_SIZE=2
  */
+let fontSize = parseInt(process.env.FONT_SIZE);
+if(fontSize <= 10){
+  fontSize = 10;
+}
+
+const fontFamily = process.env.FONT_FAMILY || 'Fira Code';
+
+let tabSize = parseInt(process.env.TAB_SIZE);
+if(tabSize <= 2){
+  tabSize = 2;
+}
+
 globalThis.EDITOR_CONFIGS = {
-  fontSize: 10,
-  fontFamily: 'Fira Code',
-  tabSize: 2,
+  fontSize,
+  fontFamily,
+  tabSize,
   maxLineSize: 140,
   ignoredFiles: [
     '*.rej',
