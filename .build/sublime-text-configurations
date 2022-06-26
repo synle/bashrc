@@ -30,6 +30,7 @@
   "hardware_acceleration": "opengl",
   "theme": "Adaptive.sublime-theme",
   "file_exclude_patterns": [
+    "*.rej",
     "*.class",
     "*.db",
     "*.dll",
@@ -66,7 +67,9 @@
     "*.woff2",
     "*.zip",
     ".DS_Store",
-    ".eslintcache"
+    ".eslintcache",
+    "yarn.lock",
+    "package-lock.json"
   ],
   "folder_exclude_patterns": [
     ".cache",
@@ -81,8 +84,10 @@
     "bower_components",
     "build",
     "CVS",
+    "dist",
     "node_modules",
-    "tmp"
+    "tmp",
+    "webpack-dist"
   ],
   "alignment_chars": [
     "=",

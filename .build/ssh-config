@@ -20,11 +20,19 @@ Host sy-macpro
   HostName 192.168.1.22
   Port 22
 
-Host sy-mbp
+Host sy-mbp16
+  HostName 192.168.1.23
+  Port 22
+
+Host sy-mbp16-intel
   HostName 192.168.1.23
   Port 22
 
 Host sy-macbookpro-16
+  HostName 192.168.1.23
+  Port 22
+
+Host sy-macbookpro-16-intel
   HostName 192.168.1.23
   Port 22
 

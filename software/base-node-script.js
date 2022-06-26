@@ -17,14 +17,14 @@ globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
  export TAB_SIZE=2
  */
 let fontSize = parseInt(process.env.FONT_SIZE);
-if(fontSize <= 10){
+if (fontSize <= 10) {
   fontSize = 10;
 }
 
 const fontFamily = process.env.FONT_FAMILY || 'Fira Code';
 
 let tabSize = parseInt(process.env.TAB_SIZE);
-if(tabSize <= 2){
+if (tabSize <= 2) {
   tabSize = 2;
 }
 
@@ -72,8 +72,8 @@ globalThis.EDITOR_CONFIGS = {
     '*.zip',
     '.DS_Store',
     '.eslintcache',
-    "yarn.lock",
-    "package-lock.json",
+    'yarn.lock',
+    'package-lock.json',
   ],
   ignoredFolders: [
     '.cache',
