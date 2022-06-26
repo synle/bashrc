@@ -53,6 +53,8 @@ then
   installPackage exa
   installPackage zoxide
   installPackage entr
+  installPackage java
+  installPackage python
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools
