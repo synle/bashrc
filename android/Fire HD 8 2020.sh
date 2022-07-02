@@ -1,6 +1,7 @@
 # Launcher Hijack
-# https://github.com/BaronKiko/LauncherHijack/releases
-# https://teleread.org/2018/07/07/how-to-install-a-new-launcher-on-amazons-fire-tablet/ 
+# https://www.androidpolice.com/2020/07/23/how-to-make-your-amazon-fire-tablet-feel-more-like-stock-android/
+# install a launcher first
+# pm disable-user --user 0 com.amazon.firelauncher
 
 ## safe
 pm disable-user amazon.alexa.tablet
