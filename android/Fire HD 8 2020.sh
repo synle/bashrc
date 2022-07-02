@@ -1,3 +1,7 @@
+# Launcher Hijack
+# https://github.com/BaronKiko/LauncherHijack/releases
+# https://teleread.org/2018/07/07/how-to-install-a-new-launcher-on-amazons-fire-tablet/ 
+
 ## safe
 pm disable-user amazon.alexa.tablet
 pm disable-user com.amazon.alexa.modeswitch
