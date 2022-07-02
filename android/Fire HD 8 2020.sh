@@ -19,6 +19,16 @@ pm disable-user com.amazon.dp.contacts
 pm disable-user com.amazon.dp.fbcontacts
 pm disable-user com.android.contacts
 
+### Calemndar
+pm disable-user com.android.calendar
+pm disable-user com.amazon.photos.importer
+
+### Map
+pm disable-user com.amazon.geo.mapsv3.services
+pm disable-user com.amazon.geo.mapsv3.resources
+pm disable-user com.amazon.geo.mapsv2
+pm disable-user com.amazon.geo.client.maps
+
 ### Kindle
 pm disable-user com.goodreads.kindle
 pm disable-user com.audible.application.kindle
