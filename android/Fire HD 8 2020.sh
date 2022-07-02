@@ -7,15 +7,33 @@ pm disable-user com.amazon.kor.demo
 pm disable-user com.amazon.photos
 pm disable-user com.android.email
 pm disable-user com.android.calculator2
-pm disable-user com.goodreads.kindle
 pm disable-user com.amazon.weather
-pm disable-user com.audible.application.kindle
 pm disable-user jp.co.omronsoft.iwnnime.languagepack.kokr_az
 pm disable-user jp.co.omronsoft.iwnnime.languagepack.zhcn_az
 pm disable-user jp.co.omronsoft.iwnnime.languagepack.zhtw_az
 pm disable-user jp.co.omronsoft.iwnnime.mlaz
 pm disable-user jp.co.omronsoft.iwnnime.mlazPackage 
 
+### Contacts
+pm disable-user com.amazon.dp.contacts
+pm disable-user com.amazon.dp.fbcontacts
+pm disable-user com.android.contacts
+
+### Kindle
+pm disable-user com.goodreads.kindle
+pm disable-user com.audible.application.kindle
+pm disable-user com.amazon.kindle.otter.oobe.forced.ota
+pm disable-user com.amazon.ods.kindleconnect
+pm disable-user com.amazon.kindle.personal_video
+pm disable-user com.amazon.kindle.kso
+pm disable-user com.amazon.kindleautomatictimezone
+pm disable-user com.amazon.kindle.starsight
+pm disable-user com.amazon.kindle.otter.oobe
+pm disable-user com.audible.application.kindle
+pm disable-user com.amazon.kindle.unifiedSearch
+pm disable-user com.goodreads.kindle
+pm disable-user com.amazon.kindle.rdmdeviceadmin
+pm disable-user com.amazon.kindle
 
 ## packages removed
 pm disable-user amazon.alexa.tablet
