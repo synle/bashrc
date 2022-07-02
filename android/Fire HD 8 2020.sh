@@ -29,6 +29,12 @@ pm disable-user com.amazon.geo.mapsv3.resources
 pm disable-user com.amazon.geo.mapsv2
 pm disable-user com.amazon.geo.client.maps
 
+### Silk Browser
+pm disable-user com.amazon.cloud9.systembrowserprovider
+pm disable-user com.amazon.cloud9.contentservice
+pm disable-user com.amazon.cloud9
+pm disable-user com.amazon.cloud9.kids
+
 ### Kindle
 pm disable-user com.goodreads.kindle
 pm disable-user com.audible.application.kindle
