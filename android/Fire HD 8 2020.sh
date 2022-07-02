@@ -6,11 +6,16 @@ pm disable-user com.amazon.alexa.youtube.app
 pm disable-user com.amazon.kor.demo
 pm disable-user com.amazon.photos
 pm disable-user com.android.email
+pm disable-user com.android.calculator2
+pm disable-user com.goodreads.kindle
+pm disable-user com.amazon.weather
+pm disable-user com.audible.application.kindle
 pm disable-user jp.co.omronsoft.iwnnime.languagepack.kokr_az
 pm disable-user jp.co.omronsoft.iwnnime.languagepack.zhcn_az
 pm disable-user jp.co.omronsoft.iwnnime.languagepack.zhtw_az
 pm disable-user jp.co.omronsoft.iwnnime.mlaz
 pm disable-user jp.co.omronsoft.iwnnime.mlazPackage 
+
 
 ## packages removed
 pm disable-user amazon.alexa.tablet
