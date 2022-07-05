@@ -64,6 +64,8 @@ pm disable-user com.android.calendar # calendar
 pm disable-user com.android.email # email
 pm disable-user com.amazon.geo.client.maps # maps
 pm disable-user com.amazon.kindle.kso # amazon offers
+pm disable-user com.amazon.zico # amazon docs
+pm disable-user com.amazon.csapp# amazon offers
 
 ## packages removed
 pm disable-user amazon.jackson19
