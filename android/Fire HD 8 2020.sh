@@ -73,6 +73,9 @@ removeApp com.amazon.geo.client.maps # maps
 removeApp com.amazon.kindle.kso # amazon offers
 removeApp com.amazon.zico # amazon docs
 removeApp com.amazon.csapp# amazon offers
+removeApp com.amazon.dee.app # amazon alexa
+removeApp com.amazon.ags.app # amazon game circle
+removeApp com.amazon.mp3 # amazon music
 
 ## packages removed
 removeApp amazon.jackson19
