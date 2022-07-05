@@ -53,6 +53,10 @@ pm disable-user com.amazon.kindle.otter.oobe
 pm disable-user com.amazon.kindle.unifiedSearch
 pm disable-user com.amazon.kindle.rdmdeviceadmin
 pm disable-user com.amazon.kindle
+
+pm disable-user com.amazon.imdb.tv.mobile.app ### Freevee IMDB
+pm disable-user com.android.documentsui # doc ui
+
 ## packages removed
 pm disable-user amazon.jackson19
 pm disable-user amazon.speech.audiostreamproviderservice
