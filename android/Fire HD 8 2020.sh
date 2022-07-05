@@ -1,7 +1,8 @@
 function removeApp(){
   echo 'pm uninstall -k --user 0' $@
-  pm uninstall -k --user 0 $@
+  pm hide $@
   pm disable-user $@
+  pm uninstall -k --user 0 $@
 }
 
 
