@@ -54,8 +54,16 @@ pm disable-user com.amazon.kindle.unifiedSearch
 pm disable-user com.amazon.kindle.rdmdeviceadmin
 pm disable-user com.amazon.kindle
 
+### Misc
 pm disable-user com.amazon.imdb.tv.mobile.app ### Freevee IMDB
 pm disable-user com.android.documentsui # doc ui
+pm disable-user com.amazon.tahoe # amazon kids
+pm disable-user com.amazon.venezia # amazon store
+pm disable-user com.android.calculator2 # calculator
+pm disable-user com.android.calendar # calendar
+pm disable-user com.android.email # email
+pm disable-user com.amazon.geo.client.maps # maps
+pm disable-user com.amazon.kindle.kso # amazon offers
 
 ## packages removed
 pm disable-user amazon.jackson19
