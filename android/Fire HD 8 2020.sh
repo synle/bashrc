@@ -3,6 +3,7 @@ function removeApp(){
   pm hide $@
   pm disable-user $@
   pm uninstall -k --user 0 $@
+  cmd appops set $@ RUN_IN_BACKGROUND ignore
 }
 
 # Launcher Hijack
