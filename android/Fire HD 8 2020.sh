@@ -5,7 +5,6 @@ function removeApp(){
   pm uninstall -k --user 0 $@
 }
 
-
 # Launcher Hijack
 # https://www.androidpolice.com/2020/07/23/how-to-make-your-amazon-fire-tablet-feel-more-like-stock-android/
 # install a launcher first
@@ -63,22 +62,68 @@ removeApp com.amazon.kindle.rdmdeviceadmin
 removeApp com.amazon.kindle
 
 ### Misc
-removeApp com.amazon.imdb.tv.mobile.app ### Freevee IMDB
-removeApp com.android.documentsui # doc ui
-removeApp com.amazon.tahoe # amazon kids
-removeApp com.amazon.venezia # amazon store
-removeApp com.android.calculator2 # calculator
-removeApp com.android.calendar # calendar
-removeApp com.android.email # email
-removeApp com.amazon.geo.client.maps # maps
-removeApp com.amazon.kindle.kso # amazon offers
-removeApp com.amazon.zico # amazon docs
-removeApp com.amazon.csapp# amazon offers
-removeApp com.amazon.dee.app # amazon alexa
-removeApp com.amazon.ags.app # amazon game circle
-removeApp com.amazon.mp3 # amazon music
 
-## packages removed
+#### Freevee IMDB
+removeApp com.amazon.imdb.tv.mobile.app 
+
+#### doc ui
+removeApp com.android.documentsui 
+
+#### amazon kids
+removeApp com.amazon.tahoe 
+
+#### amazon store
+removeApp com.amazon.venezia 
+
+#### calculator
+removeApp com.android.calculator2 
+
+#### calendar
+removeApp com.android.calendar 
+
+#### email
+removeApp com.android.email 
+
+#### maps
+removeApp com.amazon.geo.client.maps 
+
+#### amazon offers
+removeApp com.amazon.kindle.kso 
+
+#### amazon docs
+removeApp com.amazon.zico 
+removeApp com.amazon.csapp 
+
+#### amazon alexa
+removeApp com.amazon.dee.app 
+
+#### amazon game circle
+removeApp com.amazon.ags.app 
+
+#### amazon music
+removeApp com.amazon.mp3 
+
+### Other misc
+removeApp com.amazon.legalsettings
+removeApp com.amazon.device.software.ota
+removeApp com.amazon.device.software.ota.override
+removeApp com.amazon.platform 
+removeApp com.amazon.settings.systemupdates
+removeApp com.amazon.avod
+removeApp com.amazon.kindle.cms
+removeApp com.amazon.webapp
+removeApp com.amazon.tahoe
+removeApp com.amazon.iris
+removeApp com.amazon.venezia
+removeApp com.amazon.unifiedsharegoodreads
+removeApp com.amazon.ags.app
+removeApp com.amazon.geo.mapsv2.services
+removeApp com.amazon.windowshop
+removeApp com.amazon.csapp
+removeApp com.amazon.dee.app
+removeApp com.amazon.mp3
+
+### Could be dangerous packages removed
 removeApp amazon.jackson19
 removeApp amazon.speech.audiostreamproviderservice
 removeApp amazon.speech.davs.davcservice
@@ -87,13 +132,11 @@ removeApp amazon.speech.wakewordservice
 removeApp android.amazon.perm
 removeApp com.amazon.aca
 removeApp com.amazon.accessorynotifier
-removeApp com.amazon.ags.app
 removeApp com.amazon.alta.h2clientservice
 removeApp com.amazon.android.marketplace
 removeApp com.amazon.application.compatibility.enforcer
 removeApp com.amazon.application.compatibility.enforcer.sdk.library
 removeApp com.amazon.ava.shopping.android
-removeApp com.amazon.avod
 removeApp com.amazon.bioscope
 removeApp com.amazon.cardinal
 removeApp com.amazon.client.metrics
@@ -104,11 +147,9 @@ removeApp com.amazon.comms.knightmessaging
 removeApp com.amazon.comms.multimodaltachyonarm
 removeApp com.amazon.communication.discovery
 removeApp com.amazon.connectivitydiag
-removeApp com.amazon.csapp
 removeApp com.amazon.dcp
 removeApp com.amazon.dcp.contracts.framework.library
 removeApp com.amazon.dcp.contracts.library
-removeApp com.amazon.dee.app
 removeApp com.amazon.device.backup
 removeApp com.amazon.device.backup.sdk.internal.library
 removeApp com.amazon.device.crashmanager
@@ -120,8 +161,6 @@ removeApp com.amazon.device.metrics
 removeApp com.amazon.device.sale.service
 removeApp com.amazon.device.settings
 removeApp com.amazon.device.settings.sdk.internal.library
-removeApp com.amazon.device.software.ota
-removeApp com.amazon.device.software.ota.override
 removeApp com.amazon.device.sync
 removeApp com.amazon.device.sync.sdk.internal
 removeApp com.amazon.diode
@@ -129,21 +168,16 @@ removeApp com.amazon.dp.logger
 removeApp com.amazon.fireinputdevices
 removeApp com.amazon.firelauncher
 removeApp com.amazon.geo.kms.client
-removeApp com.amazon.geo.mapsv2.services
 removeApp com.amazon.glorialist
 removeApp com.amazon.h2settingsfortablet
 removeApp com.amazon.identity.auth.device.authorization
 removeApp com.amazon.imdb.tv.mobile.app
 removeApp com.amazon.imp
-removeApp com.amazon.iris
-removeApp com.amazon.kindle.cms
 removeApp com.amazon.knight.blink
 removeApp com.amazon.knight.calendar
 removeApp com.amazon.knight.ecs
 removeApp com.amazon.knight.hds
-removeApp com.amazon.legalsettings
 removeApp com.amazon.logan
-removeApp com.amazon.mp3
 removeApp com.amazon.nimh
 removeApp com.amazon.paladin
 removeApp com.amazon.parentalcontrols
@@ -155,7 +189,6 @@ removeApp com.amazon.readynowcore
 removeApp com.amazon.recess
 removeApp com.amazon.redstone
 removeApp com.amazon.securitysyncclient
-removeApp com.amazon.settings.systemupdates
 removeApp com.amazon.sharingservice.android.client.proxy
 removeApp com.amazon.shpm
 removeApp com.amazon.smartgenie
@@ -165,20 +198,16 @@ removeApp com.amazon.sync.provider.ipc
 removeApp com.amazon.sync.service
 removeApp com.amazon.tablet.dock.settings
 removeApp com.amazon.tabletsubscriptions
-removeApp com.amazon.tahoe
 removeApp com.amazon.tcomm
 removeApp com.amazon.tcomm.client
 removeApp com.amazon.tv.launcher
 removeApp com.amazon.tv.ottssocompanionapp
-removeApp com.amazon.venezia
 removeApp com.amazon.virtual.dash.knight.app
-removeApp com.amazon.webapp
 removeApp com.amazon.whisperlink.activityview.android
 removeApp com.amazon.whisperlink.core.android
 removeApp com.amazon.whisperplay.contracts
 removeApp com.amazon.whisperplay.service.install
 removeApp com.amazon.wifilocker
-removeApp com.amazon.windowshop
 removeApp com.amazon.wirelessmetrics.service
 removeApp com.amazon.zico
 removeApp com.amazon.zordon
