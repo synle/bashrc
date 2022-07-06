@@ -54,6 +54,21 @@ function listPermissions(){
 
 ### Remove permission
 function removePermissionLocation(){
+  # ignore the following
+  # com.android.phone
+  # com.chase.sig.android
+  # com.coulombtech # chargepoint
+  # com.dd.doordash
+  # com.google.android.apps.tycho # google fi
+  # com.google.android.calendar
+  # com.target.ui # target
+  # com.teslacoilsw.launcher # nova
+  # com.teslamotors.tesla # tesla
+  # com.yelp.android
+  # com.google.android.apps.maps # google map
+  # com.google.android.googlequicksearchbox # google now
+  # echo $1
+
   pm revoke $@ android.permission.ACCESS_COARSE_LOCATION
   pm revoke $@ android.permission.ACCESS_FINE_LOCATION
 }
