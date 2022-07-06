@@ -48,11 +48,15 @@ pm list packages --user USER_ID
 
 
 ### Get permission
-dumpsys package com.brave.browser | grep permission
+function listPermissions(){
+  dumpsys package $@ | grep "granted=true" | grep permission  
+}
 
 ### Remove permission
-pm revoke com.brave.browser android.permission.ACCESS_COARSE_LOCATION
-pm revoke com.brave.browser android.permission.ACCESS_FINE_LOCATION
+function removePermissionLocation(){
+  pm revoke $@ android.permission.ACCESS_COARSE_LOCATION
+  pm revoke $@ android.permission.ACCESS_FINE_LOCATION
+}
 
 ###### safe to remove
 ```
