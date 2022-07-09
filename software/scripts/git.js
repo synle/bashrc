@@ -110,6 +110,7 @@ pu = pull
 r = rebase
 ri = rebase -i
 s = status -sb
+tags = tag --list
 `
     .replace('###EMAIL', email)
     .replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs);
