@@ -110,7 +110,8 @@ pu = pull
 r = rebase
 ri = rebase -i
 s = status -sb
-tags = tag --list
+tagss = tag --list
+tags = ls-remote --tags origin
 `
     .replace('###EMAIL', email)
     .replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs);
