@@ -109,6 +109,7 @@ pof2 = push origin2 --force
 pu = pull
 r = rebase
 ri = rebase -i
+riheadlast5 = rebase -i HEAD^^^^^
 s = status -sb
 tagss = tag --list
 tags = ls-remote --tags origin

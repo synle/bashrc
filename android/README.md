@@ -49,7 +49,7 @@ pm list packages --user USER_ID
 
 ### Get permission
 function listPermissions(){
-  dumpsys package $@ | grep "granted=true" | grep permission  
+  dumpsys package $@ | grep "granted=true" | grep permission
 }
 
 ### Remove permission
