@@ -1,6 +1,8 @@
 // guide: refer to this
 // https://docs.microsoft.com/en-us/windows/terminal/get-started
 // https://docs.microsoft.com/en-us/windows/terminal/customize-settings/key-bindings#accepted-modifiers-and-keys
+//
+const historySize = 50000;
 
 async function doWork() {
   const targetPath = path.join(_getPath(), 'LocalState/settings.json');
@@ -121,6 +123,7 @@ async function doWork() {
       fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),
       padding: '2 0 2 0',
       bellStyle: 'all',
+      historySize,
       // useAcrylic: true,
     });
 
