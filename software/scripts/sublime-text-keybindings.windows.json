@@ -123,21 +123,6 @@
     "command": "find_under_expand"
   },
   {
-    "key": "alt+f",
-    "command": "show_panel",
-    "args": {
-      "panel": "find",
-      "reverse": false
-    }
-  },
-  {
-    "key": "alt+shift+f",
-    "command": "show_panel",
-    "args": {
-      "panel": "find_in_files"
-    }
-  },
-  {
     "key": "alt+shift+n",
     "command": "new_window"
   },

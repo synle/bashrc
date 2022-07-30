@@ -71,6 +71,35 @@
     ]
   },
   {
+    "keys": [
+      "super+h"
+    ],
+    "command": "show_panel",
+    "args": {
+      "panel": "replace",
+      "reverse": false
+    }
+  },
+  {
+    "command": "show_panel",
+    "args": {
+      "panel": "find",
+      "reverse": false
+    },
+    "keys": [
+      "super+f"
+    ]
+  },
+  {
+    "command": "show_panel",
+    "args": {
+      "panel": "find_in_files"
+    },
+    "keys": [
+      "super+shift+f"
+    ]
+  },
+  {
     "command": "select_by_index",
     "args": {
       "index": 0

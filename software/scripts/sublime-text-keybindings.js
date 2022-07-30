@@ -106,6 +106,22 @@ async function doInit() {
       key: 'OS_KEY+shift+k',
       command: 'find_all_under',
     },
+    { keys: ['OS_KEY+h'], command: 'show_panel', args: { panel: 'replace', reverse: false } },
+    {
+      key: 'OS_KEY+f',
+      command: 'show_panel',
+      args: {
+        panel: 'find',
+        reverse: false,
+      },
+    },
+    {
+      key: 'OS_KEY+shift+f',
+      command: 'show_panel',
+      args: {
+        panel: 'find_in_files',
+      },
+    },
 
     // splits
     // split navigation
