@@ -90,6 +90,24 @@
     "command": "workbench.action.openEditorAtIndex9"
   },
   {
+    "key": "alt+h",
+    "command": "editor.action.startFindReplaceAction",
+    "when": "editorFocus || editorIsOpen"
+  },
+  {
+    "key": "alt+h",
+    "command": "testing.toggleTestingPeekHistory",
+    "when": "testing.isPeekVisible"
+  },
+  {
+    "key": "alt+f",
+    "command": "actions.find"
+  },
+  {
+    "key": "alt+shift+f",
+    "command": "workbench.action.findInFiles"
+  },
+  {
     "key": "alt+shift+p",
     "command": "workbench.action.showCommands"
   },
@@ -106,14 +124,6 @@
     "key": "alt+left",
     "command": "cursorHome",
     "when": "textInputFocus"
-  },
-  {
-    "key": "alt+f",
-    "command": "actions.find"
-  },
-  {
-    "key": "alt+shift+f",
-    "command": "workbench.action.findInFiles"
   },
   {
     "key": "alt+shift+h",

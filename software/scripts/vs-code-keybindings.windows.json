@@ -18,14 +18,6 @@
     "when": "textInputFocus"
   },
   {
-    "key": "alt+f",
-    "command": "actions.find"
-  },
-  {
-    "key": "alt+shift+f",
-    "command": "workbench.action.findInFiles"
-  },
-  {
     "key": "alt+shift+h",
     "command": "workbench.action.replaceInFiles"
   },

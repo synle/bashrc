@@ -97,6 +97,17 @@ async function doInit() {
     { key: 'OS_KEY+7', command: 'workbench.action.openEditorAtIndex7' },
     { key: 'OS_KEY+8', command: 'workbench.action.openEditorAtIndex8' },
     { key: 'OS_KEY+9', command: 'workbench.action.openEditorAtIndex9' },
+
+    { key: 'OS_KEY+h', command: 'editor.action.startFindReplaceAction', when: 'editorFocus || editorIsOpen' },
+    { key: 'OS_KEY+h', command: 'testing.toggleTestingPeekHistory', when: 'testing.isPeekVisible' },
+    {
+      key: 'OS_KEY+f',
+      command: 'actions.find',
+    },
+    {
+      key: 'OS_KEY+shift+f',
+      command: 'workbench.action.findInFiles',
+    },
   ];
   // end COMMON_KEY_BINDINGS
 }
