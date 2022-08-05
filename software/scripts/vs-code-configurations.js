@@ -18,6 +18,7 @@ async function doInit() {
     'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
     'editor.fontLigatures': true,
     'editor.fontSize': EDITOR_CONFIGS.fontSize,
+    'terminal.integrated.fontSize': EDITOR_CONFIGS.fontSize,
     'editor.fontWeight': '500',
     'editor.formatOnPaste': true,
     'editor.maxTokenizationLineLength': 10000,
@@ -46,7 +47,7 @@ async function doInit() {
     // specific typescript
     'typescript.updateImportsOnFileMove.enabled': 'always',
     'typescript.inlayHints.variableTypes.enabled': true,
-    'window.zoomLevel': 1,
+    'window.zoomLevel': 0.5,
     'workbench.colorTheme': 'Dracula Soft',
     'workbench.editor.showTabs': true,
     'workbench.editor.tabCloseButton': 'off',
