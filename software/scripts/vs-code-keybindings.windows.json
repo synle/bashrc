@@ -214,5 +214,15 @@
     "key": "alt+`",
     "command": "workbench.action.terminal.toggleTerminal",
     "when": "terminal.active"
+  },
+  {
+    "key": "alt+g",
+    "command": "editor.action.moveSelectionToNextFindMatch",
+    "when": "editorFocus"
+  },
+  {
+    "key": "alt+shift+g",
+    "command": "editor.action.moveSelectionToPreviousFindMatch",
+    "when": "editorFocus"
   }
 ]

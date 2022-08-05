@@ -2,7 +2,6 @@ async function doWork() {
   if (is_os_window) {
     const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(`
       aaron-bond.better-comments
-      abusaidm.html-snippets
       andrejunges.Handlebars
       bierner.folder-source-actions
       christian-kohler.npm-intellisense
