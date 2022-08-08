@@ -234,6 +234,12 @@ npm install --platform=win32
 ./node_modules/.bin/electron --disable-gpu-sandbox .
 ```
 
+### Allow WSL Firewall Network Interface
+
+```bash
+New-NetFirewallRule -DisplayName "_Sy Inbound WSL" -Direction Inbound  -InterfaceAlias "vEthernet (WSL)"  -Action Allow
+```
+
 ### Image / Video extensions
 
 These are extensions to view videos and images from newer iphones and android phones:
