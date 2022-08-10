@@ -52,11 +52,11 @@ Host sy-asus-g15
   HostName 192.168.1.25
   Port 2222
 
-Host sy-alienware
+Host sy-dell-xps
   HostName 192.168.1.26
   Port 2222
 
-Host sy-alienware-15
+Host sy-dell-xps-15
   HostName 192.168.1.26
   Port 2222
 
