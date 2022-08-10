@@ -2,6 +2,12 @@
 
 https://docs.microsoft.com/en-us/windows/desktop/shell/knownfolderid
 
+### User registry for User Shell Folders
+
+```
+HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
+```
+
 ### Path
 
 ##### Home Folder
