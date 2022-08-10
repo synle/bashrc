@@ -123,6 +123,12 @@ https://docs.microsoft.com/en-us/windows/wsl/install-manual
 ```powershell
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+
+# Download kernel
+https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
+
+# Set WSL2 as default
+wsl --set-default-version 2
 ```
 
 ## Allow SSH into WSL 2
