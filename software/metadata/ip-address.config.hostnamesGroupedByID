@@ -17,10 +17,8 @@ sy-mp
 sy-macpro
 
 192.168.1.23
-sy-mbp16
-sy-mbp16-intel
-sy-macbookpro-16
-sy-macbookpro-16-intel
+sy-yoga6
+sy-lenovo-yoga6
 
 192.168.1.24
 sy-g14
@@ -33,10 +31,6 @@ sy-asus-g15
 192.168.1.26
 sy-dell-xps
 sy-dell-xps-15
-
-192.168.1.27
-sy-yoga6
-sy-lenovo-yoga6
 
 192.168.1.231
 sy-living-room-tv

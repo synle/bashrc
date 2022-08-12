@@ -80,42 +80,22 @@
     }
   ],
   [
-    "sy-mbp16",
+    "sy-yoga6",
     "192.168.1.23",
     {
       "NO_SSH": false,
-      "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
       "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
-    "sy-mbp16-intel",
+    "sy-lenovo-yoga6",
     "192.168.1.23",
     {
       "NO_SSH": false,
-      "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
-    "sy-macbookpro-16",
-    "192.168.1.23",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
-    "sy-macbookpro-16-intel",
-    "192.168.1.23",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
       "IS_FIRST_IP_IN_GROUP": false
     }
   ],
@@ -172,26 +152,6 @@
   [
     "sy-dell-xps-15",
     "192.168.1.26",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
-    "sy-yoga6",
-    "192.168.1.27",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": true
-    }
-  ],
-  [
-    "sy-lenovo-yoga6",
-    "192.168.1.27",
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
