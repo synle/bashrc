@@ -10,26 +10,6 @@
     }
   ],
   [
-    "sy-router-ap-garage",
-    "192.168.1.2",
-    {
-      "NO_SSH": true,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": true
-    }
-  ],
-  [
-    "sy-router-ap-master-bedroom",
-    "192.168.1.2",
-    {
-      "NO_SSH": true,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": true
-    }
-  ],
-  [
     "sy-printer",
     "192.168.1.11",
     {
@@ -100,26 +80,6 @@
     }
   ],
   [
-    "sy-g14",
-    "192.168.1.24",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": true
-    }
-  ],
-  [
-    "sy-asus-g14",
-    "192.168.1.24",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
     "sy-g15",
     "192.168.1.25",
     {
@@ -157,16 +117,6 @@
       "OSX_REMOTE": false,
       "WINDOWS_REMOTE": true,
       "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
-    "sy-living-room-tv",
-    "192.168.1.231",
-    {
-      "NO_SSH": true,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [

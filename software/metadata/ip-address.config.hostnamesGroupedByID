@@ -1,12 +1,6 @@
 192.168.1.1
 sy-router-main
 
-192.168.1.2
-sy-router-ap-garage
-
-192.168.1.2
-sy-router-ap-master-bedroom
-
 192.168.1.11
 sy-printer
 sy-printer-dell
@@ -20,10 +14,6 @@ sy-macpro
 sy-yoga6
 sy-lenovo-yoga6
 
-192.168.1.24
-sy-g14
-sy-asus-g14
-
 192.168.1.25
 sy-g15
 sy-asus-g15
@@ -31,9 +21,6 @@ sy-asus-g15
 192.168.1.26
 sy-dell-xps
 sy-dell-xps-15
-
-192.168.1.231
-sy-living-room-tv
 
 192.168.1.232
 sy-garage-room-tv
