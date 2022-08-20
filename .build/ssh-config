@@ -20,14 +20,6 @@ Host sy-macpro
   HostName 192.168.1.22
   Port 22
 
-Host sy-yoga6
-  HostName 192.168.1.23
-  Port 22
-
-Host sy-lenovo-yoga6
-  HostName 192.168.1.23
-  Port 22
-
 Host sy-g15
   HostName 192.168.1.25
   Port 2222

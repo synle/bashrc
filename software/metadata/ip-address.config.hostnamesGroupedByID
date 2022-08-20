@@ -10,10 +10,6 @@ sy-printer-dell-e525w
 sy-mp
 sy-macpro
 
-192.168.1.23
-sy-yoga6
-sy-lenovo-yoga6
-
 192.168.1.25
 sy-g15
 sy-asus-g15
@@ -21,6 +17,3 @@ sy-asus-g15
 192.168.1.26
 sy-dell-xps
 sy-dell-xps-15
-
-192.168.1.232
-sy-garage-room-tv

@@ -60,26 +60,6 @@
     }
   ],
   [
-    "sy-yoga6",
-    "192.168.1.23",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": true
-    }
-  ],
-  [
-    "sy-lenovo-yoga6",
-    "192.168.1.23",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
     "sy-g15",
     "192.168.1.25",
     {
@@ -117,16 +97,6 @@
       "OSX_REMOTE": false,
       "WINDOWS_REMOTE": true,
       "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
-    "sy-garage-room-tv",
-    "192.168.1.232",
-    {
-      "NO_SSH": true,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": true
     }
   ]
 ]
