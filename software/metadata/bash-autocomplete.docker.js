@@ -1,6 +1,8 @@
+const dockerCommandToUse = is_os_window === true ? 'docker.exe' : 'docker';
+
 function getOptionsForCommand(command) {
   return new Promise((resolve) => {
-    require('child_process').exec(`docker ${command} --help`, (error, stdout, stderr) => {
+    require('child_process').exec(`${dockerCommandToUse} ${command} --help`, (error, stdout, stderr) => {
       const lines = stdout
         .trim()
         .split('\n')
@@ -34,7 +36,7 @@ function getOptionsForCommand(command) {
 
 async function doWork() {
   await new Promise((resolve) => {
-    require('child_process').exec(`docker --help`, async (error, stdout, stderr) => {
+    require('child_process').exec(`${dockerCommandToUse} --help`, async (error, stdout, stderr) => {
       const lines = stdout
         .trim()
         .split('\n')
@@ -56,17 +58,31 @@ async function doWork() {
 
       const res = [];
 
+      console.log('  >> Resolving docker commands', commands.length);
+
+      const promises = [];
+
       for (const command of commands) {
-        const commandOptions = await getOptionsForCommand(command);
-        commandOptions && res.push(commandOptions);
+        promises.push(
+          new Promise(async (resolve) => {
+            console.log('    >> Resolving command > docker', command);
+            try {
+              const commandOptions = await getOptionsForCommand(command);
+              commandOptions && res.push(commandOptions);
+            } catch (err) {}
+            resolve();
+          }),
+        );
       }
+
+      await Promise.all(promises);
 
       res.push('docker' + '|' + commands.join(','));
 
       const targetPath = 'software/metadata/bash-autocomplete.docker.config';
-      console.log('Update autocomplete docker config > ', targetPath);
+      console.log('  >> Update autocomplete docker config > ', targetPath);
 
-      writeText(targetPath, res.join('\n'));
+      writeText(targetPath, res.sort().join('\n'));
     });
   });
 }
