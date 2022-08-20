@@ -46,7 +46,7 @@ defaults write com.apple.Safari WebKitInitialTimedLayoutDelay 0.25
 export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 
 # Mac only alias
-alias find='fd'
+alias find2='fd'
     `.trim(),
   );
 }
