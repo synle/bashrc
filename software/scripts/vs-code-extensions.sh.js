@@ -31,6 +31,7 @@ async function doWork() {
       streetsidesoftware.code-spell-checker
       vscjava.vscode-maven
       wmaurer.change-case
+      formulahendry.auto-rename-tag
     `);
 
     console.log(echo(`  >> Setting up VS Code Extensions (code --install-extension --force): ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
