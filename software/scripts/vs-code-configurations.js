@@ -21,6 +21,7 @@ async function doInit() {
     'terminal.integrated.fontSize': EDITOR_CONFIGS.fontSize,
     'editor.fontWeight': '500',
     'editor.formatOnPaste': true,
+    "editor.linkedEditing": true, // for linked editing (tag renames)
     'editor.maxTokenizationLineLength': 10000,
     'editor.minimap.enabled': false,
     'editor.mouseWheelScrollSensitivity': 0,
