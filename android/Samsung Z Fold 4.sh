@@ -12,4 +12,7 @@ removeApp com.samsung.android.bixby.agent
 removeApp com.samsung.android.cmfa.framework
 removeApp com.android.chrome
 removeApp com.sec.android.emergencylauncher
-
+removeApp com.samsung.android.six.webtrans # Translator for Samsung Internet
+removeApp com.sec.android.app.sbrowser # Samsung Galaxy Browser
+removeApp com.sec.android.app.chromecustomizations # Chrome browser customization
+removeApp com.samsung.android.calendar # samsung calendar
