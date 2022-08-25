@@ -17,6 +17,12 @@ removeApp com.sec.android.app.sbrowser # Samsung Galaxy Browser
 removeApp com.sec.android.app.chromecustomizations # Chrome browser customization
 removeApp com.samsung.android.calendar # samsung calendar
 
+## Safe?
+removeApp com.samsung.android.ardrawing
+removeApp com.samsung.android.ardrawing
+removeApp com.samsung.android.aremoji
+removeApp com.samsung.android.aremojieditor
+
 ## anything below here are not fully tested
 removeApp com.samsung.android.spay
 removeApp com.samsung.android.spayfw
