@@ -42,9 +42,9 @@ removeApp com.samsung.android.shortcutbackupservice # ShortcutBNR, linked to Sma
 removeApp com.sec.android.widgetapp.easymodecontactswidget # Favorite Contacts, probably the favorite contacts when enabling the simple use senior mode
 removeApp com.sec.android.widgetapp.samsungapps # Galaxy Essentials Widget
 removeApp com.sec.android.widgetapp.webmanual # User manual
+removeApp com.samsung.android.app.spage # Bixby Home - Samsung Free
 
 # # Samsung Bixby #
-# removeApp com.samsung.android.app.spage # Bixby Home
 # removeApp com.samsung.android.app.settings.bixby # SettingsBixby
 # removeApp com.samsung.android.bixby.agent
 # removeApp com.samsung.android.bixby.agent.dummy
