@@ -1,6 +1,7 @@
 touch ~/.bashrc
 
 echo '''
+#!/system/bin/sh
 # chroot to set up /tmp /etc and other fds for linux
 termux-chroot
 ''' >> ~/.bashrc
