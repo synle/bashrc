@@ -61,6 +61,14 @@ color7:         #BFBFBF
 color15:        #E6E6E6
 ''' > ~/.termux/colors.properties
 
+# termux config
+echo '''
+# Send the Escape key.
+back-key=escape
+# black theme
+use-black-ui = true
+''' > ~/.termux/termux.properties
+
 pkg update -y
 pkg upgrade -y
 pkg autoclean -y
