@@ -63,6 +63,7 @@ color15:        #E6E6E6
 
 pkg update -y
 pkg upgrade -y
+pkg autoclean -y
 
 source ~/.bashrc
 
