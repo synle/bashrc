@@ -1,9 +1,6 @@
 touch ~/.bashrc
 
 echo '''
-#!/system/bin/sh
-export LD_PRELOAD=${PREFIX}/lib/libtermux-exec.so
-
 # chroot to set up /tmp /etc and other fds for linux
 termux-chroot
 ''' >> ~/.bashrc
