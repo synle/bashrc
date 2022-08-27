@@ -7,8 +7,6 @@ export is_os_android_termux='1'
 """ > ~/.bash_syle_os
 
 pkg update -y
-pkg upgrade -y
-
 pkg install -y proot # needed for android termux fhd fixes
 pkg install -y nodejs
 pkg install -y fzf
@@ -51,6 +49,8 @@ color14:        #9AEDFE
 color7:         #BFBFBF
 color15:        #E6E6E6
 ''' > ~/.termux/colors.properties
+
+pkg upgrade -y
 
 source ~/.bashrc
 
