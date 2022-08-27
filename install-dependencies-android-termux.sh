@@ -1,5 +1,10 @@
 touch ~/.bashrc
 
+echo '''
+# chroot to set up /tmp /etc and other fds for linux
+termux-chroot
+''' >> ~/.bashrc
+
 export is_os_darwin_mac='0'
 export is_os_window='0'
 export is_os_wsl='0'
