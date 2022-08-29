@@ -131,6 +131,9 @@ https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
 wsl --set-default-version 2
 ```
 
+## GUI package for WSL (wslG)
+https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-11-with-gui-support#5-install-and-use-a-gui-package
+
 ## Allow SSH into WSL 2
 
 Enable it on port 2222,
