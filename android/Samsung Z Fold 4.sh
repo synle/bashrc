@@ -1,3 +1,4 @@
+# https://www.getdroidtips.com/uninstall-bloatware-samsung-z-flip-4-z-fold-4/#Samsung-Galaxy-Z-Flip-4-Galaxy-Z-Fold-4-Device-Overview
 curl -s "https://raw.githubusercontent.com/synle/bashrc/master/android/Core Android.sh" | sh
 
 function removeApp(){
@@ -43,6 +44,41 @@ removeApp com.sec.android.widgetapp.easymodecontactswidget # Favorite Contacts, 
 removeApp com.sec.android.widgetapp.samsungapps # Galaxy Essentials Widget
 removeApp com.sec.android.widgetapp.webmanual # User manual
 removeApp com.samsung.android.app.spage # Bixby Home - Samsung Free
+
+# bixby remap
+removeApp com.samsung.android.bixby.wakeup
+removeApp com.samsung.android.app.spage
+removeApp com.samsung.android.app.routines
+removeApp com.samsung.android.bixby.agent
+removeApp com.samsung.android.bixby.agent.dummy
+removeApp com.samsung.android.bixby.service
+
+# gear vr
+removeApp com.samsung.android.hmt.vrsvc
+removeApp com.samsung.android.app.vrsetupwizardstub
+removeApp com.samsung.android.hmt.vrshell
+removeApp com.google.vr.vrcore
+
+# samsung kids
+removeApp com.samsung.android.kidsinstaller
+removeApp com.samsung.android.app.camera.sticker.facearavatar.preload
+
+# samsung emails
+removeApp com.samsung.android.email.provider # samsung
+
+# microsoft
+removeApp com.skype.raider
+removeApp com.microsoft.office.excel
+removeApp com.microsoft.office.word
+removeApp com.microsoft.office.powerpoint
+
+# misc
+removeApp com.samsung.android.widgetapp.yahooedge.finance
+removeApp com.samsung.android.widgetapp.yahooedge.sport
+removeApp com.samsung.android.app.reminder # samsung reminder https://galaxystore.samsung.com/prepost/000005309349?appId=com.samsung.android.app.reminder
+removeApp com.samsung.android.app.news # samsung news today
+removeApp com.samsung.android.app.news # Galaxy Essentials Widget
+removeApp flipboard.boxer.app
 
 # # Samsung Bixby #
 # removeApp com.samsung.android.app.settings.bixby # SettingsBixby
