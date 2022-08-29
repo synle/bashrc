@@ -18,7 +18,6 @@ removeApp com.sec.android.app.sbrowser # Samsung Galaxy Browser
 removeApp com.sec.android.app.chromecustomizations # Chrome browser customization
 removeApp com.samsung.android.calendar # samsung calendar
 removeApp com.samsung.android.ardrawing
-removeApp com.samsung.android.ardrawing
 removeApp com.samsung.android.aremoji
 removeApp com.samsung.android.aremojieditor
 removeApp com.samsung.android.spay # samsung pay
@@ -52,6 +51,7 @@ removeApp com.samsung.android.app.routines
 removeApp com.samsung.android.bixby.agent
 removeApp com.samsung.android.bixby.agent.dummy
 removeApp com.samsung.android.bixby.service
+removeApp com.samsung.android.visionintelligence # Bixby Vision
 
 # gear vr
 removeApp com.samsung.android.hmt.vrsvc
