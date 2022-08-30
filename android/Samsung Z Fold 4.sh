@@ -28,6 +28,7 @@ removeApp com.samsung.android.forest # samsung digital wellbeing
 removeApp com.sec.android.inputmethod # samsung keyboard
 removeApp com.samsung.android.honeyboard # samsung keyboard (main)
 removeApp com.samsung.android.svoiceime # samsung voice input
+removeApp com.samsung.android.voc # samsung member
 
 # Game-related #
 removeApp com.enhance.gameservice
