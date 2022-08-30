@@ -25,6 +25,7 @@ removeApp com.samsung.android.spayfw # samsung pay
 removeApp com.samsung.android.samsungpass # samsung password and autofill
 removeApp com.samsung.android.samsungpassautofill # samsung password and autofill
 removeApp com.sec.android.inputmethod # samsung keyboard
+removeApp com.samsung.android.honeyboard # samsung keyboard (main)
 removeApp com.samsung.android.forest # samsung digital wellbeing
 
 # Game-related #
