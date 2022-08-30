@@ -29,7 +29,11 @@ removeApp com.sec.android.inputmethod # samsung keyboard
 removeApp com.samsung.android.honeyboard # samsung keyboard (main)
 removeApp com.samsung.android.svoiceime # samsung voice input
 removeApp com.samsung.android.voc # samsung member
+
+# facebook / meta junks
 removeApp com.facebook.system # facebook junk
+removeApp com.facebook.appmanager # meta app manager
+removeApp com.facebook.installer # meta app installer
 
 # Game-related #
 removeApp com.enhance.gameservice
