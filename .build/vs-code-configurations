@@ -7,6 +7,7 @@
   "terminal.integrated.fontSize": 10,
   "editor.fontWeight": "500",
   "editor.formatOnPaste": true,
+  "editor.linkedEditing": true,
   "editor.maxTokenizationLineLength": 10000,
   "editor.minimap.enabled": false,
   "editor.mouseWheelScrollSensitivity": 0,

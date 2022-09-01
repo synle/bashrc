@@ -512,7 +512,19 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
   }
 
   // clean up the files
-  files = files.filter((f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js'));
+  files = files
+    .filter((f) => !!f.match('software/scripts/') && !f.endsWith('.config.js'))
+    .filter((f) => {
+      const EXTENSIONS_TO_USE = [`.js`, `.sh`];
+
+      for (const extension of EXTENSIONS_TO_USE) {
+        if (f.endsWith(extension)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
 
   //this is a special flags used to return all the script for index building
   if (returnAllScripts) {
