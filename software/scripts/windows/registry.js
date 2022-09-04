@@ -7,17 +7,13 @@ async function doWork() {
     targetPath,
     `
 Windows Registry Editor Version 5.00
-; speed up startup delay
-[HKEY_CURRENT_USER/Software/Microsoft/Windows/CurrentVersion/Explorer/Serialize]
-"StartupDelayInMSec"=dword:00000000
-
 ; no lock screen
 [HKEY_LOCAL_MACHINE/SOFTWARE/Policies/Microsoft/Windows/Personalization]
 "NoLockScreen"=dword:00000001
 
 ; speed up menu show delay
 [HKEY_CURRENT_USER/Control Panel/Desktop]
-"MenuShowDelay"="200"
+"MenuShowDelay"="250"
 
 ; Disable shaking to min and max windows
 [HKEY_LOCAL_MACHINE/SOFTWARE/Policies/Microsoft/Windows/Personalization]
