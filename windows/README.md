@@ -18,8 +18,16 @@ HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell 
 
 ##### App Data
 
+`C:\Users\<user>\AppData\Local`
+
 ```
 %APPDATA%
+```
+
+##### Local App Data
+
+```
+%LOCALAPPDATA%
 ```
 
 ##### Program Files
