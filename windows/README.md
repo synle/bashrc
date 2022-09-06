@@ -241,13 +241,31 @@ ASUS Optimization
 
 - Twinkle Tray (brightness control): https://twinkletray.com/
 
+
+### WSL2 Image Backup and Restore
+
+https://www.virtualizationhowto.com/2021/01/wsl2-backup-and-restore-images-using-import-and-export/
+
+```bash
+wsl --shutdown
+
+# get image name from here
+# %userprofile%\AppData\Local\Packages
+# debian image name - TheDebianProject.DebianGNULinux_76v4gfsz19hv4
+
+wsl --export <Image_Name> <Path_To_Backup.tar>
+
+wsl --import <Image_Name> <Path_To_Store.tar> <Path_To_Backup.tar>
+```
+
+
 ### Electron App with WSL2
 
 - https://stackoverflow.com/questions/70330023/i-have-not-been-able-to-get-electron-running-within-electron-to-run-in-wsl2-ubun
 - https://stackoverflow.com/questions/40402344/advanced-gpu-control-needed-for-browserwindows
 - https://www.reddit.com/r/openSUSE/comments/ptqlfu/psa_vscode_and_some_nonpatched_electron/
 
-```
+```bash
 
 sudo apt-get install -y libxcursor1 libnss3 libgdk-pixbuf2.0-0 libgtk-3-0 libxss-dev libnss3-dev libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgbm-dev libasound2
 sudo apt-get autoclean -y
@@ -268,7 +286,7 @@ New-NetFirewallRule -DisplayName "_Sy Inbound WSL" -Direction Inbound  -Interfac
 
 Source: https://dev.to/vishnumohanrk/wsl-port-forwarding-2e22
 
-```
+```ps
 $ports = @(3000, 8080, 5000, 5001, 19000, 19001);
 
 If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
