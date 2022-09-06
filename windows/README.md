@@ -251,7 +251,10 @@ wsl --shutdown
 
 # get image name from here
 # %userprofile%\AppData\Local\Packages
-# debian image name - TheDebianProject.DebianGNULinux_76v4gfsz19hv4
+# Debian Package Name : TheDebianProject.DebianGNULinux_76v4gfsz19hv4
+
+wsl --list
+# Debian Image Name: Debian
 
 wsl --export <Image_Name> <Path_To_Backup.tar>
 
