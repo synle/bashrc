@@ -79,7 +79,7 @@
       "hotkey._execute_browser_action": "",
       "hotkey.openManage": "",
       "hotkey.styleDisableAll": "",
-      "sync.enabled": "none",
+      "sync.enabled": "google",
       "iconset": -1,
       "badgeDisabled": "#8B0000",
       "badgeNormal": "#006666",
@@ -1061,5 +1061,39 @@
     "_rev": 1661011752781,
     "installationUrl": "https://userstyles.world/style/4",
     "id": 5
+  },
+  {
+    "enabled": true,
+    "installDate": 1662739846034,
+    "name": "keep.google.com",
+    "sections": [
+      {
+        "code": "*{\n    transition: 0.005s linear !important;\n}\n\n/* make sure the editable / content area is mono space font - easier to view code */\n[role=\"textbox\"][contenteditable=\"true\"]{\n    font-family: monospace !important;\n}\n\n/* limit anchor links to just one line of text */\n[role=\"textbox\"][contenteditable=\"true\"] a {\n    width: 100%;\n    overflow: hidden;\n    height: 20px;\n    display: block;\n    text-overflow: ellipsis;\n    word-break: break-all;\n    white-space: nowrap;\n}\n\n",
+        "domains": [
+          "keep.google.com"
+        ]
+      }
+    ],
+    "updateDate": 1662740661282,
+    "_id": "8ee4f6de-fe35-42d6-b820-752a2d7a5ccf",
+    "_rev": 1662740661282,
+    "id": 11
+  },
+  {
+    "enabled": true,
+    "installDate": 1662740133482,
+    "name": "mail.google.com",
+    "sections": [
+      {
+        "code": "*{\n    transition: 0.005s linear !important;\n}",
+        "urlPrefixes": [
+          "https://mail.google.com/mail/u/0/#inbox"
+        ]
+      }
+    ],
+    "updateDate": 1662740133482,
+    "_id": "e61b4108-753c-4525-91ab-78fd3ce0689f",
+    "_rev": 1662740133482,
+    "id": 12
   }
 ]
