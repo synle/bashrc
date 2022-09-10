@@ -1069,9 +1069,7 @@
     "sections": [
       {
         "code": "*{\n    transition: 0.005s linear !important;\n}\n\n/* make sure the editable / content area is mono space font - easier to view code */\n[role=\"textbox\"][contenteditable=\"true\"]{\n    font-family: monospace !important;\n}\n\n/* limit anchor links to just one line of text */\n[role=\"textbox\"][contenteditable=\"true\"] a {\n    width: 100%;\n    overflow: hidden;\n    height: 20px;\n    display: block;\n    text-overflow: ellipsis;\n    word-break: break-all;\n    white-space: nowrap;\n}\n\n",
-        "domains": [
-          "keep.google.com"
-        ]
+        "domains": ["keep.google.com"]
       }
     ],
     "updateDate": 1662740661282,
@@ -1086,9 +1084,7 @@
     "sections": [
       {
         "code": "*{\n    transition: 0.005s linear !important;\n}",
-        "urlPrefixes": [
-          "https://mail.google.com/mail/u/0/#inbox"
-        ]
+        "urlPrefixes": ["https://mail.google.com/mail/u/0/#inbox"]
       }
     ],
     "updateDate": 1662740133482,

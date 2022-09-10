@@ -33,6 +33,7 @@ async function doWork() {
     bootstrapped: true,
     in_process_packages: [],
     installed_packages: convertTextToList(`
+      Alignment
       All Autocomplete
       BracketHighlighter
       Case Conversion

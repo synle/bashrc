@@ -1,5 +1,11 @@
 [
   {
+    "keys": [
+      "alt+shift+;"
+    ],
+    "command": "alignment"
+  },
+  {
     "command": "refresh_folder_list",
     "keys": [
       "f5"

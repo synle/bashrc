@@ -241,7 +241,6 @@ ASUS Optimization
 
 - Twinkle Tray (brightness control): https://twinkletray.com/
 
-
 ### WSL2 Image Backup and Restore
 
 https://www.virtualizationhowto.com/2021/01/wsl2-backup-and-restore-images-using-import-and-export/
@@ -260,7 +259,6 @@ wsl --export <Image_Name> <Path_To_Backup.tar>
 
 wsl --import <Image_Name> <Path_To_Store.tar> <Path_To_Backup.tar>
 ```
-
 
 ### Electron App with WSL2
 

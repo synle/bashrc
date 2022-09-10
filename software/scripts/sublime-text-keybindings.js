@@ -57,6 +57,7 @@ async function doInit() {
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
+    { keys: ['OS_KEY+shift+;'], command: 'alignment' },
     {
       key: 'f5',
       command: 'refresh_folder_list',
