@@ -255,9 +255,13 @@ wsl --shutdown
 wsl --list
 # Debian Image Name: Debian
 
+# export
 wsl --export <Image_Name> <Path_To_Backup.tar>
+wsl --export Debian ./wsl_backup.tar
 
+# import
 wsl --import <Image_Name> <Path_To_Restore_This_WSL.tar> <Path_To_Backup.tar>
+wsl --import Debian D:\WSL\Debian ./wsl_backup.tar
 
 # needs to update the registry to set up default users
 # Then update DefaultUid to e38 (aka 1000)
