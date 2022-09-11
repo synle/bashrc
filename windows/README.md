@@ -257,7 +257,12 @@ wsl --list
 
 wsl --export <Image_Name> <Path_To_Backup.tar>
 
-wsl --import <Image_Name> <Path_To_Store.tar> <Path_To_Backup.tar>
+wsl --import <Image_Name> <Path_To_Restore_This_WSL.tar> <Path_To_Backup.tar>
+
+# needs to update the registry to set up default users
+# Then update DefaultUid to e38 (aka 1000)
+# That above Uid can be found with `wsl -d Debian -u syle -e id -u`
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss\{MY-UUID}
 ```
 
 ### Electron App with WSL2
