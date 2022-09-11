@@ -237,10 +237,6 @@ ASUS App Service
 ASUS Optimization
 ```
 
-### App List
-
-- Twinkle Tray (brightness control): https://twinkletray.com/
-
 ### WSL2 Image Backup and Restore
 
 https://www.virtualizationhowto.com/2021/01/wsl2-backup-and-restore-images-using-import-and-export/
