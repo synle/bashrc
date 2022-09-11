@@ -328,8 +328,8 @@ Invoke-Expression "netsh interface portproxy show v4tov4";
 
 These are extensions to view videos and images from newer iphones and android phones:
 
-- [Raw Image Extension](https://apps.microsoft.com/store/detail/raw-image-extension/9NCTDW2W1BH8) - ms-windows-store://pdp/?ProductId=9NCTDW2W1BH8
-- [Heif Image Extension](https://apps.microsoft.com/store/detail/heif-image-extensions/9PMMSR1CGPWG) - ms-windows-store://pdp/?ProductId=9PMMSR1CGPWG
+- [Raw Image Extension](https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8) - ms-windows-store://pdp/?ProductId=9nctdw2w1bh8
+- [Heif Image Extension](https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg) - ms-windows-store://pdp/?ProductId=9pmmsr1cgpwg
 - [Hevc Video Extension from Device Manufacturer](https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq) - ms-windows-store://pdp/?ProductId=9n4wgh0z6vhq
-- [MPEG-2 Video Extension](https://apps.microsoft.com/store/detail/mpeg2-video-extension/9N95Q1ZZPMH4) - ms-windows-store://pdp/?ProductId=9N95Q1ZZPMH4
-- [AV1 Video Extension](https://apps.microsoft.com/store/detail/av1-video-extension/9MVZQVXJBQ9V?hl=de-de&gl=DE) - ms-windows-store://pdp/?ProductId=9MVZQVXJBQ9V
+- [MPEG-2 Video Extension](https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4) - ms-windows-store://pdp/?ProductId=9n95q1zzpmh4
+- [AV1 Video Extension](https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v?hl=de-de&gl=DE) - ms-windows-store://pdp/?ProductId=9mvzqvxjbq9v
