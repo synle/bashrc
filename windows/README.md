@@ -328,6 +328,6 @@ Invoke-Expression "netsh interface portproxy show v4tov4";
 
 These are extensions to view videos and images from newer iphones and android phones:
 
-- [Hevc Video Extensions](https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9N4WGH0Z6VHQ?hl=en-us&gl=US)
+- [Hevc Video Extensions](ms-windows-store://pdp/?ProductId=9n4wgh0z6vhq)
 - [Heif Image Extensions](https://apps.microsoft.com/store/detail/heif-image-extensions/9PMMSR1CGPWG?hl=en-us&gl=US)
 - [Raw Image Extension](https://apps.microsoft.com/store/detail/raw-image-extension/9NCTDW2W1BH8?hl=en-us&gl=US)
