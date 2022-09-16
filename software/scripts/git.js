@@ -96,6 +96,7 @@ del = branch -D
 del-upstream-branch = push -d
 del-upstream-tag = push -d tag
 empty-commit = commit --allow-empty -m "Empty commit"
+f = fetch --all --prune
 fap = fetch --all --prune
 l = log --oneline
 logs = log --oneline --decorate
