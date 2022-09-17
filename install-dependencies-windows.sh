@@ -1,3 +1,6 @@
+echo '>> Creating the Powershell User Profile'
+New-Item $profile -Type File -Force
+
 echo '>> Setting up WSL2 binary'
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
