@@ -84,6 +84,10 @@ async function doWork() {
         clear;
         Write-Host "====================="  -ForegroundColor Red -NoNewline;
       }
+      
+      function which() {
+        (Get-Command $args).Path
+      }
 
       function find() {
         wsl find $args
