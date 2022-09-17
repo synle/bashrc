@@ -265,6 +265,12 @@ wsl --import Debian D:\WSL\Debian ./wsl_backup.tar
 HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss\{MY-UUID}
 ```
 
+### Powershell Profiles
+```
+New-Item $profile -Type File -Force
+subl $profile
+```
+
 ### Electron App with WSL2
 
 - https://stackoverflow.com/questions/70330023/i-have-not-been-able-to-get-electron-running-within-electron-to-run-in-wsl2-ubun
