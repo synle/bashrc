@@ -266,6 +266,7 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss\{MY-UUID}
 ```
 
 ### Powershell Profiles
+
 ```
 New-Item $profile -Type File -Force
 subl $profile
