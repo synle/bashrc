@@ -47,6 +47,8 @@ export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/b
 
 # Mac only alias
 alias find2='fd'
+alias brave="open /Applications/Google\ Chrome.app --args --disable-smooth-scrolling
     `.trim(),
   );
+"
 }
