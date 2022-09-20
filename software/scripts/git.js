@@ -113,6 +113,7 @@ r = rebase --reapply-cherry-picks
 ri = rebase -i
 riheadlast5 = rebase -i HEAD^^^^^
 s = status -sb
+stats = shortlog -sn
 tagss = tag --list
 tags = ls-remote --tags origin
 `
