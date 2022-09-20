@@ -58,9 +58,7 @@ alias flake8="python -m flake8"
 alias n="node"
 alias y="yarn"
 alias s='ssh -4'
-alias distroName='python -c "import platform; print platform.linux_distribution()"';
 alias mk='make'
-alias npm-run='npm run'
 alias gulp="./node_modules/.bin/gulp"
 alias grunt="./node_modules/.bin/grunt"
 
