@@ -51,13 +51,16 @@ alias mergeMaster="merge origin/master"
 alias g="git"
 alias gg="git --no-pager"
 alias p="python"
+alias pytest="python -m pytest"
+alias pytest-single="python -m pytest -vvl -k"
+alias flake="flake"
+alias flake8="python -m flake8"
 alias n="node"
 alias y="yarn"
 alias s='ssh -4'
 alias distroName='python -c "import platform; print platform.linux_distribution()"';
 alias mk='make'
 alias npm-run='npm run'
-alias setWorkEmail='git config user.email $WORK_EMAIL_ADDRESS'
 alias gulp="./node_modules/.bin/gulp"
 alias grunt="./node_modules/.bin/grunt"
 
