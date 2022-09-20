@@ -98,6 +98,7 @@ del-upstream-tag = push -d tag
 empty-commit = commit --allow-empty -m "Empty commit"
 f = fetch --all --prune
 fap = fetch --all --prune
+fr = !git fetch --all --prune; !git rebase --reapply-cherry-picks
 l = log --oneline
 logs = log --oneline --decorate
 m = merge
