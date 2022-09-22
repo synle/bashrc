@@ -24,6 +24,8 @@ export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/b
 alias find2='fd'
 alias brave="open /Applications/Brave\ Browser.app/ --args --disable-smooth-scrolling"
 alias chrome="open /Applications/Google\ Chrome.app --args --disable-smooth-scrolling"
+alias sqluinative="open /Applications/sqlui-native.app/ --args --disable-smooth-scrolling"
+alias sql="sqluinative"
     `.trim(),
   );
 }
