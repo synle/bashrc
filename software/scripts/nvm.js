@@ -11,7 +11,7 @@ async function doWork() {
   bashrcTextContent = prependTextBlock(
     bashrcTextContent,
     'nvm - node version manager', // key
-    `[ -s ${targetPath}/nvm.sh ] && . ${targetPath}/nvm.sh`,
+    `[ -s ${targetPath}/nvm.sh ] && . ${targetPath}/nvm.sh --no-use`, // this is to speed up nvm on mac
   );
   writeText(BASE_BASH_SYLE, bashrcTextContent);
 }
