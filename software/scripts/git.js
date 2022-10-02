@@ -72,12 +72,15 @@ old = red
 new = green
 whitespace = red reverse
 
+[diff-so-fancy]
+markEmptyLines = false
+
 [alias]
 a = add
 aa = add -A
 amend = commit --amend --no-verify
 amend-with-verify = commit --amend
-ap = add -p 
+ap = add -p
 app = add -p .
 au = add -u
 b = branch

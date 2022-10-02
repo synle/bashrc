@@ -232,6 +232,8 @@ function updateAutoComplete() {
       scriptElem.remove();
     } else if (!osFlags.is_os_android_termux && scriptName.includes('/android-termux/')) {
       scriptElem.remove();
+    } else if (!osFlags.is_os_arch_linux && scriptName.includes('/arch-linux/')) {
+      scriptElem.remove();
     }
   });
 }
@@ -289,6 +291,7 @@ function _getOsFlags() {
     is_os_chromeos: osFlag === 'chrome_os',
     is_os_mingw64: osFlag === 'ming_64',
     is_os_android_termux: osFlag === 'android_termux',
+    is_os_arch_linux: osFlag === 'arch_linux',
   };
 
   return osFlags;

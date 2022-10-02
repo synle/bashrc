@@ -14,6 +14,7 @@ else
   export is_os_wsl=0 && [ -d /lib ] && [ -d /mnt/c/Users ] && export is_os_wsl=1
   export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
   export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
+  export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
   export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
 
   echo """
@@ -25,6 +26,7 @@ else
     export is_os_mingw64='$is_os_mingw64'
     export is_os_android_termux='$is_os_android_termux'
     export is_os_redhat='$is_os_redhat'
+    export is_os_arch_linux='$is_os_arch_linux'
   """ > ~/.bash_syle_os
 fi
 # end os flag

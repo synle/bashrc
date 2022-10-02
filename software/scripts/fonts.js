@@ -5,8 +5,8 @@ async function doWork() {
 
   console.log('  >> Download Ligatures Fonts:', targetFontPath);
 
-  if (!is_os_window && !is_os_darwin_mac) {
-    console.log(consoleLogColor1('  >> Skipped : Only Mac or Windows'));
+  if (!is_os_window && !is_os_darwin_mac && !is_os_arch_linux) {
+    console.log(consoleLogColor1('  >> Skipped : Only Mac or Windows or Arch Linux'));
     return process.exit();
   }
 

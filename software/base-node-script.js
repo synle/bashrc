@@ -503,7 +503,7 @@ async function listRepoDir() {
 async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileListInstead = false) {
   let files;
 
-  if (useLocalFileListInstead === true) {
+  if (useLocalFileListInstead === true || isTestScriptMode === true) {
     // fetch from exec bash
     files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
   } else {
@@ -560,19 +560,49 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
   softwareFiles = [...new Set([...firstFiles, ...softwareFiles, ...lastFiles])];
 
   return softwareFiles.filter((file) => {
+    if (is_os_arch_linux) {
+      if (file.includes('software/scripts/arch-linux')) {
+        return true;
+      }
+
+      // when run in an android termux env, only run script in that folder
+      const whitelistedScripts = convertTextToList(`
+        // common
+        software/scripts/_bash-rc-bootstrap.js
+        software/scripts/git.js
+        software/scripts/vim-configurations.js
+        software/scripts/vim-vundle.sh
+        software/scripts/bash-inputrc.js
+        software/scripts/bash-syle-content.js
+        software/scripts/bash-autocomplete.js
+        // specifics
+        software/scripts/fonts.js
+        software/scripts/_nvm-binary.js
+        software/scripts/_nvm-symlink.sh.js
+        software/scripts/kde-konsole-profile.js
+        software/scripts/diff-so-fancy.sh
+      `);
+
+      if (whitelistedScripts.indexOf(file) >= 0) {
+        return true;
+      }
+
+      return false;
+    }
+
     if (is_os_android_termux) {
       if (file.includes('software/scripts/android-termux')) {
         return true;
       }
 
       // when run in an android termux env, only run script in that folder
-      const whitelistAndroidTermuxScripts = convertTextToList(`
+      const whitelistedScripts = convertTextToList(`
         software/scripts/vim-configurations.js
         software/scripts/vim-vundle.sh
         software/scripts/tmux.js
       `);
 
-      if (whitelistAndroidTermuxScripts.indexOf(file) >= 0) {
+      if (whitelistedScripts.indexOf(file) >= 0) {
         return true;
       }
 
@@ -581,24 +611,29 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
 
     if (is_os_chromeos) {
       // when run in an android termux env, only run script in that folder
-      const whitelistChromeosScripts = convertTextToList(`
+      const whitelistedScripts = convertTextToList(`
+        // common
         software/scripts/_bash-rc-bootstrap.js
         software/scripts/git.js
         software/scripts/vim-configurations.js
         software/scripts/vim-vundle.sh
         software/scripts/bash-inputrc.js
-        software/scripts/bash-autocomplete.js
         software/scripts/bash-syle-content.js
+        software/scripts/bash-autocomplete.js
+        // specifics
         software/scripts/tmux.js
         software/scripts/sublime-text-configurations.js
         software/scripts/sublime-text-keybindings.js
-        software/scripts/vim-configurations.js
-        software/scripts/vim-vundle.sh
       `);
 
-      if (whitelistChromeosScripts.indexOf(file) >= 0) {
+      if (whitelistedScripts.indexOf(file) >= 0) {
         return true;
       }
+      return false;
+    }
+
+    // check against only arch linux
+    if (file.includes('software/scripts/arch-linux') && !is_os_arch_linux) {
       return false;
     }
 

@@ -8,7 +8,7 @@ async function doWork() {
   bashrcTextContent = prependTextBlock(
     bashrcTextContent,
     'nvm - node version manager', // key
-    `[ -s ${nvmPath}/nvm.sh ] && . ${nvmPath}/nvm.sh`,
+    `[ -s ${nvmPath}/nvm.sh ] && . ${nvmPath}/nvm.sh --no-use`,
   );
   writeText(BASE_BASH_SYLE, bashrcTextContent);
 }

@@ -33,3 +33,7 @@ nvmInstallNode lts
 echo "    >> nvm alias default $DEFAULT_NVM_VERSION"
 nvm alias default $DEFAULT_NVM_VERSION &>/dev/null
 nvm use default &>/dev/null
+
+
+echo "    >> install yarn"
+npm install --global yarn
