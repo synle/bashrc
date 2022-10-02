@@ -560,96 +560,90 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
   softwareFiles = [...new Set([...firstFiles, ...softwareFiles, ...lastFiles])];
 
   return softwareFiles.filter((file) => {
-    if (is_os_arch_linux) {
-      if (file.includes('software/scripts/arch-linux')) {
-        return true;
+    const scriptFinderConfigs = [
+      {
+        key: 'is_os_arch_linux',
+        allowed_path: 'software/scripts/arch-linux',
+        whitelist: `
+          // common
+          software/scripts/_bash-rc-bootstrap.js
+          software/scripts/git.js
+          software/scripts/vim-configurations.js
+          software/scripts/vim-vundle.sh
+          software/scripts/bash-inputrc.js
+          software/scripts/bash-syle-content.js
+          software/scripts/bash-autocomplete.js
+          // specifics
+          software/scripts/fonts.js
+          software/scripts/_nvm-binary.js
+          software/scripts/_nvm-symlink.sh.js
+          software/scripts/kde-konsole-profile.js
+          software/scripts/diff-so-fancy.sh
+        `,
+      },
+      {
+        key: 'is_os_android_termux',
+        allowed_path: 'software/scripts/android-termux',
+        whitelist: `
+          software/scripts/vim-configurations.js
+          software/scripts/vim-vundle.sh
+          software/scripts/tmux.js
+        `,
+      },
+      {
+        key: 'is_os_chromeos',
+        allowed_path: 'software/scripts/chrome-os',
+        whitelist: `
+          // common
+          software/scripts/_bash-rc-bootstrap.js
+          software/scripts/git.js
+          software/scripts/vim-configurations.js
+          software/scripts/vim-vundle.sh
+          software/scripts/bash-inputrc.js
+          software/scripts/bash-syle-content.js
+          software/scripts/bash-autocomplete.js
+          // specifics
+          software/scripts/tmux.js
+          software/scripts/sublime-text-configurations.js
+          software/scripts/sublime-text-keybindings.js
+        `,
+      },
+    ];
+
+    const pathsToIgnore = [
+      [is_os_arch_linux, 'software/scripts/arch-linux'],
+      [is_os_android_termux, 'software/scripts/android-termux'],
+      [is_os_window, 'software/scripts/windows'],
+      [is_os_darwin_mac, 'software/scripts/mac'],
+    ]
+      .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ''))
+      .filter((s) => !!s);
+
+    for (const scriptFinderConfig of scriptFinderConfigs) {
+      const isscriptFinderConfigApplicable = global[scriptFinderConfig.key];
+
+      if (isscriptFinderConfigApplicable) {
+        // it'sone of the configs, we should use it
+        if (file.includes(scriptFinderConfig.allowed_path)) {
+          return true;
+        }
+
+        // when run in an android termux env, only run script in that folder
+        const whitelistedScripts = convertTextToList(scriptFinderConfig.whitelist);
+
+        if (whitelistedScripts.indexOf(file) >= 0) {
+          return true;
+        }
+
+        return false;
       }
+    }
 
-      // when run in an android termux env, only run script in that folder
-      const whitelistedScripts = convertTextToList(`
-        // common
-        software/scripts/_bash-rc-bootstrap.js
-        software/scripts/git.js
-        software/scripts/vim-configurations.js
-        software/scripts/vim-vundle.sh
-        software/scripts/bash-inputrc.js
-        software/scripts/bash-syle-content.js
-        software/scripts/bash-autocomplete.js
-        // specifics
-        software/scripts/fonts.js
-        software/scripts/_nvm-binary.js
-        software/scripts/_nvm-symlink.sh.js
-        software/scripts/kde-konsole-profile.js
-        software/scripts/diff-so-fancy.sh
-      `);
-
-      if (whitelistedScripts.indexOf(file) >= 0) {
-        return true;
+    // handle it differently
+    for (const pathToIgnore of pathsToIgnore) {
+      if (file.includes(pathToIgnore)) {
+        return false;
       }
-
-      return false;
-    }
-
-    if (is_os_android_termux) {
-      if (file.includes('software/scripts/android-termux')) {
-        return true;
-      }
-
-      // when run in an android termux env, only run script in that folder
-      const whitelistedScripts = convertTextToList(`
-        software/scripts/vim-configurations.js
-        software/scripts/vim-vundle.sh
-        software/scripts/tmux.js
-      `);
-
-      if (whitelistedScripts.indexOf(file) >= 0) {
-        return true;
-      }
-
-      return false;
-    }
-
-    if (is_os_chromeos) {
-      // when run in an android termux env, only run script in that folder
-      const whitelistedScripts = convertTextToList(`
-        // common
-        software/scripts/_bash-rc-bootstrap.js
-        software/scripts/git.js
-        software/scripts/vim-configurations.js
-        software/scripts/vim-vundle.sh
-        software/scripts/bash-inputrc.js
-        software/scripts/bash-syle-content.js
-        software/scripts/bash-autocomplete.js
-        // specifics
-        software/scripts/tmux.js
-        software/scripts/sublime-text-configurations.js
-        software/scripts/sublime-text-keybindings.js
-      `);
-
-      if (whitelistedScripts.indexOf(file) >= 0) {
-        return true;
-      }
-      return false;
-    }
-
-    // check against only arch linux
-    if (file.includes('software/scripts/arch-linux') && !is_os_arch_linux) {
-      return false;
-    }
-
-    // check against only android termux
-    if (file.includes('software/scripts/android-termux') && !is_os_android_termux) {
-      return false;
-    }
-
-    // check against only mac or only window
-    if (file.includes('software/scripts/windows') && !is_os_window) {
-      return false;
-    }
-
-    // check against only mac or only window
-    if (file.includes('software/scripts/mac') && !is_os_darwin_mac) {
-      return false;
     }
 
     return true;
