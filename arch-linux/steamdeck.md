@@ -50,4 +50,20 @@ curl https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig -o ~
 ## vimrc and vundle
 git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
 curl https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc -o ~/.vimrc
+
+## input rc
+curl https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc -o ~/.inputrc
+
+## other stuffs
+sudo echo '> Initializing Environment' && \
+echo """
+export is_os_darwin_mac='0'
+export is_os_window='0'
+export is_os_wsl='0'
+export is_os_ubuntu='0'
+export is_os_chromeos='0'
+export is_os_mingw64='0'
+export is_os_android_termux='0'
+export is_os_arch_linux='1'
+""" > ~/.bash_syle_os && source ~/.bash_syle_os
 ```
