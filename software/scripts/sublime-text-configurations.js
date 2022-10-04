@@ -113,7 +113,7 @@ async function doWork() {
       dark_color_scheme: 'Mariana.sublime-color-scheme',
       light_color_scheme: 'Breakers.sublime-color-scheme',
     };
-  } else if(is_os_window) {
+  } else if (is_os_window) {
     osSpecificSettings = {
       color_scheme: 'auto',
       dark_color_scheme: 'Mariana.sublime-color-scheme',

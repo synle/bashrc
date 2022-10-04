@@ -10,7 +10,7 @@ async function doWork() {
       file = `software/scripts/${file}`;
     }
 
-    if (!file.match(/.json/) && !file.match(/.config/)) {
+    if (!file.match(/\.json/) && !file.match(/\.config/)) {
       files.push(file);
     }
   }
