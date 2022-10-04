@@ -1,7 +1,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_only_windows');
 
-  console.log('  >> Register Windows Only profile', BASE_BASH_SYLE);
+  console.log('  >> Register Only Windows profile', BASE_BASH_SYLE);
   let textContent = readText(BASE_BASH_SYLE);
   textContent = prependTextBlock(
     textContent,
@@ -10,7 +10,7 @@ async function doWork() {
   );
   writeText(BASE_BASH_SYLE, textContent);
 
-  console.log('  >> Installing Windows WSL Only tweaks:', consoleLogColor4(targetPath));
+  console.log('  >> Installing Only Windows (WSL) tweaks:', consoleLogColor4(targetPath));
   writeText(
     targetPath,
     `

@@ -10,6 +10,11 @@ async function _getPathSublimeText() {
       return findDirSingle(getOsxApplicationSupportCodeUserPath(), /Sublime[ ]*Text/i);
     }
 
+    if (is_os_arch_linux) {
+      // for sublime installed using Discover in arch linux
+      return path.join(process.env.HOME, '.var/app/com.sublimetext.three/config/sublime-text-3');
+    }
+
     // for debian or chrome os debian linux
     return findDirSingle(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i);
   } catch (err) {
@@ -108,11 +113,16 @@ async function doWork() {
       dark_color_scheme: 'Mariana.sublime-color-scheme',
       light_color_scheme: 'Breakers.sublime-color-scheme',
     };
-  } else {
+  } else if(is_os_window) {
     osSpecificSettings = {
       color_scheme: 'auto',
-      dark_color_scheme: 'Packages/Dracula Color Scheme/Dracula.tmTheme',
+      dark_color_scheme: 'Mariana.sublime-color-scheme',
       light_color_scheme: 'Breakers.sublime-color-scheme',
+    };
+  } else {
+    // linux, let's not use auto theme
+    osSpecificSettings = {
+      color_scheme: 'Mariana.sublime-color-scheme',
     };
   }
 

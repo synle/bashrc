@@ -579,6 +579,8 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           software/scripts/_nvm-symlink.sh.js
           software/scripts/kde-konsole-profile.js
           software/scripts/diff-so-fancy.sh
+          software/scripts/sublime-text-configurations.js
+          software/scripts/sublime-text-keybindings.js
         `,
       },
       {
