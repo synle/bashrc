@@ -21,6 +21,7 @@ async function _getPathSublimeText() {
 
 async function doInit() {
   sublimeSetings = {
+    update_check: false,
     atomic_save: true,
     default_line_ending: 'unix',
     font_size: EDITOR_CONFIGS.fontSize,
