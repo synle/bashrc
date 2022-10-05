@@ -36,4 +36,4 @@ nvm use default &>/dev/null
 
 
 echo "    >> install yarn"
-npm install --global yarn
+npm install --global yarn &>/dev/null

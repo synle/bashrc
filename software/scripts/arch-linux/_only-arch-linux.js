@@ -16,6 +16,9 @@ async function doWork() {
     `
 # Only Arch Linux alias
 alias open='dolphin'
+
+# override steamdeck prompt and properly use PS1 prompt
+PROMPT_COMMAND=""
     `.trim(),
   );
 }
