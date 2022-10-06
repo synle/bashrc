@@ -1,4 +1,5 @@
 setup:
+	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh | bash
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh | bash
 
 setup_full:
@@ -24,7 +25,14 @@ format:
 	sh format.sh
 
 test:
+	sh test-dependencies.sh
 	sh test-full-run.sh
+
+test_full:
+	sh test-full-run.sh
+
+test_dependencies:
+	sh test-dependencies.sh
 
 test_full_run_live:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash

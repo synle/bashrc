@@ -12,7 +12,7 @@ echo '>> Loading synle/bashrc script from upstream...'
 
 ###########################################################
 if [ $is_os_android_termux == "1" ]; then
-  echo '>> Running one time setup script for Android Termux'
+  echo '>> [Skipped] Running one time setup script for Android Termux'
 else
   echo '>> Running one time setup script for System'
   . /dev/stdin <<< "$(curl -s curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-first-and-only-one-time.sh?$(date +%s))"

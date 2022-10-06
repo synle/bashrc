@@ -291,7 +291,8 @@ function _getOsFlags() {
     is_os_chromeos: osFlag === 'chrome_os',
     is_os_mingw64: osFlag === 'ming_64',
     is_os_android_termux: osFlag === 'android_termux',
-    is_os_arch_linux: osFlag === 'arch_linux',
+    is_os_arch_linux: osFlag.includes('arch_linux'),
+    is_os_steamdeck: osFlag === 'arch_linux_steamdeck',
   };
 
   return osFlags;

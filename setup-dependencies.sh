@@ -25,6 +25,12 @@ if [ $is_os_darwin_mac == "1" ]; then
 elif [ $is_os_chromeos == "1" ]; then
   echo '>> started install-dependencies-chrome-os-linux.sh'
   curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-chrome-os-linux.sh | bash -
+elif [ $is_os_android_termux == "1" ]; then
+  echo '>> started install-dependencies-android-termux.sh'
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-android-termux.sh | bash -
+elif [ $is_os_steamdeck == "1" ]; then
+  echo '>> started install-dependencies-arch-linux-steam-deck.sh'
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-arch-linux-steam-deck.sh | bash -
 elif [ $is_os_ubuntu == "1" ]; then
   echo '>> started install-dependencies-ubuntu.sh'
   curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-ubuntu.sh | bash -

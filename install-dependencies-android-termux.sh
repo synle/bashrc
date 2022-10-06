@@ -31,7 +31,7 @@ pkg install -y git
 pkg install -y tig
 pkg install -y python
 pkg install -y bat
-pkg install -y jq 
+pkg install -y jq
 pkg install -y curl
 pkg install -y git
 pkg install -y tmux
