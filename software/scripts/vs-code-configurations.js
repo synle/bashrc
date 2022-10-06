@@ -60,6 +60,7 @@ async function doInit() {
     },
     'telemetry.enableTelemetry': false,
     'telemetry.enableCrashReporter': false,
+    'telemetry.telemetryLevel': 'off',
     'enable-crash-reporter': false,
     'update.mode': 'none',
   };
