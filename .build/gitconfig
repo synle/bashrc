@@ -1,8 +1,6 @@
-; ini file for gitconfig
-
 [user]
 name = Sy Le
-;email = emailhere@gmail.com
+; email = test_email@gmail.com
 
 [pull]
 rebase = false
@@ -13,7 +11,7 @@ default = current
 [core]
 autocrlf = input
 editor = vim
-pager=diff-so-fancy | less --tabs=2 -RFX
+
 
 [diff]
 tool = vimdiff
@@ -41,12 +39,15 @@ old = red
 new = green
 whitespace = red reverse
 
+[diff-so-fancy]
+markEmptyLines = false
+
 [alias]
 a = add
 aa = add -A
 amend = commit --amend --no-verify
 amend-with-verify = commit --amend
-ap = add -p 
+ap = add -p
 app = add -p .
 au = add -u
 b = branch
@@ -67,7 +68,7 @@ del-upstream-tag = push -d tag
 empty-commit = commit --allow-empty -m "Empty commit"
 f = fetch --all --prune
 fap = fetch --all --prune
-fr = !git fetch --all --prune; !git rebase --reapply-cherry-picks
+fr = !git fetch --all --prune && git rebase --reapply-cherry-picks
 l = log --oneline
 logs = log --oneline --decorate
 m = merge

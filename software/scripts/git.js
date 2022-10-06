@@ -8,6 +8,21 @@ async function doWork() {
   const email = _extractEmail(oldConfig);
 
   console.log('    >> Installing git Aliases and Configs for Main OS', configMain);
+
+  if (DEBUG_WRITE_TO_DIR) {
+    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
+
+    // non -mac keybinding
+    writeText(
+      'gitconfig',
+      _getGitConfig({
+        email: '; email = test_email@gmail.com',
+      }),
+    );
+
+    return process.exit();
+  }
+
   writeText(
     configMain,
     _getGitConfig({

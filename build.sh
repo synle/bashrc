@@ -24,9 +24,11 @@ software/scripts/vs-code-configurations.js
 software/scripts/vs-code-keybindings.js
 software/scripts/ssh.js
 software/scripts/sublime-merge.js
+software/scripts/git.js
+software/scripts/bash-inputrc.js
+software/scripts/vim-configurations.js
 """
 find $CONFIG_BUILD_PATH
-
 
 if [ "$CI" != "true" ]; then
   echo '> Build Autocomplete Config'

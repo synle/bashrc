@@ -185,7 +185,7 @@ function findFirstDirFromList(findProps) {
 
 function writeText(aDir, text, override = true, suppressError = false) {
   const pathToUse = _getFilePath(aDir);
-  const newContent = text;
+  const newContent = (text || '').trimEnd();
   const oldContent = readText(pathToUse);
   if (oldContent.trim() === newContent.trim() || override !== true) {
     // if content don't change, then don't save
@@ -574,6 +574,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           software/scripts/bash-syle-content.js
           software/scripts/bash-autocomplete.js
           // specifics
+          software/scripts/fzf.js
           software/scripts/fonts.js
           software/scripts/_nvm-binary.js
           software/scripts/_nvm-symlink.sh.js

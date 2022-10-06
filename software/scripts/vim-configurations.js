@@ -1,7 +1,7 @@
 async function doWork() {
   let targetPath;
 
-  const contentOnlyFullVimrc = `
+  const contentOnlyFullVimrc = trimLeftSpaces(`
     " vundle stuffs
     set nocompatible
     filetype off
@@ -33,9 +33,9 @@ async function doWork() {
 
     " theme
     color dracula
-  `;
+  `);
 
-  const contentVimrc = `
+  const contentVimrc = trimLeftSpaces(`
     " extension override
     au BufNewFile,BufRead *.cmp set filetype=xml
     au BufNewFile,BufRead *.app set filetype=xml
@@ -142,11 +142,11 @@ async function doWork() {
     " comma s and v to do split
     nnoremap <silent> ,v :vsplit<CR>
     nnoremap <silent> ,5 :vsplit<CR>
-    nnoremap <silent> ,s :split<CR>    
+    nnoremap <silent> ,s :split<CR>
     nnoremap <silent> ,d :split<CR>
     nnoremap <silent> ,w <c-w>q
     nnoremap <silent> ,x <c-w>q
-    nnoremap <silent> ,t :Files<CR>    
+    nnoremap <silent> ,t :Files<CR>
 
     " ctrl arrows to navigate split
     " https://stackoverflow.com/questions/7070889/remap-ctrl-arrowkeys-to-switch-between-split-buffers/7070942
@@ -158,7 +158,16 @@ async function doWork() {
     " fzf key bindings
     " https://dev.to/iggredible/how-to-search-faster-in-vim-with-fzf-vim-36ko
     nnoremap <silent> <C-t> :Files<CR>
-  `;
+  `);
+
+  if (DEBUG_WRITE_TO_DIR) {
+    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
+
+    // non -mac keybinding
+    writeText('vimrc', contentVimrc);
+
+    return process.exit();
+  }
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, '.vimrc');
   console.log('  >> Setting up vimrc on Linux / Mac / WSL', consoleLogColor4(targetPath));
