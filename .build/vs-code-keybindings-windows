@@ -1,7 +1,53 @@
 [
   {
+    "key": "alt+1",
+    "command": "workbench.action.openEditorAtIndex1"
+  },
+  {
+    "key": "alt+2",
+    "command": "workbench.action.openEditorAtIndex2"
+  },
+  {
+    "key": "alt+3",
+    "command": "workbench.action.openEditorAtIndex3"
+  },
+  {
+    "key": "alt+4",
+    "command": "workbench.action.openEditorAtIndex4"
+  },
+  {
+    "key": "alt+5",
+    "command": "workbench.action.openEditorAtIndex5"
+  },
+  {
+    "key": "alt+6",
+    "command": "workbench.action.openEditorAtIndex6"
+  },
+  {
+    "key": "alt+7",
+    "command": "workbench.action.openEditorAtIndex7"
+  },
+  {
+    "key": "alt+8",
+    "command": "workbench.action.openEditorAtIndex8"
+  },
+  {
+    "key": "alt+9",
+    "command": "workbench.action.openEditorAtIndex9"
+  },
+  {
     "key": "f5",
     "command": "workbench.files.action.refreshFilesExplorer"
+  },
+  {
+    "key": "alt+h",
+    "command": "editor.action.startFindReplaceAction",
+    "when": "editorFocus || editorIsOpen"
+  },
+  {
+    "key": "alt+h",
+    "command": "testing.toggleTestingPeekHistory",
+    "when": "testing.isPeekVisible"
   },
   {
     "key": "alt+\\",
@@ -54,58 +100,22 @@
     "command": "workbench.action.files.newUntitledFile"
   },
   {
-    "key": "alt+1",
-    "command": "workbench.action.openEditorAtIndex1"
-  },
-  {
-    "key": "alt+2",
-    "command": "workbench.action.openEditorAtIndex2"
-  },
-  {
-    "key": "alt+3",
-    "command": "workbench.action.openEditorAtIndex3"
-  },
-  {
-    "key": "alt+4",
-    "command": "workbench.action.openEditorAtIndex4"
-  },
-  {
-    "key": "alt+5",
-    "command": "workbench.action.openEditorAtIndex5"
-  },
-  {
-    "key": "alt+6",
-    "command": "workbench.action.openEditorAtIndex6"
-  },
-  {
-    "key": "alt+7",
-    "command": "workbench.action.openEditorAtIndex7"
-  },
-  {
-    "key": "alt+8",
-    "command": "workbench.action.openEditorAtIndex8"
-  },
-  {
-    "key": "alt+9",
-    "command": "workbench.action.openEditorAtIndex9"
-  },
-  {
-    "key": "alt+h",
-    "command": "editor.action.startFindReplaceAction",
-    "when": "editorFocus || editorIsOpen"
-  },
-  {
-    "key": "alt+h",
-    "command": "testing.toggleTestingPeekHistory",
-    "when": "testing.isPeekVisible"
-  },
-  {
     "key": "alt+f",
     "command": "actions.find"
   },
   {
     "key": "alt+shift+f",
     "command": "workbench.action.findInFiles"
+  },
+  {
+    "key": "alt+'",
+    "command": "workbench.action.debug.stepOver",
+    "when": "debugState == 'stopped'"
+  },
+  {
+    "key": "shift+alt+'",
+    "command": "workbench.action.debug.stepInto",
+    "when": "debugState != 'inactive'"
   },
   {
     "key": "alt+shift+p",

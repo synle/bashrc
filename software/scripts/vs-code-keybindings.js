@@ -34,10 +34,21 @@ async function doInit() {
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
+    { key: 'OS_KEY+1', command: 'workbench.action.openEditorAtIndex1' },
+    { key: 'OS_KEY+2', command: 'workbench.action.openEditorAtIndex2' },
+    { key: 'OS_KEY+3', command: 'workbench.action.openEditorAtIndex3' },
+    { key: 'OS_KEY+4', command: 'workbench.action.openEditorAtIndex4' },
+    { key: 'OS_KEY+5', command: 'workbench.action.openEditorAtIndex5' },
+    { key: 'OS_KEY+6', command: 'workbench.action.openEditorAtIndex6' },
+    { key: 'OS_KEY+7', command: 'workbench.action.openEditorAtIndex7' },
+    { key: 'OS_KEY+8', command: 'workbench.action.openEditorAtIndex8' },
+    { key: 'OS_KEY+9', command: 'workbench.action.openEditorAtIndex9' },
     {
       key: 'f5',
       command: 'workbench.files.action.refreshFilesExplorer',
     },
+    { key: 'OS_KEY+h', command: 'editor.action.startFindReplaceAction', when: 'editorFocus || editorIsOpen' },
+    { key: 'OS_KEY+h', command: 'testing.toggleTestingPeekHistory', when: 'testing.isPeekVisible' },
     {
       key: 'OS_KEY+\\',
       command: 'workbench.action.toggleSidebarVisibility',
@@ -88,18 +99,6 @@ async function doInit() {
       key: 'OS_KEY+n',
       command: 'workbench.action.files.newUntitledFile',
     },
-    { key: 'OS_KEY+1', command: 'workbench.action.openEditorAtIndex1' },
-    { key: 'OS_KEY+2', command: 'workbench.action.openEditorAtIndex2' },
-    { key: 'OS_KEY+3', command: 'workbench.action.openEditorAtIndex3' },
-    { key: 'OS_KEY+4', command: 'workbench.action.openEditorAtIndex4' },
-    { key: 'OS_KEY+5', command: 'workbench.action.openEditorAtIndex5' },
-    { key: 'OS_KEY+6', command: 'workbench.action.openEditorAtIndex6' },
-    { key: 'OS_KEY+7', command: 'workbench.action.openEditorAtIndex7' },
-    { key: 'OS_KEY+8', command: 'workbench.action.openEditorAtIndex8' },
-    { key: 'OS_KEY+9', command: 'workbench.action.openEditorAtIndex9' },
-
-    { key: 'OS_KEY+h', command: 'editor.action.startFindReplaceAction', when: 'editorFocus || editorIsOpen' },
-    { key: 'OS_KEY+h', command: 'testing.toggleTestingPeekHistory', when: 'testing.isPeekVisible' },
     {
       key: 'OS_KEY+f',
       command: 'actions.find',
@@ -107,6 +106,16 @@ async function doInit() {
     {
       key: 'OS_KEY+shift+f',
       command: 'workbench.action.findInFiles',
+    },
+    {
+      key: "OS_KEY+'",
+      command: 'workbench.action.debug.stepOver',
+      when: "debugState == 'stopped'",
+    },
+    {
+      key: "shift+OS_KEY+'",
+      command: 'workbench.action.debug.stepInto',
+      when: "debugState != 'inactive'",
     },
   ];
   // end COMMON_KEY_BINDINGS
