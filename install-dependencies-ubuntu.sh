@@ -39,7 +39,6 @@ then
   installPackage exa
   installPackage fzf
   installPackage git
-  installPackage jq
   installPackage pv
   installPackage net-tools
   ###

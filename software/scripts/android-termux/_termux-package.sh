@@ -13,8 +13,7 @@ packageInstall git
 packageInstall tig
 packageInstall python
 packageInstall bat
-packageInstall perl 
-packageInstall jq 
+packageInstall perl
 
 # clean loose packages
 echo '  >> Clean up loose metadata for pkg'
@@ -27,7 +26,7 @@ mkdir -p ~/.termux
 
 
 # change root
-# note that android termux does not have /tmp mapped correctly - this allow us to do things with git clone 
+# note that android termux does not have /tmp mapped correctly - this allow us to do things with git clone
 # https://wiki.termux.com/wiki/Differences_from_Linux
 termux-chroot &> /dev/null
 

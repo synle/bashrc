@@ -45,7 +45,7 @@ then
   echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
   touch ~/.bashrc
   touch ~/.bash_profile
-  
+
   if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
      echo 'source ~/.bashrc' >> ~/.bash_profile
   fi
@@ -79,7 +79,6 @@ then
   installPackage bat
   installPackage fzf
   installPackage git
-  installPackage jq
   installPackage pv
   installPackage fd
   installPackage exa
@@ -88,7 +87,7 @@ then
   installPackage java
   installPackage python
   installPackage keka # zip
-  installPackage kap # screen recording  
+  installPackage kap # screen recording
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools
