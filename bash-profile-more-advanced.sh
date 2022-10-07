@@ -229,51 +229,6 @@ fuzzyGitCobranch(){
   git checkout $(echo "$branch")
 }
 
-
-getMakeComponentOptions(){
-  make-help
-}
-
-
-# create the syle bookmark file
-touch $HOME/.syle_bookmark
-
-getCommandFromBookmark(){
-  cat $HOME/.syle_bookmark
-}
-
-addCommandToBookmarks(){
-  echo $@ >> $HOME/.syle_bookmark
-  echo "Bookmarking '"$@"'"
-  removeDuplicateLines ~/.syle_bookmark > /tmp/syle-bookmark-temp
-  cat /tmp/syle-bookmark-temp > ~/.syle_bookmark
-
-  # remove the temp file
-  rm /tmp/syle-bookmark-temp
-}
-
-fuzzyMakeComponent(){
-  makeComponentCommand=$(( \
-  getMakeComponentOptions \
-  ) | sed '/^\s*$/d' | uniq | fzf)
-  echo "$makeComponentCommand"
-  $makeComponentCommand
-}
-
-
-fuzzyFavoriteCommand(){
-  makeComponentCommand=$(( \
-  getCommandFromBookmark
-  ) | sed '/^\s*$/d' | uniq | fzf)
-  echo "$makeComponentCommand"
-
-  # run the command
-  eval "$makeComponentCommand"
-
-  # put the command into history
-  history -s "$makeComponentCommand"
-}
-
 # different completion trigger
 export FZF_COMPLETION_TRIGGER='*'
 

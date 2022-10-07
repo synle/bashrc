@@ -18,7 +18,22 @@ async function doWork() {
   textContent = prependTextBlock(
     textContent,
     'Sy Make Component', // key
-    `[ -f ${targetPath}/setup.sh ] && . ${targetPath}/setup.sh`,
+    trimLeftSpaces(`
+      [ -f ${targetPath}/setup.sh ] && . ${targetPath}/setup.sh
+
+      ## fzf alias for synle-make-component
+      getMakeComponentOptions(){
+        make-help
+      }
+
+      fuzzyMakeComponent(){
+        makeComponentCommand=$(( \
+        getMakeComponentOptions \
+        ) | sed '/^\s*$/d' | uniq | fzf)
+        echo "$makeComponentCommand"
+        $makeComponentCommand
+      }
+    `),
   );
   writeText(BASE_BASH_SYLE, textContent);
 }

@@ -575,6 +575,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           software/scripts/bash-autocomplete.js
           // specifics
           software/scripts/fzf.js
+          software/scripts/synle-make-component.js
           software/scripts/fonts.js
           software/scripts/_nvm-binary.js
           software/scripts/_nvm-symlink.sh.js
