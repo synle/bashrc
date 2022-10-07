@@ -583,6 +583,8 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           software/scripts/diff-so-fancy.sh
           software/scripts/sublime-text-configurations.js
           software/scripts/sublime-text-keybindings.js
+          software/scripts/jq.js
+          software/scripts/jq.sh
         `,
       },
       {
