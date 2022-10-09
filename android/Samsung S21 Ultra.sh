@@ -7,6 +7,11 @@ function removeApp(){
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
 
+function restoreApp(){
+  echo "> Restore:" $@
+  cmd package install-existing $@
+}
+
 ## Bloated apps
 removeApp com.android.chrome
 removeApp com.diotek.sec.lookup.dictionary

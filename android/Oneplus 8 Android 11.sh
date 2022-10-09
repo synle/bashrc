@@ -1,8 +1,13 @@
 curl -s "https://raw.githubusercontent.com/synle/bashrc/master/android/Core Android.sh" | sh
 
 function removeApp(){
-  echo "> Remove: " $@
+  echo "> Remove:" $@
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
+}
+
+function restoreApp(){
+  echo "> Restore:" $@
+  cmd package install-existing $@
 }
 
 #

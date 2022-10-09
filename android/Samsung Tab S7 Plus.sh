@@ -2,8 +2,13 @@
 curl -s "https://github.com/synle/bashrc/blob/master/android/Samsung S21 Ultra.sh" | sh
 
 function removeApp(){
-  echo "> Remove: " $@
+  echo "> Remove:" $@
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
+}
+
+function restoreApp(){
+  echo "> Restore:" $@
+  cmd package install-existing $@
 }
 
 ###
