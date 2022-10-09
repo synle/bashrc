@@ -51,15 +51,14 @@ removeApp com.samsung.android.shortcutbackupservice # ShortcutBNR, linked to Sma
 removeApp com.sec.android.widgetapp.easymodecontactswidget # Favorite Contacts, probably the favorite contacts when enabling the simple use senior mode
 removeApp com.sec.android.widgetapp.samsungapps # Galaxy Essentials Widget
 removeApp com.sec.android.widgetapp.webmanual # User manual
-removeApp com.samsung.android.app.spage # Bixby Home - Samsung Free
 
 # bixby remap
-removeApp com.samsung.android.bixby.wakeup
-removeApp com.samsung.android.app.spage
 removeApp com.samsung.android.app.routines
+removeApp com.samsung.android.app.spage
 removeApp com.samsung.android.bixby.agent
 removeApp com.samsung.android.bixby.agent.dummy
 removeApp com.samsung.android.bixby.service
+removeApp com.samsung.android.bixby.wakeup
 removeApp com.samsung.android.visionintelligence # Bixby Vision
 
 # gear vr
@@ -82,11 +81,10 @@ removeApp com.microsoft.office.word
 removeApp com.microsoft.office.powerpoint
 
 # misc
+removeApp com.samsung.android.app.news # samsung news today, Galaxy Essentials Widget
+removeApp com.samsung.android.app.reminder # samsung reminder https://galaxystore.samsung.com/prepost/000005309349?appId=com.samsung.android.app.reminder
 removeApp com.samsung.android.widgetapp.yahooedge.finance
 removeApp com.samsung.android.widgetapp.yahooedge.sport
-removeApp com.samsung.android.app.reminder # samsung reminder https://galaxystore.samsung.com/prepost/000005309349?appId=com.samsung.android.app.reminder
-removeApp com.samsung.android.app.news # samsung news today
-removeApp com.samsung.android.app.news # Galaxy Essentials Widget
 removeApp flipboard.boxer.app
 
 # # Samsung Bixby #
@@ -99,10 +97,10 @@ removeApp flipboard.boxer.app
 # removeApp com.samsung.android.bixby.voiceinput
 # removeApp com.samsung.android.bixby.wakeup
 # removeApp com.samsung.android.svoice # SVoice
+# removeApp com.samsung.android.visionintelligence # Bixby Vision
 # removeApp com.samsung.svoice.sync # Voice Service, S Voice is the ancestor of Bixby
 # removeApp com.samsung.systemui.bixby
 # removeApp com.samsung.systemui.bixby2
-# removeApp com.samsung.android.visionintelligence # Bixby Vision
 # removeApp com.samsung.visionprovider # VisionProvider, maybe linked to Bixby?
 
 # # More bixby
