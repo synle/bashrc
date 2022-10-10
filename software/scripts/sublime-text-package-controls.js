@@ -1,3 +1,22 @@
+const packages = trimLeftSpaces(`
+  Alignment
+  All Autocomplete
+  BracketHighlighter
+  Case Conversion
+  CodeFormatter
+  Compare Side-By-Side
+  DocBlockr
+  Dracula Color Scheme
+  FileIcons
+  LESS
+  Package Control
+  SCSS
+  SideBarEnhancements
+  SublimeCodeIntel
+  SyncedSideBar
+  TypeScript
+`);
+
 async function _getPathSublimeText() {
   try {
     if (is_os_window) {
@@ -32,24 +51,7 @@ async function doWork() {
   writeJson(sublimePackageControlConfigPath, {
     bootstrapped: true,
     in_process_packages: [],
-    installed_packages: convertTextToList(`
-      Alignment
-      All Autocomplete
-      BracketHighlighter
-      Case Conversion
-      CodeFormatter
-      Compare Side-By-Side
-      DocBlockr
-      Dracula Color Scheme
-      FileIcons
-      LESS
-      Package Control
-      SCSS
-      SideBarEnhancements
-      SublimeCodeIntel
-      SyncedSideBar
-      TypeScript
-    `),
+    installed_packages: convertTextToList(packages),
   });
 
   const sublimeCodeFormatConfigPath = path.join(targetPath, 'Packages/CodeFormatter/CodeFormatter.sublime-settings');

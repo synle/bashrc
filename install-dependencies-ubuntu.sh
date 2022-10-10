@@ -13,9 +13,9 @@ then
   pushd /tmp  &> /dev/null
 
   # bat https://github.com/sharkdp/bat
-  echo '>> Installing bat'
-  wget https://github.com/sharkdp/bat/releases/download/v0.18.3/bat_0.18.3_amd64.deb &>/dev/null
-  sudo dpkg -i bat_*_amd64.deb &>/dev/null
+  # echo '>> Installing bat'
+  # wget https://github.com/sharkdp/bat/releases/download/v0.18.3/bat_0.18.3_amd64.deb &>/dev/null
+  # sudo dpkg -i bat_*_amd64.deb &>/dev/null
 
   popd &> /dev/null
 

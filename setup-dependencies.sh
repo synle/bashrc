@@ -7,8 +7,6 @@ echo """
 
 echo '>> loading...'
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh)"
-clear
-
 
 echo '>> checking if we have all the minimal deps before starting'
 

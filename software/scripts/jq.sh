@@ -7,7 +7,6 @@ echo '    >> Downloading jq'
 if [ $is_os_darwin_mac == "1" ]; then
   echo '      >> For OSX'
   DOWNLOAD_PATH=https://raw.githubusercontent.com/synle/bashrc/master/binaries/jq-osx
-  curl -s  > $TEMP_PATH
 else
   echo '      >> For Linux'
   DOWNLOAD_PATH=https://raw.githubusercontent.com/synle/bashrc/master/binaries/jq-linux
