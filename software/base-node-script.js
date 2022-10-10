@@ -816,9 +816,15 @@ function processScriptFile(file) {
   }
 
   scriptToUse = _generateScript(file, url);
+
   const pipeOutput = _generatePipeOutput(file, url);
 
   console.log(`{ ${scriptToUse} ;} | ${pipeOutput}`);
+}
+
+async function includeSource(file) {
+  const fileContent = await fetchUrlAsString(file);
+  eval(fileContent);
 }
 
 function printOsFlags() {

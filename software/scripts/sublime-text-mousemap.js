@@ -1,3 +1,5 @@
+includeSource('software/scripts/sublime-text.common.js');
+
 let SUBLIME_VERSION;
 
 let OS_KEY;
@@ -26,25 +28,6 @@ function _formatKey(mouseMaps, osKeyToUse) {
   }
 
   return mouseMaps;
-}
-
-async function _getPathSublimeText() {
-  try {
-    if (is_os_window) {
-      return findDirSingle(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Text/i);
-    }
-
-    if (is_os_darwin_mac) {
-      return findDirSingle(getOsxApplicationSupportCodeUserPath(), /Sublime[ ]*Text/i);
-    }
-
-    // for debian or chrome os debian linux
-    return findDirSingle(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i);
-  } catch (err) {
-    console.log('      >> Failed to get the path for Sublime Text', url, err);
-  }
-
-  return null;
 }
 
 async function doInit() {

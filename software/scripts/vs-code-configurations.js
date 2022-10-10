@@ -1,3 +1,5 @@
+includeSource('software/scripts/vs-code.common.js');
+
 let COMMON_CONFIGS;
 
 function _convertIgnoredFilesAndFolders(ignoredFiles) {
@@ -67,7 +69,7 @@ async function doInit() {
 }
 
 async function doWork() {
-  const targetPath = _getPath();
+  const targetPath = _getVsCodePath();
   let targetFile;
 
   // write to build file
@@ -87,17 +89,4 @@ async function doWork() {
   const vsCodeMainConfigPath = path.join(targetPath, 'User/settings.json');
   console.log(`    >> `, vsCodeMainConfigPath);
   writeJsonWithMerge(vsCodeMainConfigPath, Object.assign(COMMON_CONFIGS, osSpecificSettings));
-}
-
-function _getPath() {
-  if (is_os_window) {
-    return findDirSingle(getWindowAppDataRoamingUserPath(), /Code/);
-  }
-  if (is_os_darwin_mac) {
-    return findDirSingle(getOsxApplicationSupportCodeUserPath(), /Code/);
-  }
-  if (is_os_arch_linux) {
-    return path.join(process.env.HOME, '.var/app/com.visualstudio.code/config/Code');
-  }
-  return null;
 }

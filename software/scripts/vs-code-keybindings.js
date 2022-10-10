@@ -1,3 +1,5 @@
+includeSource('software/scripts/vs-code.common.js');
+
 let OS_KEY;
 let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
@@ -122,7 +124,7 @@ async function doInit() {
 }
 
 async function doWork() {
-  const targetPath = _getPath();
+  const targetPath = _getVsCodePath();
   let targetFile;
 
   // write to build file
@@ -158,17 +160,4 @@ async function doWork() {
   if (compiledKeyBindings) {
     writeJson(vsCodeKeybindingConfigPath, compiledKeyBindings);
   }
-}
-
-function _getPath() {
-  if (is_os_window) {
-    return findDirSingle(getWindowAppDataRoamingUserPath(), /Code/);
-  }
-  if (is_os_darwin_mac) {
-    return findDirSingle(getOsxApplicationSupportCodeUserPath(), /Code/);
-  }
-  if (is_os_arch_linux) {
-    return path.join(process.env.HOME, '.var/app/com.visualstudio.code/config/Code');
-  }
-  return null;
 }

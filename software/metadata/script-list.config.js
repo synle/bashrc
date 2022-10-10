@@ -10,7 +10,8 @@ async function doWork() {
       file = `software/scripts/${file}`;
     }
 
-    if (!file.match(/\.json/) && !file.match(/\.config/)) {
+    // we want to ignore any common script (.common.js) or config file (.config)
+    if (!file.match(/\.common.js/) && !file.match(/\.json/) && !file.match(/\.config/)) {
       files.push(file);
     }
   }
