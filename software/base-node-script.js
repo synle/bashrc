@@ -556,7 +556,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
   const lastFiles = convertTextToList(`
     software/scripts/bash-syle-content.js
     software/scripts/etc-hosts.su.js
-    software/scripts/vs-code-extensions.sh.js
+    software/scripts/vs-code-extensions.sh
   `);
 
   if (is_os_window) {

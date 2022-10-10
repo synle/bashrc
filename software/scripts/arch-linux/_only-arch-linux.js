@@ -13,12 +13,15 @@ async function doWork() {
   console.log('  >> Installing Only Arch Linux tweaks: ', consoleLogColor4(targetPath));
   writeText(
     targetPath,
-    `
-# Only Arch Linux alias
-alias open='dolphin'
+    trimLeftSpaces(`
+      # Only Arch Linux alias
+      function open(){
+        pwd
+        dolphin "$1" 1>&- 2>&-  &
+      }
 
-# override steamdeck prompt and properly use PS1 prompt
-PROMPT_COMMAND=""
-    `.trim(),
+      # override steamdeck prompt and properly use PS1 prompt
+      PROMPT_COMMAND=""
+    `).trim(),
   );
 }
