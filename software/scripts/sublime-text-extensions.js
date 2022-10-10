@@ -9,7 +9,6 @@ let toInstallExtensions = trimLeftSpaces(`
   Dracula Color Scheme
   FileIcons
   LESS
-  Package Control
   SCSS
   SideBarEnhancements
   SublimeCodeIntel

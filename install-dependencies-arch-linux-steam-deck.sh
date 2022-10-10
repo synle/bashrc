@@ -8,3 +8,8 @@ sudo pacman-key --populate archlinux
 
 # Download deps
 sudo pacman -Syu bat
+
+
+# used for boot video
+# https://steamdeckrepo.com
+mkdir -p ~/.steam/root/config/uioverrides/movies/

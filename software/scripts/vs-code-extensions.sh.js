@@ -32,29 +32,27 @@ const toInstallExtensions = trimLeftSpaces(`
   formulahendry.auto-rename-tag
 `).trim();
 
+const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallExtensions);
+
 async function doWork() {
+  console.log(echo(`  >> Setting up VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
+
   // write to build file
-  writeToBuildFile([['vs-code-extensions', toInstallExtensions, false]]);
-
-  if (is_os_window) {
-    const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallExtensions);
-
-    console.log(echo(`  >> Setting up VS Code Extensions (code --install-extension --force): ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
-
-    for (const plugin of VS_CODE_EXTENSIONS_TO_INSTALL) {
-      console.log(`echo  "    >> ${plugin} " && \\`);
-
-      if (is_os_window) {
-        // windows
-        console.log(`cmd.exe /c "code.cmd --install-extension ${plugin} --force" &> /dev/null && \\`);
-      } else {
-        // mac
-        console.log(`code --install-extension ${plugin} --force &> /dev/null && \\`);
-      }
-    }
-
-    console.log(echo(`  >> Done Installed VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
-  } else {
-    console.log(consoleLogColor1('      >> Skipped : not supported'));
-  }
+  writeToBuildFile([
+    [
+      'vs-code-extensions-windows',
+      `
+c:; cd "C:/Program Files/Microsoft VS Code/bin"
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
+    `,
+      false,
+    ],
+    [
+      'vs-code-extensions-macosx',
+      `
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `/usr/local/bin/code --install-extension ${ext} --force`).join('\n')}
+    `,
+      false,
+    ],
+  ]);
 }
