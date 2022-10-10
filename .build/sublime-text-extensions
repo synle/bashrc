@@ -1,16 +1,2 @@
-Alignment
-All Autocomplete
-BracketHighlighter
-Case Conversion
-CodeFormatter
-Compare Side-By-Side
-DocBlockr
-Dracula Color Scheme
-FileIcons
-LESS
-Package Control
-SCSS
-SideBarEnhancements
-SublimeCodeIntel
-SyncedSideBar
-TypeScript
+# Use Preferences > Package Control > Package Control: Advanced Install Package. 
+Alignment,All Autocomplete,BracketHighlighter,Case Conversion,CodeFormatter,Compare Side-By-Side,DocBlockr,Dracula Color Scheme,FileIcons,LESS,Package Control,SCSS,SideBarEnhancements,SublimeCodeIntel,SyncedSideBar,TypeScript

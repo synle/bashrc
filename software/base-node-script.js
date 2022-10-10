@@ -131,8 +131,6 @@ function _getFilePath(aDir) {
       .replace(/__+/g, '_');
 
     pathToUse = path.join(globalThis.DEBUG_WRITE_TO_DIR, fileName);
-
-    console.log('<< Debug File Path: ', pathToUse);
   }
 
   return pathToUse;
@@ -214,6 +212,21 @@ function backupText(aDir, text) {
 
 function writeJson(aDir, json) {
   writeText(aDir, JSON.stringify(json, null, 2));
+}
+
+function writeToBuildFile(tasks) {
+  if (DEBUG_WRITE_TO_DIR) {
+    for (const [file, data, isJson = false] of [].concat(tasks)) {
+      if (isJson) {
+        console.log(consoleLogColor1('    >> DEBUG Mode: write JSON to file'), consoleLogColor4(file));
+        writeJson(file, data);
+      } else {
+        console.log(consoleLogColor1('    >> DEBUG Mode: write TEXT to file'), consoleLogColor4(file));
+        writeText(file, data);
+      }
+    }
+    return process.exit();
+  }
 }
 
 function appendText(aDir, text) {
@@ -774,12 +787,20 @@ function processScriptFile(file) {
 
   function _generatePipeOutput(file, url) {
     if (file.includes('.su.sh.js')) {
+      if (DEBUG_WRITE_TO_DIR) {
+        // for debug mode, we do not want to run bash
+        return 'node';
+      }
       return `node | bash`;
     }
     if (file.includes('.su.js')) {
       return `sudo -E node`; // -E means preserve the env variable
     }
     if (file.includes('.sh.js')) {
+      if (DEBUG_WRITE_TO_DIR) {
+        // for debug mode, we do not want to run bash
+        return 'node';
+      }
       return `node | bash`;
     }
     if (file.includes('.js')) {

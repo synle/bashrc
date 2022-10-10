@@ -186,16 +186,12 @@ async function doWork() {
 
   console.log(`  >> Setting up Sublime Text Keybindings:`, consoleLogColor4(targetPath));
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeJson('sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
-    writeJson('sublime-text-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY));
-    writeJson('sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([
+    ['sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY), true],
+    ['sublime-text-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY), true],
+    ['sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true],
+  ]);
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));

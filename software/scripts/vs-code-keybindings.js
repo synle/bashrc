@@ -125,16 +125,12 @@ async function doWork() {
   const targetPath = _getPath();
   let targetFile;
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeJson('vs-code-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY));
-    writeJson('vs-code-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY));
-    writeJson('vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY));
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([
+    ['vs-code-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY), true],
+    ['vs-code-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY), true],
+    ['vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true],
+  ]);
 
   if (!fs.existsSync(targetPath)) {
     console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));

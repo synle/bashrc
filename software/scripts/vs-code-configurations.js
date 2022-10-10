@@ -70,14 +70,8 @@ async function doWork() {
   const targetPath = _getPath();
   let targetFile;
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeJson('vs-code-configurations', COMMON_CONFIGS);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([['vs-code-configurations', COMMON_CONFIGS, true]]);
 
   if (!fs.existsSync(targetPath)) {
     console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));

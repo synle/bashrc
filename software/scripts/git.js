@@ -9,19 +9,16 @@ async function doWork() {
 
   console.log('    >> Installing git Aliases and Configs for Main OS', configMain);
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeText(
+  // write to build file
+  writeToBuildFile([
+    [
       'gitconfig',
       _getGitConfig({
         email: '; email = test_email@gmail.com',
       }),
-    );
-
-    return process.exit();
-  }
+      false,
+    ],
+  ]);
 
   writeText(
     configMain,

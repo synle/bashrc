@@ -1,4 +1,4 @@
-const toInstallExtensions = trimLeftSpaces(`
+let toInstallExtensions = trimLeftSpaces(`
   Alignment
   All Autocomplete
   BracketHighlighter
@@ -16,6 +16,8 @@ const toInstallExtensions = trimLeftSpaces(`
   SyncedSideBar
   TypeScript
 `).trim();
+
+toInstallExtensions = convertTextToList(toInstallExtensions);
 
 async function _getPathSublimeText() {
   try {
@@ -41,14 +43,14 @@ async function doWork() {
 
   console.log(`  >> Setting up Sublime Text Extensions:`, consoleLogColor4(targetPath));
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeText('sublime-text-extensions', toInstallExtensions);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([
+    [
+      'sublime-text-extensions',
+      `# Use Preferences > Package Control > Package Control: Advanced Install Package. \n${toInstallExtensions.join(',')}`,
+      false,
+    ],
+  ]);
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));
@@ -60,7 +62,7 @@ async function doWork() {
   writeJson(sublimePackageControlConfigPath, {
     bootstrapped: true,
     in_process_packages: [],
-    installed_packages: convertTextToList(toInstallExtensions),
+    installed_packages: toInstallExtensions,
   });
 
   const sublimeCodeFormatConfigPath = path.join(targetPath, 'Packages/CodeFormatter/CodeFormatter.sublime-settings');

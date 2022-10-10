@@ -65,14 +65,8 @@ async function doWork() {
 
   console.log(`  >> Setting up Sublime Text configurations:`, consoleLogColor4(targetPath));
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeJson('sublime-text-configurations', sublimeSetings);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([['sublime-text-configurations', sublimeSetings, true]]);
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));

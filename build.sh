@@ -13,23 +13,13 @@ export TEST_SCRIPT_FILES="software/metadata/ip-address.config.js" && \
 
 # This script will compile all the common configs
 # used for sublime and vscode keybindings
-echo '> Build raw JSON configs for VSCode and Sublime'
+# here we only want to do this for files containing the method "writeToBuildFile"
+echo '> Build raw JSON and raw JSON configs'
 CONFIG_BUILD_PATH="./.build"
 mkdir -p $CONFIG_BUILD_PATH
 export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
-sh test.sh """
-software/scripts/bash-inputrc.js
-software/scripts/git.js
-software/scripts/ssh.js
-software/scripts/sublime-merge.js
-software/scripts/sublime-text-configurations.js
-software/scripts/sublime-text-extensions.js
-software/scripts/sublime-text-keybindings.js
-software/scripts/vim-configurations.js
-software/scripts/vs-code-configurations.js
-software/scripts/vs-code-extensions.sh.js
-software/scripts/vs-code-keybindings.js
-"""
+sh test.sh "$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'base-node-script.js')"
+echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
 
 if [ "$CI" != "true" ]; then

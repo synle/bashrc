@@ -76,14 +76,8 @@ async function doWork() {
   // write if there are change
   console.log(sshConnections.map(([hostName, hostIp]) => `      >> ${hostIp} ${hostName}`).join('\n'));
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeText('ssh-config', sshConfigTextContent);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([['ssh-config', sshConfigTextContent, false]]);
 
   // make a backup
   backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.config`), sshConfigTextContent);

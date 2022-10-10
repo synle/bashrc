@@ -50,14 +50,8 @@ set visible-stats on
 #"\\en": "fuzzyMakeComponent\\r"
     `.trim();
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeText('inputrc', content);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([['inputrc', content, false]]);
 
   // write if there are change
   writeText(targetPath, content);

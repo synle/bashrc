@@ -33,14 +33,8 @@ const toInstallExtensions = trimLeftSpaces(`
 `).trim();
 
 async function doWork() {
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeText('vs-code-extensions', toInstallExtensions);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([['vs-code-extensions', toInstallExtensions, false]]);
 
   if (is_os_window) {
     const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallExtensions);
@@ -51,7 +45,7 @@ async function doWork() {
       console.log(`echo  "    >> ${plugin} " && \\`);
 
       if (is_os_window) {
-        // mac
+        // windows
         console.log(`cmd.exe /c "code.cmd --install-extension ${plugin} --force" &> /dev/null && \\`);
       } else {
         // mac

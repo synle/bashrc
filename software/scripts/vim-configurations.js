@@ -160,14 +160,8 @@ async function doWork() {
     nnoremap <silent> <C-t> :Files<CR>
   `);
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeText('vimrc', contentVimrc);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([['vimrc', contentVimrc, false]]);
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, '.vimrc');
   console.log('  >> Setting up vimrc on Linux / Mac / WSL', consoleLogColor4(targetPath));

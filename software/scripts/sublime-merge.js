@@ -15,14 +15,8 @@ async function doWork() {
 
   console.log('    >> Setting up Sublime Merge:', consoleLogColor4(targetPath));
 
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
-
-    // non -mac keybinding
-    writeJson('sublime-merge', SUBLIME_MERGE_CONFIG);
-
-    return process.exit();
-  }
+  // write to build file
+  writeToBuildFile([['sublime-merge', SUBLIME_MERGE_CONFIG, true]]);
 
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1('      >> Skipped : Not Found'));
