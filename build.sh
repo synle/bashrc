@@ -20,8 +20,10 @@ export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
 sh test.sh """
 software/scripts/sublime-text-configurations.js
 software/scripts/sublime-text-keybindings.js
+software/scripts/sublime-text-package-controls.js
 software/scripts/vs-code-configurations.js
 software/scripts/vs-code-keybindings.js
+software/scripts/vs-code-extensions.sh.js
 software/scripts/ssh.js
 software/scripts/sublime-merge.js
 software/scripts/git.js

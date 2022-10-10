@@ -1,4 +1,4 @@
-const packages = trimLeftSpaces(`
+const toInstallPackages = trimLeftSpaces(`
   Alignment
   All Autocomplete
   BracketHighlighter
@@ -15,7 +15,7 @@ const packages = trimLeftSpaces(`
   SublimeCodeIntel
   SyncedSideBar
   TypeScript
-`);
+`).trim();
 
 async function _getPathSublimeText() {
   try {
@@ -41,6 +41,15 @@ async function doWork() {
 
   console.log(`  >> Setting up Sublime Text Packages:`, consoleLogColor4(targetPath));
 
+  if (DEBUG_WRITE_TO_DIR) {
+    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
+
+    // non -mac keybinding
+    writeText('sublime-text-packages', toInstallPackages);
+
+    return process.exit();
+  }
+
   if (!fs.existsSync(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));
     return process.exit();
@@ -51,7 +60,7 @@ async function doWork() {
   writeJson(sublimePackageControlConfigPath, {
     bootstrapped: true,
     in_process_packages: [],
-    installed_packages: convertTextToList(packages),
+    installed_packages: convertTextToList(toInstallPackages),
   });
 
   const sublimeCodeFormatConfigPath = path.join(targetPath, 'Packages/CodeFormatter/CodeFormatter.sublime-settings');

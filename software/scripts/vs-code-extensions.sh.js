@@ -1,38 +1,49 @@
+const toInstallPackages = trimLeftSpaces(`
+  aaron-bond.better-comments
+  andrejunges.Handlebars
+  bierner.folder-source-actions
+  christian-kohler.npm-intellisense
+  christian-kohler.path-intellisense
+  clinyong.vscode-css-modules
+  dakara.transformer
+  dbaeumer.vscode-eslint
+  dracula-theme.theme-dracula
+  dsznajder.es7-react-js-snippets
+  emmanuelbeziat.vscode-great-icons
+  esbenp.prettier-vscode
+  Hridoy.ember-snippets
+  ms-azuretools.vscode-docker
+  ms-dotnettools.csharp
+  ms-python.python
+  ms-python.vscode-pylance
+  ms-vscode-remote.remote-containers
+  ms-vscode-remote.remote-ssh
+  ms-vscode-remote.remote-ssh-edit
+  ms-vscode-remote.remote-wsl
+  ms-vscode-remote.vscode-remote-extensionpack
+  ms-vscode.cpptools
+  nicoespeon.abracadabra
+  NuclleaR.vscode-extension-auto-import
+  oderwat.indent-rainbow
+  scala-lang.scala
+  streetsidesoftware.code-spell-checker
+  vscjava.vscode-maven
+  wmaurer.change-case
+  formulahendry.auto-rename-tag
+`).trim();
+
 async function doWork() {
+  if (DEBUG_WRITE_TO_DIR) {
+    console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
+
+    // non -mac keybinding
+    writeText('vs-code-packages', toInstallPackages);
+
+    return process.exit();
+  }
+
   if (is_os_window) {
-    const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(`
-      aaron-bond.better-comments
-      andrejunges.Handlebars
-      bierner.folder-source-actions
-      christian-kohler.npm-intellisense
-      christian-kohler.path-intellisense
-      clinyong.vscode-css-modules
-      dakara.transformer
-      dbaeumer.vscode-eslint
-      dracula-theme.theme-dracula
-      dsznajder.es7-react-js-snippets
-      emmanuelbeziat.vscode-great-icons
-      esbenp.prettier-vscode
-      Hridoy.ember-snippets
-      ms-azuretools.vscode-docker
-      ms-dotnettools.csharp
-      ms-python.python
-      ms-python.vscode-pylance
-      ms-vscode-remote.remote-containers
-      ms-vscode-remote.remote-ssh
-      ms-vscode-remote.remote-ssh-edit
-      ms-vscode-remote.remote-wsl
-      ms-vscode-remote.vscode-remote-extensionpack
-      ms-vscode.cpptools
-      nicoespeon.abracadabra
-      NuclleaR.vscode-extension-auto-import
-      oderwat.indent-rainbow
-      scala-lang.scala
-      streetsidesoftware.code-spell-checker
-      vscjava.vscode-maven
-      wmaurer.change-case
-      formulahendry.auto-rename-tag
-    `);
+    const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallPackages);
 
     console.log(echo(`  >> Setting up VS Code Extensions (code --install-extension --force): ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
 
