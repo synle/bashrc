@@ -38,7 +38,7 @@ async function doWork() {
   console.log(`  >> Setting up VS Code Extensions:`);
 
   if (DEBUG_WRITE_TO_DIR) {
-    console.log('    >> Skipped - this is only used to build the main scripts')
+    console.log('    >> Skipped - this is only used to build the main scripts');
   }
 
   // write to build file
