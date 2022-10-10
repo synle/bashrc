@@ -4,7 +4,12 @@ async function doWork() {
   textContent = prependTextBlock(
     textContent,
     'jq', // key
-    `alias jq=/opt/jq`,
+    trimLeftSpaces(`
+      alias jq=/opt/jq
+      json(){
+        cat "$1" | jq .
+      }
+    `),
   );
   writeText(BASE_BASH_SYLE, textContent);
 }
