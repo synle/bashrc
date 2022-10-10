@@ -1,4 +1,4 @@
-const toInstallPackages = trimLeftSpaces(`
+const toInstallExtensions = trimLeftSpaces(`
   Alignment
   All Autocomplete
   BracketHighlighter
@@ -39,13 +39,13 @@ async function _getPathSublimeText() {
 async function doWork() {
   let targetPath = await _getPathSublimeText();
 
-  console.log(`  >> Setting up Sublime Text Packages:`, consoleLogColor4(targetPath));
+  console.log(`  >> Setting up Sublime Text Extensions:`, consoleLogColor4(targetPath));
 
   if (DEBUG_WRITE_TO_DIR) {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
 
     // non -mac keybinding
-    writeText('sublime-text-packages', toInstallPackages);
+    writeText('sublime-text-extensions', toInstallExtensions);
 
     return process.exit();
   }
@@ -60,7 +60,7 @@ async function doWork() {
   writeJson(sublimePackageControlConfigPath, {
     bootstrapped: true,
     in_process_packages: [],
-    installed_packages: convertTextToList(toInstallPackages),
+    installed_packages: convertTextToList(toInstallExtensions),
   });
 
   const sublimeCodeFormatConfigPath = path.join(targetPath, 'Packages/CodeFormatter/CodeFormatter.sublime-settings');

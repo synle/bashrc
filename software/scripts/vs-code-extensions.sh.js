@@ -1,4 +1,4 @@
-const toInstallPackages = trimLeftSpaces(`
+const toInstallExtensions = trimLeftSpaces(`
   aaron-bond.better-comments
   andrejunges.Handlebars
   bierner.folder-source-actions
@@ -37,13 +37,13 @@ async function doWork() {
     console.log(consoleLogColor1('    >> DEBUG Mode: write to file'));
 
     // non -mac keybinding
-    writeText('vs-code-packages', toInstallPackages);
+    writeText('vs-code-extensions', toInstallExtensions);
 
     return process.exit();
   }
 
   if (is_os_window) {
-    const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallPackages);
+    const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallExtensions);
 
     console.log(echo(`  >> Setting up VS Code Extensions (code --install-extension --force): ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
 
@@ -60,5 +60,7 @@ async function doWork() {
     }
 
     console.log(echo(`  >> Done Installed VS Code Extensions: ${VS_CODE_EXTENSIONS_TO_INSTALL.length}`));
+  } else {
+    console.log(consoleLogColor1('      >> Skipped : not supported'));
   }
 }

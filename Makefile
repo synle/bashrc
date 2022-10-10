@@ -45,5 +45,11 @@ test_full_run_local:
 test_single_run_local:
 	sh test.sh "$(file)"
 
+test_single_run_local_with_prompt:
+	cat software/metadata/script-list.config
+	@echo "\n\n==================================\n"
+	@read -p "Enter File To Test:" file; \
+	sh test.sh "$$file"
+
 list_scripts:
 	cat software/metadata/script-list.config

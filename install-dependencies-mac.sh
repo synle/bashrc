@@ -10,7 +10,7 @@ function installPackage(){
 
 if [[ $is_os_darwin_mac == "1" ]]
 then
-  ecoh '>> Animation tweaks'
+  echo '>> Animation tweaks'
   # settings to speed up
   # https://gist.github.com/kidpixo/78b9a40ab58e026cf9a432573e27ced5
   #1. Disable animations when opening and closing windows.
