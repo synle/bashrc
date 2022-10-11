@@ -43,16 +43,15 @@ async function doWork() {
       }
 
       fuzzyFavoriteCommand(){
-        bookmarkedCommands=$(( \
-        getCommandFromBookmark
-        ) | sed '/^\s*$/d' | uniq | fzf)
-        echo "bookmarkedCommands"
+        bookmarkedCommands=$((getCommandFromBookmark) | sed '/^\s*$/d' | uniq | fzf)
+
+        echo "$bookmarkedCommands"
 
         # run the command
-        eval "bookmarkedCommands"
+        eval "$bookmarkedCommands"
 
         # put the command into history
-        history -s "bookmarkedCommands"
+        history -s "$bookmarkedCommands"
       }
     `),
   );
