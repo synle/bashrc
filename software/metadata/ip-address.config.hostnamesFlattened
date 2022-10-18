@@ -60,6 +60,26 @@
     }
   ],
   [
+    "sy-lenovo-yoga-6",
+    "192.168.1.23",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-yoga-6",
+    "192.168.1.23",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
     "sy-g15",
     "192.168.1.25",
     {
