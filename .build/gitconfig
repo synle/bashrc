@@ -93,3 +93,16 @@ s = status -sb
 stats = shortlog -sn
 tagss = tag --list
 tags = ls-remote --tags origin
+
+
+; these are things that are not commit
+; search git for commits that contains a text
+search-logs-for-include-text=log -- . -G
+
+; list out all commits from reflog that has changes on file
+; git rev-list --all -- software/base-node-script.js
+search-reflog-for-file=git rev-list --all --
+
+; see which branch contains the commit hash
+; branch -r --contains 'commit_hash'
+search-branch-by-commit-hash=branch -r --contains
