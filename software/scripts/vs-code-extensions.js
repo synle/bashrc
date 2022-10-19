@@ -54,7 +54,8 @@ ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} 
     [
       'vs-code-extensions-macosx',
       `
-${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `/usr/local/bin/code --install-extension ${ext} --force`).join('\n')}
+cd "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
     `,
       false,
     ],
