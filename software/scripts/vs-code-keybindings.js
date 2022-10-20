@@ -30,9 +30,9 @@ async function doInit() {
     OS_KEY = LINUX_OS_KEY;
   }
 
-  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.windows.json')) || [];
-  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.linux.json')) || [];
-  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.mac.json')) || [];
+  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString(`${__dirname}/vs-code-keybindings.windows.json`)) || [];
+  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString(`${__dirname}/vs-code-keybindings.linux.json`)) || [];
+  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString(`${__dirname}/vs-code-keybindings.mac.json`)) || [];
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [

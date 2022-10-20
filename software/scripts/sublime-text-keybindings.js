@@ -35,9 +35,9 @@ async function doInit() {
     OS_KEY = LINUX_OS_KEY;
   }
 
-  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.windows.json')) || [];
-  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.linux.json')) || [];
-  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.mac.json')) || [];
+  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString(`${__dirname}/sublime-text-keybindings.windows.json`)) || [];
+  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString(`${__dirname}/sublime-text-keybindings.linux.json`)) || [];
+  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString(`${__dirname}/sublime-text-keybindings.mac.json`)) || [];
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
