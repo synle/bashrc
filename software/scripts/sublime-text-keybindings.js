@@ -88,8 +88,17 @@ async function doInit() {
       command: 'new_file',
     },
     {
-      key: 'OS_KEY+shift+k',
+      key: 'OS_KEY+ctrl+g',
       command: 'find_all_under',
+    },
+
+    {
+      key: 'OS_KEY+shift+g',
+      command: 'find_prev',
+    },
+    {
+      key: 'OS_KEY+g',
+      command: 'find_next',
     },
     { keys: ['OS_KEY+h'], command: 'show_panel', args: { panel: 'replace', reverse: false } },
     {

@@ -63,10 +63,6 @@
     "command": "next_view"
   },
   {
-    "key": "alt+ctrl+g",
-    "command": "find_all_under"
-  },
-  {
     "key": "alt+shift+a",
     "command": "alignment"
   },

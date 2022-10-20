@@ -73,7 +73,19 @@
   {
     "command": "find_all_under",
     "keys": [
-      "super+shift+k"
+      "super+ctrl+g"
+    ]
+  },
+  {
+    "command": "find_prev",
+    "keys": [
+      "super+shift+g"
+    ]
+  },
+  {
+    "command": "find_next",
+    "keys": [
+      "super+g"
     ]
   },
   {
