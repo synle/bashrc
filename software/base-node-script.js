@@ -819,13 +819,7 @@ function processScriptFile(file) {
 
   const pipeOutput = _generatePipeOutput(file, url);
 
-  console.log(`{ echo """
-    __filename = '${file}';
-    __dirname = '${path.dirname(file)}';
-
-    globalThis.__filename = __filename;
-    globalThis.__dirname = __dirname;
-    """ && ${scriptToUse} ;} | ${pipeOutput}`);
+  console.log(`{ ${scriptToUse} ;} | ${pipeOutput}`);
 }
 
 async function includeSource(file) {
