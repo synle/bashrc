@@ -49,9 +49,7 @@ alias flake8="python -m flake8"
 alias n="node"
 alias y="yarn"
 alias s='ssh -4'
-alias mk='make'
-alias gulp="./node_modules/.bin/gulp"
-alias grunt="./node_modules/.bin/grunt"
+alias b="bat --style=plain"                                                                                                                                      
 
 br(){
   clear &&  echo $'\e[32m======================================================\e[m' && echo '''
