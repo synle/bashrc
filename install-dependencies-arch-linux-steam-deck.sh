@@ -7,7 +7,7 @@ sudo pacman-key --init
 sudo pacman-key --populate archlinux
 
 # Download deps
-sudo pacman -Syu bat
+sudo pacman -Sy bat ddcutil i2c-tools
 
 
 # used for boot video
