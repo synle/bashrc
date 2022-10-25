@@ -20,8 +20,11 @@ format:
 list_scripts:
 	cat software/metadata/script-list.config
 
-test_full:
+test:
 	sh test-full-run.sh
+
+test_full:
+	make test
 
 test_dependencies:
 	sh test-dependencies.sh
