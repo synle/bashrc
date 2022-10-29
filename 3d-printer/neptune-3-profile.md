@@ -1,3 +1,34 @@
+### Settings
+#### Printer Settings
+```
+X 235
+Y 235
+Z 285
+Rectangular
+Heated Bed
+Gcode Flavor: Marlin
+```
+
+#### Printer Settings
+```
+X Min -20
+Y Min -10
+X Max 10
+Y Max 10
+Gantry Height 285
+Number of Extruder 1
+```
+
+#### Extruder 1 - Nozzle Settings
+```
+Nozzle Size 0.4
+Compatible Material Diameter 1.75
+Nozzle X offset 0
+Nozzle Y offset 0
+Cooling Fan Number 0
+```
+
+
 ### Start GCode
 ```
 G28 ;home
