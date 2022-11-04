@@ -57,3 +57,24 @@ M104 S0 ;Turn-off hotend
 M140 S0 ;Turn-off bed
 M84 X Y E ;Disable all steppers but Z
 ```
+
+
+### Automatic script
+
+https://www.reddit.com/r/3Dprinting/comments/ww94cb/official_elegoo_neptune_3_cura_machine_profile/
+
+```bash
+# run as admin "Windows Terminal"
+mkdir -p /tmp/elegoo
+cd /tmp/elegoo
+curl https://gist.githubusercontent.com/unraze/f8bf62300ed6ec6cda4a40c3d5b3d04b/raw/b5c6c159f2f62ab978cf885da614f9f12ddc7c8b/custom_extruder_9.def.json -o custom_extruder_9.def.json
+curl https://gist.githubusercontent.com/unraze/0258a610a50ec12c4f5a1ded2920f6d2/raw/f60d379b435bfc92095946c0acb178581fd32888/custom_extruder_10.def.json -o custom_extruder_10.def.json
+curl https://gist.githubusercontent.com/unraze/77e6cf15b3074d7d05e5b6ce1e53cc40/raw/2fbea81640de848fc1c69a5324c9c27427103d65/elegoo_neptune_3.def.json -o elegoo_neptune_3.def.json
+
+cd /mnt/c/Program\ Files/Ultimaker\ Cura\ */share/cura/resources/extruders
+mv /tmp/elegoo/custom_extruder_9.def.json ./
+mv /tmp/elegoo/custom_extruder_10.def.json ./
+
+cd /mnt/c/Program\ Files/Ultimaker\ Cura\ */share/cura/resources/definitions
+mv /tmp/elegoo/elegoo_neptune_3.def.json ./
+```
