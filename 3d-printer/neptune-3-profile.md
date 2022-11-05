@@ -1,7 +1,11 @@
+### Links
 - https://ultimaker.com/software/ultimaker-cura
 - https://www.reddit.com/r/ElegooNeptune3/comments/ykh9ri/psa_official_cura_52_profiles_on_github_neptune_3/
 - https://github.com/NARUTOfzr/Cura5.0-Neptune-TEST
 - https://github.com/NARUTOfzr/Cura5.0-Neptune-TEST/archive/refs/heads/main.zip
+
+### Path
+`C:\Users\[user]\AppData\Roaming\cura\5.2`
 
 ### Settings
 #### Printer Settings
