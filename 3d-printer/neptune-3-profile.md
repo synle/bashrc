@@ -29,7 +29,7 @@ Cooling Fan Number 0
 ```
 
 
-### Start GCode
+### Start G-Code
 ```
 G28 ;home
 G92 E0 ;Reset Extruder
@@ -43,7 +43,7 @@ G92 E0 ;Reset Extruder
 G1 Z2.0 F3000 ;Move Z Axis up
 ```
 
-### Start GCode
+### End G-Code
 ```
 G91 ;Relative positionning
 G1 E-2 F2700 ;Retract a bit
