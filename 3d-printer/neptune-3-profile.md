@@ -40,25 +40,27 @@ Cooling Fan Number 0
 
 ### Start G-Code
 ```
+;ELEGOO NEPTUNE 3
+;M413 S0;S0=Disable power-loss recovery:S1=Enable power-loss recovery
+M220 S100 ;Set the feed speed to 100%
+G90
+G92 Z0;Erase Z value
 G28 ;home
+;M420 S1 Z10;Uncomment to enable progressive compensation height of 10mm
 G92 E0 ;Reset Extruder
-G1 Z4.0 F3000 ;Move Z Axis up
+G1 Z0.6 F300
+G1 X1.5 Y20 F5000.0 ;Move to start position
+G1 Y120.0 F600.0 E20 ;Draw the first line
+G1 X0.5 F1000.0 ;Move to side a little
+G1 Y20 F600 E40 ;Draw the second line
 G92 E0 ;Reset Extruder
-G1 X1.1 Y20 Z0.28 F5000.0 ;Move to start position
-G1 X1.1 Y80.0 Z0.28 F1500.0 E10 ;Draw the first line
-G1 X1.4 Y80.0 Z0.28 F5000.0 ;Move to side a little
-G1 X1.4 Y20 Z0.28 F1500.0 E20 ;Draw the second line
-G92 E0 ;Reset Extruder
-G1 Z2.0 F3000 ;Move Z Axis up
 ```
 
 ### End G-Code
 ```
 G91 ;Relative positionning
 G1 E-2 F2700 ;Retract a bit
-G1 E-2 Z0.2 F1600 ;Retract and raise Z
-G1 X5 Y5 F3000 ;Wipe out
-G1 Z10 ;Raise Z more
+G1 E-10 X5 Y5 Z3 F3000 ;Retract
 G90 ;Absolute positionning
 G1 X0 Y{machine_depth} ;Present print
 M106 S0 ;Turn-off fan
