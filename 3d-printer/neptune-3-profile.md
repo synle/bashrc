@@ -1,14 +1,18 @@
 ### Links
+
 - https://ultimaker.com/software/ultimaker-cura
 - https://www.reddit.com/r/ElegooNeptune3/comments/ykh9ri/psa_official_cura_52_profiles_on_github_neptune_3/
 - https://github.com/NARUTOfzr/Cura5.0-Neptune-TEST
 - https://github.com/NARUTOfzr/Cura5.0-Neptune-TEST/archive/refs/heads/main.zip
 
 ### Path
+
 `C:\Users\[user]\AppData\Roaming\cura\5.2`
 
 ### Settings
+
 #### Printer Settings
+
 ```
 X 235
 Y 235
@@ -19,6 +23,7 @@ Gcode Flavor: Marlin
 ```
 
 #### Printer Settings
+
 ```
 X Min -20
 Y Min -10
@@ -29,6 +34,7 @@ Number of Extruder 1
 ```
 
 #### Extruder 1 - Nozzle Settings
+
 ```
 Nozzle Size 0.4
 Compatible Material Diameter 1.75
@@ -37,8 +43,8 @@ Nozzle Y offset 0
 Cooling Fan Number 0
 ```
 
-
 ### Start G-Code
+
 ```
 ;ELEGOO NEPTUNE 3
 ;M413 S0;S0=Disable power-loss recovery:S1=Enable power-loss recovery
@@ -57,6 +63,7 @@ G92 E0 ;Reset Extruder
 ```
 
 ### End G-Code
+
 ```
 G91 ;Relative positionning
 G1 E-2 F2700 ;Retract a bit
@@ -68,7 +75,6 @@ M104 S0 ;Turn-off hotend
 M140 S0 ;Turn-off bed
 M84 X Y E ;Disable all steppers but Z
 ```
-
 
 ### Automatic script
 

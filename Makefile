@@ -29,6 +29,9 @@ test_full:
 test_dependencies:
 	sh test-dependencies.sh
 
+test_setup_hosts:
+	sh test-setup-hosts.sh
+
 # test a single file locally
 # make test_single_run file="software/scripts/sublime-text-keybindings.js"
 test_single_run:
