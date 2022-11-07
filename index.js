@@ -7,14 +7,18 @@ async function init() {
   configs = [
     {
       text: 'Setup Profile',
-      script: `<OS_FLAGS> <SETUP_DEPS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"`,
+      script: `
+        <OS_FLAGS> <SETUP_DEPS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"
+      `,
       checked: true,
       shouldShowOsSelectionInput: true,
       shouldShowSetupDependencies: true,
     },
     {
       text: 'Setup Lightweight Profile',
-      script: `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"`,
+      script: `
+        . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
+      `,
     },
     {
       text: 'Setup etc Hosts',
@@ -44,19 +48,28 @@ async function init() {
     },
     {
       text: 'Test Full Run live',
-      script: `<OS_FLAGS> curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash`,
+      script: `
+        <OS_FLAGS> curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
+      `,
       shouldShowOsSelectionInput: true,
     },
     {
       text: 'Test Single Script',
-      script: `<OS_FLAGS>\\\nexport TEST_SCRIPT_FILES="""\n<SELECT_SCRIPTS>\n""" <DEBUG_WRITE_TO_DIR> && \\\n\\\n curl -s https://raw.githubusercontent.com/synle/bashrc/master/<SELECTED_RUNNER_SCRIPT> | bash`,
+      script: `<OS_FLAGS> \\
+        export TEST_SCRIPT_FILES="""
+        <SELECT_SCRIPTS>
+        """ <DEBUG_WRITE_TO_DIR> && \\
+        curl -s https://raw.githubusercontent.com/synle/bashrc/master/<SELECTED_RUNNER_SCRIPT> | bash
+      `,
       shouldShowScriptNameInput: true,
       shouldShowOsSelectionInput: true,
     },
 
     {
       text: 'Environment Vars',
-      script: `<ENV_VARS>`,
+      script: `
+        <ENV_VARS>
+      `,
       shouldShowOsSelectionInput: true,
       shouldHideBootstrap: true,
       shouldShowEnvInput: true,
