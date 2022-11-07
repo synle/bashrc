@@ -22,10 +22,10 @@ async function init() {
         curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash
         
         # Windows
-        c:\Windows\System32\Drivers\etc\hosts
+        #c:\\Windows\\System32\\Drivers\\etc\\hosts
 
         # Linux
-        /etc/hosts
+        #/etc/hosts
 
         ${await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config`)
           .then((res) => res.text())
