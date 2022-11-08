@@ -573,32 +573,39 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
   softwareFiles = [...new Set([...firstFiles, ...softwareFiles, ...lastFiles])];
 
   return softwareFiles.filter((file) => {
+    const bareboneScriptsCommon = `
+      // common
+      software/scripts/fzf.js
+      software/scripts/synle-make-component.js
+      software/scripts/diff-so-fancy.sh
+      software/scripts/sublime-text-configurations.js
+      software/scripts/sublime-text-keybindings.js
+      software/scripts/vs-code-configurations.js
+      software/scripts/vs-code-keybindings.js
+      software/scripts/jq.js
+      software/scripts/jq.sh
+
+      // more advanced scripts
+      software/scripts/fzf.js
+      software/scripts/synle-make-component.js
+      software/scripts/diff-so-fancy.sh
+      software/scripts/sublime-text-configurations.js
+      software/scripts/sublime-text-keybindings.js
+      software/scripts/vs-code-configurations.js
+      software/scripts/vs-code-keybindings.js
+      software/scripts/jq.js
+      software/scripts/jq.sh
+    `;
+
     const scriptFinderConfigs = [
       {
         key: 'is_os_arch_linux',
         allowed_path: 'software/scripts/arch-linux',
         whitelist: `
-          // common
-          software/scripts/_bash-rc-bootstrap.js
-          software/scripts/git.js
-          software/scripts/vim-configurations.js
-          software/scripts/vim-vundle.sh
-          software/scripts/bash-inputrc.js
-          software/scripts/bash-syle-content.js
-          software/scripts/bash-autocomplete.js
+          ${bareboneScriptsCommon}
           // only
           software/scripts/kde-konsole-profile.js
           software/scripts/fonts.js
-          // specifics
-          software/scripts/fzf.js
-          software/scripts/synle-make-component.js
-          software/scripts/diff-so-fancy.sh
-          software/scripts/sublime-text-configurations.js
-          software/scripts/sublime-text-keybindings.js
-          software/scripts/vs-code-configurations.js
-          software/scripts/vs-code-keybindings.js
-          software/scripts/jq.js
-          software/scripts/jq.sh
         `,
       },
       {
@@ -614,24 +621,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         key: 'is_os_chromeos',
         allowed_path: 'software/scripts/chrome-os',
         whitelist: `
-          // common
-          software/scripts/_bash-rc-bootstrap.js
-          software/scripts/git.js
-          software/scripts/vim-configurations.js
-          software/scripts/vim-vundle.sh
-          software/scripts/bash-inputrc.js
-          software/scripts/bash-syle-content.js
-          software/scripts/bash-autocomplete.js
-          // specifics
-          software/scripts/fzf.js
-          software/scripts/synle-make-component.js
-          software/scripts/diff-so-fancy.sh
-          software/scripts/sublime-text-configurations.js
-          software/scripts/sublime-text-keybindings.js
-          software/scripts/vs-code-configurations.js
-          software/scripts/vs-code-keybindings.js
-          software/scripts/jq.js
-          software/scripts/jq.sh
+          ${bareboneScriptsCommon}
         `,
       },
     ];
