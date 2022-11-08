@@ -50,6 +50,7 @@ alias n="node"
 alias y="yarn"
 alias s='ssh -4'
 alias b="bat --style=plain"                                                                                                                                      
+alias c="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 
 br(){
   clear &&  echo $'\e[32m======================================================\e[m' && echo '''
