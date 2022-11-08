@@ -586,16 +586,17 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           software/scripts/bash-inputrc.js
           software/scripts/bash-syle-content.js
           software/scripts/bash-autocomplete.js
+          // only
+          software/scripts/kde-konsole-profile.js
+          software/scripts/fonts.js
           // specifics
           software/scripts/fzf.js
           software/scripts/synle-make-component.js
-          software/scripts/fonts.js
-          software/scripts/_nvm-binary.js
-          software/scripts/_nvm-symlink.sh.js
-          software/scripts/kde-konsole-profile.js
           software/scripts/diff-so-fancy.sh
           software/scripts/sublime-text-configurations.js
           software/scripts/sublime-text-keybindings.js
+          software/scripts/vs-code-configurations.js
+          software/scripts/vs-code-keybindings.js
           software/scripts/jq.js
           software/scripts/jq.sh
         `,
@@ -622,9 +623,15 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           software/scripts/bash-syle-content.js
           software/scripts/bash-autocomplete.js
           // specifics
-          software/scripts/tmux.js
+          software/scripts/fzf.js
+          software/scripts/synle-make-component.js
+          software/scripts/diff-so-fancy.sh
           software/scripts/sublime-text-configurations.js
           software/scripts/sublime-text-keybindings.js
+          software/scripts/vs-code-configurations.js
+          software/scripts/vs-code-keybindings.js
+          software/scripts/jq.js
+          software/scripts/jq.sh
         `,
       },
     ];
@@ -639,9 +646,9 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
       .filter((s) => !!s);
 
     for (const scriptFinderConfig of scriptFinderConfigs) {
-      const isscriptFinderConfigApplicable = global[scriptFinderConfig.key];
+      const isScriptFinderConfigApplicable = global[scriptFinderConfig.key];
 
-      if (isscriptFinderConfigApplicable) {
+      if (isScriptFinderConfigApplicable) {
         // it'sone of the configs, we should use it
         if (file.includes(scriptFinderConfig.allowed_path)) {
           return true;
