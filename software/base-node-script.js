@@ -633,6 +633,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
       [is_os_android_termux, 'software/scripts/android-termux'],
       [is_os_window, 'software/scripts/windows'],
       [is_os_darwin_mac, 'software/scripts/mac'],
+      [is_os_chromeos, 'software/scripts/chrome-os'],
     ]
       .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ''))
       .filter((s) => !!s);

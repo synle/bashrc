@@ -42,7 +42,7 @@ async function _getGitConfig({ email, extraCoreConfigs }) {
 
   let templateGitConfig = '';
 
-  templateGitConfig += (await readText('./software/scripts/git.config'))
+  templateGitConfig += (await fetchUrlAsString('software/scripts/git.config'))
     .replace('###EMAIL', email)
     .replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs);
 
