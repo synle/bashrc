@@ -11,6 +11,6 @@ async function doWork() {
     return process.exit();
   }
 
-  const url = `https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/kde-konsole-profile.ini`;
-  await downloadFile(url, targetPath);
+  const content = await readText('./software/scripts/kde-konsole-profile.ini');
+  writeText(targetPath, content);
 }

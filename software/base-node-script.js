@@ -603,6 +603,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         allowed_path: 'software/scripts/arch-linux',
         whitelist: `
           ${bareboneScriptsCommon}
+          software/scripts/git.js
           // only
           software/scripts/kde-konsole-profile.js
           software/scripts/fonts.js
@@ -622,6 +623,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         allowed_path: 'software/scripts/chrome-os',
         whitelist: `
           ${bareboneScriptsCommon}
+          software/scripts/git.js
         `,
       },
     ];
