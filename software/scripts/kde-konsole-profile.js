@@ -11,6 +11,6 @@ async function doWork() {
     return process.exit();
   }
 
-  const content = await readText('./software/scripts/kde-konsole-profile.ini');
+  const content = await fetchUrlAsString('software/scripts/kde-konsole-profile.ini');
   writeText(targetPath, content);
 }
