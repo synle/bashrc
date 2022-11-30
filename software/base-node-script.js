@@ -843,6 +843,18 @@ function printOsFlags() {
   }
 }
 
+function printScriptsToRun(scriptsToRun) {
+  console.log(`
+    node -e """
+      console.log(''.padStart(90, '='));
+      console.log('>> Scripts to Run'.padEnd(88, ' '));
+      console.log(''.padStart(90, '='));
+      ${scriptsToRun.forEach((file) => console.log('echo', file))}
+      console.log(''.padStart(90, '='));
+    """
+  `);
+}
+
 //////////////////////////////////////////////////////
 (async function () {
   // getting the ip address mapping

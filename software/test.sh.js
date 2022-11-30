@@ -34,6 +34,7 @@ ${''.padStart(90, '=')}
   }
 
   printOsFlags(); // Print OS Environments
+  printScriptsToRun(softwareFiles);
 
   for (let i = 0; i < softwareFiles.length; i++) {
     let file = softwareFiles[i];
