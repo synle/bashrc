@@ -51,9 +51,9 @@ Upgraded to 64GB RAM.
 Replaced 1TB NVME SSD with 1TB NVME with 2TB NVME
 Downgraded to Windows 10 with WSL 2 and Debian
 
-##### OSX Laptop (Macbook Pro 14 M1 - 512GB)
+##### OSX Laptop (Macbook Pro 14 M1 - 16GB RAM and 512GB Hard drive)
 Rocking OSX Ventura.
 
-##### On the go (Samsung Chromebook - 8GB RAM and 128GB Harddrive)
+##### On the go (Samsung Chromebook - 8GB RAM and 128GB Hard drive)
 Running ChromeOS with Container running Ubuntu.
 
