@@ -6,14 +6,6 @@ sy-printer
 sy-printer-dell
 sy-printer-dell-e525w
 
-192.168.1.22
-sy-mp
-sy-macpro
-
-192.168.1.23
-sy-lenovo-yoga-6
-sy-yoga-6
-
 192.168.1.24
 sy-g14
 sy-asus-g14
@@ -25,3 +17,10 @@ sy-asus-g15
 192.168.1.26
 sy-dell-xps
 sy-dell-xps-15
+
+192.168.1.27
+sy-mbp14
+sy-mbp14-m1
+
+192.168.1.28
+sy-aero16

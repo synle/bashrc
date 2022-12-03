@@ -37,14 +37,16 @@ Run this on full system - eg, Mac OSX, Ubuntu or Windows Sublinux System (WSL)
 
 ```
 
-
 #### Fun Facts
+
 Here are some fun facts about my personal setups.
 
 ##### Steam Deck
+
 Upgraded from 64GB eMMC to 1TB 2230 NVME.
 
 ##### Windows Laptop (Gigabyte Aero 16)
+
 Intel i7 12700H
 Geforce 3070 TI
 Upgraded to 64GB RAM.
@@ -52,8 +54,9 @@ Replaced 1TB NVME SSD with 1TB NVME with 2TB NVME
 Downgraded to Windows 10 with WSL 2 and Debian
 
 ##### OSX Laptop (Macbook Pro 14 M1 - 16GB RAM and 512GB Hard drive)
+
 Rocking OSX Ventura.
 
 ##### On the go (Samsung Chromebook - 8GB RAM and 128GB Hard drive)
-Running ChromeOS with Container running Ubuntu.
 
+Running ChromeOS with Container running Ubuntu.
