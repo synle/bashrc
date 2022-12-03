@@ -1,6 +1,5 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.inputrc');
-  let inputRcTextContent = readText(targetPath);
 
   console.log('  >> Updating .inputrc', consoleLogColor4(targetPath));
 

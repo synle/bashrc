@@ -1,3 +1,7 @@
+// this is the main entry point for scripts
+// it gets the list of scripts and execute them one by one
+//
+// this mode runs it live
 async function doWork() {
   const softwareFiles = await getSoftwareScriptFiles();
 

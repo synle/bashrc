@@ -1,7 +1,7 @@
 async function doWork() {
-  const targetPath = process.env.HOST_CONFIG_FILE || './software/metadata/ip-address.config';
+  const targetPath = 'software/metadata/ip-address.config';
 
-  const hostMappingApiResponse = await readText(targetPath);
+  const hostMappingApiResponse = await fetchUrlAsJson(targetPath);
 
   const HOST_SPLIT_REGEX = /[\:,|]/gi;
   const UNWANTED_KEYWORDS = ['NO_SSH', 'OSX_REMOTE', 'WINDOWS_REMOTE'];
