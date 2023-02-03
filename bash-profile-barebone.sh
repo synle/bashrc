@@ -107,6 +107,21 @@ removeDuplicateLines(){
   perl -ne 'print unless $dup{$_}++;' $@
 }
 
+shh(){
+  echo """
+########## sh $(pwd)/$@"""
+
+  cat $@
+
+  echo """
+################################################################################
+  """
+
+  clear;
+
+  sh $@
+}
+
 searchText(){
   echo """
 Searching:  $@
