@@ -1,12 +1,15 @@
 #! /bin/sh
 
-echo '  >> Installing Vundle Binary'
-mkdir -p ~/.vim/bundle
+VUNDLE_URL="https://github.com/synle/vundle.git"
 VUNDLE_DIR=~/.vim/bundle/Vundle.vim
-rm -rf $VUNDLE_DIR;
-git clone https://github.com/VundleVim/Vundle.vim.git $VUNDLE_DIR &> /dev/null;
+
+echo "  >> Installing Vundle Binary - $VUNDLE_URL"
+rm -rf  ~/.vim/bundle
+mkdir -p ~/.vim/bundle
+
+git clone $VUNDLE_URL $VUNDLE_DIR &> /dev/null;
 
 echo '  >> Installing Vundle Plugins:'
-echo '  vim +PluginInstall +qall'
-# vim +PluginInstall +qall
-vim +PluginInstall +qall &>/dev/null;
+echo '  :PluginInstall'
+echo '  vim +PlugInstall +qall >/dev/null 2>&1'
+echo '  vim +BundleInstall +qall >/dev/null 2>&1'

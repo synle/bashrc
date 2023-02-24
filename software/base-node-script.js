@@ -92,6 +92,9 @@ globalThis.EDITOR_CONFIGS = {
     'node_modules',
     'tmp',
     'webpack-dist',
+    '__pycache__',
+    '.mypy_cache',
+    '.pytest_cache',
   ],
 };
 
@@ -565,7 +568,12 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
 
   let softwareFiles = files
     .filter(
-      (f) => !!f.match('software/scripts/') && (f.includes('.js') || f.includes('.sh')) && !f.includes('config.js') && !f.includes('.json'),
+      (f) =>
+        !!f.match('software/scripts/') &&
+        (f.includes('.js') || f.includes('.sh')) &&
+        !f.includes('config.js') &&
+        !f.includes('.json') &&
+        !f.includes('.common.js'),
     )
     .filter((f) => firstFiles.indexOf(f) === -1 && lastFiles.indexOf(f) === -1)
     .sort();

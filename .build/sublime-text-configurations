@@ -88,7 +88,10 @@
     "dist",
     "node_modules",
     "tmp",
-    "webpack-dist"
+    "webpack-dist",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache"
   ],
   "alignment_chars": [
     "=",

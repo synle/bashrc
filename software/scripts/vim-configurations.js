@@ -23,7 +23,6 @@ async function doWork() {
     Plugin 'styled-components/vim-styled-components', { 'branch': 'main' }
     Plugin 'vim-airline/vim-airline'
     Plugin 'vim-airline/vim-airline-themes'
-    Plugin 'VundleVim/Vundle.vim'
 		Plugin 'AutoComplPop' " autocomplete pop
     " fzf vim
     Plugin 'junegunn/fzf'

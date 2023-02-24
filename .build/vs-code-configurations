@@ -77,7 +77,10 @@
     "**/dist": true,
     "**/node_modules": true,
     "**/tmp": true,
-    "**/webpack-dist": true
+    "**/webpack-dist": true,
+    "**/__pycache__": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true
   },
   "files.hotExit": "off",
   "files.insertFinalNewline": true,
