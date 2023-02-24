@@ -11,5 +11,4 @@ git clone $VUNDLE_URL $VUNDLE_DIR &> /dev/null;
 
 echo '  >> Installing Vundle Plugins:'
 echo '  :PluginInstall'
-echo '  vim +PlugInstall +qall >/dev/null 2>&1'
-echo '  vim +BundleInstall +qall >/dev/null 2>&1'
+echo '  vim +BundleInstall +qall'
