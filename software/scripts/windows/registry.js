@@ -7,7 +7,7 @@ async function doWork() {
     targetPath,
     `
 Windows Registry Editor Version 5.00
-; Disable internet search in start menu in windows 11
+; Disable internet search in start menu in windows 10 and 11
 [HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer]
 "DisableSearchBoxSuggestions"=dword:00000001
     `
