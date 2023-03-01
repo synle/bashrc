@@ -1,7 +1,7 @@
-async function doWork() {  
+async function doWork() {
   let targetPath = path.join(BASE_HOMEDIR_LINUX, '.config/terminator');
-  await mkdir(targetPath)
-  
+  await mkdir(targetPath);
+
   targetPath = path.join(targetPath, 'config');
   console.log('  >> Download Terminator Config - ChromeOS ', targetPath);
 

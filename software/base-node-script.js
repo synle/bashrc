@@ -507,13 +507,20 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 async function listRepoDir() {
   const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
 
+  // doing a nested and recursive call to get the files
   try {
     const json = await fetchUrlAsJson(url);
     return json.tree.map((file) => file.path);
-  } catch (err) {
-    console.log('      >> Error getting the file list');
-    return [];
-  }
+  } catch (err) {}
+
+  // fall back to use the pre compiled set
+  try {
+    const content = await fetchUrlAsString('software/metadata/script-list.config');
+    return convertTextToList(content);
+  } catch (err) {}
+
+  // if things fail, let's just return empty array here
+  return [];
 }
 
 async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileListInstead = false) {
@@ -623,15 +630,15 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           software/scripts/git.js
         `,
       },
-    ].map(scriptFinderConfig => {
+    ].map((scriptFinderConfig) => {
       // here we make sure it's including the first files along wth the last file.
       // these files are required to properly bootstrap the shell profile
       scriptFinderConfig.whitelist = [
-        ...firstFiles, 
+        ...firstFiles,
         ...scriptFinderConfig.whitelist,
         'software/scripts/bash-syle-content.js', // the last file
       ];
-      return scriptFinderConfig
+      return scriptFinderConfig;
     });
 
     const pathsToIgnore = [
