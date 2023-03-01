@@ -599,11 +599,15 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         key: 'is_os_arch_linux',
         allowed_path: 'software/scripts/arch-linux',
         whitelist: `
+          // first file
+          ${firstFiles.join('\n')}
           ${bareboneScriptsCommon}
           software/scripts/git.js
           // only
           software/scripts/kde-konsole-profile.js
           software/scripts/fonts.js
+          // last file
+          software/scripts/bash-syle-content.js
         `,
       },
       {
@@ -619,9 +623,11 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         key: 'is_os_chromeos',
         allowed_path: 'software/scripts/chrome-os',
         whitelist: `
-          software/scripts/_bash-rc-bootstrap.js
+          // first file
+          ${firstFiles.join('\n')}
           ${bareboneScriptsCommon}
           software/scripts/git.js
+          // last file
           software/scripts/bash-syle-content.js
         `,
       },
