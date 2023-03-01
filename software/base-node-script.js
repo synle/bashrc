@@ -599,15 +599,11 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         key: 'is_os_arch_linux',
         allowed_path: 'software/scripts/arch-linux',
         whitelist: `
-          // first file
-          ${firstFiles.join('\n')}
           ${bareboneScriptsCommon}
           software/scripts/git.js
           // only
           software/scripts/kde-konsole-profile.js
           software/scripts/fonts.js
-          // last file
-          software/scripts/bash-syle-content.js
         `,
       },
       {
@@ -623,15 +619,20 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         key: 'is_os_chromeos',
         allowed_path: 'software/scripts/chrome-os',
         whitelist: `
-          // first file
-          ${firstFiles.join('\n')}
           ${bareboneScriptsCommon}
           software/scripts/git.js
-          // last file
-          software/scripts/bash-syle-content.js
         `,
       },
-    ];
+    ].map(scriptFinderConfig => {
+      // here we make sure it's including the first files along wth the last file.
+      // these files are required to properly bootstrap the shell profile
+      scriptFinderConfig.whitelist = [
+        ...firstFiles, 
+        ...scriptFinderConfig.whitelist,
+        'software/scripts/bash-syle-content.js', // the last file
+      ];
+      return scriptFinderConfig
+    });
 
     const pathsToIgnore = [
       [is_os_arch_linux, 'software/scripts/arch-linux'],
