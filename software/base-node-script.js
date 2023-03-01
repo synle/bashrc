@@ -592,17 +592,6 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
       software/scripts/vs-code-keybindings.js
       software/scripts/jq.js
       software/scripts/jq.sh
-
-      // more advanced scripts
-      software/scripts/fzf.js
-      software/scripts/synle-make-component.js
-      software/scripts/diff-so-fancy.sh
-      software/scripts/sublime-text-configurations.js
-      software/scripts/sublime-text-keybindings.js
-      software/scripts/vs-code-configurations.js
-      software/scripts/vs-code-keybindings.js
-      software/scripts/jq.js
-      software/scripts/jq.sh
     `;
 
     const scriptFinderConfigs = [
@@ -630,8 +619,10 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         key: 'is_os_chromeos',
         allowed_path: 'software/scripts/chrome-os',
         whitelist: `
+          software/scripts/_bash-rc-bootstrap.js
           ${bareboneScriptsCommon}
           software/scripts/git.js
+          software/scripts/bash-syle-content.js
         `,
       },
     ];
