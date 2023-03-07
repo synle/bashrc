@@ -48,4 +48,7 @@ then
   installPackage fd-find
   installPackage zoxide
   installPackage entr
+  
+  installPackage gnupg 
+  installPackage software-properties-common
 fi
