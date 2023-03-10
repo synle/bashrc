@@ -635,7 +635,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
       // these files are required to properly bootstrap the shell profile
       scriptFinderConfig.whitelist = [
         ...firstFiles,
-        ...scriptFinderConfig.whitelist,
+        ...convertTextToList(scriptFinderConfig.whitelist),
         'software/scripts/bash-syle-content.js', // the last file
       ];
       return scriptFinderConfig;
@@ -661,7 +661,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         }
 
         // when run in an android termux env, only run script in that folder
-        const whitelistedScripts = convertTextToList(scriptFinderConfig.whitelist);
+        const whitelistedScripts = scriptFinderConfig.whitelist;
 
         if (whitelistedScripts.indexOf(file) >= 0) {
           return true;
