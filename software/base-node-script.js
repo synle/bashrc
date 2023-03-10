@@ -661,9 +661,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         }
 
         // when run in an android termux env, only run script in that folder
-        const whitelistedScripts = scriptFinderConfig.whitelist;
-
-        if (whitelistedScripts.indexOf(file) >= 0) {
+        if (scriptFinderConfig.whitelist.indexOf(file) >= 0) {
           return true;
         }
 
