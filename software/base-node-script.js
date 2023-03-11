@@ -655,7 +655,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
       const isScriptFinderConfigApplicable = global[scriptFinderConfig.key];
 
       if (isScriptFinderConfigApplicable) {
-        // it'sone of the configs, we should use it
+        // it's some of the configs, we should use it
         if (file.includes(scriptFinderConfig.allowed_path)) {
           return true;
         }
