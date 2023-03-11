@@ -5,6 +5,11 @@ async function doWork() {
   targetPath = path.join(targetPath, 'config');
   console.log('  >> Download Terminator Config - ChromeOS ', targetPath);
 
-  const content = await fetchUrlAsString('software/scripts/chrome-os/terminator-chromeos.config');
+  if (is_os_window || is_os_darwin_mac || is_os_arch_linux) {
+    console.log('    >> Skipped');
+    return;
+  }
+
+  const content = await fetchUrlAsString('software/scripts/terminator.config');
   writeText(targetPath, content);
 }

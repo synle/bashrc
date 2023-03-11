@@ -3,13 +3,19 @@ sudo apt-get update -y
 sudo apt-get install -y \
   curl \
   git \
-  vim \
-  python \
-  make \
-  cura \
-  blender \
   libreoffice \
-  vlc \
+  make \
   nautilus \
+  python \
+  remmina \
   terminator \
+  vim \
+  vlc \
 && echo '> Done Installing Dependencies...'
+
+
+# cura \
+# blender \
+# libreoffice \
+# vlc \
+# nautilus \

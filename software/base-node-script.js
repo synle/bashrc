@@ -599,6 +599,11 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
       software/scripts/vs-code-keybindings.js
       software/scripts/jq.js
       software/scripts/jq.sh
+      software/scripts/terminator.js
+      software/scripts/vim-configurations.js
+      software/scripts/vim-vundle.sh
+      software/scripts/git.js
+      software/scripts/tmux.js
     `;
 
     const scriptFinderConfigs = [
@@ -619,7 +624,6 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         whitelist: `
           software/scripts/vim-configurations.js
           software/scripts/vim-vundle.sh
-          software/scripts/tmux.js
         `,
       },
       {
@@ -627,7 +631,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         allowed_path: 'software/scripts/chrome-os',
         whitelist: `
           ${bareboneScriptsCommon}
-          software/scripts/git.js
+          software/scripts/fonts.js
         `,
       },
     ].map((scriptFinderConfig) => {
