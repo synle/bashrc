@@ -17,7 +17,7 @@ global._getPathSublimeText = async function () {
     }
 
     // for debian or chrome os debian linux
-    return findDirSingle(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ ]*Text/i);
+    return findDirSingle(globalThis.BASE_HOMEDIR_LINUX + '/.config', /Sublime[ -]*Text/i);
   } catch (err) {
     console.log('      >> Failed to get the path', err);
   }
