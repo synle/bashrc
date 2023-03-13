@@ -614,8 +614,9 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
           ${bareboneScriptsCommon}
           software/scripts/git.js
           // only
-          software/scripts/kde-konsole-profile.js
           software/scripts/fonts.js
+          software/scripts/kde-konsole-profile.js
+          software/scripts/libreoffice.js
         `,
       },
       {
@@ -632,6 +633,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
         whitelist: `
           ${bareboneScriptsCommon}
           software/scripts/fonts.js
+          software/scripts/libreoffice.js
         `,
       },
     ].map((scriptFinderConfig) => {
