@@ -12,6 +12,18 @@ Host *
 # END SY CUSTOM CONFIG - All Hosts
 
 # SY CUSTOM CONFIG - Home Network Hosts
+Host sy-mp
+  HostName 192.168.1.23
+  Port 22
+
+Host sy-macpro
+  HostName 192.168.1.23
+  Port 22
+
+Host sy-macpro-desktop
+  HostName 192.168.1.23
+  Port 22
+
 Host sy-g14
   HostName 192.168.1.24
   Port 2222

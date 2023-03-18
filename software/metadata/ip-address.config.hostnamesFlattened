@@ -40,6 +40,36 @@
     }
   ],
   [
+    "sy-mp",
+    "192.168.1.23",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-macpro",
+    "192.168.1.23",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
+    "sy-macpro-desktop",
+    "192.168.1.23",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
     "sy-g14",
     "192.168.1.24",
     {

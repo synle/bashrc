@@ -2,6 +2,9 @@
 192.168.1.11 sy-printer
 192.168.1.11 sy-printer-dell
 192.168.1.11 sy-printer-dell-e525w
+192.168.1.23 sy-mp
+192.168.1.23 sy-macpro
+192.168.1.23 sy-macpro-desktop
 192.168.1.24 sy-g14
 192.168.1.24 sy-asus-g14
 192.168.1.25 sy-g15
