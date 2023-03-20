@@ -86,8 +86,8 @@ then
   installPackage entr
   installPackage java
   installPackage python
-  installPackage keka # zip
-  installPackage kap # screen recording
+#   installPackage keka # zip
+#   installPackage kap # screen recording
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools
