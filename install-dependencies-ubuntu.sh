@@ -49,6 +49,9 @@ then
   installPackage zoxide
   installPackage entr
   
+  ###
+  installPackage openssh-server
+  
   installPackage gnupg 
   installPackage software-properties-common
 fi
