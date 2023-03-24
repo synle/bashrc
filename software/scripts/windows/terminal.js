@@ -4,6 +4,9 @@
 //
 const historySize = 50000;
 
+const UUID_LOCAL_VM_SSH_PROFILE = '{ae240490-446d-462c-bb40-0a92fc3c7a3f}';
+const UUID_SY_MACPRO_PROFILE = '{8e8e313c-1df0-4519-850c-d1532dd63843}';
+
 async function doWork() {
   const targetPath = path.join(_getPath(), 'LocalState/settings.json');
   if (!fs.existsSync(targetPath)) {
@@ -13,13 +16,13 @@ async function doWork() {
 
   console.log('  >> Setting up Microsoft Windows Terminal', consoleLogColor4(targetPath));
 
-  const oldProfiles = readJson(targetPath);
+  const oldSettings = readJson(targetPath);
 
   // keep track of actions
-  const actions = oldProfiles.actions || [];
-  delete oldProfiles.actions;
+  const actions = oldSettings.actions || [];
+  delete oldSettings.actions;
 
-  const newProfiles = Object.assign(oldProfiles, {
+  const newSettings = Object.assign(oldSettings, {
     // global config
     copyOnSelect: false,
     copyFormatting: false,
@@ -115,7 +118,45 @@ async function doWork() {
 
   // setup the profile color scheme
   let foundDefaultProfile = false;
-  newProfiles.profiles = (newProfiles.profiles.list || newProfiles.profiles || []).map((profile) => {
+  let foundLocalVMSSHProfile = false;
+  let foundSyMacproProfile = false;
+
+  const allProfiles = newSettings.profiles.list || newSettings.profiles || [];
+
+  // here we see if we need to add a new default profile for local vm
+  allProfiles.forEach((profile) => {
+    if (profile.guid === UUID_LOCAL_VM_SSH_PROFILE) {
+      foundLocalVMSSHProfile = true;
+    }
+
+    if (profile.guid === UUID_SY_MACPRO_PROFILE) {
+      foundSyMacproProfile = true;
+    }
+  });
+
+  if (!foundLocalVMSSHProfile) {
+    allProfiles.push({
+      commandline: 'ssh.exe syle@127.0.0.1',
+      guid: UUID_LOCAL_VM_SSH_PROFILE,
+      hidden: false,
+      colorScheme: 'Solarized Dark',
+      name: 'SSH VirtualBox',
+      icon: '\ud83d\ude80', // 🚀
+    });
+  }
+
+  if (!foundSyMacproProfile) {
+    allProfiles.push({
+      commandline: 'ssh.exe syle@sy-macpro',
+      guid: UUID_SY_MACPRO_PROFILE,
+      hidden: false,
+      colorScheme: 'Tango Dark',
+      name: 'SSH Sy-MacPro',
+      icon: '\ud83d\udea2', //🚢
+    });
+  }
+
+  newSettings.profiles = allProfiles.map((profile) => {
     profile = Object.assign(profile, {
       cursorShape: 'vintage',
       cursorHeight: 50,
@@ -139,7 +180,7 @@ async function doWork() {
         mainColorScheme = 'Dracula';
         break;
     }
-    profile.colorScheme = mainColorScheme;
+    profile.colorScheme = profile.colorScheme || mainColorScheme;
 
     // TODO: this is for dark mode vs light mode switching
     // will likely wait for Windows Terminal supports it
@@ -149,7 +190,7 @@ async function doWork() {
 
     // set default profile
     if (!foundDefaultProfile && [/Debian/i, /Ubuntu/i].some((distroToUseForDefault) => profile.name.match(distroToUseForDefault))) {
-      newProfiles.defaultProfile = profile.guid;
+      newSettings.defaultProfile = profile.guid;
       foundDefaultProfile = true;
     }
 
@@ -157,11 +198,11 @@ async function doWork() {
   });
 
   if (!foundDefaultProfile) {
-    newProfiles.defaultProfile = newProfiles.profiles[0].guid;
+    newSettings.defaultProfile = UUID_LOCAL_VM_SSH_PROFILE || newSettings.profiles[0].guid;
   }
 
   // done - write to file
-  writeJson(targetPath, newProfiles);
+  writeJson(targetPath, newSettings);
 }
 
 function _getPath() {

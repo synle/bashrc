@@ -12,7 +12,7 @@ alias drun='docker run'
 alias dexec='dexecBash'
 
 # other things
-alias ls="exa -1"
+alias ls="exa"
 alias ll="exa -la"
 
 # zoxide setup
