@@ -168,7 +168,7 @@ async function doWork() {
 
   if (is_os_window) {
     targetPath = path.join(getWindowUserBaseDir(), '.vimrc');
-    if (fs.existsSync(targetPath)) {
+    if (filePathExist(targetPath)) {
       console.log('  >> Setting up vimrc on Windows', consoleLogColor4(targetPath));
       writeText(targetPath, contentVimrc);
     }

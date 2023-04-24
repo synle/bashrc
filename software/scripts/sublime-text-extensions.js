@@ -32,7 +32,7 @@ async function doWork() {
     ],
   ]);
 
-  if (!fs.existsSync(targetPath)) {
+  if (!filePathExist(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));
     return process.exit();
   }
@@ -48,7 +48,7 @@ async function doWork() {
   const sublimeCodeFormatConfigPath = path.join(targetPath, 'Packages/CodeFormatter/CodeFormatter.sublime-settings');
   console.log('    >> CodeFormatter.sublime-settings', sublimeCodeFormatConfigPath);
 
-  if (!fs.existsSync(sublimeCodeFormatConfigPath)) {
+  if (!filePathExist(sublimeCodeFormatConfigPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));
     return process.exit();
   }

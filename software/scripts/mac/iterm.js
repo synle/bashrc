@@ -19,7 +19,7 @@ async function doWork() {
 
   targetPath = findDirSingle(getOsxApplicationSupportCodeUserPath(), /iTerm[ ]*[a-z0-9]*/i);
 
-  if (fs.existsSync(targetPath)) {
+  if (filePathExist(targetPath)) {
     targetPath = path.join(targetPath, 'Scripts/AutoLaunch');
     await mkdir(targetPath);
     targetPath = path.join(targetPath, 'switch_automatic.py');

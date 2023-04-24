@@ -181,7 +181,7 @@ async function doWork() {
     ['sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true],
   ]);
 
-  if (!fs.existsSync(targetPath)) {
+  if (!filePathExist(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));
     return process.exit();
   }

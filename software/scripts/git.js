@@ -51,10 +51,14 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
     .trim();
 
   if (addDefaultCommitTemplate === true) {
+    const GIT_DEFAULT_MESSAGE_PATH = `${BASE_HOMEDIR_LINUX}/.gitmessage`;
+
     templateGitConfig += `
-      [commit]
-        template = ~/.gitmessage
+[commit]
+  template = ${GIT_DEFAULT_MESSAGE_PATH}
     `;
+
+    touchFile(GIT_DEFAULT_MESSAGE_PATH);
   }
 
   return templateGitConfig.trim();

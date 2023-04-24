@@ -134,7 +134,7 @@ async function doWork() {
     ['vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true],
   ]);
 
-  if (!fs.existsSync(targetPath)) {
+  if (!filePathExist(targetPath)) {
     console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
     return process.exit();
   }

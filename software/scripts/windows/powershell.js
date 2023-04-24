@@ -185,7 +185,7 @@ async function doWork() {
   );
 
   // then add the optional block
-  if (fs.existsSync('/mnt/d')) {
+  if (filePathExist('/mnt/d')) {
     content = appendTextBlock(
       content,
       'SY CUSTOM POWERSHELL OPTIONAL BLOCKS', // key

@@ -3,7 +3,7 @@ async function doWork() {
 
   console.log('  >> mkdir for D Drive', targetPath);
 
-  if (!fs.existsSync(targetPath)) {
+  if (!filePathExist(targetPath)) {
     console.log('  >> Skipped - Path Not Found: ', consoleLogColor4(targetPath));
     return process.exit();
   }

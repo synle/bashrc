@@ -8,7 +8,7 @@ async function doWork() {
     return process.exit();
   }
 
-  if (!fs.existsSync(targetPath)) {
+  if (!filePathExist(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));
     return process.exit();
   }

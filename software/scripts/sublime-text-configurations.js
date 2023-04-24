@@ -46,7 +46,7 @@ async function doWork() {
   // write to build file
   writeToBuildFile([['sublime-text-configurations', sublimeSetings, true]]);
 
-  if (!fs.existsSync(targetPath)) {
+  if (!filePathExist(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));
     return process.exit();
   }
@@ -100,7 +100,7 @@ async function doWork() {
 
   // set the path to the sublime merge binary
   let sublimeMergeBinary = findDirSingle('/mnt/d/Applications', /sublime[_]*merge[a-z0-9]*/);
-  if (sublimeMergeBinary && fs.existsSync(path.join(sublimeMergeBinary, 'sublime_merge.exe'))) {
+  if (sublimeMergeBinary && filePathExist(path.join(sublimeMergeBinary, 'sublime_merge.exe'))) {
     sublimeMergeBinary = path.join(sublimeMergeBinary, 'sublime_merge.exe');
     osSpecificSettings.sublime_merge_path = sublimeMergeBinary.replace('/mnt/d', 'D:');
   }

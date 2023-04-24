@@ -9,7 +9,7 @@ const UUID_SY_MACPRO_PROFILE = '{8e8e313c-1df0-4519-850c-d1532dd63843}';
 
 async function doWork() {
   const targetPath = path.join(_getPath(), 'LocalState/settings.json');
-  if (!fs.existsSync(targetPath)) {
+  if (!filePathExist(targetPath)) {
     console.log('  >> Skipped Windows Terminal Config - Settings Path Not Found: ', consoleLogColor4(targetPath));
     return process.exit();
   }

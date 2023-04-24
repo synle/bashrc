@@ -199,6 +199,16 @@ function writeText(aDir, text, override = true, suppressError = false) {
   }
 }
 
+function touchFile(aDir, defaultContent = '') {
+  const pathToUse = path.resolve(aDir);
+  if (filePathExist(pathToUse)) {
+    console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
+  } else {
+    console.log(consoleLogColor3('      >> File Created'), consoleLogColor4(pathToUse));
+    fs.writeFileSync(pathToUse, defaultContent);
+  }
+}
+
 function backupText(aDir, text) {
   const pathToUse = aDir;
   const oldText = readText(pathToUse);
@@ -300,6 +310,10 @@ function getWindowUserBaseDir() {
   return findDirSingle(BASE_WINDOW, /(leng)|(sy[ ]*le)/i);
 }
 
+function filePathExist(targetPath) {
+  return fs.existsSync(targetPath);
+}
+
 /**
  * @param  {String} applicationName Optional - the application name to be appended to the base path
  * if present, we will attempt to make a new directory there
@@ -308,7 +322,7 @@ function getWindowUserBaseDir() {
 async function getWindowsApplicationBinaryDir(applicationName) {
   let targetPath = findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
 
-  if (fs.existsSync(targetPath)) {
+  if (filePathExist(targetPath)) {
     // push this binary into d drive
     targetPath = path.join(targetPath, 'Applications');
   } else {
@@ -460,7 +474,7 @@ function downloadFile(url, destination) {
   url = getFullUrl(url);
 
   return new Promise((resolve, reject) => {
-    if (fs.existsSync(destination)) {
+    if (filePathExist(destination)) {
       console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(destination));
       return resolve(false);
     }
