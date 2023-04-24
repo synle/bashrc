@@ -20,14 +20,17 @@ async function doWork() {
     ],
   ]);
 
+  // write to main gitconfig
   writeText(
     configMain,
     await _getGitConfig({
       email,
       extraCoreConfigs: 'pager=diff-so-fancy | less --tabs=2 -RFX',
+      addDefaultCommitTemplate: true,
     }),
   );
 
+  // Windows Only - write to the main gitconfig for windows host
   if (is_os_window) {
     const configWindows = path.join(getWindowUserBaseDir(), '.gitconfig');
 
@@ -36,7 +39,7 @@ async function doWork() {
   }
 }
 
-async function _getGitConfig({ email, extraCoreConfigs }) {
+async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate }) {
   email = email || '';
   extraCoreConfigs = extraCoreConfigs || '';
 
@@ -44,7 +47,15 @@ async function _getGitConfig({ email, extraCoreConfigs }) {
 
   templateGitConfig += (await fetchUrlAsString('software/scripts/git.config'))
     .replace('###EMAIL', email)
-    .replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs);
+    .replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs)
+    .trim();
+
+  if (addDefaultCommitTemplate === true) {
+    templateGitConfig += `
+      [commit]
+        template = ~/.gitmessage
+    `;
+  }
 
   return templateGitConfig.trim();
 }
