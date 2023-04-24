@@ -20,6 +20,9 @@
   "editor.wordWrap": "wordWrapColumn",
   "editor.wordWrapColumn": 140,
   "explorer.copyRelativePathSeparator": "/",
+  "window.autoDetectColorScheme": true,
+  "workbench.preferredLightColorTheme": "Default High Contrast Light",
+  "workbench.preferredDarkColorTheme": "Default High Contrast",
   "files.eol": "\n",
   "files.exclude": {
     "**/*.rej": true,

@@ -36,6 +36,11 @@ async function doInit() {
     'editor.wordWrap': 'wordWrapColumn',
     'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
     'explorer.copyRelativePathSeparator': '/', // always use / for path in all OS's
+    // theme
+    'window.autoDetectColorScheme': true,
+    'workbench.preferredLightColorTheme': 'Default High Contrast Light',
+    'workbench.preferredDarkColorTheme': 'Default High Contrast',
+    //
     'files.eol': '\n', // LF Unix mode
     'files.exclude': {
       ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFiles),
