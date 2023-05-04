@@ -33,12 +33,15 @@ test_setup_hosts:
 	sh test-setup-hosts.sh
 
 # test a single file locally
-# make test_single_run file="software/scripts/sublime-text-keybindings.js"
+# make test_single_run software/scripts/sublime-merge.js
 test_single_run:
-	sh test.sh "$(file)"
+	@echo "\n### Script that will run: \n"
+	@echo make test_single_run $(MAKECMDGOALS)
+	@echo "\n==================================\n"
+	sh test.sh $(MAKECMDGOALS)
 
 test_single_run_with_prompt:
 	cat software/metadata/script-list.config
 	@echo "\n\n==================================\n"
 	@read -p "Enter File To Test:" file; \
-	sh test.sh "$$file"
+	$(MAKE) test_single_run "$$file"
