@@ -11,7 +11,7 @@ setup_dependencies:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh | bash
 
 build:
-	make format
+	$(MAKE) format
 	sh build.sh
 
 format:
@@ -24,7 +24,7 @@ test:
 	sh test-full-run.sh
 
 test_full:
-	make test
+	$(MAKE) test
 
 test_dependencies:
 	sh test-dependencies.sh

@@ -119,6 +119,27 @@ async function doInit() {
       command: 'workbench.action.debug.stepInto',
       when: "debugState != 'inactive'",
     },
+
+    // rename
+    { key: 'f2', command: 'editor.action.rename', when: 'editorHasRenameProvider && editorTextFocus && !editorReadonly' },
+    {
+      key: 'f2',
+      command: 'workbench.action.terminal.renameInstance',
+      when: 'terminalHasBeenCreated && terminalTabsFocus && terminalTabsSingularSelection || terminalProcessSupported && terminalTabsFocus && terminalTabsSingularSelection',
+    },
+    { key: 'f2', command: 'debug.renameWatchExpression', when: 'watchExpressionsFocused' },
+    { key: 'f2', command: 'debug.setVariable', when: 'variablesFocused' },
+    {
+      key: 'f2',
+      command: 'remote.tunnel.label',
+      when: "tunnelViewFocus && tunnelType == 'Forwarded' && tunnelViewMultiSelection == 'undefined'",
+    },
+    {
+      key: 'f2',
+      command: 'renameFile',
+      when: 'explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus',
+    },
+    { key: 'f2', command: 'abracadabra.renameSymbol', when: 'editorTextFocus' },
   ];
   // end COMMON_KEY_BINDINGS
 }
