@@ -132,11 +132,13 @@ https://docs.microsoft.com/en-us/windows/wsl/install-manual
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
-# Download kernel
+# Download wsl kernel
 https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
 
 # Set WSL2 as default
 wsl --set-default-version 2
+
+wsl --update
 ```
 
 ## GUI package for WSL (wslG)
