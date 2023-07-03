@@ -12,7 +12,7 @@ async function doWork() {
 guiApplications=false
 memory=6GB # Limits VM memory in WSL 2
 swap=12GB # Sets amount of swap storage space
-processors=4 # Makes the WSL 2 VM use two virtual processors
+processors=1 # Makes the WSL 2 VM use two virtual processors
   `.trim(),
   );
 }
