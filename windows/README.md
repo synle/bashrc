@@ -342,3 +342,9 @@ These are extensions to view videos and images from newer iphones and android ph
 - [Hevc Video Extension from Device Manufacturer](https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq) - ms-windows-store://pdp/?ProductId=9n4wgh0z6vhq
 - [MPEG-2 Video Extension](https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4) - ms-windows-store://pdp/?ProductId=9n95q1zzpmh4
 - [AV1 Video Extension](https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v?hl=de-de&gl=DE) - ms-windows-store://pdp/?ProductId=9mvzqvxjbq9v
+
+
+### X-Input Emulator
+Use these to map controllers
+- https://github.com/ViGEm/ViGEmBus (For Driver)
+- https://github.com/csutorasa/XOutput (For Mappings)
