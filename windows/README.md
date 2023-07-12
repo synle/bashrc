@@ -346,6 +346,18 @@ These are extensions to view videos and images from newer iphones and android ph
 
 ### X-Input Emulator
 Use these to map generic controllers for Windows
+- https://hardwaretester.com/gamepad (For testing gamepad)
+
+#### XOutput  (doesn't work)
 - https://github.com/ViGEm/ViGEmBus (For Driver)
 - https://github.com/csutorasa/XOutput (For Mappings)
-- https://hardwaretester.com/gamepad (For testing gamepad)
+
+#### x360ce
+- https://github.com/x360ce/x360ce
+
+#### Dependencies
+- https://learn.microsoft.com/en-GB/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
+- https://aka.ms/vs/17/release/vc_redist.x86.exe
+- https://aka.ms/vs/17/release/vc_redist.x64.exe
+- https://aka.ms/highdpimfc2013x64enu
+- https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe
