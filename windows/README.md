@@ -345,6 +345,7 @@ These are extensions to view videos and images from newer iphones and android ph
 
 
 ### X-Input Emulator
-Use these to map controllers
+Use these to map generic controllers for Windows
 - https://github.com/ViGEm/ViGEmBus (For Driver)
 - https://github.com/csutorasa/XOutput (For Mappings)
+- https://hardwaretester.com/gamepad (For testing gamepad)
