@@ -34,9 +34,8 @@ async function doWork() {
   );
 
   // blocked hostname
-  let BLOCK_HOST_NAMES = await _getBlockedHostNames();
-  BLOCK_HOST_NAMES = [...new Set(BLOCK_HOST_NAMES)]
-      .filter((hostName) => !WHITE_LIST_HOST_NAMES.includes(hostName))
+  const BLOCK_HOST_NAMES = (await _getBlockedHostNames())
+    .filter((hostName) => !WHITE_LIST_HOST_NAMES.includes(hostName));
   
   etcHostTextContent = appendTextBlock(
     etcHostTextContent,
@@ -81,6 +80,8 @@ async function _getBlockedHostNames() {
     mappingsToUse = [...mappingsToUse, ...DYNAMIC_BLOCK_HOST_NAMES];
   }
 
+  mappingsToUse = mappingsToUse.map(s => s.toLowerCase());
+
   return [...new Set([...mappingsToUse])];
 }
 
@@ -106,6 +107,8 @@ function _consolidateHosts(hosts){
       newHosts.push('www.' + host)
     }
   }
+
+  newHosts = newHosts.map(s => s.toLowerCase())
   
   return [...new Set([...newHosts])];
 }
