@@ -34,12 +34,14 @@ async function doWork() {
   );
 
   // blocked hostname
-  const BLOCK_HOST_NAMES = await _getBlockedHostNames();
+  let BLOCK_HOST_NAMES = await _getBlockedHostNames();
+  BLOCK_HOST_NAMES = [...new Set(BLOCK_HOST_NAMES)]
+      .filter((hostName) => !WHITE_LIST_HOST_NAMES.includes(hostName))
+  
   etcHostTextContent = appendTextBlock(
     etcHostTextContent,
     'Sy Blocked Hosts', // key
-    [...new Set(BLOCK_HOST_NAMES)]
-      .filter((hostName) => !WHITE_LIST_HOST_NAMES.has(hostName))
+    BLOCK_HOST_NAMES
       .map((hostName) => `${ROUTED_BLOCKED_IP} ${hostName}`)
       .join('\n'),
   );
