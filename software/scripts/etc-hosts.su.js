@@ -7,7 +7,10 @@ async function doInit() {
   // initiate the vars
   STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`));
 
-  WHITE_LIST_HOST_NAMES = new Set(convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`)));
+  WHITE_LIST_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`)));
+
+  STATIC_BLOCK_HOST_NAMES = _consolidateHosts(STATIC_BLOCK_HOST_NAMES);
+  WHITE_LIST_HOST_NAMES = _consolidateHosts(WHITE_LIST_HOST_NAMES);
 
   ROUTED_BLOCKED_IP = '0.0.0.0';
 
@@ -87,4 +90,20 @@ function _getEtcHosts() {
   }
 
   return '/etc/hosts';
+}
+
+/**
+consolidate hosts, remove duplicate and add extra hosts with www.
+*/
+function _consolidateHosts(hosts){
+  const newHosts = [...hosts];
+
+  for(const host of hosts){
+    newHosts.push(host)
+    if(!host.includes('www.')){
+      newHosts.push('www.' + host)
+    }
+  }
+  
+  return [...new Set([...newHosts])];
 }
