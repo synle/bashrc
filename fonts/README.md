@@ -20,16 +20,7 @@ echo "Done downloading fonts"
 
 ### Powershell
 ```
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCode.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCodePL.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMono.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMonoPL.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Bold.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Light.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Medium.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Retina.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-SemiBold.ttf
+(Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCode.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCodePL.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMono.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMonoPL.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Bold.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Light.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Medium.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Retina.ttf) -AND (Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-SemiBold.ttf) 
 ```
 
 Source:
