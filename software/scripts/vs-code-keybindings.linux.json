@@ -48,6 +48,21 @@
     "command": "editor.action.clipboardPasteAction"
   },
   {
+    "key": "alt+v",
+    "command": "workbench.action.terminal.sendSequence",
+    "when": "terminalFocus && !accessibilityModeEnabled && terminalShellType == 'pwsh'"
+  },
+  {
+    "key": "alt+v",
+    "command": "filesExplorer.paste",
+    "when": "filesExplorerFocus && foldersViewVisible && !explorerResourceReadonly && !inputFocus"
+  },
+  {
+    "key": "alt+v",
+    "command": "workbench.action.terminal.paste",
+    "when": "terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
+  },
+  {
     "key": "alt+s",
     "command": "workbench.action.files.save"
   },
