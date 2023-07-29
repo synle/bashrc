@@ -70,6 +70,9 @@ async function doInit() {
     'telemetry.telemetryLevel': 'off',
     'enable-crash-reporter': false,
     'update.mode': 'none',
+    'remote.SSH.remotePlatform': {
+      '127.0.0.1': 'linux',
+    },
   };
 }
 
