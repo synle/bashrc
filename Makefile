@@ -32,16 +32,10 @@ test_dependencies:
 test_setup_hosts:
 	sh test-setup-hosts.sh
 
-# test a single file locally
-# make test_single_run software/scripts/sublime-merge.js
+# test a single file locally with prompt
 test_single_run:
-	@echo "\n### Script that will run: \n"
-	@echo make test_single_run $(MAKECMDGOALS)
-	@echo "\n==================================\n"
-	sh test.sh $(MAKECMDGOALS)
-
-test_single_run_with_prompt:
 	cat software/metadata/script-list.config
 	@echo "\n\n==================================\n"
 	@read -p "Enter File To Test:" file; \
-	$(MAKE) test_single_run "$$file"
+	echo "sh test.sh $$file"; \
+	sh test.sh "$$file"
