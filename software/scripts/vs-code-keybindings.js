@@ -54,7 +54,11 @@ async function doInit() {
     {
       key: 'OS_KEY+\\',
       command: 'workbench.action.toggleSidebarVisibility',
-    },
+    }, // toggle just the explorer part
+    {
+      key: 'OS_KEY+alt+\\',
+      command: 'workbench.action.toggleActivityBarVisibility',
+    }, // toggle just the activity tiny strip
     {
       key: 'OS_KEY+;',
       command: 'workbench.action.gotoLine',

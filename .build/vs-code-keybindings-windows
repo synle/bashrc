@@ -56,6 +56,10 @@
     "command": "workbench.action.toggleSidebarVisibility"
   },
   {
+    "key": "alt+alt+\\",
+    "command": "workbench.action.toggleActivityBarVisibility"
+  },
+  {
     "key": "alt+;",
     "command": "workbench.action.gotoLine"
   },
