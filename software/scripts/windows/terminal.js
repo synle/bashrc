@@ -7,8 +7,20 @@ const historySize = 50000;
 const UUID_LOCAL_VM_SSH_PROFILE = '{ae240490-446d-462c-bb40-0a92fc3c7a3f}';
 const UUID_SY_MACPRO_PROFILE = '{8e8e313c-1df0-4519-850c-d1532dd63843}';
 let BASE_CONFIG = {};
+let DEFAULT_PROFILE_STYLES = {};
 
 async function doInit() {
+  DEFAULT_PROFILE_STYLES = {
+    cursorShape: 'vintage',
+    cursorHeight: 50,
+    fontFace: EDITOR_CONFIGS.fontFamily,
+    fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),
+    padding: '2 0 2 0',
+    bellStyle: 'all',
+    historySize,
+    // useAcrylic: true,
+  };
+
   BASE_CONFIG = {
     // global config
     copyOnSelect: false,
@@ -98,6 +110,37 @@ async function doInit() {
 
     // keybindings
     keybindings: [...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal.keybinding.json')) || [])],
+
+    // default profile set
+    profiles: {
+      defaults: {},
+      list: [
+        {
+          name: 'Windows PowerShell',
+          commandline: '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+          colorScheme: 'Campbell',
+          ...DEFAULT_PROFILE_STYLES,
+        },
+        {
+          name: 'Command Prompt',
+          commandline: '%SystemRoot%\\System32\\cmd.exe',
+          colorScheme: 'Retro',
+          ...DEFAULT_PROFILE_STYLES,
+        },
+        {
+          name: 'Azure Cloud Shell',
+          source: 'Windows.Terminal.Azure',
+          colorScheme: 'Solarized Dark',
+          ...DEFAULT_PROFILE_STYLES,
+        },
+        {
+          name: 'SSH Localhost',
+          commandline: 'ssh syle@127.0.0.1',
+          colorScheme: 'Dracula',
+          ...DEFAULT_PROFILE_STYLES,
+        },
+      ],
+    },
   };
 }
 
@@ -144,7 +187,7 @@ async function doWork() {
 
   if (!foundLocalVMSSHProfile) {
     allProfiles.push({
-      commandline: 'ssh.exe syle@127.0.0.1',
+      commandline: 'ssh syle@127.0.0.1',
       guid: UUID_LOCAL_VM_SSH_PROFILE,
       hidden: false,
       colorScheme: 'Solarized Dark',
@@ -155,7 +198,7 @@ async function doWork() {
 
   if (!foundSyMacproProfile) {
     allProfiles.push({
-      commandline: 'ssh.exe syle@sy-macpro',
+      commandline: 'ssh syle@sy-macpro',
       guid: UUID_SY_MACPRO_PROFILE,
       hidden: false,
       colorScheme: 'Tango Dark',
@@ -165,16 +208,7 @@ async function doWork() {
   }
 
   newSettings.profiles = allProfiles.map((profile) => {
-    profile = Object.assign(profile, {
-      cursorShape: 'vintage',
-      cursorHeight: 50,
-      fontFace: EDITOR_CONFIGS.fontFamily,
-      fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),
-      padding: '2 0 2 0',
-      bellStyle: 'all',
-      historySize,
-      // useAcrylic: true,
-    });
+    profile = Object.assign(profile, DEFAULT_PROFILE_STYLES);
 
     let mainColorScheme;
     switch (profile.commandline) {
