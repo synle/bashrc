@@ -53,3 +53,15 @@ https://gist.github.com/estorgio/0c76e29c0439e683caca694f338d4003
 ```
 sudo mount -t vboxsf c ~/shared
 ```
+
+
+```
+# /etc/fstab
+c	/mnt/c	vboxsf	defaults	0	0
+d	/mnt/d	vboxsf	defaults	0	0
+```
+
+```
+# /etc/modules
+vboxsf
+```
