@@ -7,7 +7,7 @@ async function doInit() {
   // initiate the vars
   STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`));
 
-  WHITE_LIST_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`)));
+  WHITE_LIST_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`));
 
   STATIC_BLOCK_HOST_NAMES = _consolidateHosts(STATIC_BLOCK_HOST_NAMES);
   WHITE_LIST_HOST_NAMES = _consolidateHosts(WHITE_LIST_HOST_NAMES);
@@ -34,15 +34,12 @@ async function doWork() {
   );
 
   // blocked hostname
-  const BLOCK_HOST_NAMES = (await _getBlockedHostNames())
-    .filter((hostName) => !WHITE_LIST_HOST_NAMES.includes(hostName));
-  
+  const BLOCK_HOST_NAMES = (await _getBlockedHostNames()).filter((hostName) => !WHITE_LIST_HOST_NAMES.includes(hostName));
+
   etcHostTextContent = appendTextBlock(
     etcHostTextContent,
     'Sy Blocked Hosts', // key
-    BLOCK_HOST_NAMES
-      .map((hostName) => `${ROUTED_BLOCKED_IP} ${hostName}`)
-      .join('\n'),
+    BLOCK_HOST_NAMES.map((hostName) => `${ROUTED_BLOCKED_IP} ${hostName}`).join('\n'),
   );
 
   // write if there are change
@@ -80,7 +77,7 @@ async function _getBlockedHostNames() {
     mappingsToUse = [...mappingsToUse, ...DYNAMIC_BLOCK_HOST_NAMES];
   }
 
-  mappingsToUse = mappingsToUse.map(s => s.toLowerCase());
+  mappingsToUse = mappingsToUse.map((s) => s.toLowerCase());
 
   return [...new Set([...mappingsToUse])];
 }
@@ -98,17 +95,17 @@ function _getEtcHosts() {
 /**
 consolidate hosts, remove duplicate and add extra hosts with www.
 */
-function _consolidateHosts(hosts){
+function _consolidateHosts(hosts) {
   const newHosts = [...hosts];
 
-  for(const host of hosts){
-    newHosts.push(host)
-    if(!host.includes('www.')){
-      newHosts.push('www.' + host)
+  for (const host of hosts) {
+    newHosts.push(host);
+    if (!host.includes('www.')) {
+      newHosts.push('www.' + host);
     }
   }
 
-  newHosts = newHosts.map(s => s.toLowerCase())
-  
+  newHosts = newHosts.map((s) => s.toLowerCase());
+
   return [...new Set([...newHosts])];
 }

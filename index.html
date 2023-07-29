@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <!-- NOTE: this is the generator view for the script -->
 <html>
   <head>
@@ -124,13 +124,16 @@
             placeholder="Input"
             onchange="updateScript(); setStorage('envInputValue', document.scriptForm.envInputValue.value)"></textarea>
           <label>Add Default Env:</label>
-          <input type="checkbox" id="checkboxAddDefaultEnvs" onchange="updateScript(); setStorage('envInputValue',
-          document.scriptForm.envInputValue.value)"" />
+          <input
+            type="checkbox"
+            id="checkboxAddDefaultEnvs"
+            onchange="updateScript(); setStorage('envInputValue',
+          document.scriptForm.envInputValue.value)" />
         </div>
 
         <div class="c2-child windows">
-      <label>Windows WSL Notes:</label>
-      <textarea>
+          <label>Windows WSL Notes:</label>
+          <textarea>
 # enable wsl
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
@@ -141,16 +144,29 @@ wsl --set-default-version 2
         
 # mount point
 # \\wsl$
-      </textarea>
-     <ul>
-      <li><a target="_blank" href="https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi">WSL Kernel</a></li>
-      <li><a target="_blank" href="https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8">Raw Image Extension</a></li>
-      <li><a target="_blank" href="https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg">Heif Image Extension</a></li>
-      <li><a target="_blank" href="https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq">Hevc Video Extension fro</a></li>
-      <li><a target="_blank" href="https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4">MPEG-2 Video Extensio</a></li>
-      <li><a target="_blank" href="https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v">AV1 Video Extension</a></li>
-    </ul>
-    </div>
+      </textarea
+          >
+          <ul>
+            <li><a target="_blank" href="https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi">WSL Kernel</a></li>
+            <li>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8">Raw Image Extension</a>
+            </li>
+            <li>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg">Heif Image Extension</a>
+            </li>
+            <li>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq"
+                >Hevc Video Extension fro</a
+              >
+            </li>
+            <li>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4">MPEG-2 Video Extensio</a>
+            </li>
+            <li>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v">AV1 Video Extension</a>
+            </li>
+          </ul>
+        </div>
 
         <div class="c2-child">
           <label>Output:</label>

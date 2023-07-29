@@ -73,7 +73,8 @@ textarea,
 a {
   padding: 0.5rem 0.75rem;
 }
-ul,ol {
+ul,
+ol {
   padding: 0;
   margin: 0;
   display: flex;
