@@ -173,6 +173,9 @@ function updateScript() {
   document.querySelector('#osBootstrap').classList.toggle('hidden', selectedScript.shouldHideBootstrap === true);
   document.querySelector('#envInput').classList.toggle('hidden', selectedScript.shouldShowEnvInput !== true);
 
+  const osValue = _getOsValue()
+  [...document.scriptForm.querySelectorAll('.windows')].map(elm => elm.classList.toggle('hidden', osValue !== 'windows'));
+
   document.querySelector('#envInputValue').value = getEnvVars('\n');
 
   document.querySelector('#output').value = newCommands
@@ -299,10 +302,15 @@ function _getOsFlagScript() {
   ).trim();
 }
 
-function _getOsFlags() {
+function _getOsValue() {
   const osFlag = document.querySelector('#osToRun').value.trim();
+  return osFlag;
+}
 
-  const osFlags = {
+function _getOsFlags() {
+  const osFlag = _getOsValue();
+
+  return {
     is_os_darwin_mac: osFlag === 'mac',
     is_os_window: osFlag === 'windows',
     is_os_wsl: osFlag === 'windows',
@@ -313,8 +321,6 @@ function _getOsFlags() {
     is_os_arch_linux: osFlag.includes('arch_linux'),
     is_os_steamdeck: osFlag === 'arch_linux_steamdeck',
   };
-
-  return osFlags;
 }
 
 async function selectCommands() {
