@@ -2,11 +2,13 @@
 // https://docs.microsoft.com/en-us/windows/terminal/get-started
 // https://docs.microsoft.com/en-us/windows/terminal/customize-settings/key-bindings#accepted-modifiers-and-keys
 //
+// for profile icons (use this website - https://www.compart.com/). Pick UTF-16
 const historySize = 50000;
 
 const UUID_LOCAL_VM_SSH_PROFILE = '{ae240490-446d-462c-bb40-0a92fc3c7a3f}';
 const UUID_SY_MACPRO_PROFILE = '{8e8e313c-1df0-4519-850c-d1532dd63843}';
 let BASE_CONFIG = {};
+let DEFAULT_PROFILES = {};
 let DEFAULT_PROFILE_STYLES = {};
 
 async function doInit() {
@@ -110,8 +112,9 @@ async function doInit() {
 
     // keybindings
     keybindings: [...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal.keybinding.json')) || [])],
+  };
 
-    // default profile set
+  DEFAULT_PROFILES = {
     profiles: {
       defaults: {},
       list: [
@@ -119,24 +122,14 @@ async function doInit() {
           name: 'Windows PowerShell',
           commandline: '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
           colorScheme: 'Campbell',
-          ...DEFAULT_PROFILE_STYLES,
-        },
-        {
-          name: 'Command Prompt',
-          commandline: '%SystemRoot%\\System32\\cmd.exe',
-          colorScheme: 'Retro',
-          ...DEFAULT_PROFILE_STYLES,
-        },
-        {
-          name: 'Azure Cloud Shell',
-          source: 'Windows.Terminal.Azure',
-          colorScheme: 'Solarized Dark',
+          icon: '\ud83d\udcbb', // 💻 - https://www.compart.com/en/unicode/U+1F4BB
           ...DEFAULT_PROFILE_STYLES,
         },
         {
           name: 'SSH Localhost',
           commandline: 'ssh syle@127.0.0.1',
           colorScheme: 'Dracula',
+          icon: '\ud83d\ude80', // 🚀 - https://www.compart.com/en/unicode/U+1F680
           ...DEFAULT_PROFILE_STYLES,
         },
       ],
@@ -145,15 +138,15 @@ async function doInit() {
 }
 
 async function doWork() {
+  // write to build file
+  const commentNote = '// Open settings file (JSON)';
+  writeToBuildFile([['windows-terminal', { ...BASE_CONFIG, ...DEFAULT_PROFILES }, true, commentNote]]);
+
   const targetPath = path.join(_getPath(), 'LocalState/settings.json');
   if (!filePathExist(targetPath)) {
     console.log('  >> Skipped Windows Terminal Config - Settings Path Not Found: ', consoleLogColor4(targetPath));
     return process.exit();
   }
-
-  // write to build file
-  const commentNote = '// Open settings file (JSON)';
-  writeToBuildFile([['windows-terminal', BASE_CONFIG, true, commentNote]]);
 
   console.log('  >> Setting up Microsoft Windows Terminal', consoleLogColor4(targetPath));
 

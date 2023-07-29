@@ -329,5 +329,36 @@
       },
       "keys": "f2"
     }
-  ]
+  ],
+  "profiles": {
+    "defaults": {},
+    "list": [
+      {
+        "name": "Windows PowerShell",
+        "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "colorScheme": "Campbell",
+        "icon": "💻",
+        "cursorShape": "vintage",
+        "cursorHeight": 50,
+        "fontFace": "Fira Code",
+        "fontSize": 9,
+        "padding": "2 0 2 0",
+        "bellStyle": "all",
+        "historySize": 50000
+      },
+      {
+        "name": "SSH Localhost",
+        "commandline": "ssh syle@127.0.0.1",
+        "colorScheme": "Dracula",
+        "icon": "🚀",
+        "cursorShape": "vintage",
+        "cursorHeight": 50,
+        "fontFace": "Fira Code",
+        "fontSize": 9,
+        "padding": "2 0 2 0",
+        "bellStyle": "all",
+        "historySize": 50000
+      }
+    ]
+  }
 }
