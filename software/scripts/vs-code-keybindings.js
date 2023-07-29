@@ -155,7 +155,11 @@ async function doWork() {
   // write to build file
   writeToBuildFile([
     ['vs-code-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY), true],
-    ['vs-code-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY), true],
+    [
+      'vs-code-keybindings-linux',
+      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY),
+      true,
+    ],
     ['vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true],
   ]);
 

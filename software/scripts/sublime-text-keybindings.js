@@ -37,6 +37,7 @@ async function doInit() {
 
   WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.windows.json')) || [];
   LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.linux.json')) || [];
+  LINUX_ONLY_KEYBINDING = [...LINUX_ONLY_KEYBINDING, ...WINDOWS_ONLY_KEY_BINDINGS];
   MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.mac.json')) || [];
 
   // begin COMMON_KEY_BINDINGS
