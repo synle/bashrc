@@ -1,3 +1,5 @@
+// Preferences Settings
+
 {
   "update_check": false,
   "atomic_save": true,

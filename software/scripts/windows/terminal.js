@@ -109,7 +109,8 @@ async function doWork() {
   }
 
   // write to build file
-  writeToBuildFile([['windows-terminal', BASE_CONFIG, true]]);
+  const commentNote = '// Open settings file (JSON)';
+  writeToBuildFile([['windows-terminal', BASE_CONFIG, true, commentNote]]);
 
   console.log('  >> Setting up Microsoft Windows Terminal', consoleLogColor4(targetPath));
 

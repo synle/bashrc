@@ -44,7 +44,8 @@ async function doWork() {
   console.log(`  >> Setting up Sublime Text configurations:`, consoleLogColor4(targetPath));
 
   // write to build file
-  writeToBuildFile([['sublime-text-configurations', sublimeSetings, true]]);
+  const commentNote = '// Preferences Settings';
+  writeToBuildFile([['sublime-text-configurations', sublimeSetings, true, commentNote]]);
 
   if (!filePathExist(targetPath)) {
     console.log(consoleLogColor1('    >> Skipped : Not Found'));

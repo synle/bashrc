@@ -176,10 +176,16 @@ async function doWork() {
   console.log(`  >> Setting up Sublime Text Keybindings:`, consoleLogColor4(targetPath));
 
   // write to build file
+  const commentNote = '// Preferences Key Bindings';
   writeToBuildFile([
-    ['sublime-text-keybindings-windows', _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY), true],
-    ['sublime-text-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY), true],
-    ['sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true],
+    [
+      'sublime-text-keybindings-windows',
+      _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
+      true,
+      commentNote,
+    ],
+    ['sublime-text-keybindings-linux', _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY), true, commentNote],
+    ['sublime-text-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true, commentNote],
   ]);
 
   if (!filePathExist(targetPath)) {

@@ -1,3 +1,5 @@
+// Preferences Open User Settings (JSON)
+
 {
   "breadcrumbs.enabled": true,
   "editor.bracketPairColorization.enabled": true,

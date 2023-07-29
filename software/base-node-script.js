@@ -223,19 +223,27 @@ function backupText(aDir, text) {
   }
 }
 
-function writeJson(aDir, json) {
-  writeText(aDir, JSON.stringify(json, null, 2));
+function writeJson(aDir, json, comments = '') {
+  let content = comments + '\n' + JSON.stringify(json, null, 2);
+  writeText(aDir, content.trim());
 }
 
 function writeToBuildFile(tasks) {
   if (DEBUG_WRITE_TO_DIR) {
-    for (const [file, data, isJson = false] of [].concat(tasks)) {
+    for (let [file, data, isJson, comments] of [].concat(tasks)) {
+      isJson = !!isJson || false;
+      comments = comments || '';
+
+      if (comments) {
+        comments += '\n';
+      }
+
       if (isJson) {
         console.log(consoleLogColor1('    >> DEBUG Mode: write JSON to file'), consoleLogColor4(file));
-        writeJson(file, data);
+        writeJson(file, data, comments);
       } else {
         console.log(consoleLogColor1('    >> DEBUG Mode: write TEXT to file'), consoleLogColor4(file));
-        writeText(file, data);
+        writeText(file, (comments + data).trim());
       }
     }
     return process.exit();

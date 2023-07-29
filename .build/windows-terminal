@@ -1,3 +1,5 @@
+// Open settings file (JSON)
+
 {
   "copyOnSelect": false,
   "copyFormatting": false,

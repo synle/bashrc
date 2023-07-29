@@ -81,7 +81,8 @@ async function doWork() {
   let targetFile;
 
   // write to build file
-  writeToBuildFile([['vs-code-configurations', COMMON_CONFIGS, true]]);
+  const commentNote = '// Preferences Open User Settings (JSON)';
+  writeToBuildFile([['vs-code-configurations', COMMON_CONFIGS, true, commentNote]]);
 
   if (!filePathExist(targetPath)) {
     console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
