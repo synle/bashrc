@@ -6,23 +6,10 @@ const historySize = 50000;
 
 const UUID_LOCAL_VM_SSH_PROFILE = '{ae240490-446d-462c-bb40-0a92fc3c7a3f}';
 const UUID_SY_MACPRO_PROFILE = '{8e8e313c-1df0-4519-850c-d1532dd63843}';
+let BASE_CONFIG = {};
 
-async function doWork() {
-  const targetPath = path.join(_getPath(), 'LocalState/settings.json');
-  if (!filePathExist(targetPath)) {
-    console.log('  >> Skipped Windows Terminal Config - Settings Path Not Found: ', consoleLogColor4(targetPath));
-    return process.exit();
-  }
-
-  console.log('  >> Setting up Microsoft Windows Terminal', consoleLogColor4(targetPath));
-
-  const oldSettings = readJson(targetPath);
-
-  // keep track of actions
-  const actions = oldSettings.actions || [];
-  delete oldSettings.actions;
-
-  const newSettings = Object.assign(oldSettings, {
+async function doInit() {
+  BASE_CONFIG = {
     // global config
     copyOnSelect: false,
     copyFormatting: false,
@@ -110,11 +97,31 @@ async function doWork() {
     ],
 
     // keybindings
-    keybindings: [
-      ...actions,
-      ...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal.keybinding.json')) || []),
-    ],
-  });
+    keybindings: [...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal.keybinding.json')) || [])],
+  };
+}
+
+async function doWork() {
+  const targetPath = path.join(_getPath(), 'LocalState/settings.json');
+  if (!filePathExist(targetPath)) {
+    console.log('  >> Skipped Windows Terminal Config - Settings Path Not Found: ', consoleLogColor4(targetPath));
+    return process.exit();
+  }
+
+  // write to build file
+  writeToBuildFile([['windows-terminal', BASE_CONFIG, true]]);
+
+  console.log('  >> Setting up Microsoft Windows Terminal', consoleLogColor4(targetPath));
+
+  const oldSettings = readJson(targetPath);
+
+  // keep track of actions
+  const actions = oldSettings.actions || [];
+  delete oldSettings.actions;
+
+  BASE_CONFIG.keybindings = [...actions, ...BASE_CONFIG.keybindings];
+
+  const newSettings = Object.assign(oldSettings, BASE_CONFIG);
 
   // setup the profile color scheme
   let foundDefaultProfile = false;

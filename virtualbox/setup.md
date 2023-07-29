@@ -1,5 +1,7 @@
 ### Network
+
 NAT - with these forwarded ports
+
 ```xml
 <Network>
   <Adapter slot="0" enabled="true" MACAddress="080027288EBB" type="82540EM">
