@@ -45,3 +45,11 @@ cd /mnt
 
 sudo sh ./VBoxLinuxAdditions.run --nox11
 ```
+
+
+### Mount host shared folder
+https://gist.github.com/estorgio/0c76e29c0439e683caca694f338d4003
+
+```
+sudo mount -t vboxsf c ~/shared
+```
