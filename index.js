@@ -174,7 +174,7 @@ function updateScript() {
   document.querySelector('#envInput').classList.toggle('hidden', selectedScript.shouldShowEnvInput !== true);
 
   const osValue = _getOsValue()
-  [...document.scriptForm.querySelectorAll('.windows')].map(elm => elm.classList.toggle('hidden', osValue !== 'windows'));
+  document.scriptForm.querySelectorAll('.windows').forEach(elm => elm.classList.toggle('hidden', osValue !== 'windows'));
 
   document.querySelector('#envInputValue').value = getEnvVars('\n');
 
