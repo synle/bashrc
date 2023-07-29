@@ -60,3 +60,7 @@ Rocking OSX Ventura.
 ##### On the go (Samsung Chromebook - 8GB RAM and 128GB Hard drive)
 
 Running ChromeOS with Container running Ubuntu.
+
+##### Desktop (Lenovo P520) - 64GB RAM, 2TB NVME and Radeon 6800xt
+
+Dual booting Windows 10 and Ubuntu 22.04
