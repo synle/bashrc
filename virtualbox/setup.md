@@ -32,3 +32,16 @@ NAT - with these forwarded ports
   </Adapter>
 </Network>
 ```
+
+
+### VBOX Guest Addition for Server
+- https://linuxize.com/post/how-to-install-virtualbox-guest-additions-on-debian-10/
+- https://kifarunix.com/install-virtualbox-guest-additions-on-debian-11/
+```bash
+sudo apt install build-essential dkms linux-headers-$(uname -r)
+
+sudo mount /dev/cdrom /mnt
+cd /mnt
+
+sudo sh ./VBoxLinuxAdditions.run --nox11
+```
