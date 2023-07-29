@@ -59,6 +59,11 @@ async function doInit() {
       key: 'OS_KEY+;',
       command: 'workbench.action.gotoLine',
     },
+    ,
+    {
+      key: 'OS_KEY+m',
+      command: 'workbench.action.toggleMaximizedPanel',
+    }, // this maximize the terminal panel size
     {
       key: 'OS_KEY+r',
       command: 'workbench.action.gotoSymbol',
