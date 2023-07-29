@@ -59,7 +59,6 @@ async function doInit() {
       key: 'OS_KEY+;',
       command: 'workbench.action.gotoLine',
     },
-    ,
     {
       key: 'OS_KEY+m',
       command: 'workbench.action.toggleMaximizedPanel',
@@ -69,7 +68,7 @@ async function doInit() {
       command: 'workbench.action.gotoSymbol',
     },
     {
-      key: 'OS_KEY+m',
+      key: 'ctrl+m',
       command: 'editor.action.jumpToBracket',
       when: 'editorFocus',
     },

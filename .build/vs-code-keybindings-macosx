@@ -58,11 +58,15 @@
     "command": "workbench.action.gotoLine"
   },
   {
+    "key": "cmd+m",
+    "command": "workbench.action.toggleMaximizedPanel"
+  },
+  {
     "key": "cmd+r",
     "command": "workbench.action.gotoSymbol"
   },
   {
-    "key": "cmd+m",
+    "key": "ctrl+m",
     "command": "editor.action.jumpToBracket",
     "when": "editorFocus"
   },
