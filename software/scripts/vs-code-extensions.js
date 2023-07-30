@@ -57,6 +57,7 @@ async function doWork() {
       `
 c:; cd "C:/Program Files/Microsoft VS Code/bin"
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
+echo 'Done installing VSCode Extensions'
     `,
       false,
     ],
@@ -65,6 +66,7 @@ ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} 
       `
 cd "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
+echo 'Done installing VSCode Extensions'
     `,
       false,
     ],

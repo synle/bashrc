@@ -39,3 +39,4 @@ cd "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
 ./code --install-extension wholroyd.jinja --force
 ./code --install-extension wmaurer.change-case --force
 ./code --install-extension xabikos.JavaScriptSnippets --force
+echo 'Done installing VSCode Extensions'
