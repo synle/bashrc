@@ -56,7 +56,7 @@ async function doInit() {
       command: 'workbench.action.toggleSidebarVisibility',
     }, // toggle just the explorer part
     {
-      key: 'OS_KEY+alt+\\',
+      key: 'OS_KEY+shift+\\',
       command: 'workbench.action.toggleActivityBarVisibility',
     }, // toggle just the activity tiny strip
     {
@@ -80,10 +80,6 @@ async function doInit() {
       key: 'OS_KEY+shift+l',
       command: 'editor.action.insertCursorAtEndOfEachLineSelected',
       when: 'editorTextFocus',
-    },
-    {
-      key: 'OS_KEY+shift+\\',
-      command: 'workbench.view.explorer',
     },
     {
       key: "OS_KEY+shift+'",

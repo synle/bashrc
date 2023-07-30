@@ -56,7 +56,7 @@
     "command": "workbench.action.toggleSidebarVisibility"
   },
   {
-    "key": "cmd+alt+\\",
+    "key": "cmd+shift+\\",
     "command": "workbench.action.toggleActivityBarVisibility"
   },
   {
@@ -80,10 +80,6 @@
     "key": "cmd+shift+l",
     "command": "editor.action.insertCursorAtEndOfEachLineSelected",
     "when": "editorTextFocus"
-  },
-  {
-    "key": "cmd+shift+\\",
-    "command": "workbench.view.explorer"
   },
   {
     "key": "cmd+shift+'",
