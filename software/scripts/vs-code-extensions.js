@@ -1,4 +1,5 @@
 const toInstallExtensions = trimLeftSpaces(`
+  aaron-bond.better-comments
   andrejunges.Handlebars
   christian-kohler.path-intellisense
   clinyong.vscode-css-modules
@@ -25,6 +26,8 @@ const toInstallExtensions = trimLeftSpaces(`
   PKief.material-icon-theme
   redhat.java
   redhat.vscode-yaml
+  scala-lang.scala
+  streetsidesoftware.code-spell-checker
   VisualStudioExptTeam.intellicode-api-usage-examples
   VisualStudioExptTeam.vscodeintellicode
   vscjava.vscode-java-debug
