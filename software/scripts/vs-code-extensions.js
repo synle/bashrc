@@ -1,8 +1,5 @@
 const toInstallExtensions = trimLeftSpaces(`
-  aaron-bond.better-comments
   andrejunges.Handlebars
-  bierner.folder-source-actions
-  christian-kohler.npm-intellisense
   christian-kohler.path-intellisense
   clinyong.vscode-css-modules
   dakara.transformer
@@ -11,25 +8,34 @@ const toInstallExtensions = trimLeftSpaces(`
   dsznajder.es7-react-js-snippets
   emmanuelbeziat.vscode-great-icons
   esbenp.prettier-vscode
+  formulahendry.auto-rename-tag
   Hridoy.ember-snippets
   ms-azuretools.vscode-docker
   ms-dotnettools.csharp
+  ms-python.isort
   ms-python.python
   ms-python.vscode-pylance
-  ms-vscode-remote.remote-containers
   ms-vscode-remote.remote-ssh
   ms-vscode-remote.remote-ssh-edit
   ms-vscode-remote.remote-wsl
-  ms-vscode-remote.vscode-remote-extensionpack
   ms-vscode.cpptools
+  ms-vscode.remote-explorer
   nicoespeon.abracadabra
-  NuclleaR.vscode-extension-auto-import
   oderwat.indent-rainbow
-  scala-lang.scala
-  streetsidesoftware.code-spell-checker
+  PKief.material-icon-theme
+  redhat.java
+  redhat.vscode-yaml
+  VisualStudioExptTeam.intellicode-api-usage-examples
+  VisualStudioExptTeam.vscodeintellicode
+  vscjava.vscode-java-debug
+  vscjava.vscode-java-dependency
+  vscjava.vscode-java-pack
+  vscjava.vscode-java-test
   vscjava.vscode-maven
+  vscode-icons-team.vscode-icons
+  wholroyd.jinja
   wmaurer.change-case
-  formulahendry.auto-rename-tag
+  xabikos.JavaScriptSnippets
 `).trim();
 
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallExtensions);
