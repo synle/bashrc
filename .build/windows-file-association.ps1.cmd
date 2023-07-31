@@ -1,8 +1,4 @@
-const sublime_path = `ftype sublime="C:/Program Files/Sublime Text/sublime_text.exe" "%1"`;
-
-async function doInit() {
-  associationContent = `
-${sublime_path}
+ftype sublime="C:\\Program Files/Sublime Text/sublime_text.exe" "%1"
 assoc .csv=sublime
 assoc .txt=sublime
 assoc .dat=sublime
@@ -61,12 +57,3 @@ assoc .sass=sublime
 assoc .less=sublime
 assoc .html=sublime
 assoc .php5=sublime
-  `
-    .trim()
-    .replace('/', '\\\\');
-}
-
-async function doWork() {
-  console.log('  >> Installing Windows Only - File Associations');
-  writeToBuildFile([['windows-file-association.ps1.cmd', associationContent]]);
-}
