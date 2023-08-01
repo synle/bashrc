@@ -68,5 +68,5 @@ assoc .php5=sublime
 
 async function doWork() {
   console.log('  >> Installing Windows Only - File Associations');
-  writeToBuildFile([['windows-file-association.ps1.cmd', associationContent]]);
+  writeToBuildFile([['windows-file-association.cmd', associationContent]]);
 }

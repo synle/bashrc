@@ -1,43 +1,7 @@
-async function _getPath() {
-  try {
-    let targetPath;
+let outputContent = '';
 
-    // try it with D path
-    // if it's not present, then try home dir in C drive
-    targetPath = findFirstDirFromList([
-      ['/mnt/d/', 'Documents'],
-      [getWindowUserBaseDir(), 'Documents'],
-    ]);
-
-    if (targetPath) {
-      targetPath = path.join(targetPath, 'WindowsPowerShell');
-      await mkdir(targetPath);
-      return path.join(targetPath, 'Microsoft.PowerShell_profile.ps1');
-    }
-  } catch (err) {
-    console.log('  >> Failed to get the path for Powershell Profile', err);
-  }
-
-  return null;
-}
-
-async function doWork() {
-  console.log('  >> Setting up Windows Powershell Profile');
-
-  let targetPath = await _getPath();
-
-  if (!targetPath) {
-    console.log(consoleLogColor1('    >> Skipped : Not Found'));
-    return process.exit();
-  }
-
-  let content = readText(targetPath);
-
-  // start with the required block
-  content = appendTextBlock(
-    content,
-    'SY CUSTOM POWERSHELL CORE BLOCKS', // key
-    trimLeftSpaces(`
+async function doInit() {
+  outputContent = trimLeftSpaces(`
       # tab autocomplete
       Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
 
@@ -84,7 +48,7 @@ async function doWork() {
         clear;
         Write-Host "====================="  -ForegroundColor Red -NoNewline;
       }
-      
+
       function which() {
         (Get-Command $args).Path
       }
@@ -181,22 +145,70 @@ async function doWork() {
       }
 
       clear; # clean up the prompt
-    `),
-  );
+    `);
 
   // then add the optional block
   if (filePathExist('/mnt/d')) {
-    content = appendTextBlock(
-      content,
-      'SY CUSTOM POWERSHELL OPTIONAL BLOCKS', // key
-      trimLeftSpaces(`
-        function gogit {
-          Set-Location D:/git
-        }
-      `),
-    );
+    outputContent += trimLeftSpaces(`
+      function gogit {
+        Set-Location D:/git
+      }
+    `);
   }
+}
+
+async function doWork() {
+  console.log('  >> Setting up Windows Powershell Profile');
+
+  const commentNote = trimLeftSpaces(`
+    # power shell profile
+    # Microsoft.PowerShell_profile.ps1
+    # WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+    # ~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+  `);
+  writeToBuildFile([['windows-powershell-profile.ps1', outputContent, false, commentNote]]);
+
+  let targetPath = await _getPath();
+
+  if (!targetPath) {
+    console.log(consoleLogColor1('    >> Skipped : Not Found'));
+    return process.exit();
+  }
+
+  let content = readText(targetPath);
+
+  // start with the required block
+  content = appendTextBlock(
+    content,
+    'SY CUSTOM POWERSHELL CORE BLOCKS', // key
+    outputContent,
+  );
 
   console.log('    >> Update Powershell Profile', targetPath);
   writeText(targetPath, content);
+}
+
+async function _getPath() {
+  try {
+    let targetPath;
+
+    // try it with D path
+    // if it's not present, then try home dir in C drive
+    targetPath = findFirstDirFromList([
+      ['/mnt/d/', 'Documents'],
+      [getWindowUserBaseDir(), 'Documents'],
+    ]);
+
+    if (targetPath) {
+      targetPath = path.join(targetPath, 'WindowsPowerShell');
+      await mkdir(targetPath);
+      return path.join(targetPath, 'Microsoft.PowerShell_profile.ps1');
+    }
+  } catch (err) {
+    console.log('  >> Failed to get the path for Powershell Profile', err);
+  }
+
+  return null;
 }
