@@ -1,7 +1,7 @@
-let DYNAMIC_BLOCK_HOST_NAMES;
-let STATIC_BLOCK_HOST_NAMES;
-let WHITE_LIST_HOST_NAMES;
-let ROUTED_BLOCKED_IP;
+let DYNAMIC_BLOCK_HOST_NAMES = [];
+let STATIC_BLOCK_HOST_NAMES = [];
+let WHITE_LIST_HOST_NAMES = [];
+let ROUTED_BLOCKED_IP = '0.0.0.0';
 
 async function doInit() {
   // initiate the vars
@@ -11,8 +11,6 @@ async function doInit() {
 
   STATIC_BLOCK_HOST_NAMES = _consolidateHosts(STATIC_BLOCK_HOST_NAMES);
   WHITE_LIST_HOST_NAMES = _consolidateHosts(WHITE_LIST_HOST_NAMES);
-
-  ROUTED_BLOCKED_IP = '0.0.0.0';
 
   DYNAMIC_BLOCK_HOST_NAMES = [];
 }
