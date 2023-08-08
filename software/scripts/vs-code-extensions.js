@@ -70,5 +70,12 @@ echo 'Done installing VSCode Extensions'
     `,
       false,
     ],
+    [
+      'vs-code-extensions-linux',
+      `
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join('\n')}
+    `,
+      false,
+    ],
   ]);
 }
