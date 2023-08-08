@@ -1,3 +1,7 @@
+# this command allows us to run powershell with unrestricted scope for current user
+Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+
+# method used to create new folder in registry
 function New-FolderForced {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -14,6 +18,7 @@ function New-FolderForced {
     }
 }
 
+# the main logics start here
 Write-Output "Disable Internet Search for Start Menu Search"
 New-FolderForced -Path "HKLM:\Software\Policies\Microsoft\Windows\Explorer"
 Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
