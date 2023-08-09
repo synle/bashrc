@@ -1,3 +1,7 @@
+########################
+# text file association
+########################
+
 assoc csv=sublime
 assoc txt=sublime
 assoc dat=sublime
@@ -1419,3 +1423,44 @@ assoc vc7=sublime
 assoc ad2=sublime
 assoc smx=sublime
 ftype sublime="C:/Program Files/Sublime Text/sublime_text.exe" "%1"
+
+########################
+# media file association
+########################
+assoc 264=vlc
+assoc 3ga=vlc
+assoc 3gp=vlc
+assoc aac=vlc
+assoc avi=vlc
+assoc cda=vlc
+assoc dash=vlc
+assoc dvr=vlc
+assoc flac=vlc
+assoc ifo=vlc
+assoc m2t=vlc
+assoc m2ts=vlc
+assoc m3u8=vlc
+assoc m4v=vlc
+assoc mkv=vlc
+assoc mov=vlc
+assoc mp3=vlc
+assoc mp4=vlc
+assoc mpg=vlc
+assoc mpeg=vlc
+assoc mts=vlc
+assoc ogg=vlc
+assoc ogv=vlc
+assoc opus=vlc
+assoc pls=vlc
+assoc rec=vlc
+assoc rmvb=vlc
+assoc snd=vlc
+assoc sub=vlc
+assoc ts=vlc
+assoc vob=vlc
+assoc webm=vlc
+assoc wma=vlc
+assoc wmv=vlc
+assoc zab=vlc
+assoc wav=vlc
+ftype vlc="C:/Program Files/VideoLAN/VLC/vlc.exe" "%1"
