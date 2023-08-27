@@ -61,6 +61,13 @@ Rocking OSX Ventura.
 
 Running ChromeOS with Container running Ubuntu.
 
-##### Desktop (Lenovo P520) - 64GB RAM, 2TB NVME and Radeon 6800xt
+##### Desktop (Lenovo P520) - 64GB RAM, 2TB NVME
 
+Intel Xeon W-2135
+Upgraded to 64GB RAM
+Added 2x2TB NVME SSD
+Added 8TB 3.5 Toshiba HDD
+Added Gigabyte Eagle 3090
+Removed the front fan brackets and added 2x120mm intake fans
+Drilled a hole on top case for 120mm exhaust fan
 Dual booting Windows 10 and Ubuntu 22.04
