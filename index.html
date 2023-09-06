@@ -6,14 +6,28 @@
     <meta name="viewport" content="width=device-width" />
     <link rel="stylesheet" href="index.css" />
     <title>Setting up Bash Script</title>
+    <script src="https://unpkg.com/mustache@latest"></script>
   </head>
   <body>
     <div>
       <h1></h1>
     </div>
     <form name="scriptForm" id="container">
-      <section id="commands" class="c1"><strong>Type of Script:</strong></section>
-      <div class="c2">
+
+    </form>
+
+    <script type="text/html" id="templateContent">
+      <div class="c1" id="leftContainer">
+        <section><strong>Type of Script:</strong></section>
+        {{#configs}}
+        <div>
+          <input onchange='updateScript()' type='radio' name='commandChoice' id='{{idx}}' value='{{idx}}'
+            {{#checked}}checked{{/checked}} />
+          <label for='{{idx}}'>{{text}}</label>
+        </div>
+        {{/configs}}
+      </div>
+      <div class="c2" id="rightContainer">
         <!--     script to run     -->
         <div id="scriptToRunContainer" class="c2-child">
           <label>Scripts To Run:</label>
@@ -22,36 +36,30 @@
             <button onclick="addScriptTextbox()" type="button">Add Script</button>
             <button onclick="clearAllScriptTextBox()" type="button" style="margin-left: 40px">Clear All</button>
           </div>
-          <datalist id="scriptToRunOptions" style="overflow-y: auto !important">></datalist>
+          <datalist id="scriptToRunOptions" style="overflow-y: auto !important">
+            {{#scriptToRunOptions}}
+            <option>{{.}}</option>
+            {{/scriptToRunOptions}}
+          </datalist>
           <div class="c2-child">
             <label>Runner:</label>
             <div>
-              <input
-                type="radio"
-                name="runnerToUse"
-                id="runnerToUse-live"
-                value="test-live.sh"
-                onchange="updateScript(); setStorage('runnerToUse', document.scriptForm.runnerToUse.value)" />
-              <label for="runnerToUse-live">Live Script</label>
-              <input
-                type="radio"
-                name="runnerToUse"
-                id="runnerToUse-local"
-                value="test.sh"
+              <input type="radio" name="runnerToUse" id="runnerToUse-live" value="test-live.sh"
                 onchange="updateScript(); setStorage('runnerToUse', document.scriptForm.runnerToUse.value)"
+                {{#formValue.runnerToUseLiveScript}}checked{{/formValue.runnerToUseLiveScript}}  />
+              <label for="runnerToUse-live">Live Script</label>
+              <input type="radio" name="runnerToUse" id="runnerToUse-local" value="test.sh"
+                onchange="updateScript(); setStorage('runnerToUse', document.scriptForm.runnerToUse.value)"
+                {{^formValue.runnerToUseLiveScript}}checked{{/formValue.runnerToUseLiveScript}}
                 style="margin-left: 2rem" />
               <label for="runnerToUse-local">Local Script</label>
             </div>
           </div>
           <label>Debug Write To File:</label>
-          <input
-            id="debugWriteToDir"
-            list="writeToFilePathOptions"
-            type="text"
-            onchange="updateScript()"
-            onblur="this.value = this.value.trim();"
-            oninput="setStorage('debugWriteToDir', event.target.value)"
-            placeholder="Debug Write To File Path" />
+          <input id="debugWriteToDir" list="writeToFilePathOptions" type="text" onchange="updateScript()"
+            onblur="this.value = this.value.trim();" oninput="setStorage('debugWriteToDir', event.target.value)"
+            placeholder="Debug Write To File Path"
+            value="{{formValue.debugWriteToDir}}" />
           <datalist id="writeToFilePathOptions">
             <option>$(pwd)</option>
             <option>./</option>
@@ -59,10 +67,10 @@
           </datalist>
         </div>
 
-        <!--     os to run     -->
+        <!--os to run-->
         <div id="osToRunContainer" class="c2-child">
           <label>OS Type:</label>
-          <select id="osToRun" onchange="updateScript()" oninput="setStorage('osToRun', event.target.value)">
+          <select id="osToRun" onchange="updateScript()" oninput="setStorage('osToRun', event.target.value)" value="{{formValue.osToRun}}">
             <option value="windows" selected>Windows with WSL</option>
             <option value="ming_64">Windows with Ming_64</option>
             <option value="mac">Mac OSX</option>
@@ -73,97 +81,83 @@
           </select>
         </div>
 
-        <!-- setup dependencies -->
+        <!--setup dependencies-->
         <div id="setupDependencies" class="c2-child">
           <label>Setup Dependencies:</label>
           <div>
-            <input
-              type="radio"
-              name="setupDependencies"
-              id="setupDependencies-yes"
-              value="yes"
-              onchange="updateScript(); setStorage('setupDependencies', document.scriptForm.setupDependencies.value)" />
-            <label for="setupDependencies-yes">Yes</label>
-            <input
-              type="radio"
-              name="setupDependencies"
-              id="setupDependencies-no"
-              value="no"
+            <input type="radio" name="setupDependencies" id="setupDependencies-yes" value="yes"
               onchange="updateScript(); setStorage('setupDependencies', document.scriptForm.setupDependencies.value)"
-              style="margin-left: 2rem" />
+              {{#formValue.setupDependencies}}checked{{/formValue.setupDependencies}} />
+            <label for="setupDependencies-yes">Yes</label>
+            <input type="radio" name="setupDependencies" id="setupDependencies-no" value="no"
+              onchange="updateScript(); setStorage('setupDependencies', document.scriptForm.setupDependencies.value)"
+              {{^formValue.setupDependencies}}checked{{/formValue.setupDependencies}} style="margin-left: 2rem" />
             <label for="setupDependencies-no">No</label>
           </div>
         </div>
 
-        <!-- add bootstrap script -->
+        <!--add bootstrap script-->
         <div class="c2-child" id="osBootstrap">
           <label>Add Bootstrap Script:</label>
           <div>
-            <input
-              type="radio"
-              name="addBootstrapScript"
-              id="addBootstrapScript-yes"
-              value="yes"
-              onchange="updateScript(); setStorage('addBootstrapScript', document.scriptForm.addBootstrapScript.value)" />
-            <label for="addBootstrapScript-yes">Yes</label>
-            <input
-              type="radio"
-              name="addBootstrapScript"
-              id="addBootstrapScript-no"
-              value="no"
+            <input type="radio" name="addBootstrapScript" id="addBootstrapScript-yes" value="yes"
               onchange="updateScript(); setStorage('addBootstrapScript', document.scriptForm.addBootstrapScript.value)"
-              style="margin-left: 2rem" />
+              {{#formValue.addBootstrapScript}}checked{{/formValue.addBootstrapScript}} />
+            <label for="addBootstrapScript-yes">Yes</label>
+            <input type="radio" name="addBootstrapScript" id="addBootstrapScript-no" value="no"
+              onchange="updateScript(); setStorage('addBootstrapScript', document.scriptForm.addBootstrapScript.value)"
+              {{^formValue.addBootstrapScript}}checked{{/formValue.addBootstrapScript}} style="margin-left: 2rem" />
             <label for="addBootstrapScript-no">No</label>
           </div>
         </div>
 
         <div class="c2-child" id="envInput">
           <label>Env Var Input:</label>
-          <textarea
-            id="envInputValue"
-            placeholder="Input"
-            onchange="updateScript(); setStorage('envInputValue', document.scriptForm.envInputValue.value)"></textarea>
+          <textarea id="envInputValue" placeholder="Input"
+            onchange="updateScript(); setStorage('envInputValue', document.scriptForm.envInputValue.value)">{{formValue.envInputValue}}</textarea>
           <label>Add Default Env:</label>
-          <input
-            type="checkbox"
-            id="checkboxAddDefaultEnvs"
-            onchange="updateScript(); setStorage('envInputValue',
-          document.scriptForm.envInputValue.value)" />
+          <input type="checkbox" id="checkboxAddDefaultEnvs" onchange="updateScript(); setStorage('envInputValue',
+                        document.scriptForm.envInputValue.value)" />
         </div>
 
         <div class="c2-child windows">
           <label>Windows WSL Notes:</label>
           <textarea>
-# enable wsl
-dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+              # enable wsl
+              dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+              dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
-# set wsl2 as default
-wsl --update
-wsl --set-default-version 2
+              # set wsl2 as default
+              wsl --update
+              wsl --set-default-version 2
 
-# mount point
-# \\wsl$
-      </textarea
-          >
+              # mount point
+              # \\wsl$
+                    </textarea>
           <ul>
-            <li><a target="_blank" href="https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi">WSL Kernel</a></li>
+            <li><a target="_blank" href="https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi">WSL
+                Kernel</a></li>
             <li>
-              <a target="_blank" href="https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8">Raw Image Extension</a>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8">Raw Image
+                Extension</a>
             </li>
             <li>
-              <a target="_blank" href="https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg">Heif Image Extension</a>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg">Heif Image
+                Extension</a>
             </li>
             <li>
-              <a target="_blank" href="https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq"
-                >Hevc Video Extension fro</a
-              >
+              <a target="_blank"
+                href="https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq">Hevc
+                Video Extension fro</a>
             </li>
             <li>
-              <a target="_blank" href="https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4">MPEG-2 Video Extensio</a>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4">MPEG-2
+                Video
+                Extensio</a>
             </li>
             <li>
-              <a target="_blank" href="https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v">AV1 Video Extension</a>
+              <a target="_blank" href="https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v">AV1 Video
+                Extension</a>
             </li>
           </ul>
         </div>
@@ -179,8 +173,7 @@ wsl --set-default-version 2
         <a href="https://github.com/synle/bashrc/tree/master/.build" target="_blank">Pre-compiled Configs</a>
         <a href="https://github.com/synle/bashrc/find/master" target="_blank">Bashrc Code</a>
       </div>
-    </form>
-
+    </script>
     <script src="index.js"></script>
   </body>
 </html>

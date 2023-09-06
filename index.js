@@ -24,7 +24,7 @@ async function init() {
       text: 'Setup etc Hosts',
       script: `
         curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash
-        
+
         # Windows
         # c:\\Windows\\System32\\Drivers\\etc\\hosts
 
@@ -83,45 +83,30 @@ async function init() {
     configsByKey[config.idx] = config;
   }
 
-  // available scripts
-  let scriptToRunOptions = await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/script-list.config`).then(
-    (res) => res.text(),
-  );
-  scriptToRunOptions = scriptToRunOptions
-    .split('\n')
-    .map((s) => s.replace('./', '').trim())
-    .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
-    .sort()
-    .map((scriptName) => `<option>${scriptName}</option>`)
-    .join('\n');
-  document.querySelector('#scriptToRunOptions').innerHTML = scriptToRunOptions;
-
   // back it up
-  window.SCRIPT_TO_RUN_OPTIONS = document.querySelector('#scriptToRunOptions').innerHTML;
-
-  let selectedIdx = '';
-  for (const config of configs) {
-    const domCommand = document.createElement('div');
-    domCommand.innerHTML = `
-      <input onchange='updateScript()' type='radio' name='commandChoice' id='${config.idx}' value='${config.idx}' />
-      <label for='${config.idx}'>${config.text}</label>
-    `;
-    document.querySelector('#commands').appendChild(domCommand);
-
-    if (config.checked) {
-      selectedIdx = config.idx;
+  const templateData = {
+    configs,
+    scriptToRunOptions: await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/script-list.config`).then(
+      (res) => res.text(),
+    ).then(res => res.split('\n')
+      .map((s) => s.replace('./', '').trim())
+      .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
+      .sort()),
+    formValue: {
+      osToRun: getStorage('osToRun', 'windows'),
+      debugWriteToDir: getStorage('debugWriteToDir', ''),
+      runnerToUseLiveScript: (getStorage('runnerToUse') || 'test-live.sh') === 'test-live.sh',
+      addBootstrapScript: (getStorage('addBootstrapScript') || 'no') === 'yes',
+      setupDependencies: (getStorage('setupDependencies') || 'yes') === 'yes',
+      envInputValue: getStorage('envInputValue') || '',
     }
   }
 
-  document.scriptForm.commandChoice.value = selectedIdx;
+  // trim template whitespaces
+  const templateContent = document.querySelector('#templateContent').innerHTML.split('\n').map(line => line.replace(/^[ ]+/, '')).join('\n')
 
-  // select the previous values from local storage
-  document.querySelector('#osToRun').value = getStorage('osToRun', 'windows');
-  document.querySelector('#debugWriteToDir').value = getStorage('debugWriteToDir', '');
-  document.scriptForm.runnerToUse.value = getStorage('runnerToUse', 'test-live.sh');
-  document.scriptForm.addBootstrapScript.value = getStorage('addBootstrapScript') || 'no';
-  document.scriptForm.setupDependencies.value = getStorage('setupDependencies') || 'yes';
-  document.scriptForm.envInputValue.value = getStorage('envInputValue') || '';
+  document.querySelector('#container').innerHTML = Mustache.render(templateContent, templateData)
+  document.querySelector('#osToRun').value = templateData.formValue.osToRun
 
   getStorage('scriptToUse', '')
     .split('\n')
@@ -131,15 +116,16 @@ async function init() {
   // add the first script textbox
   addScriptTextbox();
 
+  // available scripts
+  window.SCRIPT_TO_RUN_OPTIONS = document.querySelector('#scriptToRunOptions').innerHTML;
+
   // initial setup to fix up the script
   updateScript();
 }
 
 function updateScript() {
-  let newCommands = [];
-
-  const selectedScriptIdx = document.scriptForm.commandChoice.value;
-  const selectedScript = configsByKey[selectedScriptIdx];
+  const selectedScript = configsByKey[document.scriptForm.commandChoice.value];
+  const runnerToUseLiveScript = document.scriptForm.runnerToUse.value
 
   let debugWriteToDirValue = '';
   try {
@@ -149,6 +135,7 @@ function updateScript() {
     }
   } catch (err) {}
 
+  let newCommands = [];
   newCommands.push(
     selectedScript.script
       .replace(
@@ -156,7 +143,7 @@ function updateScript() {
         [...new Set([...document.querySelectorAll('.scriptToUse')].map((s) => s.value.trim()).filter((s) => !!s.trim()))].join('\n'),
       )
       .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
-      .replace('<SELECTED_RUNNER_SCRIPT>', document.scriptForm.runnerToUse.value)
+      .replace('<SELECTED_RUNNER_SCRIPT>', runnerToUseLiveScript)
       .replace('<OS_FLAGS>', _getOsFlagScript())
       .replace(
         '<SETUP_DEPS>',
@@ -166,15 +153,6 @@ function updateScript() {
       )
       .replace('<ENV_VARS>', getEnvVars()),
   );
-
-  document.querySelector('#scriptToRunContainer').classList.toggle('hidden', selectedScript.shouldShowScriptNameInput !== true);
-  document.querySelector('#osToRunContainer').classList.toggle('hidden', selectedScript.shouldShowOsSelectionInput !== true);
-  document.querySelector('#setupDependencies').classList.toggle('hidden', selectedScript.shouldShowSetupDependencies !== true);
-  document.querySelector('#osBootstrap').classList.toggle('hidden', selectedScript.shouldHideBootstrap === true);
-  document.querySelector('#envInput').classList.toggle('hidden', selectedScript.shouldShowEnvInput !== true);
-
-  const osValue = _getOsValue();
-  document.scriptForm.querySelectorAll('.windows').forEach((elm) => elm.classList.toggle('hidden', osValue !== 'windows'));
 
   document.querySelector('#envInputValue').value = getEnvVars('\n');
 
@@ -187,6 +165,16 @@ function updateScript() {
 
   // fixed up the autocomplete
   updateAutoComplete();
+
+  // show and hide
+  document.querySelector('#scriptToRunContainer').classList.toggle('hidden', selectedScript.shouldShowScriptNameInput !== true);
+  document.querySelector('#osToRunContainer').classList.toggle('hidden', selectedScript.shouldShowOsSelectionInput !== true);
+  document.querySelector('#setupDependencies').classList.toggle('hidden', selectedScript.shouldShowSetupDependencies !== true);
+  document.querySelector('#osBootstrap').classList.toggle('hidden', selectedScript.shouldHideBootstrap === true);
+  document.querySelector('#envInput').classList.toggle('hidden', selectedScript.shouldShowEnvInput !== true);
+
+  const osValue = _getOsValue();
+  document.scriptForm.querySelectorAll('.windows').forEach((elm) => elm.classList.toggle('hidden', osValue !== 'windows'));
 }
 
 function addScriptTextbox(defaultValue = '') {
@@ -230,6 +218,9 @@ function clearAllScriptTextBox() {
     scriptElem.remove();
   }
   addScriptTextbox();
+
+  // clear the cookie
+  setStorage(`scriptToUse`, '');
 }
 
 function keyDownScriptTextbox(e) {
