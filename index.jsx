@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useMemo } from 'https://cdn.skypack.dev/react';
+import React, { useContext, useState, useEffect, useMemo, useRef } from 'https://cdn.skypack.dev/react';
 import ReactDOM from 'https://cdn.skypack.dev/react-dom';
 
 function setStorage(key, value) {
@@ -7,6 +7,16 @@ function setStorage(key, value) {
 
 function getStorage(key, defaultValue) {
   return localStorage[key] || defaultValue;
+}
+
+async function copyTextToClipboard(text, textAreaDom) {
+  try {
+    await navigator.clipboard.writeText(textAreaDom.value);
+
+    textAreaDom.focus();
+    textAreaDom.select();
+    document.execCommand('copy');
+  } catch (err) { }
 }
 
 function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
@@ -470,7 +480,7 @@ function DynamicTextArea(props) {
   useEffect(() => {
     async function _load() {
       setText('');
-      setText(await await fetch(url).then((res) => res.text()));
+      setText(await fetch(url).then((res) => res.text()));
     }
 
     _load();
@@ -478,10 +488,14 @@ function DynamicTextArea(props) {
 
   const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/.build/', '');
 
+  const onCopyText= (e) => {
+    copyTextToClipboard(text, e.target)
+  }
+
   return (
     <>
       <div className='form-label'>{shortUrl}</div>
-      <textarea value={text} readonly={true} placeholder={url} />
+      <textarea value={text} readonly placeholder={url} onDoubleClick={onCopyText} />
     </>
   );
 }
@@ -523,10 +537,7 @@ function LinuxNotesDom() {
 function WindowsNotesDom() {
   return (
     <>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
+
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-wsl-notes' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
