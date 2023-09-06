@@ -63,8 +63,8 @@ Upgraded from 64GB eMMC to 1TB 2230 NVME.
 
 ##### Desktop (Lenovo P520) - 64GB RAM, 2TB NVME
 
-- Intel Xeon W-2135
-- Upgraded to 64GB RAM
+- Intel Xeon W-2145
+- Upgraded to 128GB RAM
 - Added 2x2TB NVME SSD
 - Added 8TB 3.5 Toshiba HDD
 - Added Gigabyte Eagle 3090

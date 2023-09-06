@@ -24,7 +24,7 @@ async function init() {
       text: 'Setup etc Hosts',
       script: `
         curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash
-        
+
         # Windows
         # c:\\Windows\\System32\\Drivers\\etc\\hosts
 
@@ -136,10 +136,8 @@ async function init() {
 }
 
 function updateScript() {
-  let newCommands = [];
-
-  const selectedScriptIdx = document.scriptForm.commandChoice.value;
-  const selectedScript = configsByKey[selectedScriptIdx];
+  const selectedScript = configsByKey[document.scriptForm.commandChoice.value];
+  const runnerToUse = document.scriptForm.runnerToUse.value;
 
   let debugWriteToDirValue = '';
   try {
@@ -149,6 +147,7 @@ function updateScript() {
     }
   } catch (err) {}
 
+  let newCommands = [];
   newCommands.push(
     selectedScript.script
       .replace(
@@ -156,7 +155,7 @@ function updateScript() {
         [...new Set([...document.querySelectorAll('.scriptToUse')].map((s) => s.value.trim()).filter((s) => !!s.trim()))].join('\n'),
       )
       .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
-      .replace('<SELECTED_RUNNER_SCRIPT>', document.scriptForm.runnerToUse.value)
+      .replace('<SELECTED_RUNNER_SCRIPT>', runnerToUse)
       .replace('<OS_FLAGS>', _getOsFlagScript())
       .replace(
         '<SETUP_DEPS>',
@@ -167,6 +166,16 @@ function updateScript() {
       .replace('<ENV_VARS>', getEnvVars()),
   );
 
+  document.querySelector('#output').value = newCommands
+    .join('\n')
+    .split('\\')
+    .filter((s) => s.trim())
+    .join('\\')
+    .trim();
+
+  document.querySelector('#envInputValue').value = getEnvVars('\n');
+
+  // show and hide
   document.querySelector('#scriptToRunContainer').classList.toggle('hidden', selectedScript.shouldShowScriptNameInput !== true);
   document.querySelector('#osToRunContainer').classList.toggle('hidden', selectedScript.shouldShowOsSelectionInput !== true);
   document.querySelector('#setupDependencies').classList.toggle('hidden', selectedScript.shouldShowSetupDependencies !== true);
@@ -175,15 +184,6 @@ function updateScript() {
 
   const osValue = _getOsValue();
   document.scriptForm.querySelectorAll('.windows').forEach((elm) => elm.classList.toggle('hidden', osValue !== 'windows'));
-
-  document.querySelector('#envInputValue').value = getEnvVars('\n');
-
-  document.querySelector('#output').value = newCommands
-    .join('\n')
-    .split('\\')
-    .filter((s) => s.trim())
-    .join('\\')
-    .trim();
 
   // fixed up the autocomplete
   updateAutoComplete();
@@ -230,6 +230,7 @@ function clearAllScriptTextBox() {
     scriptElem.remove();
   }
   addScriptTextbox();
+  setStorage(`scriptToUse`, '');
 }
 
 function keyDownScriptTextbox(e) {
