@@ -213,7 +213,7 @@ function RightContainer() {
     <div id='rightContainer'>
       {selectedScript.shouldShowScriptNameInput === true && (
         <>
-          <div className='form-label'>Scripts To Run:</div>
+          <div className='form-label'>Scripts To Run</div>
           {formValue.scriptsToUse.map((scriptToUse, idx) => (
             <div key={idx}>
               <input
@@ -244,7 +244,7 @@ function RightContainer() {
             ))}
           </datalist>
 
-          <div className='form-label'>Runner:</div>
+          <div className='form-label'>Runner</div>
           <div className='form-row'>
             <input
               type='radio'
@@ -269,7 +269,7 @@ function RightContainer() {
             />
             <label htmlFor='runnerToUse-local'>Local Script</label>
           </div>
-          <div className='form-label'>Debug Write To File:</div>
+          <div className='form-label'>Debug Write To File</div>
           <div>
             <input
               id='debugWriteToDir'
@@ -291,7 +291,7 @@ function RightContainer() {
 
       {selectedScript.shouldShowOsSelectionInput === true && (
         <>
-          <div className='form-label'>OS Type:</div>
+          <div className='form-label'>OS Type</div>
           <div>
             <select
               id='osToRun'
@@ -316,7 +316,7 @@ function RightContainer() {
 
       {selectedScript.shouldShowSetupDependencies === true && (
         <>
-          <div className='form-label'>Setup Dependencies:</div>
+          <div className='form-label'>Setup Dependencies</div>
           <div className='form-row'>
             <input
               type='radio'
@@ -346,7 +346,7 @@ function RightContainer() {
 
       {selectedScript.shouldHideBootstrap !== true && (
         <>
-          <div className='form-label'>Add Bootstrap Script:</div>
+          <div className='form-label'>Add Bootstrap Script</div>
           <div className='form-row'>
             <input
               type='radio'
@@ -376,7 +376,7 @@ function RightContainer() {
 
       {selectedScript.shouldShowEnvInput === true && (
         <>
-          <div className='form-label'>Env Var Input:</div>
+          <div className='form-label'>Env Var Input</div>
           <div>
             <textarea
               id='envInputValue'
@@ -388,7 +388,7 @@ function RightContainer() {
               defaultValue={consolidatedEnvInputValue}
             />
           </div>
-          <div className='form-label'>Add Default Env:</div>
+          <div className='form-label'>Add Default Env</div>
           <div>
             <input
               type='checkbox'
@@ -406,7 +406,7 @@ function RightContainer() {
 
       {selectedScript.shouldHideOutput !== true && (
         <>
-          <div className='form-label'>Output:</div>
+          <div className='form-label'>Output</div>
           <div>
             <textarea id='formValueOutput' placeholder='Output' readonly='true' value={formValueOutput} />
           </div>
@@ -414,6 +414,8 @@ function RightContainer() {
       )}
 
       {selectedScript.shouldShowWindowsNotes === true && <WindowsNotesDom />}
+      {selectedScript.shouldShowMacOSXNotes === true && <MacOSXNotesDom />}
+      {selectedScript.shouldShowLinuxNotes === true && <LinuxNotesDom />}
     </div>
   );
 }
@@ -424,7 +426,7 @@ function LeftContainer() {
 
   return (
     <div id='leftContainer'>
-      <div className='form-label'>Type of Script:</div>
+      <div className='form-label'>Type of Script</div>
       {appData.configs.map((config) => (
         <div key={config.idx} className='form-row'>
           <input
@@ -461,79 +463,111 @@ function BottomContainer() {
   );
 }
 
-function DynamicTextArea(props){
-  const {url} = props;
+function DynamicTextArea(props) {
+  const { url } = props;
   const [text, setText] = useState('');
 
   useEffect(() => {
-    async function _load(){
+    async function _load() {
       setText('');
-      setText(await await fetch(url)
-        .then((res) => res.text()))
+      setText(await await fetch(url).then((res) => res.text()));
     }
 
     _load();
-  }, [])
+  }, []);
 
-  return <textarea value={text} readonly placeholder={url} />
-}
-
-function WindowsNotesDom() {
-  const wslNotes = `
-# enable wsl
-dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
-dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
-
-# set wsl2 as default
-wsl --update
-wsl --set-default-version 2
-
-# mount point
-# \\wsl$
-  `.trim();
+  const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/.build/', '');
 
   return (
     <>
-      <div className='form-label'>Windows WSL Notes:</div>
+      <div className='form-label'>{shortUrl}</div>
+      <textarea value={text} readonly={true} placeholder={url} />
+    </>
+  );
+}
+
+function MacOSXNotesDom() {
+  return (
+    <>
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-macosx' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-macosx' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-macosx' />
+    </>
+  );
+}
+
+function LinuxNotesDom() {
+  return (
+    <>
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-linux' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-linux' />
+    </>
+  );
+}
+
+function WindowsNotesDom() {
+  return (
+    <>
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-wsl-notes' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-windows' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-windows' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-windows' />
+
+      <div className='form-label'>Other Links</div>
       <div>
-        <textarea value={wslNotes} />
+        <a target='_blank' href='https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'>
+          WSL Kernel
+        </a>
       </div>
-      <div className='form-label'>Windows Registry:</div>
       <div>
-        <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1'/>
+        <a target='_blank' href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>
+          Raw Image Extension
+        </a>
       </div>
-      <>
-        <div>
-          <a target='_blank' href='https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'>
-            WSL Kernel
-          </a>
-        </div>
-        <div>
-          <a target='_blank' href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>
-            Raw Image Extension
-          </a>
-        </div>
-        <div>
-          <a target='_blank' href='https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg'>
-            Heif Image Extension
-          </a>
-        </div>
-        <div>
-          <a target='_blank' href='https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq'>
-            Hevc Video Extension fro
-          </a>
-        </div>
-        <div>
-          <a target='_blank' href='https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4'>
-            MPEG-2 Video Extensio
-          </a>
-        </div>
-        <div>
-          <a target='_blank' href='https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v'>
-            AV1 Video Extension
-          </a>
-        </div>
-      </>
+      <div>
+        <a target='_blank' href='https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg'>
+          Heif Image Extension
+        </a>
+      </div>
+      <div>
+        <a target='_blank' href='https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq'>
+          Hevc Video Extension fro
+        </a>
+      </div>
+      <div>
+        <a target='_blank' href='https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4'>
+          MPEG-2 Video Extensio
+        </a>
+      </div>
+      <div>
+        <a target='_blank' href='https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v'>
+          AV1 Video Extension
+        </a>
+      </div>
     </>
   );
 }
@@ -619,15 +653,24 @@ function App() {
         },
         {
           text: 'Windows Notes',
-          script: `
-        <ENV_VARS>
-      `,
           shouldShowWindowsNotes: true,
           shouldHideOutput: true,
           shouldHideBootstrap: true,
         },
+        {
+          text: 'Mac OSX Notes',
+          shouldShowMacOSXNotes: true,
+          shouldHideOutput: true,
+          shouldHideBootstrap: true,
+        },
+        {
+          text: 'Linux Notes',
+          shouldShowLinuxNotes: true,
+          shouldHideOutput: true,
+          shouldHideBootstrap: true,
+        },
       ].map((config) => {
-        config.script = config.script
+        config.script = (config.script || '')
           .split('\n')
           .map((s) => s.trim())
           .join('\n');
