@@ -152,7 +152,3 @@ function prompt() {
 }
 
 clear; # clean up the prompt
-
-function gogit {
-  Set-Location D:/git
-}
