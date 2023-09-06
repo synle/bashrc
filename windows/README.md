@@ -365,3 +365,9 @@ Use these to map generic controllers for Windows
 - https://aka.ms/vs/17/release/vc_redist.x64.exe
 - https://aka.ms/highdpimfc2013x64enu
 - https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe
+
+
+#### Mount SFTP as a drive on windows
+https://github.com/winfsp/sshfs-win
+https://github.com/winfsp/winfsp/releases/tag/v2.0
+https://github.com/winfsp/sshfs-win/releases
