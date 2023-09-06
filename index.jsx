@@ -9,14 +9,19 @@ function getStorage(key, defaultValue) {
   return localStorage[key] || defaultValue;
 }
 
-async function copyTextToClipboard(text, textAreaDom) {
-  try {
-    await navigator.clipboard.writeText(textAreaDom.value);
+async function copyTextToClipboard(text) {
+  text = text.trim();
 
-    textAreaDom.focus();
-    textAreaDom.select();
-    document.execCommand('copy');
-  } catch (err) { }
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {}
+
+  const toast = Toastify({
+    text: 'Text copied to clipboard.',
+    duration: 2000,
+    onClick: () => toast.hideToast(),
+  });
+  toast.showToast();
 }
 
 function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
@@ -188,7 +193,16 @@ function RightContainer() {
             ? ''
             : `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh)" && \\\n`,
         )
-        .replace('<ENV_VARS>', getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes')),
+        .replace(
+          '<ENV_VARS>',
+          `
+${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes')}
+
+===
+
+${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes', '\n')}
+        `.trim(),
+        ),
     );
 
     return newCommands
@@ -201,7 +215,7 @@ function RightContainer() {
 
   let consolidatedEnvInputValue = formValue.envInputValue;
   if (formValue.shouldAddDefaultEnvs === 'yes') {
-    consolidatedEnvInputValue = getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes');
+    consolidatedEnvInputValue = getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes', '\n');
   }
 
   const onChangeTestScript = (idx, newValue) => {
@@ -418,7 +432,13 @@ function RightContainer() {
         <>
           <div className='form-label'>Output</div>
           <div>
-            <textarea id='formValueOutput' placeholder='Output' readonly='true' value={formValueOutput} />
+            <textarea
+              id='formValueOutput'
+              placeholder='Output'
+              readOnly
+              value={formValueOutput}
+              onDoubleClick={(e) => copyTextToClipboard(e.target.value)}
+            />
           </div>
         </>
       )}
@@ -488,14 +508,10 @@ function DynamicTextArea(props) {
 
   const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/.build/', '');
 
-  const onCopyText= (e) => {
-    copyTextToClipboard(text, e.target)
-  }
-
   return (
     <>
       <div className='form-label'>{shortUrl}</div>
-      <textarea value={text} readonly placeholder={url} onDoubleClick={onCopyText} />
+      <textarea value={text} readOnly placeholder={url} onDoubleClick={(e) => copyTextToClipboard(e.target.value)} />
     </>
   );
 }
@@ -537,7 +553,6 @@ function LinuxNotesDom() {
 function WindowsNotesDom() {
   return (
     <>
-
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-wsl-notes' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
