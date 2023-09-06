@@ -324,7 +324,7 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
                 onInputChange(e.target.name, e.target.value);
               }}
               defaultValue={formValue.osToRun}>
-              <option value='windows' selected>
+              <option value='windows'>
                 Windows with WSL
               </option>
               <option value='ming_64'>Windows with Ming_64</option>
