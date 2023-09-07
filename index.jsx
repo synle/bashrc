@@ -478,13 +478,13 @@ function LeftContainer() {
 function BottomContainer() {
   return (
     <div id='bottomContainer' className='form-row'>
-      <a href='https://github.com/synle/bashrc' target='_blank'>
+      <a href='https://github.com/synle/bashrc' type='button' target='_blank'>
         Repo
       </a>
-      <a href='https://github.com/synle/bashrc/tree/master/.build' target='_blank'>
+      <a href='https://github.com/synle/bashrc/tree/master/.build' type='button' target='_blank'>
         Pre-compiled Configs
       </a>
-      <a href='https://github.com/synle/bashrc/find/master' target='_blank'>
+      <a href='https://github.com/synle/bashrc/find/master' type='button' target='_blank'>
         Bashrc Code
       </a>
     </div>
@@ -569,32 +569,35 @@ function WindowsNotesDom() {
 
       <div className='form-label'>Other Links</div>
       <div>
-        <a target='_blank' href='https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'>
+        <a type='button' target='_blank' href='https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'>
           WSL Kernel
         </a>
       </div>
       <div>
-        <a target='_blank' href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>
+        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>
           Raw Image Extension
         </a>
       </div>
       <div>
-        <a target='_blank' href='https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg'>
+        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg'>
           Heif Image Extension
         </a>
       </div>
       <div>
-        <a target='_blank' href='https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq'>
+        <a
+          type='button'
+          target='_blank'
+          href='https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq'>
           Hevc Video Extension fro
         </a>
       </div>
       <div>
-        <a target='_blank' href='https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4'>
+        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4'>
           MPEG-2 Video Extensio
         </a>
       </div>
       <div>
-        <a target='_blank' href='https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v'>
+        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v'>
           AV1 Video Extension
         </a>
       </div>

@@ -1,11 +1,12 @@
 @media (prefers-color-scheme: dark) {
   :root {
-    --colorBgMain: #0d1117;
+    --colorBgMain: #282a36;
     --colorBgSecondary: #161b22;
-    --colorBgHover: #303134;
-    --colorTextMain: #c9d1d9;
+    --colorBgHover: #1f2021;
+    --colorTextMain: #f8f8f2;
+    --colorTextSecondary: #50fa7b;
     --colorTextLink: #8ab4f8;
-    --colorBorderMain: #58a6ff;
+    --colorBorderMain: #8ab4f8;
     --colorBorderSecondary: #30363d;
   }
 }
@@ -16,6 +17,7 @@
     --colorBgSecondary: #f2f2f2;
     --colorBgHover: #c9c9c9;
     --colorTextMain: #000;
+    --colorTextSecondary: #333;
     --colorTextLink: #005594;
     --colorBorderMain: #58a6ff;
     --colorBorderSecondary: #c9d1d9;
@@ -27,7 +29,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  transition: all 0.4s ease-out;
+  transition: all 0.2s ease-out;
 }
 :focus {
   outline: none;
@@ -58,9 +60,11 @@ select {
   background: var(--colorBgSecondary);
   color: var(--colorTextMain);
   padding: 0.5rem 0.75rem;
+  font-size: 1rem;
 
   &:hover,
   &:focus {
+    background: var(--colorBgHover);
     border-color: var(--colorBorderMain);
   }
 }
@@ -68,10 +72,22 @@ textarea {
   min-height: 80px;
   height: 225px;
   resize: vertical;
+  transition: none;
+}
+
+/* link component */
+a {
+  font-weight: 900;
+  color: var(--colorTextLink);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 /* button components */
-a,
+a[type='button'],
 button,
 input[type='submit'] {
   border: 2px solid var(--colorBorderSecondary);
@@ -89,11 +105,8 @@ input[type='submit'] {
   &:hover,
   &:focus {
     background: var(--colorBgHover);
-  }
-
-  &:hover,
-  &:focus {
     border-color: var(--colorBorderMain);
+    text-decoration: none;
   }
 }
 
@@ -130,7 +143,7 @@ body {
 
   .form-label {
     font-weight: 900;
-    color: var(--colorTextLink);
+    color: var(--colorTextSecondary);
   }
 
   .form-row {
