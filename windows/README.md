@@ -371,3 +371,7 @@ Use these to map generic controllers for Windows
 https://github.com/winfsp/sshfs-win
 https://github.com/winfsp/winfsp/releases/tag/v2.0
 https://github.com/winfsp/sshfs-win/releases
+
+```
+\\sshfs\syle@127.0.0.1
+```
