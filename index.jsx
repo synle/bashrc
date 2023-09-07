@@ -324,9 +324,7 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
                 onInputChange(e.target.name, e.target.value);
               }}
               defaultValue={formValue.osToRun}>
-              <option value='windows'>
-                Windows with WSL
-              </option>
+              <option value='windows'>Windows with WSL</option>
               <option value='ming_64'>Windows with Ming_64</option>
               <option value='mac'>Mac OSX</option>
               <option value='chrome_os'>Chrome OS with Linux</option>
@@ -494,7 +492,7 @@ function BottomContainer() {
 }
 
 function DynamicTextArea(props) {
-  const { url } = props;
+  const { url, height } = props;
   const [text, setText] = useState('');
 
   useEffect(() => {
@@ -510,8 +508,12 @@ function DynamicTextArea(props) {
 
   return (
     <>
-      <div className='form-label'>{shortUrl}</div>
-      <textarea value={text} readOnly placeholder={url} onDoubleClick={(e) => copyTextToClipboard(e.target.value)} />
+      <div className='form-label'>
+        <a href={url} target='_blank'>
+          {shortUrl}
+        </a>
+      </div>
+      <textarea value={text} readOnly placeholder={url} onDoubleClick={(e) => copyTextToClipboard(e.target.value)} style={{ height }} />
     </>
   );
 }
@@ -519,6 +521,7 @@ function DynamicTextArea(props) {
 function MacOSXNotesDom() {
   return (
     <>
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-macosx.md' height='600px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
@@ -536,6 +539,7 @@ function MacOSXNotesDom() {
 function LinuxNotesDom() {
   return (
     <>
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-linux.md' height='600px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
@@ -553,7 +557,7 @@ function LinuxNotesDom() {
 function WindowsNotesDom() {
   return (
     <>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-wsl-notes' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='600px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
