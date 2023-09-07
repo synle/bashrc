@@ -477,17 +477,33 @@ function LeftContainer() {
 
 function BottomContainer() {
   return (
-    <div id='bottomContainer' className='form-row'>
-      <a href='https://github.com/synle/bashrc' type='button' target='_blank'>
-        Repo
-      </a>
-      <a href='https://github.com/synle/bashrc/tree/master/.build' type='button' target='_blank'>
-        Pre-compiled Configs
-      </a>
-      <a href='https://github.com/synle/bashrc/find/master' type='button' target='_blank'>
-        Bashrc Code
-      </a>
+    <div id='bottomContainer'>
+      <hr />
+      <div className='form-row'>
+        <LinkButton href='https://github.com/synle/bashrc'>Repo</LinkButton>
+        <LinkButton href='https://github.com/synle/bashrc/tree/master/.build'>Pre-compiled Configs</LinkButton>
+        <LinkButton href='https://github.com/synle/bashrc/find/master'>Bashrc Code</LinkButton>
+      </div>
     </div>
+  );
+}
+
+function LinkButton(props) {
+  const { href, children, block } = props;
+
+  if (block) {
+    return (
+      <div>
+        <a href={href} type='button' target='_blank'>
+          {children}
+        </a>
+      </div>
+    );
+  }
+  return (
+    <a href={href} type='button' target='_blank'>
+      {children}
+    </a>
   );
 }
 
@@ -567,39 +583,73 @@ function WindowsNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-windows' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-windows' />
 
-      <div className='form-label'>Other Links</div>
-      <div>
-        <a type='button' target='_blank' href='https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'>
+      {/* other links */}
+      <div className='form-label'>Windows Related</div>
+      <div className='link-group'>
+        <LinkButton block href='https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi'>
           WSL Kernel
-        </a>
+        </LinkButton>
+        <LinkButton block href='https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170'>
+          Microsoft Visual C++ Redistributable
+        </LinkButton>
       </div>
+
+      <div className='form-label'>SFTP Mount Applications</div>
       <div>
-        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>
+        <code>\\sshfs\syle@127.0.0.1</code>
+      </div>
+      <div className='link-group'>
+        <LinkButton block href='https://github.com/winfsp/winfsp/releases/latest'>
+          WinFSP {/* https://github.com/winfsp/sshfs-win */}
+        </LinkButton>
+        <LinkButton block href='https://github.com/winfsp/sshfs-win/releases/latest'>
+          SSHFS
+        </LinkButton>
+      </div>
+
+      <div className='form-label'>Other Applications</div>
+      <div className='link-group'>
+        <LinkButton block href='https://ninite.com/'>
+          Ninite
+        </LinkButton>
+        <LinkButton block href='https://download.battle.net/en-us/?product=bnetdesk'>
+          Battle Net
+        </LinkButton>
+        <LinkButton block href='https://www.sublimetext.com/download'>
+          Sublime Text
+        </LinkButton>
+        <LinkButton block href='https://www.sublimemerge.com/download'>
+          Sublime Merge
+        </LinkButton>
+        <LinkButton block href='https://www.charlesproxy.com/download/latest-release/'>
+          Charles Proxy
+        </LinkButton>
+        <LinkButton block href='https://ultimaker.com/software/ultimaker-cura/#links'>
+          Ultimaker Cura
+        </LinkButton>
+        <LinkButton block href='https://design.cricut.com/#/'>
+          Cricut Design Space
+        </LinkButton>
+      </div>
+
+      {/* extensions */}
+      <div className='form-label'>Extensions</div>
+      <div className='link-group'>
+        <LinkButton block href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>
           Raw Image Extension
-        </a>
-      </div>
-      <div>
-        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg'>
+        </LinkButton>
+        <LinkButton block href='https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg'>
           Heif Image Extension
-        </a>
-      </div>
-      <div>
-        <a
-          type='button'
-          target='_blank'
-          href='https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq'>
-          Hevc Video Extension fro
-        </a>
-      </div>
-      <div>
-        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4'>
-          MPEG-2 Video Extensio
-        </a>
-      </div>
-      <div>
-        <a type='button' target='_blank' href='https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v'>
+        </LinkButton>
+        <LinkButton href='https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq'>
+          Hevc Video Extension (Device Manager)
+        </LinkButton>
+        <LinkButton block href='https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4'>
+          MPEG-2 Video Extension
+        </LinkButton>
+        <LinkButton block href='https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v'>
           AV1 Video Extension
-        </a>
+        </LinkButton>
       </div>
     </>
   );

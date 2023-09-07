@@ -7,7 +7,7 @@
     --colorTextSecondary: #50fa7b;
     --colorTextLink: #8ab4f8;
     --colorBorderMain: #8ab4f8;
-    --colorBorderSecondary: #30363d;
+    --colorBorderSecondary: #505458;
   }
 }
 
@@ -110,6 +110,11 @@ input[type='submit'] {
   }
 }
 
+hr {
+  border: 4px solid var(--colorBorderSecondary);
+  margin-bottom: 2rem;
+}
+
 /* specific to this app */
 body {
   padding: 1rem 2rem;
@@ -136,11 +141,6 @@ body {
     gap: 1rem;
   }
 
-  #bottomContainer {
-    display: flex;
-    gap: 1rem;
-  }
-
   .form-label {
     font-weight: 900;
     color: var(--colorTextSecondary);
@@ -154,6 +154,16 @@ body {
     & button,
     & a {
       margin-right: 2rem;
+    }
+  }
+
+  .link-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 0.5rem 1rem;
+
+    & a {
+      display: block;
     }
   }
 
