@@ -525,9 +525,8 @@ function DynamicTextArea(props) {
   return (
     <>
       <div className='form-label'>
-        <a href={url} target='_blank'>
-          {shortUrl}
-        </a>
+        <span style={{ marginRight: '2rem' }}>{shortUrl}</span>
+        <LinkButton href={url}>Open</LinkButton>
       </div>
       <textarea value={text} readOnly placeholder={url} onDoubleClick={(e) => copyTextToClipboard(e.target.value)} style={{ height }} />
     </>
@@ -609,6 +608,9 @@ function WindowsNotesDom() {
 
       <div className='form-label'>Other Applications</div>
       <div className='link-group'>
+        <LinkButton block href='https://github.com/synle/bashrc/raw/master/.build/Applications.zip'>
+          Prebuild Applications
+        </LinkButton>
         <LinkButton block href='https://ninite.com/'>
           Ninite
         </LinkButton>
