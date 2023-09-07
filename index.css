@@ -1,123 +1,14 @@
-@media (prefers-color-scheme: dark) {
-  :root {
-    --colorBgMain: #282a36;
-    --colorBgSecondary: #161b22;
-    --colorBgHover: #1f2021;
-    --colorTextMain: #f8f8f2;
-    --colorTextSecondary: #50fa7b;
-    --colorTextLink: #8ab4f8;
-    --colorBorderMain: #8ab4f8;
-    --colorBorderSecondary: #505458;
-  }
-}
-
-@media print, (prefers-color-scheme: light) {
-  :root {
-    --colorBgMain: #fff;
-    --colorBgSecondary: #f2f2f2;
-    --colorBgHover: #c9c9c9;
-    --colorTextMain: #000;
-    --colorTextSecondary: #333;
-    --colorTextLink: #005594;
-    --colorBorderMain: #58a6ff;
-    --colorBorderSecondary: #c9d1d9;
-  }
-}
-
-/*  */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  transition: all 0.2s ease-out;
-}
-:focus {
-  outline: none;
-}
-html {
-  font-family: Helvetica, Tahoma, Geneva, sans-serif !important;
-  background: var(--colorBgMain);
-  color: var(--colorTextMain);
-  font-size: 14px;
-}
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  padding: 0;
-  margin: 0;
-}
-
-/* text component */
-input[type='text'],
-textarea,
-select {
-  display: block;
-  width: 100%;
-  border: 2px solid var(--colorBorderSecondary);
-  background: var(--colorBgSecondary);
-  color: var(--colorTextMain);
-  padding: 0.5rem 0.75rem;
-  font-size: 1rem;
-
-  &:hover,
-  &:focus {
-    background: var(--colorBgHover);
-    border-color: var(--colorBorderMain);
-  }
-}
-textarea {
-  min-height: 80px;
-  height: 225px;
-  resize: vertical;
-  transition: none;
-}
-
-/* link component */
-a {
-  font-weight: 900;
-  color: var(--colorTextLink);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
-/* button components */
-a[type='button'],
-button,
-input[type='submit'] {
-  border: 2px solid var(--colorBorderSecondary);
-  background: var(--colorBgSecondary);
-  color: var(--colorTextMain);
-  cursor: pointer;
-  text-transform: uppercase;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 1rem;
-  text-align: center;
-  padding: 0.5rem 1rem;
-  display: inline-block;
-
-  &:hover,
-  &:focus {
-    background: var(--colorBgHover);
-    border-color: var(--colorBorderMain);
-    text-decoration: none;
-  }
-}
-
-hr {
-  border: 4px solid var(--colorBorderSecondary);
-  margin-bottom: 2rem;
-}
-
+/*
+base:
+https: //synle.github.io/minimal-css/index.css
+*/
 /* specific to this app */
 body {
   padding: 1rem 2rem;
+}
+
+hr {
+  margin-bottom: 2rem;
 }
 
 #container {

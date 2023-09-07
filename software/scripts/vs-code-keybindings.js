@@ -119,7 +119,7 @@ async function doInit() {
       when: "debugState == 'stopped'",
     },
     {
-      key: "shift+OS_KEY+'",
+      key: "OS_KEY+shift+'",
       command: 'workbench.action.debug.stepInto',
       when: "debugState != 'inactive'",
     },

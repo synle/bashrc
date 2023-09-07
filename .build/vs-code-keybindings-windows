@@ -119,7 +119,7 @@
     "when": "debugState == 'stopped'"
   },
   {
-    "key": "shift+alt+'",
+    "key": "alt+shift+'",
     "command": "workbench.action.debug.stepInto",
     "when": "debugState != 'inactive'"
   },
