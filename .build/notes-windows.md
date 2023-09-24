@@ -14,11 +14,16 @@ wsl --update
 wsl --set-default-version 2
 ```
 
-## Import WSL 2
+## Export WSL 2
 
 ```bash
 wsl --export Debian Debian-WSL.tar
-wsl --import Debian Debian-WSL.tar
+```
+
+## Import WSL 2
+
+```bash
+wsl --import Debian . Debian-WSL.tar
 ```
 
 ### Set default user
