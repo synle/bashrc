@@ -23,8 +23,7 @@ wsl --import Debian Debian-WSL.tar
 
 ### Set default user
 
-Using register key, then update the default user to be 1000 (aka e38 in hex)
-Then update `DefaultUid` to `3e8` (aka 1000)
+Using regedit, and then update `DefaultUid` to `3e8` (aka 1000)
 
 ```
 HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss
