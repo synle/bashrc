@@ -262,7 +262,7 @@ wsl --import <Image_Name> <Path_To_Restore_This_WSL.tar> <Path_To_Backup.tar>
 wsl --import Debian D:\WSL\Debian ./wsl_backup.tar
 
 # needs to update the registry to set up default users
-# Then update DefaultUid to e38 (aka 1000)
+# Then update DefaultUid to 3e8 (aka 1000)
 # That above Uid can be found with `wsl -d Debian -u syle -e id -u`
 HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss\{MY-UUID}
 ```
