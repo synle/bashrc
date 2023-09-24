@@ -1,13 +1,28 @@
-# enable wsl
+# notes-windows.md
 
+## enable wsl
+
+```bash
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
 
-# set wsl2 as default
+## set wsl2 as default
 
+```bash
 wsl --update
 wsl --set-default-version 2
+```
 
-# mount point
+## Import WSL 2
 
-# \\wsl$
+```bash
+wsl --export Debian Debian-WSL.tar
+wsl --import Debian Debian-WSL.tar
+```
+
+## mount point
+
+```bash
+\\wsl$
+```
