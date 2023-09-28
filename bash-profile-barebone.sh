@@ -299,6 +299,8 @@ date_show(){
   date +'%a, %b %d, %Y  %r'
 }
 
+export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
+
 ##########################################################
 # prompt
 ##########################################################
