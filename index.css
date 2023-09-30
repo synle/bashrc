@@ -14,7 +14,6 @@ hr {
 #container {
   display: grid;
   grid-template-columns: auto 1fr;
-  grid-template-rows: repeat(2, auto);
   grid-gap: 2rem 1.5rem;
   margin-top: 2rem;
 

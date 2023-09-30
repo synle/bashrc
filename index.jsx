@@ -398,18 +398,15 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
 
       {selectedScript.shouldShowEnvInput === true && (
         <>
-          <div className='form-label'>Env Var Input</div>
-          <div>
-            <textarea
-              id='envInputValue'
-              name='envInputValue'
-              placeholder='Input'
-              onBlur={(e) => {
-                onInputChange(e.target.name, e.target.value.trim());
-              }}
-              defaultValue={consolidatedEnvInputValue}
-            />
-          </div>
+          <EnhancedTextArea
+            id='envInputValue'
+            name='envInputValue'
+            placeholder='Env Var Input'
+            onBlur={(e) => {
+              onInputChange(e.target.name, e.target.value.trim());
+            }}
+            defaultValue={consolidatedEnvInputValue}
+          />
           <div className='form-label'>Add Default Env</div>
           <div>
             <input
@@ -427,18 +424,7 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
       )}
 
       {selectedScript.shouldHideOutput !== true && (
-        <>
-          <div className='form-label'>Output</div>
-          <div>
-            <textarea
-              id='formValueOutput'
-              placeholder='Output'
-              readOnly
-              value={formValueOutput}
-              onDoubleClick={(e) => copyTextToClipboard(e.target.value)}
-            />
-          </div>
-        </>
+        <EnhancedTextArea id='formValueOutput' placeholder='Output' readOnly value={formValueOutput} />
       )}
 
       {selectedScript.shouldShowWindowsNotes === true && <WindowsNotesDom />}
@@ -489,22 +475,28 @@ function BottomContainer() {
 }
 
 function LinkButton(props) {
-  const { href, children, block } = props;
+  const { children, block, ...restProps } = props;
 
   if (block) {
     return (
       <div>
-        <a href={href} type='button' target='_blank'>
+        <a {...restProps} type='button' target='_blank'>
           {children}
         </a>
       </div>
     );
   }
   return (
-    <a href={href} type='button' target='_blank'>
+    <a {...restProps} type='button' target='_blank'>
       {children}
     </a>
   );
+}
+
+function ActionButton(props) {
+  const { children, ...restProps } = props;
+
+  return <button {...restProps}>{children}</button>;
 }
 
 function DynamicTextArea(props) {
@@ -520,15 +512,31 @@ function DynamicTextArea(props) {
     _load();
   }, []);
 
-  const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/.build/', '');
+  return <EnhancedTextArea height={height} url={url} value={text} readOnly />;
+}
+
+function EnhancedTextArea(props) {
+  let { url, label, height, ...restProps } = props;
+  label = label || props.placeholder;
+
+  let editUrl = '';
+
+  if (url) {
+    const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/.build/', '');
+    label = label || shortUrl;
+
+    editUrl = `https://github.com/synle/bashrc/edit/master/.build/${shortUrl}`;
+  }
 
   return (
     <>
-      <div className='form-label'>
-        <span style={{ marginRight: '2rem' }}>{shortUrl}</span>
-        <LinkButton href={url}>Open</LinkButton>
+      <div className='form-label' style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
+        <span>{label}</span>
+        <ActionButton onClick={(e) => copyTextToClipboard(e.target.value)}>Copy</ActionButton>
+        {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
+        {url && <LinkButton href={url}>Open</LinkButton>}
       </div>
-      <textarea value={text} readOnly placeholder={url} onDoubleClick={(e) => copyTextToClipboard(e.target.value)} style={{ height }} />
+      <textarea {...restProps} style={{ height }} />
     </>
   );
 }
@@ -595,11 +603,15 @@ function WindowsNotesDom() {
 
       <div className='form-label'>SFTP Mount Applications</div>
       <div>
-        <div><strong>Using username and password</strong></div>
+        <div>
+          <strong>Using username and password</strong>
+        </div>
         <code>\\sshfs\syle@127.0.0.1</code>
       </div>
       <div>
-        <div><strong>Using id_rsa keys</strong></div>
+        <div>
+          <strong>Using id_rsa keys</strong>
+        </div>
         <code>\\sshfs.k\syle@127.0.0.1</code>
       </div>
       <div className='link-group'>
