@@ -597,6 +597,8 @@ function WindowsNotesDom() {
       <div>
         <div><strong>Using username and password</strong></div>
         <code>\\sshfs\syle@127.0.0.1</code>
+      </div>
+      <div>
         <div><strong>Using id_rsa keys</strong></div>
         <code>\\sshfs.k\syle@127.0.0.1</code>
       </div>
