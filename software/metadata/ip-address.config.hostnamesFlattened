@@ -40,6 +40,46 @@
     }
   ],
   [
+    "sy-p520-black",
+    "192.168.1.21",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-lenovo-p520-black",
+    "192.168.1.21",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
+    "sy-p520-white",
+    "192.168.1.22",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-lenovo-p520-white",
+    "192.168.1.22",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
     "sy-mp",
     "192.168.1.23",
     {
@@ -70,22 +110,32 @@
     }
   ],
   [
-    "sy-g14",
+    "sy-mbp",
     "192.168.1.24",
     {
       "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
       "IS_FIRST_IP_IN_GROUP": true
     }
   ],
   [
-    "sy-asus-g14",
+    "sy-macbookpro-14",
     "192.168.1.24",
     {
       "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
+    "sy-mbp-14",
+    "192.168.1.24",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
       "IS_FIRST_IP_IN_GROUP": false
     }
   ],
@@ -110,53 +160,73 @@
     }
   ],
   [
-    "sy-dell-xps",
-    "192.168.1.26",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": true
-    }
-  ],
-  [
-    "sy-dell-xps-15",
-    "192.168.1.26",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": false,
-      "WINDOWS_REMOTE": true,
-      "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
-    "sy-mbp14",
-    "192.168.1.27",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": true
-    }
-  ],
-  [
-    "sy-mbp14-m1",
-    "192.168.1.27",
-    {
-      "NO_SSH": false,
-      "OSX_REMOTE": true,
-      "WINDOWS_REMOTE": false,
-      "IS_FIRST_IP_IN_GROUP": false
-    }
-  ],
-  [
     "sy-aero16",
+    "192.168.1.26",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-aero",
+    "192.168.1.26",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
+    "sy-gigabyte-aero-16",
+    "192.168.1.26",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
+    "sy-surfacebook2",
+    "192.168.1.27",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-surfacebook",
+    "192.168.1.27",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
+    "sy-g14",
     "192.168.1.28",
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
       "WINDOWS_REMOTE": true,
       "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-asus-g14",
+    "192.168.1.28",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
     }
   ]
 ]

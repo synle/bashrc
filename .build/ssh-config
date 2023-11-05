@@ -12,6 +12,22 @@ Host *
 # END SY CUSTOM CONFIG - All Hosts
 
 # SY CUSTOM CONFIG - Home Network Hosts
+Host sy-p520-black
+  HostName 192.168.1.21
+  Port 22
+
+Host sy-lenovo-p520-black
+  HostName 192.168.1.21
+  Port 22
+
+Host sy-p520-white
+  HostName 192.168.1.22
+  Port 22
+
+Host sy-lenovo-p520-white
+  HostName 192.168.1.22
+  Port 22
+
 Host sy-mp
   HostName 192.168.1.23
   Port 22
@@ -24,11 +40,15 @@ Host sy-macpro-desktop
   HostName 192.168.1.23
   Port 22
 
-Host sy-g14
+Host sy-mbp
   HostName 192.168.1.24
   Port 2222
 
-Host sy-asus-g14
+Host sy-macbookpro-14
+  HostName 192.168.1.24
+  Port 2222
+
+Host sy-mbp-14
   HostName 192.168.1.24
   Port 2222
 
@@ -40,23 +60,31 @@ Host sy-asus-g15
   HostName 192.168.1.25
   Port 2222
 
-Host sy-dell-xps
-  HostName 192.168.1.26
-  Port 2222
-
-Host sy-dell-xps-15
-  HostName 192.168.1.26
-  Port 2222
-
-Host sy-mbp14
-  HostName 192.168.1.27
-  Port 22
-
-Host sy-mbp14-m1
-  HostName 192.168.1.27
-  Port 22
-
 Host sy-aero16
+  HostName 192.168.1.26
+  Port 2222
+
+Host sy-aero
+  HostName 192.168.1.26
+  Port 2222
+
+Host sy-gigabyte-aero-16
+  HostName 192.168.1.26
+  Port 2222
+
+Host sy-surfacebook2
+  HostName 192.168.1.27
+  Port 22
+
+Host sy-surfacebook
+  HostName 192.168.1.27
+  Port 22
+
+Host sy-g14
+  HostName 192.168.1.28
+  Port 22
+
+Host sy-asus-g14
   HostName 192.168.1.28
   Port 22
 # END SY CUSTOM CONFIG - Home Network Hosts
