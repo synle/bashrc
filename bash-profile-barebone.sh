@@ -6,6 +6,14 @@ export BASH_PATH=~/.bashrc
 # add sbin to path
 export PATH=$PATH:/sbin
 
+# increase history size
+export HISTSIZE=5000
+export HISTFILESIZE=10000
+export HISTTIMEFORMAT="[%F %T] "
+# Force prompt to write history after every command.
+# http://superuser.com/questions/20900/bash-history-loss
+PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+
 # os flags
 export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
 export is_os_window=0 && [ -d /mnt/c/Users ] && export is_os_window=1
