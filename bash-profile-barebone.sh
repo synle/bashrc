@@ -3,6 +3,9 @@ export EDITOR='vim'
 
 export BASH_PATH=~/.bashrc
 
+# add sbin to path
+export PATH=$PATH:/sbin
+
 # os flags
 export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
 export is_os_window=0 && [ -d /mnt/c/Users ] && export is_os_window=1
@@ -49,7 +52,7 @@ alias flake8="python -m flake8"
 alias n="node"
 alias y="yarn"
 alias s='ssh -4'
-alias b="bat --style=plain"                                                                                                                                      
+alias b="bat --style=plain"
 alias c="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 
 br(){
