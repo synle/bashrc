@@ -633,6 +633,9 @@ function WindowsNotesDom() {
         <LinkButton block href='https://github.com/synle/bashrc/raw/master/.build/Applications.zip'>
           Prebuild Applications
         </LinkButton>
+        <LinkButton block href='https://github.com/synle/bashrc/tree/master/fonts'>
+          Custom Fonts
+        </LinkButton>
         <LinkButton block href='https://ninite.com/'>
           Ninite
         </LinkButton>
@@ -659,6 +662,9 @@ function WindowsNotesDom() {
       {/* extensions */}
       <div className='form-label'>Extensions</div>
       <div className='link-group'>
+        <LinkButton block href='https://apps.microsoft.com/detail/9P9TQF7MRM4R'>
+          Windows Subsystem for Linux (Windows 11)
+        </LinkButton>
         <LinkButton block href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>
           Raw Image Extension
         </LinkButton>
