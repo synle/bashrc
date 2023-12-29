@@ -545,6 +545,7 @@ function MacOSXNotesDom() {
   return (
     <>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-macosx.md' height='600px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
@@ -563,6 +564,7 @@ function LinuxNotesDom() {
   return (
     <>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-linux.md' height='600px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
@@ -581,6 +583,7 @@ function WindowsNotesDom() {
   return (
     <>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='600px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-windows.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
