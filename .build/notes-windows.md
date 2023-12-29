@@ -32,6 +32,16 @@ Using regedit, and then update `DefaultUid` to `3e8` (aka 1000)
 
 ```
 HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss
+> navigate to the UUID
+```
+
+## Disable Search Internet in Start Menu
+
+```
+HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows
+New Key => Explorer
+HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer
+New DWord 32 Bit => DisableSearchBoxSuggestions => 1
 ```
 
 ## mount point
