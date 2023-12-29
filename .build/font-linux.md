@@ -9,4 +9,5 @@ curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Medium.ttf -O -J 
 curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -O -J -L && \
 curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Retina.ttf -O -J -L && \
 curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-SemiBold.ttf -O -J -L && \
+curl https://github.com/synle/bashrc/raw/master/fonts/Trace.ttf -O -J -L && \
 echo "Done downloading fonts"

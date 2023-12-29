@@ -1,3 +1,5 @@
+C:
+cd C:
 Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCode.ttf
 Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCodePL.ttf
 Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMono.ttf
@@ -8,4 +10,5 @@ Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/Fira
 Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf
 Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Retina.ttf
 Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-SemiBold.ttf
+Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/Trace.ttf
 echo "Done downloading fonts"

@@ -541,6 +541,35 @@ function EnhancedTextArea(props) {
   );
 }
 
+/**
+ * Common applciations links DOM
+ */
+const CommonOtherAppDom = (
+  <>
+    <LinkButton block href='https://github.com/synle/bashrc/tree/master/fonts'>
+      Custom Fonts
+    </LinkButton>
+    <LinkButton block href='https://www.sublimetext.com/download'>
+      Sublime Text
+    </LinkButton>
+    <LinkButton block href='https://www.sublimemerge.com/download'>
+      Sublime Merge
+    </LinkButton>
+    <LinkButton block href='https://www.charlesproxy.com/download/latest-release/'>
+      Charles Proxy
+    </LinkButton>
+    <LinkButton block href='https://ultimaker.com/software/ultimaker-cura/#links'>
+      Ultimaker Cura
+    </LinkButton>
+    <LinkButton block href='https://design.cricut.com/#/'>
+      Cricut Design Space
+    </LinkButton>
+    <LinkButton block href='https://download.battle.net/en-us/?product=bnetdesk'>
+      Battle Net
+    </LinkButton>
+  </>
+);
+
 function MacOSXNotesDom() {
   return (
     <>
@@ -556,6 +585,10 @@ function MacOSXNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-macosx' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-macosx' />
+
+      {/* Mac */}
+      <div className='form-label'>Other Applications</div>
+      <div className='link-group'>{CommonOtherAppDom}</div>
     </>
   );
 }
@@ -575,6 +608,9 @@ function LinuxNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-linux' />
+      {/* Linux */}
+      <div className='form-label'>Other Applications</div>
+      <div className='link-group'>{CommonOtherAppDom}</div>v
     </>
   );
 }
@@ -634,32 +670,12 @@ function WindowsNotesDom() {
       <div className='form-label'>Other Applications</div>
       <div className='link-group'>
         <LinkButton block href='https://github.com/synle/bashrc/raw/master/.build/Applications.zip'>
-          Prebuild Applications
-        </LinkButton>
-        <LinkButton block href='https://github.com/synle/bashrc/tree/master/fonts'>
-          Custom Fonts
+          Prebuilt Windows Applications
         </LinkButton>
         <LinkButton block href='https://ninite.com/'>
           Ninite
         </LinkButton>
-        <LinkButton block href='https://download.battle.net/en-us/?product=bnetdesk'>
-          Battle Net
-        </LinkButton>
-        <LinkButton block href='https://www.sublimetext.com/download'>
-          Sublime Text
-        </LinkButton>
-        <LinkButton block href='https://www.sublimemerge.com/download'>
-          Sublime Merge
-        </LinkButton>
-        <LinkButton block href='https://www.charlesproxy.com/download/latest-release/'>
-          Charles Proxy
-        </LinkButton>
-        <LinkButton block href='https://ultimaker.com/software/ultimaker-cura/#links'>
-          Ultimaker Cura
-        </LinkButton>
-        <LinkButton block href='https://design.cricut.com/#/'>
-          Cricut Design Space
-        </LinkButton>
+        {CommonOtherAppDom}
       </div>
 
       {/* extensions */}
