@@ -599,6 +599,11 @@ function WindowsNotesDom() {
         <LinkButton block href='https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170'>
           Microsoft Visual C++ Redistributable
         </LinkButton>
+        <LinkButton
+          block
+          href='https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-7.0.14-windows-x64-installer?cid=getdotnetcore'>
+          Microsoft .NET 7.0 Desktop Runtime (v7.0.14)
+        </LinkButton>
       </div>
 
       <div className='form-label'>SFTP Mount Applications</div>

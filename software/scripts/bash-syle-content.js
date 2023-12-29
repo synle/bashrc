@@ -20,7 +20,7 @@ ${contentBashProfileBarebone}
 ##########################################################
   `.trim();
 
-  contentBashProfileAdvanced= `
+  contentBashProfileAdvanced = `
 ##########################################################
 ## begin advanced profile
 ##########################################################
@@ -30,7 +30,7 @@ ${contentBashProfileAdvanced}
 ##########################################################
 ## begin advanced profile
 ##########################################################
-  `.trim()
+  `.trim();
 
   // barebone script
   console.log('    >> Barebone profile');
