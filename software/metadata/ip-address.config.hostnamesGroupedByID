@@ -25,7 +25,7 @@ sy-macbookpro-14
 sy-mbp-14
 
 192.168.1.25
-sy-g15
+sy-g15-2020
 sy-asus-g15
 
 192.168.1.26
@@ -38,5 +38,9 @@ sy-surfacebook2
 sy-surfacebook
 
 192.168.1.28
-sy-g14
-sy-asus-g14
+sy-g14-2020
+sy-asus-g14-2020
+
+192.168.1.29
+sy-g14-2023
+sy-asus-g14-2023

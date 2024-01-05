@@ -52,7 +52,7 @@ Host sy-mbp-14
   HostName 192.168.1.24
   Port 2222
 
-Host sy-g15
+Host sy-g15-2020
   HostName 192.168.1.25
   Port 2222
 
@@ -80,11 +80,19 @@ Host sy-surfacebook
   HostName 192.168.1.27
   Port 22
 
-Host sy-g14
+Host sy-g14-2020
   HostName 192.168.1.28
   Port 22
 
-Host sy-asus-g14
+Host sy-asus-g14-2020
   HostName 192.168.1.28
+  Port 22
+
+Host sy-g14-2023
+  HostName 192.168.1.29
+  Port 22
+
+Host sy-asus-g14-2023
+  HostName 192.168.1.29
   Port 22
 # END SY CUSTOM CONFIG - Home Network Hosts

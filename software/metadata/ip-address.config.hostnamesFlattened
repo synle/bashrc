@@ -140,7 +140,7 @@
     }
   ],
   [
-    "sy-g15",
+    "sy-g15-2020",
     "192.168.1.25",
     {
       "NO_SSH": false,
@@ -210,7 +210,7 @@
     }
   ],
   [
-    "sy-g14",
+    "sy-g14-2020",
     "192.168.1.28",
     {
       "NO_SSH": false,
@@ -220,8 +220,28 @@
     }
   ],
   [
-    "sy-asus-g14",
+    "sy-asus-g14-2020",
     "192.168.1.28",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
+    "sy-g14-2023",
+    "192.168.1.29",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": false,
+      "WINDOWS_REMOTE": true,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-asus-g14-2023",
+    "192.168.1.29",
     {
       "NO_SSH": false,
       "OSX_REMOTE": false,
