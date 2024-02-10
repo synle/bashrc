@@ -6,6 +6,10 @@ sy-printer
 sy-printer-dell
 sy-printer-dell-e525w
 
+192.168.1.20
+sy-pi3
+sy-pi-nas
+
 192.168.1.21
 sy-p520-black
 sy-lenovo-p520-black
@@ -26,7 +30,7 @@ sy-mbp-14
 
 192.168.1.25
 sy-g15-2020
-sy-asus-g15
+sy-asus-g15-2020
 
 192.168.1.26
 sy-aero16

@@ -1,0 +1,33 @@
+c:;
+cd "C:/Users/*/AppData/Local/Programs/VSCodium/bin"
+./codium --install-extension aaron-bond.better-comments --force
+./codium --install-extension andrejunges.Handlebars --force
+./codium --install-extension christian-kohler.path-intellisense --force
+./codium --install-extension clinyong.vscode-css-modules --force
+./codium --install-extension dbaeumer.vscode-eslint --force
+./codium --install-extension dracula-theme.theme-dracula --force
+./codium --install-extension dsznajder.es7-react-js-snippets --force
+./codium --install-extension emmanuelbeziat.vscode-great-icons --force
+./codium --install-extension esbenp.prettier-vscode --force
+./codium --install-extension formulahendry.auto-rename-tag --force
+./codium --install-extension Hridoy.ember-snippets --force
+./codium --install-extension ms-azuretools.vscode-docker --force
+./codium --install-extension ms-python.isort --force
+./codium --install-extension ms-python.python --force
+./codium --install-extension nicoespeon.abracadabra --force
+./codium --install-extension oderwat.indent-rainbow --force
+./codium --install-extension PKief.material-icon-theme --force
+./codium --install-extension redhat.java --force
+./codium --install-extension redhat.vscode-yaml --force
+./codium --install-extension scala-lang.scala --force
+./codium --install-extension streetsidesoftware.code-spell-checker --force
+./codium --install-extension vscjava.vscode-java-debug --force
+./codium --install-extension vscjava.vscode-java-dependency --force
+./codium --install-extension vscjava.vscode-java-pack --force
+./codium --install-extension vscjava.vscode-java-test --force
+./codium --install-extension vscjava.vscode-maven --force
+./codium --install-extension vscode-icons-team.vscode-icons --force
+./codium --install-extension wholroyd.jinja --force
+./codium --install-extension wmaurer.change-case --force
+./codium --install-extension xabikos.JavaScriptSnippets --force
+echo 'Done installing VSCode Extensions'

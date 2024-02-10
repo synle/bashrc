@@ -2,6 +2,8 @@
 192.168.1.11 sy-printer
 192.168.1.11 sy-printer-dell
 192.168.1.11 sy-printer-dell-e525w
+192.168.1.20 sy-pi3
+192.168.1.20 sy-pi-nas
 192.168.1.21 sy-p520-black
 192.168.1.21 sy-lenovo-p520-black
 192.168.1.22 sy-p520-white
@@ -13,7 +15,7 @@
 192.168.1.24 sy-macbookpro-14
 192.168.1.24 sy-mbp-14
 192.168.1.25 sy-g15-2020
-192.168.1.25 sy-asus-g15
+192.168.1.25 sy-asus-g15-2020
 192.168.1.26 sy-aero16
 192.168.1.26 sy-aero
 192.168.1.26 sy-gigabyte-aero-16

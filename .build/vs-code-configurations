@@ -97,14 +97,12 @@
   "window.zoomLevel": 0.5,
   "workbench.colorTheme": "Dracula Soft",
   "workbench.editor.showTabs": true,
-  "workbench.editor.tabCloseButton": "off",
   "workbench.iconTheme": "vscode-great-icons",
   "workbench.tree.indent": 4,
-  "editor.codeActionsOnSave": {},
-  "telemetry.enableTelemetry": false,
-  "telemetry.enableCrashReporter": false,
-  "telemetry.telemetryLevel": "off",
-  "enable-crash-reporter": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true,
+    "source.organizeImports": true
+  },
   "update.mode": "none",
   "remote.SSH.remotePlatform": {
     "127.0.0.1": "linux"

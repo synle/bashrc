@@ -1,9 +1,23 @@
-const toInstallExtensions = trimLeftSpaces(`
+const onlyVsCodeExtensions = trimLeftSpaces(`
+  andrejunges.handlebars
+  dakara.transformer
+  hridoy.ember-snippets
+  ms-dotnettools.csharp
+  ms-python.vscode-pylance
+  ms-vscode-remote.remote-ssh
+  ms-vscode-remote.remote-ssh-edit
+  ms-vscode-remote.remote-wsl
+  ms-vscode.cpptools
+  ms-vscode.remote-explorer
+  visualstudioexptteam.intellicode-api-usage-examples
+  visualstudioexptteam.vscodeintellicode
+`);
+
+const baseVsExtensions = trimLeftSpaces(`
   aaron-bond.better-comments
   andrejunges.Handlebars
   christian-kohler.path-intellisense
   clinyong.vscode-css-modules
-  dakara.transformer
   dbaeumer.vscode-eslint
   dracula-theme.theme-dracula
   dsznajder.es7-react-js-snippets
@@ -12,15 +26,8 @@ const toInstallExtensions = trimLeftSpaces(`
   formulahendry.auto-rename-tag
   Hridoy.ember-snippets
   ms-azuretools.vscode-docker
-  ms-dotnettools.csharp
   ms-python.isort
   ms-python.python
-  ms-python.vscode-pylance
-  ms-vscode-remote.remote-ssh
-  ms-vscode-remote.remote-ssh-edit
-  ms-vscode-remote.remote-wsl
-  ms-vscode.cpptools
-  ms-vscode.remote-explorer
   nicoespeon.abracadabra
   oderwat.indent-rainbow
   PKief.material-icon-theme
@@ -28,8 +35,8 @@ const toInstallExtensions = trimLeftSpaces(`
   redhat.vscode-yaml
   scala-lang.scala
   streetsidesoftware.code-spell-checker
-  VisualStudioExptTeam.intellicode-api-usage-examples
-  VisualStudioExptTeam.vscodeintellicode
+  #VisualStudioExptTeam.intellicode-api-usage-examples
+  #VisualStudioExptTeam.vscodeintellicode
   vscjava.vscode-java-debug
   vscjava.vscode-java-dependency
   vscjava.vscode-java-pack
@@ -41,7 +48,8 @@ const toInstallExtensions = trimLeftSpaces(`
   xabikos.JavaScriptSnippets
 `).trim();
 
-const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(toInstallExtensions);
+const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
+const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(baseVsExtensions);
 
 async function doWork() {
   console.log(`  >> Setting up VS Code Extensions:`);
@@ -52,6 +60,7 @@ async function doWork() {
 
   // write to build file
   writeToBuildFile([
+    // for vscode
     [
       'vs-code-extensions-windows',
       `
@@ -74,6 +83,26 @@ echo 'Done installing VSCode Extensions'
       'vs-code-extensions-linux',
       `
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join('\n')}
+    `,
+      false,
+    ],
+    // for vscodium
+    [
+      'vs-codium-extensions-windows',
+      `
+c:;
+cd "C:/Users/*/AppData/Local/Programs/VSCodium/bin"
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
+echo 'Done installing VSCode Extensions'
+    `,
+      false,
+    ],
+    [
+      'vs-codium-extensions-macosx',
+      `
+cd "/Applications/VSCodium.app/Contents/Resources/app/bin"
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
+echo 'Done installing VSCode Extensions'
     `,
       false,
     ],

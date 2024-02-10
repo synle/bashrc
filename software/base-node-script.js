@@ -421,18 +421,26 @@ function cleanupExtraWhitespaces(s) {
   return s.replace(/[\r\n][\r\n][\n]+/g, '\n\n').trim();
 }
 
-function convertTextToList(text) {
-  return text
+function convertTextToList(...texts) {
+  const text = [...texts].join('\n');
+
+  const items = text
     .split('\n')
     .map((s) => s.trim())
     .filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
+
+  return [...new Set(items)]; // only return unique items
 }
 
-function convertTextToHosts(text) {
-  return text
+function convertTextToHosts(...texts) {
+  const text = [...texts].join('\n');
+
+  const items = text
     .split('\n')
     .map((s) => s.replace(/^[0-9]+.[0-9]+.[0-9]+.[0-9]+[ ]*/, '').trim())
     .filter((s) => s.length > 0 && s.match(/^[0-9a-zA-Z-.]+/) && s.match(/^[0-9a-zA-Z-.]+/)[0] === s);
+
+  return [...new Set(items)]; // only return unique items
 }
 
 function trimLeftSpaces(text, spaceToTrim) {

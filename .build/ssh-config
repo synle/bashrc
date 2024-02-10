@@ -12,6 +12,14 @@ Host *
 # END SY CUSTOM CONFIG - All Hosts
 
 # SY CUSTOM CONFIG - Home Network Hosts
+Host sy-pi3
+  HostName 192.168.1.20
+  Port 22
+
+Host sy-pi-nas
+  HostName 192.168.1.20
+  Port 22
+
 Host sy-p520-black
   HostName 192.168.1.21
   Port 22
@@ -56,7 +64,7 @@ Host sy-g15-2020
   HostName 192.168.1.25
   Port 2222
 
-Host sy-asus-g15
+Host sy-asus-g15-2020
   HostName 192.168.1.25
   Port 2222
 

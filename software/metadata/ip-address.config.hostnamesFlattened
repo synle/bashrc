@@ -40,6 +40,26 @@
     }
   ],
   [
+    "sy-pi3",
+    "192.168.1.20",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": true
+    }
+  ],
+  [
+    "sy-pi-nas",
+    "192.168.1.20",
+    {
+      "NO_SSH": false,
+      "OSX_REMOTE": true,
+      "WINDOWS_REMOTE": false,
+      "IS_FIRST_IP_IN_GROUP": false
+    }
+  ],
+  [
     "sy-p520-black",
     "192.168.1.21",
     {
@@ -150,7 +170,7 @@
     }
   ],
   [
-    "sy-asus-g15",
+    "sy-asus-g15-2020",
     "192.168.1.25",
     {
       "NO_SSH": false,
