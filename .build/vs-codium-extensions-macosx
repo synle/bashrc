@@ -12,7 +12,7 @@ cd "/Applications/VSCodium.app/Contents/Resources/app/bin"
 ./codium --install-extension visualstudioexptteam.intellicode-api-usage-examples --force
 ./codium --install-extension visualstudioexptteam.vscodeintellicode --force
 ./codium --install-extension aaron-bond.better-comments --force
-./codium --install-extension andrejunges.Handlebars --force
+./codium --install-extension anyscalecompute.anyscale-workspaces --force
 ./codium --install-extension christian-kohler.path-intellisense --force
 ./codium --install-extension clinyong.vscode-css-modules --force
 ./codium --install-extension dbaeumer.vscode-eslint --force
@@ -21,8 +21,12 @@ cd "/Applications/VSCodium.app/Contents/Resources/app/bin"
 ./codium --install-extension emmanuelbeziat.vscode-great-icons --force
 ./codium --install-extension esbenp.prettier-vscode --force
 ./codium --install-extension formulahendry.auto-rename-tag --force
-./codium --install-extension Hridoy.ember-snippets --force
+./codium --install-extension formulahendry.code-runner --force
+./codium --install-extension golang.go --force
+./codium --install-extension hashicorp.terraform --force
+./codium --install-extension jeanp413.open-remote-ssh --force
 ./codium --install-extension ms-azuretools.vscode-docker --force
+./codium --install-extension ms-pyright.pyright --force
 ./codium --install-extension ms-python.isort --force
 ./codium --install-extension ms-python.python --force
 ./codium --install-extension nicoespeon.abracadabra --force

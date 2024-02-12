@@ -12,7 +12,7 @@ c:; cd "C:/Program Files/Microsoft VS Code/bin"
 ./code --install-extension visualstudioexptteam.intellicode-api-usage-examples --force
 ./code --install-extension visualstudioexptteam.vscodeintellicode --force
 ./code --install-extension aaron-bond.better-comments --force
-./code --install-extension andrejunges.Handlebars --force
+./code --install-extension anyscalecompute.anyscale-workspaces --force
 ./code --install-extension christian-kohler.path-intellisense --force
 ./code --install-extension clinyong.vscode-css-modules --force
 ./code --install-extension dbaeumer.vscode-eslint --force
@@ -21,8 +21,12 @@ c:; cd "C:/Program Files/Microsoft VS Code/bin"
 ./code --install-extension emmanuelbeziat.vscode-great-icons --force
 ./code --install-extension esbenp.prettier-vscode --force
 ./code --install-extension formulahendry.auto-rename-tag --force
-./code --install-extension Hridoy.ember-snippets --force
+./code --install-extension formulahendry.code-runner --force
+./code --install-extension golang.go --force
+./code --install-extension hashicorp.terraform --force
+./code --install-extension jeanp413.open-remote-ssh --force
 ./code --install-extension ms-azuretools.vscode-docker --force
+./code --install-extension ms-pyright.pyright --force
 ./code --install-extension ms-python.isort --force
 ./code --install-extension ms-python.python --force
 ./code --install-extension nicoespeon.abracadabra --force

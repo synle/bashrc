@@ -15,7 +15,7 @@ const onlyVsCodeExtensions = trimLeftSpaces(`
 
 const baseVsExtensions = trimLeftSpaces(`
   aaron-bond.better-comments
-  andrejunges.Handlebars
+  anyscalecompute.anyscale-workspaces
   christian-kohler.path-intellisense
   clinyong.vscode-css-modules
   dbaeumer.vscode-eslint
@@ -24,8 +24,12 @@ const baseVsExtensions = trimLeftSpaces(`
   emmanuelbeziat.vscode-great-icons
   esbenp.prettier-vscode
   formulahendry.auto-rename-tag
-  Hridoy.ember-snippets
+  formulahendry.code-runner
+  golang.go
+  hashicorp.terraform
+  jeanp413.open-remote-ssh
   ms-azuretools.vscode-docker
+  ms-pyright.pyright
   ms-python.isort
   ms-python.python
   nicoespeon.abracadabra
@@ -35,8 +39,6 @@ const baseVsExtensions = trimLeftSpaces(`
   redhat.vscode-yaml
   scala-lang.scala
   streetsidesoftware.code-spell-checker
-  #VisualStudioExptTeam.intellicode-api-usage-examples
-  #VisualStudioExptTeam.vscodeintellicode
   vscjava.vscode-java-debug
   vscjava.vscode-java-dependency
   vscjava.vscode-java-pack
