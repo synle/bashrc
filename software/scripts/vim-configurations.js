@@ -2,6 +2,8 @@ async function doWork() {
   let targetPath;
 
   const contentOnlyFullVimrc = trimLeftSpaces(`
+    " ~/.vimrc
+
     " vundle stuffs
     set nocompatible
     filetype off
