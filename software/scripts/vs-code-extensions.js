@@ -93,8 +93,11 @@ ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --
       'vs-codium-extensions-windows',
       `
 c:;
-cd "C:/Users/*/AppData/Local/Programs/VSCodium/bin"
-${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
+cd "C:/Users/le*"
+cd "C:/Users/sy*"
+cd "AppData/Local/Programs/VSCodium/bin"
+cd "C:/Program Files/VSCodium/bin"
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
     `,
       false,
