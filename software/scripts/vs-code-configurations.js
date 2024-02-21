@@ -21,6 +21,8 @@ async function doInit() {
     'editor.fontLigatures': true,
     'editor.fontSize': EDITOR_CONFIGS.fontSize,
     'terminal.integrated.fontSize': EDITOR_CONFIGS.fontSize,
+    "scm.inputFontSize": EDITOR_CONFIGS.fontSize,
+    "chat.editor.fontSize": EDITOR_CONFIGS.fontSize,
     'editor.fontWeight': '500',
     'editor.formatOnPaste': true,
     'editor.linkedEditing': true, // for linked editing (tag renames)
