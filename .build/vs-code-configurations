@@ -1,12 +1,14 @@
 // Preferences Open User Settings (JSON)
 
 {
-  "breadcrumbs.enabled": true,
+  "breadcrumbs.enabled": false,
   "editor.bracketPairColorization.enabled": true,
   "editor.fontFamily": "Fira Code",
   "editor.fontLigatures": true,
   "editor.fontSize": 10,
   "terminal.integrated.fontSize": 10,
+  "scm.inputFontSize": 10,
+  "chat.editor.fontSize": 10,
   "editor.fontWeight": "500",
   "editor.formatOnPaste": true,
   "editor.linkedEditing": true,
@@ -16,7 +18,6 @@
   "editor.multiCursorModifier": "ctrlCmd",
   "editor.renderControlCharacters": true,
   "editor.renderWhitespace": "all",
-  "editor.rename.enablePreview": false,
   "editor.snippetSuggestions": "top",
   "editor.suggestSelection": "first",
   "editor.tabSize": 2,
@@ -100,6 +101,8 @@
   "workbench.editor.showTabs": true,
   "workbench.iconTheme": "vscode-great-icons",
   "workbench.tree.indent": 4,
+  "workbench.editor.enablePreview": false,
+  "workbench.activityBar.location": "top",
   "editor.codeActionsOnSave": {
     "source.fixAll": true,
     "source.organizeImports": true

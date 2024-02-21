@@ -21,9 +21,10 @@ async function doInit() {
     'editor.fontLigatures': true,
     'editor.fontSize': EDITOR_CONFIGS.fontSize,
     'terminal.integrated.fontSize': EDITOR_CONFIGS.fontSize,
-    "scm.inputFontSize": EDITOR_CONFIGS.fontSize,
-    "chat.editor.fontSize": EDITOR_CONFIGS.fontSize,
+    'scm.inputFontSize': EDITOR_CONFIGS.fontSize,
+    'chat.editor.fontSize': EDITOR_CONFIGS.fontSize,
     'editor.fontWeight': '500',
+    'breadcrumbs.enabled': false, // disable breadcrumb
     'editor.formatOnPaste': true,
     'editor.linkedEditing': true, // for linked editing (tag renames)
     'editor.maxTokenizationLineLength': 10000,
@@ -32,7 +33,6 @@ async function doInit() {
     'editor.multiCursorModifier': 'ctrlCmd',
     'editor.renderControlCharacters': true,
     'editor.renderWhitespace': 'all',
-    'editor.rename.enablePreview': false,
     'editor.snippetSuggestions': 'top',
     'editor.suggestSelection': 'first',
     'editor.tabSize': EDITOR_CONFIGS.tabSize,
@@ -63,6 +63,8 @@ async function doInit() {
     'workbench.editor.showTabs': true,
     'workbench.iconTheme': 'vscode-great-icons',
     'workbench.tree.indent': 4,
+    'workbench.editor.enablePreview': false, // single click to open file instead of preview it
+    'workbench.activityBar.location': 'top', // move the activity bar up top to save spaces
     'editor.codeActionsOnSave': {
       'source.fixAll': true,
       'source.organizeImports': true,
