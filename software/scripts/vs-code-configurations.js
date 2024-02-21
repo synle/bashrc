@@ -30,6 +30,7 @@ async function doInit() {
     'editor.multiCursorModifier': 'ctrlCmd',
     'editor.renderControlCharacters': true,
     'editor.renderWhitespace': 'all',
+    'editor.rename.enablePreview': false,
     'editor.snippetSuggestions': 'top',
     'editor.suggestSelection': 'first',
     'editor.tabSize': EDITOR_CONFIGS.tabSize,
