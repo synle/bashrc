@@ -30,7 +30,6 @@ cd "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
 ./code --install-extension ms-python.isort --force
 ./code --install-extension ms-python.python --force
 ./code --install-extension nicoespeon.abracadabra --force
-./code --install-extension oderwat.indent-rainbow --force
 ./code --install-extension PKief.material-icon-theme --force
 ./code --install-extension redhat.java --force
 ./code --install-extension redhat.vscode-yaml --force

@@ -33,7 +33,7 @@ const baseVsExtensions = trimLeftSpaces(`
   ms-python.isort
   ms-python.python
   nicoespeon.abracadabra
-  oderwat.indent-rainbow
+  #oderwat.indent-rainbow # this is built in now - no need to install
   PKief.material-icon-theme
   redhat.java
   redhat.vscode-yaml

@@ -30,7 +30,6 @@ cd "/Applications/VSCodium.app/Contents/Resources/app/bin"
 ./codium --install-extension ms-python.isort --force
 ./codium --install-extension ms-python.python --force
 ./codium --install-extension nicoespeon.abracadabra --force
-./codium --install-extension oderwat.indent-rainbow --force
 ./codium --install-extension PKief.material-icon-theme --force
 ./codium --install-extension redhat.java --force
 ./codium --install-extension redhat.vscode-yaml --force

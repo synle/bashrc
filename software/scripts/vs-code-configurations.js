@@ -16,7 +16,7 @@ function _convertIgnoredFilesAndFolders(ignoredFiles) {
 async function doInit() {
   COMMON_CONFIGS = {
     'breadcrumbs.enabled': true,
-    'editor.bracketPairColorization.enabled': true,
+    'editor.bracketPairColorization.enabled': true, // use built in default bracket rainbow color
     'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
     'editor.fontLigatures': true,
     'editor.fontSize': EDITOR_CONFIGS.fontSize,
