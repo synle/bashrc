@@ -11,7 +11,6 @@ code --install-extension ms-vscode.remote-explorer --force
 code --install-extension visualstudioexptteam.intellicode-api-usage-examples --force
 code --install-extension visualstudioexptteam.vscodeintellicode --force
 code --install-extension aaron-bond.better-comments --force
-code --install-extension anyscalecompute.anyscale-workspaces --force
 code --install-extension christian-kohler.path-intellisense --force
 code --install-extension clinyong.vscode-css-modules --force
 code --install-extension dbaeumer.vscode-eslint --force
@@ -29,6 +28,7 @@ code --install-extension ms-pyright.pyright --force
 code --install-extension ms-python.isort --force
 code --install-extension ms-python.python --force
 code --install-extension nicoespeon.abracadabra --force
+code --install-extension oderwat.indent-rainbow --force
 code --install-extension PKief.material-icon-theme --force
 code --install-extension redhat.java --force
 code --install-extension redhat.vscode-yaml --force

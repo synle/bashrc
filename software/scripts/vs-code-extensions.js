@@ -15,7 +15,6 @@ const onlyVsCodeExtensions = trimLeftSpaces(`
 
 const baseVsExtensions = trimLeftSpaces(`
   aaron-bond.better-comments
-  anyscalecompute.anyscale-workspaces
   christian-kohler.path-intellisense
   clinyong.vscode-css-modules
   dbaeumer.vscode-eslint
@@ -33,7 +32,7 @@ const baseVsExtensions = trimLeftSpaces(`
   ms-python.isort
   ms-python.python
   nicoespeon.abracadabra
-  #oderwat.indent-rainbow # this is built in now - no need to install
+  oderwat.indent-rainbow
   PKief.material-icon-theme
   redhat.java
   redhat.vscode-yaml
