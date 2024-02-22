@@ -157,5 +157,18 @@
     "key": "f2",
     "command": "abracadabra.renameSymbol",
     "when": "editorTextFocus"
+  },
+  {
+    "key": "cmd+shift+1",
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled"
+  },
+  {
+    "key": "cmd+shift+2",
+    "command": "workbench.view.search"
+  },
+  {
+    "key": "cmd+shift+`",
+    "command": "workbench.view.debug"
   }
 ]

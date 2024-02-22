@@ -144,6 +144,19 @@ async function doInit() {
       when: 'explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus',
     },
     { key: 'f2', command: 'abracadabra.renameSymbol', when: 'editorTextFocus' },
+    {
+      key: 'OS_KEY+shift+1',
+      command: 'workbench.view.explorer',
+      when: 'viewContainer.workbench.view.explorer.enabled',
+    },
+    {
+      key: 'OS_KEY+shift+2',
+      command: 'workbench.view.search',
+    },
+    {
+      key: 'OS_KEY+shift+`',
+      command: 'workbench.view.debug',
+    },
   ];
   // end COMMON_KEY_BINDINGS
 }

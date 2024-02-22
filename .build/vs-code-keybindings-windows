@@ -159,6 +159,19 @@
     "when": "editorTextFocus"
   },
   {
+    "key": "alt+shift+1",
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled"
+  },
+  {
+    "key": "alt+shift+2",
+    "command": "workbench.view.search"
+  },
+  {
+    "key": "alt+shift+`",
+    "command": "workbench.view.debug"
+  },
+  {
     "key": "alt+shift+p",
     "command": "workbench.action.showCommands"
   },
