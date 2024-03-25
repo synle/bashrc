@@ -36,7 +36,6 @@ then
   installPackage vim
   ###
   installPackage bat
-  installPackage exa
   installPackage fzf
   installPackage git
   installPackage pv
@@ -45,13 +44,11 @@ then
   installPackage default-jdk
   installPackage maven
   installPackage unzip
-  installPackage fd-find
-  installPackage zoxide
   installPackage entr
-  
+
   ###
   installPackage openssh-server
-  
-  installPackage gnupg 
+
+  installPackage gnupg
   installPackage software-properties-common
 fi

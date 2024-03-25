@@ -80,9 +80,6 @@ then
   installPackage fzf
   installPackage git
   installPackage pv
-  installPackage fd
-  installPackage exa
-  installPackage zoxide
   installPackage entr
   installPackage java
   installPackage python

@@ -11,22 +11,8 @@ alias d='docker'
 alias drun='docker run'
 alias dexec='dexecBash'
 
-# other things
-alias ls="exa"
-alias ll="exa -la"
-
-# zoxide setup
-eval "$(zoxide init bash)"
-alias cd='z'
-
 # bat / cat setup
 alias cat='bat -p --paging=never'
-
-# fd
-alias find2='fd'
-
-# entr setup
-# ls *.js | entr node main.js
 
 ##########################################################
 # Pass a path to watch, a file filter, and a command to run when those files are updated
