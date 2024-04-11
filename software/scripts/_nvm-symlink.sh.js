@@ -1,6 +1,8 @@
 async function doWork() {
+  const DEFAULT_NVM_NODE_VERSION = 21;
+
   const nvmPath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
-  let targetPath = findDirSingle(nvmPath + '/versions/node', /v14[0-9.]+/);
+  let targetPath = findDirSingle(nvmPath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
   console.log(echo(`    >> Symlink for nvm and node executables in /usr/local/bin ${targetPath}`));
   console.log(`

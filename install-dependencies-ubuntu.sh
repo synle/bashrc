@@ -51,4 +51,7 @@ then
 
   installPackage gnupg
   installPackage software-properties-common
+
+  ### Add you to the input group
+  sudo usermod -aG input syle
 fi

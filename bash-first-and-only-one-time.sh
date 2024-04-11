@@ -2,7 +2,7 @@
 ##########################################################
 # Dependencies installation
 ##########################################################
-DEFAULT_NVM_VERSION=16.20.2
+DEFAULT_NVM_NODE_VERSION=21
 
 # install nvm and node
 echo "  >> Installing nvm - node version manager"
@@ -27,11 +27,11 @@ function nvmInstallNode(){
   nvm install "$1" &>/dev/null
 }
 
-nvmInstallNode $DEFAULT_NVM_VERSION
+nvmInstallNode $DEFAULT_NVM_NODE_VERSION
 nvmInstallNode lts
 
-echo "    >> nvm alias default $DEFAULT_NVM_VERSION"
-nvm alias default $DEFAULT_NVM_VERSION &>/dev/null
+echo "    >> nvm alias default $DEFAULT_NVM_NODE_VERSION"
+nvm alias default $DEFAULT_NVM_NODE_VERSION &>/dev/null
 nvm use default &>/dev/null
 
 

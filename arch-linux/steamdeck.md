@@ -20,8 +20,9 @@ sudo pacman -Syu fzf
 sudo pacman -Syu bat
 
 ## install nvm / node
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-nvm install 14
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
+DEFAULT_NVM_NODE_VERSION=21
+nvm install $DEFAULT_NVM_NODE_VERSION
 echo 'making sure we do "--no-use"'
 
 ## npm / yarn and other dependencies for node
