@@ -60,12 +60,19 @@ function exportPathEnvs(){
 }
 
 open(){
-  echo "$@"
+  echo "open $@"
+  pwd
   explorer.exe "$@"
 }
 
 cmd(){
   cmd.exe '/C' "$@"
+}
+
+subl(){
+  echo "subl $@"
+  pwd
+  "/c/Program Files/Sublime Text/sublime_text.exe" "$@"
 }
 
 alias adb='adb.exe'
