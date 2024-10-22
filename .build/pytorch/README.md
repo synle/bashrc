@@ -12,7 +12,6 @@ C:\Windows\System32
 
 pip3 install torch==2.2.2 torchvision==0.17.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cu124
 
-
 =================
 
 Install VS Build Tools

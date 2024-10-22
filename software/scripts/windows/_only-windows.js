@@ -69,7 +69,7 @@ cmd(){
   cmd.exe '/C' "$@"
 }
 
-subl(){
+sublime_text_exe(){
   echo "subl $@"
   pwd
   "/c/Program Files/Sublime Text/sublime_text.exe" "$@"

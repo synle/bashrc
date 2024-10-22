@@ -3,7 +3,11 @@ globalThis.path = require('path');
 globalThis.https = require('https');
 globalThis.http = require('http');
 
-globalThis.BASE_WINDOW = '/mnt/c/Users';
+// depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
+// there's a script that will check and set the correct value used to BASE_WINDOW
+globalThis.BASE_WINDOW = '';
+globalThis.BASE_WINDOW_1 = '/mnt/c/Users';
+globalThis.BASE_WINDOW_2 = '/c/Users';
 globalThis.BASE_HOMEDIR_LINUX = require('os').homedir();
 globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
 
@@ -315,7 +319,24 @@ function clone(obj) {
 }
 
 function getWindowUserBaseDir() {
-  return findDirSingle(BASE_WINDOW, /(leng)|(sy[ ]*le)/i);
+  const regexUsername = /(leng)|(sy[ ]*le)/i;
+  let res = '';
+
+  // try option 1
+  res = findDirSingle(BASE_WINDOW_1, regexUsername);
+  if (res) {
+    globalThis.BASE_WINDOW = BASE_WINDOW_1;
+    return res;
+  }
+
+  // try option 2
+  res = findDirSingle(BASE_WINDOW_2, regexUsername);
+  if (res) {
+    globalThis.BASE_WINDOW = BASE_WINDOW_2;
+    return res;
+  }
+
+  return undefined;
 }
 
 function filePathExist(targetPath) {

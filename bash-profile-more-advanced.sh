@@ -74,7 +74,7 @@ subl(){
   then
     # for windows
     # getting the path
-    sublime_text.exe "$@" > /dev/null 2>&1 &
+    sublime_text_exe "$@" > /dev/null 2>&1 &
 
     echo """
 Full Path: $(realpath "$@")
