@@ -5,11 +5,16 @@ globalThis.http = require('http');
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
+globalThis.BASE_HOMEDIR_LINUX = require('os').homedir();
+globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
+
+// specific for windows and wsl only
+globalThis.BASE_MOUNT_DIR_WINDOW = '';
+globalThis.BASE_C_DIR_WINDOW = '';
+globalThis.BASE_D_DIR_WINDOW = '';
 globalThis.BASE_WINDOW = '';
 globalThis.BASE_WINDOW_1 = '/mnt/c/Users';
 globalThis.BASE_WINDOW_2 = '/c/Users';
-globalThis.BASE_HOMEDIR_LINUX = require('os').homedir();
-globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
 
 /**
  * config used for the editors
@@ -323,16 +328,22 @@ function getWindowUserBaseDir() {
   let res = '';
 
   // try option 1
-  res = findDirSingle(BASE_WINDOW_1, regexUsername);
+  res = findDirSingle(globalThis.BASE_WINDOW_1, regexUsername);
   if (res) {
-    globalThis.BASE_WINDOW = BASE_WINDOW_1;
+    globalThis.BASE_WINDOW = globalThis.BASE_WINDOW_1;
+    globalThis.BASE_C_DIR_WINDOW = '/mnt/c';
+    globalThis.BASE_D_DIR_WINDOW = '/mnt/d';
+    globalThis.BASE_MOUNT_DIR_WINDOW = '/mnt';
     return res;
   }
 
   // try option 2
-  res = findDirSingle(BASE_WINDOW_2, regexUsername);
+  res = findDirSingle(globalThis.BASE_WINDOW_2, regexUsername);
   if (res) {
-    globalThis.BASE_WINDOW = BASE_WINDOW_2;
+    globalThis.BASE_WINDOW = globalThis.BASE_WINDOW_2;
+    globalThis.BASE_C_DIR_WINDOW = '/c';
+    globalThis.BASE_D_DIR_WINDOW = '/d';
+    globalThis.BASE_MOUNT_DIR_WINDOW = '/';
     return res;
   }
 

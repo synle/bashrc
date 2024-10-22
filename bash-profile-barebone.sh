@@ -16,15 +16,20 @@ PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 
 # os flags
 export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
-export is_os_window=0 && [ -d /mnt/c/Users ] && export is_os_window=1
 export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
 export is_os_chromeos=0
-export is_os_wsl=0 && [ -d /lib ] && [ -d /mnt/c/Users ] && export is_os_wsl=1
 export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
 export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
 export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
 export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
 export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
+
+export is_os_window=0
+export is_os_wsl=0
+if [ -d /mnt/c/Users ] || [ -d /c/Users ]; then
+  export is_os_window=1
+  [ -d /lib ] && export is_os_wsl=1
+fi
 
 if [ -f ~/.bash_syle_os ]; then
   . /dev/stdin <<< "$(cat ~/.bash_syle_os)"

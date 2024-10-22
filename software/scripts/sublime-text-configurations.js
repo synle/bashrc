@@ -100,10 +100,11 @@ async function doWork() {
   }
 
   // set the path to the sublime merge binary
-  let sublimeMergeBinary = findDirSingle('/mnt/d/Applications', /sublime[_]*merge[a-z0-9]*/);
+  const baseDPath = globalThis.BASE_D_DIR_WINDOW;
+  let sublimeMergeBinary = findDirSingle(path.join(baseDPath, 'Applications'), /sublime[_]*merge[a-z0-9]*/);
   if (sublimeMergeBinary && filePathExist(path.join(sublimeMergeBinary, 'sublime_merge.exe'))) {
     sublimeMergeBinary = path.join(sublimeMergeBinary, 'sublime_merge.exe');
-    osSpecificSettings.sublime_merge_path = sublimeMergeBinary.replace('/mnt/d', 'D:');
+    osSpecificSettings.sublime_merge_path = sublimeMergeBinary.replace(baseDPath, 'D:');
   }
 
   writeJsonWithMerge(sublimeMainConfigPath, {

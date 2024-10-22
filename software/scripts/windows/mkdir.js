@@ -1,5 +1,5 @@
 async function doWork() {
-  let targetPath = '/mnt/d';
+  let targetPath = globalThis.BASE_D_DIR_WINDOW;
 
   console.log('  >> mkdir for D Drive', targetPath);
 
@@ -9,13 +9,15 @@ async function doWork() {
   }
 
   const pathsToCreate = convertTextToList(`
-    /mnt/d/Applications
-    /mnt/d/Desktop
-    /mnt/d/Documents
-    /mnt/d/Downloads
-    /mnt/d/Games
-    /mnt/d/Pictures
+    ${path.join(targetPath, 'Applications')}
+    ${path.join(targetPath, 'Desktop')}
+    ${path.join(targetPath, 'Documents')}
+    ${path.join(targetPath, 'Downloads')}
+    ${path.join(targetPath, 'Games')}
+    ${path.join(targetPath, 'Pictures')}
   `);
+
+  console.log(pathsToCreate);
 
   for (const pathToCreate of pathsToCreate) {
     console.log('    >> ', pathToCreate);

@@ -81,7 +81,7 @@ async function _getBlockedHostNames() {
 }
 
 function _getEtcHosts() {
-  const windowsEtcHostDir = '/mnt/c/Windows/System32/drivers/etc/hosts';
+  const windowsEtcHostDir = path.join(globalThis.BASE_C_DIR_WINDOW, '/Windows/System32/drivers/etc/hosts');
 
   if (filePathExist(windowsEtcHostDir) || is_os_window) {
     return windowsEtcHostDir;

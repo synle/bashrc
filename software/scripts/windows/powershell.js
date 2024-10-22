@@ -148,7 +148,7 @@ async function doInit() {
     `);
 
   // then add the optional block
-  if (filePathExist('/mnt/d')) {
+  if (filePathExist(globalThis.BASE_D_DIR_WINDOW)) {
     outputContent += trimLeftSpaces(`
       function gogit {
         Set-Location D:/git
@@ -192,12 +192,12 @@ async function doWork() {
 
 async function _getPath() {
   try {
-    let targetPath;
+    let targetPath = globalThis.BASE_D_DIR_WINDOW;
 
     // try it with D path
     // if it's not present, then try home dir in C drive
     targetPath = findFirstDirFromList([
-      ['/mnt/d/', 'Documents'],
+      [targetPath, 'Documents'],
       [getWindowUserBaseDir(), 'Documents'],
     ]);
 
