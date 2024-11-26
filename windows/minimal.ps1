@@ -14,11 +14,15 @@ function New-FolderForced {
     }
 }
 
-Write-Output "Disable Internet Search for Start Menu Search"
+# disable hibernate and fast startup
+powercfg /h off
+
+# important registry
+Write-Output "Disable Web Search for Start Menu Search"
 New-FolderForced -Path "HKLM:\Software\Policies\Microsoft\Windows\Explorer"
 Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
 
-Write-Output "Minor Explorer Tweaks - Showing hidden extensions and drive with no media"
+Write-Output "Showing hidden extensions and drive with no media"
 Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "HideFileExt" 0
 Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "HideDrivesWithNoMedia" 0
 
