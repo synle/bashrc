@@ -381,3 +381,18 @@ https://github.com/winfsp/sshfs-win/releases
 ```
 \\sshfs\syle@127.0.0.1
 ```
+
+#### Ramdisk
+Software for windows is called ImDisk
+
+#### 7-Zip
+##### Path for temp
+```
+R:\
+```
+##### Other settings
+
+Viewer
+```
+"C:\Program Files\Sublime Text\subl.exe" -n -w
+```
