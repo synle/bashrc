@@ -5,7 +5,9 @@ https://docs.microsoft.com/en-us/windows/desktop/shell/knownfolderid
 ### User registry for User Shell Folders
 
 ```bash
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 Invoke-WebRequest -Uri "https://github.com/synle/bashrc/raw/refs/heads/master/windows/minimal.ps1" -OutFile ".\minimal-registry.ps1"
+.\minimal-registry.ps1
 ```
 
 ```
