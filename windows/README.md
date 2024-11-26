@@ -4,6 +4,15 @@ https://docs.microsoft.com/en-us/windows/desktop/shell/knownfolderid
 
 ### User registry for User Shell Folders
 
+```bash
+# Define the URL and output file path
+$url = "https://github.com/synle/bashrc/raw/refs/heads/master/windows/minimal.ps1"
+$output = ".\minimal-registry.ps1"  # Change this to your desired save location
+
+# Download the file
+Invoke-WebRequest -Uri $url -OutFile $output
+```
+
 ```
 HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
 ```
