@@ -1,6 +1,10 @@
 ### Special KnownFolders
-
 https://docs.microsoft.com/en-us/windows/desktop/shell/knownfolderid
+
+### Windows 11 Debloat
+https://github.com/Raphire/Win11Debloat
+- Download the script and unzip, and execute `run.bat` - https://github.com/Raphire/Win11Debloat/archive/master.zip
+
 
 ### User registry for User Shell Folders
 
