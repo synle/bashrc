@@ -1,4 +1,14 @@
-# Remove Android Bloats
+## Wireless Debugging
+
+On the device, go to Developer Options > Wireless debugging > Pair device with pairing code, and use the newly generated pairing code
+
+```
+adb pair ip:port
+adb connect
+adb shell
+```
+
+## Remove Android Bloats
 
 ```
 
