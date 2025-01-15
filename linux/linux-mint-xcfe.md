@@ -7,8 +7,7 @@ sudo apt-get remove -y xed thunderbird* firefox*
 ## install
 
 ```bash
-sudo apt-get install -y remmina vim git terminator
-sudo apt-get install -y python3-pip
+sudo apt-get install -y remmina vim git terminator vlc python3-pip
 ```
 
 ```bash
