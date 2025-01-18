@@ -12,7 +12,7 @@ https://github.com/Raphire/Win11Debloat
 
 ```bash
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-Invoke-WebRequest -Uri "https://github.com/synle/bashrc/raw/refs/heads/master/windows/minimal.ps1" -OutFile ".\minimal-registry.ps1"
+Invoke-WebRequest -Uri "https://github.com/synle/bashrc/raw/refs/heads/master/.build/windows-registry.ps1" -OutFile ".\minimal-registry.ps1"
 .\minimal-registry.ps1
 ```
 
