@@ -7,6 +7,8 @@ async function doInit() {
     https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
     https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
   `);
+
+  BLOCKED_HOST_SOURCE_URLS = []; // TODO: this call is expensive, let's remove it
 }
 
 async function doWork() {

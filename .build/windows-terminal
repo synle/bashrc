@@ -6,8 +6,8 @@
   "useTabSwitcher": false,
   "multiLinePasteWarning": false,
   "rowsToScroll": 5,
-  "initialCols": 120,
-  "initialRows": 45,
+  "initialCols": 80,
+  "initialRows": 30,
   "tabWidthMode": "compact",
   "initialPosition": "5,5",
   "confirmCloseAllTabs": true,
@@ -352,14 +352,26 @@
         "commandline": "ssh syle@127.0.0.1",
         "colorScheme": "Dracula",
         "icon": "🚀",
+        "guid": "{ae240490-446d-462c-bb40-0a92fc3c7a3f}",
         "cursorShape": "vintage",
         "cursorHeight": 50,
         "fontFace": "Fira Code",
         "fontSize": 9,
         "padding": "2 0 2 0",
         "bellStyle": "all",
-        "historySize": 50000,
-        "guid": "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}"
+        "historySize": 50000
+      },
+      {
+        "name": "WSL Linux",
+        "source": "Windows.Terminal.Wsl",
+        "guid": "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
+        "cursorShape": "vintage",
+        "cursorHeight": 50,
+        "fontFace": "Fira Code",
+        "fontSize": 9,
+        "padding": "2 0 2 0",
+        "bellStyle": "all",
+        "historySize": 50000
       }
     ]
   },

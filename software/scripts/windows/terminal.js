@@ -5,8 +5,11 @@
 // for profile icons (use this website - https://www.compart.com/). Pick UTF-16
 const historySize = 50000;
 
+const UUID_POWERSHELL_PROFILE = `{c993c0b6-0023-5562-a928-3ea11eb283ce}`;
 const UUID_LOCAL_VM_SSH_PROFILE = '{ae240490-446d-462c-bb40-0a92fc3c7a3f}';
+const UUID_WSL_DEBIAN_PROFILE = '{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}';
 const UUID_SY_MACPRO_PROFILE = '{8e8e313c-1df0-4519-850c-d1532dd63843}';
+
 let BASE_CONFIG = {};
 let DEFAULT_PROFILES = {};
 let DEFAULT_PROFILE_STYLES = {};
@@ -30,8 +33,8 @@ async function doInit() {
     useTabSwitcher: false,
     multiLinePasteWarning: false,
     rowsToScroll: 5,
-    initialCols: 120,
-    initialRows: 45,
+    initialCols: 80,
+    initialRows: 30,
     tabWidthMode: 'compact',
     initialPosition: '5,5',
     confirmCloseAllTabs: true,
@@ -123,7 +126,7 @@ async function doInit() {
           commandline: '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo',
           colorScheme: 'Campbell',
           icon: '\ud83d\udcbb', // 💻 - https://www.compart.com/en/unicode/U+1F4BB
-          guid: '{c993c0b6-0023-5562-a928-3ea11eb283ce}',
+          guid: UUID_POWERSHELL_PROFILE,
           ...DEFAULT_PROFILE_STYLES,
         },
         {
@@ -131,6 +134,13 @@ async function doInit() {
           commandline: 'ssh syle@127.0.0.1',
           colorScheme: 'Dracula',
           icon: '\ud83d\ude80', // 🚀 - https://www.compart.com/en/unicode/U+1F680
+          guid: UUID_LOCAL_VM_SSH_PROFILE,
+          ...DEFAULT_PROFILE_STYLES,
+        },
+        {
+          name: 'WSL Linux',
+          source: 'Windows.Terminal.Wsl',
+          guid: UUID_WSL_DEBIAN_PROFILE,
           ...DEFAULT_PROFILE_STYLES,
         },
       ],
@@ -142,8 +152,6 @@ async function doWork() {
   // write to build file
   const commentNote = '// Open settings file (JSON)';
   const prebuiltConfigs = clone({ ...BASE_CONFIG, ...DEFAULT_PROFILES });
-  prebuiltConfigs.profiles.list[0].guid = `{c993c0b6-0023-5562-a928-3ea11eb283ce}`;
-  prebuiltConfigs.profiles.list[1].guid = `{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}`;
   prebuiltConfigs.defaultProfile = prebuiltConfigs.profiles.list[0].guid;
 
   writeToBuildFile([['windows-terminal', prebuiltConfigs, true, commentNote]]);
