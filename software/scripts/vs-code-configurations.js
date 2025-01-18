@@ -73,6 +73,7 @@ async function doInit() {
     'remote.SSH.remotePlatform': {
       '127.0.0.1': 'linux',
     },
+    'security.workspace.trust.enabled': false,
   };
 }
 

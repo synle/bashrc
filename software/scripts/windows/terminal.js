@@ -120,9 +120,10 @@ async function doInit() {
       list: [
         {
           name: 'Windows PowerShell',
-          commandline: '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+          commandline: '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo',
           colorScheme: 'Campbell',
           icon: '\ud83d\udcbb', // 💻 - https://www.compart.com/en/unicode/U+1F4BB
+          guid: '{c993c0b6-0023-5562-a928-3ea11eb283ce}',
           ...DEFAULT_PROFILE_STYLES,
         },
         {
@@ -140,7 +141,12 @@ async function doInit() {
 async function doWork() {
   // write to build file
   const commentNote = '// Open settings file (JSON)';
-  writeToBuildFile([['windows-terminal', { ...BASE_CONFIG, ...DEFAULT_PROFILES }, true, commentNote]]);
+  const prebuiltConfigs = clone({ ...BASE_CONFIG, ...DEFAULT_PROFILES });
+  prebuiltConfigs.profiles.list[0].guid = `{c993c0b6-0023-5562-a928-3ea11eb283ce}`;
+  prebuiltConfigs.profiles.list[1].guid = `{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}`;
+  prebuiltConfigs.defaultProfile = prebuiltConfigs.profiles.list[0].guid;
+
+  writeToBuildFile([['windows-terminal', prebuiltConfigs, true, commentNote]]);
 
   const targetPath = path.join(_getPath(), 'LocalState/settings.json');
   if (!filePathExist(targetPath)) {
@@ -232,8 +238,9 @@ async function doWork() {
     return profile;
   });
 
+  // fall back to set and use powershell to set default profile, pick the first one
   if (!foundDefaultProfile) {
-    newSettings.defaultProfile = UUID_LOCAL_VM_SSH_PROFILE || newSettings.profiles[0].guid;
+    newSettings.defaultProfile = allProfiles[0].guid;
   }
 
   // done - write to file

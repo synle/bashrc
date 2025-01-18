@@ -335,9 +335,10 @@
     "list": [
       {
         "name": "Windows PowerShell",
-        "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -NoLogo",
         "colorScheme": "Campbell",
         "icon": "💻",
+        "guid": "{c993c0b6-0023-5562-a928-3ea11eb283ce}",
         "cursorShape": "vintage",
         "cursorHeight": 50,
         "fontFace": "Fira Code",
@@ -357,8 +358,10 @@
         "fontSize": 9,
         "padding": "2 0 2 0",
         "bellStyle": "all",
-        "historySize": 50000
+        "historySize": 50000,
+        "guid": "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}"
       }
     ]
-  }
+  },
+  "defaultProfile": "{c993c0b6-0023-5562-a928-3ea11eb283ce}"
 }
