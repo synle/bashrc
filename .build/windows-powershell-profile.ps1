@@ -51,8 +51,15 @@ New-Alias g git
 New-Alias open explorer
 New-Alias d docker
 New-Alias .. cdup
+# New-Alias code codium
+New-Alias merge smerge
 
 # functions
+function gogit(){
+  d:
+  cd git
+}
+
 function ls() {
   Get-ChildItem -Force %args
 }
