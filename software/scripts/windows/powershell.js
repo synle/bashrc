@@ -1,6 +1,15 @@
 let outputContent = '';
 
 async function doInit() {
+  // then add the optional block
+  if (filePathExist(globalThis.BASE_D_DIR_WINDOW)) {
+    outputContent += trimLeftSpaces(`
+      function gogit {
+        Set-Location D:/git
+      }
+    `);
+  }
+
   outputContent = trimLeftSpaces(`
       # tab autocomplete
       Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
@@ -21,23 +30,23 @@ async function doInit() {
 
       # functions
       function ls() {
-        wsl ls $args
+        Get-ChildItem -Force %args
       }
 
       function ll() {
-        wsl ls -la $args
+        ls  $args
       }
 
       function grep() {
-        wsl grep $args
+        Get-ChildItem -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.FullName -notmatch '\\node_modules\\' }  | Select-String -Pattern "$args"
       }
 
       function vim() {
-        wsl vim $args
+        code $args
       }
 
       function mkdir() {
-        wsl mkdir $args
+        New-Item -ItemType Directory -Path $args -Force
       }
 
       function cdup() {
@@ -54,32 +63,11 @@ async function doInit() {
       }
 
       function find() {
-        wsl find $args
-      }
-
-      function gco() {
-        param(
-          [Parameter(Mandatory)]
-          [ValidateNotNullOrEmpty()]
-          [ArgumentCompleter({
-            param($pCmd, $pParam, $pWord, $pAst, $pFakes)
-
-            $branchList = (git branch --format='%(refname:short)')
-
-            if ([string]::IsNullOrWhiteSpace($pWord)) {
-              return $branchList;
-            }
-
-            $branchList | Select-String "$pWord"
-          })]
-          [string] $branch
-        )
-
-        git checkout $branch;
+        Get-ChildItem -Recurse $args
       }
 
       function touch() {
-        wsl touch $args
+        New-Item -ItemType File $args
       }
 
       ### For the prompt
@@ -146,27 +134,47 @@ async function doInit() {
 
       clear; # clean up the prompt
     `);
-
-  // then add the optional block
-  if (filePathExist(globalThis.BASE_D_DIR_WINDOW)) {
-    outputContent += trimLeftSpaces(`
-      function gogit {
-        Set-Location D:/git
-      }
-    `);
-  }
 }
 
 async function doWork() {
   console.log('  >> Setting up Windows Powershell Profile');
 
   const commentNote = trimLeftSpaces(`
-    # power shell profile
+    <#
+    #######################################################
+     power shell profile
     # Microsoft.PowerShell_profile.ps1
     # WindowsPowerShell/Microsoft.PowerShell_profile.ps1
     # ~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
+    #
 
+
+    # Downloading the file
+    # set PWD to be Documents
+    mkdir WindowsPowerShell
+    cd WindowsPowerShell
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build/windows-powershell-profile.ps1" -OutFile "Microsoft.PowerShell_profile.ps1"
+
+    # need to run this script at least once
     Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+
+    # Downloading Fonts
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCode.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCodePL.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMono.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMonoPL.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Bold.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Light.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Medium.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Retina.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-SemiBold.ttf
+    Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/Trace.ttf
+
+    #######################################################
+    #>
   `);
   writeToBuildFile([['windows-powershell-profile.ps1', outputContent, false, commentNote]]);
 

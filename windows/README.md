@@ -1,10 +1,12 @@
 ### Special KnownFolders
+
 https://docs.microsoft.com/en-us/windows/desktop/shell/knownfolderid
 
 ### Windows 11 Debloat
-https://github.com/Raphire/Win11Debloat
-- Download the script and unzip, and execute `run.bat` - https://github.com/Raphire/Win11Debloat/archive/master.zip
 
+https://github.com/Raphire/Win11Debloat
+
+- Download the script and unzip, and execute `run.bat` - https://github.com/Raphire/Win11Debloat/archive/master.zip
 
 ### User registry for User Shell Folders
 
@@ -387,16 +389,21 @@ https://github.com/winfsp/sshfs-win/releases
 ```
 
 #### Ramdisk
+
 Software for windows is called ImDisk
 
 #### 7-Zip
+
 ##### Path for temp
+
 ```
 R:\
 ```
+
 ##### Other settings
 
 Viewer
+
 ```
 "C:\Program Files\Sublime Text\subl.exe" -n -w
 ```

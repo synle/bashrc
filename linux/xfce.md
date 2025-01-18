@@ -1,9 +1,11 @@
 ### this is the folder where we should store xfce icons
+
 ```
 ~/.local/share/applications
 ```
 
 ### to revert xcfe, rename this file
+
 ~/.config/menus/xfce-applications.menu
 
 ```
@@ -11,6 +13,7 @@ mv ~/.config/menus/xfce-applications.menu ~/.config/menus/xfce-applications.menu
 ```
 
 ### sample file for xcfe Desktop
+
 ```
 [Desktop Entry]
 Name=Arduino IDE
