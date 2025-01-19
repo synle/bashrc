@@ -98,7 +98,7 @@
   "window.zoomLevel": 0.5,
   "workbench.colorTheme": "Dracula Soft",
   "workbench.editor.showTabs": true,
-  "workbench.iconTheme": "vscode-great-icons",
+  "workbench.iconTheme": "material-icon-theme",
   "workbench.tree.indent": 4,
   "workbench.editor.enablePreview": false,
   "workbench.activityBar.location": "top",

@@ -63,7 +63,7 @@ async function doInit() {
     'window.zoomLevel': 0.5,
     'workbench.colorTheme': 'Dracula Soft',
     'workbench.editor.showTabs': true,
-    'workbench.iconTheme': 'vscode-great-icons',
+    'workbench.iconTheme': 'material-icon-theme',
     'workbench.tree.indent': 4,
     'workbench.editor.enablePreview': false, // single click to open file instead of preview it
     'workbench.activityBar.location': 'top', // move the activity bar up top to save spaces
