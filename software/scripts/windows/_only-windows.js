@@ -69,12 +69,6 @@ cmd(){
   cmd.exe '/C' "$@"
 }
 
-sublime_text_exe(){
-  echo "subl $@"
-  pwd
-  "/c/Program Files/Sublime Text/sublime_text.exe" "$@"
-}
-
 alias adb='adb.exe'
 alias fastboot='fastboot.exe'
 alias update='sudo apt-get update -y; sudo apt-get upgrade -y; sudo apt-get autoclean; sudo apt-get clean; sudo apt-get autoremove'
