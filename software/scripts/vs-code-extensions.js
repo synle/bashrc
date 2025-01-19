@@ -6,13 +6,14 @@ const onlyVsCodeExtensions = trimLeftSpaces(`
   # hridoy.ember-snippets
   # ms-dotnettools.csharp
   # ms-python.vscode-pylance
-  # ms-vscode-remote.remote-ssh
-  # ms-vscode-remote.remote-ssh-edit
-  # ms-vscode-remote.remote-wsl
   # ms-vscode.cpptools
-  # ms-vscode.remote-explorer
   # visualstudioexptteam.intellicode-api-usage-examples
   # visualstudioexptteam.vscodeintellicode
+  ms-vscode-remote.vscode-remote-extensionpack
+`);
+
+const onlyCodiumExtensions = trimLeftSpaces(`
+  jeanp413.open-remote-ssh
 `);
 
 const baseVsExtensions = trimLeftSpaces(`
@@ -26,7 +27,6 @@ const baseVsExtensions = trimLeftSpaces(`
   formulahendry.auto-rename-tag
   formulahendry.code-runner
   golang.go
-  jeanp413.open-remote-ssh
   # ms-azuretools.vscode-docker
   ms-pyright.pyright
   ms-python.isort
@@ -46,7 +46,7 @@ const baseVsExtensions = trimLeftSpaces(`
 `).trim();
 
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
-const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(baseVsExtensions);
+const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(onlyCodiumExtensions, baseVsExtensions);
 
 async function doWork() {
   console.log(`  >> Setting up VS Code Extensions:`);
@@ -79,7 +79,7 @@ ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} 
 echo 'Done installing VSCode Extensions'
 
 cd "/Applications/VSCodium.app/Contents/Resources/app/bin/"
-${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCodium Extensions'
     `,
       false,
@@ -90,7 +90,7 @@ echo 'Done installing VSCodium Extensions'
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
 
-${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCodium Extensions'
     `,
       false,
