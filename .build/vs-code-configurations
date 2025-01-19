@@ -112,6 +112,7 @@
   },
   "security.workspace.trust.enabled": false,
   "workbench.startupEditor": "none",
+  "telemetry.telemetryLevel": "off",
   "[javascript]": {
     "editor.javascript": "esbenp.prettier-vscode"
   },
