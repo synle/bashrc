@@ -579,14 +579,7 @@ function MacOSXNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
-      <div className='form-label'>Sublime Text</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-macosx' />
-      <div className='form-label'>VSCode / VSCodium</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-macosx' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-macosx' />
+      <CommonEditorSetupDom />
 
       {/* Mac */}
       <div className='form-label'>Other Applications</div>
@@ -605,17 +598,10 @@ function LinuxNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
-      <div className='form-label'>Sublime Text</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-linux' />
-      <div className='form-label'>VSCode / VSCodium</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-linux' />
+      <CommonEditorSetupDom />
       {/* Linux */}
       <div className='form-label'>Other Applications</div>
-      <div className='link-group'>{CommonOtherAppDom}</div>v
+      <div className='link-group'>{CommonOtherAppDom}</div>
     </>
   );
 }
@@ -627,14 +613,7 @@ function WindowsNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-windows.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
-      <div className='form-label'>Sublime Text</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-windows' />
-      <div className='form-label'>VSCode / VSCodium</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-windows' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-windows' />
+      <CommonEditorSetupDom />
 
       {/* other links */}
       <div className='form-label'>Windows Related</div>
@@ -707,6 +686,23 @@ function WindowsNotesDom() {
           AV1 Video Extension
         </LinkButton>
       </div>
+    </>
+  );
+}
+
+function CommonEditorSetupDom() {
+  return (
+    <>
+      <div className='form-label'>Sublime Text</div>
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text.sh' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-linux' />
+      <div className='form-label'>VSCode / VSCodium</div>
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code.sh' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-linux' />
     </>
   );
 }
