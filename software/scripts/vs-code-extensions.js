@@ -1,3 +1,5 @@
+// /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
+
 const onlyVsCodeExtensions = trimLeftSpaces(`
   ## andrejunges.handlebars
   ## dakara.transformer
