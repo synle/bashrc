@@ -10,12 +10,11 @@ const toInstallExtensions = convertTextToList(`
   DocBlockr
   Dracula Color Scheme
   FileIcons
-  LESS
-  SCSS
   SideBarEnhancements
   SublimeCodeIntel
   SyncedSideBar
   TypeScript
+  Non Text Files
 `);
 
 async function doWork() {

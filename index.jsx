@@ -695,14 +695,10 @@ function CommonEditorSetupDom() {
     <>
       <div className='form-label'>Sublime Text</div>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text.sh' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-configurations' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-keybindings-linux' />
       <div className='form-label'>VSCode / VSCodium</div>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code.sh' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-configurations' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-keybindings-linux' />
     </>
   );
 }

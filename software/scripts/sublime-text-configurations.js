@@ -35,6 +35,8 @@ async function doInit() {
     // The mid-line characters to align in a multi-line selection, changing
     // this to an empty array will disable mid-line alignment
     alignment_chars: ['=', ':'],
+    // these are used to open these files externally (by using Non Text File extension)
+    open_externally_patterns: ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.zip', '*.pdf'],
   };
 }
 

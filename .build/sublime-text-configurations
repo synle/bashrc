@@ -97,5 +97,13 @@
   "alignment_chars": [
     "=",
     ":"
+  ],
+  "open_externally_patterns": [
+    "*.jpg",
+    "*.jpeg",
+    "*.png",
+    "*.gif",
+    "*.zip",
+    "*.pdf"
   ]
 }
