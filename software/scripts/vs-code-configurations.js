@@ -76,6 +76,7 @@ async function doInit() {
       '127.0.0.1': 'linux',
     },
     'security.workspace.trust.enabled': false, // this is to disable the trusted domain message
+    'workbench.startupEditor': 'none', // this disables the startup wizard
     // prettier formatting, requires esbenp.prettier-vscode
     '[javascript]': {
       'editor.javascript': 'esbenp.prettier-vscode',
