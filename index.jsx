@@ -579,7 +579,7 @@ function MacOSXNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
-      <CommonEditorSetupDom />
+      <CommonEditorSetupDom is_os_darwin_mac={true} />
 
       {/* Mac */}
       <div className='form-label'>Other Applications</div>
@@ -613,7 +613,7 @@ function WindowsNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-windows.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
-      <CommonEditorSetupDom />
+      <CommonEditorSetupDom is_os_window={true} />
 
       {/* other links */}
       <div className='form-label'>Windows Related</div>
@@ -690,15 +690,24 @@ function WindowsNotesDom() {
   );
 }
 
-function CommonEditorSetupDom() {
+function CommonEditorSetupDom(props) {
+  const { is_os_darwin_mac, is_os_window } = props;
+
+  let domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />;
+  if (is_os_darwin_mac) {
+    domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-macosx' />;
+  } else if (is_os_window) {
+    domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-window' />;
+  }
+
   return (
     <>
       <div className='form-label'>Sublime Text</div>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text.sh' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' height='75px' />
       <div className='form-label'>VSCode / VSCodium</div>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code.sh' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />
+      {domVSCodeExtension}
     </>
   );
 }
