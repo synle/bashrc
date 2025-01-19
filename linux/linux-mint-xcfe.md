@@ -3,7 +3,7 @@
 ```bash
 # curl -fsS https://dl.brave.com/install.sh | sh # brave
 sudo apt-get update -y
-sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina
+sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k
 
 ####
 sudo apt-get upgrade -y
@@ -15,4 +15,17 @@ sudo apt-get upgrade -y
 sudo apt-get remove firefox* thunderbird* celluloid* xed hypnotix* rhythmbox*
 sudo apt-get autoclean
 sudo apt-get autoremove
+```
+
+
+## Grub
+
+```bash
+# Follow the above to install grub2-theme-mint-2k
+# Use the following options
+sudo vim /etc/default/grub
+GRUB_TIMEOUT=5
+GRUB_GFXMODE=1024x768
+
+sudo update-grub
 ```
