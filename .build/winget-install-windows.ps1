@@ -15,7 +15,7 @@ winget install --id  Ultimaker.Cura
 winget install --id  Valve.Steam
 winget install --id  VideoLAN.VLC
 winget install --id  VSCodium.VSCodium
-winget install --id  winget install OpenJS.NodeJS
+winget install --id  OpenJS.NodeJS
 winget install --id  WinSCP.WinSCP
 winget install --id  dotPDNLLC.paintdotnet
 winget install --id  Zoom.Zoom
