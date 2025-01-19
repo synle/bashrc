@@ -1,16 +1,16 @@
 const onlyVsCodeExtensions = trimLeftSpaces(`
-  andrejunges.handlebars
-  dakara.transformer
-  hridoy.ember-snippets
+  ## andrejunges.handlebars
+  ## dakara.transformer
+  # hridoy.ember-snippets
   ms-dotnettools.csharp
   ms-python.vscode-pylance
-  ms-vscode-remote.remote-ssh
-  ms-vscode-remote.remote-ssh-edit
-  ms-vscode-remote.remote-wsl
-  ms-vscode.cpptools
-  ms-vscode.remote-explorer
-  visualstudioexptteam.intellicode-api-usage-examples
-  visualstudioexptteam.vscodeintellicode
+  # ms-vscode-remote.remote-ssh
+  # ms-vscode-remote.remote-ssh-edit
+  # ms-vscode-remote.remote-wsl
+  # ms-vscode.cpptools
+  # ms-vscode.remote-explorer
+  # visualstudioexptteam.intellicode-api-usage-examples
+  # visualstudioexptteam.vscodeintellicode
 `);
 
 const baseVsExtensions = trimLeftSpaces(`

@@ -77,26 +77,26 @@ async function doInit() {
     },
     'security.workspace.trust.enabled': false, // this is to disable the trusted domain message
     // prettier formatting, requires esbenp.prettier-vscode
-    "[javascript]": {
-      "editor.javascript": "esbenp.prettier-vscode"
+    '[javascript]': {
+      'editor.javascript': 'esbenp.prettier-vscode',
     },
-    "[javascriptreact]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    '[javascriptreact]': {
+      'editor.defaultFormatter': 'esbenp.prettier-vscode',
     },
-    "[typescript]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    '[typescript]': {
+      'editor.defaultFormatter': 'esbenp.prettier-vscode',
     },
-    "[typescriptreact]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    '[typescriptreact]': {
+      'editor.defaultFormatter': 'esbenp.prettier-vscode',
     },
-    "[json]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    '[json]': {
+      'editor.defaultFormatter': 'esbenp.prettier-vscode',
     },
-    "[graphql]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    '[graphql]': {
+      'editor.defaultFormatter': 'esbenp.prettier-vscode',
     },
-    "[handlebars]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    '[handlebars]': {
+      'editor.defaultFormatter': 'esbenp.prettier-vscode',
     },
   };
 }
