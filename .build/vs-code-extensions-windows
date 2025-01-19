@@ -1,6 +1,4 @@
 c:;  cd "C:/Program Files/Microsoft VS Code/bin"
-code --install-extension ms-dotnettools.csharp --force
-code --install-extension ms-python.vscode-pylance --force
 code --install-extension aaron-bond.better-comments --force
 code --install-extension christian-kohler.path-intellisense --force
 code --install-extension clinyong.vscode-css-modules --force
@@ -12,7 +10,6 @@ code --install-extension formulahendry.auto-rename-tag --force
 code --install-extension formulahendry.code-runner --force
 code --install-extension golang.go --force
 code --install-extension jeanp413.open-remote-ssh --force
-code --install-extension ms-azuretools.vscode-docker --force
 code --install-extension ms-pyright.pyright --force
 code --install-extension ms-python.isort --force
 code --install-extension ms-python.python --force
@@ -21,7 +18,6 @@ code --install-extension oderwat.indent-rainbow --force
 code --install-extension PKief.material-icon-theme --force
 code --install-extension redhat.java --force
 code --install-extension redhat.vscode-yaml --force
-code --install-extension scala-lang.scala --force
 code --install-extension streetsidesoftware.code-spell-checker --force
 code --install-extension wholroyd.jinja --force
 code --install-extension wmaurer.change-case --force
@@ -40,7 +36,6 @@ codium --install-extension formulahendry.auto-rename-tag --force
 codium --install-extension formulahendry.code-runner --force
 codium --install-extension golang.go --force
 codium --install-extension jeanp413.open-remote-ssh --force
-codium --install-extension ms-azuretools.vscode-docker --force
 codium --install-extension ms-pyright.pyright --force
 codium --install-extension ms-python.isort --force
 codium --install-extension ms-python.python --force
@@ -49,7 +44,6 @@ codium --install-extension oderwat.indent-rainbow --force
 codium --install-extension PKief.material-icon-theme --force
 codium --install-extension redhat.java --force
 codium --install-extension redhat.vscode-yaml --force
-codium --install-extension scala-lang.scala --force
 codium --install-extension streetsidesoftware.code-spell-checker --force
 codium --install-extension wholroyd.jinja --force
 codium --install-extension wmaurer.change-case --force

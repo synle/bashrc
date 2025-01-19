@@ -4,8 +4,8 @@ const onlyVsCodeExtensions = trimLeftSpaces(`
   ## andrejunges.handlebars
   ## dakara.transformer
   # hridoy.ember-snippets
-  ms-dotnettools.csharp
-  ms-python.vscode-pylance
+  # ms-dotnettools.csharp
+  # ms-python.vscode-pylance
   # ms-vscode-remote.remote-ssh
   # ms-vscode-remote.remote-ssh-edit
   # ms-vscode-remote.remote-wsl
@@ -27,7 +27,7 @@ const baseVsExtensions = trimLeftSpaces(`
   formulahendry.code-runner
   golang.go
   jeanp413.open-remote-ssh
-  ms-azuretools.vscode-docker
+  # ms-azuretools.vscode-docker
   ms-pyright.pyright
   ms-python.isort
   ms-python.python
@@ -36,7 +36,7 @@ const baseVsExtensions = trimLeftSpaces(`
   PKief.material-icon-theme
   redhat.java
   redhat.vscode-yaml
-  scala-lang.scala
+  # scala-lang.scala
   streetsidesoftware.code-spell-checker
   wholroyd.jinja
   wmaurer.change-case
