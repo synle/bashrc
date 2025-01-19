@@ -12,7 +12,18 @@ alias drun='docker run'
 alias dexec='dexecBash'
 
 # bat / cat setup
-alias cat='bat -p --paging=never'
+function batcatfull(){
+  # Check if `bat` is available
+  if command -v bat &> /dev/null; then
+      bat "$@" 2>/dev/null  # Use bat and suppress stderr
+  elif command -v batcat &> /dev/null; then
+      batcat "$@" 2>/dev/null  # Use batcat and suppress stderr
+  else
+      echo "Neither 'bat' nor 'batcat' are available." >&2
+      exit 1
+  fi
+}
+alias cat='batcatfull -p --paging=never'
 
 ##########################################################
 # Pass a path to watch, a file filter, and a command to run when those files are updated
