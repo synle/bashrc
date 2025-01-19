@@ -77,7 +77,6 @@ async function doInit() {
     },
     'security.workspace.trust.enabled': false, // this is to disable the trusted domain message
     // prettier formatting, requires esbenp.prettier-vscode
-
     "[javascript]": {
       "editor.javascript": "esbenp.prettier-vscode"
     },

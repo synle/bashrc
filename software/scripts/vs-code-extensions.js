@@ -20,12 +20,10 @@ const baseVsExtensions = trimLeftSpaces(`
   dbaeumer.vscode-eslint
   dracula-theme.theme-dracula
   dsznajder.es7-react-js-snippets
-  emmanuelbeziat.vscode-great-icons
   esbenp.prettier-vscode
   formulahendry.auto-rename-tag
   formulahendry.code-runner
   golang.go
-  hashicorp.terraform
   jeanp413.open-remote-ssh
   ms-azuretools.vscode-docker
   ms-pyright.pyright
@@ -38,16 +36,11 @@ const baseVsExtensions = trimLeftSpaces(`
   redhat.vscode-yaml
   scala-lang.scala
   streetsidesoftware.code-spell-checker
-  vscjava.vscode-java-debug
-  vscjava.vscode-java-dependency
-  vscjava.vscode-java-pack
-  vscjava.vscode-java-test
-  vscjava.vscode-maven
-  vscode-icons-team.vscode-icons
   wholroyd.jinja
   wmaurer.change-case
-  xabikos.JavaScriptSnippets
   tomoki1207.pdf
+  # hashicorp.terraform
+  # emmanuelbeziat.vscode-great-icons
 `).trim();
 
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
