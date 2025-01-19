@@ -28,3 +28,13 @@ GRUB_GFXMODE=1024x768
 
 sudo update-grub
 ```
+
+## Disable middle click for mouse
+
+```bash
+xinput list
+xinput --get-button-map 19
+
+# put this into ~/.xsessionrc
+xinput --set-button-map 19 1 0 3 4 5 6 7
+```

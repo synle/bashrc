@@ -42,7 +42,7 @@ then
   installPackage net-tools
   ###
   installPackage default-jdk
-  installPackage maven
+  # installPackage maven
   installPackage unzip
   installPackage entr
 

@@ -577,7 +577,8 @@ const CommonOtherAppDom = (
 function MacOSXNotesDom() {
   return (
     <>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-macosx.md' height='400px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-macosx.sh' height='350px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-macosx.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
@@ -595,8 +596,9 @@ function MacOSXNotesDom() {
 function LinuxNotesDom() {
   return (
     <>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-linux.md' height='400px' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/linux/linux-mint-xcfe.md' height='400px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-linux.sh' height='350px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-linux.md' height='350px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/linux/linux-mint-xcfe.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
@@ -613,7 +615,8 @@ function LinuxNotesDom() {
 function WindowsNotesDom() {
   return (
     <>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='400px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-windows.sh' height='350px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/winget-install-windows.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-windows.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
