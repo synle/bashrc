@@ -181,17 +181,7 @@ viewFile(){
       return 1 # silent exit
     fi
 
-    if isCommandExists subl.exe ; then
-      # wsl mode
-      editorCmd=subl.exe
-    elif isCommandExists subl ; then
-      # mac or other linux
-      editorCmd=subl
-    else
-      # no subl, fall back to vim
-      editorCmd=vim;
-    fi
-
+    editorCmd=subl
     echo "$editorCmd $1"
     $editorCmd "$1"
 }
