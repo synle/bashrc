@@ -48,7 +48,6 @@
     "**/*.obj": true,
     "**/*.ogg": true,
     "**/*.pdb": true,
-    "**/*.pdf": true,
     "**/*.pid": true,
     "**/*.pid.lock": true,
     "**/*.psd": true,

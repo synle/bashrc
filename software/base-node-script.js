@@ -62,7 +62,7 @@ globalThis.EDITOR_CONFIGS = {
     '*.obj',
     '*.ogg',
     '*.pdb',
-    '*.pdf',
+    // '*.pdf',
     '*.pid',
     '*.pid.lock',
     '*.psd',

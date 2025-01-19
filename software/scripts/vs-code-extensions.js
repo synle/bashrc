@@ -47,6 +47,7 @@ const baseVsExtensions = trimLeftSpaces(`
   wholroyd.jinja
   wmaurer.change-case
   xabikos.JavaScriptSnippets
+  tomoki1207.pdf
 `).trim();
 
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
@@ -65,8 +66,12 @@ async function doWork() {
     [
       'vs-code-extensions-windows',
       `
-c:; cd "C:/Program Files/Microsoft VS Code/bin"
+c:;  cd "C:/Program Files/Microsoft VS Code/bin"
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
+echo 'Done installing VSCode Extensions'
+
+c:; cd "C:/Program Files/VSCodium/bin"
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
     `,
       false,
@@ -77,6 +82,10 @@ echo 'Done installing VSCode Extensions'
 cd "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
+
+cd "/Applications/VSCodium.app/Contents/Resources/app/bin/"
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
+echo 'Done installing VSCodium Extensions'
     `,
       false,
     ],
@@ -84,29 +93,10 @@ echo 'Done installing VSCode Extensions'
       'vs-code-extensions-linux',
       `
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join('\n')}
-    `,
-      false,
-    ],
-    // for vscodium
-    [
-      'vs-codium-extensions-windows',
-      `
-c:;
-cd "C:/Users/le*"
-cd "C:/Users/sy*"
-cd "AppData/Local/Programs/VSCodium/bin"
-cd "C:/Program Files/VSCodium/bin"
-${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
-    `,
-      false,
-    ],
-    [
-      'vs-codium-extensions-macosx',
-      `
-cd "/Applications/VSCodium.app/Contents/Resources/app/bin"
-${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
-echo 'Done installing VSCode Extensions'
+
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
+echo 'Done installing VSCodium Extensions'
     `,
       false,
     ],

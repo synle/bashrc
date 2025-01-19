@@ -9,7 +9,6 @@ sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv te
 sudo apt-get upgrade -y
 ```
 
-
 ## Debloat
 
 ```bash

@@ -52,7 +52,6 @@
     "*.obj",
     "*.ogg",
     "*.pdb",
-    "*.pdf",
     "*.pid",
     "*.pid.lock",
     "*.psd",
