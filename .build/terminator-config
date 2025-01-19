@@ -21,7 +21,7 @@
   paste = <Alt>v
   toggle_scrollbar = <Alt>backslash
   search = <Alt>f
-  close_window = <Shift><Alt>w
+  close_window = <Alt>q
   resize_up = ""
   resize_down = ""
   resize_left = ""
@@ -48,7 +48,7 @@
   ungroup_all = ""
   group_tab = ""
   ungroup_tab = ""
-  new_window = <Shift><Alt>n
+  new_window = <Alt>n
   new_terminator = ""
   insert_number = ""
   insert_padded = ""
