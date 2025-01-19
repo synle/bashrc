@@ -70,56 +70,51 @@ gitCompare(){
 }
 
 subl(){
-  if [ $is_os_wsl == "1" ]
-  then
-    # for windows
-    # getting the path
-    sublime_text_exe "$@" > /dev/null 2>&1 &
+  local sublime_binaries=(
+    "/mnt/c/Program Files/Sublime Text/sublime_text.exe"
+    "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl"
+    "/opt/sublime_text/sublime_text"
+  )
 
-    echo """
-Full Path: $(realpath "$@")
- WSL Path: $(findResolvedPathForWsl1 "$@")
-    """
-  elif  [ $is_os_darwin_mac == "1" ]
-  then
-    # for osx darwin
-    sublime_osx_darwin_binary_path="/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl";
-    $sublime_osx_darwin_binary_path "$@" &> /dev/null 2>&1
+  for binary in "${sublime_binaries[@]}"; do
+    if [[ -x "$binary" ]]; then
+      "$binary" "$@" &> /dev/null 2>&1
 
-    echo """
+      echo "subl \"$@\""
+      echo """
+PWD: $(pwd)
 Full Path: $(echo "$@")
-    """
-  fi
+        """
 
-  echo "subl \"$@\""
+      return 0
+    fi
+  done
 }
+
 
 code()
 {
-  if [ $is_os_wsl == "1" ]
-  then
-    # for windows
-    # vs_code_win32_binary_path="/mnt/c/Program Files/Microsoft VS Code/Code.exe"
-    # { echo "\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
+  local vscode_binaries=(
+    "/mnt/c/Program Files/Microsoft VS Code/Code.exe"
+    "/usr/local/bin/codium"
+    "/usr/local/bin/code"
+    "/usr/bin/codium"
+    "/usr/bin/code"
+  )
 
-    Code.exe "$@" > /dev/null 2>&1 &
+  for binary in "${vscode_binaries[@]}"; do
+    if [[ -x "$binary" ]]; then
+      "$binary" "$@" &> /dev/null 2>&1
 
-    echo """
-Full Path: $(realpath "$@")
- WSL Path: $(findResolvedPathForWsl1 "$@")
-    """
-  elif  [ $is_os_darwin_mac == "1" ]
-  then
-    # for osx darwin
-    vs_code_osx_darwin_binary_path="/usr/local/bin/code";
-    "$vs_code_osx_darwin_binary_path" "$@" &> /dev/null 2>&1
-
-    echo """
+      echo "code \"$@\""
+      echo """
+PWD: $(pwd)
 Full Path: $(echo "$@")
-    """
-  fi
+        """
 
-  echo "code \"$@\""
+      return 0
+    fi
+  done
 }
 
 codeListExtensions(){
@@ -128,7 +123,71 @@ codeListExtensions(){
     # for windows
     cmd.exe /c "code --list-extensions"
   elif  [ $is_os_darwin_mac == "1" ]
+  thencode()code()
+{
+  if [ $is_os_wsl == "1" ]
   then
+    # for windows
+    # vs_code_win32_binary_path="/mnt/c/Program Files/Microsoft VS Code/Code.exe"
+    # { echo "\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
+
+    Code.exe "$@" > /dev/null 2>&1 &
+  elif  [ $is_os_darwin_mac == "1" ]
+  then
+    # for osx darwin
+    vscode_binary="/usr/local/bin/code";
+    "$vscode_binary" "$@" &> /dev/null 2>&1
+
+    echo """
+Full Path: $(echo "$@")echo "code \"$@\""
+    """
+  elif  [ $is_os_ubuntu == "1" ]
+  then
+    # for is_os_ubuntu (linux mint)
+    vscode_binary="/usr/bin/codium";
+    $vscode_binary "$@" &> /dev/null 2>&1
+
+    vscode_binary="/usr/bin/code";
+    $vscode_binary "$@" &> /dev/null 2>&1
+  fi
+
+  echo "code \"$@\""
+  echo """
+Full Path: $(echo "$@")
+    """
+}
+{
+  if [ $is_os_wsl == "1" ]
+  then
+    # for windows
+    # vs_code_win32_binary_path="/mnt/c/Program Files/Microsoft VS Code/Code.exe"
+    # { echo "\"$vs_code_win32_binary_path\" \"$(findResolvedPathForWsl1 "$@")\""; } | bash
+
+    Code.exe "$@" > /dev/null 2>&1 &
+  elif  [ $is_os_darwin_mac == "1" ]
+  then
+    # for osx darwin
+    vscode_binary="/usr/local/bin/code";
+    "$vscode_binary" "$@" &> /dev/null 2>&1
+
+    echo """
+Full Path: $(echo "$@")echo "code \"$@\""
+    """
+  elif  [ $is_os_ubuntu == "1" ]
+  then
+    # for is_os_ubuntu (linux mint)
+    vscode_binary="/usr/bin/codium";
+    $vscode_binary "$@" &> /dev/null 2>&1
+
+    vscode_binary="/usr/bin/code";
+    $vscode_binary "$@" &> /dev/null 2>&1
+  fi
+
+  echo "code \"$@\""
+  echo """
+Full Path: $(echo "$@")
+    """
+}
     code --list-extensions
   fi
 }
