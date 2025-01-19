@@ -506,7 +506,11 @@ function DynamicTextArea(props) {
   useEffect(() => {
     async function _load() {
       setText('');
-      setText(await fetch(url).then((res) => res.text()));
+      setText(
+        await fetch(url)
+          .then((r) => r.text())
+          .then((r) => r.trim()),
+      );
     }
 
     _load();
@@ -610,6 +614,7 @@ function WindowsNotesDom() {
   return (
     <>
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='400px' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/winget-install-windows.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-windows.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
@@ -697,7 +702,7 @@ function CommonEditorSetupDom(props) {
   if (is_os_darwin_mac) {
     domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-macosx' />;
   } else if (is_os_window) {
-    domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-window' />;
+    domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-windows' />;
   }
 
   return (
