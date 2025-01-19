@@ -1,3 +1,4 @@
+code --install-extension ms-vscode-remote.vscode-remote-extensionpack --force
 code --install-extension aaron-bond.better-comments --force
 code --install-extension christian-kohler.path-intellisense --force
 code --install-extension clinyong.vscode-css-modules --force
@@ -8,7 +9,6 @@ code --install-extension esbenp.prettier-vscode --force
 code --install-extension formulahendry.auto-rename-tag --force
 code --install-extension formulahendry.code-runner --force
 code --install-extension golang.go --force
-code --install-extension jeanp413.open-remote-ssh --force
 code --install-extension ms-pyright.pyright --force
 code --install-extension ms-python.isort --force
 code --install-extension ms-python.python --force
@@ -23,6 +23,7 @@ code --install-extension wmaurer.change-case --force
 code --install-extension tomoki1207.pdf --force
 echo 'Done installing VSCode Extensions'
 
+codium --install-extension jeanp413.open-remote-ssh --force
 codium --install-extension aaron-bond.better-comments --force
 codium --install-extension christian-kohler.path-intellisense --force
 codium --install-extension clinyong.vscode-css-modules --force
@@ -33,7 +34,6 @@ codium --install-extension esbenp.prettier-vscode --force
 codium --install-extension formulahendry.auto-rename-tag --force
 codium --install-extension formulahendry.code-runner --force
 codium --install-extension golang.go --force
-codium --install-extension jeanp413.open-remote-ssh --force
 codium --install-extension ms-pyright.pyright --force
 codium --install-extension ms-python.isort --force
 codium --install-extension ms-python.python --force
