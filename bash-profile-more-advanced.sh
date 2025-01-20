@@ -85,7 +85,7 @@ subl(){
 
   local sublime_binaries=(
     "/mnt/c/Program Files/Sublime Text/sublime_text.exe"
-    "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl"
+    "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl"
     "/opt/sublime_text/sublime_text"
   )
 
@@ -178,12 +178,12 @@ viewFile(){
   local editorCmd
 
   if [[ $# -eq 0 ]] ; then
-      return 1 # silent exit
-    fi
+    return 1 # silent exit
+  fi
 
-    editorCmd=subl
-    echo "$editorCmd $1"
-    $editorCmd "$1"
+  editorCmd=subl
+  echo "$editorCmd $1"
+  $editorCmd "$1"
 }
 
 

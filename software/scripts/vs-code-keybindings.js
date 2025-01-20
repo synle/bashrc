@@ -162,8 +162,7 @@ async function doInit() {
 }
 
 async function doWork() {
-  const targetPath = _getVsCodePath();
-  let targetFile;
+  console.log(`  >> VS Code Keybindings:`);
 
   // write to build file
   const commentNote = '// Preferences Open Keyboard Shortcuts (JSON)';
@@ -177,31 +176,4 @@ async function doWork() {
     ],
     ['vs-code-keybindings-macosx', _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), true, commentNote],
   ]);
-
-  if (!filePathExist(targetPath)) {
-    console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
-    return process.exit();
-  }
-
-  const vsCodeKeybindingConfigPath = path.join(targetPath, 'User/keybindings.json');
-  let compiledKeyBindings;
-  console.log('  >> Setting up Microsoft VS Code keybindings', vsCodeKeybindingConfigPath);
-
-  if (is_os_darwin_mac) {
-    // Mac OSX only key bindings
-    console.log('    >> Mac Only', vsCodeKeybindingConfigPath);
-    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS]);
-  } else if (is_os_window) {
-    // windows only key bindings
-    console.log('    >> Windows Only');
-    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS]);
-  } else {
-    // linux only key bindings
-    console.log('    >> Linux Only');
-    compiledKeyBindings = _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING]);
-  }
-
-  if (compiledKeyBindings) {
-    writeJson(vsCodeKeybindingConfigPath, compiledKeyBindings);
-  }
 }

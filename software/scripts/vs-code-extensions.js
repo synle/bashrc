@@ -49,11 +49,7 @@ const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, ba
 const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(onlyCodiumExtensions, baseVsExtensions);
 
 async function doWork() {
-  console.log(`  >> Setting up VS Code Extensions:`);
-
-  if (DEBUG_WRITE_TO_DIR) {
-    console.log('    >> Skipped - this is only used to build the main scripts');
-  }
+  console.log(`  >> VS Code Extensions:`);
 
   // write to build file
   writeToBuildFile([

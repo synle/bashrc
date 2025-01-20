@@ -1,6 +1,10 @@
 import React, { useContext, useEffect, useMemo, useState } from 'https://cdn.skypack.dev/react';
 import ReactDOM from 'https://cdn.skypack.dev/react-dom';
 
+const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+const isSystemWindows = navigator.platform.indexOf('Win') > -1;
+const isSystemUbuntu = !isSystemMac && !isSystemWindows;
+
 function setStorage(key, value) {
   localStorage[key] = value;
 }
@@ -333,6 +337,7 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
               <option value='android_termux'>Android Termux</option>
             </select>
           </div>
+          <TargetSystemOSWarningDom targetDomString={formValue.osToRun} />
         </>
       )}
 
@@ -519,6 +524,34 @@ function DynamicTextArea(props) {
   return <EnhancedTextArea height={height} url={url} value={text} readOnly />;
 }
 
+function MultipleUrlDynamicTextArea(props) {
+  const { urls, height, commentString } = props;
+  const [text, setText] = useState('');
+  const [label, setLabel] = useState('');
+
+  useEffect(() => {
+    async function _load() {
+      setText('');
+      setLabel(props.label || urls.join(', '));
+
+      let resp = [];
+      for (const url of urls) {
+        const newInput = await fetch(url)
+          .then((r) => r.text())
+          .then((r) => r.trim());
+
+        resp.push(`${commentString} ${url}\n${newInput}`);
+      }
+
+      setText(resp.join('\n\n'));
+    }
+
+    _load();
+  }, []);
+
+  return <EnhancedTextArea height={height} label={label} value={text} readOnly />;
+}
+
 function EnhancedTextArea(props) {
   let { url, label, height, ...restProps } = props;
   label = label || props.placeholder;
@@ -574,9 +607,49 @@ const CommonOtherAppDom = (
   </>
 );
 
+// This is used to show the warning about OS not matching intended system
+function TargetSystemOSWarningDom(props) {
+  let { is_os_darwin_mac, is_os_window, is_os_ubuntu, targetDomString } = props;
+
+  // if input was a string
+  switch (targetDomString) {
+    case 'mac':
+      is_os_darwin_mac = true;
+      break;
+    case 'windows':
+      is_os_window = true;
+      break;
+    case 'ubuntu':
+      is_os_ubuntu = true;
+      break;
+  }
+
+  if (is_os_darwin_mac === true) {
+    if (!isSystemMac) {
+      return <h3 style={{ color: 'red' }}>OS choice (OSX) doesn't match your system.</h3>;
+    }
+    return <h3 style={{ color: 'blue' }}>OS Choice matches your OS</h3>;
+  } else if (is_os_window === true) {
+    if (!isSystemWindows) {
+      return <h3 style={{ color: 'red' }}>OS choice (Windows) doesn't match your system.</h3>;
+    }
+    return <h3 style={{ color: 'blue' }}>OS Choice matches your OS</h3>;
+  } else if (is_os_ubuntu === true) {
+    if (!isSystemUbuntu) {
+      return <h3 style={{ color: 'red' }}>OS choice (Linux (Ubuntu) doesn't match your system.</h3>;
+    }
+    return <h3 style={{ color: 'blue' }}>OS Choice matches your OS</h3>;
+  }
+  return null;
+}
+
+/////////////////////////////////////////////
+// This is the main DOM for MacOSX
+/////////////////////////////////////////////
 function MacOSXNotesDom() {
   return (
     <>
+      <TargetSystemOSWarningDom is_os_darwin_mac={true} />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-macosx.sh' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-macosx.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
@@ -593,9 +666,13 @@ function MacOSXNotesDom() {
   );
 }
 
+/////////////////////////////////////////////
+// This is the main DOM for Linux
+/////////////////////////////////////////////
 function LinuxNotesDom() {
   return (
     <>
+      <TargetSystemOSWarningDom is_os_ubuntu={true} />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-linux.sh' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-linux.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/linux/linux-mint-xcfe.md' height='350px' />
@@ -612,9 +689,13 @@ function LinuxNotesDom() {
   );
 }
 
+/////////////////////////////////////////////
+// This is the main DOM for Windows
+/////////////////////////////////////////////
 function WindowsNotesDom() {
   return (
     <>
+      <TargetSystemOSWarningDom is_os_window={true} />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-windows.sh' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/winget-install-windows.ps1' />
@@ -699,7 +780,7 @@ function WindowsNotesDom() {
 }
 
 function CommonEditorSetupDom(props) {
-  const { is_os_darwin_mac, is_os_window } = props;
+  const { is_os_darwin_mac, is_os_window, is_os_ubuntu } = props;
 
   let domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />;
   if (is_os_darwin_mac) {
@@ -710,11 +791,15 @@ function CommonEditorSetupDom(props) {
 
   return (
     <>
-      <div className='form-label'>Sublime Text</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text.sh' />
+      <MultipleUrlDynamicTextArea
+        label='VSCode / VSCodium / SublimeText Setup'
+        urls={[
+          'https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text.sh',
+          'https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code.sh',
+        ]}
+        commentString='#'
+      />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' height='75px' />
-      <div className='form-label'>VSCode / VSCodium</div>
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code.sh' />
       {domVSCodeExtension}
     </>
   );

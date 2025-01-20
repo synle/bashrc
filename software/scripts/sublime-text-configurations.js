@@ -41,76 +41,9 @@ async function doInit() {
 }
 
 async function doWork() {
-  let targetPath = await _getPathSublimeText();
-
-  console.log(`  >> Setting up Sublime Text configurations:`, consoleLogColor4(targetPath));
+  console.log(`  >> Sublime Text Configurations / Settings:`);
 
   // write to build file
   const commentNote = '// Preferences Settings';
   writeToBuildFile([['sublime-text-configurations', sublimeSetings, true, commentNote]]);
-
-  if (!filePathExist(targetPath)) {
-    console.log(consoleLogColor1('    >> Skipped : Not Found'));
-    return process.exit();
-  }
-
-  const baseThemeConfig = [
-    {
-      class: 'sidebar_tree',
-      'font.size': 12,
-      indent_offset: 0,
-      indent: 10,
-      row_padding: [5, 2, 4, 2],
-    },
-    {
-      class: 'tab_label',
-      'font.size': 12,
-    },
-  ];
-
-  const themeNames = ['Default', 'Default Dark', 'Adaptive'];
-
-  for (const themeName of themeNames) {
-    let sublimeThemeConfigPath;
-    sublimeThemeConfigPath = path.join(targetPath, `Packages/User/${themeName}.sublime-theme`);
-    console.log('    >> theme', sublimeThemeConfigPath);
-    writeJson(sublimeThemeConfigPath, baseThemeConfig);
-  }
-
-  //
-  const sublimeMainConfigPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
-  console.log('    >> settings', sublimeMainConfigPath);
-
-  let osSpecificSettings = {};
-  if (is_os_darwin_mac) {
-    osSpecificSettings = {
-      color_scheme: 'auto',
-      dark_color_scheme: 'Mariana.sublime-color-scheme',
-      light_color_scheme: 'Breakers.sublime-color-scheme',
-    };
-  } else if (is_os_window) {
-    osSpecificSettings = {
-      color_scheme: 'auto',
-      dark_color_scheme: 'Mariana.sublime-color-scheme',
-      light_color_scheme: 'Breakers.sublime-color-scheme',
-    };
-  } else {
-    // linux, let's not use auto theme
-    osSpecificSettings = {
-      color_scheme: 'Mariana.sublime-color-scheme',
-    };
-  }
-
-  // set the path to the sublime merge binary
-  const baseDPath = globalThis.BASE_D_DIR_WINDOW;
-  let sublimeMergeBinary = findDirSingle(path.join(baseDPath, 'Applications'), /sublime[_]*merge[a-z0-9]*/);
-  if (sublimeMergeBinary && filePathExist(path.join(sublimeMergeBinary, 'sublime_merge.exe'))) {
-    sublimeMergeBinary = path.join(sublimeMergeBinary, 'sublime_merge.exe');
-    osSpecificSettings.sublime_merge_path = sublimeMergeBinary.replace(baseDPath, 'D:');
-  }
-
-  writeJsonWithMerge(sublimeMainConfigPath, {
-    ...sublimeSetings,
-    ...osSpecificSettings,
-  });
 }

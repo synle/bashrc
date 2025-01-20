@@ -104,25 +104,9 @@ async function doInit() {
 }
 
 async function doWork() {
+  console.log(`  >> VS Code Configurations / Settings:`);
+
   // write to build file
   const commentNote = '// Preferences Open User Settings (JSON)';
   writeToBuildFile([['vs-code-configurations', COMMON_CONFIGS, true, commentNote]]);
-
-  const targetPath = _getVsCodePath();
-  let targetFile;
-
-  if (!filePathExist(targetPath)) {
-    console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
-    return process.exit();
-  }
-
-  console.log(`  >> Setting up Microsoft VS Code Configurations:`, consoleLogColor4(targetPath));
-
-  // get os specific settings
-  const osSpecificSettings = {};
-
-  // settings.json
-  const vsCodeMainConfigPath = path.join(targetPath, 'User/settings.json');
-  console.log(`    >> `, vsCodeMainConfigPath);
-  writeJsonWithMerge(vsCodeMainConfigPath, Object.assign(COMMON_CONFIGS, osSpecificSettings));
 }
