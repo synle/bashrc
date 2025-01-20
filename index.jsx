@@ -5,6 +5,16 @@ const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const isSystemWindows = navigator.platform.indexOf('Win') > -1;
 const isSystemUbuntu = !isSystemMac && !isSystemWindows;
 
+// this is the default settings used on the first page load
+let defaultCommandOption = 'command-option-setup-lightweight-profile';
+if (isSystemMac) {
+  defaultCommandOption = 'command-option-setup-mac-osx';
+} else if (isSystemWindows) {
+  defaultCommandOption = 'command-option-setup-windows';
+} else if (isSystemUbuntu) {
+  defaultCommandOption = 'command-option-setup-linux';
+}
+
 function setStorage(key, value) {
   localStorage[key] = value;
 }
@@ -930,7 +940,7 @@ function App() {
               .sort(),
           ),
         formValue: {
-          commandChoice: getStorage('commandChoice') || 'command-option-setup-lightweight-profile',
+          commandChoice: getStorage('commandChoice') || defaultCommandOption,
           osToRun: getStorage('osToRun') || 'windows',
           debugWriteToDir: getStorage('debugWriteToDir') || '',
           runnerToUse: getStorage('runnerToUse') || 'test-live.sh',

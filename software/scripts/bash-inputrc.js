@@ -4,6 +4,9 @@ async function doWork() {
   console.log('  >> Updating .inputrc', consoleLogColor4(targetPath));
 
   const content = `
+# To install manually:
+# curl -o ~/.inputrc https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build/inputrc
+
 ## case insenstive autocomplete - ignore case for autocomplete
 set completion-ignore-case on
 

@@ -1,3 +1,6 @@
+# To install manually:
+# curl -o ~/.inputrc https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build/inputrc
+
 ## case insenstive autocomplete - ignore case for autocomplete
 set completion-ignore-case on
 

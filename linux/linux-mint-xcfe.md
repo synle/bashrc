@@ -12,7 +12,7 @@ sudo apt-get upgrade -y
 ## Debloat
 
 ```bash
-sudo apt-get remove firefox* thunderbird* celluloid* xed hypnotix* rhythmbox*
+sudo apt-get remove firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xfce4-terminal
 sudo apt-get autoclean
 sudo apt-get autoremove
 ```
@@ -23,7 +23,7 @@ sudo apt-get autoremove
 # Follow the above to install grub2-theme-mint-2k
 # Use the following options
 sudo vim /etc/default/grub
-GRUB_TIMEOUT=5
+GRUB_TIMEOUT=6
 GRUB_GFXMODE=1024x768
 
 sudo update-grub
