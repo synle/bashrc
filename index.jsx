@@ -624,21 +624,28 @@ function TargetSystemOSWarningDom(props) {
       break;
   }
 
+  const styles = {
+    background: 'var(--colorBgMain)',
+    position: 'sticky',
+    padding: '0.5rem 0',
+    top: 0,
+  };
+
   if (is_os_darwin_mac === true) {
     if (!isSystemMac) {
-      return <h3 style={{ color: 'red' }}>OS choice (OSX) doesn't match your system.</h3>;
+      return <h3 style={{ color: 'red', ...styles }}>OS choice (OSX) doesn't match your system.</h3>;
     }
-    return <h3 style={{ color: 'blue' }}>OS Choice matches your OS</h3>;
+    return <h3 style={{ color: 'blue', ...styles }}>OS Choice matches your OS</h3>;
   } else if (is_os_window === true) {
     if (!isSystemWindows) {
-      return <h3 style={{ color: 'red' }}>OS choice (Windows) doesn't match your system.</h3>;
+      return <h3 style={{ color: 'red', ...styles }}>OS choice (Windows) doesn't match your system.</h3>;
     }
-    return <h3 style={{ color: 'blue' }}>OS Choice matches your OS</h3>;
+    return <h3 style={{ color: 'blue', ...styles }}>OS Choice matches your OS</h3>;
   } else if (is_os_ubuntu === true) {
     if (!isSystemUbuntu) {
-      return <h3 style={{ color: 'red' }}>OS choice (Linux (Ubuntu) doesn't match your system.</h3>;
+      return <h3 style={{ color: 'red', ...styles }}>OS choice (Linux (Ubuntu) doesn't match your system.</h3>;
     }
-    return <h3 style={{ color: 'blue' }}>OS Choice matches your OS</h3>;
+    return <h3 style={{ color: 'blue', ...styles }}>OS Choice matches your OS</h3>;
   }
   return null;
 }
@@ -700,6 +707,7 @@ function WindowsNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/winget-install-windows.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-windows.md' />
+      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-powershell-profile.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
       <CommonEditorSetupDom is_os_window={true} />
@@ -814,13 +822,22 @@ function App() {
       const configsByKey = {};
       const configs = [
         {
-          text: 'Setup Profile',
-          script: `
-        <OS_FLAGS> <SETUP_DEPS> . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"
-      `,
-          checked: true,
-          shouldShowOsSelectionInput: true,
-          shouldShowSetupDependencies: true,
+          text: 'Setup Windows',
+          shouldShowWindowsNotes: true,
+          shouldHideOutput: true,
+          shouldHideBootstrap: true,
+        },
+        {
+          text: 'Setup Mac OSX',
+          shouldShowMacOSXNotes: true,
+          shouldHideOutput: true,
+          shouldHideBootstrap: true,
+        },
+        {
+          text: 'Setup Linux',
+          shouldShowLinuxNotes: true,
+          shouldHideOutput: true,
+          shouldHideBootstrap: true,
         },
         {
           text: 'Setup Lightweight Profile',
@@ -884,24 +901,6 @@ function App() {
           shouldHideBootstrap: true,
           shouldShowEnvInput: true,
         },
-        {
-          text: 'Windows Notes',
-          shouldShowWindowsNotes: true,
-          shouldHideOutput: true,
-          shouldHideBootstrap: true,
-        },
-        {
-          text: 'Mac OSX Notes',
-          shouldShowMacOSXNotes: true,
-          shouldHideOutput: true,
-          shouldHideBootstrap: true,
-        },
-        {
-          text: 'Linux Notes',
-          shouldShowLinuxNotes: true,
-          shouldHideOutput: true,
-          shouldHideBootstrap: true,
-        },
       ].map((config) => {
         config.script = (config.script || '')
           .split('\n')
@@ -931,7 +930,7 @@ function App() {
               .sort(),
           ),
         formValue: {
-          commandChoice: getStorage('commandChoice') || 'command-option-setup-profile',
+          commandChoice: getStorage('commandChoice') || 'command-option-setup-lightweight-profile',
           osToRun: getStorage('osToRun') || 'windows',
           debugWriteToDir: getStorage('debugWriteToDir') || '',
           runnerToUse: getStorage('runnerToUse') || 'test-live.sh',
