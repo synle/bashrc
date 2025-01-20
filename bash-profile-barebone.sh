@@ -73,25 +73,6 @@ br(){
   '''
 }
 
-wget(){
-  echo "$1" | node -e """
-    let data = '';
-
-    process.openStdin().addListener('data', (d) => {
-      data += d.toString();
-    });
-
-    process.openStdin().addListener('end', (d) => {
-      const url = data.trim();
-      const filename = url.substr(url.lastIndexOf('/') + 1);
-
-      console.log('curl -o \"' + filename + '\" \"' + url + '\"')
-
-      process.exit();
-    });
-  """ | bash -e
-}
-
 isCommandExists(){
   type "$1" &> /dev/null ;
 }
@@ -119,35 +100,18 @@ setGitUpstreamBranch(){
   git branch -u origin/$(git name-rev --name-only HEAD)
 }
 
-removeDuplicateLines(){
-  perl -ne 'print unless $dup{$_}++;' $@
-}
+searchHelp(){
+  echo '''
+searchCode ""
 
-shh(){
-  echo """
-########## sh $(pwd)/$@"""
+searchFile ""
 
-  cat $@
+searchFileWithGit ""
 
-  echo """
-################################################################################
-  """
+searchDirWithGit ""
 
-  clear;
-
-  sh $@
-}
-
-searchText(){
-  echo """
-Searching:  $@
-######################################################
-  """
-
-  #universal option
-  grep -r "$@" \
-    --exclude-dir={node_modules,.git} \
-  .
+searchDir ""
+  '''
 }
 
 searchCode(){

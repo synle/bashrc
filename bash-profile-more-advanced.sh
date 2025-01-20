@@ -12,16 +12,13 @@ alias drun='docker run'
 alias dexec='dexecBash'
 
 # bat / cat setup
-function batcatfull(){
-  # Check if `bat` is available
-  if command -v bat &> /dev/null; then
-      bat "$@" 2>/dev/null  # Use bat and suppress stderr
-  elif command -v batcat &> /dev/null; then
-      batcat "$@" 2>/dev/null  # Use batcat and suppress stderr
-  else
-      echo "Neither 'bat' nor 'batcat' are available." >&2
-      exit 1
-  fi
+batcatfull() {
+    # Try the 'bat' command first
+    bat "$@" 2>/dev/null
+    if [ $? -ne 0 ]; then
+        # If 'bat' fails, try the 'batcat' command
+        batcat "$@" 2>/dev/null
+    fi
 }
 alias cat='batcatfull -p --paging=never'
 
