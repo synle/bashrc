@@ -76,3 +76,9 @@ sudo usermod -aG video ${USER}
 brightnessctl s +15%
 brightnessctl s +15%-
 ```
+
+
+## Brave path
+```
+sudo ln -s /var/lib/flatpak/app/com.brave.Browser/x86_64/stable/94c81a7888d58d424e186c8f619b38995ac9b8c3d61d36bc8c0f02f71ce9ad82/export/bin/com.brave.Browser /usr/bin/brave-browser
+```
