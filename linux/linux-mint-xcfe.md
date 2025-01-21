@@ -38,3 +38,28 @@ xinput --get-button-map 19
 # put this into ~/.xsessionrc
 xinput --set-button-map 19 1 0 3 4 5 6 7
 ```
+
+## toggle mouse
+
+```bash
+sudo echo '''
+#!/bin/bash
+
+# Set the device index to a variable
+device_index=19
+
+# Get the current state of the device
+state=$(xinput list-props $device_index | grep "Device Enabled" | awk '{print $4}')
+
+# Check if the device is enabled (state == 1) or disabled (state == 0)
+if [ "$state" -eq 1 ]; then
+    # Disable the device
+    xinput disable $device_index
+else
+    # Enable the device
+    xinput enable $device_index
+fi
+''' > /usr/bin/toggle_touchpad
+
+sudo chmod +x /usr/bin/toggle_touchpad
+```
