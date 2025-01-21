@@ -3,7 +3,7 @@
 ```bash
 # curl -fsS https://dl.brave.com/install.sh | sh # brave
 sudo apt-get update -y
-sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k
+sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl
 
 ####
 sudo apt-get upgrade -y
@@ -62,4 +62,17 @@ fi
 ''' > /usr/bin/toggle_touchpad
 
 sudo chmod +x /usr/bin/toggle_touchpad
+```
+
+
+## Change brightness
+
+```
+sudo apt install brightnessctl -y
+
+sudo usermod -aG input ${USER}
+sudo usermod -aG video ${USER}
+
+brightnessctl s +15%
+brightnessctl s +15%-
 ```

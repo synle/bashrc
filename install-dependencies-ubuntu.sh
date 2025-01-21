@@ -53,5 +53,7 @@ then
   installPackage software-properties-common
 
   ### Add you to the input group
-  sudo usermod -aG input syle
+  sudo usermod -aG input ${USER}
+  sudo usermod -aG video ${USER}
+
 fi
