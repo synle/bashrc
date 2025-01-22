@@ -82,3 +82,33 @@ brightnessctl s +15%-
 ```
 sudo ln -s /var/lib/flatpak/app/com.brave.Browser/x86_64/stable/94c81a7888d58d424e186c8f619b38995ac9b8c3d61d36bc8c0f02f71ce9ad82/export/bin/com.brave.Browser /usr/bin/brave-browser
 ```
+
+## How to remove linux mint from dual boot with windows
+
+```bash
+# look for ubuntu / linux mint identifier
+bcdedit /enum firmware
+
+
+# delete it
+bcdedit /delete IDENTIFIER_ID
+
+# remove the boot file
+diskpart
+list disk
+select disk 0
+list part
+select partition 1 (SYSTEM)
+assign letter=X
+exit
+
+# same as above but if boot file is in a separate partition
+diskpart
+sel part 5
+delete partition override
+
+# go to the mapped drive and remove the ubuntu
+X:
+cd EFI
+rmdir /S ubuntu
+```
