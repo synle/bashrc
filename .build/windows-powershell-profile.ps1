@@ -57,7 +57,7 @@ New-Alias merge smerge
 # functions
 function gogit(){
   d:
-  cd git
+  cd D:/git
 }
 
 function ls() {
