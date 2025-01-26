@@ -3,8 +3,12 @@
 On the device, go to Developer Options > Wireless debugging > Pair device with pairing code, and use the newly generated pairing code
 
 ```
+# start with Pair device with pairing code
 adb pair ip:port
-adb connect
+
+# then use IpAddress & Port from the other screen
+adb connect ip:port
+
 adb shell
 ```
 
