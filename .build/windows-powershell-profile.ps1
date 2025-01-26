@@ -1,6 +1,6 @@
 <#
 #######################################################
- power shell profile
+# power shell profile
 # Microsoft.PowerShell_profile.ps1
 # WindowsPowerShell/Microsoft.PowerShell_profile.ps1
 # ~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
@@ -34,7 +34,6 @@ Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/Trac
 #######################################################
 #>
 
-
 # tab autocomplete
 Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
 
@@ -45,19 +44,23 @@ Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
 Set-PSReadLineKeyHandler -Key Ctrl+a -Function BeginningOfLine
 Set-PSReadLineKeyHandler -Key Ctrl+e -Function EndOfLine
 Set-PSReadLineKeyHandler -Key Ctrl+. -Function YankLastArg
+Set-PSReadLineKeyHandler -Chord "Escape, Backspace" -Function BackwardDeleteWord
+
 
 # Aliases
-New-Alias g git
-New-Alias open explorer
-New-Alias d docker
-New-Alias .. cdup
-# New-Alias code codium
-New-Alias merge smerge
+Set-Alias g git
+Set-Alias open explorer
+Set-Alias d docker
+Set-Alias .. cdup
+Set-Alias merge smerge
+Set-Alias adb "D:/Applications/adb/adb.exe"
+Set-Alias subl "C:/Program Files/Sublime Text/subl.exe"
+Set-Alias smerge "C:/Program Files/Sublime Merge/smerge.exe"
 
 # functions
 function gogit(){
   d:
-  cd D:/git
+  cd git
 }
 
 function ls() {

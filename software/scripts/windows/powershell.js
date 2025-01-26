@@ -11,145 +11,9 @@ async function doInit() {
   }
 
   outputContent = trimLeftSpaces(`
-      # tab autocomplete
-      Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
-
-      # keybindings
-      # Import-Module PSReadLine
-      # Get-PSReadLineKeyHandler
-      # https://github.com/PowerShell/PSReadLine
-      Set-PSReadLineKeyHandler -Key Ctrl+a -Function BeginningOfLine
-      Set-PSReadLineKeyHandler -Key Ctrl+e -Function EndOfLine
-      Set-PSReadLineKeyHandler -Key Ctrl+. -Function YankLastArg
-
-      # Aliases
-      New-Alias g git
-      New-Alias open explorer
-      New-Alias d docker
-      New-Alias .. cdup
-      # New-Alias code codium
-      New-Alias merge smerge
-
-      # functions
-      function gogit(){
-        d:
-        cd git
-      }
-
-      function ls() {
-        Get-ChildItem -Force %args
-      }
-
-      function ll() {
-        ls  $args
-      }
-
-      function grep() {
-        Get-ChildItem -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.FullName -notmatch '\\node_modules\\' }  | Select-String -Pattern "$args"
-      }
-
-      function vim() {
-        code $args
-      }
-
-      function mkdir() {
-        New-Item -ItemType Directory -Path $args -Force
-      }
-
-      function cdup() {
-        cd ..
-      }
-
-      function br() {
-        clear;
-        Write-Host "====================="  -ForegroundColor Red -NoNewline;
-      }
-
-      function which() {
-        (Get-Command $args).Path
-      }
-
-      function find() {
-        Get-ChildItem -Recurse $args
-      }
-
-      function touch() {
-        New-Item -ItemType File $args
-      }
-
-      ### For the prompt
-      function parseGitBranch() {
-        try {
-          $branch = git rev-parse --abbrev-ref HEAD
-
-          if ($branch -eq "HEAD") {
-            # we're probably in detached HEAD state, so print the SHA
-            $branch = git rev-parse --short HEAD
-            Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
-          }
-          else {
-            # we're on an actual branch, so print it
-            Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
-          }
-        } catch {
-          # we'll end up here if we're in a newly initiated git repo
-          Write-Host -NoNewline " [no branches yet]" -ForegroundColor "yellow"
-        }
-      }
-
-      function shorterPwdPath() {
-        node -e """
-          const path = require('path');
-          const splits = process.cwd().split(path.sep);
-          const shortPath = splits.map((s, idx) => idx === 0 || idx === splits.length - 1? s : s[0]).join('/');
-          console.log(shortPath)
-        """
-      }
-
-      function shorterTimestamp() {
-        node -e """
-          const date = new Date();
-          const format = (v) => (v + '').padStart(2, '0');
-          console.log(format(date.getHours()) + ':' + format(date.getMinutes()) + ':' + format(date.getSeconds()));
-        """
-      }
-
-      function prompt() {
-        # $path = "$($executionContext.SessionState.Path.CurrentLocation)"
-        $path = "$(shorterPwdPath)"
-
-        Write-Host "====" -NoNewline -ForegroundColor "red"
-        Write-Host "\n" -NoNewline
-
-        Write-Host "$(shorterTimestamp)" -NoNewline -ForegroundColor "yellow"
-        Write-Host " $(whoami)" -NoNewline -ForegroundColor "green"
-        Write-Host "\n" -NoNewline
-
-        if (Test-Path .git) {
-          Write-Host $path -NoNewline -ForegroundColor "yellow"
-          parseGitBranch
-        }
-        else {
-          # we're not in a repo so don't bother displaying branch name/sha
-          Write-Host $path -NoNewline -ForegroundColor "yellow"
-        }
-        Write-Host "\n" -NoNewline
-
-        $userPrompt = "$('>' * ($nestedPromptLevel + 3)) "
-        return $userPrompt
-      }
-
-      clear; # clean up the prompt
-    `);
-}
-
-async function doWork() {
-  console.log('  >> Setting up Windows Powershell Profile');
-
-  const commentNote = trimLeftSpaces(`
     <#
     #######################################################
-     power shell profile
+    # power shell profile
     # Microsoft.PowerShell_profile.ps1
     # WindowsPowerShell/Microsoft.PowerShell_profile.ps1
     # ~/Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1
@@ -182,27 +46,165 @@ async function doWork() {
 
     #######################################################
     #>
+
+    # tab autocomplete
+    Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
+
+    # keybindings
+    # Import-Module PSReadLine
+    # Get-PSReadLineKeyHandler
+    # https://github.com/PowerShell/PSReadLine
+    Set-PSReadLineKeyHandler -Key Ctrl+a -Function BeginningOfLine
+    Set-PSReadLineKeyHandler -Key Ctrl+e -Function EndOfLine
+    Set-PSReadLineKeyHandler -Key Ctrl+. -Function YankLastArg
+    Set-PSReadLineKeyHandler -Chord "Escape, Backspace" -Function BackwardDeleteWord
+
+
+    # Aliases
+    Set-Alias g git
+    Set-Alias open explorer
+    Set-Alias d docker
+    Set-Alias .. cdup
+    Set-Alias merge smerge
+    Set-Alias adb "D:/Applications/adb/adb.exe"
+    Set-Alias subl "C:/Program Files/Sublime Text/subl.exe"
+    Set-Alias smerge "C:/Program Files/Sublime Merge/smerge.exe"
+
+    # functions
+    function gogit(){
+      d:
+      cd git
+    }
+
+    function ls() {
+      Get-ChildItem -Force %args
+    }
+
+    function ll() {
+      ls  $args
+    }
+
+    function grep() {
+      Get-ChildItem -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.FullName -notmatch '\\node_modules\\' }  | Select-String -Pattern "$args"
+    }
+
+    function vim() {
+      code $args
+    }
+
+    function mkdir() {
+      New-Item -ItemType Directory -Path $args -Force
+    }
+
+    function cdup() {
+      cd ..
+    }
+
+    function br() {
+      clear;
+      Write-Host "====================="  -ForegroundColor Red -NoNewline;
+    }
+
+    function which() {
+      (Get-Command $args).Path
+    }
+
+    function find() {
+      Get-ChildItem -Recurse $args
+    }
+
+    function touch() {
+      New-Item -ItemType File $args
+    }
+
+    ### For the prompt
+    function parseGitBranch() {
+      try {
+        $branch = git rev-parse --abbrev-ref HEAD
+
+        if ($branch -eq "HEAD") {
+          # we're probably in detached HEAD state, so print the SHA
+          $branch = git rev-parse --short HEAD
+          Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
+        }
+        else {
+          # we're on an actual branch, so print it
+          Write-Host -NoNewline " [$branch]" -ForegroundColor "red"
+        }
+      } catch {
+        # we'll end up here if we're in a newly initiated git repo
+        Write-Host -NoNewline " [no branches yet]" -ForegroundColor "yellow"
+      }
+    }
+
+    function shorterPwdPath() {
+      node -e """
+        const path = require('path');
+        const splits = process.cwd().split(path.sep);
+        const shortPath = splits.map((s, idx) => idx === 0 || idx === splits.length - 1? s : s[0]).join('/');
+        console.log(shortPath)
+      """
+    }
+
+    function shorterTimestamp() {
+      node -e """
+        const date = new Date();
+        const format = (v) => (v + '').padStart(2, '0');
+        console.log(format(date.getHours()) + ':' + format(date.getMinutes()) + ':' + format(date.getSeconds()));
+      """
+    }
+
+    function prompt() {
+      # $path = "$($executionContext.SessionState.Path.CurrentLocation)"
+      $path = "$(shorterPwdPath)"
+
+      Write-Host "====" -NoNewline -ForegroundColor "red"
+      Write-Host "\n" -NoNewline
+
+      Write-Host "$(shorterTimestamp)" -NoNewline -ForegroundColor "yellow"
+      Write-Host " $(whoami)" -NoNewline -ForegroundColor "green"
+      Write-Host "\n" -NoNewline
+
+      if (Test-Path .git) {
+        Write-Host $path -NoNewline -ForegroundColor "yellow"
+        parseGitBranch
+      }
+      else {
+        # we're not in a repo so don't bother displaying branch name/sha
+        Write-Host $path -NoNewline -ForegroundColor "yellow"
+      }
+      Write-Host "\n" -NoNewline
+
+      $userPrompt = "$('>' * ($nestedPromptLevel + 3)) "
+      return $userPrompt
+    }
+
+    clear; # clean up the prompt
   `);
-  writeToBuildFile([['windows-powershell-profile.ps1', outputContent, false, commentNote]]);
+}
 
-  let targetPath = await _getPath();
+async function doWork() {
+  console.log('  >> Setting up Windows Powershell Profile');
+  writeToBuildFile([['windows-powershell-profile.ps1', outputContent, false]]);
 
-  if (!targetPath) {
-    console.log(consoleLogColor1('    >> Skipped : Not Found'));
-    return process.exit();
-  }
+  // let targetPath = await _getPath();
 
-  let content = readText(targetPath);
+  // if (!targetPath) {
+  //   console.log(consoleLogColor1('    >> Skipped : Not Found'));
+  //   return process.exit();
+  // }
 
-  // start with the required block
-  content = appendTextBlock(
-    content,
-    'SY CUSTOM POWERSHELL CORE BLOCKS', // key
-    outputContent,
-  );
+  // let content = readText(targetPath);
 
-  console.log('    >> Update Powershell Profile', targetPath);
-  writeText(targetPath, content);
+  // // start with the required block
+  // content = appendTextBlock(
+  //   content,
+  //   'SY CUSTOM POWERSHELL CORE BLOCKS', // key
+  //   outputContent,
+  // );
+
+  // console.log('    >> Update Powershell Profile', targetPath);
+  // writeText(targetPath, content);
 }
 
 async function _getPath() {

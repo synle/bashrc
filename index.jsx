@@ -829,37 +829,38 @@ function App() {
 
   useEffect(() => {
     async function _loadData() {
-      const configsByKey = {};
-      const configs = [
-        {
-          text: 'Setup Windows',
-          shouldShowWindowsNotes: true,
-          shouldHideOutput: true,
-          shouldHideBootstrap: true,
-        },
-        {
-          text: 'Setup Mac OSX',
-          shouldShowMacOSXNotes: true,
-          shouldHideOutput: true,
-          shouldHideBootstrap: true,
-        },
-        {
-          text: 'Setup Linux',
-          shouldShowLinuxNotes: true,
-          shouldHideOutput: true,
-          shouldHideBootstrap: true,
-        },
-        {
-          text: 'Setup Lightweight Profile',
-          shouldHideBootstrap: true,
-          script: `
+      try {
+        const configsByKey = {};
+        const configs = [
+          {
+            text: 'Setup Windows',
+            shouldShowWindowsNotes: true,
+            shouldHideOutput: true,
+            shouldHideBootstrap: true,
+          },
+          {
+            text: 'Setup Mac OSX',
+            shouldShowMacOSXNotes: true,
+            shouldHideOutput: true,
+            shouldHideBootstrap: true,
+          },
+          {
+            text: 'Setup Linux',
+            shouldShowLinuxNotes: true,
+            shouldHideOutput: true,
+            shouldHideBootstrap: true,
+          },
+          {
+            text: 'Setup Lightweight Profile',
+            shouldHideBootstrap: true,
+            script: `
         . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
       `,
-        },
-        {
-          text: 'Setup Etc Hosts',
-          shouldHideBootstrap: true,
-          script: `
+          },
+          {
+            text: 'Setup Etc Hosts',
+            shouldHideBootstrap: true,
+            script: `
         curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash
 
         # Windows
@@ -879,80 +880,84 @@ function App() {
           )}
 
       `
-            .split('\n')
-            .map((s) => s.trim())
-            .join('\n'),
-        },
-        {
-          text: 'Test Full Run live',
-          script: `
+              .split('\n')
+              .map((s) => s.trim())
+              .join('\n'),
+          },
+          {
+            text: 'Test Full Run live',
+            script: `
         <OS_FLAGS> curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
       `,
-          shouldShowOsSelectionInput: true,
-        },
-        {
-          text: 'Test Single Script',
-          script: `<OS_FLAGS> \\
+            shouldShowOsSelectionInput: true,
+          },
+          {
+            text: 'Test Single Script',
+            script: `<OS_FLAGS> \\
         export TEST_SCRIPT_FILES="""
         <SELECT_SCRIPTS>
         """ <DEBUG_WRITE_TO_DIR> && \\
         curl -s https://raw.githubusercontent.com/synle/bashrc/master/<SELECTED_RUNNER_SCRIPT> | bash
       `,
-          shouldShowScriptNameInput: true,
-          shouldShowOsSelectionInput: true,
-        },
+            shouldShowScriptNameInput: true,
+            shouldShowOsSelectionInput: true,
+          },
 
-        {
-          text: 'Environment Vars',
-          script: `
+          {
+            text: 'Environment Vars',
+            script: `
         <ENV_VARS>
       `,
-          shouldShowOsSelectionInput: true,
-          shouldHideBootstrap: true,
-          shouldShowEnvInput: true,
-        },
-      ].map((config) => {
-        config.script = (config.script || '')
-          .split('\n')
-          .map((s) => s.trim())
-          .join('\n');
-        return {
-          idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
-          ...config,
+            shouldShowOsSelectionInput: true,
+            shouldHideBootstrap: true,
+            shouldShowEnvInput: true,
+          },
+        ].map((config) => {
+          config.script = (config.script || '')
+            .split('\n')
+            .map((s) => s.trim())
+            .join('\n');
+          return {
+            idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
+            ...config,
+          };
+        });
+
+        for (const config of configs) {
+          configsByKey[config.idx] = config;
+        }
+
+        // back it up
+        const newAppData = {
+          configs,
+          configsByKey,
+          scriptToRunOptions: await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/script-list.config`)
+            .then((res) => res.text())
+            .then((res) =>
+              res
+                .split('\n')
+                .map((s) => s.replace('./', '').trim())
+                .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
+                .sort(),
+            ),
+          formValue: {
+            commandChoice: getStorage('commandChoice') || defaultCommandOption,
+            osToRun: getStorage('osToRun') || 'windows',
+            debugWriteToDir: getStorage('debugWriteToDir') || '',
+            runnerToUse: getStorage('runnerToUse') || 'test-live.sh',
+            addBootstrapScript: getStorage('addBootstrapScript') || 'no',
+            setupDependencies: getStorage('setupDependencies') || 'yes',
+            envInputValue: getStorage('envInputValue') || '',
+            shouldAddDefaultEnvs: getStorage('shouldAddDefaultEnvs') || 'yes',
+            scriptsToUse: (getStorage('scriptsToUse') || '').split('\n').filter((s) => s.trim()),
+          },
         };
-      });
 
-      for (const config of configs) {
-        configsByKey[config.idx] = config;
+        setAppData(newAppData);
+      } catch (err) {
+        // if there's an error, let's fall back and clear storage
+        localStorage.clear();
       }
-
-      // back it up
-      const newAppData = {
-        configs,
-        configsByKey,
-        scriptToRunOptions: await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/script-list.config`)
-          .then((res) => res.text())
-          .then((res) =>
-            res
-              .split('\n')
-              .map((s) => s.replace('./', '').trim())
-              .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
-              .sort(),
-          ),
-        formValue: {
-          commandChoice: getStorage('commandChoice') || defaultCommandOption,
-          osToRun: getStorage('osToRun') || 'windows',
-          debugWriteToDir: getStorage('debugWriteToDir') || '',
-          runnerToUse: getStorage('runnerToUse') || 'test-live.sh',
-          addBootstrapScript: getStorage('addBootstrapScript') || 'no',
-          setupDependencies: getStorage('setupDependencies') || 'yes',
-          envInputValue: getStorage('envInputValue') || '',
-          shouldAddDefaultEnvs: getStorage('shouldAddDefaultEnvs') || 'yes',
-          scriptsToUse: (getStorage('scriptsToUse') || '').split('\n').filter((s) => s.trim()),
-        },
-      };
-
-      setAppData(newAppData);
     }
 
     _loadData();
