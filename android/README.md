@@ -10,6 +10,9 @@ adb pair ip:port
 adb connect ip:port
 
 adb shell
+
+# to disconect
+adb disconnect
 ```
 
 ## Remove Android Bloats
