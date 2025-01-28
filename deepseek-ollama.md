@@ -7,6 +7,10 @@ https://ollama.com/download
 ```
 ollama run deepseek-r1:32b
 ollama run deepseek-r1:70b
+
+#
+ollama list
+ollama rm
 ```
 
 ## Chatbox AI
