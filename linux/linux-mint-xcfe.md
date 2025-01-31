@@ -112,3 +112,8 @@ X:
 cd EFI
 rmdir /S ubuntu
 ```
+
+## Restart reset wifi icon
+```
+alias reset-wifi-icon='nm-applet > /dev/null &'
+```
