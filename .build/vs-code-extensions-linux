@@ -21,6 +21,11 @@ code --install-extension streetsidesoftware.code-spell-checker --force
 code --install-extension wholroyd.jinja --force
 code --install-extension wmaurer.change-case --force
 code --install-extension tomoki1207.pdf --force
+code --install-extension ms-toolsai.jupyter --force
+code --install-extension ms-toolsai.jupyter-keymap --force
+code --install-extension ms-toolsai.jupyter-renderers --force
+code --install-extension ms-toolsai.vscode-jupyter-cell-tags --force
+code --install-extension ms-toolsai.vscode-jupyter-slideshow --force
 echo 'Done installing VSCode Extensions'
 
 codium --install-extension jeanp413.open-remote-ssh --force
@@ -46,4 +51,9 @@ codium --install-extension streetsidesoftware.code-spell-checker --force
 codium --install-extension wholroyd.jinja --force
 codium --install-extension wmaurer.change-case --force
 codium --install-extension tomoki1207.pdf --force
+codium --install-extension ms-toolsai.jupyter --force
+codium --install-extension ms-toolsai.jupyter-keymap --force
+codium --install-extension ms-toolsai.jupyter-renderers --force
+codium --install-extension ms-toolsai.vscode-jupyter-cell-tags --force
+codium --install-extension ms-toolsai.vscode-jupyter-slideshow --force
 echo 'Done installing VSCodium Extensions'

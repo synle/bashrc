@@ -43,6 +43,12 @@ const baseVsExtensions = trimLeftSpaces(`
   tomoki1207.pdf
   # hashicorp.terraform
   # emmanuelbeziat.vscode-great-icons
+  # jupyter python notebooks
+  ms-toolsai.jupyter
+  ms-toolsai.jupyter-keymap
+  ms-toolsai.jupyter-renderers
+  ms-toolsai.vscode-jupyter-cell-tags
+  ms-toolsai.vscode-jupyter-slideshow
 `).trim();
 
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
