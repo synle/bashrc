@@ -1,3 +1,6 @@
+# to delete all previous extensions
+# /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
+
 code --install-extension ms-vscode-remote.vscode-remote-extensionpack --force
 code --install-extension aaron-bond.better-comments --force
 code --install-extension christian-kohler.path-intellisense --force

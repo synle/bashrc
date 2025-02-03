@@ -1,5 +1,3 @@
-// /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
-
 const onlyVsCodeExtensions = trimLeftSpaces(`
   ## andrejunges.handlebars
   ## dakara.transformer
@@ -76,6 +74,9 @@ echo 'Done installing VSCode Extensions'
     [
       'vs-code-extensions-macosx',
       `
+# to delete all previous extensions
+# /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
+
 cd "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
@@ -89,6 +90,9 @@ echo 'Done installing VSCodium Extensions'
     [
       'vs-code-extensions-linux',
       `
+# to delete all previous extensions
+# /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
+
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
 

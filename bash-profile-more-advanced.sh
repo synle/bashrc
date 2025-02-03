@@ -22,6 +22,18 @@ batcatfull() {
 }
 alias cat='batcatfull -p --paging=never'
 
+# define pbpaste and pbcopy - define_pbcopy_pbpaste
+if ! command -v pbcopy &>/dev/null; then
+    pbcopy() { xclip -selection clipboard; }
+    export -f pbcopy
+fi
+
+if ! command -v pbpaste &>/dev/null; then
+    pbpaste() { xclip -selection clipboard -o; }
+    export -f pbpaste
+fi
+
+
 ##########################################################
 # Pass a path to watch, a file filter, and a command to run when those files are updated
 # watch.sh "node_modules/everest-*/src/templates" "*.handlebars" "ynpm compile-templates"
