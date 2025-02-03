@@ -57,6 +57,13 @@ Set-Alias adb "D:/Applications/adb/adb.exe"
 Set-Alias subl "C:/Program Files/Sublime Text/subl.exe"
 Set-Alias smerge "C:/Program Files/Sublime Merge/smerge.exe"
 
+# pbcopy and pbpaste
+Set-Alias pbcopy Set-Clipboard
+function pbpaste {
+    return (Get-Clipboard) -join "`n"
+}
+Set-Alias bashPS "Invoke-Expression" # bashPS (pbpaste)
+
 # functions
 function gogit(){
   d:
