@@ -75,10 +75,30 @@ function Do-Tune-Registry() {
     Set-ItemProperty -Path "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge\PhishingFilter" "EnabledV9" 0
 
     # Disable telemetry and background tracking services
-    Write-Host "Disabling telemetry and tracking..." -ForegroundColor Yellow
-    Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value 0 -Force
-    Stop-Service -Name "DiagTrack" -ErrorAction SilentlyContinue
-    Set-Service -Name "DiagTrack" -StartupType Disabled -ErrorAction SilentlyContinue
+    try{
+        Write-Host "Disabling telemetry and tracking..." -ForegroundColor Yellow
+        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value 0 -Force
+        # Stop-Service -Name "DiagTrack" -ErrorAction SilentlyContinue
+        Set-Service -Name "DiagTrack" -StartupType Disabled -ErrorAction SilentlyContinue
+    } catch {
+        Write-Output "An error occurred: $_"
+    }
+
+    # frequency
+    try{
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "FeedbackFrequency" -Value 0
+    } catch {
+        Write-Output "An error occurred: $_"
+    }
+
+
+    # Disable the "Windows Error Reporting" service:
+    try{
+        Disable-ScheduledTask -TaskName "Microsoft\Windows\Customer Experience Improvement Program\Consolidator"
+        Disable-ScheduledTask -TaskName "Microsoft\Windows\Customer Experience Improvement Program\UsbCeip"
+    } catch {
+        Write-Output "An error occurred: $_"
+    }
 
     # Disable Cortana
     Write-Host "Disabling Cortana..." -ForegroundColor Yellow
@@ -88,9 +108,13 @@ function Do-Tune-Registry() {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "EnableTransparency" -Value 0
 
     # disable gaming overlay
-    New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Force
-    New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -Value 0 -PropertyType DWORD -Force
-    New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AppCaptureEnabled" -Value 0 -PropertyType DWORD -Force
+    try{
+        New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Force
+        New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AppCaptureEnabled" -Value 0 -PropertyType DWORD -Force
+        New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -Value 0 -PropertyType DWORD -Force
+    } catch {
+        Write-Output "An error occurred: $_"
+    }
 }
 
 
@@ -207,6 +231,22 @@ function Do-Remove-Bloatwares {
 
     # remove windows widget
     Get-AppxPackage *WebExperience* | Remove-AppxPackage
+
+
+    # remove onedrive
+    try{
+        Get-AppxPackage *OneDrive* | Remove-AppxPackage
+        Remove-Item -Path "$env:UserProfile\OneDrive" -Recurse -Force
+        Remove-Item -Path "C:\Users\$env:UserName\AppData\Local\Microsoft\OneDrive" -Recurse -Force
+        Stop-Process -Name "OneDrive" -Force
+    } catch {
+        Write-Output "An error occurred: $_"
+    }
+
+    # Remove Cortana
+    Get-AppxPackage *Cortana* | Remove-AppxPackage
+
+    Write-Output "Done"
 }
 
 # all the scripts to run
