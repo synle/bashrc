@@ -73,6 +73,7 @@ sudo apt install brightnessctl -y
 sudo usermod -aG input ${USER}
 sudo usermod -aG video ${USER}
 
+# Open Keyboard > Application Shortcuts
 brightnessctl s +15%
 brightnessctl s +15%-
 ```
@@ -117,4 +118,18 @@ rmdir /S ubuntu
 
 ```
 alias reset-wifi-icon='nm-applet > /dev/null &'
+```
+
+
+## Keyboard Shortcuts
+
+```
+# Open Keyboard > Application Shortcuts
+# Shift + F1 / F2
+brightnessctl s +15%
+brightnessctl s +15%-
+
+
+# Menu = toggle touchpad
+/usr/bin/toggle_touchpad
 ```
