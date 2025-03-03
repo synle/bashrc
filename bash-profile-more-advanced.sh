@@ -10,6 +10,7 @@ dexecBash(){
 alias d='docker'
 alias drun='docker run'
 alias dexec='dexecBash'
+alias apt='sudo apt-get'
 
 # bat / cat setup
 batcatfull() {
