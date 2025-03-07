@@ -247,11 +247,21 @@ node -e """
 }
 
 # short path
-# node version
 shorterPwdPath(){
-node -e """
-  const splits = process.cwd().split('/'); console.log(splits.map((s,idx) => idx !== splits.length - 1 ? s[0] : s).join('/'));
-"""
+  local trim_count=3  # Set the number of parts to retain in the path
+  IFS='/' read -r -a splits <<< "$(pwd)"
+  result=""
+
+  for idx in "${!splits[@]}"; do
+    if [ $idx -lt $((${#splits[@]} - $trim_count)) ]; then
+      result+="${splits[$idx]:0:1}/"
+    else
+      result+="${splits[$idx]}/"
+    fi
+  done
+
+  # Remove the trailing slash at the end
+  echo "${result%/}"
 }
 
 
