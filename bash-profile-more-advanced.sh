@@ -21,7 +21,7 @@ batcatfull() {
         batcat "$@" 2>/dev/null
     fi
 }
-alias cat='batcatfull -p --paging=never'
+alias bat='batcatfull -p --paging=never'
 
 # define pbpaste and pbcopy - define_pbcopy_pbpaste
 if ! command -v pbcopy &>/dev/null; then

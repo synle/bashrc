@@ -26,20 +26,17 @@ async function doWork() {
     'fzf - Fuzzy Find Aliases', // key
     trimLeftSpaces(`
       # create the syle bookmark file
-      touch $HOME/.syle_bookmark
+      touch ~/.syle_bookmark
 
       getCommandFromBookmark(){
-        cat $HOME/.syle_bookmark
+        cat ~/.syle_bookmark
       }
 
       addCommandToBookmarks(){
-        echo $@ >> $HOME/.syle_bookmark
+        echo $@ >> ~/.syle_bookmark
         echo "Bookmarking '"$@"'"
-        removeDuplicateLines ~/.syle_bookmark > /tmp/syle-bookmark-temp
-        cat /tmp/syle-bookmark-temp > ~/.syle_bookmark
-
-        # remove the temp file
-        rm /tmp/syle-bookmark-temp
+        sort  ~/.syle_bookmark | uniq > /tmp/syle_bookmark
+        cp /tmp/syle_bookmark ~/.syle_bookmark
       }
 
       fuzzyFavoriteCommand(){
