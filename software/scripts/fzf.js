@@ -25,23 +25,31 @@ async function doWork() {
     textContent,
     'fzf - Fuzzy Find Aliases', // key
     trimLeftSpaces(`
-      # create the syle bookmark file
-      touch ~/.syle_bookmark
+      BOOKMARK_PATH=~/.syle_bookmark
 
       getCommandFromBookmark(){
-        cat ~/.syle_bookmark
+        touch $BOOKMARK_PATH
+        cat $BOOKMARK_PATH
       }
 
       addCommandToBookmarks(){
-        echo $@ >> ~/.syle_bookmark
-        echo "Bookmarking '"$@"'"
-        sort  ~/.syle_bookmark | uniq > /tmp/syle_bookmark
-        cp /tmp/syle_bookmark ~/.syle_bookmark
+        echo $1 >> $BOOKMARK_PATH
+
+        # Remove duplicates, sort, and update the bookmark file
+        sort  $BOOKMARK_PATH | uniq > /tmp/syle_bookmark && mv /tmp/syle_bookmark $BOOKMARK_PATH
       }
+      alias bookmarkCommand=addCommandToBookmarks
+
+      addDirToBookmarks(){
+        dir="\${1:-\$(pwd)}"
+        addCommandToBookmarks "cd $dir"
+      }
+      alias bookmarkDir=addDirToBookmarks
 
       fuzzyFavoriteCommand(){
-        bookmarkedCommands=$((getCommandFromBookmark) | sed '/^\s*$/d' | uniq | fzf)
+        bookmarkedCommands=$((getCommandFromBookmark) | sort | uniq | fzf)
 
+        echo '### Command Selected from Bookmarks ###'
         echo "$bookmarkedCommands"
 
         # run the command
