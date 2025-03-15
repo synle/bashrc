@@ -32,11 +32,13 @@ async function doWork() {
     " =================================================
     call vundle#end()            " required
 
-    " theme
-    " color dracula
-    " colorscheme desert
-    " colorscheme evening
-    colorscheme murphy
+    " Color Theme : there are common colors: dracula, desert, evening, murphy
+    try
+        colorscheme dracula
+    catch
+        " Fallback if dracula is not available
+        colorscheme evening
+    endtry
   `);
 
   const contentVimrc = trimLeftSpaces(`
