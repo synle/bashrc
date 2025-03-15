@@ -33,7 +33,10 @@ async function doWork() {
     call vundle#end()            " required
 
     " theme
-    color dracula
+    " color dracula
+    " colorscheme desert
+    " colorscheme evening
+    colorscheme murphy
   `);
 
   const contentVimrc = trimLeftSpaces(`
