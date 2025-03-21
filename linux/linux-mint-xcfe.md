@@ -120,7 +120,6 @@ rmdir /S ubuntu
 alias reset-wifi-icon='nm-applet > /dev/null &'
 ```
 
-
 ## Keyboard Shortcuts
 
 ```
