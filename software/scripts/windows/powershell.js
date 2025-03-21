@@ -95,6 +95,19 @@ async function doInit() {
       Get-ChildItem -Recurse | Where-Object { $_.PSIsContainer -eq $false -and $_.FullName -notmatch '\\node_modules\\' }  | Select-String -Pattern "$args"
     }
 
+    function tail {
+      param (
+          [string]$FilePath
+      )
+
+      if (-Not (Test-Path $FilePath)) {
+        Write-Host "File does not exist: $FilePath"
+        return
+      }
+
+      Get-Content $FilePath -Wait
+    }
+
     function vim() {
       code $args
     }
