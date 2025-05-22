@@ -1,0 +1,14 @@
+// Claude Code custom keybindings shared across all platforms.
+// OS_KEY = CMD (meta) key on macOS, ALT key on Windows/Linux.
+[
+  {
+    "context": "Chat",
+    "bindings": {
+      // newline insertion (shift+enter and ctrl+shift+enter, matching Mac ctrl+shift behavior)
+      "shift+enter": "chat:newline",
+      "ctrl+shift+enter": "chat:newline",
+      // undo (OS_KEY+z, matching cmd+z on Mac, alt+z on Windows/Linux)
+      "OS_KEY+z": "chat:undo",
+    },
+  },
+]

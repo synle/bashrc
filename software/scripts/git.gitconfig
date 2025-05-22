@@ -1,0 +1,201 @@
+#!/bin/sh
+
+[user]
+name = Sy Le
+# BEGIN/END - GIT_USER_EMAIL
+
+[core]
+autocrlf = input
+editor = vim
+excludesFile = ~/.gitignore_global
+fsmonitor = true # Background daemon for status speed
+untrackedCache = true # Caches untracked files
+commitGraph = true # Speeds up log/history traversal
+preloadIndex = true # Multi-threaded index scanning
+# BEGIN/END - GIT_EXTRA_CORE_CONFIGS
+
+[feature]
+manyFiles = true # Grouped performance features
+
+[index]
+version = 4 # Path compression for large indexes
+
+[checkout]
+workers = 0 # Parallel file checkout (auto-detect CPU)
+
+[fetch]
+writeCommitGraph = true # Keeps the commit graph updated on fetch
+
+[init]
+defaultBranch = main # Use 'main' as default branch name
+
+[advice]
+defaultBranchName = false # Suppress hint about setting init.defaultBranch
+skippedCherryPicks = false # Suppress hint about skipped cherry-picks during rebase
+
+[pull]
+rebase = false
+
+[push]
+default = current
+autoSetupRemote = true # Auto-track remote branch on first push
+
+[diff]
+tool = vimdiff
+prompt = false
+algorithm = histogram # Better diff output than default myers
+
+[merge]
+tool = vimdiff
+prompt = false
+conflictstyle = zdiff3 # Show base + ours + theirs for easier conflict resolution
+
+[rebase]
+autoSquash = true # Auto-reorder fixup!/squash! commits in interactive rebase
+autoStash = true # Auto-stash dirty tree before rebase, re-apply after
+updateRefs = true # Auto-update stacked branch refs during rebase
+
+[rerere]
+enabled = true # Reuse recorded conflict resolutions
+
+[transfer]
+fsckObjects = true # Validate objects on push/fetch to catch corruption
+
+[column]
+ui = auto # Show branch/tag lists in columns when terminal is wide
+
+[branch]
+sort = -committerdate # Most recently committed branches first
+
+[color]
+ui = true
+
+[color "diff"]
+meta = yellow
+commit = green
+frag = cyan
+old = red
+new = green
+whitespace = red reverse
+
+[maintenance]
+auto = true
+strategy = incremental
+
+[alias]
+# ---- Status & Staging ----
+s = "!git status -sb && echo '============' && git diff --stat -w" # Status + diff summary (ignore whitespace)
+stat = status -sb # Short status with branch info
+a = add
+aa = add -A # Add all (including untracked)
+ap = add -p # Interactive patch mode
+au = add -u # Add only tracked files
+
+# ---- Commit ----
+c  = commit --no-verify
+cm = commit --allow-empty --no-verify -m
+amend  = commit --allow-empty --no-verify --amend
+amendm = commit --allow-empty --no-verify --amend -m
+wip = "!git aa && git cm wip" # Quick save-all as a wip commit
+unwip = "!git log -1 --format=%s | grep -qi '^wip$' && git undo" # Undo last commit only if it was a wip
+
+# ---- Stash ----
+pop = stash pop # Pop the last stash entry
+
+# ---- Undo ----
+undo = reset HEAD~1 --mixed # Undo last commit, keep changes unstaged
+
+# ---- Patch ----
+patch = apply --reject --whitespace=fix # Apply a .patch file
+patch-getn = "!f() { git format-patch -${1:-1}; }; f" # Save last N commits as .patch files
+patch-get = "!git patch-getn 1" # Save last commit as .patch file
+patch-viewn = "!f() { git format-patch -${1:-1} --stdout; }; f" # Print last N commits patch to stdout
+patch-view = "!git patch-viewn 1" # Print last commit patch to stdout
+patch-downloadn = "!f() { git patch-getn ${1:-1} && git patch-rename; }; f" # patch-get + rename with repo-date prefix
+patch-download = "!git patch-downloadn 1" # Download last commit patch with repo-date prefix
+patch-rename = "!f() { r=$(basename $(git rev-parse --show-toplevel)); d=$(date +%Y_%m_%d_%H_%M); for p in *.patch; do [ -f \"$p\" ] || continue; case \"$p\" in [0-9]*) ;; *) echo \"skip $p\"; continue ;; esac; n=\"${r}-${d}-${p}\"; mv \"$p\" \"$n\"; echo \"$n\"; done; }; f" # Rename .patch files with repo-date prefix (skips already-renamed)
+
+# ---- Branch & Checkout ----
+co = checkout
+cob = checkout -b # Create and switch to new branch
+cop = checkout -  # checkout previous branch
+theirs = checkout --theirs  -- # choose theirs
+ours = checkout --ours  -- # choose ours
+hash = "!f() { git checkout $1 -- $2; }; f"  # from hash - git hash 7a2b3c4 path/to/file.txt
+their = "!git theirs"
+our = "!git ours"
+b = branch -vv # List branches with upstream/commit info
+ba = branch -a -vv # List all local/remote branches
+del = branch -D # Force delete branch
+gone = "!git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -D" # Delete local branches whose remote was deleted
+root = rev-parse --show-toplevel # Print repo root path
+current = branch --show-current # Print current branch name
+
+# ---- Pull / Push / Fetch ----
+fap = fetch --all --prune # Fetch all and purge deleted remotes
+fapr = "!git gc --prune=now && git fap && git r" # GC, fetch all, prune, then rebase
+p = pull
+pu = pull
+po = push origin
+pof = push origin --force
+pdel-branch = push origin --delete # Delete a remote branch: git pdel-branch <branch>
+pdel-tag = push origin --delete --tag # Delete a remote tag: git pdel-tag <tag>
+track = "!git branch --set-upstream-to=origin/$(git branch --show-current)" # Set upstream to origin
+
+# ---- Rebase & Merge ----
+rv = revert
+rvc = revert --continue
+mc = merge --continue
+r = rebase
+rc = rebase --continue
+ri = rebase -i # Interactive rebase
+rn = "!f() { git rebase -i HEAD~${1:-1}; }; f" # Interactive rebase last N commits
+rn-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
+ri-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}; }; f"
+rn-subl = "!f() { GIT_EDITOR=\"subl --wait\" git rebase -i HEAD~${1:-1}; }; f"
+ri-subl = "!f() { GIT_EDITOR=\"subl --wait\" git rebase -i ${1:-1}; }; f"
+r0 = rebase -i --root # Interactive rebase from root commit
+r0-code = "!GIT_EDITOR=\"code --wait\" git rebase -i --root"
+r0-subl = "!GIT_EDITOR=\"subl --wait\" git rebase -i --root"
+
+# ---- Log & Diff ----
+logbaseline = log --decorate --abbrev-commit --date=short --graph
+ls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
+lls = "!f() { git -c color.ui=always logbaseline --decorate-refs=refs/tags --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(red)%D %C(green)%an %C(reset)%s\" --author-date-order \"$@\" | sed 's/  */ /g' | $(git var GIT_PAGER); }; f"
+l = "!git ls --stat" # Log with file stats
+ll = "!git lls --stat" # Oneline log with file stats
+d = diff --word-diff -w # Word-level diff ignoring whitespace
+dh = diff --word-diff -w HEAD^ # Diff against previous commit
+ds = diff --word-diff -w --staged # Diff staged changes
+d1 = "!git -c delta.side-by-side=false diff --word-diff -w" # Inline diff (no side-by-side)
+dh1 = "!git -c delta.side-by-side=false diff --word-diff -w HEAD^" # Inline diff against previous commit
+ds1 = "!git -c delta.side-by-side=false diff --word-diff -w --staged" # Inline diff staged changes
+show1 = "!git -c delta.side-by-side=false show" # Show commit inline (no side-by-side)
+dhs = diff --stat HEAD~1 # File change stats for last commit
+stats = shortlog -sn # Commit counts per author
+
+# ---- Cherry-pick ----
+cp = cherry-pick
+cpc = cherry-pick --continue
+cpn = cherry-pick -n # Cherry-pick without committing
+
+# ---- Clone ----
+clone0 = clone --depth 1 --single-branch  # Shallow clone
+clone1 = clone --single-branch  # Full clone (single branch)
+cl0 = "!f() { git clone0 \"$@\" >/dev/null 2>&1 & echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
+cl1 = "!f() { git clone1 \"$@\" >/dev/null 2>&1 & echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
+
+# ---- Search ----
+search-logs = "!f() { git log -G \"$1\" -- .; }; f" # Search diff content of all commits: git search-logs <text>
+search-reflog = rev-list --all -- # Find commits that touched a file: git search-reflog <file>
+where-is = branch -r --contains # Find which remote branches contain a commit: git where-is <hash>
+
+# ---- Cleanup ----
+abort = "!rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD; git stash 2>/dev/null; git clean -fd 2>/dev/null; git reset --hard HEAD 2>/dev/null; git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; git am --abort 2>/dev/null" # Abort all in-progress operations and reset working tree
+clean-and-fetch = "!git gc --prune=now 2>/dev/null; git fetch --all --prune 2>/dev/null" # GC and fetch all remotes
+last = "!git log -1 --format='%h %an: %s' HEAD | sed 's/  */ /g'" # Print last commit summary
+lastd = "!git last && git dhs" # Last commit summary + file change stats
+cleanfd = "!git abort; git gc --prune=now --aggressive" # Abort all, clean untracked files, and aggressively garbage-collect
+
+# ---- Numbered Aliases (generated) ----
+# BEGIN/END - GIT_NUMBERED_ALIASES

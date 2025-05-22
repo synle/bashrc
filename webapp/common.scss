@@ -1,0 +1,871 @@
+// ============================================================================
+// Common Styles - Shared between nav-generator and bashrc/webapp
+// ============================================================================
+
+// ============================================================================
+// Color Theme Mixins
+// ============================================================================
+
+// Sy Light
+@mixin light-theme {
+  /* Backgrounds */
+  --colorBgMain: #f8f8f8; // {{light.background}}
+  --colorBgSecondary: #eaeaea; // {{light.brightGray}}
+  --colorBgHover: #595959; // {{light.brightBlack}}
+
+  /* Typography */
+  --colorTextMain: #1e1e1e; // {{light.foreground}}
+  --colorTextLink: #0366d6; // {{light.linkBlue}}
+
+  /* Status Colors */
+  --colorTextSuccess: #006b1e; // {{light.green}}
+  --colorTextError: #b30000; // {{light.red}}
+  --colorTextWarning: #bf8803; // {{light.yellow}}
+
+  /* Borders & Accents */
+  --colorBorderMain: #0033b3; // {{light.blue}}
+  --colorBorderSecondary: #a0a0a0; // {{light.white}}
+  --colorShadow: #f8f8f8; // {{light.background}}
+  --colorFocusRing: #0033b3; // {{light.blue}}
+
+  /* Code Blocks */
+  --colorBgCode: #eaeaea; // {{light.brightGray}}
+
+  /* Prism Syntax Highlighting */
+  --prismText: #1e1e1e; // {{light.foreground}}
+  --prismBg: #eaeaea; // {{light.brightGray}}
+  --prismComment: #006b1e; // {{light.green}}
+  --prismPunctuation: #595959; // {{light.brightBlack}}
+  --prismTag: #9b2c2c; // {{light.darkRed}}
+  --prismFunctionName: #0033b3; // {{light.blue}}
+  --prismFunction: #7b5e00; // {{light.brown}}
+  --prismNumber: #036b3f; // {{light.darkGreen}}
+  --prismProperty: #bf8803; // {{light.yellow}}
+  --prismKeyword: #6c0099; // {{light.purple}}
+  --prismString: #c75b2e; // {{light.orange}}
+  --prismOperator: #005fa3; // {{light.cyan}}
+  --prismVariable: #001080; // {{light.darkBlue}}
+  --prismInserted: #006b1e; // {{light.green}}
+  --prismDeleted: #b30000; // {{light.red}}
+}
+
+// Sy Dark
+@mixin dark-theme {
+  /* Backgrounds */
+  --colorBgMain: #0a0a0a; // {{dark.background}}
+  --colorBgSecondary: #1e1e1e; // {{dark.gray}}
+  --colorBgHover: #cccccc; // {{dark.white}}
+
+  /* Typography */
+  --colorTextMain: #e0e0e0; // {{dark.foreground}}
+  --colorTextLink: #4fc1ff; // {{dark.linkBlue}}
+
+  /* Status Colors */
+  --colorTextSuccess: #608b4e; // {{dark.green}}
+  --colorTextError: #f44747; // {{dark.red}}
+  --colorTextWarning: #dcdcaa; // {{dark.yellow}}
+
+  /* Borders & Accents */
+  --colorBorderMain: #569cd6; // {{dark.blue}}
+  --colorBorderSecondary: #454545; // {{dark.brightGray}}
+  --colorShadow: #000000; // {{dark.black}}
+  --colorFocusRing: #569cd6; // {{dark.blue}}
+
+  /* Code Blocks */
+  --colorBgCode: #454545; // {{dark.brightGray}}
+
+  /* Prism Syntax Highlighting */
+  --prismText: #e0e0e0; // {{dark.foreground}}
+  --prismBg: #454545; // {{dark.brightGray}}
+  --prismComment: #608b4e; // {{dark.green}}
+  --prismPunctuation: #e0e0e0; // {{dark.foreground}}
+  --prismTag: #f44747; // {{dark.red}}
+  --prismFunctionName: #569cd6; // {{dark.blue}}
+  --prismFunction: #dcdcaa; // {{dark.yellow}}
+  --prismNumber: #b5cea8; // {{dark.lightGreen}}
+  --prismProperty: #dcdcaa; // {{dark.yellow}}
+  --prismKeyword: #c586c0; // {{dark.purple}}
+  --prismString: #ce9178; // {{dark.orange}}
+  --prismOperator: #4ec9b0; // {{dark.cyan}}
+  --prismVariable: #9cdcfe; // {{dark.lightBlue}}
+  --prismInserted: #608b4e; // {{dark.green}}
+  --prismDeleted: #f44747; // {{dark.red}}
+}
+
+:root {
+  @include dark-theme;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include dark-theme;
+  }
+}
+
+@media print, (prefers-color-scheme: light) {
+  :root {
+    @include light-theme;
+  }
+}
+
+:root[data-theme="dark"] {
+  @include dark-theme;
+}
+
+:root[data-theme="light"] {
+  @include light-theme;
+}
+
+// ============================================================================
+// CSS Variables
+// ============================================================================
+
+:root {
+  // Font families
+  --fontFamilyMain: "SF Pro Display", "SF Pro", "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+  --fontFamilySecondary: Helvetica, Tahoma, Geneva, sans-serif;
+  --fontFamilyMonospace: monospace;
+
+  // Font weights
+  --fontWeightBold: 700;
+  --fontWeightSemiBold: 500;
+  --fontWeightLight: 400;
+
+  // Font sizes
+  --fontSize1: 1.1rem;
+  --fontSize2: 1rem;
+  --fontSize3: 0.9rem;
+  --fontSize4: 0.8rem;
+  --fontSize5: 0.6rem;
+
+  // Spacing
+  --spaceSize0: 0;
+  --spaceSize1: 0.3rem;
+  --spaceSize2: 0.5rem;
+  --spaceSize3: 0.7rem;
+  --spaceSize4: 1rem;
+  --spaceSize5: 1.2rem;
+
+  // Borders
+  --borderSize1: 1px;
+  --borderSize2: 2px;
+  --borderSize3: 4px;
+  --borderSize4: 0.5rem;
+
+  // Z-Index layers
+  --zIndexStickyHeader: 100;
+  --zIndexDropdown: 1000;
+  --zIndexFixedNav: 5000;
+  --zIndexFullscreen: 9000;
+  --zIndexModal: 10000;
+
+  // Border Radius
+  --borderRadius0: 0;
+  --borderRadius1: 4px;
+
+  // Grid
+  --gridGapHeight: 1rem;
+  --gridGapWidth: 1.25rem;
+
+  // Layout
+  --maxBodyWidth: 100vw;
+}
+
+// ============================================================================
+// Grid System
+// ============================================================================
+
+$gridColumnWidth: 330px;
+
+// ============================================================================
+// Reset & Base Styles
+// ============================================================================
+
+*,
+::placeholder {
+  box-sizing: border-box;
+  color: var(--colorTextMain);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+form,
+pre,
+p,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+code {
+  background: var(--colorBgCode);
+  padding: var(--spaceSize1) var(--spaceSize2);
+  border-radius: var(--borderRadius1);
+  font-family: var(--fontFamilyMonospace);
+}
+
+html,
+body {
+  &,
+  &:before,
+  &:after {
+    min-height: 100%;
+    border: none !important;
+    background-color: var(--colorBgMain) !important;
+  }
+
+  font-size: 16px;
+}
+
+body {
+  margin: auto !important;
+  min-width: 0;
+  max-width: var(--maxBodyWidth);
+  width: 100%;
+  font-family: var(--fontFamilyMain);
+  font-weight: var(--fontWeightLight);
+  overflow-x: hidden;
+  overflow-y: auto !important;
+  padding-bottom: 200px;
+}
+
+// ============================================================================
+// Typography
+// ============================================================================
+
+h1,
+.h1 {
+  font-size: var(--fontSize1);
+}
+
+h2,
+.h2 {
+  font-size: var(--fontSize2);
+}
+
+h3,
+.h3 {
+  font-size: var(--fontSize3);
+}
+
+h4,
+.h4 {
+  font-size: var(--fontSize4);
+}
+
+h5,
+.h5 {
+  font-size: var(--fontSize5);
+}
+
+// ============================================================================
+// Buttons
+// ============================================================================
+
+// ============================================================================
+// Anchors (plain links)
+// ============================================================================
+
+a {
+  color: var(--colorTextLink);
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover,
+  &:focus {
+    opacity: 0.85;
+    text-decoration: underline;
+  }
+}
+
+// ============================================================================
+// Buttons (and anchor buttons)
+// ============================================================================
+
+button,
+a[role="button"] {
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spaceSize2) var(--spaceSize3);
+  border-radius: var(--borderRadius1);
+  border: var(--borderSize1) solid var(--colorBorderSecondary);
+  background: var(--colorBgMain);
+  color: var(--colorTextLink);
+  font-family: var(--fontFamilyMain);
+  font-size: var(--fontSize3);
+  font-weight: var(--fontWeightSemiBold);
+  text-transform: uppercase;
+
+  transition:
+    opacity 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+
+  &:hover,
+  &:focus,
+  &:focus-visible {
+    opacity: 0.85;
+    box-shadow: 0 0 0 6px var(--colorFocusRing);
+    outline: none;
+    text-decoration: none;
+  }
+
+  &.primary,
+  &.selected,
+  &:active {
+    background: var(--colorTextLink);
+    color: var(--colorBgMain);
+    border-color: transparent;
+  }
+
+  > *:first-child {
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    flex-shrink: 0;
+    margin-right: var(--spaceSize2);
+  }
+}
+
+// ============================================================================
+// Form Elements
+// ============================================================================
+
+input,
+textarea {
+  font-weight: var(--fontWeightLight);
+  background: var(--colorBgMain);
+  outline: none;
+  font-size: var(--fontSize3);
+  font-family: var(--fontFamilyMain);
+
+  &:hover {
+    background: var(--colorBgSecondary) !important;
+  }
+
+  &:focus {
+    background: var(--colorBgSecondary) !important;
+  }
+}
+
+select,
+input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  display: block;
+  padding: var(--spaceSize2) var(--spaceSize3);
+  background-color: var(--colorBgSecondary);
+  color: var(--colorTextMain);
+  border: var(--borderSize1) solid var(--colorBorderMain);
+  border-radius: var(--borderRadius1);
+  font-size: var(--fontSize3);
+  line-height: 1.4;
+  cursor: pointer;
+  box-shadow: 0 2px 4px var(--colorShadow);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath fill='%231a1a1a' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px 6px;
+
+  &:hover {
+    background-color: var(--colorBgHover);
+    border-color: var(--colorBorderMain);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--colorTextLink);
+    box-shadow: 0 0 0 2px var(--colorFocusRing);
+  }
+}
+
+textarea {
+  background-color: var(--colorBgSecondary);
+  color: var(--colorTextMain);
+  border: var(--borderSize1) solid var(--colorBorderMain);
+  border-radius: var(--borderRadius1);
+  padding: var(--spaceSize2) var(--spaceSize3);
+  font-size: var(--fontSize3);
+  line-height: 1.4;
+  width: 100%;
+  resize: vertical;
+  box-shadow: 0 2px 4px var(--colorShadow);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: var(--colorTextLink);
+    box-shadow: 0 0 0 2px var(--colorFocusRing);
+  }
+}
+
+// ============================================================================
+// Responsive Breakpoints
+// ============================================================================
+
+@media only screen and (max-width: $gridColumnWidth * 2) {
+  :root {
+    --fontSize1: 1rem;
+    --fontSize2: 1rem;
+    --fontSize3: 1rem;
+    --fontSize4: 1rem;
+    --fontSize5: 1rem;
+
+    --gridGapHeight: 0.2rem;
+    --gridGapWidth: 0.25rem;
+  }
+
+  button,
+  a[role="button"],
+  input {
+    padding: var(--spaceSize1) var(--spaceSize2);
+  }
+}
+
+// ============================================================================
+// Radio Group
+// ============================================================================
+
+.nav-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spaceSize2);
+}
+
+// ============================================================================
+// Dropdown Styles
+// ============================================================================
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+  padding: 0 !important;
+  min-width: 120px;
+  text-align: center;
+
+  button,
+  a[role="button"] {
+    text-align: center;
+    width: 100%;
+    display: block;
+  }
+
+  .dropdown-content {
+    position: absolute;
+    background: var(--colorBgMain);
+    border: var(--borderSize1) solid var(--colorBorderSecondary);
+    border-radius: var(--borderRadius1);
+    box-shadow:
+      0 2px 4px var(--colorShadow),
+      0 4px 8px var(--colorShadow);
+    z-index: var(--zIndexDropdown);
+    left: 0;
+    width: max-content;
+    min-width: 100%;
+    margin-top: 2px;
+
+    &.pullUp {
+      bottom: calc(100% + 2px);
+      margin-top: 0;
+      margin-bottom: 2px;
+    }
+
+    button,
+    a[role="button"] {
+      border: none;
+      border-radius: var(--borderRadius0);
+      border-bottom: 1px solid var(--colorBorderSecondary);
+      white-space: nowrap;
+      word-break: normal;
+      text-align: left;
+      justify-content: flex-start;
+
+      &:first-child {
+        border-top-left-radius: var(--borderRadius1);
+        border-top-right-radius: var(--borderRadius1);
+      }
+
+      &:last-child {
+        border-bottom: none;
+        border-bottom-left-radius: var(--borderRadius1);
+        border-bottom-right-radius: var(--borderRadius1);
+      }
+    }
+  }
+
+  .dropdown-trigger {
+    width: 100%;
+    display: block;
+    padding: var(--spaceSize2);
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &::after {
+      content: "▼";
+      margin-left: var(--spaceSize2);
+      font-size: var(--fontSize4);
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+
+    &[aria-expanded="true"]::after {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+// ============================================================================
+// Modal Styles
+// ============================================================================
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--zIndexModal);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease-out;
+
+  .modalContent {
+    max-width: var(--maxBodyWidth);
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.2s ease-out;
+  }
+
+  .modalBody {
+    background: var(--colorBgSecondary);
+    border: var(--borderSize1) solid var(--colorBorderMain);
+    border-radius: var(--borderRadius1);
+    padding: var(--spaceSize4);
+    box-shadow:
+      0 4px 6px var(--colorShadow),
+      0 8px 16px var(--colorShadow);
+  }
+
+  .modalMessage {
+    font-weight: var(--fontWeightBold);
+    font-size: var(--fontSize3);
+    line-height: 1.5;
+    margin-bottom: var(--spaceSize3);
+    word-break: break-word;
+  }
+
+  .modalTextarea {
+    max-width: 100%;
+    width: 100%;
+    max-height: 60vh;
+    min-height: 150px;
+    margin-top: var(--spaceSize3);
+    margin-bottom: 0;
+    font-family: var(--fontFamilyMonospace);
+    background: var(--colorBgMain);
+    border: var(--borderSize1) solid var(--colorBorderMain);
+    border-radius: var(--borderRadius1);
+    padding: var(--spaceSize3);
+    font-size: var(--fontSize3);
+    resize: vertical;
+
+    &--readonly {
+      resize: none;
+      cursor: default;
+      opacity: 0.9;
+      user-select: text;
+    }
+  }
+
+  .modalBody .modalTextarea {
+    margin-top: var(--spaceSize3);
+    margin-bottom: 0;
+  }
+
+  .modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spaceSize3);
+    margin-top: var(--spaceSize4);
+
+    .modalBtn {
+      min-width: 100px;
+      padding: var(--spaceSize2) var(--spaceSize4);
+      font-weight: var(--fontWeightSemiBold);
+      border-radius: var(--borderRadius1);
+      transition: all 0.2s ease;
+
+      button {
+        text-align: center;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Code Block Wrapper
+// ============================================================================
+
+.codeBlockWrapper {
+  border: var(--borderSize1) solid var(--colorBorderSecondary);
+  border-radius: var(--borderRadius1);
+  padding: 0 var(--spaceSize2);
+  margin-bottom: var(--spaceSize2);
+  background: var(--colorBgSecondary);
+
+  &.collapsed .codeBlockBanner {
+    margin-bottom: 0;
+  }
+
+  &.collapsed .codeBlockToggle {
+    transform: rotate(-90deg);
+  }
+}
+
+.codeBlockBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spaceSize2);
+  gap: var(--spaceSize2);
+  font-weight: var(--fontWeightSemiBold);
+  text-transform: uppercase;
+  border-bottom: var(--borderSize1) solid var(--colorBorderSecondary);
+  background: inherit;
+
+  > *:first-child {
+    flex-shrink: 0;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .codeBlockActions {
+    display: flex;
+    gap: var(--spaceSize2);
+    flex-shrink: 0;
+  }
+
+  @media only screen and (max-width: $gridColumnWidth * 2) {
+    > *:first-child {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+  }
+}
+
+.codeBlockContent {
+  padding: var(--spaceSize2);
+}
+
+// ============================================================================
+// Fullscreen Code Viewer
+// ============================================================================
+
+.fullscreenCodeViewer {
+  width: 95% !important;
+  max-width: 100% !important;
+  max-height: 95vh !important;
+
+  .modalBody {
+    display: flex;
+    flex-direction: column;
+    max-height: 95vh;
+    overflow: hidden;
+  }
+
+  .codeBlockBanner {
+    border-bottom: 1px solid var(--colorBorderSecondary);
+    flex-shrink: 0;
+  }
+
+  .codeBlock {
+    flex: 1;
+    overflow: auto;
+    margin: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+.hidden {
+  display: none !important;
+}
+
+// ============================================================================
+// Print Styles
+// ============================================================================
+
+@media print {
+  body {
+    width: 800px;
+    min-width: 800px;
+  }
+}
+
+// ============================================================================
+// Monaco Editor
+// ============================================================================
+
+.monaco-editor,
+.monaco-editor .overflow-guard,
+.monaco-editor .monaco-scrollable-element {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+// ============================================================================
+// Prism Syntax Highlighting (theme-aware overrides)
+// ============================================================================
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: var(--prismText);
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background: var(--colorBgCode);
+}
+
+.token {
+  &.comment,
+  &.block-comment,
+  &.prolog,
+  &.doctype,
+  &.cdata {
+    color: var(--prismComment);
+  }
+
+  &.punctuation {
+    color: var(--prismPunctuation);
+  }
+
+  &.tag,
+  &.attr-name,
+  &.namespace,
+  &.deleted {
+    color: var(--prismTag);
+  }
+
+  &.function-name {
+    color: var(--prismFunctionName);
+  }
+
+  &.boolean,
+  &.number {
+    color: var(--prismNumber);
+  }
+
+  &.function {
+    color: var(--prismFunction);
+  }
+
+  &.property,
+  &.class-name,
+  &.constant,
+  &.symbol {
+    color: var(--prismProperty);
+  }
+
+  &.selector,
+  &.important,
+  &.atrule,
+  &.keyword,
+  &.builtin {
+    color: var(--prismKeyword);
+  }
+
+  &.string,
+  &.char,
+  &.attr-value,
+  &.regex {
+    color: var(--prismString);
+  }
+
+  &.variable {
+    color: var(--prismVariable);
+  }
+
+  &.operator,
+  &.entity,
+  &.url {
+    color: var(--prismOperator);
+  }
+
+  &.inserted {
+    color: var(--prismInserted);
+  }
+}
+
+// ============================================================================
+// bashrc/webapp Specific Utilities
+// ============================================================================
+
+// Text color utilities
+.text-error,
+.text-danger {
+  color: var(--colorTextError) !important;
+}
+
+.text-success,
+.text-info {
+  color: var(--colorTextSuccess) !important;
+}
+
+.text-warning {
+  color: var(--colorTextWarning) !important;
+}
+
+.text-muted {
+  color: var(--colorTextSecondary) !important;
+}

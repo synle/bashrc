@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# SOURCE software/bootstrap/common-functions.bash
+
+# software/scripts/windows/_full-setup.sh
+# Windows (WSL) dependencies - drive symlinks, folder setup, WSL2 config
+
+echo ">> Begin setting up dependencies/windows/deps.sh"
+sudo -v
+
+################################################################################
+# ---- Drive Symlinks ----
+################################################################################
+WSL_DRIVES="c d e f g h"
+
+echo '>> WSL mountpoint symlinks'
+for drive in $WSL_DRIVES; do
+  sudo rm -f "/$drive"
+  if [ -d "/mnt/$drive" ]; then
+    echo "  >> WSL mountpoint for /mnt/$drive"
+    sudo ln -s "/mnt/$drive" /
+  fi
+done
+
+################################################################################
+# ---- D Drive Folders ----
+################################################################################
+D_DRIVE_FOLDERS="Applications Desktop Documents Downloads Games Pictures"
+
+if [ -d "/mnt/d" ]; then
+  echo '  >> Creating folders on /mnt/d'
+  for dir in $D_DRIVE_FOLDERS; do
+    echo "      >> /mnt/d/$dir"
+    mkdir "/mnt/d/$dir" > /dev/null 2>&1
+  done
+fi
+
+################################################################################
+# ---- WSL Config ----
+################################################################################
+WSL_CONF="/etc/wsl.conf"
+echo ">> Configuring $WSL_CONF"
+sudo tee "$WSL_CONF" > /dev/null << 'EOF'
+# automount Windows drives with metadata (preserves Linux file permissions on NTFS)
+[automount]
+enabled = true
+options = "metadata"
+
+# let WSL auto-generate /etc/resolv.conf for DNS resolution
+[network]
+generateResolvConf = true
+EOF
+
+################################################################################
+# ---- Sudo Config ----
+################################################################################
+# Uncomment to enable passwordless sudo (WSL is single-user, no Windows Hello → PAM bridge exists)
+# echo "$USER ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$USER > /dev/null
+# sudo chmod 440 /etc/sudoers.d/$USER
+
+# Uncomment to allow passwordless sudo for mount/umount/mkdir only (needed for
+# auto-mounting UNC/network drives in the bash profile without a password prompt)
+# echo "$USER ALL=(ALL) NOPASSWD: /usr/bin/mount, /usr/bin/umount, /usr/bin/mkdir" | sudo tee /etc/sudoers.d/${USER}-mount > /dev/null
+# sudo chmod 440 /etc/sudoers.d/${USER}-mount
+
+################################################################################
+# ---- Cleanup ----
+################################################################################
+echo '>> Cleaning up junk files from Windows mounts (Zone.Identifier, .DS_Store, ._*) - background with 60s timeout'
+(
+  find /mnt/c -name "*:Zone.Identifier" -delete &
+  find /mnt/c -name ".DS_Store" -delete &
+  find /mnt/c -name "._*" -delete &
+  wait
+) > /dev/null 2>&1 &
+_CLEANUP_PID=$!
+(sleep 60 && kill $_CLEANUP_PID) > /dev/null 2>&1 &

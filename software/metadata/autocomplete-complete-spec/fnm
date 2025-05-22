@@ -1,0 +1,14 @@
+install|--lts,--latest,--progress,--arch,--log-level
+use|--install-if-missing,--silent-if-current,--log-level
+list
+list-remote|--lts,--sort,--filter,--log-level
+ls
+ls-remote|--lts,--sort,--filter,--log-level
+default|--log-level
+alias|--log-level
+unalias|--log-level
+current|--log-level
+env|--shell,--use-on-cd,--log-level,--corepack-enabled,--resolve-engines,--version-file-strategy,--multi
+exec|--using,--using-file,--log-level
+uninstall|--log-level
+completions|--shell,--log-level

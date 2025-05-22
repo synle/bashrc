@@ -1,0 +1,24 @@
+name: CI Setup
+description: Pull latest, setup Node.js, and install dependencies
+
+inputs:
+  node-version:
+    description: Node.js version to install
+    default: "24"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      id: setup-node
+      continue-on-error: true
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: ${{ hashFiles('package-lock.json') != '' && 'npm' || '' }}
+
+    - name: Install Dependencies
+      id: install-deps
+      continue-on-error: true
+      shell: bash
+      run: make init
