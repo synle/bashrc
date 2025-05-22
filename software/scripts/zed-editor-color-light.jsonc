@@ -1,0 +1,183 @@
+{
+  // High Contrast Light - modeled after VS Code Default High Contrast Light
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Sy Light", // {{light.themeName}}
+  "author": "synle",
+  "themes": [
+    {
+      "name": "Sy Light", // {{light.themeName}}
+      "appearance": "light",
+      "style": {
+        // --- Editor Chrome ---
+        "background": "#f8f8f8", // {{light.background}}
+        "editor.background": "#f8f8f8", // {{light.background}}
+        "editor.foreground": "#1e1e1e", // {{light.foreground}}
+        "editor.gutter.background": "#f8f8f8", // {{light.background}}
+        "editor.line.active": "#eaeaea", // {{light.brightGray}}
+        "editor.active_line.background": "#eaeaea", // {{light.brightGray}}
+        "editor.highlighted_line.background": "#eaeaea", // {{light.brightGray}}
+        "editor.subheader.background": "#f8f8f8", // {{light.background}}
+
+        // --- Text ---
+        "text": "#1e1e1e", // {{light.foreground}}
+        "text.muted": "#595959", // {{light.brightBlack}}
+        "text.placeholder": "#595959", // {{light.brightBlack}}
+        "text.disabled": "#595959", // {{light.brightBlack}}
+        "text.accent": "#0033b3", // {{light.blue}}
+
+        // --- Cursor ---
+        "editor.document_highlight.read_background": "#add6ff", // {{light.selection}}
+        "editor.document_highlight.write_background": "#add6ff", // {{light.selection}}
+
+        // --- Selection ---
+        "selection.background": "#add6ff", // {{light.selection}}
+
+        // --- UI Elements ---
+        "element.background": "#f8f8f8", // {{light.background}}
+        "element.hover": "#d4d4d4", // {{light.gray}}
+        "element.active": "#eaeaea", // {{light.brightGray}}
+        "element.selected": "#add6ff", // {{light.selection}}
+        "element.disabled": "#d4d4d4", // {{light.gray}}
+        "ghost_element.background": "#f8f8f8", // {{light.background}}
+        "ghost_element.hover": "#d4d4d4", // {{light.gray}}
+        "ghost_element.active": "#eaeaea", // {{light.brightGray}}
+        "ghost_element.selected": "#add6ff", // {{light.selection}}
+        "ghost_element.disabled": "#d4d4d4", // {{light.gray}}
+        "drop_target.background": "#add6ff", // {{light.selection}}
+
+        // --- Surface / Panel ---
+        "surface.background": "#f8f8f8", // {{light.background}}
+        "elevated_surface.background": "#f8f8f8", // {{light.background}}
+        "panel.background": "#f8f8f8", // {{light.background}}
+        "panel.focused_border": "#0033b3", // {{light.blue}}
+        "pane.focused_border": "#0033b3", // {{light.blue}}
+        "title_bar.background": "#f8f8f8", // {{light.background}}
+        "title_bar.inactive_background": "#f8f8f8", // {{light.background}}
+        "toolbar.background": "#f8f8f8", // {{light.background}}
+        "tab_bar.background": "#f8f8f8", // {{light.background}}
+        "tab.inactive_background": "#f8f8f8", // {{light.background}}
+        "tab.active_background": "#f8f8f8", // {{light.background}}
+        "search.match_background": "#b68a00", // {{light.brightYellow}}
+        "status_bar.background": "#f8f8f8", // {{light.background}}
+        "scrollbar.thumb.background": "#595959", // {{light.brightBlack}}
+        "scrollbar.thumb.border": "#595959", // {{light.brightBlack}}
+        "scrollbar.track.background": "#f8f8f8", // {{light.background}}
+        "scrollbar.track.border": "#f8f8f8", // {{light.background}}
+
+        // --- Borders ---
+        "border": "#eaeaea", // {{light.brightGray}}
+        "border.variant": "#eaeaea", // {{light.brightGray}}
+        "border.focused": "#0033b3", // {{light.blue}}
+        "border.selected": "#0033b3", // {{light.blue}}
+        "border.transparent": "#f8f8f8", // {{light.background}}
+        "border.disabled": "#eaeaea", // {{light.brightGray}}
+
+        // --- Links ---
+        "link_text.hover": "#0033b3", // {{light.blue}}
+
+        // --- Conflict / Diff ---
+        "conflict": "#7b5e00", // {{light.brown}}
+        "conflict.background": "#7b5e00", // {{light.brown}}
+        "conflict.border": "#7b5e00", // {{light.brown}}
+        "created": "#006b1e", // {{light.green}}
+        "created.background": "#006b1e", // {{light.green}}
+        "created.border": "#006b1e", // {{light.green}}
+        "deleted": "#b30000", // {{light.red}}
+        "deleted.background": "#b30000", // {{light.red}}
+        "deleted.border": "#b30000", // {{light.red}}
+        "modified": "#0033b3", // {{light.blue}}
+        "modified.background": "#0033b3", // {{light.blue}}
+        "modified.border": "#0033b3", // {{light.blue}}
+
+        // --- Diagnostics ---
+        "error": "#b30000", // {{light.red}}
+        "error.background": "#b30000", // {{light.red}}
+        "error.border": "#b30000", // {{light.red}}
+        "warning": "#bf8803", // {{light.yellow}}
+        "warning.background": "#7b5e00", // {{light.brown}}
+        "warning.border": "#bf8803", // {{light.yellow}}
+        "info": "#0033b3", // {{light.blue}}
+        "info.background": "#0033b3", // {{light.blue}}
+        "info.border": "#0033b3", // {{light.blue}}
+        "hint": "#1a7a7a", // {{light.brightCyan}}
+        "hint.background": "#1a7a7a", // {{light.brightCyan}}
+        "hint.border": "#1a7a7a", // {{light.brightCyan}}
+        "predictive": "#595959", // {{light.brightBlack}}
+        "renamed": "#0033b3", // {{light.blue}}
+        "renamed.background": "#0033b3", // {{light.blue}}
+        "renamed.border": "#0033b3", // {{light.blue}}
+        "success": "#006b1e", // {{light.green}}
+        "success.background": "#006b1e", // {{light.green}}
+        "success.border": "#006b1e", // {{light.green}}
+        "unreachable": "#595959", // {{light.brightBlack}}
+        "unreachable.background": "#595959", // {{light.brightBlack}}
+        "unreachable.border": "#595959", // {{light.brightBlack}}
+
+        // --- Syntax ---
+        "syntax": {
+          "attribute": { "color": "#001080" }, // {{light.darkBlue}}
+          "boolean": { "color": "#0000FF" }, // {{light.blue}}
+          "comment": { "color": "#008000" }, // {{light.green}}
+          "comment.doc": { "color": "#008000" }, // {{light.green}}
+          "constant": { "color": "#0070C1" }, // {{light.cyan}}
+          "constructor": { "color": "#267F99" }, // {{light.brightCyan}}
+          "embedded": { "color": "#A31515" }, // {{light.brightRed}}
+          "emphasis": { "color": "#0000FF", "font_style": "italic" }, // {{light.blue}}
+          "emphasis.strong": { "color": "#0000FF", "font_weight": 700 }, // {{light.blue}}
+          "enum": { "color": "#267F99" }, // {{light.brightCyan}}
+          "function": { "color": "#795E26" }, // {{light.brown}}
+          "hint": { "color": "#267F99" }, // {{light.brightCyan}}
+          "keyword": { "color": "#0000FF" }, // {{light.blue}}
+          "label": { "color": "#001080" }, // {{light.darkBlue}}
+          "link_text": { "color": "#A31515" }, // {{light.brightRed}}
+          "link_uri": { "color": "#0451A5" }, // {{light.linkBlue}}
+          "number": { "color": "#098658" }, // {{light.darkGreen}}
+          "operator": { "color": "#000000" }, // {{light.foreground}}
+          "predictive": { "color": "#6E7681" }, // {{light.brightBlack}}
+          "preproc": { "color": "#AF00DB" }, // {{light.brightPurple}}
+          "primary": { "color": "#001080" }, // {{light.darkBlue}}
+          "property": { "color": "#001080" }, // {{light.darkBlue}}
+          "punctuation": { "color": "#000000" }, // {{light.foreground}}
+          "punctuation.bracket": { "color": "#000000" }, // {{light.foreground}}
+          "punctuation.delimiter": { "color": "#000000" }, // {{light.foreground}}
+          "punctuation.list_marker": { "color": "#0000FF" }, // {{light.blue}}
+          "punctuation.special": { "color": "#800000" }, // {{light.darkRed}}
+          "string": { "color": "#A31515" }, // {{light.brightRed}}
+          "string.escape": { "color": "#800000" }, // {{light.darkRed}}
+          "string.regex": { "color": "#800000" }, // {{light.darkRed}}
+          "string.special": { "color": "#800000" }, // {{light.darkRed}}
+          "string.special.symbol": { "color": "#800000" }, // {{light.darkRed}}
+          "tag": { "color": "#800000" }, // {{light.darkRed}}
+          "text.literal": { "color": "#A31515" }, // {{light.brightRed}}
+          "title": { "color": "#800000", "font_weight": 700 }, // {{light.darkRed}}
+          "type": { "color": "#267F99" }, // {{light.brightCyan}}
+          "variable": { "color": "#001080" }, // {{light.darkBlue}}
+          "variable.special": { "color": "#0000FF" }, // {{light.blue}}
+          "variant": { "color": "#267F99" }, // {{light.brightCyan}}
+        },
+
+        // --- Terminal ---
+        "terminal.background": "#f8f8f8", // {{light.background}}
+        "terminal.foreground": "#1e1e1e", // {{light.foreground}}
+        "terminal.bright_foreground": "#1e1e1e", // {{light.foreground}}
+        "terminal.dim_foreground": "#595959", // {{light.brightBlack}}
+        "terminal.ansi.black": "#000000", // {{light.black}}
+        "terminal.ansi.red": "#b30000", // {{light.red}}
+        "terminal.ansi.green": "#006b1e", // {{light.green}}
+        "terminal.ansi.yellow": "#bf8803", // {{light.yellow}}
+        "terminal.ansi.blue": "#0033b3", // {{light.blue}}
+        "terminal.ansi.magenta": "#6c0099", // {{light.purple}}
+        "terminal.ansi.cyan": "#005fa3", // {{light.cyan}}
+        "terminal.ansi.white": "#a0a0a0", // {{light.white}}
+        "terminal.ansi.bright_black": "#595959", // {{light.brightBlack}}
+        "terminal.ansi.bright_red": "#cd3131", // {{light.brightRed}}
+        "terminal.ansi.bright_green": "#16825d", // {{light.brightGreen}}
+        "terminal.ansi.bright_yellow": "#b68a00", // {{light.brightYellow}}
+        "terminal.ansi.bright_blue": "#1a85ff", // {{light.brightBlue}}
+        "terminal.ansi.bright_magenta": "#9400d3", // {{light.brightPurple}}
+        "terminal.ansi.bright_cyan": "#1a7a7a", // {{light.brightCyan}}
+        "terminal.ansi.bright_white": "#ffffff", // {{light.brightWhite}}
+      },
+    },
+  ],
+}

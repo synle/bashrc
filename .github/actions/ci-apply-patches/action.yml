@@ -1,0 +1,38 @@
+name: CI Apply Patches
+description: Download and apply patch artifacts from previous CI phases
+
+inputs:
+  patches:
+    description: Comma-separated list of patch artifact names to download and apply (e.g. "prep-patch,publish-patch")
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Download patch artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: /tmp/ci-patches
+        pattern: "*-patch"
+        merge-multiple: false
+      continue-on-error: true
+
+    - name: Apply patches
+      shell: bash
+      run: |
+        IFS=',' read -ra PATCH_NAMES <<< "${{ inputs.patches }}"
+        for patch_name in "${PATCH_NAMES[@]}"; do
+          patch_name=$(echo "$patch_name" | tr -d ' ')
+          patch_dir="/tmp/ci-patches/${patch_name}"
+          patch_file="${patch_dir}/${patch_name}.patch"
+          if [ -f "$patch_file" ] && [ -s "$patch_file" ]; then
+            echo "Applying patch: ${patch_name}"
+            if git apply --allow-empty --check "$patch_file" 2>/dev/null; then
+              git apply --allow-empty "$patch_file"
+            else
+              echo "::warning::Patch ${patch_name} could not be applied (changes may already be present in checkout)"
+            fi
+          else
+            echo "No patch to apply for: ${patch_name} (empty or missing)"
+          fi
+        done

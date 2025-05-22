@@ -1,0 +1,35 @@
+{
+  "name": "Dev Environment",
+  "build": {
+    "context": "..",
+    "dockerfile": "Dockerfile"
+  },
+  "postStartCommand": "bash -c 'if [ -n \"$CODESPACE_SSH_PRIVATE_KEY\" ]; then mkdir -p ~/.ssh && echo \"$CODESPACE_SSH_PRIVATE_KEY\" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa; [ -n \"$CODESPACE_SSH_PUBLIC_KEY\" ] && echo \"$CODESPACE_SSH_PUBLIC_KEY\" > ~/.ssh/id_rsa.pub && chmod 644 ~/.ssh/id_rsa.pub; ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null; echo \">>> SSH keys configured from Codespace secrets\"; fi'",
+  "customizations": {
+    "codespaces": {
+      "permissions": {
+        "contents": "write",
+        "pull_requests": "write"
+      }
+    },
+    "vscode": {
+      "extensions": [
+        "dracula-theme.theme-dracula",
+        "PKief.material-icon-theme",
+        "oderwat.indent-rainbow",
+        "aaron-bond.better-comments",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "streetsidesoftware.code-spell-checker",
+        "wmaurer.change-case",
+        "nicoespeon.abracadabra",
+        "formulahendry.code-runner",
+        "redhat.vscode-yaml",
+        "wholroyd.jinja",
+        "clinyong.vscode-css-modules",
+        "andrejunges.handlebars",
+        "dakara.transformer"
+      ]
+    }
+  }
+}

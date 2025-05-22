@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# SOURCE software/bootstrap/common-functions.bash
+
+VUNDLE_URL="https://github.com/synle/vundle.git"
+VUNDLE_DIR=~/.vim/bundle/Vundle.vim
+
+echo ">> Uninstalling Old Vundle Binary"
+rm -rf ~/.vim/bundle
+
+echo ">> Installing Vundle Binary - $VUNDLE_URL"
+safe_mkdir "$HOME/.vim/bundle"
+
+git clone $VUNDLE_URL $VUNDLE_DIR > /dev/null
+
+echo '>> Installing Vundle Plugins: (might need to run this manually)'
+echo '    vim -E -s -u ~/.vimrc +PluginInstall +qall'
+vim -E -s -u ~/.vimrc +PluginInstall +qall > /dev/null 2>&1 &

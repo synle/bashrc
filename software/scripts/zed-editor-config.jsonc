@@ -1,0 +1,63 @@
+{
+  // --- Session ---
+  "session": { "trust_all_worktrees": true }, // Skip workspace trust prompts — trust all projects. Values: true, false
+
+  // --- Editor Behavior ---
+  "hard_tabs": false, // Use spaces instead of tabs for indentation. Values: true (tabs), false (spaces)
+  "soft_wrap": "editor_width", // Wrap lines at preferred_line_length. Values: "none", "editor_width", "preferred_line_length"
+  "auto_indent_on_paste": true, // Auto-indent pasted code to match surrounding context. Values: true, false
+  "linked_edits": true, // Rename matching HTML/JSX tags when editing one. Values: true, false
+  "multi_cursor_modifier": "cmd_or_ctrl", // Key for adding cursors via click. Values: "alt", "cmd_or_ctrl"
+  "colorize_brackets": true, // Color-code matching bracket pairs. Values: true, false
+  "show_whitespaces": "all", // Show whitespace characters as dots. Values: "all", "selection", "none", "boundary"
+  "ensure_final_newline_on_save": true, // Always end files with a newline on save. Values: true, false
+  "remove_trailing_whitespace_on_save": true, // Strip trailing whitespace on save. Values: true, false
+  "format_on_save": "on", // Auto-format code on save. Values: "on", "off"
+  "vim_mode": false, // Enable vim keybindings. Values: true, false
+
+  // --- Search ---
+  "search": { "include_ignored": false }, // Don't search gitignored files. Values: true, false
+
+  // --- UI ---
+  "cursor_blink": false, // Disable cursor blink animation. Values: true, false
+  "minimap": { "show": "never" }, // Disable the code minimap sidebar. Values: true, false
+  "scrollbar": { "show": "auto" }, // Scrollbar visibility. Values: "auto", "system", "always", "never"
+  "gutter": {
+    "line_numbers": true, // Show line numbers in the gutter. Values: true, false
+    "folds": false, // Hide fold/collapse icons in the gutter. Values: true, false
+  },
+  "indent_guides": { "enabled": false }, // Hide vertical indent guide lines. Values: true, false
+  "toolbar": {
+    "breadcrumbs": false, // Hide breadcrumb navigation at top of editor. Values: true, false
+    "quick_actions": false, // Hide quick action buttons in the toolbar. Values: true, false
+  },
+  "tabs": {
+    "close_position": "right", // Position of the tab close button. Values: "left", "right"
+    "git_status": false, // Hide git status indicators on tabs. Values: true, false
+  },
+
+  // --- Terminal ---
+  "terminal": {
+    "max_scroll_history_lines": 200000, // EDITOR_CONFIGS.terminalScrollback
+  },
+
+  // --- Performance & Telemetry ---
+  "telemetry": {
+    "diagnostics": false, // Disable sending crash reports. Values: true, false
+    "metrics": false, // Disable sending usage metrics. Values: true, false
+  },
+  "auto_update": false, // Disable automatic updates. Values: true, false
+
+  // --- Git ---
+  "git": {
+    "enabled": true, // Disable git integration entirely. Values: true, false
+    "autoFetch": true, // Don't auto-fetch from remotes. Values: true, false
+    "git_gutter": "hide", // Hide git diff indicators in the gutter. Values: "tracked_files", "hide"
+  },
+
+  // --- Extensions ---
+  "auto_install_extensions": {
+    "material-icon-theme": true, // Auto-install Material Icon Theme extension. Values: true, false
+  },
+  "icon_theme": "Material Icon Theme", // File icon theme for sidebar. Values: any installed icon theme name
+}

@@ -1,0 +1,30 @@
+// Claude Code custom keybindings shared across all platforms.
+// OS_KEY = CMD (meta) key on macOS, ALT key on Windows/Linux.
+[
+  {
+    "context": "Global",
+    "bindings": {
+      // toggle task list
+      "ctrl+t": "app:toggleTodos",
+    },
+  },
+  {
+    "context": "Chat",
+    "bindings": {
+      // newline insertion
+      "shift+enter": "chat:newline",
+      "ctrl+enter": "chat:newline",
+      // undo (OS_KEY+z, matching cmd+z on Mac, alt+z on Windows/Linux)
+      "OS_KEY+z": "chat:undo",
+      // clear input (OS_KEY+l, matching cmd+l on Mac, alt+l on Windows/Linux)
+      "OS_KEY+l": "chat:clearInput",
+      // unbind ctrl+a / ctrl+e so readline HOME / END work
+      "ctrl+a": null,
+      "ctrl+e": null,
+      // open $EDITOR (vim)
+      "ctrl+x": "chat:externalEditor",
+      // paste image
+      "ctrl+v": "chat:imagePaste",
+    },
+  },
+]

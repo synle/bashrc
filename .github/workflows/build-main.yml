@@ -1,0 +1,628 @@
+name: build-main
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+    inputs:
+      run_mode:
+        description: "Run mode"
+        type: choice
+        default: test_only
+        options:
+          - test_only
+          - clean_rebuild
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---- Phase 1: Format code, build include, and build webapp (no commit, upload patch) ----
+  prep:
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      ci-prep-outcome: ${{ steps.ci-prep.outcome }}
+      ci-prep-duration: ${{ steps.prep-summary.outputs.ci-prep-duration }}
+      total-duration: ${{ steps.prep-summary.outputs.total-duration }}
+      job-start-time: ${{ steps.prep-start.outputs.start-time }}
+    steps:
+      - name: Record start time
+        id: prep-start
+        run: |
+          echo "PREP_T0=$(date +%s)" >> "$GITHUB_ENV"
+          echo "start-time=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-setup
+
+      - name: Install shfmt
+        run: sudo apt-get install -y shfmt
+
+      - name: Record time before ci-prep
+        if: always()
+        run: echo "PREP_T1=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: CI Prep
+        id: ci-prep
+        run: make ci_prep
+
+      - name: Record time after ci-prep
+        if: always()
+        run: echo "PREP_T2=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Commit prep changes (clean rebuild)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild' }}
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "CI / CD - Prep (clean rebuild)"
+          default_author: github_actions
+          pull: "--rebase --autostash"
+
+      - name: Create prep patch
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        run: |
+          mkdir -p /tmp/ci-patches/prep-patch
+          git add -A
+          git diff --cached --binary > /tmp/ci-patches/prep-patch/prep-patch.patch
+          echo "Prep patch size: $(wc -c < /tmp/ci-patches/prep-patch/prep-patch.patch) bytes"
+
+      - name: Upload prep patch
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: prep-patch
+          path: /tmp/ci-patches/prep-patch/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload webapp dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-dist
+          path: dist/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Prep Summary
+        id: prep-summary
+        if: always()
+        run: |
+          function get_status_icon() {
+            case "$1" in
+              success)  echo ":white_check_mark:" ;;
+              failure)  echo ":x:" ;;
+              skipped)  echo ":fast_forward:" ;;
+              cancelled) echo ":no_entry_sign:" ;;
+              *)        echo ":grey_question:" ;;
+            esac
+          }
+
+          function format_duration() {
+            local total=$1
+            if [ "$total" -ge 60 ]; then
+              printf "%dm %ds" $((total / 60)) $((total % 60))
+            else
+              printf "%ds" "$total"
+            fi
+          }
+
+          D_CI_PREP=$(( ${PREP_T2:-$PREP_T1} - ${PREP_T1:-$PREP_T0} ))
+          D_TOTAL=$(( ${PREP_T2:-$PREP_T0} - PREP_T0 ))
+
+          echo "## Prep Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Result | Step | Duration |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|------|----------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| $(get_status_icon '${{ steps.ci-prep.outcome }}') | CI Prep | $(format_duration $D_CI_PREP) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | **Prep Total** | **$(format_duration $D_TOTAL)** |" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "ci-prep-duration=$D_CI_PREP" >> "$GITHUB_OUTPUT"
+          echo "total-duration=$D_TOTAL" >> "$GITHUB_OUTPUT"
+
+  # ---- Phase 2: All OS builds run in parallel (apply prep patch first) ----
+  build-ubuntu:
+    needs: [prep]
+    if: >-
+      ${{
+        !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only')
+        && (needs.prep.result == 'success' || needs.prep.result == 'skipped')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      duration: ${{ steps.ci-build.outputs.duration }}
+      binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
+      binary-check-status: ${{ steps.ci-build.outputs.binary-check-status }}
+      binary-check-failed-list: ${{ steps.ci-build.outputs.binary-check-failed-list }}
+      binary-check-warned-list: ${{ steps.ci-build.outputs.binary-check-warned-list }}
+      download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
+      download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-setup
+      - uses: ./.github/actions/ci-apply-patches
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        with:
+          patches: prep-patch
+      - uses: ./.github/actions/ci-build
+        id: ci-build
+        with:
+          artifact-name: build-ubuntu
+
+  build-rhel:
+    needs: [prep]
+    if: >-
+      ${{
+        !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only')
+        && (needs.prep.result == 'success' || needs.prep.result == 'skipped')
+      }}
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    timeout-minutes: 20
+    outputs:
+      duration: ${{ steps.ci-build.outputs.duration }}
+      binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
+      binary-check-status: ${{ steps.ci-build.outputs.binary-check-status }}
+      binary-check-failed-list: ${{ steps.ci-build.outputs.binary-check-failed-list }}
+      binary-check-warned-list: ${{ steps.ci-build.outputs.binary-check-warned-list }}
+      download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
+      download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
+    steps:
+      - name: Install dependencies
+        run: dnf install -y git curl sudo findutils make
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-setup
+      - uses: ./.github/actions/ci-apply-patches
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        with:
+          patches: prep-patch
+      - uses: ./.github/actions/ci-build
+        id: ci-build
+        with:
+          artifact-name: build-rhel
+
+  build-arch:
+    needs: [prep]
+    if: >-
+      ${{
+        !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only')
+        && (needs.prep.result == 'success' || needs.prep.result == 'skipped')
+      }}
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    continue-on-error: true
+    timeout-minutes: 20
+    outputs:
+      duration: ${{ steps.ci-build.outputs.duration }}
+      binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
+      binary-check-status: ${{ steps.ci-build.outputs.binary-check-status }}
+      binary-check-failed-list: ${{ steps.ci-build.outputs.binary-check-failed-list }}
+      binary-check-warned-list: ${{ steps.ci-build.outputs.binary-check-warned-list }}
+      download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
+      download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
+    steps:
+      - name: Install dependencies
+        run: pacman -Sy --noconfirm git curl sudo make unzip
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-setup
+      - uses: ./.github/actions/ci-apply-patches
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        with:
+          patches: prep-patch
+      - uses: ./.github/actions/ci-build
+        id: ci-build
+        with:
+          artifact-name: build-arch
+
+  build-debian:
+    needs: [prep]
+    if: >-
+      ${{
+        !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only')
+        && (needs.prep.result == 'success' || needs.prep.result == 'skipped')
+      }}
+    runs-on: ubuntu-latest
+    container: debian:latest
+    continue-on-error: true
+    timeout-minutes: 20
+    outputs:
+      duration: ${{ steps.ci-build.outputs.duration }}
+      binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
+      binary-check-status: ${{ steps.ci-build.outputs.binary-check-status }}
+      binary-check-failed-list: ${{ steps.ci-build.outputs.binary-check-failed-list }}
+      binary-check-warned-list: ${{ steps.ci-build.outputs.binary-check-warned-list }}
+      download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
+      download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
+    steps:
+      - name: Install dependencies
+        run: apt-get update -y && apt-get install -y git curl sudo make
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-setup
+      - uses: ./.github/actions/ci-apply-patches
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        with:
+          patches: prep-patch
+      - uses: ./.github/actions/ci-build
+        id: ci-build
+        with:
+          artifact-name: build-debian
+
+  build-mac:
+    needs: [prep]
+    if: >-
+      ${{
+        !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only')
+        && (needs.prep.result == 'success' || needs.prep.result == 'skipped')
+      }}
+    runs-on: macos-latest
+    timeout-minutes: 20
+    outputs:
+      duration: ${{ steps.ci-build.outputs.duration }}
+      binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
+      binary-check-status: ${{ steps.ci-build.outputs.binary-check-status }}
+      binary-check-failed-list: ${{ steps.ci-build.outputs.binary-check-failed-list }}
+      binary-check-warned-list: ${{ steps.ci-build.outputs.binary-check-warned-list }}
+      download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
+      download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GNU Make
+        run: |
+          brew install make unzip bash
+          echo "$(brew --prefix)/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
+      - uses: ./.github/actions/ci-setup
+      - uses: ./.github/actions/ci-apply-patches
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        with:
+          patches: prep-patch
+      - uses: ./.github/actions/ci-build
+        id: ci-build
+        with:
+          artifact-name: build-mac
+
+  # ---- Phase 3: Merge build artifacts, apply prep patch, single commit, and deploy ----
+  publish:
+    needs: [prep, build-ubuntu, build-rhel, build-arch, build-debian, build-mac]
+    if: >-
+      ${{
+        (needs.build-ubuntu.result == 'success' && needs.build-rhel.result == 'success' && needs.build-arch.result == 'success' && needs.build-debian.result == 'success' && needs.build-mac.result == 'success')
+        || (github.event_name == 'workflow_dispatch' && needs.build-ubuntu.result == 'skipped' && needs.build-rhel.result == 'skipped' && needs.build-arch.result == 'skipped' && needs.build-debian.result == 'skipped' && needs.build-mac.result == 'skipped')
+      }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ci-setup
+
+      - uses: ./.github/actions/ci-apply-patches
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        with:
+          patches: prep-patch
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/build-artifacts/
+          pattern: build-*
+          # merge-multiple: false — each artifact lands in its own subdir (build-ubuntu, build-arch, ...)
+          # so same-named files from different OS builds don't race-overlay each other (see next step).
+
+      - name: Merge build artifacts into .build/
+        # `actions/download-artifact@v4` with `merge-multiple: true` has been observed to overwrite
+        # same-named files without truncating, leaving the longer file's tail appended to the shorter
+        # file's content — producing corrupt profiles. Copy explicitly instead: bash `cp -f` truncates
+        # on overwrite, so the last source in this deterministic order wins cleanly. Order matters
+        # only for same-named files; each OS's unique `profile_bashrc_<os>.sh` is not affected.
+        run: |
+          for artifact_dir in /tmp/build-artifacts/build-arch /tmp/build-artifacts/build-rhel /tmp/build-artifacts/build-debian /tmp/build-artifacts/build-ubuntu /tmp/build-artifacts/build-mac; do
+            [ -d "$artifact_dir" ] || continue
+            echo "Merging $artifact_dir -> .build/"
+            cp -rfT "$artifact_dir" .build/
+          done
+          ls -la .build/profile_bashrc_*.sh 2>/dev/null || true
+
+      - name: Commit Changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "CI / CD - Format code and build artifacts"
+          default_author: github_actions
+          pull: "--rebase --autostash"
+
+      - name: Create publish patch
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        run: |
+          mkdir -p /tmp/ci-patches/publish-patch
+          git diff HEAD~1 --binary > /tmp/ci-patches/publish-patch/publish-patch.patch || true
+          echo "Publish patch size: $(wc -c < /tmp/ci-patches/publish-patch/publish-patch.patch) bytes"
+
+      - name: Upload publish patch
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-patch
+          path: /tmp/ci-patches/publish-patch/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Download webapp dist
+        if: github.event_name == 'push'
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp-dist
+          path: dist/
+
+      - name: Upload Pages artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name == 'push'
+        uses: actions/deploy-pages@v4
+
+      - name: Overall Summary
+        if: always()
+        run: |
+          function format_filesize() {
+            local bytes=$1
+            if [ "$bytes" -ge 1048576 ]; then
+              awk "BEGIN{printf \"%.1f MB\", $bytes/1048576}"
+            elif [ "$bytes" -ge 1024 ]; then
+              awk "BEGIN{printf \"%.1f KB\", $bytes/1024}"
+            else
+              printf "%d B" "$bytes"
+            fi
+          }
+
+          echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+          echo "<summary><h2>Build Artifacts (.build/)</h2></summary>" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| File | File Size | Char Count |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|-----------|------------|" >> "$GITHUB_STEP_SUMMARY"
+          for f in .build/*; do
+            [ -f "$f" ] || continue
+            fname=$(basename "$f")
+            fsize=$(wc -c < "$f" | tr -d ' ')
+            ccount=$(wc -m < "$f" | tr -d ' ')
+            echo "| \`$fname\` | $(format_filesize $fsize) | ${ccount} |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+
+  # ---- Phase 4: Unit tests and smoke test ----
+  test:
+    needs: [prep, build-ubuntu, build-rhel, build-arch, build-debian, build-mac, publish]
+    if: ${{ needs.publish.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: ./.github/actions/ci-setup
+
+      # Apply patches from prep+publish when running after a full build (push only; manual modes skip patches)
+      - name: Apply patches from build pipeline
+        if: ${{ github.event_name == 'push' }}
+        uses: ./.github/actions/ci-apply-patches
+        with:
+          patches: prep-patch,publish-patch
+
+      - name: Download profile debug artifacts
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/profile-debug
+          pattern: profile-debug-build-*
+          merge-multiple: false
+
+      - name: Copy profile debug snapshots into .build
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
+        run: |
+          # Map artifact OS names to profile OS names used in .build/
+          # artifact: build-ubuntu → ubuntu, build-rhel → redhat, build-arch → arch_linux,
+          #           build-debian → ubuntu (debian uses ubuntu profile), build-mac → mac
+          function map_os_name() {
+            case "$1" in
+              ubuntu) echo "ubuntu" ;;
+              rhel)   echo "redhat" ;;
+              arch)   echo "arch_linux" ;;
+              debian) echo "ubuntu" ;;
+              mac)    echo "mac" ;;
+              *)      echo "$1" ;;
+            esac
+          }
+
+          for artifact_dir in /tmp/profile-debug/profile-debug-build-*/; do
+            [ -d "$artifact_dir" ] || continue
+            build_os=$(basename "$artifact_dir" | sed 's/^profile-debug-build-//')
+            os_name=$(map_os_name "$build_os")
+
+            # detect the CI home path used during this build from the snapshot content
+            ci_home=""
+            for candidate in "/github/home" "/home/runner" "/Users/runner"; do
+              if command grep -q "$candidate" "$artifact_dir"bash_syle.* 2>/dev/null; then
+                ci_home="$candidate"
+                break
+              fi
+            done
+
+            for f in "$artifact_dir"bash_syle.*; do
+              [ -f "$f" ] || continue
+              snapshot=$(basename "$f" | sed 's/^bash_syle\.//')
+              target=".build/profile_bashrc_${os_name}_${snapshot}.sh"
+              cp "$f" "$target"
+
+              # normalize CI home path to ~ and username for stable diffs across runners
+              if [ -n "$ci_home" ]; then
+                sed -i \
+                  -e "s|$ci_home|~|g" \
+                  -e 's|\.\(runner\|unknown\)_bookmark|.user_bookmark|g' \
+                  "$target"
+              fi
+
+              echo "Copied $target ($(wc -c < "$target" | tr -d ' ') bytes)"
+            done
+          done
+
+          echo ""
+          echo "All profile files in .build/:"
+          ls -la .build/profile_bashrc_*.sh 2>/dev/null || echo "  (none)"
+
+      - name: Build & Verification Summary
+        if: always()
+        run: |
+          function get_status_icon() {
+            case "$1" in
+              success)  echo ":white_check_mark:" ;;
+              failure)  echo ":x:" ;;
+              skipped)  echo ":fast_forward:" ;;
+              cancelled) echo ":no_entry_sign:" ;;
+              *)        echo ":grey_question:" ;;
+            esac
+          }
+
+          function format_duration() {
+            local total=$1
+            if [ -z "$total" ] || [ "$total" = "" ]; then
+              echo "-"
+              return
+            fi
+            if [ "$total" -ge 60 ]; then
+              printf "%dm %ds" $((total / 60)) $((total % 60))
+            else
+              printf "%ds" "$total"
+            fi
+          }
+
+          function format_verification() {
+            local status="$1" summary="$2" failed_list="$3" warned_list="$4"
+            local icon detail=""
+            case "$status" in
+              error)   icon=":x:" ;;
+              warning) icon=":warning:" ;;
+              ok)      icon=":white_check_mark:" ;;
+              *)       icon=":grey_question:"; summary="N/A" ;;
+            esac
+            if [ -n "$failed_list" ]; then
+              detail+=" — Missing: $failed_list"
+            fi
+            if [ -n "$warned_list" ]; then
+              detail+=" — Warned: $warned_list"
+            fi
+            echo "$icon $summary$detail"
+          }
+
+          function format_download_verification() {
+            local status="$1" summary="$2"
+            local icon
+            case "$status" in
+              error)   icon=":x:" ;;
+              ok)      icon=":white_check_mark:" ;;
+              *)       icon=":grey_question:"; summary="N/A" ;;
+            esac
+            echo "$icon $summary"
+          }
+
+          PREP_START='${{ needs.prep.outputs.job-start-time }}'
+          D_CI_PREP='${{ needs.prep.outputs.ci-prep-duration }}'
+          D_PREP_TOTAL='${{ needs.prep.outputs.total-duration }}'
+          D_UBUNTU='${{ needs.build-ubuntu.outputs.duration }}'
+          D_RHEL='${{ needs.build-rhel.outputs.duration }}'
+          D_ARCH='${{ needs.build-arch.outputs.duration }}'
+          D_DEBIAN='${{ needs.build-debian.outputs.duration }}'
+          D_MAC='${{ needs.build-mac.outputs.duration }}'
+
+          NOW=$(date +%s)
+          if [ -n "$PREP_START" ] && [ "$PREP_START" != "" ]; then
+            D_WALL_CLOCK=$(( NOW - PREP_START ))
+          else
+            D_WALL_CLOCK=""
+          fi
+
+          echo "## Overall Build Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Result | Step | Duration |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|------|----------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| $(get_status_icon '${{ needs.prep.outputs.ci-prep-outcome }}') | CI Prep | $(format_duration "$D_CI_PREP") |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | **Prep Total** | **$(format_duration "$D_PREP_TOTAL")** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| $(get_status_icon '${{ needs.build-ubuntu.result }}') | Ubuntu | $(format_duration "$D_UBUNTU") |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| $(get_status_icon '${{ needs.build-rhel.result }}') | Fedora (RHEL) | $(format_duration "$D_RHEL") |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| $(get_status_icon '${{ needs.build-arch.result }}') | Arch Linux | $(format_duration "$D_ARCH") |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| $(get_status_icon '${{ needs.build-debian.result }}') | Debian | $(format_duration "$D_DEBIAN") |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| $(get_status_icon '${{ needs.build-mac.result }}') | macOS | $(format_duration "$D_MAC") |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | **Wall Clock Total** | **$(format_duration "$D_WALL_CLOCK")** |" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Verification Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| OS | Binary Verification | Download Asset Verification |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Ubuntu | $(format_verification '${{ needs.build-ubuntu.outputs.binary-check-status }}' '${{ needs.build-ubuntu.outputs.binary-check-summary }}' '${{ needs.build-ubuntu.outputs.binary-check-failed-list }}' '${{ needs.build-ubuntu.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-ubuntu.outputs.download-check-status }}' '${{ needs.build-ubuntu.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Fedora (RHEL) | $(format_verification '${{ needs.build-rhel.outputs.binary-check-status }}' '${{ needs.build-rhel.outputs.binary-check-summary }}' '${{ needs.build-rhel.outputs.binary-check-failed-list }}' '${{ needs.build-rhel.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-rhel.outputs.download-check-status }}' '${{ needs.build-rhel.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Arch Linux | $(format_verification '${{ needs.build-arch.outputs.binary-check-status }}' '${{ needs.build-arch.outputs.binary-check-summary }}' '${{ needs.build-arch.outputs.binary-check-failed-list }}' '${{ needs.build-arch.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-arch.outputs.download-check-status }}' '${{ needs.build-arch.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Debian | $(format_verification '${{ needs.build-debian.outputs.binary-check-status }}' '${{ needs.build-debian.outputs.binary-check-summary }}' '${{ needs.build-debian.outputs.binary-check-failed-list }}' '${{ needs.build-debian.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-debian.outputs.download-check-status }}' '${{ needs.build-debian.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| macOS | $(format_verification '${{ needs.build-mac.outputs.binary-check-status }}' '${{ needs.build-mac.outputs.binary-check-summary }}' '${{ needs.build-mac.outputs.binary-check-failed-list }}' '${{ needs.build-mac.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-mac.outputs.download-check-status }}' '${{ needs.build-mac.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run Tests and Generate Summary
+        env:
+          NO_COLOR: 1
+        run: |
+          any_failed=0
+          summary=""
+
+          function run_test_suite() {
+            local name="$1" target="$2"
+            local t0 output rc
+            t0=$(date +%s)
+            output=$(make "$target" 2>&1) && rc=0 || rc=1
+            local duration=$(( $(date +%s) - t0 ))
+
+            if [ "$rc" = "0" ]; then
+              echo "::notice::PASS: $name (${duration}s)"
+              summary+="| :white_check_mark: | $name | ${duration}s |"$'\n'
+            else
+              echo "::group::FAIL: $name (${duration}s)"
+              echo "$output"
+              echo "::endgroup::"
+              summary+="| :x: | $name | ${duration}s |"$'\n'
+              any_failed=1
+            fi
+
+            # Collapsible details with test output
+            summary+=$'\n'"<details><summary>$name output</summary>"$'\n\n'"\`\`\`"$'\n'"$output"$'\n'"\`\`\`"$'\n'"</details>"$'\n\n'
+          }
+
+          run_test_suite "Unit Tests" "ci_test_unit"
+          run_test_suite "Profile Syntax" "ci_test_profile"
+          run_test_suite "Smoke Tests" "ci_test_smoke"
+          run_test_suite "Build Config Shape" "ci_test_buildconfig"
+
+          {
+            echo "## Test Results"
+            echo ""
+            echo "| Result | Suite | Duration |"
+            echo "|--------|-------|----------|"
+            echo "$summary"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$any_failed" = "1" ]; then
+            echo "::error::One or more test suites failed"
+            exit 1
+          fi
+
+      - name: Tag successful build
+        if: github.event_name == 'push'
+        run: |
+          TAG="v0.$(date -u +'%Y%m%d').${{ github.run_number }}"
+          git tag "$TAG"
+          git push origin "$TAG"
