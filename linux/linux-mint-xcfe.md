@@ -6,6 +6,13 @@ sudo apt-get update -y
 sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl
 sudo apt-get install -y simplescreenrecorder
 
+# Windows like dock like taskbar
+# https://github.com/nsz32/docklike-plugin
+# sudo add-apt-repository ppa:xubuntu-dev/extras
+sudo apt update -y
+sudo apt install -y xfce4-docklike-plugin
+
+
 ####
 sudo apt-get upgrade -y
 ```
@@ -16,6 +23,15 @@ sudo apt-get upgrade -y
 sudo apt-get remove firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xfce4-terminal
 sudo apt-get autoclean
 sudo apt-get autoremove
+```
+
+## Theming & Appearance
+
+### Appearance
+
+```
+Style => Mint-Y (gtk3,2,xfwm4)
+ICons => Humanity
 ```
 
 ## Grub
@@ -65,7 +81,34 @@ fi
 sudo chmod +x /usr/bin/toggle_touchpad
 ```
 
-## Change brightness
+## Change brightness for external displays with `ddcutil`
+
+```
+sudo apt install ddcutil
+
+ddcutil detect
+
+ddcutil -d 1 setvcp 10 30
+
+change_brightness() {
+    ddcutil -d $1 setvcp 10 $2
+}
+
+brightness() {
+    # Set default brightness value
+    local brightness1=${1:-30}  # Default to 30 if no value is passed
+    local brightness2=${2:-$brightness1}  # If no second value, use the first one
+
+    # Ensure the brightness values are at least 30 (to avoid invalid values)
+    brightness1=$(($brightness1 < 30 ? 30 : $brightness1))
+    brightness2=$(($brightness2 < 30 ? 30 : $brightness2))
+
+    # Set brightness for both displays
+    ddcutil -d 1 setvcp 10 $brightness1 && ddcutil -d 2 setvcp 10 $brightness2
+}
+```
+
+## Change brightness for laptop display with `brightnessctl`
 
 ```
 sudo apt install brightnessctl -y
@@ -120,15 +163,55 @@ rmdir /S ubuntu
 alias reset-wifi-icon='nm-applet > /dev/null &'
 ```
 
-## Keyboard Shortcuts
+## Keyboard Shortcuts : `Keyboard` > `Application Shortcuts`
+
+### For brightness (`Shift + F1 / F2`)and touchpad controls (`Menu`)
 
 ```
-# Open Keyboard > Application Shortcuts
+# Menu = toggle touchpad
+/usr/bin/toggle_touchpad
+
 # Shift + F1 / F2
+## For laptop
 brightnessctl s +15%
 brightnessctl s +15%-
 
+## For monitors
+ddcutil -d 1 setvcp 10 30 ; ddcutil -d 2 setvcp 10 30
+ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 100
+ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 30
+```
 
-# Menu = toggle touchpad
-/usr/bin/toggle_touchpad
+### Other useful keybindings / application shortcuts
+
+```
+# Unbind Super whiskey menu
+Remove Super L - "xfce-4-popup-whiskermenu" or replace it with `Super + Space`
+
+# open terminal
+Add Super R - terminator
+
+# locking desktop
+Add Alt + Ctrl + Q => "xflock4" to lock the desktop
+
+# capture screenshot
+Add Shift + Alt + 4 => "xfce4-screenshooter -r"
+```
+
+## Keyboard Shortcuts : `Windows Manager`
+
+```
+> Super Up - Tile window to the *
+> Super Left - Tile window to the *
+> Super Right- Tile window to the *
+> Super Down - Tile window to the *
+> Super D - Show desktop
+```
+
+
+#### Auto keyboard
+```
+xfce4-keyboard-settings
+
+bash -ic center_active_window
 ```
