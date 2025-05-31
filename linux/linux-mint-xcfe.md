@@ -215,3 +215,53 @@ xfce4-keyboard-settings
 
 bash -ic center_active_window
 ```
+
+
+### Setting up Shortcuts
+```
+
+# Get current working directory
+function setup_shortcut() {
+  # Check if the file exists
+  if [[ ! -f "_desktop.txt" ]]; then
+    # Create the file with default content
+    cat <<EOF > _desktop.txt
+Type=Application
+Categories=Development
+EOF
+  fi
+
+  # Read the file content into the variable
+  DESKTOP_SHORTCUT_EXTRA="$(< _desktop.txt)"
+
+  # Get current working directory and folder name
+  CURRENT_PWD="$(pwd)"
+  CURRENT_FOLDER_NAME="$(basename "$CURRENT_PWD")"
+
+  # Create .desktop file
+  cat <<EOF > "${CURRENT_FOLDER_NAME}.desktop"
+[Desktop Entry]
+Name=${CURRENT_FOLDER_NAME}
+Comment=${CURRENT_FOLDER_NAME}
+Exec=${CURRENT_PWD}/app.AppImage
+Icon=${CURRENT_PWD}/app.jpg
+Terminal=false
+${DESKTOP_SHORTCUT_EXTRA}
+EOF
+}
+
+
+ls | grep -v url-porter | grep -v note.txt
+
+
+for folder in */; do
+  # Skip if not a directory
+  [[ -d "$folder" ]] || continue
+
+  pushd "$folder"
+  setup_shortcut
+  popd
+done
+
+cp */*.desktop ~/.local/share/applications/
+```
