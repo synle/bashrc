@@ -82,7 +82,7 @@ sudo chmod +x /usr/bin/toggle_touchpad
 
 ## Change brightness for external displays with `ddcutil`
 
-```
+```bash
 sudo apt install ddcutil
 
 ddcutil detect
@@ -109,7 +109,7 @@ brightness() {
 
 ## Change brightness for laptop display with `brightnessctl`
 
-```
+```bash
 sudo apt install brightnessctl -y
 
 sudo usermod -aG input ${USER}
@@ -122,7 +122,7 @@ brightnessctl s +15%-
 
 ### Brightness consolidated
 
-```
+```bash
 sudo apt install -y ddcutil brightnessctl
 
 sudo usermod -aG input ${USER}
@@ -204,7 +204,7 @@ alias reset-wifi-icon='nm-applet > /dev/null &'
 
 ### For brightness (`Shift + F1 / F2`)and touchpad controls (`Menu`)
 
-```
+```bash
 # Menu = toggle touchpad
 /usr/bin/toggle_touchpad
 
@@ -221,7 +221,7 @@ ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 30
 
 ### Other useful keybindings / application shortcuts
 
-```
+```bash
 ### xfce4-keyboard-settings
 
 # Unbind Super whiskey menu
@@ -249,8 +249,7 @@ Add Shift + Alt + 4 => "xfce4-screenshooter -r"
 
 ### Setting up Shortcuts
 
-```
-
+```bash
 # Get current working directory
 function setup_shortcut() {
   # Check if the file exists
