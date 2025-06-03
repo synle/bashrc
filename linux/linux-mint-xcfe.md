@@ -3,8 +3,7 @@
 ```bash
 # curl -fsS https://dl.brave.com/install.sh | sh # brave
 sudo apt-get update -y
-sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl
-sudo apt-get install -y simplescreenrecorder
+sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl ddcutil simplescreenrecorder
 
 # Windows like dock like taskbar
 # https://github.com/nsz32/docklike-plugin
@@ -121,6 +120,44 @@ brightnessctl s +15%
 brightnessctl s +15%-
 ```
 
+### Brightness consolidated
+
+```
+sudo apt install -y ddcutil brightnessctl
+
+sudo usermod -aG input ${USER}
+sudo usermod -aG video ${USER}
+
+echo """
+brightnessctl set 25%
+/usr/bin/ddcutil -d 1 setvcp 10 25
+/usr/bin/ddcutil -d 2 setvcp 10 25
+""" > /tmp/_change_brightness1
+
+echo """
+brightnessctl set 100%
+/usr/bin/ddcutil -d 1 setvcp 10 100
+/usr/bin/ddcutil -d 2 setvcp 10 100
+""" > /tmp/_change_brightness2
+
+echo """
+brightnessctl set 100%
+/usr/bin/ddcutil -d 1 setvcp 10 100
+/usr/bin/ddcutil -d 2 setvcp 10 25
+""" > /tmp/_change_brightness3
+
+echo """
+brightnessctl set 100%
+/usr/bin/ddcutil -d 1 setvcp 10 25
+/usr/bin/ddcutil -d 2 setvcp 10 100
+""" > /tmp/_change_brightness4
+
+chmod +x /tmp/_change_brightness1 && sudo mv /tmp/_change_brightness1 /usr/bin/_change_brightness1
+chmod +x /tmp/_change_brightness2 && sudo mv /tmp/_change_brightness2 /usr/bin/_change_brightness2
+chmod +x /tmp/_change_brightness3 && sudo mv /tmp/_change_brightness3 /usr/bin/_change_brightness3
+chmod +x /tmp/_change_brightness4 && sudo mv /tmp/_change_brightness4 /usr/bin/_change_brightness4
+```
+
 ## Brave path
 
 ```
@@ -185,8 +222,10 @@ ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 30
 ### Other useful keybindings / application shortcuts
 
 ```
+### xfce4-keyboard-settings
+
 # Unbind Super whiskey menu
-Remove Super L - "xfce-4-popup-whiskermenu" or replace it with `Super + Space`
+Remove Super L - "xfce4-popup-whiskermenu" or replace it with `Super + Space`
 
 # open terminal
 Add Super R - terminator
@@ -208,16 +247,8 @@ Add Shift + Alt + 4 => "xfce4-screenshooter -r"
 > Super D - Show desktop
 ```
 
-
-#### Auto keyboard
-```
-xfce4-keyboard-settings
-
-bash -ic center_active_window
-```
-
-
 ### Setting up Shortcuts
+
 ```
 
 # Get current working directory
