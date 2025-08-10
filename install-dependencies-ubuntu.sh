@@ -51,6 +51,7 @@ then
 
   installPackage gnupg
   installPackage software-properties-common
+  installPackage build-essential
 
   ### Add you to the input group
   sudo usermod -aG input ${USER}
