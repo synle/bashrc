@@ -43,11 +43,6 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss
 ```
 
 ## Disable Search Internet in Start Menu
-HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows
-New Key => Explorer
-HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\Explorer
-New DWord 32 Bit => DisableSearchBoxSuggestions => 1
-
 ```bash
 # Disable Bing Search and Web Results in Windows Search
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value 0 -Type DWord
@@ -62,9 +57,6 @@ Set-ADUser -Identity "syle" -PasswordNeverExpires $true
 ```
 
 ## Gamebar Registry hacks
-
-https://www.reddit.com/r/Windows11/comments/wwc9if/comment/ilodbyj/
-https://www.reddit.com/r/WindowsHelp/comments/1h2cagi/xbox_gamebar_windows_11_help_removing_get_an_app/
 
 ```bash
 # Disable Xbox Game Bar using registry
@@ -85,7 +77,6 @@ if (-not (Test-Path $regPathAllUsers)) {
     New-Item -Path $regPathAllUsers -Force
 }
 Set-ItemProperty -Path $regPathAllUsers -Name $regValue -Value 0
-
 
 ## AveYo: fix ms-gamebar annoyance after uninstalling Xbox
 reg add HKCR\ms-gamebar /f /ve /d URL:ms-gamebar 2>&1 >''
