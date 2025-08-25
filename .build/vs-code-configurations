@@ -29,6 +29,7 @@
   "workbench.preferredDarkColorTheme": "Default High Contrast",
   "files.eol": "\n",
   "files.exclude": {
+    "**/*.Identifier": true,
     "**/*.rej": true,
     "**/*.class": true,
     "**/*.db": true,

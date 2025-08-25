@@ -33,6 +33,7 @@
   "hardware_acceleration": "opengl",
   "theme": "Adaptive.sublime-theme",
   "file_exclude_patterns": [
+    "*.Identifier",
     "*.rej",
     "*.class",
     "*.db",

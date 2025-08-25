@@ -777,7 +777,9 @@ function WindowsNotesDom() {
         <LinkButton block href='https://apps.microsoft.com/detail/9P9TQF7MRM4R'>
           Windows Subsystem for Linux (Windows 11)
         </LinkButton>
-        <LinkButton block href='https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=runfile_local'>
+        <LinkButton
+          block
+          href='https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=runfile_local'>
           CUDA Toolkit Driver for WSL
         </LinkButton>
         <LinkButton block href='https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8'>

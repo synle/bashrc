@@ -43,6 +43,7 @@ globalThis.EDITOR_CONFIGS = {
   tabSize,
   maxLineSize: 140,
   ignoredFiles: [
+    '*.Identifier',
     '*.rej',
     '*.class',
     '*.db',

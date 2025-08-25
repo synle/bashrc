@@ -1,6 +1,5 @@
 # notes-windows.md
 
-
 ## WSL mount point
 
 ```bash
@@ -43,6 +42,7 @@ HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss
 ```
 
 ## Disable Search Internet in Start Menu
+
 ```bash
 # Disable Bing Search and Web Results in Windows Search
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "BingSearchEnabled" -Value 0 -Type DWord
@@ -88,4 +88,3 @@ reg add HKCR\ms-gamebarservices /f /v "URL Protocol" /d "" 2>&1 >''
 reg add HKCR\ms-gamebarservices /f /v "NoOpenWith" /d "" 2>&1 >''
 reg add HKCR\ms-gamebarservices\shell\open\command /f /ve /d "\`"$env:SystemRoot\System32\systray.exe\`"" 2>&1 >''
 ```
-
