@@ -11,6 +11,7 @@ alias d='docker'
 alias drun='docker run'
 alias dexec='dexecBash'
 alias apt='sudo apt-get'
+alias format="npx prettier --write --list-different '**/*.{json,js,jsx,tsx,ts,js,cjs,json,scss,mjs,html,md}'"
 
 # bat / cat setup
 batcatfull() {
