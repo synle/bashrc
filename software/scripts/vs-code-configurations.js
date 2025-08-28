@@ -61,7 +61,7 @@ async function doInit() {
     'typescript.updateImportsOnFileMove.enabled': 'always',
     'typescript.inlayHints.variableTypes.enabled': true,
     'window.zoomLevel': 0.5,
-    'workbench.colorTheme': 'Dracula Soft',
+    'workbench.colorTheme': 'Dracula Theme',
     'workbench.editor.showTabs': true,
     'workbench.iconTheme': 'material-icon-theme',
     'workbench.tree.indent': 4,
