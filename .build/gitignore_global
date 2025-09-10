@@ -1,0 +1,11 @@
+# Editor files
+*.swp
+*.swo
+# Python virtual environments
+venv/
+# macOS system files
+.DS_Store
+# Custom identifier files
+*.Identifier
+# Node.js dependencies
+node_modules/

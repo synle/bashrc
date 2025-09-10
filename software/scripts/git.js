@@ -2,6 +2,7 @@ async function doWork() {
   console.log('  >> Installing git Aliases and Configs');
 
   const configMain = path.join(BASE_HOMEDIR_LINUX, '.gitconfig');
+  const configGitIgnoreGlobal = path.join(BASE_HOMEDIR_LINUX, '.gitignore_global');
 
   // figure out the name
   const oldConfig = readText(configMain);
@@ -10,6 +11,8 @@ async function doWork() {
   console.log('    >> Installing git Aliases and Configs for Main OS', configMain);
 
   // write to build file
+  writeToBuildFile([['gitignore_global', await _getGlobalGitIgnore(), false]]);
+
   writeToBuildFile([
     [
       'gitconfig',
@@ -29,6 +32,9 @@ async function doWork() {
       addDefaultCommitTemplate: true,
     }),
   );
+
+  // write to global git ignore
+  writeText(configGitIgnoreGlobal, await _getGlobalGitIgnore());
 
   // Windows Only - write to the main gitconfig for windows host
   if (is_os_window) {
@@ -70,4 +76,28 @@ function _extractEmail(config) {
   } catch (err) {
     return '';
   }
+}
+
+async function _getGlobalGitIgnore() {
+  return `
+    # Editor files
+      *.swp
+      *.swo
+
+      # Python virtual environments
+      venv/
+
+      # macOS system files
+      .DS_Store
+
+      # Custom identifier files
+      *.Identifier
+
+      # Node.js dependencies
+      node_modules/
+    `
+    .split('\n')
+    .map((s) => s.trim())
+    .filter((s) => s)
+    .join('\n');
 }
