@@ -1,15 +1,21 @@
 async function doWork() {
-  // Load your base bash profile
   let bashrcTextContent = readText(BASE_BASH_SYLE);
 
-  // Use your existing external config value
-  const { maxLineSize } = EDITOR_CONFIGS;
+  const { maxLineSize, ignoredFolders } = EDITOR_CONFIGS;
 
-  // Define the format script block
+  // Build ignore list for Ruff
+  const ruffExclude = ignoredFolders.join(',');
+
+  // Build find exclude rules for format_cleanup
+  const findExcludes = ignoredFolders.map((folder) => `-not -path '*/${folder}/*'`).join(' \\\n    ');
+
+  // Build ignore file content for Prettier
+  const prettierIgnoreContent = ignoredFolders.join('\n');
+
   const formatScriptBlock = `
 # === format script ===
 # Adds cleanup, Python, and JS format utilities
-# Run all formatters sequentially (cleanup → Python → JS)
+
 format() {
   echo "🚀 Running full project format sequence..."
   format_cleanup || echo "⚠️ format_cleanup failed or skipped."
@@ -26,9 +32,17 @@ format_js() {
     return 1
   fi
 
-  npx prettier --write '**/*.{js,jsx,ts,tsx,json,scss,mjs,html,md}' --ignore-path .gitignore
+  # Create a temporary .prettierignore file based on EDITOR_CONFIGS.ignoredFolders
+  local temp_ignore_file=\$(mktemp)
+  cat <<'EOF' > "\$temp_ignore_file"
+${prettierIgnoreContent}
+EOF
 
-  if [ $? -eq 0 ]; then
+  npx prettier --write '**/*.{js,jsx,ts,tsx,json,scss,mjs,html,md}' --ignore-path "\$temp_ignore_file" > /dev/null 2>&1
+  local status=\$?
+  rm -f "\$temp_ignore_file"
+
+  if [ \$status -eq 0 ]; then
     echo "✅ JS/TS formatting complete."
   else
     echo "⚠️ Prettier encountered some errors."
@@ -53,9 +67,8 @@ format_python() {
   fi
 
   echo "🧹 Running Ruff checks and formatting..."
-  ruff check --fix --line-length ${maxLineSize} --exclude ".git,node_modules,venv,.venv" || return 1
-  ruff format --line-length ${maxLineSize} --exclude ".git,node_modules,venv,.venv" || return 1
-
+  ruff format --line-length ${maxLineSize} --exclude "${ruffExclude}" > /dev/null 2>&1 || return 1
+  ruff check --fix --line-length ${maxLineSize} --exclude "${ruffExclude}" | return 1
   echo "✅ Python formatting complete."
 }
 
@@ -71,11 +84,7 @@ format_cleanup() {
 
   find "\$base_dir" \\
     -type f \\( -name '*.Identifier' -o -name '.DS_Store' -o -name '._*' \\) \\
-    -not -path '*/.git/*' \\
-    -not -path '*/node_modules/*' \\
-    -not -path '*/venv/*' \\
-    -not -path '*/.venv/*' \\
-    -not -path '*/__pycache__/*' \\
+    ${findExcludes} \\
     -delete
 
   echo "✅ Cleanup complete in: \$base_dir"
@@ -83,9 +92,7 @@ format_cleanup() {
 # === end format script ===
 `;
 
-  // Insert (or replace) the format script block in the bash profile
   bashrcTextContent = prependTextBlock(bashrcTextContent, 'format script', formatScriptBlock);
 
-  // Write back to disk
   writeText(BASE_BASH_SYLE, bashrcTextContent);
 }
