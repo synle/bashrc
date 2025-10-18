@@ -30,8 +30,10 @@ import enum
 import json
 import os
 import subprocess
+
 # macOS-only script
 import platform
+
 if platform.system().lower() != "darwin":
     print("Error: This script only works on macOS")
     sys.exit(1)
@@ -41,7 +43,6 @@ from pathlib import Path
 
 
 class ChromiumSettingsPatcher:
-
     class AngleVariant(enum.Enum):
         Default = "0"
         OpenGL = "1"
@@ -50,12 +51,11 @@ class ChromiumSettingsPatcher:
     def __init__(self, state_file: str) -> None:
         self._local_state_file = Path(state_file).expanduser()
 
-
     def patch(self) -> None:
         """
         Ensure 'use-angle@1' is set in Chrome's experimental settings
         """
-        _desired_key   = "use-angle"
+        _desired_key = "use-angle"
         _desired_value = self.AngleVariant.OpenGL.value
 
         if not self._local_state_file.exists():
@@ -65,7 +65,6 @@ class ChromiumSettingsPatcher:
         else:
             print("  Parsing Local State file")
             state_data = json.loads(self._local_state_file.read_bytes())
-
 
         if "browser" not in state_data:
             state_data["browser"] = {}
@@ -106,19 +105,13 @@ def is_electron_app(directory):
         return True
 
     # Check for other common Electron app indicators
-    electron_indicators = [
-        "electron.asar",
-        "app.asar",
-        "electron-main.js",
-        "electron.dll",
-        "Electron Framework.framework"
-    ]
+    electron_indicators = ["electron.asar", "app.asar", "electron-main.js", "electron.dll", "Electron Framework.framework"]
 
     # Look up to 3 levels deep for electron indicators
     for level in range(1, 4):
         for indicator in electron_indicators:
             # Use recursive glob with max depth
-            matches = list(directory.glob(f"{'*/' * (level-1)}{indicator}"))
+            matches = list(directory.glob(f"{'*/' * (level - 1)}{indicator}"))
             if matches:
                 return True
 
@@ -134,16 +127,16 @@ def get_network_mounts():
     """
     try:
         # Use macOS 'mount' command to list all mounts
-        result = subprocess.run(['mount'], capture_output=True, text=True)
+        result = subprocess.run(["mount"], capture_output=True, text=True)
 
         network_mounts = []
         # Look for common network filesystem types
         for line in result.stdout.splitlines():
             # Common network filesystems on macOS
-            if any(fs in line for fs in ['nfs', 'smbfs', 'afpfs', 'cifs', 'webdav']):
-                parts = line.split(' on ')
+            if any(fs in line for fs in ["nfs", "smbfs", "afpfs", "cifs", "webdav"]):
+                parts = line.split(" on ")
                 if len(parts) > 1:
-                    mount_point = parts[1].split(' ')[0]
+                    mount_point = parts[1].split(" ")[0]
                     network_mounts.append(mount_point)
 
         return network_mounts
@@ -189,12 +182,10 @@ def find_local_state_files(start_dir=None):
         dirs[:] = [d for d in dirs if not any(skip_path in os.path.join(root, d) for skip_path in skip_dirs)]
 
         # Skip network mounts
-        dirs[:] = [d for d in dirs if not any(
-            os.path.join(root, d).startswith(mount) for mount in network_mounts
-        )]
+        dirs[:] = [d for d in dirs if not any(os.path.join(root, d).startswith(mount) for mount in network_mounts)]
 
         # Skip hidden directories (start with .)
-        dirs[:] = [d for d in dirs if not d.startswith('.')]
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
 
         if "Local State" in files:
             path = os.path.join(root, "Local State")
@@ -264,12 +255,7 @@ def get_macos_directories():
     """
     Return a list of standard macOS directories to scan for Electron applications
     """
-    return [
-        "~/Library/Application Support",
-        "~/Library/Caches",
-        "~/Library/Preferences",
-        "~/Library/Containers"
-    ]
+    return ["~/Library/Application Support", "~/Library/Caches", "~/Library/Preferences", "~/Library/Containers"]
 
 
 def main(list_only=False, deep_scan=False):
@@ -319,36 +305,17 @@ def parse_arguments():
     """
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Patch Electron and Chrome applications to use OpenGL rendering"
-    )
+    parser = argparse.ArgumentParser(description="Patch Electron and Chrome applications to use OpenGL rendering")
 
-    parser.add_argument(
-        "--app-path",
-        help="Path to a specific application's Local State file"
-    )
+    parser.add_argument("--app-path", help="Path to a specific application's Local State file")
 
-    parser.add_argument(
-        "--app-name",
-        help="Name of the application (used with --app-path)"
-    )
+    parser.add_argument("--app-name", help="Name of the application (used with --app-path)")
 
-    parser.add_argument(
-        "--scan-dir",
-        help="Additional directory to scan for Electron applications"
-    )
+    parser.add_argument("--scan-dir", help="Additional directory to scan for Electron applications")
 
-    parser.add_argument(
-        "--list-only",
-        action="store_true",
-        help="Only list found applications without patching"
-    )
+    parser.add_argument("--list-only", action="store_true", help="Only list found applications without patching")
 
-    parser.add_argument(
-        "--deep-scan",
-        action="store_true",
-        help="Perform a deep scan of the user's home directory for Local State files"
-    )
+    parser.add_argument("--deep-scan", action="store_true", help="Perform a deep scan of the user's home directory for Local State files")
 
     return parser.parse_args()
 

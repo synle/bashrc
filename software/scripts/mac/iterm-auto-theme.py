@@ -25,15 +25,11 @@ class AutoSwtichTheme:
         return ""
 
     async def set_color_preset(self, theme):
-        preset = await iterm2.ColorPreset.async_get(
-            self.connection, self.light if theme == "light" else self.dark
-        )
+        preset = await iterm2.ColorPreset.async_get(self.connection, self.light if theme == "light" else self.dark)
 
         profiles = await iterm2.PartialProfile.async_query(self.connection)
         for partial in profiles:
-            await (await partial.async_get_full_profile()).async_set_color_preset(
-                preset
-            )
+            await (await partial.async_get_full_profile()).async_set_color_preset(preset)
 
 
 async def quit(connection):
@@ -49,9 +45,7 @@ async def main(connection):
     ast = AutoSwtichTheme(connection, THEME_LIGHT, THEME_DARK)
     await ast.set_color_preset(await ast.get_theme())
 
-    async with iterm2.VariableMonitor(
-        connection, iterm2.VariableScopes.APP, "effectiveTheme", None
-    ) as mon:
+    async with iterm2.VariableMonitor(connection, iterm2.VariableScopes.APP, "effectiveTheme", None) as mon:
         while True:
             # Block until theme changes
             theme = await mon.async_get()

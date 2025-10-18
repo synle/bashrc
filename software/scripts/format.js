@@ -7,9 +7,7 @@ async function doWork() {
   const ruffExclude = ignoredFolders.join(',');
 
   // Build find exclude rules for format_cleanup
-  const findExcludes = ignoredFolders
-    .map((folder) => `-not -path '*/${folder}/*'`)
-    .join(' \\\n    ');
+  const findExcludes = ignoredFolders.map((folder) => `-not -path '*/${folder}/*'`).join(' \\\n    ');
 
   // Build ignore file content for Prettier
   const prettierIgnoreContent = ignoredFolders.join('\n');
