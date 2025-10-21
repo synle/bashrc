@@ -42,6 +42,28 @@ Add Super R - terminator
 
 ## Theming & Appearance
 
+### Animation and Speed (Compiz)
+
+```
+Compiz
+  Effects > Animation > Disable
+  Effects > Decoration > Disable
+  Effects > Firepaint > Disable
+
+Thunar
+  Preferences
+    Display
+      Show Thumbnails > Local Files Only >Disable Remote Files Thumbnails
+      Only show Thumbnails for files less than 10MB
+    Shortcuts
+      Icons size > 24PX
+    Advanced
+      Volume Management > Disable It
+Mouse
+  Double Click Threshold > 1s
+```
+
+
 ### Appearance
 
 ```
