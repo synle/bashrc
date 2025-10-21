@@ -22,25 +22,7 @@ sudo apt-get remove firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xf
 sudo apt-get autoclean
 sudo apt-get autoremove
 ```
-
-### Other useful keybindings / application shortcuts
-
-```bash
-### xfce4-keyboard-settings
-# locking desktop
-Add Alt + Ctrl + Q => "xflock4" to lock the desktop
-
-# capture screenshot
-Add Shift + Alt + 4 => "xfce4-screenshooter -r"
-
-# Unbind Super whiskey menu
-Remove Super L - "xfce4-popup-whiskermenu" or replace it with `Super + Space`
-
-# open terminal
-Add Super R - terminator
-```
-
-## Theming & Appearance
+## Theming & Appearance & Other tweaks
 
 ### Animation and Speed (Compiz)
 
@@ -62,6 +44,31 @@ Thunar
 
 Mouse
   Double Click Threshold > 1s
+
+Keyboard Shortcuts
+  ### xfce4-keyboard-settings
+  # locking desktop
+  Add Alt + Ctrl + Q => "xflock4" to lock the desktop
+
+  # capture screenshot
+  Add Shift + Alt + 4 => "xfce4-screenshooter -r"
+
+  # Unbind Super whiskey menu
+  Remove Super L - "xfce4-popup-whiskermenu" or replace it with `Super + Space`
+
+  # open terminal
+  Add Super R - terminator
+
+Windows Manager
+  Keyboard
+    Alt + Super + Up => Tile window to the *
+    Alt + Super + Left => Tile window to the *
+    Alt + Super + Right=> Tile window to the *
+    Alt + Super + Down => Tile window to the *
+    Alt + Super + M => Maximize Windows *
+    #
+    Super + D => Show desktop
+    Alt + Q => Close Windows
 ```
 
 
@@ -338,16 +345,6 @@ brightnessctl s +15%-
 ddcutil -d 1 setvcp 10 30 ; ddcutil -d 2 setvcp 10 30
 ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 100
 ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 30
-```
-
-## Keyboard Shortcuts : `Windows Manager`
-
-```
-> Super Up - Tile window to the *
-> Super Left - Tile window to the *
-> Super Right- Tile window to the *
-> Super Down - Tile window to the *
-> Super D - Show desktop
 ```
 
 ### Setting up Shortcuts
