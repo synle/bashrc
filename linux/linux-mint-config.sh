@@ -38,6 +38,7 @@ flatpak install -y flathub \
   org.onlyoffice.desktopeditors \
   cc.arduino.arduinoide \
   org.blender.Blender \
+  com.ultimaker.cura \
   && echo ''
 
 # === Cleanup Unneeded Applications ===
