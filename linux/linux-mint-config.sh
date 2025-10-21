@@ -36,6 +36,8 @@ flatpak install -y flathub \
   com.discordapp.Discord \
   net.davidotek.pupgui2 \
   org.onlyoffice.desktopeditors \
+  cc.arduino.arduinoide \
+  org.blender.Blender \
   && echo ''
 
 # === Cleanup Unneeded Applications ===

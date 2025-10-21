@@ -581,8 +581,8 @@ function EnhancedTextArea(props) {
 
   return (
     <>
-      <div className='form-label' style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-        <span>{label}</span>
+      <div className='form-label' style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', marginTop: '1rem' }}>
+        <span style={{ color: 'red' }}>{label}</span>
         <ActionButton onClick={(e) => copyTextToClipboard(e.target.value)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {formattedUrl && <LinkButton href={formattedUrl}>View Formatted</LinkButton>}
@@ -695,10 +695,10 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
-      <DynamicTextArea path='/.build/install-linux.sh' height='350px' />
-      <DynamicTextArea path='/.build/notes-linux.md' height='350px' />
-      <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='350px' />
+      <DynamicTextArea path='/.build/install-linux.sh' height='300px' />
       <DynamicTextArea path='/linux/linux-mint-config.sh' height='200px' />
+      <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='300px' />
+      <DynamicTextArea path='/.build/notes-linux.md' height='300px' />
       <DynamicTextArea path='/.build/font-linux.md' />
       <DynamicTextArea path='/.build/gitconfig' />
       <DynamicTextArea path='/.build/gitignore_global' />
