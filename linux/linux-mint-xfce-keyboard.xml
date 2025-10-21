@@ -38,9 +38,6 @@
         <property name="startup-notify" type="bool" value="true"/>
       </property>
       <property name="&lt;Alt&gt;Print" type="string" value="xfce4-screenshooter -w"/>
-      <property name="&lt;Super&gt;r" type="string" value="xfce4-appfinder -c">
-        <property name="startup-notify" type="bool" value="true"/>
-      </property>
       <property name="XF86WWW" type="string" value="exo-open --launch WebBrowser"/>
       <property name="XF86Mail" type="string" value="exo-open --launch MailReader"/>
       <property name="&lt;Alt&gt;F3" type="string" value="xfce4-appfinder">
@@ -51,8 +48,8 @@
       <property name="&lt;Shift&gt;Print" type="string" value="xfce4-screenshooter -r"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;Delete" type="string" value="xflock4"/>
       <property name="&lt;Alt&gt;&lt;Super&gt;s" type="string" value="orca"/>
-      <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="x-terminal-emulator"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;f" type="string" value="thunar"/>
+      <property name="Super_L" type="string" value="xfce4-popup-whiskermenu"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;l" type="string" value="xflock4"/>
       <property name="&lt;Alt&gt;F1" type="string" value="xfce4-popup-applicationsmenu"/>
       <property name="&lt;Super&gt;p" type="string" value="xfce4-display-settings --minimal"/>
@@ -63,8 +60,10 @@
       <property name="XF86Display" type="string" value="xfce4-display-settings --minimal"/>
       <property name="override" type="bool" value="true"/>
       <property name="&lt;Primary&gt;&lt;Alt&gt;q" type="string" value="xflock4"/>
-      <property name="&lt;Primary&gt;&lt;Alt&gt;4" type="string" value="xfce4-screenshooter -r"/>
+      <property name="&lt;Shift&gt;&lt;Alt&gt;dollar" type="string" value="xfce4-screenshooter -r"/>
       <property name="&lt;Alt&gt;space" type="string" value="xfce4-popup-whiskermenu"/>
+      <property name="&lt;Super&gt;r" type="string" value="terminator"/>
+      <property name="&lt;Primary&gt;&lt;Alt&gt;t" type="string" value="terminator"/>
     </property>
   </property>
   <property name="xfwm4" type="empty">
@@ -240,7 +239,6 @@
       <property name="&lt;Control&gt;F2" type="string" value="workspace_2_key"/>
       <property name="&lt;Super&gt;KP_Home" type="string" value="tile_up_left_key"/>
       <property name="&lt;Alt&gt;Tab" type="string" value="cycle_windows_key"/>
-      <property name="&lt;Alt&gt;space" type="string" value="popup_menu_key"/>
       <property name="&lt;Shift&gt;&lt;Alt&gt;Page_Up" type="string" value="raise_window_key"/>
       <property name="&lt;Super&gt;KP_End" type="string" value="tile_down_left_key"/>
       <property name="&lt;Alt&gt;F11" type="string" value="fullscreen_key"/>

@@ -515,8 +515,10 @@ function ActionButton(props) {
 }
 
 function DynamicTextArea(props) {
-  const { url, height } = props;
+  let { path, url, height } = props;
   const [text, setText] = useState('');
+
+  url = url || `https://raw.githubusercontent.com/synle/bashrc/master/${path}`;
 
   useEffect(() => {
     async function _load() {
@@ -570,11 +572,11 @@ function EnhancedTextArea(props) {
   let formattedUrl = '';
 
   if (url) {
-    const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/.build/', '');
+    const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/', '');
     label = label || shortUrl;
 
     editUrl = `https://github.com/synle/bashrc/edit/master/.build/${shortUrl}`;
-    formattedUrl = `https://github.com/synle/bashrc/blob/master/.build/${shortUrl}`;
+    formattedUrl = `https://github.com/synle/bashrc/blob/master/${shortUrl}`;
   }
 
   return (
@@ -670,13 +672,13 @@ function MacOSXNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_darwin_mac={true} />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-macosx.sh' height='350px' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-macosx.md' height='350px' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
+      <DynamicTextArea path='/.build/install-macosx.sh' height='350px' />
+      <DynamicTextArea path='/.build/notes-macosx.md' height='350px' />
+      <DynamicTextArea path='/.build/font-linux.md' />
+      <DynamicTextArea path='/.build/gitconfig' />
+      <DynamicTextArea path='/.build/ssh-config' />
+      <DynamicTextArea path='/.build/inputrc' />
+      <DynamicTextArea path='/.build/vimrc' />
       <CommonEditorSetupDom is_os_darwin_mac={true} />
 
       {/* Mac */}
@@ -693,19 +695,16 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-linux.sh' height='350px' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-linux.md' height='350px' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/linux/linux-mint-xcfe.md' height='350px' />
-      <DynamicTextArea
-        url='https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/linux/linux-mint-xfce-keyboard.xml'
-        height='350px'
-      />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitignore_global' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/ssh-config' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vimrc' />
+      <DynamicTextArea path='/.build/install-linux.sh' height='350px' />
+      <DynamicTextArea path='/.build/notes-linux.md' height='350px' />
+      <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='350px' />
+      <DynamicTextArea path='/linux/linux-mint-config.sh' height='200px' />
+      <DynamicTextArea path='/.build/font-linux.md' />
+      <DynamicTextArea path='/.build/gitconfig' />
+      <DynamicTextArea path='/.build/gitignore_global' />
+      <DynamicTextArea path='/.build/ssh-config' />
+      <DynamicTextArea path='/.build/inputrc' />
+      <DynamicTextArea path='/.build/vimrc' />
       <CommonEditorSetupDom />
       {/* Linux */}
       <div className='form-label'>Other Applications</div>
@@ -721,13 +720,13 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-windows.sh' height='350px' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-windows.md' height='350px' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/winget-install-windows.ps1' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-windows.md' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-powershell-profile.ps1' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-registry.ps1' />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-terminal' />
+      <DynamicTextArea path='/.build/install-windows.sh' height='350px' />
+      <DynamicTextArea path='/.build/notes-windows.md' height='350px' />
+      <DynamicTextArea path='/.build/winget-install-windows.ps1' />
+      <DynamicTextArea path='/.build/font-windows.md' />
+      <DynamicTextArea path='/.build/windows-powershell-profile.ps1' />
+      <DynamicTextArea path='/.build/windows-registry.ps1' />
+      <DynamicTextArea path='/.build/windows-terminal' />
       <CommonEditorSetupDom is_os_window={true} />
 
       {/* other links */}
@@ -813,11 +812,11 @@ function WindowsNotesDom() {
 function CommonEditorSetupDom(props) {
   const { is_os_darwin_mac, is_os_window, is_os_ubuntu } = props;
 
-  let domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-linux' />;
+  let domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-extensions-linux' />;
   if (is_os_darwin_mac) {
-    domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-macosx' />;
+    domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-extensions-macosx' />;
   } else if (is_os_window) {
-    domVSCodeExtension = <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code-extensions-windows' />;
+    domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-extensions-windows' />;
   }
 
   return (
@@ -830,7 +829,7 @@ function CommonEditorSetupDom(props) {
         ]}
         commentString='#'
       />
-      <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text-extensions' height='75px' />
+      <DynamicTextArea path='/.build/sublime-text-extensions' height='75px' />
       {domVSCodeExtension}
     </>
   );

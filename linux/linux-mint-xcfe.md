@@ -47,12 +47,22 @@ Mouse
   Double Click Threshold > 1s
 ```
 
+### Backup and Restore other settings
+
+```
+# backup
+TIMESTAMP=$(date +%Y%m%d-%H%M%S) && \
+tar czf "./xfce-config$TIMESTAMP.tar.gz" -C "$HOME/.config" xfce4
+
+# restore
+tar xzf "./xfce-config*.tar.gz" -C "$HOME/.config"
+```
+
 ### Backup and Restore key shortcuts
 
 ```bash
 vim ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
 ```
-
 
 ```bash
 # backup
