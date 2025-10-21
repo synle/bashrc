@@ -23,7 +23,6 @@ sudo apt-get autoclean
 sudo apt-get autoremove
 ```
 
-
 ### Other useful keybindings / application shortcuts
 
 ```bash
@@ -51,6 +50,7 @@ ICons => Humanity
 ```
 
 ### Mac OSX Like Appearance
+
 ```
 sudo apt-get install fonts-cantarell
 

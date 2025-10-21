@@ -1,122 +1,93 @@
 # to delete all previous extensions
+# /usr/bin/code --list-extensions | xargs -L 1 /usr/bin/code --uninstall-extension
 # /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
 
-/usr/share/code/code --force --install-extension ms-vscode-remote.vscode-remote-extensionpack
-/usr/share/code/code --force --install-extension aaron-bond.better-comments
-/usr/share/code/code --force --install-extension christian-kohler.path-intellisense
-/usr/share/code/code --force --install-extension clinyong.vscode-css-modules
-/usr/share/code/code --force --install-extension dbaeumer.vscode-eslint
-/usr/share/code/code --force --install-extension dracula-theme.theme-dracula
-/usr/share/code/code --force --install-extension dsznajder.es7-react-js-snippets
-/usr/share/code/code --force --install-extension esbenp.prettier-vscode
-/usr/share/code/code --force --install-extension formulahendry.auto-rename-tag
-/usr/share/code/code --force --install-extension formulahendry.code-runner
-/usr/share/code/code --force --install-extension golang.go
-/usr/share/code/code --force --install-extension ms-pyright.pyright
-/usr/share/code/code --force --install-extension ms-python.isort
-/usr/share/code/code --force --install-extension ms-python.python
-/usr/share/code/code --force --install-extension nicoespeon.abracadabra
-/usr/share/code/code --force --install-extension oderwat.indent-rainbow
-/usr/share/code/code --force --install-extension PKief.material-icon-theme
-/usr/share/code/code --force --install-extension redhat.java
-/usr/share/code/code --force --install-extension redhat.vscode-yaml
-/usr/share/code/code --force --install-extension streetsidesoftware.code-spell-checker
-/usr/share/code/code --force --install-extension wholroyd.jinja
-/usr/share/code/code --force --install-extension wmaurer.change-case
-/usr/share/code/code --force --install-extension tomoki1207.pdf
-/usr/share/code/code --force --install-extension ms-toolsai.jupyter
-/usr/share/code/code --force --install-extension ms-toolsai.jupyter-keymap
-/usr/share/code/code --force --install-extension ms-toolsai.jupyter-renderers
-/usr/share/code/code --force --install-extension ms-toolsai.vscode-jupyter-cell-tags
-/usr/share/code/code --force --install-extension ms-toolsai.vscode-jupyter-slideshow
+/usr/bin/code --install-extension ms-vscode-remote.vscode-remote-extensionpack --force
+/usr/bin/code --install-extension aaron-bond.better-comments --force
+/usr/bin/code --install-extension christian-kohler.path-intellisense --force
+/usr/bin/code --install-extension clinyong.vscode-css-modules --force
+/usr/bin/code --install-extension dbaeumer.vscode-eslint --force
+/usr/bin/code --install-extension dracula-theme.theme-dracula --force
+/usr/bin/code --install-extension dsznajder.es7-react-js-snippets --force
+/usr/bin/code --install-extension esbenp.prettier-vscode --force
+/usr/bin/code --install-extension formulahendry.auto-rename-tag --force
+/usr/bin/code --install-extension formulahendry.code-runner --force
+/usr/bin/code --install-extension golang.go --force
+/usr/bin/code --install-extension ms-pyright.pyright --force
+/usr/bin/code --install-extension ms-python.isort --force
+/usr/bin/code --install-extension ms-python.python --force
+/usr/bin/code --install-extension nicoespeon.abracadabra --force
+/usr/bin/code --install-extension oderwat.indent-rainbow --force
+/usr/bin/code --install-extension PKief.material-icon-theme --force
+/usr/bin/code --install-extension redhat.java --force
+/usr/bin/code --install-extension redhat.vscode-yaml --force
+/usr/bin/code --install-extension streetsidesoftware.code-spell-checker --force
+/usr/bin/code --install-extension wholroyd.jinja --force
+/usr/bin/code --install-extension wmaurer.change-case --force
+/usr/bin/code --install-extension tomoki1207.pdf --force
+/usr/bin/code --install-extension ms-toolsai.jupyter --force
+/usr/bin/code --install-extension ms-toolsai.jupyter-keymap --force
+/usr/bin/code --install-extension ms-toolsai.jupyter-renderers --force
+/usr/bin/code --install-extension ms-toolsai.vscode-jupyter-cell-tags --force
+/usr/bin/code --install-extension ms-toolsai.vscode-jupyter-slideshow --force
 echo 'Done installing VSCode Extensions'
 
-code --force --install-extension ms-vscode-remote.vscode-remote-extensionpack
-code --force --install-extension aaron-bond.better-comments
-code --force --install-extension christian-kohler.path-intellisense
-code --force --install-extension clinyong.vscode-css-modules
-code --force --install-extension dbaeumer.vscode-eslint
-code --force --install-extension dracula-theme.theme-dracula
-code --force --install-extension dsznajder.es7-react-js-snippets
-code --force --install-extension esbenp.prettier-vscode
-code --force --install-extension formulahendry.auto-rename-tag
-code --force --install-extension formulahendry.code-runner
-code --force --install-extension golang.go
-code --force --install-extension ms-pyright.pyright
-code --force --install-extension ms-python.isort
-code --force --install-extension ms-python.python
-code --force --install-extension nicoespeon.abracadabra
-code --force --install-extension oderwat.indent-rainbow
-code --force --install-extension PKief.material-icon-theme
-code --force --install-extension redhat.java
-code --force --install-extension redhat.vscode-yaml
-code --force --install-extension streetsidesoftware.code-spell-checker
-code --force --install-extension wholroyd.jinja
-code --force --install-extension wmaurer.change-case
-code --force --install-extension tomoki1207.pdf
-code --force --install-extension ms-toolsai.jupyter
-code --force --install-extension ms-toolsai.jupyter-keymap
-code --force --install-extension ms-toolsai.jupyter-renderers
-code --force --install-extension ms-toolsai.vscode-jupyter-cell-tags
-code --force --install-extension ms-toolsai.vscode-jupyter-slideshow
-echo 'Done installing VSCode Extensions'
-
-codium --force --install-extension jeanp413.open-remote-ssh
-codium --force --install-extension aaron-bond.better-comments
-codium --force --install-extension christian-kohler.path-intellisense
-codium --force --install-extension clinyong.vscode-css-modules
-codium --force --install-extension dbaeumer.vscode-eslint
-codium --force --install-extension dracula-theme.theme-dracula
-codium --force --install-extension dsznajder.es7-react-js-snippets
-codium --force --install-extension esbenp.prettier-vscode
-codium --force --install-extension formulahendry.auto-rename-tag
-codium --force --install-extension formulahendry.code-runner
-codium --force --install-extension golang.go
-codium --force --install-extension ms-pyright.pyright
-codium --force --install-extension ms-python.isort
-codium --force --install-extension ms-python.python
-codium --force --install-extension nicoespeon.abracadabra
-codium --force --install-extension oderwat.indent-rainbow
-codium --force --install-extension PKief.material-icon-theme
-codium --force --install-extension redhat.java
-codium --force --install-extension redhat.vscode-yaml
-codium --force --install-extension streetsidesoftware.code-spell-checker
-codium --force --install-extension wholroyd.jinja
-codium --force --install-extension wmaurer.change-case
-codium --force --install-extension tomoki1207.pdf
-codium --force --install-extension ms-toolsai.jupyter
-codium --force --install-extension ms-toolsai.jupyter-keymap
-codium --force --install-extension ms-toolsai.jupyter-renderers
-codium --force --install-extension ms-toolsai.vscode-jupyter-cell-tags
-codium --force --install-extension ms-toolsai.vscode-jupyter-slideshow
+/usr/bin/codium --install-extension jeanp413.open-remote-ssh --force
+/usr/bin/codium --install-extension aaron-bond.better-comments --force
+/usr/bin/codium --install-extension christian-kohler.path-intellisense --force
+/usr/bin/codium --install-extension clinyong.vscode-css-modules --force
+/usr/bin/codium --install-extension dbaeumer.vscode-eslint --force
+/usr/bin/codium --install-extension dracula-theme.theme-dracula --force
+/usr/bin/codium --install-extension dsznajder.es7-react-js-snippets --force
+/usr/bin/codium --install-extension esbenp.prettier-vscode --force
+/usr/bin/codium --install-extension formulahendry.auto-rename-tag --force
+/usr/bin/codium --install-extension formulahendry.code-runner --force
+/usr/bin/codium --install-extension golang.go --force
+/usr/bin/codium --install-extension ms-pyright.pyright --force
+/usr/bin/codium --install-extension ms-python.isort --force
+/usr/bin/codium --install-extension ms-python.python --force
+/usr/bin/codium --install-extension nicoespeon.abracadabra --force
+/usr/bin/codium --install-extension oderwat.indent-rainbow --force
+/usr/bin/codium --install-extension PKief.material-icon-theme --force
+/usr/bin/codium --install-extension redhat.java --force
+/usr/bin/codium --install-extension redhat.vscode-yaml --force
+/usr/bin/codium --install-extension streetsidesoftware.code-spell-checker --force
+/usr/bin/codium --install-extension wholroyd.jinja --force
+/usr/bin/codium --install-extension wmaurer.change-case --force
+/usr/bin/codium --install-extension tomoki1207.pdf --force
+/usr/bin/codium --install-extension ms-toolsai.jupyter --force
+/usr/bin/codium --install-extension ms-toolsai.jupyter-keymap --force
+/usr/bin/codium --install-extension ms-toolsai.jupyter-renderers --force
+/usr/bin/codium --install-extension ms-toolsai.vscode-jupyter-cell-tags --force
+/usr/bin/codium --install-extension ms-toolsai.vscode-jupyter-slideshow --force
 echo 'Done installing VSCodium Extensions'
 
-flatpak run com.vscodium.codium --force --install-extension jeanp413.open-remote-ssh
-flatpak run com.vscodium.codium --force --install-extension aaron-bond.better-comments
-flatpak run com.vscodium.codium --force --install-extension christian-kohler.path-intellisense
-flatpak run com.vscodium.codium --force --install-extension clinyong.vscode-css-modules
-flatpak run com.vscodium.codium --force --install-extension dbaeumer.vscode-eslint
-flatpak run com.vscodium.codium --force --install-extension dracula-theme.theme-dracula
-flatpak run com.vscodium.codium --force --install-extension dsznajder.es7-react-js-snippets
-flatpak run com.vscodium.codium --force --install-extension esbenp.prettier-vscode
-flatpak run com.vscodium.codium --force --install-extension formulahendry.auto-rename-tag
-flatpak run com.vscodium.codium --force --install-extension formulahendry.code-runner
-flatpak run com.vscodium.codium --force --install-extension golang.go
-flatpak run com.vscodium.codium --force --install-extension ms-pyright.pyright
-flatpak run com.vscodium.codium --force --install-extension ms-python.isort
-flatpak run com.vscodium.codium --force --install-extension ms-python.python
-flatpak run com.vscodium.codium --force --install-extension nicoespeon.abracadabra
-flatpak run com.vscodium.codium --force --install-extension oderwat.indent-rainbow
-flatpak run com.vscodium.codium --force --install-extension PKief.material-icon-theme
-flatpak run com.vscodium.codium --force --install-extension redhat.java
-flatpak run com.vscodium.codium --force --install-extension redhat.vscode-yaml
-flatpak run com.vscodium.codium --force --install-extension streetsidesoftware.code-spell-checker
-flatpak run com.vscodium.codium --force --install-extension wholroyd.jinja
-flatpak run com.vscodium.codium --force --install-extension wmaurer.change-case
-flatpak run com.vscodium.codium --force --install-extension tomoki1207.pdf
-flatpak run com.vscodium.codium --force --install-extension ms-toolsai.jupyter
-flatpak run com.vscodium.codium --force --install-extension ms-toolsai.jupyter-keymap
-flatpak run com.vscodium.codium --force --install-extension ms-toolsai.jupyter-renderers
-flatpak run com.vscodium.codium --force --install-extension ms-toolsai.vscode-jupyter-cell-tags
-flatpak run com.vscodium.codium --force --install-extension ms-toolsai.vscode-jupyter-slideshow
+flatpak run com.vscodium.codium --install-extension jeanp413.open-remote-ssh --force
+flatpak run com.vscodium.codium --install-extension aaron-bond.better-comments --force
+flatpak run com.vscodium.codium --install-extension christian-kohler.path-intellisense --force
+flatpak run com.vscodium.codium --install-extension clinyong.vscode-css-modules --force
+flatpak run com.vscodium.codium --install-extension dbaeumer.vscode-eslint --force
+flatpak run com.vscodium.codium --install-extension dracula-theme.theme-dracula --force
+flatpak run com.vscodium.codium --install-extension dsznajder.es7-react-js-snippets --force
+flatpak run com.vscodium.codium --install-extension esbenp.prettier-vscode --force
+flatpak run com.vscodium.codium --install-extension formulahendry.auto-rename-tag --force
+flatpak run com.vscodium.codium --install-extension formulahendry.code-runner --force
+flatpak run com.vscodium.codium --install-extension golang.go --force
+flatpak run com.vscodium.codium --install-extension ms-pyright.pyright --force
+flatpak run com.vscodium.codium --install-extension ms-python.isort --force
+flatpak run com.vscodium.codium --install-extension ms-python.python --force
+flatpak run com.vscodium.codium --install-extension nicoespeon.abracadabra --force
+flatpak run com.vscodium.codium --install-extension oderwat.indent-rainbow --force
+flatpak run com.vscodium.codium --install-extension PKief.material-icon-theme --force
+flatpak run com.vscodium.codium --install-extension redhat.java --force
+flatpak run com.vscodium.codium --install-extension redhat.vscode-yaml --force
+flatpak run com.vscodium.codium --install-extension streetsidesoftware.code-spell-checker --force
+flatpak run com.vscodium.codium --install-extension wholroyd.jinja --force
+flatpak run com.vscodium.codium --install-extension wmaurer.change-case --force
+flatpak run com.vscodium.codium --install-extension tomoki1207.pdf --force
+flatpak run com.vscodium.codium --install-extension ms-toolsai.jupyter --force
+flatpak run com.vscodium.codium --install-extension ms-toolsai.jupyter-keymap --force
+flatpak run com.vscodium.codium --install-extension ms-toolsai.jupyter-renderers --force
+flatpak run com.vscodium.codium --install-extension ms-toolsai.vscode-jupyter-cell-tags --force
+flatpak run com.vscodium.codium --install-extension ms-toolsai.vscode-jupyter-slideshow --force
 echo 'Done installing VSCodium Extensions'
