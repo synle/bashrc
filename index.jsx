@@ -696,6 +696,10 @@ function LinuxNotesDom() {
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/install-linux.sh' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/notes-linux.md' height='350px' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/linux/linux-mint-xcfe.md' height='350px' />
+      <DynamicTextArea
+        url='https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/linux/linux-mint-xfce-keyboard.xml'
+        height='350px'
+      />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/font-linux.md' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitconfig' />
       <DynamicTextArea url='https://raw.githubusercontent.com/synle/bashrc/master/.build/gitignore_global' />

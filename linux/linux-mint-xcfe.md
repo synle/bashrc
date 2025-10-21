@@ -22,6 +22,7 @@ sudo apt-get remove firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xf
 sudo apt-get autoclean
 sudo apt-get autoremove
 ```
+
 ## Theming & Appearance & Other tweaks
 
 ### Animation and Speed (Compiz)
@@ -44,7 +45,26 @@ Thunar
 
 Mouse
   Double Click Threshold > 1s
+```
 
+### Backup and Restore key shortcuts
+
+```bash
+vim ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
+```
+
+
+```bash
+# backup
+xfconf-query -c xfce4-keyboard-shortcuts -lv > ./xfce-keyboard-shortcuts-backup.txt
+
+# restore
+while read -r key value; do
+  xfconf-query -c xfce4-keyboard-shortcuts -p "$key" -s "$value" --create
+done < ~/xfce-keyboard-shortcuts-backup.txt
+```
+
+```bash
 Keyboard Shortcuts
   ### xfce4-keyboard-settings
   # locking desktop
@@ -70,7 +90,6 @@ Windows Manager
     Super + D => Show desktop
     Alt + Q => Close Windows
 ```
-
 
 ### Appearance
 
