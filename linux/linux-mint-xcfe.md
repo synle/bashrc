@@ -52,34 +52,72 @@ ICons => Humanity
 ### Mac OSX Like Appearance
 
 ```
-sudo apt-get install fonts-cantarell
 
-# mac osx theme
-pushd /tmp
-git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git
-cd WhiteSur-gtk-theme
-./install.sh -t all
-popd
+echo "🚀 Starting WhiteSur macOS theme setup..."
 
-# mac icon
-pushd /tmp
-git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git
-cd WhiteSur-icon-theme
+TMPDIR="/tmp"
+PICDIR="$HOME/Pictures"
+REPOS=(
+  "https://github.com/vinceliuice/WhiteSur-gtk-theme.git"
+  "https://github.com/vinceliuice/WhiteSur-icon-theme.git"
+  "https://github.com/vinceliuice/WhiteSur-cursors.git"
+  "https://github.com/vinceliuice/WhiteSur-wallpapers.git"
+)
+
+# --- Parallel clone phase ---
+echo "📦 Cloning repositories in parallel..."
+pushd "$TMPDIR" >/dev/null
+PIDS=()
+
+for repo in "${REPOS[@]}"; do
+  name=$(basename "$repo" .git)
+  if [ -d "$name" ]; then
+    echo "⚙️  Skipping existing repo: $name"
+    continue
+  fi
+  echo "→ Cloning: $name"
+  git clone --depth 1 "$repo" &
+  PIDS+=($!)
+done
+
+# Wait for all background clones to finish
+for pid in "${PIDS[@]}"; do
+  wait "$pid"
+done
+popd >/dev/null
+echo "✅ All repositories cloned successfully!"
+
+# --- Install icons ---
+echo "🎨 Installing WhiteSur icons..."
+pushd "$TMPDIR/WhiteSur-icon-theme" >/dev/null
 ./install.sh
-popd
+popd >/dev/null
 
-# mac osx cursor
-pushd /tmp
-git clone --depth 1 https://github.com/vinceliuice/WhiteSur-cursors.git
-cd WhiteSur-cursors
+# --- Install cursors ---
+echo "🖱️ Installing WhiteSur cursors..."
+pushd "$TMPDIR/WhiteSur-cursors" >/dev/null
 sudo ./install.sh
-popd
+popd >/dev/null
 
-# mac osx wallpaper
-pushd ~/Pictures
-git clone --depth 1 https://github.com/vinceliuice/WhiteSur-wallpapers.git
-popd
+# --- Copy wallpapers and Apple icons ---
+echo "🖼️ Copying wallpapers and Apple logo icons..."
+mkdir -p "$PICDIR"
+cp -R "$TMPDIR/WhiteSur-wallpapers" "$PICDIR/" || true
+cp ~/.local/share/icons/WhiteSur-dark/status@2x/32/start-here.svg "$PICDIR/Apple_logo_dark.svg" || true
+cp ~/.local/share/icons/WhiteSur-light/status@2x/32/start-here.svg "$PICDIR/Apple_logo_light.svg" || true
 
+# --- Install GTK theme ---
+echo "🧱 Installing WhiteSur GTK theme..."
+pushd "$TMPDIR/WhiteSur-gtk-theme" >/dev/null
+./install.sh -t all
+popd >/dev/null
+
+echo "🍏 WhiteSur macOS theme setup complete!"
+echo "Apply theme in: Settings → Appearance / Window Manager"
+```
+
+#### Turn on the theme
+```
 ### Menu → Settings → Appearance
 # Theme > White Sur Light
 # Icon > White Sur Light
@@ -88,11 +126,6 @@ popd
 ### Mouse > Theme > Whitesur
 
 ### Menu Mac OSX Icon ~/.local/share/icons/WhiteSur-light
-pushd ~/Pictures
-cp ~/.local/share/icons/WhiteSur-dark/status@2x/32/start-here.svg ./Apple_logo_dark.svg
-cp ~/.local/share/icons/WhiteSur-light/status@2x/32/start-here.svg ./Apple_logo_light.svg
-popd
-
 
 ### Lockscreen / Login Window
 ### Menu → Administration → Login Window
