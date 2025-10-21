@@ -3,14 +3,13 @@
 ```bash
 # curl -fsS https://dl.brave.com/install.sh | sh # brave
 sudo apt-get update -y
-sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl ddcutil simplescreenrecorder
+sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl ddcutil simplescreenrecorder fonts-cantarell fonts-firacode
 
 # Windows like dock like taskbar
 # https://github.com/nsz32/docklike-plugin
-# sudo add-apt-repository ppa:xubuntu-dev/extras
+sudo add-apt-repository ppa:xubuntu-dev/extras
 sudo apt update -y
-sudo apt install -y xfce4-docklike-plugin
-
+sudo apt install -y xfce4-docklike-plugin  # then add docklike into the taskbar
 
 ####
 sudo apt-get upgrade -y
@@ -31,6 +30,42 @@ sudo apt-get autoremove
 ```
 Style => Mint-Y (gtk3,2,xfwm4)
 ICons => Humanity
+```
+
+### Mac OSX Like Appearance
+```
+sudo apt-get install fonts-cantarell
+
+# mac osx theme
+pushd
+git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git
+cd WhiteSur-gtk-theme
+./install.sh -t all
+popd
+
+# mac icon
+pushd
+git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git
+cd WhiteSur-icon-theme
+./install.sh
+popd
+
+# mac osx cursor
+pushd
+git clone --depth 1 https://github.com/vinceliuice/WhiteSur-cursors.git
+cd WhiteSur-cursors
+sudo ./install.sh
+popd
+
+# mac osx wallpaper
+pushd ~/Pictures
+git clone --depth 1 https://github.com/vinceliuice/WhiteSur-wallpapers.git
+popd
+
+### Menu → Settings → Appearance
+# theme > white sur light
+# icon > white sur light
+# font > Cantarell Regular / Fira Code
 ```
 
 ## Grub
