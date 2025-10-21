@@ -77,17 +77,19 @@ done < ~/xfce-keyboard-shortcuts-backup.txt
 ```bash
 Keyboard Shortcuts
   ### xfce4-keyboard-settings
-  # locking desktop
-  Add Alt + Ctrl + Q => "xflock4" to lock the desktop
+  # to lock the desktop
+  "xflock4" => Alt + Ctrl + Q
 
   # capture screenshot
-  Add Shift + Alt + 4 => "xfce4-screenshooter -r"
+  "xfce4-screenshooter -r" => Shift + Alt + 4
+  "xfce4-screenshooter -r" => Ctrl + Alt + 4
 
   # Unbind Super whiskey menu
-  Remove Super L - "xfce4-popup-whiskermenu" or replace it with `Super + Space`
+  # Remove Super L
+  "xfce4-popup-whiskermenu" => Super + Alt
 
   # open terminal
-  Add Super R - terminator
+  "terminator" => Super R
 
 Windows Manager
   Keyboard
