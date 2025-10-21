@@ -3,7 +3,7 @@
 ```bash
 # curl -fsS https://dl.brave.com/install.sh | sh # brave
 sudo apt-get update -y
-sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl ddcutil simplescreenrecorder fonts-cantarell fonts-firacode
+sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl ddcutil simplescreenrecorder fonts-cantarell fonts-firacode imagemagick
 
 # Windows like dock like taskbar
 # https://github.com/nsz32/docklike-plugin
@@ -21,6 +21,24 @@ sudo apt-get upgrade -y
 sudo apt-get remove firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xfce4-terminal
 sudo apt-get autoclean
 sudo apt-get autoremove
+```
+
+
+### Other useful keybindings / application shortcuts
+
+```bash
+### xfce4-keyboard-settings
+# locking desktop
+Add Alt + Ctrl + Q => "xflock4" to lock the desktop
+
+# capture screenshot
+Add Shift + Alt + 4 => "xfce4-screenshooter -r"
+
+# Unbind Super whiskey menu
+Remove Super L - "xfce4-popup-whiskermenu" or replace it with `Super + Space`
+
+# open terminal
+Add Super R - terminator
 ```
 
 ## Theming & Appearance
@@ -63,9 +81,17 @@ git clone --depth 1 https://github.com/vinceliuice/WhiteSur-wallpapers.git
 popd
 
 ### Menu → Settings → Appearance
-# theme > white sur light
-# icon > white sur light
-# font > Cantarell Regular / Fira Code
+# Theme > White Sur Light
+# Icon > White Sur Light
+# Font > Cantarell Regular / Fira Code
+
+### Mouse > Theme > Whitesur
+
+### Menu Mac OSX Icon ~/.local/share/icons/WhiteSur-light
+pushd ~/Pictures
+cp ~/.local/share/icons/WhiteSur-dark/status@2x/32/start-here.svg ./Apple_logo_dark.svg
+cp ~/.local/share/icons/WhiteSur-light/status@2x/32/start-here.svg ./Apple_logo_light.svg
+popd
 ```
 
 ## Grub
@@ -252,24 +278,6 @@ brightnessctl s +15%-
 ddcutil -d 1 setvcp 10 30 ; ddcutil -d 2 setvcp 10 30
 ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 100
 ddcutil -d 1 setvcp 10 100 ; ddcutil -d 2 setvcp 10 30
-```
-
-### Other useful keybindings / application shortcuts
-
-```bash
-### xfce4-keyboard-settings
-
-# Unbind Super whiskey menu
-Remove Super L - "xfce4-popup-whiskermenu" or replace it with `Super + Space`
-
-# open terminal
-Add Super R - terminator
-
-# locking desktop
-Add Alt + Ctrl + Q => "xflock4" to lock the desktop
-
-# capture screenshot
-Add Shift + Alt + 4 => "xfce4-screenshooter -r"
 ```
 
 ## Keyboard Shortcuts : `Windows Manager`
