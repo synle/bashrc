@@ -92,6 +92,10 @@ pushd ~/Pictures
 cp ~/.local/share/icons/WhiteSur-dark/status@2x/32/start-here.svg ./Apple_logo_dark.svg
 cp ~/.local/share/icons/WhiteSur-light/status@2x/32/start-here.svg ./Apple_logo_light.svg
 popd
+
+
+### Lockscreen / Login Window
+### Menu → Administration → Login Window
 ```
 
 ## Grub
