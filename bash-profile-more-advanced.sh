@@ -146,6 +146,8 @@ code()
     fi
   done
 
+  flatpak run com.vscodium.codium $@
+
   echo """
 ============
 PWD: $(pwd)
