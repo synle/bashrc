@@ -172,7 +172,7 @@ searchDir(){
   find . -type d -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
 }
 
-function cleanmaster (){
+cleanmaster(){
     git stash;
     git reset --hard;
     git fap;
@@ -183,7 +183,7 @@ function cleanmaster (){
     git checkout --track origin/main
 }
 
-function pwd2(){
+pwd2(){
   echo "cd \"$(pwd)\""
 }
 
