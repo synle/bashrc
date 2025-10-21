@@ -68,6 +68,22 @@ alias s='ssh -4'
 alias b="bat --style=plain"
 alias c="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 
+function p() {
+  # Check if Python virtual environment is already activated
+  if [[ -z "$VIRTUAL_ENV" ]]; then
+    # Try activating local venv first
+    if [[ -f "./venv/bin/activate" ]]; then
+      source ./venv/bin/activate
+    # Then try user home venv
+    elif [[ -f "$HOME/venv/bin/activate" ]]; then
+      source "$HOME/venv/bin/activate"
+    fi
+  fi
+
+  # Run Python with all provided arguments
+  python "$@"
+}
+
 br(){
   clear &&  echo $'\e[32m======================================================\e[m' && echo '''
   '''
