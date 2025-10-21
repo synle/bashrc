@@ -37,21 +37,21 @@ ICons => Humanity
 sudo apt-get install fonts-cantarell
 
 # mac osx theme
-pushd
+pushd /tmp
 git clone https://github.com/vinceliuice/WhiteSur-gtk-theme.git
 cd WhiteSur-gtk-theme
 ./install.sh -t all
 popd
 
 # mac icon
-pushd
+pushd /tmp
 git clone --depth 1 https://github.com/vinceliuice/WhiteSur-icon-theme.git
 cd WhiteSur-icon-theme
 ./install.sh
 popd
 
 # mac osx cursor
-pushd
+pushd /tmp
 git clone --depth 1 https://github.com/vinceliuice/WhiteSur-cursors.git
 cd WhiteSur-cursors
 sudo ./install.sh
