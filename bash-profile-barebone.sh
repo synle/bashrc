@@ -23,9 +23,9 @@ export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_an
 export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
 export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
 export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
-
 export is_os_window=0
 export is_os_wsl=0
+
 if [ -d /mnt/c/Users ] || [ -d /c/Users ]; then
   export is_os_window=1
   [ -d /lib ] && export is_os_wsl=1
@@ -57,6 +57,7 @@ alias merge="git fetch --all --prune && git merge"
 alias mergeMaster="merge origin/master"
 alias g="git"
 alias gg="git --no-pager"
+alias pp="pi"
 alias pytest="python -m pytest"
 alias pytest-single="python -m pytest -vvl -k"
 alias flake="flake"
@@ -67,7 +68,17 @@ alias s='ssh -4'
 alias b="bat --style=plain"
 alias c="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 
-function p() {
+p() {
+  activatePy
+  python "$@"
+}
+
+pi() {
+  activatePy
+  pip install -r "$@"
+}
+
+activatePy(){
   # Check if Python virtual environment is already activated
   if [[ -z "$VIRTUAL_ENV" ]]; then
     # Try activating local venv first
@@ -78,9 +89,6 @@ function p() {
       source "$HOME/venv/bin/activate"
     fi
   fi
-
-  # Run Python with all provided arguments
-  python "$@"
 }
 
 br(){
