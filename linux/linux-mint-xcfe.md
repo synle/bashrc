@@ -8,8 +8,8 @@ sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv te
 # Windows like dock like taskbar
 # https://github.com/nsz32/docklike-plugin
 sudo add-apt-repository ppa:xubuntu-dev/extras
-sudo apt update -y
-sudo apt install -y xfce4-docklike-plugin  # then add docklike into the taskbar
+sudo apt-get update -y
+sudo apt-get install -y xfce4-docklike-plugin  # then add docklike into the taskbar
 
 ####
 sudo apt-get upgrade -y
@@ -44,7 +44,7 @@ Add Super R - terminator
 
 ### Animation and Speed (Compiz)
 
-```
+```bash
 Compiz
   Effects > Animation > Disable
   Effects > Decoration > Disable
@@ -59,6 +59,7 @@ Thunar
       Icons size > 24PX
     Advanced
       Volume Management > Disable It
+
 Mouse
   Double Click Threshold > 1s
 ```
@@ -66,15 +67,14 @@ Mouse
 
 ### Appearance
 
-```
+```bash
 Style => Mint-Y (gtk3,2,xfwm4)
 ICons => Humanity
 ```
 
 ### Mac OSX Like Appearance
 
-```
-
+```bash
 echo "🚀 Starting WhiteSur macOS theme setup..."
 
 TMPDIR="/tmp"
@@ -139,7 +139,8 @@ echo "Apply theme in: Settings → Appearance / Window Manager"
 ```
 
 #### Turn on the theme
-```
+
+```bash
 ### Menu → Settings → Appearance
 # Theme > White Sur Light
 # Icon > White Sur Light
@@ -156,12 +157,12 @@ echo "Apply theme in: Settings → Appearance / Window Manager"
 ## Grub
 
 ```bash
-# Follow the above to install grub2-theme-mint-2k
-# Use the following options
-sudo vim /etc/default/grub
-GRUB_TIMEOUT=6
-GRUB_GFXMODE=1024x768
+NEW_TIMEOUT=6 && NEW_GFXMODE=1024x768 && sudo sed -i -E \
+  -e "s|^GRUB_TIMEOUT=.*|GRUB_TIMEOUT=${NEW_TIMEOUT}|" \
+  -e "s|^GRUB_GFXMODE=.*|GRUB_GFXMODE=${NEW_GFXMODE}|" \
+  /etc/default/grub && sudo echo $NEW_TIMEOUT $NEW_GFXMODE
 
+sudo apt-get install -y grub2-theme-mint-2k
 sudo update-grub
 ```
 
@@ -203,7 +204,7 @@ sudo chmod +x /usr/bin/toggle_touchpad
 ## Change brightness for external displays with `ddcutil`
 
 ```bash
-sudo apt install ddcutil
+sudo apt-get install ddcutil
 
 ddcutil detect
 
@@ -230,7 +231,7 @@ brightness() {
 ## Change brightness for laptop display with `brightnessctl`
 
 ```bash
-sudo apt install brightnessctl -y
+sudo apt-get install brightnessctl -y
 
 sudo usermod -aG input ${USER}
 sudo usermod -aG video ${USER}
@@ -243,7 +244,7 @@ brightnessctl s +15%-
 ### Brightness consolidated
 
 ```bash
-sudo apt install -y ddcutil brightnessctl
+sudo apt-get install -y ddcutil brightnessctl
 
 sudo usermod -aG input ${USER}
 sudo usermod -aG video ${USER}
