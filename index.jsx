@@ -567,12 +567,14 @@ function EnhancedTextArea(props) {
   label = label || props.placeholder;
 
   let editUrl = '';
+  let formattedUrl = '';
 
   if (url) {
     const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/.build/', '');
     label = label || shortUrl;
 
     editUrl = `https://github.com/synle/bashrc/edit/master/.build/${shortUrl}`;
+    formattedUrl = `https://github.com/synle/bashrc/blob/master/.build/${shortUrl}`;
   }
 
   return (
@@ -581,7 +583,8 @@ function EnhancedTextArea(props) {
         <span>{label}</span>
         <ActionButton onClick={(e) => copyTextToClipboard(e.target.value)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
-        {url && <LinkButton href={url}>Open</LinkButton>}
+        {formattedUrl && <LinkButton href={formattedUrl}>View Formatted</LinkButton>}
+        {url && <LinkButton href={url}>View Raw</LinkButton>}
       </div>
       <textarea {...restProps} style={{ height }} />
     </>
@@ -1001,6 +1004,9 @@ function App() {
       }}>
       <div>
         <h1>{window.document.title}</h1>
+      </div>
+      <div>
+        <code>git clone git@github.com:synle/bashrc.git</code>
       </div>
       <div id='container'>
         <LeftContainer />
