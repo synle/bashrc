@@ -105,4 +105,6 @@ format_cleanup() {
 
   bashrcTextContent = prependTextBlock(bashrcTextContent, 'format script', formatScriptBlock);
   writeText(BASE_BASH_SYLE, bashrcTextContent);
+
+  writeToBuildFile([['format', formatScriptBlock]]);
 }

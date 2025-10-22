@@ -246,7 +246,20 @@ function writeJson(aDir, json, comments = '') {
   writeText(aDir, content.trim());
 }
 
+/**
+ *
+ * @param {*} tasks is an array of
+ [
+  file,     // string — absolute or relative file path
+  data,     // object or string — content to write
+  isJson,   // boolean — true if file should be written as JSON
+  comments  // string — optional text prepended as comments
+]
+ * @returns
+ */
 function writeToBuildFile(tasks) {
+  tasks = [].concat(tasks);
+
   if (DEBUG_WRITE_TO_DIR) {
     for (let [file, data, isJson, comments] of [].concat(tasks)) {
       isJson = !!isJson || false;
