@@ -3,6 +3,8 @@ async function doWork() {
 
   const { maxLineSize, ignoredFolders } = EDITOR_CONFIGS;
 
+  const MAX_DEPTH_CLEANUP = 4;
+
   // Build ignore list for Ruff
   const ruffExclude = ignoredFolders.join(',');
 
@@ -98,6 +100,29 @@ format_cleanup() {
     echo "✅ Removed \$count junk files in: \$base_dir"
   else
     echo "✨ No junk files found in: \$base_dir"
+  fi
+}
+
+format_cleanup_light() {
+  local base_dir="\${1:-.}"
+  local max_depth=${MAX_DEPTH_CLEANUP}
+
+  if [ ! -d "\$base_dir" ]; then
+    return 1
+  fi
+
+  local count=\$(find "\$base_dir" \\
+    -maxdepth "\$max_depth" \\
+    -type f \\( -name '*.Identifier' -o -name '._*' \\) \\
+    ${findExcludes} \\
+    -print | wc -l)
+
+  if [ "\$count" -gt 0 ]; then
+    find "\$base_dir" \\
+      -maxdepth "\$max_depth" \\
+      -type f \\( -name '*.Identifier' -o -name '._*' \\) \\
+      ${findExcludes} \\
+      -delete
   fi
 }
 # === end format script ===
