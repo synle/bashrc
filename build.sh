@@ -22,16 +22,16 @@ echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
 
 if [ "$CI" != "true" ]; then
-  echo '> Build Autocomplete Config'
-  if command -v docker >/dev/null 2>&1; then
-    echo "Docker detected. Running test script..."
-    export DEBUG_WRITE_TO_DIR=""
-    sh test.sh """
-      software/metadata/bash-autocomplete.docker.js
-    """
-  else
-    echo "Docker not found. Skipping test script."
-  fi
+  # echo '> Build Autocomplete Config'
+  # if command -v docker >/dev/null 2>&1; then
+  #   echo "Docker detected. Running test script..."
+  #   export DEBUG_WRITE_TO_DIR=""
+  #   sh test.sh """
+  #     software/metadata/bash-autocomplete.docker.js
+  #   """
+  # else
+  #   echo "Docker not found. Skipping test script."
+  # fi
 
   echo '> Build Host Mappings'
   export DEBUG_WRITE_TO_DIR="" && \
