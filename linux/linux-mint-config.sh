@@ -9,8 +9,8 @@ sudo add-apt-repository -y ppa:xubuntu-dev/extras
 curl -fsS https://dl.brave.com/install.sh | sh
 
 # Update system and install core packages
-sudo apt-get update -y
-sudo apt-get install -y \
+sudo apt update -y
+sudo apt install -y \
   git \
   vim \
   bat \
@@ -43,8 +43,9 @@ flatpak install -y flathub \
 
 # === Cleanup Unneeded Applications ===
 echo "Removing default and unused packages..."
-sudo apt-get purge -y firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xfce4-terminal || true
-sudo apt-get autoremove -y && sudo apt-get clean -y
+sudo apt purge -y firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xfce4-terminal
+sudo apt purge -y compiz compiz-plugins compizconfig-settings-manager emerald
+sudo apt autoremove -y && sudo apt clean -y
 
 # === Install WhiteSur macOS Theme ===
 echo "Setting up WhiteSur macOS theme..."
