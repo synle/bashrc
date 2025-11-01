@@ -20,6 +20,7 @@
     brightnessctl \
     ddcutil \
     xfce4-docklike-plugin \
+    xfce4-appmenu-plugin \
     fonts-firacode \
     python3-pip \
     python3-venv \
