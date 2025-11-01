@@ -43,7 +43,6 @@ if [ -d "$HOME/.config/xfce4" ]; then
   echo "Backing up XFCE configuration..."
   mkdir -p ./linux
   tar -czf ./linux/xfce-config.tar.gz -C "$HOME/.config" xfce4
-  tar -czf ./linux/xfce-config-full.tar.gz -C "$HOME" .config .local .themes .icons
   echo "Backup complete: ./linux/xfce-config.tar.gz"
 else
   echo "No XFCE configuration found. Skipping backup."
