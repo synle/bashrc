@@ -170,3 +170,22 @@ xfconf-query -c xfce4-keyboard-shortcuts -rR || true
 rm -rf "$TEMP_DIR" "$TMPDIR"
 echo "Temporary files removed."
 echo "Setup complete. Backup stored in: $BACKUP_DIR"
+
+
+# # install kde
+# sudo apt purge xfce4* mint-meta-xfce -y
+# sudo apt autoremove --purge -y
+
+# sudo apt install --no-install-recommends kde-plasma-desktop -y
+# sudo apt install plasma-workspace-wayland -y
+# sudo apt install sddm -y
+
+# # sudo apt install kde-standard -y
+
+# sudo dpkg-reconfigure sddm
+# sudo systemctl enable sddm
+# sudo systemctl disable lightdm
+# rm -rf ~/.config/xfce4 ~/.cache/sessions
+
+
+
