@@ -8,6 +8,13 @@
   sudo add-apt-repository -y ppa:xubuntu-dev/extras
   curl -fsS https://dl.brave.com/install.sh | sh
 
+  # Install codium
+  pushd /tmp >/dev/null || exit
+  wget -q https://github.com/VSCodium/vscodium/releases/download/1.105.17075/codium_1.105.17075_amd64.deb
+  sudo dpkg -i codium_1.105.17075_amd64.deb >/dev/null 2>&1 || sudo apt -f install -y >/dev/null 2>&1
+  popd >/dev/null || exit
+  echo "VSCodium installed successfully."
+
   # Update system and install core packages
   echo "Installing apt applications..."
   sudo apt update -y >/dev/null 2>&1 && \
