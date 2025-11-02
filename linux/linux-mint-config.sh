@@ -126,21 +126,3 @@
 
   echo "Setup complete."
   echo "Backup stored in: $BACKUP_DIR"
-
-
-  # fix issue with gtk app menu with electron
-  # That ensures all GTK and Electron apps (VS Code, Slack, Discord, Chrome, etc.) can export their menus to your XFCE AppMenu panel plugin.
-  sudo tee /etc/X11/Xsession.d/52appmenu-gtk-module_add-to-gtk-modules >/dev/null <<'EOF'
-# /etc/X11/Xsession.d/52appmenu-gtk-module_add-to-gtk-modules
-# Ensures the appmenu-gtk-module is loaded for all X11 sessions (needed for global menu)
-# Compatible with Linux Mint XFCE
-
-if [ -z "$GTK_MODULES" ]; then
-  GTK_MODULES="appmenu-gtk-module"
-else
-  GTK_MODULES="$GTK_MODULES:appmenu-gtk-module"
-fi
-
-export GTK_MODULES
-EOF
-  sudo chmod +x /etc/X11/Xsession.d/52appmenu-gtk-module_add-to-gtk-modules
