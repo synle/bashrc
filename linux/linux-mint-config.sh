@@ -100,6 +100,8 @@ sudo flatpak override --filesystem=xdg-config/gtk-4.0
 ./tweaks.sh -F >/dev/null 2>&1 || true
 sudo ./tweaks.sh -F >/dev/null 2>&1 || true
 popd >/dev/null
+sudo find /usr/share/icons -maxdepth 1 -type d \( ! -name "default" \) -exec sudo gtk-update-icon-cache -f {} \;
+
 
 # Wallpapers
 echo "Copying wallpapers..."
