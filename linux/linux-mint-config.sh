@@ -117,8 +117,11 @@
   popd >/dev/null
 
   echo "Restarting XFCE components..."
-  xfce4-panel -r
-  xfwm4 --replace &
+  pkill xfce4-panel
+  rm -rf ~/.cache/sessions/*  # Clear session cache to avoid stale configs
+  sleep 1
+  nohup xfce4-panel --disable-wm-check >/dev/null 2>&1 & # Restart panel (disable WM check prevents session interference)
+  xfwm4 --replace >/dev/null 2>&1 &  # Replace window manager (refreshes borders, shadows, etc.)
   xfconf-query -c xfce4-keyboard-shortcuts -rR || true
 
   rm -rf "$TEMP_DIR" "$TMPDIR"
@@ -126,3 +129,18 @@
 
   echo "Setup complete."
   echo "Backup stored in: $BACKUP_DIR"
+
+
+  # Setting Terminator padding...
+  GTK_DIR="$HOME/.config/gtk-3.0"
+  CSS_FILE="$GTK_DIR/gtk.css"
+  echo "Setting Terminator padding..."
+
+  # Create GTK3 config directory if it doesn’t exist
+  mkdir -p "$GTK_DIR"
+
+  # Write padding CSS
+  echo "/* Add padding inside Terminator terminal window */
+VteTerminal, vte-terminal {
+    padding: 15px 15px; /* vertical horizontal */
+}" > $CSS_FILE
