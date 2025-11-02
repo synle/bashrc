@@ -44,7 +44,7 @@ echo "Flatpak applications installed."
 echo "Removing unused packages..."
 sudo apt purge -y firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* \
   xfce4-terminal compiz compiz-plugins compizconfig-settings-manager emerald \
-  mint-y-icons mint-x-icons \
+  mint-l-* mint-y-* mint-x-* yaru-theme* yaru-cinnamon* \
   gnome-calendar webapp-manager >/dev/null 2>&1 || true
 sudo apt autoremove -y --purge >/dev/null 2>&1
 sudo apt clean -y >/dev/null 2>&1
@@ -161,7 +161,7 @@ pkill xfce4-panel || true
 rm -rf ~/.cache/sessions/* >/dev/null 2>&1
 sleep 1
 nohup xfce4-panel --disable-wm-check >/dev/null 2>&1 &
-sleep 5
+sleep 3
 xfce4-panel -r
 xfwm4 --replace >/dev/null 2>&1 &
 xfconf-query -c xfce4-keyboard-shortcuts -rR || true
