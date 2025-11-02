@@ -9,26 +9,28 @@
   curl -fsS https://dl.brave.com/install.sh | sh
 
   # Update system and install core packages
-  sudo apt update -y
-  sudo apt install -y \
-    git \
-    vim \
-    bat \
-    terminator \
-    remmina \
-    grub2-theme-mint-2k \
-    brightnessctl \
-    ddcutil \
-    xfce4-docklike-plugin \
-    xfce4-appmenu-plugin \
-    fonts-firacode \
-    python3-pip \
-    python3-venv \
-    simplescreenrecorder \
-    imagemagick \
-    vlc \
-    sublime-text \
-    && echo ''
+  echo "Installing apt applications..."
+  sudo apt update -y >/dev/null 2>&1 && \
+    echo "Done apt update..." && \
+    sudo apt install -y \
+      git \
+      vim \
+      bat \
+      terminator \
+      remmina \
+      grub2-theme-mint-2k \
+      brightnessctl \
+      ddcutil \
+      xfce4-docklike-plugin \
+      xfce4-appmenu-plugin \
+      fonts-firacode \
+      python3-pip \
+      python3-venv \
+      simplescreenrecorder \
+      imagemagick \
+      vlc \
+      sublime-text >/dev/null 2>&1 && \
+    echo "Done apt install..."
 
   # === Install Flatpak Applications ===
   echo "Installing Flatpak applications..."
@@ -40,13 +42,25 @@
     cc.arduino.arduinoide \
     org.blender.Blender \
     com.ultimaker.cura \
-    && echo ''
+    && echo 'Done flatpak install...'
 
   # === Cleanup Unneeded Applications ===
   echo "Removing default and unused packages..."
-  sudo apt purge -y firefox* thunderbird* celluloid* xed hypnotix* rhythmbox* xfce4-terminal
-  sudo apt purge -y compiz compiz-plugins compizconfig-settings-manager emerald
-  sudo apt autoremove -y && sudo apt clean -y
+  sudo apt purge -y firefox* \
+    thunderbird* \
+    celluloid* \
+    xed \
+    hypnotix* \
+    rhythmbox* \
+    xfce4-terminal \
+    compiz \
+    compiz-plugins \
+    compizconfig-settings-manager \
+    emerald \
+    gnome-calendar \
+    webapp-manager \
+    && sudo apt autoremove -y --purge && sudo apt clean -y
+    && echo 'Done apt remove install...'
 
   # === Install WhiteSur macOS Theme ===
   echo "Setting up WhiteSur macOS theme..."
