@@ -165,3 +165,20 @@
 VteTerminal, vte-terminal {
     padding: 15px 15px; /* vertical horizontal */
 }" > $CSS_FILE
+
+
+  # fix display
+  sudo tee /usr/bin/fix-display-home > /dev/null <<'EOF'
+#!/bin/bash
+# Robust display + scaling fix for Linux Mint XFCE
+
+# Set framebuffer large enough to hold both screens
+xrandr --fb 2160x2720
+
+# Configure displays
+xrandr \
+  --output DP-1-0 --primary --mode 2160x1440 --scale 1x1 --pos 0x1280 --rotate normal \
+  --output eDP --mode 2560x1600 --scale 0.8x0.8 --pos 54x0 --rotate normal
+EOF
+
+sudo chmod +x /usr/bin/fix-display-home
