@@ -161,6 +161,7 @@ pkill xfce4-panel || true
 rm -rf ~/.cache/sessions/* >/dev/null 2>&1
 sleep 1
 nohup xfce4-panel --disable-wm-check >/dev/null 2>&1 &
+sleep 5
 xfce4-panel -r
 xfwm4 --replace >/dev/null 2>&1 &
 xfconf-query -c xfce4-keyboard-shortcuts -rR || true
