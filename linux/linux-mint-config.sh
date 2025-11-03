@@ -46,6 +46,7 @@ installPackageWithApt simplescreenrecorder
 installPackageWithApt imagemagick
 installPackageWithApt vlc
 installPackageWithApt sublime-text
+installPackageWithApt mint-meta-codecs
 echo "APT packages installed."
 
 # ====== FLATPAK APPLICATIONS ==============================================================================
