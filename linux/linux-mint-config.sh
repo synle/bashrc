@@ -75,7 +75,7 @@ popd >/dev/null
 
 # Remove .git folders
 find "$TMPDIR" -maxdepth 2 -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true
-sudo rm -rf /usr/share/themes/*
+# sudo rm -rf /usr/share/themes/*
 
 # Icons
 echo "Installing WhiteSur icons..."
@@ -86,7 +86,9 @@ popd >/dev/null
 
 # Cursors
 echo "Installing WhiteSur cursors..."
-sudo bash "$TMPDIR/WhiteSur-cursors/install.sh" >/dev/null 2>&1
+pushd "$TMPDIR/WhiteSur-cursors/"
+sudo bash "$TMPDIR/WhiteSur-cursors/" >/dev/null 2>&1
+popd
 
 # GTK Theme
 echo "Installing WhiteSur GTK theme..."
@@ -94,7 +96,7 @@ pushd "$TMPDIR/WhiteSur-gtk-theme" >/dev/null
 ./tweaks.sh -g -r >/dev/null 2>&1 || true
 ./tweaks.sh -f -r >/dev/null 2>&1 || true
 sudo ./install.sh -d /usr/share/themes \
-  -c Dark -t blue -N stable --opacity normal --scheme standard >/dev/null 2>&1
+  -t blue -N stable --opacity normal --scheme standard >/dev/null 2>&1
 sudo flatpak override --filesystem=xdg-config/gtk-3.0
 sudo flatpak override --filesystem=xdg-config/gtk-4.0
 ./tweaks.sh -F >/dev/null 2>&1 || true
@@ -167,7 +169,7 @@ xfwm4 --replace >/dev/null 2>&1 &
 xfconf-query -c xfce4-keyboard-shortcuts -rR || true
 
 # Cleanup
-rm -rf "$TEMP_DIR" "$TMPDIR"
+# rm -rf "$TEMP_DIR" "$TMPDIR"
 echo "Temporary files removed."
 echo "Setup complete. Backup stored in: $BACKUP_DIR"
 
@@ -186,6 +188,3 @@ echo "Setup complete. Backup stored in: $BACKUP_DIR"
 # sudo systemctl enable sddm
 # sudo systemctl disable lightdm
 # rm -rf ~/.config/xfce4 ~/.cache/sessions
-
-
-
