@@ -15,6 +15,21 @@ sudo apt-get install -y xfce4-docklike-plugin  # then add docklike into the task
 sudo apt-get upgrade -y
 ```
 
+### Surfacebook
+
+https://github.com/linux-surface/linux-surface/wiki/Installation-and-Setup
+
+```bash
+wget -qO - https://raw.githubusercontent.com/linux-surface/linux-surface/master/pkg/keys/surface.asc \
+    | gpg --dearmor | sudo dd of=/etc/apt/trusted.gpg.d/linux-surface.gpg
+
+echo "deb [arch=amd64] https://pkg.surfacelinux.com/debian release main" \
+  | sudo tee /etc/apt/sources.list.d/linux-surface.list
+
+sudo apt-get update -y
+sudo apt install -y linux-image-surface linux-headers-surface libwacom-surface iptsd
+```
+
 ## Debloat
 
 ```bash
