@@ -4,13 +4,10 @@
 # to install run this
 winget install --id 7zip.7zip -e
 winget install --id Audacity.Audacity -e
-winget install --id BambuStudio.BambuStudio -e
 winget install --id BlenderFoundation.Blender -e
 winget install --id Brave.Brave -e
-winget install --id Cricut.DesignSpace -e
 winget install --id CodeSector.TeraCopy -e
 winget install --id Discord.Discord -e
-winget install --id dotPDNLLC.paintdotnet -e
 winget install --id EclipseAdoptium.Temurin.21.JDK -e
 winget install --id Git.Git -e
 winget install --id Greenshot.Greenshot -e
@@ -35,7 +32,9 @@ winget install --id WinFSP.SSHFS -e
 winget install --id WinMerge.WinMerge -e
 winget install --id WinSCP.WinSCP -e
 winget install --id Zoom.Zoom -e
-
+winget install --id Bambulab.BambuStudio -e
+winget install --id Cricut.DesktopApp -e
+winget install --id dotPDN.PaintDotNet -e
 
 
 
