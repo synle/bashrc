@@ -34,7 +34,7 @@ winget install --id WinSCP.WinSCP -e
 winget install --id Zoom.Zoom -e
 winget install --id Bambulab.Bambustudio -e
 winget install --id dotPDN.PaintDotNet -e
-
+winget install --id=Rufus.Rufus  -e
 
 
 #### Ignored
