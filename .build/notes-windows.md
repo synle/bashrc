@@ -1,6 +1,58 @@
 # `notes-windows.md`
 
-## All-in-one Script
+## Move my home directory
+```ps1
+# ==========================================
+# Move Desktop, Documents, and Downloads
+# to D:\Desktop, D:\Documents, D:\Downloads
+# ==========================================
+
+# Map of Known Folder GUID → Target Path
+$folders = @{
+    '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' = 'D:\Desktop'     # Desktop
+    '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' = 'D:\Documents'   # Documents
+    '{374DE290-123F-4565-9164-39C4925E467B}' = 'D:\Downloads'   # Downloads
+}
+
+# Registry paths
+$userShellFolders = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+$shellFolders     = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+
+foreach ($guid in $folders.Keys) {
+
+    $target = $folders[$guid]
+
+    # Create target directory if missing
+    if (-not (Test-Path $target)) {
+        New-Item -ItemType Directory -Path $target | Out-Null
+    }
+
+    # Resolve current path
+    $current = ([Environment]::GetFolderPath("Desktop"))
+    if ($guid -eq '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}') {
+        $current = ([Environment]::GetFolderPath("MyDocuments"))
+    }
+    if ($guid -eq '{374DE290-123F-4565-9164-39C4925E467B}') {
+        $current = "$HOME\Downloads"
+    }
+
+    # Move the contents
+    if (Test-Path $current) {
+        Write-Host "Moving: $current → $target"
+        robocopy $current $target /MOVE /E | Out-Null
+    }
+
+    # Update both registry locations
+    Set-ItemProperty -Path $userShellFolders -Name $guid -Value $target
+    Set-ItemProperty -Path $shellFolders     -Name $guid -Value $target
+
+    Write-Host "Updated registry for $guid"
+}
+
+Write-Host "Done. Log off and log back in for changes to fully apply."
+```
+
+## All-in-one setup Script
 
 ```ps1
 # Make Password Never Expire
