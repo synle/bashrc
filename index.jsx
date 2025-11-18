@@ -575,7 +575,7 @@ function EnhancedTextArea(props) {
     const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/', '');
     label = label || shortUrl;
 
-    editUrl = `https://github.com/synle/bashrc/edit/master/.build/${shortUrl}`;
+    editUrl = `https://github.com/synle/bashrc/edit/master/${shortUrl}`;
     formattedUrl = `https://github.com/synle/bashrc/blob/master/${shortUrl}`;
   }
 
