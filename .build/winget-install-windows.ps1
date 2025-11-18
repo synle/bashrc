@@ -32,8 +32,7 @@ winget install --id WinFSP.SSHFS -e
 winget install --id WinMerge.WinMerge -e
 winget install --id WinSCP.WinSCP -e
 winget install --id Zoom.Zoom -e
-winget install --id Bambulab.BambuStudio -e
-winget install --id Cricut.DesktopApp -e
+winget install --id Bambulab.Bambustudio -e
 winget install --id dotPDN.PaintDotNet -e
 
 
