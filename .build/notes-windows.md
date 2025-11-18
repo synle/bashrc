@@ -1,7 +1,7 @@
 # `notes-windows.md`
 
 ## Move my home directory
-```ps1
+```powershell
 # ==========================================
 # Move Desktop, Documents, and Downloads
 # to D:\Desktop, D:\Documents, D:\Downloads
@@ -60,9 +60,45 @@ foreach ($guid in $folders.Keys) {
 Write-Host "Complete. Log off and back in for changes to apply."
 ```
 
+## Explorers / Prefrences
+```powershell
+# Set `Start_SearchFiles`
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_SearchFiles" -Value 2
+
+# Set `Hidden` (Show Hidden Files)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 2
+
+# Set `ShowCompColor` (Show Component Colors)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowCompColor" -Value 1
+
+# Set `WebView` (Enable WebView in Explorer)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "WebView" -Value 1
+
+# Set `ShowInfoTip` (Enable Tooltips in Explorer)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowInfoTip" -Value 1
+
+# Disable `TaskbarAnimations`
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0
+
+# Disable `TaskbarSizeMove` (Prevent Resizing/Moving of Taskbar)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarSizeMove" -Value 0
+
+# Disable `DisablePreviewDesktop`
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DisablePreviewDesktop" -Value 1
+
+# Set `TaskbarSmallIcons` (Use Regular Icons on Taskbar)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarSmallIcons" -Value 0
+
+# Hide `ShowTaskViewButton`
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
+
+# Disable `TaskbarBadges` (No Badges on Taskbar Icons)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarBadges" -Value 0
+```
+
 ## All-in-one setup Script
 
-```ps1
+```powershell
 # Make Password Never Expire
 Set-ADUser -Identity "Sy Le" -PasswordNeverExpires $true
 Set-ADUser -Identity "syle" -PasswordNeverExpires $true
@@ -275,7 +311,7 @@ Set-ADUser -Identity "syle" -PasswordNeverExpires $true
 
 ## Game Bar Registry Hacks
 
-```ps1
+```powershell
 
 # ================================
 #  DISABLE XBOX GAME BAR
