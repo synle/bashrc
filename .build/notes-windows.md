@@ -7,14 +7,14 @@
 # to D:\Desktop, D:\Documents, D:\Downloads
 # ==========================================
 
-# Map of Known Folder GUID → Target Path
+# Known Folder GUIDs → New Paths
 $folders = @{
     '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' = 'D:\Desktop'     # Desktop
     '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' = 'D:\Documents'   # Documents
     '{374DE290-123F-4565-9164-39C4925E467B}' = 'D:\Downloads'   # Downloads
 }
 
-# Registry paths
+# Registry locations
 $userShellFolders = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
 $shellFolders     = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 
@@ -22,34 +22,42 @@ foreach ($guid in $folders.Keys) {
 
     $target = $folders[$guid]
 
-    # Create target directory if missing
+    # Ensure the target folder exists
     if (-not (Test-Path $target)) {
-        New-Item -ItemType Directory -Path $target | Out-Null
+        Write-Host "Creating folder: $target"
+        New-Item -ItemType Directory -Path $target -Force | Out-Null
     }
 
-    # Resolve current path
-    $current = ([Environment]::GetFolderPath("Desktop"))
-    if ($guid -eq '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}') {
-        $current = ([Environment]::GetFolderPath("MyDocuments"))
-    }
-    if ($guid -eq '{374DE290-123F-4565-9164-39C4925E467B}') {
-        $current = "$HOME\Downloads"
+    # Determine current folder path based on GUID
+    switch ($guid) {
+        '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' {  # Desktop
+            $current = "$HOME\Desktop"
+        }
+        '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' {  # Documents
+            $current = "$HOME\Documents"
+        }
+        '{374DE290-123F-4565-9164-39C4925E467B}' {  # Downloads
+            $current = "$HOME\Downloads"
+        }
     }
 
-    # Move the contents
+    # Move existing files (if the current folder exists)
     if (Test-Path $current) {
-        Write-Host "Moving: $current → $target"
+        Write-Host "Moving contents: $current → $target"
         robocopy $current $target /MOVE /E | Out-Null
     }
+    else {
+        Write-Host "Source does not exist, skipping move: $current"
+    }
 
-    # Update both registry locations
+    # Update registry to point Windows to new folder
     Set-ItemProperty -Path $userShellFolders -Name $guid -Value $target
     Set-ItemProperty -Path $shellFolders     -Name $guid -Value $target
 
-    Write-Host "Updated registry for $guid"
+    Write-Host "Updated registry for: $guid → $target"
 }
 
-Write-Host "Done. Log off and log back in for changes to fully apply."
+Write-Host "Complete. Log off and back in for changes to apply."
 ```
 
 ## All-in-one setup Script
