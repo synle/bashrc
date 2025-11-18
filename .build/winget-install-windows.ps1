@@ -1,26 +1,42 @@
-# https://winget.run/
+# to update run this
+# winget upgrade --all --include-unknown
 
-winget install --id  7zip.7zip
-winget install --id  Audacity.Audacity
-winget install --id  BlenderFoundation.Blender
-winget install --id  Git.Git
-winget install --id  Greenshot.Greenshot
-winget install --id  HandBrake.HandBrake
-winget install --id  Inkscape.Inkscape
-winget install --id  KDE.Krita
-winget install --id  Python.Python.3.10
-winget install --id  SublimeHQ.SublimeMerge
-winget install --id  SublimeHQ.SublimeText.4
-winget install --id  Ultimaker.Cura
-winget install --id  Valve.Steam
-winget install --id  VideoLAN.VLC
-winget install --id  VSCodium.VSCodium
-winget install --id  OpenJS.NodeJS
-winget install --id  WinSCP.WinSCP
-winget install --id  dotPDNLLC.paintdotnet
-winget install --id  Zoom.Zoom
-winget install --id  PuTTY.PuTTY
-winget install --id  WinMerge.WinMerge
+# to install run this
+winget install --id 7zip.7zip -e
+winget install --id Audacity.Audacity -e
+winget install --id BambuStudio.BambuStudio -e
+winget install --id BlenderFoundation.Blender -e
+winget install --id Brave.Brave -e
+winget install --id Cricut.DesignSpace -e
+winget install --id CodeSector.TeraCopy -e
+winget install --id Discord.Discord -e
+winget install --id dotPDNLLC.paintdotnet -e
+winget install --id EclipseAdoptium.Temurin.21.JDK -e
+winget install --id Git.Git -e
+winget install --id Greenshot.Greenshot -e
+winget install --id HandBrake.HandBrake -e
+winget install --id Inkscape.Inkscape -e
+winget install --id KDE.Krita -e
+winget install --id Microsoft.VisualStudioCode -e
+winget install --id Microsoft.VCRedist.2015+.x64 -e
+winget install --id Microsoft.DotNet.DesktopRuntime.7 -e
+winget install --id Mozilla.FiraCode -e
+winget install --id OpenJS.NodeJS -e
+winget install --id PuTTY.PuTTY -e
+winget install --id Python.Python.3 -e
+winget install --id SublimeHQ.SublimeMerge -e
+winget install --id SublimeHQ.SublimeText.4 -e
+winget install --id Ultimaker.Cura -e
+winget install --id Valve.Steam -e
+winget install --id VideoLAN.VLC -e
+winget install --id VSCodium.VSCodium -e
+winget install --id WinFSP.WinFSP -e
+winget install --id WinFSP.SSHFS -e
+winget install --id WinMerge.WinMerge -e
+winget install --id WinSCP.WinSCP -e
+winget install --id Zoom.Zoom -e
+
+
 
 
 #### Ignored
@@ -33,3 +49,4 @@ winget install --id  WinMerge.WinMerge
 ## winget install --id  AdoptOpenJDK.OpenJDK.16
 ## winget install --id  TheDocumentFoundation.LibreOffice
 ## winget install --id  Oracle.VirtualBox
+## winget install --id Python.Python.3.10 -e
