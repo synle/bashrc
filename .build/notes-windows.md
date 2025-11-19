@@ -3,8 +3,8 @@
 ## Move my home directory
 ```powershell
 # ==========================================
-# Move Desktop, Documents, and Downloads
-# to D:\Desktop, D:\Documents, D:\Downloads
+# Move Desktop, Documents, Downloads, Pictures
+# to D:\Desktop, D:\Documents, D:\Downloads, D:\Pictures
 # ==========================================
 
 # Known Folder GUIDs → New Paths
@@ -12,6 +12,7 @@ $folders = @{
     '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' = 'D:\Desktop'     # Desktop
     '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' = 'D:\Documents'   # Documents
     '{374DE290-123F-4565-9164-39C4925E467B}' = 'D:\Downloads'   # Downloads
+    '{33E28130-4E1E-4676-835A-98395C3BC3BB}' = 'D:\Pictures'    # Pictures
 }
 
 # Registry locations
@@ -22,42 +23,138 @@ foreach ($guid in $folders.Keys) {
 
     $target = $folders[$guid]
 
-    # Ensure the target folder exists
+    # Ensure the new target folder exists
     if (-not (Test-Path $target)) {
-        Write-Host "Creating folder: $target"
+        Write-Host "Creating: $target"
         New-Item -ItemType Directory -Path $target -Force | Out-Null
     }
 
-    # Determine current folder path based on GUID
+    # Determine current folder path
     switch ($guid) {
-        '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' {  # Desktop
-            $current = "$HOME\Desktop"
-        }
-        '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' {  # Documents
-            $current = "$HOME\Documents"
-        }
-        '{374DE290-123F-4565-9164-39C4925E467B}' {  # Downloads
-            $current = "$HOME\Downloads"
-        }
+        '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' { $current = "$HOME\Desktop" }
+        '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' { $current = "$HOME\Documents" }
+        '{374DE290-123F-4565-9164-39C4925E467B}' { $current = "$HOME\Downloads" }
+        '{33E28130-4E1E-4676-835A-98395C3BC3BB}' { $current = "$HOME\Pictures" }
     }
 
-    # Move existing files (if the current folder exists)
+    # Move documents if source exists
     if (Test-Path $current) {
-        Write-Host "Moving contents: $current → $target"
+        Write-Host "Moving: $current → $target"
         robocopy $current $target /MOVE /E | Out-Null
-    }
-    else {
-        Write-Host "Source does not exist, skipping move: $current"
+    } else {
+        Write-Host "Skipping (missing): $current"
     }
 
-    # Update registry to point Windows to new folder
+    # Update the registry mappings
     Set-ItemProperty -Path $userShellFolders -Name $guid -Value $target
     Set-ItemProperty -Path $shellFolders     -Name $guid -Value $target
 
-    Write-Host "Updated registry for: $guid → $target"
+    Write-Host "Updated location for: $guid → $target"
 }
 
-Write-Host "Complete. Log off and back in for changes to apply."
+Write-Host "`n✔ Done! Please sign out and back in for full effect."
+```
+
+## Debloat and disable telemetry
+
+```
+# ================================
+#  WINDOWS CLEANUP & PRIVACY HARDENING
+# ================================
+
+Write-Host "`n=== Windows Cleanup & Privacy Hardening ===" -ForegroundColor Cyan
+
+
+# --------------------------------
+# 1️⃣ Remove Microsoft Bloatware
+# --------------------------------
+Write-Host "`n→ Removing Microsoft bloatware apps..." -ForegroundColor Yellow
+
+$appsToRemove = @(
+    'Microsoft.3DViewer',
+    'Microsoft.GetHelp',
+    'Microsoft.Office.OneNote',
+    'Microsoft.People',
+    'Microsoft.WindowsAlarms',
+    'Microsoft.WindowsMaps',
+    'Microsoft.ZuneMusic',
+    'Microsoft.ZuneVideo'
+)
+
+foreach ($app in $appsToRemove) {
+    Write-Host "Uninstalling: $app"
+    Get-AppxPackage -Name $app -ErrorAction SilentlyContinue |
+        Remove-AppxPackage -ErrorAction SilentlyContinue
+}
+
+Write-Host "✔ App cleanup complete." -ForegroundColor Green
+
+
+# --------------------------------
+# 2️⃣ Disable Cortana + Web Search
+# --------------------------------
+Write-Host "`n→ Disabling Cortana & Internet search suggestions..." -ForegroundColor Yellow
+
+$explorerPolicy = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
+if (-not (Test-Path $explorerPolicy)) {
+    New-Item -Path $explorerPolicy -Force | Out-Null
+}
+
+Set-ItemProperty -Path $explorerPolicy -Name "AllowCortana" -Type DWord -Value 0
+Set-ItemProperty -Path $explorerPolicy -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1
+
+Write-Host "✔ Cortana + Search hardened." -ForegroundColor Green
+
+
+# --------------------------------
+# 3️⃣ Disable Windows Telemetry / Tracking
+# --------------------------------
+Write-Host "`n→ Disabling telemetry services & tasks..." -ForegroundColor Yellow
+
+# Group Policy Collection Telemetry Setting
+$telemetryKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+if (-not (Test-Path $telemetryKey)) {
+    New-Item -Path $telemetryKey -Force | Out-Null
+}
+Set-ItemProperty -Path $telemetryKey -Name "AllowTelemetry" -Type DWord -Value 0
+
+# Disable services
+$services = @(
+    "DiagTrack",
+    "DmWappushService",
+    "Connected User Experiences and Telemetry"
+)
+
+foreach ($svc in $services) {
+    Write-Host "Stopping + disabling: $svc"
+    Get-Service -Name $svc -ErrorAction SilentlyContinue | Stop-Service -Force
+    Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+}
+
+# Disable telemetry scheduled tasks
+$scheduledTasks = @(
+    "\Microsoft\Windows\Customer Experience Improvement Program\",
+    "\Microsoft\Windows\Application Experience\",
+    "\Microsoft\Windows\Autochk\Proxy",
+    "\Microsoft\Windows\Feedback\Siuf\"
+)
+
+foreach ($taskPath in $scheduledTasks) {
+    try {
+        Get-ScheduledTask -TaskPath $taskPath -ErrorAction Stop |
+            Disable-ScheduledTask -ErrorAction SilentlyContinue
+        Write-Host "Disabled tasks at: $taskPath"
+    } catch {}
+}
+
+Write-Host "✔ Telemetry disabled." -ForegroundColor Green
+
+
+# --------------------------------
+# Finishing up
+# --------------------------------
+Write-Host "`n✓ System cleanup completed successfully!" -ForegroundColor Cyan
+Write-Host "⚠ Log off or reboot required for some changes to apply." -ForegroundColor Yellow
 ```
 
 ## Explorers / Prefrences
@@ -108,40 +205,6 @@ Set-ADUser -Identity "syle" -PasswordNeverExpires $true
 # ================================
 wsl --update
 wsl --set-default-version 2
-
-# ================================
-#  REMOVE BLOAT + PRIVACY HARDENING
-# ================================
-Write-Host "`nRemoving selected Windows bloatware..." -ForegroundColor Cyan
-
-$appsToRemove = @(
-    'Microsoft.3DViewer','Microsoft.GetHelp','Microsoft.MicrosoftEdge',
-    'Microsoft.Office.OneNote','Microsoft.People','Microsoft.WindowsAlarms',
-    'Microsoft.WindowsCalculator','Microsoft.WindowsCamera',
-    'Microsoft.WindowsMaps','Microsoft.ZuneMusic','Microsoft.ZuneVideo'
-)
-
-$appsToRemove | ForEach-Object {
-    Write-Host "Removing $_..."
-    Get-AppxPackage -Name $_ -ErrorAction SilentlyContinue |
-        Remove-AppxPackage -ErrorAction SilentlyContinue
-}
-
-# Disable Cortana + Web Search
-Write-Host "`nDisabling Cortana and Start Menu web search..." -ForegroundColor Cyan
-
-$explorerPolicy = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
-if (-not (Test-Path $explorerPolicy)) {
-    New-Item -Path $explorerPolicy -Force | Out-Null
-}
-
-Set-ItemProperty -Path $explorerPolicy -Name AllowCortana -Value 0 -Force
-Set-ItemProperty -Path $explorerPolicy -Name DisableSearchBoxSuggestions -Value 1 -Force
-
-Stop-Process -Name explorer -Force
-Start-Process explorer.exe
-
-Write-Host "Bloatware removed and search hardened." -ForegroundColor Green
 
 # ================================
 #  DEFENDER EXCLUSION
