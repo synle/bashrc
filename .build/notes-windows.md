@@ -157,42 +157,6 @@ Write-Host "`n✓ System cleanup completed successfully!" -ForegroundColor Cyan
 Write-Host "⚠ Log off or reboot required for some changes to apply." -ForegroundColor Yellow
 ```
 
-## Explorers / Prefrences
-```powershell
-# Set `Start_SearchFiles`
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_SearchFiles" -Value 2
-
-# Set `Hidden` (Show Hidden Files)
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 2
-
-# Set `ShowCompColor` (Show Component Colors)
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowCompColor" -Value 1
-
-# Set `WebView` (Enable WebView in Explorer)
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "WebView" -Value 1
-
-# Set `ShowInfoTip` (Enable Tooltips in Explorer)
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowInfoTip" -Value 1
-
-# Disable `TaskbarAnimations`
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0
-
-# Disable `TaskbarSizeMove` (Prevent Resizing/Moving of Taskbar)
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarSizeMove" -Value 0
-
-# Disable `DisablePreviewDesktop`
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "DisablePreviewDesktop" -Value 1
-
-# Set `TaskbarSmallIcons` (Use Regular Icons on Taskbar)
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarSmallIcons" -Value 0
-
-# Hide `ShowTaskViewButton`
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Value 0
-
-# Disable `TaskbarBadges` (No Badges on Taskbar Icons)
-Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarBadges" -Value 0
-```
-
 ## All-in-one setup Script
 
 ```powershell
