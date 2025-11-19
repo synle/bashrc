@@ -1,6 +1,7 @@
 # `notes-windows.md`
 
-## Move my home directory
+## Getting started
+
 ```powershell
 # ==========================================
 # Move Desktop, Documents, Downloads, Pictures
@@ -52,12 +53,9 @@ foreach ($guid in $folders.Keys) {
     Write-Host "Updated location for: $guid → $target"
 }
 
-Write-Host "`n✔ Done! Please sign out and back in for full effect."
-```
+Write-Host "`nDone! Please sign out and back in for full effect."
 
-## Debloat and disable telemetry and recall
 
-```
 # ================================
 #  WINDOWS CLEANUP & PRIVACY HARDENING
 # ================================
@@ -66,9 +64,9 @@ Write-Host "`n=== Windows Cleanup & Privacy Hardening ===" -ForegroundColor Cyan
 
 
 # --------------------------------
-# 1️⃣ Remove Microsoft Bloatware
+# Remove Microsoft Bloatware
 # --------------------------------
-Write-Host "`n→ Removing Microsoft bloatware apps..." -ForegroundColor Yellow
+Write-Host "`nRemoving Microsoft bloatware apps..." -ForegroundColor Yellow
 
 $appsToRemove = @(
     'Microsoft.3DViewer',
@@ -78,7 +76,26 @@ $appsToRemove = @(
     'Microsoft.WindowsAlarms',
     'Microsoft.WindowsMaps',
     'Microsoft.ZuneMusic',
-    'Microsoft.ZuneVideo'
+    'Microsoft.ZuneVideo',
+
+    # Unnecessary built-ins
+    'Microsoft.GetHelp',
+    'Microsoft.Getstarted',
+    'Microsoft.MicrosoftOfficeHub',
+    'Microsoft.People',
+    'Microsoft.3DViewer',
+    'Microsoft.MicrosoftSolitaireCollection',
+    'Microsoft.WindowsMaps',
+    'Microsoft.WindowsAlarms',
+    'Microsoft.BingNews',
+    'Microsoft.BingWeather',
+    'Microsoft.BingFinance',
+    'Microsoft.BingSports',
+    'Microsoft.MicrosoftStickyNotes',
+
+    # Trialware OEM store content
+    'Microsoft.SkypeApp',
+    'Microsoft.Office.OneNote'
 )
 
 foreach ($app in $appsToRemove) {
@@ -87,13 +104,13 @@ foreach ($app in $appsToRemove) {
         Remove-AppxPackage -ErrorAction SilentlyContinue
 }
 
-Write-Host "✔ App cleanup complete." -ForegroundColor Green
+Write-Host "App cleanup complete." -ForegroundColor Green
 
 
 # --------------------------------
-# 2️⃣ Disable Cortana + Web Search
+# Disable Cortana + Web Search
 # --------------------------------
-Write-Host "`n→ Disabling Cortana & Internet search suggestions..." -ForegroundColor Yellow
+Write-Host "`nDisabling Cortana & Internet search suggestions..." -ForegroundColor Yellow
 
 $explorerPolicy = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
 if (-not (Test-Path $explorerPolicy)) {
@@ -103,13 +120,13 @@ if (-not (Test-Path $explorerPolicy)) {
 Set-ItemProperty -Path $explorerPolicy -Name "AllowCortana" -Type DWord -Value 0
 Set-ItemProperty -Path $explorerPolicy -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1
 
-Write-Host "✔ Cortana + Search hardened." -ForegroundColor Green
+Write-Host "Cortana + Search hardened." -ForegroundColor Green
 
 
 # --------------------------------
-# 3️⃣ Disable Windows Telemetry / Tracking
+# Disable Windows Telemetry / Tracking
 # --------------------------------
-Write-Host "`n→ Disabling telemetry services & tasks..." -ForegroundColor Yellow
+Write-Host "`nDisabling telemetry services & tasks..." -ForegroundColor Yellow
 
 # Group Policy Collection Telemetry Setting
 $telemetryKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
@@ -147,19 +164,13 @@ foreach ($taskPath in $scheduledTasks) {
     } catch {}
 }
 
-Write-Host "✔ Telemetry disabled." -ForegroundColor Green
+Write-Host "Telemetry disabled." -ForegroundColor Green
 
 
 # --------------------------------
-# Finishing up
+# Disable Windows Recall (AI screenshot history)
 # --------------------------------
-Write-Host "`n✓ System cleanup completed successfully!" -ForegroundColor Cyan
-Write-Host "⚠ Log off or reboot required for some changes to apply." -ForegroundColor Yellow
-
-# --------------------------------
-# 4️⃣ Disable Windows Recall (AI screenshot history)
-# --------------------------------
-Write-Host "`n→ Disabling Windows Recall..." -ForegroundColor Yellow
+Write-Host "`nDisabling Windows Recall..." -ForegroundColor Yellow
 
 $recallKey = "HKLM:\Software\Policies\Microsoft\Windows\WindowsAI"
 if (-not (Test-Path $recallKey)) {
@@ -182,7 +193,51 @@ foreach ($svc in $recallServices) {
     Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
 }
 
-Write-Host "✔ Recall disabled successfully." -ForegroundColor Green
+Write-Host "Recall disabled successfully." -ForegroundColor Green
+
+# ================================
+#  HOSTS FILE BLOCKING
+# ================================
+Write-Host "`nUpdating HOSTS file..." -ForegroundColor Cyan
+
+$hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
+$entriesToAdd = @(
+    "0.0.0.0 lmlicenses.wip4.adobe.com",
+    "0.0.0.0 lm.licenses.adobe.com",
+    "0.0.0.0 na1r.services.adobe.com",
+    "0.0.0.0 hlrcv.stage.adobe.com",
+    "0.0.0.0 practivate.adobe.com",
+    "0.0.0.0 activate.adobe.com",
+    "0.0.0.0 officecdn.microsoft.com",
+    "0.0.0.0 officecdn.microsoft.com.edgesuite.net",
+    "0.0.0.0 config.office.com",
+    "0.0.0.0 odc.officeapps.live.com"
+)
+
+$currentHosts = Get-Content -Path $hostsPath
+
+foreach ($entry in $entriesToAdd) {
+    if ($currentHosts -notcontains $entry) {
+        Write-Host "Adding: $entry"
+        Add-Content -Path $hostsPath -Value $entry
+    } else {
+        Write-Host "Exists: $entry"
+    }
+    Start-Sleep -Seconds 1
+}
+
+Write-Host "`nHOSTS file updated." -ForegroundColor Green
+
+# ================================
+#  DEFENDER EXCLUSION
+# ================================
+Write-Host "`nAdding Defender exclusion..." -ForegroundColor Cyan
+Add-MpPreference -ExclusionPath "C:\Program Files (x86)\Microsoft Office\Office14"
+Write-Host "Defender exclusion added."
+
+Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
+Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
+
 ```
 
 ## All-in-one setup Script
@@ -197,13 +252,6 @@ Set-ADUser -Identity "syle" -PasswordNeverExpires $true
 # ================================
 wsl --update
 wsl --set-default-version 2
-
-# ================================
-#  DEFENDER EXCLUSION
-# ================================
-Write-Host "`nAdding Defender exclusion..." -ForegroundColor Cyan
-Add-MpPreference -ExclusionPath "C:\Program Files (x86)\Microsoft Office\Office14"
-Write-Host "Defender exclusion added."
 
 # ================================
 #  FIREWALL BLOCK RULES
@@ -263,39 +311,6 @@ foreach ($exe in $AdobeExeList) {
 }
 
 Write-Host "`nAdobe and Office firewall blocks applied." -ForegroundColor Green
-
-# ================================
-#  HOSTS FILE BLOCKING
-# ================================
-Write-Host "`nUpdating HOSTS file..." -ForegroundColor Cyan
-
-$hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
-$entriesToAdd = @(
-    "0.0.0.0 lmlicenses.wip4.adobe.com",
-    "0.0.0.0 lm.licenses.adobe.com",
-    "0.0.0.0 na1r.services.adobe.com",
-    "0.0.0.0 hlrcv.stage.adobe.com",
-    "0.0.0.0 practivate.adobe.com",
-    "0.0.0.0 activate.adobe.com",
-    "0.0.0.0 officecdn.microsoft.com",
-    "0.0.0.0 officecdn.microsoft.com.edgesuite.net",
-    "0.0.0.0 config.office.com",
-    "0.0.0.0 odc.officeapps.live.com"
-)
-
-$currentHosts = Get-Content -Path $hostsPath
-
-foreach ($entry in $entriesToAdd) {
-    if ($currentHosts -notcontains $entry) {
-        Write-Host "Adding: $entry"
-        Add-Content -Path $hostsPath -Value $entry
-    } else {
-        Write-Host "Exists: $entry"
-    }
-    Start-Sleep -Seconds 1
-}
-
-Write-Host "`nHOSTS file updated." -ForegroundColor Green
 ```
 
 ---
