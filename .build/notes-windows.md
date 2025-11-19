@@ -55,7 +55,7 @@ foreach ($guid in $folders.Keys) {
 Write-Host "`n✔ Done! Please sign out and back in for full effect."
 ```
 
-## Debloat and disable telemetry
+## Debloat and disable telemetry and recall
 
 ```
 # ================================
@@ -155,6 +155,34 @@ Write-Host "✔ Telemetry disabled." -ForegroundColor Green
 # --------------------------------
 Write-Host "`n✓ System cleanup completed successfully!" -ForegroundColor Cyan
 Write-Host "⚠ Log off or reboot required for some changes to apply." -ForegroundColor Yellow
+
+# --------------------------------
+# 4️⃣ Disable Windows Recall (AI screenshot history)
+# --------------------------------
+Write-Host "`n→ Disabling Windows Recall..." -ForegroundColor Yellow
+
+$recallKey = "HKLM:\Software\Policies\Microsoft\Windows\WindowsAI"
+if (-not (Test-Path $recallKey)) {
+    New-Item -Path $recallKey -Force | Out-Null
+}
+
+# Disable AI screenshot capture + storage
+Set-ItemProperty -Path $recallKey -Name "DisableAIDataAnalysis" -Type DWord -Value 1
+Set-ItemProperty -Path $recallKey -Name "DisableCapture" -Type DWord -Value 1
+
+# Stop and disable Recall-related services if present
+$recallServices = @(
+    "Recall",
+    "DesktopAIClientService",
+    "RecallSnapshot"
+)
+
+foreach ($svc in $recallServices) {
+    Get-Service -Name $svc -ErrorAction SilentlyContinue | Stop-Service -Force
+    Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+}
+
+Write-Host "✔ Recall disabled successfully." -ForegroundColor Green
 ```
 
 ## All-in-one setup Script
