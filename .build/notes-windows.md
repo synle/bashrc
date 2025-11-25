@@ -1,6 +1,6 @@
 # `notes-windows.md`
 
-## Getting started
+## Setting up Personal Folders
 
 ```powershell
 # ==========================================
@@ -54,6 +54,27 @@ foreach ($guid in $folders.Keys) {
 }
 
 Write-Host "`nDone! Please sign out and back in for full effect."
+```
+
+## Setting up Personal Folders
+
+```powershell
+# ================================
+#  Regedit for Adobe Photoshop
+# ================================
+# Define the registry path and value
+$regPath = "HKCU:\Software\Adobe\CSXS.6"
+$regName = "PlayerDebugMode"
+$regValue = "1"
+
+# Create the key if it doesn't exist
+If (!(Test-Path $regPath)) {
+    New-Item -Path $regPath -Force | Out-Null
+}
+
+# Create or update the registry value
+New-ItemProperty -Path $regPath -Name $regName -Value $regValue -PropertyType String -Force
+Write-Host "Registry value updated successfully."
 
 
 # ================================
