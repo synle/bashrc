@@ -56,7 +56,7 @@ foreach ($guid in $folders.Keys) {
 Write-Host "`nDone! Please sign out and back in for full effect."
 ```
 
-## Setting up Personal Folders
+## Getting Started
 
 ```powershell
 # ================================
