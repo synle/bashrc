@@ -1,3 +1,7 @@
+# Only Windows - PLATFORM SPECIFIC TWEAKS
+. /home/syle/.bash_syle_only_windows
+# END Only Windows - PLATFORM SPECIFIC TWEAKS
+
 # Sy Make Component
 [ -f /home/syle/.synle-make-component/setup.sh ] && . /home/syle/.synle-make-component/setup.sh
 
