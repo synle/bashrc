@@ -232,7 +232,12 @@ $entriesToAdd = @(
     "0.0.0.0 officecdn.microsoft.com",
     "0.0.0.0 officecdn.microsoft.com.edgesuite.net",
     "0.0.0.0 config.office.com",
-    "0.0.0.0 odc.officeapps.live.com"
+    "0.0.0.0 odc.officeapps.live.com",
+    # windows telemetry
+    "0.0.0.0 vortex.data.microsoft.com",        # Core Windows telemetry ingestion        (SAFE)
+    "0.0.0.0 telemetry.microsoft.com",          # Legacy telemetry endpoint               (SAFE)
+    "0.0.0.0 watson.telemetry.microsoft.com",   # Crash & error reporting (WER)            (OPTIONAL)
+    "0.0.0.0 settings-win.data.microsoft.com",  # Settings app analytics / experiments     (SAFE)
 )
 
 $currentHosts = Get-Content -Path $hostsPath
@@ -258,6 +263,47 @@ Write-Host "Defender exclusion added."
 
 Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
 Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
+
+# --------------------------------
+# Disable Windows Copilot and Recall and more
+# --------------------------------
+
+# --- COPILOT ---
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' /v CopilotAllowed /t REG_DWORD /d 0 /f;
+reg add 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' /v ShowCopilotButton /t REG_DWORD /d 0 /f;
+
+# --- RECALL / REPLAY / AI CAPTURE ---
+dism /online /disable-feature /featurename:Recall /norestart;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f;
+
+# --- TIMELINE / ACTIVITY HISTORY ---
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v EnableActivityFeed /t REG_DWORD /d 0 /f;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v PublishUserActivities /t REG_DWORD /d 0 /f;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v UploadUserActivities /t REG_DWORD /d 0 /f;
+
+# --- TELEMETRY ---
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection' /v AllowTelemetry /t REG_DWORD /d 0 /f;
+Stop-Service DiagTrack -Force -ErrorAction SilentlyContinue;
+Set-Service DiagTrack -StartupType Disabled;
+Stop-Service diagnosticshub.standardcollector.service -Force -ErrorAction SilentlyContinue;
+Set-Service diagnosticshub.standardcollector.service -StartupType Disabled;
+
+# --- CLOUD / CONSUMER / AI ---
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent' /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent' /v DisableTailoredExperiencesWithDiagnosticData /t REG_DWORD /d 1 /f;
+
+# --- SEARCH / WEB / AI ---
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search' /v AllowCloudSearch /t REG_DWORD /d 0 /f;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search' /v DisableWebSearch /t REG_DWORD /d 1 /f;
+
+# --- EDGE COPILOT / TELEMETRY ---
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Edge' /v HubsSidebarEnabled /t REG_DWORD /d 0 /f;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Edge' /v EdgeCopilotEnabled /t REG_DWORD /d 0 /f;
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Edge' /v DiagnosticData /t REG_DWORD /d 0 /f;
+
+# --- PREVENT UPDATE RE-ENABLE ---
+reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f;
 
 ```
 
