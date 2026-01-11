@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useMemo, useState } from 'https://cdn.skypack.dev/react';
-import ReactDOM from 'https://cdn.skypack.dev/react-dom';
+import ReactDOM from "https://esm.sh/react-dom@18";
+import React, { useContext, useEffect, useMemo, useState } from "https://esm.sh/react@18";
 
 const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const isSystemWindows = navigator.platform.indexOf('Win') > -1;
