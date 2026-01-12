@@ -62,18 +62,22 @@ Write-Host "`nDone! Please sign out and back in for full effect."
 # ================================
 #  Regedit for Adobe Photoshop
 # ================================
-# Define the registry path and value
-$regPath = "HKCU:\Software\Adobe\CSXS.6"
-$regName = "PlayerDebugMode"
+
+$regPath  = "HKCU:\Software\Adobe\CSXS.6"
+$regName  = "PlayerDebugMode"
 $regValue = "1"
 
-# Create the key if it doesn't exist
 If (!(Test-Path $regPath)) {
     New-Item -Path $regPath -Force | Out-Null
 }
 
-# Create or update the registry value
-New-ItemProperty -Path $regPath -Name $regName -Value $regValue -PropertyType String -Force
+New-ItemProperty `
+    -Path $regPath `
+    -Name $regName `
+    -Value $regValue `
+    -PropertyType String `
+    -Force
+
 Write-Host "Registry value updated successfully."
 
 
@@ -87,37 +91,28 @@ Write-Host "`n=== Windows Cleanup & Privacy Hardening ===" -ForegroundColor Cyan
 # --------------------------------
 # Remove Microsoft Bloatware
 # --------------------------------
+
 Write-Host "`nRemoving Microsoft bloatware apps..." -ForegroundColor Yellow
 
 $appsToRemove = @(
     'Microsoft.3DViewer',
     'Microsoft.GetHelp',
-    'Microsoft.Office.OneNote',
+    'Microsoft.Getstarted',
+    'Microsoft.MicrosoftOfficeHub',
+    'Microsoft.MicrosoftSolitaireCollection',
     'Microsoft.People',
+    'Microsoft.SkypeApp',
     'Microsoft.WindowsAlarms',
     'Microsoft.WindowsMaps',
     'Microsoft.ZuneMusic',
     'Microsoft.ZuneVideo',
-
-    # Unnecessary built-ins
-    'Microsoft.GetHelp',
-    'Microsoft.Getstarted',
-    'Microsoft.MicrosoftOfficeHub',
-    'Microsoft.People',
-    'Microsoft.3DViewer',
-    'Microsoft.MicrosoftSolitaireCollection',
-    'Microsoft.WindowsMaps',
-    'Microsoft.WindowsAlarms',
     'Microsoft.BingNews',
     'Microsoft.BingWeather',
     'Microsoft.BingFinance',
     'Microsoft.BingSports',
     'Microsoft.MicrosoftStickyNotes',
-
-    # Trialware OEM store content
-    'Microsoft.SkypeApp',
     'Microsoft.Office.OneNote'
-)
+) | Sort-Object -Unique
 
 foreach ($app in $appsToRemove) {
     Write-Host "Uninstalling: $app"
@@ -131,6 +126,7 @@ Write-Host "App cleanup complete." -ForegroundColor Green
 # --------------------------------
 # Disable Cortana + Web Search
 # --------------------------------
+
 Write-Host "`nDisabling Cortana & Internet search suggestions..." -ForegroundColor Yellow
 
 $explorerPolicy = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
@@ -147,41 +143,39 @@ Write-Host "Cortana + Search hardened." -ForegroundColor Green
 # --------------------------------
 # Disable Windows Telemetry / Tracking
 # --------------------------------
+
 Write-Host "`nDisabling telemetry services & tasks..." -ForegroundColor Yellow
 
-# Group Policy Collection Telemetry Setting
 $telemetryKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
 if (-not (Test-Path $telemetryKey)) {
     New-Item -Path $telemetryKey -Force | Out-Null
 }
+
 Set-ItemProperty -Path $telemetryKey -Name "AllowTelemetry" -Type DWord -Value 0
 
-# Disable services
 $services = @(
     "DiagTrack",
     "DmWappushService",
-    "Connected User Experiences and Telemetry"
+    "diagnosticshub.standardcollector.service"
 )
 
 foreach ($svc in $services) {
     Write-Host "Stopping + disabling: $svc"
-    Get-Service -Name $svc -ErrorAction SilentlyContinue | Stop-Service -Force
-    Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+    Stop-Service $svc -Force -ErrorAction SilentlyContinue
+    Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
 }
 
-# Disable telemetry scheduled tasks
 $scheduledTasks = @(
     "\Microsoft\Windows\Customer Experience Improvement Program\",
     "\Microsoft\Windows\Application Experience\",
-    "\Microsoft\Windows\Autochk\Proxy",
-    "\Microsoft\Windows\Feedback\Siuf\"
+    "\Microsoft\Windows\Autochk\",
+    "\Microsoft\Windows\Feedback\"
 )
 
 foreach ($taskPath in $scheduledTasks) {
     try {
         Get-ScheduledTask -TaskPath $taskPath -ErrorAction Stop |
             Disable-ScheduledTask -ErrorAction SilentlyContinue
-        Write-Host "Disabled tasks at: $taskPath"
     } catch {}
 }
 
@@ -191,6 +185,7 @@ Write-Host "Telemetry disabled." -ForegroundColor Green
 # --------------------------------
 # Disable Windows Recall (AI screenshot history)
 # --------------------------------
+
 Write-Host "`nDisabling Windows Recall..." -ForegroundColor Yellow
 
 $recallKey = "HKLM:\Software\Policies\Microsoft\Windows\WindowsAI"
@@ -198,11 +193,9 @@ if (-not (Test-Path $recallKey)) {
     New-Item -Path $recallKey -Force | Out-Null
 }
 
-# Disable AI screenshot capture + storage
 Set-ItemProperty -Path $recallKey -Name "DisableAIDataAnalysis" -Type DWord -Value 1
 Set-ItemProperty -Path $recallKey -Name "DisableCapture" -Type DWord -Value 1
 
-# Stop and disable Recall-related services if present
 $recallServices = @(
     "Recall",
     "DesktopAIClientService",
@@ -210,100 +203,84 @@ $recallServices = @(
 )
 
 foreach ($svc in $recallServices) {
-    Get-Service -Name $svc -ErrorAction SilentlyContinue | Stop-Service -Force
-    Set-Service -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+    Stop-Service $svc -Force -ErrorAction SilentlyContinue
+    Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
 }
 
 Write-Host "Recall disabled successfully." -ForegroundColor Green
 
+
 # ================================
 #  HOSTS FILE BLOCKING
 # ================================
+
 Write-Host "`nUpdating HOSTS file..." -ForegroundColor Cyan
 
 $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
 $entriesToAdd = @(
     "0.0.0.0 lmlicenses.wip4.adobe.com",
     "0.0.0.0 lm.licenses.adobe.com",
-    "0.0.0.0 na1r.services.adobe.com",
-    "0.0.0.0 hlrcv.stage.adobe.com",
-    "0.0.0.0 practivate.adobe.com",
     "0.0.0.0 activate.adobe.com",
+    "0.0.0.0 practivate.adobe.com",
+    "0.0.0.0 na1r.services.adobe.com",
     "0.0.0.0 officecdn.microsoft.com",
     "0.0.0.0 officecdn.microsoft.com.edgesuite.net",
     "0.0.0.0 config.office.com",
     "0.0.0.0 odc.officeapps.live.com",
-    # windows telemetry
-    "0.0.0.0 vortex.data.microsoft.com",        # Core Windows telemetry ingestion        (SAFE)
-    "0.0.0.0 telemetry.microsoft.com",          # Legacy telemetry endpoint               (SAFE)
-    "0.0.0.0 watson.telemetry.microsoft.com",   # Crash & error reporting (WER)            (OPTIONAL)
-    "0.0.0.0 settings-win.data.microsoft.com",  # Settings app analytics / experiments     (SAFE)
-)
+    "0.0.0.0 vortex.data.microsoft.com",
+    "0.0.0.0 telemetry.microsoft.com"
+) | Sort-Object -Unique
 
-$currentHosts = Get-Content -Path $hostsPath
+$currentHosts = Get-Content -Path $hostsPath -ErrorAction SilentlyContinue
 
 foreach ($entry in $entriesToAdd) {
     if ($currentHosts -notcontains $entry) {
         Write-Host "Adding: $entry"
         Add-Content -Path $hostsPath -Value $entry
-    } else {
-        Write-Host "Exists: $entry"
     }
-    Start-Sleep -Seconds 1
 }
 
 Write-Host "`nHOSTS file updated." -ForegroundColor Green
 
+
 # ================================
 #  DEFENDER EXCLUSION
 # ================================
+
 Write-Host "`nAdding Defender exclusion..." -ForegroundColor Cyan
 Add-MpPreference -ExclusionPath "C:\Program Files (x86)\Microsoft Office\Office14"
 Write-Host "Defender exclusion added."
 
-Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
-Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
 
 # --------------------------------
-# Disable Windows Copilot and Recall and more
+# Disable Windows Copilot / Recall / Telemetry (reg add style)
 # --------------------------------
 
 # --- COPILOT ---
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' /v CopilotAllowed /t REG_DWORD /d 0 /f;
-reg add 'HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' /v ShowCopilotButton /t REG_DWORD /d 0 /f;
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v CopilotAllowed /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ShowCopilotButton /t REG_DWORD /d 0 /f
 
-# --- RECALL / REPLAY / AI CAPTURE ---
-dism /online /disable-feature /featurename:Recall /norestart;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f;
+# --- RECALL ---
+dism /online /disable-feature /featurename:Recall /norestart
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
 
-# --- TIMELINE / ACTIVITY HISTORY ---
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v EnableActivityFeed /t REG_DWORD /d 0 /f;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v PublishUserActivities /t REG_DWORD /d 0 /f;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\System' /v UploadUserActivities /t REG_DWORD /d 0 /f;
+# --- TIMELINE ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v UploadUserActivities /t REG_DWORD /d 0 /f
 
-# --- TELEMETRY ---
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection' /v AllowTelemetry /t REG_DWORD /d 0 /f;
-Stop-Service DiagTrack -Force -ErrorAction SilentlyContinue;
-Set-Service DiagTrack -StartupType Disabled;
-Stop-Service diagnosticshub.standardcollector.service -Force -ErrorAction SilentlyContinue;
-Set-Service diagnosticshub.standardcollector.service -StartupType Disabled;
-
-# --- CLOUD / CONSUMER / AI ---
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent' /v DisableWindowsConsumerFeatures /t REG_DWORD /d 1 /f;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent' /v DisableTailoredExperiencesWithDiagnosticData /t REG_DWORD /d 1 /f;
-
-# --- SEARCH / WEB / AI ---
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search' /v AllowCloudSearch /t REG_DWORD /d 0 /f;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search' /v DisableWebSearch /t REG_DWORD /d 1 /f;
-
-# --- EDGE COPILOT / TELEMETRY ---
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Edge' /v HubsSidebarEnabled /t REG_DWORD /d 0 /f;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Edge' /v EdgeCopilotEnabled /t REG_DWORD /d 0 /f;
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Edge' /v DiagnosticData /t REG_DWORD /d 0 /f;
+# --- EDGE ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v EdgeCopilotEnabled /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v DiagnosticData /t REG_DWORD /d 0 /f
 
 # --- PREVENT UPDATE RE-ENABLE ---
-reg add 'HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate' /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f;
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f
+
+
+Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
+Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
 
 ```
 
