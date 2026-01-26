@@ -40,9 +40,18 @@ put_setting secure long_press_timeout 400  # Improve touch responsiveness (defau
 
 ## remove app
 removeApp com.android.chrome
-removeApp com.samsung.android.honeyboard # samsung keyboard
-removeApp com.sec.android.app.sbrowser # samsung browser
+removeApp com.google.android.youtube # YouTube
+removeApp com.microsoft.skydrive # OneDrive
+removeApp com.mygalaxy.service # Samsung account marketing layer
+removeApp com.samsung.android.app.routines # bixby
 removeApp com.samsung.android.bixby.agent # bixby
 removeApp com.samsung.android.bixby.service # bixby
 removeApp com.samsung.android.bixbyvision.framework # bixby
-removeApp com.samsung.android.app.routines # bixby
+removeApp com.samsung.android.honeyboard # samsung keyboard
+removeApp com.samsung.android.themestore         # Samsung Theme Store
+removeApp com.sec.android.app.sbrowser # samsung browser
+removeApp com.sec.android.easyMover # Smart Switch
+# removeApp com.google.android.gms.supervision # ⚠️ Family Link / parental controls
+# removeApp com.samsung.android.app.updatecenter # ⚠️ Samsung app updates
+# removeApp com.samsung.android.messaging # ⚠️ Samsung Messages (OK if using Google Messages)
+
