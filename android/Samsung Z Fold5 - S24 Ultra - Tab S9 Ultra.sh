@@ -23,8 +23,8 @@ function removeApp(){
 
 ## global settings
 put_setting global window_animation_scale 0 # animation speed
-put_setting global transition_animation_scale 0.35 # animation speed
-put_setting global animator_duration_scale 0.35 # animation speed
+put_setting global transition_animation_scale 0.4 # animation speed
+put_setting global animator_duration_scale 0.4 # animation speed
 put_setting global force_gpu_rendering 1 # Force GPU rendering (can help older devices)
 put_setting global wifi_scan_always_enabled 0 # Disable constant Wi-Fi scanning
 put_setting global ble_scan_always_enabled 0 # Disable Bluetooth scanning
