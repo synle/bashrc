@@ -56,8 +56,7 @@ foreach ($guid in $folders.Keys) {
 Write-Host "`nDone! Please sign out and back in for full effect."
 ```
 
-## Getting Started
-
+## Getting Started and  All-in-one setup Script
 ```powershell
 # ================================
 #  Regedit for Adobe Photoshop
@@ -81,11 +80,13 @@ New-ItemProperty `
 Write-Host "Registry value updated successfully."
 
 
+
 # ================================
 #  WINDOWS CLEANUP & PRIVACY HARDENING
 # ================================
 
 Write-Host "`n=== Windows Cleanup & Privacy Hardening ===" -ForegroundColor Cyan
+
 
 
 # --------------------------------
@@ -123,6 +124,7 @@ foreach ($app in $appsToRemove) {
 Write-Host "App cleanup complete." -ForegroundColor Green
 
 
+
 # --------------------------------
 # Disable Cortana + Web Search
 # --------------------------------
@@ -138,6 +140,7 @@ Set-ItemProperty -Path $explorerPolicy -Name "AllowCortana" -Type DWord -Value 0
 Set-ItemProperty -Path $explorerPolicy -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1
 
 Write-Host "Cortana + Search hardened." -ForegroundColor Green
+
 
 
 # --------------------------------
@@ -182,6 +185,7 @@ foreach ($taskPath in $scheduledTasks) {
 Write-Host "Telemetry disabled." -ForegroundColor Green
 
 
+
 # --------------------------------
 # Disable Windows Recall (AI screenshot history)
 # --------------------------------
@@ -208,6 +212,7 @@ foreach ($svc in $recallServices) {
 }
 
 Write-Host "Recall disabled successfully." -ForegroundColor Green
+
 
 
 # ================================
@@ -243,6 +248,7 @@ foreach ($entry in $entriesToAdd) {
 Write-Host "`nHOSTS file updated." -ForegroundColor Green
 
 
+
 # ================================
 #  DEFENDER EXCLUSION
 # ================================
@@ -252,9 +258,12 @@ Add-MpPreference -ExclusionPath "C:\Program Files (x86)\Microsoft Office\Office1
 Write-Host "Defender exclusion added."
 
 
+
 # --------------------------------
 # Disable Windows Copilot / Recall / Telemetry (reg add style)
 # --------------------------------
+
+Write-Host "`nApplying additional registry hardening..." -ForegroundColor Yellow
 
 # --- COPILOT ---
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f
@@ -278,28 +287,33 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v DiagnosticData /t REG_DWORD /
 # --- PREVENT UPDATE RE-ENABLE ---
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f
 
-
 Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
 Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
 
-```
 
-## All-in-one setup Script
 
-```powershell
+# ================================
 # Make Password Never Expire
+# ================================
+
 Set-ADUser -Identity "Sy Le" -PasswordNeverExpires $true
 Set-ADUser -Identity "syle" -PasswordNeverExpires $true
+
+
 
 # ================================
 #  WSL SETUP
 # ================================
+
 wsl --update
 wsl --set-default-version 2
+
+
 
 # ================================
 #  FIREWALL BLOCK RULES
 # ================================
+
 function Add-BlockRuleIfMissing {
     param(
         [string]$DisplayName,
