@@ -369,6 +369,13 @@ foreach ($exe in $AdobeExeList) {
 }
 
 Write-Host "`nAdobe and Office firewall blocks applied." -ForegroundColor Green
+
+# ================================
+#  winget upgrade
+# ================================
+
+winget upgrade --all
+
 ```
 
 ---
@@ -440,7 +447,6 @@ Set-ADUser -Identity "syle" -PasswordNeverExpires $true
 ## Game Bar Registry Hacks
 
 ```powershell
-
 # ================================
 #  DISABLE XBOX GAME BAR
 # ================================
@@ -448,25 +454,40 @@ Write-Host "`nDisabling Xbox Game Bar..." -ForegroundColor Cyan
 
 $gameBarKeys = @(
     "HKCU:\Software\Microsoft\GameBar",
-    "HKLM:\Software\Microsoft\GameBar"
+    "HKCU:\System\GameConfigStore",
+    "HKLM:\Software\Microsoft\GameBar",
+    "HKLM:\System\GameConfigStore"
 )
 
 foreach ($key in $gameBarKeys) {
     if (-not (Test-Path $key)) {
         New-Item -Path $key -Force | Out-Null
     }
-    Set-ItemProperty -Path $key -Name AllowGameBar -Value 0 -Force
+
+    # Disable Game Bar
+    Set-ItemProperty -Path $key -Name AllowGameBar -Value 0 -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $key -Name AutoGameModeEnabled -Value 0 -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $key -Name GameDVR_Enabled -Value 0 -Force -ErrorAction SilentlyContinue
+    Set-ItemProperty -Path $key -Name GameDVR_EnabledForGameBar -Value 0 -Force -ErrorAction SilentlyContinue
+}
+
+# Disable Game Bar service if present
+$svc = Get-Service -Name "XblGameSave" -ErrorAction SilentlyContinue
+if ($svc) {
+    Stop-Service $svc -Force -ErrorAction SilentlyContinue
+    Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
 }
 
 # Fix ms-gamebar URL handler annoyance (AveYo)
-reg add HKCR\ms-gamebar /f /ve /d URL:ms-gamebar >'' 2>&1
+reg add HKCR\ms-gamebar /f /ve /d "URL:ms-gamebar" >'' 2>&1
 reg add HKCR\ms-gamebar /f /v "URL Protocol" /d "" >'' 2>&1
 reg add HKCR\ms-gamebar /f /v "NoOpenWith" /d "" >'' 2>&1
 reg add HKCR\ms-gamebar\shell\open\command /f /ve /d "`"$env:SystemRoot\System32\systray.exe`"" >'' 2>&1
-reg add HKCR\ms-gamebarservices /f /ve /d URL:ms-gamebarservices >'' 2>&1
+
+reg add HKCR\ms-gamebarservices /f /ve /d "URL:ms-gamebarservices" >'' 2>&1
 reg add HKCR\ms-gamebarservices /f /v "URL Protocol" /d "" >'' 2>&1
 reg add HKCR\ms-gamebarservices /f /v "NoOpenWith" /d "" >'' 2>&1
 reg add HKCR\ms-gamebarservices\shell\open\command /f /ve /d "`"$env:SystemRoot\System32\systray.exe`"" >'' 2>&1
 
-Write-Host "`nSystem cleanup and hardening complete." -ForegroundColor Green
+Write-Host "`nXbox Game Bar disabled successfully." -ForegroundColor Green
 ```
