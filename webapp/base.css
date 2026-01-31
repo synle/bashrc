@@ -31,7 +31,10 @@
 }
 
 html {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 16px;
   line-height: 1.5;
   background: var(--bg);
@@ -39,7 +42,12 @@ html {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
@@ -87,7 +95,7 @@ button,
 input[type='submit'],
 a[role='button'] {
   padding: 0.5rem 1rem;
-  font-size: .9rem;
+  font-size: 0.9rem;
   font-family: inherit;
   background: var(--bg-secondary);
   color: var(--text);
@@ -112,7 +120,6 @@ hr {
   border-top: 2px solid var(--border);
   margin: 1rem 0;
 }
-
 
 textarea.code {
   font-family: 'Courier New', Consolas, monospace;

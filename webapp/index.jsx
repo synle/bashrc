@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
-import { createRoot } from "react-dom/client";
-import Toastify from "toastify-js";
-import "toastify-js/src/toastify.css";
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import Toastify from 'toastify-js';
+import 'toastify-js/src/toastify.css';
 import './base.css';
-import "./index.css";
+import './index.css';
 
 const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const isSystemWindows = navigator.platform.indexOf('Win') > -1;

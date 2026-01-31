@@ -4,10 +4,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 
 export default defineConfig({
   root: 'webapp',
-  plugins: [
-    react(),
-    viteSingleFile()
-  ],
+  plugins: [react(), viteSingleFile()],
   build: {
     outDir: '../dist',
     emptyOutDir: true,
@@ -15,8 +12,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined,
-        inlineDynamicImports: true
-      }
-    }
-  }
+        inlineDynamicImports: true,
+      },
+    },
+  },
 });
