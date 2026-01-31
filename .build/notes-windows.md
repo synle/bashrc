@@ -97,22 +97,36 @@ Write-Host "`nRemoving Microsoft bloatware apps..." -ForegroundColor Yellow
 
 $appsToRemove = @(
     'Microsoft.3DViewer',
+    'Microsoft.549981C3F5F10',              # Cortana
+    'Microsoft.BingFinance',
+    'Microsoft.BingNews',
+    'Microsoft.BingSports',
+    'Microsoft.BingWeather',
+    'Microsoft.GamingApp',                  # Xbox (optional)
     'Microsoft.GetHelp',
     'Microsoft.Getstarted',
     'Microsoft.MicrosoftOfficeHub',
     'Microsoft.MicrosoftSolitaireCollection',
+    'Microsoft.MicrosoftStickyNotes',
+    'Microsoft.Office.OneNote',
     'Microsoft.People',
+    'Microsoft.PowerAutomateDesktop',
     'Microsoft.SkypeApp',
+    'Microsoft.Todos',
     'Microsoft.WindowsAlarms',
+    'Microsoft.WindowsFeedbackHub',
     'Microsoft.WindowsMaps',
+    'Microsoft.WindowsSoundRecorder',
+    'Microsoft.Xbox.TCUI',
+    'Microsoft.XboxGameOverlay',
+    'Microsoft.XboxGamingOverlay',
+    'Microsoft.XboxIdentityProvider',
+    'Microsoft.XboxSpeechToTextOverlay',
+    'Microsoft.YourPhone',
     'Microsoft.ZuneMusic',
     'Microsoft.ZuneVideo',
-    'Microsoft.BingNews',
-    'Microsoft.BingWeather',
-    'Microsoft.BingFinance',
-    'Microsoft.BingSports',
-    'Microsoft.MicrosoftStickyNotes',
-    'Microsoft.Office.OneNote'
+    'MicrosoftTeams',
+    'Clipchamp.Clipchamp'
 ) | Sort-Object -Unique
 
 foreach ($app in $appsToRemove) {
@@ -131,17 +145,26 @@ Write-Host "App cleanup complete." -ForegroundColor Green
 
 Write-Host "`nDisabling Cortana & Internet search suggestions..." -ForegroundColor Yellow
 
-$explorerPolicy = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
-if (-not (Test-Path $explorerPolicy)) {
-    New-Item -Path $explorerPolicy -Force | Out-Null
+# Cortana
+$paths = @(
+    "HKCU:\Software\Policies\Microsoft\Windows\Explorer",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+)
+
+foreach ($path in $paths) {
+    if (-not (Test-Path $path)) {
+        New-Item -Path $path -Force | Out-Null
+    }
 }
 
-Set-ItemProperty -Path $explorerPolicy -Name "AllowCortana" -Type DWord -Value 0
-Set-ItemProperty -Path $explorerPolicy -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1
+Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "AllowCortana" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1 -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -Type DWord -Value 0 -Force
+
+# Disable widgets
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Type DWord -Value 0 -Force
 
 Write-Host "Cortana + Search hardened." -ForegroundColor Green
-
-
 
 # --------------------------------
 # Disable Windows Telemetry / Tracking
@@ -211,9 +234,68 @@ foreach ($svc in $recallServices) {
     Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
 }
 
+# Copilot
+$copilotKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+if (-not (Test-Path $copilotKey)) {
+    New-Item -Path $copilotKey -Force | Out-Null
+}
+Set-ItemProperty -Path $copilotKey -Name "TurnOffWindowsCopilot" -Type DWord -Value 1 -Force
+
+# Hide Copilot button
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowCopilotButton" -Type DWord -Value 0 -Force
+
+# Recall / AI Data Analysis
+$recallKey = "HKLM:\Software\Policies\Microsoft\Windows\WindowsAI"
+if (-not (Test-Path $recallKey)) {
+    New-Item -Path $recallKey -Force | Out-Null
+}
+Set-ItemProperty -Path $recallKey -Name "DisableAIDataAnalysis" -Type DWord -Value 1 -Force
+
+# Timeline
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+
+
 Write-Host "Recall disabled successfully." -ForegroundColor Green
 
 
+# ================================================================================================
+#  PERFORMANCE OPTIMIZATIONS
+# ================================================================================================
+
+Write-Host "`nApplying performance optimizations..." -ForegroundColor Yellow
+
+# Disable visual effects for best performance
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Type DWord -Value 2 -Force
+
+# Disable animations
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Type String -Value "0" -Force
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0 -Force
+
+# Disable transparency
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "EnableTransparency" -Type DWord -Value 0 -Force
+
+# Optimize for programs (not background services)
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Type DWord -Value 38 -Force
+
+# Disable startup delay
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" -Name "StartupDelayInMSec" -Type DWord -Value 0 -Force
+
+# Disable search indexing on C: drive (speeds up disk I/O)
+# Note: This will slow down file searches
+# Get-WmiObject -Class Win32_Volume -Filter "DriveLetter='C:'" | Set-WmiInstance -Arguments @{IndexingEnabled=$false} | Out-Null
+
+# Disable hibernation to save disk space
+powercfg /hibernate off
+
+# Set power plan to High Performance
+$powerPlan = powercfg /list | Select-String "High performance"
+if ($powerPlan) {
+    $planGUID = ($powerPlan -split '\s+')[3]
+    powercfg /setactive $planGUID
+}
 
 # ================================
 #  HOSTS FILE BLOCKING
@@ -280,6 +362,16 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v PublishUserActiviti
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v UploadUserActivities /t REG_DWORD /d 0 /f
 
 # --- EDGE ---
+$edgeKey = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
+if (-not (Test-Path $edgeKey)) {
+    New-Item -Path $edgeKey -Force | Out-Null
+}
+
+Set-ItemProperty -Path $edgeKey -Name "HubsSidebarEnabled" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "EdgeCopilotEnabled" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "DiagnosticData" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "PersonalizationReportingEnabled" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "UserFeedbackAllowed" -Type DWord -Value 0 -Force
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v EdgeCopilotEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v DiagnosticData /t REG_DWORD /d 0 /f
@@ -290,6 +382,17 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWUfBS
 Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
 Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
 
+
+# ================================================================================================
+#  DISK CLEANUP & MAINTENANCE
+# ================================================================================================
+
+Write-Host "`nRunning disk cleanup..." -ForegroundColor Yellow
+
+# Clean temp files
+Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\Windows\Prefetch\*" -Force -ErrorAction SilentlyContinue
 
 
 # ================================
