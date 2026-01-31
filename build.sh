@@ -57,4 +57,13 @@ else
   echo "No XFCE configuration found. Skipping backup."
 fi
 
+echo '> Building webapp'
+echo '>> Installing npm dependencies'
+npm install
+echo '>> Building webapp with Vite'
+npm run build
+
+echo '>> Built webapp artifacts:'
+find dist
+
 echo '> DONE Building'
