@@ -1,0 +1,213 @@
+# format script
+# === format script ===
+format() {
+  echo "🚀 Running full project format sequence..."
+  format_cleanup || echo "⚠️ format_cleanup failed or skipped."
+  format_python || echo "⚠️ format_python failed or skipped."
+  format_js || echo "⚠️ format_js failed or skipped."
+  echo "✅ All formatting steps complete (some may have warnings)."
+}
+
+format_js() {
+  echo "🎨 Running Prettier on JavaScript/TypeScript files..."
+
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "❌ npx not found. Please install Node.js (https://nodejs.org/) first."
+    return 1
+  fi
+
+  # Create a temporary .prettierignore file based on EDITOR_CONFIGS.ignoredFolders
+  local temp_ignore_file=$(mktemp)
+  cat <<'EOF' > "$temp_ignore_file"
+__pycache__
+.cache
+.ebextensions
+.generated
+.git
+.gradle
+.hg
+.idea
+.mypy_cache
+.pytest_cache
+.sass-cache
+.svn
+bower_components
+build
+coverage
+CVS
+dist
+node_modules
+tmp
+venv
+webpack-dist
+EOF
+
+  npx prettier --write '**/*.{js,jsx,ts,tsx,json,scss,mjs,html,md}' --ignore-path "$temp_ignore_file" > /dev/null 2>&1
+  local status=$?
+  rm -f "$temp_ignore_file"
+
+  if [ $status -eq 0 ]; then
+    echo "✅ JS/TS formatting complete."
+  else
+    echo "⚠️ Prettier encountered some errors."
+    return 1
+  fi
+}
+
+format_python() {
+  # Only activate venv if not already active
+  if [ -n "$VIRTUAL_ENV" ]; then
+    echo "🐍 Python environment already active: $VIRTUAL_ENV"
+  else
+    if [ -f ".venv/bin/activate" ]; then
+      echo "🐍 Activating local virtual environment (.venv)..."
+      source .venv/bin/activate
+    elif [ -f "/home/syle/venv/bin/activate" ]; then
+      echo "🐍 Activating fallback environment (/home/syle/venv)..."
+      source /home/syle/venv/bin/activate
+    else
+      echo "⚠️ No virtual environment found. Using global Python."
+    fi
+  fi
+
+  if ! command -v ruff >/dev/null 2>&1; then
+    echo "📦 Installing Ruff..."
+    pip install ruff || { echo "❌ Failed to install Ruff."; return 1; }
+  fi
+
+  echo "🧹 Running Ruff checks and formatting..."
+  ruff format --line-length 140 --exclude "__pycache__,.cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,bower_components,build,coverage,CVS,dist,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  ruff check --fix --line-length 140 --exclude "__pycache__,.cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,bower_components,build,coverage,CVS,dist,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  echo "✅ Python formatting complete."
+}
+
+format_cleanup() {
+  echo "🧹 Cleaning up junk files (*.Identifier, ._*)..."
+
+  local base_dir="${1:-.}"
+
+  if [ ! -d "$base_dir" ]; then
+    echo "❌ Directory '$base_dir' not found."
+    return 1
+  fi
+
+  local count=$(find "$base_dir" \
+    -type f \( -name '*.Identifier' -o -name '._*' \) \
+    -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+    -print | wc -l)
+
+  if [ "$count" -gt 0 ]; then
+    find "$base_dir" \
+      -type f \( -name '*.Identifier' -o -name '._*' \) \
+      -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+      -delete
+    echo "✅ Removed $count junk files in: $base_dir"
+  else
+    echo "✨ No junk files found in: $base_dir"
+  fi
+}
+
+format_cleanup_light() {
+  local base_dir="${1:-.}"
+  local max_depth=4
+
+  if [ ! -d "$base_dir" ]; then
+    return 1
+  fi
+
+  local count=$(find "$base_dir" \
+    -maxdepth "$max_depth" \
+    -type f \( -name '*.Identifier' -o -name '._*' \) \
+    -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+    -print | wc -l)
+
+  if [ "$count" -gt 0 ]; then
+    find "$base_dir" \
+      -maxdepth "$max_depth" \
+      -type f \( -name '*.Identifier' -o -name '._*' \) \
+      -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+      -delete
+  fi
+}
+# === end format script ===
+# END format script
