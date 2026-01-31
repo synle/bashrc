@@ -1,5 +1,9 @@
-import ReactDOM from "https://esm.sh/react-dom@18";
-import React, { useContext, useEffect, useMemo, useState } from "https://esm.sh/react@18";
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import Toastify from "toastify-js";
+import "toastify-js/src/toastify.css";
+import './base.css';
+import "./index.css";
 
 const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const isSystemWindows = navigator.platform.indexOf('Win') > -1;
@@ -495,14 +499,14 @@ function LinkButton(props) {
   if (block) {
     return (
       <div>
-        <a {...restProps} type='button' target='_blank'>
+        <a {...restProps} role='button' target='_blank'>
           {children}
         </a>
       </div>
     );
   }
   return (
-    <a {...restProps} type='button' target='_blank'>
+    <a {...restProps} role='button' target='_blank'>
       {children}
     </a>
   );
@@ -588,7 +592,7 @@ function EnhancedTextArea(props) {
         {formattedUrl && <LinkButton href={formattedUrl}>View Formatted</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
       </div>
-      <textarea {...restProps} style={{ height }} />
+      <textarea {...restProps} className='code' style={{ height }} />
     </>
   );
 }
@@ -640,7 +644,7 @@ function TargetSystemOSWarningDom(props) {
   }
 
   const styles = {
-    background: 'var(--colorBgMain)',
+    background: 'var(--bg)',
     position: 'sticky',
     padding: '0.5rem 0',
     top: 0,
@@ -1020,4 +1024,5 @@ function App() {
   );
 }
 
-ReactDOM.render(<App />, document.body);
+const root = createRoot(document.getElementById('root'));
+root.render(<App />);
