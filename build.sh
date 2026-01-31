@@ -57,4 +57,19 @@ else
   echo "No XFCE configuration found. Skipping backup."
 fi
 
+echo '> Building webapp'
+if [ "$CI" = "true" ]; then
+  echo '>> Installing npm dependencies'
+  npm ci
+else
+  echo '>> Installing npm dependencies'
+  npm install
+fi
+
+echo '>> Building webapp with Vite'
+npm run build
+
+echo '>> Built webapp artifacts:'
+find dist
+
 echo '> DONE Building'

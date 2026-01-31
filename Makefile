@@ -21,7 +21,8 @@ list_scripts:
 	cat software/metadata/script-list.config
 
 dev:
-	npx http-server .
+	npm install
+	npm run dev
 
 test:
 	sh test-full-run.sh
