@@ -58,14 +58,8 @@ else
 fi
 
 echo '> Building webapp'
-if [ "$CI" = "true" ]; then
-  echo '>> Installing npm dependencies'
-  npm ci
-else
-  echo '>> Installing npm dependencies'
-  npm install
-fi
-
+echo '>> Installing npm dependencies'
+npm install
 echo '>> Building webapp with Vite'
 npm run build
 

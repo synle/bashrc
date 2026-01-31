@@ -19,7 +19,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
-      - run: sh format.sh
       - run: sh build.sh
         env:
           is_os_darwin_mac: 0
@@ -29,6 +28,7 @@ jobs:
           is_os_chromeos: 0
           is_os_mingw64: 0
           is_os_android_termux: 0
+      - run: sh format.sh
       - uses: EndBug/add-and-commit@v7
         with:
           message: 'Server Automated Build'
