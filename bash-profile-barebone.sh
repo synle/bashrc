@@ -302,6 +302,40 @@ date_show(){
   date +'%a, %b %d, %Y  %r'
 }
 
+# timeout
+timeout() {
+  local delay cmd
+
+  if [ "$#" -eq 1 ]; then
+    delay=8
+    cmd="$1"
+  elif [ "$#" -eq 2 ]; then
+    delay="$1"
+    cmd="$2"
+  else
+    echo "usage: timeout [seconds] <command>"
+    return 1
+  fi
+
+  (
+    eval "$cmd" &
+    cmd_pid=$!
+
+    # watchdog
+    (
+      sleep "$delay"
+      if kill -0 "$cmd_pid" 2>/dev/null; then
+        echo "⏱️  Timeout after ${delay}s: killing '$cmd'"
+        kill -9 "$cmd_pid" 2>/dev/null
+      fi
+    ) &
+
+    wait "$cmd_pid"
+  )
+}
+
+
+# disable telemetry
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 
 ##########################################################
