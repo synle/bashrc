@@ -1,9 +1,10 @@
-
+# Settings
 function put_setting(){
-  echo "> Put Setting:" $@
-  settings put global $@
+  # echo "> settings put" $@
+  settings put $@ >/dev/null 2>&1
 }
 
+# App disable
 function disable_app(){
   # echo "> Disable:" $@
   pm disable-user --user 0 $@ >/dev/null 2>&1
@@ -17,7 +18,6 @@ function remove_app(){
   pm uninstall -k --user 10 $@ >/dev/null 2>&1
   disable_app $@ >/dev/null 2>&1
 
-
   # function restoreApp(){
   #   echo "> Restore:" $@
   #   cmd package install-existing $@
@@ -26,25 +26,39 @@ function remove_app(){
 
 
 #################################################################
+# --- Setting tweaks ---
+# Animation Speed: 0.5 is the community standard for "snappy"
+put_setting global window_animation_scale 0
+put_setting global transition_animation_scale 0.4
+put_setting global animator_duration_scale 0.4
 
-## global settings
-put_setting global window_animation_scale 0 # animation speed
-put_setting global transition_animation_scale 0.4 # animation speed
-put_setting global animator_duration_scale 0.4 # animation speed
-put_setting global force_gpu_rendering 1 # Force GPU rendering (can help older devices)
-put_setting global wifi_scan_always_enabled 0 # Disable constant Wi-Fi scanning
-put_setting global ble_scan_always_enabled 0 # Disable Bluetooth scanning
-put_setting global disable_window_blurs 1 # Disable system-wide blur (huge on Samsung / Pixel)
-put_setting global accessibility_reduce_transparency 1 #Reduce transparency & visual effects
-put_setting global accessibility_reduce_motion 1 # Reduce transparency & visual effects
-put_setting global analytics_enabled 0 # Disable system analytics / logging
-put_setting global usage_reporting_enabled 0 # Disable system analytics / logging
-put_setting global wifi_watchdog_on 0 # Prefer faster handoff to mobile data
+# Performance & Hardware
+put_setting global ram_expand_size_list 0         # Disable RAM Plus (Virtual RAM) to reduce lag
+put_setting global force_gpu_rendering 1          # Legacy tweak for UI acceleration
+put_setting global disable_window_blurs 1         # Disable blur effects (Huge for One UI speed)
 
-## secure settings
-put_setting secure long_press_timeout 400  # Improve touch responsiveness (default 500)
+# Connectivity & Scanning
+put_setting global wifi_scan_always_enabled 0     # Disable background Wi-Fi scanning
+put_setting global ble_scan_always_enabled 0      # Disable background Bluetooth scanning
+put_setting global wifi_watchdog_on 0             # Prevent aggressive Wi-Fi/Data switching
 
-## remove app
+# Privacy & Logging
+put_setting global analytics_enabled 0            # Disable system analytics
+put_setting global usage_reporting_enabled 0      # Disable usage reporting
+
+# --- SECURE SETTINGS (User-specific behavior) ---
+# Touch Responsiveness: 250ms is "Instant," 400ms is "Standard Short"
+put_setting secure long_press_timeout 250
+put_setting secure multi_press_timeout 250
+
+# Accessibility Tweaks
+put_setting secure accessibility_reduce_transparency 1
+put_setting secure accessibility_reduce_motion 1
+
+# SYSTEM SETTINGS (UI/Device specifics)
+put_setting system haptic_feedback_enabled 1 # Optional: Speed up device haptics/feedback
+
+# --- App removals ---
 remove_app com.android.chrome
 remove_app com.google.android.youtube # YouTube
 remove_app com.microsoft.skydrive # OneDrive
@@ -79,6 +93,13 @@ remove_app com.sec.android.daemonapp  # Samsung Weather (Safe if you use the Goo
 remove_app com.samsung.android.aremoji # AR Emoji
 remove_app com.samsung.android.aremojieditor # AR Emoji
 remove_app com.sec.android.mimage.avatarstickers # AR Emoji
+remove_app com.microsoft.skydrive # Microsoft OneDrive
+remove_app com.touchtype.swiftkey # Microsoft SwiftKey
+remove_app com.microsoft.copilot # Microsoft CoPilot
+remove_app com.facebook.appmanager # Facebook Background Services & Update Managers
+remove_app com.facebook.system # Facebook Background Services & Update Managers
+remove_app com.facebook.services # Facebook Background Services & Update Managers
+remove_app com.facebook.appmanager.intel
 # disable_app com.google.android.gms.supervision # ⚠️ Family Link / parental controls
 # remove_app com.samsung.android.app.updatecenter # ⚠️ Samsung app updates
 # remove_app com.samsung.android.messaging # ⚠️ Samsung Messages (OK if using Google Messages)
