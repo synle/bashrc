@@ -1,3 +1,4 @@
+
 function put_setting(){
   echo "> Put Setting:" $@
   settings put global $@
@@ -56,6 +57,28 @@ remove_app com.samsung.android.honeyboard # samsung keyboard
 remove_app com.samsung.android.themestore         # Samsung Theme Store
 remove_app com.sec.android.app.sbrowser # samsung browser
 remove_app com.sec.android.easyMover # Smart Switch
-# disable_app com.google.android.gms.supervision # ⚠️ Family Link / parental controls
+### ⚠️ warning, be careful
+remove_app com.samsung.android.app.spage # Samsung Free / TV Plus
+remove_app com.samsung.android.tvplus # Samsung TV Plus
+remove_app com.samsung.sree # Samsung Global Goals - The app that shows ads on your lock screen for charity
+remove_app com.samsung.android.kidsinstaller # Samsung Kids - Safe to remove if you don't have children using your phone
+remove_app com.samsung.android.app.samsungmall # Samsung Shop
+remove_app com.samsung.android.voc # Samsung Members - The community/support app
+remove_app com.google.android.apps.youtube.music # YouTube Music
+remove_app com.microsoft.office.officehubrow # Microsoft Office
+remove_app com.samsung.android.app.camera.sticker.facearavatar.preload # Stickers
+remove_app com.samsung.android.aremoji # AR Emoji
+remove_app com.samsung.android.aremojieditor # AR Emoji
+remove_app com.sec.android.mimage.avatarstickers # AR Emoji
+remove_app com.sec.android.app.popupcalculator # Samsung Calculator
+remove_app com.samsung.android.calendar # Samsung Calendar
+remove_app com.samsung.android.app.reminder  # Samsung Reminder (Safe if you use Google Tasks).
+remove_app com.samsung.android.app.notes  # Samsung Notes (Safe to remove if you use Google Keep or Docs).
+remove_app com.samsung.android.email.provider # Samsung Email
+remove_app com.samsung.android.samsungpass  # Samsung Pass (Safe if you use Google Password Manager or Bitwarden).
+remove_app com.samsung.android.spay  # Samsung Wallet (Safe if you use Google Wallet)
+remove_app com.sec.android.daemonapp  # Samsung Weather (Safe if you use the Google Weather widget).
+remove_app com.samsung.android.ardrawing # AR Doodle
+disable_app com.google.android.gms.supervision # ⚠️ Family Link / parental controls
 # remove_app com.samsung.android.app.updatecenter # ⚠️ Samsung app updates
 # remove_app com.samsung.android.messaging # ⚠️ Samsung Messages (OK if using Google Messages)
