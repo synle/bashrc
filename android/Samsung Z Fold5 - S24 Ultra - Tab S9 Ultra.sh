@@ -58,6 +58,22 @@ put_setting secure accessibility_reduce_motion 1
 # SYSTEM SETTINGS (UI/Device specifics)
 put_setting system haptic_feedback_enabled 1 # Optional: Speed up device haptics/feedback
 
+# PRIVACY & TELEMETRY PURGE
+# 1. Google & Android System Logging
+put_setting global logcat_for_apps_enabled 0       # Prevents apps from reading system logs
+put_setting global usage_stats_enabled 0           # Disables tracking of app usage frequency
+put_setting global send_action_app_error 0         # Disables automatic app crash reports to Google
+put_setting global ad_id_opt_out 1                 # Opts out of personalized ad tracking
+
+# 2. Samsung-Specific Tracking
+put_setting global multi_cb 0                      # Disables Samsung "Customization Service" data collection
+put_setting global rhythmic_logging_button_enabled 0 # Disables background behavior logging
+put_setting secure send_security_reports 0         # Disables sending security logs to Samsung
+
+# 3. Hidden "Scanning" (Battery + Privacy)
+put_setting global nearby_scanning_enabled 0       # Disables "Nearby Device" constant beaconing
+put_setting global adaptive_connectivity_enabled 0 # Prevents Google from tracking Wi-Fi quality/location
+
 # --- App removals ---
 remove_app com.android.chrome
 remove_app com.google.android.youtube # YouTube
