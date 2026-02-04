@@ -3,13 +3,18 @@ function put_setting(){
   settings put global $@
 }
 
-function removeApp(){
-  echo "> Remove:" $@
-  pm uninstall $@
-  pm uninstall -k --user 0 $@
-  pm uninstall -k --user 10 $@
-  pm disable-user --user 0 $@
-  pm disable-user -k --user 0 $@
+function disable_app(){
+  # echo "> Disable:" $@
+  pm disable-user --user 0 $@ >/dev/null 2>&1
+  pm disable-user -k --user 0 $@ >/dev/null 2>&1
+}
+
+function remove_app(){
+  # echo "> Remove:" $@
+  pm uninstall $@ >/dev/null 2>&1
+  pm uninstall -k --user 0 $@ >/dev/null 2>&1
+  pm uninstall -k --user 10 $@ >/dev/null 2>&1
+  disable_app $@ >/dev/null 2>&1
 
 
   # function restoreApp(){
@@ -39,19 +44,18 @@ put_setting global wifi_watchdog_on 0 # Prefer faster handoff to mobile data
 put_setting secure long_press_timeout 400  # Improve touch responsiveness (default 500)
 
 ## remove app
-removeApp com.android.chrome
-removeApp com.google.android.youtube # YouTube
-removeApp com.microsoft.skydrive # OneDrive
-removeApp com.mygalaxy.service # Samsung account marketing layer
-removeApp com.samsung.android.app.routines # bixby
-removeApp com.samsung.android.bixby.agent # bixby
-removeApp com.samsung.android.bixby.service # bixby
-removeApp com.samsung.android.bixbyvision.framework # bixby
-removeApp com.samsung.android.honeyboard # samsung keyboard
-removeApp com.samsung.android.themestore         # Samsung Theme Store
-removeApp com.sec.android.app.sbrowser # samsung browser
-removeApp com.sec.android.easyMover # Smart Switch
-# removeApp com.google.android.gms.supervision # ⚠️ Family Link / parental controls
-# removeApp com.samsung.android.app.updatecenter # ⚠️ Samsung app updates
-# removeApp com.samsung.android.messaging # ⚠️ Samsung Messages (OK if using Google Messages)
-
+remove_app com.android.chrome
+remove_app com.google.android.youtube # YouTube
+remove_app com.microsoft.skydrive # OneDrive
+remove_app com.mygalaxy.service # Samsung account marketing layer
+remove_app com.samsung.android.app.routines # bixby
+remove_app com.samsung.android.bixby.agent # bixby
+remove_app com.samsung.android.bixby.service # bixby
+remove_app com.samsung.android.bixbyvision.framework # bixby
+remove_app com.samsung.android.honeyboard # samsung keyboard
+remove_app com.samsung.android.themestore         # Samsung Theme Store
+remove_app com.sec.android.app.sbrowser # samsung browser
+remove_app com.sec.android.easyMover # Smart Switch
+# disable_app com.google.android.gms.supervision # ⚠️ Family Link / parental controls
+# remove_app com.samsung.android.app.updatecenter # ⚠️ Samsung app updates
+# remove_app com.samsung.android.messaging # ⚠️ Samsung Messages (OK if using Google Messages)
