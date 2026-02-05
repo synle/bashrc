@@ -300,10 +300,6 @@ if ($powerPlan) {
 # ================================
 #  HOSTS FILE BLOCKING
 # ================================
-
-Write-Host "`nUpdating HOSTS file..." -ForegroundColor Cyan
-
-$hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
 $entriesToAdd = @(
     "0.0.0.0 lmlicenses.wip4.adobe.com",
     "0.0.0.0 lm.licenses.adobe.com",
@@ -315,21 +311,96 @@ $entriesToAdd = @(
     "0.0.0.0 config.office.com",
     "0.0.0.0 odc.officeapps.live.com",
     "0.0.0.0 vortex.data.microsoft.com",
-    "0.0.0.0 telemetry.microsoft.com"
-) | Sort-Object -Unique
+    "0.0.0.0 telemetry.microsoft.com",
+    # ads
+    "0.0.0.0 ads-api.twitter.com",
+    "0.0.0.0 ads-dev.pinterest.com",
+    "0.0.0.0 ads.facebook.com",
+    "0.0.0.0 ads.google.com",
+    "0.0.0.0 ads.pinterest.com",
+    "0.0.0.0 ads.reddit.com",
+    "0.0.0.0 ads.tiktok.com",
+    "0.0.0.0 ads.youtube.com",
+    "0.0.0.0 adservice.google.com",
+    "0.0.0.0 adtago.s3.amazonaws.com",
+    "0.0.0.0 adtechus.com",
+    "0.0.0.0 advertising-api-eu.amazon.com",
+    "0.0.0.0 advertising.twitter.com",
+    "0.0.0.0 advice-ads.s3.amazonaws.com",
+    "0.0.0.0 affiliationjs.s3.amazonaws.com",
+    "0.0.0.0 amazonaax.com",
+    "0.0.0.0 analyticsengine.s3.amazonaws.com",
+    "0.0.0.0 api.bugsnag.com",
+    "0.0.0.0 app.bugsnag.com",
+    "0.0.0.0 app.getsentry.com",
+    "0.0.0.0 browser.sentry-cdn.com",
+    "0.0.0.0 business.samsungusa.com",
+    "0.0.0.0 criteo.net",
+    "0.0.0.0 marvelpixel.io",
+    "0.0.0.0 notify.bugsnag.com",
+    "0.0.0.0 rubiconproject.com",
+    "0.0.0.0 sessions.bugsnag.com",
+    "0.0.0.0 track-server.net",
+    "0.0.0.0 widgets.pinterest.com",
+    "0.0.0.0 youtube.cleverads.vn",
+    "                                                    " # intentionally empty
+) |
+Where-Object { $_ -and $_.Trim() } |
+Sort-Object -Unique
 
-$currentHosts = Get-Content -Path $hostsPath -ErrorAction SilentlyContinue
+$hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
+$tempPath  = "C:\temp-host.txt"
+
+Write-Host "`nUpdating HOSTS file..." -ForegroundColor Cyan
+# Copy current host file to temp location
+if (Test-Path $hostsPath) {
+    Copy-Item -Path $hostsPath -Destination $tempPath -Force
+    $currentContent = Get-Content $tempPath
+} else {
+    Write-Error "Original hosts file not found!"
+    return
+}
+
+# Extract just the hostnames from existing file for comparison
+# This regex matches the end of the line, ignoring the IP part
+$existingHostnames = $currentContent | Where-Object { $_ -match '^\s*[0-9\.]+\s+(?<host>\S+)' } | ForEach-Object { $Matches.host.ToLower().Trim() }
+
+# Filter new entries to ensure uniqueness
+$uniqueNewEntries = @()
 
 foreach ($entry in $entriesToAdd) {
-    if ($currentHosts -notcontains $entry) {
-        Write-Host "Adding: $entry"
-        Add-Content -Path $hostsPath -Value $entry
+    # Clean the entry and extract the hostname (the part after the IP)
+    $cleanEntry = $entry.Trim()
+    if ($cleanEntry -match '\s+(?<host>\S+)$') {
+        $hostName = $Matches.host.ToLower().Trim()
+
+        if ($existingHostnames -notcontains $hostName) {
+            $uniqueNewEntries += $cleanEntry
+            # Add to list so we don't add the same host twice within the same run
+            $existingHostnames += $hostName
+        } else {
+            Write-Host "Skipping duplicate: $hostName" -ForegroundColor Yellow
+        }
     }
 }
 
+# Merge and Update
+if ($uniqueNewEntries.Count -gt 0) {
+    Add-Content -Path $tempPath -Value "`n# Added by Script $(Get-Date)"
+    Add-Content -Path $tempPath -Value $uniqueNewEntries
+
+    try {
+        # Overwrite original host file (Requires Admin)
+        Move-Item -Path $tempPath -Destination $hostsPath -Force
+        Write-Host "Successfully updated HOSTS file with $($uniqueNewEntries.Count) new entries." -ForegroundColor Green
+    } catch {
+        Write-Error "Failed to write to $hostsPath. Please ensure you are running as Administrator."
+    }
+} else {
+    Write-Host "No new unique entries to add." -ForegroundColor Gray
+    Remove-Item -Path $tempPath -ErrorAction SilentlyContinue
+}
 Write-Host "`nHOSTS file updated." -ForegroundColor Green
-
-
 
 # ================================
 #  DEFENDER EXCLUSION
