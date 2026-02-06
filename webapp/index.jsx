@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import Editor from '@monaco-editor/react';
 import Toastify from 'toastify-js';
 import 'toastify-js/src/toastify.css';
 import './base.css';
@@ -32,7 +33,9 @@ async function copyTextToClipboard(text) {
 
   try {
     await navigator.clipboard.writeText(text);
-  } catch (err) {}
+  } catch (err) {
+    console.log(err);
+  }
 
   const toast = Toastify({
     text: 'Text copied to clipboard.',
@@ -148,8 +151,9 @@ function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
   return envItems.join(envSepToReturn);
 }
 
-// create a context
+// create contexts
 const MainAppContext = React.createContext();
+const ThemeContext = React.createContext();
 
 // use it in a component
 function RightContainer() {
@@ -568,9 +572,234 @@ function MultipleUrlDynamicTextArea(props) {
   return <EnhancedTextArea height={height} label={label} value={text} readOnly />;
 }
 
+function detectLanguageFromUrl(url) {
+  if (!url) return null;
+
+  const extension = url.split('.').pop().toLowerCase();
+  const extensionMap = {
+    sh: 'shell',
+    bash: 'shell',
+    md: 'markdown',
+    ps1: 'powershell',
+    js: 'javascript',
+    jsx: 'javascript',
+    ts: 'typescript',
+    tsx: 'typescript',
+    json: 'json',
+    yml: 'yaml',
+    yaml: 'yaml',
+    py: 'python',
+    rb: 'ruby',
+    go: 'go',
+    java: 'java',
+    c: 'c',
+    cpp: 'cpp',
+    cs: 'csharp',
+    php: 'php',
+    html: 'html',
+    css: 'css',
+    xml: 'xml',
+    sql: 'sql',
+  };
+
+  return extensionMap[extension] || null;
+}
+
+function detectLanguageFromLabel(label) {
+  if (!label) return null;
+
+  const extension = label.split('.').pop().toLowerCase();
+  return detectLanguageFromUrl(extension);
+}
+
+function detectLanguageFromContent(content) {
+  if (!content || typeof content !== 'string') return 'shell';
+
+  const trimmedContent = content.trim();
+
+  // Check for shebang
+  if (trimmedContent.startsWith('#!')) {
+    if (trimmedContent.includes('/bash') || trimmedContent.includes('/sh')) return 'shell';
+    if (trimmedContent.includes('/python')) return 'python';
+    if (trimmedContent.includes('/node')) return 'javascript';
+  }
+
+  // Check for markdown headers
+  if (/^#+\s/.test(trimmedContent) || /^-{3,}$|^\*{3,}$/m.test(trimmedContent)) {
+    return 'markdown';
+  }
+
+  // Check for PowerShell cmdlets
+  if (/\b(Get-|Set-|New-|Remove-|Invoke-|Test-|Write-Host|param\()/i.test(trimmedContent)) {
+    return 'powershell';
+  }
+
+  // Check for common shell patterns
+  if (/^(export|alias|function|sudo|apt-get|yum|brew|echo|cd|ls|mkdir)\s/m.test(trimmedContent)) {
+    return 'shell';
+  }
+
+  // Check for JSON
+  if (/^\s*[\{\[]/.test(trimmedContent) && /[\}\]]\s*$/.test(trimmedContent)) {
+    try {
+      JSON.parse(trimmedContent);
+      return 'json';
+    } catch (e) {}
+  }
+
+  // Default to shell for most bash scripts
+  return 'shell';
+}
+
+function Modal(props) {
+  const { isOpen, onClose, title, children } = props;
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        zIndex: 9999,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '1rem',
+      }}
+      onClick={onClose}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1rem',
+          color: 'var(--text)',
+        }}
+        onClick={(e) => e.stopPropagation()}>
+        {title && <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{title}</h2>}
+        <button
+          onClick={onClose}
+          style={{
+            marginLeft: 'auto',
+            padding: '0.5rem 1rem',
+            fontSize: '1rem',
+            cursor: 'pointer',
+          }}>
+          Close (ESC)
+        </button>
+      </div>
+      <div
+        style={{
+          flex: 1,
+          backgroundColor: 'var(--bg-secondary)',
+          borderRadius: '4px',
+          overflow: 'hidden',
+          border: '1px solid var(--border)',
+        }}
+        onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FullScreenTextViewer(props) {
+  const { value, label } = props;
+  const [isOpen, setIsOpen] = useState(false);
+  const { theme } = useContext(ThemeContext);
+  const editorTheme = theme === 'dark' ? 'vs-dark' : 'light';
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
+  const language = detectLanguageFromLabel(label) || detectLanguageFromContent(value);
+
+  return (
+    <>
+      <ActionButton onClick={() => setIsOpen(true)}>View Fullscreen</ActionButton>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={label}>
+        <Editor
+          height='100%'
+          language={language}
+          value={value || ''}
+          theme={editorTheme}
+          options={{
+            readOnly: true,
+            minimap: { enabled: true },
+            scrollBeyondLastLine: false,
+            fontSize: 14,
+            lineNumbers: 'on',
+            wordWrap: 'on',
+            automaticLayout: true,
+          }}
+        />
+      </Modal>
+    </>
+  );
+}
+
+function Settings() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen]);
+
+  return (
+    <>
+      <ActionButton onClick={() => setIsOpen(true)}>Settings</ActionButton>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title='Settings'>
+        <div
+          style={{
+            padding: '2rem',
+            color: 'var(--text)',
+            backgroundColor: 'var(--bg)',
+            height: '100%',
+            overflowY: 'auto',
+          }}>
+          <div style={{ marginBottom: '2rem' }}>
+            <h3 style={{ marginBottom: '1rem' }}>Theme</h3>
+            <button onClick={toggleTheme} type='button'>
+              Toggle Theme (Current: {theme === 'dark' ? 'Dark' : 'Light'})
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
 function EnhancedTextArea(props) {
   let { url, label, height, ...restProps } = props;
   label = label || props.placeholder;
+
+  const content = restProps.value || restProps.defaultValue || '';
+  const { theme } = useContext(ThemeContext);
+  const editorTheme = theme === 'dark' ? 'vs-dark' : 'light';
+
+  // Detect language: first try from URL, then from content
+  const languageFromUrl = detectLanguageFromUrl(url);
+  const language = languageFromUrl || detectLanguageFromContent(content);
 
   let editUrl = '';
   let formattedUrl = '';
@@ -587,12 +816,27 @@ function EnhancedTextArea(props) {
     <>
       <div className='form-label' style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', marginTop: '1rem' }}>
         <span style={{ color: 'red' }}>{label}</span>
-        <ActionButton onClick={(e) => copyTextToClipboard(e.target.value)}>Copy</ActionButton>
+        <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {formattedUrl && <LinkButton href={formattedUrl}>View Formatted</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
+        <FullScreenTextViewer value={content} label={label} />
       </div>
-      <textarea {...restProps} className='code' style={{ height }} />
+      <Editor
+        height={height || '300px'}
+        language={language}
+        value={content}
+        theme={editorTheme}
+        options={{
+          readOnly: restProps.readOnly || false,
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          fontSize: 13,
+          lineNumbers: 'on',
+          wordWrap: 'on',
+          automaticLayout: true,
+        }}
+      />
     </>
   );
 }
@@ -842,6 +1086,19 @@ function CommonEditorSetupDom(props) {
 // hook up the context with .Provider value={}
 function App() {
   const [appData, setAppData] = useState();
+  const [theme, setTheme] = useState(() => {
+    return getStorage('theme', 'light');
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    setStorage('theme', newTheme);
+  };
 
   useEffect(() => {
     async function _loadData() {
@@ -1003,24 +1260,27 @@ function App() {
   };
 
   return (
-    <MainAppContext.Provider
-      value={{
-        appData,
-        setAppData: onSetAppData,
-        onInputChange,
-      }}>
-      <div>
-        <h1>{window.document.title}</h1>
-      </div>
-      <div>
-        <code>git clone git@github.com:synle/bashrc.git</code>
-      </div>
-      <div id='container'>
-        <LeftContainer />
-        <RightContainer />
-        <BottomContainer />
-      </div>
-    </MainAppContext.Provider>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <MainAppContext.Provider
+        value={{
+          appData,
+          setAppData: onSetAppData,
+          onInputChange,
+        }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
+          <h1>{window.document.title}</h1>
+          <Settings />
+        </div>
+        <div>
+          <code>git clone git@github.com:synle/bashrc.git</code>
+        </div>
+        <div id='container'>
+          <LeftContainer />
+          <RightContainer />
+          <BottomContainer />
+        </div>
+      </MainAppContext.Provider>
+    </ThemeContext.Provider>
   );
 }
 

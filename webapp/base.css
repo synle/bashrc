@@ -1,18 +1,28 @@
 /* Color scheme variables */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --text: #1a1a1a;
-    --text-secondary: #666666;
-    --border: #d0d0d0;
-    --accent: #0066cc;
-    --hover: #e8e8e8;
-  }
+:root[data-theme='light'],
+:root:not([data-theme]) {
+  --bg: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --text: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #d0d0d0;
+  --accent: #0066cc;
+  --hover: #e8e8e8;
 }
 
+:root[data-theme='dark'] {
+  --bg: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+  --text: #e8e8e8;
+  --text-secondary: #a0a0a0;
+  --border: #404040;
+  --accent: #4a9eff;
+  --hover: #333333;
+}
+
+/* Fallback to system preference if no data-theme is set */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #1a1a1a;
     --bg-secondary: #2a2a2a;
     --text: #e8e8e8;
