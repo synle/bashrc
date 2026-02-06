@@ -4,8 +4,8 @@
 ##########################################################
 # docker
 dexecBash(){
-  echo "docker exec -it $@ /bin/bash";
-  docker exec -it $@ /bin/bash
+  echo "docker exec -it $1 /bin/bash"
+  docker exec -it "$1" /bin/bash
 }
 alias d='docker'
 alias drun='docker run'
@@ -13,13 +13,13 @@ alias dexec='dexecBash'
 alias apt='sudo apt-get'
 
 # bat / cat setup
-batcatfull() {
-    # Try the 'bat' command first
-    bat "$@" 2>/dev/null
-    if [ $? -ne 0 ]; then
-        # If 'bat' fails, try the 'batcat' command
-        batcat "$@" 2>/dev/null
-    fi
+batcatfull(){
+  # Try the 'bat' command first
+  bat "$@" 2>/dev/null
+  if [ $? -ne 0 ]; then
+    # If 'bat' fails, try the 'batcat' command
+    batcat "$@" 2>/dev/null
+  fi
 }
 alias bat='batcatfull -p --paging=never'
 
@@ -34,7 +34,6 @@ if ! command -v pbpaste &>/dev/null; then
     export -f pbpaste
 fi
 
-
 ##########################################################
 # Pass a path to watch, a file filter, and a command to run when those files are updated
 # watch.sh "node_modules/everest-*/src/templates" "*.handlebars" "ynpm compile-templates"
@@ -46,10 +45,10 @@ watch(){
   COMMAND=$3
   chsum1=""
 
-  while [[ true ]]
+  while true
   do
     chsum2=$(find -L $WORKING_PATH/$DIR -type f -name "$FILTER" -exec md5 {} \;)
-    if [[ $chsum1 != $chsum2 ]] ; then
+    if [ "$chsum1" != "$chsum2" ]; then
       echo "Found a file change, executing $COMMAND..."
       $COMMAND
       chsum1=$chsum2
@@ -59,40 +58,37 @@ watch(){
 }
 
 listPort(){
-  echo "list port $@"
-  lsof -i tcp:$@
+  echo "list port $1"
+  lsof -i tcp:$1
 }
 
 gitCompare(){
-  #get current branch name
+  # get current branch name
   branch_name=$(git symbolic-ref -q HEAD)
   branch_name=${branch_name##refs/heads/}
   branch_name=${branch_name:-HEAD}
 
-  #get current project name
-  project_name=$(git rev-parse --show-toplevel);
+  # get current project name
+  project_name=$(git rev-parse --show-toplevel)
   project_name=${project_name##*/}
 
-  #get current repo name
+  # get current repo name
   repo_name=$(git config --get remote.origin.url)
   repo_name=${repo_name#*:}
   repo_name=${repo_name/.git/}
-
 
   baseSha1=${2-staging}
   baseSha2=${1-$branch_name}
 
   urlToShow=https://github.com/${repo_name}/compare/${baseSha1}...${baseSha2}
-  echo $urlToShow
+  echo "$urlToShow"
 
   if hash open 2>/dev/null; then
-    open $urlToShow
+    open "$urlToShow"
   fi
 }
 
 subl(){
-  executed_flag=false
-
   local sublime_binaries=(
     "/mnt/c/Program Files/Sublime Text/sublime_text.exe"
     "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl"
@@ -100,30 +96,22 @@ subl(){
   )
 
   for binary in "${sublime_binaries[@]}"; do
-    if [[ -x "$binary" ]]; then
-      echo $binary "$@"
-      if [[ "$executed_flag" = false ]]; then
-        # Run the binary and set the flag to true
-        "$binary" $@ &> /dev/null 2>&1
-        executed_flag=true
-      else
-        noop # noop
-      fi
+    if [ -x "$binary" ]; then
+      echo "$binary $@"
+      "$binary" "$@" &> /dev/null &
+      echo "============"
+      echo "PWD: $(pwd)"
+      echo "Full Path: $(realpath .)"
+      return 0
     fi
   done
 
-  echo """
-============
-PWD: $(pwd)
-Full Path: $(realpath .)
-  """
+  echo "Sublime Text not found"
+  return 1
 }
 
 
-code()
-{
-  executed_flag=false
-
+code(){
   local vscode_binaries=(
     "/mnt/c/Program Files/VSCodium/VSCodium.exe"
     "/mnt/c/Program Files/Microsoft VS Code/Code.exe"
@@ -134,25 +122,24 @@ code()
   )
 
   for binary in "${vscode_binaries[@]}"; do
-    if [[ -x "$binary" ]]; then
-      echo $binary "$@"
-      if [[ "$executed_flag" = false ]]; then
-        # Run the binary and set the flag to true
-        "$binary" $@ &> /dev/null 2>&1
-        executed_flag=true
-      else
-        noop # noop
-      fi
+    if [ -x "$binary" ]; then
+      echo "$binary $@"
+      "$binary" "$@" &> /dev/null &
+      echo "============"
+      echo "PWD: $(pwd)"
+      echo "Full Path: $(realpath .)"
+      return 0
     fi
   done
 
-  flatpak run com.vscodium.codium $@
+  # Try flatpak as fallback
+  if command -v flatpak &>/dev/null; then
+    flatpak run com.vscodium.codium "$@" &> /dev/null &
+    return 0
+  fi
 
-  echo """
-============
-PWD: $(pwd)
-Full Path: $(realpath .)
-  """
+  echo "VS Code/VSCodium not found"
+  return 1
 }
 
 codeListExtensions(){
@@ -163,15 +150,14 @@ codeListExtensions(){
 # copy command with progress bar
 cp2(){
   echo "==== copy ===="
-  echo "src:" "$1"
-  echo "dest:" "$2";
+  echo "src: $1"
+  echo "dest: $2"
   pv "$1" > "$2"
 }
 
 ##########################################################
 #############  SECTION BREAK
 ##########################################################
-
 
 ##########################################################
 # fzf - more advanced functions
@@ -184,12 +170,11 @@ alias glog='fuzzyGitShow'
 alias gl='glog'
 alias gp='git push'
 
-
 # override viewfile with more advanced function
 viewFile(){
   local editorCmd
 
-  if [[ $# -eq 0 ]] ; then
+  if [ $# -eq 0 ]; then
     return 1 # silent exit
   fi
 
@@ -199,26 +184,27 @@ viewFile(){
 }
 
 
-#fuzzy git
+# fuzzy git show
 fuzzyGitShow(){
-  # git log --pretty=format:'%Cred%h%Creset %s %Cgreen%cr %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
-  git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
-  |
-  fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort --color light --preview='echo {} | cut -d " " -f1 | xargs git show' \
+  git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always | \
+  fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort --color light \
+  --preview='echo {} | cut -d " " -f1 | xargs git show' \
   --bind "ctrl-m:execute:
-  (grep -o '[a-f0-9]\{7\}' | head -1 |
-  xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
-  {}
-  FZF-EOF"
+    (grep -o '[a-f0-9]\{7\}' | head -1 |
+    xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
+    {}
+FZF-EOF"
 }
 
 
 fuzzyGitCobranch(){
   local branches branch
-  branches=$(git branch --all | grep -v HEAD | sed 's/remotes\/origin\///g' | sed "s/.* //" | sed 's/ //g' | sed "s#remotes/[^/]*/##" | sort | uniq) &&
-  branch=$(echo "$branches" |
-  fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
-  git checkout $(echo "$branch")
+  branches=$(git branch --all | grep -v HEAD | sed 's/remotes\/origin\///g' | sed "s/.* //" | sed 's/ //g' | sed "s#remotes/[^/]*/##" | sort | uniq)
+  branch=$(echo "$branches" | fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m)
+
+  if [ -n "$branch" ]; then
+    git checkout "$branch"
+  fi
 }
 
 # different completion trigger
@@ -228,24 +214,23 @@ export FZF_COMPLETION_TRIGGER='*'
 #############  SECTION BREAK
 ##########################################################
 
-
 ##########################################################
 ####################  Prompt  ##############
 ##########################################################
 # get current branch in git repo
 parseGitBranch(){
-node -e """
-  const { exec } = require('child_process');
-  exec('git branch | grep \"*\"', (error, stdout, stderr) => !error && console.log('['+stdout.replace('*','').trim()+']'));
-"""
+  node -e "
+    const { exec } = require('child_process');
+    exec('git branch | grep \"*\"', (error, stdout, stderr) => !error && console.log('['+stdout.replace('*','').trim()+']'));
+  "
 }
 
 ifconfig2(){
-node -e """
-  const { networkInterfaces } = require('os');
-  const nets = Object.values(networkInterfaces());
-  console.log([... new Set(JSON.stringify(nets, null, 1).split('\n').filter(line => line.includes('.') && line.includes('address') && line.includes('127.0.0.1') === false).map(line => line.substr(14).replace(/[\",]/g,'')))].join(', '))
-"""
+  node -e "
+    const { networkInterfaces } = require('os');
+    const nets = Object.values(networkInterfaces());
+    console.log([... new Set(JSON.stringify(nets, null, 1).split('\n').filter(line => line.includes('.') && line.includes('address') && line.includes('127.0.0.1') === false).map(line => line.substr(14).replace(/[\\\",]/g,'')))].join(', '))
+  "
 }
 
 # short path

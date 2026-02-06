@@ -21,8 +21,7 @@ export is_os_chromeos=0
 export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
 export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
 export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
-export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
-export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
+export is_os_steamdeck=0 && [ -d /home/deck ] && pacman -h &> /dev/null && export is_os_steamdeck=1
 export is_os_window=0
 export is_os_wsl=0
 
@@ -60,7 +59,6 @@ alias gg="git --no-pager"
 alias pp="pi"
 alias pytest="python -m pytest"
 alias pytest-single="python -m pytest -vvl -k"
-alias flake="flake"
 alias flake8="python -m flake8"
 alias n="node"
 alias y="yarn"
@@ -82,20 +80,19 @@ pi() {
 
 activatePy(){
   # Check if Python virtual environment is already activated
-  if [[ -z "$VIRTUAL_ENV" ]]; then
+  if [ -z "$VIRTUAL_ENV" ]; then
     # Try activating local venv first
-    if [[ -f "./venv/bin/activate" ]]; then
+    if [ -f "./venv/bin/activate" ]; then
       source ./venv/bin/activate
     # Then try user home venv
-    elif [[ -f "$HOME/venv/bin/activate" ]]; then
+    elif [ -f "$HOME/venv/bin/activate" ]; then
       source "$HOME/venv/bin/activate"
     fi
   fi
 }
 
 br(){
-  clear &&  echo $'\e[32m======================================================\e[m' && echo '''
-  '''
+  clear && echo $'\e[32m======================================================\e[m' && echo
 }
 
 isCommandExists(){
@@ -126,31 +123,25 @@ setGitUpstreamBranch(){
 }
 
 searchHelp(){
-  echo '''
+  echo '
 searchCode ""
-
 searchFile ""
-
 searchFileWithGit ""
-
 searchDirWithGit ""
-
 searchDir ""
-  '''
+'
 }
 
 searchCode(){
-  echo """
-Searching:  $@
-#############################################################
-  """
+  echo "Searching: $@"
+  echo "#############################################################"
 
-  #universal option
+  # universal option
   grep -r -o -n "$@" \
     --include=*.{*.hbs,*.jsx,*.js,*.tsx,*.ts,*.css,*.scss,*.less,*.scala,*.html,*.java,*.py} \
     --exclude=*.{png,jpg,.gitignore,.DS_Store} \
     --exclude-dir={node_modules,.git} \
-  .
+    .
 }
 
 searchFile(){
@@ -175,14 +166,14 @@ searchDir(){
 }
 
 cleanmaster(){
-    git stash;
-    git reset --hard;
-    git fap;
-    git checkout test;
-    git checkout -b test;
-    git del master main;
-    git checkout --track origin/master;
-    git checkout --track origin/main
+  git stash
+  git reset --hard
+  git fap
+  git checkout test
+  git checkout -b test
+  git del master main
+  git checkout --track origin/master
+  git checkout --track origin/main
 }
 
 pwd2(){
@@ -208,7 +199,7 @@ alias filterUnwanted='filterUnwantedLight'
 
 # calculate chmod
 chmodCalculator(){
-  node -e """
+  node -e "
     console.log('Chmod Calculator - Enter permission for x w r:');
     var stdin = process.openStdin();
     stdin.addListener('data', (d) => {
@@ -227,7 +218,7 @@ chmodCalculator(){
         return val;
       }, 0)
     };
-  """
+  "
 }
 alias calcChmod='chmodCalculator'
 
@@ -255,9 +246,7 @@ fuzzyVim(){
   )
 
   if [ -n "$OUT" ]; then
-    echo """
-vim \"$OUT\"
-    """
+    echo "vim \"$OUT\""
     vim "$OUT"
   fi
 }
@@ -270,9 +259,7 @@ fuzzyViewFile(){
   )
 
   if [ -n "$OUT" ]; then
-    echo """
-viewFile \"$OUT\"
-    """
+    echo "viewFile \"$OUT\""
     viewFile "$OUT"
   fi
 }
@@ -283,13 +270,11 @@ fuzzyDirectory(){
     searchDirWithGit | \
     filterUnwanted | \
     fzf +m \
-  );
+  )
 
   if [ -n "$OUT" ]; then
-    echo """
-PWD: $PWD
-New_Dir: \"$OUT\"
-    """
+    echo "PWD: $PWD"
+    echo "New_Dir: \"$OUT\""
     cd "$OUT"
   fi
 }
@@ -339,11 +324,6 @@ timeout() {
 
 # disable telemetry
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
-
-# Point Claude to your local Ollama port
-export ANTHROPIC_BASE_URL="http://localhost:11434"
-export ANTHROPIC_AUTH_TOKEN="ollama"
-export ANTHROPIC_API_KEY="local-development"
 
 ##########################################################
 # prompt
