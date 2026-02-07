@@ -2,9 +2,9 @@
 # === format script ===
 format() {
   echo "🚀 Running full project format sequence..."
-  format_cleanup || echo "⚠️ format_cleanup failed or skipped."
-  format_python || echo "⚠️ format_python failed or skipped."
-  format_js || echo "⚠️ format_js failed or skipped."
+  timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
+  timeout 10 format_python || echo "⚠️ format_python failed or skipped."
+  timeout 10 format_js || echo "⚠️ format_js failed or skipped."
   echo "✅ All formatting steps complete (some may have warnings)."
 }
 
@@ -72,7 +72,7 @@ format_python() {
 
   if ! command -v ruff >/dev/null 2>&1; then
     echo "📦 Installing Ruff..."
-    pip install ruff || { echo "❌ Failed to install Ruff."; return 1; }
+    pip install ruff || uv pip install ruff || { echo "❌ Failed to install Ruff."; return 1; }
   fi
 
   echo "🧹 Running Ruff checks and formatting..."

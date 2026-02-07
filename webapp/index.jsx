@@ -873,7 +873,7 @@ const CommonOtherAppDom = (
 
 // This is used to show the warning about OS not matching intended system
 function TargetSystemOSWarningDom(props) {
-  let { is_os_darwin_mac, is_os_window, is_os_ubuntu, is_os_android_termux , targetDomString } = props;
+  let { is_os_darwin_mac, is_os_window, is_os_ubuntu, is_os_android_termux, targetDomString } = props;
 
   // if input was a string
   switch (targetDomString) {
@@ -969,7 +969,6 @@ function LinuxNotesDom() {
   );
 }
 
-
 /////////////////////////////////////////////
 // This is the main DOM for Android
 /////////////////////////////////////////////
@@ -984,24 +983,26 @@ function AndroidNotesDom() {
       {/* Android */}
       <div className='form-label'>Android Applications</div>
       <div className='link-group'>
-      <LinkButton block href='https://vanced.to/gmscore-microg'>
-      MicroG
-    </LinkButton>
-      <LinkButton block href='https://vanced.to/revanced-google-photos'>
-      Google photo
-    </LinkButton>
-      <LinkButton block href='https://vanced.to/revanced-youtube-extended'>
-      Youtube
-    </LinkButton>
-      <LinkButton block href='https://vanced.to/revanced-youtube-music-extended'>
-      Youtube Music
-    </LinkButton>
-      <LinkButton block href='https://vanced.to/revanced-google-news'>
-      Google News
-    </LinkButton>
-      <LinkButton block href='https://teslacoilapps.com/tesladirect/download.pl?packageName=com.teslacoilsw.launcherclientproxy&betaType=public'>
-      Nova Companion
-    </LinkButton>
+        <LinkButton block href='https://vanced.to/gmscore-microg'>
+          MicroG
+        </LinkButton>
+        <LinkButton block href='https://vanced.to/revanced-google-photos'>
+          Google photo
+        </LinkButton>
+        <LinkButton block href='https://vanced.to/revanced-youtube-extended'>
+          Youtube
+        </LinkButton>
+        <LinkButton block href='https://vanced.to/revanced-youtube-music-extended'>
+          Youtube Music
+        </LinkButton>
+        <LinkButton block href='https://vanced.to/revanced-google-news'>
+          Google News
+        </LinkButton>
+        <LinkButton
+          block
+          href='https://teslacoilapps.com/tesladirect/download.pl?packageName=com.teslacoilsw.launcherclientproxy&betaType=public'>
+          Nova Companion
+        </LinkButton>
       </div>
     </>
   );
