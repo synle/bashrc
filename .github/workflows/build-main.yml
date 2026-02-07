@@ -10,31 +10,6 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [24.x]
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.head_ref }}
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-          registry-url: https://registry.npmjs.org/
-      - run: sh build.sh
-        env:
-          is_os_darwin_mac: 0
-          is_os_window: 0
-          is_os_wsl: 0
-          is_os_ubuntu: 1
-          is_os_chromeos: 0
-          is_os_mingw64: 0
-          is_os_android_termux: 0
-      - run: sh format.sh
-      - uses: EndBug/add-and-commit@v7
-        with:
-          message: 'CI / CD - Prettier Automatic Commit'
+    uses: synle/gha-workflow/.github/workflows/build-and-commit-sh.yml@main
+    permissions:
+      contents: write
