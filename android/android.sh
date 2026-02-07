@@ -1,3 +1,4 @@
+# Samsung Z Fold5 - S24 Ultra - Tab S9 Ultra
 # Settings
 function put_setting(){
   # echo "> settings put" $@
