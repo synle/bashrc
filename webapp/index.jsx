@@ -1,6 +1,6 @@
+import Editor from '@monaco-editor/react';
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import Editor from '@monaco-editor/react';
 import Toastify from 'toastify-js';
 import 'toastify-js/src/toastify.css';
 import './base.css';
@@ -450,6 +450,7 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
         <EnhancedTextArea id='formValueOutput' placeholder='Output' readOnly value={formValueOutput} />
       )}
 
+      {selectedScript.shouldShowAndroidNotes === true && <AndroidNotesDom />}
       {selectedScript.shouldShowWindowsNotes === true && <WindowsNotesDom />}
       {selectedScript.shouldShowMacOSXNotes === true && <MacOSXNotesDom />}
       {selectedScript.shouldShowLinuxNotes === true && <LinuxNotesDom />}
@@ -872,7 +873,7 @@ const CommonOtherAppDom = (
 
 // This is used to show the warning about OS not matching intended system
 function TargetSystemOSWarningDom(props) {
-  let { is_os_darwin_mac, is_os_window, is_os_ubuntu, targetDomString } = props;
+  let { is_os_darwin_mac, is_os_window, is_os_ubuntu, is_os_android_termux , targetDomString } = props;
 
   // if input was a string
   switch (targetDomString) {
@@ -885,6 +886,9 @@ function TargetSystemOSWarningDom(props) {
     case 'ubuntu':
       is_os_ubuntu = true;
       break;
+    case 'android':
+      is_os_android_termux = true;
+      break;
   }
 
   const styles = {
@@ -894,7 +898,9 @@ function TargetSystemOSWarningDom(props) {
     top: 0,
   };
 
-  if (is_os_darwin_mac === true) {
+  if (is_os_android_termux === true) {
+    return <h3 style={{ color: 'red', ...styles }}>This is only meant for Android.</h3>;
+  } else if (is_os_darwin_mac === true) {
     if (!isSystemMac) {
       return <h3 style={{ color: 'red', ...styles }}>OS choice (OSX) doesn't match your system.</h3>;
     }
@@ -919,7 +925,7 @@ function TargetSystemOSWarningDom(props) {
 function MacOSXNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom is_os_darwin_mac={true} />
+      <TargetSystemOSWarningDom targetDomString='android' />
       <DynamicTextArea path='/.build/install-macosx.sh' height='350px' />
       <DynamicTextArea path='/.build/notes-macosx.md' height='350px' />
       <DynamicTextArea path='/.build/font-linux.md' />
@@ -957,6 +963,44 @@ function LinuxNotesDom() {
       {/* Linux */}
       <div className='form-label'>Other Applications</div>
       <div className='link-group'>{CommonOtherAppDom}</div>
+    </>
+  );
+}
+
+
+/////////////////////////////////////////////
+// This is the main DOM for Android
+/////////////////////////////////////////////
+function AndroidNotesDom() {
+  return (
+    <>
+      <TargetSystemOSWarningDom is_os_android_termux={true} />
+
+      <DynamicTextArea path='/android/android.sh' height='350px' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
+
+      {/* Android */}
+      <div className='form-label'>Android Applications</div>
+      <div className='link-group'>
+      <LinkButton block href='https://vanced.to/gmscore-microg'>
+      MicroG
+    </LinkButton>
+      <LinkButton block href='https://vanced.to/revanced-google-photos'>
+      Google photo
+    </LinkButton>
+      <LinkButton block href='https://vanced.to/revanced-youtube-extended'>
+      Youtube
+    </LinkButton>
+      <LinkButton block href='https://vanced.to/revanced-youtube-music-extended'>
+      Youtube Music
+    </LinkButton>
+      <LinkButton block href='https://vanced.to/revanced-google-news'>
+      Google News
+    </LinkButton>
+      <LinkButton block href='https://teslacoilapps.com/tesladirect/download.pl?packageName=com.teslacoilsw.launcherclientproxy&betaType=public'>
+      Nova Companion
+    </LinkButton>
+      </div>
     </>
   );
 }
@@ -1122,6 +1166,12 @@ function App() {
             shouldShowLinuxNotes: true,
             shouldHideOutput: true,
             shouldHideBootstrap: true,
+          },
+          {
+            text: 'Setup Android with Termux',
+            shouldShowAndroidNotes: true,
+            shouldHideBootstrap: true,
+            shouldHideOutput: true,
           },
           {
             text: 'Setup Lightweight Profile',
