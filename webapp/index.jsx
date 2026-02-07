@@ -933,6 +933,7 @@ function MacOSXNotesDom() {
       <DynamicTextArea path='/.build/ssh-config' />
       <DynamicTextArea path='/.build/inputrc' />
       <DynamicTextArea path='/.build/vimrc' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
       <CommonEditorSetupDom is_os_darwin_mac={true} />
 
       {/* Mac */}
@@ -959,6 +960,7 @@ function LinuxNotesDom() {
       <DynamicTextArea path='/.build/ssh-config' />
       <DynamicTextArea path='/.build/inputrc' />
       <DynamicTextArea path='/.build/vimrc' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
       <CommonEditorSetupDom />
       {/* Linux */}
       <div className='form-label'>Other Applications</div>
@@ -1019,6 +1021,7 @@ function WindowsNotesDom() {
       <DynamicTextArea path='/.build/windows-powershell-profile.ps1' />
       <DynamicTextArea path='/.build/windows-registry.ps1' />
       <DynamicTextArea path='/.build/windows-terminal' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
       <CommonEditorSetupDom is_os_window={true} />
 
       {/* other links */}

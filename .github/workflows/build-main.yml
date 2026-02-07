@@ -1,8 +1,12 @@
-name: Pull Request Build
+name: build-main
 
 on:
-  pull_request:
+  push:
     branches: [master, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -10,10 +14,12 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [21.x]
+        node-version: [24.x]
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
@@ -31,4 +37,4 @@ jobs:
       - run: sh format.sh
       - uses: EndBug/add-and-commit@v7
         with:
-          message: 'Server Automated Build'
+          message: 'CI / CD - Prettier Automatic Commit'
