@@ -12,10 +12,10 @@ setup_dependencies:
 
 build:
 	$(MAKE) format
-	sh build.sh
+	bash build.sh
 
 format:
-	sh format.sh
+	bash format.sh
 
 list_scripts:
 	cat software/metadata/script-list.config
