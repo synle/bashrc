@@ -1,0 +1,11 @@
+"disable_player_gesture": true,
+"enable_landscape_mode": true,
+"enable_zen_mode": true,
+"enable_zen_mode_podcast": true,
+"hide_action_button_disabled": true,
+"hide_settings_menu_about": true,
+"hide_terms_container": true,
+"remember_playback_speed_last_selected": false,
+"remember_playback_speed_last_selected_toast": false,
+"remember_video_quality_last_selected_toast": false,
+"ryd_user_id": "mcEQGYXS2FHilMuM5lvFvRIVRCjPPQ3Ng5Ho"
