@@ -979,6 +979,8 @@ function AndroidNotesDom() {
 
       <DynamicTextArea path='/android/android.sh' height='350px' />
       <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
+      <DynamicTextArea path='/android/rvx-yt.txt' height='350px' />
+      <DynamicTextArea path='/android/rvx-yt-music.txt' height='350px' />
 
       {/* Android */}
       <div className='form-label'>Android Applications</div>
