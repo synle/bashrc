@@ -38,6 +38,14 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  max-width: 100%;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  overflow-x: hidden;
 }
 
 html {
@@ -45,10 +53,16 @@ html {
     system-ui,
     -apple-system,
     sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
   background: var(--bg);
   color: var(--text);
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
 }
 
 /* Typography */
