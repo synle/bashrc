@@ -4,28 +4,35 @@ const CACHE_METADATA = 'bashrc-metadata-v1';
 const CACHE_TTL = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
 
 // Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/index.jsx',
-  '/index.css',
-  '/base.css',
-];
+const STATIC_ASSETS = ['/', '/index.html', '/index.jsx', '/index.css', '/base.css'];
 
 // Cacheable file extensions
 const cachableExtensions = [
   // Images
-  '.ico', '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.bmp', '.avif',
+  '.ico',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.svg',
+  '.webp',
+  '.bmp',
+  '.avif',
   // Code/Styles
-  '.js', '.jsx', '.css',
+  '.js',
+  '.jsx',
+  '.css',
   // Data/Text
-  '.txt', '.json', '.md', '.sh'
+  '.txt',
+  '.json',
+  '.md',
+  '.sh',
 ];
 
 // Check if URL should be cached
 function shouldCache(url) {
   const pathname = new URL(url).pathname.toLowerCase();
-  return cachableExtensions.some(ext => pathname.endsWith(ext));
+  return cachableExtensions.some((ext) => pathname.endsWith(ext));
 }
 
 // Get cache metadata
@@ -62,7 +69,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[SW] Caching static assets');
       return cache.addAll(STATIC_ASSETS);
-    })
+    }),
   );
   self.skipWaiting();
 });
@@ -77,9 +84,9 @@ self.addEventListener('activate', (event) => {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
-        })
+        }),
       );
-    })
+    }),
   );
   self.clients.claim();
 });
@@ -157,6 +164,6 @@ self.addEventListener('fetch', (event) => {
         console.error('[SW] Fetch failed:', error);
         return await caches.match('/index.html');
       }
-    })()
+    })(),
   );
 });
