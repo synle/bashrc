@@ -465,22 +465,18 @@ function LeftContainer() {
   return (
     <div id='leftContainer'>
       <div className='form-label'>Type of Script</div>
-      {appData.configs.map((config) => (
-        <div key={config.idx} className='form-row'>
-          <input
-            type='radio'
-            name='commandChoice'
-            key={config.idx}
-            id={config.idx}
-            value={config.idx}
-            onChange={(e) => {
-              onInputChange(e.target.name, e.target.value);
-            }}
-            checked={config.idx === formValue.commandChoice}
-          />
-          <label htmlFor={config.idx}>{config.text}</label>
-        </div>
-      ))}
+      <select
+        name='commandChoice'
+        value={formValue.commandChoice}
+        onChange={(e) => {
+          onInputChange(e.target.name, e.target.value);
+        }}>
+        {appData.configs.map((config) => (
+          <option key={config.idx} value={config.idx}>
+            {config.text}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -738,7 +734,7 @@ function FullScreenTextViewer(props) {
           theme={editorTheme}
           options={{
             readOnly: true,
-            minimap: { enabled: true },
+            minimap: { enabled: false },
             scrollBeyondLastLine: false,
             fontSize: 14,
             lineNumbers: 'on',
@@ -1323,12 +1319,13 @@ function App() {
           setAppData: onSetAppData,
           onInputChange,
         }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
-          <h1>{window.document.title}</h1>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between', flexWrap: 'wrap', width: '100%' }}>
+          <h1 style={{ margin: 0 }}>{window.document.title}</h1>
           <Settings />
         </div>
-        <div>
-          <code>git clone git@github.com:synle/bashrc.git</code>
+        <div style={{ width: '100%', overflowX: 'auto' }}>
+          <code style={{ display: 'block', whiteSpace: 'nowrap' }}>git clone git@github.com:synle/bashrc.git</code>
         </div>
         <div id='container'>
           <LeftContainer />
