@@ -11,24 +11,24 @@ async function doWork() {
 
   ## not show status bar
   set -g status off
-  
+
   ## scroll history
   set -g history-limit 30000
-  
+
   ##  Window options
   set -g monitor-activity off
-  
+
   ## mouse support
   set -g mouse on
-  
+
   ## Saner splitting:
   ## https://unix.stackexchange.com/questions/126976/tmux-config-not-retaining-pwd-on-new-window-or-window-split
   bind v split-window -c "#{pane_current_path}" -h
   bind s split-window -c "#{pane_current_path}" -v
-  
+
   ## Autorename sanely.
   setw -g automatic-rename on
-  
+
   ## Better name management
   bind c new-window -c "#{pane_current_path}"
 
@@ -43,7 +43,7 @@ async function doWork() {
   bind d split-window -h
   # TODO: cannot bind to ' - needs to figure this out
   bind 5 split-window
-  
+
   # alt d to split
   bind -n M-d split-window -h
       `.trim(),

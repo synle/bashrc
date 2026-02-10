@@ -25,7 +25,7 @@ removeApp jp.co.omronsoft.iwnnime.languagepack.kokr_az
 removeApp jp.co.omronsoft.iwnnime.languagepack.zhcn_az
 removeApp jp.co.omronsoft.iwnnime.languagepack.zhtw_az
 removeApp jp.co.omronsoft.iwnnime.mlaz
-removeApp jp.co.omronsoft.iwnnime.mlazPackage 
+removeApp jp.co.omronsoft.iwnnime.mlazPackage
 
 ### Contacts
 removeApp com.amazon.dp.contacts
@@ -65,50 +65,50 @@ removeApp com.amazon.kindle
 ### Misc
 
 #### Freevee IMDB
-removeApp com.amazon.imdb.tv.mobile.app 
+removeApp com.amazon.imdb.tv.mobile.app
 
 #### doc ui
-removeApp com.android.documentsui 
+removeApp com.android.documentsui
 
 #### amazon kids
-removeApp com.amazon.tahoe 
+removeApp com.amazon.tahoe
 
 #### amazon store
-removeApp com.amazon.venezia 
+removeApp com.amazon.venezia
 
 #### calculator
-removeApp com.android.calculator2 
+removeApp com.android.calculator2
 
 #### calendar
-removeApp com.android.calendar 
+removeApp com.android.calendar
 
 #### email
-removeApp com.android.email 
+removeApp com.android.email
 
 #### maps
-removeApp com.amazon.geo.client.maps 
+removeApp com.amazon.geo.client.maps
 
 #### amazon offers
-removeApp com.amazon.kindle.kso 
+removeApp com.amazon.kindle.kso
 
 #### amazon docs
-removeApp com.amazon.zico 
-removeApp com.amazon.csapp 
+removeApp com.amazon.zico
+removeApp com.amazon.csapp
 
 #### amazon alexa
-removeApp com.amazon.dee.app 
+removeApp com.amazon.dee.app
 
 #### amazon game circle
-removeApp com.amazon.ags.app 
+removeApp com.amazon.ags.app
 
 #### amazon music
-removeApp com.amazon.mp3 
+removeApp com.amazon.mp3
 
 ### Other misc
 removeApp com.amazon.legalsettings
 removeApp com.amazon.device.software.ota
 removeApp com.amazon.device.software.ota.override
-removeApp com.amazon.platform 
+removeApp com.amazon.platform
 removeApp com.amazon.settings.systemupdates
 removeApp com.amazon.avod
 removeApp com.amazon.kindle.cms

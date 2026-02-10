@@ -39,7 +39,7 @@ winget install --id=Rufus.Rufus  -e
 
 #### Ignored
 # winget install --id  Microsoft.VisualStudioCode
-# winget install --id  Notepad++.Notepad++ 
+# winget install --id  Notepad++.Notepad++
 # winget install --id  Python.Python
 # winget install --id  Prusa3D.PrusaSlicer
 ## # chitubox # this is the slicer for resin printer Mars
