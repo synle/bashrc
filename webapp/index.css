@@ -171,13 +171,16 @@ hr {
 
   .form-label {
     font-size: 1rem;
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    
   }
 
   .form-label > span {
     display: block;
     overflow-wrap: break-word;
     word-wrap: break-word;
+    flex-grow: 1;
   }
 
   .form-row {
