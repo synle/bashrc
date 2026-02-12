@@ -363,6 +363,29 @@ a[role='button'] {
 // Layout
 // ============================================================================
 
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spaceSize4);
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+.app-clone-command {
+  width: 100%;
+  overflow-x: auto;
+
+  code {
+    display: block;
+    white-space: nowrap;
+  }
+}
+
 #container {
   display: flex;
   flex-direction: column;
