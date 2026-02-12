@@ -810,8 +810,8 @@ function EnhancedTextArea(props) {
 
   return (
     <>
-      <div className='form-label' style={{ display: 'flex', alignItems: 'center', gap: '2.5rem', marginTop: '1rem' }}>
-        <span style={{ color: 'red' }}>{label}</span>
+      <div className='editor-header'>
+        <span className='text-error'>{label}</span>
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {formattedUrl && <LinkButton href={formattedUrl}>View Formatted</LinkButton>}
@@ -894,22 +894,50 @@ function TargetSystemOSWarningDom(props) {
   };
 
   if (is_os_android_termux === true) {
-    return <h3 style={{ color: 'red', ...styles }}>This is only meant for Android.</h3>;
+    return (
+      <h3 className='text-error' style={styles}>
+        This is only meant for Android.
+      </h3>
+    );
   } else if (is_os_darwin_mac === true) {
     if (!isSystemMac) {
-      return <h3 style={{ color: 'red', ...styles }}>OS choice (OSX) doesn't match your system.</h3>;
+      return (
+        <h3 className='text-error' style={styles}>
+          OS choice (OSX) doesn't match your system.
+        </h3>
+      );
     }
-    return <h3 style={{ color: 'blue', ...styles }}>OS Choice matches your OS</h3>;
+    return (
+      <h3 className='text-info' style={styles}>
+        OS Choice matches your OS
+      </h3>
+    );
   } else if (is_os_window === true) {
     if (!isSystemWindows) {
-      return <h3 style={{ color: 'red', ...styles }}>OS choice (Windows) doesn't match your system.</h3>;
+      return (
+        <h3 className='text-error' style={styles}>
+          OS choice (Windows) doesn't match your system.
+        </h3>
+      );
     }
-    return <h3 style={{ color: 'blue', ...styles }}>OS Choice matches your OS</h3>;
+    return (
+      <h3 className='text-info' style={styles}>
+        OS Choice matches your OS
+      </h3>
+    );
   } else if (is_os_ubuntu === true) {
     if (!isSystemUbuntu) {
-      return <h3 style={{ color: 'red', ...styles }}>OS choice (Linux (Ubuntu) doesn't match your system.</h3>;
+      return (
+        <h3 className='text-error' style={styles}>
+          OS choice (Linux (Ubuntu) doesn't match your system.
+        </h3>
+      );
     }
-    return <h3 style={{ color: 'blue', ...styles }}>OS Choice matches your OS</h3>;
+    return (
+      <h3 className='text-info' style={styles}>
+        OS Choice matches your OS
+      </h3>
+    );
   }
   return null;
 }
