@@ -182,8 +182,11 @@ body {
 html,
 body,
 #root {
-  width: 100%;
   overflow-x: hidden;
+}
+
+#root{
+  marign-inline: var(--spaceSize4);
 }
 
 // ============================================================================
