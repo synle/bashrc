@@ -70,6 +70,23 @@ alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 alias cl="claude --dangerously-skip-permissions"
 alias c="cl"
 
+# short form echo that
+# removes leading + trailing blank lines
+# finds the first non-empty line
+# detects its indentation
+# trims that indentation from all lines
+ech() {
+  printf '%s' "$@" \
+  | sed -e '1{/^[[:space:]]*$/d;}' -e '${/^[[:space:]]*$/d;}' \
+  | awk 'NR==1{
+      match($0,/^[[:space:]]*/);
+      indent=RLENGTH
+    }
+    {
+      sub("^[[:space:]]{0," indent "}","")
+    }1'
+}
+
 p() {
   activatePy
   python "$@"
