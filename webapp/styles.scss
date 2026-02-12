@@ -430,17 +430,40 @@ a[role='button'] {
   }
 }
 
+.editor-header {
+  display: flex;
+  gap: var(--spaceSize2);
+  align-items: center;
+  flex-wrap: wrap;
+  font-weight: var(--fontWeightSemiBold);
+  color: var(--colorTextMain);
+  margin: var(--spaceSize3) 0 var(--spaceSize2);
+  overflow-wrap: break-word;
+  font-size: var(--fontSize3);
+  text-transform: uppercase;
+
+  > span:first-child {
+    flex-shrink: 0;
+  }
+
+  @include mobile {
+    > span:first-child {
+      flex: 1 1 100%;
+      width: 100%;
+    }
+  }
+}
+
 // ============================================================================
 // Link Groups
 // ============================================================================
 
 .link-group {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spaceSize3);
 
   @include tablet {
-    display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: var(--gridGapWidth);
   }
@@ -479,6 +502,25 @@ a[role='button'] {
 
 .hidden {
   display: none;
+}
+
+// Text color utilities
+.text-error,
+.text-danger {
+  color: #dc3545 !important;
+}
+
+.text-success,
+.text-info {
+  color: var(--colorTextLink) !important;
+}
+
+.text-warning {
+  color: #ffc107 !important;
+}
+
+.text-muted {
+  color: var(--colorTextSecondary) !important;
 }
 
 // ============================================================================
