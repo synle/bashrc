@@ -179,14 +179,8 @@ body {
   overflow-y: auto !important;
 }
 
-html,
-body,
-#root {
-  overflow-x: hidden;
-}
-
-#root {
-  marign-inline: var(--spaceSize4);
+#root{
+  margin-inline: var(--spaceSize4);
 }
 
 // ============================================================================
