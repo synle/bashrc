@@ -1364,13 +1364,12 @@ function App() {
           setAppData: onSetAppData,
           onInputChange,
         }}>
-        <div
-          style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between', flexWrap: 'wrap', width: '100%' }}>
-          <h1 style={{ margin: 0 }}>{window.document.title}</h1>
+        <div className='app-header'>
+          <h1>{window.document.title}</h1>
           <Settings />
         </div>
-        <div style={{ width: '100%', overflowX: 'auto' }}>
-          <code style={{ display: 'block', whiteSpace: 'nowrap' }}>git clone git@github.com:synle/bashrc.git</code>
+        <div className='app-clone-command'>
+          <code>git clone git@github.com:synle/bashrc.git</code>
         </div>
         <div id='container'>
           <LeftContainer />
