@@ -811,10 +811,9 @@ function EnhancedTextArea(props) {
   return (
     <>
       <div className='editor-header'>
-        <span className='text-error'>{label}</span>
+        {formattedUrl ? <LinkButton href={formattedUrl}>{label}</LinkButton> : <span className='text-info'>{label}</span>}
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
-        {formattedUrl && <LinkButton href={formattedUrl}>View Formatted</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
         <FullScreenTextViewer value={content} label={label} />
       </div>
