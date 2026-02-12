@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "npx http-server --cors .",
-    "format": "prettier --write **/**/**/**/*.{css,js,html,md,json,jsx}",
+    "format": "prettier --write **/**/**/**/*.{scss,js,html,md,json,jsx}",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -21,7 +21,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
     "prettier": "^3.8.1",
-    "sass": "^1.97.3"
+    "sass": "^1.97.3",
     "vite": "^4.4.0",
     "vite-plugin-singlefile": "^0.13.5"
   }
