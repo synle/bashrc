@@ -512,6 +512,25 @@ function LinkButton(props) {
   );
 }
 
+function LinkText(props) {
+  const { children, block, ...restProps } = props;
+
+  if (block) {
+    return (
+      <div>
+        <a {...restProps} target='_blank'>
+          {children}
+        </a>
+      </div>
+    );
+  }
+  return (
+    <a {...restProps} target='_blank'>
+      {children}
+    </a>
+  );
+}
+
 function ActionButton(props) {
   const { children, ...restProps } = props;
 
@@ -811,7 +830,7 @@ function EnhancedTextArea(props) {
   return (
     <>
       <div className='editor-header'>
-        {formattedUrl ? <LinkButton href={formattedUrl}>{label}</LinkButton> : <span className='text-info'>{label}</span>}
+        {formattedUrl ? <LinkText href={formattedUrl}>{label}</LinkText> : <span className='text-info'>{label}</span>}
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
