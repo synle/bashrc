@@ -67,8 +67,10 @@ alias y="yarn"
 alias s='ssh -4'
 alias b="bat --style=plain"
 alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
-alias cl="claude --dangerously-skip-permissions"
-alias c="cl"
+alias fzf='fzf --no-sort'
+alias cl="claude --dangerously-skip-permissions"  # claude
+alias c="cl"  # claude
+alias cm='cl --model opus'  # claude
 
 # short form echo that
 # removes leading + trailing blank lines
