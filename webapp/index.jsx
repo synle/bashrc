@@ -484,7 +484,7 @@ function BottomContainer() {
   return (
     <div id='bottomContainer'>
       <hr />
-      <div className='form-row'>
+      <div className='link-group'>
         <LinkButton href='https://github.com/synle/bashrc'>Repo</LinkButton>
         <LinkButton href='https://github.com/synle/bashrc/tree/master/.build'>Pre-compiled Configs</LinkButton>
         <LinkButton href='https://github.com/synle/bashrc/find/master'>Bashrc Code</LinkButton>
