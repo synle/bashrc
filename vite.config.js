@@ -8,8 +8,8 @@ import path from 'path';
 const updateServiceWorker = () => ({
   name: 'update-service-worker',
   closeBundle() {
-    const swSourcePath = './webapp/sw.js';
-    const swDestPath = './dist/sw.js';
+    const swSourcePath = './webapp/sw-bashrc.js';
+    const swDestPath = './dist/sw-bashrc.js';
 
     if (fs.existsSync(swSourcePath)) {
       let content = fs.readFileSync(swSourcePath, 'utf-8');
