@@ -359,10 +359,10 @@ timeout() {
 # disable telemetry
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 
-# Point Claude to your local Ollama port
-export ANTHROPIC_BASE_URL="http://localhost:11434"
-export ANTHROPIC_AUTH_TOKEN="ollama"
-export ANTHROPIC_API_KEY="local-development"
+# # Point Claude to your local Ollama port
+# export ANTHROPIC_BASE_URL="http://localhost:11434"
+# export ANTHROPIC_AUTH_TOKEN="ollama"
+# export ANTHROPIC_API_KEY="local-development"
 
 ##########################################################
 # prompt
