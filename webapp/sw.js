@@ -1,10 +1,14 @@
-const CACHE_NAME = 'bashrc-webapp-v1';
-const RUNTIME_CACHE = 'bashrc-runtime-v1';
-const CACHE_METADATA = 'bashrc-metadata-v1';
+// __BUILD_TIMESTAMP__ will be replaced during build
+const CACHE_VERSION = '__BUILD_TIMESTAMP__';
+const CACHE_NAME = `bashrc-webapp-cache-${CACHE_VERSION}`;
 const CACHE_TTL = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
 
-// Static assets to cache on install
-const STATIC_ASSETS = ['/', '/index.html', '/index.jsx', '/index.css', '/base.css'];
+// Listen for skip waiting message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // Cacheable file extensions
 const cachableExtensions = [
@@ -29,141 +33,134 @@ const cachableExtensions = [
   '.sh',
 ];
 
-// Check if URL should be cached
-function shouldCache(url) {
-  const pathname = new URL(url).pathname.toLowerCase();
+// Helper function to check if URL should be cached
+function shouldCacheUrl(url) {
+  const urlObj = new URL(url);
+  const pathname = urlObj.pathname;
+
+  // Cache root paths
+  if (pathname === '/' || pathname === './' || pathname === '/index.html' || pathname === './index.html') {
+    return true;
+  }
+
+  // Check file extensions
   return cachableExtensions.some((ext) => pathname.endsWith(ext));
 }
 
-// Get cache metadata
-async function getCacheMetadata(url) {
-  const cache = await caches.open(CACHE_METADATA);
-  const response = await cache.match(url);
-  if (response) {
-    return await response.json();
-  }
-  return null;
+// Helper function to check if cached response is expired
+function isCacheExpired(response) {
+  if (!response) return true;
+
+  const cachedTime = response.headers.get('sw-cache-time');
+  if (!cachedTime) return true;
+
+  const age = Date.now() - parseInt(cachedTime, 10);
+  return age > CACHE_TTL;
 }
 
-// Set cache metadata
-async function setCacheMetadata(url, timestamp) {
-  const cache = await caches.open(CACHE_METADATA);
-  const metadata = { timestamp };
-  const response = new Response(JSON.stringify(metadata));
-  await cache.put(url, response);
+// Helper function to add timestamp to response
+async function addTimestampToResponse(response) {
+  const headers = new Headers(response.headers);
+  headers.set('sw-cache-time', Date.now().toString());
+
+  const blob = await response.blob();
+  return new Response(blob, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: headers,
+  });
 }
 
-// Check if cache is still valid
-async function isCacheValid(url) {
-  const metadata = await getCacheMetadata(url);
-  if (!metadata) {
-    return false;
-  }
-  const age = Date.now() - metadata.timestamp;
-  return age < CACHE_TTL;
-}
-
-// Install event - cache static assets
+// Install event
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    }),
-  );
-  self.skipWaiting();
+  console.log('Service Worker: Installed');
+  // Don't auto skip waiting - let the page control it
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE && cacheName !== CACHE_METADATA) {
-            console.log('[SW] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
+    Promise.all([
+      // Delete old cache versions
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('Service Worker: Clearing old cache', cacheName);
+              return caches.delete(cacheName);
+            }
+          }),
+        );
+      }),
+      // Clean up expired entries from current cache
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const requests = await cache.keys();
+        const deletionPromises = [];
+
+        for (const request of requests) {
+          const response = await cache.match(request);
+          if (isCacheExpired(response)) {
+            console.log('Service Worker: Removing expired cache entry:', request.url);
+            deletionPromises.push(cache.delete(request));
           }
-        }),
-      );
-    }),
+        }
+
+        return Promise.all(deletionPromises);
+      }),
+    ]),
   );
   self.clients.claim();
 });
 
 // Fetch event - stale-while-revalidate strategy
 self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // Skip chrome-extension and other non-http(s) requests
-  if (!url.protocol.startsWith('http')) {
+  // Only intercept requests we want to cache
+  if (!shouldCacheUrl(event.request.url)) {
     return;
   }
 
   event.respondWith(
-    (async () => {
-      const cachedResponse = await caches.match(request);
+    caches.match(event.request).then((cachedResponse) => {
+      // Fetch from network in background to update cache
+      const fetchPromise = fetch(event.request.clone())
+        .then(async (networkResponse) => {
+          // Only cache successful responses
+          if (networkResponse && networkResponse.status === 200) {
+            // Add timestamp and cache the response
+            const responseWithTimestamp = await addTimestampToResponse(networkResponse.clone());
 
-      // Fetch from network in the background (don't await)
-      const fetchPromise = (async () => {
-        try {
-          console.log('[SW] Fetching from network (background):', request.url);
-          const response = await fetch(request);
-
-          // Cache successful responses
-          if (response && response.status === 200 && response.type !== 'error') {
-            // Only cache if the URL has a cacheable extension
-            if (shouldCache(request.url)) {
-              const responseToCache = response.clone();
-              const cache = await caches.open(RUNTIME_CACHE);
-              await cache.put(request, responseToCache);
-              await setCacheMetadata(request.url, Date.now());
-              console.log('[SW] Cache updated in background:', request.url);
-            }
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseWithTimestamp);
+              console.log('Service Worker: Updated cache in background:', event.request.url);
+            });
           }
-
-          return response;
-        } catch (error) {
-          console.error('[SW] Background fetch failed:', error);
+          return networkResponse;
+        })
+        .catch((error) => {
+          console.log('Service Worker: Background fetch failed:', event.request.url, error);
           return null;
-        }
-      })();
+        });
 
-      // If we have a cached response, return it immediately
+      // If we have a cached response (even if expired), return it immediately
+      // while the network request updates the cache in the background
       if (cachedResponse) {
-        console.log('[SW] Serving from cache (stale-while-revalidate):', request.url);
+        console.log('Service Worker: Serving from cache (revalidating in background):', event.request.url);
 
-        // Check if cache is expired (but still serve it)
-        const isValid = await isCacheValid(request.url);
-        if (!isValid) {
-          console.log('[SW] Cache expired, will update in background:', request.url);
+        // If cache is still valid, refresh the TTL in background
+        if (!isCacheExpired(cachedResponse)) {
+          addTimestampToResponse(cachedResponse.clone()).then((refreshedResponse) => {
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, refreshedResponse);
+            });
+          });
         }
-
-        // Don't await - let the background fetch update the cache
-        fetchPromise.catch(() => {}); // Prevent unhandled rejection
 
         return cachedResponse;
       }
 
       // No cache - wait for network response
-      console.log('[SW] No cache, fetching from network:', request.url);
-      try {
-        const response = await fetchPromise;
-        if (response) {
-          return response;
-        }
-        // Fallback if fetch failed
-        return await caches.match('/index.html');
-      } catch (error) {
-        console.error('[SW] Fetch failed:', error);
-        return await caches.match('/index.html');
-      }
-    })(),
+      console.log('Service Worker: No cache, waiting for network:', event.request.url);
+      return fetchPromise;
+    }),
   );
 });
