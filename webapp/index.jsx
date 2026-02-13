@@ -767,40 +767,59 @@ function FullScreenTextViewer(props) {
 
 function Settings() {
   const [isOpen, setIsOpen] = useState(false);
-  const { theme, toggleTheme } = useContext(ThemeContext);
+  const { theme, setTheme } = useContext(ThemeContext);
+  const dropdownRef = React.useRef(null);
 
   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isOpen) {
         setIsOpen(false);
       }
     };
 
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [isOpen]);
 
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    setStorage('theme', newTheme);
+    setIsOpen(false);
+  };
+
   return (
-    <>
-      <ActionButton onClick={() => setIsOpen(true)}>Settings</ActionButton>
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title='Settings'>
-        <div
-          style={{
-            padding: '2rem',
-            color: 'var(--text)',
-            backgroundColor: 'var(--bg)',
-            height: '100%',
-            overflowY: 'auto',
-          }}>
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Theme</h3>
-            <button onClick={toggleTheme} type='button'>
-              Toggle Theme (Current: {theme === 'dark' ? 'Dark' : 'Light'})
-            </button>
-          </div>
+    <div className='dropdown' ref={dropdownRef}>
+      <button
+        className='dropdown-trigger'
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        type='button'>
+        {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+      </button>
+      {isOpen && (
+        <div className='dropdown-content'>
+          <button onClick={() => handleThemeChange('light')} type='button'>
+            Light Mode
+          </button>
+          <button onClick={() => handleThemeChange('dark')} type='button'>
+            Dark Mode
+          </button>
         </div>
-      </Modal>
-    </>
+      )}
+    </div>
   );
 }
 
@@ -1357,7 +1376,7 @@ function App() {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       <MainAppContext.Provider
         value={{
           appData,
