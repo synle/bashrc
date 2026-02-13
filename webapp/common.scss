@@ -327,6 +327,121 @@ textarea {
 }
 
 // ============================================================================
+// Modal Styles
+// ============================================================================
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease-out;
+
+  .modalContent {
+    max-width: var(--maxBodyWidth);
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.2s ease-out;
+  }
+
+  .modalBody {
+    background: var(--colorBgSecondary);
+    border: var(--borderSize1) solid var(--colorBorderMain);
+    border-radius: 8px;
+    padding: var(--spaceSize4);
+    box-shadow:
+      0 4px 6px var(--colorShadow),
+      0 8px 16px var(--colorShadow);
+  }
+
+  .modalMessage {
+    font-weight: var(--fontWeightBold);
+    font-size: var(--fontSize3);
+    line-height: 1.5;
+    margin-bottom: var(--spaceSize3);
+    word-break: break-word;
+  }
+
+  .modalTextarea {
+    max-width: 100%;
+    width: 100%;
+    max-height: 60vh;
+    min-height: 150px;
+    margin-top: var(--spaceSize3);
+    margin-bottom: 0;
+    font-family: var(--fontFamilyMonospace);
+    background: var(--colorBgMain);
+    border: var(--borderSize1) solid var(--colorBorderMain);
+    border-radius: 8px;
+    padding: var(--spaceSize3);
+    font-size: var(--fontSize4);
+    resize: vertical;
+
+    &--readonly {
+      resize: none;
+      cursor: default;
+      opacity: 0.9;
+      user-select: text;
+    }
+  }
+
+  .modalBody .modalTextarea {
+    margin-top: var(--spaceSize3);
+    margin-bottom: 0;
+  }
+
+  .modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spaceSize3);
+    margin-top: var(--spaceSize4);
+
+    .modalBtn {
+      min-width: 100px;
+      padding: var(--spaceSize2) var(--spaceSize4);
+      font-weight: var(--fontWeightSemiBold);
+      border-radius: 6px;
+      transition: all 0.2s ease;
+
+      button {
+        text-align: center;
+        justify-content: center;
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================================================
 // Utilities
 // ============================================================================
 
