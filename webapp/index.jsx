@@ -802,11 +802,7 @@ function Settings() {
 
   return (
     <div className='dropdown' ref={dropdownRef}>
-      <button
-        className='dropdown-trigger'
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        type='button'>
+      <button className='dropdown-trigger' onClick={() => setIsOpen(!isOpen)} aria-expanded={isOpen} type='button'>
         {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
       </button>
       {isOpen && (

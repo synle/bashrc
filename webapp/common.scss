@@ -400,14 +400,14 @@ textarea {
     text-overflow: ellipsis;
 
     &::after {
-      content: "▼";
+      content: '▼';
       margin-left: 0.5rem;
       font-size: 0.7rem;
       display: inline-block;
       transition: transform 0.2s ease;
     }
 
-    &[aria-expanded="true"]::after {
+    &[aria-expanded='true']::after {
       transform: rotate(180deg);
     }
   }
