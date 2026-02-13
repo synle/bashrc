@@ -4,11 +4,7 @@ const CACHE_NAME = `bashrc-webapp-cache-${CACHE_VERSION}`;
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // Resources to pre-cache during installation
-const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/sw-bashrc.js',
-];
+const PRECACHE_URLS = ['/', '/index.html', '/sw-bashrc.js'];
 
 // Listen for skip waiting message
 self.addEventListener('message', (event) => {
@@ -194,12 +190,9 @@ self.addEventListener('fetch', (event) => {
       // Network failed and no cache - return error page for navigation requests
       if (event.request.mode === 'navigate') {
         console.log('Service Worker: Offline and no cache for navigation');
-        return new Response(
-          '<html><body><h1>Offline</h1><p>Unable to load the page. Please check your connection.</p></body></html>',
-          {
-            headers: { 'Content-Type': 'text/html' },
-          },
-        );
+        return new Response('<html><body><h1>Offline</h1><p>Unable to load the page. Please check your connection.</p></body></html>', {
+          headers: { 'Content-Type': 'text/html' },
+        });
       }
 
       // For other requests, return a network error
