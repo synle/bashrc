@@ -10,62 +10,57 @@ function installPackage(){
 
 if [[ $is_os_darwin_mac == "1" ]]
 then
-  echo '>> Animation tweaks'
-  # settings to speed up
-  # https://gist.github.com/kidpixo/78b9a40ab58e026cf9a432573e27ced5
-  # Disable animations when opening and closing windows.
-  defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
+  #!/bin/bash
 
-  # Disable animations when opening a Quick Look window.
-  defaults write -g QLPanelAnimationDuration -float 0
+  echo ">> Mac UI & System Optimization..."
 
-  # Accelerated playback when adjusting the window size (Cocoa applications).
-  defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
-
-  # Disable animation when opening the Info window in Finder (cmd⌘ + i).
-  defaults write com.apple.finder DisableAllAnimations -bool true
-
-  # Disable animations when you open an application from the Dock.
-  defaults write com.apple.dock launchanim -bool false
-
-  # Make all animations faster that are used by Mission Control.
-  defaults write com.apple.dock expose-animation-duration -float 0.1
-
-  # Disable the delay when you hide the Dock
-  defaults write com.apple.Dock autohide-delay -float 0
-  #Mail applicatie
-
-  # Disable the animation when you sending and replying an e-mail
-  defaults write com.apple.mail DisableReplyAnimations -bool true
-  defaults write com.apple.mail DisableSendAnimations -bool true
-
-  # Disable the standard delay in rendering a Web page.
-  defaults write com.apple.Safari WebKitInitialTimedLayoutDelay 0.25
-
-  # Disable .DS_Store files on usb and network drive
-  defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool TRUE
-  defaults write com.apple.desktopservices DSDontWriteUSBStores -bool TRUE
-
-  # Mac OSX 26 optimization
-  defaults write -g NSAutoFillHeuristicControllerEnabled -bool false
+  # begin mac tweaks
+  defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false # Disable opening/closing window animations
+  defaults write -g QLPanelAnimationDuration -float 0 # Disable Quick Look fade-in/out
+  defaults write NSGlobalDomain NSWindowResizeTime -float 0.001 # Accelerate window resizing (Cocoa apps)
+  defaults write com.apple.finder DisableAllAnimations -bool true # Disable Finder animations (Info windows, etc.)
+  # --- Dock & Mission Control ---
+  defaults write com.apple.dock launchanim -bool false # Disable Dock opening animations
+  defaults write com.apple.dock expose-animation-duration -float 0.1 # Speed up Mission Control animations
+  defaults write com.apple.dock autohide-delay -float 0 # Remove Dock hide/show delay
+  defaults write com.apple.dock autohide-time-modifier -float 0.1 # Speed up the animation of showing the Dock
+  # --- Safari & Web ---
+  defaults write com.apple.Safari WebKitInitialTimedLayoutDelay -float 0.1 # Reduce rendering delay (making pages feel like they load faster)
+  # --- System & Finder Behaviors ---
+  defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true # Disable .DS_Store on network and USB volumes (Prevents lag on external drives)
+  defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+  defaults write -g NSScrollAnimationEnabled -bool false # Disable smooth scrolling (Saves GPU cycles on older hardware)
+  defaults write -g NSAutoFillHeuristicControllerEnabled -bool false # Disable "Heuristic" predictive features to save CPU
   defaults write -g NSAutoHeuristicEnabled -bool false
-  defaults write -g NSScrollAnimationEnabled -bool false  #disable smooth scrolling
+  defaults write com.apple.LaunchServices LSQuarantine -bool false # Disable the "Are you sure you want to open this app?" dialog
+  defaults write -g com.apple.mouse.scaling -float 3 # Increase trackpad/mouse tracking speed beyond the slider limit
+  defaults write -g com.apple.trackpad.scaling -float 3
+  # Disable the delay when typing (Key Repeat Speed)
+  defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false # This makes the cursor fly across the screen when holding a key
+  defaults write NSGlobalDomain KeyRepeat -int 1
+  defaults write NSGlobalDomain InitialKeyRepeat -int 10
+  defaults write com.apple.finder _FXShowPosixPathInTitle -bool true # Disable window animations and "Get Info" animations in Finder
+  defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+  # end mac tweaks
 
-
-  echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
-  touch ~/.bashrc
-  touch ~/.bash_profile
+  echo "  >> Restarting affected services..."
+  for app in "Dock" "Finder" "Mail" "Safari" "SystemUIServer"; do
+      killall "$app" > /dev/null 2>&1
+  done
+  echo "  >> Done"
 
   if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
      echo 'source ~/.bashrc' >> ~/.bash_profile
   fi
 
+  echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
+  touch ~/.bashrc
+  touch ~/.bash_profile
 
-
-  echo 'Change Shell to bash'
+  echo '>> Change Shell to bash'
   chsh -s /bin/bash
 
-  echo 'Headless Chrome Fixes for MacOSX'
+  echo '>> Headless Chrome Fixes for MacOSX'
   mkdir -p ~/Library/LaunchAgents
 cat <<EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
 <?xml version="1.0" encoding="UTF-8"?>
