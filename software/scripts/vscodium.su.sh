@@ -1,6 +1,6 @@
 # Install VSCodium (only if running on Ubuntu and not Windows)
 if [ "${is_os_ubuntu}" -eq 1 ] && [ "${is_os_window}" -eq 0 ]; then
-  version="1.105.17075"
+  version="1.109.31074"
   file="codium_${version}_amd64.deb"
   url="https://github.com/VSCodium/vscodium/releases/download/${version}/${file}"
 
