@@ -11,6 +11,10 @@ alias d='docker'
 alias drun='docker run'
 alias dexec='dexecBash'
 alias apt='sudo apt-get'
+alias bat='batcatfull -p --paging=never'
+
+# make sure the bookmark is present
+touch ~/.syle_bookmark
 
 # bat / cat setup
 batcatfull() {
@@ -21,7 +25,6 @@ batcatfull() {
         batcat "$@" 2>/dev/null
     fi
 }
-alias bat='batcatfull -p --paging=never'
 
 # define pbpaste and pbcopy - define_pbcopy_pbpaste
 if ! command -v pbcopy &>/dev/null; then
@@ -265,7 +268,6 @@ shorterPwdPath(){
   # Remove the trailing slash at the end
   echo "${result%/}"
 }
-
 
 #bash prompt
 export PS1="
