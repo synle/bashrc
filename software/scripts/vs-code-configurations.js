@@ -22,20 +22,30 @@ async function doInit() {
   'update.showReleaseNotes': false,
   'extensions.autoUpdate': false,        // Stops background extension updates
   'extensions.autoCheckUpdates': false,   // Stops checking for extension updates
+  'extensions.ignoreRecommendations': true, // Stops the background "You might like this extension" logic
   'telemetry.telemetryLevel': 'off',      // Disables all data collection
   'workbench.settings.enableNaturalLanguageSearch': false, // Stops sending settings searches to MS servers
 
-  // --- UI & Extreme Performance ---
+  // --- Instant UI Response ---
+  'editor.hover.delay': 0,               // Show tooltips instantly (or set to 10000 to "hide" them)
+  'editor.hover.enabled': true,          // Set to false if you want zero tooltips
+  'editor.quickSuggestionsDelay': 0,     // No "pause" before the suggestion box pops up
+  'editor.suggest.snippetsPreventQuickSuggestions': false,
+
+  // --- UI Performance ---
   'editor.minimap.enabled': false,
   'breadcrumbs.enabled': false,
   'editor.renderWhitespace': 'all',
   'editor.renderControlCharacters': true,
   'editor.maxTokenizationLineLength': 7000,
+  'editor.folding': false,               // Disable code folding to save CPU on large files
   'editor.cursorBlinking': 'solid',           // Saves rendering cycles
   'editor.occurrencesHighlight': false,        // Stops background "same word" searching
   'editor.selectionHighlight': false,
   'editor.codeLens': false,                    // Massive CPU saver: disables reference counts
   'editor.links': false,                       // Stops regex scanning for URLs
+  'editor.matchBrackets': 'never',       // Stops VS Code from looking for the matching bracket as you move
+  'editor.renderLineHighlight': 'none',  // Saves a tiny bit of GPU draw time per frame
   'workbench.editor.enablePreview': false,
   'workbench.startupEditor': 'none',
   'workbench.activityBar.location': 'top',
