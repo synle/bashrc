@@ -84,6 +84,14 @@ async function doInit() {
   "**/node_modules/*/**": true,
   "**/dist/**": true
 },
+'terminal.integrated.gpuAcceleration': true,
+"search.followSymlinks": false,
+"search.useIgnoreFiles": true,
+"search.exclude": {
+  "**/node_modules": true,
+  "**/bower_components": true,
+  "**/*.code-search": true
+},
     // prettier formatting, requires esbenp.prettier-vscode
     '[javascript]': {
       'editor.javascript': 'esbenp.prettier-vscode',
