@@ -82,6 +82,8 @@ del = branch -D               # Force delete branch
 fap   = fetch --all --prune     # Fetch all and purge deleted remotes
 po  = push origin
 pof = push origin --force
+pushdelbranch    = push origin --delete       # Delete a remote branch: branch-name
+pushdeltag   = push origin --delete --tag # Delete a remote tag: tag-name
 
 # Rebase & Merge
 r   = rebase --reapply-cherry-picks
