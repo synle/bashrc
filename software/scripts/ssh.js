@@ -43,10 +43,13 @@ async function doWork() {
     'SY CUSTOM CONFIG - All Hosts', // key
     trimLeftSpaces(`
       Host *
-        ### reuse connection
-        ## ControlMaster auto
-        ## ControlPath /tmp/%r@%h:%p
-        ## ControlPersist 20m
+        # Enable compression only for slow connections (it can actually slow down fast LANs)
+        Compression yes
+
+        # Keep the connection alive to prevent timeouts
+        ServerAliveInterval 60
+        ServerAliveCountMax 3
+
         # forward agent
         ForwardAgent yes
         # identity

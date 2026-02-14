@@ -359,6 +359,9 @@ timeout() {
 # disable telemetry
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 
+# for ssh socket control
+mkdir -p ~/.ssh/sockets
+
 # # Point Claude to your local Ollama port
 # export ANTHROPIC_BASE_URL="http://localhost:11434"
 # export ANTHROPIC_AUTH_TOKEN="ollama"
