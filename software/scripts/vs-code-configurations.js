@@ -171,6 +171,11 @@ async function doInit() {
       ...syntaxFormatterOpts, ...syntaxHighlightOpts
     }
   };
+
+  // mac only
+  if(is_os_darwin_mac){
+    COMMON_CONFIGS['workbench.fontAliasing'] ='antialiased'; // Mac specific, but keeps text sharp without heavy load
+  }
 }
 
 async function doWork() {
