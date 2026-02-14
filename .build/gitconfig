@@ -46,8 +46,6 @@ markEmptyLines = false
 [alias]
 a = add
 aa = add -A
-amend = commit --amend --no-verify
-amend-with-verify = commit --amend
 ap = add -p
 app = add -p .
 au = add -u
@@ -56,11 +54,16 @@ ba = branch -a -vv
 br = branch
 branch-set = branch -u
 set-branch = branch -u
-c = commit
-c-empty-commit = commit --allow-empty -m "Empty Commit"
-c-no-verify = commit --no-verify
+c = commit --allow-empty
+c-empty-commit = c -m "Empty Commit"
+c-no-verify = c --no-verify
+amend-with-verify = commit --amend
+amend = amend-with-verify --no-verify
 cleanfd = clean -f -d
-clone-shallow = clone --depth 1 -b master
+clone-shallow = clone --depth 1
+clone-1-level = clone-shallow
+clone-1-depth = clone-shallow
+copy = clone-shallow
 co = checkout
 cot = checkout --track
 cob = checkout -b
@@ -85,16 +88,21 @@ po = push origin
 po2 = push origin2
 pof = push origin --force
 pof2 = push origin2 --force
+u = pull
 pu = pull
 pl = pull
 r = rebase --reapply-cherry-picks
 ri = rebase -i
-riheadlast10 = rebase -i HEAD^^^^^^^^^^
+ri-head-last10 = rebase -i HEAD^^^^^^^^^^
+ri-head-last20 = rebase -i HEAD^^^^^^^^^^^^^^^^^^^^
 s = status -sb
 stats = shortlog -sn
 tagss = tag --list
 tags = ls-remote --tags origin
-
+patch = format-patch -1 HEAD
+patch-last1 = format-patch -1 HEAD
+apply-patch = apply --reject --whitespace=fix
+apply-patch-3-way = apply-patch -3
 
 ; these are things that are not commit
 ; search git for commits that contains a text
