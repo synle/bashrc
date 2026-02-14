@@ -19,8 +19,8 @@ async function doWork() {
       `
         # this file is auto-generated
         ${await _getGitConfig({
-        email: '; email = test_email@gmail.com #update this email',
-      })}
+          email: '; email = test_email@gmail.com #update this email',
+        })}
         `,
       false,
     ],
