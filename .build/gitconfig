@@ -2,17 +2,29 @@
 name = Sy Le
 ; email = test_email@gmail.com
 
+[core]
+autocrlf = input
+editor = vim
+excludesFile = ~/.gitignore_global
+fsmonitor = true # Uses a background daemon to monitor file changes. Massive boost for 'git status' in large repos.
+untrackedCache = true # Speeds up index updates by caching untracked files.
+commitGraph = true # Speed Up Logs and History
+preloadIndex = true # Uses multiple threads to scan for changed files.
+
+[feature]
+manyFiles = true # Enables several performance-related features at once, including a faster index format (version 4).
+
+[checkout]
+workers = 0 # Uses multiple workers for checking out files (0 = auto-detect CPU cores).
+
+[fetch]
+writeCommitGraph = true # Automatically updates the commit graph cache whenever you fetch.
+
 [pull]
 rebase = false
 
 [push]
 default = current
-
-[core]
-autocrlf = input
-editor = vim
-excludesFile = ~/.gitignore_global
-
 
 [diff]
 tool = vimdiff
@@ -32,9 +44,8 @@ newNormal = green bold
 newHighlight = green bold 22
 
 [color "diff"]
-meta = 11
-commit = green
 meta = yellow
+commit = green
 frag = cyan
 old = red
 new = green
@@ -44,74 +55,52 @@ whitespace = red reverse
 markEmptyLines = false
 
 [alias]
-a = add
-aa = add -A
-ap = add -p
-app = add -p .
-au = add -u
-b = branch -vv
-ba = branch -a -vv
-br = branch
-branch-set = branch -u
-set-branch = branch -u
-c = commit --allow-empty
-c-empty-commit = c -m "Empty Commit"
-c-no-verify = c --no-verify
-amend-with-verify = commit --amend
-amend = amend-with-verify --no-verify
-cleanfd = clean -f -d
-clone-shallow = clone --depth 1
-clone-1-level = clone-shallow
-clone-1-depth = clone-shallow
-copy = clone-shallow
-co = checkout
-cot = checkout --track
+# General
+s   = status -sb
+a   = add
+aa  = add -A
+ap  = add -p
+au  = add -u
+c   = commit --allow-empty
+cm  = commit -m
+amend = commit --amend
+ca  = amend
+can = amend --no-verify
+
+# Branch & Checkout
+co  = checkout
 cob = checkout -b
-cp = cherry-pick
-cpn = cherry-pick -n
-d = diff --word-diff -w
+b   = branch -vv
+ba  = branch -a -vv
 del = branch -D
-del-upstream-branch = push -d
-del-upstream-tag = push -d tag
-empty-commit = commit --allow-empty -m "Empty commit"
-f = fetch --all --prune
-fap = fetch --all --prune
-fr = !git fetch --all --prune && git rebase --reapply-cherry-picks
-l = log --oneline
-logs = log --oneline --decorate
-m = merge
-mc = merge --continue
-p = push
-ps = push
-psh = push
-po = push origin
-po2 = push origin2
+
+# Pull / Push / Fetch
+f   = fetch --all --prune
+pl  = pull
+ps  = push
+psf = push --force
+po  = push origin
 pof = push origin --force
-pof2 = push origin2 --force
-u = pull
-pu = pull
-pl = pull
-r = rebase --reapply-cherry-picks
-ri = rebase -i
-ri-head-last10 = rebase -i HEAD^^^^^^^^^^
-ri-head-last20 = rebase -i HEAD^^^^^^^^^^^^^^^^^^^^
-s = status -sb
+
+# Rebase & Merge
+r   = rebase --reapply-cherry-picks
+ri  = rebase -i
+ri10 = rebase -i HEAD~10
+mc  = merge --continue
+
+# Log & Diff
+l    = log --oneline
+ls   = log --oneline --decorate
+d    = diff --word-diff -w
 stats = shortlog -sn
-tagss = tag --list
-tags = ls-remote --tags origin
-patch = format-patch -1 HEAD
-patch-last1 = format-patch -1 HEAD
-apply-patch = apply --reject --whitespace=fix
-apply-patch-3-way = apply-patch -3
 
-; these are things that are not commit
-; search git for commits that contains a text
-search-logs-for-include-text=log -- . -G
+# Maintenance & Advanced
+cleanfd = clean -f -d
+cp      = cherry-pick
+cpn     = cherry-pick -n
+clone1  = clone --depth 1
 
-; list out all commits from reflog that has changes on file
-; git rev-list --all -- software/base-node-script.js
-search-reflog-for-file=git rev-list --all --
-
-; see which branch contains the commit hash
-; branch -r --contains 'commit_hash'
-search-branch-by-commit-hash=branch -r --contains
+# Search & Reflog
+search-logs   = log -- . -G
+search-reflog = rev-list --all --
+where-is      = branch -r --contains
