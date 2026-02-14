@@ -78,6 +78,12 @@ async function doInit() {
     'security.workspace.trust.enabled': false, // this is to disable the trusted domain message
     'workbench.startupEditor': 'none', // this disables the startup wizard
     'telemetry.telemetryLevel': 'off', // disable telemetry
+    "files.watcherExclude": {
+  "**/.git/objects/**": true,
+  "**/.git/subtree-cache/**": true,
+  "**/node_modules/*/**": true,
+  "**/dist/**": true
+},
     // prettier formatting, requires esbenp.prettier-vscode
     '[javascript]': {
       'editor.javascript': 'esbenp.prettier-vscode',
