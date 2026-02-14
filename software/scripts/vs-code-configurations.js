@@ -17,6 +17,14 @@ const fontSizeToUse = 14; // EDITOR_CONFIGS.fontSize
 
 async function doInit() {
   COMMON_CONFIGS = {
+    // --- Total Lockdown: Updates & Telemetry ---
+  'update.mode': 'none',
+  'update.showReleaseNotes': false,
+  'extensions.autoUpdate': false,        // Stops background extension updates
+  'extensions.autoCheckUpdates': false,   // Stops checking for extension updates
+  'telemetry.telemetryLevel': 'off',      // Disables all data collection
+  'workbench.settings.enableNaturalLanguageSearch': false, // Stops sending settings searches to MS servers
+
   // --- UI & Extreme Performance ---
   'editor.minimap.enabled': false,
   'breadcrumbs.enabled': false,
@@ -32,8 +40,6 @@ async function doInit() {
   'workbench.startupEditor': 'none',
   'workbench.activityBar.location': 'top',
   'window.zoomLevel': 0.5,
-  'telemetry.telemetryLevel': 'off',
-  'update.mode': 'none',
 
   // --- Scrolling & Navigation ---
   'editor.mouseWheelScrollSensitivity': 2,
