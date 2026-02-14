@@ -1,0 +1,949 @@
+# pretty ping
+alias ping=prettyping
+# END pretty ping
+
+# jq
+alias jq=/opt/jq
+json(){
+  cat "$1" | jq .
+}
+# END jq
+
+# format script
+# === format script ===
+format() {
+  echo "🚀 Running full project format sequence..."
+  timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
+  timeout 20 format_other_text_based_files || echo "⚠️ format_other_text_based_files failed or skipped."
+  timeout 10 format_python || echo "⚠️ format_python failed or skipped."
+  timeout 10 format_js || echo "⚠️ format_js failed or skipped."
+  echo "✅ All formatting steps complete (some may have warnings)."
+}
+
+format_js() {
+  echo "🎨 Running Prettier on JavaScript/TypeScript files..."
+
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "❌ npx not found. Please install Node.js (https://nodejs.org/) first."
+    return 1
+  fi
+
+  # Create a temporary .prettierignore file based on EDITOR_CONFIGS.ignoredFolders
+  local temp_ignore_file=$(mktemp)
+  cat <<'EOF' > "$temp_ignore_file"
+__pycache__
+.cache
+.ebextensions
+.generated
+.git
+.gradle
+.hg
+.idea
+.mypy_cache
+.pytest_cache
+.sass-cache
+.svn
+bower_components
+build
+coverage
+CVS
+dist
+node_modules
+tmp
+venv
+webpack-dist
+EOF
+
+  npx prettier --write '**/*.{js,jsx,ts,tsx,json,scss,mjs,html,md}' --ignore-path "$temp_ignore_file" > /dev/null 2>&1
+  local status=$?
+  rm -f "$temp_ignore_file"
+
+  if [ $status -eq 0 ]; then
+    echo "✅ JS/TS formatting complete."
+  else
+    echo "⚠️ Prettier encountered some errors."
+    return 1
+  fi
+}
+
+format_python() {
+  # Only activate venv if not already active
+  if [ -n "$VIRTUAL_ENV" ]; then
+    echo "🐍 Python environment already active: $VIRTUAL_ENV"
+  else
+    if [ -f ".venv/bin/activate" ]; then
+      echo "🐍 Activating local virtual environment (.venv)..."
+      source .venv/bin/activate
+    elif [ -f "/home/syle/venv/bin/activate" ]; then
+      echo "🐍 Activating fallback environment (/home/syle/venv)..."
+      source /home/syle/venv/bin/activate
+    else
+      echo "⚠️ No virtual environment found. Using global Python."
+    fi
+  fi
+
+  if ! command -v ruff >/dev/null 2>&1; then
+    echo "📦 Installing Ruff..."
+    pip install ruff || uv pip install ruff || { echo "❌ Failed to install Ruff."; return 1; }
+  fi
+
+  echo "🧹 Running Ruff checks and formatting..."
+  ruff format --line-length 140 --exclude "__pycache__,.cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,bower_components,build,coverage,CVS,dist,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  ruff check --fix --line-length 140 --exclude "__pycache__,.cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,bower_components,build,coverage,CVS,dist,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  echo "✅ Python formatting complete."
+}
+
+format_cleanup() {
+  echo "🧹 Cleaning up junk files (*.Identifier, ._*)..."
+
+  local base_dir="${1:-.}"
+
+  if [ ! -d "$base_dir" ]; then
+    echo "❌ Directory '$base_dir' not found."
+    return 1
+  fi
+
+  local count=$(find "$base_dir" \
+    -type f \( -name '*.Identifier' -o -name '._*' \) \
+    -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+    -print | wc -l)
+
+  if [ "$count" -gt 0 ]; then
+    find "$base_dir" \
+      -type f \( -name '*.Identifier' -o -name '._*' \) \
+      -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+      -delete
+    echo "✅ Removed $count junk files in: $base_dir"
+  else
+    echo "✨ No junk files found in: $base_dir"
+  fi
+}
+
+format_cleanup_light() {
+  local base_dir="${1:-.}"
+  local max_depth=4
+
+  if [ ! -d "$base_dir" ]; then
+    return 1
+  fi
+
+  local count=$(find "$base_dir" \
+    -maxdepth "$max_depth" \
+    -type f \( -name '*.Identifier' -o -name '._*' \) \
+    -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+    -print | wc -l)
+
+  if [ "$count" -gt 0 ]; then
+    find "$base_dir" \
+      -maxdepth "$max_depth" \
+      -type f \( -name '*.Identifier' -o -name '._*' \) \
+      -not -path '*/__pycache__/*' \
+    -not -path '*/.cache/*' \
+    -not -path '*/.ebextensions/*' \
+    -not -path '*/.generated/*' \
+    -not -path '*/.git/*' \
+    -not -path '*/.gradle/*' \
+    -not -path '*/.hg/*' \
+    -not -path '*/.idea/*' \
+    -not -path '*/.mypy_cache/*' \
+    -not -path '*/.pytest_cache/*' \
+    -not -path '*/.sass-cache/*' \
+    -not -path '*/.svn/*' \
+    -not -path '*/bower_components/*' \
+    -not -path '*/build/*' \
+    -not -path '*/coverage/*' \
+    -not -path '*/CVS/*' \
+    -not -path '*/dist/*' \
+    -not -path '*/node_modules/*' \
+    -not -path '*/tmp/*' \
+    -not -path '*/venv/*' \
+    -not -path '*/webpack-dist/*' \
+      -delete
+  fi
+}
+
+format_other_text_based_files() {
+  echo '>> Formatting All Text-Based Files...'
+
+  # Configuration: Add folders or files you want to skip
+  EXCLUDE_DIRS=(
+    ".git"
+    "node_modules"
+    "dist"
+    "build"
+    "vendor"
+    ".cache"
+    ".next"
+    "venv"
+    ".venv"
+    "target" # Common for Rust/Java
+  )
+
+  EXCLUDE_FILES=(
+    "package-lock.json"
+    "yarn.lock"
+    "pnpm-lock.yaml"
+    "*.min.js"
+    "*.min.css"
+    ".DS_Store"
+  )
+
+  # Build the directory prune arguments
+  dir_args=()
+  for i in "${!EXCLUDE_DIRS[@]}"; do
+    dir_args+=("-name" "${EXCLUDE_DIRS[$i]}")
+    if [ $i -lt $((${#EXCLUDE_DIRS[@]} - 1)) ]; then
+      dir_args+=("-o")
+    fi
+  done
+
+  # Build the file exclusion arguments
+  file_exclude_args=()
+  for i in "${!EXCLUDE_FILES[@]}"; do
+    file_exclude_args+=("-name" "${EXCLUDE_FILES[$i]}")
+    if [ $i -lt $((${#EXCLUDE_FILES[@]} - 1)) ]; then
+      file_exclude_args+=("-o")
+    fi
+  done
+
+  # find .
+  # 1. Prune the excluded directories
+  # 2. Filter out specific excluded files
+  # 3. Check MIME type for text files
+  find . -type d \( "${dir_args[@]}" \) -prune -o -type f ! \( "${file_exclude_args[@]}" \) -print | while read -r file; do
+
+    if file --mime-type "$file" | grep -q "text/"; then
+      echo "Formatting: $(readlink -f "$file")"
+
+      # Removes trailing whitespace
+      sed -i 's/[ \t]*$//' "$file"
+    fi
+
+  done
+
+  echo '>> DONE Formatting All Text-Based Files'
+}
+# === end format script ===
+# END format script
+
+# Sy bash autocomplete
+[ -s /Users/syle/.bash_syle_autocomplete ] && . /Users/syle/.bash_syle_autocomplete
+# END Sy bash autocomplete
+
+# nvm - node version manager
+[ -s /Users/syle/.nvm/nvm.sh ] && . /Users/syle/.nvm/nvm.sh --no-use
+# END nvm - node version manager
+
+##########################################################
+## begin barebone profile
+##########################################################
+
+#! /bin/sh
+export EDITOR='vim'
+
+export BASH_PATH=~/.bashrc
+
+# add sbin to path
+export PATH=$PATH:/sbin
+
+# increase history size
+export HISTSIZE=5000
+export HISTFILESIZE=10000
+export HISTTIMEFORMAT="[%F %T] "
+# Force prompt to write history after every command.
+# http://superuser.com/questions/20900/bash-history-loss
+PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+
+# os flags
+export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
+export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
+export is_os_chromeos=0
+export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
+export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
+export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
+export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
+export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
+export is_os_window=0
+export is_os_wsl=0
+
+if [ -d /mnt/c/Users ] || [ -d /c/Users ]; then
+  export is_os_window=1
+  [ -d /lib ] && export is_os_wsl=1
+fi
+
+if [ -f ~/.bash_syle_os ]; then
+  . /dev/stdin <<< "$(cat ~/.bash_syle_os)"
+fi
+# end os flag
+
+##########################################################
+#############  SECTION BREAK
+##########################################################
+
+#used to refresh
+alias bashrcRefresh='. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"'
+alias refreshBashrc='bashrcRefresh'
+
+##########################################################
+# common aliases
+##########################################################
+alias ..="cd .."
+alias v="vim"
+alias vi="vim"
+alias l="ls -a"
+alias ls="ls -1"
+alias ll="ls -la"
+alias merge="git fetch --all --prune && git merge"
+alias mergeMaster="merge origin/master"
+alias g="git"
+alias gg="git --no-pager"
+alias pp="pi"
+alias pytest="python -m pytest"
+alias pytest-single="python -m pytest -vvl -k"
+alias flake="flake"
+alias flake8="python -m flake8"
+alias n="node"
+alias y="yarn"
+alias s='ssh -4'
+alias b="bat --style=plain"
+alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
+alias fzf='fzf --no-sort'
+alias cl="claude --dangerously-skip-permissions"  # claude
+alias c="cl"  # claude
+alias cm='cl --model opus'  # claude
+
+# short form echo that
+# removes leading + trailing blank lines
+# finds the first non-empty line
+# detects its indentation
+# trims that indentation from all lines
+ech() {
+  printf '%s' "$@" \
+  | sed -e '1{/^[[:space:]]*$/d;}' -e '${/^[[:space:]]*$/d;}' \
+  | awk 'NR==1{
+      match($0,/^[[:space:]]*/);
+      indent=RLENGTH
+    }
+    {
+      sub("^[[:space:]]{0," indent "}","")
+    }1'
+}
+
+p() {
+  activatePy
+  python "$@"
+}
+
+pi() {
+  activatePy
+  pip install -r "$@"
+}
+
+activatePy(){
+  # Check if Python virtual environment is already activated
+  if [[ -z "$VIRTUAL_ENV" ]]; then
+    # Try activating local venv first
+    if [[ -f "./venv/bin/activate" ]]; then
+      source ./venv/bin/activate
+    # Then try user home venv
+    elif [[ -f "$HOME/venv/bin/activate" ]]; then
+      source "$HOME/venv/bin/activate"
+    fi
+  fi
+}
+
+br(){
+  clear &&  echo $'\e[32m======================================================\e[m' && echo '''
+  '''
+}
+
+isCommandExists(){
+  type "$1" &> /dev/null ;
+}
+
+renpm(){
+  rm -rf node_modules bower_components /tmp/*.cache;
+  npm install
+}
+
+tree(){
+  find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
+}
+
+# get current git branch name
+getCurrentGitBranch(){
+  git name-rev --name-only HEAD
+}
+
+getCurrentGitRepo(){
+  basename `git rev-parse --show-toplevel`
+}
+
+# set current upstream ref
+setGitUpstreamBranch(){
+  git branch -u origin/$(git name-rev --name-only HEAD)
+}
+
+searchHelp(){
+  echo '''
+searchCode ""
+
+searchFile ""
+
+searchFileWithGit ""
+
+searchDirWithGit ""
+
+searchDir ""
+  '''
+}
+
+searchCode(){
+  echo """
+Searching:  $@
+#############################################################
+  """
+
+  #universal option
+  grep -r -o -n "$@" \
+    --include=*.{*.hbs,*.jsx,*.js,*.tsx,*.ts,*.css,*.scss,*.less,*.scala,*.html,*.java,*.py} \
+    --exclude=*.{png,jpg,.gitignore,.DS_Store} \
+    --exclude-dir={node_modules,.git} \
+  .
+}
+
+searchFile(){
+  find . -type f -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
+}
+
+searchFileWithGit(){
+  # use either ls tree or find
+  git ls-tree -r --name-only HEAD 2> /dev/null || \
+  find . -type f 2>/dev/null \
+  | uniq
+}
+
+searchDirWithGit(){
+  find ${1:-.} -path '*/\.*' -prune \
+  -o -type d -print 2> /dev/null
+  echo ".." # append parent folder
+}
+
+searchDir(){
+  find . -type d -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
+}
+
+cleanmaster(){
+    git stash;
+    git reset --hard;
+    git fap;
+    git checkout test;
+    git checkout -b test;
+    git del master main;
+    git checkout --track origin/master;
+    git checkout --track origin/main
+}
+
+pwd2(){
+  echo "cd \"$(pwd)\""
+}
+
+alias search='searchText'
+
+filterUnwantedLight(){
+  grep -v "\.DS_Store" \
+  | grep -v "\.git/" \
+  | grep -v "node_modules" \
+  | uniq
+}
+filterTextFilesOnly(){
+  filterUnwantedLight \
+  | grep -v "\.jpeg" \
+  | grep -v "\.jpg" \
+  | grep -v "\.png" \
+  | uniq
+}
+alias filterUnwanted='filterUnwantedLight'
+
+# calculate chmod
+chmodCalculator(){
+  node -e """
+    console.log('Chmod Calculator - Enter permission for x w r:');
+    var stdin = process.openStdin();
+    stdin.addListener('data', (d) => {
+      console.log('Value:', _getValue((d).toString().toLowerCase().trim()))
+      process.exit();
+    });
+    const _getValue = (str) => {
+      if(str.length === 0 || str.length > 3){
+        return 'Invalid';
+      }
+
+      return [...str].reduce((val, c) => {
+        if(c === 'x'){ val += 1; }
+        if(c === 'w'){ val += 2; }
+        if(c === 'r'){ val += 4; }
+        return val;
+      }, 0)
+    };
+  """
+}
+alias calcChmod='chmodCalculator'
+
+##########################################################
+# fzf lightweight aliases and function
+##########################################################
+# all the view file aliases
+alias fv=fuzzyVim
+alias fvim=fuzzyVim
+alias fview=fuzzyViewFile
+
+# other fzf aliases
+alias fcd=fuzzyDirectory
+
+# simple view file alias - will be overriden by advanced bash
+viewFile(){
+  vim "$@"
+}
+
+fuzzyVim(){
+  local OUT=$( \
+    searchFileWithGit | \
+    filterTextFilesOnly | \
+    fzf \
+  )
+
+  if [ -n "$OUT" ]; then
+    echo """
+vim \"$OUT\"
+    """
+    vim "$OUT"
+  fi
+}
+
+fuzzyViewFile(){
+  local OUT=$( \
+    searchFileWithGit | \
+    filterTextFilesOnly | \
+    fzf \
+  )
+
+  if [ -n "$OUT" ]; then
+    echo """
+viewFile \"$OUT\"
+    """
+    viewFile "$OUT"
+  fi
+}
+
+# cdf - cd into the directory of the selected file
+fuzzyDirectory(){
+  local OUT=$( \
+    searchDirWithGit | \
+    filterUnwanted | \
+    fzf +m \
+  );
+
+  if [ -n "$OUT" ]; then
+    echo """
+PWD: $PWD
+New_Dir: \"$OUT\"
+    """
+    cd "$OUT"
+  fi
+}
+
+# date
+date_show(){
+  echo '>> utc'
+  date -u +'%a, %b %d, %Y  %r'
+
+  echo '>> local'
+  date +'%a, %b %d, %Y  %r'
+}
+
+# timeout
+timeout() {
+  local delay cmd
+
+  if [ "$#" -eq 1 ]; then
+    delay=8
+    cmd="$1"
+  elif [ "$#" -eq 2 ]; then
+    delay="$1"
+    cmd="$2"
+  else
+    echo "usage: timeout [seconds] <command>"
+    return 1
+  fi
+
+  (
+    eval "$cmd" &
+    cmd_pid=$!
+
+    # watchdog
+    (
+      sleep "$delay"
+      if kill -0 "$cmd_pid" 2>/dev/null; then
+        echo "⏱️  Timeout after ${delay}s: killing '$cmd'"
+        kill -9 "$cmd_pid" 2>/dev/null
+      fi
+    ) &
+
+    wait "$cmd_pid"
+  )
+}
+
+# disable telemetry
+export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
+
+# # Point Claude to your local Ollama port
+# export ANTHROPIC_BASE_URL="http://localhost:11434"
+# export ANTHROPIC_AUTH_TOKEN="ollama"
+# export ANTHROPIC_API_KEY="local-development"
+
+##########################################################
+# prompt
+##########################################################
+#bash prompt
+export PS1="
+\[\e[31m\]====\[\e[m\]
+\[\e[33m\]\`date\`\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\]
+\[\e[33m\]\`pwd\`\[\e[m\]
+\[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
+
+##########################################################
+## end barebone profile
+####################################################################################################################
+## begin advanced profile
+##########################################################
+
+#! /bin/sh
+##########################################################
+# aliases & functions
+##########################################################
+# docker
+dexecBash(){
+  echo "docker exec -it $@ /bin/bash";
+  docker exec -it $@ /bin/bash
+}
+alias d='docker'
+alias drun='docker run'
+alias dexec='dexecBash'
+alias apt='sudo apt-get'
+
+# bat / cat setup
+batcatfull() {
+    # Try the 'bat' command first
+    bat "$@" 2>/dev/null
+    if [ $? -ne 0 ]; then
+        # If 'bat' fails, try the 'batcat' command
+        batcat "$@" 2>/dev/null
+    fi
+}
+alias bat='batcatfull -p --paging=never'
+
+# define pbpaste and pbcopy - define_pbcopy_pbpaste
+if ! command -v pbcopy &>/dev/null; then
+    pbcopy() { xclip -selection clipboard; }
+    export -f pbcopy
+fi
+
+if ! command -v pbpaste &>/dev/null; then
+    pbpaste() { xclip -selection clipboard -o; }
+    export -f pbpaste
+fi
+
+##########################################################
+# Pass a path to watch, a file filter, and a command to run when those files are updated
+# watch.sh "node_modules/everest-*/src/templates" "*.handlebars" "ynpm compile-templates"
+# Source: https://gist.github.com/JarredMack/b33900d64c0e448fd5ff1e1bd760789e
+watch(){
+  WORKING_PATH=$(pwd)
+  DIR=$1
+  FILTER=$2
+  COMMAND=$3
+  chsum1=""
+
+  while [[ true ]]
+  do
+    chsum2=$(find -L $WORKING_PATH/$DIR -type f -name "$FILTER" -exec md5 {} \;)
+    if [[ $chsum1 != $chsum2 ]] ; then
+      echo "Found a file change, executing $COMMAND..."
+      $COMMAND
+      chsum1=$chsum2
+    fi
+    sleep 2
+  done
+}
+
+listPort(){
+  echo "list port $@"
+  lsof -i tcp:$@
+}
+
+gitCompare(){
+  #get current branch name
+  branch_name=$(git symbolic-ref -q HEAD)
+  branch_name=${branch_name##refs/heads/}
+  branch_name=${branch_name:-HEAD}
+
+  #get current project name
+  project_name=$(git rev-parse --show-toplevel);
+  project_name=${project_name##*/}
+
+  #get current repo name
+  repo_name=$(git config --get remote.origin.url)
+  repo_name=${repo_name#*:}
+  repo_name=${repo_name/.git/}
+
+  baseSha1=${2-staging}
+  baseSha2=${1-$branch_name}
+
+  urlToShow=https://github.com/${repo_name}/compare/${baseSha1}...${baseSha2}
+  echo $urlToShow
+
+  if hash open 2>/dev/null; then
+    open $urlToShow
+  fi
+}
+
+subl(){
+  executed_flag=false
+
+  local sublime_binaries=(
+    "/mnt/c/Program Files/Sublime Text/sublime_text.exe"
+    "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl"
+    "/opt/sublime_text/sublime_text"
+  )
+
+  for binary in "${sublime_binaries[@]}"; do
+    if [[ -x "$binary" ]]; then
+      echo $binary "$@"
+      if [[ "$executed_flag" = false ]]; then
+        # Run the binary and set the flag to true
+        "$binary" $@ &> /dev/null 2>&1
+        executed_flag=true
+      else
+        noop # noop
+      fi
+    fi
+  done
+
+  echo """
+============
+PWD: $(pwd)
+Full Path: $(realpath .)
+  """
+}
+
+code()
+{
+  executed_flag=false
+
+  local vscode_binaries=(
+    "/mnt/c/Program Files/VSCodium/VSCodium.exe"
+    "/mnt/c/Program Files/Microsoft VS Code/Code.exe"
+    "/usr/local/bin/codium"
+    "/usr/local/bin/code"
+    "/usr/bin/codium"
+    "/usr/bin/code"
+  )
+
+  for binary in "${vscode_binaries[@]}"; do
+    if [[ -x "$binary" ]]; then
+      echo $binary "$@"
+      if [[ "$executed_flag" = false ]]; then
+        # Run the binary and set the flag to true
+        "$binary" $@ &> /dev/null 2>&1
+        executed_flag=true
+      else
+        noop # noop
+      fi
+    fi
+  done
+
+  flatpak run com.vscodium.codium $@
+
+  echo """
+============
+PWD: $(pwd)
+Full Path: $(realpath .)
+  """
+}
+
+codeListExtensions(){
+  code --list-extensions
+}
+
+# copy command with progress bar
+cp2(){
+  echo "==== copy ===="
+  echo "src:" "$1"
+  echo "dest:" "$2";
+  pv "$1" > "$2"
+}
+
+##########################################################
+#############  SECTION BREAK
+##########################################################
+
+##########################################################
+# fzf - more advanced functions
+# https://github.com/junegunn/fzf/wiki/examples
+##########################################################
+alias gco='fuzzyGitCobranch'
+alias gbranch='gco'
+alias gbr='gco'
+alias glog='fuzzyGitShow'
+alias gl='glog'
+alias gp='git push'
+
+# override viewfile with more advanced function
+viewFile(){
+  local editorCmd
+
+  if [[ $# -eq 0 ]] ; then
+    return 1 # silent exit
+  fi
+
+  editorCmd=subl
+  echo "$editorCmd $1"
+  $editorCmd "$1"
+}
+
+#fuzzy git
+fuzzyGitShow(){
+  # git log --pretty=format:'%Cred%h%Creset %s %Cgreen%cr %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
+  git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
+  |
+  fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort --color light --preview='echo {} | cut -d " " -f1 | xargs git show' \
+  --bind "ctrl-m:execute:
+  (grep -o '[a-f0-9]\{7\}' | head -1 |
+  xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
+  {}
+  FZF-EOF"
+}
+
+fuzzyGitCobranch(){
+  local branches branch
+  branches=$(git branch --all | grep -v HEAD | sed 's/remotes\/origin\///g' | sed "s/.* //" | sed 's/ //g' | sed "s#remotes/[^/]*/##" | sort | uniq) &&
+  branch=$(echo "$branches" |
+  fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
+  git checkout $(echo "$branch")
+}
+
+# different completion trigger
+export FZF_COMPLETION_TRIGGER='*'
+
+##########################################################
+#############  SECTION BREAK
+##########################################################
+
+##########################################################
+####################  Prompt  ##############
+##########################################################
+# get current branch in git repo
+parseGitBranch(){
+node -e """
+  const { exec } = require('child_process');
+  exec('git branch | grep \"*\"', (error, stdout, stderr) => !error && console.log('['+stdout.replace('*','').trim()+']'));
+"""
+}
+
+ifconfig2(){
+node -e """
+  const { networkInterfaces } = require('os');
+  const nets = Object.values(networkInterfaces());
+  console.log([... new Set(JSON.stringify(nets, null, 1).split('\n').filter(line => line.includes('.') && line.includes('address') && line.includes('127.0.0.1') === false).map(line => line.substr(14).replace(/[\",]/g,'')))].join(', '))
+"""
+}
+
+# short path
+shorterPwdPath(){
+  local trim_count=3  # Set the number of parts to retain in the path
+  IFS='/' read -r -a splits <<< "$(pwd)"
+  result=""
+
+  for idx in "${!splits[@]}"; do
+    if [ $idx -lt $((${#splits[@]} - $trim_count)) ]; then
+      result+="${splits[$idx]:0:1}/"
+    else
+      result+="${splits[$idx]}/"
+    fi
+  done
+
+  # Remove the trailing slash at the end
+  echo "${result%/}"
+}
+
+#bash prompt
+export PS1="
+\[\e[31m\]====\[\e[m\]
+\[\e[33m\]\T\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\] - \`ifconfig2\`
+\[\e[33m\]\`shorterPwdPath\`\[\e[m\] \[\e[31m\]\`parseGitBranch\`\[\e[m\]
+\[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
+
+##########################################################
+## begin advanced profile
+##########################################################
