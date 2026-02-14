@@ -38,6 +38,10 @@
   "workbench.editor.limit.enabled": true,
   "workbench.editor.limit.value": 10,
   "workbench.editor.limit.perEditorGroup": true,
+  "editor.unicodeHighlight.ambiguousCharacters": false,
+  "editor.unicodeHighlight.invisibleCharacters": false,
+  "editor.showUnused": false,
+  "editor.lightbulb.enabled": "off",
   "git.enabled": false,
   "git.autorefresh": false,
   "git.decorations.enabled": false,
@@ -168,29 +172,87 @@
   "workbench.colorTheme": "Dracula Theme",
   "workbench.iconTheme": "material-icon-theme",
   "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
   },
   "[json]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
   },
   "[graphql]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
   },
   "[handlebars]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
   },
   "[markdown]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
+    "editor.wordWrap": "on"
+  },
+  "[plaintext]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.spellcheck.enabled": false,
+    "editor.suggest.showWords": false,
     "editor.wordWrap": "on"
   }
 }
