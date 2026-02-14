@@ -43,18 +43,26 @@ async function doWork() {
     'SY CUSTOM CONFIG - All Hosts', // key
     trimLeftSpaces(`
       Host *
-        # Enable compression only for slow connections (it can actually slow down fast LANs)
-        Compression yes
+        # --- CONNECTION MULTIPLEXING (The Speed King) ---
+        ControlMaster auto
+        ControlPath ~/.ssh/sockets/%r@%h-%p
+        ControlPersist 30m
 
-        # Keep the connection alive to prevent timeouts
+        # --- PACKET & TIMEOUT MANAGEMENT ---
         ServerAliveInterval 60
         ServerAliveCountMax 3
+        Compression no # Performance Tip: Disable compression on fast networks
+        TCPKeepAlive no # Disable OS-level heartbeats to prevent accidental drops on Wi-Fi
 
-        # forward agent
-        ForwardAgent yes
-        # identity
+        # --- IDENTITY & SECURITY ---
         User syle
         IdentityFile ~/.ssh/id_rsa
+        ForwardAgent yes
+        IdentitiesOnly yes # Prevent the client from trying every key in your agent
+
+        # --- LATENCY REDUCTION ---
+        CheckHostIP no # Skip DNS lookups on the client side
+        AddressFamily inet # Faster connection for modern systems
     `),
   );
 
