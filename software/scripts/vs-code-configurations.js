@@ -16,6 +16,16 @@ function _convertIgnoredFilesAndFolders(ignoredFiles) {
 const fontSizeToUse = 14; // EDITOR_CONFIGS.fontSize
 
 async function doInit() {
+  const syntaxHighlightOpts = {
+    'editor.spellcheck.enabled': false, // for some specific custom builds
+    'editor.suggest.showWords': false
+    'editor.wordWrap': 'on',
+  }
+  const syntaxFormatterOpts = {
+    'editor.defaultFormatter': 'esbenp.prettier-vscode',
+    'editor.formatOnSave': true,
+  }
+
   COMMON_CONFIGS = {
     // --- Total Lockdown: Updates & Telemetry ---
     'update.mode': 'none',
@@ -61,6 +71,12 @@ async function doInit() {
     'workbench.editor.limit.enabled': true, // Keeps memory low by limiting open tabs
     'workbench.editor.limit.value': 10,
     'workbench.editor.limit.perEditorGroup': true,
+
+    // --- Kill Hints & Squiggles ---
+  'editor.unicodeHighlight.ambiguousCharacters': false, // Stops highlighting chars that look like others
+  'editor.unicodeHighlight.invisibleCharacters': false, // Stops checking for invisible space bugs
+  'editor.showUnused': false,                           // Stops fading out unused variables (saves a full scan)
+  'editor.lightbulb.enabled': "off",                    // The final nail in the lightbulb's coffin
 
     // --- Kill All Git/SCM (The "Speed" Move) ---
     'git.enabled': false, // Turns off Git integration entirely
@@ -136,18 +152,24 @@ async function doInit() {
     'workbench.iconTheme': 'material-icon-theme',
 
     // --- Formatter Overrides (Prettier) ---
-    '[javascript]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
-    '[javascriptreact]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
-    '[typescript]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
-    '[typescriptreact]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
-    '[json]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
-    '[graphql]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
-    '[handlebars]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
-    '[markdown]': {
-      'editor.defaultFormatter': 'esbenp.prettier-vscode',
-      'editor.formatOnSave': true,
-      'editor.wordWrap': 'on',
+    '[javascript]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[javascriptreact]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[typescript]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[typescriptreact]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[json]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[graphql]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[handlebars]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[yaml]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[xml]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[html]': {
+      ...syntaxFormatterOpts, ...syntaxHighlightOpts
     },
+    '[markdown]': {
+      ...syntaxFormatterOpts, ...syntaxHighlightOpts
+    },
+    '[plaintext]': {
+      ...syntaxFormatterOpts, ...syntaxHighlightOpts
+    }
   };
 }
 
