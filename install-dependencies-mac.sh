@@ -46,6 +46,10 @@ then
   defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool TRUE
   defaults write com.apple.desktopservices DSDontWriteUSBStores -bool TRUE
 
+  # Mac OSX 26 optimization
+  defaults write -g NSAutoFillHeuristicControllerEnabled -bool false
+  defaults write -g NSAutoHeuristicEnabled -bool false
+  defaults write -g NSScrollAnimationEnabled -bool false  #disable smooth scrolling
 
 
   echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
@@ -56,7 +60,33 @@ then
      echo 'source ~/.bashrc' >> ~/.bash_profile
   fi
 
+
+
+  echo 'Change Shell to bash'
   chsh -s /bin/bash
+
+  echo 'Headless Chrome Fixes for MacOSX'
+  mkdir -p ~/Library/LaunchAgents
+cat <<EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.user.chrome.headless</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/launchctl</string>
+        <string>setenv</string>
+        <string>CHROME_HEADLESS</string>
+        <string>1</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
+EOF
+launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
 
   ####################################################################
   # homebrew
