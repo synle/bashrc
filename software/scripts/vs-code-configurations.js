@@ -18,7 +18,7 @@ const fontSizeToUse = 14; // EDITOR_CONFIGS.fontSize
 async function doInit() {
   const syntaxHighlightOpts = {
     'editor.spellcheck.enabled': false, // for some specific custom builds
-    'editor.suggest.showWords': false
+    'editor.suggest.showWords': false,
     'editor.wordWrap': 'on',
   }
   const syntaxFormatterOpts = {
