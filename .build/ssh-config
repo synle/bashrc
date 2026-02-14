@@ -1,14 +1,25 @@
 # SY CUSTOM CONFIG - All Hosts
 Host *
-  ### reuse connection
-  ## ControlMaster auto
-  ## ControlPath /tmp/%r@%h:%p
-  ## ControlPersist 20m
-  # forward agent
-  ForwardAgent yes
-  # identity
+  # --- CONNECTION MULTIPLEXING (The Speed King) ---
+  ControlMaster auto
+  ControlPath ~/.ssh/sockets/%r@%h-%p
+  ControlPersist 30m
+
+  # --- PACKET & TIMEOUT MANAGEMENT ---
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+  Compression no # Performance Tip: Disable compression on fast networks
+  TCPKeepAlive no # Disable OS-level heartbeats to prevent accidental drops on Wi-Fi
+
+  # --- IDENTITY & SECURITY ---
   User syle
   IdentityFile ~/.ssh/id_rsa
+  ForwardAgent yes
+  IdentitiesOnly yes # Prevent the client from trying every key in your agent
+
+  # --- LATENCY REDUCTION ---
+  CheckHostIP no # Skip DNS lookups on the client side
+  AddressFamily inet # Faster connection for modern systems
 # END SY CUSTOM CONFIG - All Hosts
 
 # SY CUSTOM CONFIG - Home Network Hosts
