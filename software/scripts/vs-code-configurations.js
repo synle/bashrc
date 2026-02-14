@@ -17,20 +17,41 @@ const fontSizeToUse = 14; // EDITOR_CONFIGS.fontSize
 
 async function doInit() {
   COMMON_CONFIGS = {
-  // --- Performance & UI Tweaks ---
+  // --- UI & Extreme Performance ---
   'editor.minimap.enabled': false,
   'breadcrumbs.enabled': false,
   'editor.renderWhitespace': 'all',
   'editor.renderControlCharacters': true,
   'editor.maxTokenizationLineLength': 7000,
-  'editor.mouseWheelScrollSensitivity': 2, // 2x speed; set to 3 if you want it even faster
-  'editor.fastScrollSensitivity': 5,        // Speed when holding 'Alt'
+  'editor.cursorBlinking': 'solid',           // Saves rendering cycles
+  'editor.occurrencesHighlight': false,        // Stops background "same word" searching
+  'editor.selectionHighlight': false,
+  'editor.codeLens': false,                    // Massive CPU saver: disables reference counts
+  'editor.links': false,                       // Stops regex scanning for URLs
   'workbench.editor.enablePreview': false,
   'workbench.startupEditor': 'none',
   'workbench.activityBar.location': 'top',
   'window.zoomLevel': 0.5,
   'telemetry.telemetryLevel': 'off',
   'update.mode': 'none',
+
+  // --- Scrolling & Navigation ---
+  'editor.mouseWheelScrollSensitivity': 2,
+  'editor.fastScrollSensitivity': 5,
+  'workbench.list.smoothScrolling': false,    // Native scrolling is faster than simulated
+  'editor.smoothScrolling': false,
+  'workbench.tree.indent': 4,
+  'workbench.editor.showTabs': true,
+  'workbench.editor.limit.enabled': true,     // Keeps memory low by limiting open tabs
+  'workbench.editor.limit.value': 10,
+  'workbench.editor.limit.perEditorGroup': true,
+
+  // --- Kill All Git/SCM (The "Speed" Move) ---
+  'git.enabled': false,                        // Turns off Git integration entirely
+  'git.autorefresh': false,
+  'git.decorations.enabled': false,
+  'scm.diffDecorations': 'none',               // Removes gutter color indicators
+  'github.codespaces.showStatusbar': false,
 
   // --- Editor Behavior ---
   'editor.bracketPairColorization.enabled': true,
@@ -77,8 +98,10 @@ async function doInit() {
   },
   'javascript.updateImportsOnFileMove.enabled': 'always',
   'javascript.inlayHints.variableTypes.enabled': true,
+  'javascript.suggestionActions.enabled': false, // Disables the lightbulb
   'typescript.updateImportsOnFileMove.enabled': 'always',
   'typescript.inlayHints.variableTypes.enabled': true,
+  'typescript.suggestionActions.enabled': false, // Disables the lightbulb
 
   // --- Terminal & System ---
   'terminal.integrated.fontSize': fontSizeToUse,
@@ -95,10 +118,8 @@ async function doInit() {
   'workbench.preferredDarkColorTheme': 'Default High Contrast',
   'workbench.colorTheme': 'Dracula Theme',
   'workbench.iconTheme': 'material-icon-theme',
-  'workbench.tree.indent': 4,
-  'workbench.editor.showTabs': true,
 
-  // --- Formatter Overrides ---
+  // --- Formatter Overrides (Prettier) ---
   '[javascript]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
   '[javascriptreact]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
   '[typescript]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
