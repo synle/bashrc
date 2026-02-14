@@ -17,104 +17,101 @@ const fontSizeToUse = 14; // EDITOR_CONFIGS.fontSize
 
 async function doInit() {
   COMMON_CONFIGS = {
-    'breadcrumbs.enabled': true,
-    'editor.bracketPairColorization.enabled': true, // use built in default bracket rainbow color
-    'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
-    'editor.fontLigatures': true,
-    'editor.fontSize': fontSizeToUse,
-    'terminal.integrated.fontSize': fontSizeToUse,
-    'scm.inputFontSize': fontSizeToUse,
-    'chat.editor.fontSize': fontSizeToUse,
-    'editor.fontWeight': 'bold',
-    'breadcrumbs.enabled': false, // disable breadcrumb
-    'editor.formatOnPaste': true,
-    'editor.linkedEditing': true, // for linked editing (tag renames)
-    'editor.maxTokenizationLineLength': 10000,
-    'editor.minimap.enabled': false,
-    'editor.mouseWheelScrollSensitivity': 0,
-    'editor.multiCursorModifier': 'ctrlCmd',
-    'editor.renderControlCharacters': true,
-    'editor.renderWhitespace': 'all',
-    'editor.snippetSuggestions': 'top',
-    'editor.suggestSelection': 'first',
-    'editor.tabSize': EDITOR_CONFIGS.tabSize,
-    'editor.wordWrap': 'wordWrapColumn',
-    'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
-    'explorer.copyRelativePathSeparator': '/', // always use / for path in all OS's
-    // theme
-    'window.autoDetectColorScheme': true,
-    'workbench.preferredLightColorTheme': 'Default High Contrast Light',
-    'workbench.preferredDarkColorTheme': 'Default High Contrast',
-    //
-    'files.eol': '\n', // LF Unix mode
-    'files.exclude': {
-      ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFiles),
-      ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFolders),
-    },
-    'files.hotExit': 'off',
-    'files.insertFinalNewline': true,
-    'files.trimTrailingWhitespace': true,
-    // specific to js
-    'javascript.updateImportsOnFileMove.enabled': 'always',
-    'javascript.inlayHints.variableTypes.enabled': true,
-    // specific typescript
-    'typescript.updateImportsOnFileMove.enabled': 'always',
-    'typescript.inlayHints.variableTypes.enabled': true,
-    'window.zoomLevel': 0.5,
-    'workbench.colorTheme': 'Dracula Theme',
-    'workbench.editor.showTabs': true,
-    'workbench.iconTheme': 'material-icon-theme',
-    'workbench.tree.indent': 4,
-    'workbench.editor.enablePreview': false, // single click to open file instead of preview it
-    'workbench.activityBar.location': 'top', // move the activity bar up top to save spaces
-    'editor.codeActionsOnSave': {
-      'source.fixAll': true,
-      'source.organizeImports': true,
-    },
-    'update.mode': 'none',
-    'remote.SSH.remotePlatform': {
-      '127.0.0.1': 'linux',
-    },
-    'security.workspace.trust.enabled': false, // this is to disable the trusted domain message
-    'workbench.startupEditor': 'none', // this disables the startup wizard
-    'telemetry.telemetryLevel': 'off', // disable telemetry
-    "files.watcherExclude": {
-  "**/.git/objects/**": true,
-  "**/.git/subtree-cache/**": true,
-  "**/node_modules/*/**": true,
-  "**/dist/**": true
-},
-'terminal.integrated.gpuAcceleration': true,
-"search.followSymlinks": false,
-"search.useIgnoreFiles": true,
-"search.exclude": {
-  "**/node_modules": true,
-  "**/bower_components": true,
-  "**/*.code-search": true
-},
-    // prettier formatting, requires esbenp.prettier-vscode
-    '[javascript]': {
-      'editor.javascript': 'esbenp.prettier-vscode',
-    },
-    '[javascriptreact]': {
-      'editor.defaultFormatter': 'esbenp.prettier-vscode',
-    },
-    '[typescript]': {
-      'editor.defaultFormatter': 'esbenp.prettier-vscode',
-    },
-    '[typescriptreact]': {
-      'editor.defaultFormatter': 'esbenp.prettier-vscode',
-    },
-    '[json]': {
-      'editor.defaultFormatter': 'esbenp.prettier-vscode',
-    },
-    '[graphql]': {
-      'editor.defaultFormatter': 'esbenp.prettier-vscode',
-    },
-    '[handlebars]': {
-      'editor.defaultFormatter': 'esbenp.prettier-vscode',
-    },
-  };
+  // --- Performance & UI Tweaks ---
+  'editor.minimap.enabled': false,
+  'breadcrumbs.enabled': false,
+  'editor.renderWhitespace': 'all',
+  'editor.renderControlCharacters': true,
+  'editor.maxTokenizationLineLength': 7000,
+  'editor.mouseWheelScrollSensitivity': 2, // 2x speed; set to 3 if you want it even faster
+  'editor.fastScrollSensitivity': 5,        // Speed when holding 'Alt'
+  'workbench.editor.enablePreview': false,
+  'workbench.startupEditor': 'none',
+  'workbench.activityBar.location': 'top',
+  'window.zoomLevel': 0.5,
+  'telemetry.telemetryLevel': 'off',
+  'update.mode': 'none',
+
+  // --- Editor Behavior ---
+  'editor.bracketPairColorization.enabled': true,
+  'editor.fontFamily': EDITOR_CONFIGS.fontFamily,
+  'editor.fontLigatures': true,
+  'editor.fontSize': fontSizeToUse,
+  'editor.fontWeight': 'bold',
+  'editor.formatOnPaste': true,
+  'editor.linkedEditing': true,
+  'editor.multiCursorModifier': 'ctrlCmd',
+  'editor.snippetSuggestions': 'top',
+  'editor.suggestSelection': 'first',
+  'editor.tabSize': EDITOR_CONFIGS.tabSize,
+  'editor.wordWrap': 'wordWrapColumn',
+  'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
+
+  // --- Files & Search Performance ---
+  'files.eol': '\n',
+  'files.insertFinalNewline': true,
+  'files.trimTrailingWhitespace': true,
+  'files.hotExit': 'off',
+  'files.exclude': {
+    ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFiles),
+    ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFolders),
+  },
+  'files.watcherExclude': {
+    '**/.git/objects/**': true,
+    '**/.git/subtree-cache/**': true,
+    '**/node_modules/*/**': true,
+    '**/dist/**': true
+  },
+  'search.followSymlinks': false,
+  'search.useIgnoreFiles': true,
+  'search.exclude': {
+    '**/node_modules': true,
+    '**/bower_components': true,
+    '**/*.code-search': true
+  },
+
+  // --- Languages & Formatting ---
+  'editor.codeActionsOnSave': {
+    'source.fixAll': true,
+    'source.organizeImports': true,
+  },
+  'javascript.updateImportsOnFileMove.enabled': 'always',
+  'javascript.inlayHints.variableTypes.enabled': true,
+  'typescript.updateImportsOnFileMove.enabled': 'always',
+  'typescript.inlayHints.variableTypes.enabled': true,
+
+  // --- Terminal & System ---
+  'terminal.integrated.fontSize': fontSizeToUse,
+  'terminal.integrated.gpuAcceleration': 'auto',
+  'scm.inputFontSize': fontSizeToUse,
+  'chat.editor.fontSize': fontSizeToUse,
+  'security.workspace.trust.enabled': false,
+  'explorer.copyRelativePathSeparator': '/',
+  'remote.SSH.remotePlatform': { '127.0.0.1': 'linux' },
+
+  // --- Theming ---
+  'window.autoDetectColorScheme': true,
+  'workbench.preferredLightColorTheme': 'Default High Contrast Light',
+  'workbench.preferredDarkColorTheme': 'Default High Contrast',
+  'workbench.colorTheme': 'Dracula Theme',
+  'workbench.iconTheme': 'material-icon-theme',
+  'workbench.tree.indent': 4,
+  'workbench.editor.showTabs': true,
+
+  // --- Formatter Overrides ---
+  '[javascript]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
+  '[javascriptreact]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
+  '[typescript]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
+  '[typescriptreact]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
+  '[json]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
+  '[graphql]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
+  '[handlebars]': { 'editor.defaultFormatter': 'esbenp.prettier-vscode' },
+  '[markdown]': {
+    'editor.defaultFormatter': 'esbenp.prettier-vscode',
+    'editor.formatOnSave': true,
+    'editor.wordWrap': 'on'
+  }
+};
 }
 
 async function doWork() {
