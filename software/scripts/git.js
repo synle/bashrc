@@ -16,9 +16,12 @@ async function doWork() {
   writeToBuildFile([
     [
       'gitconfig',
-      await _getGitConfig({
-        email: '; email = test_email@gmail.com',
-      }),
+      `
+        # this file is auto-generated
+        ${await _getGitConfig({
+        email: '; email = test_email@gmail.com #update this email',
+      })}
+        `,
       false,
     ],
   ]);
