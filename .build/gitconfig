@@ -6,19 +6,22 @@ name = Sy Le
 autocrlf = input
 editor = vim
 excludesFile = ~/.gitignore_global
-fsmonitor = true # Uses a background daemon to monitor file changes. Massive boost for 'git status' in large repos.
-untrackedCache = true # Speeds up index updates by caching untracked files.
-commitGraph = true # Speed Up Logs and History
-preloadIndex = true # Uses multiple threads to scan for changed files.
+fsmonitor = true       # Background daemon for status speed
+untrackedCache = true  # Caches untracked files
+commitGraph = true     # Speeds up log/history traversal
+preloadIndex = true    # Multi-threaded index scanning
 
 [feature]
-manyFiles = true # Enables several performance-related features at once, including a faster index format (version 4).
+manyFiles = true       # Grouped performance features
+
+[index]
+version = 4            # Path compression for large indexes
 
 [checkout]
-workers = 0 # Uses multiple workers for checking out files (0 = auto-detect CPU cores).
+workers = 0            # Parallel file checkout (auto-detect CPU)
 
 [fetch]
-writeCommitGraph = true # Automatically updates the commit graph cache whenever you fetch.
+writeCommitGraph = true # Keeps the commit graph updated on fetch
 
 [pull]
 rebase = false
@@ -37,12 +40,6 @@ prompt = false
 [color]
 ui = true
 
-[color "diff-highlight"]
-oldNormal = red bold
-oldHighlight = red bold 52
-newNormal = green bold
-newHighlight = green bold 22
-
 [color "diff"]
 meta = yellow
 commit = green
@@ -51,56 +48,60 @@ old = red
 new = green
 whitespace = red reverse
 
+[color "diff-highlight"]
+oldNormal = red bold
+oldHighlight = red bold 52
+newNormal = green bold
+newHighlight = green bold 22
+
 [diff-so-fancy]
 markEmptyLines = false
 
+[maintenance]
+auto = true
+strategy = incremental
+
 [alias]
 # General
-s   = status -sb
+s   = status -sb              # Short status with branch info
 a   = add
-aa  = add -A
-ap  = add -p
-au  = add -u
-c   = commit --allow-empty
-cm  = commit -m
-amend = commit --amend
-ca  = amend
-can = amend --no-verify
+aa  = add -A                  # Add all (including untracked)
+ap  = add -p                  # Interactive patch mode
+au  = add -u                  # Add only tracked files
+c   = commit --allow-empty    # Commit without changes
+amend = commit --amend --no-verify # Amend skipping pre-commit hooks
 
 # Branch & Checkout
 co  = checkout
-cob = checkout -b
-b   = branch -vv
-ba  = branch -a -vv
-del = branch -D
+cob = checkout -b             # Create and switch to new branch
+b   = branch -vv              # List branches with upstream/commit info
+ba  = branch -a -vv           # List all local/remote branches
+del = branch -D               # Force delete branch
 
 # Pull / Push / Fetch
-f   = fetch --all --prune
-pl  = pull
-ps  = push
-psf = push --force
+fap   = fetch --all --prune     # Fetch all and purge deleted remotes
 po  = push origin
 pof = push origin --force
 
 # Rebase & Merge
 r   = rebase --reapply-cherry-picks
-ri  = rebase -i
-ri10 = rebase -i HEAD~10
+ri  = rebase -i               # Interactive rebase
+ri10 = rebase -i HEAD~10      # Interactive rebase last 10 commits
 mc  = merge --continue
 
 # Log & Diff
 l    = log --oneline
 ls   = log --oneline --decorate
-d    = diff --word-diff -w
-stats = shortlog -sn
+d    = diff --word-diff -w    # Word-level diff ignoring whitespace
+stats = shortlog -sn          # Commit counts per author
 
 # Maintenance & Advanced
-cleanfd = clean -f -d
+cleanfd = clean -f -d         # Remove untracked files and directories
 cp      = cherry-pick
-cpn     = cherry-pick -n
-clone1  = clone --depth 1
+cpn     = cherry-pick -n      # Cherry-pick without committing
+clone1  = clone --depth 1     # Shallow clone (latest commit only)
 
 # Search & Reflog
-search-logs   = log -- . -G
-search-reflog = rev-list --all --
-where-is      = branch -r --contains
+search-logs   = log -- . -G   # Search commit content for string
+search-reflog = rev-list --all -- # Find commits in reflog for specific file
+where-is      = branch -r --contains # Find which remote branch has a commit
