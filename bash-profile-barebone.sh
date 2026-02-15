@@ -6,7 +6,9 @@ export BASH_PATH=~/.bashrc
 # add sbin to path
 export PATH=$PATH:/sbin
 
-# increase history size
+##########################################################
+# History
+##########################################################
 export HISTSIZE=5000
 export HISTFILESIZE=10000
 export HISTTIMEFORMAT="[%F %T] "
@@ -14,7 +16,9 @@ export HISTTIMEFORMAT="[%F %T] "
 # http://superuser.com/questions/20900/bash-history-loss
 PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 
-# os flags
+##########################################################
+# OS Flags
+##########################################################
 export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
 export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
 export is_os_chromeos=0
@@ -34,18 +38,16 @@ fi
 if [ -f ~/.bash_syle_os ]; then
   . /dev/stdin <<< "$(cat ~/.bash_syle_os)"
 fi
-# end os flag
+# end os flags
 
 ##########################################################
-#############  SECTION BREAK
+# Refresh / Source Aliases
 ##########################################################
-
-#used to refresh
 alias bashrcRefresh='. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"'
 alias refreshBashrc='bashrcRefresh'
 
 ##########################################################
-# common aliases
+# Common Aliases
 ##########################################################
 alias ..="cd .."
 alias v="vim"
@@ -53,30 +55,38 @@ alias vi="vim"
 alias l="ls -a"
 alias ls="ls -1"
 alias ll="ls -la"
-alias merge="git fetch --all --prune && git merge"
-alias mergeMaster="merge origin/master"
 alias g="git"
 alias gg="git --no-pager"
-alias pp="pi"
-alias pytest="python -m pytest"
-alias pytest-single="python -m pytest -vvl -k"
-alias flake="flake"
-alias flake8="python -m flake8"
 alias n="node"
 alias y="yarn"
 alias s='ssh -4'
 alias b="bat --style=plain"
 alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 alias fzf='fzf --no-sort'
-alias cl="claude --dangerously-skip-permissions"  # claude
-alias c="cl"  # claude
-alias cm='cl --model opus'  # claude
+alias search='searchText'
 
-# short form echo that
-# removes leading + trailing blank lines
-# finds the first non-empty line
-# detects its indentation
-# trims that indentation from all lines
+# git aliases
+alias merge="git fetch --all --prune && git merge"
+alias mergeMaster="merge origin/master"
+alias pp="pi"
+
+# python aliases
+alias pytest="python -m pytest"
+alias pytest-single="python -m pytest -vvl -k"
+alias flake="flake"
+alias flake8="python -m flake8"
+
+# claude aliases
+alias cl="claude --dangerously-skip-permissions"
+alias c="cl"
+alias cm='cl --model opus'
+
+##########################################################
+# Utility Functions
+##########################################################
+# short form echo that removes leading + trailing blank lines,
+# finds the first non-empty line, detects its indentation,
+# and trims that indentation from all lines
 ech() {
   printf '%s' "$@" \
   | sed -e '1{/^[[:space:]]*$/d;}' -e '${/^[[:space:]]*$/d;}' \
@@ -130,7 +140,13 @@ tree(){
   find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 }
 
-# get current git branch name
+pwd2(){
+  echo "cd \"$(pwd)\""
+}
+
+##########################################################
+# Git Helpers
+##########################################################
 getCurrentGitBranch(){
   git name-rev --name-only HEAD
 }
@@ -139,11 +155,24 @@ getCurrentGitRepo(){
   basename `git rev-parse --show-toplevel`
 }
 
-# set current upstream ref
 setGitUpstreamBranch(){
   git branch -u origin/$(git name-rev --name-only HEAD)
 }
 
+cleanmaster(){
+    git stash;
+    git reset --hard;
+    git fap;
+    git checkout test;
+    git checkout -b test;
+    git del master main;
+    git checkout --track origin/master;
+    git checkout --track origin/main
+}
+
+##########################################################
+# Search Functions
+##########################################################
 searchHelp(){
   echo '''
 searchCode ""
@@ -164,7 +193,6 @@ Searching:  $@
 #############################################################
   """
 
-  #universal option
   grep -r -o -n "$@" \
     --include=*.{*.hbs,*.jsx,*.js,*.tsx,*.ts,*.css,*.scss,*.less,*.scala,*.html,*.java,*.py} \
     --exclude=*.{png,jpg,.gitignore,.DS_Store} \
@@ -193,29 +221,16 @@ searchDir(){
   find . -type d -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
 }
 
-cleanmaster(){
-    git stash;
-    git reset --hard;
-    git fap;
-    git checkout test;
-    git checkout -b test;
-    git del master main;
-    git checkout --track origin/master;
-    git checkout --track origin/main
-}
-
-pwd2(){
-  echo "cd \"$(pwd)\""
-}
-
-alias search='searchText'
-
+##########################################################
+# Filter Functions
+##########################################################
 filterUnwantedLight(){
   grep -v "\.DS_Store" \
   | grep -v "\.git/" \
   | grep -v "node_modules" \
   | uniq
 }
+
 filterTextFilesOnly(){
   filterUnwantedLight \
   | grep -v "\.jpeg" \
@@ -223,9 +238,12 @@ filterTextFilesOnly(){
   | grep -v "\.png" \
   | uniq
 }
+
 alias filterUnwanted='filterUnwantedLight'
 
-# calculate chmod
+##########################################################
+# Chmod Calculator
+##########################################################
 chmodCalculator(){
   node -e """
     console.log('Chmod Calculator - Enter permission for x w r:');
@@ -251,17 +269,14 @@ chmodCalculator(){
 alias calcChmod='chmodCalculator'
 
 ##########################################################
-# fzf lightweight aliases and function
+# FZF Lightweight Aliases and Functions
 ##########################################################
-# all the view file aliases
 alias fv=fuzzyVim
 alias fvim=fuzzyVim
 alias fview=fuzzyViewFile
-
-# other fzf aliases
 alias fcd=fuzzyDirectory
 
-# simple view file alias - will be overriden by advanced bash
+# simple view file alias - will be overridden by advanced bash
 viewFile(){
   vim "$@"
 }
@@ -296,7 +311,6 @@ viewFile \"$OUT\"
   fi
 }
 
-# cdf - cd into the directory of the selected file
 fuzzyDirectory(){
   local OUT=$( \
     searchDirWithGit | \
@@ -313,8 +327,9 @@ New_Dir: \"$OUT\"
   fi
 }
 
-
-# date
+##########################################################
+# Date / Time
+##########################################################
 date_show(){
   echo '>> utc'
   date -u +'%a, %b %d, %Y  %r'
@@ -323,7 +338,9 @@ date_show(){
   date +'%a, %b %d, %Y  %r'
 }
 
-# timeout
+##########################################################
+# Timeout
+##########################################################
 timeout() {
   local delay cmd
 
@@ -346,7 +363,7 @@ timeout() {
     (
       sleep "$delay"
       if kill -0 "$cmd_pid" 2>/dev/null; then
-        echo "⏱️  Timeout after ${delay}s: killing '$cmd'"
+        echo "Timeout after ${delay}s: killing '$cmd'"
         kill -9 "$cmd_pid" 2>/dev/null
       fi
     ) &
@@ -355,8 +372,9 @@ timeout() {
   )
 }
 
-
-# disable telemetry
+##########################################################
+# Telemetry / Environment
+##########################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 
 # for ssh socket control
@@ -368,9 +386,8 @@ mkdir -p ~/.ssh/sockets
 # export ANTHROPIC_API_KEY="local-development"
 
 ##########################################################
-# prompt
+# Prompt
 ##########################################################
-#bash prompt
 export PS1="
 \[\e[31m\]====\[\e[m\]
 \[\e[33m\]\`date\`\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\]

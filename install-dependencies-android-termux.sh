@@ -1,3 +1,6 @@
+##########################################################
+# Android Termux Dependencies
+##########################################################
 touch ~/.bashrc
 
 echo '''
@@ -5,6 +8,9 @@ echo '''
 termux-chroot
 ''' >> ~/.bashrc
 
+##########################################################
+# Set OS Flags
+##########################################################
 export is_os_darwin_mac='0'
 export is_os_window='0'
 export is_os_wsl='0'
@@ -23,6 +29,9 @@ export is_os_mingw64='0'
 export is_os_android_termux='1'
 """ > ~/.bash_syle_os
 
+##########################################################
+# Install Packages
+##########################################################
 pkg install -y proot # needed for android termux fhd fixes
 pkg install -y nodejs
 pkg install -y fzf
@@ -35,7 +44,9 @@ pkg install -y curl
 pkg install -y git
 pkg install -y tmux
 
-# termux dracula theme
+##########################################################
+# Termux Dracula Theme
+##########################################################
 mkdir ~/.termux
 echo '''
 background:     #282A36
@@ -66,7 +77,9 @@ color7:         #BFBFBF
 color15:        #E6E6E6
 ''' > ~/.termux/colors.properties
 
-# termux config
+##########################################################
+# Termux Config
+##########################################################
 echo '''
 # Send the Escape key.
 back-key=escape
@@ -74,13 +87,18 @@ back-key=escape
 use-black-ui = true
 ''' > ~/.termux/termux.properties
 
+##########################################################
+# Update and Clean
+##########################################################
 pkg update -y
 pkg upgrade -y
 pkg autoclean -y
 
 source ~/.bashrc
 
-# use different font
+##########################################################
+# Install Font and Lightweight Profile
+##########################################################
 curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
 
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"

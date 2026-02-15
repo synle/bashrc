@@ -1,8 +1,8 @@
 #! /bin/sh
+
 ##########################################################
-# aliases & functions
+# Docker Aliases and Functions
 ##########################################################
-# docker
 dexecBash(){
   echo "docker exec -it $@ /bin/bash";
   docker exec -it $@ /bin/bash
@@ -16,7 +16,9 @@ alias bat='batcatfull -p --paging=never'
 # make sure the bookmark is present
 touch ~/.syle_bookmark
 
-# bat / cat setup
+##########################################################
+# Bat / Cat Setup
+##########################################################
 batcatfull() {
     # Try the 'bat' command first
     bat "$@" 2>/dev/null
@@ -26,7 +28,9 @@ batcatfull() {
     fi
 }
 
-# define pbpaste and pbcopy - define_pbcopy_pbpaste
+##########################################################
+# Clipboard (pbcopy / pbpaste)
+##########################################################
 if ! command -v pbcopy &>/dev/null; then
     pbcopy() { xclip -selection clipboard; }
     export -f pbcopy
@@ -37,7 +41,8 @@ if ! command -v pbpaste &>/dev/null; then
     export -f pbpaste
 fi
 
-
+##########################################################
+# File Watcher
 ##########################################################
 # Pass a path to watch, a file filter, and a command to run when those files are updated
 # watch.sh "node_modules/everest-*/src/templates" "*.handlebars" "ynpm compile-templates"
@@ -61,11 +66,17 @@ watch(){
   done
 }
 
+##########################################################
+# Network Utilities
+##########################################################
 listPort(){
   echo "list port $@"
   lsof -i tcp:$@
 }
 
+##########################################################
+# Git Utilities
+##########################################################
 gitCompare(){
   #get current branch name
   branch_name=$(git symbolic-ref -q HEAD)
@@ -81,7 +92,6 @@ gitCompare(){
   repo_name=${repo_name#*:}
   repo_name=${repo_name/.git/}
 
-
   baseSha1=${2-staging}
   baseSha2=${1-$branch_name}
 
@@ -93,6 +103,9 @@ gitCompare(){
   fi
 }
 
+##########################################################
+# Editor Launchers
+##########################################################
 subl(){
   executed_flag=false
 
@@ -106,7 +119,6 @@ subl(){
     if [[ -x "$binary" ]]; then
       echo $binary "$@"
       if [[ "$executed_flag" = false ]]; then
-        # Run the binary and set the flag to true
         "$binary" $@ &> /dev/null 2>&1
         executed_flag=true
       else
@@ -121,7 +133,6 @@ PWD: $(pwd)
 Full Path: $(realpath .)
   """
 }
-
 
 code()
 {
@@ -140,7 +151,6 @@ code()
     if [[ -x "$binary" ]]; then
       echo $binary "$@"
       if [[ "$executed_flag" = false ]]; then
-        # Run the binary and set the flag to true
         "$binary" $@ &> /dev/null 2>&1
         executed_flag=true
       else
@@ -162,8 +172,9 @@ codeListExtensions(){
   code --list-extensions
 }
 
-
-# copy command with progress bar
+##########################################################
+# Copy with Progress Bar
+##########################################################
 cp2(){
   echo "==== copy ===="
   echo "src:" "$1"
@@ -172,12 +183,7 @@ cp2(){
 }
 
 ##########################################################
-#############  SECTION BREAK
-##########################################################
-
-
-##########################################################
-# fzf - more advanced functions
+# FZF Advanced Functions
 # https://github.com/junegunn/fzf/wiki/examples
 ##########################################################
 alias gco='fuzzyGitCobranch'
@@ -186,7 +192,6 @@ alias gbr='gco'
 alias glog='fuzzyGitShow'
 alias gl='glog'
 alias gp='git push'
-
 
 # override viewfile with more advanced function
 viewFile(){
@@ -201,10 +206,7 @@ viewFile(){
   $editorCmd "$1"
 }
 
-
-#fuzzy git
 fuzzyGitShow(){
-  # git log --pretty=format:'%Cred%h%Creset %s %Cgreen%cr %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
   git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
   |
   fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort --color light --preview='echo {} | cut -d " " -f1 | xargs git show' \
@@ -214,7 +216,6 @@ fuzzyGitShow(){
   {}
   FZF-EOF"
 }
-
 
 fuzzyGitCobranch(){
   local branches branch
@@ -228,14 +229,8 @@ fuzzyGitCobranch(){
 export FZF_COMPLETION_TRIGGER='*'
 
 ##########################################################
-#############  SECTION BREAK
+# Prompt Helpers
 ##########################################################
-
-
-##########################################################
-####################  Prompt  ##############
-##########################################################
-# get current branch in git repo
 parseGitBranch(){
 node -e """
   const { exec } = require('child_process');
@@ -251,7 +246,6 @@ node -e """
 """
 }
 
-# short path
 shorterPwdPath(){
   local trim_count=3  # Set the number of parts to retain in the path
   IFS='/' read -r -a splits <<< "$(pwd)"
@@ -269,7 +263,9 @@ shorterPwdPath(){
   echo "${result%/}"
 }
 
-#bash prompt
+##########################################################
+# Prompt
+##########################################################
 export PS1="
 \[\e[31m\]====\[\e[m\]
 \[\e[33m\]\T\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\] - \`ifconfig2\`

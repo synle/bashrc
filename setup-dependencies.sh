@@ -5,9 +5,15 @@ echo """
 =======================================================
 """
 
+##########################################################
+# Load barebone bash profile for OS detection
+##########################################################
 echo '>> loading...'
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bash-profile-barebone.sh)"
 
+##########################################################
+# Ensure minimal dependencies
+##########################################################
 echo '>> checking if we have all the minimal deps before starting'
 
 if [ ! -f ~/.ssh/id_rsa ]; then
@@ -15,6 +21,9 @@ if [ ! -f ~/.ssh/id_rsa ]; then
   ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa
 fi
 
+##########################################################
+# Platform-specific dependency installation
+##########################################################
 echo '>> started installing dependencies...'
 
 if [ $is_os_darwin_mac == "1" ]; then
@@ -36,9 +45,8 @@ else
   echo '>> skipped - This OS is not supported'
 fi
 
-# if windows (note that we separate it from the Ubuntu block for WSL)
-if [ $is_os_window == "1" ]
-then
+# Windows (note: separate from Ubuntu block for WSL)
+if [ $is_os_window == "1" ]; then
   echo '>> started install-dependencies-windows.sh'
   curl -s https://raw.githubusercontent.com/synle/bashrc/master/install-dependencies-windows.sh | bash -
 fi

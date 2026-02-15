@@ -1,10 +1,12 @@
 #! /bin/sh
 ##########################################################
-# Dependencies installation
+# Dependencies Installation (one-time setup)
 ##########################################################
 DEFAULT_NVM_NODE_VERSION=21
 
-# install nvm and node
+##########################################################
+# Install NVM and Node
+##########################################################
 echo "  >> Installing nvm - node version manager"
 
 NVM_DIR=~/.nvm
@@ -19,7 +21,9 @@ else
   popd &>/dev/null
 fi
 
-## install other nvm version
+##########################################################
+# Install Node Versions
+##########################################################
 echo "  >> Setting up nvm node versions"
 
 function nvmInstallNode(){
@@ -34,6 +38,8 @@ echo "    >> nvm alias default $DEFAULT_NVM_NODE_VERSION"
 nvm alias default $DEFAULT_NVM_NODE_VERSION &>/dev/null
 nvm use default &>/dev/null
 
-
+##########################################################
+# Install Global Packages
+##########################################################
 echo "    >> install yarn"
 npm install --global yarn &>/dev/null

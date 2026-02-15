@@ -7,7 +7,9 @@ echo """
 =======================================================
 """
 
-# bootstrap the bashrc
+##########################################################
+# Bootstrap the bashrc with lightweight scripts
+##########################################################
 export TEST_SCRIPT_FILES="""
   _bash-rc-bootstrap.js
   git.js

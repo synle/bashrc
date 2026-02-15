@@ -10,38 +10,46 @@ function installPackage(){
 
 if [[ $is_os_darwin_mac == "1" ]]
 then
-  #!/bin/bash
-
+  ##########################################################
+  # macOS UI & System Optimization
+  ##########################################################
   echo ">> Mac UI & System Optimization..."
 
-  # begin mac tweaks
-  defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false # Disable opening/closing window animations
-  defaults write -g QLPanelAnimationDuration -float 0 # Disable Quick Look fade-in/out
-  defaults write NSGlobalDomain NSWindowResizeTime -float 0.001 # Accelerate window resizing (Cocoa apps)
-  defaults write com.apple.finder DisableAllAnimations -bool true # Disable Finder animations (Info windows, etc.)
-  # --- Dock & Mission Control ---
-  defaults write com.apple.dock launchanim -bool false # Disable Dock opening animations
-  defaults write com.apple.dock expose-animation-duration -float 0.1 # Speed up Mission Control animations
-  defaults write com.apple.dock autohide-delay -float 0 # Remove Dock hide/show delay
-  defaults write com.apple.dock autohide-time-modifier -float 0.1 # Speed up the animation of showing the Dock
-  # --- Safari & Web ---
-  defaults write com.apple.Safari WebKitInitialTimedLayoutDelay -float 0.1 # Reduce rendering delay (making pages feel like they load faster)
-  # --- System & Finder Behaviors ---
-  defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true # Disable .DS_Store on network and USB volumes (Prevents lag on external drives)
+  # Window animations
+  defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
+  defaults write -g QLPanelAnimationDuration -float 0
+  defaults write NSGlobalDomain NSWindowResizeTime -float 0.001
+  defaults write com.apple.finder DisableAllAnimations -bool true
+
+  # Dock & Mission Control
+  defaults write com.apple.dock launchanim -bool false
+  defaults write com.apple.dock expose-animation-duration -float 0.1
+  defaults write com.apple.dock autohide-delay -float 0
+  defaults write com.apple.dock autohide-time-modifier -float 0.1
+
+  # Safari & Web
+  defaults write com.apple.Safari WebKitInitialTimedLayoutDelay -float 0.1
+
+  # System & Finder Behaviors
+  defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
   defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
-  defaults write -g NSScrollAnimationEnabled -bool false # Disable smooth scrolling (Saves GPU cycles on older hardware)
-  defaults write -g NSAutoFillHeuristicControllerEnabled -bool false # Disable "Heuristic" predictive features to save CPU
+  defaults write -g NSScrollAnimationEnabled -bool false
+  defaults write -g NSAutoFillHeuristicControllerEnabled -bool false
   defaults write -g NSAutoHeuristicEnabled -bool false
-  defaults write com.apple.LaunchServices LSQuarantine -bool false # Disable the "Are you sure you want to open this app?" dialog
-  defaults write -g com.apple.mouse.scaling -float 3 # Increase trackpad/mouse tracking speed beyond the slider limit
+  defaults write com.apple.LaunchServices LSQuarantine -bool false
+
+  # Mouse / Trackpad speed
+  defaults write -g com.apple.mouse.scaling -float 3
   defaults write -g com.apple.trackpad.scaling -float 3
-  # Disable the delay when typing (Key Repeat Speed)
-  defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false # This makes the cursor fly across the screen when holding a key
+
+  # Key Repeat Speed
+  defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
   defaults write NSGlobalDomain KeyRepeat -int 1
   defaults write NSGlobalDomain InitialKeyRepeat -int 10
-  defaults write com.apple.finder _FXShowPosixPathInTitle -bool true # Disable window animations and "Get Info" animations in Finder
+
+  # Finder
+  defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
   defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
-  # end mac tweaks
 
   echo "  >> Restarting affected services..."
   for app in "Dock" "Finder" "Mail" "Safari" "SystemUIServer"; do
@@ -49,6 +57,9 @@ then
   done
   echo "  >> Done"
 
+  ##########################################################
+  # Shell Setup
+  ##########################################################
   if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
      echo 'source ~/.bashrc' >> ~/.bash_profile
   fi
@@ -60,6 +71,9 @@ then
   echo '>> Change Shell to bash'
   chsh -s /bin/bash
 
+  ##########################################################
+  # Headless Chrome Fixes
+  ##########################################################
   echo '>> Headless Chrome Fixes for MacOSX'
   mkdir -p ~/Library/LaunchAgents
 cat <<EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
@@ -83,9 +97,9 @@ cat <<EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
 EOF
 launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
 
-  ####################################################################
-  # homebrew
-  ####################################################################
+  ##########################################################
+  # Homebrew
+  ##########################################################
   hasHomebrewInstalled=1
   type brew &> /dev/null || hasHomebrewInstalled=0
   if [[ $hasHomebrewInstalled == "0" ]]
@@ -94,19 +108,16 @@ launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
 
-
   echo '>> Installing homebrew repos (brew tap)'
   brew tap homebrew/cask-fonts &> /dev/null
-  # brew tap heroku/brew &> /dev/null
 
   echo '>> Update Homebrew'
   brew update &> /dev/null
 
-
+  ##########################################################
+  # Install Packages
+  ##########################################################
   echo '>> Installing packages with Homebrew'
-  # installPackage azure-cli
-  # installPackage heroku
-  # installPackage tig
   installPackage bat
   installPackage fzf
   installPackage git
@@ -114,8 +125,6 @@ launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
   installPackage entr
   installPackage java
   installPackage python
-#   installPackage keka # zip
-#   installPackage kap # screen recording
 
   echo '  >> android-platform-tools'
   installPackage android-platform-tools
@@ -126,6 +135,9 @@ launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
   echo '  >> Cascadia Font'
   installPackage font-cascadia
 
+  ##########################################################
+  # Cleanup
+  ##########################################################
   echo '>> Kill all dock icons'
   defaults write com.apple.dock persistent-apps -array
   killall Dock

@@ -1,3 +1,6 @@
+##########################################################
+# ChromeOS Linux Dependencies
+##########################################################
 sudo apt-get update -y
 
 sudo apt-get install -y \
@@ -12,10 +15,3 @@ sudo apt-get install -y \
   vim \
   vlc \
 && echo '> Done Installing Dependencies...'
-
-
-# cura \
-# blender \
-# libreoffice \
-# vlc \
-# nautilus \

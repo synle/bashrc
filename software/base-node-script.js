@@ -1,3 +1,6 @@
+//////////////////////////////////////////////////////
+// Global Imports & Path Constants
+//////////////////////////////////////////////////////
 globalThis.fs = require('fs');
 globalThis.path = require('path');
 globalThis.https = require('https');
@@ -16,14 +19,17 @@ globalThis.BASE_WINDOW = '';
 globalThis.BASE_WINDOW_1 = '/mnt/c/Users';
 globalThis.BASE_WINDOW_2 = '/c/Users';
 
+//////////////////////////////////////////////////////
+// Editor Configuration
+//////////////////////////////////////////////////////
 /**
  * config used for the editors
  * @type {Object}
-
- *if you need to override these with your local settings, use the following
- export FONT_SIZE=15;
- export FONT_FAMILY='Fira Code'
- export TAB_SIZE=2
+ *
+ * if you need to override these with your local settings, use the following
+ * export FONT_SIZE=15;
+ * export FONT_FAMILY='Fira Code'
+ * export TAB_SIZE=2
  */
 let fontSize = parseInt(process.env.FONT_SIZE);
 if (!fontSize || fontSize <= 10) {
@@ -116,6 +122,9 @@ globalThis.EDITOR_CONFIGS = {
   ],
 };
 
+//////////////////////////////////////////////////////
+// Host Config & OS Flags
+//////////////////////////////////////////////////////
 /**
  * The host config is located here:
  * host name => host ip
@@ -141,7 +150,8 @@ globalThis.REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${re
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
 //////////////////////////////////////////////////////
-// begin common
+// Directory Search Utilities
+//////////////////////////////////////////////////////
 function _getFilePath(aDir) {
   let pathToUse = aDir;
   if (globalThis.DEBUG_WRITE_TO_DIR.length > 0) {
@@ -202,6 +212,9 @@ function findFirstDirFromList(findProps) {
   return undefined;
 }
 
+//////////////////////////////////////////////////////
+// File I/O Utilities
+//////////////////////////////////////////////////////
 function writeText(aDir, text, override = true, suppressError = false) {
   const pathToUse = _getFilePath(aDir);
   const newContent = (text || '').trimEnd();
@@ -345,6 +358,9 @@ function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
+//////////////////////////////////////////////////////
+// Platform-Specific Path Utilities
+//////////////////////////////////////////////////////
 function getWindowUserBaseDir() {
   const regexUsername = /(leng)|(sy[ ]*le)/i;
   let res = '';
@@ -418,6 +434,9 @@ function getOsxApplicationSupportCodeUserPath() {
   return path.join(process.env.HOME, 'Library/Application Support');
 }
 
+//////////////////////////////////////////////////////
+// Text Processing Utilities
+//////////////////////////////////////////////////////
 function updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, isPrepend) {
   configValue = configValue.trim();
 
@@ -469,6 +488,74 @@ function appendTextBlock(resultTextContent, configKey, configValue, commentPrefi
 
 function prependTextBlock(resultTextContent, configKey, configValue, commentPrefix = '#') {
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, true);
+}
+
+/**
+ * Reads BASE_BASH_SYLE, prepends a config block, and writes it back.
+ * Replaces the common 3-line read/prepend/write pattern.
+ * @param {string} configKey - The config key for the text block
+ * @param {string} content - The content to prepend
+ */
+function registerWithBashSyle(configKey, content) {
+  let textContent = readText(BASE_BASH_SYLE);
+  textContent = prependTextBlock(textContent, configKey, content);
+  writeText(BASE_BASH_SYLE, textContent);
+}
+
+/**
+ * Registers a platform-specific tweaks file with BASE_BASH_SYLE and writes the tweaks content.
+ * @param {string} platformName - Display name (e.g. "Only Mac")
+ * @param {string} fileName - The dotfile name (e.g. ".bash_syle_only_mac")
+ * @param {string} content - The tweaks content to write to the file
+ * @param {string} [sourceOverride] - Optional override for the source line (e.g. ". ~/filename" for Android Termux)
+ */
+function registerPlatformTweaks(platformName, fileName, content, sourceOverride) {
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, fileName);
+
+  console.log(`  >> Register ${platformName} profile`, BASE_BASH_SYLE);
+  const sourceLine = sourceOverride || `. ${targetPath}`;
+  registerWithBashSyle(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
+
+  console.log(`  >> Installing ${platformName} tweaks:`, consoleLogColor4(targetPath));
+  writeText(targetPath, content);
+}
+
+/**
+ * Guard clause: exits the process if the given path does not exist.
+ * @param {string} targetPath - The path to check
+ * @param {string} [message] - Optional message (defaults to "Skipped : Not Found")
+ */
+function exitIfPathNotFound(targetPath, message) {
+  if (!filePathExist(targetPath)) {
+    console.log(consoleLogColor1(`    >> ${message || 'Skipped : Not Found'}`));
+    return process.exit();
+  }
+}
+
+/**
+ * Downloads application binaries from the main repo into the Windows applications directory.
+ * @param {string} applicationName - The application name
+ * @param {function} findFilter - Filter function for downloadFilesFromMainRepo
+ */
+async function downloadWindowsApp(applicationName, findFilter) {
+  const targetPath = await getWindowsApplicationBinaryDir(applicationName);
+  console.log(`  >> Download ${applicationName} for Windows:`, targetPath);
+  try {
+    await downloadFilesFromMainRepo(findFilter, targetPath);
+  } catch (err) {
+    console.error('error', err);
+  }
+}
+
+/**
+ * Resolves OS_KEY based on current platform flags.
+ * @param {object} keys - Object with { windows, mac, linux } key values
+ * @returns {string} The resolved OS key
+ */
+function resolveOsKey(keys) {
+  if (is_os_darwin_mac) return keys.mac;
+  if (is_os_window) return keys.windows;
+  return keys.linux;
 }
 
 function cleanupExtraWhitespaces(s) {
@@ -539,7 +626,9 @@ function mkdir(targetPath) {
   return execBashSilent(`mkdir -p "${targetPath}"`);
 }
 
-// api utils
+//////////////////////////////////////////////////////
+// Network / API Utilities
+//////////////////////////////////////////////////////
 function downloadFile(url, destination) {
   url = getFullUrl(url);
 
@@ -607,6 +696,9 @@ async function listRepoDir() {
   return [];
 }
 
+//////////////////////////////////////////////////////
+// Script File Discovery & Platform Filtering
+//////////////////////////////////////////////////////
 async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileListInstead = false) {
   let files;
 
@@ -806,6 +898,9 @@ async function fetchUrlAsJson(url) {
   return parseJsonWithComments(json);
 }
 
+//////////////////////////////////////////////////////
+// Bash Execution
+//////////////////////////////////////////////////////
 function execBash(cmd, options) {
   return new Promise((resolve) => {
     const { execSync } = require('child_process');
@@ -828,7 +923,9 @@ function execBashSilent(cmd, options) {
   });
 }
 
-// console print and colors
+//////////////////////////////////////////////////////
+// Console Colors & Output
+//////////////////////////////////////////////////////
 const CONSOLE_COLORS = [
   null, // 0 index is not used
   '32m', // green
@@ -858,7 +955,9 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
   }
 }
 
-// script utils
+//////////////////////////////////////////////////////
+// Script Processing & Execution
+//////////////////////////////////////////////////////
 function processScriptFile(file) {
   let scriptToUse;
 
@@ -956,6 +1055,8 @@ function printScriptsToRun(scriptsToRun) {
   `);
 }
 
+//////////////////////////////////////////////////////
+// Bootstrap / Main Entry Point
 //////////////////////////////////////////////////////
 (async function () {
   // getting the ip address mapping
