@@ -1,16 +1,18 @@
-### Special KnownFolders
+# Windows
 
-https://docs.microsoft.com/en-us/windows/desktop/shell/knownfolderid
+## Special KnownFolders
 
-### Windows 11 Debloat
+<https://docs.microsoft.com/en-us/windows/desktop/shell/knownfolderid>
 
-https://github.com/Raphire/Win11Debloat
+## Windows 11 Debloat
 
-- Download the script and unzip, and execute `run.bat` - https://github.com/Raphire/Win11Debloat/archive/master.zip
+<https://github.com/Raphire/Win11Debloat>
 
-### User registry for User Shell Folders
+- Download the script and unzip, and execute `run.bat` - <https://github.com/Raphire/Win11Debloat/archive/master.zip>
 
-```bash
+## User Registry for User Shell Folders
+
+```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 Invoke-WebRequest -Uri "https://github.com/synle/bashrc/raw/refs/heads/master/.build/windows-registry.ps1" -OutFile ".\minimal-registry.ps1"
 .\minimal-registry.ps1
@@ -20,15 +22,15 @@ Invoke-WebRequest -Uri "https://github.com/synle/bashrc/raw/refs/heads/master/.b
 HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
 ```
 
-### Path
+## Paths
 
-##### Home Folder
+### Home Folder
 
 ```
 %USERPROFILE%
 ```
 
-##### App Data
+### App Data
 
 `C:\Users\<user>\AppData\Local`
 
@@ -36,44 +38,45 @@ HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell 
 %APPDATA%
 ```
 
-##### Local App Data
+### Local App Data
 
 ```
 %LOCALAPPDATA%
 ```
 
-##### Program Files
+### Program Files
 
-###### x86
+#### x86
 
 ```
 %ProgramFiles% (x86)
 ```
 
-###### x64
+#### x64
 
 ```
 %ProgramFiles%
 ```
 
-#### Windows 10 App Shortcut Path
+## Windows 10 App Shortcut Path
 
 `%USERPROFILE%\AppData\Local\Microsoft\WindowsApps`
-https://www.tenforums.com/tutorials/122655-create-shortcut-directly-open-app-microsoft-store-windows-10-a.html
 
-### Shortcuts
+Reference: <https://www.tenforums.com/tutorials/122655-create-shortcut-directly-open-app-microsoft-store-windows-10-a.html>
 
-#### CMD Shorcut for Control Panel
+## Shortcuts
 
-https://support.microsoft.com/en-us/help/192806/how-to-run-control-panel-tools-by-typing-a-command
+### CMD Shortcut for Control Panel
 
-#### CMD Shorcut for New Microsoft Settings Page
+<https://support.microsoft.com/en-us/help/192806/how-to-run-control-panel-tools-by-typing-a-command>
 
-https://answers.microsoft.com/en-us/windows/forum/windows_10-other_settings/list-of-specific-settings-commands-in-windows-10/73177baa-fd77-463f-88a0-00595a2e7a32
+### CMD Shortcut for New Microsoft Settings Page
 
-### Env Vars
+<https://answers.microsoft.com/en-us/windows/forum/windows_10-other_settings/list-of-specific-settings-commands-in-windows-10/73177baa-fd77-463f-88a0-00595a2e7a32>
 
-Use the UI
+## Env Vars
+
+Use the UI:
 
 ```
 %APPDATA%\npm
@@ -82,11 +85,11 @@ Use the UI
 %ProgramFiles%\PuTTY
 ```
 
-### Remove Apps
+## Remove Apps
 
-#### Remove Windows Apps in Powershell
+### Remove Windows Apps in PowerShell
 
-```
+```powershell
 Get-AppxPackage *officehub* | Remove-AppxPackage
 Get-AppxPackage *skypeapp* | Remove-AppxPackage
 Get-AppxPackage *zunemusic* | Remove-AppxPackage
@@ -98,7 +101,7 @@ Get-AppxPackage *xboxapp* | Remove-AppxPackage
 Get-AppxPackage *3dbuilder* | Remove-AppxPackage
 ```
 
-#### Adobe Binary Paths
+### Adobe Binary Paths
 
 ```
 %ProgramFiles%\Adobe\Adobe Lightroom\lightroom.exe
@@ -108,27 +111,31 @@ Get-AppxPackage *3dbuilder* | Remove-AppxPackage
 %ProgramFiles% (x86)\Common Files\Adobe\OOBE\PDApp\UWA\AAM Updates Notifier.exe
 ```
 
-#### Windows 10 Ultimate Performance
+## Performance
 
-Run powershell for super admin
+### Windows 10 Ultimate Performance
 
-```
+Run PowerShell as super admin:
+
+```powershell
 powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
 ```
 
-#### WSL root fs
+## WSL
+
+### WSL Root Filesystem
 
 WSL can be found at this path `\\wsl$`
 
-Or mount it from command line
+Or mount it from command line:
 
-```
+```powershell
 net use z: \\wsl$\Ubuntu-20.04
 ```
 
-#### VS Code Extensions Path
+### VS Code Extensions Path
 
-```
+```bash
 # Mac or Linux
 ~/.vscode/extensions
 
@@ -136,16 +143,16 @@ net use z: \\wsl$\Ubuntu-20.04
 %USERPROFILE%\.vscode\extensions
 ```
 
-#### Downloading and installing WSL2
+### Downloading and Installing WSL2
 
-https://docs.microsoft.com/en-us/windows/wsl/install-manual
+<https://docs.microsoft.com/en-us/windows/wsl/install-manual>
 
 ```powershell
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 
-# Download wsl kernel
-https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
+# Download WSL kernel
+# https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi
 
 # Set WSL2 as default
 wsl --set-default-version 2
@@ -153,50 +160,50 @@ wsl --set-default-version 2
 wsl --update
 ```
 
-## GUI package for WSL (wslG)
+### GUI Package for WSL (wslG)
 
-https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-11-with-gui-support#5-install-and-use-a-gui-package
+<https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-11-with-gui-support#5-install-and-use-a-gui-package>
 
-## Allow SSH into WSL 2
+### Allow SSH into WSL 2
 
-Enable it on port 2222,
+Enable it on port 2222.
 
-Run this commnad iif you have a host error `sshd: no hostkeys available -- exiting`
+Run this command if you have a host error `sshd: no hostkeys available -- exiting`:
 
-```
+```bash
 sudo ssh-keygen -A
 ```
 
-Edit the sshd config
+Edit the sshd config:
 
-```
+```bash
 sudo vim /etc/ssh/sshd_config
 ```
 
-Make sure the following is matching
+Make sure the following is matching:
 
 ```
 Port 2222
 ListenAddress 0.0.0.0
 ```
 
-Optional initially the config is key based auth only, comment this one out to support password auth
+Optional: initially the config is key based auth only, comment this one out to support password auth:
 
 ```
 # PasswordAuthentication no
 ```
 
-### Open up ports for WSL2
+### Open Up Ports for WSL2
 
-- https://stackoverflow.com/questions/49835559/how-to-access-to-the-web-server-which-running-on-wslwindows-subsystem-for-linux/66890232#66890232
+- <https://stackoverflow.com/questions/49835559/how-to-access-to-the-web-server-which-running-on-wslwindows-subsystem-for-linux/66890232#66890232>
 
-### Open up the SSH Server
+### Open Up the SSH Server
 
-- https://www.hanselman.com/blog/how-to-ssh-into-wsl2-on-windows-10-from-an-external-machine
+- <https://www.hanselman.com/blog/how-to-ssh-into-wsl2-on-windows-10-from-an-external-machine>
 
-```
+```powershell
 #[Ports]
-#All the ports you want to forward separated by coma
+#All the ports you want to forward separated by comma
 $ports=@(80,443,2222,3000,4000,8080,9000);
 
 $remoteport = bash.exe -c "ifconfig eth0 | grep 'inet '"
@@ -214,7 +221,6 @@ if( $found ){
 $addr='0.0.0.0';
 $ports_a = $ports -join ",";
 
-
 #Remove Firewall Exception Rules
 iex "Remove-NetFireWallRule -DisplayName '_Sy Dev Port Unlocked' ";
 
@@ -229,91 +235,17 @@ for( $i = 0; $i -lt $ports.length; $i++ ){
 }
 ```
 
-#### TightVNC Java Viewer
-
-Use this VNC viewer for Mac Remote Viewing or Ubuntu
-
-https://www.tightvnc.com/download/2.8.3/tvnjviewer-2.8.3-bin-gnugpl.zip
-
-#### Path for shortcuts
-
-```
-C:\ProgramData\Microsoft\Windows\Start Menu\Programs
-```
-
-#### Required Services
-
-`msconfig`
-
-```
-# Asus
-ASUS App Service
-ASUS Optimization
-```
-
-### WSL2 Image Backup and Restore
-
-https://www.virtualizationhowto.com/2021/01/wsl2-backup-and-restore-images-using-import-and-export/
-
-```bash
-wsl --shutdown
-
-# get image name from here
-# %userprofile%\AppData\Local\Packages
-# Debian Package Name : TheDebianProject.DebianGNULinux_76v4gfsz19hv4
-
-wsl --list
-# Debian Image Name: Debian
-
-# export
-wsl --export <Image_Name> <Path_To_Backup.tar>
-wsl --export Debian ./wsl_backup.tar
-
-# import
-wsl --import <Image_Name> <Path_To_Restore_This_WSL.tar> <Path_To_Backup.tar>
-wsl --import Debian D:\WSL\Debian ./wsl_backup.tar
-
-# needs to update the registry to set up default users
-# Then update DefaultUid to 3e8 (aka 1000)
-# That above Uid can be found with `wsl -d Debian -u syle -e id -u`
-HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss\{MY-UUID}
-```
-
-### Powershell Profiles
-
-```
-New-Item $profile -Type File -Force
-subl $profile
-```
-
-### Electron App with WSL2
-
-- https://stackoverflow.com/questions/70330023/i-have-not-been-able-to-get-electron-running-within-electron-to-run-in-wsl2-ubun
-- https://stackoverflow.com/questions/40402344/advanced-gpu-control-needed-for-browserwindows
-- https://www.reddit.com/r/openSUSE/comments/ptqlfu/psa_vscode_and_some_nonpatched_electron/
-
-```bash
-
-sudo apt-get install -y libxcursor1 libnss3 libgdk-pixbuf2.0-0 libgtk-3-0 libxss-dev libnss3-dev libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgbm-dev libasound2
-sudo apt-get autoclean -y
-sudo apt-get autoremove -y
-
-npm install --platform=win32
-
-./node_modules/.bin/electron --disable-gpu-sandbox .
-```
-
 ### Allow WSL Firewall Network Interface
 
-```bash
-New-NetFirewallRule -DisplayName "_Sy Inbound WSL" -Direction Inbound  -InterfaceAlias "vEthernet (WSL)"  -Action Allow
+```powershell
+New-NetFirewallRule -DisplayName "_Sy Inbound WSL" -Direction Inbound -InterfaceAlias "vEthernet (WSL)" -Action Allow
 ```
 
-### Forward port WSL to Windows
+### Forward Port WSL to Windows
 
-Source: https://dev.to/vishnumohanrk/wsl-port-forwarding-2e22
+Source: <https://dev.to/vishnumohanrk/wsl-port-forwarding-2e22>
 
-```ps
+```powershell
 $ports = @(3000, 8080, 5000, 5001, 19000, 19001);
 
 If (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -345,64 +277,139 @@ for ($i = 0; $i -lt $ports.length; $i++) {
 Invoke-Expression "netsh interface portproxy show v4tov4";
 ```
 
-### Image / Video extensions
+### WSL2 Image Backup and Restore
 
-These are extensions to view videos and images from newer iphones and android phones:
+<https://www.virtualizationhowto.com/2021/01/wsl2-backup-and-restore-images-using-import-and-export/>
 
-- [Raw Image Extension](https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8) - ms-windows-store://pdp/?ProductId=9nctdw2w1bh8
-- [Heif Image Extension](https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg) - ms-windows-store://pdp/?ProductId=9pmmsr1cgpwg
-- [Hevc Video Extension from Device Manufacturer](https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq) - ms-windows-store://pdp/?ProductId=9n4wgh0z6vhq
-- [MPEG-2 Video Extension](https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4) - ms-windows-store://pdp/?ProductId=9n95q1zzpmh4
-- [AV1 Video Extension](https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v?hl=de-de&gl=DE) - ms-windows-store://pdp/?ProductId=9mvzqvxjbq9v
+```bash
+wsl --shutdown
 
-### X-Input Emulator
+# get image name from here
+# %userprofile%\AppData\Local\Packages
+# Debian Package Name: TheDebianProject.DebianGNULinux_76v4gfsz19hv4
 
-Use these to map generic controllers for Windows
+wsl --list
+# Debian Image Name: Debian
 
-- https://hardwaretester.com/gamepad (For testing gamepad)
+# export
+wsl --export <Image_Name> <Path_To_Backup.tar>
+wsl --export Debian ./wsl_backup.tar
 
-#### XOutput (doesn't work)
+# import
+wsl --import <Image_Name> <Path_To_Restore_This_WSL.tar> <Path_To_Backup.tar>
+wsl --import Debian D:\WSL\Debian ./wsl_backup.tar
 
-- https://github.com/ViGEm/ViGEmBus (For Driver)
-- https://github.com/csutorasa/XOutput (For Mappings)
+# needs to update the registry to set up default users
+# Then update DefaultUid to 3e8 (aka 1000)
+# That above Uid can be found with `wsl -d Debian -u syle -e id -u`
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Lxss\{MY-UUID}
+```
 
-#### x360ce
+### Electron App with WSL2
 
-- https://github.com/x360ce/x360ce
+- <https://stackoverflow.com/questions/70330023/i-have-not-been-able-to-get-electron-running-within-electron-to-run-in-wsl2-ubun>
+- <https://stackoverflow.com/questions/40402344/advanced-gpu-control-needed-for-browserwindows>
+- <https://www.reddit.com/r/openSUSE/comments/ptqlfu/psa_vscode_and_some_nonpatched_electron/>
 
-#### Dependencies
+```bash
+sudo apt-get install -y libxcursor1 libnss3 libgdk-pixbuf2.0-0 libgtk-3-0 libxss-dev libnss3-dev libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgbm-dev libasound2
+sudo apt-get autoclean -y
+sudo apt-get autoremove -y
 
-- https://learn.microsoft.com/en-GB/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022
-- https://aka.ms/vs/17/release/vc_redist.x86.exe
-- https://aka.ms/vs/17/release/vc_redist.x64.exe
-- https://aka.ms/highdpimfc2013x64enu
-- https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe
+npm install --platform=win32
 
-#### Mount SFTP as a drive on windows
+./node_modules/.bin/electron --disable-gpu-sandbox .
+```
 
-https://github.com/winfsp/sshfs-win
-https://github.com/winfsp/winfsp/releases/tag/v2.0
-https://github.com/winfsp/sshfs-win/releases
+### PowerShell Profiles
+
+```powershell
+New-Item $profile -Type File -Force
+subl $profile
+```
+
+## Tools
+
+### TightVNC Java Viewer
+
+Use this VNC viewer for Mac Remote Viewing or Ubuntu:
+
+<https://www.tightvnc.com/download/2.8.3/tvnjviewer-2.8.3-bin-gnugpl.zip>
+
+### Path for Shortcuts
+
+```
+C:\ProgramData\Microsoft\Windows\Start Menu\Programs
+```
+
+### Required Services
+
+`msconfig`
+
+```
+# Asus
+ASUS App Service
+ASUS Optimization
+```
+
+## Image / Video Extensions
+
+These are extensions to view videos and images from newer iPhones and Android phones:
+
+- [Raw Image Extension](https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8) - `ms-windows-store://pdp/?ProductId=9nctdw2w1bh8`
+- [HEIF Image Extension](https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg) - `ms-windows-store://pdp/?ProductId=9pmmsr1cgpwg`
+- [HEVC Video Extension from Device Manufacturer](https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq) - `ms-windows-store://pdp/?ProductId=9n4wgh0z6vhq`
+- [MPEG-2 Video Extension](https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4) - `ms-windows-store://pdp/?ProductId=9n95q1zzpmh4`
+- [AV1 Video Extension](https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v) - `ms-windows-store://pdp/?ProductId=9mvzqvxjbq9v`
+
+## X-Input Emulator
+
+Use these to map generic controllers for Windows:
+
+- <https://hardwaretester.com/gamepad> (For testing gamepad)
+
+### XOutput (doesn't work)
+
+- <https://github.com/ViGEm/ViGEmBus> (For Driver)
+- <https://github.com/csutorasa/XOutput> (For Mappings)
+
+### x360ce
+
+- <https://github.com/x360ce/x360ce>
+
+### Dependencies
+
+- <https://learn.microsoft.com/en-GB/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-studio-2015-2017-2019-and-2022>
+- <https://aka.ms/vs/17/release/vc_redist.x86.exe>
+- <https://aka.ms/vs/17/release/vc_redist.x64.exe>
+- <https://aka.ms/highdpimfc2013x64enu>
+- <https://download.microsoft.com/download/1/6/B/16B06F60-3B20-4FF2-B699-5E9B7962F9AE/VSU_4/vcredist_x64.exe>
+
+## Mount SFTP as a Drive on Windows
+
+- <https://github.com/winfsp/sshfs-win>
+- <https://github.com/winfsp/winfsp/releases/tag/v2.0>
+- <https://github.com/winfsp/sshfs-win/releases>
 
 ```
 \\sshfs\syle@127.0.0.1
 ```
 
-#### Ramdisk
+## Ramdisk
 
-Software for windows is called ImDisk
+Software for Windows is called ImDisk.
 
-#### 7-Zip
+## 7-Zip
 
-##### Path for temp
+### Path for Temp
 
 ```
 R:\
 ```
 
-##### Other settings
+### Other Settings
 
-Viewer
+Viewer:
 
 ```
 "C:\Program Files\Sublime Text\subl.exe" -n -w

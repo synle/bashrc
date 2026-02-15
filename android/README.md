@@ -1,8 +1,10 @@
+# Android
+
 ## Wireless Debugging
 
-On the device, go to Developer Options > Wireless debugging > Pair device with pairing code, and use the newly generated pairing code
+On the device, go to Developer Options > Wireless debugging > Pair device with pairing code, and use the newly generated pairing code.
 
-```
+```bash
 # start with Pair device with pairing code
 adb pair ip:port
 
@@ -11,16 +13,17 @@ adb connect ip:port
 
 adb shell
 
-# to disconect
+# to disconnect
 adb disconnect
 ```
 
 ## Remove Android Bloats
 
-```
-
+```bash
 ###########################################
 ### Core Commands
+###########################################
+
 # list disabled packages
 pm list packages -d
 
@@ -46,7 +49,9 @@ function removeApp(){
 }
 
 ###########################################
-###### Other commands
+### Other Commands
+###########################################
+
 settings list system
 settings list global
 settings list secure
@@ -63,7 +68,6 @@ pm list packages -u
 # list all packages for a user
 pm list packages --user USER_ID
 
-
 ### Get permission
 function listPermissions(){
   dumpsys package $@ | grep "granted=true" | grep permission
@@ -71,7 +75,7 @@ function listPermissions(){
 
 ### Remove permission
 function removePermissionLocation(){
-  # ignore the following
+  # ignore the following:
   # com.android.phone
   # com.chase.sig.android
   # com.coulombtech # chargepoint
@@ -84,7 +88,6 @@ function removePermissionLocation(){
   # com.yelp.android
   # com.google.android.apps.maps # google map
   # com.google.android.googlequicksearchbox # google now
-  # echo $1
 
   pm revoke $@ android.permission.ACCESS_COARSE_LOCATION
   pm revoke $@ android.permission.ACCESS_FINE_LOCATION

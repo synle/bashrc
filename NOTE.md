@@ -1,26 +1,30 @@
-Environment Variables
+# Notes
+
+## Environment Variables
 
 ```
 C:\Program Files\Java\jdk-11.0.1\bin
 %USERPROFILE%\AppData\Local\Android\sdk\platform-tools
 ```
 
-### WSL not loading
+## WSL
 
-Error: 0x800703fa Illegal operation attempted on a registry key that has been marked for deletion
+### WSL Not Loading
 
-```
+Error: `0x800703fa Illegal operation attempted on a registry key that has been marked for deletion`
+
+```bash
 sc stop lxssmanager
 sc start lxssmanager
 ```
 
 ### WSL Terminal Tweaks
 
-https://blog.ropnop.com/configuring-a-pretty-and-usable-terminal-emulator-for-wsl/
+Reference: <https://blog.ropnop.com/configuring-a-pretty-and-usable-terminal-emulator-for-wsl/>
 
-xming - https://sourceforge.net/projects/xming/
+xming - <https://sourceforge.net/projects/xming/>
 
-```
+```bash
 dbus-uuidgen > /tmp/machine-id && sudo mv /tmp/machine-id /etc/machine-id
 
 sudo apt-get install terminator dbus-x11
@@ -34,9 +38,9 @@ C:\Windows\System32\wscript.exe %HOMEPATH%\startTerminator.vbs
 %USERPROFILE%
 ```
 
-### Chrome Flags
+## Chrome Flags
 
-Source: https://www.maketecheasier.com/chrome-flags-better-browsing-experience/
+Source: <https://www.maketecheasier.com/chrome-flags-better-browsing-experience/>
 
 ```
 Enable picture in picture
@@ -47,18 +51,18 @@ Tab audio muting UI control - MUTE TAB
 Fast tab/window close - QUICK TAB CLOSE
 ```
 
-#### Register SSH key
+## SSH
 
-#####
+### Register SSH Key
 
-```
+```bash
 sudo crontab -e
 */20 * * * * /opt/cron_pull_code.sh
 ```
 
-##### Script
+#### Script
 
-```
+```bash
 eval $(ssh-agent);
 ssh-add ~/.ssh/id_rsa;
 
@@ -66,14 +70,86 @@ cd your_app
 git pull
 ```
 
-#### Sample config for eslint and prettier
+### Copy SSH Keys
+
+```bash
+ssh-copy-id syle@sy-macpro
+```
+
+### Connect to SSH with Private Key
+
+```bash
+ssh -i .ssh/id_rsa
+```
+
+### SSH Config File
+
+`~/.ssh/config`
 
 ```
+Host sy-macpro
+  User syle
+  HostName 192.168.5.2
+  IdentityFile ~/.ssh/id_rsa
+```
+
+### SSH Connection Keep Alive
+
+`sudo vim /etc/ssh/ssh_config`
+
+```
+Host *
+  ClientAliveInterval 120
+  ClientAliveCountMax 720
+```
+
+### Generate Key in Windows with PuTTY
+
+Download puttygen (putty):
+
+- Save public key
+- Save private key `.ppk`
+
+Also can use puttygen to convert AWS key to `.ppk`.
+
+### Connect with PuTTY Private Key
+
+Connection > Auth > Choose private key `.ppk`
+
+## Port Forwarding
+
+Reference: <https://www.booleanworld.com/guide-ssh-port-forwarding-tunnelling/>
+
+### Local Port Forwarding
+
+From SSH Server to localhost:
+
+```bash
+ssh -L 443:localhost:443 -L 3000:localhost:3000 -L 9000:localhost:9000 -L 3306:localhost:3306 sy-macpro
+```
+
+If you do not need to start a session, you can add `-N`:
+
+```bash
+ssh -L 443:localhost:443 -L 3000:localhost:3000 -L 9000:localhost:9000 -L 3306:localhost:3306 -N sy-macpro
+```
+
+### Remote Port Forwarding
+
+From localhost to SSH Server:
+
+```bash
+ssh -R 7000:127.0.0.1:8000 user@example.com
+```
+
+## ESLint and Prettier Config
+
+```json
 "lint": "./node_modules/.bin/eslint --ignore-pattern \"*.spec.js\" --max-warnings 200 src/**/**/*.js",
 "format": "./node_modules/.bin/prettier --config ./.prettierrc --write src/**/**/*{js,jsx}"
 ```
 
-```
+```json
 {
   "printWidth": 100,
   "parser": "flow",
@@ -90,129 +166,58 @@ git pull
 }
 ```
 
-### XARGS and Sed
+## Shell Utilities
 
-```
+### xargs and sed
+
+```bash
 find src -name "*.bak" | xargs rm && find src -name "*.DS_Store" | xargs rm
 find src -type f -name "*.js" -exec sed -i'.bak' -e 's/allowTotalAmountChangedSelectors/allowTotalAmountChanged/g' {} \;
 ```
 
-### Create self-signed certs
+### awk Cheatsheet
 
-https://letsencrypt.org/docs/certificates-for-localhost/
+```bash
+awk '{print $1 $2}' contacts.txt
 
+# print number of fields, then whole line ($0)
+awk '{print NF $0}' contacts.txt
+
+# only print those lines that match 'Bob'
+awk '/Bob/{print $1 $2}' contacts.txt
+
+# only print those lines with 3 fields
+awk 'NF==3{print $0}' contacts.txt
+
+# only print those lines with 3 fields
+awk '/up/{print "UP:" $0}' '/down/{print "DOWN:" $0}' contacts.txt
+
+# from command file
+awk -f filename contacts.txt
+
+# use space as field separator here we separate by \t
+awk -F '\t' '{print $2}' contacts.txt
+
+# csv to tsv
+awk 'BEGIN{FS=","; OFS="\t"}{print $1, $2, $3}' contacts.csv
 ```
+
+## Self-Signed Certificates
+
+Reference: <https://letsencrypt.org/docs/certificates-for-localhost/>
+
+```bash
 openssl req -x509 -out localhost.crt -keyout localhost.key \
   -newkey rsa:2048 -nodes -sha256 \
   -subj '/CN=localhost' -extensions EXT -config <( \
    printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
 ```
 
-### Portforwarding
+## MySQL
 
-https://www.booleanworld.com/guide-ssh-port-forwarding-tunnelling/
+### Datetime and Timezone
 
-#### Local port forwarding
-
-From SSH Server to localhost
-
-```
-ssh -L 443:localhost:443 -L 3000:localhost:3000 -L 9000:localhost:9000 -L 3306:localhost:3306 sy-macpro
-```
-
-If you do not need to start a session, you can add -N
-
-```
-ssh -L 443:localhost:443 -L 3000:localhost:3000 -L 9000:localhost:9000 -L 3306:localhost:3306 -N sy-macpro
-```
-
-#### Remote port forwarding
-
-From localhost to SSH Server
-
-```
-ssh -R 7000:127.0.0.1:8000 user@example.com
-```
-
-### Copy SSH keys
-
-```
-ssh-copy-id syle@sy-macpro
-```
-
-### Connect to SSH with private key
-
-```
-ssh -i .ssh/id_rsa
-```
-
-### SSH Config file
-
-~/.ssh/config
-
-```
-Host sy-macpro
-  User syle
-  HostName 192.168.5.2
-  IdentityFile ~/.ssh/id_rsa
-```
-
-#### Generate key in Windows with Putty
-
-Download puttygen (putty)
-
-- Save public key
-- Save private key `ppk`
-
-Also can use puttygen to convert `aws key` to `ppk`
-
-#### Connect with Putty private key
-
-Connection > Auth > Choose private key `ppk`
-
-#### awk cheatsheet
-
-```
-awk '{print $1 $2}` contacts.txt
-
-# print number of fields, then whole line ($0)
-awk '{print NF $0}` contacts.txt
-
-# only print those lines that matches `Bob`
-awk '/Bob/{print $1 $2}` contacts.txt
-
-# only print those lines with 3 fields
-awk 'NF==3{print $0}` contacts.txt
-
-# only print those lines with 3 fields
-awk '/up/{print "UP:" $0}` '/down/{print "DOWN:" $0}` contacts.txt
-
-# from command file
-awk -f filename contacts.txt
-
-# use space as field seperator here we seperate by \t
-awk -F '\t' '{print $2}' contacts.txt
-
-# csv to tsv
-awk 'BEGIN{FS=",": OFS="\t"}' '{print $1 $2 $3}' contacts.csv
-awk 'BEGIN{FS=",": OFS="\t"}' '{print $1 $2 $3}' contacts.csv
-```
-
-### SSH Connection Alive longer
-
-`sudo vim /etc/ssh/ssh_config`
-
-```
-Host *
-  ClientAliveInterval 120
-  ClientAliveCountMax 720
-```
-
-### MYSQL
-
-#### Datetime and Timezone
-
-```
+```sql
 SHOW VARIABLES LIKE '%time_zone%'
 
 SET time_zone = '+00:00';
@@ -220,16 +225,16 @@ SELECT NOW(); -- with respect to server timezone
 SELECT UTC_TIMESTAMP();
 ```
 
-```
-TIMESTAMP type is obsolette and will stop working in years 2038
+```sql
+-- TIMESTAMP type is obsolete and will stop working in year 2038
 update_current_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ```
 
-#### Enum type
+### Enum Type
 
-##### Using Enum
+#### Using Enum
 
-```
+```sql
 ...
 city ENUM ('SF', 'LA', 'NY')
 ...
@@ -238,11 +243,11 @@ INSERT INTO test (...) VALUES ('SF');
 INSERT INTO test (...) VALUES ('1');
 ```
 
-##### Using Set
+#### Using Set
 
-Bitmap position
+Bitmap position:
 
-```
+```sql
 ...
 city SET ('SF', 'LA', 'NY')
 ...
@@ -251,9 +256,9 @@ INSERT INTO test (...) VALUES ('SF,LA');
 INSERT INTO test (...) VALUES ('1');
 ```
 
-#### Serial data type
+### Serial Data Type
 
-```
+```sql
 id SERIAL
 ...
 id INT UNSIGNED UNIQUE AUTO_INCREMENT PRIMARY KEY
@@ -261,27 +266,27 @@ id INT UNSIGNED UNIQUE AUTO_INCREMENT PRIMARY KEY
 
 ### Describe / Show Create Table
 
-```
+```sql
 DESCRIBE test
 SHOW CREATE TABLE test
 ```
 
-#### Numeric Data Types
+### Numeric Data Types
 
-Use DECIMAL for precision
+Use DECIMAL for precision:
 
-```
+```sql
 DECIMAL(9,2) -- 1234567.89
 DECIMAL(10,0) -- 1234567890
 ```
 
-Not precised
+Not precise:
 
 ```
 FLOAT - 24 bits and 7 precision - about 7 digits
 DOUBLE - 53 bits and 16 precision - about 16 digits
 ```
 
-### VS Code - Note on Remote Development
+## VS Code - Remote Development
 
-https://code.visualstudio.com/docs/remote/ssh
+Reference: <https://code.visualstudio.com/docs/remote/ssh>

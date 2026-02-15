@@ -1,13 +1,13 @@
-# Setting up your steam deck
+# Setting Up Your Steam Deck
 
-- https://www.reddit.com/r/SteamDeck/comments/t8al0i/install_arch_packages_on_your_steam_deck/
+Reference: <https://www.reddit.com/r/SteamDeck/comments/t8al0i/install_arch_packages_on_your_steam_deck/>
 
 ```bash
-
 ## Set passwords
 passwd
 
-## steam deck file system is immutable and will be removed after each update. This command is to open it up for write
+## Steam Deck file system is immutable and will be removed after each update.
+## This command opens it up for write.
 ## Disable read only mode: To allow adding new software
 sudo btrfs property set -ts / ro false
 
@@ -19,7 +19,7 @@ sudo pacman-key --populate archlinux
 sudo pacman -Syu fzf
 sudo pacman -Syu bat
 
-## install nvm / node
+## Install nvm / node
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
 DEFAULT_NVM_NODE_VERSION=21
 nvm install $DEFAULT_NVM_NODE_VERSION

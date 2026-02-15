@@ -1,67 +1,65 @@
 # synle/bashrc
 
-This is my personal bash profile
+This is my personal bash profile.
 
-## Using this URL to install:
+## Using This URL to Install
 
-Refer to this webapp for the configuration
+Refer to this webapp for the configuration:
 
-https://synle.github.io/bashrc/
+<https://synle.github.io/bashrc/>
 
 ## Supported Platforms
 
-- OSX
+- macOS
 - Ubuntu / Debian
-- Windows Sub Linux System (WSL) - Debian based only
+- Windows Subsystem for Linux (WSL) - Debian based only
 - Android Termux
+- Arch Linux / Steam Deck
+- ChromeOS
 
 ## Installation
 
-#### Install Dependencies
+### Install Dependencies
 
-Run this first to get dependencies
+Run this first to get dependencies:
 
-```
-
+```bash
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh?$(date +%s))"
-
 ```
 
-#### Install Profile for Full OS's / Systems
+### Install Profile for Full OS / Systems
 
-Run this on full system - eg, Mac OSX, Ubuntu or Windows Sublinux System (WSL)
+Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
-```
-
+```bash
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"
-
 ```
 
-#### Fun Facts
+## Fun Facts
 
 Here are some fun facts about my personal setups.
 
-##### Steam Deck
+### Steam Deck
 
 Upgraded from 64GB eMMC to 1TB 2230 NVME.
 
-##### Windows Laptop (Gigabyte Aero 16)
+### Windows Laptop (Gigabyte Aero 16)
 
 - Intel i7 12700H
 - Geforce 3070 TI
-- Upgraded to 64GB RAM.
-- Replaced 1TB NVME SSD with 1TB NVME with 2TB NVME
+- Upgraded to 64GB RAM
+- Replaced 1TB NVME SSD with 2TB NVME
 - Downgraded to Windows 10 with WSL 2 and Debian
 
-##### OSX Laptop (Macbook Pro 14 M1 - 16GB RAM and 512GB Hard drive)
+### macOS Laptop (Macbook Pro 14 M1 - 16GB RAM and 512GB Hard drive)
 
-- Rocking OSX Ventura.
+- Rocking macOS Ventura
 
-##### On the go (Samsung Chromebook - 8GB RAM and 128GB Hard drive)
+### On the Go (Samsung Chromebook - 8GB RAM and 128GB Hard drive)
 
-- Running ChromeOS with Container running Ubuntu.
+- Running ChromeOS with Container running Ubuntu
 
-##### Desktop (Lenovo P520) - 64GB RAM, 2TB NVME
+### Desktop (Lenovo P520) - 64GB RAM, 2TB NVME
 
 - Intel Xeon W-2145
 - Upgraded to 128GB RAM
