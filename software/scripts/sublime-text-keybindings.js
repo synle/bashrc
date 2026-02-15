@@ -27,13 +27,7 @@ function _formatKey(keybindings, osKeyToUse) {
 }
 
 async function doInit() {
-  if (is_os_darwin_mac) {
-    OS_KEY = MAC_OSX_KEY;
-  } else if (is_os_window) {
-    OS_KEY = WINDOWS_OS_KEY;
-  } else {
-    OS_KEY = LINUX_OS_KEY;
-  }
+  OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
 
   WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.windows.json')) || [];
   LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.linux.json')) || [];

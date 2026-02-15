@@ -28,7 +28,7 @@ ${contentBashProfileBarebone}
 ${contentBashProfileAdvanced}
 
 ##########################################################
-## begin advanced profile
+## end advanced profile
 ##########################################################
   `.trim();
 

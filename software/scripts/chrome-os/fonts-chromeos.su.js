@@ -3,10 +3,7 @@ async function doWork() {
 
   console.log('  >> Download Ligatures Fonts - for ChromeOS Ubuntu:', targetPath);
 
-  if (!filePathExist(targetPath)) {
-    console.log(consoleLogColor1('      >> Skipped : Not Found'));
-    return process.exit();
-  }
+  exitIfPathNotFound(targetPath);
 
   const files = await listRepoDir();
 

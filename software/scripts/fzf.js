@@ -14,16 +14,10 @@ async function doWork() {
   `);
 
   console.log('    >> Register binary with bashrc', BASE_BASH_SYLE);
-  let textContent = readText(BASE_BASH_SYLE);
-  textContent = prependTextBlock(
-    textContent,
-    'fzf - Fuzzy Find', // key
-    `[ -f ~/.fzf.bash ] && . ~/.fzf.bash`,
-  );
+  registerWithBashSyle('fzf - Fuzzy Find', `[ -f ~/.fzf.bash ] && . ~/.fzf.bash`);
 
-  textContent = prependTextBlock(
-    textContent,
-    'fzf - Fuzzy Find Aliases', // key
+  registerWithBashSyle(
+    'fzf - Fuzzy Find Aliases',
     trimLeftSpaces(`
       BOOKMARK_PATH=~/.syle_bookmark
 
@@ -60,6 +54,4 @@ async function doWork() {
       }
     `),
   );
-
-  writeText(BASE_BASH_SYLE, textContent);
 }

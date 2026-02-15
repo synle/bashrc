@@ -14,10 +14,8 @@ async function doWork() {
   });
 
   console.log('    >> Register binary with bashrc', BASE_BASH_SYLE);
-  let textContent = readText(BASE_BASH_SYLE);
-  textContent = prependTextBlock(
-    textContent,
-    'Sy Make Component', // key
+  registerWithBashSyle(
+    'Sy Make Component',
     trimLeftSpaces(`
       [ -f ${targetPath}/setup.sh ] && . ${targetPath}/setup.sh
 
@@ -35,5 +33,4 @@ async function doWork() {
       }
     `),
   );
-  writeText(BASE_BASH_SYLE, textContent);
 }

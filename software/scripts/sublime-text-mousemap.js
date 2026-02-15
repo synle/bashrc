@@ -31,7 +31,7 @@ function _formatKey(mouseMaps, osKeyToUse) {
 }
 
 async function doInit() {
-  OS_KEY = is_os_darwin_mac ? MAC_OSX_KEY : WINDOWS_OS_KEY;
+  OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
 }
 
 async function doWork() {
@@ -39,10 +39,7 @@ async function doWork() {
 
   console.log(`  >> Setting up Sublime Text MouseMaps:`, consoleLogColor4(targetPath));
 
-  if (!filePathExist(targetPath)) {
-    console.log(consoleLogColor1('    >> Skipped : Not Found'));
-    return process.exit();
-  }
+  exitIfPathNotFound(targetPath);
 
   const winMouseMapPath = path.join(targetPath, 'Packages/User/Default (Windows).sublime-mousemap');
   console.log('    >> Windows', winMouseMapPath);

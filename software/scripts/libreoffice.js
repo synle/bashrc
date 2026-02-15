@@ -8,10 +8,7 @@ async function doWork() {
     return process.exit();
   }
 
-  if (!filePathExist(targetPath)) {
-    console.log(consoleLogColor1('    >> Skipped : Not Found'));
-    return process.exit();
-  }
+  exitIfPathNotFound(targetPath);
 
   targetPath = path.join(targetPath, 'sofficerc');
   console.log('    >> Update Configs:', consoleLogColor4(targetPath));

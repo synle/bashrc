@@ -1,18 +1,7 @@
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_only_windows');
-
-  console.log('  >> Register Only Windows profile', BASE_BASH_SYLE);
-  let textContent = readText(BASE_BASH_SYLE);
-  textContent = prependTextBlock(
-    textContent,
-    'Only Windows - PLATFORM SPECIFIC TWEAKS', // key
-    `. ${targetPath}`,
-  );
-  writeText(BASE_BASH_SYLE, textContent);
-
-  console.log('  >> Installing Only Windows (WSL) tweaks:', consoleLogColor4(targetPath));
-  writeText(
-    targetPath,
+  registerPlatformTweaks(
+    'Only Windows',
+    '.bash_syle_only_windows',
     `
 # do stuffs specific to wsl (windows sub linux system)
 findResolvedPathForWsl1(){

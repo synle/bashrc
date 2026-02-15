@@ -5,10 +5,7 @@ async function doWork() {
   const targetPath = path.join(getWindowAppDataLocalUserPath(), 'Microsoft/PowerToys/Keyboard Manager');
   console.log('    >> Configs', consoleLogColor4(targetPath));
 
-  if (!filePathExist(targetPath)) {
-    console.log(consoleLogColor1('    >> Skipped : Not Found'));
-    return process.exit();
-  }
+  exitIfPathNotFound(targetPath);
 
   // read the file
   const config = await fetchUrlAsJson('software/scripts/windows/powertoys-keyboard-remap.json');

@@ -3,12 +3,5 @@ async function doWork() {
 
   console.log(`  >> Register NVM binary with bashrc ${nvmPath}`);
 
-  // bootstrap nvm with bash_syle
-  let bashrcTextContent = readText(BASE_BASH_SYLE);
-  bashrcTextContent = prependTextBlock(
-    bashrcTextContent,
-    'nvm - node version manager', // key
-    `[ -s ${nvmPath}/nvm.sh ] && . ${nvmPath}/nvm.sh --no-use`,
-  );
-  writeText(BASE_BASH_SYLE, bashrcTextContent);
+  registerWithBashSyle('nvm - node version manager', `[ -s ${nvmPath}/nvm.sh ] && . ${nvmPath}/nvm.sh --no-use`);
 }

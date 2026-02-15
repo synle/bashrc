@@ -1,6 +1,4 @@
 async function doWork() {
-  let bashrcTextContent = readText(BASE_BASH_SYLE);
-
   const { maxLineSize, ignoredFolders } = EDITOR_CONFIGS;
 
   const MAX_DEPTH_CLEANUP = 4;
@@ -191,8 +189,7 @@ format_other_text_based_files() {
 # === end format script ===
 `;
 
-  bashrcTextContent = prependTextBlock(bashrcTextContent, 'format script', formatScriptBlock);
-  writeText(BASE_BASH_SYLE, bashrcTextContent);
+  registerWithBashSyle('format script', formatScriptBlock);
 
   writeToBuildFile([['format', formatScriptBlock]]);
 }

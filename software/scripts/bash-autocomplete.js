@@ -229,11 +229,5 @@ ${await _getAutoCompleteWithSpec('docker', 'software/metadata/bash-autocomplete.
 
   // bootstrap nvm with bash_syle
   console.log('    >> Register binary with bashrc', BASE_BASH_SYLE);
-  let bashrcTextContent = readText(BASE_BASH_SYLE);
-  bashrcTextContent = prependTextBlock(
-    bashrcTextContent,
-    'Sy bash autocomplete', // key
-    `[ -s ${targetPath} ] && . ${targetPath}`.trim(),
-  );
-  writeText(BASE_BASH_SYLE, bashrcTextContent);
+  registerWithBashSyle('Sy bash autocomplete', `[ -s ${targetPath} ] && . ${targetPath}`);
 }

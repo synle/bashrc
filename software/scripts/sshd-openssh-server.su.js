@@ -3,10 +3,7 @@ async function doWork() {
 
   console.log('  >> Setting up SSH Server sshd_config', consoleLogColor4(targetPath));
 
-  if (!filePathExist(targetPath)) {
-    console.log('Not supported - Exit - targetPath not found: ', consoleLogColor4(targetPath));
-    return process.exit();
-  }
+  exitIfPathNotFound(targetPath, 'Not supported - Exit - targetPath not found');
 
   let portToUse = '22';
   if (is_os_window) {

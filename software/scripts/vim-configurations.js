@@ -68,8 +68,6 @@ async function doWork() {
     hi WebBrowser ctermfg=204 guifg=#56B6C2
     hi ReactLifeCycleMethods ctermfg=204 guifg=#D19A66
 
-
-
     """"""""""""""""""""""""""""""""""""""""""""""""
     " synax highlight options
     """"""""""""""""""""""""""""""""""""""""""""""""
@@ -79,9 +77,6 @@ async function doWork() {
     let g:airline#extensions#tabline#left_alt_sep = '|'
     let g:airline#extensions#tabline#left_sep = ' '
     let g:xml_syntax_folding = 1
-
-
-
 
     """"""""""""""""""""""""""""""""""""""""""""""""
     " editor options
@@ -114,7 +109,6 @@ async function doWork() {
     " set syntax highlight
     syntax on
 
-
     " highlight active vertical split with current row changes color
     " https://superuser.com/questions/385553/making-the-active-window-in-vim-more-obvious
     augroup CursorLineOnlyInActiveWindow
@@ -122,9 +116,6 @@ async function doWork() {
       autocmd VimEnter,WinEnter,BufWinEnter * setlocal cursorline
       autocmd WinLeave * setlocal nocursorline
     augroup END
-
-
-
 
     """"""""""""""""""""""""""""""""""""""""""""""""
     " keyboard shortcuts
