@@ -13,25 +13,30 @@ const onlyCodiumExtensions = trimLeftSpaces(`
 `);
 
 const baseVsExtensions = trimLeftSpaces(`
-  aaron-bond.better-comments
-  clinyong.vscode-css-modules
-  dbaeumer.vscode-eslint
+  # --- UI & Theming ---
   dracula-theme.theme-dracula
-  esbenp.prettier-vscode
-  formulahendry.code-runner
-  golang.go
-  ms-azuretools.vscode-docker
-  ms-python.isort
-  ms-python.python
-  ms-toolsai.jupyter
-  nicoespeon.abracadabra
-  oderwat.indent-rainbow
   PKief.material-icon-theme
+  oderwat.indent-rainbow
+  aaron-bond.better-comments
+
+  # --- Languages & Intelligence ---
+  ms-python.python
+  ms-python.isort
+  golang.go
   redhat.java
   redhat.vscode-yaml
-  streetsidesoftware.code-spell-checker
   wholroyd.jinja
+  clinyong.vscode-css-modules
+
+  # --- Productivity & Formatting ---
+  esbenp.prettier-vscode
+  dbaeumer.vscode-eslint
+  streetsidesoftware.code-spell-checker
   wmaurer.change-case
+  nicoespeon.abracadabra
+  formulahendry.code-runner
+  ms-azuretools.vscode-docker
+  ms-toolsai.jupyter
 `).trim();
 
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
