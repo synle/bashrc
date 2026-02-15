@@ -1,52 +1,37 @@
 const onlyVsCodeExtensions = trimLeftSpaces(`
-  ## andrejunges.handlebars
-  ## dakara.transformer
-  # hridoy.ember-snippets
-  # ms-dotnettools.csharp
-  # ms-python.vscode-pylance
-  # ms-vscode.cpptools
-  # visualstudioexptteam.intellicode-api-usage-examples
-  # visualstudioexptteam.vscodeintellicode
   ms-vscode-remote.vscode-remote-extensionpack
+  ms-dotnettools.csharp
+  ms-vscode.cpptools
+  visualstudioexptteam.vscodeintellicode
+  andrejunges.handlebars
+  dakara.transformer
 `);
 
 const onlyCodiumExtensions = trimLeftSpaces(`
   jeanp413.open-remote-ssh
+  devcontainers.vscode-dev-containers
 `);
 
 const baseVsExtensions = trimLeftSpaces(`
   aaron-bond.better-comments
-  christian-kohler.path-intellisense
   clinyong.vscode-css-modules
   dbaeumer.vscode-eslint
   dracula-theme.theme-dracula
-  dsznajder.es7-react-js-snippets
   esbenp.prettier-vscode
-  formulahendry.auto-rename-tag
   formulahendry.code-runner
   golang.go
-  # ms-azuretools.vscode-docker
-  ms-pyright.pyright
+  ms-azuretools.vscode-docker
   ms-python.isort
   ms-python.python
+  ms-toolsai.jupyter
   nicoespeon.abracadabra
   oderwat.indent-rainbow
   PKief.material-icon-theme
   redhat.java
   redhat.vscode-yaml
-  # scala-lang.scala
   streetsidesoftware.code-spell-checker
   wholroyd.jinja
   wmaurer.change-case
-  tomoki1207.pdf
-  # hashicorp.terraform
-  # emmanuelbeziat.vscode-great-icons
-  # jupyter python notebooks
-  ms-toolsai.jupyter
-  ms-toolsai.jupyter-keymap
-  ms-toolsai.jupyter-renderers
-  ms-toolsai.vscode-jupyter-cell-tags
-  ms-toolsai.vscode-jupyter-slideshow
 `).trim();
 
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
