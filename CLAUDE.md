@@ -2,177 +2,141 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository Overview
+## Project Overview
 
-This is a personal bash profile/dotfiles repository with a web-based configuration interface. It provides automated setup scripts for multiple platforms (Mac, Linux, Windows WSL, Android Termux, Arch Linux) and generates customized shell configurations, editor settings, and system configurations.
+Nav Generator is a client-side React application that converts bookmark lists into self-contained data URLs that can be bookmarked in browsers. The entire application runs in the browser with no backend dependencies.
 
-The repository has two main components:
-
-1. **Shell Configuration System**: Platform-specific setup scripts that generate bash profiles, git configs, editor settings, etc.
-2. **Web App**: A React/Vite-based configuration generator (accessible at https://synle.github.io/bashrc/) that provides a UI for creating installation commands
-
-## Key Commands
+## Development Commands
 
 ### Building
-
 ```bash
-# Full build (formats code, generates artifacts, builds webapp)
-bash build.sh
-# or
-make build
-
-# Format code only
-bash format.sh
-# or
-make format
+npm run build          # Production build using Vite
+./build.sh            # Alternative build script
 ```
 
-The build process:
+The build outputs directly to the root directory:
+- `index.js` - Compiled JavaScript bundle (IIFE format)
+- `index.css` - Compiled styles from SCSS
+- `index.js.map` - Source map
 
-1. Generates `software/metadata/script-list.config` (index of all scripts)
-2. Pre-builds host mappings and IP address configs
-3. Backs up XFCE configuration (if on Linux with XFCE)
-4. Builds configuration artifacts to `.build/` directory
-5. Builds the web app to `dist/` directory
-
-### Testing
-
+### Local Development
 ```bash
-# Run all tests
-make test
-# or
-sh test-full-run.sh
-
-# Test dependencies only
-make test_dependencies
-
-# Test hosts setup
-make test_setup_hosts
-
-# Test a single script interactively
-make test_single_run
-
-# Test specific script(s) directly
-sh test.sh "software/scripts/git.js"
-sh test.sh "software/scripts/vim.js,software/scripts/git.js"
+npm start             # Start HTTP server with CORS support (port 8080)
+./dev.sh             # Watch mode - auto-rebuilds on file changes every 3 seconds
 ```
 
-### Web App Development
-
+### Code Formatting
 ```bash
-# Install dependencies
-npm install
-
-# Start dev server (http://localhost:5173)
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+npm run format        # Format HTML, JSX, SCSS, YML, MD, JSON files with Prettier
 ```
 
-## Code Architecture
+## Architecture
 
-### Script System (software/scripts/)
+### Single-File React Application
 
-The core of the repository is a JavaScript-based configuration generator that produces bash scripts and configuration files. Scripts are organized by platform and functionality:
+The entire application is contained in `index.jsx` (~3,300 lines), structured as:
 
-- `software/scripts/*.js` - Cross-platform scripts (git, vim, fzf, etc.)
-- `software/scripts/mac/` - macOS-specific scripts
-- `software/scripts/windows/` - Windows/WSL-specific scripts
-- `software/scripts/android-termux/` - Android Termux-specific scripts
-- `software/scripts/arch-linux/` - Arch Linux/Steam Deck-specific scripts
-- `software/scripts/chrome-os/` - ChromeOS-specific scripts
+1. **Modal System** (lines 36-252)
+   - Custom Modal, AlertModal, PromptModal components
+   - Override native `window.alert()`, `window.confirm()`, `window.prompt()`
+   - Modal manager for rendering/unmounting modals
 
-### Script Execution Model
+2. **Schema Parser** (lines 315-750)
+   - Parses custom bookmark syntax into structured data
+   - Syntax markers:
+     - `!` - Page title
+     - `#` - Section headers
+     - `|` - Same-tab links
+     - `|||` - New-tab links
+     - `` ``` `` - Code blocks
+     - `---` - HTML blocks
+     - `>>>` - Tabs
+     - `@` - Custom favicon URLs
 
-Scripts use a hybrid Node.js + Bash approach:
+3. **Core Components** (lines 750-2800)
+   - `SearchBox` - Fuzzy search with keyboard navigation
+   - `PageRead` - View mode for rendered navigation
+   - `PageEdit` - Edit mode with schema editor
+   - `SchemaRender` - Converts parsed schema to React elements
+   - `SchemaEditor` - Monaco Editor wrapper with textarea fallback
+   - `App` - Main application component with view mode routing
+   - `PageVersionHistory` - IndexedDB-based version history
+   - `PageChromeBookmarkImport` - Import Chrome bookmarks
+   - `PageChromeBookmarkExport` - Export as Chrome bookmarks
+   - `PageBackupDownload` - Download schema as file
 
-1. **base-node-script.js** provides the runtime environment with:
-   - Global utilities (`fs`, `path`, `https`, `http`)
-   - Path constants (`BASE_HOMEDIR_LINUX`, `BASE_BASH_SYLE`, etc.)
-   - Editor config defaults (`EDITOR_CONFIGS`)
-   - Helper functions (likely defined further in the file)
+4. **Utilities** (lines 2800-3291)
+   - Theme toggle (dark/light mode stored in localStorage)
+   - IndexedDB operations for version history
+   - Data URL generation and navigation
+   - Bookmark file parsing (Chrome format)
 
-2. **Scripts are executed by piping through Node.js**:
+### Service Worker (`sw-nav.js`)
 
-   ```bash
-   { cat software/base-node-script.js && cat software/scripts/git.js } | node | bash
-   ```
+Implements stale-while-revalidate caching strategy:
+- Cache version tied to build timestamp (injected during build)
+- 1-week TTL for cached resources
+- Caches: HTML, JS, CSS, images, and specific file types
+- Auto-updates and cleans expired cache entries
 
-   This pattern allows JavaScript to generate bash commands dynamically.
+### Build Configuration (`vite.config.js`)
 
-3. **Test mode** sets `TEST_SCRIPT_MODE=1` environment variable to run scripts in test/dry-run mode
+- Custom plugin `updateServiceWorker()` injects build timestamp into service worker
+- Outputs IIFE bundle (not ES modules) to root directory
+- Source maps enabled
+- SCSS preprocessing
+- Minification enabled for production
 
-### Key Scripts
+### Styling (`index.scss`, `common.scss`)
 
-- `software/test.sh.js` - Test runner logic
-- `software/index.sh.js` - Main entry point for full setup
-- `software/metadata/script-list.config.js` - Generates script index
-- `software/metadata/ip-address.config.js` - Pre-builds host mappings
-- `software/metadata/hosts-blocked-ads.config.js` - Generates ad-blocking hosts file
+- SCSS with shared variables in `common.scss`
+- Custom elements: `<load>`, `<tabs>`, `<tab>`
+- Theme variables for dark/light modes
+- Responsive design
 
-### Web App (webapp/)
+### Generated Output
 
-A React/Vite SPA that generates installation commands based on user selections:
+The build creates a data URL embedded in `index.html` that contains:
+- Entire navigation schema in `<script type='schema'>` tag
+- Self-contained HTML that loads CSS and JS from GitHub Pages
+- Can be bookmarked directly in the browser
 
-- `webapp/index.jsx` - Main React app
-- `webapp/styles.scss` - Styles
-- `webapp/sw-bashrc.js` - Service worker for offline functionality
-- Built using `vite-plugin-singlefile` to produce a single HTML file in `dist/`
+## Key Concepts
 
-The web app detects the user's platform and generates appropriate installation commands like:
+### Data URL Architecture
+The application generates self-contained data URLs that:
+1. Load external CSS/JS from GitHub Pages (`https://synle.github.io/nav-generator/`)
+2. Embed the navigation schema inline in a `<script type='schema'>` tag
+3. Can be bookmarked and work offline (after first load via service worker)
 
-```bash
-. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"
-```
+### Schema Language
+The custom markup language is intentionally minimal for easy typing in the editor. The parser (`_parseSchemaString` function) converts this to a structured format for rendering.
 
-### Setup Scripts (Root Directory)
+### Monaco Editor Integration
+- Loads Monaco from CDN (`https://unpkg.com/monaco-editor@0.40.0`)
+- Custom syntax highlighting for nav-generator schema
+- Falls back to textarea if Monaco fails to load within 5 seconds
+- Auto-formats with word wrap and minimap disabled
 
-- `setup-full.sh` - Full system setup (loads barebone bash profile, then runs all scripts)
-- `setup-lightweight.sh` - Minimal setup
-- `setup-dependencies.sh` - Installs required dependencies
-- `setup-hosts.sh` - Configures /etc/hosts for ad blocking
-- `bash-profile-barebone.sh` - Minimal bash profile bootstrap
-- `bash-profile-more-advanced.sh` - Extended bash profile
-
-### Build Artifacts
-
-The `.build/` directory contains generated configuration files:
-
-- Editor keybindings (VS Code, Sublime Text) for different platforms
-- Font installation instructions
-- Windows-specific configs (registry, PowerShell profile)
-- Git/vim/inputrc configurations
-
-### Platform Detection
-
-The codebase uses OS detection flags set in `bash-profile-barebone.sh` (likely):
-
-- `is_os_android_termux`
-- `is_os_window` (Windows/WSL)
-- Platform-specific directory detection for Windows mount points
-
-### Script Naming Conventions
-
-- Files prefixed with `_` are utilities or platform-specific helpers
-- Files ending in `.su.js` likely require sudo/superuser privileges
-- Files ending in `.sh.js` are JavaScript files that generate shell scripts
-- Files ending in `.sh` are pure bash scripts
-
-## Development Workflow
-
-1. Modify scripts in `software/scripts/` or web app in `webapp/`
-2. Run `make format` to format code
-3. Run `make test` to test changes locally
-4. Run `make build` to generate artifacts
-5. Commit changes (CI will automatically run build and format)
+### Version History
+- Uses IndexedDB (`VersionsDB`) to store schema snapshots
+- Auto-saves on each edit (deduplicated by value)
+- Restore previous versions via dedicated page
 
 ## CI/CD
 
-GitHub Actions workflow (`.github/workflows/build-main.yml`) runs on push to master/main:
+GitHub Actions workflow (`.github/workflows/build-main.yml`):
+- Triggers on push to main/master
+- Calls reusable workflow from `synle/gha-workflow`
+- Runs `build.sh` and commits artifacts back to repository
+- Allows direct deployment to GitHub Pages
 
-- Uses shared workflow from `synle/gha-workflow`
-- Runs build script and commits artifacts back to the repository
+## Important Notes
+
+- **No tests**: This project has no test suite
+- **Single file**: Most application logic is in one large `index.jsx` file, not split into modules
+- **Build outputs to root**: Unlike typical projects, build artifacts are committed to the root directory for GitHub Pages deployment
+- **Monaco timeout**: The editor has a 5-second timeout before falling back to textarea
+- **Custom HTML elements**: Uses non-standard elements like `<load>`, `<tabs>`, `<tab>` for styling purposes
+- **eval() usage**: JavaScript links (`javascript://`) use eval() for execution (line 1585)
+- **No TypeScript**: Pure JavaScript/JSX without type checking
