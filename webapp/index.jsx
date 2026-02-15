@@ -1,9 +1,9 @@
 import Editor from '@monaco-editor/react';
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import Toastify from 'toastify-js';
 import 'toastify-js/src/toastify.css';
-import './styles.scss';
+import './index.scss';
 
 const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const isSystemWindows = navigator.platform.indexOf('Win') > -1;
@@ -765,57 +765,92 @@ function FullScreenTextViewer(props) {
   );
 }
 
-function Settings() {
+function DropdownButtons(props) {
+  const { type = '', children } = props;
   const [isOpen, setIsOpen] = useState(false);
-  const { theme, setTheme } = useContext(ThemeContext);
-  const dropdownRef = React.useRef(null);
+  const dropdownRef = useRef(null);
+  const [triggerButton, ...buttonsElems] = children;
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setIsOpen(false);
+  const toggleDropdown = useCallback(() => {
+    setIsOpen((prev) => !prev);
+  }, []);
+
+  const closeDropdown = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useLayoutEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        closeDropdown();
       }
     };
 
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
+    const handleEscape = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        closeDropdown();
       }
     };
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscape);
+      };
     }
+  }, [isOpen, closeDropdown]);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen]);
+  // Clone trigger button to add onClick handler
+  const enhancedTrigger = React.cloneElement(triggerButton, {
+    onClick: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleDropdown();
+      if (triggerButton.props.onClick) {
+        triggerButton.props.onClick(e);
+      }
+    },
+    'aria-expanded': isOpen,
+    'aria-haspopup': 'true',
+  });
 
-  const handleThemeChange = (newTheme) => {
-    setTheme(newTheme);
-    setStorage('theme', newTheme);
-    setIsOpen(false);
-  };
+  // Wrap buttons to close dropdown on click
+  const enhancedButtons = React.Children.map(buttonsElems, (child) => {
+    if (!child) return null;
+    return React.cloneElement(child, {
+      onClick: (e) => {
+        if (child.props.onClick) {
+          child.props.onClick(e);
+        }
+        // Close dropdown after action
+        setTimeout(closeDropdown, 100);
+      },
+    });
+  });
 
   return (
     <div className='dropdown' ref={dropdownRef}>
-      <button className='dropdown-trigger' onClick={() => setIsOpen(!isOpen)} aria-expanded={isOpen} type='button'>
-        {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-      </button>
-      {isOpen && (
-        <div className='dropdown-content'>
-          <button onClick={() => handleThemeChange('light')} type='button'>
-            Light Mode
-          </button>
-          <button onClick={() => handleThemeChange('dark')} type='button'>
-            Dark Mode
-          </button>
-        </div>
-      )}
+      {enhancedTrigger}
+      {isOpen && <div className={`dropdown-content ${type}`.trim()}>{enhancedButtons}</div>}
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
+  return <button onClick={toggleTheme}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</button>;
+}
+
+function Settings() {
+  return (
+    <DropdownButtons>
+      <button className='dropdown-trigger'>Settings</button>
+      <ThemeToggle />
+    </DropdownButtons>
   );
 }
 
