@@ -1,20 +1,18 @@
 includeSource('software/scripts/sublime-text.common.js');
 
 const toInstallExtensions = convertTextToList(`
+  A File Icon
   Alignment
   All Autocomplete
   BracketHighlighter
   Case Conversion
   CodeFormatter
-  Compare Side-By-Side
   DocBlockr
   Dracula Color Scheme
-  FileIcons
+  JsPrettier
   SideBarEnhancements
   SublimeCodeIntel
   SyncedSideBar
-  TypeScript
-  Non Text Files
 `);
 
 async function doWork() {
