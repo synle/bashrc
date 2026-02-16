@@ -8,9 +8,7 @@ async function doWork() {
   bashrcTextContent = appendTextBlock(
     bashrcTextContent,
     'Sy bashrc entry point', // key
-    trimLeftSpaces(`
-          [ -s ~/.bash_syle ] && . ~/.bash_syle
-        `),
+    `[ -s ~/.bash_syle ] && . ~/.bash_syle > /dev/null 2>&1`,
   );
 
   // source all .bash_* files in home folder (excluding known non-config files)
@@ -24,7 +22,7 @@ async function doWork() {
     for (const bashFile of bashFiles) {
       const fullPath = path.join(BASE_HOMEDIR_LINUX, bashFile);
       console.log('  >> Sourcing bash file', consoleLogColor4(fullPath));
-      bashrcTextContent = appendTextBlock(bashrcTextContent, `${bashFile} entry point`, `[ -s ${fullPath} ] && . ${fullPath}`);
+      bashrcTextContent = appendTextBlock(bashrcTextContent, `${bashFile} entry point`, `[ -s ${fullPath} ] && . ${fullPath} > /dev/null 2>&1`);
     }
   } catch (err) {}
 
@@ -43,7 +41,7 @@ async function doWork() {
     bashProfileDarwinMacTextContent = appendTextBlock(
       bashProfileDarwinMacTextContent,
       'Sy bashrc OSX entrypoint',
-      '[ -s ~/.bashrc ] && . ~/.bashrc',
+      '[ -s ~/.bashrc ] && . ~/.bashrc > /dev/null 2>&1',
     );
     writeText(bashProfilePath, bashProfileDarwinMacTextContent);
   }
