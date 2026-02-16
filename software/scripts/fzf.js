@@ -27,11 +27,13 @@ async function doWork() {
       }
 
       addCommandToBookmarks(){
-        echo $1 >> $BOOKMARK_PATH
+        local _temp_bookmark="/tmp/syle_bookmark"
+
+        echo "$1" >> "$BOOKMARK_PATH"
 
         # Remove duplicates, sort, and update the bookmark file
-        sort  $BOOKMARK_PATH | uniq > /tmp/syle_bookmark && mv /tmp/syle_bookmark $BOOKMARK_PATH
-      }
+        sort "$BOOKMARK_PATH" | uniq > "$_temp_bookmark" && mv "$_temp_bookmark" "$BOOKMARK_PATH"
+      } >/dev/null 2>&1
       alias bookmarkCommand=addCommandToBookmarks
 
       addDirToBookmarks(){
