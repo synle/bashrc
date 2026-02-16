@@ -2,7 +2,7 @@
 ##########################################################
 # Dependencies Installation (one-time setup)
 ##########################################################
-DEFAULT_NVM_NODE_VERSION=21
+DEFAULT_NVM_NODE_VERSION=24
 
 ##########################################################
 # Install NVM and Node
