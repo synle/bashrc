@@ -7,15 +7,15 @@ D_DRIVE_FOLDERS="Applications Desktop Documents Downloads Games Pictures"
 # symlink for WSL mountpoints
 echo '>> WSL mountpoint symlinks'
 for drive in $WSL_DRIVES; do
-  sudo rm -f /$drive
-  if [ -d /mnt/$drive ]; then
+  sudo rm -f "/$drive"
+  if [ -d "/mnt/$drive" ]; then
     echo "  >> WSL mountpoint for /mnt/$drive"
-    sudo ln -s /mnt/$drive /
+    sudo ln -s "/mnt/$drive" /
   fi
 done
 
 # create common folders on D drive
-if [ -d /mnt/d ]; then
+if [ -d "/mnt/d" ]; then
   echo '  >> Creating folders on /mnt/d'
   for dir in $D_DRIVE_FOLDERS; do
     echo "      >> /mnt/d/$dir"
