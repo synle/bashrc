@@ -1,9 +1,14 @@
-version="1.109.31074"
+version=$(curl -s https://api.github.com/repos/VSCodium/vscodium/releases/latest \
+  | jq -r .tag_name)
+
+echo ">> Installing vscodium : $version"
 
 # Linux Installation
 if [ "${is_os_ubuntu}" -eq 1 ] && [ "${is_os_window}" -eq 0 ]; then
     file="codium_${version}_amd64.deb"
     url="https://github.com/VSCodium/vscodium/releases/download/${version}/${file}"
+
+    echo "  >> ubuntu: $url"
 
     pushd /tmp >/dev/null || exit
     wget -q "$url" -O "$file"
@@ -20,6 +25,8 @@ if [ "${is_os_darwin_mac}" -eq 1 ]; then
 
     file="VSCodium.${arch}.${version}.dmg"
     url="https://github.com/VSCodium/vscodium/releases/download/${version}/${file}"
+
+    echo "  >> osx: $url"
 
     pushd /tmp >/dev/null || exit
     # -s (silent), -L (follow redirects), -O (save as remote name)
