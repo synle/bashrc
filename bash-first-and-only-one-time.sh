@@ -39,7 +39,7 @@ nvm alias default $DEFAULT_NVM_NODE_VERSION &>/dev/null
 nvm use default &>/dev/null
 
 ##########################################################
-# Install Global Packages
+# Install Global NPM Packages
 ##########################################################
-echo "    >> install yarn"
-npm install --global yarn &>/dev/null
+echo "    >> install yarn prettier"
+npm install --global yarn prettier &>/dev/null
