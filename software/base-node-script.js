@@ -19,6 +19,11 @@ globalThis.BASE_WINDOW = '';
 globalThis.BASE_WINDOW_1 = '/mnt/c/Users';
 globalThis.BASE_WINDOW_2 = '/c/Users';
 
+// default node installation
+globalThis.DEFAULT_NVM_NODE_VERSION = 24;
+globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
+globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
+
 //////////////////////////////////////////////////////
 // Editor Configuration
 //////////////////////////////////////////////////////

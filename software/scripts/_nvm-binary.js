@@ -1,7 +1,12 @@
 async function doWork() {
-  const nvmPath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
+  console.log(`  >> Register NVM binary with bashrc ${nvmBasePath}`);
+  console.log(`    >> Register NVM binary with bashrc ${nvmDefaultNodePath}`);
 
-  console.log(`  >> Register NVM binary with bashrc ${nvmPath}`);
+  registerWithBashSyle('nvm - node version manager', `
+    # hook up nvm
+    [ -s ${nvmBasePath}/nvm.sh ] && . ${nvmBasePath}/nvm.sh --no-use
 
-  registerWithBashSyle('nvm - node version manager', `[ -s ${nvmPath}/nvm.sh ] && . ${nvmPath}/nvm.sh --no-use`);
+    # hookup binary - add default node version to PATH
+    export PATH="${nvmDefaultNodePath}/bin:\$PATH"
+  `);
 }
