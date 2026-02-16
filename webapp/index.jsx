@@ -1016,7 +1016,7 @@ function TargetSystemOSWarningDom(props) {
 function MacOSXNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom targetDomString='android' />
+      <TargetSystemOSWarningDom targetDomString='mac' />
       <DynamicTextArea path='/.build/install-macosx.sh' height='350px' />
       <DynamicTextArea path='/.build/notes-macosx.md' height='350px' />
       <DynamicTextArea path='/.build/font-linux.md' />
