@@ -1,33 +1,3 @@
-# Only Windows - PLATFORM SPECIFIC TWEAKS
-. /home/syle/.bash_syle_only_windows
-# END Only Windows - PLATFORM SPECIFIC TWEAKS
-
-# Sy Make Component
-[ -f /home/syle/.synle-make-component/setup.sh ] && . /home/syle/.synle-make-component/setup.sh
-
-## fzf alias for synle-make-component
-getMakeComponentOptions(){
-  make-help
-}
-
-fuzzyMakeComponent(){
-  makeComponentCommand=$((         getMakeComponentOptions         ) | sed '/^s*$/d' | uniq | fzf)
-  echo "$makeComponentCommand"
-  $makeComponentCommand
-}
-# END Sy Make Component
-
-# pretty ping
-alias ping=prettyping
-# END pretty ping
-
-# jq
-alias jq=/opt/jq
-json(){
-  cat "$1" | jq .
-}
-# END jq
-
 # fzf - Fuzzy Find Aliases
 BOOKMARK_PATH=~/.syle_bookmark
 
@@ -37,11 +7,13 @@ getCommandFromBookmark(){
 }
 
 addCommandToBookmarks(){
-  echo $1 >> $BOOKMARK_PATH
+  local _temp_bookmark="/tmp/syle_bookmark"
+
+  echo "$1" >> "$BOOKMARK_PATH"
 
   # Remove duplicates, sort, and update the bookmark file
-  sort  $BOOKMARK_PATH | uniq > /tmp/syle_bookmark && mv /tmp/syle_bookmark $BOOKMARK_PATH
-}
+  sort "$BOOKMARK_PATH" | uniq > "$_temp_bookmark" && mv "$_temp_bookmark" "$BOOKMARK_PATH"
+} >/dev/null 2>&1
 alias bookmarkCommand=addCommandToBookmarks
 
 addDirToBookmarks(){
@@ -70,16 +42,32 @@ fuzzyFavoriteCommand(){
 
 # format script
 # === format script ===
-format() {
+function format {
+  local verbose=0
+  if [ "$(echo "
+" | tr '[:upper:]' '[:lower:]')" = "1" ] || [ "$(echo "
+" | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+    verbose=1
+    shift
+  fi
+
   echo "🚀 Running full project format sequence..."
-  timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
-  timeout 20 format_other_text_based_files || echo "⚠️ format_other_text_based_files failed or skipped."
-  timeout 10 format_python || echo "⚠️ format_python failed or skipped."
-  timeout 10 format_js || echo "⚠️ format_js failed or skipped."
-  echo "✅ All formatting steps complete (some may have warnings)."
+
+  if [ "$verbose" -eq 1 ]; then
+    timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
+    timeout 20 format_other_text_based_files || echo "⚠️ format_other_text_based_files failed or skipped."
+    timeout 10 format_python || echo "⚠️ format_python failed or skipped."
+    timeout 10 format_js || echo "⚠️ format_js failed or skipped."
+    echo "✅ All formatting steps complete (some may have warnings)."
+  else
+    timeout 60 format_cleanup > /dev/null 2>&1 || true
+    timeout 20 format_other_text_based_files > /dev/null 2>&1 || true
+    timeout 10 format_python > /dev/null 2>&1 || true
+    timeout 10 format_js > /dev/null 2>&1 || true
+  fi
 }
 
-format_js() {
+function format_js {
   echo "🎨 Running Prettier on JavaScript/TypeScript files..."
 
   if ! command -v npx >/dev/null 2>&1; then
@@ -125,7 +113,7 @@ EOF
   fi
 }
 
-format_python() {
+function format_python {
   # Only activate venv if not already active
   if [ -n "$VIRTUAL_ENV" ]; then
     echo "🐍 Python environment already active: $VIRTUAL_ENV"
@@ -152,7 +140,7 @@ format_python() {
   echo "✅ Python formatting complete."
 }
 
-format_cleanup() {
+function format_cleanup {
   echo "🧹 Cleaning up junk files (*.Identifier, ._*)..."
 
   local base_dir="${1:-.}"
@@ -218,7 +206,7 @@ format_cleanup() {
   fi
 }
 
-format_cleanup_light() {
+function format_cleanup_light {
   local base_dir="${1:-.}"
   local max_depth=4
 
@@ -281,7 +269,7 @@ format_cleanup_light() {
   fi
 }
 
-format_other_text_based_files() {
+function format_other_text_based_files {
   echo '>> Formatting All Text-Based Files...'
 
   # Configuration: Add folders or files you want to skip
@@ -350,689 +338,14 @@ format_other_text_based_files() {
 # END Sy bash autocomplete
 
 # nvm - node version manager
-[ -s /home/syle/.nvm/nvm.sh ] && . /home/syle/.nvm/nvm.sh --no-use
-# END nvm - node version manager
+# hookup binary - add default node version to PATH
+    export PATH="/home/syle/.nvm/versions/node/v24.13.1/bin:$PATH"
+    export NVM_DIR="/home/syle/.nvm"
 
-##########################################################
-## begin barebone profile
-##########################################################
-
-#! /bin/sh
-export EDITOR='vim'
-
-export BASH_PATH=~/.bashrc
-
-# add sbin to path
-export PATH=$PATH:/sbin
-
-##########################################################
-# History
-##########################################################
-export HISTSIZE=5000
-export HISTFILESIZE=10000
-export HISTTIMEFORMAT="[%F %T] "
-# Force prompt to write history after every command.
-# http://superuser.com/questions/20900/bash-history-loss
-PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
-
-##########################################################
-# OS Flags
-##########################################################
-export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
-export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
-export is_os_chromeos=0
-export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
-export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
-export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
-export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
-export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
-export is_os_window=0
-export is_os_wsl=0
-
-if [ -d /mnt/c/Users ] || [ -d /c/Users ]; then
-  export is_os_window=1
-  [ -d /lib ] && export is_os_wsl=1
-fi
-
-if [ -f ~/.bash_syle_os ]; then
-  . /dev/stdin <<< "$(cat ~/.bash_syle_os)"
-fi
-# end os flags
-
-##########################################################
-# Refresh / Source Aliases
-##########################################################
-alias bashrcRefresh='. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"'
-alias refreshBashrc='bashrcRefresh'
-
-##########################################################
-# Common Aliases
-##########################################################
-alias ..="cd .."
-alias v="vim"
-alias vi="vim"
-alias l="ls -a"
-alias ls="ls -1"
-alias ll="ls -la"
-alias g="git"
-alias gg="git --no-pager"
-alias n="node"
-alias y="yarn"
-alias s='ssh -4'
-alias b="bat --style=plain"
-alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
-alias fzf='fzf --no-sort'
-alias search='searchText'
-
-# git aliases
-alias merge="git fetch --all --prune && git merge"
-alias mergeMaster="merge origin/master"
-alias pp="pi"
-
-# python aliases
-alias pytest="python -m pytest"
-alias pytest-single="python -m pytest -vvl -k"
-alias flake="flake"
-alias flake8="python -m flake8"
-
-# claude aliases
-alias cl="claude --dangerously-skip-permissions"
-alias c="cl"
-alias cm='cl --model opus'
-
-##########################################################
-# Utility Functions
-##########################################################
-# short form echo that removes leading + trailing blank lines,
-# finds the first non-empty line, detects its indentation,
-# and trims that indentation from all lines
-ech() {
-  printf '%s' "$@" \
-  | sed -e '1{/^[[:space:]]*$/d;}' -e '${/^[[:space:]]*$/d;}' \
-  | awk 'NR==1{
-      match($0,/^[[:space:]]*/);
-      indent=RLENGTH
+    # lazy load nvm - only source nvm.sh when nvm is actually called
+    nvm() {
+      unset -f nvm
+      [ -s "/home/syle/.nvm/nvm.sh" ] && . "/home/syle/.nvm/nvm.sh" --no-use > /dev/null 2>&1
+      nvm "$@"
     }
-    {
-      sub("^[[:space:]]{0," indent "}","")
-    }1'
-}
-
-p() {
-  activatePy
-  python "$@"
-}
-
-pi() {
-  activatePy
-  pip install -r "$@"
-}
-
-activatePy(){
-  # Check if Python virtual environment is already activated
-  if [[ -z "$VIRTUAL_ENV" ]]; then
-    # Try activating local venv first
-    if [[ -f "./venv/bin/activate" ]]; then
-      source ./venv/bin/activate
-    # Then try user home venv
-    elif [[ -f "$HOME/venv/bin/activate" ]]; then
-      source "$HOME/venv/bin/activate"
-    fi
-  fi
-}
-
-br(){
-  clear &&  echo $'\e[32m======================================================\e[m' && echo '''
-  '''
-}
-
-isCommandExists(){
-  type "$1" &> /dev/null ;
-}
-
-renpm(){
-  rm -rf node_modules bower_components /tmp/*.cache;
-  npm install
-}
-
-tree(){
-  find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
-}
-
-pwd2(){
-  echo "cd \"$(pwd)\""
-}
-
-##########################################################
-# Git Helpers
-##########################################################
-getCurrentGitBranch(){
-  git name-rev --name-only HEAD
-}
-
-getCurrentGitRepo(){
-  basename `git rev-parse --show-toplevel`
-}
-
-setGitUpstreamBranch(){
-  git branch -u origin/$(git name-rev --name-only HEAD)
-}
-
-cleanmaster(){
-    git stash;
-    git reset --hard;
-    git fap;
-    git checkout test;
-    git checkout -b test;
-    git del master main;
-    git checkout --track origin/master;
-    git checkout --track origin/main
-}
-
-##########################################################
-# Search Functions
-##########################################################
-searchHelp(){
-  echo '''
-searchCode ""
-
-searchFile ""
-
-searchFileWithGit ""
-
-searchDirWithGit ""
-
-searchDir ""
-  '''
-}
-
-searchCode(){
-  echo """
-Searching:  $@
-#############################################################
-  """
-
-  grep -r -o -n "$@" \
-    --include=*.{*.hbs,*.jsx,*.js,*.tsx,*.ts,*.css,*.scss,*.less,*.scala,*.html,*.java,*.py} \
-    --exclude=*.{png,jpg,.gitignore,.DS_Store} \
-    --exclude-dir={node_modules,.git} \
-  .
-}
-
-searchFile(){
-  find . -type f -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
-}
-
-searchFileWithGit(){
-  # use either ls tree or find
-  git ls-tree -r --name-only HEAD 2> /dev/null || \
-  find . -type f 2>/dev/null \
-  | uniq
-}
-
-searchDirWithGit(){
-  find ${1:-.} -path '*/\.*' -prune \
-  -o -type d -print 2> /dev/null
-  echo ".." # append parent folder
-}
-
-searchDir(){
-  find . -type d -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
-}
-
-##########################################################
-# Filter Functions
-##########################################################
-filterUnwantedLight(){
-  grep -v "\.DS_Store" \
-  | grep -v "\.git/" \
-  | grep -v "node_modules" \
-  | uniq
-}
-
-filterTextFilesOnly(){
-  filterUnwantedLight \
-  | grep -v "\.jpeg" \
-  | grep -v "\.jpg" \
-  | grep -v "\.png" \
-  | uniq
-}
-
-alias filterUnwanted='filterUnwantedLight'
-
-##########################################################
-# Chmod Calculator
-##########################################################
-chmodCalculator(){
-  node -e """
-    console.log('Chmod Calculator - Enter permission for x w r:');
-    var stdin = process.openStdin();
-    stdin.addListener('data', (d) => {
-      console.log('Value:', _getValue((d).toString().toLowerCase().trim()))
-      process.exit();
-    });
-    const _getValue = (str) => {
-      if(str.length === 0 || str.length > 3){
-        return 'Invalid';
-      }
-
-      return [...str].reduce((val, c) => {
-        if(c === 'x'){ val += 1; }
-        if(c === 'w'){ val += 2; }
-        if(c === 'r'){ val += 4; }
-        return val;
-      }, 0)
-    };
-  """
-}
-alias calcChmod='chmodCalculator'
-
-##########################################################
-# FZF Lightweight Aliases and Functions
-##########################################################
-alias fv=fuzzyVim
-alias fvim=fuzzyVim
-alias fview=fuzzyViewFile
-alias fcd=fuzzyDirectory
-
-# simple view file alias - will be overridden by advanced bash
-viewFile(){
-  vim "$@"
-}
-
-fuzzyVim(){
-  local OUT=$( \
-    searchFileWithGit | \
-    filterTextFilesOnly | \
-    fzf \
-  )
-
-  if [ -n "$OUT" ]; then
-    echo """
-vim \"$OUT\"
-    """
-    vim "$OUT"
-  fi
-}
-
-fuzzyViewFile(){
-  local OUT=$( \
-    searchFileWithGit | \
-    filterTextFilesOnly | \
-    fzf \
-  )
-
-  if [ -n "$OUT" ]; then
-    echo """
-viewFile \"$OUT\"
-    """
-    viewFile "$OUT"
-  fi
-}
-
-fuzzyDirectory(){
-  local OUT=$( \
-    searchDirWithGit | \
-    filterUnwanted | \
-    fzf +m \
-  );
-
-  if [ -n "$OUT" ]; then
-    echo """
-PWD: $PWD
-New_Dir: \"$OUT\"
-    """
-    cd "$OUT"
-  fi
-}
-
-##########################################################
-# Date / Time
-##########################################################
-date_show(){
-  echo '>> utc'
-  date -u +'%a, %b %d, %Y  %r'
-
-  echo '>> local'
-  date +'%a, %b %d, %Y  %r'
-}
-
-##########################################################
-# Timeout
-##########################################################
-timeout() {
-  local delay cmd
-
-  if [ "$#" -eq 1 ]; then
-    delay=8
-    cmd="$1"
-  elif [ "$#" -eq 2 ]; then
-    delay="$1"
-    cmd="$2"
-  else
-    echo "usage: timeout [seconds] <command>"
-    return 1
-  fi
-
-  (
-    eval "$cmd" &
-    cmd_pid=$!
-
-    # watchdog
-    (
-      sleep "$delay"
-      if kill -0 "$cmd_pid" 2>/dev/null; then
-        echo "Timeout after ${delay}s: killing '$cmd'"
-        kill -9 "$cmd_pid" 2>/dev/null
-      fi
-    ) &
-
-    wait "$cmd_pid"
-  )
-}
-
-##########################################################
-# Telemetry / Environment
-##########################################################
-export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
-
-# for ssh socket control
-mkdir -p ~/.ssh/sockets
-
-# # Point Claude to your local Ollama port
-# export ANTHROPIC_BASE_URL="http://localhost:11434"
-# export ANTHROPIC_AUTH_TOKEN="ollama"
-# export ANTHROPIC_API_KEY="local-development"
-
-##########################################################
-# Prompt
-##########################################################
-export PS1="
-\[\e[31m\]====\[\e[m\]
-\[\e[33m\]\`date\`\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\]
-\[\e[33m\]\`pwd\`\[\e[m\]
-\[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
-
-##########################################################
-## end barebone profile
-####################################################################################################################
-## begin advanced profile
-##########################################################
-
-#! /bin/sh
-
-##########################################################
-# Docker Aliases and Functions
-##########################################################
-dexecBash(){
-  echo "docker exec -it $@ /bin/bash";
-  docker exec -it $@ /bin/bash
-}
-alias d='docker'
-alias drun='docker run'
-alias dexec='dexecBash'
-alias apt='sudo apt-get'
-alias bat='batcatfull -p --paging=never'
-
-# make sure the bookmark is present
-touch ~/.syle_bookmark
-
-##########################################################
-# Bat / Cat Setup
-##########################################################
-batcatfull() {
-    # Try the 'bat' command first
-    bat "$@" 2>/dev/null
-    if [ $? -ne 0 ]; then
-        # If 'bat' fails, try the 'batcat' command
-        batcat "$@" 2>/dev/null
-    fi
-}
-
-##########################################################
-# Clipboard (pbcopy / pbpaste)
-##########################################################
-if ! command -v pbcopy &>/dev/null; then
-    pbcopy() { xclip -selection clipboard; }
-    export -f pbcopy
-fi
-
-if ! command -v pbpaste &>/dev/null; then
-    pbpaste() { xclip -selection clipboard -o; }
-    export -f pbpaste
-fi
-
-##########################################################
-# File Watcher
-##########################################################
-# Pass a path to watch, a file filter, and a command to run when those files are updated
-# watch.sh "node_modules/everest-*/src/templates" "*.handlebars" "ynpm compile-templates"
-# Source: https://gist.github.com/JarredMack/b33900d64c0e448fd5ff1e1bd760789e
-watch(){
-  WORKING_PATH=$(pwd)
-  DIR=$1
-  FILTER=$2
-  COMMAND=$3
-  chsum1=""
-
-  while [[ true ]]
-  do
-    chsum2=$(find -L $WORKING_PATH/$DIR -type f -name "$FILTER" -exec md5 {} \;)
-    if [[ $chsum1 != $chsum2 ]] ; then
-      echo "Found a file change, executing $COMMAND..."
-      $COMMAND
-      chsum1=$chsum2
-    fi
-    sleep 2
-  done
-}
-
-##########################################################
-# Network Utilities
-##########################################################
-listPort(){
-  echo "list port $@"
-  lsof -i tcp:$@
-}
-
-##########################################################
-# Git Utilities
-##########################################################
-gitCompare(){
-  #get current branch name
-  branch_name=$(git symbolic-ref -q HEAD)
-  branch_name=${branch_name##refs/heads/}
-  branch_name=${branch_name:-HEAD}
-
-  #get current project name
-  project_name=$(git rev-parse --show-toplevel);
-  project_name=${project_name##*/}
-
-  #get current repo name
-  repo_name=$(git config --get remote.origin.url)
-  repo_name=${repo_name#*:}
-  repo_name=${repo_name/.git/}
-
-  baseSha1=${2-staging}
-  baseSha2=${1-$branch_name}
-
-  urlToShow=https://github.com/${repo_name}/compare/${baseSha1}...${baseSha2}
-  echo $urlToShow
-
-  if hash open 2>/dev/null; then
-    open $urlToShow
-  fi
-}
-
-##########################################################
-# Editor Launchers
-##########################################################
-subl(){
-  executed_flag=false
-
-  local sublime_binaries=(
-    "/mnt/c/Program Files/Sublime Text/sublime_text.exe"
-    "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl"
-    "/opt/sublime_text/sublime_text"
-  )
-
-  for binary in "${sublime_binaries[@]}"; do
-    if [[ -x "$binary" ]]; then
-      echo $binary "$@"
-      if [[ "$executed_flag" = false ]]; then
-        "$binary" $@ &> /dev/null 2>&1
-        executed_flag=true
-      else
-        noop # noop
-      fi
-    fi
-  done
-
-  echo """
-============
-PWD: $(pwd)
-Full Path: $(realpath .)
-  """
-}
-
-code()
-{
-  executed_flag=false
-
-  local vscode_binaries=(
-    "/mnt/c/Program Files/VSCodium/VSCodium.exe"
-    "/mnt/c/Program Files/Microsoft VS Code/Code.exe"
-    "/usr/local/bin/codium"
-    "/usr/local/bin/code"
-    "/usr/bin/codium"
-    "/usr/bin/code"
-  )
-
-  for binary in "${vscode_binaries[@]}"; do
-    if [[ -x "$binary" ]]; then
-      echo $binary "$@"
-      if [[ "$executed_flag" = false ]]; then
-        "$binary" $@ &> /dev/null 2>&1
-        executed_flag=true
-      else
-        noop # noop
-      fi
-    fi
-  done
-
-  flatpak run com.vscodium.codium $@
-
-  echo """
-============
-PWD: $(pwd)
-Full Path: $(realpath .)
-  """
-}
-
-codeListExtensions(){
-  code --list-extensions
-}
-
-##########################################################
-# Copy with Progress Bar
-##########################################################
-cp2(){
-  echo "==== copy ===="
-  echo "src:" "$1"
-  echo "dest:" "$2";
-  pv "$1" > "$2"
-}
-
-##########################################################
-# FZF Advanced Functions
-# https://github.com/junegunn/fzf/wiki/examples
-##########################################################
-alias gco='fuzzyGitCobranch'
-alias gbranch='gco'
-alias gbr='gco'
-alias glog='fuzzyGitShow'
-alias gl='glog'
-alias gp='git push'
-
-# override viewfile with more advanced function
-viewFile(){
-  local editorCmd
-
-  if [[ $# -eq 0 ]] ; then
-    return 1 # silent exit
-  fi
-
-  editorCmd=subl
-  echo "$editorCmd $1"
-  $editorCmd "$1"
-}
-
-fuzzyGitShow(){
-  git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
-  |
-  fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort --color light --preview='echo {} | cut -d " " -f1 | xargs git show' \
-  --bind "ctrl-m:execute:
-  (grep -o '[a-f0-9]\{7\}' | head -1 |
-  xargs -I % sh -c 'git show --color=always % | less -R') << 'FZF-EOF'
-  {}
-  FZF-EOF"
-}
-
-fuzzyGitCobranch(){
-  local branches branch
-  branches=$(git branch --all | grep -v HEAD | sed 's/remotes\/origin\///g' | sed "s/.* //" | sed 's/ //g' | sed "s#remotes/[^/]*/##" | sort | uniq) &&
-  branch=$(echo "$branches" |
-  fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
-  git checkout $(echo "$branch")
-}
-
-# different completion trigger
-export FZF_COMPLETION_TRIGGER='*'
-
-##########################################################
-# Prompt Helpers
-##########################################################
-parseGitBranch(){
-node -e """
-  const { exec } = require('child_process');
-  exec('git branch | grep \"*\"', (error, stdout, stderr) => !error && console.log('['+stdout.replace('*','').trim()+']'));
-"""
-}
-
-ifconfig2(){
-node -e """
-  const { networkInterfaces } = require('os');
-  const nets = Object.values(networkInterfaces());
-  console.log([... new Set(JSON.stringify(nets, null, 1).split('\n').filter(line => line.includes('.') && line.includes('address') && line.includes('127.0.0.1') === false).map(line => line.substr(14).replace(/[\",]/g,'')))].join(', '))
-"""
-}
-
-shorterPwdPath(){
-  local trim_count=3  # Set the number of parts to retain in the path
-  IFS='/' read -r -a splits <<< "$(pwd)"
-  result=""
-
-  for idx in "${!splits[@]}"; do
-    if [ $idx -lt $((${#splits[@]} - $trim_count)) ]; then
-      result+="${splits[$idx]:0:1}/"
-    else
-      result+="${splits[$idx]}/"
-    fi
-  done
-
-  # Remove the trailing slash at the end
-  echo "${result%/}"
-}
-
-##########################################################
-# Prompt
-##########################################################
-export PS1="
-\[\e[31m\]====\[\e[m\]
-\[\e[33m\]\T\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\] - \`ifconfig2\`
-\[\e[33m\]\`shorterPwdPath\`\[\e[m\] \[\e[31m\]\`parseGitBranch\`\[\e[m\]
-\[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
-
-##########################################################
-## end advanced profile
-##########################################################
+# END nvm - node version manager
