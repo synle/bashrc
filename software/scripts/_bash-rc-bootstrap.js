@@ -22,7 +22,11 @@ async function doWork() {
     for (const bashFile of bashFiles) {
       const fullPath = path.join(BASE_HOMEDIR_LINUX, bashFile);
       console.log('  >> Sourcing bash file', consoleLogColor4(fullPath));
-      bashrcTextContent = appendTextBlock(bashrcTextContent, `${bashFile} entry point`, `[ -s ${fullPath} ] && . ${fullPath} > /dev/null 2>&1`);
+      bashrcTextContent = appendTextBlock(
+        bashrcTextContent,
+        `${bashFile} entry point`,
+        `[ -s ${fullPath} ] && . ${fullPath} > /dev/null 2>&1`,
+      );
     }
   } catch (err) {}
 
