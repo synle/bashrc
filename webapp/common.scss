@@ -236,6 +236,7 @@ textarea {
   outline: none;
   font-size: var(--fontSize4);
   font-family: var(--fontFamilyMain);
+  padding: 10px 12px;
 
   &:hover {
     background: var(--colorBgSecondary) !important;
