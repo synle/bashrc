@@ -18,7 +18,8 @@ done
 if [ -d /mnt/d ]; then
   echo '  >> Creating folders on /mnt/d'
   for dir in $D_DRIVE_FOLDERS; do
-    mkdir /mnt/d/$dir > /dev/null 2>&1
+    echo "      >> /mnt/d/$dir"
+    mkdir "/mnt/d/$dir" > /dev/null 2>&1
   done
 fi
 
