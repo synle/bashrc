@@ -5,11 +5,16 @@ async function doWork() {
   registerWithBashSyle(
     'nvm - node version manager',
     `
-    # hook up nvm
-    [ -s ${nvmBasePath}/nvm.sh ] && . ${nvmBasePath}/nvm.sh --no-use > /dev/null 2>&1
-
     # hookup binary - add default node version to PATH
     export PATH="${nvmDefaultNodePath}/bin:\$PATH"
+    export NVM_DIR="${nvmBasePath}"
+
+    # lazy load nvm - only source nvm.sh when nvm is actually called
+    nvm() {
+      unset -f nvm
+      [ -s "${nvmBasePath}/nvm.sh" ] && . "${nvmBasePath}/nvm.sh" --no-use > /dev/null 2>&1
+      nvm "\$@"
+    }
   `,
   );
 }
