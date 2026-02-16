@@ -2,8 +2,8 @@
 # Windows Dependencies
 ##########################################################
 
-echo '>> Creating the Powershell User Profile'
-New-Item $profile -Type File -Force
+echo '>> Creating the Powershell User Profile: the following might need be run manually'
+echo 'New-Item $profile -Type File -Force'
 
 echo '>> Setting up WSL2 binary'
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
@@ -15,31 +15,13 @@ echo '  >> wsl --set-default-version 2'
 # powershell.exe -command "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
 
-# node-gyp - run this in powershell as admin
-# https://github.com/nodejs/node-gyp#on-windows
-# npm install --global windows-build-tools
-
-# TODO Chocolatey
-# https://chocolatey.org/install
-# powershell:
-# Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-# choco.exe install --confirm \
-#   wget \
-#   jq \
-#   firacode \
-#   microsoft-teams \
-#   vscode \
-#   sublimetext3 \
-#   qbittorrent \
-#   vlc \
-#   eclipse \
-#   virtualbox \
-#   7zip.install \
-#   notepadplusplus.install \
-#   git \
-#   putty.install \
-#   paint.net \
-#   intellijidea-community \
-#   audacity \
-#   battle.net \
-#   && echo '>> Installed packages with chocolatey'
+# symlink for WSL mountpoints
+echo '  >> symlink for WSL mountpoint'
+sudo rm -f /c
+sudo rm -f /d
+if [ -d /mnt/c ]; then
+  sudo ln -s /mnt/c /
+fi
+if [ -d /mnt/d ]; then
+  sudo ln -s /mnt/d /
+fi

@@ -58,6 +58,9 @@ Write-Host "`nDone! Please sign out and back in for full effect."
 
 ## Getting Started and  All-in-one setup Script
 ```powershell
+# this is forcing to create a profile for powershell
+New-Item $profile -Type File -Force
+
 # ================================
 #  Regedit for Adobe Photoshop
 # ================================
