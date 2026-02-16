@@ -1,11 +1,25 @@
 # === format script ===
 function format {
+  local verbose=0
+  if [ "$(echo "$1" | tr '[:upper:]' '[:lower:]')" = "1" ] || [ "$(echo "$1" | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+    verbose=1
+    shift
+  fi
+
   echo "🚀 Running full project format sequence..."
-  timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
-  timeout 20 format_other_text_based_files || echo "⚠️ format_other_text_based_files failed or skipped."
-  timeout 10 format_python || echo "⚠️ format_python failed or skipped."
-  timeout 10 format_js || echo "⚠️ format_js failed or skipped."
-  echo "✅ All formatting steps complete (some may have warnings)."
+
+  if [ "$verbose" -eq 1 ]; then
+    timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
+    timeout 20 format_other_text_based_files || echo "⚠️ format_other_text_based_files failed or skipped."
+    timeout 10 format_python || echo "⚠️ format_python failed or skipped."
+    timeout 10 format_js || echo "⚠️ format_js failed or skipped."
+    echo "✅ All formatting steps complete (some may have warnings)."
+  else
+    timeout 60 format_cleanup > /dev/null 2>&1 || true
+    timeout 20 format_other_text_based_files > /dev/null 2>&1 || true
+    timeout 10 format_python > /dev/null 2>&1 || true
+    timeout 10 format_js > /dev/null 2>&1 || true
+  fi
 }
 
 function format_js {
