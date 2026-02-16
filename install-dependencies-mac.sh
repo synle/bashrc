@@ -125,14 +125,8 @@ launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
   installPackage entr
   installPackage java
   installPackage python
-
-  echo '  >> android-platform-tools'
   installPackage android-platform-tools
-
-  echo '  >> Fira Font'
   installPackage font-fira-code
-
-  echo '  >> Cascadia Font'
   installPackage font-cascadia
 
   ##########################################################
