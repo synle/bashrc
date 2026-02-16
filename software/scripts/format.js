@@ -14,7 +14,7 @@ async function doWork() {
 
   const formatScriptBlock = `
 # === format script ===
-format() {
+function format {
   echo "🚀 Running full project format sequence..."
   timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
   timeout 20 format_other_text_based_files || echo "⚠️ format_other_text_based_files failed or skipped."
@@ -23,7 +23,7 @@ format() {
   echo "✅ All formatting steps complete (some may have warnings)."
 }
 
-format_js() {
+function format_js {
   echo "🎨 Running Prettier on JavaScript/TypeScript files..."
 
   if ! command -v npx >/dev/null 2>&1; then
@@ -49,7 +49,7 @@ EOF
   fi
 }
 
-format_python() {
+function format_python {
   # Only activate venv if not already active
   if [ -n "\$VIRTUAL_ENV" ]; then
     echo "🐍 Python environment already active: \$VIRTUAL_ENV"
@@ -76,7 +76,7 @@ format_python() {
   echo "✅ Python formatting complete."
 }
 
-format_cleanup() {
+function format_cleanup {
   echo "🧹 Cleaning up junk files (*.Identifier, ._*)..."
 
   local base_dir="\${1:-.}"
@@ -102,7 +102,7 @@ format_cleanup() {
   fi
 }
 
-format_cleanup_light() {
+function format_cleanup_light {
   local base_dir="\${1:-.}"
   local max_depth=${MAX_DEPTH_CLEANUP}
 
@@ -125,7 +125,7 @@ format_cleanup_light() {
   fi
 }
 
-format_other_text_based_files() {
+function format_other_text_based_files {
   echo '>> Formatting All Text-Based Files...'
 
   # Configuration: Add folders or files you want to skip
