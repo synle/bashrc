@@ -1,33 +1,25 @@
 ##########################################################
 # Windows Dependencies
 ##########################################################
+WSL_DRIVES="c d e f g h"
+D_DRIVE_FOLDERS="Applications Desktop Documents Downloads Games Pictures"
+
 # symlink for WSL mountpoints
 echo '>> WSL mountpoint symlinks'
-sudo rm -f /c /d /e
-if [ -d /mnt/c ]; then
-  echo '  >> WSL mountpoint for /mnt/c'
-  sudo ln -s /mnt/c /
-fi
-if [ -d /mnt/d ]; then
-  echo '  >> WSL mountpoint for /mnt/c'
-  sudo ln -s /mnt/c /
-fi
-if [ -d /mnt/e ]; then
-  echo '  >> WSL mountpoint for /mnt/c'
-  sudo ln -s /mnt/c /
-fi
-if [ -d /mnt/d ]; then
-  echo '  >> WSL mountpoint for /mnt/d'
-  sudo ln -s /mnt/d /
+for drive in $WSL_DRIVES; do
+  sudo rm -f /$drive
+  if [ -d /mnt/$drive ]; then
+    echo "  >> WSL mountpoint for /mnt/$drive"
+    sudo ln -s /mnt/$drive /
+  fi
+done
 
-  # only applicable for D drive
-  echo '  >> Creating folders'
-  mkdir /mnt/d/Applications > /dev/null 2>&1
-  mkdir /mnt/d/Desktop > /dev/null 2>&1
-  mkdir /mnt/d/Documents > /dev/null 2>&1
-  mkdir /mnt/d/Downloads > /dev/null 2>&1
-  mkdir /mnt/d/Games > /dev/null 2>&1
-  mkdir /mnt/d/Pictures > /dev/null 2>&1
+# create common folders on D drive
+if [ -d /mnt/d ]; then
+  echo '  >> Creating folders on /mnt/d'
+  for dir in $D_DRIVE_FOLDERS; do
+    mkdir /mnt/d/$dir > /dev/null 2>&1
+  done
 fi
 
 echo '>> Creating the Powershell User Profile: the following might need be run manually'
