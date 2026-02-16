@@ -77,7 +77,7 @@ async function _getBlockedHostNames() {
 
   mappingsToUse = mappingsToUse.map((s) => s.toLowerCase());
 
-  return [...new Set([...mappingsToUse])];
+  return [...new Set(mappingsToUse)];
 }
 
 function _getEtcHosts() {
@@ -97,13 +97,10 @@ function _consolidateHosts(hosts) {
   const newHosts = [...hosts];
 
   for (const host of hosts) {
-    newHosts.push(host);
     if (!host.includes('www.')) {
       newHosts.push('www.' + host);
     }
   }
 
-  newHosts = newHosts.map((s) => s.toLowerCase());
-
-  return [...new Set([...newHosts])];
+  return [...new Set(newHosts.map((s) => s.toLowerCase()))];
 }

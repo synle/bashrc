@@ -1,15 +1,6 @@
 let outputContent = '';
 
 async function doInit() {
-  // then add the optional block
-  if (filePathExist(globalThis.BASE_D_DIR_WINDOW)) {
-    outputContent += trimLeftSpaces(`
-      function gogit {
-        Set-Location D:/git
-      }
-    `);
-  }
-
   outputContent = trimLeftSpaces(`
     <#
     #######################################################

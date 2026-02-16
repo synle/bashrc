@@ -13,10 +13,7 @@ async function doWork() {
   targetPath = path.join(targetPath, 'sofficerc');
   console.log('    >> Update Configs:', consoleLogColor4(targetPath));
 
-  let newContent = '';
-  try {
-    newContent = readText(targetPath);
-  } catch (err) {}
+  let newContent = readText(targetPath);
 
   // disable splash screen
   // https://www.howtogeek.com/287367/how-to-disable-libreoffices-startup-splash-screen-on-windows-and-linux

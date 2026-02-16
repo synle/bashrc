@@ -3,6 +3,7 @@ includeSource('software/scripts/sublime-text.common.js');
 let OS_KEY;
 let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
+let LINUX_ONLY_KEYBINDING;
 let MAC_ONLY_KEY_BINDINGS;
 
 const WINDOWS_OS_KEY = 'alt'; // alt for modern mode

@@ -244,10 +244,10 @@ function backupText(aDir, text) {
   const pathToUse = aDir;
   const oldText = readText(pathToUse);
   if (oldText !== text) {
-    // back it up
+    // back up the old content before overwriting
     const backupPathToUse = pathToUse + '.' + Date.now();
+    writeText(backupPathToUse, oldText);
     writeText(pathToUse, text);
-    writeText(backupPathToUse, text);
     console.log(consoleLogColor3('      << Backup Created'), consoleLogColor4(backupPathToUse));
   } else {
     console.log(consoleLogColor3('      << Backup Skipped [NotModified]'), consoleLogColor4(pathToUse));
@@ -275,7 +275,7 @@ function writeToBuildFile(tasks) {
 
   if (DEBUG_WRITE_TO_DIR) {
     for (let [file, data, isJson, comments] of [].concat(tasks)) {
-      isJson = !!isJson || false;
+      isJson = !!isJson;
       comments = comments || '';
 
       if (comments) {
@@ -1049,7 +1049,7 @@ function printScriptsToRun(scriptsToRun) {
       console.log(''.padStart(90, '='));
       console.log('>> Scripts to Run'.padEnd(88, ' '));
       console.log(''.padStart(90, '='));
-      ${scriptsToRun.forEach((file) => console.log('echo', file))}
+      ${scriptsToRun.map((file) => `console.log('${file}')`).join('\n      ')}
       console.log(''.padStart(90, '='));
     """
   `);

@@ -4,6 +4,8 @@ const sublimeBinaryPath = `ftype ${sublimeProgramBinaryName}="C:/Program Files/S
 const vlcProgramBinaryName = 'vlc';
 const vlcBinaryPath = `ftype ${vlcProgramBinaryName}="C:/Program Files/VideoLAN/VLC/vlc.exe" "%1"`;
 
+let associationContent;
+
 async function doInit() {
   associationContent = trimLeftSpaces(`
     ########################

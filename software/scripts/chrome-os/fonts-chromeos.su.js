@@ -11,7 +11,7 @@ async function doWork() {
 
   console.log('  >> Downloading fonts', fonts.length);
 
-  if (fonts.length.length === 0) {
+  if (fonts.length === 0) {
     console.log(consoleLogColor1('    >> Skipped : No fonts found'));
     return process.exit();
   }
