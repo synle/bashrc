@@ -190,25 +190,26 @@ function format_other_text_based_files {
   echo '>> Formatting text-based files...'
 
   EXCLUDE_DIRS=(
-    ".git"
-    "node_modules"
-    "dist"
-    "build"
-    "vendor"
     ".cache"
+    ".git"
     ".next"
-    "venv"
     ".venv"
+    "build"
+    "dist"
+    "node_modules"
     "target"
+    "vendor"
+    "venv"
   )
 
   EXCLUDE_FILES=(
-    "package-lock.json"
-    "yarn.lock"
-    "pnpm-lock.yaml"
-    "*.min.js"
+    "*.Identifier",
     "*.min.css"
+    "*.min.js"
     ".DS_Store"
+    "package-lock.json"
+    "pnpm-lock.yaml"
+    "yarn.lock"
   )
 
   dir_args=()
