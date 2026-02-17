@@ -139,7 +139,7 @@ The custom markup language is intentionally minimal for easy typing in the edito
 GitHub Actions workflow (`.github/workflows/build-main.yml`):
 
 - Triggers on push to main/master
-- Calls reusable workflow from `synle/gha-workflow`
+- Calls reusable workflow from `synle/gha-workflows`
 - Runs `build.sh` and commits artifacts back to repository
 - Allows direct deployment to GitHub Pages
 
