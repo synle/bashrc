@@ -96,8 +96,12 @@ function format_python {
   echo "✅ Python formatting complete."
 }
 
+# ----------------------------------------------------
+# Aggressive Junk Cleanup (macOS + metadata)
+# ----------------------------------------------------
 function format_cleanup {
-  echo "🧹 Cleaning up junk files (*.Identifier, ._*)..."
+
+  echo "🧹 Cleaning macOS and metadata junk..."
 
   local base_dir="${1:-.}"
 
@@ -107,7 +111,21 @@ function format_cleanup {
   fi
 
   local count=$(find "$base_dir" \
-    -type f \( -name '*.Identifier' -o -name '._*' \) \
+    \( \
+      -type f \( \
+        -name '*.Identifier' -o \
+        -name '._*' -o \
+        -name '.DS_Store' -o \
+        -name '.AppleDouble' -o \
+        -name '.LSOverride' -o \
+        -name 'Icon?' \
+      \) -o \
+      -type d \( \
+        -name '.Spotlight-V100' -o \
+        -name '.Trashes' -o \
+        -name '.fseventsd' \
+      \) \
+    \) \
     -not -path '*/__pycache__/*' \
     -not -path '*/.cache/*' \
     -not -path '*/.ebextensions/*' \
@@ -133,7 +151,21 @@ function format_cleanup {
 
   if [ "$count" -gt 0 ]; then
     find "$base_dir" \
-      -type f \( -name '*.Identifier' -o -name '._*' \) \
+      \( \
+        -type f \( \
+          -name '*.Identifier' -o \
+          -name '._*' -o \
+          -name '.DS_Store' -o \
+          -name '.AppleDouble' -o \
+          -name '.LSOverride' -o \
+          -name 'Icon?' \
+        \) -o \
+        -type d \( \
+          -name '.Spotlight-V100' -o \
+          -name '.Trashes' -o \
+          -name '.fseventsd' \
+        \) \
+      \) \
       -not -path '*/__pycache__/*' \
     -not -path '*/.cache/*' \
     -not -path '*/.ebextensions/*' \
@@ -155,14 +187,19 @@ function format_cleanup {
     -not -path '*/tmp/*' \
     -not -path '*/venv/*' \
     -not -path '*/webpack-dist/*' \
-      -delete
-    echo "✅ Removed $count junk files in: $base_dir"
+      -exec rm -rf {} +
+
+    echo "✅ Removed $count junk items."
   else
-    echo "✨ No junk files found in: $base_dir"
+    echo "✨ No junk found."
   fi
 }
 
+# ----------------------------------------------------
+# Light Cleanup (depth limited)
+# ----------------------------------------------------
 function format_cleanup_light {
+
   local base_dir="${1:-.}"
   local max_depth=4
 
@@ -170,9 +207,23 @@ function format_cleanup_light {
     return 1
   fi
 
-  local count=$(find "$base_dir" \
+  find "$base_dir" \
     -maxdepth "$max_depth" \
-    -type f \( -name '*.Identifier' -o -name '._*' \) \
+    \( \
+      -type f \( \
+        -name '*.Identifier' -o \
+        -name '._*' -o \
+        -name '.DS_Store' -o \
+        -name '.AppleDouble' -o \
+        -name '.LSOverride' -o \
+        -name 'Icon?' \
+      \) -o \
+      -type d \( \
+        -name '.Spotlight-V100' -o \
+        -name '.Trashes' -o \
+        -name '.fseventsd' \
+      \) \
+    \) \
     -not -path '*/__pycache__/*' \
     -not -path '*/.cache/*' \
     -not -path '*/.ebextensions/*' \
@@ -194,35 +245,7 @@ function format_cleanup_light {
     -not -path '*/tmp/*' \
     -not -path '*/venv/*' \
     -not -path '*/webpack-dist/*' \
-    -print | wc -l)
-
-  if [ "$count" -gt 0 ]; then
-    find "$base_dir" \
-      -maxdepth "$max_depth" \
-      -type f \( -name '*.Identifier' -o -name '._*' \) \
-      -not -path '*/__pycache__/*' \
-    -not -path '*/.cache/*' \
-    -not -path '*/.ebextensions/*' \
-    -not -path '*/.generated/*' \
-    -not -path '*/.git/*' \
-    -not -path '*/.gradle/*' \
-    -not -path '*/.hg/*' \
-    -not -path '*/.idea/*' \
-    -not -path '*/.mypy_cache/*' \
-    -not -path '*/.pytest_cache/*' \
-    -not -path '*/.sass-cache/*' \
-    -not -path '*/.svn/*' \
-    -not -path '*/bower_components/*' \
-    -not -path '*/build/*' \
-    -not -path '*/coverage/*' \
-    -not -path '*/CVS/*' \
-    -not -path '*/dist/*' \
-    -not -path '*/node_modules/*' \
-    -not -path '*/tmp/*' \
-    -not -path '*/venv/*' \
-    -not -path '*/webpack-dist/*' \
-      -delete
-  fi
+    -exec rm -rf {} +
 }
 
 function format_other_text_based_files {
