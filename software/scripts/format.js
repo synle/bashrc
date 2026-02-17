@@ -183,10 +183,12 @@ function format_cleanup_light {
 }
 
 
+# ----------------------------------------------------
+# Text File Formatting
+# ----------------------------------------------------
 function format_other_text_based_files {
-  echo '>> Formatting All Text-Based Files...'
+  echo '>> Formatting text-based files...'
 
-  # Configuration: Add folders or files you want to skip
   EXCLUDE_DIRS=(
     ".git"
     "node_modules"
@@ -197,7 +199,7 @@ function format_other_text_based_files {
     ".next"
     "venv"
     ".venv"
-    "target" # Common for Rust/Java
+    "target"
   )
 
   EXCLUDE_FILES=(
@@ -209,41 +211,30 @@ function format_other_text_based_files {
     ".DS_Store"
   )
 
-  # Build the directory prune arguments
   dir_args=()
   for i in "\${!EXCLUDE_DIRS[@]}"; do
     dir_args+=("-name" "\${EXCLUDE_DIRS[\$i]}")
-    if [ \$i -lt \$((\${#EXCLUDE_DIRS[@]} - 1)) ]; then
-      dir_args+=("-o")
-    fi
+    [ \$i -lt \$((\${#EXCLUDE_DIRS[@]} - 1)) ] && dir_args+=("-o")
   done
 
-  # Build the file exclusion arguments
   file_exclude_args=()
   for i in "\${!EXCLUDE_FILES[@]}"; do
     file_exclude_args+=("-name" "\${EXCLUDE_FILES[\$i]}")
-    if [ \$i -lt \$((\${#EXCLUDE_FILES[@]} - 1)) ]; then
-      file_exclude_args+=("-o")
-    fi
+    [ \$i -lt \$((\${#EXCLUDE_FILES[@]} - 1)) ] && file_exclude_args+=("-o")
   done
 
-  # find .
-  # 1. Prune the excluded directories
-  # 2. Filter out specific excluded files
-  # 3. Check MIME type for text files
-  find . -type d \\( "\${dir_args[@]}" \\) -prune -o -type f ! \\( "\${file_exclude_args[@]}" \\) -print | while read -r file; do
+  find . -type d \\( "\${dir_args[@]}" \\) -prune -o \
+    -type f ! \\( "\${file_exclude_args[@]}" \\) -print | \
+    while read -r file; do
 
-    if file --mime-type "\$file" | grep -q "text/"; then
-      echo "Formatting: \$(readlink -f "\$file")"
-
-      # Removes trailing whitespace
-      sed -i 's/[ \\t]*\$//' "\$file"
-    fi
-
-  done
+      if file --mime-type "\$file" | grep -q "text/"; then
+        sed -i 's/[ \\t]*\$//' "\$file"
+      fi
+    done
 
   echo '>> DONE Formatting All Text-Based Files'
 }
+
 # === end format script ===
 `;
 
