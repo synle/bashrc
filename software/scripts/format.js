@@ -1,7 +1,7 @@
+const MAX_DEPTH_CLEANUP = 6;
+
 async function doWork() {
   const { maxLineSize, ignoredFolders } = EDITOR_CONFIGS;
-
-  const MAX_DEPTH_CLEANUP = 6;
 
   // Build ignore list for Ruff
   const ruffExclude = ignoredFolders.join(',');
