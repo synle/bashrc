@@ -90,8 +90,12 @@ function format_python {
   echo "✅ Python formatting complete."
 }
 
+# ----------------------------------------------------
+# Aggressive Junk Cleanup (macOS + metadata)
+# ----------------------------------------------------
 function format_cleanup {
-  echo "🧹 Cleaning up junk files (*.Identifier, ._*)..."
+
+  echo "🧹 Cleaning macOS and metadata junk..."
 
   local base_dir="\${1:-.}"
 
@@ -101,22 +105,55 @@ function format_cleanup {
   fi
 
   local count=\$(find "\$base_dir" \\
-    -type f \\( -name '*.Identifier' -o -name '._*' \\) \\
+    \\( \\
+      -type f \\( \\
+        -name '*.Identifier' -o \\
+        -name '._*' -o \\
+        -name '.DS_Store' -o \\
+        -name '.AppleDouble' -o \\
+        -name '.LSOverride' -o \\
+        -name 'Icon?' \\
+      \\) -o \\
+      -type d \\( \\
+        -name '.Spotlight-V100' -o \\
+        -name '.Trashes' -o \\
+        -name '.fseventsd' \\
+      \\) \\
+    \\) \\
     ${findExcludes} \\
     -print | wc -l)
 
   if [ "\$count" -gt 0 ]; then
     find "\$base_dir" \\
-      -type f \\( -name '*.Identifier' -o -name '._*' \\) \\
+      \\( \\
+        -type f \\( \\
+          -name '*.Identifier' -o \\
+          -name '._*' -o \\
+          -name '.DS_Store' -o \\
+          -name '.AppleDouble' -o \\
+          -name '.LSOverride' -o \\
+          -name 'Icon?' \\
+        \\) -o \\
+        -type d \\( \\
+          -name '.Spotlight-V100' -o \\
+          -name '.Trashes' -o \\
+          -name '.fseventsd' \\
+        \\) \\
+      \\) \\
       ${findExcludes} \\
-      -delete
-    echo "✅ Removed \$count junk files in: \$base_dir"
+      -exec rm -rf {} +
+
+    echo "✅ Removed \$count junk items."
   else
-    echo "✨ No junk files found in: \$base_dir"
+    echo "✨ No junk found."
   fi
 }
 
+# ----------------------------------------------------
+# Light Cleanup (depth limited)
+# ----------------------------------------------------
 function format_cleanup_light {
+
   local base_dir="\${1:-.}"
   local max_depth=${MAX_DEPTH_CLEANUP}
 
@@ -124,20 +161,27 @@ function format_cleanup_light {
     return 1
   fi
 
-  local count=\$(find "\$base_dir" \\
+  find "\$base_dir" \\
     -maxdepth "\$max_depth" \\
-    -type f \\( -name '*.Identifier' -o -name '._*' \\) \\
+    \\( \\
+      -type f \\( \\
+        -name '*.Identifier' -o \\
+        -name '._*' -o \\
+        -name '.DS_Store' -o \\
+        -name '.AppleDouble' -o \\
+        -name '.LSOverride' -o \\
+        -name 'Icon?' \\
+      \\) -o \\
+      -type d \\( \\
+        -name '.Spotlight-V100' -o \\
+        -name '.Trashes' -o \\
+        -name '.fseventsd' \\
+      \\) \\
+    \\) \\
     ${findExcludes} \\
-    -print | wc -l)
-
-  if [ "\$count" -gt 0 ]; then
-    find "\$base_dir" \\
-      -maxdepth "\$max_depth" \\
-      -type f \\( -name '*.Identifier' -o -name '._*' \\) \\
-      ${findExcludes} \\
-      -delete
-  fi
+    -exec rm -rf {} +
 }
+
 
 function format_other_text_based_files {
   echo '>> Formatting All Text-Based Files...'
