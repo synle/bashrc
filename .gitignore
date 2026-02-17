@@ -1,6 +1,10 @@
+.cache
+.claude
 .DS_Store
+.nyc_output
+.prettier-cache
+coverage
+dist
 node_modules
-package-lock.json
+npm-debug.log
 yarn.lock
-DEBUG
-Error
