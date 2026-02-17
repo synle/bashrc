@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "npx http-server --cors .",
-    "format": "prettier --write **/**/**/**/*.{scss,js,html,md,json,jsx}",
+    "format": "prettier --write --ignore-unknown --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}'",
     "clean": "rm -rf dist"
   },
   "dependencies": {
