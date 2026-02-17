@@ -201,7 +201,7 @@ function format_cleanup {
 function format_cleanup_light {
 
   local base_dir="${1:-.}"
-  local max_depth=4
+  local max_depth=6
 
   if [ ! -d "$base_dir" ]; then
     return 1
