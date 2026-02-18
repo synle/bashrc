@@ -51,7 +51,7 @@ function format_js {
 ${prettierIgnoreContent}
 EOF
 
-  npx prettier --write --ignore-unknown --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}' --ignore-path "\$temp_ignore_file" > /dev/null 2>&1
+  npx prettier --write --print-width ${EDITOR_CONFIGS.maxLineSize} --ignore-unknown --cache  '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}' --ignore-path "\$temp_ignore_file" > /dev/null 2>&1
   local status=\$?
   rm -f "\$temp_ignore_file"
 
