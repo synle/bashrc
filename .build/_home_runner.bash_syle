@@ -57,7 +57,7 @@ venv
 webpack-dist
 EOF
 
-  npx prettier --write --print-width 140 --ignore-unknown --cache  '**/*.{js,jsx,ts,tsx,mjs,cjs,json,html,css,scss,less,md,yml,yaml,graphql,vue,xml}' --ignore-path "$temp_ignore_file" > /dev/null 2>&1
+  npx prettier --write --cache --ignore-unknown --no-error-on-unmatched-pattern --ignore-path "$temp_ignore_file" --print-width 140 . > /dev/null 2>&1
   local status=$?
   rm -f "$temp_ignore_file"
 
