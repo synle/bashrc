@@ -73,7 +73,9 @@ then
   touch ~/.bash_profile
 
   echo '>> Change Shell to bash'
-  chsh -s /bin/bash
+  if [ "$SHELL" != "/bin/bash" ]; then
+    chsh -s /bin/bash
+  fi
 
   ##########################################################
   # Headless Chrome Fixes
