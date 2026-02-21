@@ -83,20 +83,17 @@ function _extractEmail(config) {
 
 async function _getGlobalGitIgnore() {
   return `
-    # Editor files
-      *.swp
-      *.swo
-
-      # Python virtual environments
-      venv/
-
-      # macOS system files
+      # OS files
       .DS_Store
-
-      # Custom identifier files
       *.Identifier
 
-      # Node.js dependencies
+      # Editors & Backups
+      *.swp
+      *.swo
+      *.rej
+
+      # Environments & Dependencies
+      venv/
       node_modules/
     `
     .split('\n')

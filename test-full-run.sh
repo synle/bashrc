@@ -1,6 +1,8 @@
 #! /bin/sh
 export TEST_SCRIPT_MODE=1
 
+echo '======== test-full-run.sh ========='
+
 echo '''
 ====================================================
 >> Do a full run with LOCAL code

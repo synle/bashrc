@@ -1,4 +1,7 @@
 #! /bin/sh
+
+echo '======== test.sh ========='
+
 # How to use?
 # Single script:
 #   sh ./test.sh "git.js"
