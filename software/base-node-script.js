@@ -229,7 +229,10 @@ function writeText(aDir, text, override = true, suppressError = false) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      console.log(consoleLogColor3(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`), consoleLogColor4(pathToUse));
+      console.log(
+        consoleLogColor3(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`),
+        consoleLogColor4(pathToUse),
+      );
     }
   } else {
     console.log(consoleLogColor3(`      << Updated [Modified] newContent=${newContent.length}`), consoleLogColor4(pathToUse));
