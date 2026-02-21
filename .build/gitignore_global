@@ -1,11 +1,10 @@
-# Editor files
+# OS files
+.DS_Store
+*.Identifier
+# Editors & Backups
 *.swp
 *.swo
-# Python virtual environments
+*.rej
+# Environments & Dependencies
 venv/
-# macOS system files
-.DS_Store
-# Custom identifier files
-*.Identifier
-# Node.js dependencies
 node_modules/
