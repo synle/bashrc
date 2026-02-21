@@ -1,5 +1,5 @@
 #! /bin/sh
-echo '======== test-full-run-live.sh ========='
+echo '< test-full-run-live.sh'
 
 echo '''
 ====================================================

@@ -44,8 +44,12 @@ then
 
   # Key Repeat Speed
   defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-  defaults write NSGlobalDomain KeyRepeat -int 1
-  defaults write NSGlobalDomain InitialKeyRepeat -int 10
+
+  # this is buggy
+  # defaults write NSGlobalDomain KeyRepeat -int 1
+  # defaults write NSGlobalDomain InitialKeyRepeat -int 10
+  defaults delete NSGlobalDomain KeyRepeat
+  defaults delete NSGlobalDomain InitialKeyRepeat
 
   # Finder
   defaults write com.apple.finder _FXShowPosixPathInTitle -bool true

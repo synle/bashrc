@@ -222,15 +222,17 @@ function findFirstDirFromList(findProps) {
 //////////////////////////////////////////////////////
 function writeText(aDir, text, override = true, suppressError = false) {
   const pathToUse = _getFilePath(aDir);
-  const newContent = (text || '').trimEnd();
-  const oldContent = readText(pathToUse);
-  if (oldContent.trim() === newContent.trim() || override !== true) {
+  const newContent = (text || '').trim();
+  const oldContent = readText(pathToUse).trim();
+
+  if (oldContent === newContent || override !== true) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
+      console.log(consoleLogColor3(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`), consoleLogColor4(pathToUse));
     }
   } else {
+    console.log(consoleLogColor3(`      << Updated [Modified] newContent=${newContent.length}`), consoleLogColor4(pathToUse));
     fs.writeFileSync(pathToUse, newContent);
   }
 }
@@ -1052,7 +1054,7 @@ function printScriptsToRun(scriptsToRun) {
   console.log(`
     node -e """
       console.log(''.padStart(90, '='));
-      console.log('>> Scripts to Run'.padEnd(88, ' '));
+      console.log('>> Scripts to Run: ${scriptsToRun.length} files'.padEnd(88, ' '));
       console.log(''.padStart(90, '='));
       ${scriptsToRun.map((file) => `console.log('${file}')`).join('\n      ')}
       console.log(''.padStart(90, '='));

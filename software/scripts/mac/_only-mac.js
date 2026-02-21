@@ -26,8 +26,8 @@ defaults write -g com.apple.mouse.scaling -float 3 # Increase trackpad/mouse tra
 defaults write -g com.apple.trackpad.scaling -float 3
 # Disable the delay when typing (Key Repeat Speed)
 defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false # This makes the cursor fly across the screen when holding a key
-defaults write NSGlobalDomain KeyRepeat -int 1
-defaults write NSGlobalDomain InitialKeyRepeat -int 10
+defaults delete NSGlobalDomain KeyRepeat
+defaults delete NSGlobalDomain InitialKeyRepeat
 defaults write com.apple.finder _FXShowPosixPathInTitle -bool true # Disable window animations and "Get Info" animations in Finder
 defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 # end mac tweaks

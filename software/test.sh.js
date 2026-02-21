@@ -14,6 +14,8 @@ async function doWork() {
     return;
   }
 
+  console.log(`echo '''    >> filesToTest = ${filesToTest.length}'''`);
+
   const softwareFiles = filesToTest
     .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
     .map((s) => s.trim())

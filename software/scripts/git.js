@@ -8,12 +8,11 @@ async function doWork() {
   const oldConfig = readText(configMain);
   const email = _extractEmail(oldConfig);
 
-  console.log('    >> Installing git Aliases and Configs for Main OS', configMain);
+  console.log(`    >> Installing git Aliases and Configs for Main OS: email=${email}`, configMain);
 
   // write to build file
-  writeToBuildFile([['gitignore_global', await _getGlobalGitIgnore(), false]]);
-
   writeToBuildFile([
+    ['gitignore_global', await _getGlobalGitIgnore(), false],
     [
       'gitconfig',
       `
@@ -52,22 +51,23 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
   email = email || '';
   extraCoreConfigs = extraCoreConfigs || '';
 
-  let templateGitConfig = '';
+  let templateGitConfig = await fetchUrlAsString('software/scripts/git.config');
 
-  templateGitConfig += (await fetchUrlAsString('software/scripts/git.config'))
-    .replace('###EMAIL', email)
-    .replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs)
-    .trim();
+  try {
+    templateGitConfig = templateGitConfig.replace('###EMAIL', email).replace('###EXTRA_CORE_CONFIGS', extraCoreConfigs).trim();
 
-  if (addDefaultCommitTemplate === true) {
-    const GIT_DEFAULT_MESSAGE_PATH = `${BASE_HOMEDIR_LINUX}/.gitmessage`;
+    if (addDefaultCommitTemplate === true) {
+      const GIT_DEFAULT_MESSAGE_PATH = `${BASE_HOMEDIR_LINUX}/.gitmessage`;
 
-    templateGitConfig += `
+      templateGitConfig += `
 [commit]
   template = ${GIT_DEFAULT_MESSAGE_PATH}
     `;
 
-    touchFile(GIT_DEFAULT_MESSAGE_PATH);
+      touchFile(GIT_DEFAULT_MESSAGE_PATH);
+    }
+  } catch (err) {
+    console.log('Failed to get git config template', err);
   }
 
   return templateGitConfig.trim();

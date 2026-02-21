@@ -1,6 +1,6 @@
 #! /bin/sh
 
-echo '======== test.sh ========='
+echo '< test.sh'
 
 # How to use?
 # Single script:

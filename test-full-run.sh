@@ -1,7 +1,7 @@
 #! /bin/sh
 export TEST_SCRIPT_MODE=1
 
-echo '======== test-full-run.sh ========='
+echo '< test-full-run.sh'
 
 echo '''
 ====================================================
