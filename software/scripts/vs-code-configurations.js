@@ -2,13 +2,31 @@ includeSource('software/scripts/vs-code.common.js');
 
 let COMMON_CONFIGS;
 
-function _convertIgnoredFilesAndFolders(ignoredFiles) {
+/**
+ * Converts lists of files and folders into a VS Code compatible settings object.
+ * @param {string[]} files - Array of filenames or extensions
+ * @param {string[]} folders - Array of folder names
+ * @param {boolean} isWatcher - If true, adds git-specific watcher optimizations
+ */
+function _convertIgnoredFilesAndFoldersForVSCode(files = [], folders = [], isWatcher = false) {
   const res = {};
 
-  for (const ignoredFile of ignoredFiles) {
-    const key = `**/${ignoredFile}`;
-    res[key] = true;
-  }
+  // Process Files (**/filename)
+  files.forEach(file => {
+    res[`**/${file}`] = true;
+  });
+
+  // Process Folders (**/folder and **/folder/**)
+  folders.forEach(folder => {
+    res[`**/${folder}`] = true;
+    res[`**/${folder}/**`] = true;
+
+    // Extra protection for watchers against high-churn git internal files
+    if (isWatcher && folder === '.git') {
+      res['**/.git/objects/**'] = true;
+      res['**/.git/subtree-cache/**'] = true;
+    }
+  });
 
   return res;
 }
@@ -37,7 +55,7 @@ async function doInit() {
     'workbench.settings.enableNaturalLanguageSearch': false, // Stops sending settings searches to MS servers
 
     // --- Instant UI Response ---
-    'editor.hover.delay': 0, // Show tooltips instantly (or set to 10000 to "hide" them)
+    'editor.hover.delay': 200, // Show tooltips instantly (or set to 10000 to "hide" them)
     'editor.hover.enabled': true, // Set to false if you want zero tooltips
     'editor.quickSuggestionsDelay': 0, // No "pause" before the suggestion box pops up
     'editor.suggest.snippetsPreventQuickSuggestions': false,
@@ -61,6 +79,10 @@ async function doInit() {
     'workbench.activityBar.location': 'top',
     'window.zoomLevel': 0.5,
 
+    // Speed up the UI even more
+    "workbench.tree.renderIndentGuides": "none",
+    "editor.guides.indentation": false,
+
     // --- Scrolling & Navigation ---
     'editor.mouseWheelScrollSensitivity': 2,
     'editor.fastScrollSensitivity': 5,
@@ -79,11 +101,14 @@ async function doInit() {
     'editor.lightbulb.enabled': 'off', // The final nail in the lightbulb's coffin
 
     // --- Kill All Git/SCM (The "Speed" Move) ---
-    'git.enabled': false, // Turns off Git integration entirely
+    'git.enabled': true, // needed to tell vscode to ignore git files
     'git.autorefresh': false,
     'git.decorations.enabled': false,
+    "git.ignoreLimitWarning": true, // "I know my repo is huge, stop bugging me."
+    "git.autofetch": true,           // (Optional) Keeps your local git status synced with the server.
     'scm.diffDecorations': 'none', // Removes gutter color indicators
     'github.codespaces.showStatusbar': false,
+
 
     // --- Editor Behavior ---
     'editor.bracketPairColorization.enabled': true,
@@ -108,23 +133,8 @@ async function doInit() {
     'files.insertFinalNewline': true,
     'files.trimTrailingWhitespace': true,
     'files.hotExit': 'off',
-    'files.exclude': {
-      ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFiles),
-      ..._convertIgnoredFilesAndFolders(EDITOR_CONFIGS.ignoredFolders),
-    },
-    'files.watcherExclude': {
-      '**/.git/objects/**': true,
-      '**/.git/subtree-cache/**': true,
-      '**/node_modules/*/**': true,
-      '**/dist/**': true,
-    },
     'search.followSymlinks': false,
     'search.useIgnoreFiles': true,
-    'search.exclude': {
-      '**/node_modules': true,
-      '**/bower_components': true,
-      '**/*.code-search': true,
-    },
 
     // --- Languages & Formatting ---
     'editor.codeActionsOnSave': {
@@ -153,6 +163,30 @@ async function doInit() {
     'workbench.preferredDarkColorTheme': 'Default High Contrast',
     'workbench.colorTheme': 'Dracula Theme',
     'workbench.iconTheme': 'material-icon-theme',
+
+    // --- Search Index and Cleanup
+    // VISUAL: Hide all files and folders in your lists from the sidebar
+  "files.exclude": _convertIgnoredFilesAndFoldersForVSCode(
+    EDITOR_CONFIGS.ignoredFiles,
+    EDITOR_CONFIGS.ignoredFolders
+  ),
+
+  // SEARCH: Ignore everything in your lists during Global Search
+  // We use the same lists because if it's hidden from the UI,
+  // you usually don't want results popping up from it.
+  "search.exclude": _convertIgnoredFilesAndFoldersForVSCode(
+    EDITOR_CONFIGS.ignoredFiles,
+    EDITOR_CONFIGS.ignoredFolders
+  ),
+
+  // PERFORMANCE: Only pass folders here.
+  // VS Code watchers ignore folders as a whole; individual files
+  // are usually too granular for the watcher to care about.
+  "files.watcherExclude": _convertIgnoredFilesAndFoldersForVSCode(
+    [],
+    EDITOR_CONFIGS.ignoredFolders,
+    true // isWatcher = true
+  ),
 
     // --- Formatter Overrides (Prettier) ---
     '[javascript]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },

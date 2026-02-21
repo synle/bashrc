@@ -80,7 +80,13 @@ declare function getWindowAppDataLocalUserPath(): string;
 declare function getOsxApplicationSupportCodeUserPath(): string;
 
 // Text processing utilities
-declare function updateTextBlock(resultTextContent: string, configKey: string, configValue: string, commentPrefix: string, isPrepend: boolean): string;
+declare function updateTextBlock(
+  resultTextContent: string,
+  configKey: string,
+  configValue: string,
+  commentPrefix: string,
+  isPrepend: boolean,
+): string;
 declare function appendTextBlock(resultTextContent: string, configKey: string, configValue: string, commentPrefix?: string): string;
 declare function prependTextBlock(resultTextContent: string, configKey: string, configValue: string, commentPrefix?: string): string;
 declare function registerWithBashSyle(configKey: string, content: string): void;

@@ -2,6 +2,20 @@ includeSource('software/scripts/sublime-text.common.js');
 
 let COMMON_CONFIGS;
 
+/**
+ * Converts lists of files and folders into Sublime Text compatible arrays.
+ * @param {string[]} list - The array of files, folders, or binary patterns.
+ * @returns {string[]} A cleaned array for Sublime Text settings.
+ */
+function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
+  // Sublime Text patterns don't use the '**/ ' prefix.
+  // We ensure we return a clean array of strings.
+  return list.map(item => {
+    // If a pattern was accidentally passed with VS Code globs, strip them
+    return item.replace(/^\*\*\//, '');
+  });
+}
+
 async function doInit() {
   // Optimized Sublime Text Configuration
   COMMON_CONFIGS = {
@@ -14,6 +28,7 @@ async function doInit() {
     index_exclude_patterns: ['*.log', 'node_modules/*', '.git/*', 'dist/*', 'build/*'],
     gpu_window_buffer: true,
     hardware_acceleration: 'opengl', // Default; overridden for Mac below
+    "index_workers": 2, // processes workers to scan your code, cataloging functions, classes, and variables
 
     // --- Typography & Rendering ---
     font_face: 'Fira Code Bold',
@@ -47,14 +62,32 @@ async function doInit() {
 
     // --- Project & Search Management ---
     rulers: [EDITOR_CONFIGS.maxLineSize],
-    file_exclude_patterns: [...EDITOR_CONFIGS.ignoredFiles],
-    folder_exclude_patterns: [...EDITOR_CONFIGS.ignoredFolders],
-    binary_file_patterns: ['node_modules/*', '.git/*', '.venv/*', 'dist/*', 'build/*', '*.log', '*.pyc', '*.exe'],
+    index_exclude_gitignore: true, // tell sublime to follow ignore ignore and exclude and not indexing git ignored files
 
     // --- Features & Extensions ---
     highlight_modified_tabs: true,
     alignment_chars: ['=', ':'],
     open_externally_patterns: ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.zip', '*.pdf'],
+
+    // --- Git Related
+    show_git_status: false, // disable git
+    mini_diff: false, // disable git
+
+    // --- Ignored Files
+    // Files hidden from the Sidebar and 'Goto Anything'
+  "file_exclude_patterns": _convertIgnoredFilesAndFoldersForSublimeText(
+    EDITOR_CONFIGS.ignoredFiles
+  ),
+
+  // Folders hidden from the Sidebar and 'Goto Anything'
+  "folder_exclude_patterns": _convertIgnoredFilesAndFoldersForSublimeText(
+    EDITOR_CONFIGS.ignoredFolders
+  ),
+
+  // Files visible in Sidebar but excluded from the Search Index (Performance)
+  "binary_file_patterns": _convertIgnoredFilesAndFoldersForSublimeText(
+    EDITOR_CONFIGS.ignoredBinaries
+  )
   };
 
   // --- OS Specific Overrides ---
