@@ -100,6 +100,9 @@ async function doInit() {
     'editor.wordWrap': 'wordWrapColumn',
     'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
 
+    // --- Explorer Behavior ---
+    "explorer.excludeGitIgnore": true, // exclude git ignore
+
     // --- Files & Search Performance ---
     'files.eol': '\n',
     'files.insertFinalNewline': true,
