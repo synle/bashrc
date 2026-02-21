@@ -101,7 +101,7 @@ async function doInit() {
     'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
 
     // --- Explorer Behavior ---
-    "explorer.excludeGitIgnore": true, // exclude git ignore
+    'explorer.excludeGitIgnore': true, // exclude git ignore
 
     // --- Files & Search Performance ---
     'files.eol': '\n',
