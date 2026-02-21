@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "checkJs": false,
+    "target": "es2020",
+    "module": "commonjs"
+  },
+  "include": [
+    "types/**/*.d.ts",
+    "base-node-script.js",
+    "scripts/**/*.js"
+  ]
+}
