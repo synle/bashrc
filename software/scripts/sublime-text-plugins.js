@@ -4,10 +4,11 @@ async function doInit() {}
 
 async function doWork() {
   console.log(`  >> Sublime Text Plugins:`);
+  const allPlugins= [`sublime-text-plugins-refresh-on-focus.py`]
 
   // write to build file
   console.log(`    >> For prebuilt configs`);
-  for (const pluginCodePath of [`sublime-text-plugins.refresh-on-focus.py`]) {
+  for (const pluginCodePath of allPlugins) {
     console.log(`      >> ${pluginCodePath}`);
     writeToBuildFile({ file: pluginCodePath, data: readText(path.join('software/scripts', pluginCodePath)) });
   }
@@ -15,10 +16,10 @@ async function doWork() {
   // for my own system
   let targetPath = await _getPathSublimeText();
   console.log('    >> For my own system', targetPath);
-  exitIfPathNotFound(targetPath);
-  for (const pluginCodePath of [`sublime-text-plugins.refresh-on-focus.py`]) {
+  for (const pluginCodePath of allPlugins) {
     const fileDestPath = path.join(targetPath, path.join('Packages/User/', pluginCodePath));
     console.log('      >> fileDestPath', fileDestPath);
-    writeJson(fileDestPath, readText(path.join('software/scripts', pluginCodePath)));
+    console.log(readText(path.join('software/scripts', pluginCodePath)))
+    writeText(fileDestPath, readText(path.join('software/scripts', pluginCodePath)));
   }
 }
