@@ -30,10 +30,11 @@ function _formatKey(keybindings, osKeyToUse) {
 async function doInit() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
 
-  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.windows.json')) || [];
-  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.linux.json')) || [];
+  WINDOWS_ONLY_KEY_BINDINGS =
+    parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.windows.jsonc')) || [];
+  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.linux.jsonc')) || [];
   LINUX_ONLY_KEYBINDING = [...LINUX_ONLY_KEYBINDING, ...WINDOWS_ONLY_KEY_BINDINGS];
-  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.mac.json')) || [];
+  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.mac.jsonc')) || [];
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [

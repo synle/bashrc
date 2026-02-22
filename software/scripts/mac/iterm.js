@@ -15,7 +15,7 @@ async function doWork() {
 
   targetPath = path.join(baseTargetPath, 'iterm.itermkeymap');
   console.log('    >> Iterm Keymap', consoleLogColor4(targetPath));
-  writeText(targetPath, await fetchUrlAsString('software/scripts/mac/iterm-keymapping.json'));
+  writeText(targetPath, await fetchUrlAsString('software/scripts/mac/iterm-keymapping.jsonc'));
 
   targetPath = findDirSingle(getOsxApplicationSupportCodeUserPath(), /iTerm[ ]*[a-z0-9]*/i);
 
