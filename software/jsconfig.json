@@ -4,5 +4,5 @@
     "target": "es2020",
     "module": "commonjs"
   },
-  "include": ["base-node-script.js", "**/**/**/*.js"]
+  "include": ["**/*.d.ts", "**/*.js"]
 }
