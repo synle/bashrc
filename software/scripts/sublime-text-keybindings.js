@@ -191,4 +191,18 @@ async function doWork() {
       comments,
     },
   ]);
+
+  // for my own system
+  let targetPath = await _getPathSublimeText();
+  console.log('    >> For my own system', targetPath);
+  exitIfPathNotFound(targetPath);
+
+  const fileDestPath = path.join(targetPath, 'Packages/User/Default.sublime-keymap');
+  console.log('      >> File Path', fileDestPath);
+  writeJson(
+    fileDestPath,
+    is_os_darwin_mac
+      ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
+      : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
+  );
 }

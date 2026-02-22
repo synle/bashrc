@@ -1,6 +1,6 @@
 includeSource('software/scripts/sublime-text.common.js');
 
-let COMMON_CONFIGS;
+let mySublimeTextConfigs = {};
 
 /**
  * Converts lists of files and folders into Sublime Text compatible arrays.
@@ -16,9 +16,9 @@ function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
   });
 }
 
-async function doInit() {
+function _getConfigs(is_os_darwin_mac = false) {
   // Optimized Sublime Text Configuration
-  COMMON_CONFIGS = {
+  const configs = {
     // --- Core Performance & Behavior ---
     update_check: false,
     atomic_save: true,
@@ -87,14 +87,31 @@ async function doInit() {
   // --- OS Specific Overrides ---
   if (is_os_darwin_mac) {
     // Metal is the native, high-performance API for modern macOS
-    COMMON_CONFIGS['hardware_acceleration'] = 'metal';
+    configs['hardware_acceleration'] = 'metal';
   }
+
+  return configs;
 }
+
+async function doInit() {}
 
 async function doWork() {
   console.log(`  >> Sublime Text Configurations / Settings:`);
 
   // write to build file
   const comments = '// Preferences Settings';
-  writeToBuildFile([{ file: 'sublime-text-configurations', data: COMMON_CONFIGS, isJson: true, comments }]);
+  console.log(`    >> For prebuilt configs`);
+  console.log(`      >> For Linux / Windows`);
+  writeToBuildFile([{ file: 'sublime-text-configurations', data: _getConfigs(false), isJson: true, comments }]);
+  console.log(`      >> For Mac`);
+  writeToBuildFile([{ file: 'sublime-text-configurations-macosx', data: _getConfigs(true), isJson: true, comments }]);
+
+  // for my own system
+  let targetPath = await _getPathSublimeText();
+  console.log('    >> For my own system', targetPath);
+  exitIfPathNotFound(targetPath);
+
+  const fileDestPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
+  console.log('      >> File Path', fileDestPath);
+  writeJson(fileDestPath, _getConfigs(is_os_darwin_mac));
 }
