@@ -32,7 +32,7 @@
   "theme": "Adaptive.sublime-theme",
   "show_folding_buttons": false,
   "fade_fold_buttons": false,
-  "preview_on_click": false,
+  "preview_on_click": true,
   "draw_white_space": "selection",
   "translate_tabs_to_spaces": true,
   "tab_size": 2,
