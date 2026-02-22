@@ -954,18 +954,22 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 }
 
 /**
- * Lists all files in the GitHub repository by querying the Git tree API.
- * Falls back to a pre-compiled script list if the API call fails.
+ * Lists all files in the GitHub repository.
+ * When fetchFromRemote is true, queries the Git tree API. Otherwise, uses the pre-compiled
+ * script list fallback directly.
+ * @param {boolean} [fetchFromRemote=true] - If true, fetches the file list from the GitHub API
  * @returns {Promise<string[]>} Array of file paths in the repository
  */
-async function listRepoDir() {
-  const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
+async function listRepoDir(fetchFromRemote = true) {
+  if (fetchFromRemote) {
+    const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
 
-  // doing a nested and recursive call to get the files
-  try {
-    const json = await fetchUrlAsJson(url);
-    return json.tree.map((file) => file.path);
-  } catch (err) {}
+    // doing a nested and recursive call to get the files
+    try {
+      const json = await fetchUrlAsJson(url);
+      return json.tree.map((file) => file.path);
+    } catch (err) {}
+  }
 
   // fall back to use the pre compiled set
   try {
@@ -981,17 +985,38 @@ async function listRepoDir() {
 // Script File Discovery & Platform Filtering
 //////////////////////////////////////////////////////
 /**
+ * Returns all software script files in the repo without OS filtering, using fallback file listing.
+ * @returns {Promise<string[]>} Array of all script file paths
+ */
+async function getAllRepoSoftwareFiles() {
+  return getSoftwareScriptFiles({ skipOsFiltering: true, useFallback: true });
+}
+
+/**
  * Discovers and returns the ordered list of software setup script files to execute.
  * Filters scripts based on the current OS platform and applies ordering rules
  * (certain scripts run first/last). Can fetch the file list from the GitHub API or local filesystem.
- * @param {boolean} [returnAllScripts=false] - If true, returns all matching scripts without OS filtering or ordering
- * @param {boolean} [useLocalFileListInstead=false] - If true, uses local `find` instead of the GitHub API
+ * @param {Object} [options={}] - Configuration options
+ * @param {boolean} [options.skipOsFiltering=false] - If true, returns all matching scripts without OS filtering or ordering
+ * @param {boolean} [options.useLocalFiles=false] - If true, uses local `find` instead of the GitHub API
+ * @param {boolean} [options.useFallback=false] - If true, attempts both local `find` and GitHub API as fallbacks, using whichever succeeds last. Errors from either method are silently ignored.
  * @returns {Promise<string[]>} Ordered array of script file paths to execute
  */
-async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileListInstead = false) {
+async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles = false, useFallback = false } = {}) {
   let files;
 
-  if (useLocalFileListInstead === true || isTestScriptMode === true) {
+  // fallback mode: try local find first, fall back to API if files is empty
+  if(useFallback === true){
+    try{
+      files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
+    } catch(_){}
+
+    if(!files || files.length === 0){
+      try{
+        files = await listRepoDir();
+      } catch(_){}
+    }
+  } if (useLocalFiles === true || isTestScriptMode === true) {
     // fetch from exec bash
     files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
   } else {
@@ -1015,7 +1040,7 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
     });
 
   //this is a special flags used to return all the script for index building
-  if (returnAllScripts) {
+  if (skipOsFiltering) {
     return files;
   }
 
@@ -1319,9 +1344,10 @@ global.echoColorError = (str) => echoColor(str, '31m');
  * (e.g. .su.js for sudo node, .sh.js for node piped to bash).
  * @param {string} file - The script file path (relative to the repo), after prefix expansion
  * @param {string} originalFile - The original file name before prefix expansion (e.g. before adding 'software/scripts/')
+ * @param {string[]} allRepoFiles - List of all file paths in the repository for regex matching
  * @returns {void}
  */
-function processScriptFile(file, originalFile) {
+function processScriptFile(file, originalFile, allRepoFiles) {
   const url = getFullUrl(`${file}?${Date.now()}`);
 
   function _generateScript(file, url) {
@@ -1376,46 +1402,34 @@ function processScriptFile(file, originalFile) {
     }
   }
 
-  if (isTestScriptMode) {
-    const fileDir = path.dirname(file);
-    const fileName = path.basename(file);
-    const foundMatchedPath = findFileRecursive(fileDir, new RegExp(fileName));
-    const fileExists = !!foundMatchedPath;
+  const fileName = path.basename(file);
+  const filePattern = new RegExp(fileName, 'i');
+  const foundMatchedPath = allRepoFiles.find((f) => filePattern.test(f) && f.startsWith(path.dirname(file)));
+  const fileExists = !!foundMatchedPath;
 
-    let description = '';
-    if (fileExists) {
-      if (file !== foundMatchedPath) {
-        description = `Expanded ${originalFile} to ${foundMatchedPath}`;
-      }
-      file = foundMatchedPath;
-    } else {
-      description = `File not found: ${file}`;
+  let description = '';
+  if (fileExists) {
+    if (file !== foundMatchedPath) {
+      description = `Expanded ${originalFile} to ${foundMatchedPath}`;
     }
-
-    if (fileExists) {
-      console.log(`{ ${_generateScript(file, url)} ;} | ${_generatePipeOutput(file, url)}`);
-    } else {
-      console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
-    }
-
-    scriptProcessingResults.push({
-      file: originalFile,
-      path: file,
-      script: _generateScript(file, url),
-      status: fileExists ? 'success' : 'error',
-      description: description,
-    });
+    file = foundMatchedPath;
   } else {
-    console.log(`{ ${_generateScript(file, url)} ;} | ${_generatePipeOutput(file, url)}`);
-
-    scriptProcessingResults.push({
-      file: originalFile,
-      path: file,
-      script: _generateScript(file, url),
-      status: 'success',
-      description: '',
-    });
+    description = `File not found: ${file}`;
   }
+
+  if (fileExists) {
+    console.log(`{ ${_generateScript(file, url)} ;} | ${_generatePipeOutput(file, url)}`);
+  } else {
+    console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
+  }
+
+  scriptProcessingResults.push({
+    file: originalFile,
+    path: file,
+    script: _generateScript(file, url),
+    status: fileExists ? 'success' : 'error',
+    description: description,
+  });
 }
 
 /**
@@ -1493,9 +1507,9 @@ function printScriptProcessingResults(results) {
 
   for (const result of results) {
     if (result.status === 'success') {
-      console.log(echoColorSuccess(`[Success] ${result.file} (${result.path})`));
+      console.log(echoColorSuccess(`[Success] ${result.file} (${result.path}). ${result.description}`));
     } else {
-      console.log(echoColorError(`[Error] ${result.file} (${result.path}) : ${result.description}`));
+      console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}`));
     }
   }
 
@@ -1534,6 +1548,8 @@ ${''.padStart(90, '=')}
     );
   }
 
+  const allRepoFiles = await getAllRepoSoftwareFiles();
+
   printOsFlags(); // Print OS Environments
   printScriptsToRun(softwareFiles);
 
@@ -1550,7 +1566,7 @@ ${''.padStart(90, '=')}
 
     console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
 
-    processScriptFile(file, originalFile);
+    processScriptFile(file, originalFile, allRepoFiles);
   }
 
   printScriptProcessingResults(scriptProcessingResults);
@@ -1570,6 +1586,8 @@ async function _doWorkFullRun() {
     ),
   );
 
+  const allRepoFiles = await getAllRepoSoftwareFiles();
+
   printOsFlags(); // Print OS Environments
   printScriptsToRun(softwareFiles);
 
@@ -1584,7 +1602,7 @@ async function _doWorkFullRun() {
 
     console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
 
-    processScriptFile(file, originalFile);
+    processScriptFile(file, originalFile, allRepoFiles);
   }
 
   printScriptProcessingResults(scriptProcessingResults);

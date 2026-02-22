@@ -56,6 +56,7 @@ declare var REPO_PREFIX_URL: string;
 declare function findDirList(srcDir: string, targetMatch: RegExp, returnFirstMatch?: boolean): string[] | string | null;
 declare function findDirSingle(srcDir: string, targetMatch: RegExp): string | null;
 declare function findFirstDirFromList(findProps: [string, RegExp][]): string | undefined;
+declare function findFileRecursive(srcDir: string, targetMatch: RegExp): string | null;
 
 // File I/O utilities
 declare function writeText(aDir: string, text: string, override?: boolean, suppressError?: boolean): void;
@@ -110,7 +111,8 @@ declare function mkdir(targetPath: string): Promise<string>;
 declare function downloadFile(url: string, destination: string): Promise<boolean>;
 declare function downloadFilesFromMainRepo(findHandler: (s: string) => boolean, destinationBaseDir: string): Promise<string[]>;
 declare function listRepoDir(): Promise<string[]>;
-declare function getSoftwareScriptFiles(returnAllScripts?: boolean, useLocalFileListInstead?: boolean): Promise<string[]>;
+declare function getAllRepoSoftwareFiles(): Promise<string[]>;
+declare function getSoftwareScriptFiles(options?: { skipOsFiltering?: boolean; useLocalFiles?: boolean; useFallback?: boolean }): Promise<string[]>;
 declare function getFullUrl(url: string): string;
 declare function fetchUrlAsString(url: string): Promise<string>;
 declare function gitClone(repo: string, pwd: string): Promise<string>;
@@ -136,10 +138,12 @@ declare function consoleLogColor3(str: string): string;
 declare function consoleLogColor4(str: string): string;
 
 // Script processing
-declare function processScriptFile(file: string): void;
+declare function processScriptFile(file: string, originalFile: string, allRepoFiles: string[]): void;
 declare function includeSource(file: string): Promise<void>;
 declare function printOsFlags(): void;
 declare function printScriptsToRun(scriptsToRun: string[]): void;
+declare function printSectionBlock(header: string, lines?: string[]): void;
+declare function printScriptProcessingResults(results: Array<{file: string, path: string, script: string, status: string, description: string}>): void;
 
 // Entry point hooks — scripts define these and base-node-script.js calls them
 declare function doInit(): Promise<void>;
