@@ -1,27 +1,42 @@
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
+/** @type {typeof import('fs')} */
 globalThis.fs = require('fs');
+/** @type {typeof import('path')} */
 globalThis.path = require('path');
+/** @type {typeof import('https')} */
 globalThis.https = require('https');
+/** @type {typeof import('http')} */
 globalThis.http = require('http');
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
+/** @type {string} */
 globalThis.BASE_HOMEDIR_LINUX = require('os').homedir();
+/** @type {string} */
 globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
 
 // specific for windows and wsl only
+/** @type {string} */
 globalThis.BASE_MOUNT_DIR_WINDOW = '';
+/** @type {string} */
 globalThis.BASE_C_DIR_WINDOW = '';
+/** @type {string} */
 globalThis.BASE_D_DIR_WINDOW = '';
+/** @type {string} */
 globalThis.BASE_WINDOW = '';
+/** @type {string} */
 globalThis.BASE_WINDOW_1 = '/mnt/c/Users';
+/** @type {string} */
 globalThis.BASE_WINDOW_2 = '/c/Users';
 
 // default node installation
+/** @type {number} */
 globalThis.DEFAULT_NVM_NODE_VERSION = 24;
+/** @type {string} */
 globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
+/** @type {string | null} */
 globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
 /**
@@ -191,18 +206,31 @@ globalThis.EDITOR_CONFIGS = {
 globalThis.HOME_HOST_NAMES = [];
 
 // os flags
+/** @type {boolean} */
+globalThis.is_os_window = false;
+/** @type {boolean} */
+globalThis.is_os_darwin_mac = false;
+/** @type {boolean} */
+globalThis.is_os_arch_linux = false;
+/** @type {boolean} */
+globalThis.is_os_android_termux = false;
+/** @type {boolean} */
+globalThis.is_os_chromeos = false;
 Object.keys(process.env)
   .filter((envKey) => envKey.indexOf('is_os_') === 0)
   .forEach((envKey) => (globalThis[envKey] = parseInt(process.env[envKey] || '0') > 0));
 
 // setting up the path for the extra tweaks
+/** @type {string} */
 globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
   is_os_window === true ? path.join(getWindowUserBaseDir(), '...sy', '_extra') : path.join(globalThis.BASE_HOMEDIR_LINUX, '_extra');
 
+/** @type {string} */
 globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || '').toLowerCase().trim();
 
 const repoName = 'synle/bashrc';
 const repoBranch = 'master';
+/** @type {string} */
 globalThis.REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
 
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
@@ -399,15 +427,9 @@ function writeJson(filePath, json, comments = '') {
 }
 
 /**
- *
- * @param {*} tasks is an array of
- {
-  file,     // string — absolute or relative file path
-  data,     // object or string — content to write
-  isJson,   // boolean — true if file should be written as JSON
-  comments  // string — optional text prepended as comments
-}
- * @returns
+ * Writes one or more build output files, routing to DEBUG_WRITE_TO_DIR when set.
+ * @param {Array<{file: string, data: any, isJson?: boolean, comments?: string}> | {file: string, data: any, isJson?: boolean, comments?: string}} tasks - A single task or array of tasks to write
+ * @returns {void}
  */
 function writeToBuildFile(tasks) {
   tasks = [].concat(tasks);
