@@ -152,6 +152,24 @@ async function doInit() {
       key: 'OS_KEY+shift+`',
       command: 'workbench.view.debug',
     },
+
+    // for zooming of font and workspace
+    {
+      "key": "OS_KEY+shift+=",
+      "command": "workbench.action.zoomIn"
+    },
+    {
+      "key": "OS_KEY+shift+-",
+      "command": "workbench.action.zoomOut"
+    },
+    {
+      "key": "OS_KEY+=",
+      "command": "editor.action.fontZoomIn"
+    },
+    {
+      "key": "OS_KEY+-",
+      "command": "editor.action.fontZoomOut"
+    },
   ];
   // end COMMON_KEY_BINDINGS
 }
