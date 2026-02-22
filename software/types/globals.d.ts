@@ -112,7 +112,11 @@ declare function downloadFile(url: string, destination: string): Promise<boolean
 declare function downloadFilesFromMainRepo(findHandler: (s: string) => boolean, destinationBaseDir: string): Promise<string[]>;
 declare function listRepoDir(): Promise<string[]>;
 declare function getAllRepoSoftwareFiles(): Promise<string[]>;
-declare function getSoftwareScriptFiles(options?: { skipOsFiltering?: boolean; useLocalFiles?: boolean; useFallback?: boolean }): Promise<string[]>;
+declare function getSoftwareScriptFiles(options?: {
+  skipOsFiltering?: boolean;
+  useLocalFiles?: boolean;
+  useFallback?: boolean;
+}): Promise<string[]>;
 declare function getFullUrl(url: string): string;
 declare function fetchUrlAsString(url: string): Promise<string>;
 declare function gitClone(repo: string, pwd: string): Promise<string>;
@@ -143,7 +147,9 @@ declare function includeSource(file: string): Promise<void>;
 declare function printOsFlags(): void;
 declare function printScriptsToRun(scriptsToRun: string[]): void;
 declare function printSectionBlock(header: string, lines?: string[]): void;
-declare function printScriptProcessingResults(results: Array<{file: string, path: string, script: string, status: string, description: string}>): void;
+declare function printScriptProcessingResults(
+  results: Array<{ file: string; path: string; script: string; status: string; description: string }>,
+): void;
 
 // Entry point hooks — scripts define these and base-node-script.js calls them
 declare function doInit(): Promise<void>;

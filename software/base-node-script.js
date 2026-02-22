@@ -24,7 +24,6 @@ globalThis.DEFAULT_NVM_NODE_VERSION = 24;
 globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
 globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
-
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.
@@ -1006,17 +1005,18 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   let files;
 
   // fallback mode: try local find first, fall back to API if files is empty
-  if(useFallback === true){
-    try{
+  if (useFallback === true) {
+    try {
       files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
-    } catch(_){}
+    } catch (_) {}
 
-    if(!files || files.length === 0){
-      try{
+    if (!files || files.length === 0) {
+      try {
         files = await listRepoDir();
-      } catch(_){}
+      } catch (_) {}
     }
-  } if (useLocalFiles === true || isTestScriptMode === true) {
+  }
+  if (useLocalFiles === true || isTestScriptMode === true) {
     // fetch from exec bash
     files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
   } else {
@@ -1502,7 +1502,9 @@ function printScriptProcessingResults(results) {
   const errorCount = results.filter((r) => r.status === 'error').length;
 
   console.log(echo(''.padStart(90, '=')));
-  console.log(echo(`>> Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`.padEnd(88, ' ')));
+  console.log(
+    echo(`>> Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`.padEnd(88, ' ')),
+  );
   console.log(echo(''.padStart(90, '=')));
 
   for (const result of results) {
@@ -1554,7 +1556,7 @@ ${''.padStart(90, '=')}
   printScriptsToRun(softwareFiles);
 
   for (let i = 0; i < softwareFiles.length; i++) {
-    const originalFile = softwareFiles[i]
+    const originalFile = softwareFiles[i];
     let file = originalFile;
 
     if (file.startsWith('software/')) {
@@ -1592,7 +1594,7 @@ async function _doWorkFullRun() {
   printScriptsToRun(softwareFiles);
 
   for (let i = 0; i < softwareFiles.length; i++) {
-    const originalFile = softwareFiles[i]
+    const originalFile = softwareFiles[i];
     let file = originalFile;
 
     // add the prefix if needed
