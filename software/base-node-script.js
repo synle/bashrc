@@ -90,6 +90,8 @@ if (!tabSize || tabSize <= 2) {
 globalThis.EDITOR_CONFIGS = {
   fontSize,
   fontFamily,
+  fontSizeDefaultFallback: 14,
+  fontFamilyDefaultFallback: 'Courier New',
   tabSize,
   /** Print/ruler column width in the editor @type {number} */
   maxLineSize: 140,

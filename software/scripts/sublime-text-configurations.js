@@ -16,7 +16,9 @@ function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
   });
 }
 
-function _getConfigs(is_os_darwin_mac = false) {
+function _getConfigs({is_prebuilt_config = false, is_os_darwin_mac = false}) {
+  const fontSizeToUse = is_prebuilt_config?EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
+
   // Optimized Sublime Text Configuration
   const configs = {
     // --- Core Performance & Behavior ---
@@ -25,13 +27,12 @@ function _getConfigs(is_os_darwin_mac = false) {
     hot_exit: false,
     remember_open_files: false,
     index_workers: 2, // Keeps indexing from hogging all CPU cores
-    index_exclude_patterns: ['*.log', 'node_modules/*', '.git/*', 'dist/*', 'build/*'],
     gpu_window_buffer: true,
     hardware_acceleration: 'opengl', // Default; overridden for Mac below
     index_workers: 2, // processes workers to scan your code, cataloging functions, classes, and variables
 
     // --- Typography & Rendering ---
-    font_face: 'Fira Code Bold',
+    font_face: is_prebuilt_config?EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily,
     font_size: EDITOR_CONFIGS.fontSize,
     font_options: ['gray_antialias', 'subpixel_antialias'],
     line_padding_top: 1,
@@ -82,6 +83,8 @@ function _getConfigs(is_os_darwin_mac = false) {
 
     // Files visible in Sidebar but excluded from the Search Index (Performance)
     binary_file_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredBinaries),
+
+    index_exclude_patterns: ['*.log', 'node_modules/*', '.git/*', 'dist/*', 'build/*'],
   };
 
   // --- OS Specific Overrides ---
@@ -93,18 +96,14 @@ function _getConfigs(is_os_darwin_mac = false) {
   return configs;
 }
 
-async function doInit() {}
-
 async function doWork() {
   console.log(`  >> Sublime Text Configurations / Settings:`);
 
   // write to build file
   const comments = '// Preferences Settings';
   console.log(`    >> For prebuilt configs`);
-  console.log(`      >> For Linux / Windows`);
-  writeToBuildFile([{ file: 'sublime-text-configurations', data: _getConfigs(false), isJson: true, comments }]);
-  console.log(`      >> For Mac`);
-  writeToBuildFile([{ file: 'sublime-text-configurations-macosx', data: _getConfigs(true), isJson: true, comments }]);
+  writeToBuildFile([{ file: 'sublime-text-configurations', data: _getConfigs({is_prebuilt_config: true,is_os_darwin_mac:false}), isJson: true, comments },
+    { file: 'sublime-text-configurations-macosx', data: _getConfigs({is_prebuilt_config: true,is_os_darwin_mac:true}), isJson: true, comments }]);
 
   // for my own system
   let targetPath = await _getPathSublimeText();
@@ -113,5 +112,5 @@ async function doWork() {
 
   const fileDestPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
   console.log('      >> File Path', fileDestPath);
-  writeJson(fileDestPath, _getConfigs(is_os_darwin_mac));
+  writeJson(fileDestPath, _getConfigs({is_os_darwin_mac:is_os_darwin_mac}));
 }
