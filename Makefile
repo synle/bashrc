@@ -3,13 +3,13 @@ setup_full:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh | bash
 
 setup_light:
-	sh run.sh --files="_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js" --prod
+	curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
 
 setup_hosts:
-	sh run.sh --files="software/scripts/etc-hosts.su.js" --prod
+	curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="software/scripts/etc-hosts.su.js"
 
 setup_dependencies:
-	sh run.sh --run-only-prescripts --pre-scripts="setup-dependencies.sh" --prod
+	curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --run-only-prescripts --pre-scripts="setup-dependencies.sh"
 
 # build
 build:

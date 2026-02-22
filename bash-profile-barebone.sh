@@ -28,7 +28,7 @@ export is_os_chromeos=0
 export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
 export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
 export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
-export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
+export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_steamdeck=1 # for steam deck
 export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
 export is_os_window=0
 export is_os_wsl=0
