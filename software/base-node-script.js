@@ -2,18 +2,18 @@
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
 /** @type {typeof import('fs')} */
-globalThis.fs = require('fs');
+var fs = (globalThis.fs = (0, require)('fs'));
 /** @type {typeof import('path')} */
-globalThis.path = require('path');
+var path = (globalThis.path = (0, require)('path'));
 /** @type {typeof import('https')} */
-globalThis.https = require('https');
+var https = (globalThis.https = (0, require)('https'));
 /** @type {typeof import('http')} */
-globalThis.http = require('http');
+var http = (globalThis.http = (0, require)('http'));
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
 /** @type {string} */
-globalThis.BASE_HOMEDIR_LINUX = require('os').homedir();
+var BASE_HOMEDIR_LINUX = (globalThis.BASE_HOMEDIR_LINUX = (0, require)('os').homedir());
 /** @type {string} */
 globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
 
