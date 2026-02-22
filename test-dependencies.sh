@@ -1,5 +1,4 @@
 #! /bin/sh
-export TEST_SCRIPT_MODE=1
 
 echo '''
 ====================================================
@@ -7,6 +6,4 @@ echo '''
 ====================================================
 '''
 
-{ \
-  cat setup-dependencies.sh
-} | bash
+sh run.sh --local --run-only-prescripts --pre-scripts="setup-dependencies.sh"

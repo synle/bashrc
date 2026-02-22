@@ -20,8 +20,9 @@
 #   sh run.sh git.js vim.js                      # Multiple bare args joined with comma
 #   sh run.sh --prod git.js vim.js               # Mix flags and bare file args
 #   sh run.sh --pre-scripts="foo.sh,bar.sh"      # Run shell scripts via | bash before main run
+#   sh run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
 #
-# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=...
+# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts
 
 # NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
@@ -29,6 +30,7 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/b
 run_mode="${RUN_MODE:-local}"
 files_to_test="${TEST_SCRIPT_FILES:-}"
 pre_run_scripts="${PRE_RUN_SCRIPTS:-}"
+run_only_prescripts=false
 bare_files=""
 
 # Parse arguments (override env vars)
@@ -48,6 +50,9 @@ for arg in "$@"; do
       ;;
     --local|--dev|-local|-dev)
       run_mode="local"
+      ;;
+    --run-only-prescripts|-run-only-prescripts)
+      run_only_prescripts=true
       ;;
     -*)
       # ignore unknown flags
@@ -93,6 +98,11 @@ if [ "$run_mode" = "prod" ]; then
     } | bash
   fi
 
+  if [ "$run_only_prescripts" = true ]; then
+    echo "<< run.sh done (run-only-prescripts)"
+    exit 0
+  fi
+
   { \
     curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/software/base-node-script.js ;
   } | node | bash
@@ -105,6 +115,11 @@ else
         cat "$script" ; \
       done ; \
     } | bash
+  fi
+
+  if [ "$run_only_prescripts" = true ]; then
+    echo "<< run.sh done (run-only-prescripts)"
+    exit 0
   fi
 
   { \

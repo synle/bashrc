@@ -28,7 +28,7 @@ test:
 	sh run.sh
 
 test_dependencies:
-	sh test-dependencies.sh
+	sh run.sh --local --run-only-prescripts --pre-scripts="setup-dependencies.sh"
 
 test_setup_hosts:
 	sh test-setup-hosts.sh
