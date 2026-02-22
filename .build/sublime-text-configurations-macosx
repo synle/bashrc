@@ -7,7 +7,7 @@
   "remember_open_files": false,
   "index_workers": 2,
   "gpu_window_buffer": true,
-  "hardware_acceleration": "opengl",
+  "hardware_acceleration": "metal",
   "font_face": "Courier New",
   "font_size": 10,
   "font_options": [

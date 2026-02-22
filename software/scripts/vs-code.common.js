@@ -22,18 +22,18 @@ function _getVsCodePath() {
   }
 
   return null;
-};
-
-global._getTargetPaths = function (){
-  const res = []
-    let targetPath = '';
-    targetPath =_getVsCodePath();
-    if(targetPath){
-      res.push(targetPath)
-    }
-
-    return res;
 }
+
+global._getTargetPaths = function () {
+  const res = [];
+  let targetPath = '';
+  targetPath = _getVsCodePath();
+  if (targetPath) {
+    res.push(targetPath);
+  }
+
+  return res;
+};
 
 // TODO: remove me
 // C:\Users\Sy Le\AppData\Roaming\VSCodium\User\settings.json

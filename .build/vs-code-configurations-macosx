@@ -428,5 +428,6 @@
     "editor.spellcheck.enabled": false,
     "editor.suggest.showWords": false,
     "editor.wordWrap": "on"
-  }
+  },
+  "workbench.fontAliasing": "antialiased"
 }

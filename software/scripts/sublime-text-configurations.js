@@ -16,8 +16,8 @@ function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
   });
 }
 
-function _getConfigs({is_prebuilt_config = false, is_os_darwin_mac = false}) {
-  const fontSizeToUse = is_prebuilt_config?EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
+function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
+  const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
   // Optimized Sublime Text Configuration
   const configs = {
@@ -32,7 +32,7 @@ function _getConfigs({is_prebuilt_config = false, is_os_darwin_mac = false}) {
     index_workers: 2, // processes workers to scan your code, cataloging functions, classes, and variables
 
     // --- Typography & Rendering ---
-    font_face: is_prebuilt_config?EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily,
+    font_face: is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily,
     font_size: EDITOR_CONFIGS.fontSize,
     font_options: ['gray_antialias', 'subpixel_antialias'],
     line_padding_top: 1,
@@ -102,8 +102,20 @@ async function doWork() {
   // write to build file
   const comments = '// Preferences Settings';
   console.log(`    >> For prebuilt configs`);
-  writeToBuildFile([{ file: 'sublime-text-configurations', data: _getConfigs({is_prebuilt_config: true,is_os_darwin_mac:false}), isJson: true, comments },
-    { file: 'sublime-text-configurations-macosx', data: _getConfigs({is_prebuilt_config: true,is_os_darwin_mac:true}), isJson: true, comments }]);
+  writeToBuildFile([
+    {
+      file: 'sublime-text-configurations',
+      data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: false }),
+      isJson: true,
+      comments,
+    },
+    {
+      file: 'sublime-text-configurations-macosx',
+      data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: true }),
+      isJson: true,
+      comments,
+    },
+  ]);
 
   // for my own system
   let targetPath = await _getPathSublimeText();
@@ -112,5 +124,5 @@ async function doWork() {
 
   const fileDestPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
   console.log('      >> File Path', fileDestPath);
-  writeJson(fileDestPath, _getConfigs({is_os_darwin_mac:is_os_darwin_mac}));
+  writeJson(fileDestPath, _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
 }

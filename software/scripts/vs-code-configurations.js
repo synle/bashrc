@@ -31,12 +31,10 @@ function _convertIgnoredFilesAndFoldersForVSCode(files = [], folders = [], isWat
   return res;
 }
 
+function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
+  const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
-
-function _getConfigs({is_prebuilt_config = false, is_os_darwin_mac = false}) {
-  const fontSizeToUse = is_prebuilt_config?EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
-
-const syntaxHighlightOpts = {
+  const syntaxHighlightOpts = {
     'editor.spellcheck.enabled': false, // for some specific custom builds
     'editor.suggest.showWords': false,
     'editor.wordWrap': 'on',
@@ -113,7 +111,7 @@ const syntaxHighlightOpts = {
 
     // --- Editor Behavior ---
     'editor.bracketPairColorization.enabled': true,
-    'editor.fontFamily': is_prebuilt_config?EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily,
+    'editor.fontFamily': is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily,
     'editor.fontLigatures': true,
     'editor.fontSize': fontSizeToUse,
     'editor.fontWeight': 'bold',
@@ -212,25 +210,25 @@ const syntaxHighlightOpts = {
     configs['workbench.fontAliasing'] = 'antialiased'; // Mac specific, but keeps text sharp without heavy load
   }
 
-  return configs
+  return configs;
 }
-
 
 async function doWork() {
   console.log(`  >> VS Code Configurations / Settings:`);
 
   // write to build file
   const comments = '// Preferences Open User Settings (JSON)';
-  writeToBuildFile([{ file: 'vs-code-configurations', data: _getConfigs({is_os_darwin_mac: false}), isJson: true, comments },
-    { file: 'vs-code-configurations-macosx', data: _getConfigs({is_os_darwin_mac: true}), isJson: true, comments }]);
-
+  writeToBuildFile([
+    { file: 'vs-code-configurations', data: _getConfigs({ is_os_darwin_mac: false }), isJson: true, comments },
+    { file: 'vs-code-configurations-macosx', data: _getConfigs({ is_os_darwin_mac: true }), isJson: true, comments },
+  ]);
 
   // for my own system
   console.log('    >> For my own system');
   let targetPaths = await _getTargetPaths();
-  for(const targetPath of targetPaths){
+  for (const targetPath of targetPaths) {
     const fileDestPath = path.join(targetPath, 'User/settings.json');
     console.log('      >> File Path', fileDestPath);
-    writeJson(fileDestPath, _getConfigs({is_os_darwin_mac: is_os_darwin_mac}));
+    writeJson(fileDestPath, _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
   }
 }
