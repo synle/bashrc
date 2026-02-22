@@ -36,63 +36,6 @@
     "when": "listFocus && listSupportsMultiselect && !inputFocus"
   },
   {
-    "key": "alt+c",
-    "command": "editor.action.clipboardCopyAction"
-  },
-  {
-    "key": "alt+c",
-    "command": "workbench.action.terminal.copySelection",
-    "when": "terminalTextSelectedInFocused || terminalFocus && terminalHasBeenCreated && terminalTextSelected || terminalFocus && terminalProcessSupported && terminalTextSelected || terminalFocus && terminalTextSelected && terminalTextSelectedInFocused || terminalHasBeenCreated && terminalTextSelected && terminalTextSelectedInFocused || terminalProcessSupported && terminalTextSelected && terminalTextSelectedInFocused"
-  },
-  {
-    "key": "alt+c",
-    "command": "keybindings.editor.copyKeybindingEntry",
-    "when": "inKeybindings && keybindingFocus && !whenFocus"
-  },
-  {
-    "key": "alt+c",
-    "command": "problems.action.copy",
-    "when": "problemsVisibility && !relatedInformationFocus && focusedView == 'workbench.panel.markers.view'"
-  },
-  {
-    "key": "alt+c",
-    "command": "remote.tunnel.copyAddressInline",
-    "when": "tunnelViewFocus && tunnelType == 'Detected' && tunnelViewMultiSelection == 'undefined' || tunnelViewFocus && tunnelType == 'Forwarded' && tunnelViewMultiSelection == 'undefined'"
-  },
-  {
-    "key": "alt+c",
-    "command": "search.action.copyMatch",
-    "when": "fileMatchOrMatchFocus"
-  },
-  {
-    "key": "alt+c",
-    "command": "filesExplorer.copy",
-    "when": "filesExplorerFocus && foldersViewVisible && !explorerResourceIsRoot && !inputFocus"
-  },
-  {
-    "key": "alt+x",
-    "command": "editor.action.clipboardCutAction"
-  },
-  {
-    "key": "alt+v",
-    "command": "editor.action.clipboardPasteAction"
-  },
-  {
-    "key": "alt+v",
-    "command": "workbench.action.terminal.sendSequence",
-    "when": "terminalFocus && !accessibilityModeEnabled && terminalShellType == 'pwsh'"
-  },
-  {
-    "key": "alt+v",
-    "command": "filesExplorer.paste",
-    "when": "filesExplorerFocus && foldersViewVisible && !explorerResourceReadonly && !inputFocus"
-  },
-  {
-    "key": "alt+v",
-    "command": "workbench.action.terminal.paste",
-    "when": "terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
-  },
-  {
     "key": "alt+s",
     "command": "workbench.action.files.save"
   },
@@ -269,5 +212,65 @@
     "key": "alt+shift+g",
     "command": "editor.action.moveSelectionToPreviousFindMatch",
     "when": "editorFocus"
+  },
+  // --- COPY (Alt+C) ---
+  {
+    "key": "alt+c",
+    "command": "editor.action.clipboardCopyAction",
+    "when": "textInputFocus"
+  },
+  {
+    "key": "alt+c",
+    "command": "workbench.action.terminal.copySelection",
+    "when": "terminalFocus && terminalHasBeenCreated && terminalTextSelected"
+  },
+  {
+    "key": "alt+c",
+    "command": "filesExplorer.copy",
+    "when": "filesExplorerFocus && !inputFocus"
+  },
+  {
+    "key": "alt+c",
+    "command": "search.action.copyMatch",
+    "when": "fileMatchOrMatchFocus"
+  },
+  {
+    "key": "alt+c",
+    "command": "problems.action.copy",
+    "when": "focusedView == 'workbench.panel.markers.view'"
+  },
+  {
+    "key": "alt+c",
+    "command": "keybindings.editor.copyKeybindingEntry",
+    "when": "inKeybindings && keybindingFocus"
+  },
+
+  // --- PASTE (Alt+V) ---
+  {
+    "key": "alt+v",
+    "command": "editor.action.clipboardPasteAction",
+    "when": "textInputFocus"
+  },
+  {
+    "key": "alt+v",
+    "command": "workbench.action.terminal.paste",
+    "when": "terminalFocus"
+  },
+  {
+    "key": "alt+v",
+    "command": "filesExplorer.paste",
+    "when": "filesExplorerFocus && !inputFocus"
+  },
+
+  // --- CUT (Alt+X) ---
+  {
+    "key": "alt+x",
+    "command": "editor.action.clipboardCutAction",
+    "when": "textInputFocus"
+  },
+  {
+    "key": "alt+x",
+    "command": "filesExplorer.cut",
+    "when": "filesExplorerFocus && !inputFocus"
   }
 ]
