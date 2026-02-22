@@ -1402,13 +1402,13 @@ function printScriptsToRun(scriptsToRun) {
 
   // for debugging
   process
-      .on('unhandledRejection', (reason, p) => {
-        console.error('[Error] unhandledRejection', reason, 'Unhandled Rejection at Promise', p);
-      })
-      .on('uncaughtException', (err) => {
-        console.error('[Error] uncaughtException', err, 'Uncaught Exception thrown');
-        process.exit(1);
-      });
+    .on('unhandledRejection', (reason, p) => {
+      console.error('[Error] unhandledRejection', reason, 'Unhandled Rejection at Promise', p);
+    })
+    .on('uncaughtException', (err) => {
+      console.error('[Error] uncaughtException', err, 'Uncaught Exception thrown');
+      process.exit(1);
+    });
 
   // start script
   try {
