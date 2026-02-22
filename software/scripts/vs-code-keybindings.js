@@ -162,13 +162,23 @@ async function doWork() {
   // write to build file
   const comments = '// Preferences Open Keyboard Shortcuts (JSON)';
   writeToBuildFile([
-    { file: 'vs-code-keybindings-windows', data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY), isJson: true, comments },
+    {
+      file: 'vs-code-keybindings-windows',
+      data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
+      isJson: true,
+      comments,
+    },
     {
       file: 'vs-code-keybindings-linux',
       data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY),
       isJson: true,
       comments,
     },
-    { file: 'vs-code-keybindings-macosx', data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), isJson: true, comments },
+    {
+      file: 'vs-code-keybindings-macosx',
+      data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
+      isJson: true,
+      comments,
+    },
   ]);
 }

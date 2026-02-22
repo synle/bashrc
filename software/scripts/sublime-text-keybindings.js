@@ -177,7 +177,17 @@ async function doWork() {
       isJson: true,
       comments,
     },
-    { file: 'sublime-text-keybindings-linux', data: _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY), isJson: true, comments },
-    { file: 'sublime-text-keybindings-macosx', data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY), isJson: true, comments },
+    {
+      file: 'sublime-text-keybindings-linux',
+      data: _formatKey([...COMMON_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY),
+      isJson: true,
+      comments,
+    },
+    {
+      file: 'sublime-text-keybindings-macosx',
+      data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
+      isJson: true,
+      comments,
+    },
   ]);
 }
