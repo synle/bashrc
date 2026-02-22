@@ -19,11 +19,16 @@
 #   sh run.sh git.js                             # Bare args treated as files
 #   sh run.sh git.js vim.js                      # Multiple bare args joined with comma
 #   sh run.sh --prod git.js vim.js               # Mix flags and bare file args
+#   sh run.sh --pre-scripts="foo.sh,bar.sh"      # Run shell scripts via | bash before main run
 #
-# Single dash also works: -prod, -local, -dev, -mode=..., -files=...
+# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=...
+
+# NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
+export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
 
 run_mode="${RUN_MODE:-local}"
 files_to_test="${TEST_SCRIPT_FILES:-}"
+pre_run_scripts="${PRE_RUN_SCRIPTS:-}"
 bare_files=""
 
 # Parse arguments (override env vars)
@@ -34,6 +39,9 @@ for arg in "$@"; do
       ;;
     --files=*|-files=*)
       files_to_test="${arg#*files=}"
+      ;;
+    --pre-scripts=*|-pre-scripts=*)
+      pre_run_scripts="${arg#*pre-scripts=}"
       ;;
     --prod|-prod)
       run_mode="prod"
@@ -68,17 +76,37 @@ fi
 
 if [ -n "$files_to_test" ]; then
   export TEST_SCRIPT_FILES="$files_to_test"
-  echo "< run.sh (mode=$run_mode, files=$TEST_SCRIPT_FILES)"
+  echo "< run.sh (mode=$run_mode) (files=$TEST_SCRIPT_FILES) (pre_scripts=$pre_run_scripts)"
 else
   unset TEST_SCRIPT_FILES
-  echo "< run.sh (mode=$run_mode, full run)"
+  echo "< run.sh (mode=$run_mode) (files==[full run]) (pre_scripts=$pre_run_scripts)"
 fi
 
 if [ "$run_mode" = "prod" ]; then
+  # run pre-run shell scripts via | bash before the main run
+  if [ -n "$pre_run_scripts" ]; then
+    echo ">> pre-run scripts: $pre_run_scripts"
+    { \
+      for script in $(echo "$pre_run_scripts" | tr ',; ' '\n'); do \
+        curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/$script" ; \
+      done ; \
+    } | bash
+  fi
+
   { \
-    curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/base-node-script.js ;
+    curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/software/base-node-script.js ;
   } | node | bash
 else
+  # run pre-run shell scripts via | bash before the main run
+  if [ -n "$pre_run_scripts" ]; then
+    echo ">> pre-run scripts: $pre_run_scripts"
+    { \
+      for script in $(echo "$pre_run_scripts" | tr ',; ' '\n'); do \
+        cat "$script" ; \
+      done ; \
+    } | bash
+  fi
+
   { \
     cat software/base-node-script.js ;
   } | node | bash

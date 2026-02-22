@@ -212,7 +212,7 @@ function RightContainer() {
           '<SETUP_DEPS>',
           formValue.setupDependencies !== 'yes'
             ? ''
-            : `. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh)" && \\\n`,
+            : `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/setup-dependencies.sh)" && \\\n`,
         )
         .replace(
           '<ENV_VARS>',
@@ -541,7 +541,7 @@ function DynamicTextArea(props) {
   let { path, url, height } = props;
   const [text, setText] = useState('');
 
-  url = url || `https://raw.githubusercontent.com/synle/bashrc/master/${path}`;
+  url = url || `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/${path}`;
 
   useEffect(() => {
     async function _load() {
@@ -870,7 +870,7 @@ function EnhancedTextArea(props) {
   let formattedUrl = '';
 
   if (url) {
-    const shortUrl = url.replace('https://raw.githubusercontent.com/synle/bashrc/master/', '').replace(/^(\.\/|\/)+/, '');
+    const shortUrl = url.replace(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/`, '').replace(/^(\.\/|\/)+/, '');
     label = label || shortUrl;
 
     editUrl = `https://github.com/synle/bashrc/edit/master/${shortUrl}`;
@@ -1213,8 +1213,8 @@ function CommonEditorSetupDom(props) {
       <MultipleUrlDynamicTextArea
         label='VSCode / VSCodium / SublimeText Setup'
         urls={[
-          'https://raw.githubusercontent.com/synle/bashrc/master/.build/sublime-text.sh',
-          'https://raw.githubusercontent.com/synle/bashrc/master/.build/vs-code.sh',
+          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/.build/sublime-text.sh`,
+          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/.build/vs-code.sh`,
         ]}
         commentString='#'
       />
@@ -1274,14 +1274,14 @@ function App() {
             text: 'Setup Lightweight Profile',
             shouldHideBootstrap: true,
             script: `
-        . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
+        . /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/setup-lightweight.sh?$(date +%s))"
       `,
           },
           {
             text: 'Setup Etc Hosts',
             shouldHideBootstrap: true,
             script: `
-        curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | sudo -E bash
+        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/setup-hosts.sh | sudo -E bash
 
         # Windows
         # c:\\Windows\\System32\\Drivers\\etc\\hosts
@@ -1289,7 +1289,7 @@ function App() {
         # Linux
         # /etc/hosts
 
-        ${await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/ip-address.config`)
+        ${await fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/ip-address.config`)
           .then((res) => res.text())
           .then((s) =>
             s
@@ -1307,7 +1307,7 @@ function App() {
           {
             text: 'Test Full Run live',
             script: `
-        <OS_FLAGS> export RUN_MODE=prod && curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
+        <OS_FLAGS> export RUN_MODE=prod && curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash
       `,
             shouldShowOsSelectionInput: true,
           },
@@ -1318,7 +1318,7 @@ function App() {
         export TEST_SCRIPT_FILES="""
         <SELECT_SCRIPTS>
         """ <DEBUG_WRITE_TO_DIR> && \\
-        curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
+        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash
       `,
             shouldShowScriptNameInput: true,
             shouldShowOsSelectionInput: true,
@@ -1352,7 +1352,7 @@ function App() {
         const newAppData = {
           configs,
           configsByKey,
-          scriptToRunOptions: await fetch(`https://raw.githubusercontent.com/synle/bashrc/master/software/metadata/script-list.config`)
+          scriptToRunOptions: await fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)
             .then((res) => res.text())
             .then((res) =>
               res

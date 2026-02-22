@@ -39,6 +39,9 @@ globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
 /** @type {string | null} */
 globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
+// NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
+globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || 'https://raw.githubusercontent.com/synle/bashrc/master').trim();
+
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.

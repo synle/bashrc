@@ -6,6 +6,9 @@ export BASH_PATH=~/.bashrc
 # add sbin to path
 export PATH=$PATH:/sbin
 
+# NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
+export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
+
 ##########################################################
 # History
 ##########################################################

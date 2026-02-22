@@ -33,6 +33,12 @@ const updateServiceWorker = () => ({
 export default defineConfig({
   root: 'webapp',
   plugins: [react(), viteSingleFile(), updateServiceWorker()],
+  define: {
+    // NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
+    'window.BASH_PROFILE_CODE_REPO_RAW_URL': JSON.stringify(
+      process.env.BASH_PROFILE_CODE_REPO_RAW_URL || 'https://raw.githubusercontent.com/synle/bashrc/master',
+    ),
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,
