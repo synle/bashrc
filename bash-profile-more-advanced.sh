@@ -106,66 +106,66 @@ gitCompare(){
 ##########################################################
 # Editor Launchers
 ##########################################################
-subl(){
-  executed_flag=false
+# The Unified Execution Engine and Clean Diagnostic Print Function
+run_editor() {
+  local editor_name="$1"
+  shift
+  local paths=("$@")
+  local target_binary=""
 
-  local sublime_binaries=(
-    "/mnt/c/Program Files/Sublime Text/sublime_text.exe"
-    "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl"
-    "/opt/sublime_text/sublime_text"
-  )
-
-  for binary in "${sublime_binaries[@]}"; do
+  # Expand paths with wildcards (case-insensitive)
+  shopt -s nullglob nocaseglob
+  for binary in "${paths[@]}"; do
     if [[ -x "$binary" ]]; then
-      echo $binary "$@"
-      if [[ "$executed_flag" = false ]]; then
-        "$binary" $@ &> /dev/null 2>&1
-        executed_flag=true
-      else
-        noop # noop
-      fi
+      target_binary="$binary"
+      break
     fi
   done
+  shopt -u nullglob nocaseglob
 
+  # Execution Logic
+  if [[ -n "$target_binary" ]]; then
+    (nohup "$target_binary" "${editor_args[@]}" >/dev/null 2>&1 &)
+  elif [[ "$editor_name" == "code" ]] && command -v flatpak &> /dev/null; then
+    target_binary="flatpak:vscodium"
+    (nohup flatpak run com.vscodium.codium "${editor_args[@]}" >/dev/null 2>&1 &)
+  else
+    echo "Error: $editor_name not found in search paths."
+    return 1
+  fi
+
+  # Combined Print Logic (replaces print_editor_path)
   echo """
-============
-PWD: $(pwd)
-Full Path: $(realpath .)
-  """
+====================================
+\"$target_binary\" ${editor_args[@]}
+PWD:    $(pwd)
+Path:   $(realpath .)
+====================================
+"""
 }
 
-code()
-{
-  executed_flag=false
+subl() {
+  local editor_args=("-n" "$@") # "-n" forces a new window/session
+  run_editor "sublime" \
+    /Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl \
+    /mnt/c/Program*Files/Sublime*Text*/sublime*.exe \
+    /mnt/c/Program*Files/Sublime*Text*/subl* \
+    /opt/sublime_text/subl* \
+    /usr/bin/subl \
+    /usr/local/bin/subl
+}
 
-  local vscode_binaries=(
-    "/mnt/c/Program Files/VSCodium/VSCodium.exe"
-    "/mnt/c/Program Files/Microsoft VS Code/Code.exe"
-    "/usr/local/bin/codium"
-    "/usr/local/bin/code"
-    "/usr/bin/codium"
-    "/usr/bin/code"
-  )
-
-  for binary in "${vscode_binaries[@]}"; do
-    if [[ -x "$binary" ]]; then
-      echo $binary "$@"
-      if [[ "$executed_flag" = false ]]; then
-        "$binary" $@ &> /dev/null 2>&1
-        executed_flag=true
-      else
-        noop # noop
-      fi
-    fi
-  done
-
-  flatpak run com.vscodium.codium $@
-
-  echo """
-============
-PWD: $(pwd)
-Full Path: $(realpath .)
-  """
+code() {
+  local editor_args=("-n" "$@") # "-n" forces a new window/session
+  run_editor "code" \
+    /mnt/c/Users/Sy*/AppData/Local/Programs/Microsoft*Code/Code.exe \
+    /mnt/c/Users/Le*/AppData/Local/Programs/Microsoft*Code/Code.exe \
+    /mnt/c/Program*Files/VSCodium/VSCodium.exe \
+    /mnt/c/Program*Files/Microsoft*VS*Code/Code.exe \
+    /usr/local/bin/codium \
+    /usr/local/bin/code \
+    /usr/bin/codium \
+    /usr/bin/code
 }
 
 codeListExtensions(){
