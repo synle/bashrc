@@ -17,7 +17,6 @@ async function doWork() {
 
   // write to build file
   writeToBuildFile([{ file: 'sublime-merge', data: SUBLIME_MERGE_CONFIG, isJson: true }]);
-
   exitIfPathNotFound(targetPath);
 
   const sublimeMergeConfigPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
