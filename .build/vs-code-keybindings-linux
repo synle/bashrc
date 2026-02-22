@@ -172,6 +172,22 @@
     "command": "workbench.view.debug"
   },
   {
+    "key": "alt+shift+=",
+    "command": "workbench.action.zoomIn"
+  },
+  {
+    "key": "alt+shift+-",
+    "command": "workbench.action.zoomOut"
+  },
+  {
+    "key": "alt+=",
+    "command": "editor.action.fontZoomIn"
+  },
+  {
+    "key": "alt+-",
+    "command": "editor.action.fontZoomOut"
+  },
+  {
     "key": "alt+shift+p",
     "command": "workbench.action.showCommands"
   },

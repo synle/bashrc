@@ -170,5 +170,21 @@
   {
     "key": "cmd+shift+`",
     "command": "workbench.view.debug"
+  },
+  {
+    "key": "cmd+shift+=",
+    "command": "workbench.action.zoomIn"
+  },
+  {
+    "key": "cmd+shift+-",
+    "command": "workbench.action.zoomOut"
+  },
+  {
+    "key": "cmd+=",
+    "command": "editor.action.fontZoomIn"
+  },
+  {
+    "key": "cmd+-",
+    "command": "editor.action.fontZoomOut"
   }
 ]
