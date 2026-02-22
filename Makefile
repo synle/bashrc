@@ -1,6 +1,6 @@
 # setup
 setup_full:
-	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh | bash
+	curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,setup-dependencies.sh"
 
 setup_light:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"

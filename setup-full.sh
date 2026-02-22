@@ -21,15 +21,6 @@ for arg in "$@"; do
   esac
 done
 
-# collect all pre-scripts to run
-scripts_to_run="bash-profile-barebone.sh"
-
-if [ "$is_os_android_termux" != "1" ]; then
-  scripts_to_run="$scripts_to_run,bash-first-and-only-one-time.sh"
-fi
-
-scripts_to_run="$scripts_to_run,setup-dependencies.sh"
-
 # get_file_contents - outputs the concatenated contents of the given files.
 # In prod mode, fetches via curl from upstream. In local mode, reads via cat.
 # Usage: get_file_contents "file1.sh,file2.sh"
@@ -45,4 +36,4 @@ get_file_contents() {
 }
 
 # run pre-scripts then full test suite via run.sh
-get_file_contents "run.sh" | bash -s -- --mode="$run_mode" --pre-scripts="$scripts_to_run"
+get_file_contents "run.sh" | bash -s -- --mode="$run_mode" --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,setup-dependencies.sh"
