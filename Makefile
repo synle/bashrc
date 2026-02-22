@@ -6,10 +6,10 @@ setup_light:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh | bash
 
 setup_hosts:
-	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-hosts.sh | bash
+	sh run.sh --files="software/scripts/etc-hosts.su.js" --prod
 
 setup_dependencies:
-	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh | bash
+	sh run.sh --run-only-prescripts --pre-scripts="setup-dependencies.sh" --prod
 
 # build
 build:
@@ -28,10 +28,10 @@ test:
 	sh run.sh
 
 test_dependencies:
-	sh run.sh --local --run-only-prescripts --pre-scripts="setup-dependencies.sh"
+	sh run.sh --run-only-prescripts --pre-scripts="setup-dependencies.sh"
 
 test_setup_hosts:
-	sh test-setup-hosts.sh
+	sh run.sh --files="software/scripts/etc-hosts.su.js"
 
 # test a single file locally
 # usage: make test_single_run file=git  (also accepts f= or files=)

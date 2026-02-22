@@ -114,7 +114,7 @@ if [ "$run_only_prescripts" = true ]; then
   exit 0
 fi
 
-# run the main test script
+# run the main test script (software/base-node-script.js is implied, no need to pass it in)
 get_file_contents "software/base-node-script.js" | node | bash
 
 echo "<< run.sh done at $(date '+%Y-%m-%d %H:%M:%S') $run_description"
