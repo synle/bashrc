@@ -19,6 +19,6 @@ async function doWork() {
   for (const pluginCodePath of [`sublime-text-plugins.refresh-on-focus.py`]) {
     const fileDestPath = path.join(targetPath, path.join('Packages/User/', pluginCodePath));
     console.log('      >> fileDestPath', fileDestPath);
-    writeJson(fileDestPath, readText(path.join('software/scripts', pluginCodePath)));
+    writeText(fileDestPath, readText(path.join('software/scripts', pluginCodePath)));
   }
 }
