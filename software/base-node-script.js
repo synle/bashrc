@@ -27,15 +27,10 @@ globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', ne
 //////////////////////////////////////////////////////
 // Editor Configuration
 //////////////////////////////////////////////////////
-/**
- * config used for the editors
- * @type {Object}
- *
- * if you need to override these with your local settings, use the following
- * export FONT_SIZE=15;
- * export FONT_FAMILY='Fira Code'
- * export TAB_SIZE=2
- */
+// fontSize, fontFamily, and tabSize can be overridden via environment variables:
+// export FONT_SIZE=15;
+// export FONT_FAMILY='Fira Code'
+// export TAB_SIZE=2
 let fontSize = parseInt(process.env.FONT_SIZE);
 if (!fontSize || fontSize <= 10) {
   fontSize = 10;
@@ -48,11 +43,25 @@ if (!tabSize || tabSize <= 2) {
   tabSize = 2;
 }
 
+/**
+ * Editor configuration object containing font settings, tab size, max line length,
+ * and ignore lists for files, folders, and binaries.
+ * @type {Object}
+ * @property {number} fontSize - Editor font size (min 10, default 10). Override with FONT_SIZE env var
+ * @property {string} fontFamily - Editor font family (default 'Fira Code'). Override with FONT_FAMILY env var
+ * @property {number} tabSize - Editor tab/indentation size (min 2, default 2). Override with TAB_SIZE env var
+ * @property {number} maxLineSize - Print/ruler column width in the editor (default 140)
+ * @property {string[]} ignoredFiles - Glob patterns for files hidden from the editor (e.g. '*.exe', '.DS_Store')
+ * @property {string[]} ignoredFolders - Directory names excluded from the editor file tree (e.g. 'node_modules', '.git')
+ * @property {string[]} ignoredBinaries - Glob patterns for binary files visible in tree but excluded from search for performance
+ */
 globalThis.EDITOR_CONFIGS = {
   fontSize,
   fontFamily,
   tabSize,
+  /** Print/ruler column width in the editor @type {number} */
   maxLineSize: 140,
+  /** List of file glob patterns to be ignored by the editor @type {string[]} */
   ignoredFiles: [
     '._*',
     '.DS_Store',
@@ -104,6 +113,7 @@ globalThis.EDITOR_CONFIGS = {
     'package-lock.json',
     'yarn.lock',
   ],
+  /** List of folder names to be ignored by the editor @type {string[]} */
   ignoredFolders: [
     '.cache',
     '.ebextensions',
@@ -130,7 +140,7 @@ globalThis.EDITOR_CONFIGS = {
     'venv',
     'webpack-dist',
   ],
-  // VISIBLE BUT EXCLUDED FROM SEARCH (Performance)
+  /** List of binary file glob patterns visible in tree but excluded from search for performance @type {string[]} */
   ignoredBinaries: [
     '.git/*',
     '.venv/*',
@@ -188,10 +198,17 @@ const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 //////////////////////////////////////////////////////
 // Directory Search Utilities
 //////////////////////////////////////////////////////
-function _getFilePath(aDir) {
-  let pathToUse = aDir;
+/**
+ * Resolves a file path, redirecting to DEBUG_WRITE_TO_DIR if set.
+ * When DEBUG_WRITE_TO_DIR is configured, the path is flattened into a sanitized filename
+ * placed inside that directory. Otherwise, returns the original path.
+ * @param {string} filePath - The original file path
+ * @returns {string} The resolved file path to use for I/O
+ */
+function _getFilePath(filePath) {
+  let pathToUse = filePath;
   if (globalThis.DEBUG_WRITE_TO_DIR.length > 0) {
-    const fileName = aDir
+    const fileName = filePath
       .replace(/[\/\\\(\)]/g, '_')
       .replace(/ /g, '_')
       .replace(/_\./g, '.')
@@ -203,6 +220,13 @@ function _getFilePath(aDir) {
   return pathToUse;
 }
 
+/**
+ * Searches a directory for subdirectories matching a regex pattern.
+ * @param {string} srcDir - The directory to search in
+ * @param {RegExp} targetMatch - Regex pattern to match directory names against
+ * @param {boolean} [returnFirstMatch=false] - If true, returns only the first matching path (or null)
+ * @returns {string[]|string|null} Array of matching directory paths, or the first match (or null) if returnFirstMatch is true
+ */
 function findDirList(srcDir, targetMatch, returnFirstMatch) {
   try {
     const dirFiles = fs
@@ -227,6 +251,12 @@ function findDirList(srcDir, targetMatch, returnFirstMatch) {
   }
 }
 
+/**
+ * Searches a directory and returns the first subdirectory matching a regex pattern.
+ * @param {string} srcDir - The directory to search in
+ * @param {RegExp} targetMatch - Regex pattern to match directory names against
+ * @returns {string|null} The first matching directory path, or null if none found
+ */
 function findDirSingle(srcDir, targetMatch) {
   return findDirList(srcDir, targetMatch, true);
 }
@@ -251,8 +281,16 @@ function findFirstDirFromList(findProps) {
 //////////////////////////////////////////////////////
 // File I/O Utilities
 //////////////////////////////////////////////////////
-function writeText(aDir, text, override = true, suppressError = false) {
-  const pathToUse = _getFilePath(aDir);
+/**
+ * Writes text content to a file. Skips writing if the content hasn't changed or if override is false.
+ * @param {string} filePath - The file path to write to
+ * @param {string} text - The text content to write
+ * @param {boolean} [override=true] - Whether to overwrite existing content. If false, skips writing when file exists
+ * @param {boolean} [suppressError=false] - Whether to suppress the "skipped" log message
+ * @returns {void}
+ */
+function writeText(filePath, text, override = true, suppressError = false) {
+  const pathToUse = _getFilePath(filePath);
   const newContent = (text || '').trim();
   const oldContent = readText(pathToUse).trim();
 
@@ -271,8 +309,14 @@ function writeText(aDir, text, override = true, suppressError = false) {
   }
 }
 
-function touchFile(aDir, defaultContent = '') {
-  const pathToUse = path.resolve(aDir);
+/**
+ * Creates a file if it doesn't already exist. If the file exists, it is left unchanged.
+ * @param {string} filePath - The file path to create
+ * @param {string} [defaultContent=''] - The default content to write if the file is created
+ * @returns {void}
+ */
+function touchFile(filePath, defaultContent = '') {
+  const pathToUse = path.resolve(filePath);
   if (filePathExist(pathToUse)) {
     console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
   } else {
@@ -281,8 +325,14 @@ function touchFile(aDir, defaultContent = '') {
   }
 }
 
-function backupText(aDir, text) {
-  const pathToUse = aDir;
+/**
+ * Writes text to a file, creating a timestamped backup of the old content if it differs.
+ * @param {string} filePath - The file path to write to and back up
+ * @param {string} text - The new text content to write
+ * @returns {void}
+ */
+function backupText(filePath, text) {
+  const pathToUse = filePath;
   const oldText = readText(pathToUse);
   if (oldText !== text) {
     // back up the old content before overwriting
@@ -295,9 +345,16 @@ function backupText(aDir, text) {
   }
 }
 
-function writeJson(aDir, json, comments = '') {
+/**
+ * Writes a JSON object to a file, optionally prepending comments.
+ * @param {string} filePath - The file path to write to
+ * @param {object} json - The JSON object to serialize and write
+ * @param {string} [comments=''] - Optional comment text to prepend before the JSON content
+ * @returns {void}
+ */
+function writeJson(filePath, json, comments = '') {
   let content = comments + '\n' + JSON.stringify(json, null, 2);
-  writeText(aDir, content.trim());
+  writeText(filePath, content.trim());
 }
 
 /**
@@ -335,13 +392,26 @@ function writeToBuildFile(tasks) {
   }
 }
 
-function appendText(aDir, text) {
-  const oldText = readText(aDir);
-  writeText(aDir, oldText + '\n' + text);
+/**
+ * Appends text to the end of an existing file's content.
+ * @param {string} filePath - The file path to append to
+ * @param {string} text - The text to append
+ * @returns {void}
+ */
+function appendText(filePath, text) {
+  const oldText = readText(filePath);
+  writeText(filePath, oldText + '\n' + text);
 }
 
-function replaceTextLineByLine(aDir, replacements, makeAdditionalBackup = false) {
-  const oldText = readText(aDir);
+/**
+ * Reads a file and applies regex replacements line by line. Creates a .bak backup of the original.
+ * @param {string} filePath - The file path to read and modify
+ * @param {Array<[RegExp, string]>} replacements - Array of [matchRegex, replaceWith] pairs to apply to each line
+ * @param {boolean} [makeAdditionalBackup=false] - If true, also creates a timestamped backup
+ * @returns {void}
+ */
+function replaceTextLineByLine(filePath, replacements, makeAdditionalBackup = false) {
+  const oldText = readText(filePath);
 
   const newText = oldText
     .split('\n')
@@ -357,36 +427,59 @@ function replaceTextLineByLine(aDir, replacements, makeAdditionalBackup = false)
     .join('\n');
 
   // make backups
-  writeText(`${aDir}.bak`, oldText, false);
+  writeText(`${filePath}.bak`, oldText, false);
 
   if (makeAdditionalBackup === true) {
-    writeText(`${aDir}.bak.${Date.now()}`, oldText);
+    writeText(`${filePath}.bak.${Date.now()}`, oldText);
   }
 
   // save with newText
-  writeText(aDir, newText);
+  writeText(filePath, newText);
 }
 
-function writeJsonWithMerge(aDir, json) {
+/**
+ * Reads an existing JSON file, shallow-merges new properties into it, and writes it back.
+ * If the file doesn't exist or is invalid, starts with an empty object.
+ * @param {string} filePath - The JSON file path to read and write
+ * @param {object} json - The JSON object whose properties will be merged into the existing file
+ * @returns {void}
+ */
+function writeJsonWithMerge(filePath, json) {
   let oldJson = {};
   try {
-    oldJson = readJson(aDir);
+    oldJson = readJson(filePath);
   } catch (e) {}
-  writeJson(aDir, Object.assign(oldJson, json));
+  writeJson(filePath, Object.assign(oldJson, json));
 }
 
-function readJson(aDir) {
-  return parseJsonWithComments(fs.readFileSync(aDir, { encoding: 'utf8', flag: 'r' }));
+/**
+ * Reads and parses a JSON file, supporting comments in the JSON content.
+ * @param {string} filePath - The JSON file path to read
+ * @returns {object} The parsed JSON object
+ */
+function readJson(filePath) {
+  return parseJsonWithComments(fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' }));
 }
 
-function readText(aDir) {
+/**
+ * Reads the contents of a text file, returning an empty string if the file doesn't exist or can't be read.
+ * @param {string} filePath - The file path to read
+ * @returns {string} The trimmed file contents, or an empty string on error
+ */
+function readText(filePath) {
   try {
-    return fs.readFileSync(aDir, { encoding: 'utf8', flag: 'r' }).trim();
+    return fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' }).trim();
   } catch (err) {
     return '';
   }
 }
 
+/**
+ * Parses a JSON string that may contain comments or non-standard syntax by using eval.
+ * Exits the process if the input is empty.
+ * @param {string} oldText - The raw JSON/JS text to parse
+ * @returns {object} The parsed object
+ */
 function parseJsonWithComments(oldText) {
   oldText = (oldText || '').trim();
   if (!oldText) {
@@ -395,6 +488,11 @@ function parseJsonWithComments(oldText) {
   return eval(`var ___temp = ${oldText}; ___temp;`);
 }
 
+/**
+ * Creates a deep clone of an object via JSON serialization/deserialization.
+ * @param {object} obj - The object to clone
+ * @returns {object} A deep copy of the input object
+ */
 function clone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
@@ -402,6 +500,12 @@ function clone(obj) {
 //////////////////////////////////////////////////////
 // Platform-Specific Path Utilities
 //////////////////////////////////////////////////////
+/**
+ * Detects and returns the Windows user home directory under WSL.
+ * Tries two possible mount paths (/mnt/c/Users and /c/Users) and sets
+ * global path variables (BASE_WINDOW, BASE_C_DIR_WINDOW, etc.) accordingly.
+ * @returns {string|undefined} The Windows user home directory path, or undefined if not found
+ */
 function getWindowUserBaseDir() {
   const regexUsername = /(leng)|(sy[ ]*le)/i;
   let res = '';
@@ -429,6 +533,11 @@ function getWindowUserBaseDir() {
   return undefined;
 }
 
+/**
+ * Checks whether a file or directory exists at the given path.
+ * @param {string} targetPath - The path to check
+ * @returns {boolean} True if the path exists, false otherwise
+ */
 function filePathExist(targetPath) {
   return fs.existsSync(targetPath);
 }
@@ -471,6 +580,10 @@ function getWindowAppDataLocalUserPath() {
   return path.join(getWindowUserBaseDir(), 'AppData/Local');
 }
 
+/**
+ * Returns the macOS Application Support directory path for the current user.
+ * @returns {string} The path to ~/Library/Application Support
+ */
 function getOsxApplicationSupportCodeUserPath() {
   return path.join(process.env.HOME, 'Library/Application Support');
 }
@@ -478,6 +591,17 @@ function getOsxApplicationSupportCodeUserPath() {
 //////////////////////////////////////////////////////
 // Text Processing Utilities
 //////////////////////////////////////////////////////
+/**
+ * Inserts or replaces a delimited text block within a larger text body.
+ * The block is bounded by "{commentPrefix} {configKey}" and "{commentPrefix} END {configKey}" markers.
+ * If the block already exists, it is replaced. Otherwise, it is appended or prepended.
+ * @param {string} resultTextContent - The full text content to modify
+ * @param {string} configKey - The identifier for the text block (used in delimiter comments)
+ * @param {string} configValue - The new content for the block
+ * @param {string} commentPrefix - The comment character/prefix (e.g. '#', '//')
+ * @param {boolean} isPrepend - If true, prepend the block when inserting new; if false, append
+ * @returns {string} The modified text content
+ */
 function updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, isPrepend) {
   configValue = configValue.trim();
 
@@ -523,10 +647,26 @@ ${resultTextContent}
   return cleanupExtraWhitespaces(resultTextContent);
 }
 
+/**
+ * Appends a delimited text block to the end of a text body (or replaces it if it already exists).
+ * @param {string} resultTextContent - The full text content to modify
+ * @param {string} configKey - The identifier for the text block
+ * @param {string} configValue - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
 function appendTextBlock(resultTextContent, configKey, configValue, commentPrefix = '#') {
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, false);
 }
 
+/**
+ * Prepends a delimited text block to the beginning of a text body (or replaces it if it already exists).
+ * @param {string} resultTextContent - The full text content to modify
+ * @param {string} configKey - The identifier for the text block
+ * @param {string} configValue - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
 function prependTextBlock(resultTextContent, configKey, configValue, commentPrefix = '#') {
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, true);
 }
@@ -599,10 +739,21 @@ function resolveOsKey(keys) {
   return keys.linux;
 }
 
-function cleanupExtraWhitespaces(s) {
-  return s.replace(/[\r\n][\r\n][\n]+/g, '\n\n').trim();
+/**
+ * Collapses runs of 3+ consecutive newlines into double newlines and trims the result.
+ * @param {string} text - The text to clean up
+ * @returns {string} The cleaned text with excess whitespace removed
+ */
+function cleanupExtraWhitespaces(text) {
+  return text.replace(/[\r\n][\r\n][\n]+/g, '\n\n').trim();
 }
 
+/**
+ * Converts one or more multiline text strings into a deduplicated array of non-empty, non-comment lines.
+ * Filters out lines starting with //, #, or *.
+ * @param {...string} texts - One or more text strings to process
+ * @returns {string[]} Unique, trimmed, non-empty lines that are not comments
+ */
 function convertTextToList(...texts) {
   const text = [...texts].join('\n');
 
@@ -614,6 +765,12 @@ function convertTextToList(...texts) {
   return [...new Set(items)]; // only return unique items
 }
 
+/**
+ * Parses hosts-file formatted text into a deduplicated array of hostnames.
+ * Strips leading IP addresses and filters to valid hostname patterns.
+ * @param {...string} texts - One or more hosts-file formatted text strings
+ * @returns {string[]} Unique hostnames extracted from the input
+ */
 function convertTextToHosts(...texts) {
   const text = [...texts].join('\n');
 
@@ -625,6 +782,13 @@ function convertTextToHosts(...texts) {
   return [...new Set(items)]; // only return unique items
 }
 
+/**
+ * Trims leading spaces from each line of a text block by a specified or auto-detected amount.
+ * If spaceToTrim is not provided, it is inferred from the indentation of the first non-empty line.
+ * @param {string} text - The multiline text to dedent
+ * @param {number} [spaceToTrim] - Number of leading spaces to remove from each line. Auto-detected if omitted.
+ * @returns {string} The dedented text
+ */
 function trimLeftSpaces(text, spaceToTrim) {
   try {
     const lines = text.split('\n');
@@ -651,10 +815,21 @@ function trimLeftSpaces(text, spaceToTrim) {
   }
 }
 
+/**
+ * Calculates a percentage value to two decimal places.
+ * @param {number} count - The part value
+ * @param {number} total - The whole value
+ * @returns {string} The percentage as a string with two decimal places (e.g. "75.00")
+ */
 function calculatePercentage(count, total) {
   return ((count * 100) / total).toFixed(2);
 }
 
+/**
+ * Extracts the root domain (e.g. "example.com") from a URL or hostname string.
+ * @param {string} url - The URL or hostname to extract the root domain from
+ * @returns {string} The root domain portion of the URL
+ */
 function getRootDomainFrom(url) {
   const lastDotIndex = url.lastIndexOf('.');
   const partialUrl = url.substr(0, lastDotIndex);
@@ -663,6 +838,11 @@ function getRootDomainFrom(url) {
   return url.substr(secondLastDotIdx + 1);
 }
 
+/**
+ * Creates a directory (and any necessary parent directories) at the given path.
+ * @param {string} targetPath - The directory path to create
+ * @returns {Promise<string>} Resolves with the stdout of the mkdir command
+ */
 function mkdir(targetPath) {
   return execBashSilent(`mkdir -p "${targetPath}"`);
 }
@@ -670,6 +850,12 @@ function mkdir(targetPath) {
 //////////////////////////////////////////////////////
 // Network / API Utilities
 //////////////////////////////////////////////////////
+/**
+ * Downloads a file from a URL to a local destination. Skips download if the file already exists.
+ * @param {string} url - The URL to download from (can be relative to REPO_PREFIX_URL)
+ * @param {string} destination - The local file path to save to
+ * @returns {Promise<boolean>} Resolves to true if downloaded, false if skipped (already exists)
+ */
 function downloadFile(url, destination) {
   url = getFullUrl(url);
 
@@ -689,6 +875,13 @@ function downloadFile(url, destination) {
   });
 }
 
+/**
+ * Downloads binary files from the main GitHub repo that match a filter function.
+ * Only considers files under the "binaries/" path, excluding markdown files.
+ * @param {function(string): boolean} findHandler - Filter function to select which files to download
+ * @param {string} destinationBaseDir - The local directory to save downloaded files to
+ * @returns {Promise<string[]>} The full list of repo files (not just downloaded ones)
+ */
 async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
   const files = await listRepoDir();
 
@@ -718,6 +911,11 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
   return files;
 }
 
+/**
+ * Lists all files in the GitHub repository by querying the Git tree API.
+ * Falls back to a pre-compiled script list if the API call fails.
+ * @returns {Promise<string[]>} Array of file paths in the repository
+ */
 async function listRepoDir() {
   const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
 
@@ -740,6 +938,14 @@ async function listRepoDir() {
 //////////////////////////////////////////////////////
 // Script File Discovery & Platform Filtering
 //////////////////////////////////////////////////////
+/**
+ * Discovers and returns the ordered list of software setup script files to execute.
+ * Filters scripts based on the current OS platform and applies ordering rules
+ * (certain scripts run first/last). Can fetch the file list from the GitHub API or local filesystem.
+ * @param {boolean} [returnAllScripts=false] - If true, returns all matching scripts without OS filtering or ordering
+ * @param {boolean} [useLocalFileListInstead=false] - If true, uses local `find` instead of the GitHub API
+ * @returns {Promise<string[]>} Ordered array of script file paths to execute
+ */
 async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileListInstead = false) {
   let files;
 
@@ -903,6 +1109,12 @@ async function getSoftwareScriptFiles(returnAllScripts = false, useLocalFileList
   });
 }
 
+/**
+ * Converts a relative URL to an absolute URL by prepending REPO_PREFIX_URL.
+ * If the URL already starts with "http", it is returned as-is.
+ * @param {string} url - The URL or relative path to resolve
+ * @returns {string} The fully qualified URL
+ */
 function getFullUrl(url) {
   if (url.indexOf('http') !== 0) {
     url = `${REPO_PREFIX_URL}${url}`;
@@ -910,6 +1122,12 @@ function getFullUrl(url) {
   return url;
 }
 
+/**
+ * Fetches a URL (or local file in test mode) and returns its content as a string.
+ * Tries curl first, then falls back to Node's https module.
+ * @param {string} url - The URL or relative path to fetch
+ * @returns {Promise<string>} The fetched content as a string
+ */
 async function fetchUrlAsString(url) {
   if (isTestScriptMode && !url.includes('http')) {
     const file = url;
@@ -930,10 +1148,21 @@ async function fetchUrlAsString(url) {
   }
 }
 
-function gitClone(repo, pwd) {
-  return execBashSilent(`git clone --depth 1 -b master "${repo}" "${pwd}" &>/dev/null`);
+/**
+ * Performs a shallow git clone of a repository's master branch into the specified directory.
+ * @param {string} repo - The git repository URL to clone
+ * @param {string} destinationDir - The local directory to clone into
+ * @returns {Promise<string>} Resolves with the stdout of the git clone command
+ */
+function gitClone(repo, destinationDir) {
+  return execBashSilent(`git clone --depth 1 -b master "${repo}" "${destinationDir}" &>/dev/null`);
 }
 
+/**
+ * Fetches a URL and parses the response as JSON (supports comments in the JSON).
+ * @param {string} url - The URL or relative path to fetch
+ * @returns {Promise<object>} The parsed JSON object
+ */
 async function fetchUrlAsJson(url) {
   const json = await fetchUrlAsString(url);
   return parseJsonWithComments(json);
@@ -942,6 +1171,13 @@ async function fetchUrlAsJson(url) {
 //////////////////////////////////////////////////////
 // Bash Execution
 //////////////////////////////////////////////////////
+/**
+ * Executes a bash command synchronously and returns the output as a string.
+ * Uses a 50MB max buffer for large outputs.
+ * @param {string} cmd - The shell command to execute
+ * @param {object} [options] - Optional execSync options (cwd, env, etc.)
+ * @returns {Promise<string>} Resolves with the command's stdout
+ */
 function execBash(cmd, options) {
   return new Promise((resolve) => {
     const { execSync } = require('child_process');
@@ -954,6 +1190,12 @@ function execBash(cmd, options) {
   });
 }
 
+/**
+ * Executes a bash command asynchronously, silently swallowing errors.
+ * @param {string} cmd - The shell command to execute
+ * @param {object} [options] - Optional exec options (cwd, env, etc.)
+ * @returns {Promise<string>} Resolves with the command's stdout (empty string on error)
+ */
 function execBashSilent(cmd, options) {
   return new Promise((resolve) => {
     const { exec } = require('child_process');
@@ -975,14 +1217,31 @@ const CONSOLE_COLORS = [
   '2m', // dim silver
 ];
 
+/**
+ * Generates a bash echo command string that outputs the given text.
+ * @param {string} str - The text to echo
+ * @returns {string} A bash echo command string
+ */
 function echo(str) {
   return `echo '''${str}'''`;
 }
 
+/**
+ * Generates a bash echo command string that outputs colored text using ANSI escape codes.
+ * @param {string} str - The text to echo
+ * @param {string} color - The ANSI color code (e.g. '32m' for green)
+ * @returns {string} A bash echo command string with color escape sequences
+ */
 function echoColor(str, color) {
   return `echo -e $'\\e[${color}${str}\\e[m'`;
 }
 
+/**
+ * Wraps a string with ANSI color escape codes for use with console.log.
+ * @param {string} str - The text to colorize
+ * @param {string} color - The ANSI color code (e.g. '32m' for green)
+ * @returns {string} The string wrapped in ANSI color escape sequences
+ */
 function consoleLogColor(str, color) {
   return `\x1b[${color}${str}\x1b[0m`;
 }
@@ -999,6 +1258,13 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
 //////////////////////////////////////////////////////
 // Script Processing & Execution
 //////////////////////////////////////////////////////
+/**
+ * Generates and prints a bash command pipeline for fetching and executing a script file.
+ * Determines the appropriate runner (node, bash, sudo) based on the file's extension pattern
+ * (e.g. .su.js for sudo node, .sh.js for node piped to bash).
+ * @param {string} file - The script file path (relative to the repo)
+ * @returns {void}
+ */
 function processScriptFile(file) {
   let scriptToUse;
 
@@ -1063,11 +1329,21 @@ function processScriptFile(file) {
   console.log(`{ ${scriptToUse} ;} | ${pipeOutput}`);
 }
 
+/**
+ * Fetches a remote script file and evaluates its content in the current context.
+ * @param {string} file - The file path or URL to fetch and eval
+ * @returns {Promise<void>}
+ */
 async function includeSource(file) {
   const fileContent = await fetchUrlAsString(file);
   eval(fileContent);
 }
 
+/**
+ * Prints a formatted table of OS flags (is_os_*) to stdout via a generated node command.
+ * Respects the SHOULD_PRINT_OS_FLAGS environment variable to suppress output.
+ * @returns {void}
+ */
 function printOsFlags() {
   if (process.env.SHOULD_PRINT_OS_FLAGS !== 'false') {
     console.log(`
@@ -1084,6 +1360,11 @@ function printOsFlags() {
   }
 }
 
+/**
+ * Prints a formatted list of script files that will be executed to stdout via a generated node command.
+ * @param {string[]} scriptsToRun - Array of script file paths to display
+ * @returns {void}
+ */
 function printScriptsToRun(scriptsToRun) {
   console.log(`
     node -e """
@@ -1120,16 +1401,14 @@ function printScriptsToRun(scriptsToRun) {
   }
 
   // for debugging
-  if (process.env.DEBUG) {
-    process
+  process
       .on('unhandledRejection', (reason, p) => {
-        console.error(reason, 'Unhandled Rejection at Promise', p);
+        console.error('[Error] unhandledRejection', reason, 'Unhandled Rejection at Promise', p);
       })
       .on('uncaughtException', (err) => {
-        console.error(err, 'Uncaught Exception thrown');
+        console.error('[Error] uncaughtException', err, 'Uncaught Exception thrown');
         process.exit(1);
       });
-  }
 
   // start script
   try {
