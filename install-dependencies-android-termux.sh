@@ -101,4 +101,6 @@ source ~/.bashrc
 ##########################################################
 curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
 
+
+# TODO: sy to check this lightweight script
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"

@@ -3,7 +3,7 @@ setup_full:
 	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh | bash
 
 setup_light:
-	curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh | bash
+	sh run.sh --files="_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js" --prod
 
 setup_hosts:
 	sh run.sh --files="software/scripts/etc-hosts.su.js" --prod

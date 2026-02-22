@@ -73,6 +73,8 @@ if [ -n "$bare_files" ] && [ -z "$files_to_test" ]; then
   files_to_test="$bare_files"
 fi
 
+export RUN_MODE="$run_mode"
+
 if [ "$run_mode" = "local" ]; then
   export TEST_SCRIPT_MODE=1
 else
