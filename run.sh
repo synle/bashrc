@@ -81,48 +81,40 @@ fi
 
 if [ -n "$files_to_test" ]; then
   export TEST_SCRIPT_FILES="$files_to_test"
-  echo "< run.sh (mode=$run_mode) (files=$TEST_SCRIPT_FILES) (pre_scripts=$pre_run_scripts)"
+  run_description="(mode=$run_mode) (files=$TEST_SCRIPT_FILES) (pre_scripts=$pre_run_scripts)"
 else
   unset TEST_SCRIPT_FILES
-  echo "< run.sh (mode=$run_mode) (files==[full run]) (pre_scripts=$pre_run_scripts)"
+  run_description="(mode=$run_mode) (files==[full run]) (pre_scripts=$pre_run_scripts)"
 fi
 
-if [ "$run_mode" = "prod" ]; then
-  # run pre-run shell scripts via | bash before the main run
-  if [ -n "$pre_run_scripts" ]; then
-    echo ">> pre-run scripts: $pre_run_scripts"
-    { \
-      for script in $(echo "$pre_run_scripts" | tr ',; ' '\n'); do \
-        curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/$script" ; \
-      done ; \
-    } | bash
-  fi
+echo "<< run.sh started at $(date '+%Y-%m-%d %H:%M:%S') $run_description"
 
-  if [ "$run_only_prescripts" = true ]; then
-    echo "<< run.sh done (run-only-prescripts)"
-    exit 0
-  fi
+# get_file_contents - outputs the concatenated contents of the given files.
+# In prod mode, fetches via curl from upstream. In local mode, reads via cat.
+# Usage: get_file_contents "file1.sh,file2.sh"
+get_file_contents() {
+  _files="$1"
+  for _file in $(echo "$_files" | tr ',; ' '\n'); do
+    if [ "$run_mode" = "prod" ]; then
+      curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/$_file"
+    else
+      cat "$_file"
+    fi
+  done
+}
 
-  { \
-    curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/software/base-node-script.js ;
-  } | node | bash
-else
-  # run pre-run shell scripts via | bash before the main run
-  if [ -n "$pre_run_scripts" ]; then
-    echo ">> pre-run scripts: $pre_run_scripts"
-    { \
-      for script in $(echo "$pre_run_scripts" | tr ',; ' '\n'); do \
-        cat "$script" ; \
-      done ; \
-    } | bash
-  fi
-
-  if [ "$run_only_prescripts" = true ]; then
-    echo "<< run.sh done (run-only-prescripts)"
-    exit 0
-  fi
-
-  { \
-    cat software/base-node-script.js ;
-  } | node | bash
+# run pre-run shell scripts via | bash before the main run
+if [ -n "$pre_run_scripts" ]; then
+  echo ">> pre-run scripts: $pre_run_scripts"
+  get_file_contents "$pre_run_scripts" | bash
 fi
+
+if [ "$run_only_prescripts" = true ]; then
+  echo "<< run.sh done at $(date '+%Y-%m-%d %H:%M:%S') $run_description"
+  exit 0
+fi
+
+# run the main test script
+get_file_contents "software/base-node-script.js" | node | bash
+
+echo "<< run.sh done at $(date '+%Y-%m-%d %H:%M:%S') $run_description"
