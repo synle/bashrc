@@ -3,23 +3,23 @@
     "0xf703-0x300000-0x7c": {
       "Label": "",
       "Action": 19,
-      "Text": ""
+      "Text": "",
     },
     "0xf701-0x300000-0x7d": {
       "Label": "",
       "Action": 21,
-      "Text": ""
+      "Text": "",
     },
     "0xf700-0x300000-0x7e": {
       "Label": "",
       "Action": 20,
-      "Text": ""
+      "Text": "",
     },
     "0xf702-0x300000-0x7b": {
       "Label": "",
       "Action": 18,
-      "Text": ""
-    }
+      "Text": "",
+    },
   },
-  "Touch Bar Items": {}
+  "Touch Bar Items": {},
 }

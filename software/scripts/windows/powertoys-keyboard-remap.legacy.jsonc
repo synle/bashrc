@@ -34,7 +34,7 @@
       { "originalKeys": "91;160;39", "newRemapKeys": "17;16;39" },
       { "originalKeys": "91;164;37", "newRemapKeys": "91;37" },
       { "originalKeys": "91;164;39", "newRemapKeys": "91;39" },
-      { "originalKeys": "91;164;77", "newRemapKeys": "91;38" }
+      { "originalKeys": "91;164;77", "newRemapKeys": "91;38" },
     ],
     "appSpecific": [
       { "originalKeys": "164;48", "newRemapKeys": "162;48", "targetApp": "brave.exe" },
@@ -80,7 +80,7 @@
       { "originalKeys": "164;160;219", "newRemapKeys": "18;16;219", "targetApp": "windowsterminal.exe" },
       { "originalKeys": "164;160;221", "newRemapKeys": "18;16;221", "targetApp": "windowsterminal.exe" },
       { "originalKeys": "91;67", "newRemapKeys": "18;67", "targetApp": "windowsterminal.exe" },
-      { "originalKeys": "91;86", "newRemapKeys": "18;86", "targetApp": "windowsterminal.exe" }
-    ]
-  }
+      { "originalKeys": "91;86", "newRemapKeys": "18;86", "targetApp": "windowsterminal.exe" },
+    ],
+  },
 }
