@@ -24,6 +24,19 @@ globalThis.DEFAULT_NVM_NODE_VERSION = 24;
 globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
 globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
+
+/**
+ * Tracks the processing status of each script file during execution.
+ * Each entry records whether a script was found and processed successfully or encountered an error.
+ * @type {Array<{file: string, path: string, script: string, status: 'success'|'error', description: string}>}
+ * @property {string} file - The original file name before prefix expansion
+ * @property {string} path - The resolved file path after prefix expansion
+ * @property {string} script - The generated bash command used to fetch/execute the script
+ * @property {string} status - 'success' if the script was found, 'error' if not found
+ * @property {string} description - Error detail message, empty string on success
+ */
+var scriptProcessingResults = [];
+
 //////////////////////////////////////////////////////
 // Editor Configuration
 //////////////////////////////////////////////////////
@@ -259,6 +272,35 @@ function findDirList(srcDir, targetMatch, returnFirstMatch) {
  */
 function findDirSingle(srcDir, targetMatch) {
   return findDirList(srcDir, targetMatch, true);
+}
+
+/**
+ * Recursively searches a directory for the first file matching a regex pattern.
+ * Unlike findDirSingle which only matches directories at one level, this searches
+ * all files and subdirectories recursively.
+ * @param {string} srcDir - The directory to start searching from
+ * @param {RegExp} targetMatch - Regex pattern to match file names against
+ * @returns {string|null} The full path of the first matching file, or null if none found
+ */
+function findFileRecursive(srcDir, targetMatch) {
+  try {
+    const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(srcDir, entry.name);
+      if (entry.isFile() && entry.name.match(targetMatch)) {
+        return fullPath;
+      }
+      if (entry.isDirectory()) {
+        const found = findFileRecursive(fullPath, targetMatch);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
 }
 
 /**
@@ -1209,14 +1251,6 @@ function execBashSilent(cmd, options) {
 //////////////////////////////////////////////////////
 // Console Colors & Output
 //////////////////////////////////////////////////////
-const CONSOLE_COLORS = [
-  null, // 0 index is not used
-  '32m', // green
-  '33m', // yellow
-  '36m', // cyan
-  '2m', // dim silver
-];
-
 /**
  * Generates a bash echo command string that outputs the given text.
  * @param {string} str - The text to echo
@@ -1246,6 +1280,24 @@ function consoleLogColor(str, color) {
   return `\x1b[${color}${str}\x1b[0m`;
 }
 
+/**
+ * ANSI color codes used to dynamically generate global color helper functions.
+ * The loop below creates echoColor{N} and consoleLogColor{N} for each non-null entry,
+ * where N is the array index. Index 0 is intentionally null (unused).
+ * Additionally, echoColorSuccess (green) and echoColorError (red) are defined as named aliases.
+ */
+const CONSOLE_COLORS = [
+  null, // 0 index is not used
+  '32m', // green
+  '33m', // yellow
+  '36m', // cyan
+  '2m', // dim silver
+  '31m', // red
+  '35m', // magenta
+  '34m', // blue
+  '37m', // white
+];
+
 for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
   const color = CONSOLE_COLORS[idx];
 
@@ -1255,6 +1307,9 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
   }
 }
 
+global.echoColorSuccess = (str) => echoColor(str, '32m');
+global.echoColorError = (str) => echoColor(str, '31m');
+
 //////////////////////////////////////////////////////
 // Script Processing & Execution
 //////////////////////////////////////////////////////
@@ -1262,12 +1317,11 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
  * Generates and prints a bash command pipeline for fetching and executing a script file.
  * Determines the appropriate runner (node, bash, sudo) based on the file's extension pattern
  * (e.g. .su.js for sudo node, .sh.js for node piped to bash).
- * @param {string} file - The script file path (relative to the repo)
+ * @param {string} file - The script file path (relative to the repo), after prefix expansion
+ * @param {string} originalFile - The original file name before prefix expansion (e.g. before adding 'software/scripts/')
  * @returns {void}
  */
-function processScriptFile(file) {
-  let scriptToUse;
-
+function processScriptFile(file, originalFile) {
   const url = getFullUrl(`${file}?${Date.now()}`);
 
   function _generateScript(file, url) {
@@ -1322,11 +1376,46 @@ function processScriptFile(file) {
     }
   }
 
-  scriptToUse = _generateScript(file, url);
+  if (isTestScriptMode) {
+    const fileDir = path.dirname(file);
+    const fileName = path.basename(file);
+    const foundMatchedPath = findFileRecursive(fileDir, new RegExp(fileName));
+    const fileExists = !!foundMatchedPath;
 
-  const pipeOutput = _generatePipeOutput(file, url);
+    let description = '';
+    if (fileExists) {
+      if (file !== foundMatchedPath) {
+        description = `Expanded ${originalFile} to ${foundMatchedPath}`;
+      }
+      file = foundMatchedPath;
+    } else {
+      description = `File not found: ${file}`;
+    }
 
-  console.log(`{ ${scriptToUse} ;} | ${pipeOutput}`);
+    if (fileExists) {
+      console.log(`{ ${_generateScript(file, url)} ;} | ${_generatePipeOutput(file, url)}`);
+    } else {
+      console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
+    }
+
+    scriptProcessingResults.push({
+      file: originalFile,
+      path: file,
+      script: _generateScript(file, url),
+      status: fileExists ? 'success' : 'error',
+      description: description,
+    });
+  } else {
+    console.log(`{ ${_generateScript(file, url)} ;} | ${_generatePipeOutput(file, url)}`);
+
+    scriptProcessingResults.push({
+      file: originalFile,
+      path: file,
+      script: _generateScript(file, url),
+      status: 'success',
+      description: '',
+    });
+  }
 }
 
 /**
@@ -1366,15 +1455,51 @@ function printOsFlags() {
  * @returns {void}
  */
 function printScriptsToRun(scriptsToRun) {
+  printSectionBlock(`Scripts to Run: ${scriptsToRun.length} files`, scriptsToRun);
+}
+
+/**
+ * Prints a formatted section block with a header and optional content lines to stdout via a generated node command.
+ * @param {string} header - The section header text
+ * @param {string[]} [lines=[]] - Optional array of content lines to display between the header and footer
+ * @returns {void}
+ */
+function printSectionBlock(header, lines = []) {
+  const linesOutput = lines.map((line) => `console.log('${line}')`).join('\n      ');
   console.log(`
     node -e """
       console.log(''.padStart(90, '='));
-      console.log('>> Scripts to Run: ${scriptsToRun.length} files'.padEnd(88, ' '));
+      console.log('>> ${header}'.padEnd(88, ' '));
       console.log(''.padStart(90, '='));
-      ${scriptsToRun.map((file) => `console.log('${file}')`).join('\n      ')}
-      console.log(''.padStart(90, '='));
+      ${linesOutput}
+      ${lines.length > 0 ? `console.log(''.padStart(90, '='));` : ''}
     """
   `);
+}
+
+/**
+ * Prints the script processing results with a section header.
+ * Success entries are printed in green, error entries in red.
+ * @param {Array<{file: string, path: string, description: string, status: string}>} results - The scriptProcessingResults array
+ * @returns {void}
+ */
+function printScriptProcessingResults(results) {
+  const successCount = results.filter((r) => r.status === 'success').length;
+  const errorCount = results.filter((r) => r.status === 'error').length;
+
+  console.log(echo(''.padStart(90, '=')));
+  console.log(echo(`>> Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`.padEnd(88, ' ')));
+  console.log(echo(''.padStart(90, '=')));
+
+  for (const result of results) {
+    if (result.status === 'success') {
+      console.log(echoColorSuccess(`[Success] ${result.file} (${result.path})`));
+    } else {
+      console.log(echoColorError(`[Error] ${result.file} (${result.path}) : ${result.description}`));
+    }
+  }
+
+  console.log(echo(''.padStart(90, '=')));
 }
 
 //////////////////////////////////////////////////////
@@ -1413,9 +1538,10 @@ ${''.padStart(90, '=')}
   printScriptsToRun(softwareFiles);
 
   for (let i = 0; i < softwareFiles.length; i++) {
-    let file = softwareFiles[i];
+    const originalFile = softwareFiles[i]
+    let file = originalFile;
 
-    if (file.includes('software/')) {
+    if (file.startsWith('software/')) {
       // does not includes the proper prefix
     } else {
       // add the prefix if needed
@@ -1424,8 +1550,10 @@ ${''.padStart(90, '=')}
 
     console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
 
-    processScriptFile(file);
+    processScriptFile(file, originalFile);
   }
+
+  printScriptProcessingResults(scriptProcessingResults);
 }
 
 //////////////////////////////////////////////////////
@@ -1446,17 +1574,20 @@ async function _doWorkFullRun() {
   printScriptsToRun(softwareFiles);
 
   for (let i = 0; i < softwareFiles.length; i++) {
-    let file = softwareFiles[i];
+    const originalFile = softwareFiles[i]
+    let file = originalFile;
 
     // add the prefix if needed
-    if (!file.includes('software/scripts/')) {
+    if (!file.startsWith('software/scripts/')) {
       file = `software/scripts/${file}`;
     }
 
     console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
 
-    processScriptFile(file);
+    processScriptFile(file, originalFile);
   }
+
+  printScriptProcessingResults(scriptProcessingResults);
 }
 
 //////////////////////////////////////////////////////
