@@ -206,7 +206,7 @@ function RightContainer() {
       selectedScript.script
         .replace('<SELECT_SCRIPTS>', formValue.scriptsToUse.join('\n'))
         .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
-        .replace('<SELECTED_RUNNER_SCRIPT>', runnerToUse)
+        .replace('<SELECTED_RUNNER_MODE>', runnerToUse)
         .replace('<OS_FLAGS>', bootstrapScript)
         .replace(
           '<SETUP_DEPS>',
@@ -295,22 +295,22 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
               type='radio'
               name='runnerToUse'
               id='runnerToUse-live'
-              value='test-live.sh'
+              value='prod'
               onChange={(e) => {
                 onInputChange(e.target.name, e.target.value);
               }}
-              checked={formValue.runnerToUse === 'test-live.sh'}
+              checked={formValue.runnerToUse === 'prod'}
             />
             <label htmlFor='runnerToUse-live'>Live Script</label>
             <input
               type='radio'
               name='runnerToUse'
               id='runnerToUse-local'
-              value='test.sh'
+              value='local'
               onChange={(e) => {
                 onInputChange(e.target.name, e.target.value);
               }}
-              checked={formValue.runnerToUse !== 'test-live.sh'}
+              checked={formValue.runnerToUse !== 'prod'}
             />
             <label htmlFor='runnerToUse-local'>Local Script</label>
           </div>
@@ -1307,17 +1307,18 @@ function App() {
           {
             text: 'Test Full Run live',
             script: `
-        <OS_FLAGS> curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
+        <OS_FLAGS> export RUN_MODE=prod && curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
       `,
             shouldShowOsSelectionInput: true,
           },
           {
             text: 'Test Single Script',
             script: `<OS_FLAGS> \\
+        export RUN_MODE=<SELECTED_RUNNER_MODE> && \\
         export TEST_SCRIPT_FILES="""
         <SELECT_SCRIPTS>
         """ <DEBUG_WRITE_TO_DIR> && \\
-        curl -s https://raw.githubusercontent.com/synle/bashrc/master/<SELECTED_RUNNER_SCRIPT> | bash
+        curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
       `,
             shouldShowScriptNameInput: true,
             shouldShowOsSelectionInput: true,
@@ -1364,7 +1365,7 @@ function App() {
             commandChoice: getStorage('commandChoice') || defaultCommandOption,
             osToRun: getStorage('osToRun') || 'windows',
             debugWriteToDir: getStorage('debugWriteToDir') || '',
-            runnerToUse: getStorage('runnerToUse') || 'test-live.sh',
+            runnerToUse: getStorage('runnerToUse') || 'prod',
             addBootstrapScript: getStorage('addBootstrapScript') || 'no',
             setupDependencies: getStorage('setupDependencies') || 'yes',
             envInputValue: getStorage('envInputValue') || '',

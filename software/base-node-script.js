@@ -1378,6 +1378,88 @@ function printScriptsToRun(scriptsToRun) {
 }
 
 //////////////////////////////////////////////////////
+// doWork: Test Specific Files (when TEST_SCRIPT_FILES is set)
+//////////////////////////////////////////////////////
+async function _doWorkTestFiles() {
+  const filesToTest = process.env.TEST_SCRIPT_FILES || '';
+
+  if (!filesToTest) {
+    console.log(`echo '''    >> Skipped'''`);
+    return;
+  }
+
+  console.log(`echo '''    >> filesToTest = ${filesToTest.length}'''`);
+
+  const softwareFiles = filesToTest
+    .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
+    .map((s) => s.trim())
+    .filter((s) => !!s);
+
+  if (softwareFiles.length > 1) {
+    console.log(
+      echoColor1(
+        `
+${''.padStart(90, '=')}
+>> Testing Configurations: ${softwareFiles.length} Files
+${''.padStart(90, '=')}
+${softwareFiles.join('\n')}
+${''.padStart(90, '=')}
+`,
+      ),
+    );
+  }
+
+  printOsFlags(); // Print OS Environments
+  printScriptsToRun(softwareFiles);
+
+  for (let i = 0; i < softwareFiles.length; i++) {
+    let file = softwareFiles[i];
+
+    if (file.includes('software/')) {
+      // does not includes the proper prefix
+    } else {
+      // add the prefix if needed
+      file = `software/scripts/${file}`;
+    }
+
+    console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
+
+    processScriptFile(file);
+  }
+}
+
+//////////////////////////////////////////////////////
+// doWork: Full Run (when TEST_SCRIPT_FILES is not set)
+//////////////////////////////////////////////////////
+async function _doWorkFullRun() {
+  const softwareFiles = await getSoftwareScriptFiles();
+
+  console.log(
+    echoColor1(
+      `
+>> Installing Configurations: ${softwareFiles.length} Files
+`,
+    ),
+  );
+
+  printOsFlags(); // Print OS Environments
+  printScriptsToRun(softwareFiles);
+
+  for (let i = 0; i < softwareFiles.length; i++) {
+    let file = softwareFiles[i];
+
+    // add the prefix if needed
+    if (!file.includes('software/scripts/')) {
+      file = `software/scripts/${file}`;
+    }
+
+    console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
+
+    processScriptFile(file);
+  }
+}
+
+//////////////////////////////////////////////////////
 // Bootstrap / Main Entry Point
 //////////////////////////////////////////////////////
 (async function () {
@@ -1415,7 +1497,16 @@ function printScriptsToRun(scriptsToRun) {
     doInit && (await doInit());
   } catch (err) {}
   try {
-    doWork && (await doWork());
+    if (typeof doWork === 'function') {
+      // if doWork is defined externally (e.g. by a script concatenated after this file), use it
+      await doWork();
+    } else if (process.env.TEST_SCRIPT_FILES) {
+      // test specific files
+      await _doWorkTestFiles();
+    } else {
+      // full run
+      await _doWorkFullRun();
+    }
   } catch (err) {
     console.log('<< Error', err);
   }

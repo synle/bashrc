@@ -25,7 +25,7 @@ dev:
 	npm run dev
 
 test:
-	sh test-full-run.sh
+	sh run.sh
 
 test_full:
 	$(MAKE) test
@@ -41,5 +41,5 @@ test_single_run:
 	cat software/metadata/script-list.config
 	@echo "\n\n==================================\n"
 	@read -p "Enter File To Test:" file; \
-	echo "sh test.sh $$file"; \
-	sh test.sh "$$file"
+	echo "sh run.sh --files=$$file"; \
+	sh run.sh --files="$$file"

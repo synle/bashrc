@@ -26,7 +26,7 @@ fi
 ##########################################################
 # Run full test suite
 ##########################################################
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/test-full-run-live.sh | bash
+export RUN_MODE=prod && curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
 
 ##########################################################
 echo -e """
