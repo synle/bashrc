@@ -12,12 +12,12 @@ function _convertIgnoredFilesAndFoldersForVSCode(files = [], folders = [], isWat
   const res = {};
 
   // Process Files (**/filename)
-  files.forEach(file => {
+  files.forEach((file) => {
     res[`**/${file}`] = true;
   });
 
   // Process Folders (**/folder and **/folder/**)
-  folders.forEach(folder => {
+  folders.forEach((folder) => {
     res[`**/${folder}`] = true;
     res[`**/${folder}/**`] = true;
 
@@ -80,8 +80,8 @@ async function doInit() {
     'window.zoomLevel': 0.5,
 
     // Speed up the UI even more
-    "workbench.tree.renderIndentGuides": "none",
-    "editor.guides.indentation": false,
+    'workbench.tree.renderIndentGuides': 'none',
+    'editor.guides.indentation': false,
 
     // --- Scrolling & Navigation ---
     'editor.mouseWheelScrollSensitivity': 2,
@@ -104,11 +104,10 @@ async function doInit() {
     'git.enabled': true, // needed to tell vscode to ignore git files
     'git.autorefresh': false,
     'git.decorations.enabled': false,
-    "git.ignoreLimitWarning": true, // "I know my repo is huge, stop bugging me."
-    "git.autofetch": true,           // (Optional) Keeps your local git status synced with the server.
+    'git.ignoreLimitWarning': true, // "I know my repo is huge, stop bugging me."
+    'git.autofetch': true, // (Optional) Keeps your local git status synced with the server.
     'scm.diffDecorations': 'none', // Removes gutter color indicators
     'github.codespaces.showStatusbar': false,
-
 
     // --- Editor Behavior ---
     'editor.bracketPairColorization.enabled': true,
@@ -166,27 +165,21 @@ async function doInit() {
 
     // --- Search Index and Cleanup
     // VISUAL: Hide all files and folders in your lists from the sidebar
-  "files.exclude": _convertIgnoredFilesAndFoldersForVSCode(
-    EDITOR_CONFIGS.ignoredFiles,
-    EDITOR_CONFIGS.ignoredFolders
-  ),
+    'files.exclude': _convertIgnoredFilesAndFoldersForVSCode(EDITOR_CONFIGS.ignoredFiles, EDITOR_CONFIGS.ignoredFolders),
 
-  // SEARCH: Ignore everything in your lists during Global Search
-  // We use the same lists because if it's hidden from the UI,
-  // you usually don't want results popping up from it.
-  "search.exclude": _convertIgnoredFilesAndFoldersForVSCode(
-    EDITOR_CONFIGS.ignoredFiles,
-    EDITOR_CONFIGS.ignoredFolders
-  ),
+    // SEARCH: Ignore everything in your lists during Global Search
+    // We use the same lists because if it's hidden from the UI,
+    // you usually don't want results popping up from it.
+    'search.exclude': _convertIgnoredFilesAndFoldersForVSCode(EDITOR_CONFIGS.ignoredFiles, EDITOR_CONFIGS.ignoredFolders),
 
-  // PERFORMANCE: Only pass folders here.
-  // VS Code watchers ignore folders as a whole; individual files
-  // are usually too granular for the watcher to care about.
-  "files.watcherExclude": _convertIgnoredFilesAndFoldersForVSCode(
-    [],
-    EDITOR_CONFIGS.ignoredFolders,
-    true // isWatcher = true
-  ),
+    // PERFORMANCE: Only pass folders here.
+    // VS Code watchers ignore folders as a whole; individual files
+    // are usually too granular for the watcher to care about.
+    'files.watcherExclude': _convertIgnoredFilesAndFoldersForVSCode(
+      [],
+      EDITOR_CONFIGS.ignoredFolders,
+      true, // isWatcher = true
+    ),
 
     // --- Formatter Overrides (Prettier) ---
     '[javascript]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },

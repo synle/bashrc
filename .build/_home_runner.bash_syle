@@ -34,7 +34,6 @@ function format_js {
   # Create a temporary .prettierignore file based on EDITOR_CONFIGS.ignoredFolders
   local temp_ignore_file=$(mktemp)
   cat <<'EOF' > "$temp_ignore_file"
-__pycache__
 .cache
 .ebextensions
 .generated
@@ -46,11 +45,15 @@ __pycache__
 .pytest_cache
 .sass-cache
 .svn
+.venv
+__pycache*
+__pycache__
 bower_components
 build
 coverage
 CVS
 dist
+env
 node_modules
 tmp
 venv
@@ -91,8 +94,8 @@ function format_python {
   fi
 
   echo "🧹 Running Ruff checks and formatting..."
-  ruff format --line-length 140 --exclude "__pycache__,.cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,bower_components,build,coverage,CVS,dist,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
-  ruff check --fix --line-length 140 --exclude "__pycache__,.cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,bower_components,build,coverage,CVS,dist,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  ruff format --line-length 140 --exclude ".cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,.venv,__pycache*,__pycache__,bower_components,build,coverage,CVS,dist,env,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  ruff check --fix --line-length 140 --exclude ".cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,.venv,__pycache*,__pycache__,bower_components,build,coverage,CVS,dist,env,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
   echo "✅ Python formatting complete."
 }
 
@@ -126,7 +129,6 @@ function format_cleanup {
         -name '.fseventsd' \
       \) \
     \) \
-    -not -path '*/__pycache__/*' \
     -not -path '*/.cache/*' \
     -not -path '*/.ebextensions/*' \
     -not -path '*/.generated/*' \
@@ -138,11 +140,15 @@ function format_cleanup {
     -not -path '*/.pytest_cache/*' \
     -not -path '*/.sass-cache/*' \
     -not -path '*/.svn/*' \
+    -not -path '*/.venv/*' \
+    -not -path '*/__pycache*/*' \
+    -not -path '*/__pycache__/*' \
     -not -path '*/bower_components/*' \
     -not -path '*/build/*' \
     -not -path '*/coverage/*' \
     -not -path '*/CVS/*' \
     -not -path '*/dist/*' \
+    -not -path '*/env/*' \
     -not -path '*/node_modules/*' \
     -not -path '*/tmp/*' \
     -not -path '*/venv/*' \
@@ -166,8 +172,7 @@ function format_cleanup {
           -name '.fseventsd' \
         \) \
       \) \
-      -not -path '*/__pycache__/*' \
-    -not -path '*/.cache/*' \
+      -not -path '*/.cache/*' \
     -not -path '*/.ebextensions/*' \
     -not -path '*/.generated/*' \
     -not -path '*/.git/*' \
@@ -178,11 +183,15 @@ function format_cleanup {
     -not -path '*/.pytest_cache/*' \
     -not -path '*/.sass-cache/*' \
     -not -path '*/.svn/*' \
+    -not -path '*/.venv/*' \
+    -not -path '*/__pycache*/*' \
+    -not -path '*/__pycache__/*' \
     -not -path '*/bower_components/*' \
     -not -path '*/build/*' \
     -not -path '*/coverage/*' \
     -not -path '*/CVS/*' \
     -not -path '*/dist/*' \
+    -not -path '*/env/*' \
     -not -path '*/node_modules/*' \
     -not -path '*/tmp/*' \
     -not -path '*/venv/*' \
@@ -224,7 +233,6 @@ function format_cleanup_light {
         -name '.fseventsd' \
       \) \
     \) \
-    -not -path '*/__pycache__/*' \
     -not -path '*/.cache/*' \
     -not -path '*/.ebextensions/*' \
     -not -path '*/.generated/*' \
@@ -236,11 +244,15 @@ function format_cleanup_light {
     -not -path '*/.pytest_cache/*' \
     -not -path '*/.sass-cache/*' \
     -not -path '*/.svn/*' \
+    -not -path '*/.venv/*' \
+    -not -path '*/__pycache*/*' \
+    -not -path '*/__pycache__/*' \
     -not -path '*/bower_components/*' \
     -not -path '*/build/*' \
     -not -path '*/coverage/*' \
     -not -path '*/CVS/*' \
     -not -path '*/dist/*' \
+    -not -path '*/env/*' \
     -not -path '*/node_modules/*' \
     -not -path '*/tmp/*' \
     -not -path '*/venv/*' \

@@ -10,7 +10,7 @@ let COMMON_CONFIGS;
 function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
   // Sublime Text patterns don't use the '**/ ' prefix.
   // We ensure we return a clean array of strings.
-  return list.map(item => {
+  return list.map((item) => {
     // If a pattern was accidentally passed with VS Code globs, strip them
     return item.replace(/^\*\*\//, '');
   });
@@ -28,7 +28,7 @@ async function doInit() {
     index_exclude_patterns: ['*.log', 'node_modules/*', '.git/*', 'dist/*', 'build/*'],
     gpu_window_buffer: true,
     hardware_acceleration: 'opengl', // Default; overridden for Mac below
-    "index_workers": 2, // processes workers to scan your code, cataloging functions, classes, and variables
+    index_workers: 2, // processes workers to scan your code, cataloging functions, classes, and variables
 
     // --- Typography & Rendering ---
     font_face: 'Fira Code Bold',
@@ -75,19 +75,13 @@ async function doInit() {
 
     // --- Ignored Files
     // Files hidden from the Sidebar and 'Goto Anything'
-  "file_exclude_patterns": _convertIgnoredFilesAndFoldersForSublimeText(
-    EDITOR_CONFIGS.ignoredFiles
-  ),
+    file_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFiles),
 
-  // Folders hidden from the Sidebar and 'Goto Anything'
-  "folder_exclude_patterns": _convertIgnoredFilesAndFoldersForSublimeText(
-    EDITOR_CONFIGS.ignoredFolders
-  ),
+    // Folders hidden from the Sidebar and 'Goto Anything'
+    folder_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFolders),
 
-  // Files visible in Sidebar but excluded from the Search Index (Performance)
-  "binary_file_patterns": _convertIgnoredFilesAndFoldersForSublimeText(
-    EDITOR_CONFIGS.ignoredBinaries
-  )
+    // Files visible in Sidebar but excluded from the Search Index (Performance)
+    binary_file_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredBinaries),
   };
 
   // --- OS Specific Overrides ---
