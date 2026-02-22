@@ -47,7 +47,7 @@ async function doInit() {
     theme: 'Adaptive.sublime-theme',
     show_folding_buttons: false, // Disables code folding UI/calculation
     fade_fold_buttons: false, // Redundant since buttons are off
-    preview_on_click: false, // Prevents lag from clicking large files
+    preview_on_click: true, // One click to preview file
 
     // --- Editing & Whitespace ---
     draw_white_space: 'selection', // Much faster than 'all' for large files
