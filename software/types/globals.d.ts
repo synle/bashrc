@@ -62,7 +62,7 @@ declare function writeText(aDir: string, text: string, override?: boolean, suppr
 declare function touchFile(aDir: string, defaultContent?: string): void;
 declare function backupText(aDir: string, text: string): void;
 declare function writeJson(aDir: string, json: any, comments?: string): void;
-declare function writeToBuildFile(tasks: [string, any, boolean?, string?][] | [string, any, boolean?, string?]): void;
+declare function writeToBuildFile(tasks: {file: string, data?: any, isJson?: boolean, comments?: string}[] | {file: string, data?: any, isJson?: boolean, comments?: string}): void;
 declare function appendText(aDir: string, text: string): void;
 declare function replaceTextLineByLine(aDir: string, replacements: [RegExp, string][], makeAdditionalBackup?: boolean): void;
 declare function writeJsonWithMerge(aDir: string, json: object): void;

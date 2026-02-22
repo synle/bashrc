@@ -158,7 +158,7 @@ async function doWork() {
   `);
 
   // write to build file
-  writeToBuildFile([['vimrc', contentVimrc, false]]);
+  writeToBuildFile([{ file: 'vimrc', data: contentVimrc }]);
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, '.vimrc');
   console.log('  >> Setting up vimrc on Linux / Mac / WSL', consoleLogColor4(targetPath));

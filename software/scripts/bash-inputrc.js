@@ -53,7 +53,7 @@ set visible-stats on
     `.trim();
 
   // write to build file
-  writeToBuildFile([['inputrc', content, false]]);
+  writeToBuildFile([{ file: 'inputrc', data: content }]);
 
   // write if there are change
   writeText(targetPath, content);

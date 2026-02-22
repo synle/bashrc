@@ -12,17 +12,16 @@ async function doWork() {
 
   // write to build file
   writeToBuildFile([
-    ['gitignore_global', await _getGlobalGitIgnore(), false],
-    [
-      'gitconfig',
-      `
+    { file: 'gitignore_global', data: await _getGlobalGitIgnore() },
+    {
+      file: 'gitconfig',
+      data: `
         # this file is auto-generated
         ${await _getGitConfig({
           email: '; email = test_email@gmail.com #update this email',
         })}
         `,
-      false,
-    ],
+    },
   ]);
 
   // write to main gitconfig

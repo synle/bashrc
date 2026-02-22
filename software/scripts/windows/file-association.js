@@ -29,5 +29,5 @@ async function doInit() {
 
 async function doWork() {
   console.log('  >> Installing Windows Only - File Associations');
-  writeToBuildFile([['windows-file-association.cmd', associationContent]]);
+  writeToBuildFile([{ file: 'windows-file-association.cmd', data: associationContent }]);
 }

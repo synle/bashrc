@@ -8,15 +8,14 @@ async function doWork() {
   const content = await fetchUrlAsString('software/scripts/terminator.config');
 
   writeToBuildFile([
-    [
-      'terminator-config',
-      `
+    {
+      file: 'terminator-config',
+      data: `
 # ~/.config/terminator/config
 
 ${content}
   `.trim(),
-      false,
-    ],
+    },
   ]);
 
   if (is_os_window || is_os_darwin_mac || is_os_arch_linux) {

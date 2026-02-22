@@ -25,18 +25,17 @@ async function doWork() {
 //   // write to build file
 //   const fontBaseNames = fonts.map((font) => path.basename(font));
 //   writeToBuildFile([
-//     [
-//       'font-linux.md',
-//       `
+//     {
+//       file: 'font-linux.md',
+//       data: `
 // cd ~/Desktop
 // ${fontBaseNames.map((fontBaseName) => `curl https://github.com/synle/bashrc/raw/master/fonts/${fontBaseName} -O -J -L && \\`).join('\n')}
 // echo "Done downloading fonts"
 // `.trim(),
-//       false,
-//     ],
-//     [
-//       'font-windows.md',
-//       `
+//     },
+//     {
+//       file: 'font-windows.md',
+//       data: `
 // C:
 // cd C:
 // ${fontBaseNames
@@ -44,7 +43,6 @@ async function doWork() {
 //   .join('\n')}
 // echo "Done downloading fonts"
 // `.trim(),
-//       false,
-//     ],
+//     },
 //   ]);
 // }

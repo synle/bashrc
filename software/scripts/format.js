@@ -241,5 +241,5 @@ function format_other_text_based_files {
 
   registerWithBashSyle('format script', formatScriptBlock);
 
-  writeToBuildFile([['format', formatScriptBlock]]);
+  writeToBuildFile([{ file: 'format', data: formatScriptBlock }]);
 }

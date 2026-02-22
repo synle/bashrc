@@ -196,7 +196,7 @@ async function doInit() {
 
 async function doWork() {
   console.log('  >> Setting up Windows Powershell Profile');
-  writeToBuildFile([['windows-powershell-profile.ps1', outputContent, false]]);
+  writeToBuildFile([{ file: 'windows-powershell-profile.ps1', data: outputContent }]);
 
   // let targetPath = await _getPath();
 

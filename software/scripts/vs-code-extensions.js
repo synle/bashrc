@@ -48,9 +48,9 @@ async function doWork() {
   // write to build file
   writeToBuildFile([
     // for vscode
-    [
-      'vs-code-extensions-windows',
-      `
+    {
+      file: 'vs-code-extensions-windows',
+      data: `
 c:;  cd "C:/Program Files/Microsoft VS Code/bin"
 ${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
@@ -59,11 +59,10 @@ c:; cd "C:/Program Files/VSCodium/bin"
 ${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCode Extensions'
     `,
-      false,
-    ],
-    [
-      'vs-code-extensions-macosx',
-      `
+    },
+    {
+      file: 'vs-code-extensions-macosx',
+      data: `
 # to delete all previous extensions
 # /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
 
@@ -75,11 +74,10 @@ cd "/Applications/VSCodium.app/Contents/Resources/app/bin/"
 ${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCodium Extensions'
     `,
-      false,
-    ],
-    [
-      'vs-code-extensions-linux',
-      `
+    },
+    {
+      file: 'vs-code-extensions-linux',
+      data: `
 # to delete all previous extensions
 # /usr/bin/code --list-extensions | xargs -L 1 /usr/bin/code --uninstall-extension
 # /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
@@ -93,7 +91,6 @@ echo 'Done installing VSCodium Extensions'
 ${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `flatpak run com.vscodium.codium --install-extension ${ext} --force`).join('\n')}
 echo 'Done installing VSCodium Extensions'
     `,
-      false,
-    ],
+    },
   ]);
 }

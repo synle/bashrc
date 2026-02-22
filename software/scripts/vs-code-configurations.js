@@ -215,6 +215,6 @@ async function doWork() {
   console.log(`  >> VS Code Configurations / Settings:`);
 
   // write to build file
-  const commentNote = '// Preferences Open User Settings (JSON)';
-  writeToBuildFile([['vs-code-configurations', COMMON_CONFIGS, true, commentNote]]);
+  const comments = '// Preferences Open User Settings (JSON)';
+  writeToBuildFile([{ file: 'vs-code-configurations', data: COMMON_CONFIGS, isJson: true, comments }]);
 }

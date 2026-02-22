@@ -95,6 +95,6 @@ async function doWork() {
   console.log(`  >> Sublime Text Configurations / Settings:`);
 
   // write to build file
-  const commentNote = '// Preferences Settings';
-  writeToBuildFile([['sublime-text-configurations', COMMON_CONFIGS, true, commentNote]]);
+  const comments = '// Preferences Settings';
+  writeToBuildFile([{ file: 'sublime-text-configurations', data: COMMON_CONFIGS, isJson: true, comments }]);
 }

@@ -16,7 +16,7 @@ async function doWork() {
   console.log('    >> Setting up Sublime Merge:', consoleLogColor4(targetPath));
 
   // write to build file
-  writeToBuildFile([['sublime-merge', SUBLIME_MERGE_CONFIG, true]]);
+  writeToBuildFile([{ file: 'sublime-merge', data: SUBLIME_MERGE_CONFIG, isJson: true }]);
 
   exitIfPathNotFound(targetPath);
 

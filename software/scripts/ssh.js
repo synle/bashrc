@@ -88,7 +88,7 @@ async function doWork() {
   console.log(sshConnections.map(([hostName, hostIp]) => `      >> ${hostIp} ${hostName}`).join('\n'));
 
   // write to build file
-  writeToBuildFile([['ssh-config', sshConfigTextContent, false]]);
+  writeToBuildFile([{ file: 'ssh-config', data: sshConfigTextContent }]);
 
   // make a backup
   backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.config`), sshConfigTextContent);

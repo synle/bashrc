@@ -51,6 +51,6 @@ async function doWork() {
     .join('\n')
     .trim();
 
-  writeToBuildFile([['window_wsl2_config', finalOutput]]);
+  writeToBuildFile([{ file: 'window_wsl2_config', data: finalOutput }]);
   writeText(targetPath, finalOutput);
 }
