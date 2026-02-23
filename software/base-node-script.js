@@ -1134,10 +1134,10 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
       ...new Set(
         (files || [])
           .map((s) => s.trim().replace('./software/', 'software/'))
-          .filter(f => f && f.includes('software/'))
-          .filter(f => !f.endsWith('.json') && !f.endsWith('software/base-node-script.js'))
-          .filter((f) =>{
-            if(skipOsFiltering === true){
+          .filter((f) => f && f.includes('software/'))
+          .filter((f) => !f.endsWith('.json') && !f.endsWith('software/base-node-script.js'))
+          .filter((f) => {
+            if (skipOsFiltering === true) {
               // if skip checking os, we want to return all scripts (used by the runner to generate all scripts)
               return true;
             }
@@ -1145,7 +1145,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
             // if os check is on, we want to include only the script tag (used for run mode by the os)
             return f.includes('software/scripts');
           })
-          .filter((f) => [`.js`, `.sh`].some(allowedExtnsion=>f.endsWith(allowedExtnsion))),
+          .filter((f) => [`.js`, `.sh`].some((allowedExtnsion) => f.endsWith(allowedExtnsion))),
       ),
     ];
   }
@@ -1663,7 +1663,11 @@ async function _doWorkTestFiles() {
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  console.log(echoColor1(`>> _doWorkTestFiles => filesToTest (process.env.TEST_SCRIPT_FILES)=${filesToTest.length}, and allRepoFiles=${allRepoFiles.length}.`));
+  console.log(
+    echoColor1(
+      `>> _doWorkTestFiles => filesToTest (process.env.TEST_SCRIPT_FILES)=${filesToTest.length}, and allRepoFiles=${allRepoFiles.length}.`,
+    ),
+  );
 
   const softwareFiles = filesToTest
     .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
