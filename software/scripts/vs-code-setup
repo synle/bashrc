@@ -1,6 +1,8 @@
 ##################################################
 # for Linux using bash
 ##################################################
+export BASH_PROFILE_CODE_REPO_RAW_URL="${BASH_PROFILE_CODE_REPO_RAW_URL:-https://raw.githubusercontent.com/synle/bashrc/master}"
+REMOTE_BASE="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
 REMOTE_BASE="https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build"
 CONFIG_FILE="vs-code-configurations"
 KEYBIND_LINUX="vs-code-keybindings-linux"
