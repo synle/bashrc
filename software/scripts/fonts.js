@@ -33,7 +33,7 @@ echo "Done downloading fonts"`;
 
   // Start-BitsTransfer: Pipe an array of URLs into a single Start-BitsTransfer call instead of invoking it per file, which lets BITS manage them as one job
   const windowFontGuide = `# Fonts - Windows
-cd ~/Desktop
+cd ([Environment]::GetFolderPath('Desktop'))
 $urls = @(
 ${fontBaseNames.map((fontBaseName) => `  "${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName}"`).join(',\n')}
 )
