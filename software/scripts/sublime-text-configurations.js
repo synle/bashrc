@@ -34,7 +34,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     // --- Typography & Rendering ---
     font_face: is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily,
     font_size: EDITOR_CONFIGS.fontSize,
-    font_options: ['gray_antialias', 'subpixel_antialias'],
+    font_options: ['gray_antialias', 'subpixel_antialias', 'bold'],
     line_padding_top: 1,
     highlight_line: true,
     scroll_speed: 0.0, // Instant scrolling
