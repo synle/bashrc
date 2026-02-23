@@ -213,11 +213,11 @@ function RightContainer() {
           formValue.setupDependencies !== 'yes'
             ? ''
             : `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-mac.sh)" && \\\n` +
-              `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-ubuntu.sh)" && \\\n` +
-              `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-windows.sh)" && \\\n` +
-              `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-chrome-os-linux.sh)" && \\\n` +
-              `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-android-termux.sh)" && \\\n` +
-              `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-arch-linux-steam-deck.sh)" && \\\n`,
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-ubuntu.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-windows.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-chrome-os-linux.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-android-termux.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-arch-linux-steam-deck.sh)" && \\\n`,
         )
         .replace(
           '<ENV_VARS>',
