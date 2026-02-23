@@ -7,6 +7,14 @@ export BASH_PATH=~/.bashrc
 export PATH=$PATH:/sbin
 
 ##########################################################
+# Shared prompt/br style
+##########################################################
+_PROMPT_BLOCK="##==========="
+_PROMPT_COLORS=(91 93 92 96 94 95)
+_PROMPT_BREAK="\[\e[1;91m\]$_PROMPT_BLOCK\[\e[1;93m\]$_PROMPT_BLOCK\[\e[1;92m\]$_PROMPT_BLOCK\[\e[1;96m\]$_PROMPT_BLOCK\[\e[1;94m\]$_PROMPT_BLOCK\[\e[1;95m\]$_PROMPT_BLOCK\[\e[m\]"
+_PROMPT_BREAK_LIGHT="\[\e[0;90m\]$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK\[\e[m\]"
+
+##########################################################
 # History
 ##########################################################
 export HISTSIZE=5000
@@ -96,8 +104,8 @@ activate_py(){
 br() {
   clear
   local repeat_count=${1:-1} # default to -1
-  local colors=(91 93 92 96 94 95)
-  local block="##=============##"
+  local colors=("${_PROMPT_COLORS[@]}")
+  local block="$_PROMPT_BLOCK"
 
   # High-Contrast Bold color codes
   local num_colors=${#colors[@]}
@@ -437,15 +445,15 @@ mkdir -p ~/.ssh/sockets
 ##########################################################
 # Prompt
 ##########################################################
-# ====
-# 08:24:44 PM UTC=01:24:44 AM syle @ Sy-G14-2023
+# #====#====#====#====#====#====
+# 08:24:44PM UTC=01:24:44AM syle @ Sy-G14-2023
 # ~/git/bashrc
 # >>>
-export PS1_Simple='
-\[\e[1;31m\]====\[\e[m\]
-\[\e[1;93m\]$(get_time) \[\e[1;95m\]UTC=$(get_time "UTC") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
+export PS1_Simple="
+${_PROMPT_BREAK_LIGHT}
+\[\e[1;93m\]\$(get_time) \[\e[1;95m\]UTC=\$(get_time \"UTC\") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
 \[\e[1;97m\]\w\[\e[m\]
-\[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] '
+\[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] "
 
 # Assign it
 export PS1="$PS1_Simple"
