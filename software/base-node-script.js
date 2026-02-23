@@ -1113,14 +1113,15 @@ async function listRepoDir(fetchFromRemote = true) {
  * @returns {Promise<string[]>} Array of all script file paths
  */
 async function getAllRepoSoftwareFiles() {
-  const res =  getSoftwareScriptFiles({ skipOsFiltering: true, useFallback: true });
+  const res = getSoftwareScriptFiles({ skipOsFiltering: true, useFallback: true });
   return [
     ...res,
+    // TODO: do this dynamically
     `software/metadata/ip-address.config.js`,
     `software/metadata/script-list.config.js`,
     `software/metadata/bash-autocomplete.docker.js`,
     `software/metadata/hosts-blocked-ads.config.js`,
-  ]
+  ];
 }
 
 /**
@@ -1136,10 +1137,31 @@ async function getAllRepoSoftwareFiles() {
 async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles = false, useFallback = false } = {}) {
   let files;
 
+  function _cleanupSoftwareFilters(files) {
+    return [
+      ...new Set(
+        (files || [])
+          .map((s) => s.replace('./software/', 'software/'))
+          .filter((f) => !!f.match('software/scripts/') && !f.endsWith('.config.js'))
+          .filter((f) => {
+            const EXTENSIONS_TO_USE = [`.js`, `.sh`];
+
+            for (const extension of EXTENSIONS_TO_USE) {
+              if (f.endsWith(extension)) {
+                return true;
+              }
+            }
+
+            return false;
+          }),
+      ),
+    ];
+  }
+
   // fallback mode: try local find first, fall back to API if files is empty
   if (useFallback === true) {
     try {
-      files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
+      files = (await execBash('find .')).split('\n');
     } catch (_) {}
 
     if (!files || files.length === 0) {
@@ -1150,26 +1172,14 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   }
   if (useLocalFiles === true || isTestScriptMode === true) {
     // fetch from exec bash
-    files = (await execBash('find .')).split('\n').map((s) => s.replace('./software/scripts/', 'software/scripts/'));
+    files = (await execBash('find .')).split('\n');
   } else {
     // fetch from APIS
     files = await listRepoDir();
   }
 
   // clean up the files
-  files = files
-    .filter((f) => !!f.match('software/scripts/') && !f.endsWith('.config.js'))
-    .filter((f) => {
-      const EXTENSIONS_TO_USE = [`.js`, `.sh`];
-
-      for (const extension of EXTENSIONS_TO_USE) {
-        if (f.endsWith(extension)) {
-          return true;
-        }
-      }
-
-      return false;
-    });
+  files = _cleanupSoftwareFilters(files);
 
   //this is a special flags used to return all the script for index building
   if (skipOsFiltering) {
@@ -1582,7 +1592,7 @@ async function includeSource(file) {
  */
 function printOsFlags() {
   if (process.env.SHOULD_PRINT_OS_FLAGS !== 'false') {
-    printSectionBlock(`OS Flags`)
+    printSectionBlock(`OS Flags`);
     console.log(`
       node -e """
         Object.keys(process.env)
@@ -1632,8 +1642,7 @@ function printScriptProcessingResults(results) {
   const successCount = results.filter((r) => r.status === 'success').length;
   const errorCount = results.filter((r) => r.status === 'error').length;
 
-
-  printSectionBlock(`Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`)
+  printSectionBlock(`Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`);
 
   for (const result of results) {
     if (result.status === 'success') {
