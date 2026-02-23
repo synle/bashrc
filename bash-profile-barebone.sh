@@ -96,21 +96,27 @@ activatePy(){
 
 br() {
   clear
-  # 1. Define your "brick" here
-  local block="========"
+  local repeat_count=${1:-1} # default to -1
+  local colors=(91 93 92 96 94 95)
+  local block="##=============##"
 
-  # 2. Build the rainbow line using that block
-  local rainbow_segment=$'\e[1;97m'$block$'\e[1;93m'$block$'\e[1;92m'$block$'\e[1;96m'$block$'\e[1;95m'$block$'\e[1;94m'$block$'\e[1;31m'$block$'\e[m'
+  # High-Contrast Bold color codes
+  local num_colors=${#colors[@]}
 
-  # 3. Default to 2 if no input is provided
-  local repeat_count=${1:-2}
-
-  # 4. Print the lines
   for ((i=0; i<repeat_count; i++)); do
-    echo "$rainbow_segment"
-  done
+    local line=""
 
-  echo ""
+    for ((j=0; j<num_colors; j++)); do
+      local color_idx=$(( (i + j) % num_colors ))
+      local color_code="${colors[$color_idx]}"
+
+      # Use the $'...' syntax here to "bake" the escape code into the string
+      line+=$'\e[1;'"${color_code}m${block}"
+    done
+
+    # Reset color and print. No -e needed because the variable is already escaped.
+    echo "${line}"$'\e[m'
+  done
 }
 
 # # Usage:
@@ -121,12 +127,27 @@ br() {
 # echo "Done!"
 spinner() {
   local chars="/-\|"
+  # Using your preferred high-contrast neon colors
+  local colors=(91 93 92 96 94 95)
+  local c_idx=0
+
+  # Hide the cursor so it looks cleaner
+  tput civis
+
+  # Trap to restore the cursor if you hit Ctrl+C
+  trap "tput cnorm; exit" SIGINT
+
   while true; do
     for (( i=0; i<${#chars}; i++ )); do
+      local color="${colors[$c_idx]}"
+
+      # Print the character in the current neon color
+      echo -ne $'\e[1;'"${color}m${chars:$i:1}"$'\e[m'"\r"
+
       sleep 0.1
-      # \r moves the cursor to the start of the line
-      # -n prevents a newline
-      echo -ne "${chars:$i:1}" "\r"
+
+      # Move to the next color in the array
+      c_idx=$(( (c_idx + 1) % ${#colors[@]} ))
     done
   done
 }
@@ -324,11 +345,15 @@ New_Dir: \"$OUT\"
 ##########################################################
 # Date / Time
 ##########################################################
-date_show(){
-  echo '>> utc'
+date2(){
+  # High-intensity colors for the labels
+  echo $'\e[1;31m>> UTC\e[m'
   date -u +'%a, %b %d, %Y  %r'
 
-  echo '>> local'
+  echo $'\e[1;96m>> PST (California)\e[m'
+  TZ="America/Los_Angeles" date +'%a, %b %d, %Y  %r'
+
+  echo $'\e[1;92m>> LOCAL\e[m'
   date +'%a, %b %d, %Y  %r'
 }
 
