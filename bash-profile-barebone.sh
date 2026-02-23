@@ -94,9 +94,23 @@ activatePy(){
   fi
 }
 
-br(){
-  clear &&  echo $'\e[32m========================================================\e[m' && echo '''
-  '''
+br() {
+  clear
+  # 1. Define your "brick" here
+  local block="========"
+
+  # 2. Build the rainbow line using that block
+  local rainbow_segment=$'\e[1;97m'$block$'\e[1;93m'$block$'\e[1;92m'$block$'\e[1;96m'$block$'\e[1;95m'$block$'\e[1;94m'$block$'\e[1;31m'$block$'\e[m'
+
+  # 3. Default to 2 if no input is provided
+  local repeat_count=${1:-2}
+
+  # 4. Print the lines
+  for ((i=0; i<repeat_count; i++)); do
+    echo "$rainbow_segment"
+  done
+
+  echo ""
 }
 
 # # Usage:
