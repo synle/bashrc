@@ -36,7 +36,8 @@
 export BASH_SYLE_COMMON='~/.bash_syle_common'
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
 
-BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
+# code begins
+export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 
 # Initialize common file with OS detection flags
 if [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then

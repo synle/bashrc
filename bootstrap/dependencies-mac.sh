@@ -133,8 +133,10 @@ EOF
   # Cleanup
   ##########################################################
   echo '>> Kill all dock icons'
-  defaults write com.apple.dock persistent-apps -array
-  killall Dock
+  if [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
+    defaults write com.apple.dock persistent-apps -array
+    killall Dock
+  fi
 
   # disable spotlight indexing
   sudo mdutil -i off
