@@ -22,12 +22,7 @@ async function doWork() {
     trimLeftSpaces(`
       BOOKMARK_PATH=~/.syle_bookmark
 
-      getCommandFromBookmark(){
-        touch $BOOKMARK_PATH
-        cat $BOOKMARK_PATH
-      }
-
-      addCommandToBookmarks(){
+      add_bookmark(){
         local _temp_bookmark="/tmp/syle_bookmark"
 
         echo "$1" >> "$BOOKMARK_PATH"
@@ -35,25 +30,22 @@ async function doWork() {
         # Remove duplicates, sort, and update the bookmark file
         sort "$BOOKMARK_PATH" | uniq > "$_temp_bookmark" && mv "$_temp_bookmark" "$BOOKMARK_PATH"
       } >/dev/null 2>&1
-      alias bookmarkCommand=addCommandToBookmarks
 
-      addDirToBookmarks(){
+      add_bookmark_dir(){
         dir="\${1:-\$(pwd)}"
-        addCommandToBookmarks "cd $dir"
+        add_bookmark "cd $dir"
       }
-      alias bookmarkDir=addDirToBookmarks
 
-      fuzzyFavoriteCommand(){
-        bookmarkedCommands=$((getCommandFromBookmark) | sort | uniq | fzf)
+      fuzzy_favorite_command(){
+        local cmd
+        cmd=$(cat "$BOOKMARK_PATH" 2>/dev/null | sort | uniq | fzf)
 
-        echo '### Command Selected from Bookmarks ###'
-        echo "$bookmarkedCommands"
-
-        # run the command
-        eval "$bookmarkedCommands"
-
-        # put the command into history
-        history -s "$bookmarkedCommands"
+        if [ -n "$cmd" ]; then
+          echo "### Command Selected from Bookmarks ###"
+          echo "$cmd"
+          eval "$cmd"
+          history -s "$cmd"
+        fi
       }
     `),
   );

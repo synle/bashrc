@@ -33,13 +33,12 @@ alias s='ssh -4'
 alias b="bat --style=plain"
 alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 alias fzf='fzf --no-sort'
-alias search='searchText'
 alias grep='grep --color'
 alias gr='grep -i'
 
 # git aliases
 alias merge="git fetch --all --prune && git merge"
-alias mergeMaster="merge origin/master"
+alias merge_master="merge origin/master"
 alias pp="pi"
 
 # python aliases
@@ -72,16 +71,16 @@ ech() {
 }
 
 p() {
-  activatePy
+  activate_py
   python "$@"
 }
 
 pi() {
-  activatePy
+  activate_py
   pip install -r "$@"
 }
 
-activatePy(){
+activate_py(){
   # Check if Python virtual environment is already activated
   if [[ -z "$VIRTUAL_ENV" ]]; then
     # Try activating local venv first
@@ -188,78 +187,84 @@ clean_master_main_branch(){
 ##########################################################
 # Search Functions
 ##########################################################
-searchHelp(){
-  echo '''
-searchCode ""
-
-searchFile ""
-
-searchFileWithGit ""
-
-searchDirWithGit ""
-
-searchDir ""
-  '''
+search_file(){
+  find . -type f -iname "*$@*" | filter_unwanted | grep -i "$@"
 }
 
-searchCode(){
-  echo """
-Searching:  $@
-#############################################################
-  """
-
-  grep -r -o -n "$@" \
-    --include=*.{*.hbs,*.jsx,*.js,*.tsx,*.ts,*.css,*.scss,*.less,*.scala,*.html,*.java,*.py} \
-    --exclude=*.{png,jpg,.gitignore,.DS_Store} \
-    --exclude-dir={node_modules,.git} \
-  .
-}
-
-searchFile(){
-  find . -type f -iname "*$@*" | filterUnwantedLight | grep -i "$@"
-}
-
-searchFileWithGit(){
+search_file_with_git(){
   # use either ls tree or find
   git ls-tree -r --name-only HEAD 2> /dev/null || \
   find . -type f 2>/dev/null \
   | uniq
 }
 
-searchDirWithGit(){
+search_dir_with_git(){
   find ${1:-.} -path '*/\.*' -prune \
   -o -type d -print 2> /dev/null
   echo ".." # append parent folder
 }
 
-searchDir(){
-  find . -type d -iname "*$@*" | filterUnwantedLight | grep -i "$@"
+search_dir(){
+  find . -type d -iname "*$@*" | filter_unwanted | grep -i "$@"
 }
 
 ##########################################################
 # Filter Functions
 ##########################################################
-filterUnwantedLight(){
+filter_unwanted(){
   grep -v "\.DS_Store" \
   | grep -v "\.git/" \
   | grep -v "node_modules" \
+  | grep -v "bower_components" \
+  | grep -v "__pycache__" \
+  | grep -v "\.pyc$" \
+  | grep -v "/venv/" \
+  | grep -v "/\.venv/" \
+  | grep -v "/dist/" \
+  | grep -v "/build/" \
+  | grep -v "/\.next/" \
+  | grep -v "/\.cache/" \
+  | grep -v "/coverage/" \
+  | grep -v "/\.idea/" \
+  | grep -v "/\.gradle/" \
+  | grep -v "/target/" \
   | uniq
 }
 
-filterTextFilesOnly(){
-  filterUnwantedLight \
-  | grep -v "\.jpeg" \
-  | grep -v "\.jpg" \
-  | grep -v "\.png" \
+filter_text_files_only(){
+  filter_unwanted \
+  | grep -v "\.jpeg$" \
+  | grep -v "\.jpg$" \
+  | grep -v "\.png$" \
+  | grep -v "\.gif$" \
+  | grep -v "\.ico$" \
+  | grep -v "\.bmp$" \
+  | grep -v "\.webp$" \
+  | grep -v "\.svg$" \
+  | grep -v "\.mp4$" \
+  | grep -v "\.mp3$" \
+  | grep -v "\.mov$" \
+  | grep -v "\.zip$" \
+  | grep -v "\.tar$" \
+  | grep -v "\.gz$" \
+  | grep -v "\.rar$" \
+  | grep -v "\.pdf$" \
+  | grep -v "\.woff2\?$" \
+  | grep -v "\.ttf$" \
+  | grep -v "\.eot$" \
+  | grep -v "\.jar$" \
+  | grep -v "\.class$" \
+  | grep -v "\.exe$" \
+  | grep -v "\.dll$" \
+  | grep -v "\.so$" \
+  | grep -v "\.dylib$" \
   | uniq
 }
-
-alias filterUnwanted='filterUnwantedLight'
 
 ##########################################################
 # Chmod Calculator
 ##########################################################
-chmodCalculator(){
+chmod_calculator(){
   node -e """
     console.log('Chmod Calculator - Enter permission for x w r:');
     var stdin = process.openStdin();
@@ -281,25 +286,25 @@ chmodCalculator(){
     };
   """
 }
-alias calcChmod='chmodCalculator'
+alias calc_chmod='chmod_calculator'
 
 ##########################################################
 # FZF Lightweight Aliases and Functions
 ##########################################################
-alias fv=fuzzyVim
-alias fvim=fuzzyVim
-alias fview=fuzzyViewFile
-alias fcd=fuzzyDirectory
+alias fv=fuzzy_vim
+alias fvim=fuzzy_vim
+alias fview=fuzzy_view_file
+alias fcd=fuzzy_directory
 
 # simple view file alias - will be overridden by advanced bash
-viewFile(){
+view_file(){
   vim "$@"
 }
 
-fuzzyVim(){
+fuzzy_vim(){
   local OUT=$( \
-    searchFileWithGit | \
-    filterTextFilesOnly | \
+    search_file_with_git | \
+    filter_text_files_only | \
     fzf \
   )
 
@@ -311,25 +316,25 @@ vim \"$OUT\"
   fi
 }
 
-fuzzyViewFile(){
+fuzzy_view_file(){
   local OUT=$( \
-    searchFileWithGit | \
-    filterTextFilesOnly | \
+    search_file_with_git | \
+    filter_text_files_only | \
     fzf \
   )
 
   if [ -n "$OUT" ]; then
     echo """
-viewFile \"$OUT\"
+view_file \"$OUT\"
     """
-    viewFile "$OUT"
+    view_file "$OUT"
   fi
 }
 
-fuzzyDirectory(){
+fuzzy_directory(){
   local OUT=$( \
-    searchDirWithGit | \
-    filterUnwanted | \
+    search_dir_with_git | \
+    filter_unwanted | \
     fzf +m \
   );
 

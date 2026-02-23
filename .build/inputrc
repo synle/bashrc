@@ -35,12 +35,12 @@ set visible-stats on
 ## ctrl + key bindings for utils
 #"\C-o": "fcd\r"
 #"\C-p": "fviewfile\r"
-"\C-b": "fuzzyFavoriteCommand\r"
+"\C-b": "fuzzy_favorite_command\r"
 "\C-n": "fuzzyMakeComponent\r"
 
 ## alt + key bindings for utils
 #"\er": "clear\n" # alt r to clear (for WSL and linux)
 #"\eo": "fcd\r" # alt o
 #"\ep": "fviewfile\r" # alt o
-#"\eb": "fuzzyFavoriteCommand\r" # alt b
+#"\eb": "fuzzy_favorite_command\r" # alt b
 #"\en": "fuzzyMakeComponent\r"

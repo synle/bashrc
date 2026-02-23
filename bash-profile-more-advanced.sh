@@ -3,15 +3,15 @@
 ##########################################################
 # Docker Aliases and Functions
 ##########################################################
-dexecBash(){
+dexec_bash(){
   echo "docker exec -it $@ /bin/bash";
   docker exec -it $@ /bin/bash
 }
 alias d='docker'
 alias drun='docker run'
-alias dexec='dexecBash'
+alias dexec='dexec_bash'
 alias apt='sudo apt-get'
-alias bat='batcatfull -p --paging=never'
+alias bat='batcat_full -p --paging=never'
 
 # make sure the bookmark is present
 touch ~/.syle_bookmark
@@ -19,7 +19,7 @@ touch ~/.syle_bookmark
 ##########################################################
 # Bat / Cat Setup
 ##########################################################
-batcatfull() {
+batcat_full() {
     # Try the 'bat' command first
     bat "$@" 2>/dev/null
     if [ $? -ne 0 ]; then
@@ -69,7 +69,7 @@ watch(){
 ##########################################################
 # Network Utilities
 ##########################################################
-listPort(){
+list_port(){
   echo "list port $@"
   lsof -i tcp:$@
 }
@@ -77,7 +77,7 @@ listPort(){
 ##########################################################
 # Git Utilities
 ##########################################################
-gitCompare(){
+git_compare(){
   #get current branch name
   branch_name=$(git symbolic-ref -q HEAD)
   branch_name=${branch_name##refs/heads/}
@@ -168,7 +168,7 @@ code() {
     /usr/bin/code
 }
 
-codeListExtensions(){
+code_list_extensions(){
   code --list-extensions
 }
 
@@ -186,15 +186,15 @@ cp2(){
 # FZF Advanced Functions
 # https://github.com/junegunn/fzf/wiki/examples
 ##########################################################
-alias gco='fuzzyGitCobranch'
+alias gco='fuzzy_git_cobranch'
 alias gbranch='gco'
 alias gbr='gco'
-alias glog='fuzzyGitShow'
+alias glog='fuzzy_git_show'
 alias gl='glog'
 alias gp='git push'
 
 # override viewfile with more advanced function
-viewFile(){
+view_file(){
   local editorCmd
 
   if [[ $# -eq 0 ]] ; then
@@ -206,7 +206,7 @@ viewFile(){
   $editorCmd "$1"
 }
 
-fuzzyGitShow(){
+fuzzy_git_show(){
   git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
   |
   fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort --color light --preview='echo {} | cut -d " " -f1 | xargs git show' \
@@ -217,7 +217,7 @@ fuzzyGitShow(){
   FZF-EOF"
 }
 
-fuzzyGitCobranch(){
+fuzzy_git_cobranch(){
   local branches branch
   branches=$(git branch --all | grep -v HEAD | sed 's/remotes\/origin\///g' | sed "s/.* //" | sed 's/ //g' | sed "s#remotes/[^/]*/##" | sort | uniq) &&
   branch=$(echo "$branches" |
@@ -231,7 +231,7 @@ export FZF_COMPLETION_TRIGGER='*'
 ##########################################################
 # Prompt Helpers
 ##########################################################
-parseGitBranch(){
+parse_git_branch(){
 node -e """
   const { exec } = require('child_process');
   exec('git branch | grep \"*\"', (error, stdout, stderr) => !error && console.log('['+stdout.replace('*','').trim()+']'));
@@ -246,7 +246,7 @@ node -e """
 """
 }
 
-shorterPwdPath(){
+shorter_pwd_path(){
   local trim_count=3  # Set the number of parts to retain in the path
   IFS='/' read -r -a splits <<< "$(pwd)"
   result=""
@@ -269,7 +269,7 @@ shorterPwdPath(){
 export PS1_Advanced='
 \[\e[1;31m\]====\[\e[m\]
 \[\e[1;93m\]$(get_time) \[\e[1;95m\]UTC=$(get_time "UTC") \[\e[1;94m\]PST=$(get_time "America/Los_Angeles") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\] - \[\e[1;93m\]`ifconfig2`\[\e[m\]
-\[\e[1;97m\]`shorterPwdPath`\[\e[m\] \[\e[1;95m\]`parseGitBranch`\[\e[m\]
+\[\e[1;97m\]`shorter_pwd_path`\[\e[m\] \[\e[1;95m\]`parse_git_branch`\[\e[m\]
 \[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] '
 
 export PS1="$PS1_Advanced"
