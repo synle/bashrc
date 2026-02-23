@@ -33,7 +33,7 @@
 # Prerequisites - OS Flags & NVM/Node Setup
 ##########################################################
 
-BASH_SYLE_COMMON=~/.bash_syle_common
+export BASH_SYLE_COMMON="~/.bash_syle_common"
 
 # Create $BASH_SYLE_COMMON if it doesn't exist (OS detection flags)
 if [ ! -f $BASH_SYLE_COMMON ]; then
