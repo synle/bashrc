@@ -1113,7 +1113,14 @@ async function listRepoDir(fetchFromRemote = true) {
  * @returns {Promise<string[]>} Array of all script file paths
  */
 async function getAllRepoSoftwareFiles() {
-  return getSoftwareScriptFiles({ skipOsFiltering: true, useFallback: true });
+  const res =  getSoftwareScriptFiles({ skipOsFiltering: true, useFallback: true });
+  return [
+    ...res,
+    `software/metadata/ip-address.config.js`,
+    `software/metadata/script-list.config.js`,
+    `software/metadata/bash-autocomplete.docker.js`,
+    `software/metadata/hosts-blocked-ads.config.js`,
+  ]
 }
 
 /**
