@@ -1,6 +1,6 @@
 /// <reference path="../base-node-script.js" />
 
-function _getRebaseInteractiveSnippet(){
+function _getRebaseInteractiveSnippet() {
   const items = [];
   for (let i = 5; i <= 100; i += 5) items.push(i);
   for (let i = 150; i <= 1000; i += 50) items.push(i);
@@ -14,7 +14,11 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
   let templateGitConfig = await fetchUrlAsString('software/scripts/git.config');
 
   try {
-    templateGitConfig = templateGitConfig.replace('###SNIPPET_GIT_USER_EMAIL###', email).replace('###SNIPPET_GIT_EXTRA_CORE_CONFIGS###', extraCoreConfigs).replace('###SNIPPET_GIT_REBASE_INTERACTIVE###', extraCoreConfigs).trim();
+    templateGitConfig = templateGitConfig
+      .replace('###SNIPPET_GIT_USER_EMAIL###', email)
+      .replace('###SNIPPET_GIT_EXTRA_CORE_CONFIGS###', extraCoreConfigs)
+      .replace('###SNIPPET_GIT_REBASE_INTERACTIVE###', _getRebaseInteractiveSnippet())
+      .trim();
 
     if (addDefaultCommitTemplate === true) {
       const GIT_DEFAULT_MESSAGE_PATH = `${BASE_HOMEDIR_LINUX}/.gitmessage`;

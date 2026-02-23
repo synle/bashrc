@@ -30,7 +30,6 @@ curl -sSLJ --parallel --parallel-max 10 \\
 ${fontBaseNames.map((fontBaseName) => `  -O ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName}`).join(' \\\n')}
 echo "Done downloading fonts"`;
 
-
   // Start-BitsTransfer: Pipe an array of URLs into a single Start-BitsTransfer call instead of invoking it per file, which lets BITS manage them as one job
   const windowFontGuide = `# Fonts - Windows
 cd ([Environment]::GetFolderPath('Desktop'))
