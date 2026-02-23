@@ -126,7 +126,7 @@ tree(){
   find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 }
 
-pwd() {
+pwd2() {
   echo '===== pwd ===================================='
   command pwd
 
@@ -373,10 +373,10 @@ mkdir -p ~/.ssh/sockets
 # >>>
 # Define the template
 export PS1_Simple="
-\[\e[31m\]====\[\e[m\]
-\[\e[33m\]\D{%c}\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\]
-\[\e[33m\]\w\[\e[m\]
-\[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
+\[\e[1;31m\]====\[\e[m\]
+\[\e[1;93m\]\D{%c}\[\e[m\] \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
+\[\e[1;97m\]\w\[\e[m\]
+\[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] "
 
 # Assign it
 export PS1="$PS1_Simple"
