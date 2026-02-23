@@ -117,19 +117,7 @@ pwd2(){
 ##########################################################
 # Git Helpers
 ##########################################################
-getCurrentGitBranch(){
-  git name-rev --name-only HEAD
-}
-
-getCurrentGitRepo(){
-  basename `git rev-parse --show-toplevel`
-}
-
-setGitUpstreamBranch(){
-  git branch -u origin/$(git name-rev --name-only HEAD)
-}
-
-cleanmaster(){
+clean_master_main_branch(){
     git stash;
     git clean fd
     git reset --hard;
