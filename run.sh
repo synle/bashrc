@@ -44,16 +44,16 @@ if [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
 ##########################################################
 # OS Detection
 ##########################################################
-export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
+export is_os_darwin_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && export is_os_darwin_mac=1
 export is_os_ubuntu=0 && command grep -Eiq "ID(_LIKE)?=(ubuntu|debian|mint)" /etc/os-release 2>/dev/null && export is_os_ubuntu=1
 export is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || grep -qi cros /proc/version 2>/dev/null; } && export is_os_chromeos=1
-export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
-export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
+export is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d /mingw64 ]; } && export is_os_mingw64=1
+export is_os_android_termux=0 && { [ -n "$TERMUX_VERSION" ] || [ -d /data/data/com.termux ]; } && export is_os_android_termux=1
 export is_os_arch_linux=0 && command grep -Eiq "ID(_LIKE)?=(arch|steamos)" /etc/os-release 2>/dev/null && export is_os_arch_linux=1
-export is_os_steamdeck=$is_os_arch_linux
+export is_os_steamdeck=0 && [[ "$is_os_arch_linux" == "1" ]] && command grep -qi "ID=steamos" /etc/os-release 2>/dev/null && export is_os_steamdeck=1
 export is_os_redhat=0 && command grep -Eiq "ID(_LIKE)?=(fedora|rhel|centos|rocky|alma)" /etc/os-release 2>/dev/null && export is_os_redhat=1
 export is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && export is_os_window=1
-export is_os_wsl=0 && command grep -qi "microsoft" /proc/version 2>/dev/null && export is_os_wsl=1
+export is_os_wsl=0 && { [[ "$is_os_window" == "1" ]] || grep -qi microsoft /proc/version 2>/dev/null; } && export is_os_wsl=1
 EOF
 fi
 
