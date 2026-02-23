@@ -33,10 +33,10 @@
 # Prerequisites - OS Flags & NVM/Node Setup
 ##########################################################
 
-export BASH_SYLE_COMMON=~/.bash_syle_common
+export BASH_SYLE_COMMON="$HOME/.bash_syle_common"
 
-# Create $BASH_SYLE_COMMON if it doesn't exist (OS detection flags)
-if [ ! -f $BASH_SYLE_COMMON ]; then
+# Create "$BASH_SYLE_COMMON" if it doesn't exist (OS detection flags)
+if [ ! -f "$BASH_SYLE_COMMON" ]; then
   echo '''
 ##########################################################
 # OS Flags (created by run.sh)
@@ -51,16 +51,16 @@ export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_steamdeck=1 #
 export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
 export is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && export is_os_window=1
 export is_os_wsl=0 && { grep -qi microsoft /proc/version 2>/dev/null || [ "$is_os_window" = "1" ]; } && export is_os_wsl=1
-''' > $BASH_SYLE_COMMON
+''' > "$BASH_SYLE_COMMON"
 fi
 
 # Append BASH_PROFILE_CODE_REPO_RAW_URL if not already present
-if [ -f $BASH_SYLE_COMMON ] && ! grep -q "BASH_PROFILE_CODE_REPO_RAW_URL" $BASH_SYLE_COMMON; then
-  echo 'export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"' >> $BASH_SYLE_COMMON
+if [ -f "$BASH_SYLE_COMMON" ] && ! grep -q "BASH_PROFILE_CODE_REPO_RAW_URL" "$BASH_SYLE_COMMON"; then
+  echo 'export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"' >> "$BASH_SYLE_COMMON"
 fi
 
 # Source OS flags
-[ -f $BASH_SYLE_COMMON ] && . $BASH_SYLE_COMMON
+[ -f "$BASH_SYLE_COMMON" ] && . "$BASH_SYLE_COMMON"
 
 ##########################################################
 # Auto-detect mode
@@ -197,7 +197,7 @@ fi
 ##########################################################
 if [ "$is_os_android_termux" != "1" ]; then
   DEFAULT_NODE_JS_VERSION=24
-  NVM_DIR=~/.nvm
+  NVM_DIR="$HOME/.nvm"
 
   # Force refresh: remove existing nvm and reinstall
   if [ "$force_refresh" = true ] && [ -d "$NVM_DIR" ]; then
