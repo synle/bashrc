@@ -49,6 +49,23 @@ fi
 echo '< build.sh'
 
 ##########################################################
+# Build JSDocs for JS Code
+##########################################################
+echo '> Build JSDocs for JS Code'
+# prepend /// <reference> to script files for intellisense
+SCRIPTS_DIR="software/scripts"
+find "$SCRIPTS_DIR" -name '*.js' | while read -r f; do
+  if ! head -1 "$f" | grep -q '/// <reference'; then
+    # compute relative path from the script file back to base-node-script.js
+    REL_DIR=$(dirname "$f" | sed "s|^$SCRIPTS_DIR||" | sed 's|[^/]||g' | sed 's|/|../|g')
+    REF_PATH="${REL_DIR}../base-node-script.js"
+    echo ">> prepending reference tag to $f"
+    printf '/// <reference path="%s" />\n%s' "$REF_PATH" "$(cat "$f")" > "$f"
+  fi
+done
+
+
+##########################################################
 # Generate Script List Indexes
 ##########################################################
 echo '> Generate Script List Indexes'
