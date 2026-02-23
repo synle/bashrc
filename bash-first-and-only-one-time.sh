@@ -1,4 +1,25 @@
 #! /bin/sh
+
+##########################################################
+# OS Flags
+##########################################################
+if [ ! -f ~/.bash_syle_os ]; then
+  echo '''
+export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
+export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
+export is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || grep -qi cros /proc/version 2>/dev/null; } && export is_os_chromeos=1
+export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
+export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
+export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
+export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_steamdeck=1 # for steam deck
+export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
+export is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && export is_os_window=1
+export is_os_wsl=0 && { grep -qi microsoft /proc/version 2>/dev/null || [ "$is_os_window" = "1" ]; } && export is_os_wsl=1
+''' > ~/.bash_syle_os
+fi
+. /dev/stdin <<< "$(cat ~/.bash_syle_os)"
+# end os flags
+
 if [ "$is_os_android_termux" != "1" ]; then
   ##########################################################
   # Dependencies Installation (one-time setup)

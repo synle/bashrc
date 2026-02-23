@@ -87,13 +87,21 @@ fi
 
 if [ -n "$files_to_test" ]; then
   export TEST_SCRIPT_FILES="$files_to_test"
-  run_description="(mode=$run_mode) (files=$TEST_SCRIPT_FILES) (pre_scripts=$pre_run_scripts)"
 else
   unset TEST_SCRIPT_FILES
-  run_description="(mode=$run_mode) (files==[full run]) (pre_scripts=$pre_run_scripts)"
 fi
 
-echo "<< run.sh started at $(date '+%Y-%m-%d %H:%M:%S') $run_description"
+run_description="
+  mode              = $run_mode
+  files             = ${files_to_test:-[full run]}
+  pre_scripts       = ${pre_run_scripts:-[none]}
+  run_only_prescripts = $run_only_prescripts
+  test_script_mode  = $TEST_SCRIPT_MODE
+"
+
+echo "=======================================================
+= run.sh started at $(date '+%Y-%m-%d %H:%M:%S')
+=$run_description======================================================="
 
 # get_file_contents - outputs the concatenated contents of the given files.
 # In prod mode, fetches via curl from upstream. In local mode, reads via cat.
@@ -116,11 +124,15 @@ if [ -n "$pre_run_scripts" ]; then
 fi
 
 if [ "$run_only_prescripts" = true ]; then
-  echo "<< run.sh done at $(date '+%Y-%m-%d %H:%M:%S') $run_description"
+  echo "=======================================================
+= run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
+======================================================="
   exit 0
 fi
 
 # run the main test script (software/base-node-script.js is implied, no need to pass it in)
 get_file_contents "software/base-node-script.js" | node | bash
 
-echo "<< run.sh done at $(date '+%Y-%m-%d %H:%M:%S') $run_description"
+echo "=======================================================
+= run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
+======================================================="

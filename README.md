@@ -26,7 +26,7 @@ Refer to this webapp for the configuration:
 Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
 ```bash
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,bootstrap/install-dependencies-mac.sh,bootstrap/install-dependencies-ubuntu.sh,bootstrap/install-dependencies-windows.sh,bootstrap/install-dependencies-chrome-os-linux.sh,bootstrap/install-dependencies-android-termux.sh,bootstrap/install-dependencies-arch-linux-steam-deck.sh"
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="bash-first-and-only-one-time.sh,bash-profile-barebone.sh,bootstrap/install-dependencies-mac.sh,bootstrap/install-dependencies-ubuntu.sh,bootstrap/install-dependencies-windows.sh,bootstrap/install-dependencies-chrome-os-linux.sh,bootstrap/install-dependencies-android-termux.sh,bootstrap/install-dependencies-arch-linux-steam-deck.sh"
 ```
 
 ## Fun Facts
