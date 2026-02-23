@@ -371,8 +371,12 @@ mkdir -p ~/.ssh/sockets
 # Sun Feb 22 20:24:44 2026 syle @ Sy-G14-2023
 # ~/git/bashrc
 # >>>
-export PS1="
+# Define the template
+export PS1_Simple="
 \[\e[31m\]====\[\e[m\]
 \[\e[33m\]\D{%c}\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\]
 \[\e[33m\]\w\[\e[m\]
 \[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
+
+# Assign it
+export PS1="$PS1_Simple"

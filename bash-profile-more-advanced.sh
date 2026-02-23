@@ -266,8 +266,12 @@ shorterPwdPath(){
 ##########################################################
 # Prompt
 ##########################################################
-export PS1="
+
+export PS1_Advanced='
 \[\e[31m\]====\[\e[m\]
-\[\e[33m\]\T\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\] - \`ifconfig2\`
-\[\e[33m\]\`shorterPwdPath\`\[\e[m\] \[\e[31m\]\`parseGitBranch\`\[\e[m\]
-\[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
+\[\e[33m\]\T\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\] - \[\e[35m\]`ifconfig2`\[\e[m\]
+\[\e[33m\]`shorterPwdPath`\[\e[m\] \[\e[31m\]`parseGitBranch`\[\e[m\]
+\[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] '
+
+# 2. Set it as your active prompt
+export PS1="$PS1_Advanced"
