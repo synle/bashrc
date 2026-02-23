@@ -370,18 +370,15 @@ function writeText(filePath, text, override = true, suppressError = false) {
   const newContent = (text || '').trim();
   const oldContent = readText(pathToUse).trim();
 
-  const oldContentStripped = (text || '').trim();
-  const newContentStripped = readText(pathToUse).trim();
-
   // strip everything before and including the COMMENT_BREAK line so timestamp-only changes don't trigger a write
-  // const commentBreakIdx_old = oldContent.indexOf(COMMENT_BREAK);
-  // const commentBreakIdx_new = newContent.indexOf(COMMENT_BREAK);
-  // const oldContentStripped = (
-  //   commentBreakIdx_old >= 0 ? oldContent.substring(oldContent.indexOf('\n', commentBreakIdx_old) + 1) : oldContent
-  // ).trim();
-  // const newContentStripped = (
-  //   commentBreakIdx_new >= 0 ? newContent.substring(newContent.indexOf('\n', commentBreakIdx_new) + 1) : newContent
-  // ).trim();
+  const commentBreakIdx_old = oldContent.indexOf(COMMENT_BREAK);
+  const commentBreakIdx_new = newContent.indexOf(COMMENT_BREAK);
+  const oldContentStripped = (
+    commentBreakIdx_old >= 0 ? oldContent.substring(oldContent.indexOf('\n', commentBreakIdx_old) + 1) : oldContent
+  ).trim();
+  const newContentStripped = (
+    commentBreakIdx_new >= 0 ? newContent.substring(newContent.indexOf('\n', commentBreakIdx_new) + 1) : newContent
+  ).trim();
 
   if (oldContentStripped === newContentStripped || override !== true) {
     // if content don't change, then don't save
