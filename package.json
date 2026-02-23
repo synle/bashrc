@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "npx http-server --cors .",
-    "format": "prettier --write --print-width 140 --ignore-unknown --no-error-on-unmatched-pattern --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,html,css,scss,less,md,yml,yaml,graphql,vue,xml}'",
+    "format": "prettier --write --cache --ignore-unknown --no-error-on-unmatched-pattern --print-width 140 .",
     "clean": "rm -rf dist",
     "setup:full": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts=\"bootstrap/profile-core.sh\"",
     "setup:light": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js\"",

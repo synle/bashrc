@@ -200,24 +200,61 @@ clean_master_main_branch(){
 ##########################################################
 # Search Functions
 ##########################################################
+
+# Search for files matching a pattern in the current directory (case-insensitive)
+# Usage: search_file <pattern>
 search_file(){
+  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
+    ech """
+      Usage: search_file <pattern>
+        Searches for files matching <pattern> (case-insensitive) in the current directory.
+    """
+    return 0
+  fi
   find . -type f -iname "*$@*" | filter_unwanted | grep -i "$@"
 }
 
+# List all tracked files (via git) or all files (via find) in the current directory
+# Usage: search_file_with_git
 search_file_with_git(){
+  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
+    ech """
+      Usage: search_file_with_git
+        Lists all tracked files using git ls-tree, falls back to find if not in a git repo.
+    """
+    return 0
+  fi
   # use either ls tree or find
   git ls-tree -r --name-only HEAD 2> /dev/null || \
   find . -type f 2>/dev/null \
   | uniq
 }
 
+# List all directories (excluding hidden) from a given path, defaults to current directory
+# Usage: search_dir_with_git [path]
 search_dir_with_git(){
+  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
+    ech """
+      Usage: search_dir_with_git [path]
+        Lists all directories (excluding hidden) from [path], defaults to current directory.
+    """
+    return 0
+  fi
   find ${1:-.} -path '*/\.*' -prune \
   -o -type d -print 2> /dev/null
   echo ".." # append parent folder
 }
 
+# Search for directories matching a pattern in the current directory (case-insensitive)
+# Usage: search_dir <pattern>
 search_dir(){
+  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
+    ech """
+      Usage: search_dir <pattern>
+        Searches for directories matching <pattern> (case-insensitive) in the current directory.
+    """
+    return 0
+  fi
   find . -type d -iname "*$@*" | filter_unwanted | grep -i "$@"
 }
 

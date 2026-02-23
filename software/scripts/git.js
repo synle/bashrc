@@ -11,7 +11,7 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
   email = email || '';
   extraCoreConfigs = extraCoreConfigs || '';
 
-  let templateGitConfig = await fetchUrlAsString('software/scripts/git.config');
+  let templateGitConfig = await fetchUrlAsString('software/scripts/git.gitconfig');
 
   try {
     templateGitConfig = templateGitConfig
