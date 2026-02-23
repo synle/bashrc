@@ -2,7 +2,7 @@
 
 ## Setting up Personal Folders
 
-```powershell
+```ps1
 # ==========================================
 # Move Desktop, Documents, Downloads, Pictures
 # to D:\Desktop, D:\Documents, D:\Downloads, D:\Pictures
@@ -57,9 +57,37 @@ Write-Host "`nDone! Please sign out and back in for full effect."
 ```
 
 ## Getting Started and  All-in-one setup Script
-```powershell
-# this is forcing to create a profile for powershell
+```ps1
+# ================================
+# Create Powershell Script Profile
+# ================================
 New-Item $profile -Type File -Force
+if (!(Test-Path $profile)) {
+    New-Item -Path $profile -Type File -Force
+    Write-Host "Profile created."
+} else {
+    Write-Host "Profile already exists at $profile"
+}
+
+# ================================
+# update time server in windows 
+# ================================
+$NtpServers = "time.cloudflare.com,0x8 time.google.com,0x8 time.windows.com,0x8"
+
+# Configure Windows Time service
+w32tm /config /manualpeerlist:"$NtpServers" /syncfromflags:manual /update
+
+# Restart service and resync
+Restart-Service w32time
+w32tm /resync
+
+# Update registry so Windows Settings UI reflects the same list
+Set-ItemProperty `
+  -Path "HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters" `
+  -Name NtpServer `
+  -Value $NtpServers
+
+Restart-Service w32time
 
 # ================================
 #  Regedit for Adobe Photoshop
@@ -623,7 +651,7 @@ Set-ADUser -Identity "syle" -PasswordNeverExpires $true
 
 ## Game Bar Registry Hacks
 
-```powershell
+```ps1
 # ================================
 #  DISABLE XBOX GAME BAR
 # ================================
