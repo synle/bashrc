@@ -1,7 +1,5 @@
 /// <reference path="../../base-node-script.js" />
 
-
-
 async function doWork() {
   registerPlatformTweaks(
     'Only Windows',

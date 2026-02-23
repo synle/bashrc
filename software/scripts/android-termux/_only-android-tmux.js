@@ -1,7 +1,5 @@
 /// <reference path="../../base-node-script.js" />
 
-
-
 async function doWork() {
   const bashAndroidTmuxFileName = '.bash_syle_only_android_termux';
 

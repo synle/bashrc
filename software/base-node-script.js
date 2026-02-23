@@ -35,15 +35,9 @@ globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
 /** @type {string | null} */
 globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
-globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (
-  process.env.BASH_PROFILE_CODE_REPO_RAW_URL || ''
-).trim();
+globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || '').trim();
 
-
-globalThis.BASH_SYLE_COMMON = (
-  process.env.BASH_SYLE_COMMON || ''
-).trim();
-
+globalThis.BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || '').trim();
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -1345,16 +1339,16 @@ function consoleLogColor(str, color) {
  * Additionally, echoColorSuccess (green) and echoColorError (red) are defined as named aliases.
  */
 const CONSOLE_COLORS = [
-  null,         // 0: Not used
-  '32m',        // 1: Green (Success)
-  '33m',        // 2: Yellow (Warning)
-  '36m',        // 3: Cyan (Info)
-  '2m',         // 4: Dim (Metadata)
-  '1;31m',      // 5: Bold Red (Standard Error)
-  '41;97;1m',   // 6: BG Red + White Text (CRITICAL ERROR)
-  '43;30m',     // 7: BG Yellow + Black Text (ATTENTION)
-  '35m',        // 8: Magenta (System)
-  '38;5;208m',  // 9: Orange (256-color mode - unique Warning)
+  null, // 0: Not used
+  '32m', // 1: Green (Success)
+  '33m', // 2: Yellow (Warning)
+  '36m', // 3: Cyan (Info)
+  '2m', // 4: Dim (Metadata)
+  '1;31m', // 5: Bold Red (Standard Error)
+  '41;97;1m', // 6: BG Red + White Text (CRITICAL ERROR)
+  '43;30m', // 7: BG Yellow + Black Text (ATTENTION)
+  '35m', // 8: Magenta (System)
+  '38;5;208m', // 9: Orange (256-color mode - unique Warning)
 ];
 
 for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
@@ -1651,12 +1645,13 @@ async function _doWorkFullRun() {
   const missingEnvVars = [
     ['BASH_PROFILE_CODE_REPO_RAW_URL', globalThis.BASH_PROFILE_CODE_REPO_RAW_URL],
     ['BASH_SYLE_COMMON', globalThis.BASH_SYLE_COMMON],
-  ].filter(([, value]) => !value).map(([key]) => key);
+  ]
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
   if (missingEnvVars.length > 0) {
     console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
     process.exit(1);
   }
-
 
   // getting the ip address mapping
   try {

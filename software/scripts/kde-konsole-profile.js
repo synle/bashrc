@@ -1,7 +1,5 @@
 /// <reference path="../base-node-script.js" />
 
-
-
 async function doWork() {
   let targetPath = BASE_SY_CUSTOM_TWEAKS_DIR;
 

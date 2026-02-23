@@ -52,23 +52,38 @@ echo '< build.sh'
 # Build JSDocs for JS Code
 ##########################################################
 echo '> Build JSDocs for JS Code'
-# prepend /// <reference> to script files for intellisense
-SCRIPTS_DIR="software/scripts"
-find "$SCRIPTS_DIR" -name '*.js' | while read -r f; do
-  # compute relative path from the script file back to base-node-script.js
-  REL_DIR=$(dirname "$f" | sed "s|^$SCRIPTS_DIR||" | sed 's|[^/]||g' | sed 's|/|../|g')
-  REF_PATH="${REL_DIR}../base-node-script.js"
-  REF_TAG="/// <reference path=\"$REF_PATH\" />"
+node -e """
+const fs = require('fs');
+const path = require('path');
 
-  # remove existing leading reference tag if present
-  if head -1 "$f" | grep -q '/// <reference'; then
-    tail -n +2 "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-  fi
+const scriptsDir = 'software/scripts';
 
-  # prepend the correct reference tag with a blank line after it
-  echo ">> prepending reference tag to $f"
-  printf '%s\n\n%s' "$REF_TAG" "$(cat "$f")" > "$f"
-done
+function getJsFiles(dir) {
+  let results = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) results.push(...getJsFiles(full));
+    else if (entry.name.endsWith('.js')) results.push(full);
+  }
+  return results;
+}
+
+for (const file of getJsFiles(scriptsDir)) {
+  const relPath = path.relative(path.dirname(file), 'software/base-node-script.js');
+  const refTag = '/// <reference path=\"' + relPath + '\" />';
+
+  let content = fs.readFileSync(file, 'utf8');
+
+  // remove existing reference tag line
+  content = content.replace(/^\/\/\/\s*<reference[^\n]*\n/, '');
+
+  // strip leading blank lines
+  content = content.replace(/^\n+/, '');
+
+  fs.writeFileSync(file, refTag + '\n\n' + content);
+  console.log('>> prepended reference tag to', file);
+}
+"""
 
 
 ##########################################################

@@ -1,7 +1,5 @@
 /// <reference path="../base-node-script.js" />
 
-
-
 includeSource('software/scripts/vs-code.common.js');
 
 let OS_KEY;
@@ -179,13 +177,13 @@ async function doInit() {
     },
     // toggle right sidebar
     {
-  "key": "shift+ctrl+OS_KEY+\\",
-  "command": "workbench.action.toggleAuxiliaryBar"
-},
+      key: 'shift+ctrl+OS_KEY+\\',
+      command: 'workbench.action.toggleAuxiliaryBar',
+    },
     {
-  "key": "shift+ctrl+OS_KEY+\\",
-  "command": "workbench.action.toggleAuxiliaryBar"
-}
+      key: 'shift+ctrl+OS_KEY+\\',
+      command: 'workbench.action.toggleAuxiliaryBar',
+    },
   ];
   // end COMMON_KEY_BINDINGS
 }
