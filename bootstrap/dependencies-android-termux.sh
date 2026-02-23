@@ -85,7 +85,6 @@ use-black-ui = true
   ##########################################################
   curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
 
-  # TODO: sy to check this lightweight script
-  . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
+  curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --files="_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
 
 fi

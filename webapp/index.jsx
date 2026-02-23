@@ -1279,7 +1279,7 @@ function App() {
             text: 'Setup Lightweight Profile',
             shouldHideBootstrap: true,
             script: `
-        . /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/setup-lightweight.sh?$(date +%s))"
+        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash -s -- --prod --files="_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
       `,
           },
           {
