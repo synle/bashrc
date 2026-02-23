@@ -196,7 +196,7 @@ function RightContainer() {
           // 'nvm use $NODE_VERSION_TO_USE',
           `echo """\n${osKeys
             .map((key) => `export ${key}='${osFlags[key] ? '1' : '0'}'`)
-             .join('\n')}\n""" > ${window.BASH_SYLE_COMMON} && source ${window.BASH_SYLE_COMMON}`,
+            .join('\n')}\n""" > ${window.BASH_SYLE_COMMON} && source ${window.BASH_SYLE_COMMON}`,
         ].join(' && \\\n') + ' && '
       ).trim();
     }

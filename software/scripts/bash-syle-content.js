@@ -41,7 +41,6 @@ ${contentProfileAdvanced}
   // append advanced profile only for fancier OS
   console.log('    >> Advanced profile');
 
-
   if (isLightweightMode) {
     console.log(consoleLogColor1('      >> Skipped : Lightweight mode'));
   } else if (is_os_window || is_os_darwin_mac || is_os_ubuntu) {
