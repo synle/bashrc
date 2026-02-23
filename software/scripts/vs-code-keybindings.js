@@ -174,6 +174,15 @@ async function doInit() {
       key: 'OS_KEY+-',
       command: 'editor.action.fontZoomOut',
     },
+    // toggle right sidebar
+    {
+  "key": "shift+ctrl+OS_KEY+\\",
+  "command": "workbench.action.toggleAuxiliaryBar"
+},
+    {
+  "key": "shift+ctrl+OS_KEY+\\",
+  "command": "workbench.action.toggleAuxiliaryBar"
+}
   ];
   // end COMMON_KEY_BINDINGS
 }
