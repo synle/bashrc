@@ -1022,14 +1022,14 @@ function MacOSXNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString='mac' />
-      <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
-      <DynamicTextArea path='/bootstrap/notes-macosx.md' height='350px' />
+      <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
+      <DynamicTextArea path='/bootstrap/notes-macosx.md' height='30vh' />
       <DynamicTextArea path='/.build/font.md' />
       <DynamicTextArea path='/.build/gitconfig' />
       <DynamicTextArea path='/.build/ssh-config' />
       <DynamicTextArea path='/.build/inputrc' />
       <DynamicTextArea path='/.build/vimrc' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
       <CommonEditorSetupDom is_os_darwin_mac={true} />
 
       {/* Mac */}
@@ -1046,7 +1046,7 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
-      <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
+      <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
       <DynamicTextArea path='/linux/linux-mint-config.sh' height='200px' />
       <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='300px' />
       <DynamicTextArea path='/bootstrap/notes-linux.md' height='300px' />
@@ -1056,7 +1056,7 @@ function LinuxNotesDom() {
       <DynamicTextArea path='/.build/ssh-config' />
       <DynamicTextArea path='/.build/inputrc' />
       <DynamicTextArea path='/.build/vimrc' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
       <CommonEditorSetupDom />
       {/* Linux */}
       <div className='form-label'>Other Applications</div>
@@ -1073,10 +1073,10 @@ function AndroidNotesDom() {
     <>
       <TargetSystemOSWarningDom is_os_android_termux={true} />
 
-      <DynamicTextArea path='/android/android.sh' height='350px' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
-      <DynamicTextArea path='/android/rvx-yt.txt' height='350px' />
-      <DynamicTextArea path='/android/rvx-yt-music.txt' height='350px' />
+      <DynamicTextArea path='/android/android.sh' height='30vh' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
+      <DynamicTextArea path='/android/rvx-yt.txt' height='30vh' />
+      <DynamicTextArea path='/android/rvx-yt-music.txt' height='30vh' />
 
       {/* Android */}
       <div className='form-label'>Android Applications</div>
@@ -1113,14 +1113,15 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
-      <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
-      <DynamicTextArea path='/bootstrap/notes-windows.md' height='350px' />
+      <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
+      <DynamicTextArea path='/bootstrap/notes-windows.md' height='30vh' />
+      <DynamicTextArea path='/dependencies-windows.ps1' height='30vh' />
       <DynamicTextArea path='/.build/winget-install-windows.ps1' />
       <DynamicTextArea path='/.build/font.md' />
       <DynamicTextArea path='/.build/windows-powershell-profile.ps1' />
       <DynamicTextArea path='/.build/windows-registry.ps1' />
       <DynamicTextArea path='/.build/windows-terminal' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='350px' />
+      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
       <CommonEditorSetupDom is_os_window={true} />
 
       {/* other links */}

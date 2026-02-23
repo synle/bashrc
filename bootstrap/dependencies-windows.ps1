@@ -1,3 +1,4 @@
+## Getting Started and All-in-one setup Script
 # ================================
 # Create Powershell Script Profile
 # ================================
@@ -516,7 +517,50 @@ foreach ($exe in $AdobeExeList) {
 Write-Host "`nAdobe and Office firewall blocks applied." -ForegroundColor Green
 
 # ================================
-#  winget upgrade
+#  winget install & upgrade
 # ================================
 
-winget upgrade --all
+$wingetPackages = @(
+    "7zip.7zip",
+    "Audacity.Audacity",
+    "Bambulab.Bambustudio",
+    "BlenderFoundation.Blender",
+    "Brave.Brave",
+    "CodeSector.TeraCopy",
+    "Discord.Discord",
+    "dotPDN.PaintDotNet",
+    "EclipseAdoptium.Temurin.21.JDK",
+    "Git.Git",
+    "Greenshot.Greenshot",
+    "HandBrake.HandBrake",
+    "Inkscape.Inkscape",
+    "KDE.Krita",
+    "Microsoft.DotNet.DesktopRuntime.7",
+    "Microsoft.VCRedist.2015+.x64",
+    "Microsoft.VisualStudioCode",
+    "Mozilla.FiraCode",
+    "OpenJS.NodeJS",
+    "PuTTY.PuTTY",
+    "Python.Python.3",
+    "Rufus.Rufus",
+    "SublimeHQ.SublimeMerge",
+    "SublimeHQ.SublimeText.4",
+    "Ultimaker.Cura",
+    "Valve.Steam",
+    "VideoLAN.VLC",
+    "VSCodium.VSCodium",
+    "WinFSP.WinFSP",
+    "WinFSP.SSHFS",
+    "WinMerge.WinMerge",
+    "WinSCP.WinSCP",
+    "Zoom.Zoom"
+)
+
+Write-Host "`nInstalling winget packages..." -ForegroundColor Cyan
+foreach ($pkg in $wingetPackages) {
+    Write-Host "Installing: $pkg"
+    winget install --id $pkg -e --accept-source-agreements --accept-package-agreements 2>$null
+}
+
+Write-Host "`nUpgrading all winget packages..." -ForegroundColor Cyan
+winget upgrade --all --include-unknown
