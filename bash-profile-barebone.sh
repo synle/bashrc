@@ -99,8 +99,22 @@ br(){
   '''
 }
 
-isCommandExists(){
-  type "$1" &> /dev/null ;
+# # Usage:
+# spinner &        # Start spinner in the background
+# SPIN_PID=$!      # Get the Process ID
+# sleep 3          # Simulate a long command
+# kill $SPIN_PID   # Stop the spinner
+# echo "Done!"
+spinner() {
+  local chars="/-\|"
+  while true; do
+    for (( i=0; i<${#chars}; i++ )); do
+      sleep 0.1
+      # \r moves the cursor to the start of the line
+      # -n prevents a newline
+      echo -ne "${chars:$i:1}" "\r"
+    done
+  done
 }
 
 renpm(){
@@ -119,6 +133,7 @@ pwd() {
   echo "cd \"$(command pwd)\""
   echo '=============================================='
 }
+
 
 ##########################################################
 # Git Helpers
@@ -353,8 +368,11 @@ mkdir -p ~/.ssh/sockets
 ##########################################################
 # Prompt
 ##########################################################
+# Sun Feb 22 20:24:44 2026 syle @ Sy-G14-2023
+# ~/git/bashrc
+# >>>
 export PS1="
 \[\e[31m\]====\[\e[m\]
-\[\e[33m\]\`date\`\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\]
-\[\e[33m\]\`pwd\`\[\e[m\]
+\[\e[33m\]\D{%c}\[\e[m\] \[\e[36m\]\u\[\e[m\] @ \[\e[32m\]\h\[\e[m\]
+\[\e[33m\]\w\[\e[m\]
 \[\e[33m\]>\[\e[m\]\[\e[31m\]>\[\e[m\]\[\e[36m\]>\[\e[m\] "
