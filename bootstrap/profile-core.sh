@@ -181,15 +181,20 @@ pwd2() {
 # Git Helpers
 ##########################################################
 clean_master_main_branch(){
-    git stash;
-    git clean fd
-    git reset --hard;
-    git fap;
-    git checkout test;
-    git checkout -b test;
-    git del master main;
-    git checkout --track origin/master;
-    git checkout --track origin/main
+  # clean up
+  git stash;
+  git clean -fd
+  git reset --hard
+  git fetch --all --prune
+
+  TEMP_BRANCH=test_123_abc_xyz
+  git checkout $TEMP_BRANCH
+  git checkout -b $TEMP_BRANCH
+  git del master main
+
+  # Track if it exists on origin
+  git rev-parse --verify origin/master >/dev/null 2>&1 && git checkout --track origin/master;
+  git rev-parse --verify origin/main >/dev/null 2>&1 && git checkout --track origin/main;
 }
 
 ##########################################################
