@@ -33,35 +33,36 @@
 ##########################################################
 # Prerequisites - OS Flags & NVM/Node Setup
 ##########################################################
+export BASH_SYLE_COMMON='~/.bash_syle_common'
+export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
 
-export BASH_SYLE_COMMON="$HOME/.bash_syle_common"
+BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 
-# Create "$BASH_SYLE_COMMON" if it doesn't exist (OS detection flags)
-if [ ! -f "$BASH_SYLE_COMMON" ]; then
-  echo '''
+# Initialize common file with OS detection flags
+if [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
+  cat << 'EOF' > "$BASH_SYLE_COMMON_PATH"
 ##########################################################
-# OS Flags (created by run.sh)
+# OS Detection
 ##########################################################
 export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
 export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
 export is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || grep -qi cros /proc/version 2>/dev/null; } && export is_os_chromeos=1
 export is_os_mingw64=0 && [ -d /mingw64 ] && export is_os_mingw64=1
 export is_os_android_termux=0 && [ -d /data/data/com.termux ] && export is_os_android_termux=1
-export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1 # for steam deck
-export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_steamdeck=1 # for steam deck
-export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1 # not used anymore
+export is_os_arch_linux=0 && pacman -h &> /dev/null && export is_os_arch_linux=1
+export is_os_steamdeck=0 && pacman -h &> /dev/null && export is_os_steamdeck=1
+export is_os_redhat=0 && yum -v &> /dev/null && export is_os_redhat=1
 export is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && export is_os_window=1
 export is_os_wsl=0 && { grep -qi microsoft /proc/version 2>/dev/null || [ "$is_os_window" = "1" ]; } && export is_os_wsl=1
-''' > "$BASH_SYLE_COMMON"
+EOF
 fi
 
-# Append BASH_PROFILE_CODE_REPO_RAW_URL if not already present
-if [ -f "$BASH_SYLE_COMMON" ] && ! grep -q "BASH_PROFILE_CODE_REPO_RAW_URL" "$BASH_SYLE_COMMON"; then
-  echo 'export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"' >> "$BASH_SYLE_COMMON"
+# Ensure Repo URL is present
+if [ -f "$BASH_SYLE_COMMON_PATH" ] && ! grep -q "BASH_PROFILE_CODE_REPO_RAW_URL" "$BASH_SYLE_COMMON_PATH"; then
+  echo "export BASH_PROFILE_CODE_REPO_RAW_URL=\"$BASH_PROFILE_CODE_REPO_RAW_URL\"" >> "$BASH_SYLE_COMMON_PATH"
 fi
+[ -f "$BASH_SYLE_COMMON_PATH" ] && . "$BASH_SYLE_COMMON_PATH"
 
-# Source OS flags
-[ -f "$BASH_SYLE_COMMON" ] && . "$BASH_SYLE_COMMON"
 
 ##########################################################
 # Auto-detect mode
