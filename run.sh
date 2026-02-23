@@ -153,14 +153,18 @@ if [ -n "$files_to_test" ]; then export TEST_SCRIPT_FILES="$files_to_test"; fi
 ##########################################################
 # Print run info
 ##########################################################
+# Get a comma-separated list of all active is_os_ flags
+active_os_flags=$(set | grep -E "^is_os_.*=1" | awk -F= '{print $1}' | paste -sd "," -)
+
 run_description="
-  mode              = $run_mode
-  files             = ${files_to_test:-[full run]}
-  pre_scripts       = ${pre_run_scripts:-[none]}
+  mode                = $run_mode
+  files               = ${files_to_test:-[full run]}
+  pre_scripts         = ${pre_run_scripts:-[none]}
   run_only_prescripts = $run_only_prescripts
-  force_refresh     = $force_refresh
-  lightweight       = ${LIGHT_WEIGHT_MODE:-0}
-  test_script_mode  = $TEST_SCRIPT_MODE
+  force_refresh       = $force_refresh
+  lightweight         = ${LIGHT_WEIGHT_MODE:-0}
+  test_script_mode    = $TEST_SCRIPT_MODE
+  os_flags            = ${active_os_flags:-[none]}
 "
 
 echo "=======================================================
