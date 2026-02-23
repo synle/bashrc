@@ -22,7 +22,7 @@ Refer to this webapp for the configuration:
 Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
 ```bash
-sudo echo '> Initializing Environment' && \
+echo '> Initializing Environment' && \
  curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="""
   bootstrap/profile-core.sh
   bootstrap/dependencies-mac.sh

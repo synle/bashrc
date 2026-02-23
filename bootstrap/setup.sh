@@ -1,9 +1,6 @@
-# bootstrap/setup.sh
-# Universal bootstrap script for all platforms
-# Auto-detects OS and installs the appropriate dependencies
+# bootstrap/setup.sh - Universal bootstrap script for all platforms - Auto-detects OS and installs the appropriate dependencies
 
-sudo echo '> Initializing Environment' && \
- curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="""
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="""
   bootstrap/profile-core.sh
   bootstrap/dependencies-mac.sh
   bootstrap/dependencies-ubuntu.sh
