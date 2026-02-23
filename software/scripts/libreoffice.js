@@ -1,3 +1,4 @@
+/// <reference path="../base-node-script.js" />
 async function doWork() {
   let targetPath = '/etc/libreoffice';
 

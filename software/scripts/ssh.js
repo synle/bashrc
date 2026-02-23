@@ -1,3 +1,4 @@
+/// <reference path="../base-node-script.js" />
 const sshPortMap = {};
 
 const portToIp = {

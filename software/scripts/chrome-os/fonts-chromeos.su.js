@@ -1,3 +1,4 @@
+/// <reference path="../../base-node-script.js" />
 async function doWork() {
   const targetPath = `/usr/local/share/fonts`;
 

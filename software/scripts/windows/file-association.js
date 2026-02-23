@@ -1,3 +1,4 @@
+/// <reference path="../../base-node-script.js" />
 const sublimeProgramBinaryName = 'sublime';
 const sublimeBinaryPath = `ftype ${sublimeProgramBinaryName}="C:/Program Files/Sublime Text/sublime_text.exe" "%1"`;
 

@@ -1,3 +1,4 @@
+/// <reference path="../../base-node-script.js" />
 async function doWork() {
   console.log('  >> Installing Powertoys Keyboard Config');
 
