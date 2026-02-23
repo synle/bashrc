@@ -12,7 +12,7 @@
     "preformat": "node software/types/generate-types.cjs",
     "format": "prettier --write --print-width 140 --ignore-unknown --no-error-on-unmatched-pattern --cache '**/*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,html,css,scss,less,md,yml,yaml,graphql,vue,xml}'",
     "clean": "rm -rf dist",
-    "setup:full": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts=\"bash-first-and-only-one-time.sh,bash-profile-barebone.sh\"",
+    "setup:full": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts=\"bash-profile-barebone.sh\"",
     "setup:light": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js\"",
     "setup:hosts": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"software/scripts/etc-hosts.su.js\"",
     "test": "sh run.sh",

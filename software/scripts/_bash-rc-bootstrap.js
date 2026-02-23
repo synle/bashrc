@@ -16,7 +16,18 @@ async function doWork() {
   );
 
   // source all .bash_* files in home folder (excluding known non-config files)
-  const excludedBashFiles = ['.bash_syle', '.bash_history', '.bash_profile', '.bash_sessions'];
+  const excludedBashFiles = [
+    '.bash_syle',      // syle custom bash
+    '.bash_history',   // Command history
+    '.bash_profile',   // Login shell config
+    '.bash_sessions',  // macOS specific session data
+    '.bashrc',         // Standard interactive shell config
+    '.bash_logout',    // Cleanup script (the one we discussed)
+    '.bash_login',     // Rarely used, but Bash looks for it if .bash_profile is missing
+    '.profile',        // Generic shell fallback used by Bash
+    '.inputrc',        // Keyboard shortcut/readline configuration
+    '.bash_aliases'    // Often used to separate aliases from the main .bashrc
+  ];
   try {
     const homeFiles = fs.readdirSync(BASE_HOMEDIR_LINUX);
     const bashFiles = homeFiles

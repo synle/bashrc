@@ -4,7 +4,6 @@
 
 sudo echo '> Initializing Environment' && \
  curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="""
-  bash-first-and-only-one-time.sh
   bash-profile-barebone.sh
   bootstrap/dependencies-mac.sh
   bootstrap/dependencies-ubuntu.sh

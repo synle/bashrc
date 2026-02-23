@@ -131,6 +131,7 @@ setGitUpstreamBranch(){
 
 cleanmaster(){
     git stash;
+    git clean fd
     git reset --hard;
     git fap;
     git checkout test;
