@@ -116,7 +116,7 @@ async function doInit() {
     ],
 
     // keybindings
-    keybindings: [...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal.keybinding.jsonc')) || [])],
+    keybindings: [...(parseJsonWithComments(await fetchUrlAsString('software/scripts/windows/terminal-keys.jsonc')) || [])],
   };
 
   DEFAULT_PROFILES = {

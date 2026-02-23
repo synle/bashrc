@@ -10,7 +10,7 @@ async function doWork() {
   exitIfPathNotFound(targetPath);
 
   // read the file
-  const config = await fetchUrlAsJson('software/scripts/windows/powertoys-keyboard-remap.jsonc');
+  const config = await fetchUrlAsJson('software/scripts/windows/powertoys-keys.jsonc');
 
   // clone the browser related keys such as brave or chrome
   const newAppSpecificKeys = [];
