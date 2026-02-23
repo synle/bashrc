@@ -187,14 +187,6 @@
     "when": "editorTextFocus && !editorReadonly",
   },
   {
-    "key": "alt+=",
-    "command": "workbench.action.zoomIn",
-  },
-  {
-    "key": "alt+-",
-    "command": "workbench.action.zoomOut",
-  },
-  {
     "key": "alt+o",
     "command": "workbench.action.files.openFile",
   },
