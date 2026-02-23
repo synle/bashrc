@@ -492,3 +492,4 @@ declare function printScriptProcessingResults(results?: any): any;
 declare function _doWorkTestFiles(): Promise<any>;
 
 declare function _doWorkFullRun(): Promise<any>;
+
