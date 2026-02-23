@@ -205,7 +205,7 @@ if [ "$is_os_android_termux" != "1" ]; then
   fi
 
   if [ ! -s $NVM_DIR/nvm.sh ]; then
-    git clone --depth 1 --single-branch --tags -b master https://github.com/creationix/nvm.git $NVM_DIR &>/dev/null
+    git clone --depth 1 -b master https://github.com/creationix/nvm.git $NVM_DIR &>/dev/null
     pushd $NVM_DIR &>/dev/null
     git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)` &>/dev/null
     . ./nvm.sh
