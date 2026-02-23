@@ -2,6 +2,29 @@
 
 let outputContent = '';
 
+async function _getPath() {
+  try {
+    let targetPath = globalThis.BASE_D_DIR_WINDOW;
+
+    // try it with D path
+    // if it's not present, then try home dir in C drive
+    targetPath = findFirstDirFromList([
+      [targetPath, 'Documents'],
+      [getWindowUserBaseDir(), 'Documents'],
+    ]);
+
+    if (targetPath) {
+      targetPath = path.join(targetPath, 'WindowsPowerShell');
+      await mkdir(targetPath);
+      return path.join(targetPath, 'Microsoft.PowerShell_profile.ps1');
+    }
+  } catch (err) {
+    console.log('  >> Failed to get the path for Powershell Profile', err);
+  }
+
+  return null;
+}
+
 async function doInit() {
   outputContent = trimLeftSpaces(`
     <#
@@ -198,7 +221,7 @@ async function doInit() {
 
 async function doWork() {
   console.log('  >> Setting up Windows Powershell Profile');
-  writeToBuildFile([{ file: 'windows-powershell-profile.ps1', data: outputContent }]);
+  writeToBuildFile([{ file: 'windows-powershell-profile.ps1', data: outputContent, comment: 'Windows powershell script', commentStyle: 'bash' }]);
 
   // let targetPath = await _getPath();
 
@@ -218,27 +241,4 @@ async function doWork() {
 
   // console.log('    >> Update Powershell Profile', targetPath);
   // writeText(targetPath, content);
-}
-
-async function _getPath() {
-  try {
-    let targetPath = globalThis.BASE_D_DIR_WINDOW;
-
-    // try it with D path
-    // if it's not present, then try home dir in C drive
-    targetPath = findFirstDirFromList([
-      [targetPath, 'Documents'],
-      [getWindowUserBaseDir(), 'Documents'],
-    ]);
-
-    if (targetPath) {
-      targetPath = path.join(targetPath, 'WindowsPowerShell');
-      await mkdir(targetPath);
-      return path.join(targetPath, 'Microsoft.PowerShell_profile.ps1');
-    }
-  } catch (err) {
-    console.log('  >> Failed to get the path for Powershell Profile', err);
-  }
-
-  return null;
 }
