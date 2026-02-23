@@ -186,5 +186,13 @@
   {
     "key": "cmd+-",
     "command": "editor.action.fontZoomOut"
+  },
+  {
+    "key": "shift+ctrl+cmd+\\",
+    "command": "workbench.action.toggleAuxiliaryBar"
+  },
+  {
+    "key": "shift+ctrl+cmd+\\",
+    "command": "workbench.action.toggleAuxiliaryBar"
   }
 ]

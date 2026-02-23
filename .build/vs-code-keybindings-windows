@@ -188,6 +188,14 @@
     "command": "editor.action.fontZoomOut"
   },
   {
+    "key": "shift+ctrl+alt+\\",
+    "command": "workbench.action.toggleAuxiliaryBar"
+  },
+  {
+    "key": "shift+ctrl+alt+\\",
+    "command": "workbench.action.toggleAuxiliaryBar"
+  },
+  {
     "key": "alt+shift+p",
     "command": "workbench.action.showCommands"
   },
