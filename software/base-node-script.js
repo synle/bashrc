@@ -461,12 +461,12 @@ function writeToBuildFile(tasks) {
       }
 
       if (comments) {
-        comments = comments
-          .trim()
-          .split('\n')
-          .map((row) => `${commentPrefix}${row.trim()}`)
-          .join('\n')
-           + '\n\n';
+        comments =
+          comments
+            .trim()
+            .split('\n')
+            .map((row) => `${commentPrefix}${row.trim()}`)
+            .join('\n') + '\n\n';
       }
 
       if (isJson) {

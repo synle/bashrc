@@ -1421,7 +1421,9 @@ function App() {
         }}>
         <div className='app-header'>
           <a href='https://github.com/synle/bashrc'>
-            <h1 style={{ textTransform: 'uppercase' }} target='_blank'>{window.document.title}</h1>
+            <h1 style={{ textTransform: 'uppercase' }} target='_blank'>
+              {window.document.title}
+            </h1>
           </a>
           <Settings />
         </div>
