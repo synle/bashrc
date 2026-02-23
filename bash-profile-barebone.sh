@@ -34,6 +34,8 @@ alias b="bat --style=plain"
 alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 alias fzf='fzf --no-sort'
 alias search='searchText'
+alias grep='grep --color'
+alias gr='grep -i'
 
 # git aliases
 alias merge="git fetch --all --prune && git merge"
@@ -160,7 +162,7 @@ Searching:  $@
 }
 
 searchFile(){
-  find . -type f -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
+  find . -type f -iname "*$@*" | filterUnwantedLight | grep -i "$@"
 }
 
 searchFileWithGit(){
@@ -177,7 +179,7 @@ searchDirWithGit(){
 }
 
 searchDir(){
-  find . -type d -iname "*$@*" | filterUnwantedLight | grep --color -i "$@"
+  find . -type d -iname "*$@*" | filterUnwantedLight | grep -i "$@"
 }
 
 ##########################################################
