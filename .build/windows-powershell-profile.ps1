@@ -1,3 +1,5 @@
+# NOTE: STOP - do not edit by hand - this file is auto-generated
+
 <#
 #######################################################
 # power shell profile
