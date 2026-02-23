@@ -336,9 +336,9 @@ function findFileRecursive(srcDir, targetMatch) {
 }
 
 /**
- * find and return the first dir that matches the prop
- * @param  {array} findProps must contains "src" and "match"
- * @return {string} the path of the first dir and undefined otherwise
+ * Iterates a list of [directory, regex] pairs and returns the first matching subdirectory path.
+ * @param {Array<[string, RegExp]>} findProps - Array of [srcDir, targetMatch] tuples to search
+ * @returns {string|undefined} The first matching directory path, or undefined if none found
  */
 function findFirstDirFromList(findProps) {
   for (const findProp of findProps) {
@@ -357,6 +357,8 @@ function findFirstDirFromList(findProps) {
 //////////////////////////////////////////////////////
 /**
  * Writes text content to a file. Skips writing if the content hasn't changed or if override is false.
+ * Before comparing, strips everything up to and including the COMMENT_BREAK marker line from both
+ * old and new content, so timestamp-only header changes don't trigger unnecessary writes.
  * @param {string} filePath - The file path to write to
  * @param {string} text - The text content to write
  * @param {boolean} [override=true] - Whether to overwrite existing content. If false, skips writing when file exists
@@ -685,9 +687,10 @@ function filePathExist(targetPath) {
 }
 
 /**
- * @param  {String} applicationName Optional - the application name to be appended to the base path
- * if present, we will attempt to make a new directory there
- * @return {String} the full path to the application binary which can be used to install or download...
+ * Resolves the Windows application binary directory under WSL (prefers D: drive, falls back to C: or _extra).
+ * If applicationName is provided, creates a subdirectory for it.
+ * @param {string} [applicationName] - Optional application name to create a subdirectory for
+ * @returns {Promise<string>} The resolved directory path for storing application binaries
  */
 async function getWindowsApplicationBinaryDir(applicationName) {
   let targetPath = findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
@@ -709,14 +712,16 @@ async function getWindowsApplicationBinaryDir(applicationName) {
 }
 
 /**
- * @return {String} the path for app roaming dir for windows
+ * Returns the Windows AppData\Roaming directory path under WSL for the current user.
+ * @returns {string} The path to {WindowsUserHome}/AppData/Roaming
  */
 function getWindowAppDataRoamingUserPath() {
   return path.join(getWindowUserBaseDir(), 'AppData/Roaming');
 }
 
 /**
- * @return {String} the path for app data local dir in windows
+ * Returns the Windows AppData\Local directory path under WSL for the current user.
+ * @returns {string} The path to {WindowsUserHome}/AppData/Local
  */
 function getWindowAppDataLocalUserPath() {
   return path.join(getWindowUserBaseDir(), 'AppData/Local');
@@ -1623,6 +1628,12 @@ function printScriptProcessingResults(results) {
 //////////////////////////////////////////////////////
 // doWork: Test Specific Files (when TEST_SCRIPT_FILES is set)
 //////////////////////////////////////////////////////
+/**
+ * Runs a subset of scripts specified by the TEST_SCRIPT_FILES environment variable.
+ * Parses the comma/semicolon/whitespace-separated list, resolves each to a repo path,
+ * and generates the bash pipeline commands to fetch and execute them.
+ * @returns {Promise<void>}
+ */
 async function _doWorkTestFiles() {
   const filesToTest = process.env.TEST_SCRIPT_FILES || '';
 
@@ -1679,6 +1690,12 @@ ${''.padStart(90, '=')}
 //////////////////////////////////////////////////////
 // doWork: Full Run (when TEST_SCRIPT_FILES is not set)
 //////////////////////////////////////////////////////
+/**
+ * Runs the full software setup: discovers all platform-applicable script files,
+ * orders them (bootstrap first, hosts/extensions last), and generates the bash
+ * pipeline commands to fetch and execute each one sequentially.
+ * @returns {Promise<void>}
+ */
 async function _doWorkFullRun() {
   const softwareFiles = await getSoftwareScriptFiles();
 
