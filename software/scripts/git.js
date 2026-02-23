@@ -83,12 +83,10 @@ async function doWork() {
     { file: 'gitignore_global', data: await _getGlobalGitIgnore() },
     {
       file: 'gitconfig',
-      data: `
-        # this file is auto-generated
-        ${await _getGitConfig({
+      data: await _getGitConfig({
           email: '; email = test_email@gmail.com #update this email',
-        })}
-        `,
+        }),
+      comments: `# NOTE: STOP - do not edit by hand - this file is auto-generated`
     },
   ]);
 

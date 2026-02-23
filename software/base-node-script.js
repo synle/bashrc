@@ -442,7 +442,7 @@ function writeToBuildFile(tasks) {
   if (DEBUG_WRITE_TO_DIR) {
     for (let { file, data, isJson, comments } of [].concat(tasks)) {
       isJson = !!isJson;
-      comments = comments || '';
+      comments = (comments || '').trim();
 
       if (comments) {
         comments += '\n';
@@ -453,6 +453,7 @@ function writeToBuildFile(tasks) {
         writeJson(file, data, comments);
       } else {
         console.log(consoleLogColor1('    >> DEBUG Mode: write TEXT to file'), consoleLogColor4(file));
+        data = (data || '').trim()
         writeText(file, (comments + data).trim());
       }
     }
