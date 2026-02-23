@@ -34,8 +34,9 @@ export default defineConfig({
   root: 'webapp',
   plugins: [react(), viteSingleFile(), updateServiceWorker()],
   define: {
-    'window.BASH_PROFILE_CODE_REPO_RAW_URL': JSON.stringify(process.env.BASH_PROFILE_CODE_REPO_RAW_URL),
-    'window.BASH_SYLE_COMMON': JSON.stringify(process.env.BASH_SYLE_COMMON),
+    // NOTE: we need the fallback for deployment
+    'window.BASH_PROFILE_CODE_REPO_RAW_URL': JSON.stringify((process.env.BASH_PROFILE_CODE_REPO_RAW_URL || 'https://raw.githubusercontent.com/synle/bashrc/master').trim()),
+    'window.BASH_SYLE_COMMON': JSON.stringify((process.env.BASH_SYLE_COMMON || '~/.bash_syle_common').trim()),
   },
   build: {
     outDir: '../dist',
