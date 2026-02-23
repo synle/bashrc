@@ -152,11 +152,11 @@ async function doInit() {
 
 async function doWork() {
   // write to build file
-  const comments = '// Open settings file (JSON)';
+  const comments = 'Open settings file (JSON)';
   const prebuiltConfigs = clone({ ...BASE_CONFIG, ...DEFAULT_PROFILES });
   prebuiltConfigs.defaultProfile = prebuiltConfigs.profiles.list[0].guid;
 
-  writeToBuildFile([{ file: 'windows-terminal', data: prebuiltConfigs, isJson: true, comments }]);
+  writeToBuildFile([{ file: 'windows-terminal', data: prebuiltConfigs, isJson: true, comments, commentStyle: 'json' }]);
 
   const targetPath = path.join(_getPath(), 'LocalState/settings.json');
   if (!filePathExist(targetPath)) {
