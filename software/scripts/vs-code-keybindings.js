@@ -3,12 +3,10 @@ includeSource('software/scripts/vs-code.common.js');
 let OS_KEY;
 let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
-let LINUX_ONLY_KEYBINDING;
 let MAC_ONLY_KEY_BINDINGS;
 
 const WINDOWS_OS_KEY = 'alt'; // alt for modern mode
 const MAC_OSX_KEY = 'cmd';
-const LINUX_OS_KEY = 'alt';
 
 function _formatKey(keybindings, osKeyToUse) {
   osKeyToUse = osKeyToUse || OS_KEY;
@@ -29,10 +27,9 @@ function _getConfigs() {
 }
 
 async function doInit() {
-  OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
+  OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
   WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.windows.jsonc')) || [];
-  LINUX_ONLY_KEYBINDING = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.linux.jsonc')) || [];
   MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.mac.jsonc')) || [];
 
   // begin COMMON_KEY_BINDINGS
@@ -194,7 +191,7 @@ async function doWork() {
     },
     {
       file: 'vs-code-keybindings-linux',
-      data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS, ...LINUX_ONLY_KEYBINDING], LINUX_OS_KEY),
+      data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
       isJson: true,
       comments,
     },
