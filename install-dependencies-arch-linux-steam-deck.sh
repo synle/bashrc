@@ -1,3 +1,8 @@
+#! /bin/sh
+# os flags are set in this file
+# https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
+
+if [ "$is_os_steamdeck" = "1" ]; then
 ##########################################################
 # Arch Linux / Steam Deck Dependencies
 ##########################################################
@@ -38,3 +43,4 @@ installPackage \
 # https://steamdeckrepo.com
 echo '>> Create the folder for boot video'
 mkdir -p ~/.steam/root/config/uioverrides/movies/
+fi

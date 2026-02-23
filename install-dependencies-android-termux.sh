@@ -1,3 +1,8 @@
+#! /bin/sh
+# os flags are set in this file
+# https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
+
+if [ "$is_os_android_termux" = "1" ]; then
 ##########################################################
 # Android Termux Dependencies
 ##########################################################
@@ -104,3 +109,4 @@ curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -o ~/
 
 # TODO: sy to check this lightweight script
 . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
+fi

@@ -21,18 +21,12 @@ Refer to this webapp for the configuration:
 
 ### Install Dependencies
 
-Run this first to get dependencies:
-
-```bash
-. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh?$(date +%s))"
-```
-
 ### Install Profile for Full OS / Systems
 
 Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
 ```bash
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,setup-dependencies.sh"
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,install-dependencies-mac.sh,install-dependencies-ubuntu.sh,install-dependencies-windows.sh,install-dependencies-chrome-os-linux.sh,install-dependencies-android-termux.sh,install-dependencies-arch-linux-steam-deck.sh"
 ```
 
 ## Fun Facts

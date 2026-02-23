@@ -1,3 +1,8 @@
+#! /bin/sh
+# os flags are set in this file
+# https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
+
+if [ "$is_os_window" = "1" ]; then
 ##########################################################
 # Windows Dependencies
 ##########################################################
@@ -35,3 +40,4 @@ echo '  >> wsl --set-default-version 2'
 # subl "$profile"
 # powershell.exe -command "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
 # https://stackoverflow.com/questions/12143245/powershell-configuration-with-an-rc-like-file
+fi

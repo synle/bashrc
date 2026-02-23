@@ -27,7 +27,13 @@
 # NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
 
-run_mode="${RUN_MODE:-local}"
+# Auto-detect mode: if $0 is a real file, we're running locally; otherwise piped (e.g. curl | bash)
+if [ -f "$0" ]; then
+  _default_mode="local"
+else
+  _default_mode="prod"
+fi
+run_mode="$_default_mode"
 files_to_test="${TEST_SCRIPT_FILES:-}"
 pre_run_scripts="${PRE_RUN_SCRIPTS:-}"
 run_only_prescripts=false
@@ -72,8 +78,6 @@ done
 if [ -n "$bare_files" ] && [ -z "$files_to_test" ]; then
   files_to_test="$bare_files"
 fi
-
-export RUN_MODE="$run_mode"
 
 if [ "$run_mode" = "local" ]; then
   export TEST_SCRIPT_MODE=1
