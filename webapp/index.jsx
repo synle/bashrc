@@ -1023,7 +1023,7 @@ function MacOSXNotesDom() {
     <>
       <TargetSystemOSWarningDom targetDomString='mac' />
       <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
-      <DynamicTextArea path='/.build/notes-macosx.md' height='350px' />
+      <DynamicTextArea path='/bootstrap/notes-macosx.md' height='350px' />
       <DynamicTextArea path='/.build/font-linux.md' />
       <DynamicTextArea path='/.build/gitconfig' />
       <DynamicTextArea path='/.build/ssh-config' />
@@ -1049,7 +1049,7 @@ function LinuxNotesDom() {
       <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
       <DynamicTextArea path='/linux/linux-mint-config.sh' height='200px' />
       <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='300px' />
-      <DynamicTextArea path='/.build/notes-linux.md' height='300px' />
+      <DynamicTextArea path='/bootstrap/notes-linux.md' height='300px' />
       <DynamicTextArea path='/.build/font-linux.md' />
       <DynamicTextArea path='/.build/gitconfig' />
       <DynamicTextArea path='/.build/gitignore_global' />
@@ -1114,7 +1114,7 @@ function WindowsNotesDom() {
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
       <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
-      <DynamicTextArea path='/.build/notes-windows.md' height='350px' />
+      <DynamicTextArea path='/bootstrap/notes-windows.md' height='350px' />
       <DynamicTextArea path='/.build/winget-install-windows.ps1' />
       <DynamicTextArea path='/.build/font-windows.md' />
       <DynamicTextArea path='/.build/windows-powershell-profile.ps1' />
