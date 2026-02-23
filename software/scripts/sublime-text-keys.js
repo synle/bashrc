@@ -36,8 +36,7 @@ function _getConfigs() {
 async function doInit() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
-  WINDOWS_ONLY_KEY_BINDINGS =
-    parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.windows.jsonc')) || [];
+  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.windows.jsonc')) || [];
   MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.mac.jsonc')) || [];
 
   // begin COMMON_KEY_BINDINGS

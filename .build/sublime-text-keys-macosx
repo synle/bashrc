@@ -1,0 +1,207 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-23 11PM]
+// 
+// Preferences Key Bindings
+// #### ============================================================================ ###
+
+
+[
+  {
+    "keys": [
+      "super+shift+;"
+    ],
+    "command": "alignment"
+  },
+  {
+    "command": "refresh_folder_list",
+    "keys": [
+      "f5"
+    ]
+  },
+  {
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": "@"
+    },
+    "keys": [
+      "super+r"
+    ]
+  },
+  {
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": ":"
+    },
+    "keys": [
+      "super+;"
+    ]
+  },
+  {
+    "command": "move_to",
+    "args": {
+      "to": "brackets"
+    },
+    "keys": [
+      "super+m"
+    ]
+  },
+  {
+    "command": "prompt_open_file",
+    "keys": [
+      "super+o"
+    ]
+  },
+  {
+    "command": "toggle_side_bar",
+    "keys": [
+      "super+\\"
+    ]
+  },
+  {
+    "command": "goto_definition",
+    "keys": [
+      "super+enter"
+    ]
+  },
+  {
+    "command": "quick_goto_variable",
+    "keys": [
+      "shift+enter"
+    ]
+  },
+  {
+    "command": "new_file",
+    "keys": [
+      "super+t"
+    ]
+  },
+  {
+    "command": "find_all_under",
+    "keys": [
+      "super+ctrl+g"
+    ]
+  },
+  {
+    "command": "find_prev",
+    "keys": [
+      "super+shift+g"
+    ]
+  },
+  {
+    "command": "find_next",
+    "keys": [
+      "super+g"
+    ]
+  },
+  {
+    "keys": [
+      "super+h"
+    ],
+    "command": "show_panel",
+    "args": {
+      "panel": "replace",
+      "reverse": false
+    }
+  },
+  {
+    "command": "show_panel",
+    "args": {
+      "panel": "find",
+      "reverse": false
+    },
+    "keys": [
+      "super+f"
+    ]
+  },
+  {
+    "command": "show_panel",
+    "args": {
+      "panel": "find_in_files"
+    },
+    "keys": [
+      "super+shift+f"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 0
+    },
+    "keys": [
+      "super+1"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 1
+    },
+    "keys": [
+      "super+2"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 2
+    },
+    "keys": [
+      "super+3"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 3
+    },
+    "keys": [
+      "super+4"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 4
+    },
+    "keys": [
+      "super+5"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 5
+    },
+    "keys": [
+      "super+6"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 6
+    },
+    "keys": [
+      "super+7"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 7
+    },
+    "keys": [
+      "super+8"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 8
+    },
+    "keys": [
+      "super+9"
+    ]
+  }
+]
