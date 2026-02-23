@@ -26,8 +26,9 @@
 #   """
 #   sh run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
 #   sh run.sh --force-refresh                    # Force remove and reinstall nvm
+#   sh run.sh --lightweight                      # Export LIGHT_WEIGHT_MODE=1 for lightweight installs
 #
-# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh
+# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh, -lightweight
 
 ##########################################################
 # Prerequisites - OS Flags & NVM/Node Setup
@@ -119,6 +120,10 @@ for arg in "$@"; do
       force_refresh=true
       _parsing_into=""
       ;;
+    --lightweight|-lightweight)
+      export LIGHT_WEIGHT_MODE=1
+      _parsing_into=""
+      ;;
     -*)
       # ignore unknown flags
       _parsing_into=""
@@ -153,6 +158,7 @@ run_description="
   pre_scripts       = ${pre_run_scripts:-[none]}
   run_only_prescripts = $run_only_prescripts
   force_refresh     = $force_refresh
+  lightweight       = ${LIGHT_WEIGHT_MODE:-0}
   test_script_mode  = $TEST_SCRIPT_MODE
 "
 

@@ -228,6 +228,9 @@ Object.keys(process.env)
   .filter((envKey) => envKey.indexOf('is_os_') === 0)
   .forEach((envKey) => (globalThis[envKey] = parseInt(process.env[envKey] || '0') > 0));
 
+/** @type {boolean} */
+globalThis.isLightweightMode = process.env.LIGHT_WEIGHT_MODE === '1';
+
 // setting up the path for the extra tweaks
 /** @type {string} */
 globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
