@@ -46,8 +46,6 @@ fi
 ##########################################################
 # Refresh / Source Aliases
 ##########################################################
-alias bashrcRefresh='. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh?$(date +%s))" -- --prod --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,setup-dependencies.sh"'
-alias refreshBashrc='bashrcRefresh'
 
 ##########################################################
 # Common Aliases
