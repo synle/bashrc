@@ -1,6 +1,7 @@
 /// <reference path="../base-node-script.js" />
 
 
+
 const MAX_DEPTH_CLEANUP = 6;
 
 async function doWork() {

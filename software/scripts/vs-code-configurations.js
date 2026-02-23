@@ -1,6 +1,7 @@
 /// <reference path="../base-node-script.js" />
 
 
+
 includeSource('software/scripts/vs-code.common.js');
 
 let COMMON_CONFIGS;

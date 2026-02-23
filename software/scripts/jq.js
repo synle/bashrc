@@ -1,6 +1,7 @@
 /// <reference path="../base-node-script.js" />
 
 
+
 async function doWork() {
   console.log('  >> Setting up jq alias in bashrc', BASE_BASH_SYLE);
   registerWithBashSyle(

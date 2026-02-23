@@ -1,6 +1,7 @@
 /// <reference path="../../base-node-script.js" />
 
 
+
 async function doWork() {
   let targetPath = globalThis.BASE_D_DIR_WINDOW;
 

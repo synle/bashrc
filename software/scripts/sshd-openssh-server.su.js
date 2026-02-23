@@ -1,6 +1,7 @@
 /// <reference path="../base-node-script.js" />
 
 
+
 async function doWork() {
   const targetPath = '/etc/ssh/sshd_config';
 
