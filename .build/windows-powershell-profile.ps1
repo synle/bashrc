@@ -12,24 +12,24 @@
 mkdir WindowsPowerShell
 cd WindowsPowerShell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build/windows-powershell-profile.ps1" -OutFile "Microsoft.PowerShell_profile.ps1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/synle/bashrc/master/.build/windows-powershell-profile.ps1" -OutFile "Microsoft.PowerShell_profile.ps1"
 
 # need to run this script at least once
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 
 # Downloading Fonts
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCode.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaCodePL.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMono.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/CascadiaMonoPL.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Bold.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Light.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Medium.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Retina.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/FiraCode-SemiBold.ttf
-Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/Trace.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCode.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCodePL.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMono.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMonoPL.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Bold.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Light.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Medium.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Regular.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Retina.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-SemiBold.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/Trace.ttf
 
 #######################################################
 #>
