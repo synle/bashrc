@@ -64,12 +64,12 @@ if [ "$is_os_darwin_mac" = "1" ]; then
   fi
 
   echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
-  touch ~/.bashrc
-  touch ~/.bash_profile
+  touch ~/.bashrc ~/.bash_profile
+  chown "$USER" ~/.bashrc ~/.bash_profile
 
-  echo '>> Change Shell to bash'
+  echo '>> Change Shell to bash: $USER'
   if [ "$SHELL" != "/bin/bash" ]; then
-    chsh -s /bin/bash
+    chsh -s /bin/bash "$USER"
   fi
 
   ##########################################################
