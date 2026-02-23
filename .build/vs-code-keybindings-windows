@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-23 10PM]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-23 11PM]
 // 
 // Preferences Open Keyboard Shortcuts (JSON)
 // #### ============================================================================ ###
@@ -385,14 +385,6 @@
     "key": "alt+]",
     "command": "editor.action.indentLines",
     "when": "editorTextFocus && !editorReadonly"
-  },
-  {
-    "key": "alt+=",
-    "command": "workbench.action.zoomIn"
-  },
-  {
-    "key": "alt+-",
-    "command": "workbench.action.zoomOut"
   },
   {
     "key": "alt+o",

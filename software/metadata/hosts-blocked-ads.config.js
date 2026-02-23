@@ -1,3 +1,5 @@
+/// <reference path="../base-node-script.js" />
+
 let BLOCKED_HOST_SOURCE_URLS;
 
 async function doInit() {
