@@ -1213,8 +1213,8 @@ function CommonEditorSetupDom(props) {
       <MultipleUrlDynamicTextArea
         label='VSCode / VSCodium / SublimeText Setup'
         urls={[
-          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/.build/sublime-text.sh`,
-          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/.build/vs-code.sh`,
+          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/scripts/sublime-text-setup`,
+          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/scripts/vs-code-setup`,
         ]}
         commentString='#'
       />
