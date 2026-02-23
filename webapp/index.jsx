@@ -212,12 +212,12 @@ function RightContainer() {
           '<SETUP_DEPS>',
           formValue.setupDependencies !== 'yes'
             ? ''
-            : `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-mac.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-ubuntu.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-windows.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-chrome-os-linux.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-android-termux.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/install-dependencies-arch-linux-steam-deck.sh)" && \\\n`,
+            : `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-mac.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-ubuntu.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-windows.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-chrome-os-linux.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-android-termux.sh)" && \\\n` +
+                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-arch-linux-steam-deck.sh)" && \\\n`,
         )
         .replace(
           '<ENV_VARS>',
@@ -1022,7 +1022,7 @@ function MacOSXNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString='mac' />
-      <DynamicTextArea path='/.build/install-macosx.sh' height='350px' />
+      <DynamicTextArea path='/bootstrap/setup-macosx.sh' height='350px' />
       <DynamicTextArea path='/.build/notes-macosx.md' height='350px' />
       <DynamicTextArea path='/.build/font-linux.md' />
       <DynamicTextArea path='/.build/gitconfig' />
@@ -1046,7 +1046,7 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
-      <DynamicTextArea path='/.build/install-linux.sh' height='300px' />
+      <DynamicTextArea path='/bootstrap/setup-linux.sh' height='300px' />
       <DynamicTextArea path='/linux/linux-mint-config.sh' height='200px' />
       <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='300px' />
       <DynamicTextArea path='/.build/notes-linux.md' height='300px' />
@@ -1113,7 +1113,7 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
-      <DynamicTextArea path='/.build/install-windows.sh' height='350px' />
+      <DynamicTextArea path='/bootstrap/setup-windows.sh' height='350px' />
       <DynamicTextArea path='/.build/notes-windows.md' height='350px' />
       <DynamicTextArea path='/.build/winget-install-windows.ps1' />
       <DynamicTextArea path='/.build/font-windows.md' />

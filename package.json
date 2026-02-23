@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "private": "true",
+  "config": {
+    "dependencies_pre-scripts": "bash-first-and-only-one-time.sh,bash-profile-barebone.sh,bootstrap/dependencies-mac.sh,bootstrap/dependencies-ubuntu.sh,bootstrap/dependencies-windows.sh,bootstrap/dependencies-chrome-os-linux.sh,bootstrap/dependencies-android-termux.sh,bootstrap/dependencies-arch-linux-steam-deck.sh"
+  },
   "scripts": {
     "dev": "vite",
     "prebuild": "npm run format",
@@ -15,9 +18,9 @@
     "setup:full": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts=\"bash-first-and-only-one-time.sh,bash-profile-barebone.sh\"",
     "setup:light": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js\"",
     "setup:hosts": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"software/scripts/etc-hosts.su.js\"",
-    "setup:dependencies": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --run-only-prescripts --pre-scripts=\"setup-dependencies.sh\"",
+    "setup:dependencies": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --run-only-prescripts --pre-scripts=\"$npm_package_config_dependencies_pre-scripts\"",
     "test": "sh run.sh",
-    "test:dependencies": "sh run.sh --run-only-prescripts --pre-scripts=\"setup-dependencies.sh\"",
+    "test:dependencies": "sh run.sh --run-only-prescripts --pre-scripts=\"$npm_package_config_dependencies_pre-scripts\"",
     "test:hosts": "sh run.sh --files=\"software/scripts/etc-hosts.su.js\"",
     "list:scripts": "cat software/metadata/script-list.config"
   },

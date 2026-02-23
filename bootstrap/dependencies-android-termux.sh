@@ -14,27 +14,6 @@ termux-chroot
 ''' >> ~/.bashrc
 
 ##########################################################
-# Set OS Flags
-##########################################################
-export is_os_darwin_mac='0'
-export is_os_window='0'
-export is_os_wsl='0'
-export is_os_ubuntu='0'
-export is_os_chromeos='0'
-export is_os_mingw64='0'
-export is_os_android_termux='1'
-
-echo """
-export is_os_darwin_mac='0'
-export is_os_window='0'
-export is_os_wsl='0'
-export is_os_ubuntu='0'
-export is_os_chromeos='0'
-export is_os_mingw64='0'
-export is_os_android_termux='1'
-""" > ~/.bash_syle_os
-
-##########################################################
 # Install Packages
 ##########################################################
 pkg install -y proot # needed for android termux fhd fixes

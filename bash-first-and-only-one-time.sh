@@ -5,6 +5,9 @@
 ##########################################################
 if [ ! -f ~/.bash_syle_os ]; then
   echo '''
+##########################################################
+# OS Flags (created by bash-first-and-only-one-time.sh)
+##########################################################
 export is_os_darwin_mac=0 && [ -d /Applications ] && export is_os_darwin_mac=1
 export is_os_ubuntu=0 && apt-get -v &> /dev/null && export is_os_ubuntu=1
 export is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || grep -qi cros /proc/version 2>/dev/null; } && export is_os_chromeos=1
@@ -17,7 +20,7 @@ export is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && expo
 export is_os_wsl=0 && { grep -qi microsoft /proc/version 2>/dev/null || [ "$is_os_window" = "1" ]; } && export is_os_wsl=1
 ''' > ~/.bash_syle_os
 fi
-. /dev/stdin <<< "$(cat ~/.bash_syle_os)"
+[ -f ~/.bash_syle_os ] && . ~/.bash_syle_os
 # end os flags
 
 if [ "$is_os_android_termux" != "1" ]; then
@@ -65,5 +68,4 @@ if [ "$is_os_android_termux" != "1" ]; then
   ##########################################################
   echo "    >> install yarn prettier"
   npm install --global yarn prettier &>/dev/null
-
 fi

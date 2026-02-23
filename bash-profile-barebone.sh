@@ -20,8 +20,9 @@ export HISTTIMEFORMAT="[%F %T] "
 PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 
 ##########################################################
-# OS Flags (defined in bash-first-and-only-one-time.sh)
+# OS Flags
 ##########################################################
+[ -f ~/.bash_syle_os ] && . ~/.bash_syle_os
 
 ##########################################################
 # Common Aliases
