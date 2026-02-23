@@ -370,15 +370,18 @@ function writeText(filePath, text, override = true, suppressError = false) {
   const newContent = (text || '').trim();
   const oldContent = readText(pathToUse).trim();
 
+  const oldContentStripped = (text || '').trim();
+  const newContentStripped = readText(pathToUse).trim();
+
   // strip everything before and including the COMMENT_BREAK line so timestamp-only changes don't trigger a write
-  const commentBreakIdx_old = oldContent.indexOf(COMMENT_BREAK);
-  const commentBreakIdx_new = newContent.indexOf(COMMENT_BREAK);
-  const oldContentStripped = (
-    commentBreakIdx_old >= 0 ? oldContent.substring(oldContent.indexOf('\n', commentBreakIdx_old) + 1) : oldContent
-  ).trim();
-  const newContentStripped = (
-    commentBreakIdx_new >= 0 ? newContent.substring(newContent.indexOf('\n', commentBreakIdx_new) + 1) : newContent
-  ).trim();
+  // const commentBreakIdx_old = oldContent.indexOf(COMMENT_BREAK);
+  // const commentBreakIdx_new = newContent.indexOf(COMMENT_BREAK);
+  // const oldContentStripped = (
+  //   commentBreakIdx_old >= 0 ? oldContent.substring(oldContent.indexOf('\n', commentBreakIdx_old) + 1) : oldContent
+  // ).trim();
+  // const newContentStripped = (
+  //   commentBreakIdx_new >= 0 ? newContent.substring(newContent.indexOf('\n', commentBreakIdx_new) + 1) : newContent
+  // ).trim();
 
   if (oldContentStripped === newContentStripped || override !== true) {
     // if content don't change, then don't save
@@ -517,7 +520,7 @@ function writeToBuildFile(tasks) {
         if (commentPrefix) {
           // added marker to help with trakcing and remove lalter
 
-          comments += `${commentPrefix}${COMMENT_BREAK}`;
+          comments += `\n${commentPrefix}${COMMENT_BREAK}`;
         }
 
         comments += '\n\n';
@@ -533,6 +536,25 @@ function writeToBuildFile(tasks) {
       }
     }
     return process.exit();
+  }
+}
+
+/**
+ * Writes config data to a destination file composed from a base path and a relative file name.
+ * Logs the resolved path before writing. Supports JSON (default) or plain text output.
+ * @param {string} basePath - The base directory path
+ * @param {string} fileName - The relative file name to join with basePath (e.g. 'Packages/User/Preferences.sublime-settings')
+ * @param {any} data - The data to write (object for JSON, string for text)
+ * @param {boolean} [isJson=true] - If true, writes as formatted JSON via writeJson; otherwise writes as plain text via writeText
+ * @returns {void}
+ */
+function writeConfigToFile(basePath, fileName, data, isJson = true) {
+  const fileDestPath = path.join(basePath, fileName);
+  console.log('      >> File Path', fileDestPath);
+  if (isJson) {
+    writeJson(fileDestPath, data);
+  } else {
+    writeText(fileDestPath, data);
   }
 }
 

@@ -229,8 +229,6 @@ async function doWork() {
   let targetPaths = await _getTargetPaths();
   console.log('    >> For my own system: ', targetPaths?.length);
   for (const targetPath of targetPaths) {
-    const fileDestPath = path.join(targetPath, 'User/settings.json');
-    console.log('      >> File Path', fileDestPath);
-    writeJson(fileDestPath, _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
+    writeConfigToFile(targetPath, 'User/settings.json', _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
   }
 }

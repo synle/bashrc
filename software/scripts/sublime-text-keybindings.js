@@ -204,7 +204,5 @@ async function doWork() {
   console.log('    >> For my own system', targetPath);
   exitIfPathNotFound(targetPath);
 
-  const fileDestPath = path.join(targetPath, 'Packages/User/Default.sublime-keymap');
-  console.log('      >> File Path', fileDestPath);
-  writeJson(fileDestPath, _getConfigs());
+  writeConfigToFile(targetPath, 'Packages/User/Default.sublime-keymap', _getConfigs());
 }

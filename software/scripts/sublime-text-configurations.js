@@ -126,7 +126,5 @@ async function doWork() {
   console.log('    >> For my own system', targetPath);
   exitIfPathNotFound(targetPath);
 
-  const fileDestPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
-  console.log('      >> File Path', fileDestPath);
-  writeJson(fileDestPath, _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
+  writeConfigToFile(targetPath, 'Packages/User/Preferences.sublime-settings', _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
 }

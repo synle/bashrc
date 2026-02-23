@@ -221,8 +221,6 @@ async function doWork() {
   let targetPaths = await _getTargetPaths();
   console.log('    >> For my own system: ', targetPaths?.length);
   for (const targetPath of targetPaths) {
-    const fileDestPath = path.join(targetPath, 'User/keybindings.json');
-    console.log('      >> File Path', fileDestPath);
-    writeJson(fileDestPath, _getConfigs());
+    writeConfigToFile(targetPath, 'User/keybindings.json', _getConfigs());
   }
 }
