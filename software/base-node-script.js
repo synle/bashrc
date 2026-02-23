@@ -1,14 +1,10 @@
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
-/** @type {typeof import('fs')} */
-var fs = (globalThis.fs = (0, require)('fs'));
-/** @type {typeof import('path')} */
-var path = (globalThis.path = (0, require)('path'));
-/** @type {typeof import('https')} */
-var https = (globalThis.https = (0, require)('https'));
-/** @type {typeof import('http')} */
-var http = (globalThis.http = (0, require)('http'));
+globalThis.fs = require('fs');
+globalThis.path = require('path');
+globalThis.https = require('https');
+globalThis.http = require('http');
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
@@ -39,10 +35,15 @@ globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
 /** @type {string | null} */
 globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
-// NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
 globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (
-  process.env.BASH_PROFILE_CODE_REPO_RAW_URL || 'https://raw.githubusercontent.com/synle/bashrc/master'
+  process.env.BASH_PROFILE_CODE_REPO_RAW_URL || ''
 ).trim();
+
+
+globalThis.BASH_SYLE_COMMON = (
+  process.env.BASH_SYLE_COMMON || ''
+).trim();
+
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -1643,6 +1644,16 @@ async function _doWorkFullRun() {
 // Bootstrap / Main Entry Point
 //////////////////////////////////////////////////////
 (async function () {
+  const missingEnvVars = [
+    ['BASH_PROFILE_CODE_REPO_RAW_URL', globalThis.BASH_PROFILE_CODE_REPO_RAW_URL],
+    ['BASH_SYLE_COMMON', globalThis.BASH_SYLE_COMMON],
+  ].filter(([, value]) => !value).map(([key]) => key);
+  if (missingEnvVars.length > 0) {
+    console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    process.exit(1);
+  }
+
+
   // getting the ip address mapping
   try {
     globalThis.HOME_HOST_NAMES = await fetchUrlAsJson(`software/metadata/ip-address.config.hostnamesFlattened`);
@@ -1666,6 +1677,7 @@ async function _doWorkFullRun() {
   process
     .on('unhandledRejection', (reason, p) => {
       console.error('[Error] unhandledRejection', reason, 'Unhandled Rejection at Promise', p);
+      process.exit(1);
     })
     .on('uncaughtException', (err) => {
       console.error('[Error] uncaughtException', err, 'Uncaught Exception thrown');

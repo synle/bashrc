@@ -9,7 +9,10 @@ async function doWork() {
   bashrcTextContent = appendTextBlock(
     bashrcTextContent,
     'Sy bashrc entry point', // key
-    `[ -s ~/.bash_syle ] && . ~/.bash_syle > /dev/null 2>&1`,
+    `
+[ -f ${BASH_SYLE_COMMON} ] && . ${BASH_SYLE_COMMON} > /dev/null 2>&1
+[ -s ~/.bash_syle ] && . ~/.bash_syle > /dev/null 2>&1
+`.trim(),
   );
 
   // source all .bash_* files in home folder (excluding known non-config files)
@@ -36,7 +39,7 @@ async function doWork() {
 
   // wipe out the bash syle
   console.log('  >> Wiping out the old .bash_syle', BASE_BASH_SYLE);
-  writeText(BASE_BASH_SYLE, '');
+  writeText(BASE_BASH_SYLE, ``);
 
   // bootstrap Mac Darwin OSX .bash_profile
   if (is_os_darwin_mac) {
