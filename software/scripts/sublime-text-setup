@@ -1,5 +1,9 @@
+# NOTE: this is used by normal script, thus we have a fallback here
 export BASH_PROFILE_CODE_REPO_RAW_URL="${BASH_PROFILE_CODE_REPO_RAW_URL:-https://raw.githubusercontent.com/synle/bashrc/master}"
 
+##################################################
+# for Linux using bash
+##################################################
 REPO_BUILD="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
 sublime-text-mousemap-macosx
 # Resolve potential paths with wildcards
@@ -29,6 +33,10 @@ else
     echo "Sublime Text User directory not found. Skipping installation."
 fi
 
+
+##################################################
+# for Windows using powershell
+##################################################
 # for windows with powershell, last effort (final fallback)
 $RepoBuild = "https://raw.githubusercontent.com/synle/bashrc/master/.build"
 $W_Path = "$env:AppData/Sublime Text/Packages/User"
