@@ -246,21 +246,44 @@ node -e """
 """
 }
 
-shorterPwdPath(){
-  local trim_count=3  # Set the number of parts to retain in the path
-  IFS='/' read -r -a splits <<< "$(pwd)"
-  result=""
+shorterPwdPath() {
+  local trim_count=3
+  # Use $PWD directly to avoid your custom 'pwd' function decoration
+  local current_dir="$PWD"
+
+  # Replace Home directory with ~ for a cleaner look
+  current_dir="${current_dir/#$HOME/~}"
+
+  # Split path into an array
+  IFS='/' read -r -a splits <<< "$current_dir"
+  local result=""
 
   for idx in "${!splits[@]}"; do
+    # Skip empty first element for absolute paths
+    if [ -z "${splits[$idx]}" ] && [ $idx -eq 0 ]; then
+      continue
+    fi
+
+    # Logic: If current index is far from the end, truncate to 1 char
     if [ $idx -lt $((${#splits[@]} - $trim_count)) ]; then
-      result+="${splits[$idx]:0:1}/"
+      # If it's the home tilde, don't truncate it further
+      if [ "${splits[$idx]}" = "~" ]; then
+        result+="~/"
+      else
+        result+="${splits[$idx]:0:1}/"
+      fi
     else
+      # Keep the full folder name for the last 'trim_count' folders
       result+="${splits[$idx]}/"
     fi
   done
 
-  # Remove the trailing slash at the end
-  echo "${result%/}"
+  # Add leading slash back if it's an absolute path, then trim trailing slash
+  if [[ "$current_dir" == /* ]]; then
+    echo "/${result%/}"
+  else
+    echo "${result%/}"
+  fi
 }
 
 ##########################################################
