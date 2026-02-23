@@ -162,19 +162,22 @@ if [ -n "$files_to_test" ]; then export TEST_SCRIPT_FILES="$files_to_test"; fi
 active_os_flags=$(set | grep -E "^is_os_.*=1" | awk -F= '{print $1}' | paste -sd "," -)
 
 run_description="
-  mode                = $run_mode
-  files               = ${files_to_test:-[full run]}
-  pre_scripts         = ${pre_run_scripts:-[none]}
-  run_only_prescripts = $run_only_prescripts
-  force_refresh       = $force_refresh
-  lightweight         = ${LIGHT_WEIGHT_MODE:-0}
-  test_script_mode    = $TEST_SCRIPT_MODE
-  os_flags            = ${active_os_flags:-[none]}
+mode                = $run_mode
+files               = ${files_to_test:-[full run]}
+pre_scripts         = ${pre_run_scripts:-[none]}
+run_only_prescripts = $run_only_prescripts
+force_refresh       = $force_refresh
+lightweight         = ${LIGHT_WEIGHT_MODE:-0}
+test_script_mode    = $TEST_SCRIPT_MODE
+os_flags            = ${active_os_flags:-[none]}
 "
 
-echo "=======================================================
-= run.sh started at $(date '+%Y-%m-%d %H:%M:%S')
-=$run_description======================================================="
+echo "
+=======================================================
+>> run.sh started at $(date '+%Y-%m-%d %H:%M:%S')
+$run_description
+=======================================================
+"
 
 ##########################################################
 # Helpers
@@ -202,9 +205,11 @@ if [ -n "$pre_run_scripts" ]; then
 fi
 
 if [ "$run_only_prescripts" = true ]; then
-  echo "=======================================================
-= run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
-======================================================="
+  echo "
+=======================================================
+>> run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
+=======================================================
+"
   exit 0
 fi
 
@@ -246,7 +251,7 @@ fi
 ##########################################################
 get_file_contents "software/base-node-script.js" | node | bash
 
-echo "=======================================================
-= run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
-======================================================="
+echo "
+=======================================================
+>> run.sh done at $(date '+%Y-%m-%d %H:%M:%S')"
 

@@ -1575,15 +1575,12 @@ async function includeSource(file) {
  */
 function printOsFlags() {
   if (process.env.SHOULD_PRINT_OS_FLAGS !== 'false') {
+    printSectionBlock(`OS Flags`)
     console.log(`
       node -e """
-        console.log(''.padStart(90, '='));
-        console.log('>> OS Flags'.padEnd(88, ' '));
-        console.log(''.padStart(90, '='));
         Object.keys(process.env)
           .filter(envKey => envKey.indexOf('is_os_') === 0)
-          .forEach(envKey => console.log(envKey.padEnd(20, ' ') + ':', process.env[envKey] === '1' ? 'Yes': 'No'))
-        console.log(''.padStart(90, '='));
+          .forEach(envKey => console.log(envKey.padEnd(30, ' ') + ':', process.env[envKey] === '1' ? 'Yes': 'No'))
       """
     `);
   }
@@ -1606,13 +1603,14 @@ function printScriptsToRun(scriptsToRun) {
  */
 function printSectionBlock(header, lines = []) {
   const linesOutput = lines.map((line) => `console.log('${line}')`).join('\n      ');
+  const lineBreak = 55;
   console.log(`
     node -e """
-      console.log(''.padStart(90, '='));
-      console.log('>> ${header}'.padEnd(88, ' '));
-      console.log(''.padStart(90, '='));
+      console.log(''.padStart(${lineBreak}, '='));
+      console.log('>> ${header}');
+      console.log(''.padStart(${lineBreak}, '='));
       ${linesOutput}
-      ${lines.length > 0 ? `console.log(''.padStart(90, '='));` : ''}
+      ${lines.length > 0 ? `console.log(''.padStart(${lineBreak}, '='));` : ''}
     """
   `);
 }
@@ -1627,11 +1625,8 @@ function printScriptProcessingResults(results) {
   const successCount = results.filter((r) => r.status === 'success').length;
   const errorCount = results.filter((r) => r.status === 'error').length;
 
-  console.log(echo(''.padStart(90, '=')));
-  console.log(
-    echo(`>> Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`.padEnd(88, ' ')),
-  );
-  console.log(echo(''.padStart(90, '=')));
+
+  printSectionBlock(`Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`)
 
   for (const result of results) {
     if (result.status === 'success') {
@@ -1640,8 +1635,6 @@ function printScriptProcessingResults(results) {
       console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}`));
     }
   }
-
-  console.log(echo(''.padStart(90, '=')));
 }
 
 //////////////////////////////////////////////////////
@@ -1661,7 +1654,7 @@ async function _doWorkTestFiles() {
     return;
   }
 
-  console.log(`echo '''    >> filesToTest = ${filesToTest.length}'''`);
+  console.log(echoColor1(`>> filesToTest = ${filesToTest.length}`));
 
   const softwareFiles = filesToTest
     .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
