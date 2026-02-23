@@ -1207,11 +1207,11 @@ function WindowsNotesDom() {
 function CommonEditorSetupDom(props) {
   const { is_os_darwin_mac, is_os_window, is_os_ubuntu } = props;
 
-  let domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-extensions-linux' />;
+  let domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-ext-linux' />;
   if (is_os_darwin_mac) {
-    domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-extensions-macosx' />;
+    domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-ext-macosx' />;
   } else if (is_os_window) {
-    domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-extensions-windows' />;
+    domVSCodeExtension = <DynamicTextArea path='/.build/vs-code-ext-windows' />;
   }
 
   return (
@@ -1224,7 +1224,7 @@ function CommonEditorSetupDom(props) {
         ]}
         commentString='#'
       />
-      <DynamicTextArea path='/.build/sublime-text-extensions' height='75px' />
+      <DynamicTextArea path='/.build/sublime-text-ext' height='75px' />
       {domVSCodeExtension}
     </>
   );

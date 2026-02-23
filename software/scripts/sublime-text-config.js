@@ -106,14 +106,14 @@ async function doWork() {
   console.log(`    >> For prebuilt configs`);
   writeToBuildFile([
     {
-      file: 'sublime-text-configurations',
+      file: 'sublime-text-config',
       data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: false }),
       isJson: true,
       comments,
       commentStyle: 'json',
     },
     {
-      file: 'sublime-text-configurations-macosx',
+      file: 'sublime-text-config-macosx',
       data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: true }),
       isJson: true,
       comments,

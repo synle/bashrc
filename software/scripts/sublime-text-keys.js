@@ -37,8 +37,8 @@ async function doInit() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
   WINDOWS_ONLY_KEY_BINDINGS =
-    parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.windows.jsonc')) || [];
-  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keybindings.mac.jsonc')) || [];
+    parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.windows.jsonc')) || [];
+  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.mac.jsonc')) || [];
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
@@ -177,21 +177,21 @@ async function doWork() {
   const comments = 'Preferences Key Bindings';
   writeToBuildFile([
     {
-      file: 'sublime-text-keybindings-windows',
+      file: 'sublime-text-keys-windows',
       data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
       isJson: true,
       comments,
       commentStyle: 'json',
     },
     {
-      file: 'sublime-text-keybindings-linux',
+      file: 'sublime-text-keys-linux',
       data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
       isJson: true,
       comments,
       commentStyle: 'json',
     },
     {
-      file: 'sublime-text-keybindings-macosx',
+      file: 'sublime-text-keys-macosx',
       data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
       isJson: true,
       comments,

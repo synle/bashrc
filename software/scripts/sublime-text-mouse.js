@@ -57,8 +57,8 @@ async function doWork() {
   // write to build file
   console.log(`    >> For prebuilt configs`);
   writeToBuildFile([
-    { file: 'sublime-text-mousemap', data: _formatKey(MOUSE_MAPS, WINDOWS_OS_KEY), isJson: true },
-    { file: 'sublime-text-mousemap-macosx', data: _formatKey(MOUSE_MAPS, MAC_OSX_KEY), isJson: true },
+    { file: 'sublime-text-mouse', data: _formatKey(MOUSE_MAPS, WINDOWS_OS_KEY), isJson: true },
+    { file: 'sublime-text-mouse-macosx', data: _formatKey(MOUSE_MAPS, MAC_OSX_KEY), isJson: true },
   ]);
 
   // for my own system

@@ -6,9 +6,9 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="${BASH_PROFILE_CODE_REPO_RAW_URL:-https:/
 ##################################################
 REMOTE_BASE="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
 REMOTE_BASE="https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build"
-CONFIG_FILE="vs-code-configurations"
-KEYBIND_LINUX="vs-code-keybindings-linux"
-KEYBIND_MAC="vs-code-keybindings-macosx"
+CONFIG_FILE="vs-code-config"
+KEYBIND_LINUX="vs-code-keys-linux"
+KEYBIND_MAC="vs-code-keys-macosx"
 
 # Define all targets: path + keybinding file
 targets=(
@@ -44,8 +44,8 @@ done
 # for Windows using powershell
 ##################################################
 $baseUrl     = "https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build"
-$configFile  = "vs-code-configurations"
-$keybindings = "vs-code-keybindings-windows"
+$configFile  = "vs-code-config"
+$keybindings = "vs-code-keys-windows"
 
 # Target directories
 $targets = @(

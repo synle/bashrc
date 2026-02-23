@@ -23,7 +23,7 @@ async function doWork() {
   // write to build file
   writeToBuildFile([
     {
-      file: 'sublime-text-extensions',
+      file: 'sublime-text-ext',
       data: `# Use Preferences > Package Control > Package Control: Advanced Install Package. \n${toInstallExtensions.join(',')}`,
     },
   ]);

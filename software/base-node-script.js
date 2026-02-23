@@ -1192,7 +1192,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   const lastFiles = convertTextToList(`
     software/scripts/bash-syle-content.js
     software/scripts/etc-hosts.su.js
-    software/scripts/vs-code-extensions.sh
+    software/scripts/vs-code-ext.sh
   `);
 
   if (is_os_window) {
@@ -1219,10 +1219,10 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
       software/scripts/fzf.js
       software/scripts/synle-make-component.js
       software/scripts/diff-so-fancy.sh
-      software/scripts/sublime-text-configurations.js
-      software/scripts/sublime-text-keybindings.js
-      software/scripts/vs-code-configurations.js
-      software/scripts/vs-code-keybindings.js
+      software/scripts/sublime-text-config.js
+      software/scripts/sublime-text-keys.js
+      software/scripts/vs-code-config.js
+      software/scripts/vs-code-keys.js
       software/scripts/jq.js
       software/scripts/jq.sh
       software/scripts/terminator.js

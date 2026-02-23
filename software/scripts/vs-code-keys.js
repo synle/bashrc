@@ -31,8 +31,8 @@ function _getConfigs() {
 async function doInit() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
-  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.windows.jsonc')) || [];
-  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keybindings.mac.jsonc')) || [];
+  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keys.windows.jsonc')) || [];
+  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keys.mac.jsonc')) || [];
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
@@ -195,21 +195,21 @@ async function doWork() {
   const comments = 'Preferences Open Keyboard Shortcuts (JSON)';
   writeToBuildFile([
     {
-      file: 'vs-code-keybindings-windows',
+      file: 'vs-code-keys-windows',
       data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
       isJson: true,
       comments,
       commentStyle: 'json',
     },
     {
-      file: 'vs-code-keybindings-linux',
+      file: 'vs-code-keys-linux',
       data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
       isJson: true,
       comments,
       commentStyle: 'json',
     },
     {
-      file: 'vs-code-keybindings-macosx',
+      file: 'vs-code-keys-macosx',
       data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
       isJson: true,
       comments,
