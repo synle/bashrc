@@ -35,7 +35,9 @@ export default defineConfig({
   plugins: [react(), viteSingleFile(), updateServiceWorker()],
   define: {
     // NOTE: we need the fallback for deployment
-    'window.BASH_PROFILE_CODE_REPO_RAW_URL': JSON.stringify((process.env.BASH_PROFILE_CODE_REPO_RAW_URL || 'https://raw.githubusercontent.com/synle/bashrc/master').trim()),
+    'window.BASH_PROFILE_CODE_REPO_RAW_URL': JSON.stringify(
+      (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || 'https://raw.githubusercontent.com/synle/bashrc/master').trim(),
+    ),
     'window.BASH_SYLE_COMMON': JSON.stringify((process.env.BASH_SYLE_COMMON || '~/.bash_syle_common').trim()),
   },
   build: {
