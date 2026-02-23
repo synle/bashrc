@@ -1,5 +1,6 @@
 /// <reference path="../base-node-script.js" />
 
+
 global._getPathSublimeText = async function () {
   const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
 

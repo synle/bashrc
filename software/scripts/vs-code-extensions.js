@@ -1,5 +1,6 @@
 /// <reference path="../base-node-script.js" />
 
+
 const onlyVsCodeExtensions = trimLeftSpaces(`
   ms-vscode-remote.vscode-remote-extensionpack
   ms-dotnettools.csharp

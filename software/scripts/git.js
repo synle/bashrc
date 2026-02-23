@@ -1,5 +1,6 @@
 /// <reference path="../base-node-script.js" />
 
+
 async function doWork() {
   console.log('  >> Installing git Aliases and Configs');
 

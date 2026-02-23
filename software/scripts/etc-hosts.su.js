@@ -1,5 +1,6 @@
 /// <reference path="../base-node-script.js" />
 
+
 let DYNAMIC_BLOCK_HOST_NAMES = [];
 let STATIC_BLOCK_HOST_NAMES = [];
 let WHITE_LIST_HOST_NAMES = [];
