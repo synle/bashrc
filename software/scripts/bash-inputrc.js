@@ -6,7 +6,7 @@ async function doWork() {
 
   const content = `
 # To install manually:
-# curl -o ~/.inputrc https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build/inputrc
+# curl -o ~/.inputrc ${BASH_PROFILE_CODE_REPO_RAW_URL}/.build/inputrc
 
 ## case insenstive autocomplete - ignore case for autocomplete
 set completion-ignore-case on

@@ -30,7 +30,7 @@ async function doWork() {
 //       file: 'font-linux.md',
 //       data: `
 // cd ~/Desktop
-// ${fontBaseNames.map((fontBaseName) => `curl https://github.com/synle/bashrc/raw/master/fonts/${fontBaseName} -O -J -L && \\`).join('\n')}
+// ${fontBaseNames.map((fontBaseName) => `curl ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName} -O -J -L && \\`).join('\n')}
 // echo "Done downloading fonts"
 // `.trim(),
 //     },
@@ -40,7 +40,7 @@ async function doWork() {
 // C:
 // cd C:
 // ${fontBaseNames
-//   .map((fontBaseName) => `Start-BitsTransfer -Source https://github.com/synle/bashrc/raw/master/fonts/${fontBaseName}`)
+//   .map((fontBaseName) => `Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName}`)
 //   .join('\n')}
 // echo "Done downloading fonts"
 // `.trim(),
