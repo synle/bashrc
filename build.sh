@@ -56,7 +56,7 @@ node -e """
 const fs = require('fs');
 const path = require('path');
 
-const scriptsDir = 'software/scripts';
+const scriptsDir = 'software';
 
 function getJsFiles(dir) {
   let results = [];
