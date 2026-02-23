@@ -55,13 +55,19 @@ echo '> Build JSDocs for JS Code'
 # prepend /// <reference> to script files for intellisense
 SCRIPTS_DIR="software/scripts"
 find "$SCRIPTS_DIR" -name '*.js' | while read -r f; do
-  if ! head -1 "$f" | grep -q '/// <reference'; then
-    # compute relative path from the script file back to base-node-script.js
-    REL_DIR=$(dirname "$f" | sed "s|^$SCRIPTS_DIR||" | sed 's|[^/]||g' | sed 's|/|../|g')
-    REF_PATH="${REL_DIR}../base-node-script.js"
-    echo ">> prepending reference tag to $f"
-    printf '/// <reference path="%s" />\n%s' "$REF_PATH" "$(cat "$f")" > "$f"
+  # compute relative path from the script file back to base-node-script.js
+  REL_DIR=$(dirname "$f" | sed "s|^$SCRIPTS_DIR||" | sed 's|[^/]||g' | sed 's|/|../|g')
+  REF_PATH="${REL_DIR}../base-node-script.js"
+  REF_TAG="/// <reference path=\"$REF_PATH\" />"
+
+  # remove existing leading reference tag if present
+  if head -1 "$f" | grep -q '/// <reference'; then
+    tail -n +2 "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   fi
+
+  # prepend the correct reference tag with a blank line after it
+  echo ">> prepending reference tag to $f"
+  printf '%s\n\n%s' "$REF_TAG" "$(cat "$f")" > "$f"
 done
 
 

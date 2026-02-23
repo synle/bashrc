@@ -1,5 +1,3 @@
-#! /bin/sh
-
 VUNDLE_URL="https://github.com/synle/vundle.git"
 VUNDLE_DIR=~/.vim/bundle/Vundle.vim
 

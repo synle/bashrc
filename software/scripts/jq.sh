@@ -1,4 +1,3 @@
-#! /bin/sh
 TEMP_PATH=/tmp/jq
 DEST_PATH=/opt/jq
 
