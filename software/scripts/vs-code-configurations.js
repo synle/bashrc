@@ -219,10 +219,10 @@ async function doWork() {
   console.log(`  >> VS Code Configurations / Settings:`);
 
   // write to build file
-  const comments = '// Preferences Open User Settings (JSON)';
+  const comments = 'Preferences Open User Settings (JSON)';
   writeToBuildFile([
-    { file: 'vs-code-configurations', data: _getConfigs({ is_os_darwin_mac: false }), isJson: true, comments },
-    { file: 'vs-code-configurations-macosx', data: _getConfigs({ is_os_darwin_mac: true }), isJson: true, comments },
+    { file: 'vs-code-configurations', data: _getConfigs({ is_os_darwin_mac: false }), isJson: true, comments, commentStyle:'json' },
+    { file: 'vs-code-configurations-macosx', data: _getConfigs({ is_os_darwin_mac: true }), isJson: true, comments, commentStyle:'json' },
   ]);
 
   // for my own system

@@ -440,12 +440,33 @@ function writeToBuildFile(tasks) {
   tasks = [].concat(tasks);
 
   if (DEBUG_WRITE_TO_DIR) {
-    for (let { file, data, isJson, comments } of [].concat(tasks)) {
+    for (let { file, data, isJson, comments, commentStyle } of [].concat(tasks)) {
       isJson = !!isJson;
       comments = (comments || '').trim();
 
+      let commentPrefix = '';
+      switch (commentStyle) {
+        case 'json':
+          commentPrefix = '//';
+          break;
+        case 'gitconfig':
+        case 'bash':
+          commentPrefix = '#';
+          break;
+      }
+
+      if (commentPrefix) {
+        commentPrefix = commentPrefix + ' '; // add a space to make it easy to ready
+        comments = 'NOTE: STOP - do not edit by hand - this file is auto-generated\n' + comments;
+      }
+
       if (comments) {
-        comments += '\n';
+        comments = comments
+          .trim()
+          .split('\n')
+          .map((row) => `${commentPrefix}${row.trim()}`)
+          .join('\n')
+           + '\n\n';
       }
 
       if (isJson) {
@@ -453,7 +474,7 @@ function writeToBuildFile(tasks) {
         writeJson(file, data, comments);
       } else {
         console.log(consoleLogColor1('    >> DEBUG Mode: write TEXT to file'), consoleLogColor4(file));
-        data = (data || '').trim()
+        data = (data || '').trim();
         writeText(file, (comments + data).trim());
       }
     }

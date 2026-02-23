@@ -84,9 +84,9 @@ async function doWork() {
     {
       file: 'gitconfig',
       data: await _getGitConfig({
-          email: '; email = test_email@gmail.com #update this email',
-        }),
-      comments: `# NOTE: STOP - do not edit by hand - this file is auto-generated`
+        email: '; email = test_email@gmail.com #update this email',
+      }),
+      commentStyle: 'bash',
     },
   ]);
 

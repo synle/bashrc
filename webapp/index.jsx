@@ -1418,19 +1418,21 @@ function App() {
           setAppData: onSetAppData,
           onInputChange,
         }}>
-<div className='app-header'>
-<a href='https://github.com/synle/bashrc'><h1 style={{textTransform: 'uppercase'}}>{window.document.title}</h1></a>
-<Settings />
-</div>
-<div className='app-clone-command'>
-<code>git clone git@github.com:synle/bashrc.git</code>
-</div>
-<div id='container'>
-<LeftContainer />
-<RightContainer />
-<BottomContainer />
-</div>
-</MainAppContext.Provider>
+        <div className='app-header'>
+          <a href='https://github.com/synle/bashrc'>
+            <h1 style={{ textTransform: 'uppercase' }} target='_blank'>{window.document.title}</h1>
+          </a>
+          <Settings />
+        </div>
+        <div className='app-clone-command'>
+          <code>git clone git@github.com:synle/bashrc.git</code>
+        </div>
+        <div id='container'>
+          <LeftContainer />
+          <RightContainer />
+          <BottomContainer />
+        </div>
+      </MainAppContext.Provider>
     </ThemeContext.Provider>
   );
 }

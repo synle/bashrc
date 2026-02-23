@@ -5,19 +5,19 @@ const BASE_REMOTE_CONNECTIONS_PATH = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_
 const DEFAULT_CONNECTION_USER = 'syle';
 
 async function doWork() {
-await mkdir(BASE_REMOTE_CONNECTIONS_PATH);
+  await mkdir(BASE_REMOTE_CONNECTIONS_PATH);
 
-doWorkVnc();
-doWorkRdp();
+  doWorkVnc();
+  doWorkRdp();
 }
 
 async function doWorkRdp() {
-console.log('  >> Setting up Remote Desktop (RDP) Connections');
+  console.log('  >> Setting up Remote Desktop (RDP) Connections');
 
-const hosts = HOME_HOST_NAMES.filter(
-([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) =>
-WINDOWS_REMOTE === true && IS_FIRST_IP_IN_GROUP === true,
-);
+  const hosts = HOME_HOST_NAMES.filter(
+    ([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) =>
+      WINDOWS_REMOTE === true && IS_FIRST_IP_IN_GROUP === true,
+  );
 
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.rdp');

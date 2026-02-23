@@ -102,7 +102,7 @@ async function doWork() {
   console.log(`  >> Sublime Text Configurations / Settings:`);
 
   // write to build file
-  const comments = '// Preferences Settings';
+  const comments = 'Preferences Settings';
   console.log(`    >> For prebuilt configs`);
   writeToBuildFile([
     {
@@ -110,12 +110,14 @@ async function doWork() {
       data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: false }),
       isJson: true,
       comments,
+      commentStyle: 'json',
     },
     {
       file: 'sublime-text-configurations-macosx',
       data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: true }),
       isJson: true,
       comments,
+      commentStyle: 'json',
     },
   ]);
 
