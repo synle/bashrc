@@ -77,8 +77,8 @@ for (const file of getJsFiles(scriptsDir)) {
   // remove existing reference tag line
   content = content.replace(/^\/\/\/\s*<reference[^\n]*\n/, '');
 
-  // strip leading blank lines
-  content = content.replace(/^\n+/, '');
+  // strip blank lines
+  content = content.trim();
 
   fs.writeFileSync(file, refTag + '\n\n' + content);
   console.log('>> prepended reference tag to', file);
