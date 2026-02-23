@@ -150,3 +150,44 @@ echo '>> Built webapp artifacts:'
 find dist
 
 echo '> DONE Building'
+
+
+##########################################################
+# Update README.md Install Command from bootstrap/setup.sh
+##########################################################
+echo '> Updating README.md install command from bootstrap/setup.sh'
+node -e """
+const fs = require('fs');
+
+const setupContent = fs.readFileSync('bootstrap/setup.sh', 'utf8');
+const commandLines = setupContent
+  .split('\n')
+  .filter(line => !line.startsWith('#') && line.trim() !== '')
+  .join('\n')
+  .trim();
+
+const installSection = [
+  '## Installation',
+  '',
+  'Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):',
+  '',
+  '\`\`\`bash',
+  commandLines,
+  '\`\`\`',
+].join('\n');
+
+const readme = fs.readFileSync('README.md', 'utf8');
+const replaced = readme.replace(
+  /## Installation[\s\S]*?(?=\n## )/,
+  installSection + '\n\n'
+);
+
+if (replaced !== readme) {
+  fs.writeFileSync('README.md', replaced);
+  console.log('>> Updated README.md install command');
+} else {
+  console.log('>> No changes needed in README.md');
+}
+"""
+
+echo '> DONE Building'
