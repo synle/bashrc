@@ -32,7 +32,7 @@ Run this first to get dependencies:
 Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
 ```bash
-. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,setup-dependencies.sh"
 ```
 
 ## Fun Facts

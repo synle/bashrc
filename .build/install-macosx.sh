@@ -12,4 +12,4 @@ export is_os_android_termux='0'
 export is_os_arch_linux='0'
 export is_os_steamdeck='0'
 """ > ~/.bash_syle_os && source ~/.bash_syle_os && . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-dependencies.sh)" && \
- . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-full.sh?$(date +%s))"
+ curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="bash-profile-barebone.sh,bash-first-and-only-one-time.sh,setup-dependencies.sh"
