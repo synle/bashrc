@@ -6,44 +6,44 @@ async function doWork() {
   let res = readText(BASE_BASH_SYLE);
   res += `\n\n\n`;
 
-  let contentBashProfileBarebone = await fetchUrlAsString(`bash-profile-barebone.sh`);
-  let contentBashProfileAdvanced = await fetchUrlAsString(`bash-profile-more-advanced.sh`);
+  let contentProfileCore = await fetchUrlAsString(`bootstrap/profile-core.sh`);
+  let contentProfileAdvanced = await fetchUrlAsString(`bootstrap/profile-advanced.sh`);
 
   // add the header
-  contentBashProfileBarebone = `
+  contentProfileCore = `
 ##########################################################
-## begin barebone profile
+## begin core profile
 ##########################################################
 
-${contentBashProfileBarebone}
+${contentProfileCore}
 
 ##########################################################
-## end barebone profile
+## end core profile
 ##########################################################
   `.trim();
 
-  contentBashProfileAdvanced = `
+  contentProfileAdvanced = `
 ##########################################################
 ## begin advanced profile
 ##########################################################
 
-${contentBashProfileAdvanced}
+${contentProfileAdvanced}
 
 ##########################################################
 ## end advanced profile
 ##########################################################
   `.trim();
 
-  // barebone script
-  console.log('    >> Barebone profile');
-  res += contentBashProfileBarebone.trim();
+  // core profile
+  console.log('    >> Core profile');
+  res += contentProfileCore.trim();
 
-  // append more advanced script only for fancier OS
-  console.log('    >> More advanced profile');
+  // append advanced profile only for fancier OS
+  console.log('    >> Advanced profile');
 
   if (is_os_window || is_os_darwin_mac || is_os_ubuntu) {
     console.log('      >> Installed only for more advanced OS');
-    res += contentBashProfileAdvanced.trim();
+    res += contentProfileAdvanced.trim();
   } else {
     console.log(consoleLogColor1('      >> Skipped : Only Mac or Windows'));
   }
