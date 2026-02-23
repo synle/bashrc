@@ -68,37 +68,113 @@ Write-Host "`n=== Windows Cleanup & Privacy Hardening ===" -ForegroundColor Cyan
 Write-Host "`nRemoving Microsoft bloatware apps..." -ForegroundColor Yellow
 
 $appsToRemove = @(
-    'Microsoft.3DViewer',
-    'Microsoft.549981C3F5F10',              # Cortana
-    'Microsoft.BingFinance',
-    'Microsoft.BingNews',
-    'Microsoft.BingSports',
-    'Microsoft.BingWeather',
-    'Microsoft.GamingApp',                  # Xbox (optional)
-    'Microsoft.GetHelp',
-    'Microsoft.Getstarted',
-    'Microsoft.MicrosoftOfficeHub',
-    'Microsoft.MicrosoftSolitaireCollection',
-    'Microsoft.MicrosoftStickyNotes',
-    'Microsoft.Office.OneNote',
-    'Microsoft.People',
-    'Microsoft.PowerAutomateDesktop',
-    'Microsoft.SkypeApp',
-    'Microsoft.Todos',
-    'Microsoft.WindowsAlarms',
-    'Microsoft.WindowsFeedbackHub',
-    'Microsoft.WindowsMaps',
-    'Microsoft.WindowsSoundRecorder',
-    'Microsoft.Xbox.TCUI',
-    'Microsoft.XboxGameOverlay',
-    'Microsoft.XboxGamingOverlay',
-    'Microsoft.XboxIdentityProvider',
-    'Microsoft.XboxSpeechToTextOverlay',
-    'Microsoft.YourPhone',
-    'Microsoft.ZuneMusic',
-    'Microsoft.ZuneVideo',
-    'MicrosoftTeams',
-    'Clipchamp.Clipchamp'
+    # ---- Original ----
+    'Clipchamp.Clipchamp',                  # [safe] Microsoft video editor, rarely used
+    'Microsoft.3DViewer',                   # [safe] 3D model viewer, niche use
+    'Microsoft.549981C3F5F10',              # [safe] Cortana standalone app
+    'Microsoft.BingFinance',                # [safe] Bing stock/finance tracker widget
+    'Microsoft.BingNews',                   # [safe] Bing news aggregator widget
+    'Microsoft.BingSports',                 # [safe] Bing sports scores widget
+    'Microsoft.BingWeather',                # [safe] Bing weather widget
+    'Microsoft.GamingApp',                  # [caution] Xbox app hub - WARNING: needed to manage Xbox Game Pass subscriptions and game installs
+    'Microsoft.GetHelp',                    # [safe] Microsoft support/help wizard
+    'Microsoft.Getstarted',                 # [safe] Windows tips and welcome experience
+    'Microsoft.MicrosoftOfficeHub',         # [safe] Office hub launcher, not needed if Office is installed separately
+    'Microsoft.MicrosoftSolitaireCollection', # [safe] Bundled solitaire games with ads
+    'Microsoft.MicrosoftStickyNotes',       # [caution] Desktop sticky notes - WARNING: if you use sticky notes for quick reminders, removing this deletes them
+    'Microsoft.Office.OneNote',             # [caution] OneNote UWP app - WARNING: removes UWP version; desktop OneNote (Office) is unaffected
+    'Microsoft.People',                     # [safe] Contact manager, mostly unused standalone
+    'Microsoft.PowerAutomateDesktop',       # [safe] RPA/automation tool, unused by most consumers
+    'Microsoft.SkypeApp',                   # [safe] Skype UWP, replaced by Teams
+    'Microsoft.Todos',                      # [caution] Microsoft To Do task manager - WARNING: if you use To Do for task lists, removing this loses local access
+    'Microsoft.WindowsAlarms',              # [caution] Clock, alarms and timers - WARNING: removes built-in alarm/timer/stopwatch/world clock
+    'Microsoft.WindowsFeedbackHub',         # [safe] Sends feedback to Microsoft
+    'Microsoft.WindowsMaps',                # [safe] Built-in Maps app, most use browser maps
+    'Microsoft.WindowsSoundRecorder',       # [safe] Basic audio recorder
+    'Microsoft.Xbox.TCUI',                  # [safe] Xbox text/chat UI overlay
+    'Microsoft.XboxGameOverlay',            # [safe] Xbox Game Bar overlay popup
+    'Microsoft.XboxGamingOverlay',          # [safe] Xbox Game Bar (Win+G) overlay
+    'Microsoft.XboxIdentityProvider',       # [caution] Xbox sign-in provider - WARNING: breaks Xbox Live authentication for any Xbox/MS Store game
+    'Microsoft.XboxSpeechToTextOverlay',    # [safe] Xbox voice-to-text chat overlay
+    'Microsoft.YourPhone',                  # [safe] Phone Link companion app
+    'Microsoft.ZuneMusic',                  # [caution] Groove Music / modern media player - WARNING: removes default music player; use VLC or other alternative first
+    'Microsoft.ZuneVideo',                  # [caution] Movies & TV player - WARNING: removes default video player for purchased MS Store content
+    'MicrosoftTeams',                       # [safe] Teams personal/consumer pre-install
+    #### Merged from .build/windows-registry.ps1 ####
+    'ACGMediaPlayer',                       # [safe] Pre-installed third-party media player
+    'ActiproSoftwareLLC',                   # [safe] OEM demo UI control library
+    'AdobeSystemsIncorporated.AdobePhotoshopExpress', # [safe] Adobe Photoshop Express freemium app
+    'Amazon.com.Amazon',                    # [safe] Amazon Shopping app
+    'AmazonVideo.PrimeVideo',               # [safe] Prime Video streaming app
+    'Asphalt8Airborne',                     # [safe] Pre-installed racing game
+    'AutodeskSketchBook',                   # [safe] Autodesk drawing app
+    'CaesarsSlotsFreeCasino',               # [safe] Pre-installed casino game ad
+    'COOKINGFEVER',                         # [safe] Pre-installed cooking game ad
+    'CyberLinkMediaSuiteEssentials',        # [safe] OEM CyberLink media suite trial
+    'Disney',                               # [safe] Disney+ streaming app
+    'DisneyMagicKingdoms',                  # [safe] Pre-installed Disney game ad
+    'DrawboardPDF',                         # [safe] PDF annotation app trial
+    'Duolingo-LearnLanguagesforFree',       # [safe] Duolingo language learning app
+    'EclipseManager',                       # [safe] OEM Eclipse IDE manager
+    'Facebook',                             # [safe] Facebook app
+    'FarmVille2CountryEscape',              # [safe] Pre-installed Zynga game ad
+    'fitbit',                               # [safe] Fitbit companion app
+    'Flipboard',                            # [safe] News aggregator app
+    'HiddenCity',                           # [safe] Pre-installed hidden object game ad
+    'HULULLC.HULUPLUS',                     # [safe] Hulu streaming app
+    'iHeartRadio',                          # [safe] iHeartRadio streaming app
+    'Instagram',                            # [safe] Instagram app
+    'king.com.BubbleWitch3Saga',            # [safe] Pre-installed King game ad
+    'king.com.CandyCrushSaga',              # [safe] Pre-installed King game ad
+    'king.com.CandyCrushSodaSaga',          # [safe] Pre-installed King game ad
+    'LinkedInforWindows',                   # [safe] LinkedIn app
+    'MarchofEmpires',                       # [safe] Pre-installed strategy game ad
+    'Microsoft.3DBuilder',                  # [safe] 3D model creation tool, discontinued
+    'Microsoft.BingFoodAndDrink',           # [safe] Bing recipes/food widget
+    'Microsoft.BingHealthAndFitness',       # [safe] Bing health tracker widget
+    'Microsoft.BingTranslator',             # [safe] Bing translator widget
+    'Microsoft.BingTravel',                 # [safe] Bing travel planner widget
+    'Microsoft.Copilot',                    # [safe] Microsoft Copilot AI assistant app
+    'Microsoft.Messaging',                  # [safe] Legacy SMS messaging app, replaced by Phone Link
+    'Microsoft.Microsoft3DViewer',          # [safe] Alternate 3D viewer package name
+    'Microsoft.MicrosoftJournal',           # [safe] Microsoft Journal inking/note app
+    'Microsoft.MicrosoftPowerBIForWindows', # [safe] Power BI report viewer, not needed for most consumers
+    'Microsoft.MixedReality.Portal',        # [safe] VR/AR Mixed Reality portal, useless without headset
+    'Microsoft.MSPaint',                    # [caution] Classic MS Paint - WARNING: removes Paint; use Paint 3D or install separately if needed
+    'Microsoft.NetworkSpeedTest',           # [safe] Bing network speed test
+    'Microsoft.News',                       # [safe] Microsoft News aggregator (Start menu feed)
+    'Microsoft.Office.Sway',               # [safe] Sway presentation app, rarely used
+    'Microsoft.OneConnect',                 # [safe] Paid Wi-Fi & cellular manager, rarely needed
+    'Microsoft.OneDrive',                   # [caution] OneDrive cloud sync client - WARNING: if you sync files to OneDrive, removing this stops cloud backup and may lose unsynced files
+    'Microsoft.OutlookForWindows',          # [caution] New Outlook app (replacing Mail & Calendar) - WARNING: if you rely on built-in Mail app, this removes it
+    'Microsoft.Paint',                      # [caution] Modern Paint app - WARNING: same as MSPaint, removes the drawing tool
+    'Microsoft.Print3D',                    # [safe] 3D printing slicer companion, niche use
+    'Microsoft.WindowsCalculator',          # [caution] Built-in Calculator - WARNING: removes Calculator; install a replacement first (e.g. via winget)
+    'Microsoft.WindowsCamera',              # [caution] Camera app - WARNING: removes camera/webcam capture app; needed if you use the built-in camera
+    'Microsoft.windowscommunicationsapps',  # [caution] Mail & Calendar apps - WARNING: removes built-in Mail and Calendar; use Outlook or other client first
+    'MicrosoftCorporationII.MicrosoftFamily', # [safe] Microsoft Family Safety parental controls
+    'MicrosoftCorporationII.QuickAssist',   # [safe] Remote assistance tool
+    'MSTeams',                              # [safe] Teams (new) pre-install, alternate package name
+    'Netflix',                              # [safe] Netflix streaming app
+    'NYTCrossword',                         # [safe] NY Times crossword game
+    'OneCalendar',                          # [safe] Third-party calendar widget
+    'PandoraMediaInc',                      # [safe] Pandora music streaming app
+    'PhototasticCollage',                   # [safe] OEM photo collage maker
+    'PicsArt-PhotoStudio',                  # [safe] PicsArt photo editor
+    'Plex',                                 # [safe] Plex media player app
+    'PolarrPhotoEditorAcademicEdition',     # [safe] Polarr photo editor trial
+    'Royal Revolt',                         # [safe] Pre-installed strategy game ad
+    'Shazam',                               # [safe] Shazam music identification app
+    'Sidia.LiveWallpaper',                  # [safe] OEM live wallpaper app
+    'SlingTV',                              # [safe] Sling TV streaming app
+    'Spotify',                              # [safe] Spotify music app pre-install (can reinstall from Store)
+    'TikTok',                               # [safe] TikTok short video app
+    'TuneInRadio',                          # [safe] TuneIn radio streaming app
+    'Twitter',                              # [safe] Twitter/X app
+    'Viber',                                # [safe] Viber messaging app
+    'WinZipUniversal',                      # [safe] WinZip trial, use 7-Zip instead
+    'Wunderlist',                           # [safe] Deprecated to-do app (replaced by Microsoft To Do)
+    'XING'                                  # [safe] XING professional network app
 ) | Sort-Object -Unique
 
 foreach ($app in $appsToRemove) {
@@ -108,6 +184,19 @@ foreach ($app in $appsToRemove) {
 }
 
 Write-Host "App cleanup complete." -ForegroundColor Green
+
+# Remove Windows Widget, OneDrive, Cortana packages
+Get-AppxPackage *WebExperience* | Remove-AppxPackage -ErrorAction SilentlyContinue
+Get-AppxPackage *Cortana* | Remove-AppxPackage -ErrorAction SilentlyContinue
+
+try {
+    Get-AppxPackage *OneDrive* | Remove-AppxPackage -ErrorAction SilentlyContinue
+    Remove-Item -Path "$env:UserProfile\OneDrive" -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "C:\Users\$env:UserName\AppData\Local\Microsoft\OneDrive" -Recurse -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+} catch {
+    Write-Output "OneDrive removal error: $_"
+}
 
 
 
@@ -129,14 +218,124 @@ foreach ($path in $paths) {
     }
 }
 
+# Disable Cortana for current user
 Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "AllowCortana" -Type DWord -Value 0 -Force
+# Stop Bing web results from appearing in Start Menu search
 Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1 -Force
+# Disable Cortana system-wide via group policy
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -Type DWord -Value 0 -Force
 
-# Disable widgets
+# Hide the Widgets button (news/weather feed) from taskbar
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Type DWord -Value 0 -Force
 
 Write-Host "Cortana + Search hardened." -ForegroundColor Green
+
+# --------------------------------
+# Explorer Tweaks
+# --------------------------------
+
+Write-Host "`nApplying Explorer tweaks..." -ForegroundColor Yellow
+
+# Show file extensions (.txt, .exe, .jpg, etc.) in Explorer
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Type DWord -Value 0 -Force
+# Show drives even when they have no media inserted (e.g. empty card readers)
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideDrivesWithNoMedia" -Type DWord -Value 0 -Force
+# Hide the Task View button (virtual desktops timeline) from taskbar
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Type DWord -Value 0 -Force
+
+# Stop Bing web results in Start Menu search (machine-wide policy, complements HKCU above)
+$hklmExplorer = "HKLM:\Software\Policies\Microsoft\Windows\Explorer"
+if (-not (Test-Path $hklmExplorer)) {
+    New-Item -Path $hklmExplorer -Force | Out-Null
+}
+Set-ItemProperty -Path $hklmExplorer -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1 -Force
+
+Write-Host "Explorer tweaks applied." -ForegroundColor Green
+
+# --------------------------------
+# Privacy Hardening
+# --------------------------------
+
+Write-Host "`nApplying privacy settings..." -ForegroundColor Yellow
+
+# Stop sending typing/writing data to Microsoft for improving suggestions
+$tipcKey = "HKCU:\SOFTWARE\Microsoft\Input\TIPC"
+if (-not (Test-Path $tipcKey)) { New-Item -Path $tipcKey -Force | Out-Null }
+Set-ItemProperty -Path $tipcKey -Name "Enabled" -Type DWord -Value 0 -Force
+
+# Stop apps from using advertising ID for cross-app ad targeting
+$adInfoKey = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo"
+if (-not (Test-Path $adInfoKey)) { New-Item -Path $adInfoKey -Force | Out-Null }
+Set-ItemProperty -Path $adInfoKey -Name "Enabled" -Type DWord -Value 0 -Force
+
+# Stop sending speech, inking and typing samples to MS (Cortana personalization)
+$personKey = "HKCU:\SOFTWARE\Microsoft\Personalization\Settings"
+if (-not (Test-Path $personKey)) { New-Item -Path $personKey -Force | Out-Null }
+Set-ItemProperty -Path $personKey -Name "AcceptedPrivacyPolicy" -Type DWord -Value 0 -Force
+
+# Stop scanning contacts and sending them to Microsoft for speech recognition
+$trainKey = "HKCU:\SOFTWARE\Microsoft\InputPersonalization\TrainedDataStore"
+if (-not (Test-Path $trainKey)) { New-Item -Path $trainKey -Force | Out-Null }
+Set-ItemProperty -Path $trainKey -Name "HarvestContacts" -Type DWord -Value 0 -Force
+
+# Prevent websites from accessing your language list for locale-targeted content
+Set-ItemProperty -Path "HKCU:\Control Panel\International\User Profile" -Name "HttpAcceptLanguageOptOut" -Type DWord -Value 1 -Force
+
+# Disable network-based default printer switching (location-aware printing)
+$printerKey = "HKCU:\Printers\Defaults"
+if (-not (Test-Path $printerKey)) { New-Item -Path $printerKey -Force | Out-Null }
+Set-ItemProperty -Path $printerKey -Name "NetID" -Value "{00000000-0000-0000-0000-000000000000}" -Force
+
+# Block implicit ink and handwriting data collection for personalization
+$inputKey = "HKCU:\SOFTWARE\Microsoft\InputPersonalization"
+if (-not (Test-Path $inputKey)) { New-Item -Path $inputKey -Force | Out-Null }
+Set-ItemProperty -Path $inputKey -Name "RestrictImplicitInkCollection" -Type DWord -Value 1 -Force
+# Block implicit text input data collection for personalization
+Set-ItemProperty -Path $inputKey -Name "RestrictImplicitTextCollection" -Type DWord -Value 1 -Force
+
+# Never prompt user for Windows feedback (0 = never)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "FeedbackFrequency" -Type DWord -Value 0 -Force
+
+Write-Host "Privacy settings applied." -ForegroundColor Green
+
+# --------------------------------
+# Microsoft Edge (Legacy UWP) Privacy
+# --------------------------------
+
+Write-Host "`nApplying legacy Edge UWP settings..." -ForegroundColor Yellow
+
+$edgeBase = "HKCU:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\microsoft.microsoftedge_8wekyb3d8bbwe\MicrosoftEdge"
+
+$edgePaths = @{
+    "$edgeBase\Main"                        = @{ "DoNotTrack" = 1 }        # Send Do Not Track header to websites
+    "$edgeBase\User\Default\SearchScopes"   = @{ "ShowSearchSuggestionsGlobal" = 0 } # Disable search suggestions sending keystrokes to Bing
+    "$edgeBase\FlipAhead"                   = @{ "FPEnabled" = 0 }         # Disable page prediction/pre-fetching (sends browsing data to MS)
+    "$edgeBase\PhishingFilter"              = @{ "EnabledV9" = 0 }         # Disable SmartScreen phishing filter (sends URLs to MS)
+}
+
+foreach ($path in $edgePaths.Keys) {
+    if (-not (Test-Path $path)) { New-Item -Path $path -Force | Out-Null }
+    foreach ($name in $edgePaths[$path].Keys) {
+        Set-ItemProperty -Path $path -Name $name -Type DWord -Value $edgePaths[$path][$name] -Force
+    }
+}
+
+Write-Host "Legacy Edge settings applied." -ForegroundColor Green
+
+# --------------------------------
+# Disable Game DVR / Game Bar Overlay
+# --------------------------------
+
+Write-Host "`nDisabling Game DVR..." -ForegroundColor Yellow
+
+$gameDvrKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
+if (-not (Test-Path $gameDvrKey)) { New-Item -Path $gameDvrKey -Force | Out-Null }
+# Disable background game clip recording and screenshots
+Set-ItemProperty -Path $gameDvrKey -Name "AppCaptureEnabled" -Type DWord -Value 0 -Force
+# Disable Game DVR (Win+G game bar recording feature) entirely
+Set-ItemProperty -Path $gameDvrKey -Name "AllowGameDVR" -Type DWord -Value 0 -Force
+
+Write-Host "Game DVR disabled." -ForegroundColor Green
 
 # --------------------------------
 # Disable Windows Telemetry / Tracking
@@ -149,12 +348,13 @@ if (-not (Test-Path $telemetryKey)) {
     New-Item -Path $telemetryKey -Force | Out-Null
 }
 
+# Set telemetry to Security-only (0 = no optional diagnostic data sent to MS)
 Set-ItemProperty -Path $telemetryKey -Name "AllowTelemetry" -Type DWord -Value 0
 
 $services = @(
-    "DiagTrack",
-    "DmWappushService",
-    "diagnosticshub.standardcollector.service"
+    "DiagTrack",                                  # Connected User Experiences and Telemetry service
+    "DmWappushService",                           # WAP Push Message Routing (telemetry relay)
+    "diagnosticshub.standardcollector.service"     # Diagnostics Hub data collector
 )
 
 foreach ($svc in $services) {
@@ -164,10 +364,10 @@ foreach ($svc in $services) {
 }
 
 $scheduledTasks = @(
-    "\Microsoft\Windows\Customer Experience Improvement Program\",
-    "\Microsoft\Windows\Application Experience\",
-    "\Microsoft\Windows\Autochk\",
-    "\Microsoft\Windows\Feedback\"
+    "\Microsoft\Windows\Customer Experience Improvement Program\", # CEIP data collection tasks
+    "\Microsoft\Windows\Application Experience\",                  # App compatibility telemetry (ProgramDataUpdater, AitAgent)
+    "\Microsoft\Windows\Autochk\",                                 # Disk check telemetry proxy
+    "\Microsoft\Windows\Feedback\"                                 # Feedback Hub scheduled prompts
 )
 
 foreach ($taskPath in $scheduledTasks) {
@@ -192,13 +392,15 @@ if (-not (Test-Path $recallKey)) {
     New-Item -Path $recallKey -Force | Out-Null
 }
 
+# Block Recall from analyzing screen content with AI
 Set-ItemProperty -Path $recallKey -Name "DisableAIDataAnalysis" -Type DWord -Value 1
+# Block Recall from taking periodic screenshots of your desktop
 Set-ItemProperty -Path $recallKey -Name "DisableCapture" -Type DWord -Value 1
 
 $recallServices = @(
-    "Recall",
-    "DesktopAIClientService",
-    "RecallSnapshot"
+    "Recall",                   # Main Recall screenshot history service
+    "DesktopAIClientService",   # Desktop AI analysis client
+    "RecallSnapshot"            # Periodic screenshot capture service
 )
 
 foreach ($svc in $recallServices) {
@@ -206,26 +408,28 @@ foreach ($svc in $recallServices) {
     Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
 }
 
-# Copilot
+# Disable Windows Copilot AI assistant via group policy
 $copilotKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
 if (-not (Test-Path $copilotKey)) {
     New-Item -Path $copilotKey -Force | Out-Null
 }
 Set-ItemProperty -Path $copilotKey -Name "TurnOffWindowsCopilot" -Type DWord -Value 1 -Force
 
-# Hide Copilot button
+# Remove Copilot button from taskbar
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowCopilotButton" -Type DWord -Value 0 -Force
 
-# Recall / AI Data Analysis
+# Redundant Recall kill-switch via WindowsAI policy (belt-and-suspenders with above)
 $recallKey = "HKLM:\Software\Policies\Microsoft\Windows\WindowsAI"
 if (-not (Test-Path $recallKey)) {
     New-Item -Path $recallKey -Force | Out-Null
 }
 Set-ItemProperty -Path $recallKey -Name "DisableAIDataAnalysis" -Type DWord -Value 1 -Force
 
-# Timeline
+# Disable Timeline / Activity History - stops Windows from tracking app and browsing activity
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+# Stop publishing user activities to Microsoft cloud (used by Timeline and cross-device sync)
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+# Stop uploading user activity history to Microsoft servers
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
 
 
@@ -239,20 +443,21 @@ Write-Host "Recall disabled successfully." -ForegroundColor Green
 
 Write-Host "`nApplying performance optimizations..." -ForegroundColor Yellow
 
-# Disable visual effects for best performance
+# Set visual effects to "Adjust for best performance" (2 = custom/performance, disables most eye candy)
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Type DWord -Value 2 -Force
 
-# Disable animations
+# Disable window minimize/maximize animations
 Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Type String -Value "0" -Force
+# Disable taskbar button animations (fade, slide effects)
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0 -Force
 
-# Disable transparency
+# Disable Aero transparency/blur effects (reduces GPU compositing overhead)
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "EnableTransparency" -Type DWord -Value 0 -Force
 
-# Optimize for programs (not background services)
+# Prioritize foreground programs over background services (38 = short, variable, high fg boost)
 Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Type DWord -Value 38 -Force
 
-# Disable startup delay
+# Remove the 10-second startup delay Windows adds before launching startup programs
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" -Name "StartupDelayInMSec" -Type DWord -Value 0 -Force
 
 # Disable search indexing on C: drive (speeds up disk I/O)
@@ -390,37 +595,43 @@ Write-Host "Defender exclusion added."
 
 Write-Host "`nApplying additional registry hardening..." -ForegroundColor Yellow
 
-# --- COPILOT ---
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v CopilotAllowed /t REG_DWORD /d 0 /f
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ShowCopilotButton /t REG_DWORD /d 0 /f
+# --- COPILOT (reg add fallback - ensures values persist even if PS cmdlets fail) ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f  # Disable Copilot via policy
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v CopilotAllowed /t REG_DWORD /d 0 /f         # Block Copilot from being enabled
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ShowCopilotButton /t REG_DWORD /d 0 /f  # Hide Copilot taskbar button
 
-# --- RECALL ---
-dism /online /disable-feature /featurename:Recall /norestart
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
+# --- RECALL (reg add fallback) ---
+dism /online /disable-feature /featurename:Recall /norestart  # Remove Recall Windows feature entirely
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f  # Block AI-powered screen analysis
 
-# --- TIMELINE ---
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v UploadUserActivities /t REG_DWORD /d 0 /f
+# --- TIMELINE (reg add fallback) ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f       # Disable Timeline activity feed
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v PublishUserActivities /t REG_DWORD /d 0 /f    # Stop publishing activity to MS cloud
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v UploadUserActivities /t REG_DWORD /d 0 /f     # Stop uploading activity history
 
-# --- EDGE ---
+# --- EDGE (Chromium) POLICY ---
 $edgeKey = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
 if (-not (Test-Path $edgeKey)) {
     New-Item -Path $edgeKey -Force | Out-Null
 }
 
+# Disable Edge sidebar panel (Bing Chat, Discover, Shopping, etc.)
 Set-ItemProperty -Path $edgeKey -Name "HubsSidebarEnabled" -Type DWord -Value 0 -Force
+# Disable Copilot integration in Edge browser
 Set-ItemProperty -Path $edgeKey -Name "EdgeCopilotEnabled" -Type DWord -Value 0 -Force
+# Disable Edge diagnostic/telemetry data collection
 Set-ItemProperty -Path $edgeKey -Name "DiagnosticData" -Type DWord -Value 0 -Force
+# Disable Edge personalization data reporting to Microsoft
 Set-ItemProperty -Path $edgeKey -Name "PersonalizationReportingEnabled" -Type DWord -Value 0 -Force
+# Disable Edge user feedback prompts
 Set-ItemProperty -Path $edgeKey -Name "UserFeedbackAllowed" -Type DWord -Value 0 -Force
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v EdgeCopilotEnabled /t REG_DWORD /d 0 /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v DiagnosticData /t REG_DWORD /d 0 /f
+# reg add fallbacks for the same Edge policies
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 0 /f   # Sidebar off
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v EdgeCopilotEnabled /t REG_DWORD /d 0 /f    # Edge Copilot off
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v DiagnosticData /t REG_DWORD /d 0 /f        # Edge telemetry off
 
-# --- PREVENT UPDATE RE-ENABLE ---
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f
+# --- PREVENT WINDOWS UPDATE FROM RE-ENABLING FEATURES ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f  # Stop WU from rolling back privacy settings via safeguard holds
 
 Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
 Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
