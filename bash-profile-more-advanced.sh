@@ -106,35 +106,45 @@ git_compare(){
 ##########################################################
 # Editor Launchers
 ##########################################################
-# The Unified Execution Engine and Clean Diagnostic Print Function
-run_editor() {
+# Resolve editor binary from a list of candidate paths
+find_editor() {
   local editor_name="$1"
   shift
   local paths=("$@")
-  local target_binary=""
 
-  # Expand paths with wildcards (case-insensitive)
   shopt -s nullglob nocaseglob
   for binary in "${paths[@]}"; do
     if [[ -x "$binary" ]]; then
-      target_binary="$binary"
-      break
+      echo "$binary"
+      shopt -u nullglob nocaseglob
+      return 0
     fi
   done
   shopt -u nullglob nocaseglob
 
-  # Execution Logic
-  if [[ -n "$target_binary" ]]; then
-    (nohup "$target_binary" "${editor_args[@]}" >/dev/null 2>&1 &)
-  elif [[ "$editor_name" == "code" ]] && command -v flatpak &> /dev/null; then
-    target_binary="flatpak:vscodium"
-    (nohup flatpak run com.vscodium.codium "${editor_args[@]}" >/dev/null 2>&1 &)
-  else
-    echo "Error: $editor_name not found in search paths."
-    return 1
+  # flatpak fallback for code/vscodium
+  if [[ "$editor_name" == "code" ]] && command -v flatpak &> /dev/null; then
+    echo "flatpak:vscodium"
+    return 0
   fi
 
-  # Combined Print Logic (replaces print_editor_path)
+  echo "Error: $editor_name not found in search paths." >&2
+  return 1
+}
+
+# Launch an editor in the background (GUI mode)
+run_editor() {
+  local editor_name="$1"
+  shift
+  local target_binary
+  target_binary=$(find_editor "$editor_name" "$@") || return 1
+
+  if [[ "$target_binary" == "flatpak:vscodium" ]]; then
+    (nohup flatpak run com.vscodium.codium "${editor_args[@]}" >/dev/null 2>&1 &)
+  else
+    (nohup "$target_binary" "${editor_args[@]}" >/dev/null 2>&1 &)
+  fi
+
   echo """
 ====================================
 \"$target_binary\" ${editor_args[@]}
@@ -144,32 +154,53 @@ Path:   $(realpath .)
 """
 }
 
+# Run an editor command in the foreground (CLI mode, stdout preserved)
+run_editor_cli() {
+  local editor_name="$1"
+  shift
+  local target_binary
+  target_binary=$(find_editor "$editor_name" "${editor_paths[@]}") || return 1
+
+  if [[ "$target_binary" == "flatpak:vscodium" ]]; then
+    flatpak run com.vscodium.codium "$@"
+  else
+    "$target_binary" "$@"
+  fi
+}
+
+_SUBL_PATHS=(
+  /Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl
+  /mnt/c/Program*Files/Sublime*Text*/sublime*.exe
+  /mnt/c/Program*Files/Sublime*Text*/subl*
+  /opt/sublime_text/subl*
+  /usr/bin/subl
+  /usr/local/bin/subl
+)
+
+_CODE_PATHS=(
+  /mnt/c/Users/Sy*/AppData/Local/Programs/Microsoft*Code/Code.exe
+  /mnt/c/Users/Le*/AppData/Local/Programs/Microsoft*Code/Code.exe
+  /mnt/c/Program*Files/VSCodium/VSCodium.exe
+  /mnt/c/Program*Files/Microsoft*VS*Code/Code.exe
+  /usr/local/bin/codium
+  /usr/local/bin/code
+  /usr/bin/codium
+  /usr/bin/code
+)
+
 subl() {
-  local editor_args=("-n" "$@") # "-n" forces a new window/session
-  run_editor "sublime" \
-    /Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl \
-    /mnt/c/Program*Files/Sublime*Text*/sublime*.exe \
-    /mnt/c/Program*Files/Sublime*Text*/subl* \
-    /opt/sublime_text/subl* \
-    /usr/bin/subl \
-    /usr/local/bin/subl
+  local editor_args=("-n" "$@")
+  run_editor "sublime" "${_SUBL_PATHS[@]}"
 }
 
 code() {
-  local editor_args=("-n" "$@") # "-n" forces a new window/session
-  run_editor "code" \
-    /mnt/c/Users/Sy*/AppData/Local/Programs/Microsoft*Code/Code.exe \
-    /mnt/c/Users/Le*/AppData/Local/Programs/Microsoft*Code/Code.exe \
-    /mnt/c/Program*Files/VSCodium/VSCodium.exe \
-    /mnt/c/Program*Files/Microsoft*VS*Code/Code.exe \
-    /usr/local/bin/codium \
-    /usr/local/bin/code \
-    /usr/bin/codium \
-    /usr/bin/code
+  local editor_args=("-n" "$@")
+  run_editor "code" "${_CODE_PATHS[@]}"
 }
 
 code_list_extensions(){
-  code --list-extensions
+  local editor_paths=("${_CODE_PATHS[@]}")
+  run_editor_cli "code" --list-extensions
 }
 
 ##########################################################
