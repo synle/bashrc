@@ -45,7 +45,7 @@ alias pp="pi"
 # python aliases
 alias pytest="python -m pytest"
 alias pytest-single="python -m pytest -vvl -k"
-alias flake="flake"
+alias flake="flake8"
 alias flake8="python -m flake8"
 
 # claude aliases
@@ -95,7 +95,7 @@ activatePy(){
 }
 
 br(){
-  clear &&  echo $'\e[32m======================================================\e[m' && echo '''
+  clear &&  echo $'\e[32m========================================================\e[m' && echo '''
   '''
 }
 
@@ -112,8 +112,12 @@ tree(){
   find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 }
 
-pwd2(){
-  echo "cd \"$(pwd)\""
+pwd() {
+  echo '===== pwd ===================================='
+  command pwd
+
+  echo "cd \"$(command pwd)\""
+  echo '=============================================='
 }
 
 ##########################################################
