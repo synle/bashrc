@@ -1,4 +1,5 @@
 /// <reference path="../../base-node-script.js" />
+
 async function doWork() {
   const targetPath = path.join(getWindowUserBaseDir(), '.wslconfig');
   console.log('  >> WSL Tweaks: Updating configuration', targetPath);

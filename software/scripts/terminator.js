@@ -1,4 +1,5 @@
 /// <reference path="../base-node-script.js" />
+
 async function doWork() {
   let targetPath = path.join(BASE_HOMEDIR_LINUX, '.config/terminator');
   await mkdir(targetPath);

@@ -1,4 +1,5 @@
 /// <reference path="../../base-node-script.js" />
+
 // guide: refer to this
 // https://docs.microsoft.com/en-us/windows/terminal/get-started
 // https://docs.microsoft.com/en-us/windows/terminal/customize-settings/key-bindings#accepted-modifiers-and-keys

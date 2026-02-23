@@ -1,4 +1,5 @@
 /// <reference path="../base-node-script.js" />
+
 async function doWork() {
   console.log('  >> Setting up .bash_syle');
 

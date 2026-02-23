@@ -1,4 +1,5 @@
 /// <reference path="../../base-node-script.js" />
+
 let outputContent = '';
 
 async function doInit() {
