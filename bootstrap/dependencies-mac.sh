@@ -133,6 +133,7 @@ EOF
   # Cleanup
   ##########################################################
   echo '>> Kill all dock icons'
+  # TODO Sy: check if TEST_FORCE_REFRESH is true, then do this (must store TEST_FORCE_REFRESH into globalThis... in base node first)
   if [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
     defaults write com.apple.dock persistent-apps -array
     killall Dock

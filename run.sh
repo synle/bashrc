@@ -86,6 +86,7 @@ force_refresh=false
 _parsing_into=""
 unset TEST_SCRIPT_MODE
 unset TEST_SCRIPT_FILES
+unset TEST_FORCE_REFRESH
 
 ##########################################################
 # Parse arguments
@@ -124,6 +125,7 @@ for arg in "$@"; do
       ;;
     --force-refresh|-force-refresh|--force|-force)
       force_refresh=true
+      export TEST_FORCE_REFRESH=1
       _parsing_into=""
       ;;
     --lightweight|-lightweight)
