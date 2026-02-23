@@ -224,8 +224,8 @@ async function doWork() {
   ]);
 
   // for my own system
-  console.log('    >> For my own system');
   let targetPaths = await _getTargetPaths();
+  console.log('    >> For my own system: ', targetPaths?.length);
   for (const targetPath of targetPaths) {
     const fileDestPath = path.join(targetPath, 'User/settings.json');
     console.log('      >> File Path', fileDestPath);

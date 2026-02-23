@@ -27,6 +27,14 @@ function _formatKey(keybindings, osKeyToUse) {
   return keybindings;
 }
 
+
+function _getConfigs(){
+  return is_os_darwin_mac
+      ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
+      : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY)
+}
+
+
 async function doInit() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
 
@@ -201,8 +209,6 @@ async function doWork() {
   console.log('      >> File Path', fileDestPath);
   writeJson(
     fileDestPath,
-    is_os_darwin_mac
-      ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
-      : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
+    _getConfigs(),
   );
 }
