@@ -1279,7 +1279,7 @@ function App() {
             text: 'Setup Lightweight Profile',
             shouldHideBootstrap: true,
             script: `
-        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash -s -- --prod --lightweight --files="_bash-rc-bootstrap.js,git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
+        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash -s -- --prod --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
       `,
           },
           {
