@@ -56,7 +56,8 @@ foreach ($guid in $folders.Keys) {
 Write-Host "`nDone! Please sign out and back in for full effect."
 ```
 
-## Getting Started and  All-in-one setup Script
+## Getting Started and All-in-one setup Script
+
 ```ps1
 # ================================
 # Create Powershell Script Profile
@@ -70,7 +71,7 @@ if (!(Test-Path $profile)) {
 }
 
 # ================================
-# update time server in windows 
+# update time server in windows
 # ================================
 $NtpServers = "time.cloudflare.com,0x8 time.google.com,0x8 time.windows.com,0x8"
 
