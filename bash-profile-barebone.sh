@@ -345,6 +345,23 @@ New_Dir: \"$OUT\"
 ##########################################################
 # Date / Time
 ##########################################################
+## Returns HH:MM:SS AM/PM
+# Defaults to Local Time if no TZ is passed
+get_time() {
+  local tz=${1:-""} # Default to empty string if no arg
+
+  if [ -z "$tz" ]; then
+    # Local Time
+    date +'%I:%M:%S %p'
+  elif [ "$tz" = "UTC" ]; then
+    # UTC Time
+    date -u +'%I:%M:%S %p'
+  else
+    # Specific Timezone (e.g., America/Los_Angeles)
+    TZ="$tz" date +'%I:%M:%S %p'
+  fi
+}
+
 date2(){
   # High-intensity colors for the labels
   echo $'\e[1;31m>> UTC\e[m'
