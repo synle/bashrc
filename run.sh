@@ -24,9 +24,6 @@
 #
 # Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts
 
-# NOTE - IMPORTANT: This is where you update the bash profile code repo raw url
-export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
-
 # Auto-detect mode: if $0 is a real file, we're running locally; otherwise piped (e.g. curl | bash)
 if [ -f "$0" ]; then
   _default_mode="local"

@@ -1,14 +1,13 @@
-#! /bin/sh
-# os flags are set in this file
-# https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
+# bootstrap/dependencies-ubuntu.sh
+# Ubuntu / Debian dependencies - apt-get packages and user permissions
 
-function installPackage(){
+installPackage() {
   echo "  >> $@"
   sudo apt-get install -y --fix-missing $@ &> /dev/null
 }
 
-if [ $is_os_ubuntu == "1" ]
-then
+if [ "$is_os_ubuntu" = "1" ]; then
+
   ##########################################################
   # Update Packages
   ##########################################################
@@ -51,4 +50,5 @@ then
   ##########################################################
   sudo usermod -aG input ${USER}
   sudo usermod -aG video ${USER}
+
 fi

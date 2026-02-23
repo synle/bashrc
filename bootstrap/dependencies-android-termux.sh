@@ -1,38 +1,38 @@
-#! /bin/sh
-# os flags are set in this file
-# https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
+# bootstrap/dependencies-android-termux.sh
+# Android Termux dependencies - packages, theme, config
 
 if [ "$is_os_android_termux" = "1" ]; then
-##########################################################
-# Android Termux Dependencies
-##########################################################
-touch ~/.bashrc
 
-echo '''
+  ##########################################################
+  # Android Termux Dependencies
+  ##########################################################
+  touch ~/.bashrc
+
+  echo '''
 # chroot to set up /tmp /etc and other fds for linux
 termux-chroot
 ''' >> ~/.bashrc
 
-##########################################################
-# Install Packages
-##########################################################
-pkg install -y proot # needed for android termux fhd fixes
-pkg install -y nodejs
-pkg install -y fzf
-pkg install -y vim
-pkg install -y git
-pkg install -y tig
-pkg install -y python
-pkg install -y bat
-pkg install -y curl
-pkg install -y git
-pkg install -y tmux
+  ##########################################################
+  # Install Packages
+  ##########################################################
+  pkg install -y proot # needed for android termux fhd fixes
+  pkg install -y nodejs
+  pkg install -y fzf
+  pkg install -y vim
+  pkg install -y git
+  pkg install -y tig
+  pkg install -y python
+  pkg install -y bat
+  pkg install -y curl
+  pkg install -y git
+  pkg install -y tmux
 
-##########################################################
-# Termux Dracula Theme
-##########################################################
-mkdir ~/.termux
-echo '''
+  ##########################################################
+  # Termux Dracula Theme
+  ##########################################################
+  mkdir ~/.termux
+  echo '''
 background:     #282A36
 foreground:     #F8F8F2
 
@@ -61,31 +61,31 @@ color7:         #BFBFBF
 color15:        #E6E6E6
 ''' > ~/.termux/colors.properties
 
-##########################################################
-# Termux Config
-##########################################################
-echo '''
+  ##########################################################
+  # Termux Config
+  ##########################################################
+  echo '''
 # Send the Escape key.
 back-key=escape
 # black theme
 use-black-ui = true
 ''' > ~/.termux/termux.properties
 
-##########################################################
-# Update and Clean
-##########################################################
-pkg update -y
-pkg upgrade -y
-pkg autoclean -y
+  ##########################################################
+  # Update and Clean
+  ##########################################################
+  pkg update -y
+  pkg upgrade -y
+  pkg autoclean -y
 
-source ~/.bashrc
+  source ~/.bashrc
 
-##########################################################
-# Install Font and Lightweight Profile
-##########################################################
-curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
+  ##########################################################
+  # Install Font and Lightweight Profile
+  ##########################################################
+  curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
 
+  # TODO: sy to check this lightweight script
+  . /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
 
-# TODO: sy to check this lightweight script
-. /dev/stdin <<< "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/setup-lightweight.sh?$(date +%s))"
 fi

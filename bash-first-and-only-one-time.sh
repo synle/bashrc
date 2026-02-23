@@ -20,6 +20,13 @@ export is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && expo
 export is_os_wsl=0 && { grep -qi microsoft /proc/version 2>/dev/null || [ "$is_os_window" = "1" ]; } && export is_os_wsl=1
 ''' > ~/.bash_syle_os
 fi
+
+
+# append BASH_PROFILE_CODE_REPO_RAW_URL if not already in ~/.bash_syle_os
+if [ -f ~/.bash_syle_os ] && ! grep -q "BASH_PROFILE_CODE_REPO_RAW_URL" ~/.bash_syle_os; then
+  echo 'export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"' >> ~/.bash_syle_os
+fi
+
 [ -f ~/.bash_syle_os ] && . ~/.bash_syle_os
 # end os flags
 

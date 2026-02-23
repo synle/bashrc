@@ -1022,7 +1022,7 @@ function MacOSXNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString='mac' />
-      <DynamicTextArea path='/bootstrap/setup-macosx.sh' height='350px' />
+      <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
       <DynamicTextArea path='/.build/notes-macosx.md' height='350px' />
       <DynamicTextArea path='/.build/font-linux.md' />
       <DynamicTextArea path='/.build/gitconfig' />
@@ -1046,7 +1046,7 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
-      <DynamicTextArea path='/bootstrap/setup-linux.sh' height='300px' />
+      <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
       <DynamicTextArea path='/linux/linux-mint-config.sh' height='200px' />
       <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='300px' />
       <DynamicTextArea path='/.build/notes-linux.md' height='300px' />
@@ -1113,7 +1113,7 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
-      <DynamicTextArea path='/bootstrap/setup-windows.sh' height='350px' />
+      <DynamicTextArea path='/bootstrap/setup.sh' height='350px' />
       <DynamicTextArea path='/.build/notes-windows.md' height='350px' />
       <DynamicTextArea path='/.build/winget-install-windows.ps1' />
       <DynamicTextArea path='/.build/font-windows.md' />
@@ -1318,11 +1318,10 @@ function App() {
           },
           {
             text: 'Test Single Script',
-            script: `<OS_FLAGS> \\
-        export TEST_SCRIPT_FILES="""
+            script: `<OS_FLAGS> <DEBUG_WRITE_TO_DIR> \\
+        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash -s -- --prod --files="""
         <SELECT_SCRIPTS>
-        """ <DEBUG_WRITE_TO_DIR> && \\
-        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash
+        """
       `,
             shouldShowScriptNameInput: true,
             shouldShowOsSelectionInput: true,

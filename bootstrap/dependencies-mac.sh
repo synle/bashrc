@@ -1,15 +1,14 @@
-#! /bin/sh
-# os flags are set in this file
-# https://github.com/synle/bashrc/blob/master/bash-profile-barebone.sh
+# bootstrap/dependencies-mac.sh
+# macOS dependencies - Homebrew packages, system preferences, shell setup
 
-function installPackage(){
+installPackage() {
   echo "  >> $@"
   brew install $@ &> /dev/null
   brew cask install &> /dev/null
 }
 
-if [[ $is_os_darwin_mac == "1" ]]
-then
+if [ "$is_os_darwin_mac" = "1" ]; then
+
   ##########################################################
   # macOS UI & System Optimization
   ##########################################################
@@ -44,10 +43,6 @@ then
 
   # Key Repeat Speed
   defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
-
-  # this is buggy
-  # defaults write NSGlobalDomain KeyRepeat -int 1
-  # defaults write NSGlobalDomain InitialKeyRepeat -int 10
   defaults delete NSGlobalDomain KeyRepeat
   defaults delete NSGlobalDomain InitialKeyRepeat
 
@@ -57,7 +52,7 @@ then
 
   echo "  >> Restarting affected services..."
   for app in "Dock" "Finder" "Mail" "Safari" "SystemUIServer"; do
-      killall "$app" > /dev/null 2>&1
+    killall "$app" > /dev/null 2>&1
   done
   echo "  >> Done"
 
@@ -65,7 +60,7 @@ then
   # Shell Setup
   ##########################################################
   if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
-     echo 'source ~/.bashrc' >> ~/.bash_profile
+    echo 'source ~/.bashrc' >> ~/.bash_profile
   fi
 
   echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
@@ -101,15 +96,14 @@ cat <<EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
 </dict>
 </plist>
 EOF
-launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
+  launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
 
   ##########################################################
   # Homebrew
   ##########################################################
   hasHomebrewInstalled=1
   type brew &> /dev/null || hasHomebrewInstalled=0
-  if [[ $hasHomebrewInstalled == "0" ]]
-  then
+  if [ "$hasHomebrewInstalled" = "0" ]; then
     echo '>> Installing Homebrew Package Manager'
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
@@ -144,4 +138,5 @@ launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
 
   # disable spotlight indexing
   sudo mdutil -i off
+
 fi

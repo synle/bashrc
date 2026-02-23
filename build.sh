@@ -53,8 +53,7 @@ echo '< build.sh'
 ##########################################################
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-export TEST_SCRIPT_FILES="software/metadata/script-list.config.js" && \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
+  curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="software/metadata/script-list.config.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
 export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 
@@ -62,8 +61,7 @@ export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 # Prebuild Host Mappings
 ##########################################################
 echo '> Prebuilding Host Mappings'
-export TEST_SCRIPT_FILES="software/metadata/ip-address.config.js" && \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="software/metadata/ip-address.config.js"
 
 ##########################################################
 # Build Raw JSON and Config Artifacts
@@ -85,8 +83,7 @@ if [ "$CI" != "true" ]; then
 
   echo '> Build Host Mappings'
   export DEBUG_WRITE_TO_DIR="" && \
-  export TEST_SCRIPT_FILES="software/metadata/hosts-blocked-ads.config.js"  \
-    && curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash
+    curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="software/metadata/hosts-blocked-ads.config.js"
 
 fi
 
