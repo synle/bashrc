@@ -22,11 +22,10 @@ function _formatKey(keybindings, osKeyToUse) {
   return keybindings;
 }
 
-
-function _getConfigs(){
+function _getConfigs() {
   return is_os_darwin_mac
-      ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
-      : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY)
+    ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
+    : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY);
 }
 
 async function doInit() {
@@ -206,7 +205,6 @@ async function doWork() {
       comments,
     },
   ]);
-
 
   // for my own system
   let targetPaths = await _getTargetPaths();

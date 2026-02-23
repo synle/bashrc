@@ -27,13 +27,11 @@ function _formatKey(keybindings, osKeyToUse) {
   return keybindings;
 }
 
-
-function _getConfigs(){
+function _getConfigs() {
   return is_os_darwin_mac
-      ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
-      : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY)
+    ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
+    : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY);
 }
-
 
 async function doInit() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
@@ -207,8 +205,5 @@ async function doWork() {
 
   const fileDestPath = path.join(targetPath, 'Packages/User/Default.sublime-keymap');
   console.log('      >> File Path', fileDestPath);
-  writeJson(
-    fileDestPath,
-    _getConfigs(),
-  );
+  writeJson(fileDestPath, _getConfigs());
 }

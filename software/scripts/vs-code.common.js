@@ -7,17 +7,17 @@ global._getTargetPaths = function () {
 
   // 1. Initialize search roots with standard OS locations
   const searchRoots = [
-    process.env.APPDATA,                                 // Windows Native
-    path.join(home, 'Library/Application Support'),      // macOS
-    path.join(home, '.config'),                          // Linux Standard
+    process.env.APPDATA, // Windows Native
+    path.join(home, 'Library/Application Support'), // macOS
+    path.join(home, '.config'), // Linux Standard
     path.join(home, '.var/app/com.visualstudio.code/config'), // Linux Flatpak
-    path.join(home, '.var/app/com.vscodium/config')          // Linux Flatpak
+    path.join(home, '.var/app/com.vscodium/config'), // Linux Flatpak
   ];
 
   // 2. Account for WSL and Git Bash Windows mounts
   // Iterates through C:\Users\* to find Roaming folders
   const windowsMounts = ['/mnt/c/Users', '/c/Users'];
-  windowsMounts.forEach(mount => {
+  windowsMounts.forEach((mount) => {
     if (fs.existsSync(mount)) {
       try {
         const directoryItems = fs.readdirSync(mount);
