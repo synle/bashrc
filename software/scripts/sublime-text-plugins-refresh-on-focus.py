@@ -1,3 +1,5 @@
+# software/scripts/sublime-text-plugins-refresh-on-focus.py
+
 import sublime
 import sublime_plugin
 

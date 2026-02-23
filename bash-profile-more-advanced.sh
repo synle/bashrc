@@ -268,7 +268,7 @@ shorter_pwd_path(){
 ##########################################################
 export PS1_Advanced='
 \[\e[1;31m\]====\[\e[m\]
-\[\e[1;93m\]$(get_time) \[\e[1;95m\]UTC=$(get_time "UTC") \[\e[1;94m\]PST=$(get_time "America/Los_Angeles") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\] - \[\e[1;93m\]`ifconfig2`\[\e[m\]
+\[\e[1;93m\]$(get_time) \[\e[1;95m\]UTC=$(get_time "UTC") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\] - \[\e[1;93m\]`ifconfig2`\[\e[m\]
 \[\e[1;97m\]`shorter_pwd_path`\[\e[m\] \[\e[1;95m\]`parse_git_branch`\[\e[m\]
 \[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] '
 

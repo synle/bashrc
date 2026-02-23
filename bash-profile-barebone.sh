@@ -350,20 +350,28 @@ New_Dir: \"$OUT\"
 ##########################################################
 # Date / Time
 ##########################################################
-## Returns HH:MM:SS AM/PM
-# Defaults to Local Time if no TZ is passed
+## Returns HH:MM:SS AM/PM with colored AM/PM indicator
+# AM = bright white (light), PM = dark gray (dark)
+# Uses \001/\002 for PS1-safe non-printing character wrapping
 get_time() {
-  local tz=${1:-""} # Default to empty string if no arg
+  local tz=${1:-""}
+  local time_str ampm
 
-  if [ -z "$tz" ]; then
-    # Local Time
-    date +'%I:%M:%S %p'
-  elif [ "$tz" = "UTC" ]; then
-    # UTC Time
-    date -u +'%I:%M:%S %p'
+  if [ "$tz" = "UTC" ]; then
+    time_str=$(date -u +'%I:%M:%S')
+    ampm=$(date -u +'%p')
+  elif [ -n "$tz" ]; then
+    time_str=$(TZ="$tz" date +'%I:%M:%S')
+    ampm=$(TZ="$tz" date +'%p')
   else
-    # Specific Timezone (e.g., America/Los_Angeles)
-    TZ="$tz" date +'%I:%M:%S %p'
+    time_str=$(date +'%I:%M:%S')
+    ampm=$(date +'%p')
+  fi
+
+  if [ "$ampm" = "AM" ]; then
+    printf '%s\001\e[1;97m\002%s\001\e[m\002' "$time_str" "$ampm"
+  else
+    printf '%s\001\e[0;90m\002%s\001\e[m\002' "$time_str" "$ampm"
   fi
 }
 
@@ -429,15 +437,15 @@ mkdir -p ~/.ssh/sockets
 ##########################################################
 # Prompt
 ##########################################################
-# Sun Feb 22 20:24:44 2026 syle @ Sy-G14-2023
+# ====
+# 08:24:44 PM UTC=01:24:44 AM syle @ Sy-G14-2023
 # ~/git/bashrc
 # >>>
-# Define the template
-export PS1_Simple="
+export PS1_Simple='
 \[\e[1;31m\]====\[\e[m\]
-\[\e[1;93m\]\D{%c}\[\e[m\] \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
+\[\e[1;93m\]$(get_time) \[\e[1;95m\]UTC=$(get_time "UTC") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
 \[\e[1;97m\]\w\[\e[m\]
-\[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] "
+\[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] '
 
 # Assign it
 export PS1="$PS1_Simple"
