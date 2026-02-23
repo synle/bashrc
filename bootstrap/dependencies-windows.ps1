@@ -1,0 +1,575 @@
+Setting up Personal Folders
+# ==========================================
+# Move Desktop, Documents, Downloads, Pictures
+# to D:\Desktop, D:\Documents, D:\Downloads, D:\Pictures
+# ==========================================
+
+# Known Folder GUIDs → New Paths
+$folders = @{
+    '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' = 'D:\Desktop'     # Desktop
+    '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' = 'D:\Documents'   # Documents
+    '{374DE290-123F-4565-9164-39C4925E467B}' = 'D:\Downloads'   # Downloads
+    '{33E28130-4E1E-4676-835A-98395C3BC3BB}' = 'D:\Pictures'    # Pictures
+}
+
+# Registry locations
+$userShellFolders = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+$shellFolders     = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+
+foreach ($guid in $folders.Keys) {
+
+    $target = $folders[$guid]
+
+    # Ensure the new target folder exists
+    if (-not (Test-Path $target)) {
+        Write-Host "Creating: $target"
+        New-Item -ItemType Directory -Path $target -Force | Out-Null
+    }
+
+    # Determine current folder path
+    switch ($guid) {
+        '{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}' { $current = "$HOME\Desktop" }
+        '{FDD39AD0-238F-46AF-ADB4-6C85480369C7}' { $current = "$HOME\Documents" }
+        '{374DE290-123F-4565-9164-39C4925E467B}' { $current = "$HOME\Downloads" }
+        '{33E28130-4E1E-4676-835A-98395C3BC3BB}' { $current = "$HOME\Pictures" }
+    }
+
+    # Move documents if source exists
+    if (Test-Path $current) {
+        Write-Host "Moving: $current → $target"
+        robocopy $current $target /MOVE /E | Out-Null
+    } else {
+        Write-Host "Skipping (missing): $current"
+    }
+
+    # Update the registry mappings
+    Set-ItemProperty -Path $userShellFolders -Name $guid -Value $target
+    Set-ItemProperty -Path $shellFolders     -Name $guid -Value $target
+
+    Write-Host "Updated location for: $guid → $target"
+}
+
+Write-Host "`nDone! Please sign out and back in for full effect."
+Getting Started and All-in-one setup Script
+# ================================
+# Create Powershell Script Profile
+# ================================
+New-Item $profile -Type File -Force
+if (!(Test-Path $profile)) {
+    New-Item -Path $profile -Type File -Force
+    Write-Host "Profile created."
+} else {
+    Write-Host "Profile already exists at $profile"
+}
+
+# ================================
+# update time server in windows
+# ================================
+$NtpServers = "time.cloudflare.com,0x8 time.google.com,0x8 time.windows.com,0x8"
+
+# Configure Windows Time service
+w32tm /config /manualpeerlist:"$NtpServers" /syncfromflags:manual /update
+
+# Restart service and resync
+Restart-Service w32time
+w32tm /resync
+
+# Update registry so Windows Settings UI reflects the same list
+Set-ItemProperty `
+  -Path "HKLM:\SYSTEM\CurrentControlSet\Services\W32Time\Parameters" `
+  -Name NtpServer `
+  -Value $NtpServers
+
+Restart-Service w32time
+
+# ================================
+#  Regedit for Adobe Photoshop
+# ================================
+
+$regPath  = "HKCU:\Software\Adobe\CSXS.6"
+$regName  = "PlayerDebugMode"
+$regValue = "1"
+
+If (!(Test-Path $regPath)) {
+    New-Item -Path $regPath -Force | Out-Null
+}
+
+New-ItemProperty `
+    -Path $regPath `
+    -Name $regName `
+    -Value $regValue `
+    -PropertyType String `
+    -Force
+
+Write-Host "Registry value updated successfully."
+
+
+
+# ================================
+#  WINDOWS CLEANUP & PRIVACY HARDENING
+# ================================
+
+Write-Host "`n=== Windows Cleanup & Privacy Hardening ===" -ForegroundColor Cyan
+
+
+
+# --------------------------------
+# Remove Microsoft Bloatware
+# --------------------------------
+
+Write-Host "`nRemoving Microsoft bloatware apps..." -ForegroundColor Yellow
+
+$appsToRemove = @(
+    'Microsoft.3DViewer',
+    'Microsoft.549981C3F5F10',              # Cortana
+    'Microsoft.BingFinance',
+    'Microsoft.BingNews',
+    'Microsoft.BingSports',
+    'Microsoft.BingWeather',
+    'Microsoft.GamingApp',                  # Xbox (optional)
+    'Microsoft.GetHelp',
+    'Microsoft.Getstarted',
+    'Microsoft.MicrosoftOfficeHub',
+    'Microsoft.MicrosoftSolitaireCollection',
+    'Microsoft.MicrosoftStickyNotes',
+    'Microsoft.Office.OneNote',
+    'Microsoft.People',
+    'Microsoft.PowerAutomateDesktop',
+    'Microsoft.SkypeApp',
+    'Microsoft.Todos',
+    'Microsoft.WindowsAlarms',
+    'Microsoft.WindowsFeedbackHub',
+    'Microsoft.WindowsMaps',
+    'Microsoft.WindowsSoundRecorder',
+    'Microsoft.Xbox.TCUI',
+    'Microsoft.XboxGameOverlay',
+    'Microsoft.XboxGamingOverlay',
+    'Microsoft.XboxIdentityProvider',
+    'Microsoft.XboxSpeechToTextOverlay',
+    'Microsoft.YourPhone',
+    'Microsoft.ZuneMusic',
+    'Microsoft.ZuneVideo',
+    'MicrosoftTeams',
+    'Clipchamp.Clipchamp'
+) | Sort-Object -Unique
+
+foreach ($app in $appsToRemove) {
+    Write-Host "Uninstalling: $app"
+    Get-AppxPackage -Name $app -ErrorAction SilentlyContinue |
+        Remove-AppxPackage -ErrorAction SilentlyContinue
+}
+
+Write-Host "App cleanup complete." -ForegroundColor Green
+
+
+
+# --------------------------------
+# Disable Cortana + Web Search
+# --------------------------------
+
+Write-Host "`nDisabling Cortana & Internet search suggestions..." -ForegroundColor Yellow
+
+# Cortana
+$paths = @(
+    "HKCU:\Software\Policies\Microsoft\Windows\Explorer",
+    "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+)
+
+foreach ($path in $paths) {
+    if (-not (Test-Path $path)) {
+        New-Item -Path $path -Force | Out-Null
+    }
+}
+
+Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "AllowCortana" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows\Explorer" -Name "DisableSearchBoxSuggestions" -Type DWord -Value 1 -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -Type DWord -Value 0 -Force
+
+# Disable widgets
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Type DWord -Value 0 -Force
+
+Write-Host "Cortana + Search hardened." -ForegroundColor Green
+
+# --------------------------------
+# Disable Windows Telemetry / Tracking
+# --------------------------------
+
+Write-Host "`nDisabling telemetry services & tasks..." -ForegroundColor Yellow
+
+$telemetryKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+if (-not (Test-Path $telemetryKey)) {
+    New-Item -Path $telemetryKey -Force | Out-Null
+}
+
+Set-ItemProperty -Path $telemetryKey -Name "AllowTelemetry" -Type DWord -Value 0
+
+$services = @(
+    "DiagTrack",
+    "DmWappushService",
+    "diagnosticshub.standardcollector.service"
+)
+
+foreach ($svc in $services) {
+    Write-Host "Stopping + disabling: $svc"
+    Stop-Service $svc -Force -ErrorAction SilentlyContinue
+    Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
+}
+
+$scheduledTasks = @(
+    "\Microsoft\Windows\Customer Experience Improvement Program\",
+    "\Microsoft\Windows\Application Experience\",
+    "\Microsoft\Windows\Autochk\",
+    "\Microsoft\Windows\Feedback\"
+)
+
+foreach ($taskPath in $scheduledTasks) {
+    try {
+        Get-ScheduledTask -TaskPath $taskPath -ErrorAction Stop |
+            Disable-ScheduledTask -ErrorAction SilentlyContinue
+    } catch {}
+}
+
+Write-Host "Telemetry disabled." -ForegroundColor Green
+
+
+
+# --------------------------------
+# Disable Windows Recall (AI screenshot history)
+# --------------------------------
+
+Write-Host "`nDisabling Windows Recall..." -ForegroundColor Yellow
+
+$recallKey = "HKLM:\Software\Policies\Microsoft\Windows\WindowsAI"
+if (-not (Test-Path $recallKey)) {
+    New-Item -Path $recallKey -Force | Out-Null
+}
+
+Set-ItemProperty -Path $recallKey -Name "DisableAIDataAnalysis" -Type DWord -Value 1
+Set-ItemProperty -Path $recallKey -Name "DisableCapture" -Type DWord -Value 1
+
+$recallServices = @(
+    "Recall",
+    "DesktopAIClientService",
+    "RecallSnapshot"
+)
+
+foreach ($svc in $recallServices) {
+    Stop-Service $svc -Force -ErrorAction SilentlyContinue
+    Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
+}
+
+# Copilot
+$copilotKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+if (-not (Test-Path $copilotKey)) {
+    New-Item -Path $copilotKey -Force | Out-Null
+}
+Set-ItemProperty -Path $copilotKey -Name "TurnOffWindowsCopilot" -Type DWord -Value 1 -Force
+
+# Hide Copilot button
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowCopilotButton" -Type DWord -Value 0 -Force
+
+# Recall / AI Data Analysis
+$recallKey = "HKLM:\Software\Policies\Microsoft\Windows\WindowsAI"
+if (-not (Test-Path $recallKey)) {
+    New-Item -Path $recallKey -Force | Out-Null
+}
+Set-ItemProperty -Path $recallKey -Name "DisableAIDataAnalysis" -Type DWord -Value 1 -Force
+
+# Timeline
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+
+
+Write-Host "Recall disabled successfully." -ForegroundColor Green
+
+
+# ================================================================================================
+#  PERFORMANCE OPTIMIZATIONS
+# ================================================================================================
+
+Write-Host "`nApplying performance optimizations..." -ForegroundColor Yellow
+
+# Disable visual effects for best performance
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name "VisualFXSetting" -Type DWord -Value 2 -Force
+
+# Disable animations
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Type String -Value "0" -Force
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0 -Force
+
+# Disable transparency
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "EnableTransparency" -Type DWord -Value 0 -Force
+
+# Optimize for programs (not background services)
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Type DWord -Value 38 -Force
+
+# Disable startup delay
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" -Name "StartupDelayInMSec" -Type DWord -Value 0 -Force
+
+# Disable search indexing on C: drive (speeds up disk I/O)
+# Note: This will slow down file searches
+# Get-WmiObject -Class Win32_Volume -Filter "DriveLetter='C:'" | Set-WmiInstance -Arguments @{IndexingEnabled=$false} | Out-Null
+
+# Disable hibernation to save disk space
+powercfg /hibernate off
+
+# Set power plan to High Performance
+$powerPlan = powercfg /list | Select-String "High performance"
+if ($powerPlan) {
+    $planGUID = ($powerPlan -split '\s+')[3]
+    powercfg /setactive $planGUID
+}
+
+# ================================
+#  HOSTS FILE BLOCKING
+# ================================
+$entriesToAdd = @(
+    "0.0.0.0 lmlicenses.wip4.adobe.com",
+    "0.0.0.0 lm.licenses.adobe.com",
+    "0.0.0.0 activate.adobe.com",
+    "0.0.0.0 practivate.adobe.com",
+    "0.0.0.0 na1r.services.adobe.com",
+    "0.0.0.0 officecdn.microsoft.com",
+    "0.0.0.0 officecdn.microsoft.com.edgesuite.net",
+    "0.0.0.0 config.office.com",
+    "0.0.0.0 odc.officeapps.live.com",
+    "0.0.0.0 vortex.data.microsoft.com",
+    "0.0.0.0 telemetry.microsoft.com",
+    # ads
+    "0.0.0.0 ads-api.twitter.com",
+    "0.0.0.0 ads-dev.pinterest.com",
+    "0.0.0.0 ads.facebook.com",
+    "0.0.0.0 ads.google.com",
+    "0.0.0.0 ads.pinterest.com",
+    "0.0.0.0 ads.reddit.com",
+    "0.0.0.0 ads.tiktok.com",
+    "0.0.0.0 ads.youtube.com",
+    "0.0.0.0 adservice.google.com",
+    "0.0.0.0 adtago.s3.amazonaws.com",
+    "0.0.0.0 adtechus.com",
+    "0.0.0.0 advertising-api-eu.amazon.com",
+    "0.0.0.0 advertising.twitter.com",
+    "0.0.0.0 advice-ads.s3.amazonaws.com",
+    "0.0.0.0 affiliationjs.s3.amazonaws.com",
+    "0.0.0.0 amazonaax.com",
+    "0.0.0.0 analyticsengine.s3.amazonaws.com",
+    "0.0.0.0 api.bugsnag.com",
+    "0.0.0.0 app.bugsnag.com",
+    "0.0.0.0 app.getsentry.com",
+    "0.0.0.0 browser.sentry-cdn.com",
+    "0.0.0.0 business.samsungusa.com",
+    "0.0.0.0 criteo.net",
+    "0.0.0.0 marvelpixel.io",
+    "0.0.0.0 notify.bugsnag.com",
+    "0.0.0.0 rubiconproject.com",
+    "0.0.0.0 sessions.bugsnag.com",
+    "0.0.0.0 track-server.net",
+    "0.0.0.0 widgets.pinterest.com",
+    "0.0.0.0 youtube.cleverads.vn",
+    "                                                    " # intentionally empty
+) |
+Where-Object { $_ -and $_.Trim() } |
+Sort-Object -Unique
+
+$hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
+$tempPath  = "C:\temp-host.txt"
+
+Write-Host "`nUpdating HOSTS file..." -ForegroundColor Cyan
+# Copy current host file to temp location
+if (Test-Path $hostsPath) {
+    Copy-Item -Path $hostsPath -Destination $tempPath -Force
+    $currentContent = Get-Content $tempPath
+} else {
+    Write-Error "Original hosts file not found!"
+    return
+}
+
+# Extract just the hostnames from existing file for comparison
+# This regex matches the end of the line, ignoring the IP part
+$existingHostnames = $currentContent | Where-Object { $_ -match '^\s*[0-9\.]+\s+(?<host>\S+)' } | ForEach-Object { $Matches.host.ToLower().Trim() }
+
+# Filter new entries to ensure uniqueness
+$uniqueNewEntries = @()
+
+foreach ($entry in $entriesToAdd) {
+    # Clean the entry and extract the hostname (the part after the IP)
+    $cleanEntry = $entry.Trim()
+    if ($cleanEntry -match '\s+(?<host>\S+)$') {
+        $hostName = $Matches.host.ToLower().Trim()
+
+        if ($existingHostnames -notcontains $hostName) {
+            $uniqueNewEntries += $cleanEntry
+            # Add to list so we don't add the same host twice within the same run
+            $existingHostnames += $hostName
+        } else {
+            Write-Host "Skipping duplicate: $hostName" -ForegroundColor Yellow
+        }
+    }
+}
+
+# Merge and Update
+if ($uniqueNewEntries.Count -gt 0) {
+    Add-Content -Path $tempPath -Value "`n# Added by Script $(Get-Date)"
+    Add-Content -Path $tempPath -Value $uniqueNewEntries
+
+    try {
+        # Overwrite original host file (Requires Admin)
+        Move-Item -Path $tempPath -Destination $hostsPath -Force
+        Write-Host "Successfully updated HOSTS file with $($uniqueNewEntries.Count) new entries." -ForegroundColor Green
+    } catch {
+        Write-Error "Failed to write to $hostsPath. Please ensure you are running as Administrator."
+    }
+} else {
+    Write-Host "No new unique entries to add." -ForegroundColor Gray
+    Remove-Item -Path $tempPath -ErrorAction SilentlyContinue
+}
+Write-Host "`nHOSTS file updated." -ForegroundColor Green
+
+# ================================
+#  DEFENDER EXCLUSION
+# ================================
+
+Write-Host "`nAdding Defender exclusion..." -ForegroundColor Cyan
+Add-MpPreference -ExclusionPath "C:\Program Files (x86)\Microsoft Office\Office14"
+Write-Host "Defender exclusion added."
+
+
+
+# --------------------------------
+# Disable Windows Copilot / Recall / Telemetry (reg add style)
+# --------------------------------
+
+Write-Host "`nApplying additional registry hardening..." -ForegroundColor Yellow
+
+# --- COPILOT ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v TurnOffWindowsCopilot /t REG_DWORD /d 1 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot" /v CopilotAllowed /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v ShowCopilotButton /t REG_DWORD /d 0 /f
+
+# --- RECALL ---
+dism /online /disable-feature /featurename:Recall /norestart
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
+
+# --- TIMELINE ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v EnableActivityFeed /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v PublishUserActivities /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v UploadUserActivities /t REG_DWORD /d 0 /f
+
+# --- EDGE ---
+$edgeKey = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
+if (-not (Test-Path $edgeKey)) {
+    New-Item -Path $edgeKey -Force | Out-Null
+}
+
+Set-ItemProperty -Path $edgeKey -Name "HubsSidebarEnabled" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "EdgeCopilotEnabled" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "DiagnosticData" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "PersonalizationReportingEnabled" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $edgeKey -Name "UserFeedbackAllowed" -Type DWord -Value 0 -Force
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v HubsSidebarEnabled /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v EdgeCopilotEnabled /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v DiagnosticData /t REG_DWORD /d 0 /f
+
+# --- PREVENT UPDATE RE-ENABLE ---
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DisableWUfBSafeguards /t REG_DWORD /d 1 /f
+
+Write-Host "`nSystem cleanup completed successfully!" -ForegroundColor Cyan
+Write-Host "Log off or reboot required for some changes to apply." -ForegroundColor Yellow
+
+
+# ================================================================================================
+#  DISK CLEANUP & MAINTENANCE
+# ================================================================================================
+
+Write-Host "`nRunning disk cleanup..." -ForegroundColor Yellow
+
+# Clean temp files
+Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\Windows\Prefetch\*" -Force -ErrorAction SilentlyContinue
+
+
+# ================================
+# Make Password Never Expire
+# ================================
+
+Set-ADUser -Identity "Sy Le" -PasswordNeverExpires $true
+Set-ADUser -Identity "syle" -PasswordNeverExpires $true
+
+
+
+# ================================
+#  WSL SETUP
+# ================================
+
+wsl --update
+wsl --set-default-version 2
+
+
+
+# ================================
+#  FIREWALL BLOCK RULES
+# ================================
+
+function Add-BlockRuleIfMissing {
+    param(
+        [string]$DisplayName,
+        [string]$Program,
+        [string]$Description
+    )
+
+    if (-not (Get-NetFirewallRule -DisplayName $DisplayName -ErrorAction SilentlyContinue)) {
+        New-NetFirewallRule -DisplayName $DisplayName -Program $Program `
+            -Direction Outbound -Action Block -Profile Any -Description $Description | Out-Null
+        Write-Host "Added: $DisplayName" -ForegroundColor Green
+    } else {
+        Write-Host "Exists: $DisplayName" -ForegroundColor Yellow
+    }
+}
+
+# ---- Block Office14 executables ----
+Write-Host "`nBlocking Office14 executables..." -ForegroundColor Cyan
+
+$officePath = "C:\Program Files (x86)\Microsoft Office\Office14"
+$officeApps = @(
+    "WINWORD.EXE","EXCEL.EXE","POWERPNT.EXE","OUTLOOK.EXE",
+    "MSACCESS.EXE","VISIO.EXE","OIS.EXE","SETLANG.EXE",
+    "MSOSYNC.EXE","MSOUC.EXE","NAMECONTROLSERVER.EXE","GRAPH.EXE"
+)
+
+foreach ($app in $officeApps) {
+    $fullPath = Join-Path $officePath $app
+    if (Test-Path $fullPath) {
+        Add-BlockRuleIfMissing "_Sy_BLOCK_Office14_$app" $fullPath "Block Office14 outbound: $app"
+    }
+}
+
+# ---- Block all Adobe ----
+Write-Host "`nBlocking Adobe executables..." -ForegroundColor Cyan
+
+$AdobePaths = @(
+    "$env:ProgramFiles\Adobe",
+    "$env:ProgramFiles(x86)\Adobe",
+    "$env:ProgramFiles\Common Files\Adobe",
+    "$env:ProgramFiles(x86)\Common Files\Adobe"
+)
+
+$AdobeExeList = $AdobePaths |
+    Where-Object { Test-Path $_ } |
+    ForEach-Object { Get-ChildItem -Path $_ -Recurse -Filter *.exe -ErrorAction SilentlyContinue }
+
+$idx = 1
+foreach ($exe in $AdobeExeList) {
+    $rule = "_Sy_BLOCK_Adobe_{0:D3}_$($exe.BaseName)" -f $idx
+    Add-BlockRuleIfMissing $rule $exe.FullName "Block Adobe outbound"
+    $idx++
+}
+
+Write-Host "`nAdobe and Office firewall blocks applied." -ForegroundColor Green
+
+# ================================
+#  winget upgrade
+# ================================
+
+winget upgrade --all
