@@ -1,34 +1,35 @@
-#! /bin/sh
-
 # run.sh - Unified test runner script
 #
 # Usage:
-#   sh run.sh                                    # Full run, local mode (default)
-#   sh run.sh --mode=prod                        # Full run, prod mode (curl from upstream)
-#   sh run.sh --prod                             # Shorthand for --mode=prod
-#   sh run.sh --local                            # Shorthand for --mode=local
-#   sh run.sh --dev                              # Shorthand for --mode=local
-#   sh run.sh --files="git.js"                   # Test specific file(s), local mode
-#   sh run.sh --mode=prod --files="git.js"       # Test specific file(s), prod mode
-#   sh run.sh --files="vim.js,git.js"            # Multiple files (comma-separated)
-#   sh run.sh --files="""                        # Multiple files (multiline)
+#   bash run.sh                                    # Full run, local mode (default)
+#   bash run.sh --mode=prod                        # Full run, prod mode (curl from upstream)
+#   bash run.sh --prod                             # Shorthand for --mode=prod
+#   bash run.sh --local                            # Shorthand for --mode=local
+#   bash run.sh --dev                              # Shorthand for --mode=local
+#   bash run.sh --files="git.js"                   # Test specific file(s), local mode
+#   bash run.sh --mode=prod --files="git.js"       # Test specific file(s), prod mode
+#   bash run.sh --files="vim.js,git.js"            # Multiple files (comma-separated)
+#   bash run.sh --files="""                        # Multiple files (multiline)
 #     vim.js
 #     git.js
 #     vundle.js
 #   """
-#   sh run.sh git.js                             # Bare args treated as files
-#   sh run.sh git.js vim.js                      # Multiple bare args
-#   sh run.sh --prod git.js vim.js               # Mix flags and bare file args
-#   sh run.sh --pre-scripts="foo.sh,bar.sh"      # Run shell scripts via | bash before main run
-#   sh run.sh --pre-scripts="""                  # Multiline pre-scripts
+#   bash run.sh git.js                             # Bare args treated as files
+#   bash run.sh git.js vim.js                      # Multiple bare args
+#   bash run.sh --prod git.js vim.js               # Mix flags and bare file args
+#   bash run.sh --pre-scripts="foo.sh,bar.sh"      # Run shell scripts via | bash before main run
+#   bash run.sh --pre-scripts="""                  # Multiline pre-scripts
 #     foo.sh
 #     bar.sh
 #   """
-#   sh run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
-#   sh run.sh --force-refresh                    # Force remove and reinstall nvm
-#   sh run.sh --lightweight                      # Export LIGHT_WEIGHT_MODE=1 for lightweight installs
+#   bash run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
+#   bash run.sh --force-refresh                    # Force remove and reinstall nvm
+#   bash run.sh -f                                 # Shorthand for --force-refresh
+#   bash run.sh --lightweight                      # Export LIGHT_WEIGHT_MODE=1 for lightweight installs
+#   bash run.sh --debug                            # Enable debug mode (set -x for verbose output)
+#   bash run.sh -D                                 # Shorthand for --debug
 #
-# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh, -lightweight
+# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh, -f, -lightweight, -debug, -D
 
 ####################################################################
 # Prerequisites - OS Flags & Helpers
@@ -50,6 +51,7 @@ files_to_test=""
 pre_run_scripts=""
 run_only_prescripts=false
 force_refresh=false
+debug_mode=false
 _parsing_into=""
 unset TEST_SCRIPT_MODE
 unset TEST_SCRIPT_FILES
@@ -90,13 +92,18 @@ for arg in "$@"; do
       run_only_prescripts=true
       _parsing_into=""
       ;;
-    --force-refresh|-force-refresh|--force|-force)
+    --force-refresh|-force-refresh|--force|-force|-f)
       force_refresh=true
       export TEST_FORCE_REFRESH=1
       _parsing_into=""
       ;;
     --lightweight|-lightweight)
       export LIGHT_WEIGHT_MODE=1
+      _parsing_into=""
+      ;;
+    --debug|-debug|-D)
+      debug_mode=true
+      set -x
       _parsing_into=""
       ;;
     -*)
@@ -136,6 +143,7 @@ files               = ${files_to_test:-[full run]}
 pre_scripts         = ${pre_run_scripts:-[none]}
 run_only_prescripts = $run_only_prescripts
 force_refresh       = $force_refresh
+debug               = $debug_mode
 lightweight         = ${LIGHT_WEIGHT_MODE:-0}
 test_script_mode    = $TEST_SCRIPT_MODE
 os_flags            = ${active_os_flags:-[none]}
@@ -176,24 +184,7 @@ else
 fi
 
 ####################################################################
-# Run pre-scripts
-####################################################################
-if [ -n "$pre_run_scripts" ]; then
-  echo ">> pre-run scripts: $pre_run_scripts"
-  get_file_contents "$pre_run_scripts" | bash
-fi
-
-if [ "$run_only_prescripts" = true ]; then
-  echo "
-=======================================================
->> run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
-=======================================================
-"
-  exit 0
-fi
-
-####################################################################
-# Install NVM and Node (skip on Android Termux)
+# script: Install NVM and Node (skip on Android Termux)
 ####################################################################
 if [ "$is_os_android_termux" != "1" ]; then
   DEFAULT_NODE_JS_VERSION=24
@@ -225,10 +216,37 @@ if [ "$is_os_android_termux" != "1" ]; then
   fi
 fi
 
+_run_buffer=""
+
 ####################################################################
-# Run main script
+# script: Run pre-scripts
 ####################################################################
-get_file_contents "software/index.js" | node | bash
+if [ -n "$pre_run_scripts" ]; then
+  echo ">> pre-run scripts: $pre_run_scripts"
+  _run_buffer="$_run_buffer
+$(get_file_contents "$pre_run_scripts")"
+fi
+
+if [ "$run_only_prescripts" = true ]; then
+  echo "$_run_buffer" | bash
+  echo "
+=======================================================
+>> run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
+=======================================================
+"
+  exit 0
+fi
+
+####################################################################
+# script: Run main script
+####################################################################
+_run_buffer="$_run_buffer
+$(get_file_contents "software/index.js" | node)"
+
+####################################################################
+# Execute all buffered scripts at once
+####################################################################
+echo "$_run_buffer" | bash
 
 echo "
 =======================================================
