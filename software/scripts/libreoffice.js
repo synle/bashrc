@@ -1,5 +1,6 @@
 /// <reference path="../index.js" />
 
+/** * Disables the LibreOffice splash screen on Chrome OS and Arch Linux. */
 async function doWork() {
   let targetPath = '/etc/libreoffice';
 

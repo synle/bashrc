@@ -2,6 +2,7 @@
 
 const MAX_DEPTH_CLEANUP = 6;
 
+/** * Generates and registers bash functions for code formatting, cleanup, and file formatting using Prettier and Ruff. */
 async function doWork() {
   const { maxLineSize, ignoredFolders } = EDITOR_CONFIGS;
 

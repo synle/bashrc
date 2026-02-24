@@ -1838,9 +1838,6 @@ async function _doWorkFullRun() {
 
   // start script
   try {
-    doInit && (await doInit());
-  } catch (err) {}
-  try {
     if (typeof doWork === 'function') {
       // if doWork is defined externally (e.g. by a script concatenated after this file), use it
       await doWork();

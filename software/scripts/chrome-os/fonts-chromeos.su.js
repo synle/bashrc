@@ -1,5 +1,6 @@
 /// <reference path="../../index.js" />
 
+/** * Installs fonts on Chrome OS by copying them to the system font directory. */
 async function doWork() {
   const targetPath = `/usr/local/share/fonts`;
 

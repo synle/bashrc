@@ -44,6 +44,9 @@ const baseVsExtensions = trimLeftSpaces(`
 const VS_CODE_EXTENSIONS_TO_INSTALL = convertTextToList(onlyVsCodeExtensions, baseVsExtensions);
 const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(onlyCodiumExtensions, baseVsExtensions);
 
+/**
+ * Generates platform-specific extension installation scripts for VS Code and VSCodium.
+ */
 async function doWork() {
   console.log(`  >> VS Code Extensions:`);
 

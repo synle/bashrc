@@ -1,5 +1,6 @@
 /// <reference path="../../index.js" />
 
+/** * Configures Sumatra PDF reader theme and settings for Windows. */
 async function doWork() {
   console.log('  >> Installing Windows Only - Sumatra Dracula Theme');
 

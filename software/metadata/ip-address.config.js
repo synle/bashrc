@@ -1,5 +1,8 @@
 /// <reference path="../index.js" />
 
+/**
+ * Parses the IP address config file and generates hostname mapping files in grouped, flattened, and etc-hosts formats.
+ */
 async function doWork() {
   const targetPath = 'software/metadata/ip-address.config';
 

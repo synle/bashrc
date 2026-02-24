@@ -1,5 +1,6 @@
 /// <reference path="../index.js" />
 
+/** * Writes the .inputrc file with readline keybindings, autocomplete settings, and fzf shortcuts. */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.inputrc');
 

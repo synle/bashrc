@@ -1,5 +1,6 @@
 /// <reference path="../../index.js" />
 
+/** * Applies WSL-specific tweaks and configurations for Windows Subsystem for Linux. */
 async function doWork() {
   const targetPath = path.join(getWindowUserBaseDir(), '.wslconfig');
   console.log('  >> WSL Tweaks: Updating configuration', targetPath);
