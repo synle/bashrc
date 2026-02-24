@@ -1,33 +1,33 @@
 # Fonts - Linux / MacOS
 cd ~/Desktop
 curl -sSLJ --parallel --parallel-max 10 \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCode.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCodePL.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMono.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMonoPL.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Bold.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Light.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Medium.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Regular.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Retina.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-SemiBold.ttf \
-  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Trace.ttf
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Code-PL-Roman.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Code-Roman.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Mono-PL-Roman.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Mono-Roman.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Bold.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Light.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Medium.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Regular.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Retina.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-SemiBold.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/fonts/Trace-Regular.ttf
 echo "Done downloading fonts"
 
 # Fonts - Windows
 cd ([Environment]::GetFolderPath('Desktop'))
 $urls = @(
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCode.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCodePL.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMono.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMonoPL.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Bold.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Light.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Medium.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Regular.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Retina.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-SemiBold.ttf",
-  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Trace.ttf"
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Code-PL-Roman.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Code-Roman.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Mono-PL-Roman.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Cascadia-Mono-Roman.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Bold.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Light.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Medium.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Regular.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-Retina.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-SemiBold.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Trace-Regular.ttf"
 )
 $urls | Start-BitsTransfer -Destination .
 echo "Done downloading fonts"

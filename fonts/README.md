@@ -4,7 +4,6 @@ These fonts are copied from the owner of Fira Code. Repo is at https://github.co
 
 https://raw.githubusercontent.com/synle/bashrc/master/.build/font.md
 
-
 ### Get Font Name Mappings
 
 ```
@@ -14,27 +13,27 @@ for f in ./*.ttf; do echo "$(basename "$f") => $(fc-query --format "%{family} %{
 ### Font Mappings
 
 ┌───────────────────────┬────────────────────────┬────────────────────────────┐
-│   Current Filename    │    Actual Font Name    │        New Filename        │
+│ Current Filename │ Actual Font Name │ New Filename │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ CascadiaCode.ttf      │ Cascadia Code Roman    │ Cascadia-Code-Roman.ttf    │
+│ CascadiaCode.ttf │ Cascadia Code Roman │ Cascadia-Code-Roman.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ CascadiaCodePL.ttf    │ Cascadia Code PL Roman │ Cascadia-Code-PL-Roman.ttf │
+│ CascadiaCodePL.ttf │ Cascadia Code PL Roman │ Cascadia-Code-PL-Roman.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ CascadiaMono.ttf      │ Cascadia Mono Roman    │ Cascadia-Mono-Roman.ttf    │
+│ CascadiaMono.ttf │ Cascadia Mono Roman │ Cascadia-Mono-Roman.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ CascadiaMonoPL.ttf    │ Cascadia Mono PL Roman │ Cascadia-Mono-PL-Roman.ttf │
+│ CascadiaMonoPL.ttf │ Cascadia Mono PL Roman │ Cascadia-Mono-PL-Roman.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ FiraCode-Bold.ttf     │ Fira Code Bold         │ Fira-Code-Bold.ttf         │
+│ FiraCode-Bold.ttf │ Fira Code Bold │ Fira-Code-Bold.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ FiraCode-Light.ttf    │ Fira Code Light        │ Fira-Code-Light.ttf        │
+│ FiraCode-Light.ttf │ Fira Code Light │ Fira-Code-Light.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ FiraCode-Medium.ttf   │ Fira Code Medium       │ Fira-Code-Medium.ttf       │
+│ FiraCode-Medium.ttf │ Fira Code Medium │ Fira-Code-Medium.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ FiraCode-Regular.ttf  │ Fira Code Regular      │ Fira-Code-Regular.ttf      │
+│ FiraCode-Regular.ttf │ Fira Code Regular │ Fira-Code-Regular.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ FiraCode-Retina.ttf   │ Fira Code Retina       │ Fira-Code-Retina.ttf       │
+│ FiraCode-Retina.ttf │ Fira Code Retina │ Fira-Code-Retina.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ FiraCode-SemiBold.ttf │ Fira Code SemiBold     │ Fira-Code-SemiBold.ttf     │
+│ FiraCode-SemiBold.ttf │ Fira Code SemiBold │ Fira-Code-SemiBold.ttf │
 ├───────────────────────┼────────────────────────┼────────────────────────────┤
-│ Trace.ttf             │ Trace Regular          │ Trace-Regular.ttf          │
+│ Trace.ttf │ Trace Regular │ Trace-Regular.ttf │
 └───────────────────────┴────────────────────────┴────────────────────────────┘
