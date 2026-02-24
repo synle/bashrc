@@ -1,4 +1,4 @@
-/// <reference path="../../base-node-script.js" />
+/// <reference path="../../index.js" />
 
 // guide: refer to this
 // https://docs.microsoft.com/en-us/windows/terminal/get-started
