@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "sh build.sh && npm run format",
     "dev": "vite",
-    "prebuild": "npm run format &&",
+    "prebuild": "npm run format",
     "build": "eval \"$(cat bootstrap/common-env.sh)\" && vite build",
     "preview": "vite preview",
     "start": "npx http-server --cors .",
