@@ -1,9 +1,9 @@
 /// <reference path="../index.js" />
 
 const bashTargets = [
-  { path: '$HOME/.var/app/com.vscodium.codium/config/VSCodium/User', keys: 'vs-code-keys-linux' },
-  { path: '$HOME/.config/VSCodium/User', keys: 'vs-code-keys-linux' },
-  { path: '$HOME/.config/Code/User', keys: 'vs-code-keys-linux' },
+  { path: '$HOME/.var/app/com.vscodium.codium/config/VSCodium/User', keys: 'vs-code-keys-windows' },
+  { path: '$HOME/.config/VSCodium/User', keys: 'vs-code-keys-windows' },
+  { path: '$HOME/.config/Code/User', keys: 'vs-code-keys-windows' },
   { path: '$HOME/Library/Application Support/Code/User', keys: 'vs-code-keys-macosx' },
   { path: '$HOME/Library/Application Support/VSCodium/User', keys: 'vs-code-keys-macosx' },
 ];
@@ -32,13 +32,10 @@ function getPowershellTargetBlock() {
 async function doWork() {
   console.log(`  >> VS Code Setup Script:`);
 
-  const script = `# NOTE: this is used by normal script, thus we have a fallback here
-export BASH_PROFILE_CODE_REPO_RAW_URL="\${BASH_PROFILE_CODE_REPO_RAW_URL:-https://raw.githubusercontent.com/synle/bashrc/master}"
-
-##################################################
+  const script = `##################################################
 # for Linux using bash
 ##################################################
-REMOTE_BASE="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+REMOTE_BASE="${BASH_PROFILE_CODE_REPO_RAW_URL}/.build"
 CONFIG_FILE="${configFile}"
 
 targets=(
@@ -69,7 +66,7 @@ done
 ##################################################
 # for Windows using powershell
 ##################################################
-$baseUrl     = "$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+$baseUrl     = "${BASH_PROFILE_CODE_REPO_RAW_URL}/.build"
 $configFile  = "${configFile}"
 $keybindings = "vs-code-keys-windows"
 
