@@ -295,6 +295,11 @@ shorter_pwd_path(){
 }
 
 ##########################################################
+# Refresh script
+##########################################################
+alias refresh="curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/bootstrap/setup.sh| bash -s -- --prod"
+
+##########################################################
 # Prompt
 # Add this if we need cool break
 # "\$(br 5 no-clear reverse | sed 's/\(\x1b\[[0-9;]*m\)/\\\[\1\\\]/g')"
