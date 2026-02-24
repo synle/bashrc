@@ -9,7 +9,5 @@ async function doWork() {
 
   // write to build file
   const comments = 'This is a bash only meant for mac';
-  writeToBuildFile([
-    { file: 'only-mac-profile', data: onlyMacProfile, comments, commentStyle: 'bash' },
-  ]);
+  writeToBuildFile([{ file: 'only-mac-profile', data: onlyMacProfile, comments, commentStyle: 'bash' }]);
 }
