@@ -43,6 +43,7 @@ $os_flags
 export REPO_PATH_IDENTIFIER='$REPO_PATH_IDENTIFIER'
 export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'
 export BASH_PROFILE_CODE_REPO_RAW_URL='$BASH_PROFILE_CODE_REPO_RAW_URL'
+export BASH_SYLE_COMMON='$BASH_SYLE_COMMON'
 
 alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
 """ > "$BASH_SYLE_COMMON_PATH"
