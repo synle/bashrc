@@ -5,6 +5,9 @@ import Toastify from 'toastify-js';
 import 'toastify-js/src/toastify.css';
 import './index.scss';
 
+const BASH_PROFILE_CODE_REPO_RAW_URL = window.BASH_PROFILE_CODE_REPO_RAW_URL;
+const BASH_SYLE_COMMON = window.BASH_SYLE_COMMON;
+
 const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const isSystemWindows = navigator.platform.indexOf('Win') > -1;
 const isSystemUbuntu = !isSystemMac && !isSystemWindows;
@@ -410,7 +413,7 @@ function ScriptOutputSection({ script }) {
 
     // Build the template variables
     const templateVars = {
-      BASH_PROFILE_CODE_REPO_RAW_URL: window.BASH_PROFILE_CODE_REPO_RAW_URL,
+      BASH_PROFILE_CODE_REPO_RAW_URL: BASH_PROFILE_CODE_REPO_RAW_URL,
       SELECT_SCRIPTS: formValue.scriptsToUse.join('\n'),
       DEBUG_WRITE_TO_DIR: formValue.debugWriteToDir ? `&& export DEBUG_WRITE_TO_DIR="${formValue.debugWriteToDir}"` : '',
       SELECTED_RUNNER_MODE: formValue.runnerToUse,
@@ -426,6 +429,8 @@ function ScriptOutputSection({ script }) {
             ).trim()
           : '',
       SETUP_DEPS: formValue.setupDependencies === 'yes' ? (appData.setupDepsScript || '') + '\n' : '',
+      SETUP_HOSTS_SCRIPT: appData.setupHostsScript || '',
+      IP_ADDRESS_MAPPING_CONFIGS: appData.ipAddressMappingConfigs || '',
       ENV_VARS: `
 ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes')}
 
@@ -539,7 +544,7 @@ function DynamicTextArea(props) {
   let { path, url, height } = props;
   const [text, setText] = useState('');
 
-  url = url || `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/${path}`;
+  url = url || `${BASH_PROFILE_CODE_REPO_RAW_URL}/${path}`;
 
   useEffect(() => {
     async function _load() {
@@ -868,7 +873,7 @@ function EnhancedTextArea(props) {
   let formattedUrl = '';
 
   if (url) {
-    const shortUrl = url.replace(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/`, '').replace(/^(\.\/|\/)+/, '');
+    const shortUrl = url.replace(`${BASH_PROFILE_CODE_REPO_RAW_URL}/`, '').replace(/^(\.\/|\/)+/, '');
     label = label || shortUrl;
 
     editUrl = `https://github.com/synle/bashrc/edit/master/${shortUrl}`;
@@ -1015,9 +1020,9 @@ function TargetSystemOSWarningDom(props) {
   return null;
 }
 
-/////////////////////////////////////////////
-// This is the main DOM for MacOSX
-/////////////////////////////////////////////
+// ##################################################################
+// 🍎 MacOSX Main DOM Renderer
+// ##################################################################
 function MacOSXNotesDom() {
   return (
     <>
@@ -1039,9 +1044,9 @@ function MacOSXNotesDom() {
   );
 }
 
-/////////////////////////////////////////////
-// This is the main DOM for Linux
-/////////////////////////////////////////////
+// ##################################################################
+// 🐧 Linux Main DOM Renderer
+// ##################################################################
 function LinuxNotesDom() {
   return (
     <>
@@ -1064,9 +1069,9 @@ function LinuxNotesDom() {
   );
 }
 
-/////////////////////////////////////////////
-// This is the main DOM for Android
-/////////////////////////////////////////////
+// ##################################################################
+// 🤖 Android Main DOM Renderer
+// ##################################################################
 function AndroidNotesDom() {
   return (
     <>
@@ -1105,9 +1110,9 @@ function AndroidNotesDom() {
   );
 }
 
-/////////////////////////////////////////////
-// This is the main DOM for Windows
-/////////////////////////////////////////////
+// ##################################################################
+// 🪟 Windows Main DOM Renderer
+// ##################################################################
 function WindowsNotesDom() {
   return (
     <>
@@ -1216,8 +1221,8 @@ function CommonEditorSetupDom(props) {
       <MultipleUrlDynamicTextArea
         label='VSCode / VSCodium / SublimeText Setup'
         urls={[
-          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/scripts/sublime-text-setup`,
-          `${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/scripts/vs-code-setup`,
+          `${BASH_PROFILE_CODE_REPO_RAW_URL}/software/scripts/sublime-text-setup`,
+          `${BASH_PROFILE_CODE_REPO_RAW_URL}/software/scripts/vs-code-setup`,
         ]}
         commentString='#'
       />
@@ -1248,29 +1253,33 @@ function App() {
     async function _loadData() {
       try {
         const configsByKey = {};
-        const etcHostsScript = `
-        curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/setup-hosts.sh | sudo -E bash
 
-        # Windows
-        # c:\\Windows\\System32\\Drivers\\etc\\hosts
-
-        # Linux
-        # /etc/hosts
-
-        ${await fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/ip-address.config`)
-          .then((res) => res.text())
-          .then((s) =>
-            s
-              .trim()
-              .split('\n')
-              .map((s) => '# ' + s.trim())
-              .join('\n'),
-          )}
-
-      `
-          .split('\n')
-          .map((s) => s.trim())
-          .join('\n');
+        const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs] = await Promise.all([
+          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/setup.sh`)
+            .then((res) => res.text())
+            .then((res) => res.trim()),
+          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)
+            .then((res) => res.text())
+            .then((res) =>
+              res
+                .split('\n')
+                .map((s) => s.replace('./', '').trim())
+                .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
+                .sort(),
+            ),
+          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/package.json`)
+            .then((res) => res.json())
+            .then((pkg) => pkg.scripts['setup:hosts'] || ''),
+          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/ip-address.config`)
+            .then((res) => res.text())
+            .then((s) =>
+              s
+                .trim()
+                .split('\n')
+                .map((s) => '# ' + s.trim())
+                .join('\n'),
+            ),
+        ]);
 
         const configs = [
           {
@@ -1299,7 +1308,11 @@ function App() {
           },
           {
             text: 'Setup Etc Hosts',
-            renderBody: () => <ScriptOutputSection script={etcHostsScript} />,
+            renderBody: () => (
+              <ScriptOutputSection
+                script={`{{SETUP_HOSTS_SCRIPT}}\n\n# Windows\n# c:\\Windows\\System32\\Drivers\\etc\\hosts\n\n# Linux\n# /etc/hosts\n\n{{IP_ADDRESS_MAPPING_CONFIGS}}`}
+              />
+            ),
           },
           {
             text: 'Test Full Run live',
@@ -1347,18 +1360,10 @@ function App() {
         const newAppData = {
           configs,
           configsByKey,
-          setupDepsScript: await fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/setup.sh`)
-            .then((res) => res.text())
-            .then((res) => res.trim()),
-          scriptToRunOptions: await fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)
-            .then((res) => res.text())
-            .then((res) =>
-              res
-                .split('\n')
-                .map((s) => s.replace('./', '').trim())
-                .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
-                .sort(),
-            ),
+          setupDepsScript,
+          scriptToRunOptions,
+          setupHostsScript,
+          ipAddressMappingConfigs,
           formValue: {
             commandChoice: getStorage('commandChoice') || defaultCommandOption,
             osToRun: getStorage('osToRun') || 'windows',
