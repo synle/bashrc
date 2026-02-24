@@ -1,8 +1,8 @@
-import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { viteSingleFile } from 'vite-plugin-singlefile';
 import fs from 'fs';
 import path from 'path';
+import { defineConfig } from 'vite';
+import { viteSingleFile } from 'vite-plugin-singlefile';
 
 // Plugin to update service worker with build timestamp
 const updateServiceWorker = () => ({
@@ -30,22 +30,21 @@ const updateServiceWorker = () => ({
   },
 });
 
-const requiredEnvVars = ['REPO_PATH_IDENTIFIER', 'REPO_BRANCH_NAME', 'BASH_SYLE_COMMON'];
-for (const name of requiredEnvVars) {
-  console.log('>>> [requiredEnvVars]=', name, process.env[name]);
-  // if (!process.env[name]) {
-  //   throw new Error(`${name} environment variable is not defined. Run bootstrap/common-env.sh first.`);
-  // }
+const requiredEnvKeys = ['REPO_PATH_IDENTIFIER', 'REPO_BRANCH_NAME', 'BASH_SYLE_COMMON'];
+const requiredEnvs = {};
+for (const envKey of requiredEnvKeys) {
+  process.env[envKey] = (process.env[envKey] || '').trim();
+  if (!process.env[envKey]) {
+    throw new Error(`${envKey} environment variable is not defined. Run bootstrap/common-env.sh first.`);
+  }
+  requiredEnvs[`window.${envKey}`] = JSON.stringify(process.env[envKey]);
 }
 
 export default defineConfig({
   root: 'webapp',
   plugins: [react(), viteSingleFile(), updateServiceWorker()],
   define: {
-    // NOTE: we need the fallback for deployment
-    'window.REPO_PATH_IDENTIFIER': JSON.stringify((process.env.REPO_PATH_IDENTIFIER || 'synle/bashrc').trim()),
-    'window.REPO_BRANCH_NAME': JSON.stringify((process.env.REPO_BRANCH_NAME || 'master').trim()),
-    'window.BASH_SYLE_COMMON': JSON.stringify((process.env.BASH_SYLE_COMMON || '~/.bash_syle_common').trim()),
+    ...requiredEnvs,
   },
   build: {
     outDir: '../dist',
