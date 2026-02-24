@@ -155,11 +155,243 @@ const MainAppContext = React.createContext();
 const ThemeContext = React.createContext();
 
 // use it in a component
-function RightContainer() {
+function ScriptNameInputSection() {
   const { appData, setAppData, onInputChange } = useContext(MainAppContext);
   const formValue = appData.formValue;
 
-  const selectedScript = appData.configs.find((config) => config.idx === formValue.commandChoice);
+  const onChangeTestScript = (idx, newValue) => {
+    formValue.scriptsToUse[idx] = newValue.trim();
+    onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
+  };
+
+  const onAddTestScript = () => {
+    formValue.scriptsToUse.push('software/');
+    onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
+  };
+
+  const onClearTestScripts = () => {
+    setStorage(`scriptsToUse.${Date.now()}`, formValue.scriptsToUse.join('\n'));
+    onInputChange('scriptsToUse', [], '');
+  };
+
+  return (
+    <>
+      <div className='form-label'>Scripts To Run</div>
+      {formValue.scriptsToUse.map((scriptToUse, idx) => (
+        <div key={idx}>
+          <input
+            list='scriptToRunOptions'
+            type='text'
+            placeholder='Script To Run'
+            autofocus
+            required
+            onBlur={(e) => {
+              e.target.value = e.target.value.trim();
+              onChangeTestScript(idx, e.target.value);
+            }}
+            defaultValue={scriptToUse}
+          />
+        </div>
+      ))}
+      <div className='form-row'>
+        <button onClick={onAddTestScript} type='button'>
+          Add Script
+        </button>
+        <button onClick={onClearTestScripts} type='button'>
+          Clear All
+        </button>
+      </div>
+      <datalist id='scriptToRunOptions'>
+        {appData.scriptToRunOptions.map((option, index) => (
+          <option key={index}>{option}</option>
+        ))}
+      </datalist>
+
+      <div className='form-label'>Runner</div>
+      <div className='form-row'>
+        <input
+          type='radio'
+          name='runnerToUse'
+          id='runnerToUse-live'
+          value='prod'
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.value);
+          }}
+          checked={formValue.runnerToUse === 'prod'}
+        />
+        <label htmlFor='runnerToUse-live'>Live Script</label>
+        <input
+          type='radio'
+          name='runnerToUse'
+          id='runnerToUse-local'
+          value='local'
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.value);
+          }}
+          checked={formValue.runnerToUse !== 'prod'}
+        />
+        <label htmlFor='runnerToUse-local'>Local Script</label>
+      </div>
+      <div className='form-label'>Debug Write To File</div>
+      <div>
+        <input
+          id='debugWriteToDir'
+          name='debugWriteToDir'
+          list='writeToFilePathOptions'
+          type='text'
+          onBlur={(e) => onInputChange(e.target.name, e.target.value.trim())}
+          placeholder='Debug Write To File Path'
+          defaultValue={formValue.debugWriteToDir}
+        />
+        <datalist id='writeToFilePathOptions'>
+          <option>$(pwd)</option>
+          <option>./</option>
+          <option>~</option>
+        </datalist>
+      </div>
+    </>
+  );
+}
+
+function OsSelectionInputSection() {
+  const { onInputChange } = useContext(MainAppContext);
+  const formValue = useContext(MainAppContext).appData.formValue;
+
+  return (
+    <>
+      <div className='form-label'>OS Type</div>
+      <div>
+        <select
+          id='osToRun'
+          name='osToRun'
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.value);
+          }}
+          defaultValue={formValue.osToRun}>
+          <option value='windows'>Windows with WSL</option>
+          <option value='ming_64'>Windows with Ming_64</option>
+          <option value='mac'>Mac OSX</option>
+          <option value='chrome_os'>Chrome OS with Linux</option>
+          <option value='ubuntu'>Ubuntu</option>
+          <option value='arch_linux_steamdeck'>Arch Linux (Steam Deck)</option>
+          <option value='android_termux'>Android Termux</option>
+        </select>
+      </div>
+      <TargetSystemOSWarningDom targetDomString={formValue.osToRun} />
+    </>
+  );
+}
+
+function SetupDependenciesSection() {
+  const { onInputChange } = useContext(MainAppContext);
+  const formValue = useContext(MainAppContext).appData.formValue;
+
+  return (
+    <>
+      <div className='form-label'>Setup Dependencies</div>
+      <div className='form-row'>
+        <input
+          type='radio'
+          name='setupDependencies'
+          id='setupDependencies-yes'
+          value='yes'
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.value);
+          }}
+          checked={formValue.setupDependencies === 'yes'}
+        />
+        <label htmlFor='setupDependencies-yes'>Yes</label>
+        <input
+          type='radio'
+          name='setupDependencies'
+          id='setupDependencies-no'
+          value='no'
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.value);
+          }}
+          checked={formValue.setupDependencies !== 'yes'}
+        />
+        <label htmlFor='setupDependencies-no'>No</label>
+      </div>
+    </>
+  );
+}
+
+function BootstrapSection() {
+  const { onInputChange } = useContext(MainAppContext);
+  const formValue = useContext(MainAppContext).appData.formValue;
+
+  return (
+    <>
+      <div className='form-label'>Add Bootstrap Script</div>
+      <div className='form-row'>
+        <input
+          type='radio'
+          name='addBootstrapScript'
+          id='addBootstrapScript-yes'
+          value='yes'
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.value);
+          }}
+          checked={formValue.addBootstrapScript === 'yes'}
+        />
+        <label htmlFor='addBootstrapScript-yes'>Yes</label>
+        <input
+          type='radio'
+          name='addBootstrapScript'
+          id='addBootstrapScript-no'
+          value='no'
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.value);
+          }}
+          checked={formValue.addBootstrapScript !== 'yes'}
+        />
+        <label htmlFor='addBootstrapScript-no'>No</label>
+      </div>
+    </>
+  );
+}
+
+function EnvInputSection() {
+  const { onInputChange } = useContext(MainAppContext);
+  const formValue = useContext(MainAppContext).appData.formValue;
+
+  let consolidatedEnvInputValue = formValue.envInputValue;
+  if (formValue.shouldAddDefaultEnvs === 'yes') {
+    consolidatedEnvInputValue = getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes', '\n');
+  }
+
+  return (
+    <>
+      <EnhancedTextArea
+        id='envInputValue'
+        name='envInputValue'
+        placeholder='Env Var Input'
+        onBlur={(e) => {
+          onInputChange(e.target.name, e.target.value.trim());
+        }}
+        defaultValue={consolidatedEnvInputValue}
+      />
+      <div className='form-label'>Add Default Env</div>
+      <div>
+        <input
+          type='checkbox'
+          id='shouldAddDefaultEnvs'
+          name='shouldAddDefaultEnvs'
+          checked={formValue.shouldAddDefaultEnvs === 'yes'}
+          onChange={(e) => {
+            onInputChange(e.target.name, e.target.checked ? 'yes' : 'no');
+            location.reload(); // TODO: improve this - used to trigger the updates of env variable
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
+function ScriptOutputSection({ script }) {
+  const { appData } = useContext(MainAppContext);
+  const formValue = appData.formValue;
 
   const formValueOutput = useMemo(() => {
     const osFlag = formValue.osToRun;
@@ -204,236 +436,23 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
     };
 
     // Mustache-style template rendering: replaces all {{KEY}} with corresponding values
-    const rendered = selectedScript.script.replace(/\{\{(\w+)\}\}/g, (_, key) => templateVars[key] || '');
+    const rendered = script.replace(/\{\{(\w+)\}\}/g, (_, key) => templateVars[key] || '');
 
     return rendered
       .split('\\')
       .filter((s) => s.trim())
       .join('\\')
       .trim();
-  }, [formValue]);
+  }, [formValue, script]);
 
-  let consolidatedEnvInputValue = formValue.envInputValue;
-  if (formValue.shouldAddDefaultEnvs === 'yes') {
-    consolidatedEnvInputValue = getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes', '\n');
-  }
+  return <EnhancedTextArea id='formValueOutput' placeholder='Output' readOnly value={formValueOutput} />;
+}
 
-  const onChangeTestScript = (idx, newValue) => {
-    formValue.scriptsToUse[idx] = newValue.trim();
-    onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
-  };
+function RightContainer() {
+  const { appData } = useContext(MainAppContext);
+  const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
 
-  const onAddTestScript = () => {
-    formValue.scriptsToUse.push('software/');
-    onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
-  };
-
-  const onClearTestScripts = () => {
-    setStorage(`scriptsToUse.${Date.now()}`, formValue.scriptsToUse.join('\n'));
-    onInputChange('scriptsToUse', [], '');
-  };
-
-  return (
-    <div id='rightContainer'>
-      {selectedScript.shouldShowScriptNameInput === true && (
-        <>
-          <div className='form-label'>Scripts To Run</div>
-          {formValue.scriptsToUse.map((scriptToUse, idx) => (
-            <div key={idx}>
-              <input
-                list='scriptToRunOptions'
-                type='text'
-                placeholder='Script To Run'
-                autofocus
-                required
-                onBlur={(e) => {
-                  e.target.value = e.target.value.trim();
-                  onChangeTestScript(idx, e.target.value);
-                }}
-                defaultValue={scriptToUse}
-              />
-            </div>
-          ))}
-          <div className='form-row'>
-            <button onClick={onAddTestScript} type='button'>
-              Add Script
-            </button>
-            <button onClick={onClearTestScripts} type='button'>
-              Clear All
-            </button>
-          </div>
-          <datalist id='scriptToRunOptions'>
-            {appData.scriptToRunOptions.map((option, index) => (
-              <option key={index}>{option}</option>
-            ))}
-          </datalist>
-
-          <div className='form-label'>Runner</div>
-          <div className='form-row'>
-            <input
-              type='radio'
-              name='runnerToUse'
-              id='runnerToUse-live'
-              value='prod'
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.value);
-              }}
-              checked={formValue.runnerToUse === 'prod'}
-            />
-            <label htmlFor='runnerToUse-live'>Live Script</label>
-            <input
-              type='radio'
-              name='runnerToUse'
-              id='runnerToUse-local'
-              value='local'
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.value);
-              }}
-              checked={formValue.runnerToUse !== 'prod'}
-            />
-            <label htmlFor='runnerToUse-local'>Local Script</label>
-          </div>
-          <div className='form-label'>Debug Write To File</div>
-          <div>
-            <input
-              id='debugWriteToDir'
-              name='debugWriteToDir'
-              list='writeToFilePathOptions'
-              type='text'
-              onBlur={(e) => onInputChange(e.target.name, e.target.value.trim())}
-              placeholder='Debug Write To File Path'
-              defaultValue={formValue.debugWriteToDir}
-            />
-            <datalist id='writeToFilePathOptions'>
-              <option>$(pwd)</option>
-              <option>./</option>
-              <option>~</option>
-            </datalist>
-          </div>
-        </>
-      )}
-
-      {selectedScript.shouldShowOsSelectionInput === true && (
-        <>
-          <div className='form-label'>OS Type</div>
-          <div>
-            <select
-              id='osToRun'
-              name='osToRun'
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.value);
-              }}
-              defaultValue={formValue.osToRun}>
-              <option value='windows'>Windows with WSL</option>
-              <option value='ming_64'>Windows with Ming_64</option>
-              <option value='mac'>Mac OSX</option>
-              <option value='chrome_os'>Chrome OS with Linux</option>
-              <option value='ubuntu'>Ubuntu</option>
-              <option value='arch_linux_steamdeck'>Arch Linux (Steam Deck)</option>
-              <option value='android_termux'>Android Termux</option>
-            </select>
-          </div>
-          <TargetSystemOSWarningDom targetDomString={formValue.osToRun} />
-        </>
-      )}
-
-      {selectedScript.shouldShowSetupDependencies === true && (
-        <>
-          <div className='form-label'>Setup Dependencies</div>
-          <div className='form-row'>
-            <input
-              type='radio'
-              name='setupDependencies'
-              id='setupDependencies-yes'
-              value='yes'
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.value);
-              }}
-              checked={formValue.setupDependencies === 'yes'}
-            />
-            <label htmlFor='setupDependencies-yes'>Yes</label>
-            <input
-              type='radio'
-              name='setupDependencies'
-              id='setupDependencies-no'
-              value='no'
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.value);
-              }}
-              checked={formValue.setupDependencies !== 'yes'}
-            />
-            <label htmlFor='setupDependencies-no'>No</label>
-          </div>
-        </>
-      )}
-
-      {selectedScript.shouldHideBootstrap !== true && (
-        <>
-          <div className='form-label'>Add Bootstrap Script</div>
-          <div className='form-row'>
-            <input
-              type='radio'
-              name='addBootstrapScript'
-              id='addBootstrapScript-yes'
-              value='yes'
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.value);
-              }}
-              checked={formValue.addBootstrapScript === 'yes'}
-            />
-            <label htmlFor='addBootstrapScript-yes'>Yes</label>
-            <input
-              type='radio'
-              name='addBootstrapScript'
-              id='addBootstrapScript-no'
-              value='no'
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.value);
-              }}
-              checked={formValue.addBootstrapScript !== 'yes'}
-            />
-            <label htmlFor='addBootstrapScript-no'>No</label>
-          </div>
-        </>
-      )}
-
-      {selectedScript.shouldShowEnvInput === true && (
-        <>
-          <EnhancedTextArea
-            id='envInputValue'
-            name='envInputValue'
-            placeholder='Env Var Input'
-            onBlur={(e) => {
-              onInputChange(e.target.name, e.target.value.trim());
-            }}
-            defaultValue={consolidatedEnvInputValue}
-          />
-          <div className='form-label'>Add Default Env</div>
-          <div>
-            <input
-              type='checkbox'
-              id='shouldAddDefaultEnvs'
-              name='shouldAddDefaultEnvs'
-              checked={formValue.shouldAddDefaultEnvs === 'yes'}
-              onChange={(e) => {
-                onInputChange(e.target.name, e.target.checked ? 'yes' : 'no');
-                location.reload(); // TODO: improve this - used to trigger the updates of env variable
-              }}
-            />
-          </div>
-        </>
-      )}
-
-      {selectedScript.shouldHideOutput !== true && (
-        <EnhancedTextArea id='formValueOutput' placeholder='Output' readOnly value={formValueOutput} />
-      )}
-
-      {selectedScript.shouldShowAndroidNotes === true && <AndroidNotesDom />}
-      {selectedScript.shouldShowWindowsNotes === true && <WindowsNotesDom />}
-      {selectedScript.shouldShowMacOSXNotes === true && <MacOSXNotesDom />}
-      {selectedScript.shouldShowLinuxNotes === true && <LinuxNotesDom />}
-    </div>
-  );
+  return <div id='rightContainer'>{selectedConfig.renderBody()}</div>;
 }
 
 function LeftContainer() {
@@ -1229,42 +1248,7 @@ function App() {
     async function _loadData() {
       try {
         const configsByKey = {};
-        const configs = [
-          {
-            text: 'Setup Windows',
-            shouldShowWindowsNotes: true,
-            shouldHideOutput: true,
-            shouldHideBootstrap: true,
-          },
-          {
-            text: 'Setup Mac OSX',
-            shouldShowMacOSXNotes: true,
-            shouldHideOutput: true,
-            shouldHideBootstrap: true,
-          },
-          {
-            text: 'Setup Linux',
-            shouldShowLinuxNotes: true,
-            shouldHideOutput: true,
-            shouldHideBootstrap: true,
-          },
-          {
-            text: 'Setup Android with Termux',
-            shouldShowAndroidNotes: true,
-            shouldHideBootstrap: true,
-            shouldHideOutput: true,
-          },
-          {
-            text: 'Setup Lightweight Profile',
-            shouldHideBootstrap: true,
-            script: `
-        curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
-      `,
-          },
-          {
-            text: 'Setup Etc Hosts',
-            shouldHideBootstrap: true,
-            script: `
+        const etcHostsScript = `
         curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/setup-hosts.sh | sudo -E bash
 
         # Windows
@@ -1284,47 +1268,76 @@ function App() {
           )}
 
       `
-              .split('\n')
-              .map((s) => s.trim())
-              .join('\n'),
+          .split('\n')
+          .map((s) => s.trim())
+          .join('\n');
+
+        const configs = [
+          {
+            text: 'Setup Windows',
+            renderBody: () => <WindowsNotesDom />,
+          },
+          {
+            text: 'Setup Mac OSX',
+            renderBody: () => <MacOSXNotesDom />,
+          },
+          {
+            text: 'Setup Linux',
+            renderBody: () => <LinuxNotesDom />,
+          },
+          {
+            text: 'Setup Android with Termux',
+            renderBody: () => <AndroidNotesDom />,
+          },
+          {
+            text: 'Setup Lightweight Profile',
+            renderBody: () => (
+              <ScriptOutputSection
+                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"`}
+              />
+            ),
+          },
+          {
+            text: 'Setup Etc Hosts',
+            renderBody: () => <ScriptOutputSection script={etcHostsScript} />,
           },
           {
             text: 'Test Full Run live',
-            script: `
-        {{OS_FLAGS}} curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash
-      `,
-            shouldShowOsSelectionInput: true,
+            renderBody: () => (
+              <>
+                <OsSelectionInputSection />
+                <BootstrapSection />
+                <ScriptOutputSection script={`{{OS_FLAGS}} curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash`} />
+              </>
+            ),
           },
           {
             text: 'Test Single Script',
-            script: `{{OS_FLAGS}} {{DEBUG_WRITE_TO_DIR}} \\
-        curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --files="""
-        {{SELECT_SCRIPTS}}
-        """
-      `,
-            shouldShowScriptNameInput: true,
-            shouldShowOsSelectionInput: true,
+            renderBody: () => (
+              <>
+                <ScriptNameInputSection />
+                <OsSelectionInputSection />
+                <BootstrapSection />
+                <ScriptOutputSection
+                  script={`{{OS_FLAGS}} {{DEBUG_WRITE_TO_DIR}} \\\ncurl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --files="""\n{{SELECT_SCRIPTS}}\n"""`}
+                />
+              </>
+            ),
           },
-
           {
             text: 'Environment Vars',
-            script: `
-        {{ENV_VARS}}
-      `,
-            shouldShowOsSelectionInput: true,
-            shouldHideBootstrap: true,
-            shouldShowEnvInput: true,
+            renderBody: () => (
+              <>
+                <OsSelectionInputSection />
+                <EnvInputSection />
+                <ScriptOutputSection script={`{{ENV_VARS}}`} />
+              </>
+            ),
           },
-        ].map((config) => {
-          config.script = (config.script || '')
-            .split('\n')
-            .map((s) => s.trim())
-            .join('\n');
-          return {
-            idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
-            ...config,
-          };
-        });
+        ].map((config) => ({
+          idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, '-')}`,
+          ...config,
+        }));
 
         for (const config of configs) {
           configsByKey[config.idx] = config;
