@@ -1131,6 +1131,13 @@ async function getAllRepoSoftwareFiles() {
 async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles = false, useFallback = false } = {}) {
   let files;
 
+  /**
+   * Deduplicates and filters raw file list to valid software script paths,
+   * normalizing prefixes and excluding JSON and index.js files. Optionally
+   * filters by OS-specific markers when skipOsFiltering is false.
+   * @param {string[]} files - Raw list of file paths to filter
+   * @returns {string[]} Deduplicated, filtered, and normalized script file paths
+   */
   function _cleanupSoftwareFilters(files) {
     return [
       ...new Set(
@@ -1469,7 +1476,9 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
   }
 }
 
+/** @type {(str: string) => string} Generates a bash echo command with green (success) coloring */
 global.echoColorSuccess = (str) => echoColor(str, '32m');
+/** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
 global.echoColorError = (str) => echoColor(str, '31m');
 
 //////////////////////////////////////////////////////
@@ -1487,6 +1496,12 @@ global.echoColorError = (str) => echoColor(str, '31m');
 function processScriptFile(file, originalFile, allRepoFiles) {
   const url = getFullUrl(`${file}?${Date.now()}`);
 
+  /**
+   * Builds the full fetch script command, prepending the bootstrap start script for .js files.
+   * @param {string} file - The script file path
+   * @param {string} url - The full URL to fetch the script from
+   * @returns {string} The composed fetch command string
+   */
   function _generateScript(file, url) {
     if (file.includes('.js')) {
       return `${_generateStartScript()} && ${_generateRawScript(file, url)}`;
@@ -1494,6 +1509,13 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     return `${_generateRawScript(file, url)}`;
   }
 
+  /**
+   * Generates a curl or cat command to fetch a script file's content.
+   * Uses cat in test mode, curl otherwise.
+   * @param {string} file - The script file path
+   * @param {string} url - The full URL to fetch the script from
+   * @returns {string} A curl or cat command string
+   */
   function _generateRawScript(file, url) {
     if (isTestScriptMode) {
       return `cat ${file}`;
@@ -1502,6 +1524,10 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     return `curl -s ${url}`;
   }
 
+  /**
+   * Generates the fetch command for the bootstrap index.js file.
+   * @returns {string} A fetch command string for the software/index.js bootstrap script
+   */
   function _generateStartScript() {
     const startScriptFilePath = 'software/index.js';
     const startScriptUrl = getFullUrl(`${startScriptFilePath}?${Date.now()}`);
@@ -1509,6 +1535,13 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     return _generateRawScript(startScriptFilePath, startScriptUrl);
   }
 
+  /**
+   * Determines the pipe target (node, bash, sudo) based on the file's extension pattern.
+   * For example, .su.js pipes to sudo node, .sh.js pipes node output to bash.
+   * @param {string} file - The script file path
+   * @param {string} url - The full URL of the script
+   * @returns {string} The pipe command (e.g., 'node', 'bash', 'sudo -E node', 'node | bash')
+   */
   function _generatePipeOutput(file, url) {
     if (file.includes('.su.sh.js')) {
       if (DEBUG_WRITE_TO_DIR) {
@@ -1750,6 +1783,12 @@ async function _doWorkFullRun() {
 //////////////////////////////////////////////////////
 // Bootstrap / Main Entry Point
 //////////////////////////////////////////////////////
+/**
+ * Main bootstrap entry point. Validates required environment variables,
+ * fetches host configuration, creates necessary directories, sets up
+ * global error handlers, and dispatches to the appropriate work mode
+ * (test files or full run).
+ */
 (async function () {
   const missingEnvVars = [
     ['BASH_PROFILE_CODE_REPO_RAW_URL', globalThis.BASH_PROFILE_CODE_REPO_RAW_URL],
