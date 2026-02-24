@@ -281,7 +281,10 @@ a[role='button'] {
   gap: var(--spaceSize3);
 
   @include tablet {
-    grid-template-columns: repeat(5, minmax(200px, 1fr));
+    // Clamps the grid between 1 and 5 columns
+    // grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    // Optional: To strictly force a 5-column max limit even on huge screens
+    grid-template-columns: repeat(auto-fit, minmax(min(20%, 200px), 1fr));
     gap: var(--gridGapWidth);
   }
 
