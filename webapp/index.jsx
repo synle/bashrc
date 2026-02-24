@@ -757,7 +757,7 @@ function FullScreenTextViewer(props) {
 
   return (
     <>
-      <ActionButton onClick={() => setIsOpen(true)}>View Fullscreen</ActionButton>
+      <ActionButton onClick={() => setIsOpen(true)}>Fullscreen</ActionButton>
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={label}>
         <Editor
           height='100%'
