@@ -212,12 +212,7 @@ function RightContainer() {
           '<SETUP_DEPS>',
           formValue.setupDependencies !== 'yes'
             ? ''
-            : `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-mac.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-ubuntu.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-windows.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-chrome-os-linux.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-android-termux.sh)" && \\\n` +
-                `. /dev/stdin <<< "$(curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/dependencies-arch-linux-steam-deck.sh)" && \\\n`,
+            : (appData.setupDepsScript || '') + '\n',
         )
         .replace(
           '<ENV_VARS>',
@@ -1356,6 +1351,9 @@ function App() {
         const newAppData = {
           configs,
           configsByKey,
+          setupDepsScript: await fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/setup.sh`)
+            .then((res) => res.text())
+            .then((res) => res.trim()),
           scriptToRunOptions: await fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)
             .then((res) => res.text())
             .then((res) =>
