@@ -1,16 +1,13 @@
-# NOTE: this is used by normal script, thus we have a fallback here
-export BASH_PROFILE_CODE_REPO_RAW_URL="${BASH_PROFILE_CODE_REPO_RAW_URL:-https://raw.githubusercontent.com/synle/bashrc/master}"
-
 ##################################################
 # for Linux using bash
 ##################################################
-REMOTE_BASE="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+REMOTE_BASE="https://raw.githubusercontent.com/synle/bashrc/master/.build"
 CONFIG_FILE="vs-code-config"
 
 targets=(
-  "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User|vs-code-keys-linux"
-  "$HOME/.config/VSCodium/User|vs-code-keys-linux"
-  "$HOME/.config/Code/User|vs-code-keys-linux"
+  "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User|vs-code-keys-windows"
+  "$HOME/.config/VSCodium/User|vs-code-keys-windows"
+  "$HOME/.config/Code/User|vs-code-keys-windows"
   "$HOME/Library/Application Support/Code/User|vs-code-keys-macosx"
   "$HOME/Library/Application Support/VSCodium/User|vs-code-keys-macosx"
 )
@@ -39,7 +36,7 @@ done
 ##################################################
 # for Windows using powershell
 ##################################################
-$baseUrl     = "$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+$baseUrl     = "https://raw.githubusercontent.com/synle/bashrc/master/.build"
 $configFile  = "vs-code-config"
 $keybindings = "vs-code-keys-windows"
 

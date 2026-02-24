@@ -1,10 +1,10 @@
-# NOTE: this is used by normal script, thus we have a fallback here
-export BASH_PROFILE_CODE_REPO_RAW_URL="${BASH_PROFILE_CODE_REPO_RAW_URL:-https://raw.githubusercontent.com/synle/bashrc/master}"
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-24 04PM]
+
 
 ##################################################
 # for Linux using bash
 ##################################################
-REPO_BUILD="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+REPO_BUILD="https://raw.githubusercontent.com/synle/bashrc/master/.build"
 
 # Resolve potential paths with wildcards
 W_PATH=$(ls -d {/mnt/c,/c}/Users/*/AppData/Roaming/Sublime*Text*/Packages/User 2>/dev/null | head -n 1)
@@ -41,7 +41,7 @@ fi
 # for Windows using powershell
 ##################################################
 # for windows with powershell, last effort (final fallback)
-$RepoBuild = "$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+$RepoBuild = "https://raw.githubusercontent.com/synle/bashrc/master/.build"
 $W_Path = "$env:AppData/Sublime Text/Packages/User"
 if (Test-Path $W_Path) {
     Write-Host "Installing for Windows with PowerShell..."
