@@ -156,6 +156,7 @@ function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
 // create contexts
 const MainAppContext = React.createContext();
 const ThemeContext = React.createContext();
+const EditorCollapseContext = React.createContext({collapseAll: false});
 
 // use it in a component
 function ScriptNameInputSection() {
@@ -864,6 +865,12 @@ function EnhancedTextArea(props) {
   const content = restProps.value || restProps.defaultValue || '';
   const { theme } = useContext(ThemeContext);
   const editorTheme = theme === 'dark' ? 'vs-dark' : 'light';
+  const { collapseAll } = useContext(EditorCollapseContext);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    setCollapsed(collapseAll);
+  }, [collapseAll]);
 
   // Detect language: first try from URL, then from content
   const languageFromUrl = detectLanguageFromUrl(url);
@@ -887,31 +894,34 @@ function EnhancedTextArea(props) {
   const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
 
   return (
-    <>
+    <div className={collapsed ? 'editor-section editor-collapsed' : 'editor-section'}>
       <div className='editor-header'>
         {formattedUrl ? <LinkText href={formattedUrl}>{label}</LinkText> : <span className='text-info'>{label}</span>}
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
         <FullScreenTextViewer value={content} label={label} />
+        <ActionButton onClick={() => setCollapsed(!collapsed)}>{collapsed ? 'Expand' : 'Collapse'}</ActionButton>
       </div>
-      <Editor
-        height={computedHeight}
-        language={language}
-        value={content}
-        theme={editorTheme}
-        options={{
-          readOnly: restProps.readOnly || false,
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          scrollbar: { vertical: 'hidden', horizontal: 'hidden', handleMouseWheel: false },
-          fontSize: 13,
-          lineNumbers: 'on',
-          wordWrap: 'on',
-          automaticLayout: true,
-        }}
-      />
-    </>
+      {!collapsed && (
+        <Editor
+          height={computedHeight}
+          language={language}
+          value={content}
+          theme={editorTheme}
+          options={{
+            readOnly: restProps.readOnly || false,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            scrollbar: { vertical: 'hidden', horizontal: 'hidden', handleMouseWheel: false },
+            fontSize: 13,
+            lineNumbers: 'on',
+            wordWrap: 'on',
+            automaticLayout: true,
+          }}
+        />
+      )}
+    </div>
   );
 }
 
@@ -1027,14 +1037,14 @@ function MacOSXNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString='mac' />
-      <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
-      <DynamicTextArea path='/mac/README.md' height='30vh' />
+      <DynamicTextArea path='/bootstrap/setup.sh' />
+      <DynamicTextArea path='/mac/README.md' />
       <DynamicTextArea path='/.build/font.md' />
       <DynamicTextArea path='/.build/gitconfig' />
       <DynamicTextArea path='/.build/ssh-config' />
       <DynamicTextArea path='/.build/inputrc' />
       <DynamicTextArea path='/.build/vimrc' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
+      <DynamicTextArea path='/android/sponsorblock.json' />
       <CommonEditorSetupDom is_os_darwin_mac={true} />
 
       {/* Mac */}
@@ -1051,16 +1061,16 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
-      <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
-      <DynamicTextArea path='/linux/linux-mint-config.sh' height='30vh' />
-      <DynamicTextArea path='/linux/README.md' height='30vh' />
+      <DynamicTextArea path='/bootstrap/setup.sh' />
+      <DynamicTextArea path='/linux/linux-mint-config.sh' />
+      <DynamicTextArea path='/linux/README.md' />
       <DynamicTextArea path='/.build/font.md' />
       <DynamicTextArea path='/.build/gitconfig' />
       <DynamicTextArea path='/.build/gitignore_global' />
       <DynamicTextArea path='/.build/ssh-config' />
       <DynamicTextArea path='/.build/inputrc' />
       <DynamicTextArea path='/.build/vimrc' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
+      <DynamicTextArea path='/android/sponsorblock.json' />
       <CommonEditorSetupDom />
       {/* Linux */}
       <div className='form-label'>Other Applications</div>
@@ -1077,10 +1087,10 @@ function AndroidNotesDom() {
     <>
       <TargetSystemOSWarningDom is_os_android_termux={true} />
 
-      <DynamicTextArea path='/android/android.sh' height='30vh' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
-      <DynamicTextArea path='/android/rvx-yt.txt' height='30vh' />
-      <DynamicTextArea path='/android/rvx-yt-music.txt' height='30vh' />
+      <DynamicTextArea path='/android/android.sh' />
+      <DynamicTextArea path='/android/sponsorblock.json' />
+      <DynamicTextArea path='/android/rvx-yt.txt' />
+      <DynamicTextArea path='/android/rvx-yt-music.txt' />
 
       {/* Android */}
       <div className='form-label'>Android Applications</div>
@@ -1117,13 +1127,13 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
-      <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
-      <DynamicTextArea path='/windows/README.md' height='30vh' />
-      <DynamicTextArea path='/bootstrap/dependencies-windows.ps1' height='30vh' />
+      <DynamicTextArea path='/bootstrap/setup.sh' />
+      <DynamicTextArea path='/windows/README.md' />
+      <DynamicTextArea path='/bootstrap/dependencies-windows.ps1' />
       <DynamicTextArea path='/.build/font.md' />
       <DynamicTextArea path='/.build/windows-powershell-profile.ps1' />
       <DynamicTextArea path='/.build/windows-terminal' />
-      <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
+      <DynamicTextArea path='/android/sponsorblock.json' />
       <CommonEditorSetupDom is_os_window={true} />
 
       {/* other links */}
@@ -1226,7 +1236,7 @@ function CommonEditorSetupDom(props) {
         ]}
         commentString='#'
       />
-      <DynamicTextArea path='/.build/sublime-text-ext' height='75px' />
+      <DynamicTextArea path='/.build/sublime-text-ext' />
       {domVSCodeExtension}
     </>
   );

@@ -239,6 +239,30 @@ a[role='button'] {
   }
 }
 
+.editor-collapse-controls {
+  display: flex;
+  gap: var(--spaceSize2);
+  margin-bottom: var(--spaceSize2);
+}
+
+.editor-section {
+  border: var(--borderSize1) solid var(--colorBorderSecondary);
+  border-radius: var(--borderRadius2);
+  padding: var(--spaceSize2);
+  margin-bottom: var(--spaceSize2);
+  background: var(--colorBgMain);
+
+  .editor-header {
+    margin-top: 0;
+  }
+}
+
+.editor-collapsed {
+  .editor-header {
+    margin-bottom: 0;
+  }
+}
+
 // ============================================================================
 // Link Groups
 // ============================================================================
