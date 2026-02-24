@@ -156,7 +156,7 @@ function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
 // create contexts
 const MainAppContext = React.createContext();
 const ThemeContext = React.createContext();
-const EditorCollapseContext = React.createContext({ collapseAll: false });
+const EditorCollapseContext = React.createContext({ collapseAll: false, tick: 0 });
 
 // use it in a component
 function ScriptNameInputSection() {
@@ -454,32 +454,41 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
   return <EnhancedTextArea id='formValueOutput' placeholder='Output' readOnly value={formValueOutput} />;
 }
 
-function RightContainer() {
+function MainBodyContainer() {
   const { appData } = useContext(MainAppContext);
   const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
+  const [collapseSignal, setCollapseSignal] = useState({ collapseAll: false, tick: 0 });
 
-  return <div id='rightContainer'>{selectedConfig.renderBody()}</div>;
+  return (
+    <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
+      <div id='mainBodyContainer'>
+        <div className='editor-collapse-controls'>
+          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>Collapse All</ActionButton>
+          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: false, tick: prev.tick + 1 }))}>Expand All</ActionButton>
+        </div>
+        {selectedConfig.renderBody()}
+      </div>
+    </EditorCollapseContext.Provider>
+  );
 }
 
-function LeftContainer() {
+function TopNavigationContainer() {
   const { appData, onInputChange } = useContext(MainAppContext);
   const formValue = appData.formValue;
 
   return (
-    <div id='leftContainer'>
-      <div className='form-label'>Type of Script</div>
-      <select
-        name='commandChoice'
-        value={formValue.commandChoice}
-        onChange={(e) => {
-          onInputChange(e.target.name, e.target.value);
-        }}>
+    <div id='topNavigationContainer'>
+      <div className='nav-radio-group'>
         {appData.configs.map((config) => (
-          <option key={config.idx} value={config.idx}>
+          <a
+            key={config.idx}
+            role='button'
+            className={formValue.commandChoice === config.idx ? 'selected' : ''}
+            onClick={() => onInputChange('commandChoice', config.idx)}>
             {config.text}
-          </option>
+          </a>
         ))}
-      </select>
+      </div>
     </div>
   );
 }
@@ -865,12 +874,12 @@ function EnhancedTextArea(props) {
   const content = restProps.value || restProps.defaultValue || '';
   const { theme } = useContext(ThemeContext);
   const editorTheme = theme === 'dark' ? 'vs-dark' : 'light';
-  const { collapseAll } = useContext(EditorCollapseContext);
+  const { collapseAll, tick } = useContext(EditorCollapseContext);
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     setCollapsed(collapseAll);
-  }, [collapseAll]);
+  }, [collapseAll, tick]);
 
   // Detect language: first try from URL, then from content
   const languageFromUrl = detectLanguageFromUrl(url);
@@ -1428,20 +1437,20 @@ function App() {
           setAppData: onSetAppData,
           onInputChange,
         }}>
-        <div className='app-header'>
-          <LinkText href='https://github.com/synle/bashrc'>
-            <h1 style={{ textTransform: 'uppercase' }} target='_blank'>
-              {window.document.title}
-            </h1>
-          </LinkText>
-          <Settings />
-        </div>
-        <div className='app-clone-command'>
-          <code>git clone git@github.com:synle/bashrc.git</code>
-        </div>
         <div id='container'>
-          <LeftContainer />
-          <RightContainer />
+          <div className='app-header'>
+            <LinkText href='https://github.com/synle/bashrc'>
+              <h1 style={{ textTransform: 'uppercase' }} target='_blank'>
+                {window.document.title}
+              </h1>
+            </LinkText>
+            <Settings />
+          </div>
+          <div className='app-clone-command'>
+            <code>git clone git@github.com:synle/bashrc.git</code>
+          </div>
+          <TopNavigationContainer />
+          <MainBodyContainer />
           <BottomContainer />
         </div>
       </MainAppContext.Provider>

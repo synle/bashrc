@@ -144,27 +144,41 @@ a[role='button'] {
   flex-direction: column;
   gap: var(--spaceSize4);
   margin-top: var(--spaceSize4);
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
-#leftContainer,
-#rightContainer,
+#topNavigationContainer,
+#mainBodyContainer,
 #bottomContainer {
   width: 100%;
   max-width: 100%;
 }
 
-#leftContainer {
+#topNavigationContainer {
   display: flex;
   flex-direction: column;
   gap: var(--spaceSize3);
 }
 
-#rightContainer {
+.nav-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spaceSize2);
+
+  a[role='button'] {
+    &.selected {
+      background: var(--colorTextLink);
+      color: var(--colorBgMain);
+      border-color: transparent;
+    }
+  }
+}
+
+#mainBodyContainer {
   display: flex;
   flex-direction: column;
   gap: var(--spaceSize4);
-  overflow-x: hidden;
+  overflow-x: clip;
 
   > * {
     width: 100%;
@@ -214,6 +228,11 @@ a[role='button'] {
   overflow-wrap: break-word;
   font-size: var(--fontSize3);
   text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--colorBgMain);
+  padding: var(--spaceSize2) 0;
 
   > span:first-child {
     flex-shrink: 0;
