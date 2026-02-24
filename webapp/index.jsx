@@ -872,6 +872,12 @@ function EnhancedTextArea(props) {
     formattedUrl = `https://github.com/synle/bashrc/blob/master/${shortUrl}`;
   }
 
+  // Calculate height based on content line count so the editor stretches to fit
+  const lineHeight = 20;
+  const padding = 20;
+  const lineCount = content.split('\n').length;
+  const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
+
   return (
     <>
       <div className='editor-header'>
@@ -882,7 +888,7 @@ function EnhancedTextArea(props) {
         <FullScreenTextViewer value={content} label={label} />
       </div>
       <Editor
-        height={height || '300px'}
+        height={computedHeight}
         language={language}
         value={content}
         theme={editorTheme}
@@ -890,6 +896,7 @@ function EnhancedTextArea(props) {
           readOnly: restProps.readOnly || false,
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
+          scrollbar: { vertical: 'hidden', horizontal: 'hidden', handleMouseWheel: false },
           fontSize: 13,
           lineNumbers: 'on',
           wordWrap: 'on',
