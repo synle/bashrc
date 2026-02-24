@@ -1,4 +1,6 @@
-### Network
+# VirtualBox Notes
+
+## Network
 
 NAT - with these forwarded ports
 
@@ -33,10 +35,10 @@ NAT - with these forwarded ports
 </Network>
 ```
 
-### VBOX Guest Addition for Server
+## Guest Additions (Server)
 
-- https://linuxize.com/post/how-to-install-virtualbox-guest-additions-on-debian-10/
-- https://kifarunix.com/install-virtualbox-guest-additions-on-debian-11/
+- <https://linuxize.com/post/how-to-install-virtualbox-guest-additions-on-debian-10/>
+- <https://kifarunix.com/install-virtualbox-guest-additions-on-debian-11/>
 
 ```bash
 sudo apt install build-essential dkms linux-headers-$(uname -r)
@@ -47,25 +49,23 @@ cd /mnt
 sudo sh ./VBoxLinuxAdditions.run --nox11
 ```
 
-### Mount host shared folder
+## Mount Host Shared Folder
 
-https://gist.github.com/estorgio/0c76e29c0439e683caca694f338d4003
+<https://gist.github.com/estorgio/0c76e29c0439e683caca694f338d4003>
 
-#### Mount manually
+### Mount Manually
 
-```
+```bash
 sudo mount -t vboxsf c ~/shared
 ```
 
-#### Mount persistently
+### Mount Persistently
 
-```
-# setup the mount point
+```bash
 # /etc/fstab
 c	/mnt/c	vboxsf	defaults	0	0
 d	/mnt/d	vboxsf	defaults	0	0
 
-# load up this kernel on load
 # /etc/modules
 vboxsf
 ```

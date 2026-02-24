@@ -1,44 +1,42 @@
-# Android
+# Android Notes
 
 ## Wireless Debugging
 
 On the device, go to Developer Options > Wireless debugging > Pair device with pairing code, and use the newly generated pairing code.
 
 ```bash
-# start with Pair device with pairing code
+# pair with the device using pairing code
 adb pair ip:port
 
-# then use IpAddress & Port from the other screen
+# connect using IP address and port from the other screen
 adb connect ip:port
 
 adb shell
 
-# to disconnect
+# disconnect
 adb disconnect
 ```
 
-## Remove Android Bloats
+## Remove Android Bloatware
+
+### Core Commands
 
 ```bash
-###########################################
-### Core Commands
-###########################################
-
 # list disabled packages
 pm list packages -d
 
 # list users
 pm list users
 
-# disable the app
+# disable an app
 pm disable-user --user 0 _some_package_
 pm uninstall -k --user 0 _some_package_
 
-# re-enable the apps
+# re-enable an app
 cmd package install-existing _some_package_
 pm enable _some_package_
 
-# grant and revoke permission
+# grant and revoke permissions
 pm grant [package] android.permission.CAMERA
 pm revoke [package] android.permission.CAMERA
 
@@ -47,51 +45,38 @@ function removeApp(){
   echo "> Remove: " $@
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
 }
+```
 
-###########################################
-### Other Commands
-###########################################
+### Package Management
 
-settings list system
-settings list global
-settings list secure
-
-### All packages:
+```bash
+# list all packages
 dumpsys package | grep "Package \[" | cut -d "\[" -f2 | cut -d "\]" -f1
 pm list packages | cut -d ":" -f2
 
+# list all packages including uninstalled
 # https://adbshell.com/commands/adb-shell-pm-list-packages
-
-# list all packages including all uninstalled
 pm list packages -u
 
 # list all packages for a user
 pm list packages --user USER_ID
+```
 
-### Get permission
+### Settings and Permissions
+
+```bash
+settings list system
+settings list global
+settings list secure
+
+# list granted permissions for an app
 function listPermissions(){
   dumpsys package $@ | grep "granted=true" | grep permission
 }
 
-### Remove permission
+# revoke location permission for an app
 function removePermissionLocation(){
-  # ignore the following:
-  # com.android.phone
-  # com.chase.sig.android
-  # com.coulombtech # chargepoint
-  # com.dd.doordash
-  # com.google.android.apps.tycho # google fi
-  # com.google.android.calendar
-  # com.target.ui # target
-  # com.teslacoilsw.launcher # nova
-  # com.teslamotors.tesla # tesla
-  # com.yelp.android
-  # com.google.android.apps.maps # google map
-  # com.google.android.googlequicksearchbox # google now
-
   pm revoke $@ android.permission.ACCESS_COARSE_LOCATION
   pm revoke $@ android.permission.ACCESS_FINE_LOCATION
 }
-
-###### safe to remove
 ```

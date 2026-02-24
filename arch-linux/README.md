@@ -1,30 +1,36 @@
-# Setting Up Your Steam Deck
+# Arch Linux / Steam Deck Notes
+
+## Setting Up Steam Deck
 
 Reference: <https://www.reddit.com/r/SteamDeck/comments/t8al0i/install_arch_packages_on_your_steam_deck/>
 
+### Initial Setup
+
 ```bash
-## Set passwords
+# Set password
 passwd
 
-## Steam Deck file system is immutable and will be removed after each update.
-## This command opens it up for write.
-## Disable read only mode: To allow adding new software
+# Steam Deck file system is immutable and resets after each update.
+# Disable read only mode to allow adding new software.
 sudo btrfs property set -ts / ro false
+```
 
-## Setting up pacman (package manager)
+### Package Manager (pacman)
+
+```bash
 sudo pacman-key --init
 sudo pacman-key --populate archlinux
 
-## Install dependencies
 sudo pacman -Syu fzf
 sudo pacman -Syu bat
+```
 
-## Install nvm / node
+### Install Node.js via NVM
+
+```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
 DEFAULT_NVM_NODE_VERSION=21
 nvm install $DEFAULT_NVM_NODE_VERSION
-echo 'making sure we do "--no-use"'
 
-## npm / yarn and other dependencies for node
 npm install --global yarn
 ```

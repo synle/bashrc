@@ -1,10 +1,12 @@
-# DeepSeek with Ollama
+# AI / LLM Notes
 
-## Install Ollama
+## Ollama
+
+### Install
 
 <https://ollama.com/download>
 
-## Download and Install DeepSeek
+### Download and Run Models
 
 ```bash
 ollama run deepseek-r1:32b
