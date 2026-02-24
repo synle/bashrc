@@ -96,7 +96,7 @@ for (const file of getJsFiles(scriptsDir)) {
 ##########################################################
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-  curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --files="software/metadata/script-list.config.js"
+  bash run.sh | bash -s -- --prod --files="software/metadata/script-list.config.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
 export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 
@@ -104,7 +104,7 @@ export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 # Prebuild Host Mappings
 ##########################################################
 echo '> Prebuilding Host Mappings'
-curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --files="software/metadata/ip-address.config.js"
+bash run.sh | bash -s -- --prod --files="software/metadata/ip-address.config.js"
 
 ##########################################################
 # Build Raw JSON and Config Artifacts
@@ -123,11 +123,9 @@ find $CONFIG_BUILD_PATH
 # Build Host Mappings (skip in CI)
 ##########################################################
 if [ "$CI" != "true" ]; then
-
   echo '> Build Host Mappings'
   export DEBUG_WRITE_TO_DIR="" && \
-    curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --files="software/metadata/hosts-blocked-ads.config.js"
-
+    bash run.sh | bash -s -- --prod --files="software/metadata/hosts-blocked-ads.config.js"
 fi
 
 ##########################################################
