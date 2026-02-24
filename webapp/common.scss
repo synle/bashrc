@@ -216,13 +216,13 @@ a[role='button'] {
     transform 0.15s ease;
 
   &:hover,
-&:focus,
-&:focus-visible {
-  opacity: 0.85;
-  /* Increased the 4th value (spread) to 4px */
-  box-shadow: 0 0 0 4px rgba(10, 91, 215, 0.25);
-  outline: none; /* Recommended to hide the default browser outline when using custom box-shadow focus */
-}
+  &:focus,
+  &:focus-visible {
+    opacity: 0.85;
+    /* Increased the 4th value (spread) to 4px */
+    box-shadow: 0 0 0 4px rgba(10, 91, 215, 0.25);
+    outline: none; /* Recommended to hide the default browser outline when using custom box-shadow focus */
+  }
 
   &.primary {
     background: var(--colorTextLink);

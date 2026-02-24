@@ -463,7 +463,9 @@ function MainBodyContainer() {
     <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
       <div id='mainBodyContainer'>
         <div className='editor-collapse-controls'>
-          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>Collapse All</ActionButton>
+          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>
+            Collapse All
+          </ActionButton>
           <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: false, tick: prev.tick + 1 }))}>Expand All</ActionButton>
         </div>
         {selectedConfig.renderBody()}
@@ -963,20 +965,13 @@ const CommonOtherAppDom = (
 );
 
 // This is used to show the warning about OS not matching intended system
-function TargetSystemOSWarningDom({
-  targetDomString,
-  isSystemMac,
-  isSystemWindows,
-  isSystemUbuntu,
-  isSystemAndroid
-}) {
-
+function TargetSystemOSWarningDom({ targetDomString, isSystemMac, isSystemWindows, isSystemUbuntu, isSystemAndroid }) {
   // 1. Map target strings to their corresponding system detection booleans
   const osMap = {
-    'mac': { name: 'OSX', isMatch: isSystemMac },
-    'windows': { name: 'Windows', isMatch: isSystemWindows },
-    'ubuntu': { name: 'Linux (Ubuntu)', isMatch: isSystemUbuntu },
-    'android': { name: 'Android', isMatch: isSystemAndroid }
+    mac: { name: 'OSX', isMatch: isSystemMac },
+    windows: { name: 'Windows', isMatch: isSystemWindows },
+    ubuntu: { name: 'Linux (Ubuntu)', isMatch: isSystemUbuntu },
+    android: { name: 'Android', isMatch: isSystemAndroid },
   };
 
   const target = osMap[targetDomString];
@@ -993,14 +988,16 @@ function TargetSystemOSWarningDom({
 
   // 3. Handle the Android edge case or standard mismatch logic
   if (targetDomString === 'android') {
-    return <h3 className='text-error' style={styles}>This is only meant for Android.</h3>;
+    return (
+      <h3 className='text-error' style={styles}>
+        This is only meant for Android.
+      </h3>
+    );
   }
 
   return (
     <h3 className={target.isMatch ? 'text-info' : 'text-error'} style={styles}>
-      {target.isMatch
-        ? 'OS Choice matches your OS'
-        : `OS choice (${target.name}) doesn't match your system.`}
+      {target.isMatch ? 'OS Choice matches your OS' : `OS choice (${target.name}) doesn't match your system.`}
     </h3>
   );
 }
