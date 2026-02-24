@@ -23,6 +23,26 @@ export HISTTIMEFORMAT="[%F %T] "
 # http://superuser.com/questions/20900/bash-history-loss
 PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 
+
+##########################################################
+# Custom Bash autocomplete filters for commands and file patterns
+##########################################################
+ignored_commands=(
+    "*/clean-staging"
+    "*/CleanPCCSP.dll"
+)
+ignored_files=(
+    ".rej"
+    ".pyc"
+    ".tmp"
+    ".DS_Store"
+)
+cmd_string=$(printf ":%s" "${ignored_commands[@]}")
+file_string=$(printf ":%s" "${ignored_files[@]}")
+export EXECIGNORE="$EXECIGNORE${cmd_string}"
+export FIGNORE="$FIGNORE${file_string}"
+unset ignored_commands cmd_string ignored_files file_string
+
 ##########################################################
 # Common Aliases
 ##########################################################
