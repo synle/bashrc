@@ -1038,7 +1038,6 @@ function LinuxNotesDom() {
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
       <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
       <DynamicTextArea path='/linux/linux-mint-config.sh' height='30vh' />
-      <DynamicTextArea path='/linux/linux-mint-xcfe.md' height='30vh' />
       <DynamicTextArea path='/linux/README.md' height='30vh' />
       <DynamicTextArea path='/.build/font.md' />
       <DynamicTextArea path='/.build/gitconfig' />
@@ -1105,11 +1104,9 @@ function WindowsNotesDom() {
       <TargetSystemOSWarningDom is_os_window={true} />
       <DynamicTextArea path='/bootstrap/setup.sh' height='30vh' />
       <DynamicTextArea path='/windows/README.md' height='30vh' />
-      <DynamicTextArea path='/dependencies-windows.ps1' height='30vh' />
-      <DynamicTextArea path='/.build/winget-install-windows.ps1' />
+      <DynamicTextArea path='/bootstrap/dependencies-windows.ps1' height='30vh' />
       <DynamicTextArea path='/.build/font.md' />
       <DynamicTextArea path='/.build/windows-powershell-profile.ps1' />
-      <DynamicTextArea path='/.build/windows-registry.ps1' />
       <DynamicTextArea path='/.build/windows-terminal' />
       <DynamicTextArea path='/android/sponsorblock.json' height='30vh' />
       <CommonEditorSetupDom is_os_window={true} />

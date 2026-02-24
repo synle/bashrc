@@ -39,8 +39,6 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/b
 # code begins
 export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 
-#TODO: only run this if we need bootstrap/dependencies*, else just do  echo '> Initializing Environment'
-sudo echo '> Initializing Environment'
 
 # Initialize common file with OS detection flags
 if [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
@@ -197,6 +195,16 @@ get_file_contents() {
     fi
   done
 }
+
+_needs_sudo=false
+case "$pre_run_scripts" in *bootstrap/dependencies*) _needs_sudo=true ;; esac
+case "$files_to_test" in *bootstrap/dependencies*) _needs_sudo=true ;; esac
+
+if [ "$_needs_sudo" = true ]; then
+  sudo echo '> Initializing Environment [with sudo]'
+else
+  echo '> Initializing Environment'
+fi
 
 ##########################################################
 # Run pre-scripts
