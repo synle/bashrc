@@ -162,16 +162,6 @@ function RightContainer() {
   const selectedScript = appData.configs.find((config) => config.idx === formValue.commandChoice);
 
   const formValueOutput = useMemo(() => {
-    const runnerToUse = formValue.runnerToUse;
-
-    let debugWriteToDirValue = '';
-    try {
-      debugWriteToDirValue = formValue.debugWriteToDir;
-      if (debugWriteToDirValue) {
-        debugWriteToDirValue = `&& export DEBUG_WRITE_TO_DIR="${debugWriteToDirValue}"`;
-      }
-    } catch (err) {}
-
     const osFlag = formValue.osToRun;
     const osFlags = {
       is_os_darwin_mac: osFlag === 'mac',
@@ -186,43 +176,36 @@ function RightContainer() {
     };
     const osKeys = Object.keys(osFlags);
 
-    let bootstrapScript = '';
-    if (formValue.addBootstrapScript === 'yes') {
-      bootstrapScript = (
-        [
-          "sudo echo '> Initializing Environment'",
-          // 'NODE_VERSION_TO_USE=12.22.1',
-          // 'nvm install $NODE_VERSION_TO_USE',
-          // 'nvm use $NODE_VERSION_TO_USE',
-          `echo """\n${osKeys
-            .map((key) => `export ${key}='${osFlags[key] ? '1' : '0'}'`)
-            .join('\n')}\n""" > ${window.BASH_SYLE_COMMON} && source ${window.BASH_SYLE_COMMON}`,
-        ].join(' && \\\n') + ' && '
-      ).trim();
-    }
-
-    let newCommands = [];
-    newCommands.push(
-      selectedScript.script
-        .replace('<SELECT_SCRIPTS>', formValue.scriptsToUse.join('\n'))
-        .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
-        .replace('<SELECTED_RUNNER_MODE>', runnerToUse)
-        .replace('<OS_FLAGS>', bootstrapScript)
-        .replace('<SETUP_DEPS>', formValue.setupDependencies !== 'yes' ? '' : (appData.setupDepsScript || '') + '\n')
-        .replace(
-          '<ENV_VARS>',
-          `
+    // Build the template variables
+    const templateVars = {
+      SELECT_SCRIPTS: formValue.scriptsToUse.join('\n'),
+      DEBUG_WRITE_TO_DIR: formValue.debugWriteToDir ? `&& export DEBUG_WRITE_TO_DIR="${formValue.debugWriteToDir}"` : '',
+      SELECTED_RUNNER_MODE: formValue.runnerToUse,
+      OS_FLAGS:
+        formValue.addBootstrapScript === 'yes'
+          ? (
+              [
+                "sudo echo '> Initializing Environment'",
+                `echo """\n${osKeys
+                  .map((key) => `export ${key}='${osFlags[key] ? '1' : '0'}'`)
+                  .join('\n')}\n""" > ${window.BASH_SYLE_COMMON} && source ${window.BASH_SYLE_COMMON}`,
+              ].join(' && \\\n') + ' && '
+            ).trim()
+          : '',
+      SETUP_DEPS: formValue.setupDependencies === 'yes' ? (appData.setupDepsScript || '') + '\n' : '',
+      ENV_VARS: `
 ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes')}
 
 ===
 
 ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === 'yes', '\n')}
-        `.trim(),
-        ),
-    );
+      `.trim(),
+    };
 
-    return newCommands
-      .join('\n')
+    // Mustache-style template rendering: replaces all {{KEY}} with corresponding values
+    const rendered = selectedScript.script.replace(/\{\{(\w+)\}\}/g, (_, key) => templateVars[key] || '');
+
+    return rendered
       .split('\\')
       .filter((s) => s.trim())
       .join('\\')
@@ -1307,15 +1290,15 @@ function App() {
           {
             text: 'Test Full Run live',
             script: `
-        <OS_FLAGS> curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash
+        {{OS_FLAGS}} curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash
       `,
             shouldShowOsSelectionInput: true,
           },
           {
             text: 'Test Single Script',
-            script: `<OS_FLAGS> <DEBUG_WRITE_TO_DIR> \\
+            script: `{{OS_FLAGS}} {{DEBUG_WRITE_TO_DIR}} \\
         curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash -s -- --prod --files="""
-        <SELECT_SCRIPTS>
+        {{SELECT_SCRIPTS}}
         """
       `,
             shouldShowScriptNameInput: true,
@@ -1325,7 +1308,7 @@ function App() {
           {
             text: 'Environment Vars',
             script: `
-        <ENV_VARS>
+        {{ENV_VARS}}
       `,
             shouldShowOsSelectionInput: true,
             shouldHideBootstrap: true,
