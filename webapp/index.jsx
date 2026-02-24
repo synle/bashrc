@@ -463,7 +463,9 @@ function MainBodyContainer() {
     <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
       <div id='mainBodyContainer'>
         <div className='editor-collapse-controls'>
-          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>Collapse All</ActionButton>
+          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>
+            Collapse All
+          </ActionButton>
           <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: false, tick: prev.tick + 1 }))}>Expand All</ActionButton>
         </div>
         {selectedConfig.renderBody()}
