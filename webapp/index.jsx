@@ -1484,10 +1484,10 @@ function App() {
         const configsByKey = {};
 
         const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs] = await Promise.all([
-          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/setup.sh`)
+          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/setup.sh`)
             .then((res) => res.text())
             .then((res) => res.trim()),
-          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)
+          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)
             .then((res) => res.text())
             .then((res) =>
               res
@@ -1496,10 +1496,10 @@ function App() {
                 .filter((s) => !!s && (s.includes('.js') || s.includes('.sh')))
                 .sort(),
             ),
-          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/package.json`)
+          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/package.json`)
             .then((res) => res.json())
             .then((pkg) => pkg.scripts['setup:hosts'] || ''),
-          fetch(`${window.BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/ip-address.config`)
+          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/ip-address.config`)
             .then((res) => res.text())
             .then((s) =>
               s
