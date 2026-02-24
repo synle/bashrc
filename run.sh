@@ -36,6 +36,39 @@
 ####################################################################
 source <(curl -fsSL https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)
 
+####################################################################
+# script: Install NVM and Node (skip on Android Termux)
+####################################################################
+if [ "$is_os_android_termux" != "1" ]; then
+  DEFAULT_NODE_JS_VERSION=24
+  NVM_DIR="$HOME/.nvm"
+
+  # Force refresh: remove existing nvm and reinstall
+  if [ "$force_refresh" = true ] && [ -d "$NVM_DIR" ]; then
+    rm -rf "$NVM_DIR"
+  fi
+
+  if [ ! -s $NVM_DIR/nvm.sh ]; then
+    git clone --depth 1 -b master https://github.com/creationix/nvm.git $NVM_DIR &>/dev/null
+    pushd $NVM_DIR &>/dev/null
+    git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)` &>/dev/null
+    . ./nvm.sh
+    popd &>/dev/null
+
+    nvmInstallNode() {
+      nvm ls "$1" &>/dev/null || nvm install "$1" &>/dev/null
+    }
+    nvmInstallNode $DEFAULT_NODE_JS_VERSION
+
+    nvm alias default $DEFAULT_NODE_JS_VERSION &>/dev/null
+    nvm use default &>/dev/null
+
+    # Run in background: non-blocking installs
+    nvmInstallNode lts &>/dev/null &
+    npm install --global yarn prettier &>/dev/null &
+  fi
+fi
+
 
 ####################################################################
 # Auto-detect mode
@@ -183,38 +216,6 @@ else
   echo '> Initializing Environment'
 fi
 
-####################################################################
-# script: Install NVM and Node (skip on Android Termux)
-####################################################################
-if [ "$is_os_android_termux" != "1" ]; then
-  DEFAULT_NODE_JS_VERSION=24
-  NVM_DIR="$HOME/.nvm"
-
-  # Force refresh: remove existing nvm and reinstall
-  if [ "$force_refresh" = true ] && [ -d "$NVM_DIR" ]; then
-    rm -rf "$NVM_DIR"
-  fi
-
-  if [ ! -s $NVM_DIR/nvm.sh ]; then
-    git clone --depth 1 -b master https://github.com/creationix/nvm.git $NVM_DIR &>/dev/null
-    pushd $NVM_DIR &>/dev/null
-    git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)` &>/dev/null
-    . ./nvm.sh
-    popd &>/dev/null
-
-    nvmInstallNode() {
-      nvm ls "$1" &>/dev/null || nvm install "$1" &>/dev/null
-    }
-    nvmInstallNode $DEFAULT_NODE_JS_VERSION
-
-    nvm alias default $DEFAULT_NODE_JS_VERSION &>/dev/null
-    nvm use default &>/dev/null
-
-    # Run in background: non-blocking installs
-    nvmInstallNode lts &>/dev/null &
-    npm install --global yarn prettier &>/dev/null &
-  fi
-fi
 
 _run_buffer=""
 
