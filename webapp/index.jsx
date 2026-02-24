@@ -208,12 +208,7 @@ function RightContainer() {
         .replace('<DEBUG_WRITE_TO_DIR>', debugWriteToDirValue)
         .replace('<SELECTED_RUNNER_MODE>', runnerToUse)
         .replace('<OS_FLAGS>', bootstrapScript)
-        .replace(
-          '<SETUP_DEPS>',
-          formValue.setupDependencies !== 'yes'
-            ? ''
-            : (appData.setupDepsScript || '') + '\n',
-        )
+        .replace('<SETUP_DEPS>', formValue.setupDependencies !== 'yes' ? '' : (appData.setupDepsScript || '') + '\n')
         .replace(
           '<ENV_VARS>',
           `
