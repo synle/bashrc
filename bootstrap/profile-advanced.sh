@@ -296,11 +296,14 @@ shorter_pwd_path(){
 
 ##########################################################
 # Prompt
+# Add this if we need cool break
+# "\$(br 5 no-clear reverse | sed 's/\(\x1b\[[0-9;]*m\)/\\\[\1\\\]/g')"
 ##########################################################
+# 08:32:43PM U=04:32:43AM syle @ Sy-Omen45L 10.255.255.254, 172.28.2.202
+# /h/syle/git/bashrc [master]
+# >>>
 export PS1_Advanced="
-${_PROMPT_BREAK_LIGHT}
-\[\e[1;93m\]\$(get_time) \[\e[1;95m\]UTC=\$(get_time \"UTC\") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\] - \[\e[1;93m\]\`ifconfig2\`\[\e[m\]
-\[\e[1;97m\]\`shorter_pwd_path\`\[\e[m\] \[\e[1;95m\]\`parse_git_branch\`\[\e[m\]
-\[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] "
-
+\[\e[1;92m\]\$(get_time) \[\e[1;93m\]U=\$(get_time \"UTC\") \[\e[1;94m\]\u\[\e[m\] @ \[\e[1;95m\]\h \[\e[1;93m\]\$(ifconfig2)\[\e[m\]
+\[\e[1;31m\]\$(shorter_pwd_path)\[\e[m\] \[\e[1;36m\]\$(parse_git_branch)\[\e[m\]
+\$(rainbow_print '>>>' | sed 's/\(\x1b\[[0-9;]*m\)/\\\[\1\\\]/g') "
 export PS1="$PS1_Advanced"

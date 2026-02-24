@@ -9,10 +9,9 @@ export PATH=$PATH:/sbin
 ##########################################################
 # Shared prompt/br style
 ##########################################################
-_PROMPT_BLOCK="##==========="
+_PROMPT_BLOCK="##########"
 _PROMPT_COLORS=(91 93 92 96 94 95)
 _PROMPT_BREAK="\[\e[1;91m\]$_PROMPT_BLOCK\[\e[1;93m\]$_PROMPT_BLOCK\[\e[1;92m\]$_PROMPT_BLOCK\[\e[1;96m\]$_PROMPT_BLOCK\[\e[1;94m\]$_PROMPT_BLOCK\[\e[1;95m\]$_PROMPT_BLOCK\[\e[m\]"
-_PROMPT_BREAK_LIGHT="\[\e[0;90m\]$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK$_PROMPT_BLOCK\[\e[m\]"
 
 ##########################################################
 # History
@@ -101,29 +100,65 @@ activate_py(){
   fi
 }
 
+
+rainbow_print() {
+    # 1. Determine the color set
+    # If $1 is provided and looks like a list of numbers, use it.
+    # Otherwise, fall back to the global _PROMPT_COLORS.
+    local colors
+    if [[ -n "$1" && "$1" =~ ^[0-9[:space:]]+$ ]]; then
+        colors=($1)
+        shift # Remove colors from arguments so $1 becomes the text
+    else
+        colors=("${_PROMPT_COLORS[@]}")
+    fi
+
+    # 2. Get the input text (from remaining $1 or stdin)
+    local input="${1:-$(cat -)}"
+    local color_count=${#colors[@]}
+
+    # 3. Print
+    for (( i=0; i<${#input}; i++ )); do
+        local color_idx=$(( i % color_count ))
+        local color=${colors[$color_idx]}
+        printf "\e[%sm%s\e[0m" "$color" "${input:$i:1}"
+    done
+    echo
+}
+
+# How to use it:
+# Default behavior (Clears screen, prints 5 blocks):
+# br
+# Print 10 blocks (Still clears screen):
+# br 10
+# Print 3 blocks WITHOUT clearing:
+# br 3 no-clear
+# Print the default 5 blocks WITHOUT clearing:
+# br 5 no-clear
 br() {
-  clear
-  local repeat_count=${1:-1} # default to -1
-  local colors=("${_PROMPT_COLORS[@]}")
-  local block="$_PROMPT_BLOCK"
+    local repeat_count=${1:-5}
+    local clear_flag=${2:-"clear"}
+    local reverse_flag=${3:-"normal"}
 
-  # High-Contrast Bold color codes
-  local num_colors=${#colors[@]}
+    [[ "$clear_flag" != "no-clear" ]] && clear
 
-  for ((i=0; i<repeat_count; i++)); do
+    local colors=("${_PROMPT_COLORS[@]}")
+
+    if [[ "$reverse_flag" == "reverse" ]]; then
+        local reversed=()
+        for ((i=${#colors[@]}-1; i>=0; i--)); do
+            reversed+=("${colors[i]}")
+        done
+        colors=("${reversed[@]}")
+    fi
+
     local line=""
-
-    for ((j=0; j<num_colors; j++)); do
-      local color_idx=$(( (i + j) % num_colors ))
-      local color_code="${colors[$color_idx]}"
-
-      # Use the $'...' syntax here to "bake" the escape code into the string
-      line+=$'\e[1;'"${color_code}m${block}"
+    for ((i=0; i<repeat_count; i++)); do
+        line+="$_PROMPT_BLOCK"
     done
 
-    # Reset color and print. No -e needed because the variable is already escaped.
-    echo "${line}"$'\e[m'
-  done
+    # Pass the local color array as a space-separated string
+    echo "$line" | rainbow_print "${colors[*]}"
 }
 
 # # Usage:
@@ -486,16 +521,13 @@ mkdir -p ~/.ssh/sockets
 
 ##########################################################
 # Prompt
+# "\$(br 5 no-clear reverse | sed 's/\(\x1b\[[0-9;]*m\)/\\\[\1\\\]/g')"
 ##########################################################
-# #====#====#====#====#====#====
-# 08:24:44PM UTC=01:24:44AM syle @ Sy-G14-2023
+# 08:31:59PM U=04:31:59AM syle @ Sy-Omen45L
 # ~/git/bashrc
 # >>>
 export PS1_Simple="
-${_PROMPT_BREAK_LIGHT}
-\[\e[1;93m\]\$(get_time) \[\e[1;95m\]UTC=\$(get_time \"UTC\") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
-\[\e[1;97m\]\w\[\e[m\]
-\[\e[1;93m\]>\[\e[m\]\[\e[1;31m\]>\[\e[m\]\[\e[1;36m\]>\[\e[m\] "
-
-# Assign it
+\[\e[1;93m\]\$(get_time) \[\e[1;95m\]U=\$(get_time \"UTC\") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
+\[\e[1;31m\]\w\[\e[m\]
+\$(rainbow_print '>>>' | sed 's/\(\x1b\[[0-9;]*m\)/\\\[\1\\\]/g') "
 export PS1="$PS1_Simple"
