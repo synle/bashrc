@@ -57,6 +57,7 @@ const fs = require('fs');
 const path = require('path');
 
 const scriptsDir = 'software';
+const baseScript = 'software/base-node-script.js'
 
 function getJsFiles(dir) {
   let results = [];
@@ -69,7 +70,7 @@ function getJsFiles(dir) {
 }
 
 for (const file of getJsFiles(scriptsDir)) {
-  const relPath = path.relative(path.dirname(file), 'software/base-node-script.js');
+  const relPath = path.relative(path.dirname(file), baseScript);
   const refTag = '/// <reference path=\"' + relPath + '\" />';
 
   let content = fs.readFileSync(file, 'utf8');
@@ -110,7 +111,7 @@ echo '> Build raw JSON and raw JSON configs'
 CONFIG_BUILD_PATH="./.build"
 mkdir -p $CONFIG_BUILD_PATH
 export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
-sh run.sh --files="$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'base-node-script.js')"
+sh run.sh --files="$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
 echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
 
