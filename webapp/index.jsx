@@ -463,9 +463,7 @@ function MainBodyContainer() {
     <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
       <div id='mainBodyContainer'>
         <div className='editor-collapse-controls'>
-          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>
-            Collapse All
-          </ActionButton>
+          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>Collapse All</ActionButton>
           <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: false, tick: prev.tick + 1 }))}>Expand All</ActionButton>
         </div>
         {selectedConfig.renderBody()}
@@ -482,13 +480,12 @@ function TopNavigationContainer() {
     <div id='topNavigationContainer'>
       <div className='nav-radio-group'>
         {appData.configs.map((config) => (
-          <a
+          <button
             key={config.idx}
-            role='button'
             className={formValue.commandChoice === config.idx ? 'selected' : ''}
             onClick={() => onInputChange('commandChoice', config.idx)}>
             {config.text}
-          </a>
+          </button>
         ))}
       </div>
     </div>
@@ -966,24 +963,26 @@ const CommonOtherAppDom = (
 );
 
 // This is used to show the warning about OS not matching intended system
-function TargetSystemOSWarningDom(props) {
-  let { is_os_darwin_mac, is_os_window, is_os_ubuntu, is_os_android_termux, targetDomString } = props;
+function TargetSystemOSWarningDom({
+  targetDomString,
+  isSystemMac,
+  isSystemWindows,
+  isSystemUbuntu,
+  isSystemAndroid
+}) {
 
-  // if input was a string
-  switch (targetDomString) {
-    case 'mac':
-      is_os_darwin_mac = true;
-      break;
-    case 'windows':
-      is_os_window = true;
-      break;
-    case 'ubuntu':
-      is_os_ubuntu = true;
-      break;
-    case 'android':
-      is_os_android_termux = true;
-      break;
-  }
+  // 1. Map target strings to their corresponding system detection booleans
+  const osMap = {
+    'mac': { name: 'OSX', isMatch: isSystemMac },
+    'windows': { name: 'Windows', isMatch: isSystemWindows },
+    'ubuntu': { name: 'Linux (Ubuntu)', isMatch: isSystemUbuntu },
+    'android': { name: 'Android', isMatch: isSystemAndroid }
+  };
+
+  const target = osMap[targetDomString];
+
+  // 2. Guard clause: if the target isn't in our map, render nothing
+  if (!target) return null;
 
   const styles = {
     background: 'var(--bg)',
@@ -992,53 +991,18 @@ function TargetSystemOSWarningDom(props) {
     top: 0,
   };
 
-  if (is_os_android_termux === true) {
-    return (
-      <h3 className='text-error' style={styles}>
-        This is only meant for Android.
-      </h3>
-    );
-  } else if (is_os_darwin_mac === true) {
-    if (!isSystemMac) {
-      return (
-        <h3 className='text-error' style={styles}>
-          OS choice (OSX) doesn't match your system.
-        </h3>
-      );
-    }
-    return (
-      <h3 className='text-info' style={styles}>
-        OS Choice matches your OS
-      </h3>
-    );
-  } else if (is_os_window === true) {
-    if (!isSystemWindows) {
-      return (
-        <h3 className='text-error' style={styles}>
-          OS choice (Windows) doesn't match your system.
-        </h3>
-      );
-    }
-    return (
-      <h3 className='text-info' style={styles}>
-        OS Choice matches your OS
-      </h3>
-    );
-  } else if (is_os_ubuntu === true) {
-    if (!isSystemUbuntu) {
-      return (
-        <h3 className='text-error' style={styles}>
-          OS choice (Linux (Ubuntu) doesn't match your system.
-        </h3>
-      );
-    }
-    return (
-      <h3 className='text-info' style={styles}>
-        OS Choice matches your OS
-      </h3>
-    );
+  // 3. Handle the Android edge case or standard mismatch logic
+  if (targetDomString === 'android') {
+    return <h3 className='text-error' style={styles}>This is only meant for Android.</h3>;
   }
-  return null;
+
+  return (
+    <h3 className={target.isMatch ? 'text-info' : 'text-error'} style={styles}>
+      {target.isMatch
+        ? 'OS Choice matches your OS'
+        : `OS choice (${target.name}) doesn't match your system.`}
+    </h3>
+  );
 }
 
 // ##################################################################

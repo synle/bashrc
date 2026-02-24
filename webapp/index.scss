@@ -165,12 +165,10 @@ a[role='button'] {
   flex-wrap: wrap;
   gap: var(--spaceSize2);
 
-  a[role='button'] {
-    &.selected {
-      background: var(--colorTextLink);
-      color: var(--colorBgMain);
-      border-color: transparent;
-    }
+  .selected {
+    background: var(--colorTextLink);
+    color: var(--colorBgMain);
+    border-color: transparent;
   }
 }
 
