@@ -1,4 +1,4 @@
-/// <reference path="base-node-script.js" />
+/// <reference path="index.js" />
 
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
@@ -1137,7 +1137,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
         (files || [])
           .map((s) => s.trim().replace('./software/', 'software/'))
           .filter((f) => f && f.includes('software/'))
-          .filter((f) => !f.endsWith('.json') && !f.endsWith('software/base-node-script.js'))
+          .filter((f) => !f.endsWith('.json') && !f.endsWith('software/index.js'))
           .filter((f) => {
             if (skipOsFiltering === true) {
               // if skip checking os, we want to return all scripts (used by the runner to generate all scripts)
@@ -1503,7 +1503,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
   }
 
   function _generateStartScript() {
-    const startScriptFilePath = 'software/base-node-script.js';
+    const startScriptFilePath = 'software/index.js';
     const startScriptUrl = getFullUrl(`${startScriptFilePath}?${Date.now()}`);
 
     return _generateRawScript(startScriptFilePath, startScriptUrl);

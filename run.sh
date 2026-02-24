@@ -251,7 +251,7 @@ fi
 ##########################################################
 # Run main script
 ##########################################################
-get_file_contents "software/base-node-script.js" | node | bash
+get_file_contents "software/index.js" | node | bash
 
 echo "
 =======================================================
