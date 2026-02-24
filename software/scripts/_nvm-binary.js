@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 async function doWork() {
   console.log(`  >> Register NVM binary with bashrc ${nvmBasePath}`);

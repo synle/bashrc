@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 function _getRebaseInteractiveSnippet() {
   const items = [];

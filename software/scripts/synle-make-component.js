@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.synle-make-component');
