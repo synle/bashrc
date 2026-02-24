@@ -1,4 +1,6 @@
 #! /bin/sh
+export BASH_SYLE_COMMON='~/.bash_syle_common'
+export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
 
 if [ "$CI" = "true" ]; then
     echo() {
@@ -92,7 +94,7 @@ for (const file of getJsFiles(scriptsDir)) {
 ##########################################################
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-  curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="software/metadata/script-list.config.js"
+  curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --files="software/metadata/script-list.config.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
 export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 
@@ -100,7 +102,7 @@ export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 # Prebuild Host Mappings
 ##########################################################
 echo '> Prebuilding Host Mappings'
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="software/metadata/ip-address.config.js"
+curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --files="software/metadata/ip-address.config.js"
 
 ##########################################################
 # Build Raw JSON and Config Artifacts
@@ -122,7 +124,7 @@ if [ "$CI" != "true" ]; then
 
   echo '> Build Host Mappings'
   export DEBUG_WRITE_TO_DIR="" && \
-    curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="software/metadata/hosts-blocked-ads.config.js"
+    curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --files="software/metadata/hosts-blocked-ads.config.js"
 
 fi
 
