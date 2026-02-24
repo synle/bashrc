@@ -2,7 +2,10 @@
 
 let BLOCKED_HOST_SOURCE_URLS;
 
-async function doInit() {
+/**
+ * Fetches blocked ad hosts from multiple upstream sources, deduplicates and sorts them, then writes the result to a config file.
+ */
+async function doWork() {
   BLOCKED_HOST_SOURCE_URLS = convertTextToList(`
     https://adaway.org/hosts.txt
     http://winhelp2002.mvps.org/hosts.txt
@@ -11,9 +14,7 @@ async function doInit() {
   `);
 
   BLOCKED_HOST_SOURCE_URLS = []; // TODO: this call is expensive, let's remove it
-}
 
-async function doWork() {
   let h;
   let res = [];
 

@@ -35,6 +35,12 @@ let MOUSE_MAPS = [
   },
 ];
 
+/**
+ * Replaces OS_KEY placeholders in mouse map modifier arrays with the actual OS-specific key.
+ * @param {object[]} mouseMaps - Array of Sublime Text mouse map objects.
+ * @param {string} osKeyToUse - The OS-specific modifier key to substitute.
+ * @returns {object[]} Mouse maps with resolved modifier keys.
+ */
 function _formatKey(mouseMaps, osKeyToUse) {
   osKeyToUse = osKeyToUse || OS_KEY;
 
@@ -47,11 +53,12 @@ function _formatKey(mouseMaps, osKeyToUse) {
   return mouseMaps;
 }
 
-async function doInit() {
-  OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
-}
-
+/**
+ * Resolves OS key, writes prebuilt mouse map configs per platform, and applies the config to the local Sublime Text installation.
+ */
 async function doWork() {
+  OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
+
   console.log(`  >> Setting up Sublime Text MouseMaps`);
 
   // write to build file

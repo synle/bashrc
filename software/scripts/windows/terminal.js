@@ -16,7 +16,27 @@ let BASE_CONFIG = {};
 let DEFAULT_PROFILES = {};
 let DEFAULT_PROFILE_STYLES = {};
 
-async function doInit() {
+/**
+ * Returns the Windows Terminal LocalState directory path by searching for the installed package folder.
+ * @returns {string|null} Path to the Windows Terminal package directory, or null if not found.
+ */
+function _getPath() {
+  try {
+    if (is_os_window) {
+      const localPackgesPath = path.join(getWindowUserBaseDir(), 'AppData/Local/Packages/');
+      return findDirSingle(localPackgesPath, /Microsoft\.WindowsTerminal/i);
+    }
+    return null;
+  } catch (e) {
+    console.log('  >> Skipped Windows Terminal Config - Error');
+    return process.exit();
+  }
+}
+
+/**
+ * Initializes Windows Terminal config with color schemes, keybindings, and profile defaults, then writes settings to the build output and local installation.
+ */
+async function doWork() {
   DEFAULT_PROFILE_STYLES = {
     cursorShape: 'vintage',
     cursorHeight: 50,
@@ -148,9 +168,7 @@ async function doInit() {
       ],
     },
   };
-}
 
-async function doWork() {
   // write to build file
   const comments = 'Open settings file (JSON)';
   const prebuiltConfigs = clone({ ...BASE_CONFIG, ...DEFAULT_PROFILES });
@@ -255,17 +273,4 @@ async function doWork() {
 
   // done - write to file
   writeJson(targetPath, newSettings);
-}
-
-function _getPath() {
-  try {
-    if (is_os_window) {
-      const localPackgesPath = path.join(getWindowUserBaseDir(), 'AppData/Local/Packages/');
-      return findDirSingle(localPackgesPath, /Microsoft\.WindowsTerminal/i);
-    }
-    return null;
-  } catch (e) {
-    console.log('  >> Skipped Windows Terminal Config - Error');
-    return process.exit();
-  }
 }

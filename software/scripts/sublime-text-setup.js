@@ -17,6 +17,11 @@ const buildFiles = [
   { buildName: 'sublime-text-plugins-refresh-on-focus.py', dest: 'sublime-text-plugins-refresh-on-focus.py', os: 'mac' },
 ];
 
+/**
+ * Generates curl download commands for Sublime Text config files for a given OS.
+ * @param {string} os - The target OS ('windows', 'linux', or 'mac').
+ * @returns {string} Formatted curl commands.
+ */
 function getCurlLines(os) {
   return buildFiles
     .filter((f) => f.os === os)
@@ -24,6 +29,10 @@ function getCurlLines(os) {
     .join('\n');
 }
 
+/**
+ * Generates PowerShell download commands for Sublime Text config files on Windows.
+ * @returns {string} Formatted PowerShell Invoke-WebRequest commands.
+ */
 function getPowershellLines() {
   return buildFiles
     .filter((f) => f.os === 'windows')
@@ -31,6 +40,9 @@ function getPowershellLines() {
     .join('\n');
 }
 
+/**
+ * Generates the Sublime Text setup script for bash and PowerShell environments.
+ */
 async function doWork() {
   console.log(`  >> Sublime Text Setup Script:`);
 

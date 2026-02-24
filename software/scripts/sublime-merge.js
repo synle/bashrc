@@ -12,6 +12,23 @@ const SUBLIME_MERGE_CONFIG = {
   update_check: false,
 };
 
+/**
+ * Returns the Sublime Merge config directory path based on the current OS.
+ * @returns {string|null} Path to Sublime Merge config directory, or null if not found.
+ */
+function _getPathSublimeMerge() {
+  if (is_os_window) {
+    return findDirSingle(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Merge/);
+  }
+  if (is_os_darwin_mac) {
+    return path.join(getOsxApplicationSupportCodeUserPath(), 'Sublime Merge');
+  }
+  return null;
+}
+
+/**
+ * Writes Sublime Merge settings to the build output and applies them to the local installation.
+ */
 async function doWork() {
   let targetPath = _getPathSublimeMerge();
 
@@ -24,14 +41,4 @@ async function doWork() {
   const sublimeMergeConfigPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
   console.log('    >>', sublimeMergeConfigPath);
   writeJson(sublimeMergeConfigPath, SUBLIME_MERGE_CONFIG);
-}
-
-function _getPathSublimeMerge() {
-  if (is_os_window) {
-    return findDirSingle(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Merge/);
-  }
-  if (is_os_darwin_mac) {
-    return path.join(getOsxApplicationSupportCodeUserPath(), 'Sublime Merge');
-  }
-  return null;
 }

@@ -10,6 +10,12 @@ let MAC_ONLY_KEY_BINDINGS;
 const WINDOWS_OS_KEY = 'alt'; // alt for modern mode
 const MAC_OSX_KEY = 'super';
 
+/**
+ * Replaces OS_KEY placeholders in keybinding key/keys arrays with the actual OS-specific modifier key.
+ * @param {object[]} keybindings - Array of Sublime Text keybinding objects.
+ * @param {string} osKeyToUse - The OS-specific modifier key to substitute.
+ * @returns {object[]} Keybindings with resolved key strings.
+ */
 function _formatKey(keybindings, osKeyToUse) {
   osKeyToUse = osKeyToUse || OS_KEY;
 
@@ -27,13 +33,20 @@ function _formatKey(keybindings, osKeyToUse) {
   return keybindings;
 }
 
+/**
+ * Returns the merged keybinding config for the current OS (Mac or Windows/Linux).
+ * @returns {object[]} Array of resolved keybinding objects.
+ */
 function _getConfigs() {
   return is_os_darwin_mac
     ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
     : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY);
 }
 
-async function doInit() {
+/**
+ * Loads OS-specific keybinding configs, defines common keybindings, writes prebuilt configs per platform, and applies to the local Sublime Text installation.
+ */
+async function doWork() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
   WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.windows.jsonc')) || [];
@@ -167,9 +180,7 @@ async function doInit() {
     { key: ['OS_KEY+9'], command: 'select_by_index', args: { index: 8 } },
   ];
   // end COMMON_KEY_BINDINGS
-}
 
-async function doWork() {
   console.log(`  >> Sublime Text Keybindings:`);
 
   // write to build file

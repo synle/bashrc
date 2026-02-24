@@ -4,13 +4,9 @@ const BASE_REMOTE_CONNECTIONS_PATH = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_
 
 const DEFAULT_CONNECTION_USER = 'syle';
 
-async function doWork() {
-  await mkdir(BASE_REMOTE_CONNECTIONS_PATH);
-
-  doWorkVnc();
-  doWorkRdp();
-}
-
+/**
+ * Generates RDP connection files for Windows remote hosts in the home network.
+ */
 async function doWorkRdp() {
   console.log('  >> Setting up Remote Desktop (RDP) Connections');
 
@@ -72,6 +68,9 @@ kdcproxyname:s:
   }
 }
 
+/**
+ * Generates VNC connection files for macOS remote hosts in the home network.
+ */
 async function doWorkVnc() {
   console.log('  >> Setting up VNC Connections');
 
@@ -99,4 +98,14 @@ UserName=${DEFAULT_CONNECTION_USER}
 
     writeText(targetPath, content);
   }
+}
+
+/**
+ * Creates the remote connections directory and generates both RDP and VNC connection files for home network hosts.
+ */
+async function doWork() {
+  await mkdir(BASE_REMOTE_CONNECTIONS_PATH);
+
+  doWorkVnc();
+  doWorkRdp();
 }

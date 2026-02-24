@@ -33,6 +33,13 @@ function _convertIgnoredFilesAndFoldersForVSCode(files = [], folders = [], isWat
   return res;
 }
 
+/**
+ * Builds the full VS Code settings object with editor, performance, theming, and language configs.
+ * @param {object} options - Configuration options.
+ * @param {boolean} [options.is_prebuilt_config] - Whether to use fallback font sizes for prebuilt configs.
+ * @param {boolean} [options.is_os_darwin_mac] - Whether the target OS is macOS.
+ * @returns {object} The VS Code settings object.
+ */
 function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
   const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
@@ -215,6 +222,9 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
   return configs;
 }
 
+/**
+ * Writes VS Code settings to prebuilt config files and applies them to the local VS Code installation.
+ */
 async function doWork() {
   console.log(`  >> VS Code Configurations / Settings:`);
 

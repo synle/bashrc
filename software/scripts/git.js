@@ -1,5 +1,9 @@
 /// <reference path="../index.js" />
 
+/**
+ * Generates git rebase interactive alias snippets for various commit counts.
+ * @returns {string} Git config alias entries for interactive rebase shortcuts.
+ */
 function _getRebaseInteractiveSnippet() {
   const items = [];
   for (let i = 5; i <= 100; i += 5) items.push(i);
@@ -7,6 +11,14 @@ function _getRebaseInteractiveSnippet() {
   return items.map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`).join('\n');
 }
 
+/**
+ * Builds the full git config content from a template, injecting email, core configs, and rebase aliases.
+ * @param {object} options - Configuration options.
+ * @param {string} options.email - The git user email to inject.
+ * @param {string} [options.extraCoreConfigs] - Additional git core config entries.
+ * @param {boolean} [options.addDefaultCommitTemplate] - Whether to add a default commit template.
+ * @returns {Promise<string>} The rendered git config content.
+ */
 async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate }) {
   email = email || '';
   extraCoreConfigs = extraCoreConfigs || '';
@@ -37,6 +49,11 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
   return templateGitConfig.trim();
 }
 
+/**
+ * Extracts the email address from an existing git config string.
+ * @param {string} config - Raw git config file content.
+ * @returns {string} The extracted email line, or empty string if not found.
+ */
 function _extractEmail(config) {
   try {
     return config.match(/email[ ]*=[ ]*[a-z @.]+/)[0].trim();
@@ -45,6 +62,10 @@ function _extractEmail(config) {
   }
 }
 
+/**
+ * Returns the content for the global gitignore file with common OS and editor exclusions.
+ * @returns {Promise<string>} The global gitignore content.
+ */
 async function _getGlobalGitIgnore() {
   return `
       # OS files
@@ -66,6 +87,9 @@ async function _getGlobalGitIgnore() {
     .join('\n');
 }
 
+/**
+ * Installs git aliases, configs, and global gitignore for the current system and optionally for Windows.
+ */
 async function doWork() {
   console.log('  >> Installing git Aliases and Configs');
 

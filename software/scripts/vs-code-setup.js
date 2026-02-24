@@ -15,14 +15,25 @@ const powershellTargets = [
 
 const configFile = 'vs-code-config';
 
+/**
+ * Formats bash target entries as pipe-delimited strings for the setup script.
+ * @returns {string} Formatted bash target entries.
+ */
 function getBashTargetEntries() {
   return bashTargets.map((t) => `  "${t.path}|${t.keys}"`).join('\n');
 }
 
+/**
+ * Formats PowerShell target entries as hashtable objects for the setup script.
+ * @returns {string} Formatted PowerShell target block.
+ */
 function getPowershellTargetBlock() {
   return powershellTargets.map((t) => `    @{ Path = "${t.path}"; Keys = "${t.keys}" }`).join('\n');
 }
 
+/**
+ * Generates the VS Code / VSCodium setup script for both bash and PowerShell environments.
+ */
 async function doWork() {
   console.log(`  >> VS Code Setup Script:`);
 

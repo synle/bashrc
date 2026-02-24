@@ -2,6 +2,11 @@
 
 const dockerCommandToUse = is_os_window === true ? 'docker.exe' : 'docker';
 
+/**
+ * Parses the help output of a docker subcommand to extract its available CLI options.
+ * @param {string} command - The docker subcommand to get options for.
+ * @returns {Promise<string>} A pipe-delimited string of the command and its options.
+ */
 function getOptionsForCommand(command) {
   return new Promise((resolve) => {
     require('child_process').exec(`${dockerCommandToUse} ${command} --help`, (error, stdout, stderr) => {
@@ -36,6 +41,9 @@ function getOptionsForCommand(command) {
   });
 }
 
+/**
+ * Resolves all docker commands and their options, then writes the autocomplete config file.
+ */
 async function doWork() {
   await new Promise((resolve) => {
     require('child_process').exec(`${dockerCommandToUse} --help`, async (error, stdout, stderr) => {

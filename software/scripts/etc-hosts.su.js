@@ -5,7 +5,68 @@ let STATIC_BLOCK_HOST_NAMES = [];
 let WHITE_LIST_HOST_NAMES = [];
 let ROUTED_BLOCKED_IP = '0.0.0.0';
 
-async function doInit() {
+/**
+ * Fetches blocked hostnames from static and dynamic sources, filtering out whitelisted entries.
+ * @returns {Promise<string[]>} Array of hostnames to block.
+ */
+async function _getBlockedHostNames() {
+  let mappingsToUse = [...STATIC_BLOCK_HOST_NAMES];
+  if (!is_os_window) {
+    // for non windows, we can more hosts from the blocked hosts...
+    const url = `software/metadata/hosts-blocked-ads.config`;
+    try {
+      let h = await fetchUrlAsString(`software/metadata/hosts-blocked-ads.config`);
+      h = convertTextToHosts(h);
+      console.log('      >> URL fetch for host success', url);
+      console.log('        >> Total Hosts Found', h.length);
+      DYNAMIC_BLOCK_HOST_NAMES = [...DYNAMIC_BLOCK_HOST_NAMES, ...h];
+    } catch (err) {
+      console.log('      >> URL fetch for host failed', url, err);
+    }
+
+    mappingsToUse = [...mappingsToUse, ...DYNAMIC_BLOCK_HOST_NAMES];
+  }
+
+  mappingsToUse = mappingsToUse.map((s) => s.toLowerCase());
+
+  return [...new Set(mappingsToUse)];
+}
+
+/**
+ * Returns the path to the system etc hosts file based on the current OS.
+ * @returns {string} Path to the hosts file.
+ */
+function _getEtcHosts() {
+  const windowsEtcHostDir = path.join(globalThis.BASE_C_DIR_WINDOW, '/Windows/System32/drivers/etc/hosts');
+
+  if (filePathExist(windowsEtcHostDir) || is_os_window) {
+    return windowsEtcHostDir;
+  }
+
+  return '/etc/hosts';
+}
+
+/**
+ * Consolidates hosts by removing duplicates and adding www-prefixed variants.
+ * @param {string[]} hosts - Array of hostnames to consolidate.
+ * @returns {string[]} Deduplicated array with www variants included.
+ */
+function _consolidateHosts(hosts) {
+  const newHosts = [...hosts];
+
+  for (const host of hosts) {
+    if (!host.includes('www.')) {
+      newHosts.push('www.' + host);
+    }
+  }
+
+  return [...new Set(newHosts.map((s) => s.toLowerCase()))];
+}
+
+/**
+ * Loads blocked and whitelisted host configs, then updates the system etc hosts file with home network mappings and blocked hosts.
+ */
+async function doWork() {
   // initiate the vars
   STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`));
 
@@ -15,9 +76,7 @@ async function doInit() {
   WHITE_LIST_HOST_NAMES = _consolidateHosts(WHITE_LIST_HOST_NAMES);
 
   DYNAMIC_BLOCK_HOST_NAMES = [];
-}
 
-async function doWork() {
   const targetPath = _getEtcHosts();
   let etcHostTextContent = readText(targetPath);
 
@@ -57,52 +116,4 @@ async function doWork() {
   } catch (err) {
     console.log('      >> Skipped : Permission denied (needs to Run as Admin for Windows WSL)');
   }
-}
-
-async function _getBlockedHostNames() {
-  let mappingsToUse = [...STATIC_BLOCK_HOST_NAMES];
-  if (!is_os_window) {
-    // for non windows, we can more hosts from the blocked hosts...
-    const url = `software/metadata/hosts-blocked-ads.config`;
-    try {
-      let h = await fetchUrlAsString(`software/metadata/hosts-blocked-ads.config`);
-      h = convertTextToHosts(h);
-      console.log('      >> URL fetch for host success', url);
-      console.log('        >> Total Hosts Found', h.length);
-      DYNAMIC_BLOCK_HOST_NAMES = [...DYNAMIC_BLOCK_HOST_NAMES, ...h];
-    } catch (err) {
-      console.log('      >> URL fetch for host failed', url, err);
-    }
-
-    mappingsToUse = [...mappingsToUse, ...DYNAMIC_BLOCK_HOST_NAMES];
-  }
-
-  mappingsToUse = mappingsToUse.map((s) => s.toLowerCase());
-
-  return [...new Set(mappingsToUse)];
-}
-
-function _getEtcHosts() {
-  const windowsEtcHostDir = path.join(globalThis.BASE_C_DIR_WINDOW, '/Windows/System32/drivers/etc/hosts');
-
-  if (filePathExist(windowsEtcHostDir) || is_os_window) {
-    return windowsEtcHostDir;
-  }
-
-  return '/etc/hosts';
-}
-
-/**
-consolidate hosts, remove duplicate and add extra hosts with www.
-*/
-function _consolidateHosts(hosts) {
-  const newHosts = [...hosts];
-
-  for (const host of hosts) {
-    if (!host.includes('www.')) {
-      newHosts.push('www.' + host);
-    }
-  }
-
-  return [...new Set(newHosts.map((s) => s.toLowerCase()))];
 }

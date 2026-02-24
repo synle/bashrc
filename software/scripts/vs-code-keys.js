@@ -10,6 +10,12 @@ let MAC_ONLY_KEY_BINDINGS;
 const WINDOWS_OS_KEY = 'alt'; // alt for modern mode
 const MAC_OSX_KEY = 'cmd';
 
+/**
+ * Replaces OS_KEY placeholders in keybinding key strings with the actual OS-specific modifier key.
+ * @param {object[]} keybindings - Array of VS Code keybinding objects.
+ * @param {string} osKeyToUse - The OS-specific modifier key to substitute.
+ * @returns {object[]} Keybindings with resolved key strings.
+ */
 function _formatKey(keybindings, osKeyToUse) {
   osKeyToUse = osKeyToUse || OS_KEY;
 
@@ -22,13 +28,20 @@ function _formatKey(keybindings, osKeyToUse) {
   return keybindings;
 }
 
+/**
+ * Returns the merged keybinding config for the current OS (Mac or Windows/Linux).
+ * @returns {object[]} Array of resolved keybinding objects.
+ */
 function _getConfigs() {
   return is_os_darwin_mac
     ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
     : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY);
 }
 
-async function doInit() {
+/**
+ * Loads OS-specific keybinding configs, defines common keybindings, writes prebuilt configs per platform, and applies to the local VS Code installation.
+ */
+async function doWork() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
   WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/vs-code-keys.windows.jsonc')) || [];
@@ -186,9 +199,7 @@ async function doInit() {
     },
   ];
   // end COMMON_KEY_BINDINGS
-}
 
-async function doWork() {
   console.log(`  >> VS Code Keybindings:`);
 
   // write to build file

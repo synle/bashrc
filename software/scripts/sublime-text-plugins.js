@@ -2,8 +2,9 @@
 
 includeSource('software/scripts/sublime-text.common.js');
 
-async function doInit() {}
-
+/**
+ * Copies Sublime Text plugin files to both the prebuilt build directory and the local Sublime Text installation.
+ */
 async function doWork() {
   console.log(`  >> Sublime Text Plugins:`);
   const allPlugins = [`sublime-text-plugins-refresh-on-focus.py`];

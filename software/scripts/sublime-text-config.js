@@ -18,6 +18,13 @@ function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
   });
 }
 
+/**
+ * Builds the full Sublime Text settings object with editor, performance, and OS-specific configs.
+ * @param {object} options - Configuration options.
+ * @param {boolean} [options.is_prebuilt_config] - Whether to use fallback font sizes for prebuilt configs.
+ * @param {boolean} [options.is_os_darwin_mac] - Whether the target OS is macOS.
+ * @returns {object} The Sublime Text settings object.
+ */
 function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
   const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
@@ -98,6 +105,9 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
   return configs;
 }
 
+/**
+ * Writes Sublime Text settings to prebuilt config files and applies them to the local Sublime Text installation.
+ */
 async function doWork() {
   console.log(`  >> Sublime Text Configurations / Settings:`);
 

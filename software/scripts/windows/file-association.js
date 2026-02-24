@@ -8,7 +8,10 @@ const vlcBinaryPath = `ftype ${vlcProgramBinaryName}="C:/Program Files/VideoLAN/
 
 let associationContent;
 
-async function doInit() {
+/**
+ * Builds file association commands for text and media files, then writes the Windows batch script to the build output.
+ */
+async function doWork() {
   associationContent = trimLeftSpaces(`
     ########################
     # text file association
@@ -27,9 +30,7 @@ async function doInit() {
       .join('\n')}
     ${vlcBinaryPath}
   `);
-}
 
-async function doWork() {
   console.log('  >> Installing Windows Only - File Associations');
   writeToBuildFile([{ file: 'windows-file-association.cmd', data: associationContent }]);
 }

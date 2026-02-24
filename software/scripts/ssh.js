@@ -12,7 +12,10 @@ const portToIp = {
 
 const DEFAULT_SSH_PORT = '22';
 
-async function doInit() {
+/**
+ * Initializes SSH port mappings and writes the SSH client config file with home network hosts and connection settings.
+ */
+async function doWork() {
   // setting up the ssh port map
   for (const port of Object.keys(portToIp)) {
     const ips = portToIp[port]
@@ -23,9 +26,7 @@ async function doInit() {
       sshPortMap[ip] = port;
     }
   }
-}
 
-async function doWork() {
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, '.ssh');
   const targetPath = path.join(baseSshPath, 'config');
 

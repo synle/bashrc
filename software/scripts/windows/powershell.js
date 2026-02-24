@@ -2,6 +2,10 @@
 
 let outputContent = '';
 
+/**
+ * Resolves the file path for the Windows PowerShell profile script.
+ * @returns {Promise<string|null>} The path to the PowerShell profile file, or null if not found.
+ */
 async function _getPath() {
   try {
     let targetPath = globalThis.BASE_D_DIR_WINDOW;
@@ -25,7 +29,10 @@ async function _getPath() {
   return null;
 }
 
-async function doInit() {
+/**
+ * Generates the Windows PowerShell profile script content and writes it to the build output.
+ */
+async function doWork() {
   outputContent = trimLeftSpaces(`
     <#
     #######################################################
@@ -217,9 +224,7 @@ async function doInit() {
 
     clear; # clean up the prompt
   `);
-}
 
-async function doWork() {
   console.log('  >> Setting up Windows Powershell Profile');
   writeToBuildFile([
     { file: 'windows-powershell-profile.ps1', data: outputContent, comment: 'Windows powershell script', commentStyle: 'bash' },

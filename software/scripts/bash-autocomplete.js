@@ -38,6 +38,12 @@ except:
   )
  */
 
+/**
+ * Generates a bash autocomplete function for a command using a spec file that maps subcommands to their options.
+ * @param {string} command - The command name to create autocomplete for.
+ * @param {string} completeSpecURL - URL or path to the autocomplete spec file.
+ * @returns {Promise<string>} The generated bash autocomplete script block.
+ */
 async function _getAutoCompleteWithSpec(command, completeSpecURL) {
   const completeSpecContent = await fetchUrlAsString(completeSpecURL);
 
@@ -89,6 +95,9 @@ async function _getAutoCompleteWithSpec(command, completeSpecURL) {
   `);
 }
 
+/**
+ * Installs bash autocomplete scripts for git, ssh, make, npm, npx, yarn, and docker.
+ */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_autocomplete');
   console.log('  >> Installing Bash Autocomplete', consoleLogColor4(targetPath));
