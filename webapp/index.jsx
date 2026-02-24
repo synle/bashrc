@@ -156,7 +156,7 @@ function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
 // create contexts
 const MainAppContext = React.createContext();
 const ThemeContext = React.createContext();
-const EditorCollapseContext = React.createContext({collapseAll: false});
+const EditorCollapseContext = React.createContext({ collapseAll: false });
 
 // use it in a component
 function ScriptNameInputSection() {
