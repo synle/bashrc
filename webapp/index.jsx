@@ -5,8 +5,13 @@ import Toastify from 'toastify-js';
 import 'toastify-js/src/toastify.css';
 import './index.scss';
 
-const BASH_PROFILE_CODE_REPO_RAW_URL = window.BASH_PROFILE_CODE_REPO_RAW_URL;
+const REPO_PATH_IDENTIFIER = window.REPO_PATH_IDENTIFIER;
+const REPO_BRANCH_NAME = window.REPO_BRANCH_NAME;
 const BASH_SYLE_COMMON = window.BASH_SYLE_COMMON;
+const REPO_URL = `https://github.com/${REPO_PATH_IDENTIFIER}`;
+const BASH_PROFILE_CODE_REPO_RAW_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}`;
+const BASH_PROFILE_CODE_REPO_VIEW_URL = `${REPO_URL}/blob/${REPO_BRANCH_NAME}`;
+const BASH_PROFILE_CODE_REPO_EDIT_URL = `${REPO_URL}/edit/${REPO_BRANCH_NAME}`;
 
 const isSystemMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const isSystemWindows = navigator.platform.indexOf('Win') > -1;
@@ -22,14 +27,30 @@ if (isSystemMac) {
   defaultCommandOption = 'command-option-setup-linux';
 }
 
+/**
+ * Writes a value to localStorage under the given key.
+ * @param {string} key - The localStorage key to write to.
+ * @param {string} value - The value to store.
+ */
 function setStorage(key, value) {
   localStorage[key] = value;
 }
 
+/**
+ * Reads a value from localStorage, returning a default if the key is not set or falsy.
+ * @param {string} key - The localStorage key to read from.
+ * @param {string} [defaultValue] - The fallback value if the key is missing or falsy.
+ * @returns {string} The stored value or the default.
+ */
 function getStorage(key, defaultValue) {
   return localStorage[key] || defaultValue;
 }
 
+/**
+ * Copies the provided text to the system clipboard and displays a toast notification.
+ * @param {string} text - The text to copy. Leading/trailing whitespace is trimmed before copying.
+ * @returns {Promise<void>}
+ */
 async function copyTextToClipboard(text) {
   text = text.trim();
 
@@ -47,6 +68,17 @@ async function copyTextToClipboard(text) {
   toast.showToast();
 }
 
+/**
+ * Parses, normalizes, deduplicates, and sorts environment variable paths for a given OS.
+ * Merges user-provided paths with OS-specific defaults, normalizes path separators,
+ * replaces well-known Windows directories with environment variable placeholders,
+ * and removes duplicates.
+ * @param {string} env - Raw environment variable paths input (newline, semicolon, or colon separated).
+ * @param {string} osFlag - The target OS identifier ('windows', 'mac', or other for generic).
+ * @param {boolean} shouldUseDefaultEnvs - Whether to include OS-specific default environment paths.
+ * @param {string} [envSepToReturn] - The separator to join the resulting paths. Defaults to ';' for Windows/generic or ':' for Mac.
+ * @returns {string} The deduplicated, sorted, and joined environment variable paths.
+ */
 function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
   let pathSep = '/';
   let defaultEnv = '';
@@ -158,7 +190,13 @@ const MainAppContext = React.createContext();
 const ThemeContext = React.createContext();
 const EditorCollapseContext = React.createContext({ collapseAll: false, tick: 0 });
 
-// use it in a component
+/**
+ * Form section for managing the list of scripts to run.
+ * Provides inputs for selecting scripts from a datalist, adding/clearing scripts,
+ * choosing between live and local runner modes, and specifying a debug write-to-file path.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The script name input form section.
+ */
 function ScriptNameInputSection() {
   const { appData, setAppData, onInputChange } = useContext(MainAppContext);
   const formValue = appData.formValue;
@@ -257,6 +295,13 @@ function ScriptNameInputSection() {
   );
 }
 
+/**
+ * Dropdown section for selecting the target operating system type.
+ * Renders a select element with OS options (Windows WSL, Ming_64, Mac OSX, Chrome OS, Ubuntu,
+ * Arch Linux/Steam Deck, Android Termux) and displays an OS mismatch warning below it.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The OS selection dropdown section.
+ */
 function OsSelectionInputSection() {
   const { onInputChange } = useContext(MainAppContext);
   const formValue = useContext(MainAppContext).appData.formValue;
@@ -286,6 +331,13 @@ function OsSelectionInputSection() {
   );
 }
 
+/**
+ * Radio button toggle section for enabling or disabling setup dependencies.
+ * Allows the user to choose whether dependency installation scripts should be included
+ * in the generated output.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The setup dependencies toggle section.
+ */
 function SetupDependenciesSection() {
   const { onInputChange } = useContext(MainAppContext);
   const formValue = useContext(MainAppContext).appData.formValue;
@@ -321,6 +373,12 @@ function SetupDependenciesSection() {
   );
 }
 
+/**
+ * Radio button toggle section for enabling or disabling the bootstrap script.
+ * When enabled, the generated output will include OS flag exports and environment initialization.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The bootstrap script toggle section.
+ */
 function BootstrapSection() {
   const { onInputChange } = useContext(MainAppContext);
   const formValue = useContext(MainAppContext).appData.formValue;
@@ -356,6 +414,13 @@ function BootstrapSection() {
   );
 }
 
+/**
+ * Textarea section for entering environment variable paths.
+ * Displays an enhanced text area pre-populated with consolidated env vars (optionally
+ * merged with OS-specific defaults), and a checkbox to toggle default env inclusion.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The environment variable paths input section.
+ */
 function EnvInputSection() {
   const { onInputChange } = useContext(MainAppContext);
   const formValue = useContext(MainAppContext).appData.formValue;
@@ -393,6 +458,14 @@ function EnvInputSection() {
   );
 }
 
+/**
+ * Renders the generated shell script output by interpolating mustache-style template
+ * variables (e.g., OS flags, selected scripts, env vars) from the current form state
+ * into the provided script template string.
+ * @param {Object} props
+ * @param {string} props.script - The script template string containing {{KEY}} placeholders.
+ * @returns {React.ReactElement} An EnhancedTextArea displaying the rendered script output.
+ */
 function ScriptOutputSection({ script }) {
   const { appData } = useContext(MainAppContext);
   const formValue = appData.formValue;
@@ -414,6 +487,9 @@ function ScriptOutputSection({ script }) {
 
     // Build the template variables
     const templateVars = {
+      REPO_PATH_IDENTIFIER: REPO_PATH_IDENTIFIER,
+      REPO_BRANCH_NAME: REPO_BRANCH_NAME,
+      REPO_URL: REPO_URL,
       BASH_PROFILE_CODE_REPO_RAW_URL: BASH_PROFILE_CODE_REPO_RAW_URL,
       SELECT_SCRIPTS: formValue.scriptsToUse.join('\n'),
       DEBUG_WRITE_TO_DIR: formValue.debugWriteToDir ? `&& export DEBUG_WRITE_TO_DIR="${formValue.debugWriteToDir}"` : '',
@@ -454,6 +530,12 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
   return <EnhancedTextArea id='formValueOutput' placeholder='Output' readOnly value={formValueOutput} />;
 }
 
+/**
+ * Main content area that renders the body of the currently selected configuration tab.
+ * Provides collapse/expand controls for all editor sections and wraps the content
+ * in an EditorCollapseContext provider for coordinated collapse state.
+ * @returns {React.ReactElement} The main body container with collapse controls and selected config body.
+ */
 function MainBodyContainer() {
   const { appData } = useContext(MainAppContext);
   const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
@@ -474,6 +556,12 @@ function MainBodyContainer() {
   );
 }
 
+/**
+ * Top tab bar navigation that renders a button for each available configuration.
+ * Highlights the currently selected tab and triggers commandChoice changes on click.
+ * Consumes MainAppContext for the configs list and input change handling.
+ * @returns {React.ReactElement} The top navigation tab bar.
+ */
 function TopNavigationContainer() {
   const { appData, onInputChange } = useContext(MainAppContext);
   const formValue = appData.formValue;
@@ -494,19 +582,33 @@ function TopNavigationContainer() {
   );
 }
 
+/**
+ * Footer section containing links to the GitHub repository, pre-compiled configs,
+ * and the bashrc code browser.
+ * @returns {React.ReactElement} The bottom footer container with repository links.
+ */
 function BottomContainer() {
   return (
     <div id='bottomContainer'>
       <hr />
       <div className='link-group'>
-        <LinkButton href='https://github.com/synle/bashrc'>Repo</LinkButton>
-        <LinkButton href='https://github.com/synle/bashrc/tree/master/.build'>Pre-compiled Configs</LinkButton>
-        <LinkButton href='https://github.com/synle/bashrc/find/master'>Bashrc Code</LinkButton>
+        <LinkButton href={REPO_URL}>Repo</LinkButton>
+        <LinkButton href={`${BASH_PROFILE_CODE_REPO_VIEW_URL}/.build`}>Pre-compiled Configs</LinkButton>
+        <LinkButton href={`${REPO_URL}/find/${REPO_BRANCH_NAME}`}>Bashrc Code</LinkButton>
       </div>
     </div>
   );
 }
 
+/**
+ * An anchor element styled as a button that opens links in a new tab.
+ * Optionally wraps the anchor in a div for block-level display.
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The button label content.
+ * @param {boolean} [props.block=false] - If true, wraps the anchor in a div for block-level layout.
+ * @param {string} props.href - The URL to link to.
+ * @returns {React.ReactElement} An anchor element with role="button" and target="_blank".
+ */
 function LinkButton(props) {
   const { children, block, ...restProps } = props;
 
@@ -526,6 +628,15 @@ function LinkButton(props) {
   );
 }
 
+/**
+ * An anchor element rendered as a plain text link that opens in a new tab.
+ * Optionally wraps the anchor in a div for block-level display.
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The link text content.
+ * @param {boolean} [props.block=false] - If true, wraps the anchor in a div for block-level layout.
+ * @param {string} props.href - The URL to link to.
+ * @returns {React.ReactElement} An anchor element with target="_blank".
+ */
 function LinkText(props) {
   const { children, block, ...restProps } = props;
 
@@ -545,12 +656,28 @@ function LinkText(props) {
   );
 }
 
+/**
+ * A simple button element that passes through all props to the underlying HTML button.
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The button label content.
+ * @param {Function} [props.onClick] - Click handler for the button.
+ * @returns {React.ReactElement} A button element.
+ */
 function ActionButton(props) {
   const { children, ...restProps } = props;
 
   return <button {...restProps}>{children}</button>;
 }
 
+/**
+ * Fetches text content from a remote URL and displays it in an EnhancedTextArea.
+ * If a relative path is provided, it is resolved against the BASH_PROFILE_CODE_REPO_RAW_URL base.
+ * @param {Object} props
+ * @param {string} [props.path] - Relative path to the file within the bashrc repository.
+ * @param {string} [props.url] - Full URL to fetch content from. Overrides path if provided.
+ * @param {string} [props.height] - CSS height for the text area.
+ * @returns {React.ReactElement} A read-only EnhancedTextArea with the fetched content.
+ */
 function DynamicTextArea(props) {
   let { path, url, height } = props;
   const [text, setText] = useState('');
@@ -573,6 +700,16 @@ function DynamicTextArea(props) {
   return <EnhancedTextArea height={height} url={url} value={text} readOnly />;
 }
 
+/**
+ * Fetches text content from multiple remote URLs, concatenates them with comment headers,
+ * and displays the combined result in an EnhancedTextArea.
+ * @param {Object} props
+ * @param {string[]} props.urls - Array of URLs to fetch content from.
+ * @param {string} [props.height] - CSS height for the text area.
+ * @param {string} props.commentString - The comment prefix to use before each URL header (e.g., '#').
+ * @param {string} [props.label] - Optional label for the text area. Defaults to the joined URLs.
+ * @returns {React.ReactElement} A read-only EnhancedTextArea with the combined fetched content.
+ */
 function MultipleUrlDynamicTextArea(props) {
   const { urls, height, commentString } = props;
   const [text, setText] = useState('');
@@ -601,6 +738,12 @@ function MultipleUrlDynamicTextArea(props) {
   return <EnhancedTextArea height={height} label={label} value={text} readOnly />;
 }
 
+/**
+ * Detects a programming language identifier from a file URL based on its extension.
+ * Maps common file extensions (e.g., .sh, .py, .js, .md) to Monaco Editor language identifiers.
+ * @param {string} url - The file URL to extract the extension from.
+ * @returns {string|null} The detected language identifier, or null if the extension is not recognized.
+ */
 function detectLanguageFromUrl(url) {
   if (!url) return null;
 
@@ -634,6 +777,12 @@ function detectLanguageFromUrl(url) {
   return extensionMap[extension] || null;
 }
 
+/**
+ * Detects a programming language identifier from a label string based on its file extension.
+ * Extracts the extension from the label and delegates to detectLanguageFromUrl.
+ * @param {string} label - The label or filename to extract the extension from.
+ * @returns {string|null} The detected language identifier, or null if the extension is not recognized.
+ */
 function detectLanguageFromLabel(label) {
   if (!label) return null;
 
@@ -641,6 +790,13 @@ function detectLanguageFromLabel(label) {
   return detectLanguageFromUrl(extension);
 }
 
+/**
+ * Heuristically detects a programming language from the content of a file.
+ * Checks for shebangs, markdown headers, PowerShell cmdlets, common shell patterns,
+ * and valid JSON. Defaults to 'shell' if no specific language is detected.
+ * @param {string} content - The text content to analyze.
+ * @returns {string} The detected language identifier (e.g., 'shell', 'python', 'markdown', 'json').
+ */
 function detectLanguageFromContent(content) {
   if (!content || typeof content !== 'string') return 'shell';
 
@@ -680,6 +836,17 @@ function detectLanguageFromContent(content) {
   return 'shell';
 }
 
+/**
+ * Full-screen overlay modal component with a semi-transparent dark background.
+ * Renders a title bar with a close button and a content area. Clicking the backdrop
+ * closes the modal.
+ * @param {Object} props
+ * @param {boolean} props.isOpen - Whether the modal is currently visible.
+ * @param {Function} props.onClose - Callback invoked when the modal should be closed.
+ * @param {string} [props.title] - Optional title displayed in the modal header.
+ * @param {React.ReactNode} props.children - The content to render inside the modal body.
+ * @returns {React.ReactElement|null} The modal overlay, or null if not open.
+ */
 function Modal(props) {
   const { isOpen, onClose, title, children } = props;
 
@@ -736,6 +903,14 @@ function Modal(props) {
   );
 }
 
+/**
+ * A button that opens a full-screen read-only Monaco Editor modal to view text content.
+ * Supports ESC key to close the modal. Auto-detects the language from the label or content.
+ * @param {Object} props
+ * @param {string} props.value - The text content to display in the full-screen editor.
+ * @param {string} [props.label] - Optional label used as the modal title and for language detection.
+ * @returns {React.ReactElement} A button and a modal containing a read-only Monaco Editor.
+ */
 function FullScreenTextViewer(props) {
   const { value, label } = props;
   const [isOpen, setIsOpen] = useState(false);
@@ -779,6 +954,15 @@ function FullScreenTextViewer(props) {
   );
 }
 
+/**
+ * A dropdown menu component that uses the first child as the trigger button and
+ * renders remaining children as dropdown items. Supports click-outside and ESC key
+ * dismissal, and auto-closes after an item is clicked.
+ * @param {Object} props
+ * @param {string} [props.type=''] - Optional CSS class suffix for the dropdown content container.
+ * @param {React.ReactNode} props.children - The first child is used as the trigger button; subsequent children are dropdown items.
+ * @returns {React.ReactElement} The dropdown container with trigger and conditional dropdown content.
+ */
 function DropdownButtons(props) {
   const { type = '', children } = props;
   const [isOpen, setIsOpen] = useState(false);
@@ -853,12 +1037,22 @@ function DropdownButtons(props) {
   );
 }
 
+/**
+ * A button that toggles between dark and light themes.
+ * Consumes ThemeContext to read the current theme and trigger the toggle.
+ * @returns {React.ReactElement} A button displaying "Light Mode" or "Dark Mode" based on the current theme.
+ */
 function ThemeToggle() {
   const { theme, toggleTheme } = useContext(ThemeContext);
 
   return <button onClick={toggleTheme}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</button>;
 }
 
+/**
+ * Settings dropdown menu containing the ThemeToggle button.
+ * Renders a DropdownButtons component with "Settings" as the trigger label.
+ * @returns {React.ReactElement} A dropdown with settings options.
+ */
 function Settings() {
   return (
     <DropdownButtons>
@@ -868,6 +1062,20 @@ function Settings() {
   );
 }
 
+/**
+ * A Monaco Editor-based text display component with action buttons for copy, edit, view raw,
+ * fullscreen, and collapse/expand. Auto-detects the language from the URL or content,
+ * computes editor height from line count, and respects the global collapse context.
+ * @param {Object} props
+ * @param {string} [props.url] - Optional URL of the source file, used for language detection and edit/view links.
+ * @param {string} [props.label] - Optional label displayed as the editor header. Falls back to placeholder or derived URL.
+ * @param {string} [props.height] - Optional CSS height override. If omitted, height is computed from content line count.
+ * @param {string} [props.placeholder] - Fallback label text if no label or URL is provided.
+ * @param {string} [props.value] - The text content to display in the editor.
+ * @param {string} [props.defaultValue] - Fallback text content if value is not provided.
+ * @param {boolean} [props.readOnly] - Whether the editor should be read-only.
+ * @returns {React.ReactElement} The enhanced text area section with header actions and Monaco Editor.
+ */
 function EnhancedTextArea(props) {
   let { url, label, height, ...restProps } = props;
   label = label || props.placeholder;
@@ -893,8 +1101,8 @@ function EnhancedTextArea(props) {
     const shortUrl = url.replace(`${BASH_PROFILE_CODE_REPO_RAW_URL}/`, '').replace(/^(\.\/|\/)+/, '');
     label = label || shortUrl;
 
-    editUrl = `https://github.com/synle/bashrc/edit/master/${shortUrl}`;
-    formattedUrl = `https://github.com/synle/bashrc/blob/master/${shortUrl}`;
+    editUrl = `${BASH_PROFILE_CODE_REPO_EDIT_URL}/${shortUrl}`;
+    formattedUrl = `${BASH_PROFILE_CODE_REPO_VIEW_URL}/${shortUrl}`;
   }
 
   // Calculate height based on content line count so the editor stretches to fit
@@ -940,7 +1148,7 @@ function EnhancedTextArea(props) {
  */
 const CommonOtherAppDom = (
   <>
-    <LinkButton block href='https://github.com/synle/bashrc/tree/master/fonts'>
+    <LinkButton block href={`${BASH_PROFILE_CODE_REPO_VIEW_URL}/fonts`}>
       Custom Fonts
     </LinkButton>
     <LinkButton block href='https://www.sublimetext.com/download'>
@@ -964,7 +1172,18 @@ const CommonOtherAppDom = (
   </>
 );
 
-// This is used to show the warning about OS not matching intended system
+/**
+ * Displays a warning or confirmation message when the selected target OS does not
+ * match (or matches) the user's current system. Renders nothing if the target is
+ * not in the known OS map.
+ * @param {Object} props
+ * @param {string} [props.targetDomString] - The target OS identifier ('mac', 'windows', 'ubuntu', 'android').
+ * @param {boolean} [props.isSystemMac] - Whether the current system is macOS.
+ * @param {boolean} [props.isSystemWindows] - Whether the current system is Windows.
+ * @param {boolean} [props.isSystemUbuntu] - Whether the current system is Ubuntu/Linux.
+ * @param {boolean} [props.isSystemAndroid] - Whether the current system is Android.
+ * @returns {React.ReactElement|null} A styled heading with the match/mismatch message, or null.
+ */
 function TargetSystemOSWarningDom({ targetDomString, isSystemMac, isSystemWindows, isSystemUbuntu, isSystemAndroid }) {
   // 1. Map target strings to their corresponding system detection booleans
   const osMap = {
@@ -1002,9 +1221,11 @@ function TargetSystemOSWarningDom({ targetDomString, isSystemMac, isSystemWindow
   );
 }
 
-// ##################################################################
-// 🍎 MacOSX Main DOM Renderer
-// ##################################################################
+/**
+ * macOS setup notes page. Renders the bootstrap script, README, font/git/SSH/inputrc/vim configs,
+ * SponsorBlock settings, common editor setup for macOS, and links to other useful applications.
+ * @returns {React.ReactElement} The macOS setup notes section.
+ */
 function MacOSXNotesDom() {
   return (
     <>
@@ -1026,9 +1247,12 @@ function MacOSXNotesDom() {
   );
 }
 
-// ##################################################################
-// 🐧 Linux Main DOM Renderer
-// ##################################################################
+/**
+ * Linux setup notes page. Renders the bootstrap script, Linux Mint config, README,
+ * font/git/gitignore/SSH/inputrc/vim configs, SponsorBlock settings, common editor setup,
+ * and links to other useful applications.
+ * @returns {React.ReactElement} The Linux setup notes section.
+ */
 function LinuxNotesDom() {
   return (
     <>
@@ -1051,9 +1275,12 @@ function LinuxNotesDom() {
   );
 }
 
-// ##################################################################
-// 🤖 Android Main DOM Renderer
-// ##################################################################
+/**
+ * Android/Termux setup notes page. Renders the Android shell script, SponsorBlock settings,
+ * ReVanced Extended patch configs for YouTube and YouTube Music, and links to Android
+ * applications (MicroG, YouTube, YouTube Music, Google News, Nova Companion).
+ * @returns {React.ReactElement} The Android/Termux setup notes section.
+ */
 function AndroidNotesDom() {
   return (
     <>
@@ -1092,9 +1319,13 @@ function AndroidNotesDom() {
   );
 }
 
-// ##################################################################
-// 🪟 Windows Main DOM Renderer
-// ##################################################################
+/**
+ * Windows setup notes page. Renders the bootstrap script, README, PowerShell dependencies,
+ * font config, PowerShell profile, Windows Terminal settings, SponsorBlock settings,
+ * common editor setup for Windows, and links to WSL, SFTP mount tools, Visual C++
+ * redistributable, .NET runtime, Ninite, prebuilt applications, and Windows extensions.
+ * @returns {React.ReactElement} The Windows setup notes section.
+ */
 function WindowsNotesDom() {
   return (
     <>
@@ -1148,7 +1379,7 @@ function WindowsNotesDom() {
 
       <div className='form-label'>Other Applications</div>
       <div className='link-group'>
-        <LinkButton block href='https://github.com/synle/bashrc/raw/master/.build/Applications.zip'>
+        <LinkButton block href={`${BASH_PROFILE_CODE_REPO_RAW_URL}/.build/Applications.zip`}>
           Prebuilt Windows Applications
         </LinkButton>
         <LinkButton block href='https://ninite.com/'>
@@ -1188,6 +1419,15 @@ function WindowsNotesDom() {
   );
 }
 
+/**
+ * Shared editor setup section that renders VS Code/VSCodium/Sublime Text setup scripts
+ * and the appropriate VS Code extension list for the target OS.
+ * @param {Object} props
+ * @param {boolean} [props.is_os_darwin_mac] - If true, shows macOS VS Code extensions.
+ * @param {boolean} [props.is_os_window] - If true, shows Windows VS Code extensions.
+ * @param {boolean} [props.is_os_ubuntu] - If true (or default), shows Linux VS Code extensions.
+ * @returns {React.ReactElement} The combined editor setup scripts and extension lists.
+ */
 function CommonEditorSetupDom(props) {
   const { is_os_darwin_mac, is_os_window, is_os_ubuntu } = props;
 
@@ -1214,7 +1454,14 @@ function CommonEditorSetupDom(props) {
   );
 }
 
-// hook up the context with .Provider value={}
+/**
+ * Root application component. Initializes app state by fetching remote configuration data
+ * (setup scripts, script options, hosts config, IP mappings), manages theme state via
+ * ThemeContext, provides form state and input handling via MainAppContext, and renders
+ * the full application layout (header, navigation tabs, main body, footer).
+ * Falls back by clearing localStorage if data loading fails.
+ * @returns {React.ReactElement|null} The full application wrapped in context providers, or null while loading.
+ */
 function App() {
   const [appData, setAppData] = useState();
   const [theme, setTheme] = useState(() => {
@@ -1402,7 +1649,7 @@ function App() {
         }}>
         <div id='container'>
           <div className='app-header'>
-            <LinkText href='https://github.com/synle/bashrc'>
+            <LinkText href={REPO_URL}>
               <h1 style={{ textTransform: 'uppercase' }} target='_blank'>
                 {window.document.title}
               </h1>

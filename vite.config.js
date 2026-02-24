@@ -30,16 +30,21 @@ const updateServiceWorker = () => ({
   },
 });
 
+const requiredEnvVars = [
+  'REPO_PATH_IDENTIFIER',
+  'REPO_BRANCH_NAME',
+  'BASH_SYLE_COMMON',
+];
+for (const name of requiredEnvVars) {
+  if (!process.env[name]) {
+    throw new Error(`${name} environment variable is not defined. Run bootstrap/common-env.sh first.`);
+  }
+}
+
 export default defineConfig({
   root: 'webapp',
   plugins: [react(), viteSingleFile(), updateServiceWorker()],
-  define: {
-    // NOTE: we need the fallback for deployment
-    'window.BASH_PROFILE_CODE_REPO_RAW_URL': JSON.stringify(
-      (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || 'https://raw.githubusercontent.com/synle/bashrc/master').trim(),
-    ),
-    'window.BASH_SYLE_COMMON': JSON.stringify((process.env.BASH_SYLE_COMMON || '~/.bash_syle_common').trim()),
-  },
+  define: Object.fromEntries(requiredEnvVars.map((name) => [`window.${name}`, JSON.stringify(process.env[name].trim())])),
   build: {
     outDir: '../dist',
     emptyOutDir: true,

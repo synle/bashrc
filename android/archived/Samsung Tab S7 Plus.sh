@@ -1,5 +1,5 @@
 # use the one from s21 as the base and add more stuffs on top
-curl -s "https://github.com/synle/bashrc/blob/master/android/Samsung S21 Ultra.sh" | sh
+curl -s "https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/android/archived/Samsung S21 Ultra.sh" | sh
 
 function removeApp(){
   echo "> Remove:" $@
