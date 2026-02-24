@@ -4,8 +4,8 @@
   "type": "module",
   "private": "true",
   "scripts": {
-    "predev": "sh build.sh && npm run format",
-    "dev": "vite",
+    "predev": "bash build.sh && npm run format",
+    "dev": "bash -c 'source bootstrap/common-env.sh && vite'",
     "prebuild": "npm run format",
     "build": "bash -c 'source bootstrap/common-env.sh && vite build'",
     "preview": "vite preview",
