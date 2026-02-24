@@ -5,18 +5,14 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="${BASH_PROFILE_CODE_REPO_RAW_URL:-https:/
 # for Linux using bash
 ##################################################
 REMOTE_BASE="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
-REMOTE_BASE="https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build"
 CONFIG_FILE="vs-code-config"
-KEYBIND_LINUX="vs-code-keys-linux"
-KEYBIND_MAC="vs-code-keys-macosx"
 
-# Define all targets: path + keybinding file
 targets=(
-  "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User|$KEYBIND_LINUX"
-  "$HOME/.config/VSCodium/User|$KEYBIND_LINUX"
-  "$HOME/.config/Code/User|$KEYBIND_LINUX"
-  "$HOME/Library/Application Support/Code/User|$KEYBIND_MAC"
-  "$HOME/Library/Application Support/VSCodium/User|$KEYBIND_MAC"
+  "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User|vs-code-keys-linux"
+  "$HOME/.config/VSCodium/User|vs-code-keys-linux"
+  "$HOME/.config/Code/User|vs-code-keys-linux"
+  "$HOME/Library/Application Support/Code/User|vs-code-keys-macosx"
+  "$HOME/Library/Application Support/VSCodium/User|vs-code-keys-macosx"
 )
 
 download_if_exists() {
@@ -24,15 +20,15 @@ download_if_exists() {
   local key_file="$2"
 
   if [ -d "$dest_dir" ]; then
-    echo "📦 Updating config in: $dest_dir"
+    echo "Updating config in: $dest_dir"
     curl -fsSL "$REMOTE_BASE/$CONFIG_FILE" -o "$dest_dir/settings.json"
     curl -fsSL "$REMOTE_BASE/$key_file" -o "$dest_dir/keybindings.json"
   else
-    echo "⚠️ Skipped: $dest_dir does not exist."
+    echo "Skipped: $dest_dir does not exist."
   fi
 }
 
-echo "🚀 Starting VSCode/VSCodium config sync..."
+echo "Starting VSCode/VSCodium config sync..."
 
 for target in "${targets[@]}"; do
   IFS="|" read -r dir key <<< "$target"
@@ -43,25 +39,24 @@ done
 ##################################################
 # for Windows using powershell
 ##################################################
-$baseUrl     = "https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/.build"
+$baseUrl     = "$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
 $configFile  = "vs-code-config"
 $keybindings = "vs-code-keys-windows"
 
-# Target directories
 $targets = @(
-    "$HOME\AppData\Roaming\VSCodium\User",
-    "$HOME\AppData\Roaming\Code\User"
+    @{ Path = "$HOME\AppData\Roaming\VSCodium\User"; Keys = "vs-code-keys-windows" }
+    @{ Path = "$HOME\AppData\Roaming\Code\User"; Keys = "vs-code-keys-windows" }
 )
 
-Write-Host "🚀 Starting VSCode/VSCodium config sync..." -ForegroundColor Cyan
+Write-Host "Starting VSCode/VSCodium config sync..."
 
 foreach ($target in $targets) {
-    if (Test-Path $target) {
-        Write-Host "📦 Updating config in: $target" -ForegroundColor Green
+    if (Test-Path $target.Path) {
+        Write-Host "Updating config in: $($target.Path)"
 
-        Invoke-WebRequest -Uri "$baseUrl/$configFile" -OutFile "$target\settings.json" -UseBasicParsing
-        Invoke-WebRequest -Uri "$baseUrl/$keybindings" -OutFile "$target\keybindings.json" -UseBasicParsing
+        Invoke-WebRequest -Uri "$baseUrl/$configFile" -OutFile "$($target.Path)\settings.json" -UseBasicParsing
+        Invoke-WebRequest -Uri "$baseUrl/$($target.Keys)" -OutFile "$($target.Path)\keybindings.json" -UseBasicParsing
     } else {
-        Write-Host "⚠️ Skipped: $target does not exist." -ForegroundColor Yellow
+        Write-Host "Skipped: $($target.Path) does not exist."
     }
 }

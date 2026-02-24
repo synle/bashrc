@@ -1,0 +1,80 @@
+/// <reference path="../index.js" />
+
+const buildFiles = [
+  { buildName: 'sublime-text-config', dest: 'Preferences.sublime-settings', os: 'windows' },
+  { buildName: 'sublime-text-keys-windows', dest: 'Default.sublime-keymap', os: 'windows' },
+  { buildName: 'sublime-text-mouse', dest: 'Default.sublime-mousemap', os: 'windows' },
+  { buildName: 'sublime-text-plugins-refresh-on-focus.py', dest: 'sublime-text-plugins-refresh-on-focus.py', os: 'windows' },
+
+  { buildName: 'sublime-text-config', dest: 'Preferences.sublime-settings', os: 'linux' },
+  { buildName: 'sublime-text-keys-linux', dest: 'Default.sublime-keymap', os: 'linux' },
+  { buildName: 'sublime-text-mouse', dest: 'Default.sublime-mousemap', os: 'linux' },
+  { buildName: 'sublime-text-plugins-refresh-on-focus.py', dest: 'sublime-text-plugins-refresh-on-focus.py', os: 'linux' },
+
+  { buildName: 'sublime-text-config-macosx', dest: 'Preferences.sublime-settings', os: 'mac' },
+  { buildName: 'sublime-text-keys-macosx', dest: 'Default.sublime-keymap', os: 'mac' },
+  { buildName: 'sublime-text-mouse-macosx', dest: 'Default.sublime-mousemap', os: 'mac' },
+  { buildName: 'sublime-text-plugins-refresh-on-focus.py', dest: 'sublime-text-plugins-refresh-on-focus.py', os: 'mac' },
+];
+
+function getCurlLines(os) {
+  return buildFiles
+    .filter((f) => f.os === os)
+    .map((f) => `    curl -fsSL "$REPO_BUILD/${f.buildName}" -o "$TARGET_PATH/${f.dest}"`)
+    .join('\n');
+}
+
+function getPowershellLines() {
+  return buildFiles
+    .filter((f) => f.os === 'windows')
+    .map((f) => `    Invoke-WebRequest -Uri "$RepoBuild/${f.buildName}" -OutFile "$W_Path/${f.dest}" -UseBasicParsing`)
+    .join('\n');
+}
+
+async function doWork() {
+  console.log(`  >> Sublime Text Setup Script:`);
+
+  const script = `# NOTE: this is used by normal script, thus we have a fallback here
+export BASH_PROFILE_CODE_REPO_RAW_URL="\${BASH_PROFILE_CODE_REPO_RAW_URL:-https://raw.githubusercontent.com/synle/bashrc/master}"
+
+##################################################
+# for Linux using bash
+##################################################
+REPO_BUILD="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+
+# Resolve potential paths with wildcards
+W_PATH=$(ls -d {/mnt/c,/c}/Users/*/AppData/Roaming/Sublime*Text*/Packages/User 2>/dev/null | head -n 1)
+L_PATH=$(ls -d $HOME/.config/sublime-text*/Packages/User 2>/dev/null | head -n 1)
+M_PATH=$(ls -d "$HOME/Library/Application Support/Sublime Text"*/Packages/User 2>/dev/null | head -n 1)
+
+if [ -n "$W_PATH" ] && [ -d "$W_PATH" ]; then
+    echo "Installing for Windows/WSL ($W_PATH)..."
+    TARGET_PATH="$W_PATH"
+${getCurlLines('windows')}
+elif [ -n "$L_PATH" ] && [ -d "$L_PATH" ]; then
+    echo "Installing for Linux ($L_PATH)..."
+    TARGET_PATH="$L_PATH"
+${getCurlLines('linux')}
+elif [ -n "$M_PATH" ] && [ -d "$M_PATH" ]; then
+    echo "Installing for Mac ($M_PATH)..."
+    TARGET_PATH="$M_PATH"
+${getCurlLines('mac')}
+else
+    echo "Sublime Text User directory not found. Skipping installation."
+fi
+
+
+##################################################
+# for Windows using powershell
+##################################################
+# for windows with powershell, last effort (final fallback)
+$RepoBuild = "$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
+$W_Path = "$env:AppData/Sublime Text/Packages/User"
+if (Test-Path $W_Path) {
+    Write-Host "Installing for Windows with PowerShell..."
+${getPowershellLines()}
+}
+`;
+
+  writeText('software/scripts/sublime-text-setup', script);
+}

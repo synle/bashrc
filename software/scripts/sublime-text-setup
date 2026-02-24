@@ -5,7 +5,7 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="${BASH_PROFILE_CODE_REPO_RAW_URL:-https:/
 # for Linux using bash
 ##################################################
 REPO_BUILD="$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
-sublime-text-mouse-macosx
+
 # Resolve potential paths with wildcards
 W_PATH=$(ls -d {/mnt/c,/c}/Users/*/AppData/Roaming/Sublime*Text*/Packages/User 2>/dev/null | head -n 1)
 L_PATH=$(ls -d $HOME/.config/sublime-text*/Packages/User 2>/dev/null | head -n 1)
@@ -13,22 +13,25 @@ M_PATH=$(ls -d "$HOME/Library/Application Support/Sublime Text"*/Packages/User 2
 
 if [ -n "$W_PATH" ] && [ -d "$W_PATH" ]; then
     echo "Installing for Windows/WSL ($W_PATH)..."
-    curl -fsSL "$REPO_BUILD/sublime-text-config" -o "$W_PATH/Preferences.sublime-settings"
-    curl -fsSL "$REPO_BUILD/sublime-text-keys-windows" -o "$W_PATH/Default.sublime-keymap"
-    curl -fsSL "$REPO_BUILD/sublime-text-mouse" -o "$W_PATH/Default.sublime-mousemap"
-    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py" -o "$W_PATH/sublime-text-plugins-refresh-on-focus.py"
+    TARGET_PATH="$W_PATH"
+    curl -fsSL "$REPO_BUILD/sublime-text-config" -o "$TARGET_PATH/Preferences.sublime-settings"
+    curl -fsSL "$REPO_BUILD/sublime-text-keys-windows" -o "$TARGET_PATH/Default.sublime-keymap"
+    curl -fsSL "$REPO_BUILD/sublime-text-mouse" -o "$TARGET_PATH/Default.sublime-mousemap"
+    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py" -o "$TARGET_PATH/sublime-text-plugins-refresh-on-focus.py"
 elif [ -n "$L_PATH" ] && [ -d "$L_PATH" ]; then
     echo "Installing for Linux ($L_PATH)..."
-    curl -fsSL "$REPO_BUILD/sublime-text-config" -o "$L_PATH/Preferences.sublime-settings"
-    curl -fsSL "$REPO_BUILD/sublime-text-keys-linux" -o "$L_PATH/Default.sublime-keymap"
-    curl -fsSL "$REPO_BUILD/sublime-text-mouse" -o "$L_PATH/Default.sublime-mousemap"
-    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py" -o "$L_PATH/sublime-text-plugins-refresh-on-focus.py"
+    TARGET_PATH="$L_PATH"
+    curl -fsSL "$REPO_BUILD/sublime-text-config" -o "$TARGET_PATH/Preferences.sublime-settings"
+    curl -fsSL "$REPO_BUILD/sublime-text-keys-linux" -o "$TARGET_PATH/Default.sublime-keymap"
+    curl -fsSL "$REPO_BUILD/sublime-text-mouse" -o "$TARGET_PATH/Default.sublime-mousemap"
+    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py" -o "$TARGET_PATH/sublime-text-plugins-refresh-on-focus.py"
 elif [ -n "$M_PATH" ] && [ -d "$M_PATH" ]; then
     echo "Installing for Mac ($M_PATH)..."
-    curl -fsSL "$REPO_BUILD/sublime-text-config-macosx" -o "$M_PATH/Preferences.sublime-settings"
-    curl -fsSL "$REPO_BUILD/sublime-text-keys-macosx" -o "$M_PATH/Default.sublime-keymap"
-    curl -fsSL "$REPO_BUILD/sublime-text-mouse-macosx" -o "$M_PATH/Default.sublime-mousemap"
-    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py" -o "$M_PATH/sublime-text-plugins-refresh-on-focus.py"
+    TARGET_PATH="$M_PATH"
+    curl -fsSL "$REPO_BUILD/sublime-text-config-macosx" -o "$TARGET_PATH/Preferences.sublime-settings"
+    curl -fsSL "$REPO_BUILD/sublime-text-keys-macosx" -o "$TARGET_PATH/Default.sublime-keymap"
+    curl -fsSL "$REPO_BUILD/sublime-text-mouse-macosx" -o "$TARGET_PATH/Default.sublime-mousemap"
+    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py" -o "$TARGET_PATH/sublime-text-plugins-refresh-on-focus.py"
 else
     echo "Sublime Text User directory not found. Skipping installation."
 fi
@@ -38,12 +41,12 @@ fi
 # for Windows using powershell
 ##################################################
 # for windows with powershell, last effort (final fallback)
-$RepoBuild = "https://raw.githubusercontent.com/synle/bashrc/master/.build"
+$RepoBuild = "$BASH_PROFILE_CODE_REPO_RAW_URL/.build"
 $W_Path = "$env:AppData/Sublime Text/Packages/User"
 if (Test-Path $W_Path) {
     Write-Host "Installing for Windows with PowerShell..."
-    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-config" -OutFile "$W_Path/Preferences.sublime-settings"
-    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-keys-windows" -OutFile "$W_Path/Default.sublime-keymap"
-    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-mouse" -OutFile "$W_Path/Default.sublime-mousemap"
-    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-plugins-refresh-on-focus.py" -OutFile "$W_Path/sublime-text-plugins-refresh-on-focus.py"
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-config" -OutFile "$W_Path/Preferences.sublime-settings" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-keys-windows" -OutFile "$W_Path/Default.sublime-keymap" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-mouse" -OutFile "$W_Path/Default.sublime-mousemap" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-plugins-refresh-on-focus.py" -OutFile "$W_Path/sublime-text-plugins-refresh-on-focus.py" -UseBasicParsing
 }
