@@ -62,17 +62,6 @@ h6 {
   font-weight: var(--fontWeightBold);
 }
 
-a {
-  color: var(--colorTextLink);
-  text-decoration: none;
-  cursor: pointer;
-  user-select: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
 hr {
   border: none;
   border-top: var(--borderSize1) solid var(--colorBorderSecondary);

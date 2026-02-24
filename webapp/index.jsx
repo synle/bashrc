@@ -1429,11 +1429,11 @@ function App() {
           onInputChange,
         }}>
         <div className='app-header'>
-          <a href='https://github.com/synle/bashrc'>
+          <LinkText href='https://github.com/synle/bashrc'>
             <h1 style={{ textTransform: 'uppercase' }} target='_blank'>
               {window.document.title}
             </h1>
-          </a>
+          </LinkText>
           <Settings />
         </div>
         <div className='app-clone-command'>

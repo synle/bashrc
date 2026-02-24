@@ -181,8 +181,18 @@ h5,
 // Buttons
 // ============================================================================
 
-button,
 a {
+  color: var(--colorTextLink);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+button,
+a[role='button'] {
   cursor: pointer;
   user-select: none;
   text-decoration: none;
@@ -321,7 +331,7 @@ textarea {
   }
 
   button,
-  a,
+  a[role='button'],
   input {
     padding: var(--spaceSize1) var(--spaceSize2);
   }
@@ -339,7 +349,7 @@ textarea {
   text-align: center;
 
   button,
-  a {
+  a[role='button'] {
     text-align: center;
     width: 100%;
     display: block;
@@ -366,7 +376,7 @@ textarea {
     }
 
     button,
-    a {
+    a[role='button'] {
       border: none;
       border-radius: 0;
       border-bottom: 1px solid var(--colorBorderSecondary);
