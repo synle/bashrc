@@ -30,46 +30,15 @@
 #
 # Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh, -lightweight
 
-##########################################################
+####################################################################
 # Prerequisites - OS Flags & NVM/Node Setup
-##########################################################
-export BASH_SYLE_COMMON='~/.bash_syle_common'
-export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
-
-# code begins
-export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
+####################################################################
+eval "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)"
 
 
-# Initialize common file with OS detection flags
-if [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
-  cat << 'EOF' > "$BASH_SYLE_COMMON_PATH"
-##########################################################
-# OS Detection
-##########################################################
-export is_os_darwin_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && export is_os_darwin_mac=1
-export is_os_ubuntu=0 && command grep -Eiq "ID(_LIKE)?=(ubuntu|debian|mint)" /etc/os-release 2>/dev/null && export is_os_ubuntu=1
-export is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /proc/version 2>/dev/null && ! command grep -qi "microsoft" /proc/version 2>/dev/null; }; } && export is_os_chromeos=1
-export is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d /mingw64 ]; } && export is_os_mingw64=1
-export is_os_android_termux=0 && { [ -n "$TERMUX_VERSION" ] || [ -d /data/data/com.termux ]; } && export is_os_android_termux=1
-export is_os_arch_linux=0 && command grep -Eiq "ID(_LIKE)?=(arch|steamos)" /etc/os-release 2>/dev/null && export is_os_arch_linux=1
-export is_os_steamdeck=0 && [[ "$is_os_arch_linux" == "1" ]] && command grep -qi "ID=steamos" /etc/os-release 2>/dev/null && export is_os_steamdeck=1
-export is_os_redhat=0 && command grep -Eiq "ID(_LIKE)?=(fedora|rhel|centos|rocky|alma)" /etc/os-release 2>/dev/null && export is_os_redhat=1
-export is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && export is_os_window=1
-export is_os_wsl=0 && { [[ "$is_os_window" == "1" ]] || command grep -qi microsoft /proc/version 2>/dev/null; } && export is_os_wsl=1
-alias osflags="env | grep "^is_os_.*=1" | awk -F= '{print $1}'"
-EOF
-fi
-
-# Ensure Repo URL is present
-if [ -f "$BASH_SYLE_COMMON_PATH" ] && ! command grep -Eiq "[[:space:]]*export[[:space:]]+BASH_PROFILE_CODE_REPO_RAW_URL" "$BASH_SYLE_COMMON_PATH"; then
-  echo "export BASH_PROFILE_CODE_REPO_RAW_URL=\"$BASH_PROFILE_CODE_REPO_RAW_URL\"" >> "$BASH_SYLE_COMMON_PATH"
-fi
-[ -f "$BASH_SYLE_COMMON_PATH" ] && . "$BASH_SYLE_COMMON_PATH"
-
-
-##########################################################
+####################################################################
 # Auto-detect mode
-##########################################################
+####################################################################
 # If $0 is run.sh, we're running locally; otherwise piped (e.g. curl | bash)
 case "$(basename "$0")" in
   run.sh) _default_mode="local" ;;
@@ -86,9 +55,9 @@ unset TEST_SCRIPT_MODE
 unset TEST_SCRIPT_FILES
 unset TEST_FORCE_REFRESH
 
-##########################################################
+####################################################################
 # Parse arguments
-##########################################################
+####################################################################
 for arg in "$@"; do
   case "$arg" in
     --mode=*|-mode=*)
@@ -149,15 +118,15 @@ for arg in "$@"; do
   esac
 done
 
-##########################################################
+####################################################################
 # Set exports
-##########################################################
+####################################################################
 if [ "$run_mode" = "local" ]; then export TEST_SCRIPT_MODE=1; fi
 if [ -n "$files_to_test" ]; then export TEST_SCRIPT_FILES="$files_to_test"; fi
 
-##########################################################
+####################################################################
 # Print run info
-##########################################################
+####################################################################
 # Get a comma-separated list of all active is_os_ flags
 active_os_flags=$(set | grep -E "^is_os_.*=1" | awk -F= '{print $1}' | paste -sd "," -)
 
@@ -179,9 +148,9 @@ $run_description
 =======================================================
 "
 
-##########################################################
+####################################################################
 # Helpers
-##########################################################
+####################################################################
 
 # get_file_contents - outputs the concatenated contents of the given files.
 # In prod mode, fetches via curl from upstream. In local mode, reads via cat.
@@ -206,9 +175,9 @@ else
   echo '> Initializing Environment'
 fi
 
-##########################################################
+####################################################################
 # Run pre-scripts
-##########################################################
+####################################################################
 if [ -n "$pre_run_scripts" ]; then
   echo ">> pre-run scripts: $pre_run_scripts"
   get_file_contents "$pre_run_scripts" | bash
@@ -223,9 +192,9 @@ if [ "$run_only_prescripts" = true ]; then
   exit 0
 fi
 
-##########################################################
+####################################################################
 # Install NVM and Node (skip on Android Termux)
-##########################################################
+####################################################################
 if [ "$is_os_android_termux" != "1" ]; then
   DEFAULT_NODE_JS_VERSION=24
   NVM_DIR="$HOME/.nvm"
@@ -256,9 +225,9 @@ if [ "$is_os_android_termux" != "1" ]; then
   fi
 fi
 
-##########################################################
+####################################################################
 # Run main script
-##########################################################
+####################################################################
 get_file_contents "software/index.js" | node | bash
 
 echo "

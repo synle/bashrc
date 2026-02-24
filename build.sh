@@ -1,6 +1,5 @@
 #! /bin/sh
-export BASH_SYLE_COMMON='~/.bash_syle_common'
-export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/synle/bashrc/master"
+eval "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)"
 
 if [ "$CI" = "true" ]; then
     echo() {
