@@ -4,6 +4,7 @@
   "type": "module",
   "private": "true",
   "scripts": {
+    "predev": "sh build.sh && npm run format",
     "dev": "vite",
     "prebuild": "npm run format",
     "build": "vite build",
