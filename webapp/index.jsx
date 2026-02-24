@@ -1658,6 +1658,7 @@ function App() {
           </div>
           <div className='app-clone-command'>
             <code>git clone git@github.com:synle/bashrc.git</code>
+            <code>git clone https://github.com/synle/bashrc.git</code>
           </div>
           <TopNavigationContainer />
           <MainBodyContainer />
