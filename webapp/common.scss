@@ -203,7 +203,7 @@ a[role='button'] {
   padding: var(--spaceSize1) var(--spaceSize2);
   border-radius: 4px;
   border: var(--borderSize1) solid var(--colorBorderSecondary);
-  background: var(--colorBgMain);
+  background: var(--colorBgSecondary);
   color: var(--colorTextLink);
   font-family: var(--fontFamilyMain);
   font-size: var(--fontSize4);
@@ -359,7 +359,7 @@ textarea {
 
   .dropdown-content {
     position: absolute;
-    background: var(--colorBgMain);
+    background: var(--colorBgSecondary);
     border: var(--borderSize1) solid var(--colorBorderSecondary);
     border-radius: 5px;
     box-shadow:
