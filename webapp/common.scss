@@ -76,21 +76,21 @@
 
   // Spacing
   --spaceSize0: 0;
-  --spaceSize1: 0.5rem;
-  --spaceSize2: 0.6rem;
-  --spaceSize3: 0.75rem;
-  --spaceSize4: 1rem;
-  --spaceSize5: 2rem;
+  --spaceSize1: 0.25rem;
+  --spaceSize2: 0.35rem;
+  --spaceSize3: 0.5rem;
+  --spaceSize4: 0.65rem;
+  --spaceSize5: 1rem;
 
   // Borders
-  --borderSize1: 2px;
-  --borderSize2: 4px;
-  --borderSize3: 5px;
-  --borderSize4: 0.5rem;
+  --borderSize1: 1px;
+  --borderSize2: 2px;
+  --borderSize3: 3px;
+  --borderSize4: 0.25rem;
 
   // Grid
-  --gridGapHeight: 1rem;
-  --gridGapWidth: 1.25rem;
+  --gridGapHeight: 0.5rem;
+  --gridGapWidth: 0.65rem;
 
   // Layout
   --maxBodyWidth: 100vw;
@@ -189,9 +189,9 @@ a {
   outline: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: var(--spaceSize2);
-  border-radius: 6px;
+  gap: 0.3rem;
+  padding: var(--spaceSize1) var(--spaceSize2);
+  border-radius: 4px;
   border: var(--borderSize1) solid var(--colorBorderSecondary);
   background: var(--colorBgMain);
   color: var(--colorTextLink);
@@ -236,7 +236,7 @@ textarea {
   outline: none;
   font-size: var(--fontSize4);
   font-family: var(--fontFamilyMain);
-  padding: 10px 12px;
+  padding: 6px 8px;
 
   &:hover {
     background: var(--colorBgSecondary) !important;
@@ -252,7 +252,7 @@ select {
   -webkit-appearance: none;
   -moz-appearance: none;
   display: block;
-  padding: 10px 12px;
+  padding: 6px 8px;
   background-color: var(--colorBgSecondary);
   color: var(--colorTextMain);
   border: 1px solid var(--colorBorderMain);
@@ -287,7 +287,7 @@ textarea {
   color: var(--colorTextMain);
   border: 1px solid var(--colorBorderMain);
   border-radius: 4px;
-  padding: 8px;
+  padding: 6px;
   font-size: 14px;
   line-height: 1.4;
   width: 100%;
@@ -445,8 +445,8 @@ textarea {
   .modalBody {
     background: var(--colorBgSecondary);
     border: var(--borderSize1) solid var(--colorBorderMain);
-    border-radius: 8px;
-    padding: var(--spaceSize4);
+    border-radius: 6px;
+    padding: var(--spaceSize3);
     box-shadow:
       0 4px 6px var(--colorShadow),
       0 8px 16px var(--colorShadow);
