@@ -178,6 +178,7 @@ function RightContainer() {
 
     // Build the template variables
     const templateVars = {
+      BASH_PROFILE_CODE_REPO_RAW_URL: window.BASH_PROFILE_CODE_REPO_RAW_URL,
       SELECT_SCRIPTS: formValue.scriptsToUse.join('\n'),
       DEBUG_WRITE_TO_DIR: formValue.debugWriteToDir ? `&& export DEBUG_WRITE_TO_DIR="${formValue.debugWriteToDir}"` : '',
       SELECTED_RUNNER_MODE: formValue.runnerToUse,
@@ -1257,14 +1258,14 @@ function App() {
             text: 'Setup Lightweight Profile',
             shouldHideBootstrap: true,
             script: `
-        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash -s -- --prod --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
+        curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
       `,
           },
           {
             text: 'Setup Etc Hosts',
             shouldHideBootstrap: true,
             script: `
-        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/setup-hosts.sh | sudo -E bash
+        curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/setup-hosts.sh | sudo -E bash
 
         # Windows
         # c:\\Windows\\System32\\Drivers\\etc\\hosts
@@ -1290,14 +1291,14 @@ function App() {
           {
             text: 'Test Full Run live',
             script: `
-        {{OS_FLAGS}} curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash
+        {{OS_FLAGS}} curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash
       `,
             shouldShowOsSelectionInput: true,
           },
           {
             text: 'Test Single Script',
             script: `{{OS_FLAGS}} {{DEBUG_WRITE_TO_DIR}} \\
-        curl -s ${window.BASH_PROFILE_CODE_REPO_RAW_URL}/run.sh | bash -s -- --prod --files="""
+        curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --files="""
         {{SELECT_SCRIPTS}}
         """
       `,
