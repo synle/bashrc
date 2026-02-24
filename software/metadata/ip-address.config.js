@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 async function doWork() {
   const targetPath = 'software/metadata/ip-address.config';

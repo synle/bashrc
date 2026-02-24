@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 const onlyVsCodeExtensions = trimLeftSpaces(`
   ms-vscode-remote.vscode-remote-extensionpack

@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 const linuxFontPath = '/usr/share/fonts/truetype';
 

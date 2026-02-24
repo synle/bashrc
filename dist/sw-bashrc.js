@@ -1,5 +1,5 @@
-// 1771893326318 will be replaced during build
-const CACHE_VERSION = '1771893326318';
+// 1771895155307 will be replaced during build
+const CACHE_VERSION = '1771895155307';
 const CACHE_NAME = `bashrc-webapp-cache-${CACHE_VERSION}`;
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 

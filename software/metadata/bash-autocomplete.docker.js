@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 const dockerCommandToUse = is_os_window === true ? 'docker.exe' : 'docker';
 

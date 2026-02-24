@@ -1,4 +1,4 @@
-/// <reference path="../index.js" />
+/// <reference path="../base-node-script.js" />
 
 async function doWork() {
   console.log(echo(`    >> Symlink for nvm and node executables in /usr/local/bin ${nvmDefaultNodePath}`));
