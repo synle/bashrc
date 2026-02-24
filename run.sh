@@ -31,9 +31,9 @@
 # Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh, -lightweight
 
 ####################################################################
-# Prerequisites - OS Flags & NVM/Node Setup
+# Prerequisites - OS Flags & Helpers
 ####################################################################
-eval "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)"
+source <(curl -fsSL https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)
 
 
 ####################################################################

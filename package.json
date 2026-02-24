@@ -15,7 +15,7 @@
     "setup:full": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts=\"bootstrap/profile-core.sh\"",
     "setup:light": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js\"",
     "setup:hosts": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"software/scripts/etc-hosts.su.js\"",
-    "test": "sh run.sh",
+    "test": "bash run.sh",
     "test:hosts": "sh run.sh --files=\"software/scripts/etc-hosts.su.js\"",
     "list:scripts": "cat software/metadata/script-list.config"
   },

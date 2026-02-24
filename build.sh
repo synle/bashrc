@@ -1,5 +1,8 @@
-#! /bin/sh
-eval "$(curl -s https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)"
+####################################################################
+# Prerequisites - OS Flags & Helpers
+####################################################################
+source <(curl -fsSL https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)
+
 
 if [ "$CI" = "true" ]; then
     echo() {
