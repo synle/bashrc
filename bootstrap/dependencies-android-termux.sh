@@ -83,7 +83,7 @@ use-black-ui = true
   ##########################################################
   # Install Font and Lightweight Profile
   ##########################################################
-  curl https://github.com/synle/bashrc/raw/master/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
+  curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
   curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod  --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
 
 fi

@@ -68,7 +68,7 @@ Write-Host "`nDone! Please sign out and back in for full effect."
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-Invoke-WebRequest -Uri "https://github.com/synle/bashrc/raw/refs/heads/master/.build/windows-registry.ps1" -OutFile ".\minimal-registry.ps1"
+Invoke-WebRequest -Uri "https://github.com/synle/bashrc/raw/master/.build/windows-registry.ps1" -OutFile ".\minimal-registry.ps1"
 .\minimal-registry.ps1
 ```
 

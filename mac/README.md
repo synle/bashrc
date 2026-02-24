@@ -10,7 +10,7 @@
 
 ```bash
 
-curl https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/software/scripts/mac/tweaks.sh | bash
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/mac/tweaks.sh | bash
 
 ```
 
@@ -18,6 +18,6 @@ curl https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/software/s
 
 ```bash
 
-curl https://raw.githubusercontent.com/synle/bashrc/refs/heads/master/software/scripts/mac/tweaks-electron-oclp.py | python3
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/software/scripts/mac/tweaks-electron-oclp.py | python3
 
 ```
