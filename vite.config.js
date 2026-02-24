@@ -30,11 +30,7 @@ const updateServiceWorker = () => ({
   },
 });
 
-const requiredEnvVars = [
-  'REPO_PATH_IDENTIFIER',
-  'REPO_BRANCH_NAME',
-  'BASH_SYLE_COMMON',
-];
+const requiredEnvVars = ['REPO_PATH_IDENTIFIER', 'REPO_BRANCH_NAME', 'BASH_SYLE_COMMON'];
 for (const name of requiredEnvVars) {
   if (!process.env[name]) {
     throw new Error(`${name} environment variable is not defined. Run bootstrap/common-env.sh first.`);

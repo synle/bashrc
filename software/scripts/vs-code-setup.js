@@ -16,17 +16,11 @@ const powershellTargets = [
 const configFile = 'vs-code-config';
 
 function getBashTargetEntries() {
-  return bashTargets
-    .map((t) => `  "${t.path}|${t.keys}"`)
-    .join('\n');
+  return bashTargets.map((t) => `  "${t.path}|${t.keys}"`).join('\n');
 }
 
 function getPowershellTargetBlock() {
-  return powershellTargets
-    .map(
-      (t) => `    @{ Path = "${t.path}"; Keys = "${t.keys}" }`,
-    )
-    .join('\n');
+  return powershellTargets.map((t) => `    @{ Path = "${t.path}"; Keys = "${t.keys}" }`).join('\n');
 }
 
 async function doWork() {
