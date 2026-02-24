@@ -1,4 +1,4 @@
-/// <reference path="../base-node-script.js" />
+/// <reference path="../index.js" />
 
 async function doWork() {
   let targetPath = path.join(BASE_HOMEDIR_LINUX, '.config/terminator');

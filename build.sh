@@ -57,7 +57,7 @@ const fs = require('fs');
 const path = require('path');
 
 const scriptsDir = 'software';
-const baseScript = 'software/base-node-script.js'
+const baseScript = 'software/index.js'
 
 function getJsFiles(dir) {
   let results = [];

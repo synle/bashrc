@@ -1,4 +1,4 @@
-/// <reference path="../base-node-script.js" />
+/// <reference path="../index.js" />
 
 const sshPortMap = {};
 
