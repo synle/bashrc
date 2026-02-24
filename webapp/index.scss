@@ -162,17 +162,6 @@ a[role='button'] {
   gap: var(--spaceSize3);
 }
 
-.nav-radio-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spaceSize2);
-
-  .selected {
-    background: var(--colorTextLink);
-    color: var(--colorBgMain);
-    border-color: transparent;
-  }
-}
 
 #mainBodyContainer {
   display: flex;

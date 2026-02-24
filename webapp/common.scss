@@ -15,6 +15,7 @@
   --colorBorderMain: #2a5cab;
   --colorBorderSecondary: #cccccc;
   --colorShadow: rgba(0, 0, 0, 0.15);
+  --colorFocusRing: rgba(10, 91, 215, 0.45);
 }
 
 @mixin dark-theme {
@@ -26,6 +27,7 @@
   --colorBorderMain: #3399ff;
   --colorBorderSecondary: #444444;
   --colorShadow: #222222;
+  --colorFocusRing: rgba(80, 160, 255, 0.5);
 }
 
 :root {
@@ -44,11 +46,11 @@
   }
 }
 
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   @include dark-theme;
 }
 
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   @include light-theme;
 }
 
@@ -58,7 +60,9 @@
 
 :root {
   // Font families
-  --fontFamilyMain: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+  --fontFamilyMain:
+    -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif,
+    Apple Color Emoji, Segoe UI Emoji;
   --fontFamilySecondary: Helvetica, Tahoma, Geneva, sans-serif;
   --fontFamilyMonospace: monospace;
 
@@ -76,21 +80,21 @@
 
   // Spacing
   --spaceSize0: 0;
-  --spaceSize1: 0.4rem;
-  --spaceSize2: 0.5rem;
-  --spaceSize3: 0.7rem;
-  --spaceSize4: 0.9rem;
-  --spaceSize5: 1rem;
+  --spaceSize1: 0.5rem;
+  --spaceSize2: 0.6rem;
+  --spaceSize3: 0.75rem;
+  --spaceSize4: 1rem;
+  --spaceSize5: 2rem;
 
   // Borders
-  --borderSize1: 1px;
-  --borderSize2: 2px;
-  --borderSize3: 3px;
-  --borderSize4: 0.25rem;
+  --borderSize1: 2px;
+  --borderSize2: 4px;
+  --borderSize3: 5px;
+  --borderSize4: 0.5rem;
 
   // Grid
-  --gridGapHeight: 0.5rem;
-  --gridGapWidth: 0.65rem;
+  --gridGapHeight: 1rem;
+  --gridGapWidth: 1.25rem;
 
   // Layout
   --maxBodyWidth: 100vw;
@@ -181,29 +185,19 @@ h5,
 // Buttons
 // ============================================================================
 
-a {
-  color: var(--colorTextLink);
-  text-decoration: underline;
-  cursor: pointer;
-
-  &:hover {
-    opacity: 0.85;
-  }
-}
-
 button,
-a[role='button'] {
+a {
   cursor: pointer;
   user-select: none;
   text-decoration: none;
   outline: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: var(--spaceSize1) var(--spaceSize2);
-  border-radius: 4px;
+  gap: 0.5rem;
+  padding: var(--spaceSize2);
+  border-radius: 6px;
   border: var(--borderSize1) solid var(--colorBorderSecondary);
-  background: var(--colorBgSecondary);
+  background: var(--colorBgMain);
   color: var(--colorTextLink);
   font-family: var(--fontFamilyMain);
   font-size: var(--fontSize4);
@@ -219,12 +213,13 @@ a[role='button'] {
   &:focus,
   &:focus-visible {
     opacity: 0.85;
-    /* Increased the 4th value (spread) to 4px */
-    box-shadow: 0 0 0 4px rgba(10, 91, 215, 0.25);
-    outline: none; /* Recommended to hide the default browser outline when using custom box-shadow focus */
+    box-shadow: 0 0 0 6px var(--colorFocusRing);
+    outline: none;
   }
 
-  &.primary {
+  &.primary,
+  &.selected,
+  &:active {
     background: var(--colorTextLink);
     color: var(--colorBgMain);
     border-color: transparent;
@@ -248,7 +243,6 @@ textarea {
   outline: none;
   font-size: var(--fontSize4);
   font-family: var(--fontFamilyMain);
-  padding: 6px 8px;
 
   &:hover {
     background: var(--colorBgSecondary) !important;
@@ -264,7 +258,7 @@ select {
   -webkit-appearance: none;
   -moz-appearance: none;
   display: block;
-  padding: 6px 8px;
+  padding: 10px 12px;
   background-color: var(--colorBgSecondary);
   color: var(--colorTextMain);
   border: 1px solid var(--colorBorderMain);
@@ -290,7 +284,7 @@ select {
   &:focus {
     outline: none;
     border-color: var(--colorTextLink);
-    box-shadow: 0 0 0 2px rgba(42, 92, 171, 0.25);
+    box-shadow: 0 0 0 2px var(--colorFocusRing);
   }
 }
 
@@ -299,7 +293,7 @@ textarea {
   color: var(--colorTextMain);
   border: 1px solid var(--colorBorderMain);
   border-radius: 4px;
-  padding: 6px;
+  padding: 8px;
   font-size: 14px;
   line-height: 1.4;
   width: 100%;
@@ -312,7 +306,7 @@ textarea {
   &:focus {
     outline: none;
     border-color: var(--colorTextLink);
-    box-shadow: 0 0 0 2px rgba(42, 92, 171, 0.25);
+    box-shadow: 0 0 0 2px var(--colorFocusRing);
   }
 }
 
@@ -333,10 +327,20 @@ textarea {
   }
 
   button,
-  a[role='button'],
+  a,
   input {
     padding: var(--spaceSize1) var(--spaceSize2);
   }
+}
+
+// ============================================================================
+// Radio Group
+// ============================================================================
+
+.nav-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spaceSize2);
 }
 
 // ============================================================================
@@ -351,7 +355,7 @@ textarea {
   text-align: center;
 
   button,
-  a[role='button'] {
+  a {
     text-align: center;
     width: 100%;
     display: block;
@@ -359,7 +363,7 @@ textarea {
 
   .dropdown-content {
     position: absolute;
-    background: var(--colorBgSecondary);
+    background: var(--colorBgMain);
     border: var(--borderSize1) solid var(--colorBorderSecondary);
     border-radius: 5px;
     box-shadow:
@@ -378,7 +382,7 @@ textarea {
     }
 
     button,
-    a[role='button'] {
+    a {
       border: none;
       border-radius: 0;
       border-bottom: 1px solid var(--colorBorderSecondary);
@@ -413,14 +417,14 @@ textarea {
     text-overflow: ellipsis;
 
     &::after {
-      content: '▼';
+      content: "▼";
       margin-left: 0.5rem;
       font-size: 0.7rem;
       display: inline-block;
       transition: transform 0.2s ease;
     }
 
-    &[aria-expanded='true']::after {
+    &[aria-expanded="true"]::after {
       transform: rotate(180deg);
     }
   }
@@ -457,8 +461,8 @@ textarea {
   .modalBody {
     background: var(--colorBgSecondary);
     border: var(--borderSize1) solid var(--colorBorderMain);
-    border-radius: 6px;
-    padding: var(--spaceSize3);
+    border-radius: 8px;
+    padding: var(--spaceSize4);
     box-shadow:
       0 4px 6px var(--colorShadow),
       0 8px 16px var(--colorShadow);
@@ -546,7 +550,7 @@ textarea {
 // ============================================================================
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 // ============================================================================
