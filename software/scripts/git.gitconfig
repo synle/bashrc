@@ -92,6 +92,7 @@ del = branch -D # Force delete branch
 
 # Pull / Push / Fetch
 fap = fetch --all --prune # Fetch all and purge deleted remotes
+p =  pull
 pu = pull
 po = push origin
 pof = push origin --force
