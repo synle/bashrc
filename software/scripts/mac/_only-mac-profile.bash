@@ -1,7 +1,3 @@
-##########################################################
-# Shell & Environment
-##########################################################
-
 # Suppress bash legacy warning in Catalina+
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
