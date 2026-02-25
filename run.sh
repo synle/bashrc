@@ -277,7 +277,7 @@ fi
 ####################################################################
 if [ "$run_only_prescripts" != true ]; then
   if command -v node >/dev/null 2>&1; then
-    get_file_contents "software/index.js" | node
+    get_file_contents "software/index.js" | node | bash
   else
     echo "[Skip files] Node is not installed — skipping main script."
   fi
