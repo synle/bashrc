@@ -1,46 +1,64 @@
 # To install manually:
 # curl -o ~/.inputrc https://raw.githubusercontent.com/synle/bashrc/master/.build/inputrc
 
-## case insenstive autocomplete - ignore case for autocomplete
-set completion-ignore-case on
+########################################
+# Completion Behavior
+########################################
+set completion-ignore-case on          # Case-insensitive tab completion (e.g. "doc" matches "Documents")
+set expand-tilde on                    # Expand ~ to the full home directory path during completion
+set show-all-if-ambiguous on           # Show all completions immediately instead of waiting for a second Tab press
+set visible-stats on                   # Append file type indicators (/ for dirs, * for executables, @ for symlinks)
+set colored-stats on                   # Color-code completions by file type (like ls --color)
+set colored-completion-prefix on       # Highlight the common prefix in completion results
+set mark-symlinked-directories on      # Append / to symlinked directories during completion
+set completion-map-case on             # Treat hyphens and underscores as equivalent during completion
+set skip-completed-text on             # Don't duplicate text when completing in the middle of a word
+set menu-complete-display-prefix on    # Show the common prefix before cycling through completions
 
-## https://gist.github.com/gregorynicholas/1812027
-set expand-tilde on
-set show-all-if-ambiguous on
-set visible-stats on
+########################################
+# Editing Behavior
+########################################
+set bell-style none                    # Disable the terminal bell — no beep or flash on errors
+set enable-bracketed-paste on          # Paste multi-line text safely without executing each line
 
-## set match-hidden-files off
+########################################
+# History
+########################################
+set revert-all-at-newline on           # Reset edited history entries when you press Enter — keeps history clean
 
-## http://hiltmon.com/blog/2013/03/12/better-bash-shell-expansion/
+########################################
+# Tab Completion
+########################################
+# Tab to cycle through completions (forward)
+"\t": menu-complete
 
-## shift tab to reverse auto complete.
-"\e[Z": "\e-1\C-i"
+# Shift+Tab to cycle through completions (backward)
+"\e[Z": menu-complete-backward
 
-## ctrl + key bindings for cursor movements for WSL or Linux
-"\e[1;5A": beginning-of-line  # ctrl + up
-"\e[1;5B": end-of-line  # ctrl + down
-"\e[1;5D": backward-word  # ctrl + left
-"\e[1;5C": forward-word   # ctrl + right
-#"\C-H": shell-backward-kill-word # ctrl + backspace to delete
+########################################
+# Cursor Movement — Linux / WSL
+########################################
+"\e[1;5A": beginning-of-line          # Ctrl+Up — jump to beginning of line
+"\e[1;5B": end-of-line                # Ctrl+Down — jump to end of line
+"\e[1;5D": backward-word              # Ctrl+Left — jump one word backward
+"\e[1;5C": forward-word               # Ctrl+Right — jump one word forward
 
-## option + key for cursor movements for Mac OSX
-"\e\e[C": forward-word # right
-"\e\e[D": backward-word # left
-"\e\e[A": beginning-of-line  # up
-"\e\e[B": end-of-line  # down
+########################################
+# Cursor Movement — macOS (Option key)
+########################################
+"\e\e[C": forward-word               # Option+Right — jump one word forward
+"\e\e[D": backward-word              # Option+Left — jump one word backward
+"\e\e[A": beginning-of-line          # Option+Up — jump to beginning of line
+"\e\e[B": end-of-line                # Option+Down — jump to end of line
 
-## this command uses TAB to autocomplete forward paths
-"\t":menu-complete
+########################################
+# History Navigation
+########################################
+"\e[A": history-search-backward       # Up arrow — search history backward matching current prefix
+"\e[B": history-search-forward        # Down arrow — search history forward matching current prefix
 
-## ctrl + key bindings for utils
-#"\C-o": "fcd\r"
-#"\C-p": "fviewfile\r"
-"\C-b": "fuzzy_favorite_command\r"
-"\C-n": "fuzzyMakeComponent\r"
-
-## alt + key bindings for utils
-#"\er": "clear\n" # alt r to clear (for WSL and linux)
-#"\eo": "fcd\r" # alt o
-#"\ep": "fviewfile\r" # alt o
-#"\eb": "fuzzy_favorite_command\r" # alt b
-#"\en": "fuzzyMakeComponent\r"
+########################################
+# Custom Shortcuts
+########################################
+"\C-b": "fuzzy_favorite_command\r"   # Ctrl+B — run fuzzy favorite command picker
+"\C-n": "fuzzyMakeComponent\r"       # Ctrl+N — run fuzzy make-component scaffold

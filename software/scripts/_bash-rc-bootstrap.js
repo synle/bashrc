@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Bootstraps the .bashrc file with entry points for .bash_syle and other bash config files. */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bashrc');

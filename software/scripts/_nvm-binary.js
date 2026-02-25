@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Registers nvm (Node Version Manager) binary paths and lazy-loading script with bashrc. */
 async function doWork() {
   console.log(`  >> Register NVM binary with bashrc ${nvmBasePath}`);

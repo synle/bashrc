@@ -1,3 +1,5 @@
+/// <reference path="../../index.js" />
+
 /** * Configures iTerm2 terminal settings for macOS. */
 async function doWork() {
   console.log('  >> Installing Mac Only - Iterm Dracula Theme');

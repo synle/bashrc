@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Downloads and installs the Terminator terminal emulator config file. */
 async function doWork() {
   let targetPath = path.join(BASE_HOMEDIR_LINUX, '.config/terminator');

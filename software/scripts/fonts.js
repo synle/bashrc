@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 const linuxFontPath = '/usr/share/fonts/truetype';
 
 /** * Downloads ligature fonts and generates platform-specific font installation guides. */
