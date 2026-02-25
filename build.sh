@@ -1,8 +1,8 @@
 ####################################################################
 # Prerequisites - OS Flags & Helpers
 ####################################################################
-source <(curl -fsSL https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)
-
+# BEGIN common-env
+# END common-env
 
 if [ "$CI" = "true" ]; then
     echo() {
@@ -194,3 +194,38 @@ if (replaced !== readme) {
 """
 
 echo '> DONE Building'
+
+
+##########################################################
+# Update build.sh and run.sh with common-env.sh content
+##########################################################
+echo '> Updating build.sh and run.sh with common-env.sh'
+node -e """
+const fs = require('fs');
+
+const commonEnvContent = fs.readFileSync('bootstrap/common-env.sh', 'utf8')
+  .replace(/^#!.*\n/, '') // remove shebang
+  .trim();
+
+const BEGIN = '# BEGIN common-env';
+const END = '# END common-env';
+
+for (const file of ['build.sh', 'run.sh']) {
+  const content = fs.readFileSync(file, 'utf8');
+  const beginIdx = content.indexOf(BEGIN);
+  const endIdx = content.indexOf(END);
+  if (beginIdx === -1 || endIdx === -1) {
+    console.log('>> Markers not found in ' + file + ', skipping');
+    continue;
+  }
+
+  const replaced = content.slice(0, beginIdx) + BEGIN + '\n' + commonEnvContent + '\n' + content.slice(endIdx);
+
+  if (replaced !== content) {
+    fs.writeFileSync(file, replaced);
+    console.log('>> Updated ' + file);
+  } else {
+    console.log('>> No changes needed in ' + file);
+  }
+}
+"""

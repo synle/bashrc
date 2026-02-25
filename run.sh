@@ -34,7 +34,8 @@
 ####################################################################
 # Prerequisites - OS Flags & Helpers
 ####################################################################
-source <(curl -fsSL https://raw.githubusercontent.com/synle/bashrc/master/bootstrap/common-env.sh)
+# BEGIN common-env
+# END common-env
 
 ####################################################################
 # script: Install NVM and Node (skip on Android Termux)
