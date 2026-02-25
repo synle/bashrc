@@ -1077,6 +1077,17 @@ function downloadFile(url, destination) {
 }
 
 /**
+ * Downloads an asset from an external URL to a local destination using curl.
+ * Unlike downloadFile, this supports redirects and does not prepend the repo URL.
+ * @param {string} url - The full URL to download from
+ * @param {string} destination - The local file path to save to
+ * @returns {Promise<string>} Resolves with the command's stdout
+ */
+function downloadAsset(url, destination) {
+  return execBash(`curl -sL "${url}" -o "${destination}"`);
+}
+
+/**
  * Downloads binary files from the main GitHub repo that match a filter function.
  * Only considers files under the "binaries/" path, excluding markdown files.
  * @param {function(string): boolean} findHandler - Filter function to select which files to download
@@ -1447,6 +1458,18 @@ function execBashSilent(cmd, options) {
       resolve(stdout);
     });
   });
+}
+
+/**
+ * Deletes a directory or file at the given path using rm -rf.
+ * @param {string} targetPath - The path to delete
+ * @param {boolean} [recursive=true] - Whether to delete recursively (adds -r flag)
+ * @returns {Promise<string>} Resolves when deletion is complete
+ */
+function deleteFolder(targetPath, recursive = true) {
+  console.log(`  >> Deleting ${targetPath}`);
+  const flags = recursive ? "-rf" : "-f";
+  return execBashSilent(`rm ${flags} "${targetPath}"`);
 }
 
 //////////////////////////////////////////////////////

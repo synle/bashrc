@@ -8,7 +8,7 @@ async function doWork() {
 
   if (TEST_FORCE_REFRESH) {
     console.log("  >> Force refresh: deleting old url-porter files");
-    await execBashSilent(`rm -rf "${targetPath}"`);
+    await deleteFolder(targetPath);
   }
 
   if (fs.existsSync(targetPath)) {
@@ -19,7 +19,7 @@ async function doWork() {
   console.log("  >> Installing url-porter extension to:", targetPath);
 
   await mkdir(targetPath);
-  await execBash(`curl -L "${zipUrl}" -o "${tmpZip}"`);
+  await downloadAsset(zipUrl, tmpZip);
   await execBash(`unzip -oq "${tmpZip}" -d "${targetPath}"`);
   await execBashSilent(`rm -f "${tmpZip}"`);
 
