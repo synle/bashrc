@@ -79,7 +79,7 @@ timeout() {
     wait "\\$cmd_pid"
   )
 }
-`;
+`.trim();
 
   const formatScriptBlock = `
 # === timeout script ===
@@ -269,11 +269,9 @@ ${excludeFilesArray}
 
   echo '>> DONE Formatting All Text-Based Files'
 }
-
-# === end format script ===
-`;
+`.trim();
 
   registerWithBashSyle("format script", formatScriptBlock);
 
-  writeToBuildFile([{ file: "format", data: formatScriptBlock }]);
+  writeToBuildFile([{ file: "format.js", data: formatScriptBlock }]);
 }
