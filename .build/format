@@ -6,16 +6,16 @@ function format {
     shift
   fi
 
-  echo "🚀 Running full project format sequence..."
+  echo "Running full project format sequence..."
 
   if [ "$verbose" -eq 1 ]; then
-    timeout 60 format_cleanup || echo "⚠️ format_cleanup failed or skipped."
-    timeout 20 format_other_text_based_files || echo "⚠️ format_other_text_based_files failed or skipped."
-    timeout 10 format_python || echo "⚠️ format_python failed or skipped."
-    timeout 10 format_js || echo "⚠️ format_js failed or skipped."
-    echo "✅ All formatting steps complete (some may have warnings)."
+    timeout 30 format_cleanup || echo "format_cleanup failed or skipped."
+    timeout 20 format_other_text_based_files || echo "format_other_text_based_files failed or skipped."
+    timeout 10 format_python || echo "format_python failed or skipped."
+    timeout 10 format_js || echo "format_js failed or skipped."
+    echo "All formatting steps complete (some may have warnings)."
   else
-    timeout 60 format_cleanup > /dev/null 2>&1 || true
+    timeout 30 format_cleanup > /dev/null 2>&1 || true
     timeout 20 format_other_text_based_files > /dev/null 2>&1 || true
     timeout 10 format_python > /dev/null 2>&1 || true
     timeout 10 format_js > /dev/null 2>&1 || true
@@ -23,14 +23,14 @@ function format {
 }
 
 function format_js {
-  echo "🎨 Running Prettier on JavaScript/TypeScript files..."
+  echo "Running Prettier on JavaScript/TypeScript files..."
 
   if ! command -v npx >/dev/null 2>&1; then
-    echo "❌ npx not found. Please install Node.js (https://nodejs.org/) first."
+    echo "npx not found. Please install Node.js (https://nodejs.org/) first."
     return 1
   fi
 
-  # Create a temporary .prettierignore file based on EDITOR_CONFIGS.ignoredFolders
+  # Create a temporary .prettierignore file
   local temp_ignore_file=$(mktemp)
   cat <<'EOF' > "$temp_ignore_file"
 .cache
@@ -41,20 +41,23 @@ function format_js {
 .hg
 .idea
 .mypy_cache
+.next
 .pytest_cache
 .sass-cache
 .svn
 .venv
+CVS
 __pycache*
 __pycache__
 bower_components
 build
 coverage
-CVS
 dist
 env
 node_modules
+target
 tmp
+vendor
 venv
 webpack-dist
 EOF
@@ -64,9 +67,9 @@ EOF
   rm -f "$temp_ignore_file"
 
   if [ $status -eq 0 ]; then
-    echo "✅ JS/TS formatting complete."
+    echo "JS/TS formatting complete."
   else
-    echo "⚠️ Prettier encountered some errors."
+    echo "Prettier encountered some errors."
     return 1
   fi
 }
@@ -74,58 +77,64 @@ EOF
 function format_python {
   # Only activate venv if not already active
   if [ -n "$VIRTUAL_ENV" ]; then
-    echo "🐍 Python environment already active: $VIRTUAL_ENV"
+    echo "Python environment already active: $VIRTUAL_ENV"
   else
     if [ -f ".venv/bin/activate" ]; then
-      echo "🐍 Activating local virtual environment (.venv)..."
+      echo "Activating local virtual environment (.venv)..."
       source .venv/bin/activate
     elif [ -f "/home/syle/venv/bin/activate" ]; then
-      echo "🐍 Activating fallback environment (/home/syle/venv)..."
+      echo "Activating fallback environment (/home/syle/venv)..."
       source /home/syle/venv/bin/activate
     else
-      echo "⚠️ No virtual environment found. Using global Python."
+      echo "No virtual environment found. Using global Python."
     fi
   fi
 
   if ! command -v ruff >/dev/null 2>&1; then
-    echo "📦 Installing Ruff..."
-    pip install ruff || uv pip install ruff || { echo "❌ Failed to install Ruff."; return 1; }
+    echo "Installing Ruff..."
+    pip install ruff || uv pip install ruff || { echo "Failed to install Ruff."; return 1; }
   fi
 
-  echo "🧹 Running Ruff checks and formatting..."
-  ruff format --line-length 140 --exclude ".cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,.venv,__pycache*,__pycache__,bower_components,build,coverage,CVS,dist,env,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
-  ruff check --fix --line-length 140 --exclude ".cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.pytest_cache,.sass-cache,.svn,.venv,__pycache*,__pycache__,bower_components,build,coverage,CVS,dist,env,node_modules,tmp,venv,webpack-dist" > /dev/null 2>&1 || return 1
-  echo "✅ Python formatting complete."
+  echo "Running Ruff checks and formatting..."
+  ruff format --line-length 140 --exclude ".cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.next,.pytest_cache,.sass-cache,.svn,.venv,CVS,__pycache*,__pycache__,bower_components,build,coverage,dist,env,node_modules,target,tmp,vendor,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  ruff check --fix --line-length 140 --exclude ".cache,.ebextensions,.generated,.git,.gradle,.hg,.idea,.mypy_cache,.next,.pytest_cache,.sass-cache,.svn,.venv,CVS,__pycache*,__pycache__,bower_components,build,coverage,dist,env,node_modules,target,tmp,vendor,venv,webpack-dist" > /dev/null 2>&1 || return 1
+  echo "Python formatting complete."
 }
 
 # ----------------------------------------------------
-# Aggressive Junk Cleanup (macOS + metadata)
+# Aggressive Junk Cleanup (macOS metadata, OS artifacts,
+# patch rejects, and other system files)
 # ----------------------------------------------------
 function format_cleanup {
-
-  echo "🧹 Cleaning macOS and metadata junk..."
+  echo "Cleaning junk files..."
 
   local base_dir="${1:-.}"
 
   if [ ! -d "$base_dir" ]; then
-    echo "❌ Directory '$base_dir' not found."
+    echo "Directory '$base_dir' not found."
     return 1
   fi
 
   local count=$(find "$base_dir" \
     \( \
       -type f \( \
-        -name '*.Identifier' -o \
         -name '._*' -o \
-        -name '.DS_Store' -o \
         -name '.AppleDouble' -o \
+        -name '.DS_Store' -o \
         -name '.LSOverride' -o \
-        -name 'Icon?' \
+        -name '*.Identifier' -o \
+        -name '*.orig' -o \
+        -name '*.rej' -o \
+        -name 'Desktop.ini' -o \
+        -name 'ehthumbs.db' -o \
+        -name 'Icon?' -o \
+        -name 'Thumbs.db' \
       \) -o \
       -type d \( \
         -name '.Spotlight-V100' -o \
         -name '.Trashes' -o \
-        -name '.fseventsd' \
+        -name '.fseventsd' -o \
+        -name '__MACOSX' \
       \) \
     \) \
     -not -path '*/.cache/*' \
@@ -136,20 +145,23 @@ function format_cleanup {
     -not -path '*/.hg/*' \
     -not -path '*/.idea/*' \
     -not -path '*/.mypy_cache/*' \
+    -not -path '*/.next/*' \
     -not -path '*/.pytest_cache/*' \
     -not -path '*/.sass-cache/*' \
     -not -path '*/.svn/*' \
     -not -path '*/.venv/*' \
+    -not -path '*/CVS/*' \
     -not -path '*/__pycache*/*' \
     -not -path '*/__pycache__/*' \
     -not -path '*/bower_components/*' \
     -not -path '*/build/*' \
     -not -path '*/coverage/*' \
-    -not -path '*/CVS/*' \
     -not -path '*/dist/*' \
     -not -path '*/env/*' \
     -not -path '*/node_modules/*' \
+    -not -path '*/target/*' \
     -not -path '*/tmp/*' \
+    -not -path '*/vendor/*' \
     -not -path '*/venv/*' \
     -not -path '*/webpack-dist/*' \
     -print | wc -l)
@@ -158,17 +170,23 @@ function format_cleanup {
     find "$base_dir" \
       \( \
         -type f \( \
-          -name '*.Identifier' -o \
           -name '._*' -o \
-          -name '.DS_Store' -o \
-          -name '.AppleDouble' -o \
-          -name '.LSOverride' -o \
-          -name 'Icon?' \
+        -name '.AppleDouble' -o \
+        -name '.DS_Store' -o \
+        -name '.LSOverride' -o \
+        -name '*.Identifier' -o \
+        -name '*.orig' -o \
+        -name '*.rej' -o \
+        -name 'Desktop.ini' -o \
+        -name 'ehthumbs.db' -o \
+        -name 'Icon?' -o \
+        -name 'Thumbs.db' \
         \) -o \
         -type d \( \
           -name '.Spotlight-V100' -o \
-          -name '.Trashes' -o \
-          -name '.fseventsd' \
+        -name '.Trashes' -o \
+        -name '.fseventsd' -o \
+        -name '__MACOSX' \
         \) \
       \) \
       -not -path '*/.cache/*' \
@@ -179,27 +197,30 @@ function format_cleanup {
     -not -path '*/.hg/*' \
     -not -path '*/.idea/*' \
     -not -path '*/.mypy_cache/*' \
+    -not -path '*/.next/*' \
     -not -path '*/.pytest_cache/*' \
     -not -path '*/.sass-cache/*' \
     -not -path '*/.svn/*' \
     -not -path '*/.venv/*' \
+    -not -path '*/CVS/*' \
     -not -path '*/__pycache*/*' \
     -not -path '*/__pycache__/*' \
     -not -path '*/bower_components/*' \
     -not -path '*/build/*' \
     -not -path '*/coverage/*' \
-    -not -path '*/CVS/*' \
     -not -path '*/dist/*' \
     -not -path '*/env/*' \
     -not -path '*/node_modules/*' \
+    -not -path '*/target/*' \
     -not -path '*/tmp/*' \
+    -not -path '*/vendor/*' \
     -not -path '*/venv/*' \
     -not -path '*/webpack-dist/*' \
       -exec rm -rf {} +
 
-    echo "✅ Removed $count junk items."
+    echo "Removed $count junk items."
   else
-    echo "✨ No junk found."
+    echo "No junk found."
   fi
 }
 
@@ -207,7 +228,6 @@ function format_cleanup {
 # Light Cleanup (depth limited)
 # ----------------------------------------------------
 function format_cleanup_light {
-
   local base_dir="${1:-.}"
   local max_depth=6
 
@@ -219,17 +239,23 @@ function format_cleanup_light {
     -maxdepth "$max_depth" \
     \( \
       -type f \( \
-        -name '*.Identifier' -o \
         -name '._*' -o \
-        -name '.DS_Store' -o \
         -name '.AppleDouble' -o \
+        -name '.DS_Store' -o \
         -name '.LSOverride' -o \
-        -name 'Icon?' \
+        -name '*.Identifier' -o \
+        -name '*.orig' -o \
+        -name '*.rej' -o \
+        -name 'Desktop.ini' -o \
+        -name 'ehthumbs.db' -o \
+        -name 'Icon?' -o \
+        -name 'Thumbs.db' \
       \) -o \
       -type d \( \
         -name '.Spotlight-V100' -o \
         -name '.Trashes' -o \
-        -name '.fseventsd' \
+        -name '.fseventsd' -o \
+        -name '__MACOSX' \
       \) \
     \) \
     -not -path '*/.cache/*' \
@@ -240,49 +266,70 @@ function format_cleanup_light {
     -not -path '*/.hg/*' \
     -not -path '*/.idea/*' \
     -not -path '*/.mypy_cache/*' \
+    -not -path '*/.next/*' \
     -not -path '*/.pytest_cache/*' \
     -not -path '*/.sass-cache/*' \
     -not -path '*/.svn/*' \
     -not -path '*/.venv/*' \
+    -not -path '*/CVS/*' \
     -not -path '*/__pycache*/*' \
     -not -path '*/__pycache__/*' \
     -not -path '*/bower_components/*' \
     -not -path '*/build/*' \
     -not -path '*/coverage/*' \
-    -not -path '*/CVS/*' \
     -not -path '*/dist/*' \
     -not -path '*/env/*' \
     -not -path '*/node_modules/*' \
+    -not -path '*/target/*' \
     -not -path '*/tmp/*' \
+    -not -path '*/vendor/*' \
     -not -path '*/venv/*' \
     -not -path '*/webpack-dist/*' \
     -exec rm -rf {} +
 }
 
-
 # ----------------------------------------------------
-# Text File Formatting
+# Text File Formatting (trim trailing whitespace)
 # ----------------------------------------------------
 function format_other_text_based_files {
   echo '>> Formatting text-based files...'
 
   EXCLUDE_DIRS=(
     ".cache"
+    ".ebextensions"
+    ".generated"
     ".git"
+    ".gradle"
+    ".hg"
+    ".idea"
+    ".mypy_cache"
     ".next"
+    ".pytest_cache"
+    ".sass-cache"
+    ".svn"
     ".venv"
+    "CVS"
+    "__pycache*"
+    "__pycache__"
+    "bower_components"
     "build"
+    "coverage"
     "dist"
+    "env"
     "node_modules"
     "target"
+    "tmp"
     "vendor"
     "venv"
+    "webpack-dist"
   )
 
   EXCLUDE_FILES=(
-    "*.Identifier",
+    "*.Identifier"
     "*.min.css"
     "*.min.js"
+    "*.orig"
+    "*.rej"
     ".DS_Store"
     "package-lock.json"
     "pnpm-lock.yaml"
