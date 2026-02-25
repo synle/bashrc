@@ -34,7 +34,7 @@
 ####################################################################
 # Prerequisites - OS Flags & Helpers
 ####################################################################
-# BEGIN common-env
+# BEGIN bootstrap/common-env.sh
 ####################################################################
 # common-env.sh - Shared environment setup for run.sh and build.sh
 # Sets up repo identifiers, URL exports, OS detection flags,
@@ -86,7 +86,7 @@ alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
 
 
 unset os_flags
-# END common-env
+# END bootstrap/common-env.sh
 
 ####################################################################
 # Auto-detect mode

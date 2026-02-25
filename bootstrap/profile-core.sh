@@ -546,8 +546,9 @@ mkdir -p ~/.ssh/sockets
 # 08:31:59PM U=04:31:59AM syle @ Sy-Omen45L
 # ~/git/bashrc
 # >>>
-export PS1_Simple="
-\[\e[1;93m\]\$(get_time) \[\e[1;95m\]U=\$(get_time \"UTC\") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]
-\[\e[1;31m\]\w\[\e[m\]
-\$(rainbow_print '>>>' | sed 's/\(\x1b\[[0-9;]*m\)/\\\[\1\\\]/g') "
+# export PS1_Simple="
+# \$(get_time) U=\$(get_time \"UTC\") \u @ \h
+# \w
+# >>> "
+export PS1_Simple="\n\[\e[1;93m\]\$(get_time) \[\e[1;95m\]U=\$(get_time \"UTC\") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]\n\[\e[1;31m\]\w\[\e[m\]\n\$(rainbow_print '>>>' | sed 's/\(\x1b\[[0-9;]*m\)/\\\[\1\\\]/g') "
 export PS1="$PS1_Simple"

@@ -31,17 +31,17 @@ curl -sSLJ --parallel --parallel-max 10 \\
 ${fontBaseNames.map((fontBaseName) => `  -O ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName}`).join(' \\\n')}
 echo "Done downloading fonts"`;
 
-  // Start-BitsTransfer: Pipe an array of URLs into a single Start-BitsTransfer call instead of invoking it per file, which lets BITS manage them as one job
+  // Start-BitsTransfer: Use ForEach-Object to pass each URL explicitly to -Source, since Start-BitsTransfer cannot bind plain strings from the pipeline
   const windowFontGuide = `# Fonts - Windows
 cd ([Environment]::GetFolderPath('Desktop'))
 $urls = @(
 ${fontBaseNames.map((fontBaseName) => `  "${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName}"`).join(',\n')}
 )
-$urls | Start-BitsTransfer -Destination .
+$urls | ForEach-Object { Start-BitsTransfer -Source $_ -Destination . }
 echo "Done downloading fonts"`;
 
   writeToBuildFile({
-    file: 'font.md',
+    file: 'font.sh',
     data: `${linuxFontGuide}\n\n${windowFontGuide}`,
   });
 }

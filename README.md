@@ -2,9 +2,7 @@
 
 This is my personal bash profile.
 
-## Using This URL to Install
-
-Refer to this webapp for the configuration:
+## Demo
 
 <https://synle.github.io/bashrc/>
 
@@ -21,18 +19,8 @@ Refer to this webapp for the configuration:
 
 Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
-```bash
-curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --pre-scripts="""
-  bootstrap/profile-core.sh
-  bootstrap/dependencies-mac.sh
-  bootstrap/dependencies-ubuntu.sh
-  bootstrap/dependencies-windows.sh
-  bootstrap/dependencies-chrome-os-linux.sh
-  bootstrap/dependencies-android-termux.sh
-  bootstrap/dependencies-arch-linux-steam-deck.sh
-"""
-```
-
+<!-- BEGIN bootstrap/setup.sh -->
+<!-- END bootstrap/setup.sh -->
 
 ## Fun Facts
 

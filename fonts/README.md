@@ -2,7 +2,8 @@ These fonts are copied from the owner of Fira Code. Repo is at https://github.co
 
 ### Font Install Script
 
-https://raw.githubusercontent.com/synle/bashrc/master/.build/font.md
+<!-- BEGIN .build/font.sh -->
+<!-- END .build/font.sh -->
 
 ### Get Font Name Mappings
 
