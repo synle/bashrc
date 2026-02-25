@@ -149,15 +149,14 @@ for (const file of getJsFiles(scriptsDir)) {
 ##########################################################
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-  bash run.sh | bash -s -- --prod --files="software/metadata/script-list.config.js"
+  cat run.sh | bash -s -- --files="software/metadata/script-list.config.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
-export SHOULD_PRINT_OS_FLAGS='false'; # only print this flag the first time
 
 ##########################################################
 # Prebuild Host Mappings
 ##########################################################
 echo '> Prebuilding Host Mappings'
-bash run.sh | bash -s -- --prod --files="software/metadata/ip-address.config.js"
+cat run.sh | bash -s -- --files="software/metadata/ip-address.config.js"
 
 ##########################################################
 # Build Raw JSON and Config Artifacts
@@ -178,7 +177,7 @@ find $CONFIG_BUILD_PATH
 if [ "$CI" != "true" ]; then
   echo '> Build Host Mappings'
   export DEBUG_WRITE_TO_DIR="" && \
-    bash run.sh | bash -s -- --prod --files="software/metadata/hosts-blocked-ads.config.js"
+    cat run.sh | bash -s -- --files="software/metadata/hosts-blocked-ads.config.js"
 fi
 
 ##########################################################

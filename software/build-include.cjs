@@ -46,9 +46,9 @@ const INCLUSIONS = [
 
 /** Comment style per file extension */
 const COMMENT_STYLES = {
-  '.md':   { prefix: '<!--', suffix: ' -->' },
+  '.md': { prefix: '<!--', suffix: ' -->' },
   '.html': { prefix: '<!--', suffix: ' -->' },
-  '.xml':  { prefix: '<!--', suffix: ' -->' },
+  '.xml': { prefix: '<!--', suffix: ' -->' },
 };
 const DEFAULT_COMMENT_STYLE = { prefix: '#', suffix: '' };
 
@@ -70,7 +70,9 @@ function isFilePath(key) {
 
 /** Map source file extensions to markdown code fence languages */
 const CODE_FENCE_LANGUAGES = {
-  '.sh': 'bash', '.bash': 'bash', '.zsh': 'bash',
+  '.sh': 'bash',
+  '.bash': 'bash',
+  '.zsh': 'bash',
   '.ps1': 'powershell',
 };
 
@@ -110,9 +112,7 @@ function findMarkers(content, targetFile) {
   const escapedSuffix = suffix.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   // Match: prefix BEGIN key suffix (suffix is optional with possible whitespace)
-  const pattern = escapedSuffix
-    ? `${escapedPrefix} BEGIN (.+?)\\s*${escapedSuffix}`
-    : `${escapedPrefix} BEGIN (.+)`;
+  const pattern = escapedSuffix ? `${escapedPrefix} BEGIN (.+?)\\s*${escapedSuffix}` : `${escapedPrefix} BEGIN (.+)`;
 
   const regex = new RegExp(pattern, 'g');
   const markers = [];
@@ -150,9 +150,7 @@ for (const inc of INCLUSIONS) {
 
 // Determine target files: CLI args or collect from INCLUSIONS
 const cliTargets = process.argv.slice(2);
-const targetFiles = cliTargets.length > 0
-  ? cliTargets
-  : [...new Set(INCLUSIONS.flatMap((inc) => inc.targets))];
+const targetFiles = cliTargets.length > 0 ? cliTargets : [...new Set(INCLUSIONS.flatMap((inc) => inc.targets))];
 
 let totalUpdated = 0;
 

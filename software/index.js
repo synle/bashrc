@@ -1623,7 +1623,7 @@ async function includeSource(file) {
  * @returns {void}
  */
 function printOsFlags() {
-  if (process.env.SHOULD_PRINT_OS_FLAGS !== 'false') {
+  if (process.env.SHOULD_PRINT_OS_FLAGS === 'true') {
     printSectionBlock(`OS Flags`);
     console.log(`
       node -e """

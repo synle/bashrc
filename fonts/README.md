@@ -32,7 +32,7 @@ $urls = @(
   "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Fira-Code-SemiBold.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/fonts/Trace-Regular.ttf"
 )
-$urls | Start-BitsTransfer -Destination .
+$urls | ForEach-Object { Start-BitsTransfer -Source $_ -Destination . }
 echo "Done downloading fonts"
 ```
 <!-- END .build/font.sh -->
