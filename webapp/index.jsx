@@ -691,12 +691,12 @@ function DynamicTextArea(props) {
       setText(
         await fetch(url)
           .then((r) => {
-            setSuccess(r.ok)
+            setSuccess(r.ok);
             return r;
           })
           .then((r) => r.text())
           .then((r) => r.trim())
-          .catch(r => setSuccess(false)),
+          .catch((r) => setSuccess(false)),
       );
     }
 
@@ -1155,18 +1155,18 @@ function EnhancedTextArea(props) {
   return (
     <div className={collapsed ? 'editor-section editor-collapsed' : 'editor-section'}>
       <div className='editor-header'>
-        <div>
-          {formattedUrl ? <LinkText href={formattedUrl}>{label}</LinkText> : <span>{label}</span>}
-        </div>
+        <div>{formattedUrl ? <LinkText href={formattedUrl}>{label}</LinkText> : <span>{label}</span>}</div>
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
         <FullScreenTextViewer value={content} label={label} />
         <ActionButton onClick={() => setCollapsed(!collapsed)}>{collapsed ? 'Expand' : 'Collapse'}</ActionButton>
       </div>
-      {error ? <div className='text-error'>Content Error: {content}</div>
-      :!collapsed && <CodeEditor content={content} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />
-    }
+      {error ? (
+        <div className='text-error'>Content Error: {content}</div>
+      ) : (
+        !collapsed && <CodeEditor content={content} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />
+      )}
     </div>
   );
 }
@@ -1226,14 +1226,9 @@ function TargetSystemOSWarningDom({ targetDomString, isSystemMac, isSystemWindow
   // 2. Guard clause: if the target isn't in our map, render nothing
   if (!target) return null;
 
-
   // 3. Handle the Android edge case or standard mismatch logic
   if (targetDomString === 'android') {
-    return (
-      <h3 className='text-error'>
-        This is only meant for Android.
-      </h3>
-    );
+    return <h3 className='text-error'>This is only meant for Android.</h3>;
   }
 
   return (
