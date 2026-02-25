@@ -128,7 +128,7 @@ cp = cherry-pick
 cpc = cherry-pick --continue
 cpn = cherry-pick -n # Cherry-pick without committing
 clone0 = clone --depth 1 --single-branch  # Shallow Clone
-clone1 = clone --depth 1 --single-branch --single-branch  # Full Clone
+clone1 = clone --single-branch  # Full Clone
 cl0 = "!f() { git clone --depth 1 --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
 cl1 = "!f() { git clone --branch master --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
 
