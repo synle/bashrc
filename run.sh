@@ -242,29 +242,32 @@ if [ "$TEST_FORCE_REFRESH" = true ] && [ -d "$NVM_DIR" ]; then
   rm -rf "$NVM_DIR"
 fi
 if [ "$is_os_android_termux" != "1" ]; then
-  DEFAULT_NODE_JS_VERSION=24
+  DEFAULT_NODE_JS_VERSION=24  # this is the default node version we will be using
   NVM_DIR="$HOME/.nvm"
+  NVM_VERSION="v0.40.4"
 
-  if [ ! -s $NVM_DIR/nvm.sh ]; then
-    git clone --depth 1 -b master https://github.com/creationix/nvm.git $NVM_DIR &>/dev/null
-    pushd $NVM_DIR &>/dev/null
-    git fetch --tags --quiet &>/dev/null
-    git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1) 2>/dev/null` &>/dev/null
-    . ./nvm.sh
-    popd &>/dev/null
-
-    nvmInstallNode() {
-      nvm ls "$1" &>/dev/null || nvm install "$1" &>/dev/null
-    }
-    nvmInstallNode $DEFAULT_NODE_JS_VERSION
-
-    nvm alias default $DEFAULT_NODE_JS_VERSION &>/dev/null
-    nvm use default &>/dev/null
-
-    # Run in background: non-blocking installs
-    nvmInstallNode lts &>/dev/null &
-    npm install --global yarn prettier &>/dev/null &
+  # Install NVM if missing
+  if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    git clone --depth 1 --branch "$NVM_VERSION" \
+      https://github.com/creationix/nvm.git "$NVM_DIR" &>/dev/null
   fi
+
+  # Always load nvm
+  # shellcheck disable=SC1090
+  . "$NVM_DIR/nvm.sh"
+
+  nvmInstallNode() {
+    nvm ls "$1" &>/dev/null || nvm install "$1" &>/dev/null
+  }
+
+  nvmInstallNode "$DEFAULT_NODE_JS_VERSION"
+
+  nvm alias default "$DEFAULT_NODE_JS_VERSION" &>/dev/null
+  nvm use default &>/dev/null
+
+  # Optional background installs
+  nvmInstallNode lts &>/dev/null &
+  npm install -g yarn prettier &>/dev/null &
 fi
 
 
