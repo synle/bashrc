@@ -9,26 +9,25 @@
 // Ayu Light (Day)
 @mixin light-theme {
   /* Backgrounds */
-  --colorBgMain: #fafafa;        /* Ayu Light Background */
-  --colorBgSecondary: #f0f0f0;   /* Ayu Light UI / Sidebar */
-  --colorBgHover: #e6e6e6;       /* Soft Grey Hover */
+  --colorBgMain: #fafafa; /* Ayu Light Background */
+  --colorBgSecondary: #f0f0f0; /* Ayu Light UI / Sidebar */
+  --colorBgHover: #e6e6e6; /* Soft Grey Hover */
 
   /* Typography */
-  --colorTextMain: #5c6773;      /* Ayu Light Body Text (Dark Grey-Blue) */
-  --colorTextLink: #36a3d9;      /* Ayu Light Blue */
+  --colorTextMain: #5c6773; /* Ayu Light Body Text (Dark Grey-Blue) */
+  --colorTextLink: #36a3d9; /* Ayu Light Blue */
 
   /* Status Colors */
-  --colorTextSuccess: #6cbf43;   /* Ayu Light Green */
-  --colorTextError: #ff3333;     /* Ayu Light Red */
-  --colorTextWarning: #e7c547;   /* Ayu Light Yellow/Orange */
+  --colorTextSuccess: #6cbf43; /* Ayu Light Green */
+  --colorTextError: #ff3333; /* Ayu Light Red */
+  --colorTextWarning: #e7c547; /* Ayu Light Yellow/Orange */
 
   /* Borders & Accents */
-  --colorBorderMain: #f29718;    /* Ayu Light Accent (Orange/Gold) */
+  --colorBorderMain: #f29718; /* Ayu Light Accent (Orange/Gold) */
   --colorBorderSecondary: #abb0b6; /* Muted Border */
   --colorShadow: rgba(0, 0, 0, 0.05);
   --colorFocusRing: rgba(242, 151, 24, 0.3); /* Subtle Orange Glow */
 }
-
 
 // dracula theme
 @mixin dark-theme {

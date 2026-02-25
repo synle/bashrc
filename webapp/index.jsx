@@ -203,12 +203,12 @@ function ScriptNameInputSection() {
 
   const _onScriptChange = () => {
     onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
-  }
+  };
 
   const onChangeTestScript = (idx, newValue) => {
     formValue.scriptsToUse[idx] = newValue.trim();
-    if(formValue?.scriptsToUse.length === 0){
-      formValue.scriptsToUse.push('software/')
+    if (formValue?.scriptsToUse.length === 0) {
+      formValue.scriptsToUse.push('software/');
     }
     _onScriptChange();
   };
@@ -220,16 +220,18 @@ function ScriptNameInputSection() {
 
   const onClearTestScripts = () => {
     setStorage(`scriptsToUse.${Date.now()}`, formValue.scriptsToUse.join('\n'));
-    formValue.scriptsToUse = ['software/']
+    formValue.scriptsToUse = ['software/'];
     _onScriptChange();
   };
 
   return (
     <>
-      <div className='form-label'>Scripts To Run
-      {formValue.scriptsToUse.map((scriptToUse, idx) => (
+      <div className='form-label'>
+        Scripts To Run
+        {formValue.scriptsToUse.map((scriptToUse, idx) => (
           <input
-            key={idx} style={{width: '100%', marginTop: '1rem', padding: '0.5rem 0.75rem'}}
+            key={idx}
+            style={{ width: '100%', marginTop: '1rem', padding: '0.5rem 0.75rem' }}
             list='scriptToRunOptions'
             type='text'
             placeholder='Script To Run'
@@ -241,7 +243,8 @@ function ScriptNameInputSection() {
             }}
             defaultValue={scriptToUse}
           />
-      ))}</div>
+        ))}
+      </div>
 
       <div className='form-row'>
         <button onClick={onAddTestScript} type='button'>
@@ -257,48 +260,52 @@ function ScriptNameInputSection() {
         ))}
       </datalist>
 
-      <div className='form-label'>Runner
-      <div className='form-row'>
-        <input
-          type='radio'
-          name='runnerToUse'
-          id='runnerToUse-live'
-          value='prod'
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.value);
-          }}
-          checked={formValue.runnerToUse === 'prod'}
-        />
-        <label htmlFor='runnerToUse-live'>Live Script</label>
-        <input
-          type='radio'
-          name='runnerToUse'
-          id='runnerToUse-local'
-          value='local'
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.value);
-          }}
-          checked={formValue.runnerToUse !== 'prod'}
-        />
-        <label htmlFor='runnerToUse-local'>Local Script</label>
+      <div className='form-label'>
+        Runner
+        <div className='form-row'>
+          <input
+            type='radio'
+            name='runnerToUse'
+            id='runnerToUse-live'
+            value='prod'
+            onChange={(e) => {
+              onInputChange(e.target.name, e.target.value);
+            }}
+            checked={formValue.runnerToUse === 'prod'}
+          />
+          <label htmlFor='runnerToUse-live'>Live Script</label>
+          <input
+            type='radio'
+            name='runnerToUse'
+            id='runnerToUse-local'
+            value='local'
+            onChange={(e) => {
+              onInputChange(e.target.name, e.target.value);
+            }}
+            checked={formValue.runnerToUse !== 'prod'}
+          />
+          <label htmlFor='runnerToUse-local'>Local Script</label>
+        </div>
       </div>
-    </div>
-      <div className='form-label'>Debug Write To File<div className='form-row'>
-        <input
-          id='debugWriteToDir'
-          name='debugWriteToDir'
-          list='writeToFilePathOptions'
-          type='text'
-          onBlur={(e) => onInputChange(e.target.name, e.target.value.trim())}
-          placeholder='Debug Write To File Path'
-          defaultValue={formValue.debugWriteToDir}
-        />
-        <datalist id='writeToFilePathOptions'>
-          <option>$(pwd)</option>
-          <option>./</option>
-          <option>~</option>
-        </datalist>
-      </div></div>
+      <div className='form-label'>
+        Debug Write To File
+        <div className='form-row'>
+          <input
+            id='debugWriteToDir'
+            name='debugWriteToDir'
+            list='writeToFilePathOptions'
+            type='text'
+            onBlur={(e) => onInputChange(e.target.name, e.target.value.trim())}
+            placeholder='Debug Write To File Path'
+            defaultValue={formValue.debugWriteToDir}
+          />
+          <datalist id='writeToFilePathOptions'>
+            <option>$(pwd)</option>
+            <option>./</option>
+            <option>~</option>
+          </datalist>
+        </div>
+      </div>
     </>
   );
 }
@@ -316,23 +323,26 @@ function OsSelectionInputSection() {
 
   return (
     <>
-      <div className='form-label'>OS Type<div className='form-row'>
-        <select
-          id='osToRun'
-          name='osToRun'
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.value);
-          }}
-          defaultValue={formValue.osToRun}>
-          <option value='windows'>Windows with WSL</option>
-          <option value='ming_64'>Windows with Ming_64</option>
-          <option value='mac'>Mac OSX</option>
-          <option value='chrome_os'>Chrome OS with Linux</option>
-          <option value='ubuntu'>Ubuntu</option>
-          <option value='arch_linux_steamdeck'>Arch Linux (Steam Deck)</option>
-          <option value='android_termux'>Android Termux</option>
-        </select>
-      </div></div>
+      <div className='form-label'>
+        OS Type
+        <div className='form-row'>
+          <select
+            id='osToRun'
+            name='osToRun'
+            onChange={(e) => {
+              onInputChange(e.target.name, e.target.value);
+            }}
+            defaultValue={formValue.osToRun}>
+            <option value='windows'>Windows with WSL</option>
+            <option value='ming_64'>Windows with Ming_64</option>
+            <option value='mac'>Mac OSX</option>
+            <option value='chrome_os'>Chrome OS with Linux</option>
+            <option value='ubuntu'>Ubuntu</option>
+            <option value='arch_linux_steamdeck'>Arch Linux (Steam Deck)</option>
+            <option value='android_termux'>Android Termux</option>
+          </select>
+        </div>
+      </div>
       <TargetSystemOSWarningDom targetDomString={formValue.osToRun} />
     </>
   );
@@ -392,30 +402,33 @@ function BootstrapSection() {
 
   return (
     <>
-      <div className='form-label'>Add Bootstrap Script<div className='form-row'>
-        <input
-          type='radio'
-          name='addBootstrapScript'
-          id='addBootstrapScript-yes'
-          value='yes'
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.value);
-          }}
-          checked={formValue.addBootstrapScript === 'yes'}
-        />
-        <label htmlFor='addBootstrapScript-yes'>Yes</label>
-        <input
-          type='radio'
-          name='addBootstrapScript'
-          id='addBootstrapScript-no'
-          value='no'
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.value);
-          }}
-          checked={formValue.addBootstrapScript !== 'yes'}
-        />
-        <label htmlFor='addBootstrapScript-no'>No</label>
-      </div></div>
+      <div className='form-label'>
+        Add Bootstrap Script
+        <div className='form-row'>
+          <input
+            type='radio'
+            name='addBootstrapScript'
+            id='addBootstrapScript-yes'
+            value='yes'
+            onChange={(e) => {
+              onInputChange(e.target.name, e.target.value);
+            }}
+            checked={formValue.addBootstrapScript === 'yes'}
+          />
+          <label htmlFor='addBootstrapScript-yes'>Yes</label>
+          <input
+            type='radio'
+            name='addBootstrapScript'
+            id='addBootstrapScript-no'
+            value='no'
+            onChange={(e) => {
+              onInputChange(e.target.name, e.target.value);
+            }}
+            checked={formValue.addBootstrapScript !== 'yes'}
+          />
+          <label htmlFor='addBootstrapScript-no'>No</label>
+        </div>
+      </div>
     </>
   );
 }
@@ -447,19 +460,21 @@ function EnvInputSection() {
         }}
         defaultValue={consolidatedEnvInputValue}
       />
-      <div className='form-label'>Add Default Env<div className='form-row'>
-        <input
-          type='checkbox'
-          id='shouldAddDefaultEnvs'
-          name='shouldAddDefaultEnvs'
-          checked={formValue.shouldAddDefaultEnvs === 'yes'}
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.checked ? 'yes' : 'no');
-            location.reload(); // TODO: improve this - used to trigger the updates of env variable
-          }}
-        />
-      </div></div>
-
+      <div className='form-label'>
+        Add Default Env
+        <div className='form-row'>
+          <input
+            type='checkbox'
+            id='shouldAddDefaultEnvs'
+            name='shouldAddDefaultEnvs'
+            checked={formValue.shouldAddDefaultEnvs === 'yes'}
+            onChange={(e) => {
+              onInputChange(e.target.name, e.target.checked ? 'yes' : 'no');
+              location.reload(); // TODO: improve this - used to trigger the updates of env variable
+            }}
+          />
+        </div>
+      </div>
     </>
   );
 }
@@ -546,7 +561,6 @@ function MainBodyContainer() {
   const { appData } = useContext(MainAppContext);
   const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
   const [collapseSignal, setCollapseSignal] = useState({ collapseAll: false, tick: 0 });
-
 
   return (
     <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
@@ -1629,8 +1643,8 @@ function App() {
           },
         };
 
-        if(newAppData?.formValue?.scriptsToUse.length === 0){
-          newAppData.formValue.scriptsToUse.push('software/')
+        if (newAppData?.formValue?.scriptsToUse.length === 0) {
+          newAppData.formValue.scriptsToUse.push('software/');
         }
 
         setAppData(newAppData);
