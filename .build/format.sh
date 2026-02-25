@@ -3,22 +3,22 @@
 # Usage: timeout [seconds] <command> (default: 17s)
 timeout() {
   local delay cmd
-  if [ "\$#" -eq 1 ]; then delay=17; cmd="\$1"
-  elif [ "\$#" -eq 2 ]; then delay="\$1"; cmd="\$2"
+  if [ "$#" -eq 1 ]; then delay=17; cmd="$1"
+  elif [ "$#" -eq 2 ]; then delay="$1"; cmd="$2"
   else echo "Usage: timeout [seconds] <command>" >&2; return 1; fi
 
-  echo "Running with ${delay}s timeout: \$cmd" >&2
+  echo "Running with ${delay}s timeout: $cmd" >&2
   (
-    eval "\$cmd" &
-    local cmd_pid=\$!
+    eval "$cmd" &
+    local cmd_pid=$!
     (
-      sleep "\$delay"
-      if kill -0 "\$cmd_pid" 2>/dev/null; then
-        echo "Timeout after ${delay}s: killing '\$cmd'" >&2
-        kill -9 "\$cmd_pid" 2>/dev/null
+      sleep "$delay"
+      if kill -0 "$cmd_pid" 2>/dev/null; then
+        echo "Timeout after ${delay}s: killing '$cmd'" >&2
+        kill -9 "$cmd_pid" 2>/dev/null
       fi
     ) &
-    wait "\$cmd_pid"
+    wait "$cmd_pid"
   )
 }
 
