@@ -6,43 +6,50 @@
 // Color Theme Mixins
 // ============================================================================
 
-// alucard theme
+// Ayu Light (Day)
 @mixin light-theme {
-  --colorBgMain: #f9f9f9;
-  --colorBgSecondary: #f0f0f0;
-  --colorBgHover: #e4e4e4;
-  --colorTextMain: #3030ff;
-  --colorTextLink: #2222ff;
-  --colorTextSuccess: #008008;
-  --colorTextError: #dc3545
-  --colorTextWarning: #ffc107
-  --colorBorderMain: #2a5cab;
-  --colorBorderSecondary: #cccccc;
-  --colorShadow: rgba(0, 0, 0, 0.15);
-  --colorFocusRing: rgba(10, 91, 215, 0.45);
+  /* Backgrounds */
+  --colorBgMain: #fafafa;        /* Ayu Light Background */
+  --colorBgSecondary: #f0f0f0;   /* Ayu Light UI / Sidebar */
+  --colorBgHover: #e6e6e6;       /* Soft Grey Hover */
+
+  /* Typography */
+  --colorTextMain: #5c6773;      /* Ayu Light Body Text (Dark Grey-Blue) */
+  --colorTextLink: #36a3d9;      /* Ayu Light Blue */
+
+  /* Status Colors */
+  --colorTextSuccess: #6cbf43;   /* Ayu Light Green */
+  --colorTextError: #ff3333;     /* Ayu Light Red */
+  --colorTextWarning: #e7c547;   /* Ayu Light Yellow/Orange */
+
+  /* Borders & Accents */
+  --colorBorderMain: #f29718;    /* Ayu Light Accent (Orange/Gold) */
+  --colorBorderSecondary: #abb0b6; /* Muted Border */
+  --colorShadow: rgba(0, 0, 0, 0.05);
+  --colorFocusRing: rgba(242, 151, 24, 0.3); /* Subtle Orange Glow */
 }
 
 
 // dracula theme
 @mixin dark-theme {
   /* Backgrounds */
-  --colorBgMain: #282a36;        /* Dracula Background */
-  --colorBgSecondary: #44475a;   /* Dracula Current Line / Selection */
-  --colorBgHover: #6272a4;       /* Dracula Comment / Muted Blue */
+  --colorBgMain: #282a36; /* Dracula Background */
+  --colorBgSecondary: #44475a; /* Dracula Current Line / Selection */
+  --colorBgHover: #6272a4; /* Dracula Comment / Muted Blue */
 
   /* Typography */
-  --colorTextMain: #f8f8f2;      /* Dracula Foreground */
-  --colorTextLink: #8be9fd;      /* Dracula Cyan */
+  --colorTextMain: #f8f8f2; /* Dracula Foreground */
+  --colorTextLink: #8be9fd; /* Dracula Cyan */
 
   /* Status Colors */
-  --colorTextSuccess: #50fa7b;   /* Dracula Green */
-  --colorTextError: #ff5555;     /* Dracula Red */
-  --colorTextWarning: #f1fa8c;   /* Dracula Yellow */
+  --colorTextSuccess: #50fa7b; /* Dracula Green */
+  --colorTextError: #ff5555; /* Dracula Red */
+  --colorTextWarning: #f1fa8c; /* Dracula Yellow */
 
   /* Borders & Accents */
-  --colorBorderMain: #bd93f9;    /* Dracula Purple */
+  --colorBorderMain: #bd93f9; /* Dracula Purple */
   --colorBorderSecondary: #44475a;
-  --colorShadow: #191a21;        /* Darker shade for depth */
+  --colorShadow: #191a21; /* Darker shade for depth */
   --colorFocusRing: rgba(189, 147, 249, 0.5); /* Semi-transparent Purple */
 }
 
