@@ -222,13 +222,13 @@ a[role='button'] {
   background: var(--colorBgMain);
   padding: var(--spaceSize2) 0;
 
-  > span:first-child {
+  > *:first-child {
     flex-shrink: 0;
     flex-grow: 1;
   }
 
   @include mobile {
-    > span:first-child {
+    > *:first-child {
       flex: 1 1 100%;
       width: 100%;
     }
@@ -291,38 +291,4 @@ a[role='button'] {
       box-shadow: 0 4px 8px var(--colorShadow);
     }
   }
-}
-
-// ============================================================================
-// Monaco Editor
-// ============================================================================
-
-.monaco-editor,
-.monaco-editor .overflow-guard,
-.monaco-editor .monaco-scrollable-element {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-// ============================================================================
-// bashrc/webapp Specific Utilities
-// ============================================================================
-
-// Text color utilities
-.text-error,
-.text-danger {
-  color: #dc3545 !important;
-}
-
-.text-success,
-.text-info {
-  color: var(--colorTextLink) !important;
-}
-
-.text-warning {
-  color: #ffc107 !important;
-}
-
-.text-muted {
-  color: var(--colorTextSecondary) !important;
 }

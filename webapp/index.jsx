@@ -681,6 +681,7 @@ function ActionButton(props) {
 function DynamicTextArea(props) {
   let { path, url, height } = props;
   const [text, setText] = useState('');
+  const [success, setSuccess] = useState(true);
 
   url = url || `${BASH_PROFILE_CODE_REPO_RAW_URL}/${path}`;
 
@@ -689,15 +690,20 @@ function DynamicTextArea(props) {
       setText('');
       setText(
         await fetch(url)
+          .then((r) => {
+            setSuccess(r.ok)
+            return r;
+          })
           .then((r) => r.text())
-          .then((r) => r.trim()),
+          .then((r) => r.trim())
+          .catch(r => setSuccess(false)),
       );
     }
 
     _load();
-  }, []);
+  }, [url]);
 
-  return <EnhancedTextArea height={height} url={url} value={text} readOnly />;
+  return <EnhancedTextArea height={height} url={url} value={text} error={!success} readOnly />;
 }
 
 /**
@@ -1120,7 +1126,7 @@ function CodeEditor({ content = '', syntax, height, readOnly = false, options: e
 }
 
 function EnhancedTextArea(props) {
-  let { url, label, height, ...restProps } = props;
+  let { url, label, height, error, ...restProps } = props;
   label = label || props.placeholder;
 
   const content = restProps.value || restProps.defaultValue || '';
@@ -1149,14 +1155,18 @@ function EnhancedTextArea(props) {
   return (
     <div className={collapsed ? 'editor-section editor-collapsed' : 'editor-section'}>
       <div className='editor-header'>
-        {formattedUrl ? <LinkText href={formattedUrl}>{label}</LinkText> : <span className='text-info'>{label}</span>}
+        <div>
+          {formattedUrl ? <LinkText href={formattedUrl}>{label}</LinkText> : <span>{label}</span>}
+        </div>
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
         <FullScreenTextViewer value={content} label={label} />
         <ActionButton onClick={() => setCollapsed(!collapsed)}>{collapsed ? 'Expand' : 'Collapse'}</ActionButton>
       </div>
-      {!collapsed && <CodeEditor content={content} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />}
+      {error ? <div className='text-error'>Content Error: {content}</div>
+      :!collapsed && <CodeEditor content={content} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />
+    }
     </div>
   );
 }
@@ -1216,24 +1226,18 @@ function TargetSystemOSWarningDom({ targetDomString, isSystemMac, isSystemWindow
   // 2. Guard clause: if the target isn't in our map, render nothing
   if (!target) return null;
 
-  const styles = {
-    background: 'var(--bg)',
-    position: 'sticky',
-    padding: '0.5rem 0',
-    top: 0,
-  };
 
   // 3. Handle the Android edge case or standard mismatch logic
   if (targetDomString === 'android') {
     return (
-      <h3 className='text-error' style={styles}>
+      <h3 className='text-error'>
         This is only meant for Android.
       </h3>
     );
   }
 
   return (
-    <h3 className={target.isMatch ? 'text-info' : 'text-error'} style={styles}>
+    <h3 className={target.isMatch ? 'text-info' : 'text-error'}>
       {target.isMatch ? 'OS Choice matches your OS' : `OS choice (${target.name}) doesn't match your system.`}
     </h3>
   );
