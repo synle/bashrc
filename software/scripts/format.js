@@ -25,23 +25,25 @@ async function doWork() {
   const { maxLineSize, ignoredFolders, junkFiles, junkDirs } = EDITOR_CONFIGS;
 
   // Merge with EDITOR_CONFIGS.ignoredFolders and deduplicate
-  const allIgnoredDirs = [...new Set([
-    ...ignoredFolders,
-    '.cache',
-    '.git',
-    '.gradle',
-    '.idea',
-    '.next',
-    '.venv',
-    '__pycache__',
-    'build',
-    'coverage',
-    'dist',
-    'node_modules',
-    'target',
-    'vendor',
-    'venv',
-  ])].sort();
+  const allIgnoredDirs = [
+    ...new Set([
+      ...ignoredFolders,
+      '.cache',
+      '.git',
+      '.gradle',
+      '.idea',
+      '.next',
+      '.venv',
+      '__pycache__',
+      'build',
+      'coverage',
+      'dist',
+      'node_modules',
+      'target',
+      'vendor',
+      'venv',
+    ]),
+  ].sort();
 
   // Build ignore rules for tools
   const ruffExclude = allIgnoredDirs.join(',');

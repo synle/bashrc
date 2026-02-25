@@ -109,12 +109,7 @@ globalThis.EDITOR_CONFIGS = {
     'Thumbs.db',
   ],
   /** Junk directories to delete during cleanup @type {string[]} */
-  junkDirs: [
-    '.Spotlight-V100',
-    '.Trashes',
-    '.fseventsd',
-    '__MACOSX',
-  ],
+  junkDirs: ['.Spotlight-V100', '.Trashes', '.fseventsd', '__MACOSX'],
   /** List of file glob patterns to be ignored by the editor @type {string[]} */
   ignoredFiles: [
     '._*',
