@@ -1700,11 +1700,12 @@ function App() {
       >
         <div id="container">
           <div className="app-header">
-            <LinkText href={REPO_URL}>
-              <h1 style={{ textTransform: "uppercase" }} target="_blank">
+              <h1 style={{ textTransform: "uppercase" }}>
+                <LinkText href={REPO_URL}>
                 {window.document.title}
+                            </LinkText>
               </h1>
-            </LinkText>
+
             <Settings />
           </div>
           <div className="app-clone-command">
