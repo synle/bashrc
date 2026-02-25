@@ -6,19 +6,34 @@ const linuxFontPath = "/usr/share/fonts/truetype";
 async function doWork() {
   const targetFontPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
 
-  await mkdir(targetFontPath);
-
   console.log("  >> Download Ligatures Fonts:", targetFontPath);
 
   const files = await listRepoDir();
-
   const fonts = files.filter((f) => f.includes(".ttf"));
 
-  console.log("  >> Downloading fonts", fonts.length);
-
-  if (fonts.length.length === 0) {
+  if (fonts.length === 0) {
     console.log(consoleLogColor1("    >> Skipped : No fonts found"));
-    return process.exit();
+    return;
+  }
+
+  console.log("  >> Found fonts:", fonts.length);
+
+  if (TEST_FORCE_REFRESH) {
+    console.log("  >> Force refresh: deleting old font files");
+    await deleteFolder(targetFontPath);
+  }
+
+  if (!fs.existsSync(targetFontPath)) {
+    await mkdir(targetFontPath);
+    for (const font of fonts) {
+      const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/${font}`;
+      const destination = path.join(targetFontPath, path.basename(font));
+      console.log("    >> Downloading:", path.basename(font));
+      await downloadAsset(fontUrl, destination);
+    }
+    console.log("  >> Fonts downloaded to:", targetFontPath);
+  } else {
+    console.log("  >> Fonts already installed, skipping:", targetFontPath);
   }
 
   // write to build file

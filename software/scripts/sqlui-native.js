@@ -21,7 +21,7 @@ async function doWork() {
 
   if (TEST_FORCE_REFRESH) {
     console.log("  >> Force refresh: deleting old sqlui-native files");
-    await execBashSilent(`rm -rf "${targetPath}"`);
+    await deleteFolder(targetPath);
   }
 
   if (fs.existsSync(targetPath)) {
@@ -32,7 +32,7 @@ async function doWork() {
   console.log(`  >> Installing sqlui-native v${SQLUI_NATIVE_VERSION} to:`, targetPath);
 
   await mkdir(targetPath);
-  await execBash(`curl -L "${url}" -o "${destination}"`);
+  await downloadAsset(url, destination);
 
   console.log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
 
