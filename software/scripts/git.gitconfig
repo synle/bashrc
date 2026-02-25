@@ -127,8 +127,8 @@ cleanfd = clean -f -d # Remove untracked files and directories
 cp = cherry-pick
 cpc = cherry-pick --continue
 cpn = cherry-pick -n # Cherry-pick without committing
-clone0 = clone --depth 1 --single-branch  # Shallow Clone: Depth 1 + Single Branch (Default branch)
-clone1 = clone --branch --single-branch  # Full Clone: Full History + Single Branch (Strictly 'master' branch)
+clone0 = clone --depth 1 --single-branch  # Shallow Clone
+clone1 = clone --depth 1 --single-branch --single-branch  # Full Clone
 cl0 = "!f() { git clone --depth 1 --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
 cl1 = "!f() { git clone --branch master --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
 
