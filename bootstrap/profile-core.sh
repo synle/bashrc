@@ -1,6 +1,5 @@
 #! /bin/bash
 export EDITOR='vim'
-
 export BASH_PATH=~/.bashrc
 
 # add sbin to path
@@ -236,88 +235,79 @@ pwd2() {
 ##########################################################
 # Git Helpers
 ##########################################################
+# Resets the working tree, deletes local master/main, and re-tracks the default branch from origin (preferring master over main).
 clean_master_main_branch() {
-  # Full Reset
   git stash >/dev/null 2>&1
   git clean -fd >/dev/null 2>&1
   git reset --hard HEAD >/dev/null 2>&1
   git merge --abort >/dev/null 2>&1
   git rebase --abort >/dev/null 2>&1
   git fetch --all --prune >/dev/null 2>&1
+  rm -rf .git/rebase-merge
 
-  # Pivot & Purge
-  local TEMP="test_123_abc_xyz"
-  git checkout -B "$TEMP" >/dev/null 2>&1
+  local temp_branch_name="tmp-clean-$(date +%s)"
+  git checkout -B "$temp_branch_name" >/dev/null 2>&1
   git branch -D master main >/dev/null 2>&1
 
-  # Re-track
   for b in master main; do
     if git rev-parse --verify "origin/$b" >/dev/null 2>&1; then
       git checkout --track "origin/$b" >/dev/null 2>&1
+      break
     fi
   done
+
+  git branch -D "$temp_branch_name" >/dev/null 2>&1
+}
+
+# Creates an empty commit on a new branch and pushes it to trigger a deployment.
+commit_empty_trigger_deploy() {
+  local temp_branch_name="empty-commit-$(date +%s)"
+  git checkout -b "$temp_branch_name" >/dev/null 2>&1
+  git commit --allow-empty -m "Trigger deployment - EMPTY PR" >/dev/null 2>&1
+  git push -u origin "$temp_branch_name" >/dev/null 2>&1
 }
 
 ##########################################################
 # Search Functions
 ##########################################################
-
-# Search for files matching a pattern in the current directory (case-insensitive)
-# Usage: search_file <pattern>
-search_file(){
-  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
-    ech """
-      Usage: search_file <pattern>
-        Searches for files matching <pattern> (case-insensitive) in the current directory.
-    """
-    return 0
-  fi
-  find . -type f -iname "*$@*" | filter_unwanted | grep -i "$@"
+search_file() {
+  local pattern
+  pattern=$(_require_search_input "$@") || return 0
+  find . -type f -iname "*$pattern*" | filter_unwanted | grep -i "$pattern"
 }
 
-# List all tracked files (via git) or all files (via find) in the current directory
-# Usage: search_file_with_git
-search_file_with_git(){
-  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
-    ech """
-      Usage: search_file_with_git
-        Lists all tracked files using git ls-tree, falls back to find if not in a git repo.
-    """
-    return 0
-  fi
-  # use either ls tree or find
-  git ls-tree -r --name-only HEAD 2> /dev/null || \
-  find . -type f 2>/dev/null \
-  | uniq
+# Lists all tracked files via git, falls back to find if not in a git repo.
+search_file_with_git() {
+  git ls-tree -r --name-only HEAD 2>/dev/null || find . -type f 2>/dev/null | uniq
 }
 
-# List all directories (excluding hidden) from a given path, defaults to current directory
-# Usage: search_dir_with_git [path]
-search_dir_with_git(){
-  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
-    ech """
-      Usage: search_dir_with_git [path]
-        Lists all directories (excluding hidden) from [path], defaults to current directory.
-    """
-    return 0
-  fi
-  find ${1:-.} -path '*/\.*' -prune \
-  -o -type d -print 2> /dev/null
-  echo ".." # append parent folder
+# Lists all directories (excluding hidden) from a given path, defaults to current directory.
+search_dir_with_git() {
+  find "${1:-.}" -path '*/.*' -prune -o -type d -print 2>/dev/null
+  echo ".."
 }
 
-# Search for directories matching a pattern in the current directory (case-insensitive)
-# Usage: search_dir <pattern>
-search_dir(){
-  if [ "$1" = "/help" ] || [ "$1" = "/?" ]; then
-    ech """
-      Usage: search_dir <pattern>
-        Searches for directories matching <pattern> (case-insensitive) in the current directory.
-    """
-    return 0
-  fi
-  find . -type d -iname "*$@*" | filter_unwanted | grep -i "$@"
+# Searches for directories matching a pattern in the current directory (case-insensitive).
+search_dir() {
+  local pattern
+  pattern=$(_require_search_input "$@") || return 0
+  find . -type d -iname "*$pattern*" | filter_unwanted | grep -i "$pattern"
 }
+
+# Returns the input text, prompting the user interactively if none was provided.
+_require_search_input() {
+  if [ -n "$*" ]; then
+    echo "$*"
+  else
+    read -rp "Enter search pattern: " input
+    if [ -z "$input" ]; then
+      echo "No input provided." >&2
+      return 1
+    fi
+    echo "$input"
+  fi
+}
+
 
 ##########################################################
 # Filter Functions
@@ -499,40 +489,6 @@ date2(){
 }
 
 ##########################################################
-# Timeout
-##########################################################
-timeout() {
-  local delay cmd
-
-  if [ "$#" -eq 1 ]; then
-    delay=8
-    cmd="$1"
-  elif [ "$#" -eq 2 ]; then
-    delay="$1"
-    cmd="$2"
-  else
-    echo "usage: timeout [seconds] <command>"
-    return 1
-  fi
-
-  (
-    eval "$cmd" &
-    cmd_pid=$!
-
-    # watchdog
-    (
-      sleep "$delay"
-      if kill -0 "$cmd_pid" 2>/dev/null; then
-        echo "Timeout after ${delay}s: killing '$cmd'"
-        kill -9 "$cmd_pid" 2>/dev/null
-      fi
-    ) &
-
-    wait "$cmd_pid"
-  )
-}
-
-##########################################################
 # Telemetry / Environment
 ##########################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
@@ -552,9 +508,11 @@ mkdir -p ~/.ssh/sockets
 # 08:31:59PM U=04:31:59AM syle @ Sy-Omen45L
 # ~/git/bashrc
 # >>>
-# export PS1_Simple="
-# \$(get_time) U=\$(get_time \"UTC\") \u @ \h
-# \w
-# >>> "
-export PS1_Simple="\n\[\e[1;93m\]\$(get_time) \[\e[1;95m\]U=\$(get_time \"UTC\") \[\e[1;96m\]\u\[\e[m\] @ \[\e[1;92m\]\h\[\e[m\]\n\[\e[1;31m\]\w\[\e[m\]\n\$(rainbow_print '>>>' | sed 's/\(\x1b\[[0-9;]*m\)/\x01\1\x02/g') "
+export PS1_Simple="\n\
+\[\e[1;93m\]\$(get_time) \
+\[\e[1;95m\]U=\$(get_time \"UTC\") \
+\[\e[1;96m\]\u\[\e[m\] @ \
+\[\e[1;92m\]\h\[\e[m\]\n\
+\[\e[1;31m\]\w\[\e[m\]\n\
+>>> "
 export PS1="$PS1_Simple"
