@@ -52,7 +52,8 @@ if [ "$is_os_android_termux" != "1" ]; then
   if [ ! -s $NVM_DIR/nvm.sh ]; then
     git clone --depth 1 -b master https://github.com/creationix/nvm.git $NVM_DIR &>/dev/null
     pushd $NVM_DIR &>/dev/null
-    git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1)` &>/dev/null
+    git fetch --tags --quiet &>/dev/null
+    git checkout `git describe --abbrev=0 --tags --match "v[0-9]*" $(git rev-list --tags --max-count=1) 2>/dev/null` &>/dev/null
     . ./nvm.sh
     popd &>/dev/null
 
@@ -69,6 +70,7 @@ if [ "$is_os_android_termux" != "1" ]; then
     npm install --global yarn prettier &>/dev/null &
   fi
 fi
+
 
 
 ####################################################################
