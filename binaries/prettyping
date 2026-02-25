@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /bin/bash
 #https://raw.githubusercontent.com/denilsonsa/prettyping/master/prettyping
 #
 # Written by Denilson Figueiredo de Sá <denilsonsa@gmail.com>
