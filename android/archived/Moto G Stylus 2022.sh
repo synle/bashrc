@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 function removeApp(){
   echo 'pm uninstall -k --user 0' $@
   pm uninstall -k --user 0 $@

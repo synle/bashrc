@@ -128,6 +128,5 @@ async function doWork() {
   let targetPath = await _getPathSublimeText();
   console.log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
-
   writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
 }

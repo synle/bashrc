@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env bash
+
 export EDITOR='vim'
 export BASH_PATH=~/.bashrc
 

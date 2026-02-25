@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 {
 ####################################################################
 # build.sh - Build pipeline with selectable steps

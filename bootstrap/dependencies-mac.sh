@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # bootstrap/dependencies-mac.sh
 # macOS dependencies - Homebrew packages, system preferences, shell setup
 

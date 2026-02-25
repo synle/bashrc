@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # diff-so-fancy and integration with git
 TEMP_PATH=/tmp/diff-so-fancy
 DEST_PATH=/usr/local/bin/diff-so-fancy

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo '>> Setting OSX Defaults'
 
 #screenshot folder

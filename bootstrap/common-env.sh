@@ -1,4 +1,3 @@
-#! /bin/bash
 ####################################################################
 # common-env.sh - Shared environment setup for run.sh and build.sh
 # Sets up repo identifiers, URL exports, OS detection flags,

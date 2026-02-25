@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo '>> Greenshot (disable auto-update, added hotkeys)'
 
 sed -i -E '

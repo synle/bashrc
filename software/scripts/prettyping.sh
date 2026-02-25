@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # add prettyping: http://denilson.sa.nom.br/prettyping/
 TEMP_PATH=/tmp/prettyping
 DEST_PATH=/usr/local/bin/prettyping

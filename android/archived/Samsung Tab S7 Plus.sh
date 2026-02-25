@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # use the one from s21 as the base and add more stuffs on top
 curl -s "https://raw.githubusercontent.com/synle/bashrc/master/android/archived/Samsung S21 Ultra.sh" | sh
 
