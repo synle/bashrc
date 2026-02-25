@@ -264,39 +264,28 @@ if [ "$is_os_android_termux" != "1" ]; then
   nvm use default >/dev/null 2>&1
 fi
 
-
-_run_buffer=""
 ####################################################################
 # script: Run pre-scripts
 ####################################################################
 if [ -n "$pre_run_scripts" ]; then
   echo ">> pre-run scripts: $pre_run_scripts"
-  _run_buffer="$_run_buffer
-$(get_file_contents "$pre_run_scripts")"
+  $(get_file_contents "$pre_run_scripts")
 fi
 
-if [ "$run_only_prescripts" = true ]; then
-  echo "$_run_buffer" | bash
-  echo "
+####################################################################
+# script: Run main script - if needed
+####################################################################
+if [ "$run_only_prescripts" != true ]; then
+  if command -v node >/dev/null 2>&1; then
+    get_file_contents "software/index.js" | node
+  else
+    echo "[Skip files] Node is not installed — skipping main script."
+  fi
+fi
+
+echo "
+
 =======================================================
 >> run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
 =======================================================
 "
-  exit 0
-fi
-
-####################################################################
-# script: Run main script
-####################################################################
-_run_buffer="$_run_buffer
-$(get_file_contents "software/index.js" | node)"
-
-####################################################################
-# Execute all buffered scripts at once
-####################################################################
-echo "$_run_buffer" | bash
-
-echo "
-=======================================================
->> run.sh done at $(date '+%Y-%m-%d %H:%M:%S')"
-
