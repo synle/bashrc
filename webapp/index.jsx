@@ -201,27 +201,35 @@ function ScriptNameInputSection() {
   const { appData, setAppData, onInputChange } = useContext(MainAppContext);
   const formValue = appData.formValue;
 
+  const _onScriptChange = () => {
+    onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
+  }
+
   const onChangeTestScript = (idx, newValue) => {
     formValue.scriptsToUse[idx] = newValue.trim();
-    onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
+    if(formValue?.scriptsToUse.length === 0){
+      formValue.scriptsToUse.push('software/')
+    }
+    _onScriptChange();
   };
 
   const onAddTestScript = () => {
     formValue.scriptsToUse.push('software/');
-    onInputChange('scriptsToUse', formValue.scriptsToUse, formValue.scriptsToUse.join('\n'));
+    _onScriptChange();
   };
 
   const onClearTestScripts = () => {
     setStorage(`scriptsToUse.${Date.now()}`, formValue.scriptsToUse.join('\n'));
-    onInputChange('scriptsToUse', [], '');
+    formValue.scriptsToUse = ['software/']
+    _onScriptChange();
   };
 
   return (
     <>
-      <div className='form-label'>Scripts To Run</div>
+      <div className='form-label'>Scripts To Run
       {formValue.scriptsToUse.map((scriptToUse, idx) => (
-        <div key={idx}>
           <input
+            key={idx} style={{width: '100%', marginTop: '1rem', padding: '0.5rem 0.75rem'}}
             list='scriptToRunOptions'
             type='text'
             placeholder='Script To Run'
@@ -233,8 +241,8 @@ function ScriptNameInputSection() {
             }}
             defaultValue={scriptToUse}
           />
-        </div>
-      ))}
+      ))}</div>
+
       <div className='form-row'>
         <button onClick={onAddTestScript} type='button'>
           Add Script
@@ -249,7 +257,7 @@ function ScriptNameInputSection() {
         ))}
       </datalist>
 
-      <div className='form-label'>Runner</div>
+      <div className='form-label'>Runner
       <div className='form-row'>
         <input
           type='radio'
@@ -274,8 +282,8 @@ function ScriptNameInputSection() {
         />
         <label htmlFor='runnerToUse-local'>Local Script</label>
       </div>
-      <div className='form-label'>Debug Write To File</div>
-      <div>
+    </div>
+      <div className='form-label'>Debug Write To File<div className='form-row'>
         <input
           id='debugWriteToDir'
           name='debugWriteToDir'
@@ -290,7 +298,7 @@ function ScriptNameInputSection() {
           <option>./</option>
           <option>~</option>
         </datalist>
-      </div>
+      </div></div>
     </>
   );
 }
@@ -308,8 +316,7 @@ function OsSelectionInputSection() {
 
   return (
     <>
-      <div className='form-label'>OS Type</div>
-      <div>
+      <div className='form-label'>OS Type<div className='form-row'>
         <select
           id='osToRun'
           name='osToRun'
@@ -325,7 +332,7 @@ function OsSelectionInputSection() {
           <option value='arch_linux_steamdeck'>Arch Linux (Steam Deck)</option>
           <option value='android_termux'>Android Termux</option>
         </select>
-      </div>
+      </div></div>
       <TargetSystemOSWarningDom targetDomString={formValue.osToRun} />
     </>
   );
@@ -385,8 +392,7 @@ function BootstrapSection() {
 
   return (
     <>
-      <div className='form-label'>Add Bootstrap Script</div>
-      <div className='form-row'>
+      <div className='form-label'>Add Bootstrap Script<div className='form-row'>
         <input
           type='radio'
           name='addBootstrapScript'
@@ -409,7 +415,7 @@ function BootstrapSection() {
           checked={formValue.addBootstrapScript !== 'yes'}
         />
         <label htmlFor='addBootstrapScript-no'>No</label>
-      </div>
+      </div></div>
     </>
   );
 }
@@ -441,8 +447,7 @@ function EnvInputSection() {
         }}
         defaultValue={consolidatedEnvInputValue}
       />
-      <div className='form-label'>Add Default Env</div>
-      <div>
+      <div className='form-label'>Add Default Env<div className='form-row'>
         <input
           type='checkbox'
           id='shouldAddDefaultEnvs'
@@ -453,7 +458,8 @@ function EnvInputSection() {
             location.reload(); // TODO: improve this - used to trigger the updates of env variable
           }}
         />
-      </div>
+      </div></div>
+
     </>
   );
 }
@@ -540,6 +546,7 @@ function MainBodyContainer() {
   const { appData } = useContext(MainAppContext);
   const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
   const [collapseSignal, setCollapseSignal] = useState({ collapseAll: false, tick: 0 });
+
 
   return (
     <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
