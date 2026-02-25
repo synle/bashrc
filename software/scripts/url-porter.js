@@ -21,7 +21,7 @@ async function doWork() {
   await mkdir(targetPath);
   await downloadAsset(zipUrl, tmpZip);
   await execBash(`unzip -oq "${tmpZip}" -d "${targetPath}"`);
-  await execBashSilent(`rm -f "${tmpZip}"`);
+  await deleteFolder(tmpZip);
 
   console.log("  >> url-porter installed:", targetPath);
 }
