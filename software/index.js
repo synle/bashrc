@@ -80,6 +80,8 @@ if (!tabSize || tabSize <= 2) {
  * @property {string} fontFamily - Editor font family (default 'Fira Code'). Override with FONT_FAMILY env var
  * @property {number} tabSize - Editor tab/indentation size (min 2, default 2). Override with TAB_SIZE env var
  * @property {number} maxLineSize - Print/ruler column width in the editor (default 140)
+ * @property {string[]} junkFiles - File patterns to delete during cleanup (macOS metadata, OS artifacts, patch rejects)
+ * @property {string[]} junkDirs - Directory names to delete during cleanup (macOS/OS artifact directories)
  * @property {string[]} ignoredFiles - Glob patterns for files hidden from the editor (e.g. '*.exe', '.DS_Store')
  * @property {string[]} ignoredFolders - Directory names excluded from the editor file tree (e.g. 'node_modules', '.git')
  * @property {string[]} ignoredBinaries - Glob patterns for binary files visible in tree but excluded from search for performance
@@ -92,11 +94,34 @@ globalThis.EDITOR_CONFIGS = {
   tabSize,
   /** Print/ruler column width in the editor @type {number} */
   maxLineSize: 140,
+  /** Junk files to delete during cleanup (macOS metadata, OS artifacts, patch rejects) @type {string[]} */
+  junkFiles: [
+    '._*',
+    '.AppleDouble',
+    '.DS_Store',
+    '.LSOverride',
+    '*.Identifier',
+    '*.orig',
+    '*.rej',
+    'Desktop.ini',
+    'ehthumbs.db',
+    'Icon?',
+    'Thumbs.db',
+  ],
+  /** Junk directories to delete during cleanup @type {string[]} */
+  junkDirs: [
+    '.Spotlight-V100',
+    '.Trashes',
+    '.fseventsd',
+    '__MACOSX',
+  ],
   /** List of file glob patterns to be ignored by the editor @type {string[]} */
   ignoredFiles: [
     '._*',
+    '.AppleDouble',
     '.DS_Store',
     '.eslintcache',
+    '.LSOverride',
     '.Spotlight-*',
     '.Trashes',
     '*.class',
@@ -121,6 +146,7 @@ globalThis.EDITOR_CONFIGS = {
     '*.o',
     '*.obj',
     '*.ogg',
+    '*.orig',
     '*.pdb',
     '*.pid.lock',
     '*.pid',
@@ -141,7 +167,10 @@ globalThis.EDITOR_CONFIGS = {
     '*.swp',
     '*.Trashes',
     '*.zip',
+    'Desktop.ini',
+    'ehthumbs.db',
     'package-lock.json',
+    'Thumbs.db',
     'yarn.lock',
   ],
   /** List of folder names to be ignored by the editor @type {string[]} */
