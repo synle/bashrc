@@ -1076,13 +1076,54 @@ function Settings() {
  * @param {boolean} [props.readOnly] - Whether the editor should be read-only.
  * @returns {React.ReactElement} The enhanced text area section with header actions and Monaco Editor.
  */
+/**
+ * A reusable Monaco Editor wrapper component.
+ * @param {Object} props
+ * @param {string} props.content - The text content to display in the editor.
+ * @param {string} [props.syntax] - The language/syntax to use. If not provided, auto-detected from content.
+ * @param {string} [props.height] - The editor height (e.g., '300px'). If not provided, auto-calculated from content line count.
+ * @param {boolean} [props.readOnly] - Whether the editor is read-only.
+ * @param {Object} [props.options] - Additional Monaco Editor options to merge.
+ * @returns {React.ReactElement} A Monaco Editor instance.
+ */
+function CodeEditor({ content = '', syntax, height, readOnly = false, options: extraOptions, ...restProps }) {
+  const { theme } = useContext(ThemeContext);
+  const editorTheme = theme === 'dark' ? 'vs-dark' : 'light';
+  const language = syntax || detectLanguageFromContent(content);
+
+  // Calculate height based on content line count so the editor stretches to fit
+  const lineHeight = 20;
+  const padding = 20;
+  const lineCount = content.split('\n').length;
+  const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
+
+  return (
+    <Editor
+      height={computedHeight}
+      language={language}
+      value={content}
+      theme={editorTheme}
+      options={{
+        readOnly,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        scrollbar: { vertical: 'hidden', horizontal: 'hidden', handleMouseWheel: false },
+        fontSize: 13,
+        lineNumbers: 'on',
+        wordWrap: 'on',
+        automaticLayout: true,
+        ...extraOptions,
+      }}
+      {...restProps}
+    />
+  );
+}
+
 function EnhancedTextArea(props) {
   let { url, label, height, ...restProps } = props;
   label = label || props.placeholder;
 
   const content = restProps.value || restProps.defaultValue || '';
-  const { theme } = useContext(ThemeContext);
-  const editorTheme = theme === 'dark' ? 'vs-dark' : 'light';
   const { collapseAll, tick } = useContext(EditorCollapseContext);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -1092,7 +1133,7 @@ function EnhancedTextArea(props) {
 
   // Detect language: first try from URL, then from content
   const languageFromUrl = detectLanguageFromUrl(url);
-  const language = languageFromUrl || detectLanguageFromContent(content);
+  const syntax = languageFromUrl || undefined;
 
   let editUrl = '';
   let formattedUrl = '';
@@ -1105,12 +1146,6 @@ function EnhancedTextArea(props) {
     formattedUrl = `${BASH_PROFILE_CODE_REPO_VIEW_URL}/${shortUrl}`;
   }
 
-  // Calculate height based on content line count so the editor stretches to fit
-  const lineHeight = 20;
-  const padding = 20;
-  const lineCount = content.split('\n').length;
-  const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
-
   return (
     <div className={collapsed ? 'editor-section editor-collapsed' : 'editor-section'}>
       <div className='editor-header'>
@@ -1122,21 +1157,11 @@ function EnhancedTextArea(props) {
         <ActionButton onClick={() => setCollapsed(!collapsed)}>{collapsed ? 'Expand' : 'Collapse'}</ActionButton>
       </div>
       {!collapsed && (
-        <Editor
-          height={computedHeight}
-          language={language}
-          value={content}
-          theme={editorTheme}
-          options={{
-            readOnly: restProps.readOnly || false,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            scrollbar: { vertical: 'hidden', horizontal: 'hidden', handleMouseWheel: false },
-            fontSize: 13,
-            lineNumbers: 'on',
-            wordWrap: 'on',
-            automaticLayout: true,
-          }}
+        <CodeEditor
+          content={content}
+          syntax={syntax}
+          height={height}
+          readOnly={restProps.readOnly || false}
         />
       )}
     </div>
