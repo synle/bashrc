@@ -143,10 +143,12 @@ body {
 
 body {
   margin: auto !important;
-  min-width: calc(100% - 30px);
+  min-width: 0;
   max-width: var(--maxBodyWidth);
+  width: 100%;
   font-family: var(--fontFamilyMain);
   font-weight: var(--fontWeightLight);
+  overflow-x: hidden;
   overflow-y: auto !important;
 }
 

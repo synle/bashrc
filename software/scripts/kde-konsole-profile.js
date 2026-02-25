@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Downloads and installs the KDE Konsole terminal profile for Arch Linux. */
 async function doWork() {
   let targetPath = BASE_SY_CUSTOM_TWEAKS_DIR;

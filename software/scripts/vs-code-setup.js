@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 const bashTargets = [
   { path: '$HOME/.var/app/com.vscodium.codium/config/VSCodium/User', keys: 'vs-code-keys-windows' },
   { path: '$HOME/.config/VSCodium/User', keys: 'vs-code-keys-windows' },

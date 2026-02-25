@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Clones, installs, and registers fzf (fuzzy finder) with bashrc and bookmark aliases. */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, '.fzf');

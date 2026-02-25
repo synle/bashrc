@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 includeSource('software/scripts/vs-code.common.js');
 
 let COMMON_CONFIGS;
@@ -42,151 +44,148 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
   const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
   const syntaxHighlightOpts = {
-    'editor.spellcheck.enabled': false, // for some specific custom builds
-    'editor.suggest.showWords': false,
-    'editor.wordWrap': 'on',
+    'editor.spellcheck.enabled': false, // Disable per-language spell check
+    'editor.suggest.showWords': false, // Don't suggest plain-text words — only real completions
+    'editor.wordWrap': 'on', // Wrap long lines visually instead of horizontal scrolling
   };
   const syntaxFormatterOpts = {
-    'editor.defaultFormatter': 'esbenp.prettier-vscode',
-    'editor.formatOnSave': true,
+    'editor.defaultFormatter': 'esbenp.prettier-vscode', // Use Prettier as the default formatter
+    'editor.formatOnSave': true, // Auto-format the file on every save
   };
 
   const configs = {
-    // --- Total Lockdown: Updates & Telemetry ---
-    'update.mode': 'none',
-    'update.showReleaseNotes': false,
-    'extensions.autoUpdate': false, // Stops background extension updates
-    'extensions.autoCheckUpdates': false, // Stops checking for extension updates
-    'extensions.ignoreRecommendations': true, // Stops the background "You might like this extension" logic
-    'telemetry.telemetryLevel': 'off', // Disables all data collection
-    'workbench.settings.enableNaturalLanguageSearch': false, // Stops sending settings searches to MS servers
+    // --- Updates & Telemetry ---
+    'update.mode': 'none', // Disable auto-update checks entirely
+    'update.showReleaseNotes': false, // Don't show release notes after updates
+    'extensions.autoUpdate': false, // Stop background extension updates
+    'extensions.autoCheckUpdates': false, // Stop polling for extension update availability
+    'extensions.ignoreRecommendations': true, // Suppress "recommended extension" popups
+    'telemetry.telemetryLevel': 'off', // Disable all telemetry data collection
+    'workbench.settings.enableNaturalLanguageSearch': false, // Don't send settings searches to Microsoft servers
 
-    // --- Instant UI Response ---
-    'editor.hover.delay': 200, // Show tooltips instantly (or set to 10000 to "hide" them)
-    'editor.hover.enabled': true, // Set to false if you want zero tooltips
-    'editor.quickSuggestionsDelay': 0, // No "pause" before the suggestion box pops up
-    'editor.suggest.snippetsPreventQuickSuggestions': false,
+    // --- Suggestions & Hover ---
+    'editor.hover.delay': 200, // Delay in ms before showing hover tooltips
+    'editor.hover.enabled': true, // Show hover tooltips (type info, docs)
+    'editor.quickSuggestionsDelay': 0, // Show autocomplete immediately with no pause
+    'editor.suggest.snippetsPreventQuickSuggestions': false, // Allow quick suggestions even inside snippet placeholders
 
     // --- UI Performance ---
-    'editor.minimap.enabled': false,
-    'breadcrumbs.enabled': false,
-    'editor.renderWhitespace': 'all',
-    'editor.renderControlCharacters': true,
-    'editor.maxTokenizationLineLength': 7000,
-    'editor.folding': false, // Disable code folding to save CPU on large files
-    'editor.cursorBlinking': 'solid', // Saves rendering cycles
-    'editor.occurrencesHighlight': false, // Stops background "same word" searching
-    'editor.selectionHighlight': false,
-    'editor.codeLens': false, // Massive CPU saver: disables reference counts
-    'editor.links': false, // Stops regex scanning for URLs
-    'editor.matchBrackets': 'never', // Stops VS Code from looking for the matching bracket as you move
-    'editor.renderLineHighlight': 'none', // Saves a tiny bit of GPU draw time per frame
-    'workbench.editor.enablePreview': false,
-    'workbench.startupEditor': 'none',
-    'workbench.activityBar.location': 'top',
-    'window.zoomLevel': 0.5,
-
-    // Speed up the UI even more
-    'workbench.tree.renderIndentGuides': 'none',
-    'editor.guides.indentation': false,
+    'editor.minimap.enabled': false, // Disable the code minimap — saves rendering overhead
+    'breadcrumbs.enabled': false, // Hide breadcrumb navigation bar at top of editor
+    'editor.renderWhitespace': 'all', // Show dots for all whitespace characters
+    'editor.renderControlCharacters': true, // Show control characters (tabs, zero-width spaces)
+    'editor.maxTokenizationLineLength': 7000, // Skip syntax highlighting for lines longer than this
+    'editor.folding': false, // Disable code folding — saves CPU on large files
+    'editor.cursorBlinking': 'solid', // No cursor blink animation — saves rendering cycles
+    'editor.occurrencesHighlight': false, // Don't highlight other occurrences of the selected word
+    'editor.selectionHighlight': false, // Don't highlight text matching the current selection
+    'editor.codeLens': false, // Disable CodeLens (reference counts) — major CPU saver
+    'editor.links': false, // Don't scan for and underline URLs in code
+    'editor.matchBrackets': 'never', // Don't highlight matching bracket pairs
+    'editor.renderLineHighlight': 'none', // Don't highlight the current line — saves GPU draw time
+    'workbench.editor.enablePreview': false, // Always open files in a full tab, not a preview tab
+    'workbench.startupEditor': 'none', // Show nothing on startup — no welcome tab or recent files
+    'workbench.activityBar.location': 'top', // Move activity bar to top for more horizontal space
+    'window.zoomLevel': 0.5, // Slight zoom-in for readability
+    'workbench.tree.renderIndentGuides': 'none', // Hide indent guides in sidebar trees
+    'editor.guides.indentation': false, // Hide indentation guides in the editor
 
     // --- Scrolling & Navigation ---
-    'editor.mouseWheelScrollSensitivity': 2,
-    'editor.fastScrollSensitivity': 5,
-    'workbench.list.smoothScrolling': false, // Native scrolling is faster than simulated
-    'editor.smoothScrolling': false,
-    'workbench.tree.indent': 4,
-    'workbench.editor.showTabs': true,
-    'workbench.editor.limit.enabled': true, // Keeps memory low by limiting open tabs
-    'workbench.editor.limit.value': 10,
-    'workbench.editor.limit.perEditorGroup': true,
+    'editor.mouseWheelScrollSensitivity': 2, // 2x scroll speed with mouse wheel
+    'editor.fastScrollSensitivity': 5, // 5x scroll speed when holding Alt+scroll
+    'workbench.list.smoothScrolling': false, // Disable smooth scrolling in lists — native scrolling is faster
+    'editor.smoothScrolling': false, // Disable smooth scrolling in the editor
+    'workbench.tree.indent': 4, // Indent level in sidebar trees (px)
+    'workbench.editor.showTabs': true, // Show editor tabs
+    'workbench.editor.limit.enabled': true, // Limit the number of open tabs to save memory
+    'workbench.editor.limit.value': 10, // Max 10 open tabs per editor group
+    'workbench.editor.limit.perEditorGroup': true, // Apply tab limit per editor group, not globally
 
-    // --- Kill Hints & Squiggles ---
-    'editor.unicodeHighlight.ambiguousCharacters': false, // Stops highlighting chars that look like others
-    'editor.unicodeHighlight.invisibleCharacters': false, // Stops checking for invisible space bugs
-    'editor.showUnused': false, // Stops fading out unused variables (saves a full scan)
-    'editor.lightbulb.enabled': 'off', // The final nail in the lightbulb's coffin
+    // --- Hints & Diagnostics ---
+    'editor.unicodeHighlight.ambiguousCharacters': false, // Don't flag characters that look like others (e.g. Cyrillic 'а' vs Latin 'a')
+    'editor.unicodeHighlight.invisibleCharacters': false, // Don't flag invisible/zero-width characters
+    'editor.showUnused': false, // Don't fade out unused variables — saves a full file scan
+    'editor.lightbulb.enabled': 'off', // Disable the lightbulb quick-fix icon
 
-    // --- Kill All Git/SCM (The "Speed" Move) ---
-    'git.enabled': true, // needed to tell vscode to ignore git files
-    'git.autorefresh': false,
-    'git.decorations.enabled': false,
-    'git.ignoreLimitWarning': true, // "I know my repo is huge, stop bugging me."
-    'git.autofetch': true, // (Optional) Keeps your local git status synced with the server.
-    'scm.diffDecorations': 'none', // Removes gutter color indicators
-    'github.codespaces.showStatusbar': false,
+    // --- Git & Source Control ---
+    'git.enabled': true, // Keep git enabled so VS Code respects .gitignore for file exclusions
+    'git.autorefresh': false, // Don't auto-refresh git status — reduces I/O on large repos
+    'git.decorations.enabled': false, // Hide git status badges on files in sidebar
+    'git.ignoreLimitWarning': true, // Suppress "repository has too many changes" warnings
+    'git.autofetch': true, // Periodically fetch from remote to keep local refs up to date
+    'scm.diffDecorations': 'none', // Remove gutter diff color indicators (added/modified/deleted)
+    'github.codespaces.showStatusbar': false, // Hide Codespaces status bar item
 
     // --- Editor Behavior ---
-    'editor.bracketPairColorization.enabled': true,
-    'editor.fontFamily': is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily,
-    'editor.fontLigatures': true,
-    'editor.fontSize': fontSizeToUse,
-    'editor.fontWeight': 'bold',
-    'editor.formatOnPaste': true,
-    'editor.linkedEditing': true,
-    'editor.multiCursorModifier': 'ctrlCmd',
-    'editor.snippetSuggestions': 'top',
-    'editor.suggestSelection': 'first',
-    'editor.tabSize': EDITOR_CONFIGS.tabSize,
-    'editor.wordWrap': 'wordWrapColumn',
-    'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize,
+    'editor.bracketPairColorization.enabled': true, // Color-code matching bracket pairs for readability
+    'editor.fontFamily': is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily, // Primary editor font
+    'editor.fontLigatures': true, // Enable font ligatures (e.g. => becomes arrow in supported fonts)
+    'editor.fontSize': fontSizeToUse, // Base font size for the editor
+    'editor.fontWeight': 'bold', // Bold font weight for the editor
+    'editor.formatOnPaste': true, // Auto-format code when pasting
+    'editor.linkedEditing': true, // Rename matching HTML tags automatically when editing one
+    'editor.multiCursorModifier': 'ctrlCmd', // Use Cmd/Ctrl+click for multi-cursor instead of Alt+click
+    'editor.snippetSuggestions': 'top', // Show snippet suggestions at the top of the autocomplete list
+    'editor.suggestSelection': 'first', // Always pre-select the first autocomplete suggestion
+    'editor.tabSize': EDITOR_CONFIGS.tabSize, // Number of spaces per tab
+    'editor.wordWrap': 'wordWrapColumn', // Wrap lines at a specific column
+    'editor.wordWrapColumn': EDITOR_CONFIGS.maxLineSize, // Column at which to wrap lines
 
-    // --- Explorer Behavior ---
-    'explorer.excludeGitIgnore': true, // exclude git ignore
+    // --- Explorer ---
+    'explorer.excludeGitIgnore': true, // Hide .gitignore'd files from the Explorer sidebar
 
-    // --- Files & Search Performance ---
-    'files.eol': '\n',
-    'files.insertFinalNewline': true,
-    'files.trimTrailingWhitespace': true,
-    'files.hotExit': 'off',
-    'search.followSymlinks': false,
-    'search.useIgnoreFiles': true,
+    // --- Files & Search ---
+    'files.eol': '\n', // Use LF line endings by default
+    'files.insertFinalNewline': true, // Always end files with a newline (POSIX convention)
+    'files.trimTrailingWhitespace': true, // Remove trailing whitespace on save
+    'files.hotExit': 'off', // Don't save unsaved buffers on close — start fresh every time
+    'search.followSymlinks': false, // Don't follow symlinks during search — prevents infinite loops
+    'search.useIgnoreFiles': true, // Respect .gitignore and .ignore files during search
 
     // --- Languages & Formatting ---
     'editor.codeActionsOnSave': {
-      'source.fixAll': true,
-      'source.organizeImports': true,
+      'source.fixAll': true, // Auto-fix all fixable lint errors on save
+      'source.organizeImports': true, // Auto-sort and remove unused imports on save
     },
-    'javascript.updateImportsOnFileMove.enabled': 'always',
-    'javascript.inlayHints.variableTypes.enabled': true,
-    'javascript.suggestionActions.enabled': false, // Disables the lightbulb
-    'typescript.updateImportsOnFileMove.enabled': 'always',
-    'typescript.inlayHints.variableTypes.enabled': true,
-    'typescript.suggestionActions.enabled': false, // Disables the lightbulb
+    'javascript.updateImportsOnFileMove.enabled': 'always', // Auto-update JS import paths when files are moved
+    'javascript.inlayHints.variableTypes.enabled': true, // Show inferred variable types as inline hints in JS
+    'javascript.suggestionActions.enabled': false, // Disable JS lightbulb suggestions
+    'typescript.updateImportsOnFileMove.enabled': 'always', // Auto-update TS import paths when files are moved
+    'typescript.inlayHints.variableTypes.enabled': true, // Show inferred variable types as inline hints in TS
+    'typescript.suggestionActions.enabled': false, // Disable TS lightbulb suggestions
 
     // --- Terminal & System ---
-    'terminal.integrated.fontSize': fontSizeToUse,
-    'terminal.integrated.gpuAcceleration': 'auto',
-    'scm.inputFontSize': fontSizeToUse,
-    'chat.editor.fontSize': fontSizeToUse,
-    'security.workspace.trust.enabled': false,
-    'explorer.copyRelativePathSeparator': '/',
-    'remote.SSH.remotePlatform': { '127.0.0.1': 'linux' },
+    'terminal.integrated.fontSize': fontSizeToUse, // Font size for the integrated terminal
+    'terminal.integrated.gpuAcceleration': 'auto', // Let VS Code decide whether to use GPU for terminal rendering
+    'scm.inputFontSize': fontSizeToUse, // Font size for the SCM commit message input
+    'chat.editor.fontSize': fontSizeToUse, // Font size for the Copilot Chat editor
+    'security.workspace.trust.enabled': false, // Disable workspace trust prompts — trust all workspaces
+    'explorer.copyRelativePathSeparator': '/', // Always use forward slashes when copying relative paths
+    'remote.SSH.remotePlatform': { '127.0.0.1': 'linux' }, // Default remote platform for localhost SSH
 
     // --- Theming ---
-    'window.autoDetectColorScheme': true,
-    'workbench.preferredLightColorTheme': 'Default High Contrast Light',
-    'workbench.preferredDarkColorTheme': 'Default High Contrast',
-    'workbench.colorTheme': 'Dracula Theme',
-    'workbench.iconTheme': 'material-icon-theme',
+    'window.autoDetectColorScheme': true, // Follow the OS light/dark mode preference
+    'workbench.preferredLightColorTheme': 'Default High Contrast Light', // Theme for light mode
+    'workbench.preferredDarkColorTheme': 'Default High Contrast', // Theme for dark mode
+    'workbench.colorTheme': 'Dracula Theme', // Fallback theme when auto-detect is off
+    'workbench.iconTheme': 'material-icon-theme', // File icon theme for sidebar
 
-    // --- Search Index and Cleanup
-    // VISUAL: Hide all files and folders in your lists from the sidebar
-    'files.exclude': _convertIgnoredFilesAndFoldersForVSCode(EDITOR_CONFIGS.ignoredFiles, EDITOR_CONFIGS.ignoredFolders),
+    // --- Misc ---
+    'window.newWindowDimensions': 'maximized', // New windows open maximized
+    'window.restoreWindows': 'none', // Don't restore previous windows on startup — start fresh
+    'editor.accessibilitySupport': 'off', // Disable accessibility features for performance (screen reader detection)
+    'editor.dragAndDrop': false, // Disable drag-and-drop of selected text — prevents accidental moves
+    'editor.copyWithSyntaxHighlighting': false, // Copy plain text without HTML formatting — faster paste
+    'editor.emptySelectionClipboard': false, // Don't copy the entire line when nothing is selected
 
-    // SEARCH: Ignore everything in your lists during Global Search
-    // We use the same lists because if it's hidden from the UI,
-    // you usually don't want results popping up from it.
-    'search.exclude': _convertIgnoredFilesAndFoldersForVSCode(EDITOR_CONFIGS.ignoredFiles, EDITOR_CONFIGS.ignoredFolders),
-
-    // PERFORMANCE: Only pass folders here.
-    // VS Code watchers ignore folders as a whole; individual files
-    // are usually too granular for the watcher to care about.
+    // --- Search Index & Cleanup ---
+    'files.exclude': _convertIgnoredFilesAndFoldersForVSCode(EDITOR_CONFIGS.ignoredFiles, EDITOR_CONFIGS.ignoredFolders), // Files and folders hidden from sidebar and Goto Anything
+    'search.exclude': _convertIgnoredFilesAndFoldersForVSCode(EDITOR_CONFIGS.ignoredFiles, EDITOR_CONFIGS.ignoredFolders), // Files and folders excluded from global search results
     'files.watcherExclude': _convertIgnoredFilesAndFoldersForVSCode(
       [],
       EDITOR_CONFIGS.ignoredFolders,
-      true, // isWatcher = true
-    ),
+      true, // isWatcher = true — adds extra git object exclusions
+    ), // Folders excluded from the file watcher — reduces I/O
 
     // --- Formatter Overrides (Prettier) ---
     '[javascript]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
@@ -198,23 +197,14 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     '[handlebars]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
     '[yaml]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
     '[xml]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
-    '[html]': {
-      ...syntaxFormatterOpts,
-      ...syntaxHighlightOpts,
-    },
-    '[markdown]': {
-      ...syntaxFormatterOpts,
-      ...syntaxHighlightOpts,
-    },
-    '[plaintext]': {
-      ...syntaxFormatterOpts,
-      ...syntaxHighlightOpts,
-    },
+    '[html]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[markdown]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
+    '[plaintext]': { ...syntaxFormatterOpts, ...syntaxHighlightOpts },
   };
 
-  // mac only
+  // Mac-specific overrides
   if (is_os_darwin_mac) {
-    configs['workbench.fontAliasing'] = 'antialiased'; // Mac specific, but keeps text sharp without heavy load
+    configs['workbench.fontAliasing'] = 'antialiased'; // Sharper text rendering on macOS Retina displays
   }
 
   return configs;

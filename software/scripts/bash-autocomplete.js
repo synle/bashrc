@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /**
 Different options and code styles
 
@@ -108,29 +110,42 @@ async function doWork() {
 ##########################################################
   `;
 
-  // getting upstream
+  // ========================================================
+  // Git — upstream completion script + alias support
+  // ========================================================
   console.log('    >> Git Bash Autocomplete');
   const gitAutocompleteScript = await fetchUrlAsString(
     'https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash',
   );
   res += `
+##########################################################
+# Git Autocomplete (upstream)
+# Provides full tab completion for all git commands,
+# branches, remotes, tags, and options.
+##########################################################
 ${gitAutocompleteScript}
-  `;
+`;
 
-  // our base
   console.log('    >> Other Bash Autocomplete');
   res += `
 ##########################################################
-# begin sy custom autocomplete
+# Custom Autocomplete Functions
 ##########################################################
 
-# git auto complete...
-# auto complete for git with this short hand 'g' and 'git'
+# ---------------------------------------------------------
+# Git Aliases
+# Enable git tab completion for the 'g' shorthand alias
+# so 'g che<TAB>' expands just like 'git che<TAB>'
+# ---------------------------------------------------------
 __git_complete g __git_main
 __git_complete git __git_main
 
 
-# ssh server autocomplete
+# ---------------------------------------------------------
+# SSH
+# Autocomplete hostnames from ~/.ssh/config and
+# ~/.ssh/config.d/* — filters out wildcard entries
+# ---------------------------------------------------------
 __ssh_complete(){
   opts=\$([ -f ~/.ssh/config ] && grep "^Host" ~/.ssh/config ~/.ssh/config.d/* 2>/dev/null | grep -v "[?*]" | cut -d " " -f 2-)
   cur="\${COMP_WORDS[COMP_CWORD]}"
@@ -139,7 +154,12 @@ __ssh_complete(){
 complete -F __ssh_complete ssh
 complete -F __ssh_complete s
 
-# make autocomplete
+
+# ---------------------------------------------------------
+# Make
+# Autocomplete Makefile target names by parsing the
+# Makefile in the current directory
+# ---------------------------------------------------------
 __make_complete ()
 {
   opts=\$([ -f Makefile ] && cat Makefile | grep -v ' ' | cut -d ':' -f 1 | uniq);
@@ -149,7 +169,11 @@ __make_complete ()
 complete -F __make_complete make
 
 
-# npm autocomplete
+# ---------------------------------------------------------
+# npm
+# - 'npm <TAB>' suggests: run, test, start, install, ci
+# - 'npm run <TAB>' reads script names from package.json
+# ---------------------------------------------------------
 __npm_run_complete_options()
 {
 node -e """
@@ -168,12 +192,14 @@ __npm_complete ()
   then
     opts=$(__npm_run_complete_options)
   else
-    # npm => then shows run start test
+    # Top-level npm subcommands
     opts=$(
       echo '''
         run
         test
         start
+        install
+        ci
       ''' | tr -d " \t"
     )
   fi
@@ -182,6 +208,12 @@ __npm_complete ()
 }
 complete -F __npm_complete npm
 
+
+# ---------------------------------------------------------
+# npm-run (direct alias)
+# 'npm-run <TAB>' suggests script names from package.json
+# Only completes the first argument (the script name)
+# ---------------------------------------------------------
 __npm_run_complete ()
 {
   cur="\${COMP_WORDS[COMP_CWORD]}";
@@ -198,7 +230,12 @@ __npm_run_complete ()
 }
 complete -F __npm_run_complete npm-run
 
+
+# ---------------------------------------------------------
 # npx
+# Autocomplete common npx commands: prettier, ts-node,
+# tsx, tsc, eslint. Only completes the first argument.
+# ---------------------------------------------------------
 __npx_complete ()
 {
   cur="\${COMP_WORDS[COMP_CWORD]}";
@@ -209,6 +246,9 @@ __npx_complete ()
         echo '''
           prettier
           ts-node
+          tsx
+          tsc
+          eslint
         ''' | tr -d " \t"
       )
 
@@ -221,7 +261,12 @@ __npx_complete ()
 }
 complete -F __npx_complete npx
 
-# yarn
+
+# ---------------------------------------------------------
+# Yarn
+# Autocomplete yarn commands with script names from
+# package.json — same source as npm run
+# ---------------------------------------------------------
 __yarn_complete ()
 {
   opts=\$(__npm_run_complete_options)
@@ -231,6 +276,12 @@ __yarn_complete ()
 }
 complete -F __yarn_complete yarn
 
+
+# ---------------------------------------------------------
+# Docker (spec-based)
+# Uses a spec file to map docker subcommands to their
+# available options for context-aware completion
+# ---------------------------------------------------------
 ${await _getAutoCompleteWithSpec('docker', 'software/metadata/bash-autocomplete.docker.config')}
 `;
 

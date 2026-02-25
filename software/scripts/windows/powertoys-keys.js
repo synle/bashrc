@@ -1,3 +1,5 @@
+/// <reference path="../../index.js" />
+
 /** * Generates PowerToys keyboard remapping configuration for Windows. */
 async function doWork() {
   console.log('  >> Installing Powertoys Keyboard Config');

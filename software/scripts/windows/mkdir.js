@@ -1,3 +1,5 @@
+/// <reference path="../../index.js" />
+
 /** * Creates common Windows directories for applications and tools. */
 async function doWork() {
   let targetPath = globalThis.BASE_D_DIR_WINDOW;

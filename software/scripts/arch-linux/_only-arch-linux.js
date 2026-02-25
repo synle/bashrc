@@ -1,3 +1,5 @@
+/// <reference path="../../index.js" />
+
 /** * Gate check that exits early if the current OS is not Arch Linux. */
 async function doWork() {
   registerPlatformTweaks(
