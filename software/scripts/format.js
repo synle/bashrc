@@ -86,7 +86,7 @@ timeout() {
 ${timeoutScriptBlock}
 
 # === format script ===
-function format {
+format {
   local verbose=0
   if [ "\$(echo "\$1" | tr '[:upper:]' '[:lower:]')" = "1" ] || [ "\$(echo "\$1" | tr '[:upper:]' '[:lower:]')" = "true" ]; then
     verbose=1
@@ -109,7 +109,7 @@ function format {
   fi
 }
 
-function format_js {
+format_js {
   echo "Running Prettier on JavaScript/TypeScript files..."
 
   if ! command -v npx >/dev/null 2>&1; then
@@ -135,7 +135,7 @@ EOF
   fi
 }
 
-function format_python {
+format_python {
   # Only activate venv if not already active
   if [ -n "\$VIRTUAL_ENV" ]; then
     echo "Python environment already active: \$VIRTUAL_ENV"
@@ -166,7 +166,7 @@ function format_python {
 # Aggressive Junk Cleanup (macOS metadata, OS artifacts,
 # patch rejects, and other system files)
 # ----------------------------------------------------
-function format_cleanup {
+format_cleanup {
   echo "Cleaning junk files..."
 
   local base_dir="\${1:-.}"
@@ -210,7 +210,7 @@ function format_cleanup {
 # ----------------------------------------------------
 # Light Cleanup (depth limited)
 # ----------------------------------------------------
-function format_cleanup_light {
+format_cleanup_light {
   local base_dir="\${1:-.}"
   local max_depth=${MAX_DEPTH_CLEANUP}
 
@@ -235,7 +235,7 @@ function format_cleanup_light {
 # ----------------------------------------------------
 # Text File Formatting (trim trailing whitespace)
 # ----------------------------------------------------
-function format_other_text_based_files {
+format_other_text_based_files {
   echo '>> Formatting text-based files...'
 
   EXCLUDE_DIRS=(
