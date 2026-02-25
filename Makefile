@@ -6,5 +6,8 @@ build:
 run:
 	bash run.sh
 
+test:
+	bash run.sh
+
 format:
 	bash format.sh
