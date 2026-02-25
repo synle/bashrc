@@ -1,4 +1,5 @@
 {
+####################################################################
 # run.sh - Unified test runner script
 #
 # Usage:
@@ -31,6 +32,7 @@
 #   bash run.sh -D                                 # Shorthand for --debug
 #
 # Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh, -f, -lightweight, -debug, -D
+####################################################################
 
 ####################################################################
 # Prerequisites - OS Flags & Helpers

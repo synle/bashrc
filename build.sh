@@ -1,7 +1,78 @@
 {
 ####################################################################
-# Prerequisites - OS Flags & Helpers
+# build.sh - Build pipeline with selectable steps
+#
+# Usage:
+#   bash build.sh                                    # Run all steps
+#   bash build.sh --steps="jsdocs,webapp"            # Run specific steps (comma-separated)
+#   bash build.sh --steps="jsdocs webapp"            # Run specific steps (space-separated)
+#   bash build.sh --steps="""                        # Run specific steps (multiline)
+#     jsdocs
+#     webapp
+#   """
+#   bash build.sh jsdocs webapp                      # Bare args treated as steps
+#
+# Available steps:
+#   jsdocs          Build JSDocs for JS Code
+#   script-indexes  Generate Script List Indexes
+#   prebuild-hosts  Prebuild Host Mappings
+#   build-configs   Build Raw JSON and Config Artifacts
+#   host-mappings   Build Host Mappings (skip in CI)
+#   backup-xfce     Backup XFCE Configuration (if applicable)
+#   webapp          Build Web App
+#   build-include   Update files with BEGIN/END block inclusions
 ####################################################################
+
+# All valid step names
+ALL_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp build-include"
+
+####################################################################
+# Parse arguments
+####################################################################
+_steps_to_run=""
+_parsing_into=""
+
+for arg in "$@"; do
+  case "$arg" in
+    --steps=*|-steps=*)
+      _val="${arg#*steps=}"
+      if [ -n "$_val" ]; then
+        _steps_to_run="${_steps_to_run:+$_steps_to_run,}$_val"
+      fi
+      _parsing_into="steps"
+      ;;
+    -*)
+      _parsing_into=""
+      ;;
+    *)
+      _target="${_parsing_into:-steps}"
+      case "$_target" in
+        steps) _steps_to_run="${_steps_to_run:+$_steps_to_run,}$arg" ;;
+      esac
+      ;;
+  esac
+done
+
+# Normalize separators (commas, spaces, newlines) and filter invalid steps
+_normalized=""
+for step in $(echo "$_steps_to_run" | tr ',\n' ' '); do
+  step=$(echo "$step" | xargs) # trim whitespace
+  [ -z "$step" ] && continue
+  case " $ALL_STEPS " in
+    *" $step "*) _normalized="${_normalized:+$_normalized }$step" ;;
+    *) echo "WARNING: Unknown step '$step', skipping" ;;
+  esac
+done
+
+# If no steps specified, run all
+if [ -z "$_normalized" ]; then
+  _normalized="$ALL_STEPS"
+fi
+
+# Helper to check if a step should run
+should_run() { case " $_normalized " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
+
+echo "Steps to run: $_normalized"
 
 # BEGIN bootstrap/common-env.sh
 ####################################################################
@@ -58,58 +129,11 @@ unset os_flags
 # END bootstrap/common-env.sh
 
 
-# Build code begins here
-if [ "$CI" = "true" ]; then
-    echo() {
-        local input="$*"
-
-        # 1. Quick check: Does it start with > or <?
-        case "$input" in
-            ">"* | "<"*)
-                # Close previous group
-                command echo "::endgroup::"
-
-                local icons=""
-                local remainder="$input"
-
-                # 2. Extract leading > signs
-                while :; do
-                    case "$remainder" in
-                        ">"*)
-                            icons="${icons}🚀"
-                            remainder="${remainder#?}" # Remove first char
-                            ;;
-                        *) break ;;
-                    esac
-                done
-
-                # 3. Extract leading < signs
-                while :; do
-                    case "$remainder" in
-                        "<"*)
-                            icons="${icons}⭐"
-                            remainder="${remainder#?}" # Remove first char
-                            ;;
-                        *) break ;;
-                    esac
-                done
-
-                # 4. Output the group
-                command echo "::group::${icons}${remainder}"
-                ;;
-            *)
-                # Normal output for everything else
-                command echo "$@"
-                ;;
-        esac
-    }
-fi
-
 echo '< build.sh'
-
 ##########################################################
-# Build JSDocs for JS Code
+# step: jsdocs - Build JSDocs for JS Code
 ##########################################################
+if should_run jsdocs; then
 echo '> Build JSDocs for JS Code'
 node -e """
 const fs = require('fs');
@@ -144,27 +168,32 @@ for (const file of getJsFiles(scriptsDir)) {
   console.log('>> prepended reference tag to', file);
 }
 """
-
+fi
 
 ##########################################################
-# Generate Script List Indexes
+# step: script-indexes - Generate Script List Indexes
 ##########################################################
+if should_run script-indexes; then
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
 bash run.sh --files="software/metadata/script-list.config.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
+fi
 
 ##########################################################
-# Prebuild Host Mappings
+# step: prebuild-hosts - Prebuild Host Mappings
 ##########################################################
+if should_run prebuild-hosts; then
 echo '> Prebuilding Host Mappings'
 bash run.sh --files="software/metadata/ip-address.config.js"
+fi
 
 ##########################################################
-# Build Raw JSON and Config Artifacts
+# step: build-configs - Build Raw JSON and Config Artifacts
 # Compile common configs used for sublime and vscode keybindings.
 # Only process files containing the method "writeToBuildFile".
 ##########################################################
+if should_run build-configs; then
 echo '> Build raw JSON and raw JSON configs'
 CONFIG_BUILD_PATH="./.build"
 mkdir -p $CONFIG_BUILD_PATH
@@ -172,32 +201,32 @@ export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
 bash run.sh --files="$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
 echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
+fi
 
 ##########################################################
-# Build Host Mappings (skip in CI)
+# step: host-mappings - Build Host Mappings (skip in CI)
 ##########################################################
-if [ "$CI" != "true" ]; then
+if should_run host-mappings && [ "$CI" != "true" ]; then
   echo '> Build Host Mappings'
   export DEBUG_WRITE_TO_DIR="" && \
 bash run.sh --files="software/metadata/hosts-blocked-ads.config.js"
 fi
 
 ##########################################################
-# Backup XFCE Configuration (if applicable)
+# step: backup-xfce - Backup XFCE Configuration (if applicable)
 ##########################################################
-if [ -d "$HOME/.config/xfce4" ]; then
+if should_run backup-xfce && [ -d "$HOME/.config/xfce4" ]; then
   echo "Backing up XFCE configuration..."
   mkdir -p ./linux
   tar -czf ./linux/xfce-config.tar.gz \
     -C "$HOME/.config" xfce4
   echo "Backup complete: ./linux/xfce-config.tar.gz"
-else
-  echo "No XFCE configuration found. Skipping backup."
 fi
 
 ##########################################################
-# Build Web App
+# step: webapp - Build Web App
 ##########################################################
+if should_run webapp; then
 echo '> Building webapp'
 echo '>> Installing npm dependencies'
 npm install
@@ -206,12 +235,15 @@ npm run build
 echo '>> Built webapp artifacts:'
 find dist
 echo '> DONE Building'
-
+fi
 
 ##########################################################
-# Update files with BEGIN/END block inclusions
+# step: build-include - Update files with BEGIN/END block inclusions
 ##########################################################
+if should_run build-include; then
 echo '> Running build-include substitutions'
-node software/build-include.cjs build.sh run.sh README.md fonts/README.md
+node software/build-include.cjs
+fi
+
 exit
 }

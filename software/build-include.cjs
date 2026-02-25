@@ -21,14 +21,16 @@
  *   .html -> "<!--" (with " -->" suffix on END marker)
  *   *     -> "#"
  *
- * Pass target files as CLI args, or it defaults to scanning all INCLUSIONS targets.
+ * Scans all git-tracked *.sh and *.md files for BEGIN/END markers automatically.
+ * Optionally pass specific files as CLI args to process only those.
  *
  * Usage:
- *   node software/build-include.cjs                     # process INCLUSIONS targets only
- *   node software/build-include.cjs build.sh run.sh     # process specific files (auto + config)
+ *   node software/build-include.cjs                     # auto-scan tracked *.sh and *.md files
+ *   node software/build-include.cjs build.sh run.sh     # process specific files only
  */
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 /**
  * Explicit inclusions for keys that aren't file paths or need transforms.
@@ -148,9 +150,11 @@ for (const inc of INCLUSIONS) {
   inclusionsByKey.set(inc.key, inc);
 }
 
-// Determine target files: CLI args or collect from INCLUSIONS
+// Determine target files: CLI args or auto-scan git-tracked *.sh and *.md files
 const cliTargets = process.argv.slice(2);
-const targetFiles = cliTargets.length > 0 ? cliTargets : [...new Set(INCLUSIONS.flatMap((inc) => inc.targets))];
+const trackedFiles = execSync('git ls-files "*.sh" "*.md"', { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+const inclusionTargets = INCLUSIONS.flatMap((inc) => inc.targets);
+const targetFiles = cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])];
 
 let totalUpdated = 0;
 
