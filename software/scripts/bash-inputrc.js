@@ -27,7 +27,8 @@ set menu-complete-display-prefix on    # Show the common prefix before cycling t
 ########################################
 # Editing Behavior
 ########################################
-set bell-style none                    # Disable the terminal bell — no beep or flash on errors
+# Disable the terminal bell — no beep or flash on errors
+set bell-style none
 set enable-bracketed-paste on          # Paste multi-line text safely without executing each line
 
 ########################################
