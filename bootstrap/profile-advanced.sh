@@ -294,6 +294,12 @@ shorter_pwd_path(){
   echo "${result%/}"
 }
 
+# default bookmarks
+add_bookmark search_file
+add_bookmark search_file_with_git
+add_bookmark search_dir_with_git
+add_bookmark search_dir
+
 ##########################################################
 # Refresh script
 ##########################################################
@@ -307,9 +313,13 @@ alias refresh="curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/bootstrap/setup.sh| bash 
 # 08:32:43PM U=04:32:43AM syle @ Sy-Omen45L 10.255.255.254, 172.28.2.202
 # /h/syle/git/bashrc [master]
 # >>>
-# export PS1_Advanced="
-# \$(get_time) U=\$(get_time \"UTC\") \u @ \h \$(ifconfig2)
-# \$(shorter_pwd_path) \$(parse_git_branch)
-# >>> "
-export PS1_Advanced="\n\[\e[1;92m\]\$(get_time) \[\e[1;93m\]U=\$(get_time \"UTC\") \[\e[1;94m\]\u\[\e[m\] @ \[\e[1;95m\]\h \[\e[1;93m\]\$(ifconfig2)\[\e[m\]\n\[\e[1;31m\]\$(shorter_pwd_path)\[\e[m\] \[\e[1;36m\]\$(parse_git_branch)\[\e[m\]\n\$(rainbow_print '>>>' | sed 's/\(\x1b\[[0-9;]*m\)/\x01\1\x02/g') "
+export PS1_Advanced="\n\
+\[\e[1;92m\]\$(get_time) \
+\[\e[1;93m\]U=\$(get_time \"UTC\") \
+\[\e[1;94m\]\u\[\e[m\] @ \
+\[\e[1;95m\]\h \
+\[\e[1;93m\]\$(ifconfig2)\[\e[m\]\n\
+\[\e[1;31m\]\$(shorter_pwd_path)\[\e[m\] \
+\[\e[1;36m\]\$(parse_git_branch)\[\e[m\]\n\
+>>> "
 export PS1="$PS1_Advanced"

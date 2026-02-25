@@ -56,7 +56,35 @@ async function doWork() {
   const excludeDirsArray = allIgnoredDirs.map((d) => `    "${d}"`).join('\n');
   const excludeFilesArray = EXCLUDED_FILES.map((f) => `    "${f}"`).join('\n');
 
+  const timeoutScriptBlock = `
+# Runs a command with a timeout, killing it if it exceeds the allowed duration.
+# Usage: timeout [seconds] <command> (default: 17s)
+timeout() {
+  local delay cmd
+  if [ "\\$#" -eq 1 ]; then delay=17; cmd="\\$1"
+  elif [ "\\$#" -eq 2 ]; then delay="\\$1"; cmd="\\$2"
+  else echo "Usage: timeout [seconds] <command>" >&2; return 1; fi
+
+  echo "Running with \${delay}s timeout: \\$cmd" >&2
+  (
+    eval "\\$cmd" &
+    local cmd_pid=\\$!
+    (
+      sleep "\\$delay"
+      if kill -0 "\\$cmd_pid" 2>/dev/null; then
+        echo "Timeout after \${delay}s: killing '\\$cmd'" >&2
+        kill -9 "\\$cmd_pid" 2>/dev/null
+      fi
+    ) &
+    wait "\\$cmd_pid"
+  )
+}
+`;
+
   const formatScriptBlock = `
+# === timeout script ===
+${timeoutScriptBlock}
+
 # === format script ===
 function format {
   local verbose=0
@@ -68,16 +96,16 @@ function format {
   echo "Running full project format sequence..."
 
   if [ "\$verbose" -eq 1 ]; then
-    timeout 30 format_cleanup || echo "format_cleanup failed or skipped."
-    timeout 20 format_other_text_based_files || echo "format_other_text_based_files failed or skipped."
-    timeout 10 format_python || echo "format_python failed or skipped."
-    timeout 10 format_js || echo "format_js failed or skipped."
+    timeout format_cleanup || echo "format_cleanup failed or skipped."
+    timeout format_other_text_based_files || echo "format_other_text_based_files failed or skipped."
+    timeout format_python || echo "format_python failed or skipped."
+    timeout format_js || echo "format_js failed or skipped."
     echo "All formatting steps complete (some may have warnings)."
   else
-    timeout 30 format_cleanup > /dev/null 2>&1 || true
-    timeout 20 format_other_text_based_files > /dev/null 2>&1 || true
-    timeout 10 format_python > /dev/null 2>&1 || true
-    timeout 10 format_js > /dev/null 2>&1 || true
+    timeout format_cleanup > /dev/null 2>&1 || true
+    timeout format_other_text_based_files > /dev/null 2>&1 || true
+    timeout format_python > /dev/null 2>&1 || true
+    timeout format_js > /dev/null 2>&1 || true
   fi
 }
 
