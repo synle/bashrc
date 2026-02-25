@@ -40,7 +40,7 @@ globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + "/versions/node", ne
 globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || "").trim();
 
 globalThis.BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || "").trim();
-globalThis.TEST_FORCE_REFRESH = (process.env.TEST_FORCE_REFRESH || "").trim() === '1';
+globalThis.TEST_FORCE_REFRESH = (process.env.TEST_FORCE_REFRESH || "").trim() === "1";
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -256,7 +256,7 @@ globalThis.isLightweightMode = process.env.LIGHT_WEIGHT_MODE === "1";
 
 // setting up the path for the extra tweaks
 /** @type {string} */
-globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =path.join(is_os_window ? getWindowUserBaseDir() : globalThis.BASE_HOMEDIR_LINUX, "_extra");
+globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : globalThis.BASE_HOMEDIR_LINUX, "_extra");
 
 /** @type {string} */
 globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || "").toLowerCase().trim();
