@@ -1156,14 +1156,7 @@ function EnhancedTextArea(props) {
         <FullScreenTextViewer value={content} label={label} />
         <ActionButton onClick={() => setCollapsed(!collapsed)}>{collapsed ? 'Expand' : 'Collapse'}</ActionButton>
       </div>
-      {!collapsed && (
-        <CodeEditor
-          content={content}
-          syntax={syntax}
-          height={height}
-          readOnly={restProps.readOnly || false}
-        />
-      )}
+      {!collapsed && <CodeEditor content={content} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />}
     </div>
   );
 }
