@@ -1352,7 +1352,6 @@ function WindowsNotesDom() {
       <DynamicTextArea path='/windows/README.md' />
       <DynamicTextArea path='/bootstrap/dependencies-windows.ps1' />
       <DynamicTextArea path='/.build/font.sh' />
-      <DynamicTextArea path='/.build/windows-powershell-profile.ps1' />
       <DynamicTextArea path='/.build/windows-terminal' />
       <DynamicTextArea path='/android/sponsorblock.json' />
       <CommonEditorSetupDom is_os_window={true} />
