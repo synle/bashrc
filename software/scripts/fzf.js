@@ -2,9 +2,9 @@
 
 /** * Clones, installs, and registers fzf (fuzzy finder) with bashrc and bookmark aliases. */
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, '.fzf');
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".fzf");
 
-  console.log('  >> Download and installing fzf:', consoleLogColor4(targetPath));
+  console.log("  >> Download and installing fzf:", consoleLogColor4(targetPath));
 
   // clone it
   await execBashSilent(`
@@ -16,11 +16,11 @@ async function doWork() {
     ${targetPath}/install --no-key-bindings --no-completion --no-update-rc &>/dev/null;
   `);
 
-  console.log('    >> Register binary with bashrc', BASE_BASH_SYLE);
-  registerWithBashSyle('fzf - Fuzzy Find', `[ -f ~/.fzf.bash ] && . ~/.fzf.bash`);
+  console.log("    >> Register binary with bashrc", BASE_BASH_SYLE);
+  registerWithBashSyle("fzf - Fuzzy Find", `[ -f ~/.fzf.bash ] && . ~/.fzf.bash`);
 
   registerWithBashSyle(
-    'fzf - Fuzzy Find Aliases',
+    "fzf - Fuzzy Find Aliases",
     trimLeftSpaces(`
       BOOKMARK_PATH=~/.syle_bookmark
 

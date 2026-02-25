@@ -2,10 +2,10 @@
 
 /** * Downloads and installs Greenshot screenshot tool for Windows. */
 async function doWork() {
-  console.log('  >> Installing Windows Only - GreenShot');
+  console.log("  >> Installing Windows Only - GreenShot");
 
-  const targetPath = path.join(getWindowAppDataRoamingUserPath(), 'Greenshot', 'Greenshot.ini');
-  console.log('    >> Configs', consoleLogColor4(targetPath));
+  const targetPath = path.join(getWindowAppDataRoamingUserPath(), "Greenshot", "Greenshot.ini");
+  console.log("    >> Configs", consoleLogColor4(targetPath));
 
   exitIfPathNotFound(targetPath);
 
@@ -24,7 +24,7 @@ async function doWork() {
       ; Which destinations? Possible options (more might be added by plugins) are: Editor, FileDefault, FileWithDialog, Clipboard, Printer, EMail, Picker
       Destinations=FileNoDialog,Clipboard
     `
-      .replace(/[ ][ ]+/g, '')
+      .replace(/[ ][ ]+/g, "")
       .trim(),
   );
 }

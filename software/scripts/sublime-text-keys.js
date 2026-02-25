@@ -1,14 +1,14 @@
 /// <reference path="../index.js" />
 
-includeSource('software/scripts/sublime-text.common.js');
+includeSource("software/scripts/sublime-text.common.js");
 
 let OS_KEY;
 let COMMON_KEY_BINDINGS;
 let WINDOWS_ONLY_KEY_BINDINGS;
 let MAC_ONLY_KEY_BINDINGS;
 
-const WINDOWS_OS_KEY = 'alt'; // alt for modern mode
-const MAC_OSX_KEY = 'super';
+const WINDOWS_OS_KEY = "alt"; // alt for modern mode
+const MAC_OSX_KEY = "super";
 
 /**
  * Replaces OS_KEY placeholders in keybinding key/keys arrays with the actual OS-specific modifier key.
@@ -25,7 +25,7 @@ function _formatKey(keybindings, osKeyToUse) {
     keybinding.keys = []
       .concat(keybinding.keys || [])
       .concat(keybinding.key || [])
-      .map((s) => s.replace('OS_KEY', osKeyToUse));
+      .map((s) => s.replace("OS_KEY", osKeyToUse));
 
     delete keybinding.key;
   }
@@ -49,84 +49,84 @@ function _getConfigs() {
 async function doWork() {
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
-  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.windows.jsonc')) || [];
-  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString('software/scripts/sublime-text-keys.mac.jsonc')) || [];
+  WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString("software/scripts/sublime-text-keys.windows.jsonc")) || [];
+  MAC_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString("software/scripts/sublime-text-keys.mac.jsonc")) || [];
 
   // begin COMMON_KEY_BINDINGS
   COMMON_KEY_BINDINGS = [
-    { keys: ['OS_KEY+shift+;'], command: 'alignment' },
+    { keys: ["OS_KEY+shift+;"], command: "alignment" },
     {
-      key: 'f5',
-      command: 'refresh_folder_list',
+      key: "f5",
+      command: "refresh_folder_list",
     },
     {
-      key: 'OS_KEY+r',
-      command: 'show_overlay',
+      key: "OS_KEY+r",
+      command: "show_overlay",
       args: {
-        overlay: 'goto',
-        text: '@',
+        overlay: "goto",
+        text: "@",
       },
     },
     {
-      key: 'OS_KEY+;',
-      command: 'show_overlay',
+      key: "OS_KEY+;",
+      command: "show_overlay",
       args: {
-        overlay: 'goto',
-        text: ':',
+        overlay: "goto",
+        text: ":",
       },
     },
     {
-      key: 'OS_KEY+m',
-      command: 'move_to',
-      args: { to: 'brackets' },
+      key: "OS_KEY+m",
+      command: "move_to",
+      args: { to: "brackets" },
     },
     {
-      key: 'OS_KEY+o',
-      command: 'prompt_open_file',
+      key: "OS_KEY+o",
+      command: "prompt_open_file",
     },
     {
-      key: 'OS_KEY+\\',
-      command: 'toggle_side_bar',
+      key: "OS_KEY+\\",
+      command: "toggle_side_bar",
     },
     {
-      key: 'OS_KEY+enter',
-      command: 'goto_definition',
+      key: "OS_KEY+enter",
+      command: "goto_definition",
     },
     {
-      key: 'shift+enter',
-      command: 'quick_goto_variable',
+      key: "shift+enter",
+      command: "quick_goto_variable",
     },
     {
-      key: 'OS_KEY+t',
-      command: 'new_file',
+      key: "OS_KEY+t",
+      command: "new_file",
     },
     {
-      key: 'OS_KEY+ctrl+g',
-      command: 'find_all_under',
+      key: "OS_KEY+ctrl+g",
+      command: "find_all_under",
     },
 
     {
-      key: 'OS_KEY+shift+g',
-      command: 'find_prev',
+      key: "OS_KEY+shift+g",
+      command: "find_prev",
     },
     {
-      key: 'OS_KEY+g',
-      command: 'find_next',
+      key: "OS_KEY+g",
+      command: "find_next",
     },
-    { keys: ['OS_KEY+h'], command: 'show_panel', args: { panel: 'replace', reverse: false } },
+    { keys: ["OS_KEY+h"], command: "show_panel", args: { panel: "replace", reverse: false } },
     {
-      key: 'OS_KEY+f',
-      command: 'show_panel',
+      key: "OS_KEY+f",
+      command: "show_panel",
       args: {
-        panel: 'find',
+        panel: "find",
         reverse: false,
       },
     },
     {
-      key: 'OS_KEY+shift+f',
-      command: 'show_panel',
+      key: "OS_KEY+shift+f",
+      command: "show_panel",
       args: {
-        panel: 'find_in_files',
+        panel: "find_in_files",
       },
     },
 
@@ -169,50 +169,50 @@ async function doWork() {
     //     ],
     //   },
     // },
-    { key: ['OS_KEY+1'], command: 'select_by_index', args: { index: 0 } },
-    { key: ['OS_KEY+2'], command: 'select_by_index', args: { index: 1 } },
-    { key: ['OS_KEY+3'], command: 'select_by_index', args: { index: 2 } },
-    { key: ['OS_KEY+4'], command: 'select_by_index', args: { index: 3 } },
-    { key: ['OS_KEY+5'], command: 'select_by_index', args: { index: 4 } },
-    { key: ['OS_KEY+6'], command: 'select_by_index', args: { index: 5 } },
-    { key: ['OS_KEY+7'], command: 'select_by_index', args: { index: 6 } },
-    { key: ['OS_KEY+8'], command: 'select_by_index', args: { index: 7 } },
-    { key: ['OS_KEY+9'], command: 'select_by_index', args: { index: 8 } },
+    { key: ["OS_KEY+1"], command: "select_by_index", args: { index: 0 } },
+    { key: ["OS_KEY+2"], command: "select_by_index", args: { index: 1 } },
+    { key: ["OS_KEY+3"], command: "select_by_index", args: { index: 2 } },
+    { key: ["OS_KEY+4"], command: "select_by_index", args: { index: 3 } },
+    { key: ["OS_KEY+5"], command: "select_by_index", args: { index: 4 } },
+    { key: ["OS_KEY+6"], command: "select_by_index", args: { index: 5 } },
+    { key: ["OS_KEY+7"], command: "select_by_index", args: { index: 6 } },
+    { key: ["OS_KEY+8"], command: "select_by_index", args: { index: 7 } },
+    { key: ["OS_KEY+9"], command: "select_by_index", args: { index: 8 } },
   ];
   // end COMMON_KEY_BINDINGS
 
   console.log(`  >> Sublime Text Keybindings:`);
 
   // write to build file
-  const comments = 'Preferences Key Bindings';
+  const comments = "Preferences Key Bindings";
   writeToBuildFile([
     {
-      file: 'sublime-text-keys-windows',
+      file: "sublime-text-keys-windows",
       data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
       isJson: true,
       comments,
-      commentStyle: 'json',
+      commentStyle: "json",
     },
     {
-      file: 'sublime-text-keys-linux',
+      file: "sublime-text-keys-linux",
       data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
       isJson: true,
       comments,
-      commentStyle: 'json',
+      commentStyle: "json",
     },
     {
-      file: 'sublime-text-keys-macosx',
+      file: "sublime-text-keys-macosx",
       data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
       isJson: true,
       comments,
-      commentStyle: 'json',
+      commentStyle: "json",
     },
   ]);
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  console.log('    >> For my own system', targetPath);
+  console.log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
 
-  writeConfigToFile(targetPath, 'Packages/User/Default.sublime-keymap', _getConfigs());
+  writeConfigToFile(targetPath, "Packages/User/Default.sublime-keymap", _getConfigs());
 }

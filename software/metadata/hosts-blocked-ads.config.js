@@ -20,11 +20,11 @@ async function doWork() {
 
   console.log(
     `
-${''.padStart(90, '=')}
+${"".padStart(90, "=")}
 >> BLOCKED_HOST_SOURCE_URLS
-${''.padStart(90, '=')}
-${BLOCKED_HOST_SOURCE_URLS.join('\n')}
-${''.padStart(90, '=')}
+${"".padStart(90, "=")}
+${BLOCKED_HOST_SOURCE_URLS.join("\n")}
+${"".padStart(90, "=")}
 `,
   );
 
@@ -39,10 +39,10 @@ ${''.padStart(90, '=')}
         try {
           h = await fetchUrlAsString(url);
           h = convertTextToHosts(h);
-          console.log('Fetched Success', url, h.length);
+          console.log("Fetched Success", url, h.length);
           res = res.concat(h);
         } catch (err) {
-          console.log('Fetched Failed', url);
+          console.log("Fetched Failed", url);
         }
         resolve();
       }),
@@ -78,10 +78,10 @@ ${''.padStart(90, '=')}
     }
   });
 
-  console.log('Total Hosts', res.length);
+  console.log("Total Hosts", res.length);
 
-  const targetPath = './software/metadata/hosts-blocked-ads.config';
+  const targetPath = "./software/metadata/hosts-blocked-ads.config";
 
-  console.log('Update the hosts', targetPath);
-  writeText(targetPath, res.join('\n'));
+  console.log("Update the hosts", targetPath);
+  writeText(targetPath, res.join("\n"));
 }

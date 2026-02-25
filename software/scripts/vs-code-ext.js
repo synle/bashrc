@@ -54,46 +54,46 @@ async function doWork() {
   writeToBuildFile([
     // for vscode
     {
-      file: 'vs-code-ext-windows',
+      file: "vs-code-ext-windows",
       data: `
 c:;  cd "C:/Program Files/Microsoft VS Code/bin"
-${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join('\n')}
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `code --install-extension ${ext} --force`).join("\n")}
 echo 'Done installing VSCode Extensions'
 
 c:; cd "C:/Program Files/VSCodium/bin"
-${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join('\n')}
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join("\n")}
 echo 'Done installing VSCode Extensions'
     `,
     },
     {
-      file: 'vs-code-ext-macosx',
+      file: "vs-code-ext-macosx",
       data: `
 # to delete all previous extensions
 # /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
 
 cd "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
-${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join('\n')}
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `./code --install-extension ${ext} --force`).join("\n")}
 echo 'Done installing VSCode Extensions'
 
 cd "/Applications/VSCodium.app/Contents/Resources/app/bin/"
-${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join('\n')}
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `./codium --install-extension ${ext} --force`).join("\n")}
 echo 'Done installing VSCodium Extensions'
     `,
     },
     {
-      file: 'vs-code-ext-linux',
+      file: "vs-code-ext-linux",
       data: `
 # to delete all previous extensions
 # /usr/bin/code --list-extensions | xargs -L 1 /usr/bin/code --uninstall-extension
 # /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
 
-${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `/usr/bin/code --install-extension ${ext} --force`).join('\n')}
+${VS_CODE_EXTENSIONS_TO_INSTALL.map((ext) => `/usr/bin/code --install-extension ${ext} --force`).join("\n")}
 echo 'Done installing VSCode Extensions'
 
-${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `/usr/bin/codium --install-extension ${ext} --force`).join('\n')}
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `/usr/bin/codium --install-extension ${ext} --force`).join("\n")}
 echo 'Done installing VSCodium Extensions'
 
-${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `flatpak run com.vscodium.codium --install-extension ${ext} --force`).join('\n')}
+${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `flatpak run com.vscodium.codium --install-extension ${ext} --force`).join("\n")}
 echo 'Done installing VSCodium Extensions'
     `,
     },

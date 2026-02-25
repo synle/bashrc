@@ -9,15 +9,15 @@ const MAX_DEPTH_CLEANUP = 6;
 
 /** Files to skip during text-based formatting (minified, lockfiles, generated) */
 const EXCLUDED_FILES = [
-  '*.Identifier',
-  '*.min.css',
-  '*.min.js',
-  '*.orig',
-  '*.rej',
-  '.DS_Store',
-  'package-lock.json',
-  'pnpm-lock.yaml',
-  'yarn.lock',
+  "*.Identifier",
+  "*.min.css",
+  "*.min.js",
+  "*.orig",
+  "*.rej",
+  ".DS_Store",
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
 ];
 
 /** * Generates and registers bash functions for code formatting, cleanup, and file formatting using Prettier and Ruff. */
@@ -28,33 +28,33 @@ async function doWork() {
   const allIgnoredDirs = [
     ...new Set([
       ...ignoredFolders,
-      '.cache',
-      '.git',
-      '.gradle',
-      '.idea',
-      '.next',
-      '.venv',
-      '__pycache__',
-      'build',
-      'coverage',
-      'dist',
-      'node_modules',
-      'target',
-      'vendor',
-      'venv',
+      ".cache",
+      ".git",
+      ".gradle",
+      ".idea",
+      ".next",
+      ".venv",
+      "__pycache__",
+      "build",
+      "coverage",
+      "dist",
+      "node_modules",
+      "target",
+      "vendor",
+      "venv",
     ]),
   ].sort();
 
   // Build ignore rules for tools
-  const ruffExclude = allIgnoredDirs.join(',');
-  const findExcludes = allIgnoredDirs.map((folder) => `-not -path '*/${folder}/*'`).join(' \\\n    ');
-  const prettierIgnoreContent = allIgnoredDirs.join('\n');
+  const ruffExclude = allIgnoredDirs.join(",");
+  const findExcludes = allIgnoredDirs.map((folder) => `-not -path '*/${folder}/*'`).join(" \\\n    ");
+  const prettierIgnoreContent = allIgnoredDirs.join("\n");
 
   // Build bash arrays for find commands
-  const junkFileNames = junkFiles.map((f) => `-name '${f}'`).join(' -o \\\n        ');
-  const junkDirNames = junkDirs.map((d) => `-name '${d}'`).join(' -o \\\n        ');
-  const excludeDirsArray = allIgnoredDirs.map((d) => `    "${d}"`).join('\n');
-  const excludeFilesArray = EXCLUDED_FILES.map((f) => `    "${f}"`).join('\n');
+  const junkFileNames = junkFiles.map((f) => `-name '${f}'`).join(" -o \\\n        ");
+  const junkDirNames = junkDirs.map((d) => `-name '${d}'`).join(" -o \\\n        ");
+  const excludeDirsArray = allIgnoredDirs.map((d) => `    "${d}"`).join("\n");
+  const excludeFilesArray = EXCLUDED_FILES.map((f) => `    "${f}"`).join("\n");
 
   const timeoutScriptBlock = `
 # Runs a command with a timeout, killing it if it exceeds the allowed duration.
@@ -273,7 +273,7 @@ ${excludeFilesArray}
 # === end format script ===
 `;
 
-  registerWithBashSyle('format script', formatScriptBlock);
+  registerWithBashSyle("format script", formatScriptBlock);
 
-  writeToBuildFile([{ file: 'format', data: formatScriptBlock }]);
+  writeToBuildFile([{ file: "format", data: formatScriptBlock }]);
 }

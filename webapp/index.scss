@@ -2,7 +2,7 @@
 // Import Common Styles
 // ============================================================================
 
-@use 'common.scss' as *;
+@use "common.scss" as *;
 
 // ============================================================================
 // bashrc/webapp Specific Variables
@@ -79,9 +79,9 @@ code {
 // bashrc/webapp Specific Forms
 // ============================================================================
 
-input[type='text'],
-input[type='email'],
-input[type='url'],
+input[type="text"],
+input[type="email"],
+input[type="url"],
 textarea,
 select {
   width: 100%;
@@ -105,8 +105,8 @@ textarea {
 // ============================================================================
 
 button,
-input[type='submit'],
-a[role='button'] {
+input[type="submit"],
+a[role="button"] {
   @include mobile {
     padding: var(--spaceSize1) var(--spaceSize2);
   }
@@ -197,9 +197,9 @@ a[role='button'] {
     font-weight: var(--fontWeightSemiBold);
   }
 
-  input[type='text'],
-  input[type='email'],
-  input[type='url'] {
+  input[type="text"],
+  input[type="email"],
+  input[type="url"] {
     flex: 1;
     min-width: 0;
   }

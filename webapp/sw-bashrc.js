@@ -1,14 +1,14 @@
 // __BUILD_TIMESTAMP__ will be replaced during build
-const CACHE_VERSION = '__BUILD_TIMESTAMP__';
+const CACHE_VERSION = "__BUILD_TIMESTAMP__";
 const CACHE_NAME = `bashrc-webapp-cache-${CACHE_VERSION}`;
 const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
 // Resources to pre-cache during installation
-const PRECACHE_URLS = ['/', '/index.html', '/sw-bashrc.js'];
+const PRECACHE_URLS = ["/", "/index.html", "/sw-bashrc.js"];
 
 // Listen for skip waiting message
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
 });
@@ -20,7 +20,7 @@ function shouldCacheUrl(url) {
     const urlObj = new URL(url);
 
     // Only cache HTTP/HTTPS requests
-    if (!urlObj.protocol.startsWith('http')) {
+    if (!urlObj.protocol.startsWith("http")) {
       return false;
     }
 
@@ -40,7 +40,7 @@ function shouldCacheUrl(url) {
 function isCacheExpired(response) {
   if (!response) return true;
 
-  const cachedTime = response.headers.get('sw-cache-time');
+  const cachedTime = response.headers.get("sw-cache-time");
   if (!cachedTime) return true;
 
   const age = Date.now() - parseInt(cachedTime, 10);
@@ -50,7 +50,7 @@ function isCacheExpired(response) {
 // Helper function to add timestamp to response
 async function addTimestampToResponse(response) {
   const headers = new Headers(response.headers);
-  headers.set('sw-cache-time', Date.now().toString());
+  headers.set("sw-cache-time", Date.now().toString());
 
   const blob = await response.blob();
   return new Response(blob, {
@@ -61,12 +61,12 @@ async function addTimestampToResponse(response) {
 }
 
 // Install event - pre-cache essential resources
-self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing version', CACHE_VERSION);
+self.addEventListener("install", (event) => {
+  console.log("Service Worker: Installing version", CACHE_VERSION);
 
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
-      console.log('Service Worker: Pre-caching essential resources');
+      console.log("Service Worker: Pre-caching essential resources");
 
       // Try to cache each URL, but don't fail if one fails
       const cachePromises = PRECACHE_URLS.map(async (url) => {
@@ -75,15 +75,15 @@ self.addEventListener('install', (event) => {
           if (response.ok) {
             const responseWithTimestamp = await addTimestampToResponse(response);
             await cache.put(url, responseWithTimestamp);
-            console.log('Service Worker: Pre-cached', url);
+            console.log("Service Worker: Pre-cached", url);
           }
         } catch (error) {
-          console.warn('Service Worker: Failed to pre-cache', url, error);
+          console.warn("Service Worker: Failed to pre-cache", url, error);
         }
       });
 
       await Promise.all(cachePromises);
-      console.log('Service Worker: Pre-caching complete');
+      console.log("Service Worker: Pre-caching complete");
     }),
   );
 
@@ -92,7 +92,7 @@ self.addEventListener('install', (event) => {
 });
 
 // Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
     Promise.all([
       // Delete old cache versions
@@ -100,7 +100,7 @@ self.addEventListener('activate', (event) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
             if (cacheName !== CACHE_NAME) {
-              console.log('Service Worker: Clearing old cache', cacheName);
+              console.log("Service Worker: Clearing old cache", cacheName);
               return caches.delete(cacheName);
             }
           }),
@@ -114,7 +114,7 @@ self.addEventListener('activate', (event) => {
         for (const request of requests) {
           const response = await cache.match(request);
           if (isCacheExpired(response)) {
-            console.log('Service Worker: Removing expired cache entry:', request.url);
+            console.log("Service Worker: Removing expired cache entry:", request.url);
             deletionPromises.push(cache.delete(request));
           }
         }
@@ -127,7 +127,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - Cache first, then network with background update
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   // Only intercept requests we want to cache
   if (!shouldCacheUrl(event.request.url)) {
     // For external resources, just fetch normally
@@ -148,12 +148,12 @@ self.addEventListener('fetch', (event) => {
             // Add timestamp and cache the response
             const responseWithTimestamp = await addTimestampToResponse(networkResponse.clone());
             await cache.put(event.request, responseWithTimestamp);
-            console.log('Service Worker: Cached:', event.request.url);
+            console.log("Service Worker: Cached:", event.request.url);
           }
           return networkResponse;
         })
         .catch((error) => {
-          console.log('Service Worker: Network fetch failed for:', event.request.url, error);
+          console.log("Service Worker: Network fetch failed for:", event.request.url, error);
           return null;
         });
 
@@ -162,25 +162,25 @@ self.addEventListener('fetch', (event) => {
       if (cachedResponse) {
         // Check if cache is expired
         if (isCacheExpired(cachedResponse)) {
-          console.log('Service Worker: Cache expired, waiting for network:', event.request.url);
+          console.log("Service Worker: Cache expired, waiting for network:", event.request.url);
           // Cache expired - try to get fresh from network
           const networkResponse = await fetchPromise;
           if (networkResponse) {
             return networkResponse;
           }
           // Network failed, return stale cache as fallback
-          console.log('Service Worker: Network failed, serving stale cache:', event.request.url);
+          console.log("Service Worker: Network failed, serving stale cache:", event.request.url);
           return cachedResponse;
         } else {
           // Cache is fresh, return it and update in background
-          console.log('Service Worker: Serving from cache:', event.request.url);
+          console.log("Service Worker: Serving from cache:", event.request.url);
           fetchPromise.catch(() => {}); // Update cache in background, ignore errors
           return cachedResponse;
         }
       }
 
       // No cache - wait for network response
-      console.log('Service Worker: No cache, fetching from network:', event.request.url);
+      console.log("Service Worker: No cache, fetching from network:", event.request.url);
       const networkResponse = await fetchPromise;
 
       if (networkResponse) {
@@ -188,17 +188,17 @@ self.addEventListener('fetch', (event) => {
       }
 
       // Network failed and no cache - return error page for navigation requests
-      if (event.request.mode === 'navigate') {
-        console.log('Service Worker: Offline and no cache for navigation');
-        return new Response('<html><body><h1>Offline</h1><p>Unable to load the page. Please check your connection.</p></body></html>', {
-          headers: { 'Content-Type': 'text/html' },
+      if (event.request.mode === "navigate") {
+        console.log("Service Worker: Offline and no cache for navigation");
+        return new Response("<html><body><h1>Offline</h1><p>Unable to load the page. Please check your connection.</p></body></html>", {
+          headers: { "Content-Type": "text/html" },
         });
       }
 
       // For other requests, return a network error
-      return new Response('Network error', {
+      return new Response("Network error", {
         status: 503,
-        statusText: 'Service Unavailable',
+        statusText: "Service Unavailable",
       });
     }),
   );

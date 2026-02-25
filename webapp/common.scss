@@ -68,11 +68,11 @@
   }
 }
 
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   @include dark-theme;
 }
 
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   @include light-theme;
 }
 
@@ -229,7 +229,7 @@ a {
 // ============================================================================
 
 button,
-a[role='button'] {
+a[role="button"] {
   cursor: pointer;
   user-select: none;
   text-decoration: none;
@@ -371,7 +371,7 @@ textarea {
   }
 
   button,
-  a[role='button'],
+  a[role="button"],
   input {
     padding: var(--spaceSize1) var(--spaceSize2);
   }
@@ -399,7 +399,7 @@ textarea {
   text-align: center;
 
   button,
-  a[role='button'] {
+  a[role="button"] {
     text-align: center;
     width: 100%;
     display: block;
@@ -426,7 +426,7 @@ textarea {
     }
 
     button,
-    a[role='button'] {
+    a[role="button"] {
       border: none;
       border-radius: 0;
       border-bottom: 1px solid var(--colorBorderSecondary);
@@ -461,14 +461,14 @@ textarea {
     text-overflow: ellipsis;
 
     &::after {
-      content: '▼';
+      content: "▼";
       margin-left: 0.5rem;
       font-size: 0.7rem;
       display: inline-block;
       transition: transform 0.2s ease;
     }
 
-    &[aria-expanded='true']::after {
+    &[aria-expanded="true"]::after {
       transform: rotate(180deg);
     }
   }

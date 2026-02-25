@@ -3,43 +3,43 @@
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
-globalThis.fs = require('fs');
-globalThis.path = require('path');
-globalThis.https = require('https');
-globalThis.http = require('http');
+globalThis.fs = require("fs");
+globalThis.path = require("path");
+globalThis.https = require("https");
+globalThis.http = require("http");
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
 /** @type {string} */
-var BASE_HOMEDIR_LINUX = (globalThis.BASE_HOMEDIR_LINUX = (0, require)('os').homedir());
+var BASE_HOMEDIR_LINUX = (globalThis.BASE_HOMEDIR_LINUX = (0, require)("os").homedir());
 /** @type {string} */
-globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, '.bash_syle');
+globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, ".bash_syle");
 
 // specific for windows and wsl only
 /** @type {string} */
-globalThis.BASE_MOUNT_DIR_WINDOW = '';
+globalThis.BASE_MOUNT_DIR_WINDOW = "";
 /** @type {string} */
-globalThis.BASE_C_DIR_WINDOW = '';
+globalThis.BASE_C_DIR_WINDOW = "";
 /** @type {string} */
-globalThis.BASE_D_DIR_WINDOW = '';
+globalThis.BASE_D_DIR_WINDOW = "";
 /** @type {string} */
-globalThis.BASE_WINDOW = '';
+globalThis.BASE_WINDOW = "";
 /** @type {string} */
-globalThis.BASE_WINDOW_1 = '/mnt/c/Users';
+globalThis.BASE_WINDOW_1 = "/mnt/c/Users";
 /** @type {string} */
-globalThis.BASE_WINDOW_2 = '/c/Users';
+globalThis.BASE_WINDOW_2 = "/c/Users";
 
 // default node installation
 /** @type {number} */
 globalThis.DEFAULT_NVM_NODE_VERSION = 24;
 /** @type {string} */
-globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, '.nvm');
+globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, ".nvm");
 /** @type {string | null} */
-globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + '/versions/node', new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
+globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + "/versions/node", new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
 
-globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || '').trim();
+globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || "").trim();
 
-globalThis.BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || '').trim();
+globalThis.BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || "").trim();
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -65,7 +65,7 @@ if (!fontSize || fontSize <= 10) {
   fontSize = 10;
 }
 
-const fontFamily = process.env.FONT_FAMILY || 'Fira Code';
+const fontFamily = process.env.FONT_FAMILY || "Fira Code";
 
 let tabSize = parseInt(process.env.TAB_SIZE);
 if (!tabSize || tabSize <= 2) {
@@ -90,136 +90,136 @@ globalThis.EDITOR_CONFIGS = {
   fontSize,
   fontFamily,
   fontSizeDefaultFallback: 14,
-  fontFamilyDefaultFallback: 'Courier New',
+  fontFamilyDefaultFallback: "Courier New",
   tabSize,
   /** Print/ruler column width in the editor @type {number} */
   maxLineSize: 140,
   /** Junk files to delete during cleanup (macOS metadata, OS artifacts, patch rejects) @type {string[]} */
   junkFiles: [
-    '._*',
-    '.AppleDouble',
-    '.DS_Store',
-    '.LSOverride',
-    '*.Identifier',
-    '*.orig',
-    '*.rej',
-    'Desktop.ini',
-    'ehthumbs.db',
-    'Icon?',
-    'Thumbs.db',
+    "._*",
+    ".AppleDouble",
+    ".DS_Store",
+    ".LSOverride",
+    "*.Identifier",
+    "*.orig",
+    "*.rej",
+    "Desktop.ini",
+    "ehthumbs.db",
+    "Icon?",
+    "Thumbs.db",
   ],
   /** Junk directories to delete during cleanup @type {string[]} */
-  junkDirs: ['.Spotlight-V100', '.Trashes', '.fseventsd', '__MACOSX'],
+  junkDirs: [".Spotlight-V100", ".Trashes", ".fseventsd", "__MACOSX"],
   /** List of file glob patterns to be ignored by the editor @type {string[]} */
   ignoredFiles: [
-    '._*',
-    '.AppleDouble',
-    '.DS_Store',
-    '.eslintcache',
-    '.LSOverride',
-    '.Spotlight-*',
-    '.Trashes',
-    '*.class',
-    '*.code-search',
-    '*.db',
-    '*.dll',
-    '*.doc',
-    '*.docx',
-    '*.dylib',
-    '*.egg-info',
-    '*.egg',
-    '*.exe',
-    '*.idb',
-    '*.Identifier',
-    '*.ini',
-    '*.jar',
-    '*.js.map',
-    '*.lib',
-    '*.min.js',
-    '*.mp3',
-    '*.ncb',
-    '*.o',
-    '*.obj',
-    '*.ogg',
-    '*.orig',
-    '*.pdb',
-    '*.pid.lock',
-    '*.pid',
-    '*.psd',
-    '*.py[cod]',
-    '*.pyc',
-    '*.pyo',
-    '*.rej',
-    '*.sdf',
-    '*.seed',
-    '*.sln',
-    '*.so',
-    '*.Spotlight-*',
-    '*.sqlite',
-    '*.sublime-workspace',
-    '*.suo',
-    '*.swf',
-    '*.swp',
-    '*.Trashes',
-    '*.zip',
-    'Desktop.ini',
-    'ehthumbs.db',
-    'package-lock.json',
-    'Thumbs.db',
-    'yarn.lock',
+    "._*",
+    ".AppleDouble",
+    ".DS_Store",
+    ".eslintcache",
+    ".LSOverride",
+    ".Spotlight-*",
+    ".Trashes",
+    "*.class",
+    "*.code-search",
+    "*.db",
+    "*.dll",
+    "*.doc",
+    "*.docx",
+    "*.dylib",
+    "*.egg-info",
+    "*.egg",
+    "*.exe",
+    "*.idb",
+    "*.Identifier",
+    "*.ini",
+    "*.jar",
+    "*.js.map",
+    "*.lib",
+    "*.min.js",
+    "*.mp3",
+    "*.ncb",
+    "*.o",
+    "*.obj",
+    "*.ogg",
+    "*.orig",
+    "*.pdb",
+    "*.pid.lock",
+    "*.pid",
+    "*.psd",
+    "*.py[cod]",
+    "*.pyc",
+    "*.pyo",
+    "*.rej",
+    "*.sdf",
+    "*.seed",
+    "*.sln",
+    "*.so",
+    "*.Spotlight-*",
+    "*.sqlite",
+    "*.sublime-workspace",
+    "*.suo",
+    "*.swf",
+    "*.swp",
+    "*.Trashes",
+    "*.zip",
+    "Desktop.ini",
+    "ehthumbs.db",
+    "package-lock.json",
+    "Thumbs.db",
+    "yarn.lock",
   ],
   /** List of folder names to be ignored by the editor @type {string[]} */
   ignoredFolders: [
-    '.cache',
-    '.ebextensions',
-    '.generated',
-    '.git',
-    '.gradle',
-    '.hg',
-    '.idea',
-    '.mypy_cache',
-    '.pytest_cache',
-    '.sass-cache',
-    '.svn',
-    '.venv',
-    '__pycache*',
-    '__pycache__',
-    'bower_components',
-    'build',
-    'coverage',
-    'CVS',
-    'dist',
-    'env',
-    'node_modules',
-    'tmp',
-    'venv',
-    'webpack-dist',
+    ".cache",
+    ".ebextensions",
+    ".generated",
+    ".git",
+    ".gradle",
+    ".hg",
+    ".idea",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".sass-cache",
+    ".svn",
+    ".venv",
+    "__pycache*",
+    "__pycache__",
+    "bower_components",
+    "build",
+    "coverage",
+    "CVS",
+    "dist",
+    "env",
+    "node_modules",
+    "tmp",
+    "venv",
+    "webpack-dist",
   ],
   /** List of binary file glob patterns visible in tree but excluded from search for performance @type {string[]} */
   ignoredBinaries: [
-    '.git/*',
-    '.venv/*',
-    '*.dds',
-    '*.eot',
-    '*.exe',
-    '*.gif',
-    '*.ico',
-    '*.jar',
-    '*.jpeg',
-    '*.jpg',
-    '*.log',
-    '*.pdf',
-    '*.png',
-    '*.pyc',
-    '*.swf',
-    '*.tga',
-    '*.ttf',
-    '*.woff',
-    '*.woff2',
-    '*.zip',
-    'build/*',
-    'dist/*',
-    'node_modules/*',
+    ".git/*",
+    ".venv/*",
+    "*.dds",
+    "*.eot",
+    "*.exe",
+    "*.gif",
+    "*.ico",
+    "*.jar",
+    "*.jpeg",
+    "*.jpg",
+    "*.log",
+    "*.pdf",
+    "*.png",
+    "*.pyc",
+    "*.swf",
+    "*.tga",
+    "*.ttf",
+    "*.woff",
+    "*.woff2",
+    "*.zip",
+    "build/*",
+    "dist/*",
+    "node_modules/*",
   ],
 };
 
@@ -247,22 +247,22 @@ globalThis.is_os_android_termux = false;
 /** @type {boolean} */
 globalThis.is_os_chromeos = false;
 Object.keys(process.env)
-  .filter((envKey) => envKey.indexOf('is_os_') === 0)
-  .forEach((envKey) => (globalThis[envKey] = parseInt(process.env[envKey] || '0') > 0));
+  .filter((envKey) => envKey.indexOf("is_os_") === 0)
+  .forEach((envKey) => (globalThis[envKey] = parseInt(process.env[envKey] || "0") > 0));
 
 /** @type {boolean} */
-globalThis.isLightweightMode = process.env.LIGHT_WEIGHT_MODE === '1';
+globalThis.isLightweightMode = process.env.LIGHT_WEIGHT_MODE === "1";
 
 // setting up the path for the extra tweaks
 /** @type {string} */
 globalThis.BASE_SY_CUSTOM_TWEAKS_DIR =
-  is_os_window === true ? path.join(getWindowUserBaseDir(), '...sy', '_extra') : path.join(globalThis.BASE_HOMEDIR_LINUX, '_extra');
+  is_os_window === true ? path.join(getWindowUserBaseDir(), "...sy", "_extra") : path.join(globalThis.BASE_HOMEDIR_LINUX, "_extra");
 
 /** @type {string} */
-globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || '').toLowerCase().trim();
+globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || "").toLowerCase().trim();
 
-const repoName = 'synle/bashrc';
-const repoBranch = 'master';
+const repoName = "synle/bashrc";
+const repoBranch = "master";
 /** @type {string} */
 globalThis.REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
 
@@ -282,10 +282,10 @@ function _getFilePath(filePath) {
   let pathToUse = filePath;
   if (globalThis.DEBUG_WRITE_TO_DIR.length > 0) {
     const fileName = filePath
-      .replace(/[\/\\\(\)]/g, '_')
-      .replace(/ /g, '_')
-      .replace(/_\./g, '.')
-      .replace(/__+/g, '_');
+      .replace(/[\/\\\(\)]/g, "_")
+      .replace(/ /g, "_")
+      .replace(/_\./g, ".")
+      .replace(/__+/g, "_");
 
     pathToUse = path.join(globalThis.DEBUG_WRITE_TO_DIR, fileName);
   }
@@ -395,17 +395,17 @@ function findFirstDirFromList(findProps) {
  */
 function writeText(filePath, text, override = true, suppressError = false) {
   const pathToUse = _getFilePath(filePath);
-  const newContent = (text || '').trim();
+  const newContent = (text || "").trim();
   const oldContent = readText(pathToUse).trim();
 
   // strip everything before and including the COMMENT_BREAK line so timestamp-only changes don't trigger a write
   const commentBreakIdx_old = oldContent.indexOf(COMMENT_BREAK);
   const commentBreakIdx_new = newContent.indexOf(COMMENT_BREAK);
   const oldContentStripped = (
-    commentBreakIdx_old >= 0 ? oldContent.substring(oldContent.indexOf('\n', commentBreakIdx_old) + 1) : oldContent
+    commentBreakIdx_old >= 0 ? oldContent.substring(oldContent.indexOf("\n", commentBreakIdx_old) + 1) : oldContent
   ).trim();
   const newContentStripped = (
-    commentBreakIdx_new >= 0 ? newContent.substring(newContent.indexOf('\n', commentBreakIdx_new) + 1) : newContent
+    commentBreakIdx_new >= 0 ? newContent.substring(newContent.indexOf("\n", commentBreakIdx_new) + 1) : newContent
   ).trim();
 
   if (oldContentStripped === newContentStripped || override !== true) {
@@ -429,12 +429,12 @@ function writeText(filePath, text, override = true, suppressError = false) {
  * @param {string} [defaultContent=''] - The default content to write if the file is created
  * @returns {void}
  */
-function touchFile(filePath, defaultContent = '') {
+function touchFile(filePath, defaultContent = "") {
   const pathToUse = path.resolve(filePath);
   if (filePathExist(pathToUse)) {
-    console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(pathToUse));
+    console.log(consoleLogColor3("      << Skipped [NotModified]"), consoleLogColor4(pathToUse));
   } else {
-    console.log(consoleLogColor3('      >> File Created'), consoleLogColor4(pathToUse));
+    console.log(consoleLogColor3("      >> File Created"), consoleLogColor4(pathToUse));
     fs.writeFileSync(pathToUse, defaultContent);
   }
 }
@@ -450,12 +450,12 @@ function backupText(filePath, text) {
   const oldText = readText(pathToUse);
   if (oldText !== text) {
     // back up the old content before overwriting
-    const backupPathToUse = pathToUse + '.' + Date.now();
+    const backupPathToUse = pathToUse + "." + Date.now();
     writeText(backupPathToUse, oldText);
     writeText(pathToUse, text);
-    console.log(consoleLogColor3('      << Backup Created'), consoleLogColor4(backupPathToUse));
+    console.log(consoleLogColor3("      << Backup Created"), consoleLogColor4(backupPathToUse));
   } else {
-    console.log(consoleLogColor3('      << Backup Skipped [NotModified]'), consoleLogColor4(pathToUse));
+    console.log(consoleLogColor3("      << Backup Skipped [NotModified]"), consoleLogColor4(pathToUse));
   }
 }
 
@@ -466,8 +466,8 @@ function backupText(filePath, text) {
  * @param {string} [comments=''] - Optional comment text to prepend before the JSON content
  * @returns {void}
  */
-function writeJson(filePath, json, comments = '') {
-  let content = comments + '\n' + JSON.stringify(json, null, 2);
+function writeJson(filePath, json, comments = "") {
+  let content = comments + "\n" + JSON.stringify(json, null, 2);
   writeText(filePath, content.trim());
 }
 
@@ -481,20 +481,20 @@ function getAutoGeneratedText() {
 
   // Mod the minutes by 10 to round down (e.g., 28 -> 20, 31 -> 30)
   const rawMinutes = now.getMinutes();
-  const roundedMinutes = String(rawMinutes - (rawMinutes % 10)).padStart(2, '0');
+  const roundedMinutes = String(rawMinutes - (rawMinutes % 10)).padStart(2, "0");
 
   // Date formatting
   const yyyy = now.getFullYear();
-  const MM = String(now.getMonth() + 1).padStart(2, '0');
-  const dd = String(now.getDate()).padStart(2, '0');
+  const MM = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
 
   // 12-hour clock and AM/PM
   let hours = now.getHours();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const ampm = hours >= 12 ? "PM" : "AM";
   hours = hours % 12 || 12; // Converts 0 to 12
-  const hh = String(hours).padStart(2, '0');
+  const hh = String(hours).padStart(2, "0");
 
-  const mm = String(minutes).padStart(2, '0');
+  const mm = String(minutes).padStart(2, "0");
 
   // const timehere = `${yyyy}-${mm}-${dd} ${hh}:${roundedMinutes} ${ampm}`;
   const timehere = `${yyyy}-${MM}-${dd}-${hh}-${mm}${ampm}`;
@@ -524,30 +524,30 @@ function writeToBuildFile(tasks) {
   if (DEBUG_WRITE_TO_DIR) {
     for (let { file, data, isJson, comments, commentStyle } of [].concat(tasks)) {
       isJson = !!isJson;
-      comments = (comments || '').trim();
+      comments = (comments || "").trim();
 
-      let commentPrefix = '';
+      let commentPrefix = "";
       switch (commentStyle) {
-        case 'json':
-          commentPrefix = '//';
+        case "json":
+          commentPrefix = "//";
           break;
-        case 'gitconfig':
-        case 'bash':
-          commentPrefix = '#';
+        case "gitconfig":
+        case "bash":
+          commentPrefix = "#";
           break;
       }
 
       if (commentPrefix) {
-        commentPrefix = commentPrefix + ' '; // add a space to make it easy to ready
+        commentPrefix = commentPrefix + " "; // add a space to make it easy to ready
         comments = `${getAutoGeneratedText()}\n${comments}`;
       }
 
       if (comments) {
         comments = comments
           .trim()
-          .split('\n')
+          .split("\n")
           .map((row) => `${commentPrefix}${row.trim()}`)
-          .join('\n');
+          .join("\n");
 
         if (commentPrefix) {
           // added marker to help with trakcing and remove lalter
@@ -555,15 +555,15 @@ function writeToBuildFile(tasks) {
           comments += `\n${commentPrefix}${COMMENT_BREAK}`;
         }
 
-        comments += '\n\n';
+        comments += "\n\n";
       }
 
       if (isJson) {
-        console.log(consoleLogColor1('    >> DEBUG Mode: write JSON to file'), consoleLogColor4(file));
+        console.log(consoleLogColor1("    >> DEBUG Mode: write JSON to file"), consoleLogColor4(file));
         writeJson(file, data, comments);
       } else {
-        console.log(consoleLogColor1('    >> DEBUG Mode: write TEXT to file'), consoleLogColor4(file));
-        data = (data || '').trim();
+        console.log(consoleLogColor1("    >> DEBUG Mode: write TEXT to file"), consoleLogColor4(file));
+        data = (data || "").trim();
         writeText(file, (comments + data).trim());
       }
     }
@@ -582,7 +582,7 @@ function writeToBuildFile(tasks) {
  */
 function writeConfigToFile(basePath, fileName, data, isJson = true) {
   const fileDestPath = path.join(basePath, fileName);
-  console.log('      >> File Path', fileDestPath);
+  console.log("      >> File Path", fileDestPath);
   if (isJson) {
     writeJson(fileDestPath, data);
   } else {
@@ -598,7 +598,7 @@ function writeConfigToFile(basePath, fileName, data, isJson = true) {
  */
 function appendText(filePath, text) {
   const oldText = readText(filePath);
-  writeText(filePath, oldText + '\n' + text);
+  writeText(filePath, oldText + "\n" + text);
 }
 
 /**
@@ -612,7 +612,7 @@ function replaceTextLineByLine(filePath, replacements, makeAdditionalBackup = fa
   const oldText = readText(filePath);
 
   const newText = oldText
-    .split('\n')
+    .split("\n")
     .map((line) => {
       let newLine = line;
 
@@ -622,7 +622,7 @@ function replaceTextLineByLine(filePath, replacements, makeAdditionalBackup = fa
 
       return newLine;
     })
-    .join('\n');
+    .join("\n");
 
   // make backups
   writeText(`${filePath}.bak`, oldText, false);
@@ -656,7 +656,7 @@ function writeJsonWithMerge(filePath, json) {
  * @returns {object} The parsed JSON object
  */
 function readJson(filePath) {
-  return parseJsonWithComments(fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' }));
+  return parseJsonWithComments(fs.readFileSync(filePath, { encoding: "utf8", flag: "r" }));
 }
 
 /**
@@ -666,9 +666,9 @@ function readJson(filePath) {
  */
 function readText(filePath) {
   try {
-    return fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' }).trim();
+    return fs.readFileSync(filePath, { encoding: "utf8", flag: "r" }).trim();
   } catch (err) {
-    return '';
+    return "";
   }
 }
 
@@ -679,7 +679,7 @@ function readText(filePath) {
  * @returns {object} The parsed object
  */
 function parseJsonWithComments(oldText) {
-  oldText = (oldText || '').trim();
+  oldText = (oldText || "").trim();
   if (!oldText) {
     process.exit();
   }
@@ -706,15 +706,15 @@ function clone(obj) {
  */
 function getWindowUserBaseDir() {
   const regexUsername = /(leng)|(sy[ ]*le)/i;
-  let res = '';
+  let res = "";
 
   // try option 1
   res = findDirSingle(globalThis.BASE_WINDOW_1, regexUsername);
   if (res) {
     globalThis.BASE_WINDOW = globalThis.BASE_WINDOW_1;
-    globalThis.BASE_C_DIR_WINDOW = '/mnt/c';
-    globalThis.BASE_D_DIR_WINDOW = '/mnt/d';
-    globalThis.BASE_MOUNT_DIR_WINDOW = '/mnt';
+    globalThis.BASE_C_DIR_WINDOW = "/mnt/c";
+    globalThis.BASE_D_DIR_WINDOW = "/mnt/d";
+    globalThis.BASE_MOUNT_DIR_WINDOW = "/mnt";
     return res;
   }
 
@@ -722,9 +722,9 @@ function getWindowUserBaseDir() {
   res = findDirSingle(globalThis.BASE_WINDOW_2, regexUsername);
   if (res) {
     globalThis.BASE_WINDOW = globalThis.BASE_WINDOW_2;
-    globalThis.BASE_C_DIR_WINDOW = '/c';
-    globalThis.BASE_D_DIR_WINDOW = '/d';
-    globalThis.BASE_MOUNT_DIR_WINDOW = '/';
+    globalThis.BASE_C_DIR_WINDOW = "/c";
+    globalThis.BASE_D_DIR_WINDOW = "/d";
+    globalThis.BASE_MOUNT_DIR_WINDOW = "/";
     return res;
   }
 
@@ -747,14 +747,14 @@ function filePathExist(targetPath) {
  * @returns {Promise<string>} The resolved directory path for storing application binaries
  */
 async function getWindowsApplicationBinaryDir(applicationName) {
-  let targetPath = findDirSingle('/mnt', /[d]/) || findDirSingle('/mnt', /[c]/);
+  let targetPath = findDirSingle("/mnt", /[d]/) || findDirSingle("/mnt", /[c]/);
 
   if (filePathExist(targetPath)) {
     // push this binary into d drive
-    targetPath = path.join(targetPath, 'Applications');
+    targetPath = path.join(targetPath, "Applications");
   } else {
     // else use the extra folder
-    targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, 'windows');
+    targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "windows");
   }
 
   if (applicationName) {
@@ -770,7 +770,7 @@ async function getWindowsApplicationBinaryDir(applicationName) {
  * @returns {string} The path to {WindowsUserHome}/AppData/Roaming
  */
 function getWindowAppDataRoamingUserPath() {
-  return path.join(getWindowUserBaseDir(), 'AppData/Roaming');
+  return path.join(getWindowUserBaseDir(), "AppData/Roaming");
 }
 
 /**
@@ -778,7 +778,7 @@ function getWindowAppDataRoamingUserPath() {
  * @returns {string} The path to {WindowsUserHome}/AppData/Local
  */
 function getWindowAppDataLocalUserPath() {
-  return path.join(getWindowUserBaseDir(), 'AppData/Local');
+  return path.join(getWindowUserBaseDir(), "AppData/Local");
 }
 
 /**
@@ -786,7 +786,7 @@ function getWindowAppDataLocalUserPath() {
  * @returns {string} The path to ~/Library/Application Support
  */
 function getOsxApplicationSupportCodeUserPath() {
-  return path.join(process.env.HOME, 'Library/Application Support');
+  return path.join(process.env.HOME, "Library/Application Support");
 }
 
 //////////////////////////////////////////////////////
@@ -856,7 +856,7 @@ ${resultTextContent}
  * @param {string} [commentPrefix='#'] - The comment character/prefix
  * @returns {string} The modified text content
  */
-function appendTextBlock(resultTextContent, configKey, configValue, commentPrefix = '#') {
+function appendTextBlock(resultTextContent, configKey, configValue, commentPrefix = "#") {
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, false);
 }
 
@@ -868,7 +868,7 @@ function appendTextBlock(resultTextContent, configKey, configValue, commentPrefi
  * @param {string} [commentPrefix='#'] - The comment character/prefix
  * @returns {string} The modified text content
  */
-function prependTextBlock(resultTextContent, configKey, configValue, commentPrefix = '#') {
+function prependTextBlock(resultTextContent, configKey, configValue, commentPrefix = "#") {
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, true);
 }
 
@@ -909,7 +909,7 @@ function registerPlatformTweaks(platformName, fileName, content, sourceOverride)
  */
 function exitIfPathNotFound(targetPath, message) {
   if (!filePathExist(targetPath)) {
-    console.log(consoleLogColor1(`    >> ${message || 'Skipped : Not Found'}`));
+    console.log(consoleLogColor1(`    >> ${message || "Skipped : Not Found"}`));
     return process.exit();
   }
 }
@@ -925,7 +925,7 @@ async function downloadWindowsApp(applicationName, findFilter) {
   try {
     await downloadFilesFromMainRepo(findFilter, targetPath);
   } catch (err) {
-    console.error('error', err);
+    console.error("error", err);
   }
 }
 
@@ -946,7 +946,7 @@ function resolveOsKey(keys) {
  * @returns {string} The cleaned text with excess whitespace removed
  */
 function cleanupExtraWhitespaces(text) {
-  return text.replace(/[\r\n][\r\n][\n]+/g, '\n\n').trim();
+  return text.replace(/[\r\n][\r\n][\n]+/g, "\n\n").trim();
 }
 
 /**
@@ -956,10 +956,10 @@ function cleanupExtraWhitespaces(text) {
  * @returns {string[]} Unique, trimmed, non-empty lines that are not comments
  */
 function convertTextToList(...texts) {
-  const text = [...texts].join('\n');
+  const text = [...texts].join("\n");
 
   const items = text
-    .split('\n')
+    .split("\n")
     .map((s) => s.trim())
     .filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
 
@@ -973,11 +973,11 @@ function convertTextToList(...texts) {
  * @returns {string[]} Unique hostnames extracted from the input
  */
 function convertTextToHosts(...texts) {
-  const text = [...texts].join('\n');
+  const text = [...texts].join("\n");
 
   const items = text
-    .split('\n')
-    .map((s) => s.replace(/^[0-9]+.[0-9]+.[0-9]+.[0-9]+[ ]*/, '').trim())
+    .split("\n")
+    .map((s) => s.replace(/^[0-9]+.[0-9]+.[0-9]+.[0-9]+[ ]*/, "").trim())
     .filter((s) => s.length > 0 && s.match(/^[0-9a-zA-Z-.]+/) && s.match(/^[0-9a-zA-Z-.]+/)[0] === s);
 
   return [...new Set(items)]; // only return unique items
@@ -992,7 +992,7 @@ function convertTextToHosts(...texts) {
  */
 function trimLeftSpaces(text, spaceToTrim) {
   try {
-    const lines = text.split('\n');
+    const lines = text.split("\n");
 
     if (spaceToTrim === undefined) {
       // if not present, we will attempt to look at the space to trim automatically
@@ -1010,7 +1010,7 @@ function trimLeftSpaces(text, spaceToTrim) {
 
         return line.substr(Math.min(spaceToTrim, myLeftSpaces));
       })
-      .join('\n');
+      .join("\n");
   } catch (err) {
     return text;
   }
@@ -1032,9 +1032,9 @@ function calculatePercentage(count, total) {
  * @returns {string} The root domain portion of the URL
  */
 function getRootDomainFrom(url) {
-  const lastDotIndex = url.lastIndexOf('.');
+  const lastDotIndex = url.lastIndexOf(".");
   const partialUrl = url.substr(0, lastDotIndex);
-  const secondLastDotIdx = partialUrl.lastIndexOf('.') || 0;
+  const secondLastDotIdx = partialUrl.lastIndexOf(".") || 0;
 
   return url.substr(secondLastDotIdx + 1);
 }
@@ -1062,7 +1062,7 @@ function downloadFile(url, destination) {
 
   return new Promise((resolve, reject) => {
     if (filePathExist(destination)) {
-      console.log(consoleLogColor3('      << Skipped [NotModified]'), consoleLogColor4(destination));
+      console.log(consoleLogColor3("      << Skipped [NotModified]"), consoleLogColor4(destination));
       return resolve(false);
     }
 
@@ -1070,9 +1070,9 @@ function downloadFile(url, destination) {
     https
       .get(url, function (response) {
         response.pipe(file);
-        file.on('finish', () => resolve(true));
+        file.on("finish", () => resolve(true));
       })
-      .on('error', reject);
+      .on("error", reject);
   });
 }
 
@@ -1086,7 +1086,7 @@ function downloadFile(url, destination) {
 async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
   const files = await listRepoDir();
 
-  const filesToDownload = files.filter((s) => s.includes('binaries/') && !s.toLowerCase().includes('.md')).filter(findHandler);
+  const filesToDownload = files.filter((s) => s.includes("binaries/") && !s.toLowerCase().includes(".md")).filter(findHandler);
 
   const promises = [];
   for (const file of filesToDownload) {
@@ -1098,10 +1098,10 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
           const url = file;
           const downloaded = await downloadFile(url, destinationFile);
           if (downloaded === true) {
-            console.log(consoleLogColor3('      >> Downloaded'), consoleLogColor4(destinationFile));
+            console.log(consoleLogColor3("      >> Downloaded"), consoleLogColor4(destinationFile));
           }
         } catch (err) {
-          console.log(consoleLogColor3('      >> Error Downloading'), consoleLogColor4(file));
+          console.log(consoleLogColor3("      >> Error Downloading"), consoleLogColor4(file));
         }
 
         resolve();
@@ -1132,7 +1132,7 @@ async function listRepoDir(fetchFromRemote = true) {
 
   // fall back to use the pre compiled set
   try {
-    const content = await fetchUrlAsString('software/metadata/script-list.config');
+    const content = await fetchUrlAsString("software/metadata/script-list.config");
     return convertTextToList(content);
   } catch (err) {}
 
@@ -1175,9 +1175,9 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
     return [
       ...new Set(
         (files || [])
-          .map((s) => s.trim().replace('./software/', 'software/'))
-          .filter((f) => f && f.includes('software/'))
-          .filter((f) => !f.endsWith('.json') && !f.endsWith('software/index.js'))
+          .map((s) => s.trim().replace("./software/", "software/"))
+          .filter((f) => f && f.includes("software/"))
+          .filter((f) => !f.endsWith(".json") && !f.endsWith("software/index.js"))
           .filter((f) => {
             if (skipOsFiltering === true) {
               // if skip checking os, we want to return all scripts (used by the runner to generate all scripts)
@@ -1185,7 +1185,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
             }
 
             // if os check is on, we want to include only the script tag (used for run mode by the os)
-            return f.includes('software/scripts');
+            return f.includes("software/scripts");
           })
           .filter((f) => [`.js`, `.sh`].some((allowedExtnsion) => f.endsWith(allowedExtnsion))),
       ),
@@ -1195,7 +1195,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   // fallback mode: try local find first, fall back to API if files is empty
   if (useFallback === true) {
     try {
-      files = (await execBash('find .')).split('\n');
+      files = (await execBash("find .")).split("\n");
     } catch (_) {}
 
     if (!files || files.length === 0) {
@@ -1206,7 +1206,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   }
   if (useLocalFiles === true || isTestScriptMode === true) {
     // fetch from exec bash
-    files = (await execBash('find .')).split('\n');
+    files = (await execBash("find .")).split("\n");
   } else {
     // fetch from APIS
     files = await listRepoDir();
@@ -1236,17 +1236,17 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   `);
 
   if (is_os_window) {
-    firstFiles.push('software/scripts/windows/mkdir.js');
+    firstFiles.push("software/scripts/windows/mkdir.js");
   }
 
   let softwareFiles = files
     .filter(
       (f) =>
-        !!f.match('software/scripts/') &&
-        (f.includes('.js') || f.includes('.sh')) &&
-        !f.includes('config.js') &&
-        !f.includes('.json') &&
-        !f.includes('.common.js'),
+        !!f.match("software/scripts/") &&
+        (f.includes(".js") || f.includes(".sh")) &&
+        !f.includes("config.js") &&
+        !f.includes(".json") &&
+        !f.includes(".common.js"),
     )
     .filter((f) => firstFiles.indexOf(f) === -1 && lastFiles.indexOf(f) === -1)
     .sort();
@@ -1274,8 +1274,8 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
 
     const scriptFinderConfigs = [
       {
-        key: 'is_os_arch_linux',
-        allowed_path: 'software/scripts/arch-linux',
+        key: "is_os_arch_linux",
+        allowed_path: "software/scripts/arch-linux",
         whitelist: `
           ${bareboneScriptsCommon}
           software/scripts/git.js
@@ -1286,16 +1286,16 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
         `,
       },
       {
-        key: 'is_os_android_termux',
-        allowed_path: 'software/scripts/android-termux',
+        key: "is_os_android_termux",
+        allowed_path: "software/scripts/android-termux",
         whitelist: `
           software/scripts/vim-configurations.js
           software/scripts/vim-vundle.sh
         `,
       },
       {
-        key: 'is_os_chromeos',
-        allowed_path: 'software/scripts/chrome-os',
+        key: "is_os_chromeos",
+        allowed_path: "software/scripts/chrome-os",
         whitelist: `
           ${bareboneScriptsCommon}
           software/scripts/fonts.js
@@ -1308,19 +1308,19 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
       scriptFinderConfig.whitelist = [
         ...firstFiles,
         ...convertTextToList(scriptFinderConfig.whitelist),
-        'software/scripts/bash-syle-content.js', // the last file
+        "software/scripts/bash-syle-content.js", // the last file
       ];
       return scriptFinderConfig;
     });
 
     const pathsToIgnore = [
-      [is_os_arch_linux, 'software/scripts/arch-linux'],
-      [is_os_android_termux, 'software/scripts/android-termux'],
-      [is_os_window, 'software/scripts/windows'],
-      [is_os_darwin_mac, 'software/scripts/mac'],
-      [is_os_chromeos, 'software/scripts/chrome-os'],
+      [is_os_arch_linux, "software/scripts/arch-linux"],
+      [is_os_android_termux, "software/scripts/android-termux"],
+      [is_os_window, "software/scripts/windows"],
+      [is_os_darwin_mac, "software/scripts/mac"],
+      [is_os_chromeos, "software/scripts/chrome-os"],
     ]
-      .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ''))
+      .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
       .filter((s) => !!s);
 
     for (const scriptFinderConfig of scriptFinderConfigs) {
@@ -1359,7 +1359,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
  * @returns {string} The fully qualified URL
  */
 function getFullUrl(url) {
-  if (url.indexOf('http') !== 0) {
+  if (url.indexOf("http") !== 0) {
     url = `${REPO_PREFIX_URL}${url}`;
   }
   return url;
@@ -1372,7 +1372,7 @@ function getFullUrl(url) {
  * @returns {Promise<string>} The fetched content as a string
  */
 async function fetchUrlAsString(url) {
-  if (isTestScriptMode && !url.includes('http')) {
+  if (isTestScriptMode && !url.includes("http")) {
     const file = url;
     return execBash(`cat ${file}`);
   }
@@ -1383,9 +1383,9 @@ async function fetchUrlAsString(url) {
     return execBash(`curl -s ${url}`);
   } catch (err) {
     return new Promise((resolve) => {
-      require('https').get(url, (res) => {
-        let rawData = '';
-        res.on('data', (chunk) => (rawData += chunk)).on('end', () => resolve(rawData));
+      require("https").get(url, (res) => {
+        let rawData = "";
+        res.on("data", (chunk) => (rawData += chunk)).on("end", () => resolve(rawData));
       });
     });
   }
@@ -1423,10 +1423,10 @@ async function fetchUrlAsJson(url) {
  */
 function execBash(cmd, options) {
   return new Promise((resolve) => {
-    const { execSync } = require('child_process');
+    const { execSync } = require("child_process");
     const stdout = execSync(cmd, {
       ...(options || {}),
-      encoding: 'utf8',
+      encoding: "utf8",
       maxBuffer: 50 * 1024 * 1024,
     }).toString();
     resolve(stdout);
@@ -1441,7 +1441,7 @@ function execBash(cmd, options) {
  */
 function execBashSilent(cmd, options) {
   return new Promise((resolve) => {
-    const { exec } = require('child_process');
+    const { exec } = require("child_process");
     options = options || {};
     exec(cmd, options || {}, (error, stdout, stderr) => {
       resolve(stdout);
@@ -1489,31 +1489,31 @@ function consoleLogColor(str, color) {
  */
 const CONSOLE_COLORS = [
   null, // 0: Not used
-  '32m', // 1: Green (Success)
-  '33m', // 2: Yellow (Warning)
-  '36m', // 3: Cyan (Info)
-  '2m', // 4: Dim (Metadata)
-  '1;31m', // 5: Bold Red (Standard Error)
-  '41;97;1m', // 6: BG Red + White Text (CRITICAL ERROR)
-  '43;30m', // 7: BG Yellow + Black Text (ATTENTION)
-  '35m', // 8: Magenta (System)
-  '38;5;208m', // 9: Orange (256-color mode - unique Warning)
+  "32m", // 1: Green (Success)
+  "33m", // 2: Yellow (Warning)
+  "36m", // 3: Cyan (Info)
+  "2m", // 4: Dim (Metadata)
+  "1;31m", // 5: Bold Red (Standard Error)
+  "41;97;1m", // 6: BG Red + White Text (CRITICAL ERROR)
+  "43;30m", // 7: BG Yellow + Black Text (ATTENTION)
+  "35m", // 8: Magenta (System)
+  "38;5;208m", // 9: Orange (256-color mode - unique Warning)
 ];
 
 for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
   const color = CONSOLE_COLORS[idx];
 
   if (color) {
-    global['echoColor' + idx] = (str) => echoColor(str, color);
-    global['consoleLogColor' + idx] = (str) => consoleLogColor(str, color);
+    global["echoColor" + idx] = (str) => echoColor(str, color);
+    global["consoleLogColor" + idx] = (str) => consoleLogColor(str, color);
   }
 }
 
 /** @type {(str: string) => string} Generates a bash echo command with green (success) coloring */
-global.echoColorSuccess = (str) => echoColor(str, '32m');
+global.echoColorSuccess = (str) => echoColor(str, "32m");
 /** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
-global.echoColorError = (str) => echoColor(str, '31m');
-global.echoColorWarning = (str) => echoColor(str, '33m');
+global.echoColorError = (str) => echoColor(str, "31m");
+global.echoColorWarning = (str) => echoColor(str, "33m");
 
 //////////////////////////////////////////////////////
 // Script Processing & Execution
@@ -1537,7 +1537,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
    * @returns {string} The composed fetch command string
    */
   function _generateScript(file, url) {
-    if (file.includes('.js')) {
+    if (file.includes(".js")) {
       return `${_generateStartScript()} && ${_generateRawScript(file, url)}`;
     }
     return `${_generateRawScript(file, url)}`;
@@ -1563,7 +1563,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
    * @returns {string} A fetch command string for the software/index.js bootstrap script
    */
   function _generateStartScript() {
-    const startScriptFilePath = 'software/index.js';
+    const startScriptFilePath = "software/index.js";
     const startScriptUrl = getFullUrl(`${startScriptFilePath}?${Date.now()}`);
 
     return _generateRawScript(startScriptFilePath, startScriptUrl);
@@ -1577,41 +1577,41 @@ function processScriptFile(file, originalFile, allRepoFiles) {
    * @returns {string} The pipe command (e.g., 'node', 'bash', 'sudo -E node', 'node | bash')
    */
   function _generatePipeOutput(file, url) {
-    if (file.includes('.su.sh.js')) {
+    if (file.includes(".su.sh.js")) {
       if (DEBUG_WRITE_TO_DIR) {
         // for debug mode, we do not want to run bash
-        return 'node';
+        return "node";
       }
       return `node | bash`;
     }
-    if (file.includes('.su.js')) {
+    if (file.includes(".su.js")) {
       return `sudo -E node`; // -E means preserve the env variable
     }
-    if (file.includes('.sh.js')) {
+    if (file.includes(".sh.js")) {
       if (DEBUG_WRITE_TO_DIR) {
         // for debug mode, we do not want to run bash
-        return 'node';
+        return "node";
       }
       return `node | bash`;
     }
-    if (file.includes('.js')) {
+    if (file.includes(".js")) {
       return `node`;
     }
 
-    if (file.includes('.su.sh')) {
+    if (file.includes(".su.sh")) {
       return `sudo -E bash`; // -E means preserve the env variable
     }
-    if (file.includes('.sh')) {
+    if (file.includes(".sh")) {
       return `bash`;
     }
   }
 
   const fileName = path.basename(file);
-  const filePattern = new RegExp(fileName, 'i');
+  const filePattern = new RegExp(fileName, "i");
   const foundMatchedPath = allRepoFiles.find((f) => filePattern.test(f) && f.startsWith(path.dirname(file)));
   const fileExists = !!foundMatchedPath;
 
-  let description = '';
+  let description = "";
   if (fileExists) {
     if (file !== foundMatchedPath) {
       description = `Expanded ${originalFile} to ${foundMatchedPath}`;
@@ -1631,7 +1631,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     file: originalFile,
     path: file,
     script: _generateScript(file, url),
-    status: fileExists ? 'success' : 'error',
+    status: fileExists ? "success" : "error",
     description: description,
   });
 }
@@ -1652,7 +1652,7 @@ async function includeSource(file) {
  * @returns {void}
  */
 function printOsFlags() {
-  if (process.env.SHOULD_PRINT_OS_FLAGS === 'true') {
+  if (process.env.SHOULD_PRINT_OS_FLAGS === "true") {
     printSectionBlock(`OS Flags`);
     console.log(`
       node -e """
@@ -1680,9 +1680,9 @@ function printScriptsToRun(scriptsToRun) {
  * @returns {void}
  */
 function printSectionBlock(header, lines = []) {
-  console.log(echoColorError(''.padStart(lineBreak, '=')));
+  console.log(echoColorError("".padStart(lineBreak, "=")));
   console.log(echoColorError(`>> ${header}`));
-  console.log(echoColorError(''.padStart(lineBreak, '=')));
+  console.log(echoColorError("".padStart(lineBreak, "=")));
 }
 
 /**
@@ -1692,13 +1692,13 @@ function printSectionBlock(header, lines = []) {
  * @returns {void}
  */
 function printScriptProcessingResults(results) {
-  const successCount = results.filter((r) => r.status === 'success').length;
-  const errorCount = results.filter((r) => r.status === 'error').length;
+  const successCount = results.filter((r) => r.status === "success").length;
+  const errorCount = results.filter((r) => r.status === "error").length;
 
   printSectionBlock(`Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`);
 
   for (const result of results) {
-    if (result.status === 'success') {
+    if (result.status === "success") {
       console.log(echoColorSuccess(`[Success] ${result.file} (${result.path}). ${result.description}`));
     } else {
       console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}`));
@@ -1716,7 +1716,7 @@ function printScriptProcessingResults(results) {
  * @returns {Promise<void>}
  */
 async function _doWorkTestFiles() {
-  const filesToTest = process.env.TEST_SCRIPT_FILES || '';
+  const filesToTest = process.env.TEST_SCRIPT_FILES || "";
 
   if (!filesToTest) {
     console.log(`echo '''    >> Skipped'''`);
@@ -1742,7 +1742,7 @@ async function _doWorkTestFiles() {
     const originalFile = softwareFiles[i];
     let file = originalFile;
 
-    if (file.startsWith('software/')) {
+    if (file.startsWith("software/")) {
       // does not includes the proper prefix
     } else {
       // add the prefix if needed
@@ -1787,7 +1787,7 @@ async function _doWorkFullRun() {
     let file = originalFile;
 
     // add the prefix if needed
-    if (!file.startsWith('software/scripts/')) {
+    if (!file.startsWith("software/scripts/")) {
       file = `software/scripts/${file}`;
     }
 
@@ -1810,13 +1810,13 @@ async function _doWorkFullRun() {
  */
 (async function () {
   const missingEnvVars = [
-    ['BASH_PROFILE_CODE_REPO_RAW_URL', globalThis.BASH_PROFILE_CODE_REPO_RAW_URL],
-    ['BASH_SYLE_COMMON', globalThis.BASH_SYLE_COMMON],
+    ["BASH_PROFILE_CODE_REPO_RAW_URL", globalThis.BASH_PROFILE_CODE_REPO_RAW_URL],
+    ["BASH_SYLE_COMMON", globalThis.BASH_SYLE_COMMON],
   ]
     .filter(([, value]) => !value)
     .map(([key]) => key);
   if (missingEnvVars.length > 0) {
-    console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    console.error(`Missing required environment variables: ${missingEnvVars.join(", ")}`);
     process.exit(1);
   }
 
@@ -1829,8 +1829,8 @@ async function _doWorkFullRun() {
 
   // create the sy tweak folder
   const pathsToCreateDir = [
-    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, 'mac'),
-    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, 'windows'),
+    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
+    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),
   ];
 
   for (const aPath of pathsToCreateDir) {
@@ -1841,18 +1841,18 @@ async function _doWorkFullRun() {
 
   // for debugging
   process
-    .on('unhandledRejection', (reason, p) => {
-      console.error('[Error] unhandledRejection', reason, 'Unhandled Rejection at Promise', p);
+    .on("unhandledRejection", (reason, p) => {
+      console.error("[Error] unhandledRejection", reason, "Unhandled Rejection at Promise", p);
       process.exit(1);
     })
-    .on('uncaughtException', (err) => {
-      console.error('[Error] uncaughtException', err, 'Uncaught Exception thrown');
+    .on("uncaughtException", (err) => {
+      console.error("[Error] uncaughtException", err, "Uncaught Exception thrown");
       process.exit(1);
     });
 
   // start script
   try {
-    if (typeof doWork === 'function') {
+    if (typeof doWork === "function") {
       // if doWork is defined externally (e.g. by a script concatenated after this file), use it
       await doWork();
     } else if (process.env.TEST_SCRIPT_FILES) {
@@ -1863,6 +1863,6 @@ async function _doWorkFullRun() {
       await _doWorkFullRun();
     }
   } catch (err) {
-    console.log('<< Error', err);
+    console.log("<< Error", err);
   }
 })();

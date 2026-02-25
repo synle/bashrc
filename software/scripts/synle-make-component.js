@@ -2,11 +2,11 @@
 
 /** * Clones, builds, and registers the synle-make-component tool with bashrc and fzf integration. */
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, '.synle-make-component');
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".synle-make-component");
 
-  console.log('  >> Download and installing synle-make-component:', consoleLogColor4(targetPath));
+  console.log("  >> Download and installing synle-make-component:", consoleLogColor4(targetPath));
 
-  console.log('    >> Cloning and building', consoleLogColor4(targetPath));
+  console.log("    >> Cloning and building", consoleLogColor4(targetPath));
   await execBashSilent(`
     rm -rf "${targetPath}"
     git clone --depth 1 -b master https://github.com/synle/make-component.git "${targetPath}"
@@ -16,9 +16,9 @@ async function doWork() {
     cwd: targetPath,
   });
 
-  console.log('    >> Register binary with bashrc', BASE_BASH_SYLE);
+  console.log("    >> Register binary with bashrc", BASE_BASH_SYLE);
   registerWithBashSyle(
-    'Sy Make Component',
+    "Sy Make Component",
     trimLeftSpaces(`
       [ -f ${targetPath}/setup.sh ] && . ${targetPath}/setup.sh
 

@@ -8,7 +8,7 @@ function _getRebaseInteractiveSnippet() {
   const items = [];
   for (let i = 5; i <= 100; i += 5) items.push(i);
   for (let i = 150; i <= 1000; i += 50) items.push(i);
-  return items.map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`).join('\n');
+  return items.map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`).join("\n");
 }
 
 /**
@@ -20,16 +20,16 @@ function _getRebaseInteractiveSnippet() {
  * @returns {Promise<string>} The rendered git config content.
  */
 async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate }) {
-  email = email || '';
-  extraCoreConfigs = extraCoreConfigs || '';
+  email = email || "";
+  extraCoreConfigs = extraCoreConfigs || "";
 
-  let templateGitConfig = await fetchUrlAsString('software/scripts/git.gitconfig');
+  let templateGitConfig = await fetchUrlAsString("software/scripts/git.gitconfig");
 
   try {
     templateGitConfig = templateGitConfig
-      .replace('###SNIPPET_GIT_USER_EMAIL###', email)
-      .replace('###SNIPPET_GIT_EXTRA_CORE_CONFIGS###', extraCoreConfigs)
-      .replace('###SNIPPET_GIT_REBASE_INTERACTIVE###', _getRebaseInteractiveSnippet())
+      .replace("###SNIPPET_GIT_USER_EMAIL###", email)
+      .replace("###SNIPPET_GIT_EXTRA_CORE_CONFIGS###", extraCoreConfigs)
+      .replace("###SNIPPET_GIT_REBASE_INTERACTIVE###", _getRebaseInteractiveSnippet())
       .trim();
 
     if (addDefaultCommitTemplate === true) {
@@ -43,7 +43,7 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
       touchFile(GIT_DEFAULT_MESSAGE_PATH);
     }
   } catch (err) {
-    console.log('Failed to get git config template', err);
+    console.log("Failed to get git config template", err);
   }
 
   return templateGitConfig.trim();
@@ -58,7 +58,7 @@ function _extractEmail(config) {
   try {
     return config.match(/email[ ]*=[ ]*[a-z @.]+/)[0].trim();
   } catch (err) {
-    return '';
+    return "";
   }
 }
 
@@ -81,20 +81,20 @@ async function _getGlobalGitIgnore() {
       venv/
       node_modules/
     `
-    .split('\n')
+    .split("\n")
     .map((s) => s.trim())
     .filter((s) => s)
-    .join('\n');
+    .join("\n");
 }
 
 /**
  * Installs git aliases, configs, and global gitignore for the current system and optionally for Windows.
  */
 async function doWork() {
-  console.log('  >> Installing git Aliases and Configs');
+  console.log("  >> Installing git Aliases and Configs");
 
-  const configMain = path.join(BASE_HOMEDIR_LINUX, '.gitconfig');
-  const configGitIgnoreGlobal = path.join(BASE_HOMEDIR_LINUX, '.gitignore_global');
+  const configMain = path.join(BASE_HOMEDIR_LINUX, ".gitconfig");
+  const configGitIgnoreGlobal = path.join(BASE_HOMEDIR_LINUX, ".gitignore_global");
 
   // figure out the name
   const oldConfig = readText(configMain);
@@ -104,13 +104,13 @@ async function doWork() {
 
   // write to build file
   writeToBuildFile([
-    { file: 'gitignore_global', data: await _getGlobalGitIgnore() },
+    { file: "gitignore_global", data: await _getGlobalGitIgnore() },
     {
-      file: 'gitconfig',
+      file: "gitconfig",
       data: await _getGitConfig({
-        email: '; email = test_email@gmail.com #update this email',
+        email: "; email = test_email@gmail.com #update this email",
       }),
-      commentStyle: 'bash',
+      commentStyle: "bash",
     },
   ]);
 
@@ -119,7 +119,7 @@ async function doWork() {
     configMain,
     await _getGitConfig({
       email,
-      extraCoreConfigs: 'pager=diff-so-fancy | less --tabs=2 -RFX',
+      extraCoreConfigs: "pager=diff-so-fancy | less --tabs=2 -RFX",
       addDefaultCommitTemplate: true,
     }),
   );
@@ -129,9 +129,9 @@ async function doWork() {
 
   // Windows Only - write to the main gitconfig for windows host
   if (is_os_window) {
-    const configWindows = path.join(getWindowUserBaseDir(), '.gitconfig');
+    const configWindows = path.join(getWindowUserBaseDir(), ".gitconfig");
 
-    console.log('    >> Installing git Aliases and Configs for Windows', configWindows);
+    console.log("    >> Installing git Aliases and Configs for Windows", configWindows);
     writeText(configWindows, await _getGitConfig({ email }));
   }
 }

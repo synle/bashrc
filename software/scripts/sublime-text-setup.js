@@ -1,20 +1,20 @@
 /// <reference path="../index.js" />
 
 const buildFiles = [
-  { buildName: 'sublime-text-config', dest: 'Preferences.sublime-settings', os: 'windows' },
-  { buildName: 'sublime-text-keys-windows', dest: 'Default.sublime-keymap', os: 'windows' },
-  { buildName: 'sublime-text-mouse', dest: 'Default.sublime-mousemap', os: 'windows' },
-  { buildName: 'sublime-text-plugins-refresh-on-focus.py', dest: 'sublime-text-plugins-refresh-on-focus.py', os: 'windows' },
+  { buildName: "sublime-text-config", dest: "Preferences.sublime-settings", os: "windows" },
+  { buildName: "sublime-text-keys-windows", dest: "Default.sublime-keymap", os: "windows" },
+  { buildName: "sublime-text-mouse", dest: "Default.sublime-mousemap", os: "windows" },
+  { buildName: "sublime-text-plugins-refresh-on-focus.py", dest: "sublime-text-plugins-refresh-on-focus.py", os: "windows" },
 
-  { buildName: 'sublime-text-config', dest: 'Preferences.sublime-settings', os: 'linux' },
-  { buildName: 'sublime-text-keys-linux', dest: 'Default.sublime-keymap', os: 'linux' },
-  { buildName: 'sublime-text-mouse', dest: 'Default.sublime-mousemap', os: 'linux' },
-  { buildName: 'sublime-text-plugins-refresh-on-focus.py', dest: 'sublime-text-plugins-refresh-on-focus.py', os: 'linux' },
+  { buildName: "sublime-text-config", dest: "Preferences.sublime-settings", os: "linux" },
+  { buildName: "sublime-text-keys-linux", dest: "Default.sublime-keymap", os: "linux" },
+  { buildName: "sublime-text-mouse", dest: "Default.sublime-mousemap", os: "linux" },
+  { buildName: "sublime-text-plugins-refresh-on-focus.py", dest: "sublime-text-plugins-refresh-on-focus.py", os: "linux" },
 
-  { buildName: 'sublime-text-config-macosx', dest: 'Preferences.sublime-settings', os: 'mac' },
-  { buildName: 'sublime-text-keys-macosx', dest: 'Default.sublime-keymap', os: 'mac' },
-  { buildName: 'sublime-text-mouse-macosx', dest: 'Default.sublime-mousemap', os: 'mac' },
-  { buildName: 'sublime-text-plugins-refresh-on-focus.py', dest: 'sublime-text-plugins-refresh-on-focus.py', os: 'mac' },
+  { buildName: "sublime-text-config-macosx", dest: "Preferences.sublime-settings", os: "mac" },
+  { buildName: "sublime-text-keys-macosx", dest: "Default.sublime-keymap", os: "mac" },
+  { buildName: "sublime-text-mouse-macosx", dest: "Default.sublime-mousemap", os: "mac" },
+  { buildName: "sublime-text-plugins-refresh-on-focus.py", dest: "sublime-text-plugins-refresh-on-focus.py", os: "mac" },
 ];
 
 /**
@@ -26,7 +26,7 @@ function getCurlLines(os) {
   return buildFiles
     .filter((f) => f.os === os)
     .map((f) => `    curl -fsSL "$REPO_BUILD/${f.buildName}" -o "$TARGET_PATH/${f.dest}"`)
-    .join('\n');
+    .join("\n");
 }
 
 /**
@@ -35,9 +35,9 @@ function getCurlLines(os) {
  */
 function getPowershellLines() {
   return buildFiles
-    .filter((f) => f.os === 'windows')
+    .filter((f) => f.os === "windows")
     .map((f) => `    Invoke-WebRequest -Uri "$RepoBuild/${f.buildName}" -OutFile "$W_Path/${f.dest}" -UseBasicParsing`)
-    .join('\n');
+    .join("\n");
 }
 
 /**
@@ -62,15 +62,15 @@ M_PATH=$(ls -d "$HOME/Library/Application Support/Sublime Text"*/Packages/User 2
 if [ -n "$W_PATH" ] && [ -d "$W_PATH" ]; then
     echo "Installing for Windows/WSL ($W_PATH)..."
     TARGET_PATH="$W_PATH"
-${getCurlLines('windows')}
+${getCurlLines("windows")}
 elif [ -n "$L_PATH" ] && [ -d "$L_PATH" ]; then
     echo "Installing for Linux ($L_PATH)..."
     TARGET_PATH="$L_PATH"
-${getCurlLines('linux')}
+${getCurlLines("linux")}
 elif [ -n "$M_PATH" ] && [ -d "$M_PATH" ]; then
     echo "Installing for Mac ($M_PATH)..."
     TARGET_PATH="$M_PATH"
-${getCurlLines('mac')}
+${getCurlLines("mac")}
 else
     echo "Sublime Text User directory not found. Skipping installation."
 fi
@@ -88,5 +88,5 @@ ${getPowershellLines()}
 }
 `;
 
-  writeText('software/scripts/sublime-text-setup', script);
+  writeText("software/scripts/sublime-text-setup", script);
 }

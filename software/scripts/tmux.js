@@ -2,9 +2,9 @@
 
 /** * Writes the tmux configuration file with split, navigation, and mouse settings. */
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, '.tmux.conf');
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".tmux.conf");
 
-  console.log('  >> Updating .tmux.conf', consoleLogColor4(targetPath));
+  console.log("  >> Updating .tmux.conf", consoleLogColor4(targetPath));
 
   writeText(
     targetPath,
