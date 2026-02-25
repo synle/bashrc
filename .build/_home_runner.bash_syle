@@ -384,7 +384,7 @@ function format_other_text_based_files {
 
 # nvm - node version manager
 # hookup binary - add default node version to PATH
-    export PATH="null/bin:$PATH"
+    export PATH="/home/runner/.nvm/versions/node/v24.14.0/bin:$PATH"
     export NVM_DIR="/home/runner/.nvm"
 
     # lazy load nvm - only source nvm.sh when nvm is actually called
