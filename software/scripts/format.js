@@ -273,5 +273,5 @@ ${excludeFilesArray}
 
   registerWithBashSyle("format script", formatScriptBlock);
 
-  writeToBuildFile([{ file: "format.js", data: formatScriptBlock }]);
+  writeToBuildFile([{ file: "format.sh", data: formatScriptBlock }]);
 }

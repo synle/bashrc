@@ -1700,11 +1700,9 @@ function App() {
       >
         <div id="container">
           <div className="app-header">
-              <h1 style={{ textTransform: "uppercase" }}>
-                <LinkText href={REPO_URL}>
-                {window.document.title}
-                            </LinkText>
-              </h1>
+            <h1 style={{ textTransform: "uppercase" }}>
+              <LinkText href={REPO_URL}>{window.document.title}</LinkText>
+            </h1>
 
             <Settings />
           </div>
