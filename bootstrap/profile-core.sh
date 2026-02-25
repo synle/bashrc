@@ -47,6 +47,7 @@ unset ignored_commands cmd_string ignored_files file_string
 # Common Aliases
 ##########################################################
 alias ..="cd .."
+alias bs="bash"
 alias v="vim"
 alias vi="vim"
 alias l="ls -a"
@@ -235,21 +236,26 @@ pwd2() {
 ##########################################################
 # Git Helpers
 ##########################################################
-clean_master_main_branch(){
-  # clean up
-  git stash;
-  git clean -fd
-  git reset --hard
-  git fetch --all --prune
+clean_master_main_branch() {
+  # Full Reset
+  git stash >/dev/null 2>&1
+  git clean -fd >/dev/null 2>&1
+  git reset --hard HEAD >/dev/null 2>&1
+  git merge --abort >/dev/null 2>&1
+  git rebase --abort >/dev/null 2>&1
+  git fetch --all --prune >/dev/null 2>&1
 
-  TEMP_BRANCH=test_123_abc_xyz
-  git checkout $TEMP_BRANCH
-  git checkout -b $TEMP_BRANCH
-  git del master main
+  # Pivot & Purge
+  local TEMP="test_123_abc_xyz"
+  git checkout -B "$TEMP" >/dev/null 2>&1
+  git branch -D master main >/dev/null 2>&1
 
-  # Track if it exists on origin
-  git rev-parse --verify origin/master >/dev/null 2>&1 && git checkout --track origin/master;
-  git rev-parse --verify origin/main >/dev/null 2>&1 && git checkout --track origin/main;
+  # Re-track
+  for b in master main; do
+    if git rev-parse --verify "origin/$b" >/dev/null 2>&1; then
+      git checkout --track "origin/$b" >/dev/null 2>&1
+    fi
+  done
 }
 
 ##########################################################

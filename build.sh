@@ -167,7 +167,7 @@ echo '> Build raw JSON and raw JSON configs'
 CONFIG_BUILD_PATH="./.build"
 mkdir -p $CONFIG_BUILD_PATH
 export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
-sh run.sh --files="$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
+bash run.sh --files="$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
 echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
 
@@ -203,10 +203,6 @@ echo '>> Building webapp with Vite'
 npm run build
 echo '>> Built webapp artifacts:'
 find dist
-
-echo '> DONE Building'
-
-
 echo '> DONE Building'
 
 
