@@ -10,8 +10,11 @@
   --colorBgMain: #f9f9f9;
   --colorBgSecondary: #f0f0f0;
   --colorBgHover: #e4e4e4;
-  --colorTextMain: #1a1a1a;
-  --colorTextLink: #1a3d6e;
+  --colorTextMain: #3030ff;
+  --colorTextLink: #2222ff;
+  --colorTextSuccess: #008008;
+  --colorTextError: #dc3545
+  --colorTextWarning: #ffc107
   --colorBorderMain: #2a5cab;
   --colorBorderSecondary: #cccccc;
   --colorShadow: rgba(0, 0, 0, 0.15);
@@ -24,6 +27,9 @@
   --colorBgHover: #333333;
   --colorTextMain: #f5f5f5;
   --colorTextLink: #4ea1ff;
+  --colorTextSuccess: #608b4e;
+  --colorTextError: #dc3545
+  --colorTextWarning: #ffc107
   --colorBorderMain: #3399ff;
   --colorBorderSecondary: #444444;
   --colorShadow: #222222;
@@ -584,4 +590,38 @@ textarea {
     width: 800px;
     min-width: 800px;
   }
+}
+
+// ============================================================================
+// Monaco Editor
+// ============================================================================
+
+.monaco-editor,
+.monaco-editor .overflow-guard,
+.monaco-editor .monaco-scrollable-element {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+// ============================================================================
+// bashrc/webapp Specific Utilities
+// ============================================================================
+
+// Text color utilities
+.text-error,
+.text-danger {
+  color: var(--colorTextError) !important;
+}
+
+.text-success,
+.text-info {
+  color: var(--colorTextSuccess) !important;
+}
+
+.text-warning {
+  color: var(--colorTextWarning) !important;
+}
+
+.text-muted {
+  color: var(--colorTextSecondary) !important;
 }
