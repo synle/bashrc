@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo '>> Setting up VS Code Extensions'
 
 if [ $is_os_darwin_mac == "1" ]; then

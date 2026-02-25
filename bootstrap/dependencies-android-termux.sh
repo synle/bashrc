@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # bootstrap/dependencies-android-termux.sh
 # Android Termux dependencies - packages, theme, config
 

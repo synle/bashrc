@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 {
 ####################################################################
 # run.sh - Unified test runner script

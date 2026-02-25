@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 version=$(curl -s https://api.github.com/repos/VSCodium/vscodium/releases/latest \
   | jq -r .tag_name)
 

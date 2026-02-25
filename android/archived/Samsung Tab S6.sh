@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 curl -s "https://raw.githubusercontent.com/synle/bashrc/master/android/Core Android.sh" | sh
 
 function removeApp(){

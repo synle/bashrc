@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # termux packages
 function packageInstall(){
   echo "    >> pkg install $@"
@@ -28,4 +29,3 @@ mkdir -p ~/.termux
 # note that android termux does not have /tmp mapped correctly - this allow us to do things with git clone
 # https://wiki.termux.com/wiki/Differences_from_Linux
 termux-chroot &> /dev/null
-

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # bootstrap/dependencies-arch-linux-steam-deck.sh
 # Arch Linux / Steam Deck dependencies - pacman packages, boot video
 

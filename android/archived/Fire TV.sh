@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 function removeApp(){
   echo "> Remove:" $@
   pm uninstall $@ || pm uninstall -k --user 0 $@ || pm uninstall -k --user 10 $@
@@ -60,4 +61,3 @@ removeApp com.android.wallpaperbackup
 removeApp com.ivona.orchestrator
 removeApp com.ivona.tts.oem
 removeApp com.svox.pico
-

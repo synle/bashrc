@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # bootstrap/dependencies-chrome-os-linux.sh
 # ChromeOS (Crostini) dependencies - apt-get packages
 

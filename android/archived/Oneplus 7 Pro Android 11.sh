@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # default apps
 # android
 # android.autoinstalls.config.oneplus

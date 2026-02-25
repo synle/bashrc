@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # bootstrap/dependencies-ubuntu.sh
 # Ubuntu / Debian dependencies - apt-get packages and user permissions
 

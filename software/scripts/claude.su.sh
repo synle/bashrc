@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo '>> Installing claude'
 if ! command -v claude >/dev/null 2>&1; then
   echo '  >> Downloading and Installing'

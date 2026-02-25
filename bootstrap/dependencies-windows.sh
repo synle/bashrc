@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # bootstrap/dependencies-windows.sh
 # Windows (WSL) dependencies - drive symlinks, folder setup, WSL2 config
 

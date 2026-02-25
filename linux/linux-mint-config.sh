@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env bash
+
 
 # Helper function to remove packages with apt
 removePackageWithApt() {
