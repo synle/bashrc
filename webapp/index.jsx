@@ -225,7 +225,7 @@ function ScriptNameInputSection() {
             list='scriptToRunOptions'
             type='text'
             placeholder='Script To Run'
-            autofocus
+            autoFocus
             required
             onBlur={(e) => {
               e.target.value = e.target.value.trim();
@@ -1621,6 +1621,10 @@ function App() {
             scriptsToUse: (getStorage('scriptsToUse') || '').split('\n').filter((s) => s.trim()),
           },
         };
+
+        if(newAppData?.formValue?.scriptsToUse.length === 0){
+          newAppData.formValue.scriptsToUse.push('software/')
+        }
 
         setAppData(newAppData);
       } catch (err) {
