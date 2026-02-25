@@ -5,3 +5,7 @@ build
 coverage
 dist
 node_modules
+
+# for this repo
+./webapp/*.css
+./webapp/*.js

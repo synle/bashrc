@@ -1,26 +1,26 @@
 /// <reference path="../index.js" />
 
 const bashTargets = [
-  { path: '$HOME/.var/app/com.vscodium.codium/config/VSCodium/User', keys: 'vs-code-keys-windows' },
-  { path: '$HOME/.config/VSCodium/User', keys: 'vs-code-keys-windows' },
-  { path: '$HOME/.config/Code/User', keys: 'vs-code-keys-windows' },
-  { path: '$HOME/Library/Application Support/Code/User', keys: 'vs-code-keys-macosx' },
-  { path: '$HOME/Library/Application Support/VSCodium/User', keys: 'vs-code-keys-macosx' },
+  { path: "$HOME/.var/app/com.vscodium.codium/config/VSCodium/User", keys: "vs-code-keys-windows" },
+  { path: "$HOME/.config/VSCodium/User", keys: "vs-code-keys-windows" },
+  { path: "$HOME/.config/Code/User", keys: "vs-code-keys-windows" },
+  { path: "$HOME/Library/Application Support/Code/User", keys: "vs-code-keys-macosx" },
+  { path: "$HOME/Library/Application Support/VSCodium/User", keys: "vs-code-keys-macosx" },
 ];
 
 const powershellTargets = [
-  { path: '$HOME\\AppData\\Roaming\\VSCodium\\User', keys: 'vs-code-keys-windows' },
-  { path: '$HOME\\AppData\\Roaming\\Code\\User', keys: 'vs-code-keys-windows' },
+  { path: "$HOME\\AppData\\Roaming\\VSCodium\\User", keys: "vs-code-keys-windows" },
+  { path: "$HOME\\AppData\\Roaming\\Code\\User", keys: "vs-code-keys-windows" },
 ];
 
-const configFile = 'vs-code-config';
+const configFile = "vs-code-config";
 
 /**
  * Formats bash target entries as pipe-delimited strings for the setup script.
  * @returns {string} Formatted bash target entries.
  */
 function getBashTargetEntries() {
-  return bashTargets.map((t) => `  "${t.path}|${t.keys}"`).join('\n');
+  return bashTargets.map((t) => `  "${t.path}|${t.keys}"`).join("\n");
 }
 
 /**
@@ -28,7 +28,7 @@ function getBashTargetEntries() {
  * @returns {string} Formatted PowerShell target block.
  */
 function getPowershellTargetBlock() {
-  return powershellTargets.map((t) => `    @{ Path = "${t.path}"; Keys = "${t.keys}" }`).join('\n');
+  return powershellTargets.map((t) => `    @{ Path = "${t.path}"; Keys = "${t.keys}" }`).join("\n");
 }
 
 /**
@@ -93,5 +93,5 @@ foreach ($target in $targets) {
 }
 `;
 
-  writeText('software/scripts/vs-code-setup', script);
+  writeText("software/scripts/vs-code-setup", script);
 }

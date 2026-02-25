@@ -5,10 +5,10 @@ const SUBLIME_MERGE_CONFIG = {
   font_face: EDITOR_CONFIGS.fontFamily,
   font_size: EDITOR_CONFIGS.fontSize,
   hide_menu: false,
-  side_bar_layout: 'tabs',
+  side_bar_layout: "tabs",
   tab_size: 2,
   translate_tabs_to_spaces: false,
-  hardware_acceleration: 'opengl',
+  hardware_acceleration: "opengl",
   update_check: false,
 };
 
@@ -21,7 +21,7 @@ function _getPathSublimeMerge() {
     return findDirSingle(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Merge/);
   }
   if (is_os_darwin_mac) {
-    return path.join(getOsxApplicationSupportCodeUserPath(), 'Sublime Merge');
+    return path.join(getOsxApplicationSupportCodeUserPath(), "Sublime Merge");
   }
   return null;
 }
@@ -32,13 +32,13 @@ function _getPathSublimeMerge() {
 async function doWork() {
   let targetPath = _getPathSublimeMerge();
 
-  console.log('    >> Setting up Sublime Merge:', consoleLogColor4(targetPath));
+  console.log("    >> Setting up Sublime Merge:", consoleLogColor4(targetPath));
 
   // write to build file
-  writeToBuildFile([{ file: 'sublime-merge', data: SUBLIME_MERGE_CONFIG, isJson: true }]);
+  writeToBuildFile([{ file: "sublime-merge", data: SUBLIME_MERGE_CONFIG, isJson: true }]);
   exitIfPathNotFound(targetPath);
 
-  const sublimeMergeConfigPath = path.join(targetPath, 'Packages/User/Preferences.sublime-settings');
-  console.log('    >>', sublimeMergeConfigPath);
+  const sublimeMergeConfigPath = path.join(targetPath, "Packages/User/Preferences.sublime-settings");
+  console.log("    >>", sublimeMergeConfigPath);
   writeJson(sublimeMergeConfigPath, SUBLIME_MERGE_CONFIG);
 }

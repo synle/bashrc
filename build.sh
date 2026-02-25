@@ -126,6 +126,55 @@ alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
 
 
 unset os_flags
+
+
+
+### specific to CI mode
+if [ "$CI" = "true" ]; then
+    echo() {
+        local input="$*"
+
+        # 1. Quick check: Does it start with > or <?
+        case "$input" in
+            ">"* | "<"*)
+                # Close previous group
+                command echo "::endgroup::"
+
+                local icons=""
+                local remainder="$input"
+
+                # 2. Extract leading > signs
+                while :; do
+                    case "$remainder" in
+                        ">"*)
+                            icons="${icons}🚀"
+                            remainder="${remainder#?}" # Remove first char
+                            ;;
+                        *) break ;;
+                    esac
+                done
+
+                # 3. Extract leading < signs
+                while :; do
+                    case "$remainder" in
+                        "<"*)
+                            icons="${icons}⭐"
+                            remainder="${remainder#?}" # Remove first char
+                            ;;
+                        *) break ;;
+                    esac
+                done
+
+                # 4. Output the group
+                command echo "::group::${icons}${remainder}"
+                ;;
+            *)
+                # Normal output for everything else
+                command echo "$@"
+                ;;
+        esac
+    }
+fi
 # END bootstrap/common-env.sh
 
 

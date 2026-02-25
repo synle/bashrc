@@ -99,10 +99,10 @@ async function _getAutoCompleteWithSpec(command, completeSpecURL) {
  * Installs bash autocomplete scripts for git, ssh, make, npm, npx, yarn, and docker.
  */
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, '.bash_syle_autocomplete');
-  console.log('  >> Installing Bash Autocomplete', consoleLogColor4(targetPath));
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bash_syle_autocomplete");
+  console.log("  >> Installing Bash Autocomplete", consoleLogColor4(targetPath));
 
-  let res = '';
+  let res = "";
 
   res += `
 ##########################################################
@@ -113,9 +113,9 @@ async function doWork() {
   // ========================================================
   // Git — upstream completion script + alias support
   // ========================================================
-  console.log('    >> Git Bash Autocomplete');
+  console.log("    >> Git Bash Autocomplete");
   const gitAutocompleteScript = await fetchUrlAsString(
-    'https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash',
+    "https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash",
   );
   res += `
 ##########################################################
@@ -126,7 +126,7 @@ async function doWork() {
 ${gitAutocompleteScript}
 `;
 
-  console.log('    >> Other Bash Autocomplete');
+  console.log("    >> Other Bash Autocomplete");
   res += `
 ##########################################################
 # Custom Autocomplete Functions
@@ -282,12 +282,12 @@ complete -F __yarn_complete yarn
 # Uses a spec file to map docker subcommands to their
 # available options for context-aware completion
 # ---------------------------------------------------------
-${await _getAutoCompleteWithSpec('docker', 'software/metadata/bash-autocomplete.docker.config')}
+${await _getAutoCompleteWithSpec("docker", "software/metadata/bash-autocomplete.docker.config")}
 `;
 
   writeText(targetPath, res);
 
   // bootstrap nvm with bash_syle
-  console.log('    >> Register binary with bashrc', BASE_BASH_SYLE);
-  registerWithBashSyle('Sy bash autocomplete', `[ -s ${targetPath} ] && . ${targetPath}`);
+  console.log("    >> Register binary with bashrc", BASE_BASH_SYLE);
+  registerWithBashSyle("Sy bash autocomplete", `[ -s ${targetPath} ] && . ${targetPath}`);
 }

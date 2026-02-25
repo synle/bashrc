@@ -2,9 +2,9 @@
 
 /** * Writes the .inputrc file with readline keybindings, autocomplete settings, and fzf shortcuts. */
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, '.inputrc');
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".inputrc");
 
-  console.log('  >> Updating .inputrc', consoleLogColor4(targetPath));
+  console.log("  >> Updating .inputrc", consoleLogColor4(targetPath));
 
   const content = `
 # To install manually:
@@ -75,7 +75,7 @@ set revert-all-at-newline on           # Reset edited history entries when you p
     `.trim();
 
   // write to build file
-  writeToBuildFile([{ file: 'inputrc', data: content }]);
+  writeToBuildFile([{ file: "inputrc", data: content }]);
 
   // write if there are change
   writeText(targetPath, content);

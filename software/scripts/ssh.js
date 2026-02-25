@@ -10,7 +10,7 @@ const portToIp = {
   `,
 };
 
-const DEFAULT_SSH_PORT = '22';
+const DEFAULT_SSH_PORT = "22";
 
 /**
  * Initializes SSH port mappings and writes the SSH client config file with home network hosts and connection settings.
@@ -19,7 +19,7 @@ async function doWork() {
   // setting up the ssh port map
   for (const port of Object.keys(portToIp)) {
     const ips = portToIp[port]
-      .split('\n')
+      .split("\n")
       .map((s) => s.trim())
       .filter((s) => s);
     for (const ip of ips) {
@@ -27,23 +27,23 @@ async function doWork() {
     }
   }
 
-  const baseSshPath = path.join(BASE_HOMEDIR_LINUX, '.ssh');
-  const targetPath = path.join(baseSshPath, 'config');
+  const baseSshPath = path.join(BASE_HOMEDIR_LINUX, ".ssh");
+  const targetPath = path.join(baseSshPath, "config");
 
-  console.log('    >> Setting up SSH Client config', consoleLogColor4(targetPath));
+  console.log("    >> Setting up SSH Client config", consoleLogColor4(targetPath));
 
   await mkdir(baseSshPath);
 
   await execBashSilent(`touch "${targetPath}" && chmod 611 "${targetPath}"`);
 
-  console.log('    >> Updating SSH Client Config', consoleLogColor4(targetPath));
+  console.log("    >> Updating SSH Client Config", consoleLogColor4(targetPath));
 
   let sshConfigTextContent = readText(targetPath);
 
   // add tweaks...
   sshConfigTextContent = appendTextBlock(
     sshConfigTextContent,
-    'SY CUSTOM CONFIG - All Hosts', // key
+    "SY CUSTOM CONFIG - All Hosts", // key
     trimLeftSpaces(`
       Host *
         # --- CONNECTION MULTIPLEXING (The Speed King) ---
@@ -73,7 +73,7 @@ async function doWork() {
 
   sshConfigTextContent = appendTextBlock(
     sshConfigTextContent,
-    'SY CUSTOM CONFIG - Home Network Hosts', // key
+    "SY CUSTOM CONFIG - Home Network Hosts", // key
     sshConnections
       .map(([hostName, hostIp]) =>
         trimLeftSpaces(`
@@ -82,16 +82,16 @@ async function doWork() {
             Port ${sshPortMap[hostIp] || DEFAULT_SSH_PORT}
         `),
       )
-      .join('\n'),
+      .join("\n"),
   );
 
   sshConfigTextContent = sshConfigTextContent.trim();
 
   // write if there are change
-  console.log(sshConnections.map(([hostName, hostIp]) => `      >> ${hostIp} ${hostName}`).join('\n'));
+  console.log(sshConnections.map(([hostName, hostIp]) => `      >> ${hostIp} ${hostName}`).join("\n"));
 
   // write to build file
-  writeToBuildFile([{ file: 'ssh-config', data: sshConfigTextContent }]);
+  writeToBuildFile([{ file: "ssh-config", data: sshConfigTextContent }]);
 
   // make a backup
   backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.config`), sshConfigTextContent);

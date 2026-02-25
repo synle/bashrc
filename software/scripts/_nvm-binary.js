@@ -6,7 +6,7 @@ async function doWork() {
   console.log(`    >> Register NVM binary with bashrc ${nvmDefaultNodePath}`);
 
   registerWithBashSyle(
-    'nvm - node version manager',
+    "nvm - node version manager",
     `
     # hookup binary - add default node version to PATH
     export PATH="${nvmDefaultNodePath}/bin:\$PATH"

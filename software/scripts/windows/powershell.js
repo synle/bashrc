@@ -1,6 +1,6 @@
 /// <reference path="../../index.js" />
 
-let outputContent = '';
+let outputContent = "";
 
 /**
  * Resolves the file path for the Windows PowerShell profile script.
@@ -13,17 +13,17 @@ async function _getPath() {
     // try it with D path
     // if it's not present, then try home dir in C drive
     targetPath = findFirstDirFromList([
-      [targetPath, 'Documents'],
-      [getWindowUserBaseDir(), 'Documents'],
+      [targetPath, "Documents"],
+      [getWindowUserBaseDir(), "Documents"],
     ]);
 
     if (targetPath) {
-      targetPath = path.join(targetPath, 'WindowsPowerShell');
+      targetPath = path.join(targetPath, "WindowsPowerShell");
       await mkdir(targetPath);
-      return path.join(targetPath, 'Microsoft.PowerShell_profile.ps1');
+      return path.join(targetPath, "Microsoft.PowerShell_profile.ps1");
     }
   } catch (err) {
-    console.log('  >> Failed to get the path for Powershell Profile', err);
+    console.log("  >> Failed to get the path for Powershell Profile", err);
   }
 
   return null;
@@ -225,9 +225,9 @@ async function doWork() {
     clear; # clean up the prompt
   `);
 
-  console.log('  >> Setting up Windows Powershell Profile');
+  console.log("  >> Setting up Windows Powershell Profile");
   writeToBuildFile([
-    { file: 'windows-powershell-profile.ps1', data: outputContent, comment: 'Windows powershell script', commentStyle: 'bash' },
+    { file: "windows-powershell-profile.ps1", data: outputContent, comment: "Windows powershell script", commentStyle: "bash" },
   ]);
 
   // let targetPath = await _getPath();

@@ -1,6 +1,6 @@
 /// <reference path="../index.js" />
 
-includeSource('software/scripts/sublime-text.common.js');
+includeSource("software/scripts/sublime-text.common.js");
 
 const toInstallExtensions = convertTextToList(`
   A File Icon
@@ -23,8 +23,8 @@ async function doWork() {
   // write to build file
   writeToBuildFile([
     {
-      file: 'sublime-text-ext',
-      data: `# Use Preferences > Package Control > Package Control: Advanced Install Package. \n${toInstallExtensions.join(',')}`,
+      file: "sublime-text-ext",
+      data: `# Use Preferences > Package Control > Package Control: Advanced Install Package. \n${toInstallExtensions.join(",")}`,
     },
   ]);
 }

@@ -54,7 +54,7 @@ unset os_flags
 
 
 ### specific to CI mode
-#if [ "$CI" = "true" ]; then
+if [ "$CI" = "true" ]; then
     echo() {
         local input="$*"
 

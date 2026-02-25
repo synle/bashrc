@@ -1,18 +1,18 @@
-import react from '@vitejs/plugin-react';
-import fs from 'fs';
-import path from 'path';
-import { defineConfig } from 'vite';
-import { viteSingleFile } from 'vite-plugin-singlefile';
+import react from "@vitejs/plugin-react";
+import fs from "fs";
+import path from "path";
+import { defineConfig } from "vite";
+import { viteSingleFile } from "vite-plugin-singlefile";
 
 // Plugin to update service worker with build timestamp
 const updateServiceWorker = () => ({
-  name: 'update-service-worker',
+  name: "update-service-worker",
   closeBundle() {
-    const swSourcePath = './webapp/sw-bashrc.js';
-    const swDestPath = './dist/sw-bashrc.js';
+    const swSourcePath = "./webapp/sw-bashrc.js";
+    const swDestPath = "./dist/sw-bashrc.js";
 
     if (fs.existsSync(swSourcePath)) {
-      let content = fs.readFileSync(swSourcePath, 'utf-8');
+      let content = fs.readFileSync(swSourcePath, "utf-8");
       const timestamp = Date.now();
       content = content.replace(/__BUILD_TIMESTAMP__/g, timestamp);
 
@@ -30,10 +30,10 @@ const updateServiceWorker = () => ({
   },
 });
 
-const requiredEnvKeys = ['REPO_PATH_IDENTIFIER', 'REPO_BRANCH_NAME', 'BASH_SYLE_COMMON'];
+const requiredEnvKeys = ["REPO_PATH_IDENTIFIER", "REPO_BRANCH_NAME", "BASH_SYLE_COMMON"];
 const requiredEnvs = {};
 for (const envKey of requiredEnvKeys) {
-  process.env[envKey] = (process.env[envKey] || '').trim();
+  process.env[envKey] = (process.env[envKey] || "").trim();
   if (!process.env[envKey]) {
     throw new Error(`${envKey} environment variable is not defined. Run bootstrap/common-env.sh first.`);
   }
@@ -41,13 +41,13 @@ for (const envKey of requiredEnvKeys) {
 }
 
 export default defineConfig({
-  root: 'webapp',
+  root: "webapp",
   plugins: [react(), viteSingleFile(), updateServiceWorker()],
   define: {
     ...requiredEnvs,
   },
   build: {
-    outDir: '../dist',
+    outDir: "../dist",
     emptyOutDir: true,
     assetsInlineLimit: 100000000,
     rollupOptions: {

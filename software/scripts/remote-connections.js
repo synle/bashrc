@@ -1,14 +1,14 @@
 /// <reference path="../index.js" />
 
-const BASE_REMOTE_CONNECTIONS_PATH = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, 'remote-connections');
+const BASE_REMOTE_CONNECTIONS_PATH = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "remote-connections");
 
-const DEFAULT_CONNECTION_USER = 'syle';
+const DEFAULT_CONNECTION_USER = "syle";
 
 /**
  * Generates RDP connection files for Windows remote hosts in the home network.
  */
 async function doWorkRdp() {
-  console.log('  >> Setting up Remote Desktop (RDP) Connections');
+  console.log("  >> Setting up Remote Desktop (RDP) Connections");
 
   const hosts = HOME_HOST_NAMES.filter(
     ([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) =>
@@ -16,9 +16,9 @@ async function doWorkRdp() {
   );
 
   for (const [hostName, hostIp] of hosts) {
-    const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.rdp');
+    const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + ".rdp");
 
-    console.log('    >> RDP: ', consoleLogColor4(targetPath));
+    console.log("    >> RDP: ", consoleLogColor4(targetPath));
 
     const content = `
 use multimon:i:0
@@ -72,7 +72,7 @@ kdcproxyname:s:
  * Generates VNC connection files for macOS remote hosts in the home network.
  */
 async function doWorkVnc() {
-  console.log('  >> Setting up VNC Connections');
+  console.log("  >> Setting up VNC Connections");
 
   const hosts = HOME_HOST_NAMES.filter(
     ([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) =>
@@ -80,9 +80,9 @@ async function doWorkVnc() {
   );
 
   for (const [hostName, hostIp] of hosts) {
-    const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + '.vnc');
+    const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + ".vnc");
 
-    console.log('    >> VNC: ', consoleLogColor4(hostName));
+    console.log("    >> VNC: ", consoleLogColor4(hostName));
 
     const content = `
 AuthCertificate=

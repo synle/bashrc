@@ -1,6 +1,6 @@
 /// <reference path="../index.js" />
 
-const dockerCommandToUse = is_os_window === true ? 'docker.exe' : 'docker';
+const dockerCommandToUse = is_os_window === true ? "docker.exe" : "docker";
 
 /**
  * Parses the help output of a docker subcommand to extract its available CLI options.
@@ -9,10 +9,10 @@ const dockerCommandToUse = is_os_window === true ? 'docker.exe' : 'docker';
  */
 function getOptionsForCommand(command) {
   return new Promise((resolve) => {
-    require('child_process').exec(`${dockerCommandToUse} ${command} --help`, (error, stdout, stderr) => {
+    require("child_process").exec(`${dockerCommandToUse} ${command} --help`, (error, stdout, stderr) => {
       const lines = stdout
         .trim()
-        .split('\n')
+        .split("\n")
         .map((s) => s.trim())
         .filter((s) => s);
       let hintStart = false;
@@ -26,16 +26,16 @@ function getOptionsForCommand(command) {
             options.push(line.match(/--[a-z-]+/)[0].trim());
           }
         } else {
-          if (line.indexOf('Options:') === 0) {
+          if (line.indexOf("Options:") === 0) {
             hintStart = true;
           }
         }
       }
 
       if (options.length > 0) {
-        resolve('docker ' + command + '|' + [...new Set(options)].join(','));
+        resolve("docker " + command + "|" + [...new Set(options)].join(","));
       } else {
-        resolve('');
+        resolve("");
       }
     });
   });
@@ -46,10 +46,10 @@ function getOptionsForCommand(command) {
  */
 async function doWork() {
   await new Promise((resolve) => {
-    require('child_process').exec(`${dockerCommandToUse} --help`, async (error, stdout, stderr) => {
+    require("child_process").exec(`${dockerCommandToUse} --help`, async (error, stdout, stderr) => {
       const lines = stdout
         .trim()
-        .split('\n')
+        .split("\n")
         .map((s) => s.trim())
         .filter((s) => s);
       let hintStart = false;
@@ -57,10 +57,10 @@ async function doWork() {
       for (const line of lines) {
         if (hintStart) {
           if (line.match(/[ ][ ]+[ ]+/)) {
-            commands.push(line.split(' ')[0].trim());
+            commands.push(line.split(" ")[0].trim());
           }
         } else {
-          if (line.indexOf('Commands:') === 0) {
+          if (line.indexOf("Commands:") === 0) {
             hintStart = true;
           }
         }
@@ -68,14 +68,14 @@ async function doWork() {
 
       const res = [];
 
-      console.log('  >> Resolving docker commands', commands.length);
+      console.log("  >> Resolving docker commands", commands.length);
 
       const promises = [];
 
       for (const command of commands) {
         promises.push(
           new Promise(async (resolve) => {
-            console.log('    >> Resolving command > docker', command);
+            console.log("    >> Resolving command > docker", command);
             try {
               const commandOptions = await getOptionsForCommand(command);
               commandOptions && res.push(commandOptions);
@@ -87,12 +87,12 @@ async function doWork() {
 
       await Promise.all(promises);
 
-      res.push('docker' + '|' + commands.join(','));
+      res.push("docker" + "|" + commands.join(","));
 
-      const targetPath = 'software/metadata/bash-autocomplete.docker.config';
-      console.log('  >> Update autocomplete docker config > ', targetPath);
+      const targetPath = "software/metadata/bash-autocomplete.docker.config";
+      console.log("  >> Update autocomplete docker config > ", targetPath);
 
-      writeText(targetPath, res.sort().join('\n'));
+      writeText(targetPath, res.sort().join("\n"));
     });
   });
 }
