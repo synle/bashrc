@@ -127,9 +127,9 @@ cp = cherry-pick
 cpc = cherry-pick --continue
 cpn = cherry-pick -n # Cherry-pick without committing
 clone0 = clone --depth 1 --single-branch  # Shallow Clone: Depth 1 + Single Branch (Default branch)
-clone1 = clone --branch master --single-branch  # Full Clone: Full History + Single Branch (Strictly 'master' branch)
-cl0 = "!f() { git clone0 \"$@\" >/dev/null 2>&1 & echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
-cl1 = "!f() { git clone1 \"$@\" >/dev/null 2>&1 & echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
+clone1 = clone --branch --single-branch  # Full Clone: Full History + Single Branch (Strictly 'master' branch)
+cl0 = "!f() { git clone --depth 1 --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
+cl1 = "!f() { git clone --branch master --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
 
 # Search & Reflog
 search-logs = log -- . -G # Usage: git search-logs <some_text_to_search>,Search the 'diff' content of all commits in the current directory for a specific string
