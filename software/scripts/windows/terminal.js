@@ -52,13 +52,13 @@ async function doWork() {
   // Default profile appearance
   // ----------------------------------------------------------
   DEFAULT_PROFILE_STYLES = {
-    cursorShape: "vintage",                          // block-style cursor
-    cursorHeight: 50,                                // cursor height (% of cell)
-    fontFace: EDITOR_CONFIGS.fontFamily,             // shared editor font
-    fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),  // cap font size at 9
-    padding: "2 0 2 0",                              // top right bottom left padding
-    bellStyle: "all",                                // audible + visual bell
-    historySize,                                     // scrollback buffer size
+    cursorShape: "vintage", // block-style cursor
+    cursorHeight: 50, // cursor height (% of cell)
+    fontFace: EDITOR_CONFIGS.fontFamily, // shared editor font
+    fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9), // cap font size at 9
+    padding: "2 0 2 0", // top right bottom left padding
+    bellStyle: "all", // audible + visual bell
+    historySize, // scrollback buffer size
     // useAcrylic: true,                             // translucent background (disabled)
   };
 
@@ -67,33 +67,33 @@ async function doWork() {
   // ----------------------------------------------------------
   BASE_CONFIG = {
     // clipboard
-    copyOnSelect: false,              // don't auto-copy on selection
-    copyFormatting: false,            // copy as plain text
+    copyOnSelect: false, // don't auto-copy on selection
+    copyFormatting: false, // copy as plain text
 
     // tabs
-    useTabSwitcher: false,            // disable ctrl+tab popup switcher
-    tabWidthMode: "compact",          // shrink inactive tabs
-    confirmCloseAllTabs: true,        // prompt before closing all tabs
+    useTabSwitcher: false, // disable ctrl+tab popup switcher
+    tabWidthMode: "compact", // shrink inactive tabs
+    confirmCloseAllTabs: true, // prompt before closing all tabs
 
     // input
-    multiLinePasteWarning: false,     // suppress multi-line paste warning
-    focusFollowMouse: true,           // focus pane on mouse hover
+    multiLinePasteWarning: false, // suppress multi-line paste warning
+    focusFollowMouse: true, // focus pane on mouse hover
 
     // window size and position
-    initialCols: 80,                  // default column count
-    initialRows: 30,                  // default row count
-    initialPosition: "5,5",           // window position on screen (x,y)
-    rowsToScroll: 5,                  // scroll speed (lines per tick)
+    initialCols: 80, // default column count
+    initialRows: 30, // default row count
+    initialPosition: "5,5", // window position on screen (x,y)
+    rowsToScroll: 5, // scroll speed (lines per tick)
 
     // performance
-    disableAnimations: true,                              // skip ui animations
-    "experimental.rendering.forceFullRepaint": true,      // force full repaint (fixes rendering glitches)
+    disableAnimations: true, // skip ui animations
+    "experimental.rendering.forceFullRepaint": true, // force full repaint (fixes rendering glitches)
 
     // misc
-    trimBlockSelection: true,         // trim trailing whitespace on block select copy
-    wordDelimiters: " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",  // double-click word boundary chars
-    snapOnInput: true,                // auto-scroll to bottom on keypress
-    altGrAliasing: true,              // treat right-alt as ctrl+alt (for intl keyboards)
+    trimBlockSelection: true, // trim trailing whitespace on block select copy
+    wordDelimiters: " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502", // double-click word boundary chars
+    snapOnInput: true, // auto-scroll to bottom on keypress
+    altGrAliasing: true, // treat right-alt as ctrl+alt (for intl keyboards)
 
     // ----------------------------------------------------------
     // Color schemes
