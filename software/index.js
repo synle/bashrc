@@ -898,7 +898,8 @@ async function registerSpecAutocomplete(command, specUrl) {
   // register a pure-bash completer that reads from the spec file
   registerWithBashSyleAutocomplete(
     `${command} Autocomplete`,
-    trimLeftSpaces(`
+    trimLeftSpaces(
+      `
       ##################################################
       # ${command} (spec-based autocomplete)
       ##################################################
@@ -926,7 +927,8 @@ async function registerSpecAutocomplete(command, specUrl) {
         COMPREPLY=(\$(compgen -W "\$opts" -- "\$cur"))
       }
       complete -F __spec_complete_${command} ${command}
-    ` + '\n\n\n'),
+    ` + "\n\n\n",
+    ),
   );
 }
 
