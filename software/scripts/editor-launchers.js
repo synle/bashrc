@@ -48,17 +48,45 @@ async function doWork() {
         local target_binary
         target_binary=$(find_editor "$editor_name" "$@") || return 1
 
+        # Prepare a new array for the converted paths
+        converted_args=()
+        local unresolved_path=""
+        local resolved_path=""
+
+        for arg in "\${editor_args[@]}"; do
+            # Check if the argument is a path (starts with / or .)
+            if [[ "$arg" == /* ]] || [[ "$arg" == .* ]]; then
+                unresolved_path=$(realpath "$arg")
+                if [ "$is_os_window" = "1" ]; then
+                    resolved_path=$(wslpath -m "$arg")
+                else
+                    resolved_path="$unresolved_path"
+                fi
+                converted_args+=("$resolved_path")
+            else
+                converted_args+=("$arg")
+            fi
+        done
+
         if [[ "$target_binary" == "flatpak:vscodium" ]]; then
           (nohup flatpak run com.vscodium.codium "\${editor_args[@]}" >/dev/null 2>&1 &)
         else
-          (nohup "$target_binary" "\${editor_args[@]}" >/dev/null 2>&1 &)
+          if [ "$is_os_window" = "1" ]; then
+              # Use the converted_args here
+              (nohup "$target_binary" "\${converted_args[@]}" >/dev/null 2>&1 &)
+          else
+              # If not a Windows window, you might still want standard args
+              # or the same conversion depending on your setup
+              (nohup "$target_binary" "\${editor_args[@]}" >/dev/null 2>&1 &)
+          fi
         fi
 
         echo """
       ====================================
       \\"$target_binary\\" \${editor_args[@]}
       PWD:    $(pwd)
-      Path:   $(realpath .)
+      Path:          $unresolved_path
+      Resolved Path: $resolved_path
       ====================================
       """
       }
