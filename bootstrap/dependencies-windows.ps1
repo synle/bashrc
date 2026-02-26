@@ -1105,5 +1105,46 @@ winget upgrade --all --include-unknown
 
 
 # ================================================================================================
+# Add known paths to PATH if they exist
+# ================================================================================================
+
+$pathCandidates = @(
+    "$env:JAVA_HOME\bin"                                          # java jdk
+    "$env:LocalAppData\Microsoft\WindowsApps"                     # windows apps (user)
+    "${env:ProgramFiles(x86)}\NVIDIA Corporation\PhysX\Common"    # nvidia physx
+    "$env:ProgramFiles\Microsoft VS Code"                         # vs code
+    "$env:ProgramFiles\Microsoft VS Code\bin"                     # vs code cli
+    "$env:ProgramFiles\Sublime Text"                              # sublime text
+    "$env:SystemRoot"                                             # windows root
+    "$env:SystemRoot\System32"                                    # system32
+    "$env:SystemRoot\System32\OpenSSH"                            # openssh
+    "$env:SystemRoot\System32\Wbem"                               # wmi / wbem
+    "$env:SystemRoot\System32\WindowsPowerShell\v1.0"             # powershell
+    "$env:UserProfile\AppData\Local\Microsoft\WindowsApps"        # windows apps (profile)
+)
+
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$added = @()
+
+foreach ($p in $pathCandidates) {
+    if ([string]::IsNullOrWhiteSpace($p)) { continue }
+    if ((Test-Path $p) -and ($currentPath -notlike "*$p*")) {
+        $currentPath = "$currentPath;$p"
+        $added += $p
+    }
+}
+
+if ($added.Count -gt 0) {
+    Write-Host "Added to PATH:" -ForegroundColor Green
+    $added | ForEach-Object { Write-Host "  $_" }
+} else {
+    Write-Host "All paths already in PATH or do not exist." -ForegroundColor Yellow
+}
+
+# dedupe PATH while preserving order
+$currentPath = (($currentPath -split ";") | Where-Object { $_ -ne "" } | Select-Object -Unique) -join ";"
+[Environment]::SetEnvironmentVariable("Path", $currentPath, "User")
+
+# ================================================================================================
 
 Write-Host "`nSetup complete! Log off or reboot for all changes to take effect." -ForegroundColor Cyan
