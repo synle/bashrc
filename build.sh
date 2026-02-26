@@ -87,6 +87,10 @@ export BASH_SYLE_COMMON='~/.bash_syle_common'
 export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/$REPO_PATH_IDENTIFIER/$REPO_BRANCH_NAME" # https://raw.githubusercontent.com/synle/bashrc/master
 
+# environment toolings
+export NODE_JS_VERSION="24"
+export NVM_DIR="$HOME/.nvm"
+
 
 # OS detection upfront
 is_os_darwin_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && is_os_darwin_mac=1
