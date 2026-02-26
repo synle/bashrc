@@ -355,7 +355,10 @@ echo "
 [ -d "${HOME}/.local" ] && sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 
 # Resource .bashrc
+echo '''
+# source the new profile here
 [ -f "${HOME}/.bashrc" ] && . "${HOME}/.bashrc"
+'''
 
 exit
 }
