@@ -1,9 +1,9 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-26-03-55AM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-26-04-51AM]
 # #### ============================================================================ ###
 
 [user]
 name = Sy Le
-###SNIPPET_GIT_USER_EMAIL###
+; email = test_email@gmail.com #update this email
 
 
 [core]
@@ -111,7 +111,96 @@ rc = rebase --reapply-cherry-picks --continue
 ri = rebase -i # Interactive rebase
 ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
 # Interactive rebase last n commits
-###SNIPPET_GIT_REBASE_INTERACTIVE###
+r2 = rebase -i HEAD~2
+r2-vscode = !GIT_EDITOR=\"code --wait\" git r2
+r3 = rebase -i HEAD~3
+r3-vscode = !GIT_EDITOR=\"code --wait\" git r3
+r4 = rebase -i HEAD~4
+r4-vscode = !GIT_EDITOR=\"code --wait\" git r4
+r5 = rebase -i HEAD~5
+r5-vscode = !GIT_EDITOR=\"code --wait\" git r5
+r6 = rebase -i HEAD~6
+r6-vscode = !GIT_EDITOR=\"code --wait\" git r6
+r7 = rebase -i HEAD~7
+r7-vscode = !GIT_EDITOR=\"code --wait\" git r7
+r8 = rebase -i HEAD~8
+r8-vscode = !GIT_EDITOR=\"code --wait\" git r8
+r9 = rebase -i HEAD~9
+r9-vscode = !GIT_EDITOR=\"code --wait\" git r9
+r10 = rebase -i HEAD~10
+r10-vscode = !GIT_EDITOR=\"code --wait\" git r10
+r15 = rebase -i HEAD~15
+r15-vscode = !GIT_EDITOR=\"code --wait\" git r15
+r20 = rebase -i HEAD~20
+r20-vscode = !GIT_EDITOR=\"code --wait\" git r20
+r25 = rebase -i HEAD~25
+r25-vscode = !GIT_EDITOR=\"code --wait\" git r25
+r30 = rebase -i HEAD~30
+r30-vscode = !GIT_EDITOR=\"code --wait\" git r30
+r35 = rebase -i HEAD~35
+r35-vscode = !GIT_EDITOR=\"code --wait\" git r35
+r40 = rebase -i HEAD~40
+r40-vscode = !GIT_EDITOR=\"code --wait\" git r40
+r45 = rebase -i HEAD~45
+r45-vscode = !GIT_EDITOR=\"code --wait\" git r45
+r50 = rebase -i HEAD~50
+r50-vscode = !GIT_EDITOR=\"code --wait\" git r50
+r55 = rebase -i HEAD~55
+r55-vscode = !GIT_EDITOR=\"code --wait\" git r55
+r60 = rebase -i HEAD~60
+r60-vscode = !GIT_EDITOR=\"code --wait\" git r60
+r65 = rebase -i HEAD~65
+r65-vscode = !GIT_EDITOR=\"code --wait\" git r65
+r70 = rebase -i HEAD~70
+r70-vscode = !GIT_EDITOR=\"code --wait\" git r70
+r75 = rebase -i HEAD~75
+r75-vscode = !GIT_EDITOR=\"code --wait\" git r75
+r80 = rebase -i HEAD~80
+r80-vscode = !GIT_EDITOR=\"code --wait\" git r80
+r85 = rebase -i HEAD~85
+r85-vscode = !GIT_EDITOR=\"code --wait\" git r85
+r90 = rebase -i HEAD~90
+r90-vscode = !GIT_EDITOR=\"code --wait\" git r90
+r95 = rebase -i HEAD~95
+r95-vscode = !GIT_EDITOR=\"code --wait\" git r95
+r100 = rebase -i HEAD~100
+r100-vscode = !GIT_EDITOR=\"code --wait\" git r100
+r150 = rebase -i HEAD~150
+r150-vscode = !GIT_EDITOR=\"code --wait\" git r150
+r200 = rebase -i HEAD~200
+r200-vscode = !GIT_EDITOR=\"code --wait\" git r200
+r250 = rebase -i HEAD~250
+r250-vscode = !GIT_EDITOR=\"code --wait\" git r250
+r300 = rebase -i HEAD~300
+r300-vscode = !GIT_EDITOR=\"code --wait\" git r300
+r350 = rebase -i HEAD~350
+r350-vscode = !GIT_EDITOR=\"code --wait\" git r350
+r400 = rebase -i HEAD~400
+r400-vscode = !GIT_EDITOR=\"code --wait\" git r400
+r450 = rebase -i HEAD~450
+r450-vscode = !GIT_EDITOR=\"code --wait\" git r450
+r500 = rebase -i HEAD~500
+r500-vscode = !GIT_EDITOR=\"code --wait\" git r500
+r550 = rebase -i HEAD~550
+r550-vscode = !GIT_EDITOR=\"code --wait\" git r550
+r600 = rebase -i HEAD~600
+r600-vscode = !GIT_EDITOR=\"code --wait\" git r600
+r650 = rebase -i HEAD~650
+r650-vscode = !GIT_EDITOR=\"code --wait\" git r650
+r700 = rebase -i HEAD~700
+r700-vscode = !GIT_EDITOR=\"code --wait\" git r700
+r750 = rebase -i HEAD~750
+r750-vscode = !GIT_EDITOR=\"code --wait\" git r750
+r800 = rebase -i HEAD~800
+r800-vscode = !GIT_EDITOR=\"code --wait\" git r800
+r850 = rebase -i HEAD~850
+r850-vscode = !GIT_EDITOR=\"code --wait\" git r850
+r900 = rebase -i HEAD~900
+r900-vscode = !GIT_EDITOR=\"code --wait\" git r900
+r950 = rebase -i HEAD~950
+r950-vscode = !GIT_EDITOR=\"code --wait\" git r950
+r1000 = rebase -i HEAD~1000
+r1000-vscode = !GIT_EDITOR=\"code --wait\" git r1000
 
 # Log & Diff
 l = log --oneline

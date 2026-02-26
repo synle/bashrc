@@ -9,9 +9,7 @@ function _getRebaseInteractiveSnippet() {
   for (let i = 2; i <= 10; i += 1) items.push(i);
   for (let i = 10; i <= 100; i += 5) items.push(i);
   for (let i = 150; i <= 1000; i += 50) items.push(i);
-  return [...new Set(items)]
-    .map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`)
-    .join("\n");
+  return [...new Set(items)].map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`).join("\n");
 }
 
 /**
@@ -23,7 +21,7 @@ function _getRebaseInteractiveSnippet() {
  * @returns {Promise<string>} The rendered git config content.
  */
 async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate }) {
-  email = (email || "");
+  email = email || "";
   extraCoreConfigs = extraCoreConfigs || "";
 
   let templateGitConfig = await fetchUrlAsString("software/scripts/git.gitconfig");
