@@ -354,10 +354,10 @@ echo "
 # Final touch: make current user owner of ~/.local
 [ -d "${HOME}/.local" ] && sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 
-# Resource .bashrc
+# Source .bash_syle
 echo '''
 # source the new profile here
-[ -f "${HOME}/.bashrc" ] && . "${HOME}/.bashrc"
+[ -f "${HOME}/.bash_syle" ] && . "${HOME}/.bash_syle"
 '''
 
 exit

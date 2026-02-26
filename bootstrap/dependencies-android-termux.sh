@@ -4,12 +4,12 @@
 if [ "$is_os_android_termux" = "1" ]; then
   echo ">> Begin setting up dependencies-android-termux.sh"
 
-  touch ~/.bashrc
+  touch ~/.bash_syle
 
   echo '''
 # chroot to set up /tmp /etc and other fds for linux
 termux-chroot
-''' >> ~/.bashrc
+''' >> ~/.bash_syle
 
   ##########################################################
   # Install Packages
@@ -76,7 +76,7 @@ use-black-ui = true
   pkg upgrade -y
   pkg autoclean -y
 
-  source ~/.bashrc
+  source ~/.bash_syle
 
   ##########################################################
   # Install Font and Lightweight Profile

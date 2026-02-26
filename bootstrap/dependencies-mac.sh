@@ -88,13 +88,9 @@ if [ "$is_os_darwin_mac" = "1" ]; then
   ##########################################################
   # Shell Setup
   ##########################################################
-  if ! grep -q "source ~/.bashrc" ~/.bash_profile; then
-    echo 'source ~/.bashrc' >> ~/.bash_profile
-  fi
-
   echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
-  touch ~/.bashrc ~/.bash_profile
-  chown "$USER" ~/.bashrc ~/.bash_profile
+  touch ~/.bash_syle ~/.bash_profile ~/.bashrc
+  chown "$USER" ~/.bash_syle ~/.bash_profile ~/.bashrc
 
   echo '>> Change Shell to bash: $USER'
   if [ "$SHELL" != "/bin/bash" ]; then

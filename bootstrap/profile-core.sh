@@ -1,6 +1,6 @@
 # bootstrap/profile-core.sh
 export EDITOR='vim'
-export BASH_PATH=~/.bashrc
+export BASH_PATH=~/.bash_syle
 
 # add known paths to PATH if they exist
 path_candidates=(

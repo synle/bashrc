@@ -1228,7 +1228,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   }
 
   const firstFiles = convertTextToList(`
-    software/scripts/_bash-rc-bootstrap.js
+    software/scripts/_bash-syle-bootstrap.js
     software/scripts/_fnm-binary.js
     software/scripts/_fnm-symlink.sh.js
   `);
