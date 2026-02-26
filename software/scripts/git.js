@@ -9,7 +9,9 @@ function _getRebaseInteractiveSnippet() {
   for (let i = 2; i <= 10; i += 1) items.push(i);
   for (let i = 10; i <= 100; i += 5) items.push(i);
   for (let i = 150; i <= 1000; i += 50) items.push(i);
-  return [... new Set(...items)].map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`).join("\n");
+  return [...new Set(...items)]
+    .map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`)
+    .join("\n");
 }
 
 /**
