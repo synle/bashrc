@@ -3,13 +3,16 @@
 /** * Bootstraps .bash_profile and .bashrc with entry points for .bash_syle, the single source of all shell config. */
 async function doWork() {
   // wipe out the old bash_syle first
-  console.log("  >> Wiping out the old .bash_syle", BASE_BASH_SYLE);
-  writeText(BASE_BASH_SYLE, ``);
+  const coreBashProfileFiles = [BASE_BASH_SYLE, BASE_BASH_SYLE_AUTOCOMPLETE];
+  for (const file of coreBashProfileFiles) {
+    console.log("  >> Wiping out the old bash profile asset: ", file);
+    writeText(file, ``);
+  }
 
-  const entryPointContent = `
-[ -f ${BASH_SYLE_COMMON} ] && . ${BASH_SYLE_COMMON} > /dev/null 2>&1
-[ -s ~/.bash_syle ] && . ~/.bash_syle > /dev/null 2>&1
-`.trim();
+  const entryPointContent = trimSpacesOnBothEnd(`
+    [ -f ${BASH_SYLE_COMMON} ] && . ${BASH_SYLE_COMMON} > /dev/null 2>&1
+    ${coreBashProfileFiles.map(file => '[ -f '+file+' ] && . '+file+' > /dev/null 2>&1').join('\n')}
+  `)
 
   // bootstrap .bash_profile (login shells on all platforms)
   {

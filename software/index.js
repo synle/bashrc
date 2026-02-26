@@ -1078,6 +1078,11 @@ function trimLeftSpaces(text, spaceToTrim) {
   }
 }
 
+
+function trimSpacesOnBothEnd(text) {
+  return (text|| '').split('\n').map(s => s.trim()).join('\n');
+}
+
 /**
  * Calculates a percentage value to two decimal places.
  * @param {number} count - The part value
