@@ -298,8 +298,9 @@ if [ "$TEST_FORCE_REFRESH" = true ] && command -v fnm >/dev/null 2>&1; then
   fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
 fi
 if [ "$is_os_android_termux" != "1" ]; then
-  # Install fnm if missing
+  echo ">> Installing fnm (for nodejs)"
   if ! command -v fnm >/dev/null 2>&1; then
+    echo "  >> Downloading fnm"
     curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell >/dev/null 2>&1
     export PATH="$HOME/.local/share/fnm:$PATH"
 
