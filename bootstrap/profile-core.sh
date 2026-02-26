@@ -94,6 +94,7 @@ SYLE_PATHS_MAX=100
 
 __track_pwd() {
   local current="$(pwd)"
+  [ "$current" = "$HOME" ] && return   # don't track home dir
   local tmp="/tmp/.bash_syle_paths_tmp"
   echo "$current" | cat - "$SYLE_PATHS_FILE" 2>/dev/null | awk '!seen[$0]++' | head -n "$SYLE_PATHS_MAX" > "$tmp"
   mv "$tmp" "$SYLE_PATHS_FILE"
