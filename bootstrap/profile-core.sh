@@ -101,6 +101,8 @@ __track_pwd() {
 }
 
 golast() {
+  [ "$current" = "$HOME" ] && return   # don't go home dir
+
   local dir
   dir=$(head -1 "$SYLE_PATHS_FILE" 2>/dev/null)
   if [ -n "$dir" ] && [ -d "$dir" ]; then
