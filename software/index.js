@@ -1078,9 +1078,11 @@ function trimLeftSpaces(text, spaceToTrim) {
   }
 }
 
-
 function trimSpacesOnBothEnd(text) {
-  return (text|| '').split('\n').map(s => s.trim()).join('\n');
+  return (text || "")
+    .split("\n")
+    .map((s) => s.trim())
+    .join("\n");
 }
 
 /**
