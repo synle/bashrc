@@ -393,7 +393,7 @@ commit_empty_trigger_deploy() {
 
 # Go to git home $MY_GIT_HOME
 function gogit(){
-  local git_home="${MY_GIT_HOME:-~/git}"
+  local git_home="${MY_GIT_HOME:-$HOME/git}"
   cd "$git_home" 2>/dev/null || echo "gogit: $git_home is not present"
 }
 
