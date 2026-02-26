@@ -203,11 +203,11 @@ r1000 = rebase -i HEAD~1000
 r1000-vscode = !GIT_EDITOR=\"code --wait\" git r1000
 
 # Log & Diff
-l = log --oneline --graph
-ll = log --stat --graph
+l = log --oneline --graph --pretty=format:'%C(auto)%h %C(magenta)%an %C(blue)%ad %C(reset)%s' --date=short
+ll = !git l --stat
 la = !git la --all
 lla = !git lla --all
-logs = !git log --stats --graph
+logs = !git lla
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^
 ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
