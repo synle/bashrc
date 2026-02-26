@@ -260,20 +260,6 @@ function ScriptNameInputSection() {
       </datalist>
 
       <div className="form-row">
-        <div className="form-label">Runner</div>
-        <div className="form-input">
-          <div className="nav-radio-group">
-            <button className={formValue.runnerToUse === "prod" ? "selected" : ""} onClick={() => onInputChange("runnerToUse", "prod")}>
-              Live Script
-            </button>
-            <button className={formValue.runnerToUse !== "prod" ? "selected" : ""} onClick={() => onInputChange("runnerToUse", "local")}>
-              Local Script
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="form-row">
         <div className="form-label">Debug Write To File</div>
         <div className="form-input">
           <div className="nav-radio-group">
@@ -387,39 +373,6 @@ function SetupDependenciesSection() {
 }
 
 /**
- * Radio button toggle section for enabling or disabling the bootstrap script.
- * When enabled, the generated output will include OS flag exports and environment initialization.
- * Consumes MainAppContext for form state and input change handling.
- * @returns {React.ReactElement} The bootstrap script toggle section.
- */
-function BootstrapSection() {
-  const { onInputChange } = useContext(MainAppContext);
-  const formValue = useContext(MainAppContext).appData.formValue;
-
-  return (
-    <div className="form-row">
-      <div className="form-label">Add Bootstrap Script</div>
-      <div className="form-input">
-        <div className="nav-radio-group">
-          <button
-            className={formValue.addBootstrapScript === "yes" ? "selected" : ""}
-            onClick={() => onInputChange("addBootstrapScript", "yes")}
-          >
-            Yes
-          </button>
-          <button
-            className={formValue.addBootstrapScript !== "yes" ? "selected" : ""}
-            onClick={() => onInputChange("addBootstrapScript", "no")}
-          >
-            No
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/**
  * Textarea section for entering environment variable paths.
  * Displays an enhanced text area pre-populated with consolidated env vars (optionally
  * merged with OS-specific defaults), and a checkbox to toggle default env inclusion.
@@ -510,18 +463,6 @@ function ScriptOutputSection({ script }) {
       BASH_PROFILE_CODE_REPO_RAW_URL: BASH_PROFILE_CODE_REPO_RAW_URL,
       SELECT_SCRIPTS: formValue.scriptsToUse.join("\n"),
       DEBUG_WRITE_TO_DIR: formValue.debugWriteToDir ? `&& export DEBUG_WRITE_TO_DIR="${formValue.debugWriteToDir}"` : "",
-      SELECTED_RUNNER_MODE: formValue.runnerToUse,
-      OS_FLAGS:
-        formValue.addBootstrapScript === "yes"
-          ? (
-              [
-                "sudo echo '> Initializing Environment'",
-                `echo """\n${osKeys
-                  .map((key) => `export ${key}='${osFlags[key] ? "1" : "0"}'`)
-                  .join("\n")}\n""" > ${window.BASH_SYLE_COMMON} && source ${window.BASH_SYLE_COMMON}`,
-              ].join(" && \\\n") + " && "
-            ).trim()
-          : "",
       SETUP_DEPS: formValue.setupDependencies === "yes" ? (appData.setupDepsScript || "") + "\n" : "",
       SETUP_HOSTS_SCRIPT: appData.setupHostsScript || "",
       IP_ADDRESS_MAPPING_CONFIGS: appData.ipAddressMappingConfigs || "",
@@ -556,19 +497,11 @@ ${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefa
 function MainBodyContainer() {
   const { appData } = useContext(MainAppContext);
   const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
-  const [collapseSignal, setCollapseSignal] = useState({ collapseAll: false, tick: 0 });
 
   return (
-    <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
-      <div id="mainBodyContainer">
-        <div className="editor-collapse-controls">
-          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: !prev.collapseAll, tick: prev.tick + 1 }))}>
-            {collapseSignal.collapseAll ? "▶" : "▼"}
-          </ActionButton>
-        </div>
-        {selectedConfig.renderBody()}
-      </div>
-    </EditorCollapseContext.Provider>
+    <div id="mainBodyContainer">
+      {selectedConfig.renderBody()}
+    </div>
   );
 }
 
@@ -1588,8 +1521,7 @@ function App() {
             renderBody: () => (
               <>
                 <OsSelectionInputSection />
-                <BootstrapSection />
-                <ScriptOutputSection script={`{{OS_FLAGS}} curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash`} />
+                <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash`} />
               </>
             ),
           },
@@ -1599,9 +1531,8 @@ function App() {
               <>
                 <ScriptNameInputSection />
                 <OsSelectionInputSection />
-                <BootstrapSection />
                 <ScriptOutputSection
-                  script={`{{OS_FLAGS}} {{DEBUG_WRITE_TO_DIR}} \\\ncurl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --files="""\n{{SELECT_SCRIPTS}}\n"""`}
+                  script={`{{DEBUG_WRITE_TO_DIR}} \\\ncurl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --files="""\n{{SELECT_SCRIPTS}}\n"""`}
                 />
               </>
             ),
@@ -1637,8 +1568,6 @@ function App() {
             commandChoice: getStorage("commandChoice") || defaultCommandOption,
             osToRun: getStorage("osToRun") || "windows",
             debugWriteToDir: getStorage("debugWriteToDir") || "",
-            runnerToUse: getStorage("runnerToUse") || "prod",
-            addBootstrapScript: getStorage("addBootstrapScript") || "no",
             setupDependencies: getStorage("setupDependencies") || "yes",
             envInputValue: getStorage("envInputValue") || "",
             shouldAddDefaultEnvs: getStorage("shouldAddDefaultEnvs") || "yes",
@@ -1659,6 +1588,8 @@ function App() {
 
     _loadData();
   }, []);
+
+  const [collapseSignal, setCollapseSignal] = useState({ collapseAll: false, tick: 0 });
 
   if (!appData) {
     return null;
@@ -1692,13 +1623,19 @@ function App() {
           onInputChange,
         }}
       >
+        <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
         <div id="container">
           <div className="app-header">
             <h1 style={{ textTransform: "uppercase" }}>
               <LinkText href={REPO_URL}>{window.document.title}</LinkText>
             </h1>
 
-            <Settings />
+            <div style={{ display: "flex", gap: "var(--spaceSize2)", alignItems: "center" }}>
+              <Settings />
+              <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: !prev.collapseAll, tick: prev.tick + 1 }))}>
+                {collapseSignal.collapseAll ? "▶" : "▼"}
+              </ActionButton>
+            </div>
           </div>
           <div className="app-clone-command">
             <code>git clone git@github.com:synle/bashrc.git</code>
@@ -1744,6 +1681,7 @@ function App() {
         <button className="fixed-nav-buttons fixed-nav-right" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
           Top
         </button>
+        </EditorCollapseContext.Provider>
       </MainAppContext.Provider>
     </ThemeContext.Provider>
   );
