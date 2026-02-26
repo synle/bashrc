@@ -107,9 +107,7 @@ textarea {
 button,
 input[type="submit"],
 a[role="button"] {
-  @include mobile {
-    padding: var(--spaceSize1) var(--spaceSize2);
-  }
+  padding: var(--spaceSize1) var(--spaceSize2);
 }
 
 // ============================================================================
@@ -123,6 +121,11 @@ a[role="button"] {
   justify-content: space-between;
   flex-wrap: wrap;
   width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--colorBgMain);
+  padding: var(--spaceSize2) 0;
 
   h1 {
     margin: 0;
@@ -229,7 +232,7 @@ a[role="button"] {
   font-size: var(--fontSize3);
   text-transform: uppercase;
   position: sticky;
-  top: 0;
+  top: 4rem;
   z-index: 10;
   background: var(--colorBgMain);
   padding: var(--spaceSize1) 0;
@@ -245,13 +248,6 @@ a[role="button"] {
       width: 100%;
     }
   }
-}
-
-.editor-collapse-controls {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spaceSize2);
-  margin-bottom: var(--spaceSize2);
 }
 
 .editor-section {
