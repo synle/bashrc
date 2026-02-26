@@ -7,6 +7,9 @@
 // for profile icons (use this website - https://www.compart.com/). Pick UTF-16
 const historySize = 50000;
 
+// ============================================================================
+// Profile GUIDs
+// ============================================================================
 const UUID_POWERSHELL_PROFILE = `{c993c0b6-0023-5562-a928-3ea11eb283ce}`;
 const UUID_LOCAL_VM_SSH_PROFILE = "{ae240490-446d-462c-bb40-0a92fc3c7a3f}";
 const UUID_WSL_DEBIAN_PROFILE = "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}";
@@ -15,6 +18,10 @@ const UUID_SY_MACPRO_PROFILE = "{8e8e313c-1df0-4519-850c-d1532dd63843}";
 let BASE_CONFIG = {};
 let DEFAULT_PROFILES = {};
 let DEFAULT_PROFILE_STYLES = {};
+
+// ============================================================================
+// Path Resolution
+// ============================================================================
 
 /**
  * Returns the Windows Terminal LocalState directory path by searching for the installed package folder.
@@ -33,38 +40,64 @@ function _getPath() {
   }
 }
 
+// ============================================================================
+// Main Setup
+// ============================================================================
+
 /**
  * Initializes Windows Terminal config with color schemes, keybindings, and profile defaults, then writes settings to the build output and local installation.
  */
 async function doWork() {
+  // ----------------------------------------------------------
+  // Default profile appearance
+  // ----------------------------------------------------------
   DEFAULT_PROFILE_STYLES = {
-    cursorShape: "vintage",
-    cursorHeight: 50,
-    fontFace: EDITOR_CONFIGS.fontFamily,
-    fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),
-    padding: "2 0 2 0",
-    bellStyle: "all",
-    historySize,
-    // useAcrylic: true,
+    cursorShape: "vintage",                          // block-style cursor
+    cursorHeight: 50,                                // cursor height (% of cell)
+    fontFace: EDITOR_CONFIGS.fontFamily,             // shared editor font
+    fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),  // cap font size at 9
+    padding: "2 0 2 0",                              // top right bottom left padding
+    bellStyle: "all",                                // audible + visual bell
+    historySize,                                     // scrollback buffer size
+    // useAcrylic: true,                             // translucent background (disabled)
   };
 
+  // ----------------------------------------------------------
+  // Global terminal settings
+  // ----------------------------------------------------------
   BASE_CONFIG = {
-    // global config
-    copyOnSelect: false,
-    copyFormatting: false,
-    useTabSwitcher: false,
-    multiLinePasteWarning: false,
-    rowsToScroll: 5,
-    initialCols: 80,
-    initialRows: 30,
-    tabWidthMode: "compact",
-    initialPosition: "5,5",
-    confirmCloseAllTabs: true,
-    disableAnimations: true,
-    focusFollowMouse: true,
-    "experimental.rendering.forceFullRepaint": true,
+    // clipboard
+    copyOnSelect: false,              // don't auto-copy on selection
+    copyFormatting: false,            // copy as plain text
 
-    // schema
+    // tabs
+    useTabSwitcher: false,            // disable ctrl+tab popup switcher
+    tabWidthMode: "compact",          // shrink inactive tabs
+    confirmCloseAllTabs: true,        // prompt before closing all tabs
+
+    // input
+    multiLinePasteWarning: false,     // suppress multi-line paste warning
+    focusFollowMouse: true,           // focus pane on mouse hover
+
+    // window size and position
+    initialCols: 80,                  // default column count
+    initialRows: 30,                  // default row count
+    initialPosition: "5,5",           // window position on screen (x,y)
+    rowsToScroll: 5,                  // scroll speed (lines per tick)
+
+    // performance
+    disableAnimations: true,                              // skip ui animations
+    "experimental.rendering.forceFullRepaint": true,      // force full repaint (fixes rendering glitches)
+
+    // misc
+    trimBlockSelection: true,         // trim trailing whitespace on block select copy
+    wordDelimiters: " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",  // double-click word boundary chars
+    snapOnInput: true,                // auto-scroll to bottom on keypress
+    altGrAliasing: true,              // treat right-alt as ctrl+alt (for intl keyboards)
+
+    // ----------------------------------------------------------
+    // Color schemes
+    // ----------------------------------------------------------
     schemes: [
       {
         name: "Dracula",
@@ -135,10 +168,15 @@ async function doWork() {
       },
     ],
 
-    // keybindings
+    // ----------------------------------------------------------
+    // Keybindings (loaded from external jsonc file)
+    // ----------------------------------------------------------
     keybindings: [...(parseJsonWithComments(await fetchUrlAsString("software/scripts/windows/terminal-keys.jsonc")) || [])],
   };
 
+  // ----------------------------------------------------------
+  // Shell profiles
+  // ----------------------------------------------------------
   DEFAULT_PROFILES = {
     profiles: {
       defaults: {},
@@ -169,13 +207,18 @@ async function doWork() {
     },
   };
 
-  // write to build file
+  // ============================================================================
+  // Write prebuilt config to build output
+  // ============================================================================
   const comments = "Open settings file (JSON)";
   const prebuiltConfigs = clone({ ...BASE_CONFIG, ...DEFAULT_PROFILES });
   prebuiltConfigs.defaultProfile = prebuiltConfigs.profiles.list[0].guid;
 
   writeToBuildFile([{ file: "windows-terminal", data: prebuiltConfigs, isJson: true, comments, commentStyle: "json" }]);
 
+  // ============================================================================
+  // Apply config to local Windows Terminal installation
+  // ============================================================================
   const targetPath = path.join(_getPath(), "LocalState/settings.json");
   if (!filePathExist(targetPath)) {
     console.log("  >> Skipped Windows Terminal Config - Settings Path Not Found: ", consoleLogColor4(targetPath));
@@ -186,22 +229,23 @@ async function doWork() {
 
   const oldSettings = readJson(targetPath);
 
-  // keep track of actions
+  // merge existing keybindings (actions) with our keybindings
   const actions = oldSettings.actions || [];
   delete oldSettings.actions;
-
   BASE_CONFIG.keybindings = [...actions, ...BASE_CONFIG.keybindings];
 
   const newSettings = Object.assign(oldSettings, BASE_CONFIG);
 
-  // setup the profile color scheme
+  // ----------------------------------------------------------
+  // Profile discovery and color scheme assignment
+  // ----------------------------------------------------------
   let foundDefaultProfile = false;
   let foundLocalVMSSHProfile = false;
   let foundSyMacproProfile = false;
 
   const allProfiles = newSettings.profiles.list || newSettings.profiles || [];
 
-  // here we see if we need to add a new default profile for local vm
+  // check if custom profiles already exist
   allProfiles.forEach((profile) => {
     if (profile.guid === UUID_LOCAL_VM_SSH_PROFILE) {
       foundLocalVMSSHProfile = true;
@@ -212,6 +256,9 @@ async function doWork() {
     }
   });
 
+  // ----------------------------------------------------------
+  // Add missing custom profiles
+  // ----------------------------------------------------------
   if (!foundLocalVMSSHProfile) {
     allProfiles.push({
       commandline: "ssh syle@127.0.0.1",
@@ -234,9 +281,13 @@ async function doWork() {
     });
   }
 
+  // ----------------------------------------------------------
+  // Apply styles and color schemes to all profiles
+  // ----------------------------------------------------------
   newSettings.profiles = allProfiles.map((profile) => {
     profile = Object.assign(profile, DEFAULT_PROFILE_STYLES);
 
+    // assign color scheme based on shell type
     let mainColorScheme;
     switch (profile.commandline) {
       case "powershell.exe":
@@ -251,13 +302,7 @@ async function doWork() {
     }
     profile.colorScheme = profile.colorScheme || mainColorScheme;
 
-    // TODO: this is for dark mode vs light mode switching
-    // will likely wait for Windows Terminal supports it
-    // profile.colorSchemeDark = 'One Half Dark';
-    // profile.colorSchemeLight = 'One Half Light';
-    // profile.colorScheme = profile.colorSchemeDark;
-
-    // set default profile
+    // set default profile to first matching WSL distro (Debian or Ubuntu)
     if (!foundDefaultProfile && [/Debian/i, /Ubuntu/i].some((distroToUseForDefault) => profile.name.match(distroToUseForDefault))) {
       newSettings.defaultProfile = profile.guid;
       foundDefaultProfile = true;
@@ -266,11 +311,13 @@ async function doWork() {
     return profile;
   });
 
-  // fall back to set and use powershell to set default profile, pick the first one
+  // fallback: use the first profile as default
   if (!foundDefaultProfile) {
     newSettings.defaultProfile = allProfiles[0].guid;
   }
 
-  // done - write to file
+  // ----------------------------------------------------------
+  // Write final config to disk
+  // ----------------------------------------------------------
   writeJson(targetPath, newSettings);
 }
