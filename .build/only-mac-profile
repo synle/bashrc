@@ -1,0 +1,22 @@
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-26-03-18AM]
+# 
+# This is a bash only meant for mac
+# #### ============================================================================ ###
+
+# Suppress bash legacy warning in Catalina+
+export BASH_SILENCE_DEPRECATION_WARNING=1
+
+# Add Visual Studio Code (code) to PATH
+export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+
+##########################################################
+# Mac-Only Aliases
+##########################################################
+
+alias find2='fd'
+alias brave='open "/Applications/Brave\\ Browser.app" --args --disable-smooth-scrolling'
+alias chrome='open "/Applications/Google\\ Chrome.app" --args --disable-smooth-scrolling'
+alias sqluinative='open "/Applications/sqlui-native.app" --args --disable-smooth-scrolling'
+alias sql="sqluinative"
+
+alias update='refresh'
