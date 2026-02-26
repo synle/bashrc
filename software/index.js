@@ -875,7 +875,7 @@ function registerWithBashSyleProfile(configKey, content) {
  */
 function registerWithBashSyleAutocomplete(configKey, content) {
   let textContent = readText(BASE_BASH_SYLE_AUTOCOMPLETE);
-  textContent = prependTextBlock(textContent, configKey, content);
+  textContent = appendTextBlock(textContent, configKey, content);
   writeText(BASE_BASH_SYLE_AUTOCOMPLETE, textContent);
 }
 
@@ -899,7 +899,9 @@ async function registerSpecAutocomplete(command, specUrl) {
   registerWithBashSyleAutocomplete(
     `${command} Autocomplete`,
     trimLeftSpaces(`
+      ##################################################
       # ${command} (spec-based autocomplete)
+      ##################################################
       __spec_complete_${command}()
       {
         local cur="\${COMP_WORDS[COMP_CWORD]}"
@@ -924,7 +926,7 @@ async function registerSpecAutocomplete(command, specUrl) {
         COMPREPLY=(\$(compgen -W "\$opts" -- "\$cur"))
       }
       complete -F __spec_complete_${command} ${command}
-    `),
+    ` + '\n\n\n'),
   );
 }
 
