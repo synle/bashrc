@@ -11,7 +11,5 @@ mkdir -p ~/.vim/bundle
 git clone $VUNDLE_URL $VUNDLE_DIR &> /dev/null;
 
 echo '  >> Installing Vundle Plugins: (might need to run this manually)'
-echo '    vim +PluginInstall +qall'
-vim +PluginInstall +qall &> /dev/null
 echo '    vim -E -s -u ~/.vimrc +PluginInstall +qall'
-vim -E -s -u ~/.vimrc +PluginInstall +qall &> /dev/null
+vim -E -s -u ~/.vimrc +PluginInstall +qall &> /dev/null &
