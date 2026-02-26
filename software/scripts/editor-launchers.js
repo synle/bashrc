@@ -12,7 +12,7 @@ async function doWork() {
   console.log("  >> Registering editor launchers (find_editor, run_editor, subl, code)");
 
   // Section 1: Common editor launcher functions
-  registerWithBashSyle(
+  registerWithBashSyleProfile(
     "Editor Launchers - Common",
     trimLeftSpaces(`
       # Resolve editor binary from a list of candidate paths
@@ -108,7 +108,7 @@ async function doWork() {
   );
 
   // Section 2: Sublime Text launcher
-  registerWithBashSyle(
+  registerWithBashSyleProfile(
     "Editor Launchers - Sublime Text",
     trimLeftSpaces(`
       _SUBL_PATHS=(
@@ -132,7 +132,7 @@ async function doWork() {
   );
 
   // Section 3: VS Code / VSCodium launcher
-  registerWithBashSyle(
+  registerWithBashSyleProfile(
     "Editor Launchers - VS Code",
     trimLeftSpaces(`
       _CODE_PATHS=(

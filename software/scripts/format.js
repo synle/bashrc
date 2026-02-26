@@ -271,7 +271,7 @@ ${excludeFilesArray}
 }
 `.trim();
 
-  registerWithBashSyle("format script", formatScriptBlock);
+  registerWithBashSyleProfile("format script", formatScriptBlock);
 
   writeToBuildFile([{ file: "format.sh", data: formatScriptBlock }]);
 }

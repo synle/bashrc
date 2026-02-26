@@ -12,6 +12,7 @@ globalThis.http = require("http");
 // there's a script that will check and set the correct value used to BASE_WINDOW
 var BASE_HOMEDIR_LINUX = (globalThis.BASE_HOMEDIR_LINUX = (0, require)("os").homedir());
 globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, ".bash_syle");
+globalThis.BASE_BASH_SYLE_AUTOCOMPLETE = path.join(BASE_HOMEDIR_LINUX, ".bash_syle_autocomplete");
 
 // specific for windows and wsl only
 globalThis.BASE_MOUNT_DIR_WINDOW = "";
@@ -860,10 +861,22 @@ function prependTextBlock(resultTextContent, configKey, configValue, commentPref
  * @param {string} configKey - The config key for the text block
  * @param {string} content - The content to prepend
  */
-function registerWithBashSyle(configKey, content) {
+function registerWithBashSyleProfile(configKey, content) {
   let textContent = readText(BASE_BASH_SYLE);
   textContent = prependTextBlock(textContent, configKey, content);
   writeText(BASE_BASH_SYLE, textContent);
+}
+
+/**
+ * Reads BASE_BASH_SYLE_AUTOCOMPLETE, prepends a config block, and writes it back.
+ * Used by bash-autocomplete-*.js scripts to register autocomplete blocks.
+ * @param {string} configKey - The config key for the text block
+ * @param {string} content - The content to prepend
+ */
+function registerWithBashSyleAutocomplete(configKey, content) {
+  let textContent = readText(BASE_BASH_SYLE_AUTOCOMPLETE);
+  textContent = prependTextBlock(textContent, configKey, content);
+  writeText(BASE_BASH_SYLE_AUTOCOMPLETE, textContent);
 }
 
 /**
@@ -878,7 +891,7 @@ function registerPlatformTweaks(platformName, fileName, content, sourceOverride)
 
   console.log(`  >> Register ${platformName} profile`, BASE_BASH_SYLE);
   const sourceLine = sourceOverride || `. ${targetPath}`;
-  registerWithBashSyle(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
+  registerWithBashSyleProfile(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
 
   console.log(`  >> Installing ${platformName} tweaks:`, consoleLogColor4(targetPath));
   writeText(targetPath, content);

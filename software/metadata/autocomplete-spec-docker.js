@@ -89,7 +89,7 @@ async function doWork() {
 
       res.push("docker" + "|" + commands.join(","));
 
-      const targetPath = "software/metadata/bash-autocomplete.docker.config";
+      const targetPath = "software/scripts/bash-autocomplete-docker.complete-spec";
       console.log("  >> Update autocomplete docker config > ", targetPath);
 
       writeText(targetPath, res.sort().join("\n"));

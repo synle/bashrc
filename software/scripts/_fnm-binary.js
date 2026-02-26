@@ -5,7 +5,7 @@ async function doWork() {
   console.log(`  >> Register fnm binary with bashrc ${FNM_DIR}`);
   console.log(`    >> Register fnm default node path with bashrc ${FNM_DEFAULT_NODE_PATH}`);
 
-  registerWithBashSyle(
+  registerWithBashSyleProfile(
     "fnm - fast node manager",
     `
     # hookup binary - add default node version to PATH
