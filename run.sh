@@ -26,7 +26,7 @@
 #     bar.sh
 #   """
 #   bash run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
-#   bash run.sh --force-refresh                    # Force remove and reinstall fnm
+#   bash run.sh --force-refresh                    # Force remove and reinstall mise
 #   bash run.sh -f                                 # Shorthand for --force-refresh
 #   bash run.sh --lightweight                      # Export LIGHT_WEIGHT_MODE=1 for lightweight installs
 #   bash run.sh --debug                            # Enable debug mode (set -x for verbose output)
@@ -289,20 +289,20 @@ fi
 
 
 ####################################################################
-# script: Install fnm and Node (skip on Android Termux)
+# script: Install mise and Node (skip on Android Termux)
 ####################################################################
-# Force refresh: remove existing fnm and reinstall
+# Force refresh: remove existing mise node and reinstall
 export NODE_JS_VERSION="24"
-export FNM_DIR="$HOME/.local/share/fnm"
-if [ "$TEST_FORCE_REFRESH" = true ] && command -v fnm >/dev/null 2>&1; then
-  fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
+export MISE_DIR="$HOME/.local/share/mise"
+if [ "$TEST_FORCE_REFRESH" = true ] && command -v mise >/dev/null 2>&1; then
+  mise uninstall "node@$NODE_JS_VERSION" >/dev/null 2>&1
 fi
 if [ "$is_os_android_termux" != "1" ]; then
-  echo ">> Installing fnm (for nodejs)"
-  if ! command -v fnm >/dev/null 2>&1; then
-    echo "  >> Downloading fnm"
-    curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell >/dev/null 2>&1
-    export PATH="$HOME/.local/share/fnm:$PATH"
+  echo ">> Installing mise (for nodejs)"
+  if ! command -v mise >/dev/null 2>&1; then
+    echo "  >> Downloading mise"
+    curl -fsSL https://mise.run | sh >/dev/null 2>&1
+    export PATH="$HOME/.local/bin:$PATH"
 
     # Clean up old nvm installation if present
     if [ -d "$HOME/.nvm" ]; then
@@ -317,23 +317,36 @@ if [ "$is_os_android_termux" != "1" ]; then
       done
       unset _profile
     fi
+
+    # Clean up old fnm installation if present
+    if [ -d "$HOME/.local/share/fnm" ]; then
+      echo "  >> Removing old fnm installation (~/.local/share/fnm)"
+      rm -rf "$HOME/.local/share/fnm"
+      # Remove fnm lines from shell profiles
+      for _profile in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.profile"; do
+        if [ -f "$_profile" ] && grep -q 'fnm' "$_profile"; then
+          echo "    >> Cleaning fnm references from $_profile"
+          sed -i.fnm-backup '/fnm/d' "$_profile"
+        fi
+      done
+      unset _profile
+    fi
   fi
 
-  eval "$(fnm env --shell bash)"
+  eval "$(mise activate bash --shims)"
 
   # Install Node if missing
-  if ! fnm list | grep -q "v${NODE_JS_VERSION}\."; then
-    fnm install "$NODE_JS_VERSION" >/dev/null 2>&1
+  if ! mise list node 2>/dev/null | grep -q "${NODE_JS_VERSION}\."; then
+    mise install "node@$NODE_JS_VERSION" >/dev/null 2>&1
   else
     echo "Node $NODE_JS_VERSION already installed — skip"
   fi
 
-  # Set + use default quietly
-  fnm default "$NODE_JS_VERSION" >/dev/null 2>&1
-  fnm use "$NODE_JS_VERSION" >/dev/null 2>&1
+  # Set as global default
+  mise use --global "node@$NODE_JS_VERSION" >/dev/null 2>&1
 
   # Export resolved node path for downstream scripts
-  export FNM_DEFAULT_NODE_PATH="$FNM_DIR/node-versions/$(node -v 2>/dev/null)/installation"
+  export MISE_NODE_PATH="$MISE_DIR/installs/node/$(node -v 2>/dev/null | sed 's/^v//')"
 fi
 
 ####################################################################
