@@ -182,6 +182,7 @@ alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 alias fzf='fzf --no-sort'
 alias grep='grep --color'
 alias gr='grep -i'
+alias clear='/usr/bin/clear'
 
 # git aliases
 alias merge="git fetch --all --prune && git merge"
