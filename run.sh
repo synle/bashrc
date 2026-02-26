@@ -292,8 +292,6 @@ fi
 # script: Install nvm and Node (skip on Android Termux)
 ####################################################################
 # Force refresh: remove existing nvm node and reinstall
-export NODE_JS_VERSION="24"
-export NVM_DIR="$HOME/.nvm"
 if [ "$TEST_FORCE_REFRESH" = true ] && [ -s "$NVM_DIR/nvm.sh" ]; then
   . "$NVM_DIR/nvm.sh"
   nvm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
