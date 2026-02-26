@@ -902,21 +902,23 @@ async function registerSpecAutocomplete(command, specUrl) {
       # ${command} (spec-based autocomplete)
       __spec_complete_${command}()
       {
-        local input="\${COMP_WORDS[*]}"
         local cur="\${COMP_WORDS[COMP_CWORD]}"
         local spec_file="${specPath}"
         local opts=""
 
         if [ -f "\$spec_file" ]; then
-          while IFS='|' read -r cmd flags; do
-            if [ -z "\$cmd" ] || [ -z "\$flags" ]; then continue; fi
-            case "\$input" in
-              "\$cmd"*)
-                opts="\$(echo "\$flags" | tr ',' ' ')"
-                break
-                ;;
-            esac
-          done < "\$spec_file"
+          # build the command prefix from COMP_WORDS excluding the current word
+          # try longest prefix first (e.g. "docker attach"), then shorter (e.g. "docker")
+          local i
+          for (( i=COMP_CWORD; i>=1; i-- )); do
+            local prefix="\${COMP_WORDS[*]:0:i}"
+            local line
+            line=\$(grep -m1 "^\$prefix|" "\$spec_file")
+            if [ -n "\$line" ]; then
+              opts="\$(echo "\$line" | cut -d'|' -f2- | tr ',' ' ')"
+              break
+            fi
+          done
         fi
 
         COMPREPLY=(\$(compgen -W "\$opts" -- "\$cur"))
@@ -1038,14 +1040,9 @@ function convertRawTextToList(...texts) {
  * @returns {string[]} Unique hostnames extracted from the input
  */
 function convertTextToHosts(...texts) {
-  const text = [...texts].join("\n");
-
-  const items = text
-    .split("\n")
+  return convertRawTextToList(...texts)
     .map((s) => s.replace(/^[0-9]+.[0-9]+.[0-9]+.[0-9]+[ ]*/, "").trim())
     .filter((s) => s.length > 0 && s.match(/^[0-9a-zA-Z-.]+/) && s.match(/^[0-9a-zA-Z-.]+/)[0] === s);
-
-  return [...new Set(items)]; // only return unique items
 }
 
 /**
@@ -1270,10 +1267,12 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
 
   // fallback mode: try local find first, fall back to API if files is empty
   if (useFallback === true) {
+    // fetch from exec bash
     try {
-      files = (await execBash("find .", true)).split("\n");
+      files = convertRawTextToList(await execBash("find .", true));
     } catch (_) {}
 
+    // fetch from APIS
     if (!files || files.length === 0) {
       try {
         files = await listRepoDir();
@@ -1282,7 +1281,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   }
   if (useLocalFiles === true || isTestScriptMode === true) {
     // fetch from exec bash
-    files = (await execBash("find .", true)).split("\n");
+    files = convertRawTextToList(await execBash("find .", true));
   } else {
     // fetch from APIS
     files = await listRepoDir();
