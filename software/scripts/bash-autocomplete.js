@@ -287,7 +287,7 @@ ${await _getAutoCompleteWithSpec("docker", "software/metadata/bash-autocomplete.
 
   writeText(targetPath, res);
 
-  // bootstrap mise with bash_syle
+  // bootstrap nvm with bash_syle
   console.log("    >> Register binary with bashrc", BASE_BASH_SYLE);
   registerWithBashSyle("Sy bash autocomplete", `[ -s ${targetPath} ] && . ${targetPath}`);
 }

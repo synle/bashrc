@@ -21,10 +21,10 @@ globalThis.BASE_WINDOW = "";
 globalThis.BASE_WINDOW_1 = "/mnt/c/Users";
 globalThis.BASE_WINDOW_2 = "/c/Users";
 
-// default node installation (mise) - values exported from run.sh
+// default node installation (nvm) - values exported from run.sh
 globalThis.NODE_JS_VERSION = (process.env.NODE_JS_VERSION || "").trim();
-globalThis.MISE_DIR = (process.env.MISE_DIR || "").trim();
-globalThis.MISE_NODE_PATH = (process.env.MISE_NODE_PATH || "").trim();
+globalThis.NVM_DIR = (process.env.NVM_DIR || "").trim();
+globalThis.NVM_DEFAULT_NODE_PATH = (process.env.NVM_DEFAULT_NODE_PATH || "").trim();
 globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || "").trim();
 globalThis.BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || "").trim();
 globalThis.TEST_FORCE_REFRESH = (process.env.TEST_FORCE_REFRESH || "").trim() === "1";
@@ -1216,8 +1216,8 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
 
   const firstFiles = convertTextToList(`
     software/scripts/_bash-rc-bootstrap.js
-    software/scripts/_mise-binary.js
-    software/scripts/_mise-symlink.sh.js
+    software/scripts/_nvm-binary.js
+    software/scripts/_nvm-symlink.sh.js
   `);
 
   // this is a list of file to do last
