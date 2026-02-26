@@ -263,16 +263,10 @@ function ScriptNameInputSection() {
         <div className="form-label">Runner</div>
         <div className="form-input">
           <div className="nav-radio-group">
-            <button
-              className={formValue.runnerToUse === "prod" ? "selected" : ""}
-              onClick={() => onInputChange("runnerToUse", "prod")}
-            >
+            <button className={formValue.runnerToUse === "prod" ? "selected" : ""} onClick={() => onInputChange("runnerToUse", "prod")}>
               Live Script
             </button>
-            <button
-              className={formValue.runnerToUse !== "prod" ? "selected" : ""}
-              onClick={() => onInputChange("runnerToUse", "local")}
-            >
+            <button className={formValue.runnerToUse !== "prod" ? "selected" : ""} onClick={() => onInputChange("runnerToUse", "local")}>
               Local Script
             </button>
           </div>
@@ -285,14 +279,13 @@ function ScriptNameInputSection() {
           <div className="nav-radio-group">
             <button
               className={formValue.debugWriteToDir ? "selected" : ""}
-              onClick={() => { if (!formValue.debugWriteToDir) onInputChange("debugWriteToDir", "$(pwd)"); }}
+              onClick={() => {
+                if (!formValue.debugWriteToDir) onInputChange("debugWriteToDir", "$(pwd)");
+              }}
             >
               Yes
             </button>
-            <button
-              className={!formValue.debugWriteToDir ? "selected" : ""}
-              onClick={() => onInputChange("debugWriteToDir", "")}
-            >
+            <button className={!formValue.debugWriteToDir ? "selected" : ""} onClick={() => onInputChange("debugWriteToDir", "")}>
               No
             </button>
           </div>
@@ -459,13 +452,19 @@ function EnvInputSection() {
           <div className="nav-radio-group">
             <button
               className={formValue.shouldAddDefaultEnvs === "yes" ? "selected" : ""}
-              onClick={() => { onInputChange("shouldAddDefaultEnvs", "yes"); location.reload(); }}
+              onClick={() => {
+                onInputChange("shouldAddDefaultEnvs", "yes");
+                location.reload();
+              }}
             >
               Yes
             </button>
             <button
               className={formValue.shouldAddDefaultEnvs !== "yes" ? "selected" : ""}
-              onClick={() => { onInputChange("shouldAddDefaultEnvs", "no"); location.reload(); }}
+              onClick={() => {
+                onInputChange("shouldAddDefaultEnvs", "no");
+                location.reload();
+              }}
             >
               No
             </button>
@@ -1742,10 +1741,7 @@ function App() {
             ▼ Next
           </button>
         </div>
-        <button
-          className="fixed-nav-buttons fixed-nav-right"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        >
+        <button className="fixed-nav-buttons fixed-nav-right" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
           Top
         </button>
       </MainAppContext.Provider>
