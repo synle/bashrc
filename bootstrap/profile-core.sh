@@ -30,7 +30,7 @@ PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 ignored_commands=(
   "*/clean-staging"
   "*/CleanPCCSP.dll"
-  "cleanmgr.exe"
+  "*/cleanmgr.exe"
 )
 ignored_files=(
   ".rej"

@@ -13,3 +13,5 @@ alias brave='open "/Applications/Brave\\ Browser.app" --args --disable-smooth-sc
 alias chrome='open "/Applications/Google\\ Chrome.app" --args --disable-smooth-scrolling'
 alias sqluinative='open "/Applications/sqlui-native.app" --args --disable-smooth-scrolling'
 alias sql="sqluinative"
+
+alias update='refresh'
