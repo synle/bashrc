@@ -6,7 +6,7 @@
 async function doWork() {
   console.log("    >> Make Bash Autocomplete");
 
-  registerWithBashSyleAutocomplete(
+  registerWithBashSyleAutocompleteWithRawContent(
     "Make Autocomplete",
     trimLeftSpaces(`
       # ---------------------------------------------------------

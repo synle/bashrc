@@ -6,7 +6,7 @@
 async function doWork() {
   console.log("    >> Yarn Bash Autocomplete");
 
-  registerWithBashSyleAutocomplete(
+  registerWithBashSyleAutocompleteWithRawContent(
     "Yarn Autocomplete",
     trimLeftSpaces(`
       # ---------------------------------------------------------

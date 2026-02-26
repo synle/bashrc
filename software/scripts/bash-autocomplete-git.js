@@ -9,7 +9,7 @@ async function doWork() {
     "https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash",
   );
 
-  registerWithBashSyleAutocomplete(
+  registerWithBashSyleAutocompleteWithRawContent(
     "Git Autocomplete",
     trimLeftSpaces(`
       ##########################################################

@@ -7,5 +7,5 @@
 async function doWork() {
   console.log("    >> Docker Bash Autocomplete");
 
-  await registerSpecAutocomplete("docker", "software/scripts/bash-autocomplete-complete-spec-docker");
+  await registerWithBashSyleAutocompleteWithCompleteSpec("docker", "software/scripts/bash-autocomplete-complete-spec-docker");
 }

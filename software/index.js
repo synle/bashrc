@@ -873,7 +873,7 @@ function registerWithBashSyleProfile(configKey, content) {
  * @param {string} configKey - The config key for the text block
  * @param {string} content - The content to prepend
  */
-function registerWithBashSyleAutocomplete(configKey, content) {
+function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
   let textContent = readText(BASE_BASH_SYLE_AUTOCOMPLETE);
   textContent = appendTextBlock(textContent, configKey, content);
   writeText(BASE_BASH_SYLE_AUTOCOMPLETE, textContent);
@@ -886,7 +886,7 @@ function registerWithBashSyleAutocomplete(configKey, content) {
  * @param {string} command - The command name (e.g. "docker")
  * @param {string} specUrl - URL or local path to the complete-spec file
  */
-async function registerSpecAutocomplete(command, specUrl) {
+async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl) {
   const specFileName = `.bash_syle_complete-spec-${command}`;
   const specPath = path.join(BASE_HOMEDIR_LINUX, specFileName);
 
@@ -896,7 +896,7 @@ async function registerSpecAutocomplete(command, specUrl) {
   writeText(specPath, specContent);
 
   // register a pure-bash completer that reads from the spec file
-  registerWithBashSyleAutocomplete(
+  registerWithBashSyleAutocompleteWithRawContent(
     `${command} Autocomplete`,
     trimLeftSpaces(
       `

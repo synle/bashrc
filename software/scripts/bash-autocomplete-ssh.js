@@ -6,7 +6,7 @@
 async function doWork() {
   console.log("    >> SSH Bash Autocomplete");
 
-  registerWithBashSyleAutocomplete(
+  registerWithBashSyleAutocompleteWithRawContent(
     "SSH Autocomplete",
     trimLeftSpaces(`
       # ---------------------------------------------------------

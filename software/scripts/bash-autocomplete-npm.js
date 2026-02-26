@@ -6,7 +6,7 @@
 async function doWork() {
   console.log("    >> npm/npx Bash Autocomplete");
 
-  registerWithBashSyleAutocomplete(
+  registerWithBashSyleAutocompleteWithRawContent(
     "npm npx Autocomplete",
     trimLeftSpaces(`
       # ---------------------------------------------------------
