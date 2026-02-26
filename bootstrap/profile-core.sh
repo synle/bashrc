@@ -39,6 +39,7 @@ done
 
 # dedupe PATH while preserving order
 export PATH="$(echo "$PATH" | tr ':' '\n' | awk '!seen[$0]++' | tr '\n' ':' | sed 's/:$//')"
+unset path_candidates
 
 ##########################################################
 # Shared prompt/br style
@@ -50,12 +51,73 @@ _PROMPT_BREAK="\[\e[1;91m\]$_PROMPT_BLOCK\[\e[1;93m\]$_PROMPT_BLOCK\[\e[1;92m\]$
 ##########################################################
 # History
 ##########################################################
-export HISTSIZE=5000
-export HISTFILESIZE=10000
+export HISTSIZE=80000
+export HISTFILESIZE=80000
 export HISTTIMEFORMAT="[%F %T] "
-# Force prompt to write history after every command.
-# http://superuser.com/questions/20900/bash-history-loss
-PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+export HISTCONTROL=ignoreboth  # avoid duplicate entries and commands starting with space
+shopt -s histappend  # append instead of overwrite history file
+shopt -s cmdhist  # save multi-line commands as one entry
+
+# command to ignore in the list
+ignored_history=(
+  "ls"
+  "ll"
+  "l"
+  "cd"
+  "cd *"
+  ".."
+  "cd ."
+  "cd ..*"
+  "pwd"
+  "exit"
+  "clear"
+  "br"
+  "history"
+  "git add*"
+  "git commit*"
+  "git amend*"
+  "git push*"
+  "git pull*"
+  "git stash*"
+  "git checkout*"
+  "git status"
+  "git diff"
+  "git log"
+  "git fetch*"
+)
+export HISTIGNORE=$(IFS=":"; echo "${ignored_history[*]}")
+unset ignored_history
+
+# track visited directories
+SYLE_PATHS_FILE=~/.bash_syle_paths
+SYLE_PATHS_MAX=100
+
+__track_pwd() {
+  local current="$(pwd)"
+  local tmp="/tmp/.bash_syle_paths_tmp"
+  echo "$current" | cat - "$SYLE_PATHS_FILE" 2>/dev/null | awk '!seen[$0]++' | head -n "$SYLE_PATHS_MAX" > "$tmp"
+  mv "$tmp" "$SYLE_PATHS_FILE"
+}
+
+golast() {
+  local dir
+  dir=$(head -1 "$SYLE_PATHS_FILE" 2>/dev/null)
+  if [ -n "$dir" ] && [ -d "$dir" ]; then
+    cd "$dir"
+  else
+    echo "golast: no valid path found"
+  fi
+}
+
+# write + reload history after every command (share history across terminals)
+# Before every prompt — meaning after every command you run and right before bash shows >>> again.
+# Example flow:
+# 1. You type ls and hit Enter
+# 2. ls runs
+# 3. Bash runs everything in PROMPT_COMMAND
+# 4. Bash displays your prompt (>>>)
+# 5. You type next command...
+PROMPT_COMMAND="__track_pwd; history -a; history -c; history -r;${PROMPT_COMMAND}"
 
 
 ##########################################################
