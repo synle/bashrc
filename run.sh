@@ -26,7 +26,7 @@
 #     bar.sh
 #   """
 #   bash run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
-#   bash run.sh --force-refresh                    # Force remove and reinstall nvm
+#   bash run.sh --force-refresh                    # Force remove and reinstall fnm
 #   bash run.sh -f                                 # Shorthand for --force-refresh
 #   bash run.sh --lightweight                      # Export LIGHT_WEIGHT_MODE=1 for lightweight installs
 #   bash run.sh --debug                            # Enable debug mode (set -x for verbose output)
@@ -53,7 +53,7 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/$REPO_P
 
 # environment toolings
 export NODE_JS_VERSION="24"
-export NVM_DIR="$HOME/.nvm"
+export FNM_DIR="$HOME/.fnm"
 
 
 # OS detection upfront
@@ -293,36 +293,36 @@ fi
 
 
 ####################################################################
-# script: Install nvm and Node (skip on Android Termux)
+# script: Install fnm and Node (skip on Android Termux)
 ####################################################################
-# Force refresh: remove existing nvm node and reinstall
-if [ "$TEST_FORCE_REFRESH" = true ] && [ -s "$NVM_DIR/nvm.sh" ]; then
-  . "$NVM_DIR/nvm.sh"
-  nvm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
+# Force refresh: remove existing fnm node and reinstall
+if [ "$TEST_FORCE_REFRESH" = true ] && command -v fnm >/dev/null 2>&1; then
+  fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
 fi
 if [ "$is_os_android_termux" != "1" ]; then
-  echo ">> Installing nvm (for nodejs)"
-  if [ ! -s "$NVM_DIR/nvm.sh" ]; then
-    echo "  >> Downloading nvm"
-    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash >/dev/null 2>&1
+  echo ">> Installing fnm (for nodejs)"
+  if ! command -v fnm >/dev/null 2>&1; then
+    echo "  >> Downloading fnm"
+    curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell >/dev/null 2>&1
   fi
 
-  # Source nvm
-  . "$NVM_DIR/nvm.sh"
+  # Source fnm
+  export PATH="$FNM_DIR:$PATH"
+  eval "$(fnm env)"
 
   # Install Node if missing
-  if ! nvm ls "$NODE_JS_VERSION" >/dev/null 2>&1; then
-    nvm install "$NODE_JS_VERSION" >/dev/null 2>&1
+  if ! fnm ls "$NODE_JS_VERSION" >/dev/null 2>&1; then
+    fnm install "$NODE_JS_VERSION" >/dev/null 2>&1
   else
     echo "Node $NODE_JS_VERSION already installed — skip"
   fi
 
   # Set + use default quietly
-  nvm alias default "$NODE_JS_VERSION" >/dev/null 2>&1
-  nvm use "$NODE_JS_VERSION" >/dev/null 2>&1
+  fnm default "$NODE_JS_VERSION" >/dev/null 2>&1
+  fnm use "$NODE_JS_VERSION" >/dev/null 2>&1
 
   # Export resolved node path for downstream scripts
-  export NVM_DEFAULT_NODE_PATH="$NVM_DIR/versions/node/$(node -v 2>/dev/null)"
+  export FNM_DEFAULT_NODE_PATH="$FNM_DIR/node-versions/$(node -v 2>/dev/null)/installation"
 fi
 
 ####################################################################
@@ -350,5 +350,12 @@ echo "
 >> run.sh done at $(date '+%Y-%m-%d %H:%M:%S')
 =======================================================
 "
+
+# Final touch: make current user owner of ~/.local
+[ -d "${HOME}/.local" ] && sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
+
+# Resource .bashrc
+[ -f "${HOME}/.bashrc" ] && . "${HOME}/.bashrc"
+
 exit
 }

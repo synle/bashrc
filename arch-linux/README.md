@@ -25,12 +25,12 @@ sudo pacman -Syu fzf
 sudo pacman -Syu bat
 ```
 
-### Install Node.js via NVM
+### Install Node.js via fnm
 
 ```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
-DEFAULT_NVM_NODE_VERSION=21
-nvm install $DEFAULT_NVM_NODE_VERSION
+curl -fsSL https://fnm.vercel.app/install | bash
+DEFAULT_FNM_NODE_VERSION=24
+fnm install $DEFAULT_FNM_NODE_VERSION
 
 npm install --global yarn
 ```

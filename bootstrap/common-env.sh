@@ -11,7 +11,7 @@ export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/$REPO_P
 
 # environment toolings
 export NODE_JS_VERSION="24"
-export NVM_DIR="$HOME/.nvm"
+export FNM_DIR="$HOME/.fnm"
 
 
 # OS detection upfront
