@@ -880,6 +880,71 @@ function registerWithBashSyleAutocomplete(configKey, content) {
 }
 
 /**
+ * Downloads a complete-spec file and registers a generic spec-based bash autocomplete for a command.
+ * Spec format: each line is "command subcommand|opt1,opt2,--flag1,--flag2"
+ * The spec file is saved to ~/.bash_syle_complete-spec-<command> and read at completion time.
+ * @param {string} command - The command name (e.g. "docker")
+ * @param {string} specUrl - URL or local path to the complete-spec file
+ */
+async function registerSpecAutocomplete(command, specUrl) {
+  const specFileName = `.bash_syle_complete-spec-${command}`;
+  const specPath = path.join(BASE_HOMEDIR_LINUX, specFileName);
+
+  // download and save the spec file
+  const specContent = await fetchUrlAsString(specUrl);
+  console.log(`    >> Writing complete-spec for ${command}`, consoleLogColor4(specPath));
+  writeText(specPath, specContent);
+
+  // register a pure-bash completer that reads from the spec file
+  registerWithBashSyleAutocomplete(
+    `${command} Autocomplete`,
+    trimLeftSpaces(`
+      # ${command} (spec-based autocomplete)
+      __spec_complete_${command}()
+      {
+        local input="\${COMP_WORDS[*]}"
+        local cur="\${COMP_WORDS[COMP_CWORD]}"
+        local spec_file="${specPath}"
+        local opts=""
+
+        if [ -f "\$spec_file" ]; then
+          while IFS='|' read -r cmd flags; do
+            if [ -z "\$cmd" ] || [ -z "\$flags" ]; then continue; fi
+            case "\$input" in
+              "\$cmd"*)
+                opts="\$(echo "\$flags" | tr ',' ' ')"
+                break
+                ;;
+            esac
+          done < "\$spec_file"
+        fi
+
+        COMPREPLY=(\$(compgen -W "\$opts" -- "\$cur"))
+      }
+      complete -F __spec_complete_${command} ${command}
+    `),
+  );
+}
+
+/**
+ * Safely writes content to a file with backup validation.
+ * Throws if new content is empty or less than 10% of the existing backup content size.
+ * @param {string} targetPath - The file path to write to
+ * @param {string} newContent - The new content to write
+ * @param {string} [backupContent] - Optional existing content to validate against
+ * @param {number} [minRatio=0.1] - Minimum ratio of new content size to backup size (0-1)
+ */
+function safeWriteText(targetPath, newContent, backupContent, minRatio = 0.1) {
+  if (!newContent || newContent.trim().length === 0) {
+    throw new Error(`generated content is empty, keeping backup: ${targetPath}`);
+  } else if (backupContent && newContent.length < backupContent.length * minRatio) {
+    throw new Error(`generated content is <${Math.round(minRatio * 100)}% of backup size, keeping backup: ${targetPath}`);
+  } else {
+    writeText(targetPath, newContent);
+  }
+}
+
+/**
  * Registers a platform-specific tweaks file with BASE_BASH_SYLE and writes the tweaks content.
  * @param {string} platformName - Display name (e.g. "Only Mac")
  * @param {string} fileName - The dotfile name (e.g. ".bash_syle_only_mac")
@@ -945,18 +1010,27 @@ function cleanupExtraWhitespaces(text) {
 }
 
 /**
- * Converts one or more multiline text strings into a deduplicated array of non-empty, non-comment lines.
- * Filters out lines starting with //, #, or *.
- * @param {...string} texts - One or more text strings to process
- * @returns {string[]} Unique, trimmed, non-empty lines that are not comments
+ * Splits text into unique, trimmed lines, filtering out empty lines and comment lines (// # *).
+ * @param {...string} texts - One or more text strings to split
+ * @returns {string[]} Array of unique, non-empty, non-comment lines
  */
 function convertTextToList(...texts) {
+  return convertRawTextToList(texts)
+    .filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
+}
+
+
+/**
+ * Splits text into unique, trimmed lines (including empty and comment lines).
+ * @param {...string} texts - One or more text strings to split
+ * @returns {string[]} Array of unique, trimmed lines
+ */
+function convertRawTextToList(...texts) {
   const text = [...texts].join("\n");
 
   const items = text
     .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
+    .map((s) => s.trim());
 
   return [...new Set(items)]; // only return unique items
 }
@@ -1040,7 +1114,7 @@ function getRootDomainFrom(url) {
  * @returns {Promise<string>} Resolves with the stdout of the mkdir command
  */
 function mkdir(targetPath) {
-  return execBashSilent(`mkdir -p "${targetPath}"`);
+  return execBash(`mkdir -p "${targetPath}"`);
 }
 
 //////////////////////////////////////////////////////
@@ -1201,7 +1275,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   // fallback mode: try local find first, fall back to API if files is empty
   if (useFallback === true) {
     try {
-      files = (await execBash("find .")).split("\n");
+      files = (await execBash("find .", true)).split("\n");
     } catch (_) {}
 
     if (!files || files.length === 0) {
@@ -1212,7 +1286,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   }
   if (useLocalFiles === true || isTestScriptMode === true) {
     // fetch from exec bash
-    files = (await execBash("find .")).split("\n");
+    files = (await execBash("find .", true)).split("\n");
   } else {
     // fetch from APIS
     files = await listRepoDir();
@@ -1405,7 +1479,7 @@ async function fetchUrlAsString(url) {
  * @returns {Promise<string>} Resolves with the stdout of the git clone command
  */
 function gitClone(repo, destinationDir) {
-  return execBashSilent(`git clone --depth 1 -b master "${repo}" "${destinationDir}" &>/dev/null`);
+  return execBash(`git clone --depth 1 -b master "${repo}" "${destinationDir}" &>/dev/null`);
 }
 
 /**
@@ -1422,13 +1496,21 @@ async function fetchUrlAsJson(url) {
 // Bash Execution
 //////////////////////////////////////////////////////
 /**
- * Executes a bash command synchronously and returns the output as a string.
- * Uses a 50MB max buffer for large outputs.
+ * Executes a bash command and returns the output as a string.
  * @param {string} cmd - The shell command to execute
- * @param {object} [options] - Optional execSync options (cwd, env, etc.)
+ * @param {boolean} [returnOutput=false] - If true, use execSync and return output. If false, use async exec and swallow errors.
+ * @param {object} [options] - Optional exec options (cwd, env, etc.)
  * @returns {Promise<string>} Resolves with the command's stdout
  */
-function execBash(cmd, options) {
+async function execBash(cmd, returnOutput = false, options) {
+  if (!returnOutput) {
+    return new Promise((resolve) => {
+      const { exec } = require("child_process");
+      exec(cmd, options || {}, (error, stdout, stderr) => {
+        resolve(stdout);
+      });
+    });
+  }
   return new Promise((resolve) => {
     const { execSync } = require("child_process");
     const stdout = execSync(cmd, {
@@ -1441,22 +1523,6 @@ function execBash(cmd, options) {
 }
 
 /**
- * Executes a bash command asynchronously, silently swallowing errors.
- * @param {string} cmd - The shell command to execute
- * @param {object} [options] - Optional exec options (cwd, env, etc.)
- * @returns {Promise<string>} Resolves with the command's stdout (empty string on error)
- */
-function execBashSilent(cmd, options) {
-  return new Promise((resolve) => {
-    const { exec } = require("child_process");
-    options = options || {};
-    exec(cmd, options || {}, (error, stdout, stderr) => {
-      resolve(stdout);
-    });
-  });
-}
-
-/**
  * Deletes a directory or file at the given path using rm -rf.
  * @param {string} targetPath - The path to delete
  * @param {boolean} [recursive=true] - Whether to delete recursively (adds -r flag)
@@ -1465,7 +1531,7 @@ function execBashSilent(cmd, options) {
 function deleteFolder(targetPath, recursive = true) {
   console.log(`  >> Deleting ${targetPath}`);
   const flags = recursive ? "-rf" : "-f";
-  return execBashSilent(`rm ${flags} "${targetPath}"`);
+  return execBash(`rm ${flags} "${targetPath}"`);
 }
 
 //////////////////////////////////////////////////////

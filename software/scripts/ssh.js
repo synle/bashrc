@@ -34,7 +34,7 @@ async function doWork() {
 
   await mkdir(baseSshPath);
 
-  await execBashSilent(`touch "${targetPath}" && chmod 611 "${targetPath}"`);
+  await execBash(`touch "${targetPath}" && chmod 611 "${targetPath}"`);
 
   console.log("    >> Updating SSH Client Config", consoleLogColor4(targetPath));
 

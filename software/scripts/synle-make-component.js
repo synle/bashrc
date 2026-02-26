@@ -10,11 +10,11 @@ async function doWork() {
 
   await deleteFolder(targetPath);
 
-  await execBashSilent(`
+  await execBash(`
     git clone --depth 1 -b master https://github.com/synle/make-component.git "${targetPath}"
   `);
 
-  await execBashSilent(`npm i && npm run build`, {
+  await execBash(`npm i && npm run build`, false, {
     cwd: targetPath,
   });
 

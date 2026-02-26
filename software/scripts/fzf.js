@@ -8,11 +8,11 @@ async function doWork() {
 
   // clone it
   await deleteFolder(targetPath);
-  await execBashSilent(`
+  await execBash(`
     git clone https://github.com/junegunn/fzf.git ${targetPath} &>/dev/null;
     `);
 
-  await execBashSilent(`
+  await execBash(`
     ${targetPath}/install --no-key-bindings --no-completion --no-update-rc &>/dev/null;
   `);
 
