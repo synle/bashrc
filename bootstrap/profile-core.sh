@@ -147,6 +147,8 @@ ignored_commands=(
   "*/clean-staging"
   "*/CleanPCCSP.dll"
   "*/cleanmgr.exe"
+  "*/clear_console"
+  "*/clear"
 )
 ignored_files=(
   ".rej"
