@@ -106,7 +106,9 @@ textarea {
 
 button,
 input[type="submit"],
-a[role="button"] {
+a[role="button"],
+.dropdown .dropdown-trigger,
+input {
   padding: var(--spaceSize1) var(--spaceSize2);
 }
 
@@ -283,7 +285,6 @@ a[role="button"] {
 
   a {
     display: block;
-    padding: var(--spaceSize2);
     border: var(--borderSize1) solid var(--colorBorderSecondary);
     border-radius: 6px;
     background: var(--colorBgSecondary);
