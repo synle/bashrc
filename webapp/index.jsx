@@ -226,33 +226,32 @@ function ScriptNameInputSection() {
 
   return (
     <>
-      <div className="form-label">
-        Scripts To Run
-        {formValue.scriptsToUse.map((scriptToUse, idx) => (
-          <input
-            key={idx}
-            style={{ width: "100%", marginTop: "1rem", padding: "0.5rem 0.75rem" }}
-            list="scriptToRunOptions"
-            type="text"
-            placeholder="Script To Run"
-            autoFocus
-            required
-            onBlur={(e) => {
-              e.target.value = e.target.value.trim();
-              onChangeTestScript(idx, e.target.value);
-            }}
-            defaultValue={scriptToUse}
-          />
-        ))}
-      </div>
-
       <div className="form-row">
-        <button onClick={onAddTestScript} type="button">
-          Add Script
-        </button>
-        <button onClick={onClearTestScripts} type="button">
-          Clear All
-        </button>
+        <div className="form-label">Scripts To Run</div>
+        <div className="form-input">
+          {formValue.scriptsToUse.map((scriptToUse, idx) => (
+            <input
+              key={idx}
+              style={{ width: "100%" }}
+              list="scriptToRunOptions"
+              type="text"
+              placeholder="Script To Run"
+              autoFocus
+              required
+              onBlur={(e) => {
+                e.target.value = e.target.value.trim();
+                onChangeTestScript(idx, e.target.value);
+              }}
+              defaultValue={scriptToUse}
+            />
+          ))}
+          <button onClick={onAddTestScript} type="button">
+            Add Script
+          </button>
+          <button onClick={onClearTestScripts} type="button">
+            Clear All
+          </button>
+        </div>
       </div>
       <datalist id="scriptToRunOptions">
         {appData.scriptToRunOptions.map((option, index) => (
@@ -260,50 +259,61 @@ function ScriptNameInputSection() {
         ))}
       </datalist>
 
-      <div className="form-label">
-        Runner
-        <div className="form-row">
-          <input
-            type="radio"
-            name="runnerToUse"
-            id="runnerToUse-live"
-            value="prod"
-            onChange={(e) => {
-              onInputChange(e.target.name, e.target.value);
-            }}
-            checked={formValue.runnerToUse === "prod"}
-          />
-          <label htmlFor="runnerToUse-live">Live Script</label>
-          <input
-            type="radio"
-            name="runnerToUse"
-            id="runnerToUse-local"
-            value="local"
-            onChange={(e) => {
-              onInputChange(e.target.name, e.target.value);
-            }}
-            checked={formValue.runnerToUse !== "prod"}
-          />
-          <label htmlFor="runnerToUse-local">Local Script</label>
+      <div className="form-row">
+        <div className="form-label">Runner</div>
+        <div className="form-input">
+          <div className="nav-radio-group">
+            <button
+              className={formValue.runnerToUse === "prod" ? "selected" : ""}
+              onClick={() => onInputChange("runnerToUse", "prod")}
+            >
+              Live Script
+            </button>
+            <button
+              className={formValue.runnerToUse !== "prod" ? "selected" : ""}
+              onClick={() => onInputChange("runnerToUse", "local")}
+            >
+              Local Script
+            </button>
+          </div>
         </div>
       </div>
-      <div className="form-label">
-        Debug Write To File
-        <div className="form-row">
-          <input
-            id="debugWriteToDir"
-            name="debugWriteToDir"
-            list="writeToFilePathOptions"
-            type="text"
-            onBlur={(e) => onInputChange(e.target.name, e.target.value.trim())}
-            placeholder="Debug Write To File Path"
-            defaultValue={formValue.debugWriteToDir}
-          />
-          <datalist id="writeToFilePathOptions">
-            <option>$(pwd)</option>
-            <option>./</option>
-            <option>~</option>
-          </datalist>
+
+      <div className="form-row">
+        <div className="form-label">Debug Write To File</div>
+        <div className="form-input">
+          <div className="nav-radio-group">
+            <button
+              className={formValue.debugWriteToDir ? "selected" : ""}
+              onClick={() => { if (!formValue.debugWriteToDir) onInputChange("debugWriteToDir", "$(pwd)"); }}
+            >
+              Yes
+            </button>
+            <button
+              className={!formValue.debugWriteToDir ? "selected" : ""}
+              onClick={() => onInputChange("debugWriteToDir", "")}
+            >
+              No
+            </button>
+          </div>
+          {formValue.debugWriteToDir && (
+            <>
+              <input
+                id="debugWriteToDir"
+                name="debugWriteToDir"
+                list="writeToFilePathOptions"
+                type="text"
+                onBlur={(e) => onInputChange(e.target.name, e.target.value.trim())}
+                placeholder="Debug Write To File Path"
+                defaultValue={formValue.debugWriteToDir}
+              />
+              <datalist id="writeToFilePathOptions">
+                <option>$(pwd)</option>
+                <option>./</option>
+                <option>~</option>
+              </datalist>
+            </>
+          )}
         </div>
       </div>
     </>
@@ -323,9 +333,9 @@ function OsSelectionInputSection() {
 
   return (
     <>
-      <div className="form-label">
-        OS Type
-        <div className="form-row">
+      <div className="form-row">
+        <div className="form-label">OS Type</div>
+        <div className="form-input">
           <select
             id="osToRun"
             name="osToRun"
@@ -361,33 +371,25 @@ function SetupDependenciesSection() {
   const formValue = useContext(MainAppContext).appData.formValue;
 
   return (
-    <>
+    <div className="form-row">
       <div className="form-label">Setup Dependencies</div>
-      <div className="form-row">
-        <input
-          type="radio"
-          name="setupDependencies"
-          id="setupDependencies-yes"
-          value="yes"
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.value);
-          }}
-          checked={formValue.setupDependencies === "yes"}
-        />
-        <label htmlFor="setupDependencies-yes">Yes</label>
-        <input
-          type="radio"
-          name="setupDependencies"
-          id="setupDependencies-no"
-          value="no"
-          onChange={(e) => {
-            onInputChange(e.target.name, e.target.value);
-          }}
-          checked={formValue.setupDependencies !== "yes"}
-        />
-        <label htmlFor="setupDependencies-no">No</label>
+      <div className="form-input">
+        <div className="nav-radio-group">
+          <button
+            className={formValue.setupDependencies === "yes" ? "selected" : ""}
+            onClick={() => onInputChange("setupDependencies", "yes")}
+          >
+            Yes
+          </button>
+          <button
+            className={formValue.setupDependencies !== "yes" ? "selected" : ""}
+            onClick={() => onInputChange("setupDependencies", "no")}
+          >
+            No
+          </button>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -402,35 +404,25 @@ function BootstrapSection() {
   const formValue = useContext(MainAppContext).appData.formValue;
 
   return (
-    <>
-      <div className="form-label">
-        Add Bootstrap Script
-        <div className="form-row">
-          <input
-            type="radio"
-            name="addBootstrapScript"
-            id="addBootstrapScript-yes"
-            value="yes"
-            onChange={(e) => {
-              onInputChange(e.target.name, e.target.value);
-            }}
-            checked={formValue.addBootstrapScript === "yes"}
-          />
-          <label htmlFor="addBootstrapScript-yes">Yes</label>
-          <input
-            type="radio"
-            name="addBootstrapScript"
-            id="addBootstrapScript-no"
-            value="no"
-            onChange={(e) => {
-              onInputChange(e.target.name, e.target.value);
-            }}
-            checked={formValue.addBootstrapScript !== "yes"}
-          />
-          <label htmlFor="addBootstrapScript-no">No</label>
+    <div className="form-row">
+      <div className="form-label">Add Bootstrap Script</div>
+      <div className="form-input">
+        <div className="nav-radio-group">
+          <button
+            className={formValue.addBootstrapScript === "yes" ? "selected" : ""}
+            onClick={() => onInputChange("addBootstrapScript", "yes")}
+          >
+            Yes
+          </button>
+          <button
+            className={formValue.addBootstrapScript !== "yes" ? "selected" : ""}
+            onClick={() => onInputChange("addBootstrapScript", "no")}
+          >
+            No
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -461,19 +453,23 @@ function EnvInputSection() {
         }}
         defaultValue={consolidatedEnvInputValue}
       />
-      <div className="form-label">
-        Add Default Env
-        <div className="form-row">
-          <input
-            type="checkbox"
-            id="shouldAddDefaultEnvs"
-            name="shouldAddDefaultEnvs"
-            checked={formValue.shouldAddDefaultEnvs === "yes"}
-            onChange={(e) => {
-              onInputChange(e.target.name, e.target.checked ? "yes" : "no");
-              location.reload(); // TODO: improve this - used to trigger the updates of env variable
-            }}
-          />
+      <div className="form-row">
+        <div className="form-label">Add Default Env</div>
+        <div className="form-input">
+          <div className="nav-radio-group">
+            <button
+              className={formValue.shouldAddDefaultEnvs === "yes" ? "selected" : ""}
+              onClick={() => { onInputChange("shouldAddDefaultEnvs", "yes"); location.reload(); }}
+            >
+              Yes
+            </button>
+            <button
+              className={formValue.shouldAddDefaultEnvs !== "yes" ? "selected" : ""}
+              onClick={() => { onInputChange("shouldAddDefaultEnvs", "no"); location.reload(); }}
+            >
+              No
+            </button>
+          </div>
         </div>
       </div>
     </>
@@ -567,10 +563,9 @@ function MainBodyContainer() {
     <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
       <div id="mainBodyContainer">
         <div className="editor-collapse-controls">
-          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: true, tick: prev.tick + 1 }))}>
-            Collapse All
+          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: !prev.collapseAll, tick: prev.tick + 1 }))}>
+            {collapseSignal.collapseAll ? "▶" : "▼"}
           </ActionButton>
-          <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: false, tick: prev.tick + 1 }))}>Expand All</ActionButton>
         </div>
         {selectedConfig.renderBody()}
       </div>
@@ -1187,7 +1182,7 @@ function EnhancedTextArea(props) {
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
         <FullScreenTextViewer value={content} label={label} />
-        <ActionButton onClick={() => setCollapsed(!collapsed)}>{collapsed ? "Expand" : "Collapse"}</ActionButton>
+        <ActionButton onClick={() => setCollapsed(!collapsed)}>{collapsed ? "▶" : "▼"}</ActionButton>
       </div>
       {error ? (
         <div className="text-error">Content Error: {content}</div>
@@ -1714,6 +1709,45 @@ function App() {
           <MainBodyContainer />
           <BottomContainer />
         </div>
+        <div className="fixed-nav-buttons fixed-nav-left">
+          <button
+            onClick={() => {
+              const sections = [...document.querySelectorAll(".editor-section")];
+              const scrollY = window.scrollY;
+              for (let i = sections.length - 1; i >= 0; i--) {
+                const top = sections[i].getBoundingClientRect().top + scrollY;
+                if (top < scrollY - 5) {
+                  sections[i].scrollIntoView({ behavior: "smooth" });
+                  return;
+                }
+              }
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          >
+            ▲ Prev
+          </button>
+          <button
+            onClick={() => {
+              const sections = [...document.querySelectorAll(".editor-section")];
+              const scrollY = window.scrollY;
+              for (let i = 0; i < sections.length; i++) {
+                const top = sections[i].getBoundingClientRect().top + scrollY;
+                if (top > scrollY + 5) {
+                  sections[i].scrollIntoView({ behavior: "smooth" });
+                  return;
+                }
+              }
+            }}
+          >
+            ▼ Next
+          </button>
+        </div>
+        <button
+          className="fixed-nav-buttons fixed-nav-right"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          Top
+        </button>
       </MainAppContext.Provider>
     </ThemeContext.Provider>
   );
