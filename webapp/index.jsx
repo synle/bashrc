@@ -79,111 +79,6 @@ async function copyTextToClipboard(text) {
  * @param {string} [envSepToReturn] - The separator to join the resulting paths. Defaults to ';' for Windows/generic or ':' for Mac.
  * @returns {string} The deduplicated, sorted, and joined environment variable paths.
  */
-function getEnvVars(env, osFlag, shouldUseDefaultEnvs, envSepToReturn) {
-  let pathSep = "/";
-  let defaultEnv = "";
-  let envSep = /[\n;\:]/g;
-
-  switch (osFlag) {
-    case "windows":
-      envSep = /[\n;]/g;
-
-      if (!envSepToReturn) {
-        envSepToReturn = ";";
-      }
-
-      pathSep = "\\";
-
-      defaultEnv = `
-        %SystemRoot%
-        %SystemRoot%/System32
-        %SystemRoot%/System32/OpenSSH
-        %SystemRoot%/System32/Wbem
-        %SystemRoot%/System32/WindowsPowerShell/v1.0
-        %UserProfile%/AppData/Local/Microsoft/WindowsApps
-        %LocalAppData%/Microsoft/WindowsApps
-      `;
-
-      if (shouldUseDefaultEnvs) {
-        defaultEnv += `
-          #### JDK
-          %JAVA_HOME%/bin
-
-          #### NVIDIA
-          %ProgramFiles% (x86)/NVIDIA Corporation/PhysX/Common
-
-          #### VS Code
-          %ProgramFiles%/Microsoft VS Code
-          %ProgramFiles%/Microsoft VS Code/bin
-
-          #### Sublime
-          %ProgramFiles%/Sublime Text
-        `;
-      }
-      break;
-    case "mac":
-      if (!envSepToReturn) {
-        envSepToReturn = ":";
-      }
-
-      defaultEnv = `
-        /usr/local/bin
-        /usr/bin
-        /bin
-        /usr/sbin
-        /sbin
-      `;
-
-      if (shouldUseDefaultEnvs) {
-        defaultEnv += `
-          #### VS Code
-          /Applications/Visual Studio Code.app/Contents/Resources/app/bin
-        `;
-      }
-      break;
-    default:
-      if (!envSepToReturn) {
-        envSepToReturn = ";";
-      }
-      break;
-  }
-
-  // convert the env var into arrays
-  defaultEnv = defaultEnv.split(envSep);
-
-  const newEnv = [...env.split(envSep), ...defaultEnv]
-    .map((s) => s.trim())
-    .filter((s) => s && !s.includes("#"))
-    .filter((s) => s.includes("\\") || s.includes("/") || (osFlag === "windows" && s.includes("%")))
-    .map((s) => {
-      s = s
-        .replace(/[/\\]/g, pathSep)
-        .replace(/C:\\Windows/i, "%SystemRoot%")
-        .replace(/C:\\Program Files (x86)/i, "%ProgramFiles% (x86)")
-        .replace(/C:\\Program Files/i, "%ProgramFiles%")
-        .replace(/C:\\Users\\[a-z0-9]+\\AppData\\Local/i, "%LocalAppData%")
-        .replace(/C:\\Users\\[a-z0-9]+/i, "%UserProfile%")
-        .replace(/%LocalAppData%/i, "%LocalAppData%")
-        .replace(/%ProgramFiles%/i, "%ProgramFiles%")
-        .replace(/%SystemRoot%/i, "%SystemRoot%")
-        .replace(/%SystemRoot%\\System32/i, "%SystemRoot%\\System32")
-        .replace(/%UserProfile%/i, "%UserProfile%");
-
-      s = s.replace(/[\\/]+$/, pathSep);
-
-      const lastChar = s[s.length - 1];
-      if (lastChar !== "/" && lastChar !== "\\") {
-        s += pathSep;
-      }
-
-      return s;
-    })
-    .sort();
-
-  const envItems = [...new Set(newEnv)];
-
-  return envItems.join(envSepToReturn);
-}
 
 // create contexts
 const MainAppContext = React.createContext();
@@ -379,55 +274,6 @@ function SetupDependenciesSection() {
  * Consumes MainAppContext for form state and input change handling.
  * @returns {React.ReactElement} The environment variable paths input section.
  */
-function EnvInputSection() {
-  const { onInputChange } = useContext(MainAppContext);
-  const formValue = useContext(MainAppContext).appData.formValue;
-
-  let consolidatedEnvInputValue = formValue.envInputValue;
-  if (formValue.shouldAddDefaultEnvs === "yes") {
-    consolidatedEnvInputValue = getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === "yes", "\n");
-  }
-
-  return (
-    <>
-      <EnhancedTextArea
-        id="envInputValue"
-        name="envInputValue"
-        placeholder="Env Var Input"
-        onBlur={(e) => {
-          onInputChange(e.target.name, e.target.value.trim());
-        }}
-        defaultValue={consolidatedEnvInputValue}
-      />
-      <div className="form-row">
-        <div className="form-label">Add Default Env</div>
-        <div className="form-input">
-          <div className="nav-radio-group">
-            <button
-              className={formValue.shouldAddDefaultEnvs === "yes" ? "selected" : ""}
-              onClick={() => {
-                onInputChange("shouldAddDefaultEnvs", "yes");
-                location.reload();
-              }}
-            >
-              Yes
-            </button>
-            <button
-              className={formValue.shouldAddDefaultEnvs !== "yes" ? "selected" : ""}
-              onClick={() => {
-                onInputChange("shouldAddDefaultEnvs", "no");
-                location.reload();
-              }}
-            >
-              No
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
 /**
  * Renders the generated shell script output by interpolating mustache-style template
  * variables (e.g., OS flags, selected scripts, env vars) from the current form state
@@ -466,13 +312,6 @@ function ScriptOutputSection({ script }) {
       SETUP_DEPS: formValue.setupDependencies === "yes" ? (appData.setupDepsScript || "") + "\n" : "",
       SETUP_HOSTS_SCRIPT: appData.setupHostsScript || "",
       IP_ADDRESS_MAPPING_CONFIGS: appData.ipAddressMappingConfigs || "",
-      ENV_VARS: `
-${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === "yes")}
-
-===
-
-${getEnvVars(formValue.envInputValue, formValue.osToRun, formValue.shouldAddDefaultEnvs === "yes", "\n")}
-      `.trim(),
     };
 
     // Mustache-style template rendering: replaces all {{KEY}} with corresponding values
@@ -1537,16 +1376,6 @@ function App() {
               </>
             ),
           },
-          {
-            text: "Environment Vars",
-            renderBody: () => (
-              <>
-                <OsSelectionInputSection />
-                <EnvInputSection />
-                <ScriptOutputSection script={`{{ENV_VARS}}`} />
-              </>
-            ),
-          },
         ].map((config) => ({
           idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, "-")}`,
           ...config,
@@ -1569,8 +1398,6 @@ function App() {
             osToRun: getStorage("osToRun") || "windows",
             debugWriteToDir: getStorage("debugWriteToDir") || "",
             setupDependencies: getStorage("setupDependencies") || "yes",
-            envInputValue: getStorage("envInputValue") || "",
-            shouldAddDefaultEnvs: getStorage("shouldAddDefaultEnvs") || "yes",
             scriptsToUse: (getStorage("scriptsToUse") || "").split("\n").filter((s) => s.trim()),
           },
         };

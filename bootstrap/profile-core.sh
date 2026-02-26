@@ -3,8 +3,42 @@
 export EDITOR='vim'
 export BASH_PATH=~/.bashrc
 
-# add sbin to path
-export PATH=$PATH:/sbin
+# add known paths to PATH if they exist
+path_candidates=(
+  # common (linux / mac / wsl)
+  /bin                                  # core system binaries
+  /sbin                                 # core system admin binaries
+  /usr/bin                              # standard unix binaries
+  /usr/sbin                             # standard unix admin binaries
+  /usr/local/bin                        # user-installed binaries
+  /usr/local/sbin                       # local admin binaries
+  ~/.cargo/bin                          # rust / cargo
+  ~/.fzf/bin                            # fzf fuzzy finder
+  ~/.local/bin                          # pip / user-local binaries
+  ~/.volta/bin                          # volta node version manager
+  ~/miniconda3/bin                      # miniconda python
+  ~/miniconda3/condabin                 # conda command
+  # mac
+  /opt/homebrew/bin                     # homebrew (apple silicon)
+  /opt/homebrew/sbin                    # homebrew admin (apple silicon)
+  /usr/local/Homebrew/bin               # homebrew (intel mac)
+  # wsl / linux
+  /snap/bin                             # snap packages
+  /usr/games                            # linux game binaries
+  /usr/local/games                      # local game binaries
+  /usr/lib/wsl/lib                      # wsl gpu / system libs
+)
+
+# append each path if the directory exists
+for p in "${path_candidates[@]}"; do
+  expanded="${p/#\~/$HOME}"
+  if [ -d "$expanded" ]; then
+    export PATH="$PATH:$expanded"
+  fi
+done
+
+# dedupe PATH while preserving order
+export PATH="$(echo "$PATH" | tr ':' '\n' | awk '!seen[$0]++' | tr '\n' ':' | sed 's/:$//')"
 
 ##########################################################
 # Shared prompt/br style
@@ -267,6 +301,12 @@ commit_empty_trigger_deploy() {
   git checkout -b "$temp_branch_name" >/dev/null 2>&1
   git commit --allow-empty -m "Trigger deployment - EMPTY PR" >/dev/null 2>&1
   git push -u origin "$temp_branch_name" >/dev/null 2>&1
+}
+
+# Go to git home $MY_GIT_HOME
+function gogit(){
+  local git_home="${MY_GIT_HOME:-~/git}"
+  cd "$git_home" 2>/dev/null || echo "gogit: $git_home is not present"
 }
 
 ##########################################################
