@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # bootstrap/dependencies-arch-linux-steam-deck.sh
 # Arch Linux / Steam Deck dependencies - pacman packages, boot video
 
@@ -11,10 +10,7 @@ installPackage() {
 }
 
 if [ "$is_os_steamdeck" = "1" ]; then
-
-  ##########################################################
-  # Arch Linux / Steam Deck Dependencies
-  ##########################################################
+  echo ">> Begin setting up dependencies-arch-linux-steam-deck.sh"
 
   # Steam Deck file system is immutable and will be removed after each update.
   # This command opens it up for write.
@@ -44,4 +40,6 @@ if [ "$is_os_steamdeck" = "1" ]; then
   echo '>> Create the folder for boot video'
   mkdir -p ~/.steam/root/config/uioverrides/movies/
 
+else
+  echo ">> Skipped dependencies-arch-linux-steam-deck.sh"
 fi

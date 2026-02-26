@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # bootstrap/dependencies-ubuntu.sh
 # Ubuntu / Debian dependencies - apt-get packages and user permissions
 
@@ -8,10 +7,8 @@ installPackage() {
 }
 
 if [ "$is_os_ubuntu" = "1" ]; then
+  echo ">> Begin setting up dependencies-ubuntu.sh"
 
-  ##########################################################
-  # Update Packages
-  ##########################################################
   echo '>> update packages'
   sudo apt-get update -y &> /dev/null
 
@@ -52,4 +49,6 @@ if [ "$is_os_ubuntu" = "1" ]; then
   sudo usermod -aG input ${USER}
   sudo usermod -aG video ${USER}
 
+else
+  echo ">> Skipped dependencies-ubuntu.sh"
 fi

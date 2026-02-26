@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # bootstrap/dependencies-mac.sh
 # macOS dependencies - Homebrew packages, system preferences, shell setup
 
@@ -9,10 +8,8 @@ installPackage() {
 }
 
 if [ "$is_os_darwin_mac" = "1" ]; then
+  echo ">> Begin setting up dependencies-mac.sh"
 
-  ##########################################################
-  # macOS UI & System Optimization
-  ##########################################################
   echo ">> Mac UI & System Optimization..."
 
   # --- Window Animations ---
@@ -174,4 +171,6 @@ EOF
   echo '>> Disable spotlight indexing'
   sudo mdutil -i off
 
+else
+  echo ">> Skipped dependencies-mac.sh"
 fi

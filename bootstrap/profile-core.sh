@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # bootstrap/profile-core.sh
 export EDITOR='vim'
 export BASH_PATH=~/.bashrc

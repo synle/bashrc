@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
 # bootstrap/dependencies-windows.sh
 # Windows (WSL) dependencies - drive symlinks, folder setup, WSL2 config
 
 if [ "$is_os_window" = "1" ]; then
+  echo ">> Begin setting up dependencies-windows.sh"
 
-  ##########################################################
-  # Windows Dependencies
-  ##########################################################
   WSL_DRIVES="c d e f g h"
   D_DRIVE_FOLDERS="Applications Desktop Documents Downloads Games Pictures"
 
@@ -38,4 +35,6 @@ if [ "$is_os_window" = "1" ]; then
 
   echo '  >> wsl --set-default-version 2'
 
+else
+  echo ">> Skipped dependencies-windows.sh"
 fi

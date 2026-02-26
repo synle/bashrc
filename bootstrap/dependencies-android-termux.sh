@@ -1,12 +1,9 @@
-#!/usr/bin/env bash
 # bootstrap/dependencies-android-termux.sh
 # Android Termux dependencies - packages, theme, config
 
 if [ "$is_os_android_termux" = "1" ]; then
+  echo ">> Begin setting up dependencies-android-termux.sh"
 
-  ##########################################################
-  # Android Termux Dependencies
-  ##########################################################
   touch ~/.bashrc
 
   echo '''
@@ -87,4 +84,6 @@ use-black-ui = true
   curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/fonts/FiraCode-Regular.ttf -o ~/.termux/font.ttf
   curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod  --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-autocomplete.js,bash-syle-content.js"
 
+else
+  echo ">> Skipped dependencies-android-termux.sh"
 fi

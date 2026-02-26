@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # bootstrap/profile-advanced.sh
 
 ##########################################################
