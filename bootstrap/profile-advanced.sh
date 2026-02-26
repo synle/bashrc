@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# bootstrap/profile-advanced.sh
 
 ##########################################################
 # Docker Aliases and Functions
@@ -224,3 +225,8 @@ export PS1_Advanced="\n\
 \[\e[1;36m\]\$(parse_git_branch)\[\e[m\]\n\
 >>> "
 export PS1="$PS1_Advanced"
+
+# on WSL, cd to last visited directory on shell start
+if [ "$is_os_window" = "1" ]; then
+  golast
+fi

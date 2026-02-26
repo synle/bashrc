@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# bootstrap/profile-core.sh
 export EDITOR='vim'
 export BASH_PATH=~/.bashrc
 
@@ -42,13 +43,6 @@ export PATH="$(echo "$PATH" | tr ':' '\n' | awk '!seen[$0]++' | tr '\n' ':' | se
 unset path_candidates
 
 ##########################################################
-# Shared prompt/br style
-##########################################################
-_PROMPT_BLOCK="##########"
-_PROMPT_COLORS=(91 93 92 96 94 95)
-_PROMPT_BREAK="\[\e[1;91m\]$_PROMPT_BLOCK\[\e[1;93m\]$_PROMPT_BLOCK\[\e[1;92m\]$_PROMPT_BLOCK\[\e[1;96m\]$_PROMPT_BLOCK\[\e[1;94m\]$_PROMPT_BLOCK\[\e[1;95m\]$_PROMPT_BLOCK\[\e[m\]"
-
-##########################################################
 # History
 ##########################################################
 export HISTSIZE=80000
@@ -88,23 +82,46 @@ ignored_history=(
 export HISTIGNORE=$(IFS=":"; echo "${ignored_history[*]}")
 unset ignored_history
 
-# track visited directories
-SYLE_PATHS_FILE=~/.bash_syle_paths
-SYLE_PATHS_MAX=100
+##########################################################
+# Track Visited Directories
+# Maintains a list of recently visited directories in
+# RECENT_PATHS_FILE. The list is capped at RECENT_PATHS_MAX
+# entries, most recent first, deduplicated, and auto-pruned
+# of directories that no longer exist.
+#
+# Used by:
+#   _track_pwd - runs via PROMPT_COMMAND after every command
+#   _recent_paths - reads and cleans the paths file
+#   golast - cd to the most recently visited directory
+#   fuzzy_paths (fp) - fzf picker for visited directories
+##########################################################
+RECENT_PATHS_FILE=~/.bash_syle_paths
+RECENT_PATHS_MAX=100
 
-__track_pwd() {
-  local current="$(pwd)"
-  [ "$current" = "$HOME" ] && return   # don't track home dir
+# reads the paths file, removes entries that no longer exist, and outputs the cleaned list
+_recent_paths() {
   local tmp="/tmp/.bash_syle_paths_tmp"
-  echo "$current" | cat - "$SYLE_PATHS_FILE" 2>/dev/null | awk '!seen[$0]++' | head -n "$SYLE_PATHS_MAX" > "$tmp"
-  mv "$tmp" "$SYLE_PATHS_FILE"
+  while IFS= read -r dir; do
+    [ -d "$dir" ] && echo "$dir"
+  done < "$RECENT_PATHS_FILE" 2>/dev/null > "$tmp"
+  mv "$tmp" "$RECENT_PATHS_FILE"
+  cat "$RECENT_PATHS_FILE"
 }
 
-golast() {
-  [ "$current" = "$HOME" ] && return   # don't go home dir
+# prepends the current directory to the paths file (deduped, capped at RECENT_PATHS_MAX)
+# skips home directory. runs automatically via PROMPT_COMMAND.
+_track_pwd() {
+  local current="$(pwd)"
+  [ "$current" = "$HOME" ] && return
+  local tmp="/tmp/.bash_syle_paths_tmp"
+  echo "$current" | cat - "$RECENT_PATHS_FILE" 2>/dev/null | awk '!seen[$0]++' | head -n "$RECENT_PATHS_MAX" > "$tmp"
+  mv "$tmp" "$RECENT_PATHS_FILE"
+}
 
+# cd to the most recently visited directory
+golast() {
   local dir
-  dir=$(head -1 "$SYLE_PATHS_FILE" 2>/dev/null)
+  dir=$(_recent_paths | head -1)
   if [ -n "$dir" ] && [ -d "$dir" ]; then
     cd "$dir"
   else
@@ -120,7 +137,7 @@ golast() {
 # 3. Bash runs everything in PROMPT_COMMAND
 # 4. Bash displays your prompt (>>>)
 # 5. You type next command...
-PROMPT_COMMAND="__track_pwd; history -a; history -c; history -r;${PROMPT_COMMAND}"
+PROMPT_COMMAND="_track_pwd; history -a; history -c; history -r;${PROMPT_COMMAND}"
 
 
 ##########################################################
@@ -222,16 +239,19 @@ activate_py(){
 }
 
 
+rainbow_block="##########"
+rainbow_colors=(91 93 92 96 94 95)
+
 rainbow_print() {
     # 1. Determine the color set
     # If $1 is provided and looks like a list of numbers, use it.
-    # Otherwise, fall back to the global _PROMPT_COLORS.
+    # Otherwise, fall back to the global rainbow_colors.
     local colors
     if [[ -n "$1" && "$1" =~ ^[0-9[:space:]]+$ ]]; then
         colors=($1)
         shift # Remove colors from arguments so $1 becomes the text
     else
-        colors=("${_PROMPT_COLORS[@]}")
+        colors=("${rainbow_colors[@]}")
     fi
 
     # 2. Get the input text (from remaining $1 or stdin)
@@ -263,7 +283,7 @@ br() {
 
     [[ "$clear_flag" != "no-clear" ]] && clear
 
-    local colors=("${_PROMPT_COLORS[@]}")
+    local colors=("${rainbow_colors[@]}")
 
     if [[ "$reverse_flag" == "reverse" ]]; then
         local reversed=()
@@ -275,7 +295,7 @@ br() {
 
     local line=""
     for ((i=0; i<repeat_count; i++)); do
-        line+="$_PROMPT_BLOCK"
+        line+="$rainbow_block"
     done
 
     # Pass the local color array as a space-separated string
@@ -503,6 +523,7 @@ alias fv=fuzzy_vim
 alias fvim=fuzzy_vim
 alias fview=fuzzy_view_file
 alias fcd=fuzzy_directory
+alias fp=fuzzy_paths
 
 # simple view file alias - will be overridden by advanced bash
 view_file(){
@@ -539,20 +560,20 @@ view_file \"$OUT\"
   fi
 }
 
-fuzzy_directory(){
-  local OUT=$( \
-    search_dir_with_git | \
-    filter_unwanted | \
-    fzf +m \
-  );
-
-  if [ -n "$OUT" ]; then
-    echo """
-PWD: $PWD
-New_Dir: \"$OUT\"
-    """
+_fuzzy_cd() {
+  local OUT=$(echo "$1" | fzf +m)
+  if [ -n "$OUT" ] && [ -d "$OUT" ]; then
+    echo "cd \"$OUT\""
     cd "$OUT"
   fi
+}
+
+fuzzy_directory(){
+  _fuzzy_cd "$(search_dir_with_git | filter_unwanted)"
+}
+
+fuzzy_paths(){
+  _fuzzy_cd "$(_recent_paths)"
 }
 
 ##########################################################
