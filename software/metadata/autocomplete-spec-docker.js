@@ -46,9 +46,7 @@ async function doWork() {
   try {
     const stdout = await execBash(`${dockerCommandToUse} --help`, true);
     const commandLines = extractSection(convertRawTextToList(stdout), "Commands:");
-    const commands = commandLines
-      .filter((line) => line.match(/[ ][ ]+[ ]+/))
-      .map((line) => line.split(" ")[0].trim());
+    const commands = commandLines.filter((line) => line.match(/[ ][ ]+[ ]+/)).map((line) => line.split(" ")[0].trim());
 
     console.log("  >> Resolving docker commands", commands.length);
     const res = [];

@@ -1015,10 +1015,8 @@ function cleanupExtraWhitespaces(text) {
  * @returns {string[]} Array of unique, non-empty, non-comment lines
  */
 function convertTextToList(...texts) {
-  return convertRawTextToList(texts)
-    .filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
+  return convertRawTextToList(texts).filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
 }
-
 
 /**
  * Splits text into unique, trimmed lines (including empty and comment lines).
@@ -1028,9 +1026,7 @@ function convertTextToList(...texts) {
 function convertRawTextToList(...texts) {
   const text = [...texts].join("\n");
 
-  const items = text
-    .split("\n")
-    .map((s) => s.trim());
+  const items = text.split("\n").map((s) => s.trim());
 
   return [...new Set(items)]; // only return unique items
 }

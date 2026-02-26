@@ -8,6 +8,7 @@
 /usr/bin/code --install-extension visualstudioexptteam.vscodeintellicode --force
 /usr/bin/code --install-extension andrejunges.handlebars --force
 /usr/bin/code --install-extension dakara.transformer --force
+/usr/bin/code --install-extension ,# --- UI & Theming --- --force
 /usr/bin/code --install-extension dracula-theme.theme-dracula --force
 /usr/bin/code --install-extension PKief.material-icon-theme --force
 /usr/bin/code --install-extension oderwat.indent-rainbow --force
@@ -31,6 +32,7 @@ echo 'Done installing VSCode Extensions'
 
 /usr/bin/codium --install-extension jeanp413.open-remote-ssh --force
 /usr/bin/codium --install-extension devcontainers.vscode-dev-containers --force
+/usr/bin/codium --install-extension ,# --- UI & Theming --- --force
 /usr/bin/codium --install-extension dracula-theme.theme-dracula --force
 /usr/bin/codium --install-extension PKief.material-icon-theme --force
 /usr/bin/codium --install-extension oderwat.indent-rainbow --force
@@ -54,6 +56,7 @@ echo 'Done installing VSCodium Extensions'
 
 flatpak run com.vscodium.codium --install-extension jeanp413.open-remote-ssh --force
 flatpak run com.vscodium.codium --install-extension devcontainers.vscode-dev-containers --force
+flatpak run com.vscodium.codium --install-extension ,# --- UI & Theming --- --force
 flatpak run com.vscodium.codium --install-extension dracula-theme.theme-dracula --force
 flatpak run com.vscodium.codium --install-extension PKief.material-icon-theme --force
 flatpak run com.vscodium.codium --install-extension oderwat.indent-rainbow --force

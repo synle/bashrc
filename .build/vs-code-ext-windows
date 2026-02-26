@@ -5,6 +5,7 @@ code --install-extension ms-vscode.cpptools --force
 code --install-extension visualstudioexptteam.vscodeintellicode --force
 code --install-extension andrejunges.handlebars --force
 code --install-extension dakara.transformer --force
+code --install-extension ,# --- UI & Theming --- --force
 code --install-extension dracula-theme.theme-dracula --force
 code --install-extension PKief.material-icon-theme --force
 code --install-extension oderwat.indent-rainbow --force
@@ -29,6 +30,7 @@ echo 'Done installing VSCode Extensions'
 c:; cd "C:/Program Files/VSCodium/bin"
 codium --install-extension jeanp413.open-remote-ssh --force
 codium --install-extension devcontainers.vscode-dev-containers --force
+codium --install-extension ,# --- UI & Theming --- --force
 codium --install-extension dracula-theme.theme-dracula --force
 codium --install-extension PKief.material-icon-theme --force
 codium --install-extension oderwat.indent-rainbow --force
