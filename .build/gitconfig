@@ -1,0 +1,216 @@
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-26-03-18AM]
+# #### ============================================================================ ###
+
+[user]
+name = Sy Le
+; email = test_email@gmail.com #update this email
+
+
+[core]
+autocrlf = input
+editor = vim
+excludesFile = ~/.gitignore_global
+fsmonitor = true # Background daemon for status speed
+untrackedCache = true # Caches untracked files
+commitGraph = true # Speeds up log/history traversal
+preloadIndex = true # Multi-threaded index scanning
+
+[feature]
+manyFiles = true # Grouped performance features
+
+[index]
+version = 4 # Path compression for large indexes
+
+[checkout]
+workers = 0 # Parallel file checkout (auto-detect CPU)
+
+[fetch]
+writeCommitGraph = true # Keeps the commit graph updated on fetch
+
+[pull]
+rebase = false
+
+[push]
+default = current
+
+[diff]
+tool = vimdiff
+prompt = false
+
+[merge]
+tool = vimdiff
+prompt = false
+
+[color]
+ui = true
+
+[color "diff"]
+meta = yellow
+commit = green
+frag = cyan
+old = red
+new = green
+whitespace = red reverse
+
+[color "diff-highlight"]
+oldNormal = red bold
+oldHighlight = red bold 52
+newNormal = green bold
+newHighlight = green bold 22
+
+[diff-so-fancy]
+markEmptyLines = false
+
+[maintenance]
+auto = true
+strategy = incremental
+
+[alias]
+# General
+s = status -sb # Short status with branch info
+a = add
+aa = add -A # Add all (including untracked)
+ap = add -p # Interactive patch mode
+au = add -u # Add only tracked files
+
+# Commit
+c  = commit --allow-empty --no-verify
+cm = commit --allow-empty --no-verify -m
+amend  = commit --allow-empty --no-verify --amend
+amendm = commit --allow-empty --no-verify --amend -m
+
+# Patch and Smart patch download (default: HEAD~1, but accepts range)
+patch = apply --reject --whitespace=fix
+patch-apply = !git patch
+patch-download = format-patch -1 --root
+patch-download-raw = !git patch-download --stdout
+
+
+# Branch & Checkout
+co = checkout
+cob = checkout -b # Create and switch to new branch
+b = branch -vv # List branches with upstream/commit info
+ba = branch -a -vv # List all local/remote branches
+del = branch -D # Force delete branch
+
+# Pull / Push / Fetch
+fap = fetch --all --prune # Fetch all and purge deleted remotes
+p =  pull
+pu = pull
+po = push origin
+pof = push origin --force
+pushdelbranch = push origin --delete # Delete a remote branch: branch-name
+pushdeltag = push origin --delete --tag # Delete a remote tag: tag-name
+pdel-branch = ! git pushdelbranch
+pdel-tag = ! git pushdeltag
+pdel = pushdelbranch
+track = !git branch --set-upstream-to=origin/$(git branch --show-current)  # track
+
+# Rebase & Merge
+rv = revert
+rvc = revert --continue
+mc = merge --continue
+r = rebase --reapply-cherry-picks
+rc = rebase --reapply-cherry-picks --continue
+ri = rebase -i # Interactive rebase
+ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
+# Interactive rebase last n commits
+r5 = rebase -i HEAD~5
+r5-vscode = !GIT_EDITOR=\"code --wait\" git r5
+r10 = rebase -i HEAD~10
+r10-vscode = !GIT_EDITOR=\"code --wait\" git r10
+r15 = rebase -i HEAD~15
+r15-vscode = !GIT_EDITOR=\"code --wait\" git r15
+r20 = rebase -i HEAD~20
+r20-vscode = !GIT_EDITOR=\"code --wait\" git r20
+r25 = rebase -i HEAD~25
+r25-vscode = !GIT_EDITOR=\"code --wait\" git r25
+r30 = rebase -i HEAD~30
+r30-vscode = !GIT_EDITOR=\"code --wait\" git r30
+r35 = rebase -i HEAD~35
+r35-vscode = !GIT_EDITOR=\"code --wait\" git r35
+r40 = rebase -i HEAD~40
+r40-vscode = !GIT_EDITOR=\"code --wait\" git r40
+r45 = rebase -i HEAD~45
+r45-vscode = !GIT_EDITOR=\"code --wait\" git r45
+r50 = rebase -i HEAD~50
+r50-vscode = !GIT_EDITOR=\"code --wait\" git r50
+r55 = rebase -i HEAD~55
+r55-vscode = !GIT_EDITOR=\"code --wait\" git r55
+r60 = rebase -i HEAD~60
+r60-vscode = !GIT_EDITOR=\"code --wait\" git r60
+r65 = rebase -i HEAD~65
+r65-vscode = !GIT_EDITOR=\"code --wait\" git r65
+r70 = rebase -i HEAD~70
+r70-vscode = !GIT_EDITOR=\"code --wait\" git r70
+r75 = rebase -i HEAD~75
+r75-vscode = !GIT_EDITOR=\"code --wait\" git r75
+r80 = rebase -i HEAD~80
+r80-vscode = !GIT_EDITOR=\"code --wait\" git r80
+r85 = rebase -i HEAD~85
+r85-vscode = !GIT_EDITOR=\"code --wait\" git r85
+r90 = rebase -i HEAD~90
+r90-vscode = !GIT_EDITOR=\"code --wait\" git r90
+r95 = rebase -i HEAD~95
+r95-vscode = !GIT_EDITOR=\"code --wait\" git r95
+r100 = rebase -i HEAD~100
+r100-vscode = !GIT_EDITOR=\"code --wait\" git r100
+r150 = rebase -i HEAD~150
+r150-vscode = !GIT_EDITOR=\"code --wait\" git r150
+r200 = rebase -i HEAD~200
+r200-vscode = !GIT_EDITOR=\"code --wait\" git r200
+r250 = rebase -i HEAD~250
+r250-vscode = !GIT_EDITOR=\"code --wait\" git r250
+r300 = rebase -i HEAD~300
+r300-vscode = !GIT_EDITOR=\"code --wait\" git r300
+r350 = rebase -i HEAD~350
+r350-vscode = !GIT_EDITOR=\"code --wait\" git r350
+r400 = rebase -i HEAD~400
+r400-vscode = !GIT_EDITOR=\"code --wait\" git r400
+r450 = rebase -i HEAD~450
+r450-vscode = !GIT_EDITOR=\"code --wait\" git r450
+r500 = rebase -i HEAD~500
+r500-vscode = !GIT_EDITOR=\"code --wait\" git r500
+r550 = rebase -i HEAD~550
+r550-vscode = !GIT_EDITOR=\"code --wait\" git r550
+r600 = rebase -i HEAD~600
+r600-vscode = !GIT_EDITOR=\"code --wait\" git r600
+r650 = rebase -i HEAD~650
+r650-vscode = !GIT_EDITOR=\"code --wait\" git r650
+r700 = rebase -i HEAD~700
+r700-vscode = !GIT_EDITOR=\"code --wait\" git r700
+r750 = rebase -i HEAD~750
+r750-vscode = !GIT_EDITOR=\"code --wait\" git r750
+r800 = rebase -i HEAD~800
+r800-vscode = !GIT_EDITOR=\"code --wait\" git r800
+r850 = rebase -i HEAD~850
+r850-vscode = !GIT_EDITOR=\"code --wait\" git r850
+r900 = rebase -i HEAD~900
+r900-vscode = !GIT_EDITOR=\"code --wait\" git r900
+r950 = rebase -i HEAD~950
+r950-vscode = !GIT_EDITOR=\"code --wait\" git r950
+r1000 = rebase -i HEAD~1000
+r1000-vscode = !GIT_EDITOR=\"code --wait\" git r1000
+
+# Log & Diff
+l = log --oneline
+ls = log --oneline --decorate
+d = diff --word-diff -w # Word-level diff ignoring whitespace
+dh = diff --word-diff -w HEAD^
+ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
+stats = shortlog -sn # Commit counts per author
+
+# Maintenance & Advanced
+cleanfd = clean -f -d # Remove untracked files and directories
+cp = cherry-pick
+cpc = cherry-pick --continue
+cpn = cherry-pick -n # Cherry-pick without committing
+clone0 = clone --depth 1 --single-branch  # Shallow Clone
+clone1 = clone --single-branch  # Full Clone
+cl0 = "!f() { git clone --depth 1 --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
+cl1 = "!f() { git clone --branch master --single-branch \"$@\" >/dev/null 2>&1 & echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
+
+# Search & Reflog
+search-logs = log -- . -G # Usage: git search-logs <some_text_to_search>,Search the 'diff' content of all commits in the current directory for a specific string
+search-reflog = rev-list --all -- # git search-history -- "config.old.json" Usage: git search-reflog <file_name>, Find every commit across ALL branches/tags that ever touched a specific file. Useful for finding where a file was deleted or moved
+where-is = branch -r --contains # Usage: git where-is <hash_id>, Identify which remote branches contain a specific commit hash

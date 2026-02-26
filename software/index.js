@@ -1230,7 +1230,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
   //this is a special flags used to return all the script for index building
   if (skipOsFiltering) {
     //sort by depth (slash count) then alphabetically
-    return files.sort((a, b) => (a.split('/').length - b.split('/').length) || a.localeCompare(b));
+    return files.sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b));
   }
 
   const firstFiles = convertTextToList(`
