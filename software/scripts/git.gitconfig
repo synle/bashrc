@@ -82,7 +82,6 @@ patch-apply = !git patch
 patch-download = format-patch -1 --root
 patch-download-raw = !git patch-download --stdout
 
-
 # Branch & Checkout
 co = checkout
 cob = checkout -b # Create and switch to new branch
@@ -96,11 +95,8 @@ p =  pull
 pu = pull
 po = push origin
 pof = push origin --force
-pushdelbranch = push origin --delete # Delete a remote branch: branch-name
-pushdeltag = push origin --delete --tag # Delete a remote tag: tag-name
-pdel-branch = ! git pushdelbranch
-pdel-tag = ! git pushdeltag
-pdel = pushdelbranch
+pdel-branch = push origin --delete # Delete a remote branch: branch-name
+pdel-tag = push origin --delete --tag # Delete a remote tag: tag-name
 track = !git branch --set-upstream-to=origin/$(git branch --show-current)  # track
 
 # Rebase & Merge
@@ -117,6 +113,7 @@ ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
 # Log & Diff
 l = log --oneline
 ls = log --oneline --decorate
+logs = !git log --oneline
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^
 ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
