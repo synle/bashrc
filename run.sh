@@ -26,7 +26,7 @@
 #     bar.sh
 #   """
 #   bash run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
-#   bash run.sh --force-refresh                    # Force remove and reinstall nvm
+#   bash run.sh --force-refresh                    # Force remove and reinstall fnm
 #   bash run.sh -f                                 # Shorthand for --force-refresh
 #   bash run.sh --lightweight                      # Export LIGHT_WEIGHT_MODE=1 for lightweight installs
 #   bash run.sh --debug                            # Enable debug mode (set -x for verbose output)
@@ -289,33 +289,50 @@ fi
 
 
 ####################################################################
-# script: Install NVM and Node (skip on Android Termux)
+# script: Install fnm and Node (skip on Android Termux)
 ####################################################################
-# Force refresh: remove existing nvm and reinstall
-NVM_VERSION="v0.40.4"
-NODE_JS_VERSION="24"
-NVM_DIR="$HOME/.nvm"
-if [ "$TEST_FORCE_REFRESH" = true ] && [ -d "$NVM_DIR" ]; then
-  rm -rf "$NVM_DIR"
+# Force refresh: remove existing fnm and reinstall
+export NODE_JS_VERSION="24"
+export FNM_DIR="$HOME/.local/share/fnm"
+if [ "$TEST_FORCE_REFRESH" = true ] && command -v fnm >/dev/null 2>&1; then
+  fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
 fi
 if [ "$is_os_android_termux" != "1" ]; then
-  # Install nvm if missing
-  [ -s "$NVM_DIR/nvm.sh" ] || \
-    git clone --depth 1 --branch "$NVM_VERSION" \
-    https://github.com/creationix/nvm.git "$NVM_DIR" >/dev/null 2>&1
+  # Install fnm if missing
+  if ! command -v fnm >/dev/null 2>&1; then
+    curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell >/dev/null 2>&1
+    export PATH="$HOME/.local/share/fnm:$PATH"
 
-  . "$NVM_DIR/nvm.sh"
+    # Clean up old nvm installation if present
+    if [ -d "$HOME/.nvm" ]; then
+      echo "  >> Removing old nvm installation (~/.nvm)"
+      rm -rf "$HOME/.nvm"
+      # Remove nvm lines from shell profiles
+      for _profile in "$HOME/.bashrc" "$HOME/.bash_profile" "$HOME/.zshrc" "$HOME/.profile"; do
+        if [ -f "$_profile" ] && grep -q 'NVM_DIR\|nvm.sh' "$_profile"; then
+          echo "    >> Cleaning nvm references from $_profile"
+          sed -i.nvm-backup '/NVM_DIR\|nvm\.sh\|nvm bash_completion/d' "$_profile"
+        fi
+      done
+      unset _profile
+    fi
+  fi
+
+  eval "$(fnm env --shell bash)"
 
   # Install Node if missing
-  if [ "$(nvm version "$NODE_JS_VERSION" 2>/dev/null)" = "N/A" ]; then
-    nvm install "$NODE_JS_VERSION" >/dev/null 2>&1
+  if ! fnm list | grep -q "v${NODE_JS_VERSION}\."; then
+    fnm install "$NODE_JS_VERSION" >/dev/null 2>&1
   else
     echo "Node $NODE_JS_VERSION already installed — skip"
   fi
 
   # Set + use default quietly
-  nvm alias default "$NODE_JS_VERSION" >/dev/null 2>&1
-  nvm use default >/dev/null 2>&1
+  fnm default "$NODE_JS_VERSION" >/dev/null 2>&1
+  fnm use "$NODE_JS_VERSION" >/dev/null 2>&1
+
+  # Export resolved node path for downstream scripts
+  export FNM_DEFAULT_NODE_PATH="$FNM_DIR/node-versions/$(node -v 2>/dev/null)/installation"
 fi
 
 ####################################################################

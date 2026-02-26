@@ -10,35 +10,22 @@ globalThis.http = require("http");
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
-/** @type {string} */
 var BASE_HOMEDIR_LINUX = (globalThis.BASE_HOMEDIR_LINUX = (0, require)("os").homedir());
-/** @type {string} */
 globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, ".bash_syle");
 
 // specific for windows and wsl only
-/** @type {string} */
 globalThis.BASE_MOUNT_DIR_WINDOW = "";
-/** @type {string} */
 globalThis.BASE_C_DIR_WINDOW = "";
-/** @type {string} */
 globalThis.BASE_D_DIR_WINDOW = "";
-/** @type {string} */
 globalThis.BASE_WINDOW = "";
-/** @type {string} */
 globalThis.BASE_WINDOW_1 = "/mnt/c/Users";
-/** @type {string} */
 globalThis.BASE_WINDOW_2 = "/c/Users";
 
-// default node installation
-/** @type {number} */
-globalThis.DEFAULT_NVM_NODE_VERSION = 24;
-/** @type {string} */
-globalThis.nvmBasePath = path.join(BASE_HOMEDIR_LINUX, ".nvm");
-/** @type {string | null} */
-globalThis.nvmDefaultNodePath = findDirSingle(nvmBasePath + "/versions/node", new RegExp(`[v]*${DEFAULT_NVM_NODE_VERSION}[0-9.]+`));
-
+// default node installation (fnm) - values exported from run.sh
+globalThis.NODE_JS_VERSION = (process.env.NODE_JS_VERSION || "").trim();
+globalThis.FNM_DIR = (process.env.FNM_DIR || "").trim();
+globalThis.FNM_DEFAULT_NODE_PATH = (process.env.FNM_DEFAULT_NODE_PATH || "").trim();
 globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || "").trim();
-
 globalThis.BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || "").trim();
 globalThis.TEST_FORCE_REFRESH = (process.env.TEST_FORCE_REFRESH || "").trim() === "1";
 
@@ -255,15 +242,12 @@ Object.keys(process.env)
 globalThis.isLightweightMode = process.env.LIGHT_WEIGHT_MODE === "1";
 
 // setting up the path for the extra tweaks
-/** @type {string} */
 globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : globalThis.BASE_HOMEDIR_LINUX, "_extra");
 
-/** @type {string} */
 globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || "").toLowerCase().trim();
 
 const repoName = "synle/bashrc";
 const repoBranch = "master";
-/** @type {string} */
 globalThis.REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
 
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
@@ -1232,8 +1216,8 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
 
   const firstFiles = convertTextToList(`
     software/scripts/_bash-rc-bootstrap.js
-    software/scripts/_nvm-binary.js
-    software/scripts/_nvm-symlink.sh.js
+    software/scripts/_fnm-binary.js
+    software/scripts/_fnm-symlink.sh.js
   `);
 
   // this is a list of file to do last
