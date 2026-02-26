@@ -337,11 +337,7 @@ function MainBodyContainer() {
   const { appData } = useContext(MainAppContext);
   const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
 
-  return (
-    <div id="mainBodyContainer">
-      {selectedConfig.renderBody()}
-    </div>
-  );
+  return <div id="mainBodyContainer">{selectedConfig.renderBody()}</div>;
 }
 
 /**
@@ -1451,63 +1447,63 @@ function App() {
         }}
       >
         <EditorCollapseContext.Provider value={{ collapseAll: collapseSignal.collapseAll, tick: collapseSignal.tick }}>
-        <div id="container">
-          <div className="app-header">
-            <h1 style={{ textTransform: "uppercase" }}>
-              <LinkText href={REPO_URL}>{window.document.title}</LinkText>
-            </h1>
+          <div id="container">
+            <div className="app-header">
+              <h1 style={{ textTransform: "uppercase" }}>
+                <LinkText href={REPO_URL}>{window.document.title}</LinkText>
+              </h1>
 
-            <div style={{ display: "flex", gap: "var(--spaceSize2)", alignItems: "center" }}>
-              <Settings />
-              <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: !prev.collapseAll, tick: prev.tick + 1 }))}>
-                {collapseSignal.collapseAll ? "▶" : "▼"}
-              </ActionButton>
+              <div style={{ display: "flex", gap: "var(--spaceSize2)", alignItems: "center" }}>
+                <Settings />
+                <ActionButton onClick={() => setCollapseSignal((prev) => ({ collapseAll: !prev.collapseAll, tick: prev.tick + 1 }))}>
+                  {collapseSignal.collapseAll ? "▶" : "▼"}
+                </ActionButton>
+              </div>
             </div>
+            <div className="app-clone-command">
+              <code>git clone git@github.com:synle/bashrc.git</code>
+              <code>git clone https://github.com/synle/bashrc.git</code>
+            </div>
+            <TopNavigationContainer />
+            <MainBodyContainer />
+            <BottomContainer />
           </div>
-          <div className="app-clone-command">
-            <code>git clone git@github.com:synle/bashrc.git</code>
-            <code>git clone https://github.com/synle/bashrc.git</code>
+          <div className="fixed-nav-buttons fixed-nav-left">
+            <button
+              onClick={() => {
+                const sections = [...document.querySelectorAll(".editor-section")];
+                const scrollY = window.scrollY;
+                for (let i = sections.length - 1; i >= 0; i--) {
+                  const top = sections[i].getBoundingClientRect().top + scrollY;
+                  if (top < scrollY - 5) {
+                    sections[i].scrollIntoView({ behavior: "smooth" });
+                    return;
+                  }
+                }
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
+              ▲ Prev
+            </button>
+            <button
+              onClick={() => {
+                const sections = [...document.querySelectorAll(".editor-section")];
+                const scrollY = window.scrollY;
+                for (let i = 0; i < sections.length; i++) {
+                  const top = sections[i].getBoundingClientRect().top + scrollY;
+                  if (top > scrollY + 5) {
+                    sections[i].scrollIntoView({ behavior: "smooth" });
+                    return;
+                  }
+                }
+              }}
+            >
+              ▼ Next
+            </button>
           </div>
-          <TopNavigationContainer />
-          <MainBodyContainer />
-          <BottomContainer />
-        </div>
-        <div className="fixed-nav-buttons fixed-nav-left">
-          <button
-            onClick={() => {
-              const sections = [...document.querySelectorAll(".editor-section")];
-              const scrollY = window.scrollY;
-              for (let i = sections.length - 1; i >= 0; i--) {
-                const top = sections[i].getBoundingClientRect().top + scrollY;
-                if (top < scrollY - 5) {
-                  sections[i].scrollIntoView({ behavior: "smooth" });
-                  return;
-                }
-              }
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          >
-            ▲ Prev
+          <button className="fixed-nav-buttons fixed-nav-right" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            Top
           </button>
-          <button
-            onClick={() => {
-              const sections = [...document.querySelectorAll(".editor-section")];
-              const scrollY = window.scrollY;
-              for (let i = 0; i < sections.length; i++) {
-                const top = sections[i].getBoundingClientRect().top + scrollY;
-                if (top > scrollY + 5) {
-                  sections[i].scrollIntoView({ behavior: "smooth" });
-                  return;
-                }
-              }
-            }}
-          >
-            ▼ Next
-          </button>
-        </div>
-        <button className="fixed-nav-buttons fixed-nav-right" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-          Top
-        </button>
         </EditorCollapseContext.Provider>
       </MainAppContext.Provider>
     </ThemeContext.Provider>
