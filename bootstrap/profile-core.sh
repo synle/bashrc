@@ -28,14 +28,15 @@ PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
 # Custom Bash autocomplete filters for commands and file patterns
 ##########################################################
 ignored_commands=(
-    "*/clean-staging"
-    "*/CleanPCCSP.dll"
+  "*/clean-staging"
+  "*/CleanPCCSP.dll"
+  "cleanmgr.exe"
 )
 ignored_files=(
-    ".rej"
-    ".pyc"
-    ".tmp"
-    ".DS_Store"
+  ".rej"
+  ".pyc"
+  ".tmp"
+  ".DS_Store"
 )
 cmd_string=$(printf ":%s" "${ignored_commands[@]}")
 file_string=$(printf ":%s" "${ignored_files[@]}")
