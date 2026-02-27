@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /** * Generates vimrc configuration with Vundle plugins, syntax highlighting, and keybindings for Linux, Mac, and Windows. */
 async function doWork() {
   let targetPath;

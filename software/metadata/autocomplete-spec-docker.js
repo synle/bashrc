@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const dockerCommandToUse = is_os_window === true ? "docker.exe" : "docker";
 
 /**

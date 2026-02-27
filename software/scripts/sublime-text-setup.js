@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const buildFiles = [
   { buildName: "sublime-text-config", dest: "Preferences.sublime-settings", os: "windows" },
   { buildName: "sublime-text-keys-windows", dest: "Default.sublime-keymap", os: "windows" },
