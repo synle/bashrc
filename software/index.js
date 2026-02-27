@@ -11,8 +11,8 @@ globalThis.BASE_HOMEDIR_LINUX = require("os").homedir();
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
-globalThis.BASH_SYLE_PATH = (process.env.BASH_SYLE_PATH || "").trim()
-globalThis.BASH_SYLE_AUTOCOMPLETE_PATH = (process.env.BASH_SYLE_AUTOCOMPLETE_PATH || "").trim()
+globalThis.BASH_SYLE_PATH = (process.env.BASH_SYLE_PATH || "").trim();
+globalThis.BASH_SYLE_AUTOCOMPLETE_PATH = (process.env.BASH_SYLE_AUTOCOMPLETE_PATH || "").trim();
 
 // specific for windows and wsl only
 globalThis.BASE_MOUNT_DIR_WINDOW = "";
