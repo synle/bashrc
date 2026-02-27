@@ -1272,7 +1272,8 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
             // if os check is on, we want to include only the script tag (used for run mode by the os)
             return f.includes("software/scripts");
           })
-          .filter((f) => [`.js`, `.sh`].some((allowedExtnsion) => f.endsWith(allowedExtnsion))),
+          .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)))
+          .sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b)), //sort by depth (slash count) then alphabetically,
       ),
     ];
   }
@@ -1304,8 +1305,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
 
   //this is a special flags used to return all the script for index building
   if (skipOsFiltering) {
-    //sort by depth (slash count) then alphabetically
-    return files.sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b));
+    return files;
   }
 
   const firstFiles = convertTextToList(`
