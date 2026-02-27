@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const SUBLIME_MERGE_CONFIG = {
   expand_merge_commits_by_default: false,
   font_face: EDITOR_CONFIGS.fontFamily,

@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const BASE_REMOTE_CONNECTIONS_PATH = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "remote-connections");
 
 const DEFAULT_CONNECTION_USER = "syle";

@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /**
  * Installs git bash autocomplete from upstream and registers alias completion.
  */

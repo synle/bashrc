@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /**
  * Parses the IP address config file and generates hostname mapping files in grouped, flattened, and etc-hosts formats.
  */
