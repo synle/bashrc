@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Clones, builds, and registers the synle-make-component tool with bashrc and fzf integration. */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".synle-make-component");

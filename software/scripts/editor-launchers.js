@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Registers editor launcher functions (find_editor, run_editor, run_editor_cli) and shell aliases for subl/code. */
 async function doWork() {
   console.log("  >> Editor Launchers:");

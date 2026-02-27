@@ -1,3 +1,5 @@
+/// <reference path="index.js" />
+
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
@@ -1202,7 +1204,7 @@ function downloadAsset(url, destination) {
  * @returns {Promise<string[]>} The full list of repo files (not just downloaded ones)
  */
 async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
-  const files = await listRepoDir('remote_api');
+  const files = await listRepoDir("remote_api");
 
   const filesToDownload = files.filter((s) => s.includes("binaries/") && !s.toLowerCase().includes(".md")).filter(findHandler);
 
@@ -1231,6 +1233,22 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 }
 
 /**
+ * Deduplicates and filters raw file list to valid software/bootstrap script paths.
+ * Normalizes prefixes, removes non-script files, and returns unique entries.
+ * @param {string[]} files - Raw list of file paths to filter
+ * @returns {string[]} Deduplicated, filtered, and normalized script file paths
+ */
+function filterRepoScripts(files) {
+  const filtered = (files || [])
+    .map((s) => s.trim().replace(/^\.\//, ""))
+    .filter((f) => f && (f.startsWith("software/") || f.startsWith("bootstrap/")))
+    .filter((f) => !f.endsWith(".json") && f !== "software/index.js")
+    .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)));
+
+  return [...new Set(filtered)];
+}
+
+/**
  * Lists all files in the repository from different sources.
  * @param {string} [source='remote_api'] - Source to fetch files from:
  *   'remote_api' - fetches from GitHub Git tree API
@@ -1240,16 +1258,16 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
  *   (remote_api -> remote_cache -> local) when the selected source fails
  * @returns {Promise<string[]>} Array of file paths in the repository
  */
-async function listRepoDir(source = 'remote_api', fallthrough = false) {
-  if (source === 'local' || fallthrough) {
-    try{
-      return filterRepoScripts(convertRawTextToList(await execBash("find .", true))).sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b))
-    } catch(_){
-
-    }
+async function listRepoDir(source = "remote_api", fallthrough = false) {
+  if (source === "local" || fallthrough) {
+    try {
+      return filterRepoScripts(convertRawTextToList(await execBash("find .", true))).sort(
+        (a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b),
+      );
+    } catch (_) {}
   }
 
-  if (source === 'remote_api' || fallthrough) {
+  if (source === "remote_api" || fallthrough) {
     const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
 
     // doing a nested and recursive call to get the files
@@ -1259,7 +1277,7 @@ async function listRepoDir(source = 'remote_api', fallthrough = false) {
     } catch (_) {}
   }
 
-  if (source === 'remote_cache' || fallthrough) {
+  if (source === "remote_cache" || fallthrough) {
     try {
       const content = await fetchUrlAsString("software/metadata/script-list.config");
       return convertTextToList(content);
@@ -1278,7 +1296,7 @@ async function listRepoDir(source = 'remote_api', fallthrough = false) {
  * @returns {Promise<string[]>} Array of all script file paths sorted by depth then alphabetically
  */
 async function getAllRepoSoftwareFiles() {
-  return listRepoDir('local', true);
+  return listRepoDir("local", true);
 }
 
 /**
@@ -1291,9 +1309,9 @@ async function getSoftwareScriptFiles() {
   let files;
 
   if (isTestScriptMode === true) {
-    files = await listRepoDir('local');
+    files = await listRepoDir("local");
   } else {
-    files = await listRepoDir('remote_api');
+    files = await listRepoDir("remote_api");
   }
 
   // clean up the files, only include software/scripts (used for run mode by the os)

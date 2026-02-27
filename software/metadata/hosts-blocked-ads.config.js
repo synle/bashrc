@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 let BLOCKED_HOST_SOURCE_URLS;
 
 /**
