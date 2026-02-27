@@ -566,6 +566,7 @@ declare const BASH_SYLE_COMMON: any;
 declare const REPO_PATH_IDENTIFIER: any;
 declare const REPO_BRANCH_NAME: any;
 declare const DEBUG_WRITE_TO_DIR: any;
+declare const HAS_SUDO_ACCESS: boolean;
 declare const IS_FORCE_REFRESH: boolean;
 declare const IS_TEST_SCRIPT_MODE: boolean;
 declare const IS_LIGHT_WEIGHT_MODE: boolean;
