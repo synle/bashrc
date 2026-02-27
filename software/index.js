@@ -681,9 +681,9 @@ function clone(obj) {
  */
 function getWindowUserBaseDir() {
   const regexUsername = /(leng)|(sy[ ]*le)/i;
-  const basePaths = [[path.join(BASE_C_DIR_WINDOW, "Users")]];
-  for (const basePath of basePaths) {
-    const res = findDirSingle(basePath, regexUsername);
+  const basePaths = [[path.join(BASE_C_DIR_WINDOW, "Users"), regexUsername]];
+  for (const [basePath, regex] of basePaths) {
+    const res = findDirSingle(basePath, regex);
     if (res) return res;
   }
   return undefined;
