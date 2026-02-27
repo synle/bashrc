@@ -622,9 +622,9 @@ declare const is_os_android_termux: boolean;
 declare const is_os_chromeos: boolean;
 declare const BASE_SY_CUSTOM_TWEAKS_DIR: any;
 declare const LINE_BREAK_COUNT: 100;
-declare const LINE_BREAK_EQUAL: any;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
+declare const LINE_BREAK_EQUAL: string;
 declare const COMMENT_BREAK: string;
 /**
  * ANSI color codes used to dynamically generate global color helper functions.
