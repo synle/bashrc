@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 // ============================================================
 // Constants — used across all format functions
 // ============================================================
@@ -22,6 +20,7 @@ const EXCLUDED_FILES = [
 
 /** * Generates and registers bash functions for code formatting, cleanup, and file formatting using Prettier and Ruff. */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   const { maxLineSize, ignoredFolders, junkFiles, junkDirs } = EDITOR_CONFIGS;
 
   // Merge with EDITOR_CONFIGS.ignoredFolders and deduplicate

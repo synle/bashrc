@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 includeSource("software/scripts/sublime-text.common.js");
 
 let mySublimeTextConfigs = {};
@@ -102,6 +100,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
  * Writes Sublime Text settings to prebuilt config files and applies them to the local Sublime Text installation.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux");
   console.log(`  >> Sublime Text Configurations / Settings:`);
 
   // write to build file

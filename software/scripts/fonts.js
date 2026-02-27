@@ -1,9 +1,8 @@
-/// <reference path="../index.js" />
-
 const linuxFontPath = "/usr/share/fonts/truetype";
 
 /** * Downloads ligature fonts and generates platform-specific font installation guides. */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux");
   const targetFontPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
 
   console.log("  >> Download Ligatures Fonts:", targetFontPath);

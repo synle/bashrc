@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 includeSource("software/scripts/vs-code.common.js");
 
 let COMMON_CONFIGS;
@@ -214,6 +212,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
  * Writes VS Code settings to prebuilt config files and applies them to the local VS Code installation.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux");
   console.log(`  >> VS Code Configurations / Settings:`);
 
   // write to build file

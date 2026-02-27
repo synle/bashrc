@@ -1,9 +1,8 @@
-/// <reference path="../index.js" />
-
 /**
  * Installs bash autocomplete for npm, npm-run, and npx commands.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   console.log("    >> npm/npx Bash Autocomplete");
 
   registerWithBashSyleAutocompleteWithRawContent(

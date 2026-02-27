@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const BASE_REMOTE_CONNECTIONS_PATH = path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "remote-connections");
 
 const DEFAULT_CONNECTION_USER = "syle";
@@ -104,6 +102,7 @@ UserName=${DEFAULT_CONNECTION_USER}
  * Creates the remote connections directory and generates both RDP and VNC connection files for home network hosts.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   await mkdir(BASE_REMOTE_CONNECTIONS_PATH);
 
   doWorkVnc();

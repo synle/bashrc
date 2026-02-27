@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const onlyVsCodeExtensions = trimLeftSpaces(`
   ms-vscode-remote.vscode-remote-extensionpack
   ms-dotnettools.csharp
@@ -48,6 +46,7 @@ const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(onlyCodiumExtensions, 
  * Generates platform-specific extension installation scripts for VS Code and VSCodium.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   console.log(`  >> VS Code Extensions:`);
 
   // write to build file

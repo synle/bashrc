@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /**
  * Scans the repository for all software script files and writes the sorted list to the script-list config.
  */

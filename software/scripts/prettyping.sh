@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 # add prettyping: http://denilson.sa.nom.br/prettyping/
+
+# Skip on unsupported OS
+[ "$is_os_android_termux" = "1" ] && { echo "    >> Skipped : Not supported on is_os_android_termux"; exit 0; }
+[ "$is_os_arch_linux" = "1" ] && { echo "    >> Skipped : Not supported on is_os_arch_linux"; exit 0; }
+[ "$is_os_chromeos" = "1" ] && { echo "    >> Skipped : Not supported on is_os_chromeos"; exit 0; }
+
 TEMP_PATH=/tmp/prettyping
 DEST_PATH=/usr/local/bin/prettyping
 

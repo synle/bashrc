@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 includeSource("software/scripts/sublime-text.common.js");
 
 let SUBLIME_VERSION;
@@ -57,6 +55,7 @@ function _formatKey(mouseMaps, osKeyToUse) {
  * Resolves OS key, writes prebuilt mouse map configs per platform, and applies the config to the local Sublime Text installation.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
 
   console.log(`  >> Setting up Sublime Text MouseMaps`);

@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /**
  * Generates git rebase interactive alias snippets for various commit counts.
  * @returns {string} Git config alias entries for interactive rebase shortcuts.
@@ -92,6 +90,7 @@ async function _getGlobalGitIgnore() {
  * Installs git aliases, configs, and global gitignore for the current system and optionally for Windows.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux");
   console.log("  >> Installing git Aliases and Configs");
 
   const configMain = path.join(BASE_HOMEDIR_LINUX, ".gitconfig");

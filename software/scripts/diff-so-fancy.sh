@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # diff-so-fancy and integration with git
+
+# Skip on unsupported OS
+[ "$is_os_android_termux" = "1" ] && { echo "    >> Skipped : Not supported on is_os_android_termux"; exit 0; }
+
 TEMP_PATH=/tmp/diff-so-fancy
 DEST_PATH=/usr/local/bin/diff-so-fancy
 

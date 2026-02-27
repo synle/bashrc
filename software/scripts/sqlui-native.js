@@ -1,9 +1,8 @@
-/// <reference path="../index.js" />
-
 const SQLUI_NATIVE_VERSION = "1.64.4";
 
 /** * Downloads the sqlui-native application binary for the current platform. */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "sqlui-native");
   const baseUrl = `https://github.com/synle/sqlui-native/releases/download/${SQLUI_NATIVE_VERSION}`;
 

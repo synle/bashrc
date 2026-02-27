@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /** * Downloads and installs the url-porter Chrome extension. */
 async function doWork() {
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "url-porter");

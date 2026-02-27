@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /** * Registers fnm (Fast Node Manager) binary paths and env setup script with bashrc. */
 async function doWork() {
   console.log(`  >> Register fnm binary with bashrc ${FNM_DIR}`);

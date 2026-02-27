@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const SUBLIME_MERGE_CONFIG = {
   expand_merge_commits_by_default: false,
   font_face: EDITOR_CONFIGS.fontFamily,
@@ -30,6 +28,7 @@ function _getPathSublimeMerge() {
  * Writes Sublime Merge settings to the build output and applies them to the local installation.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   let targetPath = _getPathSublimeMerge();
 
   console.log("    >> Setting up Sublime Merge:", consoleLogColor4(targetPath));

@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 includeSource("software/scripts/sublime-text.common.js");
 
 const toInstallExtensions = convertTextToList(`
@@ -18,6 +16,7 @@ const toInstallExtensions = convertTextToList(`
 `);
 
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   console.log(`  >> Sublime Text Extensions:`);
 
   // write to build file

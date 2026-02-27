@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /** * Configures the SSH server sshd_config with port, listen address, and password authentication settings. */
 async function doWork() {
   const targetPath = "/etc/ssh/sshd_config";

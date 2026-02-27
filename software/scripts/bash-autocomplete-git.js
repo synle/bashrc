@@ -1,9 +1,8 @@
-/// <reference path="../index.js" />
-
 /**
  * Installs git bash autocomplete from upstream and registers alias completion.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   console.log("    >> Git Bash Autocomplete");
   const gitAutocompleteScript = await fetchUrlAsString(
     "https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash",

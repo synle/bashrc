@@ -1,5 +1,3 @@
-/// <reference path="../../index.js" />
-
 /** * Gate check that exits early if the current environment is not Android Termux. */
 async function doWork() {
   const bashAndroidTmuxFileName = ".bash_syle_only_android_termux";

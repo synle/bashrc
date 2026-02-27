@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 includeSource("software/scripts/sublime-text.common.js");
 
 let OS_KEY;
@@ -47,6 +45,7 @@ function _getConfigs() {
  * Loads OS-specific keybinding configs, defines common keybindings, writes prebuilt configs per platform, and applies to the local Sublime Text installation.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux");
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: WINDOWS_OS_KEY });
 
   WINDOWS_ONLY_KEY_BINDINGS = parseJsonWithComments(await fetchUrlAsString("software/scripts/sublime-text-keys.windows.jsonc")) || [];

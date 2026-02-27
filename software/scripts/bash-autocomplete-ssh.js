@@ -1,9 +1,8 @@
-/// <reference path="../index.js" />
-
 /**
  * Installs SSH bash autocomplete from ~/.ssh/config hostnames.
  */
 async function doWork() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   console.log("    >> SSH Bash Autocomplete");
 
   registerWithBashSyleAutocompleteWithRawContent(

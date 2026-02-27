@@ -1,5 +1,3 @@
-/// <reference path="index.js" />
-
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
@@ -1003,6 +1001,20 @@ function exitIfPathFound(targetPath, message) {
 }
 
 /**
+ * Guard clause: exits the process if the current OS matches any of the given OS flags.
+ * Used by individual scripts to self-guard against unsupported platforms.
+ * @param {...string} osFlags - OS flag names to check (e.g. "is_os_android_termux", "is_os_arch_linux")
+ */
+function exitIfUnsupportedOs(...osFlags) {
+  for (const flag of osFlags) {
+    if (global[flag]) {
+      console.log(consoleLogColor1(`    >> Skipped : Not supported on ${flag}`));
+      return process.exit();
+    }
+  }
+}
+
+/**
  * Downloads application binaries from the main repo into the Windows applications directory.
  * @param {string} applicationName - The application name
  * @param {function} findFilter - Filter function for downloadFilesFromMainRepo
@@ -1319,126 +1331,24 @@ async function getSoftwareScriptFiles() {
 
   softwareFiles = [...new Set([...firstFiles, ...softwareFiles, ...lastFiles])];
 
-  // Filter scripts by OS platform. Certain lightweight/restricted OSes (arch linux, android termux,
-  // chromeos) only run a whitelisted subset of scripts plus their own OS-specific folder. All other
-  // OSes run everything except folders belonging to other platforms.
-  //
-  // How it works:
-  // 1. bareboneScriptsCommon — shared minimal set of scripts for lightweight OS environments
-  // 2. scriptFinderConfigs — per-OS config with:
-  //    - key: the global OS flag to check (e.g. "is_os_arch_linux")
-  //    - allowed_path: OS-specific script folder that is always included
-  //    - whitelist: only these scripts (plus firstFiles/lastFiles) run on this OS
-  //    Each config's whitelist is expanded to include firstFiles and bash-syle-content.js
-  //    so the shell profile is always properly bootstrapped.
-  // 3. pathsToIgnore — OS-specific folders are excluded when that OS is not active.
-  //    e.g. "software/scripts/windows" is ignored unless is_os_window is true.
-  // 4. Evaluation order:
-  //    a. If a scriptFinderConfig matches the current OS, use whitelist-only mode:
-  //       include the file if it's in the OS folder OR in the whitelist, reject otherwise.
-  //    b. If no scriptFinderConfig matches (standard OS like ubuntu, mac, windows),
-  //       include everything except folders belonging to other inactive OSes.
+  // Exclude OS-specific script folders that don't belong to the current platform.
+  // Each script self-guards against unsupported OSes via exitIfUnsupportedOs().
+  const pathsToIgnore = [
+    [is_os_arch_linux, "software/scripts/arch_linux"],
+    [is_os_android_termux, "software/scripts/android_termux"],
+    [is_os_window, "software/scripts/windows"],
+    [is_os_darwin_mac, "software/scripts/mac"],
+    [is_os_chromeos, "software/scripts/chromeos"],
+  ]
+    .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
+    .filter((s) => !!s);
+
   return softwareFiles.filter((file) => {
-    // Shared minimal scripts for lightweight OS environments (arch linux, chromeos)
-    const bareboneScriptsCommon = `
-      software/scripts/fzf.js
-      software/scripts/synle-make-component.js
-      software/scripts/diff-so-fancy.sh
-      software/scripts/sublime-text-config.js
-      software/scripts/sublime-text-keys.js
-      software/scripts/vs-code-config.js
-      software/scripts/vs-code-keys.js
-      software/scripts/jq.js
-      software/scripts/jq.sh
-      software/scripts/terminator.js
-      software/scripts/vim-configurations.js
-      software/scripts/vim-vundle.sh
-      software/scripts/git.js
-      software/scripts/tmux.js
-    `;
-
-    // Per-OS whitelist configs for restricted environments.
-    // Each entry defines which scripts are allowed to run on that OS.
-    const scriptFinderConfigs = [
-      {
-        key: "is_os_arch_linux",
-        allowed_path: "software/scripts/arch_linux",
-        whitelist: `
-          ${bareboneScriptsCommon}
-          software/scripts/git.js
-          software/scripts/fonts.js
-          software/scripts/kde-konsole-profile.js
-          software/scripts/libreoffice.js
-        `,
-      },
-      {
-        key: "is_os_android_termux",
-        allowed_path: "software/scripts/android_termux",
-        whitelist: `
-          software/scripts/vim-configurations.js
-          software/scripts/vim-vundle.sh
-        `,
-      },
-      {
-        key: "is_os_chromeos",
-        allowed_path: "software/scripts/chromeos",
-        whitelist: `
-          ${bareboneScriptsCommon}
-          software/scripts/fonts.js
-          software/scripts/libreoffice.js
-        `,
-      },
-    ].map((scriptFinderConfig) => {
-      // Expand whitelist to include bootstrap (firstFiles) and finalization scripts
-      // so the shell profile is always properly set up
-      scriptFinderConfig.whitelist = [
-        ...firstFiles,
-        ...convertTextToList(scriptFinderConfig.whitelist),
-        "software/scripts/bash-syle-content.js",
-      ];
-      return scriptFinderConfig;
-    });
-
-    // OS-specific folders to exclude when that OS is not active.
-    // If the OS flag is false, its folder path is added to the ignore list.
-    const pathsToIgnore = [
-      [is_os_arch_linux, "software/scripts/arch_linux"],
-      [is_os_android_termux, "software/scripts/android_termux"],
-      [is_os_window, "software/scripts/windows"],
-      [is_os_darwin_mac, "software/scripts/mac"],
-      [is_os_chromeos, "software/scripts/chromeos"],
-    ]
-      .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
-      .filter((s) => !!s);
-
-    // Check if current OS matches a restricted environment config.
-    // If so, only allow scripts in its folder or whitelist.
-    for (const scriptFinderConfig of scriptFinderConfigs) {
-      const isScriptFinderConfigApplicable = global[scriptFinderConfig.key];
-
-      if (isScriptFinderConfigApplicable) {
-        // allow scripts in the OS-specific folder
-        if (file.includes(scriptFinderConfig.allowed_path)) {
-          return true;
-        }
-
-        // allow scripts explicitly whitelisted for this OS
-        if (scriptFinderConfig.whitelist.indexOf(file) >= 0) {
-          return true;
-        }
-
-        // reject everything else for this restricted OS
-        return false;
-      }
-    }
-
-    // Standard OS (ubuntu, mac, windows, etc): exclude folders for inactive OSes
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
         return false;
       }
     }
-
     return true;
   });
 }
