@@ -64,7 +64,8 @@ strategy = incremental
 
 [alias]
 # General
-s = status -sb # Short status with branch info
+s = !git status -sb && git diff --stat
+stat = status -sb # Short status with branch info
 a = add
 aa = add -A # Add all (including untracked)
 ap = add -p # Interactive patch mode
@@ -112,9 +113,7 @@ ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
 
 # Log & Diff
 l = git log --date=short --abbrev-commit --pretty=format:"%C(yellow)%h %C(blue)%ad %C(reset)%s"
-ln = !git l -n
-ls = !git l --one-line
-logs = !git ls
+ll = git log --graph --oneline --decorate --all --author-date-order
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^
 ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
