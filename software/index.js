@@ -1,3 +1,5 @@
+/// <reference path="index.js" />
+
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
@@ -1849,10 +1851,7 @@ async function _doWorkFullRun() {
   }
 
   // create the sy tweak folder
-  const pathsToCreateDir = [
-    path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
-    path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),
-  ];
+  const pathsToCreateDir = [path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "mac"), path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "windows")];
 
   for (const aPath of pathsToCreateDir) {
     try {

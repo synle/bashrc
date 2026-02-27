@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 includeSource("software/scripts/sublime-text.common.js");
 
 let mySublimeTextConfigs = {};

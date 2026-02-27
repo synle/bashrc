@@ -1,3 +1,5 @@
+/// <reference path="../../index.js" />
+
 /** * Gate check that exits early if the current OS is not macOS. */
 async function doWork() {
   const onlyMacProfile = readText("software/scripts/mac/_only-mac-profile.bash").trim();

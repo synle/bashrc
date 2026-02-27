@@ -1,3 +1,3 @@
 declare module "index" {
-    export {};
+  export {};
 }
