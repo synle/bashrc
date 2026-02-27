@@ -164,7 +164,6 @@ echo '< build.sh'
 ##########################################################
 if should_run jsdocs; then
 echo '> Build JSDocs for JS Code'
-node software/build-jsdocs.cjs
 # Generate .d.ts: preprocess index.js to strip require() calls, then run tsc
 node -e '
 const fs = require("fs");
