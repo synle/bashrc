@@ -1294,7 +1294,8 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
         files = await listRepoDir();
       } catch (_) {}
     }
-  } else  {// otherwise just fetch from upstream
+  } else {
+    // otherwise just fetch from upstream
     // fetch from APIS
     files = await listRepoDir();
   }
