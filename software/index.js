@@ -970,15 +970,36 @@ function registerPlatformTweaks(platformName, fileName, content, sourceOverride)
 }
 
 /**
+ * Guard clause: exits the process based on whether the given path exists or not.
+ * @param {string} targetPath - The path to check
+ * @param {boolean} [exitIfFound=false] - If true, exits when path exists. If false, exits when path does not exist.
+ * @param {string} [message] - Optional message (defaults to "Skipped : Found Folder" or "Skipped : Not Found")
+ */
+function exitIfPathCheck(targetPath, exitIfFound = false, message) {
+  const found = filePathExist(targetPath);
+  if (exitIfFound ? found : !found) {
+    const defaultMessage = exitIfFound ? "Skipped : Found Folder" : "Skipped : Not Found";
+    console.log(consoleLogColor1(`    >> ${message || defaultMessage}`), targetPath);
+    return process.exit();
+  }
+}
+
+/**
  * Guard clause: exits the process if the given path does not exist.
  * @param {string} targetPath - The path to check
  * @param {string} [message] - Optional message (defaults to "Skipped : Not Found")
  */
 function exitIfPathNotFound(targetPath, message) {
-  if (!filePathExist(targetPath)) {
-    console.log(consoleLogColor1(`    >> ${message || "Skipped : Not Found"}`));
-    return process.exit();
-  }
+  return exitIfPathCheck(targetPath, false, message);
+}
+
+/**
+ * Guard clause: exits the process if the given path already exists.
+ * @param {string} targetPath - The path to check
+ * @param {string} [message] - Optional message (defaults to "Skipped : Found Folder")
+ */
+function exitIfPathFound(targetPath, message) {
+  return exitIfPathCheck(targetPath, true, message);
 }
 
 /**

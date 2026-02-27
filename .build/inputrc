@@ -62,4 +62,4 @@ set revert-all-at-newline on           # Reset edited history entries when you p
 # Custom Shortcuts
 ########################################
 "\C-b": "fuzzy_favorite_command\r"   # Ctrl+B — run fuzzy favorite command picker
-"\C-n": "fuzzyMakeComponent\r"       # Ctrl+N — run fuzzy make-component scaffold
+"\C-n": "fuzzy_make_component\r"       # Ctrl+N — run fuzzy make-component scaffold

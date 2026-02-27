@@ -6,8 +6,12 @@ async function doWork() {
 
   console.log("  >> Download and installing fzf:", consoleLogColor4(targetPath));
 
-  // clone it
-  await deleteFolder(targetPath);
+  if (TEST_FORCE_REFRESH) {
+    await deleteFolder(targetPath);
+  }
+
+  exitIfPathFound(targetPath);
+
   await execBash(`
     git clone https://github.com/junegunn/fzf.git ${targetPath} &>/dev/null;
     `);
