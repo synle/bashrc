@@ -167,8 +167,6 @@ declare function parseJsonWithComments(oldText: string): object;
 declare function clone(obj: object): object;
 /**
  * Detects and returns the Windows user home directory under WSL.
- * Tries two possible mount paths (/mnt/c/Users and /c/Users) and sets
- * global path variables (BASE_C_DIR_WINDOW, BASE_D_DIR_WINDOW) accordingly.
  * @returns {string|undefined} The Windows user home directory path, or undefined if not found
  */
 declare function getWindowUserBaseDir(): string | undefined;
@@ -543,22 +541,34 @@ declare function _doWorkTestFiles(): Promise<void>;
  * @returns {Promise<void>}
  */
 declare function _doWorkFullRun(): Promise<void>;
-declare var fs: {};
-declare var path: {};
-declare var https: {};
-declare var http: {};
-declare var BASE_HOMEDIR_LINUX: any;
-declare var BASH_SYLE_PATH: any;
-declare var BASH_SYLE_AUTOCOMPLETE_PATH: any;
-declare var BASH_SYLE_COMMON_PATH: any;
-declare var BASE_C_DIR_WINDOW: string;
-declare var BASE_D_DIR_WINDOW: string;
-declare var NODE_JS_VERSION: any;
-declare var FNM_DIR: any;
-declare var FNM_DEFAULT_NODE_PATH: any;
-declare var BASH_PROFILE_CODE_REPO_RAW_URL: any;
-declare var BASH_SYLE_COMMON: any;
-declare var IS_FORCE_REFRESH: boolean;
+declare function parseBoolean(v: any): boolean;
+declare function parseString(v: any): any;
+/** @type {typeof import("fs")} */
+declare const fs: typeof import("fs");
+/** @type {typeof import("path")} */
+declare const path: typeof import("path");
+/** @type {typeof import("https")} */
+declare const https: typeof import("https");
+/** @type {typeof import("http")} */
+declare const http: typeof import("http");
+declare const BASE_HOMEDIR_LINUX: "";
+declare const BASH_SYLE_PATH: any;
+declare const BASH_SYLE_AUTOCOMPLETE_PATH: any;
+declare const BASH_SYLE_COMMON_PATH: any;
+declare const BASE_C_DIR_WINDOW: "/mnt/c";
+declare const BASE_D_DIR_WINDOW: "/mnt/d";
+declare const NODE_JS_VERSION: any;
+declare const FNM_DIR: any;
+declare const FNM_DEFAULT_NODE_PATH: any;
+declare const BASH_PROFILE_CODE_REPO_RAW_URL: any;
+declare const BASH_SYLE_COMMON: any;
+declare const REPO_PATH_IDENTIFIER: any;
+declare const REPO_BRANCH_NAME: any;
+declare const DEBUG_WRITE_TO_DIR: any;
+declare const IS_FORCE_REFRESH: boolean;
+declare const IS_TEST_SCRIPT_MODE: boolean;
+declare const IS_LIGHT_WEIGHT_MODE: boolean;
+declare const REPO_PREFIX_URL: string;
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.
@@ -594,7 +604,6 @@ declare let tabSize: number;
  * @property {string[]} ignoredBinaries - Glob patterns for binary files visible in tree but excluded from search for performance
  */
 declare const EDITOR_CONFIGS: any;
-declare const lineBreak: 100;
 /**
  * The host config is located here:
  * host name => host ip
@@ -611,15 +620,12 @@ declare const is_os_arch_linux: boolean;
 declare const is_os_android_termux: boolean;
 /** @type {boolean} */
 declare const is_os_chromeos: boolean;
-/** @type {boolean} */
-declare const isLightweightMode: boolean;
 declare const BASE_SY_CUSTOM_TWEAKS_DIR: any;
-declare const DEBUG_WRITE_TO_DIR: any;
-declare const repoName: "synle/bashrc";
-declare const repoBranch: "master";
-declare const REPO_PREFIX_URL: "https://raw.githubusercontent.com/synle/bashrc/master/";
-declare const isTestScriptMode: boolean;
-declare const COMMENT_BREAK: "#### ============================================================================ ###";
+declare const LINE_BREAK_COUNT: 100;
+declare const LINE_BREAK_EQUAL: any;
+declare const LINE_BREAK_HASH: string;
+declare const LINE_BREAK_SLASH: string;
+declare const COMMENT_BREAK: string;
 /**
  * ANSI color codes used to dynamically generate global color helper functions.
  * The loop below creates echoColor{N} and consoleLogColor{N} for each non-null entry,

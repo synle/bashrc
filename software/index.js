@@ -214,7 +214,6 @@ const EDITOR_CONFIGS = {
   ],
 };
 
-
 //////////////////////////////////////////////////////
 // Host Config & OS Flags
 //////////////////////////////////////////////////////
@@ -242,7 +241,6 @@ const is_os_chromeos = !!global.is_os_chromeos;
 
 // setting up the path for the extra tweaks
 const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
-
 
 const LINE_BREAK_COUNT = 100; // console line break
 const LINE_BREAK_EQUAL = LINE_BREAK_EQUAL;
@@ -683,9 +681,7 @@ function clone(obj) {
  */
 function getWindowUserBaseDir() {
   const regexUsername = /(leng)|(sy[ ]*le)/i;
-  const basePaths = [
-    [path.join(BASE_C_DIR_WINDOW, "Users")],
-  ];
+  const basePaths = [[path.join(BASE_C_DIR_WINDOW, "Users")]];
   for (const basePath of basePaths) {
     const res = findDirSingle(basePath, regexUsername);
     if (res) return res;
