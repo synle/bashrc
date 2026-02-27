@@ -1,5 +1,6 @@
-const parseBoolean = (v) => parseInt(v) === 1 || (v || "").trim().toLowerCase() === "true";
 const parseString = (v) => (v || "").trim();
+const parseInteger = (v, defaultValue) => parseInt(parseString(v)) || defaultValue;
+const parseBoolean = (v) => parseString(v).toLowerCase() === "true" || parseInteger(v, 0) === 1;
 
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
@@ -31,6 +32,7 @@ const IS_FORCE_REFRESH = parseBoolean(process.env.IS_FORCE_REFRESH);
 const IS_TEST_SCRIPT_MODE = parseBoolean(process.env.IS_TEST_SCRIPT_MODE);
 const IS_LIGHT_WEIGHT_MODE = parseBoolean(process.env.IS_LIGHT_WEIGHT_MODE);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
+const LINE_BREAK_COUNT = parseInt(process.env.LINE_BREAK_COUNT, 100); // console line break
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -242,11 +244,11 @@ const is_os_chromeos = !!global.is_os_chromeos;
 // setting up the path for the extra tweaks
 const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
 
-const LINE_BREAK_COUNT = 100; // console line break
+// line break and comment break
 const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
 const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
-const COMMENT_BREAK = `#### ${LINE_BREAK_EQUAL} ###`;
+const COMMENT_BREAK = `### ${LINE_BREAK_EQUAL} ###`;
 
 //////////////////////////////////////////////////////
 // Directory Search Utilities
@@ -1326,10 +1328,10 @@ async function getSoftwareScriptFiles() {
   // Exclude OS-specific script folders that don't belong to the current platform.
   // Each script self-guards against unsupported OSes via exitIfUnsupportedOs().
   const pathsToIgnore = [
-    [is_os_arch_linux, "software/scripts/arch_linux"],
-    [is_os_android_termux, "software/scripts/android_termux"],
     [is_os_window, "software/scripts/windows"],
     [is_os_darwin_mac, "software/scripts/mac"],
+    [is_os_arch_linux, "software/scripts/arch_linux"],
+    [is_os_android_termux, "software/scripts/android-termux"],
     [is_os_chromeos, "software/scripts/chromeos"],
   ]
     .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
@@ -1338,9 +1340,20 @@ async function getSoftwareScriptFiles() {
   return softwareFiles.filter((file) => {
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
+        console.log(
+    echoColorError(
+      `  >> Ignored: ${file}`
+    ),
+  );
         return false;
       }
     }
+
+    console.log(
+    echoColorSuccess(
+      `  >> Accepted: ${file}`
+    ),
+  );
     return true;
   });
 }

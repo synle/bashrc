@@ -541,8 +541,9 @@ declare function _doWorkTestFiles(): Promise<void>;
  * @returns {Promise<void>}
  */
 declare function _doWorkFullRun(): Promise<void>;
-declare function parseBoolean(v: any): boolean;
 declare function parseString(v: any): any;
+declare function parseInteger(v: any, defaultValue: any): any;
+declare function parseBoolean(v: any): boolean;
 /** @type {typeof import("fs")} */
 declare const fs: typeof import("fs");
 /** @type {typeof import("path")} */
@@ -569,6 +570,7 @@ declare const IS_FORCE_REFRESH: boolean;
 declare const IS_TEST_SCRIPT_MODE: boolean;
 declare const IS_LIGHT_WEIGHT_MODE: boolean;
 declare const REPO_PREFIX_URL: string;
+declare const LINE_BREAK_COUNT: number;
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.
@@ -621,7 +623,6 @@ declare const is_os_android_termux: boolean;
 /** @type {boolean} */
 declare const is_os_chromeos: boolean;
 declare const BASE_SY_CUSTOM_TWEAKS_DIR: any;
-declare const LINE_BREAK_COUNT: 100;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
 declare const LINE_BREAK_EQUAL: string;
