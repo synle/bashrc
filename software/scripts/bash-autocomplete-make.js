@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /**
  * Installs Make bash autocomplete for Makefile target names.
  */

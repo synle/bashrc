@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /** * Outputs shell commands to create symlinks for node, npm, npx, and yarn in /usr/local/bin. */
 async function doWork() {
   console.log(echo(`    >> Symlink for fnm and node executables in /usr/local/bin ${FNM_DEFAULT_NODE_PATH}`));

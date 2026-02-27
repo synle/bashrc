@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 /**
  * Installs SSH bash autocomplete from ~/.ssh/config hostnames.
  */

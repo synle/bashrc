@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 const sshPortMap = {};
 
 const portToIp = {

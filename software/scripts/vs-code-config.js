@@ -1,5 +1,3 @@
-/// <reference path="../index.js" />
-
 includeSource("software/scripts/vs-code.common.js");
 
 let COMMON_CONFIGS;

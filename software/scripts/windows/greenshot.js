@@ -1,5 +1,3 @@
-/// <reference path="../../index.js" />
-
 /** * Downloads and installs Greenshot screenshot tool for Windows. */
 async function doWork() {
   console.log("  >> Installing Windows Only - GreenShot");
