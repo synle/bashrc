@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Bootstraps .bash_profile and .bashrc with entry points for .bash_syle, the single source of all shell config. */
 async function doWork() {
   // wipe out the old bash_syle first

@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /** * Assembles the .bash_syle file by combining core and advanced shell profile content. */
 async function doWork() {
   console.log("  >> Setting up .bash_syle");

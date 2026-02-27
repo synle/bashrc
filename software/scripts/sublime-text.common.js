@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /**
  * Searches for the Sublime Text config directory based on the current OS.
  * @returns {Promise<string|null>} Path to the Sublime Text config directory, or null if not found.

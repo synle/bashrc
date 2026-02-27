@@ -1,3 +1,5 @@
+/// <reference path="../../index.js" />
+
 /** * Downloads and installs Classic Start menu for Windows. */
 async function doWork() {
   console.log("  >> Installing Windows Only - Classic Start Configs");

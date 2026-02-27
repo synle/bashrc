@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /**
  * Generates git rebase interactive alias snippets for various commit counts.
  * @returns {string} Git config alias entries for interactive rebase shortcuts.

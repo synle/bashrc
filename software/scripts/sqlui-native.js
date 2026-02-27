@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 const SQLUI_NATIVE_VERSION = "1.64.4";
 
 /** * Downloads the sqlui-native application binary for the current platform. */

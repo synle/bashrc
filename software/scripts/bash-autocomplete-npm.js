@@ -1,3 +1,5 @@
+/// <reference path="../index.js" />
+
 /**
  * Installs bash autocomplete for npm, npm-run, and npx commands.
  */
