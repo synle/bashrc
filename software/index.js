@@ -1236,13 +1236,6 @@ async function getAllRepoSoftwareFiles() {
   return getSoftwareScriptFiles({ skipOsFiltering: true, useFallback: true });
 }
 
-/**
- * Deduplicates and filters raw file list to valid software script paths,
- * normalizing prefixes and excluding JSON and index.js files. Optionally
- * filters by OS-specific markers when skipOsFiltering is false.
- * @param {string[]} files - Raw list of file paths to filter
- * @returns {string[]} Deduplicated, filtered, and normalized script file paths
- */
 function _cleanupSoftwareFilters(files) {
   return [
     ...new Set(
@@ -1250,15 +1243,6 @@ function _cleanupSoftwareFilters(files) {
         .map((s) => s.trim().replace("./software/", "software/"))
         .filter((f) => f && f.includes("software/"))
         .filter((f) => !f.endsWith(".json") && !f.endsWith("software/index.js"))
-        .filter((f) => {
-          if (skipOsFiltering === true) {
-            // if skip checking os, we want to return all scripts (used by the runner to generate all scripts)
-            return true;
-          }
-
-          // if os check is on, we want to include only the script tag (used for run mode by the os)
-          return f.includes("software/scripts");
-        })
         .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)))
         .sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b)), //sort by depth (slash count) then alphabetically,
     ),
