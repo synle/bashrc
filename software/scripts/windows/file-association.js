@@ -16,19 +16,20 @@ async function doWork() {
     ########################
     # text file association
     ########################
+    ${sublimeBinaryPath}
 
     ${convertTextToList(await fetchUrlAsString("software/scripts/windows/file-association.textfile.config"))
-      .map((extension) => `assoc ${extension}=${sublimeProgramBinaryName}`)
+      .map((extension) => `assoc .${extension}=${sublimeProgramBinaryName}`)
       .join("\n")}
-    ${sublimeBinaryPath}
 
     ########################
     # media file association
     ########################
-    ${convertTextToList(await fetchUrlAsString("software/scripts/windows/file-association.media.config"))
-      .map((extension) => `assoc ${extension}=${vlcProgramBinaryName}`)
-      .join("\n")}
     ${vlcBinaryPath}
+
+    ${convertTextToList(await fetchUrlAsString("software/scripts/windows/file-association.media.config"))
+      .map((extension) => `assoc .${extension}=${vlcProgramBinaryName}`)
+      .join("\n")}
   `);
 
   console.log("  >> Installing Windows Only - File Associations");
