@@ -1237,6 +1237,35 @@ async function getAllRepoSoftwareFiles() {
 }
 
 /**
+ * Deduplicates and filters raw file list to valid software script paths,
+ * normalizing prefixes and excluding JSON and index.js files. Optionally
+ * filters by OS-specific markers when skipOsFiltering is false.
+ * @param {string[]} files - Raw list of file paths to filter
+ * @returns {string[]} Deduplicated, filtered, and normalized script file paths
+ */
+function _cleanupSoftwareFilters(files) {
+  return [
+    ...new Set(
+      (files || [])
+        .map((s) => s.trim().replace("./software/", "software/"))
+        .filter((f) => f && f.includes("software/"))
+        .filter((f) => !f.endsWith(".json") && !f.endsWith("software/index.js"))
+        .filter((f) => {
+          if (skipOsFiltering === true) {
+            // if skip checking os, we want to return all scripts (used by the runner to generate all scripts)
+            return true;
+          }
+
+          // if os check is on, we want to include only the script tag (used for run mode by the os)
+          return f.includes("software/scripts");
+        })
+        .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)))
+        .sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b)), //sort by depth (slash count) then alphabetically,
+    ),
+  ];
+}
+
+/**
  * Discovers and returns the ordered list of software setup script files to execute.
  * Filters scripts based on the current OS platform and applies ordering rules
  * (certain scripts run first/last). Can fetch the file list from the GitHub API or local filesystem.
@@ -1249,37 +1278,11 @@ async function getAllRepoSoftwareFiles() {
 async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles = false, useFallback = false } = {}) {
   let files;
 
-  /**
-   * Deduplicates and filters raw file list to valid software script paths,
-   * normalizing prefixes and excluding JSON and index.js files. Optionally
-   * filters by OS-specific markers when skipOsFiltering is false.
-   * @param {string[]} files - Raw list of file paths to filter
-   * @returns {string[]} Deduplicated, filtered, and normalized script file paths
-   */
-  function _cleanupSoftwareFilters(files) {
-    return [
-      ...new Set(
-        (files || [])
-          .map((s) => s.trim().replace("./software/", "software/"))
-          .filter((f) => f && f.includes("software/"))
-          .filter((f) => !f.endsWith(".json") && !f.endsWith("software/index.js"))
-          .filter((f) => {
-            if (skipOsFiltering === true) {
-              // if skip checking os, we want to return all scripts (used by the runner to generate all scripts)
-              return true;
-            }
-
-            // if os check is on, we want to include only the script tag (used for run mode by the os)
-            return f.includes("software/scripts");
-          })
-          .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)))
-          .sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b)), //sort by depth (slash count) then alphabetically,
-      ),
-    ];
-  }
-
-  // fallback mode: try local find first, fall back to API if files is empty
-  if (useFallback === true) {
+  if (useLocalFiles === true || isTestScriptMode === true) {
+    // fetch from exec bash
+    files = convertRawTextToList(await execBash("find .", true));
+  } else if (useFallback === true) {
+    // fallback mode: try local find first, fall back to API if files is empty
     // fetch from exec bash
     try {
       files = convertRawTextToList(await execBash("find .", true));
@@ -1291,11 +1294,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
         files = await listRepoDir();
       } catch (_) {}
     }
-  }
-  if (useLocalFiles === true || isTestScriptMode === true) {
-    // fetch from exec bash
-    files = convertRawTextToList(await execBash("find .", true));
-  } else {
+  } else  {// otherwise just fetch from upstream
     // fetch from APIS
     files = await listRepoDir();
   }
