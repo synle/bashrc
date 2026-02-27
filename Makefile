@@ -14,3 +14,6 @@ format:
 
 clean:
 	bash clean.sh
+
+nuke:
+	rm -rf ~/.bash_sy* ~/.local/share/fnm
