@@ -1,33 +1,33 @@
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
 //////////////////////////////////////////////////////
-globalThis.fs = require("fs");
-globalThis.path = require("path");
-globalThis.https = require("https");
-globalThis.http = require("http");
-globalThis.BASE_HOMEDIR_LINUX = require("os").homedir();
+var fs = require("fs");
+var path = require("path");
+var https = require("https");
+var http = require("http");
+var BASE_HOMEDIR_LINUX = require("os").homedir();
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
-globalThis.BASH_SYLE_PATH = (process.env.BASH_SYLE_PATH || "").trim();
-globalThis.BASH_SYLE_AUTOCOMPLETE_PATH = (process.env.BASH_SYLE_AUTOCOMPLETE_PATH || "").trim();
-globalThis.BASH_SYLE_COMMON_PATH = (process.env.BASH_SYLE_COMMON_PATH || "").trim();
+var BASH_SYLE_PATH = (process.env.BASH_SYLE_PATH || "").trim();
+var BASH_SYLE_AUTOCOMPLETE_PATH = (process.env.BASH_SYLE_AUTOCOMPLETE_PATH || "").trim();
+var BASH_SYLE_COMMON_PATH = (process.env.BASH_SYLE_COMMON_PATH || "").trim();
 
 // specific for windows and wsl only
-globalThis.BASE_MOUNT_DIR_WINDOW = "";
-globalThis.BASE_C_DIR_WINDOW = "";
-globalThis.BASE_D_DIR_WINDOW = "";
-globalThis.BASE_WINDOW = "";
-globalThis.BASE_WINDOW_1 = "/mnt/c/Users";
-globalThis.BASE_WINDOW_2 = "/c/Users";
+var BASE_MOUNT_DIR_WINDOW = "";
+var BASE_C_DIR_WINDOW = "";
+var BASE_D_DIR_WINDOW = "";
+var BASE_WINDOW = "";
+var BASE_WINDOW_1 = "/mnt/c/Users";
+var BASE_WINDOW_2 = "/c/Users";
 
 // default node installation (fnm) - values exported from run.sh
-globalThis.NODE_JS_VERSION = (process.env.NODE_JS_VERSION || "").trim();
-globalThis.FNM_DIR = (process.env.FNM_DIR || "").trim();
-globalThis.FNM_DEFAULT_NODE_PATH = (process.env.FNM_DEFAULT_NODE_PATH || "").trim();
-globalThis.BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || "").trim();
-globalThis.BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || "").trim();
-globalThis.TEST_FORCE_REFRESH = (process.env.TEST_FORCE_REFRESH || "").trim() === "1";
+var NODE_JS_VERSION = (process.env.NODE_JS_VERSION || "").trim();
+var FNM_DIR = (process.env.FNM_DIR || "").trim();
+var FNM_DEFAULT_NODE_PATH = (process.env.FNM_DEFAULT_NODE_PATH || "").trim();
+var BASH_PROFILE_CODE_REPO_RAW_URL = (process.env.BASH_PROFILE_CODE_REPO_RAW_URL || "").trim();
+var BASH_SYLE_COMMON = (process.env.BASH_SYLE_COMMON || "").trim();
+var TEST_FORCE_REFRESH = (process.env.TEST_FORCE_REFRESH || "").trim() === "1";
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -74,7 +74,7 @@ if (!tabSize || tabSize <= 2) {
  * @property {string[]} ignoredFolders - Directory names excluded from the editor file tree (e.g. 'node_modules', '.git')
  * @property {string[]} ignoredBinaries - Glob patterns for binary files visible in tree but excluded from search for performance
  */
-globalThis.EDITOR_CONFIGS = {
+var EDITOR_CONFIGS = {
   fontSize,
   fontFamily,
   fontSizeDefaultFallback: 14,
@@ -221,34 +221,34 @@ const lineBreak = 100; // console line break
  * host name => host ip
  * @type {Array}
  */
-globalThis.HOME_HOST_NAMES = [];
+var HOME_HOST_NAMES = [];
 
 // os flags
 /** @type {boolean} */
-globalThis.is_os_window = false;
+var is_os_window = false;
 /** @type {boolean} */
-globalThis.is_os_darwin_mac = false;
+var is_os_darwin_mac = false;
 /** @type {boolean} */
-globalThis.is_os_arch_linux = false;
+var is_os_arch_linux = false;
 /** @type {boolean} */
-globalThis.is_os_android_termux = false;
+var is_os_android_termux = false;
 /** @type {boolean} */
-globalThis.is_os_chromeos = false;
+var is_os_chromeos = false;
 Object.keys(process.env)
   .filter((envKey) => envKey.indexOf("is_os_") === 0)
-  .forEach((envKey) => (globalThis[envKey] = parseInt(process.env[envKey] || "0") > 0));
+  .forEach((envKey) => (global[envKey] = parseInt(process.env[envKey] || "0") > 0));
 
 /** @type {boolean} */
-globalThis.isLightweightMode = process.env.LIGHT_WEIGHT_MODE === "1";
+var isLightweightMode = process.env.LIGHT_WEIGHT_MODE === "1";
 
 // setting up the path for the extra tweaks
-globalThis.BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : globalThis.BASE_HOMEDIR_LINUX, "_extra");
+var BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
 
-globalThis.DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || "").toLowerCase().trim();
+var DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || "").toLowerCase().trim();
 
 const repoName = "synle/bashrc";
 const repoBranch = "master";
-globalThis.REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
+var REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
 
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
@@ -264,14 +264,14 @@ const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
  */
 function _getFilePath(filePath) {
   let pathToUse = filePath;
-  if (globalThis.DEBUG_WRITE_TO_DIR.length > 0) {
+  if (DEBUG_WRITE_TO_DIR.length > 0) {
     const fileName = filePath
       .replace(/[\/\\\(\)]/g, "_")
       .replace(/ /g, "_")
       .replace(/_\./g, ".")
       .replace(/__+/g, "_");
 
-    pathToUse = path.join(globalThis.DEBUG_WRITE_TO_DIR, fileName);
+    pathToUse = path.join(DEBUG_WRITE_TO_DIR, fileName);
   }
 
   return pathToUse;
@@ -691,22 +691,22 @@ function getWindowUserBaseDir() {
   let res = "";
 
   // try option 1
-  res = findDirSingle(globalThis.BASE_WINDOW_1, regexUsername);
+  res = findDirSingle(BASE_WINDOW_1, regexUsername);
   if (res) {
-    globalThis.BASE_WINDOW = globalThis.BASE_WINDOW_1;
-    globalThis.BASE_C_DIR_WINDOW = "/mnt/c";
-    globalThis.BASE_D_DIR_WINDOW = "/mnt/d";
-    globalThis.BASE_MOUNT_DIR_WINDOW = "/mnt";
+    BASE_WINDOW = BASE_WINDOW_1;
+    BASE_C_DIR_WINDOW = "/mnt/c";
+    BASE_D_DIR_WINDOW = "/mnt/d";
+    BASE_MOUNT_DIR_WINDOW = "/mnt";
     return res;
   }
 
   // try option 2
-  res = findDirSingle(globalThis.BASE_WINDOW_2, regexUsername);
+  res = findDirSingle(BASE_WINDOW_2, regexUsername);
   if (res) {
-    globalThis.BASE_WINDOW = globalThis.BASE_WINDOW_2;
-    globalThis.BASE_C_DIR_WINDOW = "/c";
-    globalThis.BASE_D_DIR_WINDOW = "/d";
-    globalThis.BASE_MOUNT_DIR_WINDOW = "/";
+    BASE_WINDOW = BASE_WINDOW_2;
+    BASE_C_DIR_WINDOW = "/c";
+    BASE_D_DIR_WINDOW = "/d";
+    BASE_MOUNT_DIR_WINDOW = "/";
     return res;
   }
 
@@ -1525,16 +1525,16 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
   const color = CONSOLE_COLORS[idx];
 
   if (color) {
-    global["echoColor" + idx] = (str) => echoColor(str, color);
-    global["consoleLogColor" + idx] = (str) => consoleLogColor(str, color);
+    globalThis["echoColor" + idx] = (str) => echoColor(str, color);
+    globalThis["consoleLogColor" + idx] = (str) => consoleLogColor(str, color);
   }
 }
 
 /** @type {(str: string) => string} Generates a bash echo command with green (success) coloring */
-global.echoColorSuccess = (str) => echoColor(str, "32m");
+var echoColorSuccess = (str) => echoColor(str, "32m");
 /** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
-global.echoColorError = (str) => echoColor(str, "31m");
-global.echoColorWarning = (str) => echoColor(str, "33m");
+var echoColorError = (str) => echoColor(str, "31m");
+var echoColorWarning = (str) => echoColor(str, "33m");
 
 //////////////////////////////////////////////////////
 // Script Processing & Execution
@@ -1831,8 +1831,8 @@ async function _doWorkFullRun() {
  */
 (async function () {
   const missingEnvVars = [
-    ["BASH_PROFILE_CODE_REPO_RAW_URL", globalThis.BASH_PROFILE_CODE_REPO_RAW_URL],
-    ["BASH_SYLE_COMMON", globalThis.BASH_SYLE_COMMON],
+    ["BASH_PROFILE_CODE_REPO_RAW_URL", BASH_PROFILE_CODE_REPO_RAW_URL],
+    ["BASH_SYLE_COMMON", BASH_SYLE_COMMON],
   ]
     .filter(([, value]) => !value)
     .map(([key]) => key);
@@ -1843,15 +1843,15 @@ async function _doWorkFullRun() {
 
   // getting the ip address mapping
   try {
-    globalThis.HOME_HOST_NAMES = await fetchUrlAsJson(`software/metadata/ip-address.config.hostnamesFlattened`);
+    HOME_HOST_NAMES = await fetchUrlAsJson(`software/metadata/ip-address.config.hostnamesFlattened`);
   } catch (err) {
-    globalThis.HOME_HOST_NAMES = [];
+    HOME_HOST_NAMES = [];
   }
 
   // create the sy tweak folder
   const pathsToCreateDir = [
-    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
-    path.join(globalThis.BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),
+    path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "mac"),
+    path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "windows"),
   ];
 
   for (const aPath of pathsToCreateDir) {
