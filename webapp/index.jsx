@@ -7,7 +7,6 @@ import "./index.scss";
 
 const REPO_PATH_IDENTIFIER = window.REPO_PATH_IDENTIFIER;
 const REPO_BRANCH_NAME = window.REPO_BRANCH_NAME;
-const BASH_SYLE_COMMON = window.BASH_SYLE_COMMON;
 const REPO_URL = `https://github.com/${REPO_PATH_IDENTIFIER}`;
 const BASH_PROFILE_CODE_REPO_RAW_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}`;
 const BASH_PROFILE_CODE_REPO_VIEW_URL = `${REPO_URL}/blob/${REPO_BRANCH_NAME}`;

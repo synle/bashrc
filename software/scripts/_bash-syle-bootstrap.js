@@ -10,8 +10,8 @@ async function doWork() {
   }
 
   const entryPointContent = trimSpacesOnBothEnd(`
-    [ -f ${BASH_SYLE_COMMON} ] && . ${BASH_SYLE_COMMON} > /dev/null 2>&1
-    ${coreBashProfileFiles.map((file) => "[ -f " + file + " ] && . " + file + " > /dev/null 2>&1").join("\n")}
+    [ -f "${BASH_SYLE_COMMON_PATH}" ] && . "${BASH_SYLE_COMMON_PATH}" > /dev/null 2>&1
+    ${coreBashProfileFiles.map((file) => '[ -f "' + file + '" ] && . "' + file + '" > /dev/null 2>&1').join("\n")}
   `);
 
   // bootstrap .bash_profile (login shells on all platforms)
