@@ -157,7 +157,7 @@ EOF
   ##########################################################
   # Cleanup
   ##########################################################
-  if [ "$TEST_FORCE_REFRESH" = "1" ] || [ ! -f "$BASH_SYLE_COMMON" ]; then
+  if [ "$IS_FORCE_REFRESH" = "1" ] || [ ! -f "$BASH_SYLE_COMMON" ]; then
     echo '>> Kill all dock icons'
     defaults write com.apple.dock persistent-apps -array
     killall Dock

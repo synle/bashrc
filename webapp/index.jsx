@@ -1037,7 +1037,7 @@ function MacOSXNotesDom() {
       <TargetSystemOSWarningDom targetDomString="mac" />
       <DynamicTextArea path="/bootstrap/setup.sh" />
       <DynamicTextArea path="/mac/README.md" />
-      <DynamicTextArea path="/.build/font.sh" />
+      <DynamicTextArea path="/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
       <DynamicTextArea path="/.build/inputrc" />
@@ -1065,7 +1065,7 @@ function LinuxNotesDom() {
       <DynamicTextArea path="/bootstrap/setup.sh" />
       <DynamicTextArea path="/linux/linux-mint-config.sh" />
       <DynamicTextArea path="/linux/README.md" />
-      <DynamicTextArea path="/.build/font.sh" />
+      <DynamicTextArea path="/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/gitignore_global" />
       <DynamicTextArea path="/.build/ssh-config" />
@@ -1139,7 +1139,7 @@ function WindowsNotesDom() {
       <DynamicTextArea path="/bootstrap/setup.sh" />
       <DynamicTextArea path="/windows/README.md" />
       <DynamicTextArea path="/bootstrap/dependencies-windows.ps1" />
-      <DynamicTextArea path="/.build/font.sh" />
+      <DynamicTextArea path="/fonts/install.sh" />
       <DynamicTextArea path="/.build/windows-terminal" />
       <DynamicTextArea path="/android/sponsorblock.json" />
       <CommonEditorSetupDom is_os_window={true} />

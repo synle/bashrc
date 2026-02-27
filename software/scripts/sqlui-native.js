@@ -18,7 +18,7 @@ async function doWork() {
   const url = `${baseUrl}/${fileName}`;
   const destination = path.join(targetPath, fileName);
 
-  if (TEST_FORCE_REFRESH) {
+  if (IS_FORCE_REFRESH) {
     console.log("  >> Force refresh: deleting old sqlui-native files");
     await deleteFolder(targetPath);
   }

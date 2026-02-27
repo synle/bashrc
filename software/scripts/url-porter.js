@@ -4,7 +4,7 @@ async function doWork() {
   const zipUrl = "https://github.com/synle/url-porter/raw/refs/heads/main/url-porter.zip";
   const tmpZip = "/tmp/url-porter.zip";
 
-  if (TEST_FORCE_REFRESH) {
+  if (IS_FORCE_REFRESH) {
     console.log("  >> Force refresh: deleting old url-porter files");
     await deleteFolder(targetPath);
   }

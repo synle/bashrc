@@ -28,7 +28,7 @@
 #   bash run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
 #   bash run.sh --force-refresh                    # Force remove and reinstall fnm
 #   bash run.sh -f                                 # Shorthand for --force-refresh
-#   bash run.sh --lightweight                      # Export LIGHT_WEIGHT_MODE=1 for lightweight installs
+#   bash run.sh --lightweight                      # Export IS_LIGHT_WEIGHT_MODE=1 for lightweight installs
 #   bash run.sh --debug                            # Enable debug mode (set -x for verbose output)
 #   bash run.sh -D                                 # Shorthand for --debug
 #
@@ -137,9 +137,9 @@ run_only_prescripts=false
 force_refresh=false
 debug_mode=false
 _parsing_into=""
-unset TEST_SCRIPT_MODE
+unset IS_TEST_SCRIPT_MODE
 unset TEST_SCRIPT_FILES
-unset TEST_FORCE_REFRESH
+unset IS_FORCE_REFRESH
 
 ####################################################################
 # Parse arguments
@@ -178,11 +178,11 @@ for arg in "$@"; do
       ;;
     --force-refresh|-force-refresh|--force|-force|-f)
       force_refresh=true
-      export TEST_FORCE_REFRESH=1
+      export IS_FORCE_REFRESH=1
       _parsing_into=""
       ;;
     --lightweight|-lightweight)
-      export LIGHT_WEIGHT_MODE=1
+      export IS_LIGHT_WEIGHT_MODE=1
       _parsing_into=""
       ;;
     --debug|-debug|-D)
@@ -212,7 +212,7 @@ done
 ####################################################################
 # Set exports
 ####################################################################
-if [ "$run_mode" = "local" ]; then export TEST_SCRIPT_MODE=1; fi
+if [ "$run_mode" = "local" ]; then export IS_TEST_SCRIPT_MODE=1; fi
 if [ -n "$files_to_test" ]; then export TEST_SCRIPT_FILES="$files_to_test"; fi
 
 ####################################################################
@@ -228,8 +228,8 @@ pre_scripts         = ${pre_run_scripts:-[none]}
 run_only_prescripts = $run_only_prescripts
 force_refresh       = $force_refresh
 debug               = $debug_mode
-lightweight         = ${LIGHT_WEIGHT_MODE:-0}
-test_script_mode    = $TEST_SCRIPT_MODE
+lightweight         = ${IS_LIGHT_WEIGHT_MODE:-0}
+test_script_mode    = $IS_TEST_SCRIPT_MODE
 os_flags            = ${active_os_flags:-[none]}
 "
 
@@ -271,7 +271,7 @@ fi
 # script: Install fnm and Node (skip on Android Termux)
 ####################################################################
 # Force refresh: remove existing fnm node and reinstall
-if [ "$TEST_FORCE_REFRESH" = true ] && command -v fnm >/dev/null 2>&1; then
+if [ "$IS_FORCE_REFRESH" = true ] && command -v fnm >/dev/null 2>&1; then
   fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
 fi
 if [ "$is_os_android_termux" != "1" ]; then

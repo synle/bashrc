@@ -187,7 +187,7 @@ fi
 if should_run script-indexes; then
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-bash run.sh --files="software/metadata/script-list.config.js"
+bash run.sh --files="software/metadata/script-list.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
 fi
 
@@ -212,14 +212,14 @@ export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
 bash run.sh --files="$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
 echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
+unset DEBUG_WRITE_TO_DIR DEBUG_WRITE_TO_DIR
 fi
 
 ##########################################################
 # step: host-mappings - Build Host Mappings (skip in CI)
 ##########################################################
 if should_run host-mappings && [ "$CI" != "true" ]; then
-  echo '> Build Host Mappings'
-  export DEBUG_WRITE_TO_DIR="" && \
+echo '> Build Host Mappings'
 bash run.sh --files="software/metadata/hosts-blocked-ads.config.js"
 fi
 

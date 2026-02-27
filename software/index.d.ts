@@ -168,7 +168,7 @@ declare function clone(obj: object): object;
 /**
  * Detects and returns the Windows user home directory under WSL.
  * Tries two possible mount paths (/mnt/c/Users and /c/Users) and sets
- * global path variables (BASE_WINDOW, BASE_C_DIR_WINDOW, etc.) accordingly.
+ * global path variables (BASE_C_DIR_WINDOW, BASE_D_DIR_WINDOW) accordingly.
  * @returns {string|undefined} The Windows user home directory path, or undefined if not found
  */
 declare function getWindowUserBaseDir(): string | undefined;
@@ -551,18 +551,14 @@ declare var BASE_HOMEDIR_LINUX: any;
 declare var BASH_SYLE_PATH: any;
 declare var BASH_SYLE_AUTOCOMPLETE_PATH: any;
 declare var BASH_SYLE_COMMON_PATH: any;
-declare var BASE_MOUNT_DIR_WINDOW: string;
 declare var BASE_C_DIR_WINDOW: string;
 declare var BASE_D_DIR_WINDOW: string;
-declare var BASE_WINDOW: string;
-declare var BASE_WINDOW_1: string;
-declare var BASE_WINDOW_2: string;
 declare var NODE_JS_VERSION: any;
 declare var FNM_DIR: any;
 declare var FNM_DEFAULT_NODE_PATH: any;
 declare var BASH_PROFILE_CODE_REPO_RAW_URL: any;
 declare var BASH_SYLE_COMMON: any;
-declare var TEST_FORCE_REFRESH: boolean;
+declare var IS_FORCE_REFRESH: boolean;
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.

@@ -4,7 +4,7 @@ async function doWork() {
 
   console.log("  >> Download and installing fzf:", consoleLogColor4(targetPath));
 
-  if (TEST_FORCE_REFRESH) {
+  if (IS_FORCE_REFRESH) {
     await deleteFolder(targetPath);
   }
 

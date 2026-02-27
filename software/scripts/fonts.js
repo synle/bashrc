@@ -17,7 +17,7 @@ async function doWork() {
 
   console.log("  >> Found fonts:", fonts.length);
 
-  if (TEST_FORCE_REFRESH) {
+  if (IS_FORCE_REFRESH) {
     console.log("  >> Force refresh: deleting old font files");
     await deleteFolder(targetFontPath);
   }
