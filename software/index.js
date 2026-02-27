@@ -1340,20 +1340,12 @@ async function getSoftwareScriptFiles() {
   return softwareFiles.filter((file) => {
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        console.log(
-    echoColorError(
-      `  >> Ignored: ${file}`
-    ),
-  );
+        console.log(echoColorError(`  >> Ignored: ${file}`));
         return false;
       }
     }
 
-    console.log(
-    echoColorSuccess(
-      `  >> Accepted: ${file}`
-    ),
-  );
+    console.log(echoColorSuccess(`  >> Accepted: ${file}`));
     return true;
   });
 }
