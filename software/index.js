@@ -41,7 +41,7 @@ var TEST_FORCE_REFRESH = (process.env.TEST_FORCE_REFRESH || "").trim() === "1";
  * @property {string} status - 'success' if the script was found, 'error' if not found
  * @property {string} description - Error detail message, empty string on success
  */
-var scriptProcessingResults = [];
+const scriptProcessingResults = [];
 
 //////////////////////////////////////////////////////
 // Editor Configuration
@@ -76,7 +76,7 @@ if (!tabSize || tabSize <= 2) {
  * @property {string[]} ignoredFolders - Directory names excluded from the editor file tree (e.g. 'node_modules', '.git')
  * @property {string[]} ignoredBinaries - Glob patterns for binary files visible in tree but excluded from search for performance
  */
-var EDITOR_CONFIGS = {
+const EDITOR_CONFIGS = {
   fontSize,
   fontFamily,
   fontSizeDefaultFallback: 14,
@@ -223,34 +223,34 @@ const lineBreak = 100; // console line break
  * host name => host ip
  * @type {Array}
  */
-var HOME_HOST_NAMES = [];
+let HOME_HOST_NAMES = [];
 
-// os flags
-/** @type {boolean} */
-var is_os_window = false;
-/** @type {boolean} */
-var is_os_darwin_mac = false;
-/** @type {boolean} */
-var is_os_arch_linux = false;
-/** @type {boolean} */
-var is_os_android_termux = false;
-/** @type {boolean} */
-var is_os_chromeos = false;
+// os flags - read from environment and also set on global for script file access
 Object.keys(process.env)
   .filter((envKey) => envKey.indexOf("is_os_") === 0)
   .forEach((envKey) => (global[envKey] = parseInt(process.env[envKey] || "0") > 0));
+/** @type {boolean} */
+const is_os_window = !!global.is_os_window;
+/** @type {boolean} */
+const is_os_darwin_mac = !!global.is_os_darwin_mac;
+/** @type {boolean} */
+const is_os_arch_linux = !!global.is_os_arch_linux;
+/** @type {boolean} */
+const is_os_android_termux = !!global.is_os_android_termux;
+/** @type {boolean} */
+const is_os_chromeos = !!global.is_os_chromeos;
 
 /** @type {boolean} */
-var isLightweightMode = process.env.LIGHT_WEIGHT_MODE === "1";
+const isLightweightMode = process.env.LIGHT_WEIGHT_MODE === "1";
 
 // setting up the path for the extra tweaks
-var BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
+const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
 
-var DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || "").toLowerCase().trim();
+const DEBUG_WRITE_TO_DIR = (process.env.DEBUG_WRITE_TO_DIR || "").toLowerCase().trim();
 
 const repoName = "synle/bashrc";
 const repoBranch = "master";
-var REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
+const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${repoName}/${repoBranch}/`;
 
 const isTestScriptMode = parseInt(process.env.TEST_SCRIPT_MODE) === 1;
 
@@ -1533,10 +1533,10 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
 }
 
 /** @type {(str: string) => string} Generates a bash echo command with green (success) coloring */
-var echoColorSuccess = (str) => echoColor(str, "32m");
+const echoColorSuccess = (str) => echoColor(str, "32m");
 /** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
-var echoColorError = (str) => echoColor(str, "31m");
-var echoColorWarning = (str) => echoColor(str, "33m");
+const echoColorError = (str) => echoColor(str, "31m");
+const echoColorWarning = (str) => echoColor(str, "33m");
 
 //////////////////////////////////////////////////////
 // Script Processing & Execution

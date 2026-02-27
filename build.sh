@@ -165,6 +165,21 @@ echo '< build.sh'
 if should_run jsdocs; then
 echo '> Build JSDocs for JS Code'
 node software/build-jsdocs.cjs
+# Generate .d.ts: preprocess index.js to strip require() calls, then run tsc
+node -e '
+const fs = require("fs");
+let src = fs.readFileSync("software/index.js", "utf8");
+src = src.replace(/^const (\w+) = require\("(\w+)"\);$/gm, (_, n, m) =>
+  `/** @type {typeof import("${m}")} */\nconst ${n} = /** @type {any} */ (null);`);
+src = src.replace(/^const (\w+) = require\("[^"]+"\)\.\w+\(\);?$/gm, (_, n) =>
+  `const ${n} = "";`);
+src = src.replace(/require\("[^"]+"\)/g, "({})");
+fs.writeFileSync("/tmp/_index-for-tsc.js", src);
+'
+npx tsc /tmp/_index-for-tsc.js --declaration --allowJs --emitDeclarationOnly \
+  --outDir /tmp/_dts-out --lib esnext --skipLibCheck --target esnext
+cp /tmp/_dts-out/_index-for-tsc.d.ts software/index.d.ts
+rm -rf /tmp/_index-for-tsc.js /tmp/_dts-out
 fi
 
 ##########################################################
