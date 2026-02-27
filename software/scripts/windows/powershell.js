@@ -6,7 +6,7 @@ let outputContent = "";
  */
 async function _getPath() {
   try {
-    let targetPath = globalThis.BASE_D_DIR_WINDOW;
+    let targetPath = BASE_D_DIR_WINDOW;
 
     // try it with D path
     // if it's not present, then try home dir in C drive
