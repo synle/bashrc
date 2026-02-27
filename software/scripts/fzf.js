@@ -16,7 +16,7 @@ async function doWork() {
     ${targetPath}/install --no-key-bindings --no-completion --no-update-rc &>/dev/null;
   `);
 
-  console.log("    >> Register binary with bashrc", BASE_BASH_SYLE);
+  console.log("    >> Register binary with bashrc", BASH_SYLE_PATH);
   registerWithBashSyleProfile("fzf - Fuzzy Find", `[ -f ~/.fzf.bash ] && . ~/.fzf.bash`);
 
   registerWithBashSyleProfile(

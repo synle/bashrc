@@ -18,7 +18,7 @@ async function doWork() {
     cwd: targetPath,
   });
 
-  console.log("    >> Register binary with bashrc", BASE_BASH_SYLE);
+  console.log("    >> Register binary with bashrc", BASH_SYLE_PATH);
   registerWithBashSyleProfile(
     "Sy Make Component",
     trimLeftSpaces(`

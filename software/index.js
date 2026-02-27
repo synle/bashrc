@@ -7,12 +7,12 @@ globalThis.fs = require("fs");
 globalThis.path = require("path");
 globalThis.https = require("https");
 globalThis.http = require("http");
+globalThis.BASE_HOMEDIR_LINUX = require("os").homedir();
 
 // depends on system, it's either BASE_WINDOW_1 or BASE_WINDOW_2
 // there's a script that will check and set the correct value used to BASE_WINDOW
-var BASE_HOMEDIR_LINUX = (globalThis.BASE_HOMEDIR_LINUX = (0, require)("os").homedir());
-globalThis.BASE_BASH_SYLE = path.join(BASE_HOMEDIR_LINUX, ".bash_syle");
-globalThis.BASE_BASH_SYLE_AUTOCOMPLETE = path.join(BASE_HOMEDIR_LINUX, ".bash_syle_autocomplete");
+globalThis.BASH_SYLE_PATH = (process.env.BASH_SYLE_PATH || "").trim()
+globalThis.BASH_SYLE_AUTOCOMPLETE_PATH = (process.env.BASH_SYLE_AUTOCOMPLETE_PATH || "").trim()
 
 // specific for windows and wsl only
 globalThis.BASE_MOUNT_DIR_WINDOW = "";
@@ -856,27 +856,27 @@ function prependTextBlock(resultTextContent, configKey, configValue, commentPref
 }
 
 /**
- * Reads BASE_BASH_SYLE, prepends a config block, and writes it back.
+ * Reads BASH_SYLE_PATH, prepends a config block, and writes it back.
  * Replaces the common 3-line read/prepend/write pattern.
  * @param {string} configKey - The config key for the text block
  * @param {string} content - The content to prepend
  */
 function registerWithBashSyleProfile(configKey, content) {
-  let textContent = readText(BASE_BASH_SYLE);
+  let textContent = readText(BASH_SYLE_PATH);
   textContent = prependTextBlock(textContent, configKey, content);
-  writeText(BASE_BASH_SYLE, textContent);
+  writeText(BASH_SYLE_PATH, textContent);
 }
 
 /**
- * Reads BASE_BASH_SYLE_AUTOCOMPLETE, prepends a config block, and writes it back.
+ * Reads BASH_SYLE_AUTOCOMPLETE_PATH, prepends a config block, and writes it back.
  * Used by bash-autocomplete-*.js scripts to register autocomplete blocks.
  * @param {string} configKey - The config key for the text block
  * @param {string} content - The content to prepend
  */
 function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
-  let textContent = readText(BASE_BASH_SYLE_AUTOCOMPLETE);
+  let textContent = readText(BASH_SYLE_AUTOCOMPLETE_PATH);
   textContent = appendTextBlock(textContent, configKey, content);
-  writeText(BASE_BASH_SYLE_AUTOCOMPLETE, textContent);
+  writeText(BASH_SYLE_AUTOCOMPLETE_PATH, textContent);
 }
 
 /**
@@ -951,7 +951,7 @@ function safeWriteText(targetPath, newContent, backupContent, minRatio = 0.1) {
 }
 
 /**
- * Registers a platform-specific tweaks file with BASE_BASH_SYLE and writes the tweaks content.
+ * Registers a platform-specific tweaks file with BASH_SYLE_PATH and writes the tweaks content.
  * @param {string} platformName - Display name (e.g. "Only Mac")
  * @param {string} fileName - The dotfile name (e.g. ".bash_syle_only_mac")
  * @param {string} content - The tweaks content to write to the file
@@ -960,7 +960,7 @@ function safeWriteText(targetPath, newContent, backupContent, minRatio = 0.1) {
 function registerPlatformTweaks(platformName, fileName, content, sourceOverride) {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, fileName);
 
-  console.log(`  >> Register ${platformName} profile`, BASE_BASH_SYLE);
+  console.log(`  >> Register ${platformName} profile`, BASH_SYLE_PATH);
   const sourceLine = sourceOverride || `. ${targetPath}`;
   registerWithBashSyleProfile(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
 

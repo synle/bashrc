@@ -83,7 +83,11 @@ echo "Steps to run: $_normalized"
 ####################################################################
 export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="master"
+export BASH_SYLE='~/.bash_syle'
+export BASH_SYLE_AUTOCOMPLETE='~/.bash_syle_autocomplete'
 export BASH_SYLE_COMMON='~/.bash_syle_common'
+export BASH_SYLE_PATH=$(eval echo $BASH_SYLE)
+export BASH_SYLE_AUTOCOMPLETE_PATH=$(eval echo $BASH_SYLE_AUTOCOMPLETE)
 export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/$REPO_PATH_IDENTIFIER/$REPO_BRANCH_NAME" # https://raw.githubusercontent.com/synle/bashrc/master
 
@@ -123,6 +127,8 @@ $os_flags
 export REPO_PATH_IDENTIFIER='$REPO_PATH_IDENTIFIER'
 export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'
 export BASH_PROFILE_CODE_REPO_RAW_URL='$BASH_PROFILE_CODE_REPO_RAW_URL'
+export BASH_SYLE='$BASH_SYLE'
+export BASH_SYLE_AUTOCOMPLETE='$BASH_SYLE_AUTOCOMPLETE'
 export BASH_SYLE_COMMON='$BASH_SYLE_COMMON'
 
 alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
@@ -189,39 +195,7 @@ echo '< build.sh'
 ##########################################################
 if should_run jsdocs; then
 echo '> Build JSDocs for JS Code'
-node -e """
-const fs = require('fs');
-const path = require('path');
-
-const scriptsDir = 'software';
-const baseScript = 'software/index.js'
-
-function getJsFiles(dir) {
-  let results = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) results.push(...getJsFiles(full));
-    else if (entry.name.endsWith('.js')) results.push(full);
-  }
-  return results;
-}
-
-for (const file of getJsFiles(scriptsDir)) {
-  const relPath = path.relative(path.dirname(file), baseScript);
-  const refTag = '/// <reference path=\"' + relPath + '\" />';
-
-  let content = fs.readFileSync(file, 'utf8');
-
-  // remove existing reference tag line
-  content = content.replace(/^\/\/\/\s*<reference[^\n]*\n/, '');
-
-  // strip blank lines
-  content = content.trim();
-
-  fs.writeFileSync(file, refTag + '\n\n' + content);
-  console.log('>> prepended reference tag to', file);
-}
-"""
+node software/build-jsdocs.cjs
 fi
 
 ##########################################################

@@ -4,7 +4,7 @@
 async function doWork() {
   console.log("  >> Setting up .bash_syle");
 
-  let res = readText(BASE_BASH_SYLE);
+  let res = readText(BASH_SYLE_PATH);
   res += `\n\n\n`;
 
   let contentProfileCore = await fetchUrlAsString(`bootstrap/profile-core.sh`);
@@ -54,5 +54,5 @@ ${contentProfileAdvanced}
   // remove double new lines
   res = cleanupExtraWhitespaces(res);
 
-  writeText(BASE_BASH_SYLE, res);
+  writeText(BASH_SYLE_PATH, res);
 }

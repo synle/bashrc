@@ -5,7 +5,11 @@
 ####################################################################
 export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="master"
+export BASH_SYLE='~/.bash_syle'
+export BASH_SYLE_AUTOCOMPLETE='~/.bash_syle_autocomplete'
 export BASH_SYLE_COMMON='~/.bash_syle_common'
+export BASH_SYLE_PATH=$(eval echo $BASH_SYLE)
+export BASH_SYLE_AUTOCOMPLETE_PATH=$(eval echo $BASH_SYLE_AUTOCOMPLETE)
 export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/$REPO_PATH_IDENTIFIER/$REPO_BRANCH_NAME" # https://raw.githubusercontent.com/synle/bashrc/master
 
@@ -45,6 +49,8 @@ $os_flags
 export REPO_PATH_IDENTIFIER='$REPO_PATH_IDENTIFIER'
 export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'
 export BASH_PROFILE_CODE_REPO_RAW_URL='$BASH_PROFILE_CODE_REPO_RAW_URL'
+export BASH_SYLE='$BASH_SYLE'
+export BASH_SYLE_AUTOCOMPLETE='$BASH_SYLE_AUTOCOMPLETE'
 export BASH_SYLE_COMMON='$BASH_SYLE_COMMON'
 
 alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"

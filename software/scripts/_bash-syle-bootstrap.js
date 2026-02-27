@@ -3,7 +3,7 @@
 /** * Bootstraps .bash_profile and .bashrc with entry points for .bash_syle, the single source of all shell config. */
 async function doWork() {
   // wipe out the old bash_syle first
-  const coreBashProfileFiles = [BASE_BASH_SYLE, BASE_BASH_SYLE_AUTOCOMPLETE];
+  const coreBashProfileFiles = [BASH_SYLE_PATH, BASH_SYLE_AUTOCOMPLETE_PATH];
   for (const file of coreBashProfileFiles) {
     console.log("  >> Wiping out the old bash profile asset: ", file);
     writeText(file, ``);

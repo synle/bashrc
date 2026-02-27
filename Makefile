@@ -1,4 +1,4 @@
-.PHONY: build run format
+.PHONY: build run format clean
 
 build:
 	bash build.sh
@@ -11,3 +11,6 @@ test:
 
 format:
 	bash format.sh
+
+clean:
+	bash clean.sh

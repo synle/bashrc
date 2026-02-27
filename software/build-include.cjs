@@ -130,6 +130,13 @@ function findMarkers(content, targetFile) {
 }
 
 /**
+ * Remove content between BEGIN/END markers, leaving the markers with empty content.
+ */
+function cleanBlock(content, key, commentPrefix, commentSuffix) {
+  return replaceBlock(content, key, "", commentPrefix, commentSuffix);
+}
+
+/**
  * Replace content between BEGIN/END markers.
  */
 function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix) {
@@ -144,14 +151,18 @@ function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix)
   return content.slice(0, beginIdx) + BEGIN + "\n" + sourceContent + "\n" + content.slice(endIdx);
 }
 
+// Check for --clean mode
+const isCleanMode = process.argv.includes("--clean");
+const modeName = isCleanMode ? "clean-include" : "build-include";
+
 // Build a lookup from key -> inclusion config
 const inclusionsByKey = new Map();
 for (const inc of INCLUSIONS) {
   inclusionsByKey.set(inc.key, inc);
 }
 
-// Determine target files: CLI args or auto-scan git-tracked *.sh and *.md files
-const cliTargets = process.argv.slice(2);
+// Determine target files: CLI args (excluding flags) or auto-scan git-tracked *.sh and *.md files
+const cliTargets = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 const trackedFiles = execSync('git ls-files "*.sh" "*.md"', { encoding: "utf8" }).trim().split("\n").filter(Boolean);
 const inclusionTargets = INCLUSIONS.flatMap((inc) => inc.targets);
 const targetFiles = cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])];
@@ -170,32 +181,40 @@ for (const target of targetFiles) {
   const markers = findMarkers(content, target);
 
   for (const { key, commentPrefix, commentSuffix } of markers) {
-    let sourceContent;
+    let replaced;
 
-    const inc = inclusionsByKey.get(key);
-    if (inc) {
-      // Config mode: use explicit inclusion
-      sourceContent = fs.readFileSync(inc.source, "utf8");
-      if (inc.transform) sourceContent = inc.transform(sourceContent);
-    } else if (isFilePath(key)) {
-      // Auto mode: key is the file path
-      if (!fs.existsSync(key)) {
-        console.log(`  >> Source file not found: ${key} (referenced in ${target}), skipping`);
+    if (isCleanMode) {
+      // Clean mode: replace block content with empty
+      replaced = cleanBlock(content, key, commentPrefix, commentSuffix);
+    } else {
+      // Build mode: replace block content with source
+      let sourceContent;
+
+      const inc = inclusionsByKey.get(key);
+      if (inc) {
+        // Config mode: use explicit inclusion
+        sourceContent = fs.readFileSync(inc.source, "utf8");
+        if (inc.transform) sourceContent = inc.transform(sourceContent);
+      } else if (isFilePath(key)) {
+        // Auto mode: key is the file path
+        if (!fs.existsSync(key)) {
+          console.log(`  >> Source file not found: ${key} (referenced in ${target}), skipping`);
+          continue;
+        }
+        sourceContent = autoTransform(fs.readFileSync(key, "utf8"), key, target);
+      } else {
+        // Unknown key, not a file path, no config — skip
         continue;
       }
-      sourceContent = autoTransform(fs.readFileSync(key, "utf8"), key, target);
-    } else {
-      // Unknown key, not a file path, no config — skip
-      continue;
-    }
 
-    sourceContent = sourceContent.trim();
-    const replaced = replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix);
+      sourceContent = sourceContent.trim();
+      replaced = replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix);
+    }
 
     if (replaced && replaced !== content) {
       content = replaced;
       changed = true;
-      console.log(`  >> Updated ${target} (block: ${key})`);
+      console.log(`  >> ${isCleanMode ? "Cleaned" : "Updated"} ${target} (block: ${key})`);
     } else {
       console.log(`  >> No changes needed in ${target} (block: ${key})`);
     }
@@ -207,4 +226,4 @@ for (const target of targetFiles) {
   }
 }
 
-console.log(`  >> build-include: ${totalUpdated} file(s) updated`);
+console.log(`  >> ${modeName}: ${totalUpdated} file(s) updated`);
