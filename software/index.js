@@ -1594,10 +1594,6 @@ function processScriptFile(file, originalFile, allRepoFiles) {
       return `sudo -E node`; // -E means preserve the env variable
     }
     if (file.includes(".sh.js")) {
-      if (DEBUG_WRITE_TO_DIR) {
-        // for debug mode, we do not want to run bash
-        return "node";
-      }
       return `node | bash`;
     }
     if (file.includes(".js")) {
@@ -1612,22 +1608,29 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     }
   }
 
-  const fileName = path.basename(file);
-  const filePattern = new RegExp(fileName, "i");
-  const foundMatchedPath = allRepoFiles.find((f) => filePattern.test(f) && f.startsWith(path.dirname(file)));
+  const foundMatchedPath =
+    allRepoFiles.find((f) => f === file) ||
+    allRepoFiles.find((f) => new RegExp(path.basename(file), "i").test(f) && f.startsWith(path.dirname(file)))
+    // || allRepoFiles.find((f) => f.toLowerCase().includes(file.toLowerCase()))
   const fileExists = !!foundMatchedPath;
 
-  let description = "";
+  let description;
+  let fileMatchState;
   if (fileExists) {
     if (file !== foundMatchedPath) {
       description = `Expanded ${originalFile} to ${foundMatchedPath}`;
+      fileMatchState = 'expanded_match'
     }
     file = foundMatchedPath;
   } else {
     description = `File not found: ${file}`;
+    fileMatchState = 'not_found'
   }
 
   if (fileExists) {
+    // purge matched file from the list to prevent duplicate matches
+    const idx = allRepoFiles.indexOf(foundMatchedPath);
+    if (idx !== -1) allRepoFiles.splice(idx, 1);
     console.log(`{ ${_generateScript(file, url)} ;} | ${_generatePipeOutput(file, url)}`);
   } else {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
@@ -1638,7 +1641,8 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     path: file,
     script: _generateScript(file, url),
     status: fileExists ? "success" : "error",
-    description: description,
+    fileMatchState: fileMatchState || '',
+    description: description || '',
   });
 }
 
@@ -1705,7 +1709,10 @@ function printScriptProcessingResults(results) {
 
   for (const result of results) {
     if (result.status === "success") {
-      console.log(echoColorSuccess(`[Success] ${result.file} (${result.path}). ${result.description}`));
+      console.log(echoColorSuccess(
+      ! result.fileMatchState ? `[Success] ${result.file}. ${result.description}`
+      : `[Success] ${result.file} (${result.path}). ${result.description}`
+    ));
     } else {
       console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}`));
     }
