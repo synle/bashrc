@@ -1259,7 +1259,7 @@ function filterRepoScripts(files) {
 async function listRepoDir(source = "remote_api", fallthrough = false) {
   if (source === "local" || fallthrough) {
     try {
-      return filterRepoScripts(convertRawTextToList(await execBash("find .", true)))
+      return filterRepoScripts(convertRawTextToList(await execBash("find .", true)));
     } catch (_) {}
   }
 
