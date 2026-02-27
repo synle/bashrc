@@ -29,7 +29,3 @@ if ! command -v claude >/dev/null 2>&1 && [ -z "$CLAUDE_BIN" ]; then
     fi
   done
 fi
-
-if [ -n "$CLAUDE_BIN" ] && [ ! -f /usr/local/bin/claude ]; then
-  sudo ln -sf "$CLAUDE_BIN" /usr/local/bin/claude
-fi
