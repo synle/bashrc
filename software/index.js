@@ -245,6 +245,7 @@ const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir(
 const LINE_BREAK_COUNT = 100; // console line break
 const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
 const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
+const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
 const COMMENT_BREAK = `#### ${LINE_BREAK_EQUAL} ###`;
 
 //////////////////////////////////////////////////////
