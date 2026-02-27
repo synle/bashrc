@@ -34,6 +34,9 @@ is_os_redhat=0 && command grep -Eiq "ID(_LIKE)?=(fedora|rhel|centos|rocky|alma)"
 is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && is_os_window=1
 is_os_wsl=0 && { [[ "$is_os_window" == "1" ]] || command grep -qi microsoft /proc/version 2>/dev/null; } && is_os_wsl=1
 
+# sudo access detection
+HAS_SUDO_ACCESS=0 && sudo -n true 2>/dev/null && HAS_SUDO_ACCESS=1
+
 # Write resolved values to common file
 os_flags=""
 for var in $(compgen -v | grep '^is_os_'); do
@@ -50,6 +53,8 @@ $LINE_BREAK_HASH
 $LINE_BREAK_HASH
 
 $os_flags
+
+export HAS_SUDO_ACCESS='$HAS_SUDO_ACCESS'
 
 export REPO_PATH_IDENTIFIER='$REPO_PATH_IDENTIFIER'
 export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'

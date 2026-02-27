@@ -28,6 +28,7 @@ const BASH_SYLE_COMMON = parseString(process.env.BASH_SYLE_COMMON);
 const REPO_PATH_IDENTIFIER = parseString(process.env.REPO_PATH_IDENTIFIER);
 const REPO_BRANCH_NAME = parseString(process.env.REPO_BRANCH_NAME);
 const DEBUG_WRITE_TO_DIR = parseString(process.env.DEBUG_WRITE_TO_DIR).toLowerCase();
+const HAS_SUDO_ACCESS = parseBoolean(process.env.HAS_SUDO_ACCESS);
 const IS_FORCE_REFRESH = parseBoolean(process.env.IS_FORCE_REFRESH);
 const IS_TEST_SCRIPT_MODE = parseBoolean(process.env.IS_TEST_SCRIPT_MODE);
 const IS_LIGHT_WEIGHT_MODE = parseBoolean(process.env.IS_LIGHT_WEIGHT_MODE);
@@ -1221,7 +1222,28 @@ function filterRepoScripts(files) {
     .filter((f) => !f.endsWith(".json") && f !== "software/index.js")
     .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)));
 
-  return [...new Set(filtered)];
+  // this is a list of files to run last
+  // NOTE: update ssh causes the change in host file,
+  // therefore it needs to be done last
+  const lastFiles = convertTextToList(`
+    software/scripts/bash-syle-content.js
+    software/scripts/vs-code-ext.sh
+  `);
+
+  return [...new Set(filtered)].sort((a, b) => {
+    const aIsLast = lastFiles.includes(a);
+    const bIsLast = lastFiles.includes(b);
+
+    // lastFiles come last
+    if (aIsLast !== bIsLast) return aIsLast ? 1 : -1;
+
+    // then by number of slashes (fewer slashes first)
+    const slashDiff = a.split("/").length - b.split("/").length;
+    if (slashDiff !== 0) return slashDiff;
+
+    // then alphabetically
+    return a.localeCompare(b);
+  });
 }
 
 /**
@@ -1237,9 +1259,7 @@ function filterRepoScripts(files) {
 async function listRepoDir(source = "remote_api", fallthrough = false) {
   if (source === "local" || fallthrough) {
     try {
-      return filterRepoScripts(convertRawTextToList(await execBash("find .", true))).sort(
-        (a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b),
-      );
+      return filterRepoScripts(convertRawTextToList(await execBash("find .", true)))
     } catch (_) {}
   }
 
@@ -1293,24 +1313,6 @@ async function getSoftwareScriptFiles() {
   // clean up the files, only include software/scripts (used for run mode by the os)
   files = filterRepoScripts(files).filter((f) => f.includes("software/scripts"));
 
-  const firstFiles = convertTextToList(`
-    software/scripts/_bash-syle-bootstrap.js
-    software/scripts/_fnm-binary.js
-  `);
-
-  // this is a list of file to do last
-  // NOTE because the update ssh causes the change in host file
-  // therefore it needs to be done last
-  const lastFiles = convertTextToList(`
-    software/scripts/bash-syle-content.js
-    software/scripts/etc-hosts.su.js
-    software/scripts/vs-code-ext.sh
-  `);
-
-  if (is_os_window) {
-    firstFiles.push("software/scripts/windows/mkdir.js");
-  }
-
   let softwareFiles = files
     .filter(
       (f) =>
@@ -1320,10 +1322,7 @@ async function getSoftwareScriptFiles() {
         !f.includes(".json") &&
         !f.includes(".common.js"),
     )
-    .filter((f) => firstFiles.indexOf(f) === -1 && lastFiles.indexOf(f) === -1)
     .sort();
-
-  softwareFiles = [...new Set([...firstFiles, ...softwareFiles, ...lastFiles])];
 
   // Exclude OS-specific script folders that don't belong to the current platform.
   // Each script self-guards against unsupported OSes via exitIfUnsupportedOs().
@@ -1338,14 +1337,19 @@ async function getSoftwareScriptFiles() {
     .filter((s) => !!s);
 
   return softwareFiles.filter((file) => {
+    if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
+      console.log(echoColorError(`  >> [Ignored] - No sudo access: ${file}`));
+      return false;
+    }
+
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        console.log(echoColorError(`  >> Ignored: ${file}`));
+        console.log(echoColorError(`  >> [Ignored] - OS Specific ${file}`));
         return false;
       }
     }
 
-    console.log(echoColorSuccess(`  >> Accepted: ${file}`));
+    console.log(echoColorSuccess(`  >> [Accepted]: ${file}`));
     return true;
   });
 }
