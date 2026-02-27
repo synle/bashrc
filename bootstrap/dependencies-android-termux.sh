@@ -14,17 +14,21 @@ termux-chroot
   ##########################################################
   # Install Packages
   ##########################################################
-  pkg install -y proot # needed for android termux fhd fixes
-  pkg install -y nodejs
-  pkg install -y fzf
-  pkg install -y vim
-  pkg install -y git
-  pkg install -y tig
-  pkg install -y python
-  pkg install -y bat
-  pkg install -y curl
-  pkg install -y git
-  pkg install -y tmux
+  installPackage() {
+    echo "  >> $@"
+    pkg install -y $@ &> /dev/null
+  }
+
+  installPackage proot # needed for android termux fhd fixes
+  installPackage nodejs
+  installPackage fzf
+  installPackage vim
+  installPackage git
+  installPackage tig
+  installPackage python
+  installPackage bat
+  installPackage curl
+  installPackage tmux
 
   ##########################################################
   # Termux Dracula Theme

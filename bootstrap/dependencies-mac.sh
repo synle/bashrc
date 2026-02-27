@@ -89,8 +89,8 @@ if [ "$is_os_darwin_mac" = "1" ]; then
   # Shell Setup
   ##########################################################
   echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
-  touch ~/.bash_syle ~/.bash_profile ~/.bashrc
-  chown "$USER" ~/.bash_syle ~/.bash_profile ~/.bashrc
+  touch "$BASH_SYLE_PATH" ~/.bash_profile ~/.bashrc
+  chown "$USER" "$BASH_SYLE_PATH" ~/.bash_profile ~/.bashrc
 
   echo '>> Change Shell to bash: $USER'
   if [ "$SHELL" != "/bin/bash" ]; then
@@ -157,7 +157,7 @@ EOF
   ##########################################################
   # Cleanup
   ##########################################################
-  if [ "$TEST_FORCE_REFRESH" = "1" ] || [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
+  if [ "$TEST_FORCE_REFRESH" = "1" ] || [ ! -f "$BASH_SYLE_COMMON" ]; then
     echo '>> Kill all dock icons'
     defaults write com.apple.dock persistent-apps -array
     killall Dock

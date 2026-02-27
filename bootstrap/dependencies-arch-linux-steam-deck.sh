@@ -2,11 +2,8 @@
 # Arch Linux / Steam Deck dependencies - pacman packages, boot video
 
 installPackage() {
-  echo '>> pacman install'
-  for packageName in "$@"; do
-    echo "$packageName"
-  done
-  sudo pacman -Sy $@
+  echo "  >> $@"
+  sudo pacman -Sy $@ &> /dev/null
 }
 
 if [ "$is_os_steamdeck" = "1" ]; then
@@ -27,11 +24,10 @@ if [ "$is_os_steamdeck" = "1" ]; then
   ##########################################################
   # Install Packages
   ##########################################################
-  installPackage \
-    bat \
-    ddcutil \
-    i2c-tools \
-  && echo '>> Done installPackage'
+  installPackage bat
+  installPackage ddcutil
+  installPackage i2c-tools
+  echo '>> Done installPackage'
 
   ##########################################################
   # Boot Video Directory

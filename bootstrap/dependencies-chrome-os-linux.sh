@@ -6,18 +6,21 @@ if [ "$is_os_chromeos" = "1" ]; then
 
   sudo apt-get update -y
 
-  sudo apt-get install -y \
-    curl \
-    git \
-    libreoffice \
-    make \
-    nautilus \
-    python \
-    remmina \
-    terminator \
-    vim \
-    vlc \
-  && echo '> Done Installing Dependencies...'
+  installPackage() {
+    echo "  >> $@"
+    sudo apt-get install -y --fix-missing $@ &> /dev/null
+  }
+
+  installPackage curl
+  installPackage git
+  installPackage libreoffice
+  installPackage make
+  installPackage nautilus
+  installPackage python
+  installPackage remmina
+  installPackage terminator
+  installPackage vim
+  installPackage vlc
 
 else
   echo ">> Skipped dependencies-chrome-os-linux.sh"
