@@ -1190,7 +1190,7 @@ function downloadAsset(url, destination) {
  * @returns {Promise<string[]>} The full list of repo files (not just downloaded ones)
  */
 async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
-  const files = await listRepoDir();
+  const files = await listRepoDir('remote_api');
 
   const filesToDownload = files.filter((s) => s.includes("binaries/") && !s.toLowerCase().includes(".md")).filter(findHandler);
 
@@ -1219,28 +1219,40 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 }
 
 /**
- * Lists all files in the GitHub repository.
- * When fetchFromRemote is true, queries the Git tree API. Otherwise, uses the pre-compiled
- * script list fallback directly.
- * @param {boolean} [fetchFromRemote=true] - If true, fetches the file list from the GitHub API
+ * Lists all files in the repository from different sources.
+ * @param {string} [source='remote_api'] - Source to fetch files from:
+ *   'remote_api' - fetches from GitHub Git tree API
+ *   'remote_cache' - fetches from pre-compiled script list config
+ *   'local' - fetches from local filesystem using find
+ * @param {boolean} [fallthrough=false] - If true, continues trying remaining sources in order
+ *   (remote_api -> remote_cache -> local) when the selected source fails
  * @returns {Promise<string[]>} Array of file paths in the repository
  */
-async function listRepoDir(fetchFromRemote = true) {
-  if (fetchFromRemote) {
+async function listRepoDir(source = 'remote_api', fallthrough = false) {
+  if (source === 'local' || fallthrough) {
+    try{
+      return filterRepoScripts(convertRawTextToList(await execBash("find .", true))).sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b))
+    } catch(_){
+
+    }
+  }
+
+  if (source === 'remote_api' || fallthrough) {
     const url = `https://api.github.com/repos/${repoName}/git/trees/${repoBranch}?recursive=1&cacheBust=${Date.now()}`;
 
     // doing a nested and recursive call to get the files
     try {
       const json = await fetchUrlAsJson(url);
       return json.tree.map((file) => file.path);
-    } catch (err) {}
+    } catch (_) {}
   }
 
-  // fall back to use the pre compiled set
-  try {
-    const content = await fetchUrlAsString("software/metadata/script-list.config");
-    return convertTextToList(content);
-  } catch (err) {}
+  if (source === 'remote_cache' || fallthrough) {
+    try {
+      const content = await fetchUrlAsString("software/metadata/script-list.config");
+      return convertTextToList(content);
+    } catch (_) {}
+  }
 
   // if things fail, let's just return empty array here
   return [];
@@ -1250,73 +1262,34 @@ async function listRepoDir(fetchFromRemote = true) {
 // Script File Discovery & Platform Filtering
 //////////////////////////////////////////////////////
 /**
- * Returns all software script files in the repo without OS filtering, using fallback file listing.
- * @returns {Promise<string[]>} Array of all script file paths
+ * Get all available scripts used for searching and matching against partially matched scripts.
+ * @returns {Promise<string[]>} Array of all script file paths sorted by depth then alphabetically
  */
 async function getAllRepoSoftwareFiles() {
-  return getSoftwareScriptFiles({ skipOsFiltering: true, useFallback: true });
-}
-
-function _cleanupSoftwareFilters(files) {
-  return [
-    ...new Set(
-      (files || [])
-        .map((s) => s.trim().replace("./software/", "software/"))
-        .filter((f) => f && f.includes("software/"))
-        .filter((f) => !f.endsWith(".json") && !f.endsWith("software/index.js"))
-        .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)))
-        .sort((a, b) => a.split("/").length - b.split("/").length || a.localeCompare(b)), //sort by depth (slash count) then alphabetically,
-    ),
-  ];
+  return listRepoDir('local', true);
 }
 
 /**
- * Discovers and returns the ordered list of software setup script files to execute.
+ * Gets list of scripts available for a system based on OS flags, used for checking and testing.
  * Filters scripts based on the current OS platform and applies ordering rules
  * (certain scripts run first/last). Can fetch the file list from the GitHub API or local filesystem.
- * @param {Object} [options={}] - Configuration options
- * @param {boolean} [options.skipOsFiltering=false] - If true, returns all matching scripts without OS filtering or ordering
- * @param {boolean} [options.useLocalFiles=false] - If true, uses local `find` instead of the GitHub API
- * @param {boolean} [options.useFallback=false] - If true, attempts both local `find` and GitHub API as fallbacks, using whichever succeeds last. Errors from either method are silently ignored.
  * @returns {Promise<string[]>} Ordered array of script file paths to execute
  */
-async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles = false, useFallback = false } = {}) {
+async function getSoftwareScriptFiles() {
   let files;
 
-  if (useLocalFiles === true || isTestScriptMode === true) {
-    // fetch from exec bash
-    files = convertRawTextToList(await execBash("find .", true));
-  } else if (useFallback === true) {
-    // fallback mode: try local find first, fall back to API if files is empty
-    // fetch from exec bash
-    try {
-      files = convertRawTextToList(await execBash("find .", true));
-    } catch (_) {}
-
-    // fetch from APIS
-    if (!files || files.length === 0) {
-      try {
-        files = await listRepoDir();
-      } catch (_) {}
-    }
+  if (isTestScriptMode === true) {
+    files = await listRepoDir('local');
   } else {
-    // otherwise just fetch from upstream
-    // fetch from APIS
-    files = await listRepoDir();
+    files = await listRepoDir('remote_api');
   }
 
-  // clean up the files
-  files = _cleanupSoftwareFilters(files);
-
-  //this is a special flags used to return all the script for index building
-  if (skipOsFiltering) {
-    return files;
-  }
+  // clean up the files, only include software/scripts (used for run mode by the os)
+  files = filterRepoScripts(files).filter((f) => f.includes("software/scripts"));
 
   const firstFiles = convertTextToList(`
     software/scripts/_bash-syle-bootstrap.js
     software/scripts/_fnm-binary.js
-    software/scripts/_fnm-symlink.sh.js
   `);
 
   // this is a list of file to do last
@@ -1346,9 +1319,28 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
 
   softwareFiles = [...new Set([...firstFiles, ...softwareFiles, ...lastFiles])];
 
+  // Filter scripts by OS platform. Certain lightweight/restricted OSes (arch linux, android termux,
+  // chromeos) only run a whitelisted subset of scripts plus their own OS-specific folder. All other
+  // OSes run everything except folders belonging to other platforms.
+  //
+  // How it works:
+  // 1. bareboneScriptsCommon — shared minimal set of scripts for lightweight OS environments
+  // 2. scriptFinderConfigs — per-OS config with:
+  //    - key: the global OS flag to check (e.g. "is_os_arch_linux")
+  //    - allowed_path: OS-specific script folder that is always included
+  //    - whitelist: only these scripts (plus firstFiles/lastFiles) run on this OS
+  //    Each config's whitelist is expanded to include firstFiles and bash-syle-content.js
+  //    so the shell profile is always properly bootstrapped.
+  // 3. pathsToIgnore — OS-specific folders are excluded when that OS is not active.
+  //    e.g. "software/scripts/windows" is ignored unless is_os_window is true.
+  // 4. Evaluation order:
+  //    a. If a scriptFinderConfig matches the current OS, use whitelist-only mode:
+  //       include the file if it's in the OS folder OR in the whitelist, reject otherwise.
+  //    b. If no scriptFinderConfig matches (standard OS like ubuntu, mac, windows),
+  //       include everything except folders belonging to other inactive OSes.
   return softwareFiles.filter((file) => {
+    // Shared minimal scripts for lightweight OS environments (arch linux, chromeos)
     const bareboneScriptsCommon = `
-      // common
       software/scripts/fzf.js
       software/scripts/synle-make-component.js
       software/scripts/diff-so-fancy.sh
@@ -1365,14 +1357,15 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
       software/scripts/tmux.js
     `;
 
+    // Per-OS whitelist configs for restricted environments.
+    // Each entry defines which scripts are allowed to run on that OS.
     const scriptFinderConfigs = [
       {
         key: "is_os_arch_linux",
-        allowed_path: "software/scripts/arch-linux",
+        allowed_path: "software/scripts/arch_linux",
         whitelist: `
           ${bareboneScriptsCommon}
           software/scripts/git.js
-          // only
           software/scripts/fonts.js
           software/scripts/kde-konsole-profile.js
           software/scripts/libreoffice.js
@@ -1380,7 +1373,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
       },
       {
         key: "is_os_android_termux",
-        allowed_path: "software/scripts/android-termux",
+        allowed_path: "software/scripts/android_termux",
         whitelist: `
           software/scripts/vim-configurations.js
           software/scripts/vim-vundle.sh
@@ -1388,7 +1381,7 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
       },
       {
         key: "is_os_chromeos",
-        allowed_path: "software/scripts/chrome-os",
+        allowed_path: "software/scripts/chromeos",
         whitelist: `
           ${bareboneScriptsCommon}
           software/scripts/fonts.js
@@ -1396,45 +1389,50 @@ async function getSoftwareScriptFiles({ skipOsFiltering = false, useLocalFiles =
         `,
       },
     ].map((scriptFinderConfig) => {
-      // here we make sure it's including the first files along wth the last file.
-      // these files are required to properly bootstrap the shell profile
+      // Expand whitelist to include bootstrap (firstFiles) and finalization scripts
+      // so the shell profile is always properly set up
       scriptFinderConfig.whitelist = [
         ...firstFiles,
         ...convertTextToList(scriptFinderConfig.whitelist),
-        "software/scripts/bash-syle-content.js", // the last file
+        "software/scripts/bash-syle-content.js",
       ];
       return scriptFinderConfig;
     });
 
+    // OS-specific folders to exclude when that OS is not active.
+    // If the OS flag is false, its folder path is added to the ignore list.
     const pathsToIgnore = [
-      [is_os_arch_linux, "software/scripts/arch-linux"],
-      [is_os_android_termux, "software/scripts/android-termux"],
+      [is_os_arch_linux, "software/scripts/arch_linux"],
+      [is_os_android_termux, "software/scripts/android_termux"],
       [is_os_window, "software/scripts/windows"],
       [is_os_darwin_mac, "software/scripts/mac"],
-      [is_os_chromeos, "software/scripts/chrome-os"],
+      [is_os_chromeos, "software/scripts/chromeos"],
     ]
       .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
       .filter((s) => !!s);
 
+    // Check if current OS matches a restricted environment config.
+    // If so, only allow scripts in its folder or whitelist.
     for (const scriptFinderConfig of scriptFinderConfigs) {
       const isScriptFinderConfigApplicable = global[scriptFinderConfig.key];
 
       if (isScriptFinderConfigApplicable) {
-        // it's some of the configs, we should use it
+        // allow scripts in the OS-specific folder
         if (file.includes(scriptFinderConfig.allowed_path)) {
           return true;
         }
 
-        // when run in an android termux env, only run script in that folder
+        // allow scripts explicitly whitelisted for this OS
         if (scriptFinderConfig.whitelist.indexOf(file) >= 0) {
           return true;
         }
 
+        // reject everything else for this restricted OS
         return false;
       }
     }
 
-    // handle it differently
+    // Standard OS (ubuntu, mac, windows, etc): exclude folders for inactive OSes
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
         return false;
