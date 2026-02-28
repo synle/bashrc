@@ -233,15 +233,29 @@ Write-Host "App cleanup complete." -ForegroundColor Green
 
 
 # ================================================================================================
-#  ONEDRIVE REMOVAL
+#  ONEDRIVE / SKYDRIVE REMOVAL
 # ================================================================================================
 
-Write-Host "`n=== Removing OneDrive ===" -ForegroundColor Cyan
+Write-Host "`n=== Removing OneDrive / SkyDrive ===" -ForegroundColor Cyan
 
 try {
+    # Kill all OneDrive / SkyDrive processes
     Stop-Process -Name "OneDrive" -Force -ErrorAction SilentlyContinue
-    Get-AppxPackage *OneDrive* | Remove-AppxPackage -ErrorAction SilentlyContinue
+    Stop-Process -Name "OneDriveSetup" -Force -ErrorAction SilentlyContinue
+    Stop-Process -Name "SkyDrive" -Force -ErrorAction SilentlyContinue
 
+    # Uninstall via winget (catches Win32 and Store versions)
+    winget uninstall --id "Microsoft.OneDrive" --silent --accept-source-agreements 2>$null
+    winget uninstall --id "Microsoft.OneDriveForBusiness" --silent --accept-source-agreements 2>$null
+    winget uninstall --id "Microsoft.SkyDrive" --silent --accept-source-agreements 2>$null
+
+    # Uninstall Appx packages for all users
+    Get-AppxPackage *OneDrive* -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+    Get-AppxPackage *SkyDrive* -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+    Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -match "OneDrive|SkyDrive" } |
+        Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+
+    # Uninstall via setup executables
     if (Test-Path "$env:systemroot\System32\OneDriveSetup.exe") {
         & "$env:systemroot\System32\OneDriveSetup.exe" /uninstall
     }
@@ -249,44 +263,79 @@ try {
         & "$env:systemroot\SysWOW64\OneDriveSetup.exe" /uninstall
     }
 
+    # Remove leftover directories
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:localappdata\Microsoft\OneDrive"
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:localappdata\Microsoft\SkyDrive"
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:programdata\Microsoft OneDrive"
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:programdata\Microsoft\OneDrive"
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:systemdrive\OneDriveTemp"
 
     if ((Test-Path "$env:userprofile\OneDrive") -and
         (Get-ChildItem "$env:userprofile\OneDrive" -Recurse | Measure-Object).Count -eq 0) {
         Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:userprofile\OneDrive"
     }
+    if ((Test-Path "$env:userprofile\SkyDrive") -and
+        (Get-ChildItem "$env:userprofile\SkyDrive" -Recurse | Measure-Object).Count -eq 0) {
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "$env:userprofile\SkyDrive"
+    }
 
-    # Disable OneDrive via Group Policy
-    $onedrivePolicyPath = "HKLM:\SOFTWARE\Wow6432Node\Policies\Microsoft\Windows\OneDrive"
-    if (-not (Test-Path $onedrivePolicyPath)) { New-Item -Path $onedrivePolicyPath -Force | Out-Null }
-    Set-ItemProperty -Path $onedrivePolicyPath -Name "DisableFileSyncNGSC" -Type DWord -Value 1 -Force
+    # Disable OneDrive via Group Policy (both WoW64 and native paths)
+    @(
+        "HKLM:\SOFTWARE\Wow6432Node\Policies\Microsoft\Windows\OneDrive",
+        "HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive"
+    ) | ForEach-Object {
+        if (-not (Test-Path $_)) { New-Item -Path $_ -Force | Out-Null }
+        Set-ItemProperty -Path $_ -Name "DisableFileSyncNGSC" -Type DWord -Value 1 -Force
+        Set-ItemProperty -Path $_ -Name "DisableFileSync" -Type DWord -Value 1 -Force
+    }
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Wow6432Node\Policies\Microsoft\Windows\OneDrive" `
+        -Name "DisableLibrariesDefaultSaveToSkyDrive" -Type DWord -Value 1 -Force
 
-    # Remove OneDrive from Explorer sidebar
+    # Remove OneDrive / SkyDrive from Explorer sidebar
     New-PSDrive -PSProvider "Registry" -Root "HKEY_CLASSES_ROOT" -Name "HKCR" -ErrorAction SilentlyContinue
     @(
         "HKCR:\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}",
-        "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}"
+        "HKCR:\Wow6432Node\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}",
+        "HKCR:\CLSID\{04271989-C4D2-4E23-B7D5-BC5F64C5FA56}",
+        "HKCR:\Wow6432Node\CLSID\{04271989-C4D2-4E23-B7D5-BC5F64C5FA56}"
     ) | ForEach-Object {
         if (-not (Test-Path $_)) { New-Item -Path $_ -Force | Out-Null }
         Set-ItemProperty -Path $_ -Name "System.IsPinnedToNameSpaceTree" -Type DWord -Value 0 -Force
     }
     Remove-PSDrive "HKCR" -ErrorAction SilentlyContinue
 
-    # Remove OneDrive run hook for new users
+    # Remove from Explorer namespace
+    @(
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{018D5C66-4533-4307-9B53-224DE2ED1FE6}",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{04271989-C4D2-4E23-B7D5-BC5F64C5FA56}"
+    ) | ForEach-Object {
+        Remove-Item -Path $_ -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    # Remove run hooks for current user
+    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "SkyDrive" -Force -ErrorAction SilentlyContinue
+
+    # Remove run hooks for new users
     reg load "hku\Default" "C:\Users\Default\NTUSER.DAT" 2>$null
     reg delete "HKEY_USERS\Default\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "OneDriveSetup" /f 2>$null
+    reg delete "HKEY_USERS\Default\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v "SkyDrive" /f 2>$null
     reg unload "hku\Default" 2>$null
 
-    # Remove startmenu entry and scheduled tasks
+    # Remove startmenu entries and scheduled tasks
     Remove-Item -Force -ErrorAction SilentlyContinue "$env:userprofile\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk"
+    Remove-Item -Force -ErrorAction SilentlyContinue "$env:userprofile\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\SkyDrive.lnk"
     Get-ScheduledTask -TaskPath '\' -TaskName 'OneDrive*' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false
+    Get-ScheduledTask -TaskPath '\' -TaskName 'SkyDrive*' -ErrorAction SilentlyContinue | Unregister-ScheduledTask -Confirm:$false
+
+    # Stop and disable OneDrive sync service
+    Get-Service -Name "OneSyncSvc*" -ErrorAction SilentlyContinue | Stop-Service -Force -ErrorAction SilentlyContinue
+    Get-Service -Name "OneSyncSvc*" -ErrorAction SilentlyContinue | Set-Service -StartupType Disabled -ErrorAction SilentlyContinue
 } catch {
-    Write-Output "OneDrive removal error: $_"
+    Write-Output "OneDrive/SkyDrive removal error: $_"
 }
 
-Write-Host "OneDrive removed." -ForegroundColor Green
+Write-Host "OneDrive/SkyDrive removed." -ForegroundColor Green
 
 
 

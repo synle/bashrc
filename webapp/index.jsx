@@ -422,22 +422,32 @@ function LinkButton(props) {
  * @returns {React.ReactElement} An anchor element with target="_blank".
  */
 function LinkText(props) {
-  const { children, block, ...restProps } = props;
+  const { children, block, copyOnClick, ...restProps } = props;
+
+  const linkProps = { ...restProps, target: "_blank" };
+
+  if (copyOnClick) {
+    linkProps.onClick = (e) => {
+      e.preventDefault();
+      const text = (e.currentTarget.innerText || "").trim();
+      copyTextToClipboard(text);
+    };
+    linkProps.onDoubleClick = (e) => {
+      e.preventDefault();
+      window.open(restProps.href, "_blank");
+    };
+    linkProps.title = "Click to copy, double-click to open";
+    linkProps.style = { ...linkProps.style, cursor: "copy" };
+  }
 
   if (block) {
     return (
       <div>
-        <a {...restProps} target="_blank">
-          {children}
-        </a>
+        <a {...linkProps}>{children}</a>
       </div>
     );
   }
-  return (
-    <a {...restProps} target="_blank">
-      {children}
-    </a>
-  );
+  return <a {...linkProps}>{children}</a>;
 }
 
 /**
@@ -943,7 +953,7 @@ function EnhancedTextArea(props) {
   return (
     <div className={collapsed ? "editor-section editor-collapsed" : "editor-section"}>
       <div className="editor-header">
-        <div>{formattedUrl ? <LinkText href={formattedUrl}>{label}</LinkText> : <span>{label}</span>}</div>
+        <div>{formattedUrl ? <LinkText href={formattedUrl} copyOnClick>{label}</LinkText> : <span>{label}</span>}</div>
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
