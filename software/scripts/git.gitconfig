@@ -64,7 +64,7 @@ strategy = incremental
 
 [alias]
 # General
-s = !git status -sb && git diff --stat
+s = "!bash -c 'git status -sb && git diff --stat' --"
 stat = status -sb # Short status with branch info
 a = add
 aa = add -A # Add all (including untracked)
@@ -79,9 +79,9 @@ amendm = commit --allow-empty --no-verify --amend -m
 
 # Patch and Smart patch download (default: HEAD~1, but accepts range)
 patch = apply --reject --whitespace=fix
-patch-apply = !git patch
+patch-apply = "!bash -c 'git patch' --"
 patch-download = format-patch -1 --root
-patch-download-raw = !git patch-download --stdout
+patch-download-raw = "!bash -c 'git patch-download --stdout' --"
 
 # Branch & Checkout
 co = checkout
@@ -98,7 +98,7 @@ po = push origin
 pof = push origin --force
 pdel-branch = push origin --delete # Delete a remote branch: branch-name
 pdel-tag = push origin --delete --tag # Delete a remote tag: tag-name
-track = !git branch --set-upstream-to=origin/$(git branch --show-current)  # track
+track = "!bash -c 'git branch --set-upstream-to=origin/$(git branch --show-current)' --" # track
 
 # Rebase & Merge
 rv = revert
@@ -107,37 +107,37 @@ mc = merge --continue
 r = rebase --reapply-cherry-picks
 rc = rebase --reapply-cherry-picks --continue
 ri = rebase -i # Interactive rebase
-ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
+ri-vscode = "!bash -c 'GIT_EDITOR=\"code --wait\" git ri' --"
 
 # Log & Diff
 logbaseline = log --decorate --all --abbrev-commit --date=short --graph
-ls = "!git logbaseline --pretty=format:'%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s'"
-lls = "!git logbaseline --oneline --author-date-order"
-l = "!git ls --stat"
-ll = "!git lls --stat"
+ls = "!bash -c 'git logbaseline --pretty=format:\"%%C(yellow)%%h %%C(blue)%%ad %%C(green)%%an %%C(reset)%%s\"' --"
+lls = "!bash -c 'git logbaseline --oneline --author-date-order' --"
+l = "!bash -c 'git ls --stat' --"
+ll = "!bash -c 'git lls --stat' --"
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^
 ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
 stats = shortlog -sn # Commit counts per author
 
 # Maintenance & Advanced
-cleanfd = "!git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; git am --abort 2>/dev/null; rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD; git clean -f -d" # Abort conflicts and remove untracked files/directories
+cleanfd = "!bash -c 'git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; git am --abort 2>/dev/null; rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD; git clean -f -d' --" # Abort conflicts and remove untracked files/directories
 cp = cherry-pick
 cpc = cherry-pick --continue
 cpn = cherry-pick -n # Cherry-pick without committing
 clone0 = clone --depth 1 --single-branch  # Shallow Clone
 clone1 = clone --single-branch  # Full Clone
-cl0 = "!f() { git clone0 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
-cl1 = "!f() { git clone1 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
+cl0 = "!bash -c 'git clone0 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl0] Shallow clone of ${1} started in background...\"' --"
+cl1 = "!bash -c 'git clone1 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl1] Full clone of master for ${1} started in background...\"' --"
 
 # Search & Reflog
-search-logs = "!f() { git log -G \"$1\" -- .; }; f" # Usage: git search-logs <some_text_to_search>, Search the 'diff' content of all commits in the current directory for a specific string
+search-logs = "!bash -c 'git log -G \"$1\" -- .' --" # Usage: git search-logs <some_text_to_search>, Search the 'diff' content of all commits in the current directory for a specific string
 search-reflog = rev-list --all -- # git search-history -- "config.old.json" Usage: git search-reflog <file_name>, Find every commit across ALL branches/tags that ever touched a specific file. Useful for finding where a file was deleted or moved
 where-is = branch -r --contains # Usage: git where-is <hash_id>, Identify which remote branches contain a specific commit hash
 
 # Interactive rebase last n commits
-rn = "!f() { git rebase -i HEAD~${1:-1}; }; f"
-rn-vscode = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
+rn = "!bash -c 'git rebase -i HEAD~${1:-1}' --"
+rn-vscode = "!bash -c 'GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}' --"
 ###SNIPPET_GIT_REBASE_INTERACTIVE###
 
 # extra content
