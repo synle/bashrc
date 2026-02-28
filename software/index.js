@@ -1333,7 +1333,6 @@ async function getSoftwareScriptFiles() {
       (f) =>
         !!f.match("software/scripts/") &&
         (f.includes(".js") || f.includes(".sh")) &&
-        !f.includes("config.js") &&
         !f.includes(".json") &&
         !f.includes(".common.js"),
     )
