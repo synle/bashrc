@@ -132,6 +132,23 @@ fi
 if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || stat -f '%u' "${HOME}/.local" 2>/dev/null)" != "$(id -u)" ]; then
   sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
+
+# run_files - Run script files through software/index.js
+# Uses cat (local) when IS_TEST_SCRIPT_MODE=1, curl (prod) otherwise.
+# Usage:
+#   run_files "git.js,vim.js"    # run specific files
+#   run_files                    # full run (no TEST_SCRIPT_FILES set)
+run_files() {
+  if [ -n "$1" ]; then
+    export TEST_SCRIPT_FILES="$1"
+  fi
+  if [ "$IS_TEST_SCRIPT_MODE" = "1" ]; then
+    cat software/index.js
+  else
+    curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js"
+  fi | node | bash
+  unset TEST_SCRIPT_FILES
+}
 # END bootstrap/common-env.sh
 
 ####################################################################
@@ -237,22 +254,6 @@ $run_description
 $LINE_BREAK_HASH
 "
 
-####################################################################
-# Helpers
-####################################################################
-# get_file_contents - outputs the concatenated contents of the given files.
-# In prod mode, fetches via curl from upstream. In local mode, reads via cat.
-# Supports comma-separated, space-separated, and multiline file lists.
-get_file_contents() {
-  echo "$1" | tr ',; ' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d' | while read -r _file; do
-    if [ "$run_mode" = "prod" ]; then
-      curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/$_file"
-    else
-      cat "$_file"
-    fi
-  done
-}
-
 _needs_sudo=false
 case "$files_to_test" in *bootstrap/dependencies*) _needs_sudo=true ;; esac
 
@@ -315,7 +316,7 @@ $LINE_BREAK_HASH
 """
 
 if command -v node >/dev/null 2>&1; then
-  get_file_contents "software/index.js" | node | bash
+  run_files
 else
   echo "[Skip] Node is not installed — skipping main script."
 fi

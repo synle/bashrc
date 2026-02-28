@@ -172,18 +172,28 @@ fi
 if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || stat -f '%u' "${HOME}/.local" 2>/dev/null)" != "$(id -u)" ]; then
   sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
+
+# run_files - Run script files through software/index.js
+# Uses cat (local) when IS_TEST_SCRIPT_MODE=1, curl (prod) otherwise.
+# Usage:
+#   run_files "git.js,vim.js"    # run specific files
+#   run_files                    # full run (no TEST_SCRIPT_FILES set)
+run_files() {
+  if [ -n "$1" ]; then
+    export TEST_SCRIPT_FILES="$1"
+  fi
+  if [ "$IS_TEST_SCRIPT_MODE" = "1" ]; then
+    cat software/index.js
+  else
+    curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js"
+  fi | node | bash
+  unset TEST_SCRIPT_FILES
+}
 # END bootstrap/common-env.sh
 
 
-####################################################################
-# Helper: run files directly through index.js (avoids full run.sh bootstrap)
-####################################################################
-run_files() {
-  export IS_TEST_SCRIPT_MODE=1
-  export TEST_SCRIPT_FILES="$1"
-  cat software/index.js | node | bash
-  unset TEST_SCRIPT_FILES
-}
+# build.sh always runs locally
+export IS_TEST_SCRIPT_MODE=1
 
 echo '< build.sh'
 ##########################################################
