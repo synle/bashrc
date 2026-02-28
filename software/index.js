@@ -1589,7 +1589,9 @@ const echoColorAttention = (str) => echoColor(str, CONSOLE_COLORS[7]);
  */
 function _getTempFilePath(file) {
   const name = path.basename(file).replace(/[^a-zA-Z0-9._-]/g, "_");
-  return `/tmp/bashrc_sw_${name}`;
+  // TODO: append Date.now() at the end to be safe /tmp/bashrc_syle_sw_${name}_${Date.now()}, clean me up to just be yyyy_MM_DD_hh:mm:ss (hh lets do military time)
+  const RUNNER_SCRIPT_ID = Date.now();
+  return `/tmp/bashrc_syle_sw_${RUNNER_SCRIPT_ID}`;
 }
 
 /**
@@ -1723,23 +1725,24 @@ function processScriptFile(file, originalFile, allRepoFiles) {
   }
 
   let tempFileCommand = "";
+  const start = new Date();
   if (fileExists) {
     // purge matched file from the list to prevent duplicate matches
     const idx = allRepoFiles.indexOf(foundMatchedPath);
     if (idx !== -1) allRepoFiles.splice(idx, 1);
-    const tmpFile = _getTempFilePath(file);
-    const fetchCmd = _generateScript(file, url);
-    const runner = _generatePipeOutput(file, url);
-    tempFileCommand = _generateTempFileCommand(fetchCmd, tmpFile, runner, file);
-    // Wrap with bash-side timing and status tracking
+    const tmpFile = _getTempFilePath(file);// /tmp/bashrc_sw_script-list.js
+    const fetchCmd = _generateScript(file, url); // cat software/index.js && cat software/metadata/script-list.js
+    const runner = _generatePipeOutput(file, url); // node
     const resultLabel = !fileMatchState ? originalFile : `${originalFile} (${file})`;
     const descSuffix = description ? ` ${description}` : "";
-    console.log(
-      `_SCRIPT_START=$(date +%s); ${tempFileCommand}; _SCRIPT_END=$(date +%s); _SCRIPT_DUR=$((_SCRIPT_END - _SCRIPT_START)); if [ "$_SCRIPT_DUR" -ge 60 ]; then _SCRIPT_DUR_FMT="$((_SCRIPT_DUR / 60))m $((_SCRIPT_DUR % 60))s"; else _SCRIPT_DUR_FMT="\${_SCRIPT_DUR}s"; fi; if [ $_EC -eq 0 ]; then _RUN_SUCCESS=$((_RUN_SUCCESS + 1)); echo -e $'\\e[32m[Success] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; else _RUN_FAIL=$((_RUN_FAIL + 1)); echo -e $'\\e[41;97;1m[Error] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; fi; _RUN_TOTAL_DUR=$((_RUN_TOTAL_DUR + _SCRIPT_DUR))`,
-    );
+    tempFileCommand  = `cat ${tmpFile} | ${runner}`
+    const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`
+    console.log(echoColor3(`  >> processScriptFile | ${originalFile} (${file}) - ${tempFileCommand}`));
+    console.log(fullCommand); // this is to tell the system to trigger the command
   } else {
-    console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
+    console.log(echoColor3(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `));
   }
+  const end = new Date();
 
   scriptProcessingResults.push({
     file: originalFile,
@@ -1749,6 +1752,11 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     status: fileExists ? "success" : "error",
     fileMatchState: fileMatchState || "",
     description: description || "",
+
+    // TODO: remove these start and end time, it's buggy, can't be done
+    start,
+    end,
+    durationMs: end - start
   });
 }
 
@@ -1818,21 +1826,63 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
+    console.log(echoColor2(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
-  // Print summary in bash so it runs after all scripts complete with real durations
-  const totalFiles = scriptProcessingResults.length;
-  console.log(echoColorWarning(LINE_BREAK_EQUAL));
-  console.log(
-    `if [ "$_RUN_TOTAL_DUR" -ge 60 ]; then _RUN_TOTAL_FMT="$((_RUN_TOTAL_DUR / 60))m $((_RUN_TOTAL_DUR % 60))s"; else _RUN_TOTAL_FMT="\${_RUN_TOTAL_DUR}s"; fi`,
-  );
-  console.log(
-    `echo -e $'\\e[43;30m>> Script Processing Results: ${totalFiles} files ($_RUN_SUCCESS success, $_RUN_FAIL failed) - Total: $_RUN_TOTAL_FMT\\e[m'`,
-  );
-  console.log(echoColorWarning(LINE_BREAK_EQUAL));
+  printScriptProcessingResults(scriptProcessingResults);
 }
+
+/**
+ * Prints the script processing results with a section header.
+ * Success entries are printed in green, error entries in red.
+ * @param {Array<{file: string, path: string, description: string, status: string}>} results - The scriptProcessingResults array
+ * @returns {void}
+ */
+function formatDurationMinsSeconds(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  if (mins > 0) {
+    return `${mins}m ${secs}s`;
+  }
+  return `${secs}s`;
+}
+
+function printScriptProcessingResults(results) {
+  const successCount = results.filter((r) => r.status === "success").length;
+  const errorCount = results.filter((r) => r.status === "error").length;
+  const totalDurationMs = results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
+
+  printSectionBlock(
+    `Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed) - Total: ${formatDurationMinsSeconds(totalDurationMs)}`,
+  );
+
+  for (const result of results) {
+    const duration = result.durationMs != null ? ` (${formatDurationMinsSeconds(result.durationMs)})` : "";
+    if (result.status === "success") {
+      console.log(
+        echoColorSuccess(
+          !result.fileMatchState
+            ? `[Success] ${result.file}.${duration} ${result.description}`
+            : `[Success] ${result.file} (${result.path}).${duration} ${result.description}`,
+        ),
+      );
+      if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
+        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
+      }
+    } else {
+      console.log(echoColorError(`[Error] ${result.file} (${result.path}).${duration} ${result.description}`));
+      if (result.fileMatchState !== "not_found" && result.tempFileCommand) {
+        // Non-file-expansion error: always show retry command for debugging
+        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
+      } else if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
+        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
+      }
+    }
+  }
+}
+
 
 /**
  * Runs a subset of scripts specified by the TEST_SCRIPT_FILES environment variable.
