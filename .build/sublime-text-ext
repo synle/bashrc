@@ -1,2 +1,2 @@
 # Use Preferences > Package Control > Package Control: Advanced Install Package. 
-A File Icon,Alignment,All Autocomplete,BracketHighlighter,Case Conversion,CodeFormatter,DocBlockr,Dracula Color Scheme,JsPrettier,SideBarEnhancements,SublimeCodeIntel,SyncedSideBar
+A File Icon,Dracula Color Scheme,LSP,LSP-css,LSP-html,LSP-json,LSP-pyright,LSP-typescript,LESS,Sass,TypeScript,CodeFormatter,JsPrettier,Alignment,All Autocomplete,BracketHighlighter,Case Conversion,DocBlockr,Emmet,SideBarEnhancements,SyncedSideBar,GitGutter,Compare Side-By-Side,Markdown Preview,SublimeLinter
