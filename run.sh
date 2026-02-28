@@ -20,19 +20,13 @@
 #   bash run.sh git.js                             # Bare args treated as files
 #   bash run.sh git.js vim.js                      # Multiple bare args
 #   bash run.sh --prod git.js vim.js               # Mix flags and bare file args
-#   bash run.sh --pre-scripts="foo.sh,bar.sh"      # Run shell scripts via | bash before main run
-#   bash run.sh --pre-scripts="""                  # Multiline pre-scripts
-#     foo.sh
-#     bar.sh
-#   """
-#   bash run.sh --run-only-prescripts              # Only run pre-scripts, skip main run
 #   bash run.sh --force-refresh                    # Force remove and reinstall fnm
 #   bash run.sh -f                                 # Shorthand for --force-refresh
 #   bash run.sh --lightweight                      # Export IS_LIGHT_WEIGHT_MODE=1 for lightweight installs
 #   bash run.sh --debug                            # Enable debug mode (set -x for verbose output)
 #   bash run.sh -D                                 # Shorthand for --debug
 #
-# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -pre-scripts=..., -run-only-prescripts, -force-refresh, -f, -lightweight, -debug, -D
+# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -force-refresh, -f, -lightweight, -debug, -D
 ####################################################################
 
 ####################################################################
@@ -149,16 +143,12 @@ esac
 
 run_mode="$_default_mode"
 files_to_test=""
-pre_run_scripts=""
-run_only_prescripts=false
 force_refresh=false
 debug_mode=false
 _parsing_into=""
 unset IS_TEST_SCRIPT_MODE
 unset TEST_SCRIPT_FILES
 unset IS_FORCE_REFRESH
-unset PRE_SCRIPT_FILES
-unset RUN_ONLY_PRESCRIPTS
 
 ####################################################################
 # Parse arguments
@@ -176,23 +166,12 @@ for arg in "$@"; do
       fi
       _parsing_into="files"
       ;;
-    --pre-scripts=*|-pre-scripts=*)
-      _val="${arg#*pre-scripts=}"
-      if [ -n "$_val" ]; then
-        pre_run_scripts="${pre_run_scripts:+$pre_run_scripts,}$_val"
-      fi
-      _parsing_into="prescripts"
-      ;;
     --prod|-prod)
       run_mode="prod"
       _parsing_into=""
       ;;
     --local|--dev|-local|-dev)
       run_mode="local"
-      _parsing_into=""
-      ;;
-    --run-only-prescripts|-run-only-prescripts)
-      run_only_prescripts=true
       _parsing_into=""
       ;;
     --force-refresh|-force-refresh|--force|-force|-f)
@@ -214,16 +193,8 @@ for arg in "$@"; do
       _parsing_into=""
       ;;
     *)
-      # Bare args: append to whichever flag was last parsed, default to files
-      _target="${_parsing_into:-files}"
-      case "$_target" in
-        prescripts)
-          pre_run_scripts="${pre_run_scripts:+$pre_run_scripts,}$arg"
-          ;;
-        *)
-          files_to_test="${files_to_test:+$files_to_test,}$arg"
-          ;;
-      esac
+      # Bare args: append to files
+      files_to_test="${files_to_test:+$files_to_test,}$arg"
       ;;
   esac
 done
@@ -243,8 +214,6 @@ active_os_flags=$(set | grep -E "^is_os_.*=1" | awk -F= '{print $1}' | paste -sd
 run_description="
 mode                = $run_mode
 files               = ${files_to_test:-[full run]}
-pre_scripts         = ${pre_run_scripts:-[none]}
-run_only_prescripts = $run_only_prescripts
 force_refresh       = $force_refresh
 debug               = $debug_mode
 lightweight         = ${IS_LIGHT_WEIGHT_MODE:-0}
@@ -276,7 +245,6 @@ get_file_contents() {
 }
 
 _needs_sudo=false
-case "$pre_run_scripts" in *bootstrap/dependencies*) _needs_sudo=true ;; esac
 case "$files_to_test" in *bootstrap/dependencies*) _needs_sudo=true ;; esac
 
 if [ "$_needs_sudo" = true ]; then
@@ -329,19 +297,15 @@ if [ "$is_os_android_termux" != "1" ]; then
 fi
 
 ####################################################################
-# script: Run (single pipeline for pre-scripts + files)
+# script: Run (single pipeline for files)
 ####################################################################
-if [ -n "$pre_run_scripts" ]; then export PRE_SCRIPT_FILES="$pre_run_scripts"; fi
-if [ "$run_only_prescripts" = true ]; then export RUN_ONLY_PRESCRIPTS=1; fi
 
 echo """
 $LINE_BREAK_HASH
->> pre_scripts: ${pre_run_scripts:-[none]}  files: ${files_to_test:-[full run]}
+>> files: ${files_to_test:-[full run]}
 """
 
-if [ "$run_only_prescripts" = true ] && [ -z "$pre_run_scripts" ]; then
-  echo "[Skip] --run-only-prescripts with no pre-scripts specified."
-elif command -v node >/dev/null 2>&1; then
+if command -v node >/dev/null 2>&1; then
   get_file_contents "software/index.js" | node | bash
 else
   echo "[Skip] Node is not installed — skipping main script."

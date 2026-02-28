@@ -541,13 +541,6 @@ declare function _runScripts(softwareFiles: string[], allRepoFiles: string[], la
  */
 declare function _doWorkTestFiles(): Promise<void>;
 /**
- * Runs pre-scripts specified by the PRE_SCRIPT_FILES environment variable.
- * Pre-scripts are processed before the main run (test files or full run).
- * @param {string[]} allRepoFiles - List of all file paths in the repository
- * @returns {void}
- */
-declare function _doWorkPreScripts(allRepoFiles: string[]): void;
-/**
  * Runs the full software setup: discovers all platform-applicable script files
  * and generates the bash pipeline commands to fetch and execute each one.
  * @returns {Promise<void>}
@@ -614,8 +607,6 @@ declare const HAS_SUDO_ACCESS: boolean;
 declare const IS_FORCE_REFRESH: boolean;
 declare const IS_TEST_SCRIPT_MODE: boolean;
 declare const IS_LIGHT_WEIGHT_MODE: boolean;
-declare const PRE_SCRIPT_FILES: string;
-declare const RUN_ONLY_PRESCRIPTS: boolean;
 declare const REPO_PREFIX_URL: string;
 declare const LINE_BREAK_COUNT: number;
 /**
