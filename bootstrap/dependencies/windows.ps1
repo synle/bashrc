@@ -430,6 +430,28 @@ Write-Host "Explorer tweaks applied." -ForegroundColor Green
 
 
 
+# ================================
+# Clean Up macOS Junk Files
+# ================================
+
+Write-Host "`n=== Cleaning macOS junk files (._*, .DS_Store) ===" -ForegroundColor Cyan
+
+# Remove macOS resource fork files and .DS_Store from all drives
+Get-PSDrive -PSProvider FileSystem | ForEach-Object {
+    $root = $_.Root
+    Write-Host "Scanning $root ..."
+    Get-ChildItem -Path $root -Recurse -Force -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like '._*' -or $_.Name -eq '.DS_Store' } |
+        ForEach-Object {
+            try { Remove-Item $_.FullName -Force -ErrorAction Stop; Write-Host "  Removed: $($_.FullName)" }
+            catch { }
+        }
+}
+
+Write-Host "macOS junk files cleanup done." -ForegroundColor Green
+
+
+
 # ================================================================================================
 #  MOUSE & KEYBOARD TWEAKS
 # ================================================================================================
