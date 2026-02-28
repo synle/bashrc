@@ -953,7 +953,15 @@ function EnhancedTextArea(props) {
   return (
     <div className={collapsed ? "editor-section editor-collapsed" : "editor-section"}>
       <div className="editor-header">
-        <div>{formattedUrl ? <LinkText href={formattedUrl} copyOnClick>{label}</LinkText> : <span>{label}</span>}</div>
+        <div>
+          {formattedUrl ? (
+            <LinkText href={formattedUrl} copyOnClick>
+              {label}
+            </LinkText>
+          ) : (
+            <span>{label}</span>
+          )}
+        </div>
         <ActionButton onClick={() => copyTextToClipboard(content)}>Copy</ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
