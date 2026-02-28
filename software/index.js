@@ -117,10 +117,11 @@ const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseIntege
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.
- * @type {Array<{file: string, path: string, script: string, status: 'success'|'error', description: string}>}
+ * @type {Array<{file: string, path: string, script: string, tempFileCommand: string, status: 'success'|'error', description: string}>}
  * @property {string} file - The original file name before prefix expansion
  * @property {string} path - The resolved file path after prefix expansion
  * @property {string} script - The generated bash command used to fetch/execute the script
+ * @property {string} tempFileCommand - The generated temp file command for retry/debugging
  * @property {string} status - 'success' if the script was found, 'error' if not found
  * @property {string} description - Error detail message, empty string on success
  */
@@ -1721,6 +1722,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     fileMatchState = "not_found";
   }
 
+  let tempFileCommand = "";
   if (fileExists) {
     // purge matched file from the list to prevent duplicate matches
     const idx = allRepoFiles.indexOf(foundMatchedPath);
@@ -1728,7 +1730,8 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     const tmpFile = _getTempFilePath(file);
     const fetchCmd = _generateScript(file, url);
     const runner = _generatePipeOutput(file, url);
-    console.log(_generateTempFileCommand(fetchCmd, tmpFile, runner, file));
+    tempFileCommand = _generateTempFileCommand(fetchCmd, tmpFile, runner, file);
+    console.log(tempFileCommand);
   } else {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
   }
@@ -1737,6 +1740,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     file: originalFile,
     path: file,
     script: _generateScript(file, url),
+    tempFileCommand,
     status: fileExists ? "success" : "error",
     fileMatchState: fileMatchState || "",
     description: description || "",
@@ -1806,8 +1810,17 @@ function printScriptProcessingResults(results) {
             : `[Success] ${result.file} (${result.path}). ${result.description}`,
         ),
       );
+      if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
+        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
+      }
     } else {
       console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}`));
+      if (result.fileMatchState !== "not_found" && result.tempFileCommand) {
+        // Non-file-expansion error: always show retry command for debugging
+        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
+      } else if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
+        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
+      }
     }
   }
 }
