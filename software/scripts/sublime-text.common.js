@@ -2,7 +2,7 @@
  * Searches for the Sublime Text config directory based on the current OS.
  * @returns {Promise<string|null>} Path to the Sublime Text config directory, or null if not found.
  */
-global._getPathSublimeText = async function () {
+async function _getPathSublimeText () {
   exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
 
