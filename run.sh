@@ -185,7 +185,11 @@ for arg in "$@"; do
       ;;
     --debug|-debug|-D)
       debug_mode=true
+
+      # TODO: move this to verbose mode (aka when --verbose), consider movign the verbose flagz
       set -x
+
+      # TODO: here debug would only set ()
       _parsing_into=""
       ;;
     -*)
