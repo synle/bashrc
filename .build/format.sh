@@ -106,9 +106,9 @@ format_python() {
     if [ -f ".venv/bin/activate" ]; then
       echo "Activating local virtual environment (.venv)..."
       source .venv/bin/activate
-    elif [ -f "/home/syle/venv/bin/activate" ]; then
-      echo "Activating fallback environment (/home/syle/venv)..."
-      source /home/syle/venv/bin/activate
+    elif [ -f "$HOME/venv/bin/activate" ]; then
+      echo "Activating fallback environment ($HOME/venv)..."
+      source "$HOME/venv/bin/activate"
     else
       echo "No virtual environment found. Using global Python."
     fi
@@ -139,7 +139,8 @@ format_cleanup() {
     return 1
   fi
 
-  local count=$(find "$base_dir" \
+  local deleted
+  deleted=$(find "$base_dir" \
     \( \
       -type f \( \
         -name '._*' -o \
@@ -188,60 +189,10 @@ format_cleanup() {
     -not -path '*/vendor/*' \
     -not -path '*/venv/*' \
     -not -path '*/webpack-dist/*' \
-    -print | wc -l)
+    -print -exec rm -rf {} + 2>/dev/null)
 
+  local count=$(echo "$deleted" | grep -c . 2>/dev/null || echo 0)
   if [ "$count" -gt 0 ]; then
-    find "$base_dir" \
-      \( \
-        -type f \( \
-          -name '._*' -o \
-        -name '.AppleDouble' -o \
-        -name '.DS_Store' -o \
-        -name '.LSOverride' -o \
-        -name '*.Identifier' -o \
-        -name '*.orig' -o \
-        -name '*.rej' -o \
-        -name 'Desktop.ini' -o \
-        -name 'ehthumbs.db' -o \
-        -name 'Icon?' -o \
-        -name 'Thumbs.db' \
-        \) -o \
-        -type d \( \
-          -name '.Spotlight-V100' -o \
-        -name '.Trashes' -o \
-        -name '.fseventsd' -o \
-        -name '__MACOSX' \
-        \) \
-      \) \
-      -not -path '*/.cache/*' \
-    -not -path '*/.ebextensions/*' \
-    -not -path '*/.generated/*' \
-    -not -path '*/.git/*' \
-    -not -path '*/.gradle/*' \
-    -not -path '*/.hg/*' \
-    -not -path '*/.idea/*' \
-    -not -path '*/.mypy_cache/*' \
-    -not -path '*/.next/*' \
-    -not -path '*/.pytest_cache/*' \
-    -not -path '*/.sass-cache/*' \
-    -not -path '*/.svn/*' \
-    -not -path '*/.venv/*' \
-    -not -path '*/CVS/*' \
-    -not -path '*/__pycache*/*' \
-    -not -path '*/__pycache__/*' \
-    -not -path '*/bower_components/*' \
-    -not -path '*/build/*' \
-    -not -path '*/coverage/*' \
-    -not -path '*/dist/*' \
-    -not -path '*/env/*' \
-    -not -path '*/node_modules/*' \
-    -not -path '*/target/*' \
-    -not -path '*/tmp/*' \
-    -not -path '*/vendor/*' \
-    -not -path '*/venv/*' \
-    -not -path '*/webpack-dist/*' \
-      -exec rm -rf {} +
-
     echo "Removed $count junk items."
   else
     echo "No junk found."

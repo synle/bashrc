@@ -343,7 +343,12 @@ declare function convertTextToHosts(...texts: string[]): string[];
  * @returns {string} The dedented text
  */
 declare function trimLeftSpaces(text: string, spaceToTrim?: number): string;
-declare function trimSpacesOnBothEnd(text: any): any;
+/**
+ * Trims leading and trailing spaces from each line of a text block.
+ * @param {string} text - The multiline text to trim
+ * @returns {string} The text with each line trimmed
+ */
+declare function trimSpacesOnBothEnd(text: string): string;
 /**
  * Calculates a percentage value to two decimal places.
  * @param {number} count - The part value
@@ -541,8 +546,38 @@ declare function _doWorkTestFiles(): Promise<void>;
  * @returns {Promise<void>}
  */
 declare function _doWorkFullRun(): Promise<void>;
-declare function parseString(v: any): any;
-declare function parseInteger(v: any, defaultValue: any): any;
+/**
+ * @file software/index.js - Bootstrap & utility library for the bashrc software setup system.
+ *
+ * This file serves two purposes:
+ * 1. **Utility library** - Provides shared functions (file I/O, text processing, network,
+ *    platform detection, console output) that individual setup scripts depend on.
+ * 2. **Bootstrap entry point** - When executed directly, discovers and orchestrates the
+ *    execution of platform-specific setup scripts via bash pipelines.
+ *
+ * Individual scripts (software/scripts/*.js) are fetched and evaluated with this file
+ * pre-loaded, giving them access to all exported utilities as globals.
+ *
+ * @module software/index
+ */
+/**
+ * Parses a value to a trimmed string, defaulting to empty string.
+ * @param {*} v - The value to parse
+ * @returns {string} The trimmed string representation
+ */
+declare function parseString(v: any): string;
+/**
+ * Parses a value to an integer, returning defaultValue on failure.
+ * @param {*} v - The value to parse
+ * @param {number} defaultValue - Fallback when parsing fails
+ * @returns {number}
+ */
+declare function parseInteger(v: any, defaultValue: number): number;
+/**
+ * Parses a value to a boolean. Recognizes "true" (case-insensitive) and "1".
+ * @param {*} v - The value to parse
+ * @returns {boolean}
+ */
 declare function parseBoolean(v: any): boolean;
 /** @type {typeof import("fs")} */
 declare const fs: typeof import("fs");
@@ -552,20 +587,22 @@ declare const path: typeof import("path");
 declare const https: typeof import("https");
 /** @type {typeof import("http")} */
 declare const http: typeof import("http");
+declare const exec: any;
+declare const execSync: any;
 declare const BASE_HOMEDIR_LINUX: "";
-declare const BASH_SYLE_PATH: any;
-declare const BASH_SYLE_AUTOCOMPLETE_PATH: any;
-declare const BASH_SYLE_COMMON_PATH: any;
+declare const BASH_SYLE_PATH: string;
+declare const BASH_SYLE_AUTOCOMPLETE_PATH: string;
+declare const BASH_SYLE_COMMON_PATH: string;
 declare const BASE_C_DIR_WINDOW: "/mnt/c";
 declare const BASE_D_DIR_WINDOW: "/mnt/d";
-declare const NODE_JS_VERSION: any;
-declare const FNM_DIR: any;
-declare const FNM_DEFAULT_NODE_PATH: any;
-declare const BASH_PROFILE_CODE_REPO_RAW_URL: any;
-declare const BASH_SYLE_COMMON: any;
-declare const REPO_PATH_IDENTIFIER: any;
-declare const REPO_BRANCH_NAME: any;
-declare const DEBUG_WRITE_TO_DIR: any;
+declare const NODE_JS_VERSION: string;
+declare const FNM_DIR: string;
+declare const FNM_DEFAULT_NODE_PATH: string;
+declare const BASH_PROFILE_CODE_REPO_RAW_URL: string;
+declare const BASH_SYLE_COMMON: string;
+declare const REPO_PATH_IDENTIFIER: string;
+declare const REPO_BRANCH_NAME: string;
+declare const DEBUG_WRITE_TO_DIR: string;
 declare const HAS_SUDO_ACCESS: boolean;
 declare const IS_FORCE_REFRESH: boolean;
 declare const IS_TEST_SCRIPT_MODE: boolean;
@@ -639,4 +676,5 @@ declare const CONSOLE_COLORS: string[];
 declare const echoColorSuccess: (str: string) => string;
 /** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
 declare const echoColorError: (str: string) => string;
-declare function echoColorWarning(str: any): string;
+/** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
+declare const echoColorWarning: (str: string) => string;
