@@ -137,7 +137,6 @@ const toInstallExtensions = convertTextToList(`
   LSP-typescript
 
   // syntax highlighting
-  LESS
   Sass
   TypeScript
 
@@ -151,8 +150,6 @@ const toInstallExtensions = convertTextToList(`
   BracketHighlighter
   Case Conversion
   DocBlockr
-  Emmet
-
   // ui
   SideBarEnhancements
   SyncedSideBar
@@ -162,7 +159,7 @@ const toInstallExtensions = convertTextToList(`
 
   // utilities
   Compare Side-By-Side
-  Markdown Preview
+  MarkdownPreview
   SublimeLinter
 `);
 
