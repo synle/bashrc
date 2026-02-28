@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-04-00AM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-04-20AM]
 # ############################################################################################################################################
 
 [user]
@@ -113,8 +113,8 @@ ri = rebase -i # Interactive rebase
 ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
 
 # Log & Diff
-l = log --date=short --abbrev-commit --pretty=format:"%C(yellow)%h %C(blue)%ad %C(reset)%s"
-ll = log --graph --oneline --decorate --all --author-date-order
+l = "!git log --date=short --abbrev-commit --pretty=format:'%C(yellow)%h %C(blue)%ad %C(reset)%s'"
+ll = "!git log --graph --oneline --decorate --all --author-date-order"
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^
 ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
