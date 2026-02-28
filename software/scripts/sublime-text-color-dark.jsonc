@@ -62,52 +62,55 @@
   },
   "rules": [
     // --- Syntax ---
-    { "scope": "comment, punctuation.definition.comment",                        "foreground": "var(green)" },
-    { "scope": "string, string.quoted",                                          "foreground": "var(orange)" },
-    { "scope": "constant.character.escape",                                      "foreground": "var(gold)" },
-    { "scope": "constant.numeric",                                               "foreground": "var(light_green)" },
-    { "scope": "constant.language",                                              "foreground": "var(blue)" },
-    { "scope": "keyword, keyword.control, keyword.operator.word",                "foreground": "var(blue)" },
-    { "scope": "keyword.operator, punctuation.accessor",                         "foreground": "var(fg)" },
-    { "scope": "storage, storage.type, storage.modifier",                        "foreground": "var(blue)" },
+    { "scope": "comment, punctuation.definition.comment", "foreground": "var(green)" },
+    { "scope": "string, string.quoted", "foreground": "var(orange)" },
+    { "scope": "constant.character.escape", "foreground": "var(gold)" },
+    { "scope": "constant.numeric", "foreground": "var(light_green)" },
+    { "scope": "constant.language", "foreground": "var(blue)" },
+    { "scope": "keyword, keyword.control, keyword.operator.word", "foreground": "var(blue)" },
+    { "scope": "keyword.operator, punctuation.accessor", "foreground": "var(fg)" },
+    { "scope": "storage, storage.type, storage.modifier", "foreground": "var(blue)" },
     { "scope": "keyword.control.import, keyword.control.export, keyword.control.flow", "foreground": "var(pink)" },
 
     // --- Identifiers ---
-    { "scope": "entity.name.function, meta.function-call, variable.function",    "foreground": "var(yellow)" },
-    { "scope": "support.function",                                               "foreground": "var(yellow)" },
-    { "scope": "entity.name.class, entity.name.type, entity.other.inherited-class, support.class, support.type", "foreground": "var(teal)" },
-    { "scope": "variable, variable.other, variable.parameter",                   "foreground": "var(light_blue)" },
-    { "scope": "variable.other.constant, support.constant",                      "foreground": "var(bright_blue)" },
+    { "scope": "entity.name.function, meta.function-call, variable.function", "foreground": "var(yellow)" },
+    { "scope": "support.function", "foreground": "var(yellow)" },
+    {
+      "scope": "entity.name.class, entity.name.type, entity.other.inherited-class, support.class, support.type",
+      "foreground": "var(teal)",
+    },
+    { "scope": "variable, variable.other, variable.parameter", "foreground": "var(light_blue)" },
+    { "scope": "variable.other.constant, support.constant", "foreground": "var(bright_blue)" },
 
     // --- HTML / XML ---
-    { "scope": "entity.name.tag",                                                "foreground": "var(blue)" },
-    { "scope": "entity.other.attribute-name",                                    "foreground": "var(light_blue)" },
+    { "scope": "entity.name.tag", "foreground": "var(blue)" },
+    { "scope": "entity.other.attribute-name", "foreground": "var(light_blue)" },
 
     // --- CSS ---
-    { "scope": "support.type.property-name",                                     "foreground": "var(light_blue)" },
-    { "scope": "support.constant.property-value, constant.other.color",          "foreground": "var(orange)" },
+    { "scope": "support.type.property-name", "foreground": "var(light_blue)" },
+    { "scope": "support.constant.property-value, constant.other.color", "foreground": "var(orange)" },
     { "scope": "entity.other.attribute-name.class, entity.other.attribute-name.id, entity.name.tag.css", "foreground": "var(gold)" },
 
     // --- Regex ---
-    { "scope": "string.regexp",                                                  "foreground": "var(dark_red)" },
+    { "scope": "string.regexp", "foreground": "var(dark_red)" },
 
     // --- Markdown ---
-    { "scope": "markup.heading, punctuation.definition.heading",                 "foreground": "var(blue)", "font_style": "bold" },
-    { "scope": "markup.bold",                                                    "font_style": "bold" },
-    { "scope": "markup.italic",                                                  "font_style": "italic" },
-    { "scope": "markup.underline.link",                                          "foreground": "var(orange)" },
-    { "scope": "markup.raw, markup.raw.inline",                                  "foreground": "var(orange)" },
+    { "scope": "markup.heading, punctuation.definition.heading", "foreground": "var(blue)", "font_style": "bold" },
+    { "scope": "markup.bold", "font_style": "bold" },
+    { "scope": "markup.italic", "font_style": "italic" },
+    { "scope": "markup.underline.link", "foreground": "var(orange)" },
+    { "scope": "markup.raw, markup.raw.inline", "foreground": "var(orange)" },
 
     // --- Diff ---
-    { "scope": "markup.inserted",                                                "foreground": "var(light_green)" },
-    { "scope": "markup.deleted",                                                 "foreground": "var(red)" },
-    { "scope": "markup.changed",                                                 "foreground": "var(orange)" },
+    { "scope": "markup.inserted", "foreground": "var(light_green)" },
+    { "scope": "markup.deleted", "foreground": "var(red)" },
+    { "scope": "markup.changed", "foreground": "var(orange)" },
 
     // --- Data formats ---
-    { "scope": "meta.mapping.key string, support.type.property-name.json",       "foreground": "var(light_blue)" },
-    { "scope": "entity.name.tag.yaml",                                           "foreground": "var(light_blue)" },
+    { "scope": "meta.mapping.key string, support.type.property-name.json", "foreground": "var(light_blue)" },
+    { "scope": "entity.name.tag.yaml", "foreground": "var(light_blue)" },
 
     // --- Invalid ---
-    { "scope": "invalid, invalid.deprecated",                                    "foreground": "var(red)" },
+    { "scope": "invalid, invalid.deprecated", "foreground": "var(red)" },
   ],
 }

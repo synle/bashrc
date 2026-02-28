@@ -61,52 +61,55 @@
   },
   "rules": [
     // --- Syntax ---
-    { "scope": "comment, punctuation.definition.comment",                        "foreground": "var(green)" },
-    { "scope": "string, string.quoted",                                          "foreground": "var(red)" },
-    { "scope": "constant.character.escape",                                      "foreground": "#EE0000" },
-    { "scope": "constant.numeric",                                               "foreground": "var(dark_green)" },
-    { "scope": "constant.language",                                              "foreground": "var(blue)" },
-    { "scope": "keyword, keyword.control, keyword.operator.word",                "foreground": "var(blue)" },
-    { "scope": "keyword.operator, punctuation.accessor",                         "foreground": "var(fg)" },
-    { "scope": "storage, storage.type, storage.modifier",                        "foreground": "var(blue)" },
+    { "scope": "comment, punctuation.definition.comment", "foreground": "var(green)" },
+    { "scope": "string, string.quoted", "foreground": "var(red)" },
+    { "scope": "constant.character.escape", "foreground": "#EE0000" },
+    { "scope": "constant.numeric", "foreground": "var(dark_green)" },
+    { "scope": "constant.language", "foreground": "var(blue)" },
+    { "scope": "keyword, keyword.control, keyword.operator.word", "foreground": "var(blue)" },
+    { "scope": "keyword.operator, punctuation.accessor", "foreground": "var(fg)" },
+    { "scope": "storage, storage.type, storage.modifier", "foreground": "var(blue)" },
     { "scope": "keyword.control.import, keyword.control.export, keyword.control.flow", "foreground": "var(pink)" },
 
     // --- Identifiers ---
-    { "scope": "entity.name.function, meta.function-call, variable.function",    "foreground": "var(brown)" },
-    { "scope": "support.function",                                               "foreground": "var(brown)" },
-    { "scope": "entity.name.class, entity.name.type, entity.other.inherited-class, support.class, support.type", "foreground": "var(teal)" },
-    { "scope": "variable, variable.other, variable.parameter",                   "foreground": "var(dark_blue)" },
-    { "scope": "variable.other.constant, support.constant",                      "foreground": "var(constant_blue)" },
+    { "scope": "entity.name.function, meta.function-call, variable.function", "foreground": "var(brown)" },
+    { "scope": "support.function", "foreground": "var(brown)" },
+    {
+      "scope": "entity.name.class, entity.name.type, entity.other.inherited-class, support.class, support.type",
+      "foreground": "var(teal)",
+    },
+    { "scope": "variable, variable.other, variable.parameter", "foreground": "var(dark_blue)" },
+    { "scope": "variable.other.constant, support.constant", "foreground": "var(constant_blue)" },
 
     // --- HTML / XML ---
-    { "scope": "entity.name.tag",                                                "foreground": "var(dark_red)" },
-    { "scope": "entity.other.attribute-name",                                    "foreground": "var(red)" },
+    { "scope": "entity.name.tag", "foreground": "var(dark_red)" },
+    { "scope": "entity.other.attribute-name", "foreground": "var(red)" },
 
     // --- CSS ---
-    { "scope": "support.type.property-name",                                     "foreground": "var(red)" },
-    { "scope": "support.constant.property-value, constant.other.color",          "foreground": "var(link_blue)" },
+    { "scope": "support.type.property-name", "foreground": "var(red)" },
+    { "scope": "support.constant.property-value, constant.other.color", "foreground": "var(link_blue)" },
     { "scope": "entity.other.attribute-name.class, entity.other.attribute-name.id, entity.name.tag.css", "foreground": "var(dark_red)" },
 
     // --- Regex ---
-    { "scope": "string.regexp",                                                  "foreground": "#811F3F" },
+    { "scope": "string.regexp", "foreground": "#811F3F" },
 
     // --- Markdown ---
-    { "scope": "markup.heading, punctuation.definition.heading",                 "foreground": "var(dark_red)", "font_style": "bold" },
-    { "scope": "markup.bold",                                                    "font_style": "bold" },
-    { "scope": "markup.italic",                                                  "font_style": "italic" },
-    { "scope": "markup.underline.link",                                          "foreground": "var(link_blue)" },
-    { "scope": "markup.raw, markup.raw.inline",                                  "foreground": "var(red)" },
+    { "scope": "markup.heading, punctuation.definition.heading", "foreground": "var(dark_red)", "font_style": "bold" },
+    { "scope": "markup.bold", "font_style": "bold" },
+    { "scope": "markup.italic", "font_style": "italic" },
+    { "scope": "markup.underline.link", "foreground": "var(link_blue)" },
+    { "scope": "markup.raw, markup.raw.inline", "foreground": "var(red)" },
 
     // --- Diff ---
-    { "scope": "markup.inserted",                                                "foreground": "var(dark_green)" },
-    { "scope": "markup.deleted",                                                 "foreground": "var(red)" },
-    { "scope": "markup.changed",                                                 "foreground": "var(blue)" },
+    { "scope": "markup.inserted", "foreground": "var(dark_green)" },
+    { "scope": "markup.deleted", "foreground": "var(red)" },
+    { "scope": "markup.changed", "foreground": "var(blue)" },
 
     // --- Data formats ---
-    { "scope": "meta.mapping.key string, support.type.property-name.json",       "foreground": "var(dark_blue)" },
-    { "scope": "entity.name.tag.yaml",                                           "foreground": "var(dark_blue)" },
+    { "scope": "meta.mapping.key string, support.type.property-name.json", "foreground": "var(dark_blue)" },
+    { "scope": "entity.name.tag.yaml", "foreground": "var(dark_blue)" },
 
     // --- Invalid ---
-    { "scope": "invalid, invalid.deprecated",                                    "foreground": "#CD3131" },
+    { "scope": "invalid, invalid.deprecated", "foreground": "#CD3131" },
   ],
 }
