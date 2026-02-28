@@ -1205,5 +1205,326 @@ $currentPath = (($currentPath -split ";") | Where-Object { $_ -ne "" } | Select-
 [Environment]::SetEnvironmentVariable("Path", $currentPath, "User")
 
 # ================================================================================================
+#  SYSTEM > DISPLAY SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Display Settings ===" -ForegroundColor Cyan
+
+# Disable Night Light auto-schedule (user can still toggle manually)
+$bluelightPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default`$windows.data.bluelightreduction.settings\windows.data.bluelightreduction.settings"
+# Night light strength and schedule are stored as binary blobs; disable auto-schedule via registry
+$nightLightPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default`$windows.data.bluelightreduction.bluelightreductionstate\windows.data.bluelightreduction.bluelightreductionstate"
+
+# Set display scaling to 100% (96 DPI) - only applies after logoff
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "LogPixels" -Type DWord -Value 96 -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Win8DpiScaling" -Type DWord -Value 1 -Force -ErrorAction SilentlyContinue
+
+Write-Host "Display settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  SYSTEM > NOTIFICATIONS SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Notification Settings ===" -ForegroundColor Cyan
+
+$notifPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\PushNotifications"
+if (-not (Test-Path $notifPath)) { New-Item -Path $notifPath -Force | Out-Null }
+
+# Disable toast notifications from apps
+Set-ItemProperty -Path $notifPath -Name "ToastEnabled" -Type DWord -Value 0 -Force
+
+# Disable lock screen notifications
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings" -Name "NOC_GLOBAL_SETTING_ALLOW_TOASTS_ABOVE_LOCK" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings" -Name "NOC_GLOBAL_SETTING_ALLOW_CRITICAL_TOASTS_ABOVE_LOCK" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable notification sounds
+$notifSettingsPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings"
+if (-not (Test-Path $notifSettingsPath)) { New-Item -Path $notifSettingsPath -Force | Out-Null }
+Set-ItemProperty -Path $notifSettingsPath -Name "NOC_GLOBAL_SETTING_ALLOW_NOTIFICATION_SOUND" -Type DWord -Value 0 -Force
+
+# Disable "Get tips and suggestions when using Windows"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338389Enabled" -Type DWord -Value 0 -Force
+
+# Disable "Suggest ways to get the most out of Windows"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-310093Enabled" -Type DWord -Value 0 -Force
+
+# Disable "Show me the Windows welcome experience"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-310091Enabled" -Type DWord -Value 0 -Force
+
+Write-Host "Notification settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  SYSTEM > MULTITASKING SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Multitasking Settings ===" -ForegroundColor Cyan
+
+$explorerAdvancedPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+
+# Disable Snap Assist suggestions (don't show what to snap next to a window)
+Set-ItemProperty -Path $explorerAdvancedPath -Name "SnapAssist" -Type DWord -Value 0 -Force
+
+# Disable "When I snap a window, show what I can snap next to it"
+Set-ItemProperty -Path $explorerAdvancedPath -Name "DITest" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Alt+Tab: show only open windows (not Edge tabs)
+Set-ItemProperty -Path $explorerAdvancedPath -Name "MultiTaskingAltTabFilter" -Type DWord -Value 3 -Force
+
+# Disable "Show snap layouts when I hover over a window's maximize button"
+Set-ItemProperty -Path $explorerAdvancedPath -Name "EnableSnapAssistFlyout" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable "Show snap layouts when I drag a window to the top of my screen"
+Set-ItemProperty -Path $explorerAdvancedPath -Name "EnableSnapBar" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+Write-Host "Multitasking settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  SYSTEM > CLIPBOARD SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Clipboard Settings ===" -ForegroundColor Cyan
+
+# Enable clipboard history (Win+V)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Clipboard" -Name "EnableClipboardHistory" -Type DWord -Value 1 -Force
+
+# Disable clipboard sync across devices
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Clipboard" -Name "EnableCloudClipboard" -Type DWord -Value 0 -Force
+
+Write-Host "Clipboard settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  SYSTEM > STORAGE SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Storage Settings ===" -ForegroundColor Cyan
+
+# Disable Storage Sense (automatic cleanup)
+$storageSensePath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy"
+if (-not (Test-Path $storageSensePath)) { New-Item -Path $storageSensePath -Force | Out-Null }
+Set-ItemProperty -Path $storageSensePath -Name "01" -Type DWord -Value 0 -Force
+
+Write-Host "Storage settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  PERSONALIZATION > TASKBAR SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Taskbar Settings ===" -ForegroundColor Cyan
+
+$taskbarPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+
+# Hide Search box from taskbar (0=hidden, 1=icon, 2=search box)
+Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Type DWord -Value 0 -Force
+
+# Hide Widgets button
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarDa" -Type DWord -Value 0 -Force
+
+# Hide Chat (Teams) button
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarMn" -Type DWord -Value 0 -Force
+
+# Hide Task View button
+Set-ItemProperty -Path $taskbarPath -Name "ShowTaskViewButton" -Type DWord -Value 0 -Force
+
+# Hide Copilot button
+Set-ItemProperty -Path $taskbarPath -Name "ShowCopilotButton" -Type DWord -Value 0 -Force
+
+# Taskbar alignment: Left (0=Left, 1=Center)
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarAl" -Type DWord -Value 0 -Force
+
+# Hide recently opened items in Start, Jump Lists, and File Explorer
+Set-ItemProperty -Path $taskbarPath -Name "Start_TrackDocs" -Type DWord -Value 0 -Force
+
+# Auto-hide taskbar (disabled by default, uncomment to enable)
+# Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3" ...
+
+# Never combine taskbar buttons (0=always combine, 1=when full, 2=never)
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarGlomLevel" -Type DWord -Value 2 -Force
+
+# Show labels on taskbar buttons
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarSmallIcons" -Type DWord -Value 0 -Force
+
+Write-Host "Taskbar settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  PERSONALIZATION > START MENU SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Start Menu Settings ===" -ForegroundColor Cyan
+
+# Disable "Show recently added apps"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338388Enabled" -Type DWord -Value 0 -Force
+
+# Disable "Show most used apps"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackProgs" -Type DWord -Value 0 -Force
+
+# Disable "Show suggestions and tips on Start" (recommendations)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_IrisRecommendations" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable "Show recently opened items in Start" (already set above too)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackDocs" -Type DWord -Value 0 -Force
+
+Write-Host "Start menu settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  PERSONALIZATION > LOCK SCREEN SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Lock Screen Settings ===" -ForegroundColor Cyan
+
+# Disable Windows Spotlight on lock screen (use picture instead)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "RotatingLockScreenEnabled" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "RotatingLockScreenOverlayEnabled" -Type DWord -Value 0 -Force
+
+# Disable "Get fun facts, tips, and more" on lock screen
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338387Enabled" -Type DWord -Value 0 -Force
+
+# Disable lock screen tips
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" -Name "SubscribedContent-338393Enabled" -Type DWord -Value 0 -Force
+
+Write-Host "Lock screen settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  PERSONALIZATION > THEMES & COLORS
+# ================================================================================================
+
+Write-Host "`n=== Applying Theme Settings ===" -ForegroundColor Cyan
+
+$personalizePath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+
+# Enable dark mode for apps
+Set-ItemProperty -Path $personalizePath -Name "AppsUseLightTheme" -Type DWord -Value 0 -Force
+
+# Enable dark mode for system (taskbar, Start, etc.)
+Set-ItemProperty -Path $personalizePath -Name "SystemUsesLightTheme" -Type DWord -Value 0 -Force
+
+# Disable transparency effects (already in performance section, but explicit for personalization)
+Set-ItemProperty -Path $personalizePath -Name "EnableTransparency" -Type DWord -Value 0 -Force
+
+# Show accent color on title bars and window borders
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\DWM" -Name "ColorPrevalence" -Type DWord -Value 1 -Force
+
+Write-Host "Theme settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  DEVICES > TYPING SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Typing Settings ===" -ForegroundColor Cyan
+
+# Disable autocorrect
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\TabletTip\1.7" -Name "EnableAutocorrection" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable text suggestions when typing on hardware keyboard
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\TabletTip\1.7" -Name "EnableTextPrediction" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable highlight misspelled words
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\TabletTip\1.7" -Name "EnableSpellchecking" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable typing insights
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Input\Settings" -Name "InsightsEnabled" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+Write-Host "Typing settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  GAMING SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Gaming Settings ===" -ForegroundColor Cyan
+
+# Disable Game Mode
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\GameBar" -Name "AllowAutoGameMode" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\GameBar" -Name "AutoGameModeEnabled" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable Game Bar tips
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\GameBar" -Name "ShowStartupPanel" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable "Open Xbox Game Bar using this button on a controller"
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\GameBar" -Name "UseNexusForGameBarEnabled" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+Write-Host "Gaming settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  ACCESSIBILITY SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Accessibility Settings ===" -ForegroundColor Cyan
+
+# Disable Narrator auto-start
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Narrator\NoRoam" -Name "WinEnterLaunchEnabled" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+# Disable animation effects
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" ([byte[]](0x90, 0x12, 0x03, 0x80, 0x10, 0x00, 0x00, 0x00)) -Force -ErrorAction SilentlyContinue
+
+# Disable Magnifier auto-start
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\ScreenMagnifier" -Name "FollowMouse" -Type DWord -Value 0 -Force -ErrorAction SilentlyContinue
+
+Write-Host "Accessibility settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  WINDOWS UPDATE SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Windows Update Settings ===" -ForegroundColor Cyan
+
+$wuPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
+if (-not (Test-Path $wuPath)) { New-Item -Path $wuPath -Force | Out-Null }
+
+# Notify before downloading and installing updates (don't auto-install)
+# 2=Notify before download, 3=Auto download & notify, 4=Auto download & schedule
+Set-ItemProperty -Path $wuPath -Name "AUOptions" -Type DWord -Value 2 -Force
+
+# Disable auto-restart for updates
+Set-ItemProperty -Path $wuPath -Name "NoAutoRebootWithLoggedOnUsers" -Type DWord -Value 1 -Force
+
+# Disable delivery optimization (P2P update sharing)
+$doPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization"
+if (-not (Test-Path $doPath)) { New-Item -Path $doPath -Force | Out-Null }
+Set-ItemProperty -Path $doPath -Name "DODownloadMode" -Type DWord -Value 0 -Force
+
+Write-Host "Windows Update settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
+#  SOUND SETTINGS
+# ================================================================================================
+
+Write-Host "`n=== Applying Sound Settings ===" -ForegroundColor Cyan
+
+# Disable Windows startup sound
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\BootAnimation" -Name "DisableStartupSound" -Type DWord -Value 1 -Force -ErrorAction SilentlyContinue
+
+# Set sound scheme to "No Sounds"
+Set-ItemProperty -Path "HKCU:\AppEvents\Schemes" -Name "(Default)" -Value ".None" -Force
+
+Write-Host "Sound settings applied." -ForegroundColor Green
+
+
+
+# ================================================================================================
 
 Write-Host "`nSetup complete! Log off or reboot for all changes to take effect." -ForegroundColor Cyan
