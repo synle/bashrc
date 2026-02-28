@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-02-40AM]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-03-00AM]
 // 
 // Preferences Settings
 // ############################################################################################################################################
@@ -36,7 +36,7 @@
   "draw_white_space": "selection",
   "translate_tabs_to_spaces": true,
   "tab_size": 2,
-  "trim_trailing_white_space_on_save": true,
+  "trim_trailing_white_space_on_save": "all",
   "ensure_newline_at_eof_on_save": true,
   "default_line_ending": "unix",
   "show_line_endings": true,
