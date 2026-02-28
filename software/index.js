@@ -1732,7 +1732,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     const fetchCmd = _generateScript(file, url);
     const runner = _generatePipeOutput(file, url);
     tempFileCommand = _generateTempFileCommand(fetchCmd, tmpFile, runner, file);
-    console.log(tempFileCommand)
+    console.log(tempFileCommand);
   } else {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
   }
