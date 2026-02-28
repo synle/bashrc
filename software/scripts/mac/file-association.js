@@ -88,7 +88,7 @@ async function doWork() {
         Sets Sublime Text and VLC as default apps for text and media files
         To revert, run file-association-mac-revert.sh
       `,
-      commentStyle: 'bash',
+      commentStyle: "bash",
     },
     {
       file: "file-association-mac-revert.sh",
@@ -97,7 +97,7 @@ async function doWork() {
         Revert File Associations for macOS
         This resets the Launch Services database to restore default file associations
       `,
-      commentStyle: 'bash',
+      commentStyle: "bash",
     },
   ]);
 }

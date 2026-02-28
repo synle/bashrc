@@ -451,11 +451,11 @@ declare function fetchUrlAsJson(url: string): Promise<object>;
 /**
  * Executes a bash command and returns the output as a string.
  * @param {string} cmd - The shell command to execute
- * @param {boolean} [returnOutput=false] - If true, use execSync and return output synchronously. If false, use async exec and swallow errors.
+ * @param {boolean} [returnOutput=false] - If true, use execSync and return output. If false, use async exec and swallow errors.
  * @param {object} [options] - Optional exec options (cwd, env, etc.)
- * @returns {Promise<string>|string} Resolves with the command's stdout, or returns synchronously when returnOutput is true
+ * @returns {Promise<string>} Resolves with the command's stdout
  */
-declare function execBash(cmd: string, returnOutput?: boolean, options?: object): Promise<string> | string;
+declare function execBash(cmd: string, returnOutput?: boolean, options?: object): Promise<string>;
 /**
  * Deletes a directory or file at the given path using rm -rf.
  * @param {string} targetPath - The path to delete

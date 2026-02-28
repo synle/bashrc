@@ -283,7 +283,6 @@ const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
 const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
 
-
 //////////////////////////////////////////////////////
 // Directory Search Utilities
 //////////////////////////////////////////////////////

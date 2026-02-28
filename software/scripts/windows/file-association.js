@@ -95,7 +95,7 @@ async function doWork() {
         Sets Sublime Text and VLC as default apps for text and media files
         To revert, run file-association-windows-revert.ps1 as Administrator
       `,
-      commentStyle: 'bash',
+      commentStyle: "bash",
     },
     {
       file: "file-association-windows-revert.ps1",
@@ -105,7 +105,7 @@ async function doWork() {
         Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows-revert.ps1
         This removes all custom file associations set by file-association-windows.ps1
       `,
-      commentStyle: 'bash',
+      commentStyle: "bash",
     },
   ]);
 }
