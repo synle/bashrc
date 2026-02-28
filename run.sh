@@ -23,10 +23,12 @@
 #   bash run.sh --force-refresh                    # Force remove and reinstall fnm
 #   bash run.sh -f                                 # Shorthand for --force-refresh
 #   bash run.sh --lightweight                      # Export IS_LIGHT_WEIGHT_MODE=1 for lightweight installs
-#   bash run.sh --debug                            # Enable debug mode (set -x for verbose output)
+#   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
 #   bash run.sh -D                                 # Shorthand for --debug
+#   bash run.sh --verbose                          # Enable verbose mode (set -x for bash tracing)
+#   bash run.sh -V                                 # Shorthand for --verbose
 #
-# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -force-refresh, -f, -lightweight, -debug, -D
+# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -force-refresh, -f, -lightweight, -debug, -D, -verbose, -V
 ####################################################################
 
 ####################################################################
@@ -145,6 +147,7 @@ run_mode="$_default_mode"
 files_to_test=""
 force_refresh=false
 debug_mode=false
+verbose_mode=false
 _parsing_into=""
 unset IS_TEST_SCRIPT_MODE
 unset TEST_SCRIPT_FILES
@@ -183,13 +186,14 @@ for arg in "$@"; do
       export IS_LIGHT_WEIGHT_MODE=1
       _parsing_into=""
       ;;
+    --verbose|-verbose|-V)
+      verbose_mode=true
+      set -x
+      _parsing_into=""
+      ;;
     --debug|-debug|-D)
       debug_mode=true
-
-      # TODO: move this to verbose mode (aka when --verbose), consider movign the verbose flagz
-      set -x
-
-      # TODO: here debug would only set ()
+      export KEEP_TEMP_SCRIPTS=1
       _parsing_into=""
       ;;
     -*)
@@ -220,6 +224,7 @@ mode                = $run_mode
 files               = ${files_to_test:-[full run]}
 force_refresh       = $force_refresh
 debug               = $debug_mode
+verbose             = $verbose_mode
 lightweight         = ${IS_LIGHT_WEIGHT_MODE:-0}
 test_script_mode    = $IS_TEST_SCRIPT_MODE
 os_flags            = ${active_os_flags:-[none]}

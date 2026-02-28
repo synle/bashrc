@@ -20,33 +20,35 @@
  */
 const parseString = (v) => (v || "").trim();
 
-//
- //Parses a value to an integer, returning defaultValue on failure.
- //@param {*} v - The value to parse
- //@param {number} defaultValue - Fallback when parsing fails
- //@returns {number}
- //
- //TODO: implement, when 3 arguments, it's gonna be v, minValue, maxValue, with 2 arguments, it's v and defualtValue
-const parseInteger = function (v) => {
+/**
+ * Parses a value to an integer.
+ * With 2 arguments: (v, defaultValue) - returns parsed int or defaultValue on failure.
+ * With 3 arguments: (v, minValue, maxValue) - clamps result between min and max (defaultValue is minValue).
+ * @param {*} v - The value to parse
+ * @param {number} [defaultValueOrMin] - Fallback value (2 args) or minimum value (3 args)
+ * @param {number} [maxValue] - Maximum value (only when 3 args are provided)
+ * @returns {number}
+ */
+const parseInteger = function (v) {
   let defaultValue, minValue, maxValue;
-  if(arguments.length === 3){
-    // when 3 arguments, it's gonna be v, minValue, maxValue
-    defaultValue = arguments[1]
-    minValue = arguments[2]
-    maxValue = arguments[3]
+  if (arguments.length === 3) {
+    // 3 arguments: (v, minValue, maxValue)
+    minValue = arguments[1];
+    maxValue = arguments[2];
+    defaultValue = minValue;
   } else {
-    // with 2 arguments, it's v and defualtValue
-    defaultValue = arguments[1]
+    // 2 arguments: (v, defaultValue)
+    defaultValue = arguments[1];
   }
 
-  let parsed =  parseInt(parseString(v)) || defaultValue
-  if(minValue){
-    parsed = Math.max(parsed, minValue)
+  let parsed = parseInt(parseString(v)) || defaultValue;
+  if (minValue !== undefined) {
+    parsed = Math.max(parsed, minValue);
   }
-  if(maxValue){
-    parsed = Math.min(parsed, maxValue)
+  if (maxValue !== undefined) {
+    parsed = Math.min(parsed, maxValue);
   }
-  return parsed
+  return parsed;
 };
 
 /**
@@ -57,13 +59,22 @@ const parseInteger = function (v) => {
 const parseBoolean = (v) => parseString(v).toLowerCase() === "true" || parseInteger(v, 0) === 1;
 
 
-// TODO: update to use getRuntimeOption instead of access process.env. if parseString was called earlier with a process.env var
-// (const NODE_JS_VERSION = parseString(process.env.NODE_JS_VERSION);), it can replaced directly parseString
-// (process.env.NODE_JS_VERSION). Make sure you pass in the right form for parseFunc accordingly
-// TODO: update the code of getRuntimeOption to look for argument parameter with this key first aka the
-// option v alue in this form `--optionKey='optionValue'` or `-optionKey=''` (allow both option). If there's value passed in argue used that
-// evne if it'empty - only fallback to process.env if the key is undefined or not present.
+/**
+ * Retrieves a runtime option by key. Checks command-line arguments first (--key=value or -key=value),
+ * then falls back to process.env. Uses the provided parse function to coerce the value.
+ * @param {string} optionKey - The option key to look up
+ * @param {function} [parseFunc=parseString] - Parser function to apply to the raw value
+ * @returns {*} The parsed option value
+ */
 const getRuntimeOption = (optionKey, parseFunc = parseString) => {
+  // check CLI args first: --optionKey=value or -optionKey=value
+  for (const arg of process.argv.slice(2)) {
+    const match = arg.match(new RegExp(`^--?${optionKey}=(.*)$`));
+    if (match) {
+      return parseFunc(match[1]);
+    }
+  }
+  // fallback to environment variable
   return parseFunc(process.env[optionKey] || '');
 }
 
@@ -77,32 +88,32 @@ const http = require("http");
 const { exec, execSync } = require("child_process");
 const BASE_HOMEDIR_LINUX = require("os").homedir();
 
-const BASH_SYLE_PATH = parseString(process.env.BASH_SYLE_PATH);
-const BASH_SYLE_AUTOCOMPLETE_PATH = parseString(process.env.BASH_SYLE_AUTOCOMPLETE_PATH);
-const BASH_SYLE_COMMON_PATH = parseString(process.env.BASH_SYLE_COMMON_PATH);
+const BASH_SYLE_PATH = getRuntimeOption('BASH_SYLE_PATH');
+const BASH_SYLE_AUTOCOMPLETE_PATH = getRuntimeOption('BASH_SYLE_AUTOCOMPLETE_PATH');
+const BASH_SYLE_COMMON_PATH = getRuntimeOption('BASH_SYLE_COMMON_PATH');
 
 // specific for windows and wsl only
 const BASE_C_DIR_WINDOW = "/mnt/c";
 const BASE_D_DIR_WINDOW = "/mnt/d";
 
 // default node installation (fnm) - values exported from run.sh
-const NODE_JS_VERSION = parseString(process.env.NODE_JS_VERSION);
-const FNM_DIR = parseString(process.env.FNM_DIR);
-const FNM_DEFAULT_NODE_PATH = parseString(process.env.FNM_DEFAULT_NODE_PATH);
-const BASH_PROFILE_CODE_REPO_RAW_URL = parseString(process.env.BASH_PROFILE_CODE_REPO_RAW_URL);
-const BASH_SYLE_COMMON = parseString(process.env.BASH_SYLE_COMMON);
-const REPO_PATH_IDENTIFIER = parseString(process.env.REPO_PATH_IDENTIFIER);
-const REPO_BRANCH_NAME = parseString(process.env.REPO_BRANCH_NAME);
-const DEBUG_WRITE_TO_DIR = parseString(process.env.DEBUG_WRITE_TO_DIR).toLowerCase();
-const HAS_SUDO_ACCESS = parseBoolean(process.env.HAS_SUDO_ACCESS);
-const IS_FORCE_REFRESH = parseBoolean(process.env.IS_FORCE_REFRESH);
-const IS_TEST_SCRIPT_MODE = parseBoolean(process.env.IS_TEST_SCRIPT_MODE);
-const IS_LIGHT_WEIGHT_MODE = parseBoolean(process.env.IS_LIGHT_WEIGHT_MODE);
-const PRE_SCRIPT_FILES = parseString(process.env.PRE_SCRIPT_FILES);
-const RUN_ONLY_PRESCRIPTS = parseBoolean(process.env.RUN_ONLY_PRESCRIPTS);
-const KEEP_TEMP_SCRIPTS = parseBoolean(process.env.KEEP_TEMP_SCRIPTS);
+const NODE_JS_VERSION = getRuntimeOption('NODE_JS_VERSION');
+const FNM_DIR = getRuntimeOption('FNM_DIR');
+const FNM_DEFAULT_NODE_PATH = getRuntimeOption('FNM_DEFAULT_NODE_PATH');
+const BASH_PROFILE_CODE_REPO_RAW_URL = getRuntimeOption('BASH_PROFILE_CODE_REPO_RAW_URL');
+const BASH_SYLE_COMMON = getRuntimeOption('BASH_SYLE_COMMON');
+const REPO_PATH_IDENTIFIER = getRuntimeOption('REPO_PATH_IDENTIFIER');
+const REPO_BRANCH_NAME = getRuntimeOption('REPO_BRANCH_NAME');
+const DEBUG_WRITE_TO_DIR = getRuntimeOption('DEBUG_WRITE_TO_DIR').toLowerCase();
+const HAS_SUDO_ACCESS = getRuntimeOption('HAS_SUDO_ACCESS', parseBoolean);
+const IS_FORCE_REFRESH = getRuntimeOption('IS_FORCE_REFRESH', parseBoolean);
+const IS_TEST_SCRIPT_MODE = getRuntimeOption('IS_TEST_SCRIPT_MODE', parseBoolean);
+const IS_LIGHT_WEIGHT_MODE = getRuntimeOption('IS_LIGHT_WEIGHT_MODE', parseBoolean);
+const PRE_SCRIPT_FILES = getRuntimeOption('PRE_SCRIPT_FILES');
+const RUN_ONLY_PRESCRIPTS = getRuntimeOption('RUN_ONLY_PRESCRIPTS', parseBoolean);
+const KEEP_TEMP_SCRIPTS = getRuntimeOption('KEEP_TEMP_SCRIPTS', parseBoolean);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
-const LINE_BREAK_COUNT = parseInteger(process.env.LINE_BREAK_COUNT, 10); // console line break width
+const LINE_BREAK_COUNT = getRuntimeOption('LINE_BREAK_COUNT', (v) => parseInteger(v, 10)); // console line break width
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -1564,6 +1575,7 @@ const echoColorSuccess = (str) => echoColor(str, "32m");
 const echoColorError = (str) => echoColor(str, CONSOLE_COLORS[6]);
 /** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
 const echoColorWarning = (str) => echoColor(str, "33m");
+/** @type {(str: string) => string} Generates a bash echo command with attention (BG Yellow + Black) coloring */
 const echoColorAttention = (str) => echoColor(str, CONSOLE_COLORS[7]);
 
 //////////////////////////////////////////////////////
