@@ -689,7 +689,19 @@ function parseJsonWithComments(oldText) {
   if (!oldText) {
     process.exit();
   }
-  return eval(`var ___temp = ${oldText}; ___temp;`);
+  // Strip single-line comments (// ...) and block comments (/* ... */) before parsing.
+  // Avoids using eval() for security. Handles most common JSON-with-comments patterns.
+  const stripped = oldText
+    .replace(/\/\/.*$/gm, "")        // single-line comments
+    .replace(/\/\*[\s\S]*?\*\//g, "") // block comments
+    .replace(/,\s*([}\]])/g, "$1")    // trailing commas
+    .trim();
+  try {
+    return JSON.parse(stripped);
+  } catch (_) {
+    // Fallback for edge cases (e.g. unquoted keys, JS expressions) — use Function instead of eval
+    return new Function(`return (${oldText})`)();
+  }
 }
 
 /**
@@ -1326,14 +1338,10 @@ async function getSoftwareScriptFiles() {
   }
 
   // clean up the files, only include software/scripts (used for run mode by the os)
-  files = filterRepoScripts(files).filter((f) => f.includes("software/scripts"));
+  // filterRepoScripts already handles dedup, extension filtering (.js/.sh), and sorting
+  files = filterRepoScripts(files).filter((f) => f.includes("software/scripts/"));
 
-  let softwareFiles = files
-    .filter(
-      (f) =>
-        !!f.match("software/scripts/") && (f.includes(".js") || f.includes(".sh")) && !f.includes(".json") && !f.includes(".common.js"),
-    )
-    .sort();
+  let softwareFiles = files.filter((f) => !f.includes(".common.js")).sort();
 
   // Exclude OS-specific script folders that don't belong to the current platform.
   // Each script self-guards against unsupported OSes via exitIfUnsupportedOs().
@@ -1430,24 +1438,23 @@ async function fetchUrlAsJson(url) {
 /**
  * Executes a bash command and returns the output as a string.
  * @param {string} cmd - The shell command to execute
- * @param {boolean} [returnOutput=false] - If true, use execSync and return output. If false, use async exec and swallow errors.
+ * @param {boolean} [sync=false] - If true, use execSync (blocking, throws on error). If false, use async exec (non-blocking, swallows errors).
  * @param {object} [options] - Optional exec options (cwd, env, etc.)
- * @returns {Promise<string>} Resolves with the command's stdout
+ * @returns {Promise<string>|string} The command's stdout
  */
-async function execBash(cmd, returnOutput = false, options) {
-  if (!returnOutput) {
+async function execBash(cmd, sync = false, options) {
+  if (!sync) {
     return new Promise((resolve) => {
       exec(cmd, options || {}, (error, stdout, stderr) => {
         resolve(stdout);
       });
     });
   }
-  const stdout = execSync(cmd, {
+  return execSync(cmd, {
     ...(options || {}),
     encoding: "utf8",
     maxBuffer: 50 * 1024 * 1024,
   });
-  return stdout;
 }
 
 /**
@@ -1725,12 +1732,38 @@ function printScriptProcessingResults(results) {
 }
 
 //////////////////////////////////////////////////////
-// doWork: Test Specific Files (when TEST_SCRIPT_FILES is set)
+// doWork: Unified script runner (test files or full run)
 //////////////////////////////////////////////////////
 /**
+ * Shared runner for both test-specific and full-run modes.
+ * Resolves script file paths, generates bash pipeline commands, and prints results.
+ * @param {string[]} softwareFiles - Array of script file paths to execute
+ * @param {string[]} allRepoFiles - Array of all repo file paths for matching
+ * @param {string} label - Description label for logging
+ * @returns {void}
+ */
+function _runScripts(softwareFiles, allRepoFiles, label) {
+  printOsFlags();
+  printScriptsToRun(softwareFiles);
+
+  for (let i = 0; i < softwareFiles.length; i++) {
+    const originalFile = softwareFiles[i];
+    let file = originalFile;
+
+    // add the prefix if needed
+    if (!file.startsWith("software/")) {
+      file = `software/scripts/${file}`;
+    }
+
+    console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
+    processScriptFile(file, originalFile, allRepoFiles);
+  }
+
+  printScriptProcessingResults(scriptProcessingResults);
+}
+
+/**
  * Runs a subset of scripts specified by the TEST_SCRIPT_FILES environment variable.
- * Parses the comma/semicolon/whitespace-separated list, resolves each to a repo path,
- * and generates the bash pipeline commands to fetch and execute them.
  * @returns {Promise<void>}
  */
 async function _doWorkTestFiles() {
@@ -1749,39 +1782,16 @@ async function _doWorkTestFiles() {
   );
 
   const softwareFiles = filesToTest
-    .split(/[,;\s]/) // list can be separated by ; or , or \n or \r
+    .split(/[,;\s]/)
     .map((s) => s.trim())
     .filter((s) => !!s);
 
-  printOsFlags(); // Print OS Environments
-  printScriptsToRun(softwareFiles);
-
-  for (let i = 0; i < softwareFiles.length; i++) {
-    const originalFile = softwareFiles[i];
-    let file = originalFile;
-
-    if (file.startsWith("software/")) {
-      // does not includes the proper prefix
-    } else {
-      // add the prefix if needed
-      file = `software/scripts/${file}`;
-    }
-
-    console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
-
-    processScriptFile(file, originalFile, allRepoFiles);
-  }
-
-  printScriptProcessingResults(scriptProcessingResults);
+  _runScripts(softwareFiles, allRepoFiles, "Test Files");
 }
 
-//////////////////////////////////////////////////////
-// doWork: Full Run (when TEST_SCRIPT_FILES is not set)
-//////////////////////////////////////////////////////
 /**
- * Runs the full software setup: discovers all platform-applicable script files,
- * orders them (bootstrap first, hosts/extensions last), and generates the bash
- * pipeline commands to fetch and execute each one sequentially.
+ * Runs the full software setup: discovers all platform-applicable script files
+ * and generates the bash pipeline commands to fetch and execute each one.
  * @returns {Promise<void>}
  */
 async function _doWorkFullRun() {
@@ -1796,25 +1806,7 @@ async function _doWorkFullRun() {
   );
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-
-  printOsFlags(); // Print OS Environments
-  printScriptsToRun(softwareFiles);
-
-  for (let i = 0; i < softwareFiles.length; i++) {
-    const originalFile = softwareFiles[i];
-    let file = originalFile;
-
-    // add the prefix if needed
-    if (!file.startsWith("software/scripts/")) {
-      file = `software/scripts/${file}`;
-    }
-
-    console.log(echoColor2(`>> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
-
-    processScriptFile(file, originalFile, allRepoFiles);
-  }
-
-  printScriptProcessingResults(scriptProcessingResults);
+  _runScripts(softwareFiles, allRepoFiles, "Full Run");
 }
 
 //////////////////////////////////////////////////////
