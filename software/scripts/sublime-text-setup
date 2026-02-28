@@ -1,9 +1,9 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-02-00AM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-27-06-20PM]
 
 
-##################################################
+############################################################################################################################################
 # for Linux using bash
-##################################################
+############################################################################################################################################
 REPO_BUILD="https://raw.githubusercontent.com/synle/bashrc/master/.build"
 
 # Resolve potential paths with wildcards
@@ -37,9 +37,9 @@ else
 fi
 
 
-##################################################
+############################################################################################################################################
 # for Windows using powershell
-##################################################
+############################################################################################################################################
 # for windows with powershell, last effort (final fallback)
 $RepoBuild = "https://raw.githubusercontent.com/synle/bashrc/master/.build"
 $W_Path = "$env:AppData/Sublime Text/Packages/User"

@@ -247,16 +247,20 @@ async function doWork() {
   let targetPath = await _getPathSublimeText();
   console.log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
-  writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
 
-  // deploy custom color schemes
+   // deploy custom color schemes
   const colorSchemes = [
     { src: "software/scripts/sublime-text-high-contrast-dark.sublime-color-scheme", dest: "High Contrast Dark.sublime-color-scheme" },
     { src: "software/scripts/sublime-text-high-contrast-light.sublime-color-scheme", dest: "High Contrast Light.sublime-color-scheme" },
   ];
   for (const { src, dest } of colorSchemes) {
-    const data = JSON.parse(fs.readFileSync(src, "utf8"));
+    console.log(`    >> Deploying color scheme: ${dest}`);
+    const data = parseJsonWithComments(src);
+
+    console.log(`      >> Parsing: ${dest}`, src);
     writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
-    console.log(`    >> Deployed color scheme: ${dest}`);
   }
+
+  console.log(`    >> Deployed config:`, targetPath);
+  writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
 }
