@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-04-20AM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-04-40AM]
 # ############################################################################################################################################
 
 [user]
@@ -113,15 +113,18 @@ ri = rebase -i # Interactive rebase
 ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
 
 # Log & Diff
-l = "!git log --date=short --abbrev-commit --pretty=format:'%C(yellow)%h %C(blue)%ad %C(reset)%s'"
-ll = "!git log --graph --oneline --decorate --all --author-date-order"
+logbaseline = log --decorate --all --abbrev-commit --date=short
+ls = "!git logbaseline --pretty=format:'%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s' --stat --graph"
+lls = "!git logbaseline --graph --oneline --author-date-order"
+l = "!git ls --stat"
+ll = "!git lls --stat"
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^
 ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
 stats = shortlog -sn # Commit counts per author
 
 # Maintenance & Advanced
-cleanfd = clean -f -d # Remove untracked files and directories
+cleanfd = "!git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; git am --abort 2>/dev/null; rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD; git clean -f -d" # Abort conflicts and remove untracked files/directories
 cp = cherry-pick
 cpc = cherry-pick --continue
 cpn = cherry-pick -n # Cherry-pick without committing
@@ -136,7 +139,7 @@ search-reflog = rev-list --all -- # git search-history -- "config.old.json" Usag
 where-is = branch -r --contains # Usage: git where-is <hash_id>, Identify which remote branches contain a specific commit hash
 
 # Interactive rebase last n commits
-n = "!f() { git rebase -i HEAD~${1:-1}; }; f"
+rn = "!f() { git rebase -i HEAD~${1:-1}; }; f"
 rn-vscode = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
 r2 = rebase -i HEAD~2
 r2-vscode = !GIT_EDITOR=\"code --wait\" git r2
