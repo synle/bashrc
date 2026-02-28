@@ -1529,7 +1529,7 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
 /** @type {(str: string) => string} Generates a bash echo command with green (success) coloring */
 const echoColorSuccess = (str) => echoColor(str, "32m");
 /** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
-const echoColorError = (str) => echoColor(str,CONSOLE_COLORS[6]);
+const echoColorError = (str) => echoColor(str, CONSOLE_COLORS[6]);
 /** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
 const echoColorWarning = (str) => echoColor(str, "33m");
 const echoColorAttention = (str) => echoColor(str, CONSOLE_COLORS[7]);

@@ -677,3 +677,4 @@ declare const echoColorSuccess: (str: string) => string;
 declare const echoColorError: (str: string) => string;
 /** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
 declare const echoColorWarning: (str: string) => string;
+declare function echoColorAttention(str: any): string;
