@@ -58,7 +58,7 @@ async function doWork() {
   const timeoutScriptBlock = `
 # Runs a command with a timeout, killing it if it exceeds the allowed duration.
 # Usage: timeout [seconds] <command> (default: 17s)
-timeout() {
+function timeout() {
   local delay cmd
   if [ "\$#" -eq 1 ]; then delay=17; cmd="\$1"
   elif [ "\$#" -eq 2 ]; then delay="\$1"; cmd="\$2"
@@ -85,7 +85,7 @@ timeout() {
 ${timeoutScriptBlock}
 
 # === format script ===
-format() {
+function format() {
   local verbose=0
   if [ "\$(echo "\$1" | tr '[:upper:]' '[:lower:]')" = "1" ] || [ "\$(echo "\$1" | tr '[:upper:]' '[:lower:]')" = "true" ]; then
     verbose=1
@@ -93,6 +93,15 @@ format() {
   fi
 
   echo "Running full project format sequence..."
+
+  # Merge macOS resource fork (._*) files into their parent files
+  if command -v dot_clean >/dev/null 2>&1; then
+    if [ "\$verbose" -eq 1 ]; then
+      timeout "dot_clean ." || echo "dot_clean failed or skipped."
+    else
+      timeout "dot_clean ." > /dev/null 2>&1 || true
+    fi
+  fi
 
   if [ "\$verbose" -eq 1 ]; then
     timeout format_cleanup || echo "format_cleanup failed or skipped."
@@ -108,7 +117,7 @@ format() {
   fi
 }
 
-format_js() {
+function format_js() {
   echo "Running Prettier on JavaScript/TypeScript files..."
 
   if ! command -v npx >/dev/null 2>&1; then
@@ -134,7 +143,7 @@ EOF
   fi
 }
 
-format_python() {
+function format_python() {
   # Only activate venv if not already active
   if [ -n "\$VIRTUAL_ENV" ]; then
     echo "Python environment already active: \$VIRTUAL_ENV"
@@ -165,7 +174,7 @@ format_python() {
 # Aggressive Junk Cleanup (macOS metadata, OS artifacts,
 # patch rejects, and other system files)
 # ----------------------------------------------------
-format_cleanup() {
+function format_cleanup() {
   echo "Cleaning junk files..."
 
   local base_dir="\${1:-.}"
@@ -199,7 +208,7 @@ format_cleanup() {
 # ----------------------------------------------------
 # Light Cleanup (depth limited)
 # ----------------------------------------------------
-format_cleanup_light() {
+function format_cleanup_light() {
   local base_dir="\${1:-.}"
   local max_depth=${MAX_DEPTH_CLEANUP}
 
@@ -207,11 +216,16 @@ format_cleanup_light() {
     return 1
   fi
 
+  # Merge macOS resource fork (._*) files before deleting leftovers
+  if command -v dot_clean >/dev/null 2>&1; then
+    dot_clean "\$base_dir" 2>/dev/null || true
+  fi
+
   find "\$base_dir" \\
     -maxdepth "\$max_depth" \\
     \\( \\
       -type f \\( \\
-        ${junkFileNames} \\
+        ${junkFileNames} -o -name '.*._' -o -name '._*' \\
       \\) -o \\
       -type d \\( \\
         ${junkDirNames} \\
@@ -224,7 +238,7 @@ format_cleanup_light() {
 # ----------------------------------------------------
 # Text File Formatting (trim trailing whitespace)
 # ----------------------------------------------------
-format_other_text_based_files() {
+function format_other_text_based_files() {
   echo '>> Formatting text-based files...'
 
   EXCLUDE_DIRS=(
