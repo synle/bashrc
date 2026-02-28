@@ -167,7 +167,6 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     tree_animation_enabled: false, // Disable sidebar expand/collapse animation
     animation_enabled: false, // Disable all UI animations globally
     theme: "auto", // Auto-switch theme based on OS dark/light mode
-    // TODO: add a fallback to breaker and monakai if is_prebuilt_config
     dark_theme: "Adaptive.sublime-theme", // Theme for dark mode
     light_theme: "Adaptive.sublime-theme", // Theme for light mode
     show_folding_buttons: false, // Hide code folding arrows in the gutter — saves CPU on large files
@@ -204,8 +203,8 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     auto_complete_commit_on_tab: true, // Press Tab to accept autocomplete instead of requiring Enter
     ignored_packages: ["Vintage"], // Disable Vintage (vim mode) — not needed if you don't use vim bindings
     color_scheme: "auto", // Auto-switch color scheme based on OS dark/light mode
-    dark_color_scheme: "High Contrast Dark.sublime-color-scheme", // Color scheme for dark mode
-    light_color_scheme: "High Contrast Light.sublime-color-scheme", // Color scheme for light mode
+    dark_color_scheme: is_prebuilt_config ? "Monokai.sublime-color-scheme" : "High Contrast Dark.sublime-color-scheme",
+    light_color_scheme: is_prebuilt_config ? "Breakers.sublime-color-scheme" : "High Contrast Light.sublime-color-scheme",
 
     // --- Ignored Files ---
     file_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFiles), // Files hidden from sidebar and Goto Anything
@@ -256,7 +255,7 @@ async function doWork() {
   ];
   for (const { src, dest } of colorSchemes) {
     console.log(`    >> Deploying color scheme: ${dest}`);
-    const data = parseJsonWithComments(await fetchUrlAsString(src));
+    const data = await fetchUrlAsJson(src);
 
     console.log(`      >> Parsing: ${dest}`, src);
     writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
