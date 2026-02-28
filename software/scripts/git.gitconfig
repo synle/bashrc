@@ -92,7 +92,7 @@ del = branch -D # Force delete branch
 
 # Pull / Push / Fetch
 fap = fetch --all --prune # Fetch all and purge deleted remotes
-p =  pull
+p = pull
 pu = pull
 po = push origin
 pof = push origin --force
@@ -108,12 +108,10 @@ r = rebase --reapply-cherry-picks
 rc = rebase --reapply-cherry-picks --continue
 ri = rebase -i # Interactive rebase
 ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
-# Interactive rebase last n commits
-###SNIPPET_GIT_REBASE_INTERACTIVE###
 
 # Log & Diff
-l = git log --date=short --abbrev-commit --pretty=format:"%C(yellow)%h %C(blue)%ad %C(reset)%s"
-ll = git log --graph --oneline --decorate --all --author-date-order
+l = log --date=short --abbrev-commit --pretty=format:"%C(yellow)%h %C(blue)%ad %C(reset)%s"
+ll = log --graph --oneline --decorate --all --author-date-order
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^
 ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
@@ -130,6 +128,14 @@ cl0 = "!f() { git clone0 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl0] Shallow c
 cl1 = "!f() { git clone1 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
 
 # Search & Reflog
-search-logs = log -- . -G # Usage: git search-logs <some_text_to_search>,Search the 'diff' content of all commits in the current directory for a specific string
+search-logs = "!f() { git log -G \"$1\" -- .; }; f" # Usage: git search-logs <some_text_to_search>, Search the 'diff' content of all commits in the current directory for a specific string
 search-reflog = rev-list --all -- # git search-history -- "config.old.json" Usage: git search-reflog <file_name>, Find every commit across ALL branches/tags that ever touched a specific file. Useful for finding where a file was deleted or moved
 where-is = branch -r --contains # Usage: git where-is <hash_id>, Identify which remote branches contain a specific commit hash
+
+# Interactive rebase last n commits
+n = "!f() { git rebase -i HEAD~${1:-1}; }; f"
+rn-vscode = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
+###SNIPPET_GIT_REBASE_INTERACTIVE###
+
+# extra content
+###SNIPPET_GIT_EXTRA_CORE_CONFIGS###
