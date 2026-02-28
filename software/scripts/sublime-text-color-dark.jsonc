@@ -63,12 +63,12 @@
 
     // Shadow
     "shadow": "#00000080",
-    "shadow_width": 6,
+    "shadow_width": "6",
 
     // Padding
-    "block_caret_border": 0,
-    "line_padding_top": 1,
-    "line_padding_bottom": 1,
+    "block_caret_border": "0",
+    "line_padding_top": "1",
+    "line_padding_bottom": "1",
 
     // Popup styling (autocomplete, hover, goto definition)
     "popup_css": "html { background-color: #1E1E1E; color: #FFFFFF; } a { color: #6FC3DF; }",
