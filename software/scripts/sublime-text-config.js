@@ -167,6 +167,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     tree_animation_enabled: false, // Disable sidebar expand/collapse animation
     animation_enabled: false, // Disable all UI animations globally
     theme: "auto", // Auto-switch theme based on OS dark/light mode
+    // TODO: add a fallback to breaker and monakai if is_prebuilt_config
     dark_theme: "Adaptive.sublime-theme", // Theme for dark mode
     light_theme: "Adaptive.sublime-theme", // Theme for light mode
     show_folding_buttons: false, // Hide code folding arrows in the gutter — saves CPU on large files
@@ -255,7 +256,7 @@ async function doWork() {
   ];
   for (const { src, dest } of colorSchemes) {
     console.log(`    >> Deploying color scheme: ${dest}`);
-    const data = parseJsonWithComments(src);
+    const data = parseJsonWithComments(await fetchUrlAsString(src));
 
     console.log(`      >> Parsing: ${dest}`, src);
     writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
