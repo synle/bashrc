@@ -151,8 +151,6 @@ alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
 
 unset os_flags
 
-
-
 ### specific to CI mode - override echo to emit GitHub Actions groups
 if [ "$CI" = "true" ]; then
     echo() {
@@ -167,6 +165,12 @@ if [ "$CI" = "true" ]; then
             *) command echo "$@" ;;
         esac
     }
+fi
+
+
+# make current user owner of ~/.local (only if ownership differs)
+if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || stat -f '%u' "${HOME}/.local" 2>/dev/null)" != "$(id -u)" ]; then
+  sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
 # END bootstrap/common-env.sh
 
