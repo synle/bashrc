@@ -584,14 +584,30 @@ declare function _doWorkFullRun(): Promise<void>;
  * @returns {string} The trimmed string representation
  */
 declare function parseString(v: any): string;
-declare function parseInteger(v: any): any;
+/**
+ * Parses a value to an integer.
+ * With 2 arguments: (v, defaultValue) - returns parsed int or defaultValue on failure.
+ * With 3 arguments: (v, minValue, maxValue) - clamps result between min and max (defaultValue is minValue).
+ * @param {*} v - The value to parse
+ * @param {number} [defaultValueOrMin] - Fallback value (2 args) or minimum value (3 args)
+ * @param {number} [maxValue] - Maximum value (only when 3 args are provided)
+ * @returns {number}
+ */
+declare function parseInteger(v: any, ...args: any[]): number;
 /**
  * Parses a value to a boolean. Recognizes "true" (case-insensitive) and "1".
  * @param {*} v - The value to parse
  * @returns {boolean}
  */
 declare function parseBoolean(v: any): boolean;
-declare function getRuntimeOption(optionKey: any, parseFunc?: (v: any) => string): string;
+/**
+ * Retrieves a runtime option by key. Checks command-line arguments first (--key=value or -key=value),
+ * then falls back to process.env. Uses the provided parse function to coerce the value.
+ * @param {string} optionKey - The option key to look up
+ * @param {function} [parseFunc=parseString] - Parser function to apply to the raw value
+ * @returns {*} The parsed option value
+ */
+declare function getRuntimeOption(optionKey: string, parseFunc?: Function): any;
 /** @type {typeof import("fs")} */
 declare const fs: typeof import("fs");
 /** @type {typeof import("path")} */
@@ -603,35 +619,36 @@ declare const http: typeof import("http");
 declare const exec: any;
 declare const execSync: any;
 declare const BASE_HOMEDIR_LINUX: "";
-declare const BASH_SYLE_PATH: string;
-declare const BASH_SYLE_AUTOCOMPLETE_PATH: string;
-declare const BASH_SYLE_COMMON_PATH: string;
+declare const BASH_SYLE_PATH: any;
+declare const BASH_SYLE_AUTOCOMPLETE_PATH: any;
+declare const BASH_SYLE_COMMON_PATH: any;
 declare const BASE_C_DIR_WINDOW: "/mnt/c";
 declare const BASE_D_DIR_WINDOW: "/mnt/d";
-declare const NODE_JS_VERSION: string;
-declare const FNM_DIR: string;
-declare const FNM_DEFAULT_NODE_PATH: string;
-declare const BASH_PROFILE_CODE_REPO_RAW_URL: string;
-declare const BASH_SYLE_COMMON: string;
-declare const REPO_PATH_IDENTIFIER: string;
-declare const REPO_BRANCH_NAME: string;
-declare const DEBUG_WRITE_TO_DIR: string;
-declare const HAS_SUDO_ACCESS: boolean;
-declare const IS_FORCE_REFRESH: boolean;
-declare const IS_TEST_SCRIPT_MODE: boolean;
-declare const IS_LIGHT_WEIGHT_MODE: boolean;
-declare const PRE_SCRIPT_FILES: string;
-declare const RUN_ONLY_PRESCRIPTS: boolean;
-declare const KEEP_TEMP_SCRIPTS: boolean;
+declare const NODE_JS_VERSION: any;
+declare const FNM_DIR: any;
+declare const FNM_DEFAULT_NODE_PATH: any;
+declare const BASH_PROFILE_CODE_REPO_RAW_URL: any;
+declare const BASH_SYLE_COMMON: any;
+declare const REPO_PATH_IDENTIFIER: any;
+declare const REPO_BRANCH_NAME: any;
+declare const DEBUG_WRITE_TO_DIR: any;
+declare const HAS_SUDO_ACCESS: any;
+declare const IS_FORCE_REFRESH: any;
+declare const IS_TEST_SCRIPT_MODE: any;
+declare const IS_LIGHT_WEIGHT_MODE: any;
+declare const PRE_SCRIPT_FILES: any;
+declare const RUN_ONLY_PRESCRIPTS: any;
+declare const KEEP_TEMP_SCRIPTS: any;
 declare const REPO_PREFIX_URL: string;
 declare const LINE_BREAK_COUNT: any;
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.
- * @type {Array<{file: string, path: string, script: string, status: 'success'|'error', description: string}>}
+ * @type {Array<{file: string, path: string, script: string, tempFileCommand: string, status: 'success'|'error', description: string}>}
  * @property {string} file - The original file name before prefix expansion
  * @property {string} path - The resolved file path after prefix expansion
  * @property {string} script - The generated bash command used to fetch/execute the script
+ * @property {string} tempFileCommand - The generated temp file command for retry/debugging
  * @property {string} status - 'success' if the script was found, 'error' if not found
  * @property {string} description - Error detail message, empty string on success
  */
@@ -639,11 +656,12 @@ declare const scriptProcessingResults: Array<{
   file: string;
   path: string;
   script: string;
+  tempFileCommand: string;
   status: "success" | "error";
   description: string;
 }>;
-declare const fontSize: any;
-declare const tabSize: any;
+declare const fontSize: number;
+declare const tabSize: number;
 declare const fontFamily: any;
 /**
  * Editor configuration object containing font settings, tab size, max line length,
@@ -693,4 +711,5 @@ declare const echoColorSuccess: (str: string) => string;
 declare const echoColorError: (str: string) => string;
 /** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
 declare const echoColorWarning: (str: string) => string;
-declare function echoColorAttention(str: any): string;
+/** @type {(str: string) => string} Generates a bash echo command with attention (BG Yellow + Black) coloring */
+declare const echoColorAttention: (str: string) => string;
