@@ -1331,10 +1331,7 @@ async function getSoftwareScriptFiles() {
   let softwareFiles = files
     .filter(
       (f) =>
-        !!f.match("software/scripts/") &&
-        (f.includes(".js") || f.includes(".sh")) &&
-        !f.includes(".json") &&
-        !f.includes(".common.js"),
+        !!f.match("software/scripts/") && (f.includes(".js") || f.includes(".sh")) && !f.includes(".json") && !f.includes(".common.js"),
     )
     .sort();
 
