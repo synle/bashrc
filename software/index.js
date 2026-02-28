@@ -1629,7 +1629,6 @@ function _generateTempFileCommand(fetchCmd, tmpFile, runner, label) {
  * @returns {void}
  */
 function processScriptFile(file, originalFile, allRepoFiles) {
-  const startTime = Date.now();
   const url = getFullUrl(`${file}?${Date.now()}`);
 
   /**
@@ -1732,12 +1731,14 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     const fetchCmd = _generateScript(file, url);
     const runner = _generatePipeOutput(file, url);
     tempFileCommand = _generateTempFileCommand(fetchCmd, tmpFile, runner, file);
-    console.log(tempFileCommand);
+    // Wrap with bash-side timing and status tracking
+    const resultLabel = !fileMatchState ? originalFile : `${originalFile} (${file})`;
+    const descSuffix = description ? ` ${description}` : "";
+    console.log(`_SCRIPT_START=$(date +%s); ${tempFileCommand}; _SCRIPT_END=$(date +%s); _SCRIPT_DUR=$((_SCRIPT_END - _SCRIPT_START)); if [ "$_SCRIPT_DUR" -ge 60 ]; then _SCRIPT_DUR_FMT="$((_SCRIPT_DUR / 60))m $((_SCRIPT_DUR % 60))s"; else _SCRIPT_DUR_FMT="\${_SCRIPT_DUR}s"; fi; if [ $_EC -eq 0 ]; then _RUN_SUCCESS=$((_RUN_SUCCESS + 1)); echo -e $'\\e[32m[Success] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; else _RUN_FAIL=$((_RUN_FAIL + 1)); echo -e $'\\e[41;97;1m[Error] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; fi; _RUN_TOTAL_DUR=$((_RUN_TOTAL_DUR + _SCRIPT_DUR))`);
   } else {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
   }
 
-  const endTime = Date.now();
   scriptProcessingResults.push({
     file: originalFile,
     path: file,
@@ -1746,9 +1747,6 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     status: fileExists ? "success" : "error",
     fileMatchState: fileMatchState || "",
     description: description || "",
-    startTime,
-    endTime,
-    durationMs: endTime - startTime,
   });
 }
 
@@ -1794,56 +1792,6 @@ function printSectionBlock(header, lines = []) {
   console.log(echoColorWarning(LINE_BREAK_EQUAL));
 }
 
-/**
- * Prints the script processing results with a section header.
- * Success entries are printed in green, error entries in red.
- * @param {Array<{file: string, path: string, description: string, status: string}>} results - The scriptProcessingResults array
- * @returns {void}
- */
-function formatDurationMinsSeconds(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  if (mins > 0) {
-    return `${mins}m ${secs}s`;
-  }
-  return `${secs}s`;
-}
-
-function printScriptProcessingResults(results) {
-  const successCount = results.filter((r) => r.status === "success").length;
-  const errorCount = results.filter((r) => r.status === "error").length;
-  const totalDurationMs = results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
-
-  printSectionBlock(
-    `Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed) - Total: ${formatDurationMinsSeconds(totalDurationMs)}`,
-  );
-
-  for (const result of results) {
-    const duration = result.durationMs != null ? ` (${formatDurationMinsSeconds(result.durationMs)})` : "";
-    if (result.status === "success") {
-      console.log(
-        echoColorSuccess(
-          !result.fileMatchState
-            ? `[Success] ${result.file}.${duration} ${result.description}`
-            : `[Success] ${result.file} (${result.path}).${duration} ${result.description}`,
-        ),
-      );
-      if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
-        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
-      }
-    } else {
-      console.log(echoColorError(`[Error] ${result.file} (${result.path}).${duration} ${result.description}`));
-      if (result.fileMatchState !== "not_found" && result.tempFileCommand) {
-        // Non-file-expansion error: always show retry command for debugging
-        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
-      } else if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
-        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
-      }
-    }
-  }
-}
-
 //////////////////////////////////////////////////////
 // doWork: Unified script runner (test files or full run)
 //////////////////////////////////////////////////////
@@ -1859,6 +1807,9 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
   printOsFlags();
   printScriptsToRun(softwareFiles);
 
+  // Initialize bash-side counters for tracking results
+  console.log(`_RUN_SUCCESS=0; _RUN_FAIL=0; _RUN_TOTAL_DUR=0; _RUN_START=$(date +%s)`);
+
   for (let i = 0; i < softwareFiles.length; i++) {
     const originalFile = softwareFiles[i];
     let file = originalFile;
@@ -1872,7 +1823,12 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
-  printScriptProcessingResults(scriptProcessingResults);
+  // Print summary in bash so it runs after all scripts complete with real durations
+  const totalFiles = scriptProcessingResults.length;
+  console.log(echoColorWarning(LINE_BREAK_EQUAL));
+  console.log(`if [ "$_RUN_TOTAL_DUR" -ge 60 ]; then _RUN_TOTAL_FMT="$((_RUN_TOTAL_DUR / 60))m $((_RUN_TOTAL_DUR % 60))s"; else _RUN_TOTAL_FMT="\${_RUN_TOTAL_DUR}s"; fi`);
+  console.log(`echo -e $'\\e[43;30m>> Script Processing Results: ${totalFiles} files ($_RUN_SUCCESS success, $_RUN_FAIL failed) - Total: $_RUN_TOTAL_FMT\\e[m'`);
+  console.log(echoColorWarning(LINE_BREAK_EQUAL));
 }
 
 /**
