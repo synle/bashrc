@@ -484,6 +484,24 @@ declare function echoColor(str: string, color: string): string;
  */
 declare function consoleLogColor(str: string, color: string): string;
 /**
+ * Derives a predictable temp file path from a script file name.
+ * Used to write combined scripts to disk so errors show real file paths in stack traces.
+ * @param {string} file - The script file path
+ * @returns {string} A temp file path like /tmp/bashrc_sw_git.js
+ */
+declare function _getTempFilePath(file: string): string;
+/**
+ * Generates a bash snippet that writes a script to a temp file, executes it,
+ * and on failure preserves the file and shows context around the error.
+ * On success, cleans up the temp file (unless KEEP_TEMP_SCRIPTS is set).
+ * @param {string} fetchCmd - The command to produce the script content (e.g. cat or curl)
+ * @param {string} tmpFile - The temp file path to write to
+ * @param {string} runner - The command to run the temp file (e.g. 'node', 'bash', 'sudo -E node')
+ * @param {string} label - Human-readable label for error messages (the script path)
+ * @returns {string} A bash command string
+ */
+declare function _generateTempFileCommand(fetchCmd: string, tmpFile: string, runner: string, label: string): string;
+/**
  * Generates and prints a bash command pipeline for fetching and executing a script file.
  * Determines the appropriate runner (node, bash, sudo) based on the file's extension pattern
  * (e.g. .su.js for sudo node, .sh.js for node piped to bash).
@@ -607,6 +625,9 @@ declare const HAS_SUDO_ACCESS: boolean;
 declare const IS_FORCE_REFRESH: boolean;
 declare const IS_TEST_SCRIPT_MODE: boolean;
 declare const IS_LIGHT_WEIGHT_MODE: boolean;
+declare const PRE_SCRIPT_FILES: string;
+declare const RUN_ONLY_PRESCRIPTS: boolean;
+declare const KEEP_TEMP_SCRIPTS: boolean;
 declare const REPO_PREFIX_URL: string;
 declare const LINE_BREAK_COUNT: number;
 /**
