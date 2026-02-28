@@ -19,13 +19,35 @@
  * @returns {string} The trimmed string representation
  */
 const parseString = (v) => (v || "").trim();
-/**
- * Parses a value to an integer, returning defaultValue on failure.
- * @param {*} v - The value to parse
- * @param {number} defaultValue - Fallback when parsing fails
- * @returns {number}
- */
-const parseInteger = (v, defaultValue) => parseInt(parseString(v)) || defaultValue;
+
+//
+ //Parses a value to an integer, returning defaultValue on failure.
+ //@param {*} v - The value to parse
+ //@param {number} defaultValue - Fallback when parsing fails
+ //@returns {number}
+ //
+ //TODO: implement, when 3 arguments, it's gonna be v, minValue, maxValue, with 2 arguments, it's v and defualtValue
+const parseInteger = function (v) => {
+  let defaultValue, minValue, maxValue;
+  if(arguments.length === 3){
+    // when 3 arguments, it's gonna be v, minValue, maxValue
+    defaultValue = arguments[1]
+    minValue = arguments[2]
+    maxValue = arguments[3]
+  } else {
+    // with 2 arguments, it's v and defualtValue
+    defaultValue = arguments[1]
+  }
+
+  let parsed =  parseInt(parseString(v)) || defaultValue
+  if(minValue){
+    parsed = Math.max(parsed, minValue)
+  }
+  if(maxValue){
+    parsed = Math.min(parsed, maxValue)
+  }
+  return parsed
+};
 
 /**
  * Parses a value to a boolean. Recognizes "true" (case-insensitive) and "1".
@@ -33,6 +55,17 @@ const parseInteger = (v, defaultValue) => parseInt(parseString(v)) || defaultVal
  * @returns {boolean}
  */
 const parseBoolean = (v) => parseString(v).toLowerCase() === "true" || parseInteger(v, 0) === 1;
+
+
+// TODO: update to use getRuntimeOption instead of access process.env. if parseString was called earlier with a process.env var
+// (const NODE_JS_VERSION = parseString(process.env.NODE_JS_VERSION);), it can replaced directly parseString
+// (process.env.NODE_JS_VERSION). Make sure you pass in the right form for parseFunc accordingly
+// TODO: update the code of getRuntimeOption to look for argument parameter with this key first aka the
+// option v alue in this form `--optionKey='optionValue'` or `-optionKey=''` (allow both option). If there's value passed in argue used that
+// evne if it'empty - only fallback to process.env if the key is undefined or not present.
+const getRuntimeOption = (optionKey, parseFunc = parseString) => {
+  return parseFunc(process.env[optionKey] || '');
+}
 
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
@@ -90,17 +123,10 @@ const scriptProcessingResults = [];
 // export FONT_SIZE=15;
 // export FONT_FAMILY='Fira Code'
 // export TAB_SIZE=2
-let fontSize = parseInt(process.env.FONT_SIZE);
-if (!fontSize || fontSize <= 10) {
-  fontSize = 10;
-}
+const fontSize = parseInteger(process.env.FONT_SIZE, 10);
+const tabSize = parseInteger(process.env.TAB_SIZE, 2);
 
 const fontFamily = process.env.FONT_FAMILY || "Fira Code";
-
-let tabSize = parseInt(process.env.TAB_SIZE);
-if (!tabSize || tabSize <= 2) {
-  tabSize = 2;
-}
 
 /**
  * Editor configuration object containing font settings, tab size, max line length,
