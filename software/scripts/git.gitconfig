@@ -110,9 +110,9 @@ ri = rebase -i # Interactive rebase
 ri-vscode = !GIT_EDITOR=\"code --wait\" git ri
 
 # Log & Diff
-logbaseline = log --decorate --all --abbrev-commit --date=short
-ls = "!git logbaseline --pretty=format:'%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s' --stat --graph"
-lls = "!git logbaseline --graph --oneline --author-date-order"
+logbaseline = log --decorate --all --abbrev-commit --date=short --graph
+ls = "!git logbaseline --pretty=format:'%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s'"
+lls = "!git logbaseline --oneline --author-date-order"
 l = "!git ls --stat"
 ll = "!git lls --stat"
 d = diff --word-diff -w # Word-level diff ignoring whitespace
