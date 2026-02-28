@@ -172,8 +172,24 @@ fi
 if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || stat -f '%u' "${HOME}/.local" 2>/dev/null)" != "$(id -u)" ]; then
   sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
+
+# Run build-include substitutions (update BEGIN/END blocks) if node and the script exist
+if command -v node >/dev/null 2>&1 && [ -f "software/build-include.cjs" ]; then
+  echo '> Running build-include substitutions'
+  node software/build-include.cjs
+fi
 # END bootstrap/common-env.sh
 
+
+####################################################################
+# Helper: run files directly through index.js (avoids full run.sh bootstrap)
+####################################################################
+run_files() {
+  export IS_TEST_SCRIPT_MODE=1
+  export TEST_SCRIPT_FILES="$1"
+  cat software/index.js | node | bash
+  unset TEST_SCRIPT_FILES
+}
 
 echo '< build.sh'
 ##########################################################
@@ -204,7 +220,7 @@ fi
 if should_run script-indexes; then
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-bash run.sh --files="software/metadata/script-list.js"
+run_files "software/metadata/script-list.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
 fi
 
@@ -213,7 +229,7 @@ fi
 ##########################################################
 if should_run prebuild-hosts; then
 echo '> Prebuilding Host Mappings'
-bash run.sh --files="software/metadata/ip-address.config.js"
+run_files "software/metadata/ip-address.config.js"
 fi
 
 ##########################################################
@@ -226,7 +242,7 @@ echo '> Build raw JSON and raw JSON configs'
 CONFIG_BUILD_PATH="./.build"
 mkdir -p $CONFIG_BUILD_PATH
 export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
-bash run.sh --files="$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
+run_files "$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
 echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
 unset DEBUG_WRITE_TO_DIR DEBUG_WRITE_TO_DIR
@@ -237,7 +253,7 @@ fi
 ##########################################################
 if should_run host-mappings && [ "$CI" != "true" ]; then
 echo '> Build Host Mappings'
-bash run.sh --files="software/metadata/hosts-blocked-ads.config.js"
+run_files "software/metadata/hosts-blocked-ads.config.js"
 fi
 
 ##########################################################

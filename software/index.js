@@ -65,6 +65,8 @@ const HAS_SUDO_ACCESS = parseBoolean(process.env.HAS_SUDO_ACCESS);
 const IS_FORCE_REFRESH = parseBoolean(process.env.IS_FORCE_REFRESH);
 const IS_TEST_SCRIPT_MODE = parseBoolean(process.env.IS_TEST_SCRIPT_MODE);
 const IS_LIGHT_WEIGHT_MODE = parseBoolean(process.env.IS_LIGHT_WEIGHT_MODE);
+const PRE_SCRIPT_FILES = parseString(process.env.PRE_SCRIPT_FILES);
+const RUN_ONLY_PRESCRIPTS = parseBoolean(process.env.RUN_ONLY_PRESCRIPTS);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
 const LINE_BREAK_COUNT = parseInt(process.env.LINE_BREAK_COUNT, 10) || 80; // console line break width
 
@@ -1789,6 +1791,29 @@ async function _doWorkTestFiles() {
   _runScripts(softwareFiles, allRepoFiles, "Test Files");
 }
 
+//////////////////////////////////////////////////////
+// doWork: Pre-Scripts (when PRE_SCRIPT_FILES is set)
+//////////////////////////////////////////////////////
+/**
+ * Runs pre-scripts specified by the PRE_SCRIPT_FILES environment variable.
+ * Pre-scripts are processed before the main run (test files or full run).
+ * @param {string[]} allRepoFiles - List of all file paths in the repository
+ * @returns {void}
+ */
+function _doWorkPreScripts(allRepoFiles) {
+  if (!PRE_SCRIPT_FILES) return;
+
+  const preScripts = PRE_SCRIPT_FILES.split(/[,;\s]/)
+    .map((s) => s.trim())
+    .filter((s) => !!s);
+
+  console.log(echoColor5(`>> Pre-scripts: ${preScripts.length} files`));
+  _runScripts(preScripts, allRepoFiles, "Pre-Scripts");
+}
+
+//////////////////////////////////////////////////////
+// doWork: Full Run (when TEST_SCRIPT_FILES is not set)
+//////////////////////////////////////////////////////
 /**
  * Runs the full software setup: discovers all platform-applicable script files
  * and generates the bash pipeline commands to fetch and execute each one.
@@ -1859,7 +1884,14 @@ async function _doWorkFullRun() {
 
   // start script
   try {
-    if (typeof doWork === "function") {
+    // Process pre-scripts first (if any), before the main run
+    const allRepoFiles = await getAllRepoSoftwareFiles();
+    _doWorkPreScripts(allRepoFiles);
+
+    if (RUN_ONLY_PRESCRIPTS) {
+      // Skip main run, only pre-scripts were requested
+      printScriptProcessingResults(scriptProcessingResults);
+    } else if (typeof doWork === "function") {
       // if doWork is defined externally (e.g. by a script concatenated after this file), use it
       await doWork();
     } else if (process.env.TEST_SCRIPT_FILES) {

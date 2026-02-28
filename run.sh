@@ -136,6 +136,12 @@ fi
 if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || stat -f '%u' "${HOME}/.local" 2>/dev/null)" != "$(id -u)" ]; then
   sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
+
+# Run build-include substitutions (update BEGIN/END blocks) if node and the script exist
+if command -v node >/dev/null 2>&1 && [ -f "software/build-include.cjs" ]; then
+  echo '> Running build-include substitutions'
+  node software/build-include.cjs
+fi
 # END bootstrap/common-env.sh
 
 ####################################################################
@@ -157,6 +163,8 @@ _parsing_into=""
 unset IS_TEST_SCRIPT_MODE
 unset TEST_SCRIPT_FILES
 unset IS_FORCE_REFRESH
+unset PRE_SCRIPT_FILES
+unset RUN_ONLY_PRESCRIPTS
 
 ####################################################################
 # Parse arguments
@@ -327,29 +335,22 @@ if [ "$is_os_android_termux" != "1" ]; then
 fi
 
 ####################################################################
-# script: Run pre-scripts
+# script: Run (single pipeline for pre-scripts + files)
 ####################################################################
-if [ -n "$pre_run_scripts" ]; then
-  echo "
-$LINE_BREAK_HASH
->> pre-run scripts: $pre_run_scripts
-"
-  get_file_contents "$pre_run_scripts" | bash
-fi
+if [ -n "$pre_run_scripts" ]; then export PRE_SCRIPT_FILES="$pre_run_scripts"; fi
+if [ "$run_only_prescripts" = true ]; then export RUN_ONLY_PRESCRIPTS=1; fi
 
-####################################################################
-# script: Run main script - if needed
-####################################################################
-if [ "$run_only_prescripts" != true ]; then
-  echo "
+echo """
 $LINE_BREAK_HASH
->> files scripts: $files_to_test
-"
-  if command -v node >/dev/null 2>&1; then
-    get_file_contents "software/index.js" | node | bash
-  else
-    echo "[Skip files] Node is not installed — skipping main script."
-  fi
+>> pre_scripts: ${pre_run_scripts:-[none]}  files: ${files_to_test:-[full run]}
+"""
+
+if [ "$run_only_prescripts" = true ] && [ -z "$pre_run_scripts" ]; then
+  echo "[Skip] --run-only-prescripts with no pre-scripts specified."
+elif command -v node >/dev/null 2>&1; then
+  get_file_contents "software/index.js" | node | bash
+else
+  echo "[Skip] Node is not installed — skipping main script."
 fi
 
 echo "
