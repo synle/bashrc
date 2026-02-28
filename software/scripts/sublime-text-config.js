@@ -163,6 +163,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     // --- UI Cleanliness ---
     show_tab_close_buttons: false, // Hide per-tab close buttons — use keyboard or middle-click instead
     bold_folder_labels: true, // Make folder names bold in the sidebar for visual hierarchy
+    sidebar_font_size: fontSizeToUse, // Match sidebar font size to editor font size (ST4 4200+)
     auto_hide_menu: true, // Hide the menu bar until Alt is pressed — more vertical space
     tree_animation_enabled: false, // Disable sidebar expand/collapse animation
     animation_enabled: false, // Disable all UI animations globally

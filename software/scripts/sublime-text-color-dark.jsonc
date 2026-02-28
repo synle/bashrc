@@ -32,8 +32,10 @@
     // Selection & highlight
     "selection": "var(selection)",
     "selection_border": "var(selection)",
+    "selection_foreground": "var(fg)",
     "inactive_selection": "#264F7850",
     "line_highlight": "#FFFFFF15",
+    "highlight": "#FFFFFF20",
     "find_highlight": "#FFD33D",
     "find_highlight_foreground": "#000000",
 
@@ -55,10 +57,21 @@
     "line_diff_modified": "#E2C08D",
     "line_diff_deleted": "var(red)",
 
+    // Rulers & fold markers
+    "rulers": "#FFFFFF20",
+    "fold_marker": "#6FC3DF",
+
+    // Shadow
+    "shadow": "#00000080",
+    "shadow_width": 6,
+
     // Padding
     "block_caret_border": 0,
     "line_padding_top": 1,
     "line_padding_bottom": 1,
+
+    // Popup styling (autocomplete, hover, goto definition)
+    "popup_css": "html { background-color: #1E1E1E; color: #FFFFFF; } a { color: #6FC3DF; }",
   },
   "rules": [
     // --- Syntax ---
