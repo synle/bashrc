@@ -531,14 +531,6 @@ declare function printScriptsToRun(scriptsToRun: string[]): void;
  */
 declare function printSectionBlock(header: string, lines?: string[]): void;
 /**
- * Prints the script processing results with a section header.
- * Success entries are printed in green, error entries in red.
- * @param {Array<{file: string, path: string, description: string, status: string}>} results - The scriptProcessingResults array
- * @returns {void}
- */
-declare function formatDurationMinsSeconds(ms: any): void;
-declare function printScriptProcessingResults(results: any): void;
-/**
  * Shared runner for both test-specific and full-run modes.
  * Resolves script file paths, generates bash pipeline commands, and prints results.
  * @param {string[]} softwareFiles - Array of script file paths to execute

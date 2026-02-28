@@ -1734,7 +1734,9 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     // Wrap with bash-side timing and status tracking
     const resultLabel = !fileMatchState ? originalFile : `${originalFile} (${file})`;
     const descSuffix = description ? ` ${description}` : "";
-    console.log(`_SCRIPT_START=$(date +%s); ${tempFileCommand}; _SCRIPT_END=$(date +%s); _SCRIPT_DUR=$((_SCRIPT_END - _SCRIPT_START)); if [ "$_SCRIPT_DUR" -ge 60 ]; then _SCRIPT_DUR_FMT="$((_SCRIPT_DUR / 60))m $((_SCRIPT_DUR % 60))s"; else _SCRIPT_DUR_FMT="\${_SCRIPT_DUR}s"; fi; if [ $_EC -eq 0 ]; then _RUN_SUCCESS=$((_RUN_SUCCESS + 1)); echo -e $'\\e[32m[Success] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; else _RUN_FAIL=$((_RUN_FAIL + 1)); echo -e $'\\e[41;97;1m[Error] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; fi; _RUN_TOTAL_DUR=$((_RUN_TOTAL_DUR + _SCRIPT_DUR))`);
+    console.log(
+      `_SCRIPT_START=$(date +%s); ${tempFileCommand}; _SCRIPT_END=$(date +%s); _SCRIPT_DUR=$((_SCRIPT_END - _SCRIPT_START)); if [ "$_SCRIPT_DUR" -ge 60 ]; then _SCRIPT_DUR_FMT="$((_SCRIPT_DUR / 60))m $((_SCRIPT_DUR % 60))s"; else _SCRIPT_DUR_FMT="\${_SCRIPT_DUR}s"; fi; if [ $_EC -eq 0 ]; then _RUN_SUCCESS=$((_RUN_SUCCESS + 1)); echo -e $'\\e[32m[Success] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; else _RUN_FAIL=$((_RUN_FAIL + 1)); echo -e $'\\e[41;97;1m[Error] ${resultLabel}. ($_SCRIPT_DUR_FMT)${descSuffix}\\e[m'; fi; _RUN_TOTAL_DUR=$((_RUN_TOTAL_DUR + _SCRIPT_DUR))`,
+    );
   } else {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
   }
@@ -1826,8 +1828,12 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
   // Print summary in bash so it runs after all scripts complete with real durations
   const totalFiles = scriptProcessingResults.length;
   console.log(echoColorWarning(LINE_BREAK_EQUAL));
-  console.log(`if [ "$_RUN_TOTAL_DUR" -ge 60 ]; then _RUN_TOTAL_FMT="$((_RUN_TOTAL_DUR / 60))m $((_RUN_TOTAL_DUR % 60))s"; else _RUN_TOTAL_FMT="\${_RUN_TOTAL_DUR}s"; fi`);
-  console.log(`echo -e $'\\e[43;30m>> Script Processing Results: ${totalFiles} files ($_RUN_SUCCESS success, $_RUN_FAIL failed) - Total: $_RUN_TOTAL_FMT\\e[m'`);
+  console.log(
+    `if [ "$_RUN_TOTAL_DUR" -ge 60 ]; then _RUN_TOTAL_FMT="$((_RUN_TOTAL_DUR / 60))m $((_RUN_TOTAL_DUR % 60))s"; else _RUN_TOTAL_FMT="\${_RUN_TOTAL_DUR}s"; fi`,
+  );
+  console.log(
+    `echo -e $'\\e[43;30m>> Script Processing Results: ${totalFiles} files ($_RUN_SUCCESS success, $_RUN_FAIL failed) - Total: $_RUN_TOTAL_FMT\\e[m'`,
+  );
   console.log(echoColorWarning(LINE_BREAK_EQUAL));
 }
 
