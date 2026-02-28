@@ -494,12 +494,6 @@ declare function consoleLogColor(str: string, color: string): string;
  */
 declare function processScriptFile(file: string, originalFile: string, allRepoFiles: string[]): void;
 /**
- * Fetches a remote script file and evaluates its content in the current context.
- * @param {string} file - The file path or URL to fetch and eval
- * @returns {Promise<void>}
- */
-declare function includeSource(file: string): Promise<void>;
-/**
  * Prints a formatted table of OS flags (is_os_*) to stdout via a generated node command.
  * Respects the SHOULD_PRINT_OS_FLAGS environment variable to suppress output.
  * @returns {void}

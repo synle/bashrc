@@ -36,9 +36,10 @@ async function doWork() {
   exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
   console.log(`  >> VS Code Setup Script:`);
 
-  const script = `##################################################
+  const script = `
+${LINE_BREAK_HASH}
 # for Linux using bash
-##################################################
+${LINE_BREAK_HASH}
 REMOTE_BASE="${BASH_PROFILE_CODE_REPO_RAW_URL}/.build"
 CONFIG_FILE="${configFile}"
 
@@ -67,9 +68,9 @@ for target in "\${targets[@]}"; do
 done
 
 
-##################################################
+${LINE_BREAK_HASH}
 # for Windows using powershell
-##################################################
+${LINE_BREAK_HASH}
 $baseUrl     = "${BASH_PROFILE_CODE_REPO_RAW_URL}/.build"
 $configFile  = "${configFile}"
 $keybindings = "vs-code-keys-windows"

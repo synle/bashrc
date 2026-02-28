@@ -1,8 +1,30 @@
+/** Glob patterns for locating the Sublime Text binary across platforms */
+const _SUBL_PATHS = [
+  "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl",
+  "/mnt/c/Program*Files/Sublime*Text*/sublime*.exe",
+  "/mnt/c/Program*Files/Sublime*Text*/subl*",
+  "/opt/sublime_text/subl*",
+  "/usr/bin/subl",
+  "/usr/local/bin/subl",
+];
+
+/** Glob patterns for locating the VS Code / VSCodium binary across platforms */
+const _CODE_PATHS = [
+  "/mnt/c/Users/Sy*/AppData/Local/Programs/Microsoft*Code/Code.exe",
+  "/mnt/c/Users/Le*/AppData/Local/Programs/Microsoft*Code/Code.exe",
+  "/mnt/c/Program*Files/VSCodium/VSCodium.exe",
+  "/mnt/c/Program*Files/Microsoft*VS*Code/Code.exe",
+  "/usr/local/bin/codium",
+  "/usr/local/bin/code",
+  "/usr/bin/codium",
+  "/usr/bin/code",
+];
+
 /**
  * Searches standard OS paths for VS Code and VSCodium installation directories.
  * @returns {string[]} Array of absolute paths to found VS Code/VSCodium config directories.
  */
-function _getTargetPaths() {
+function _getVSCodeAndVSCodiumPaths() {
   const res = [];
   const home = process.env.HOME || process.env.USERPROFILE;
 
@@ -60,4 +82,34 @@ function _getTargetPaths() {
   });
 
   return res;
+}
+
+/**
+ * Searches for the Sublime Text config directory based on the current OS.
+ * @returns {Promise<string|null>} Path to the Sublime Text config directory, or null if not found.
+ */
+async function _getPathSublimeText() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
+
+  try {
+    if (is_os_window) {
+      return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
+    }
+
+    if (is_os_darwin_mac) {
+      return findDirSingle(getOsxApplicationSupportCodeUserPath(), regexBinary);
+    }
+
+    if (is_os_arch_linux) {
+      return findDirSingle(path.join(process.env.HOME, ".var/app/com.sublimetext.three/config"), regexBinary);
+    }
+
+    // for debian or chrome os debian linux
+    return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
+  } catch (err) {
+    console.log("      >> Failed to get the path", err);
+  }
+
+  return null;
 }

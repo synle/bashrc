@@ -1,5 +1,120 @@
-// BEGIN software/scripts/sublime-text.common.js
-// END software/scripts/sublime-text.common.js
+// BEGIN software/scripts/editor.common.js
+/** Glob patterns for locating the Sublime Text binary across platforms */
+const _SUBL_PATHS = [
+  "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl",
+  "/mnt/c/Program*Files/Sublime*Text*/sublime*.exe",
+  "/mnt/c/Program*Files/Sublime*Text*/subl*",
+  "/opt/sublime_text/subl*",
+  "/usr/bin/subl",
+  "/usr/local/bin/subl",
+];
+
+/** Glob patterns for locating the VS Code / VSCodium binary across platforms */
+const _CODE_PATHS = [
+  "/mnt/c/Users/Sy*/AppData/Local/Programs/Microsoft*Code/Code.exe",
+  "/mnt/c/Users/Le*/AppData/Local/Programs/Microsoft*Code/Code.exe",
+  "/mnt/c/Program*Files/VSCodium/VSCodium.exe",
+  "/mnt/c/Program*Files/Microsoft*VS*Code/Code.exe",
+  "/usr/local/bin/codium",
+  "/usr/local/bin/code",
+  "/usr/bin/codium",
+  "/usr/bin/code",
+];
+
+/**
+ * Searches standard OS paths for VS Code and VSCodium installation directories.
+ * @returns {string[]} Array of absolute paths to found VS Code/VSCodium config directories.
+ */
+function _getVSCodeAndVSCodiumPaths() {
+  const res = [];
+  const home = process.env.HOME || process.env.USERPROFILE;
+
+  // 1. Initialize search roots with standard OS locations
+  const searchRoots = [
+    process.env.APPDATA, // Windows Native
+    path.join(home, "Library/Application Support"), // macOS
+    path.join(home, ".config"), // Linux Standard
+    path.join(home, ".var/app/com.visualstudio.code/config"), // Linux Flatpak
+    path.join(home, ".var/app/com.vscodium/config"), // Linux Flatpak
+  ];
+
+  // 2. Account for WSL and Git Bash Windows mounts
+  // Iterates through C:\Users\* to find Roaming folders
+  const windowsMounts = ["/mnt/c/Users", "/c/Users"];
+  windowsMounts.forEach((mount) => {
+    if (fs.existsSync(mount)) {
+      try {
+        const directoryItems = fs.readdirSync(mount);
+        for (const item of directoryItems) {
+          const roamingPath = path.join(mount, item, "AppData/Roaming");
+          if (fs.existsSync(roamingPath)) {
+            searchRoots.push(roamingPath);
+          }
+        }
+      } catch (e) {
+        // Skip folders with permission issues (like System folders)
+      }
+    }
+  });
+
+  // 3. Patterns for the apps we want to find
+  const patterns = [/Code/i, /VSCodium/i];
+
+  // 4. Execution logic using your findDirSingle method
+  searchRoots.forEach((root) => {
+    if (!root || !fs.existsSync(root)) return;
+
+    patterns.forEach((pattern) => {
+      try {
+        // Use your method to find the matching directory (e.g., "Code")
+        const foundAppPath = findDirSingle(root, pattern);
+
+        if (foundAppPath && fs.existsSync(foundAppPath)) {
+          // Normalize the path and ensure it's not already in the array
+          const absolutePath = path.resolve(foundAppPath);
+          if (!res.includes(absolutePath)) {
+            res.push(absolutePath);
+          }
+        }
+      } catch (err) {
+        // Silent fail for locked directories
+      }
+    });
+  });
+
+  return res;
+}
+
+/**
+ * Searches for the Sublime Text config directory based on the current OS.
+ * @returns {Promise<string|null>} Path to the Sublime Text config directory, or null if not found.
+ */
+async function _getPathSublimeText() {
+  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
+
+  try {
+    if (is_os_window) {
+      return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
+    }
+
+    if (is_os_darwin_mac) {
+      return findDirSingle(getOsxApplicationSupportCodeUserPath(), regexBinary);
+    }
+
+    if (is_os_arch_linux) {
+      return findDirSingle(path.join(process.env.HOME, ".var/app/com.sublimetext.three/config"), regexBinary);
+    }
+
+    // for debian or chrome os debian linux
+    return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
+  } catch (err) {
+    console.log("      >> Failed to get the path", err);
+  }
+
+  return null;
+}
+// END software/scripts/editor.common.js
 
 let mySublimeTextConfigs = {};
 
@@ -51,7 +166,9 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     auto_hide_menu: true, // Hide the menu bar until Alt is pressed — more vertical space
     tree_animation_enabled: false, // Disable sidebar expand/collapse animation
     animation_enabled: false, // Disable all UI animations globally
-    theme: "Adaptive.sublime-theme", // Use the built-in adaptive theme
+    theme: "auto", // Auto-switch theme based on OS dark/light mode
+    dark_theme: "Adaptive.sublime-theme", // Theme for dark mode
+    light_theme: "Adaptive.sublime-theme", // Theme for light mode
     show_folding_buttons: false, // Hide code folding arrows in the gutter — saves CPU on large files
     fade_fold_buttons: false, // No fade effect for fold buttons (moot when buttons are hidden)
     preview_on_click: true, // Single-click a file in sidebar to preview without fully opening it
@@ -85,7 +202,9 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     show_definitions: false, // Disable the inline definition popup on hover — reduces lag
     auto_complete_commit_on_tab: true, // Press Tab to accept autocomplete instead of requiring Enter
     ignored_packages: ["Vintage"], // Disable Vintage (vim mode) — not needed if you don't use vim bindings
-    color_scheme: "Monokai.sublime-color-scheme", // Default color scheme with good contrast
+    color_scheme: "auto", // Auto-switch color scheme based on OS dark/light mode
+    dark_color_scheme: "High Contrast Dark.sublime-color-scheme", // Color scheme for dark mode
+    light_color_scheme: "High Contrast Light.sublime-color-scheme", // Color scheme for light mode
 
     // --- Ignored Files ---
     file_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFiles), // Files hidden from sidebar and Goto Anything
@@ -129,4 +248,15 @@ async function doWork() {
   console.log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
   writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
+
+  // deploy custom color schemes
+  const colorSchemes = [
+    { src: "software/scripts/sublime-text-high-contrast-dark.sublime-color-scheme", dest: "High Contrast Dark.sublime-color-scheme" },
+    { src: "software/scripts/sublime-text-high-contrast-light.sublime-color-scheme", dest: "High Contrast Light.sublime-color-scheme" },
+  ];
+  for (const { src, dest } of colorSchemes) {
+    const data = JSON.parse(fs.readFileSync(src, "utf8"));
+    writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
+    console.log(`    >> Deployed color scheme: ${dest}`);
+  }
 }

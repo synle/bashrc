@@ -1660,16 +1660,6 @@ function processScriptFile(file, originalFile, allRepoFiles) {
 }
 
 /**
- * Fetches a remote script file and evaluates its content in the current context.
- * @param {string} file - The file path or URL to fetch and eval
- * @returns {Promise<void>}
- */
-async function includeSource(file) {
-  const fileContent = await fetchUrlAsString(file);
-  eval(fileContent);
-}
-
-/**
  * Prints a formatted table of OS flags (is_os_*) to stdout via a generated node command.
  * Respects the SHOULD_PRINT_OS_FLAGS environment variable to suppress output.
  * @returns {void}

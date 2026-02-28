@@ -31,8 +31,5 @@ git ls-files | while read -r file; do
   echo "  >> Cleaned autogen note from $file"
 done
 
-echo '> Running clean-jsdocs'
-node software/build-jsdocs.cjs --clean
-
 echo '> Running clean-include'
 node software/build-include.cjs --clean "$@"
