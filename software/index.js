@@ -58,7 +58,6 @@ const parseInteger = function (v) {
  */
 const parseBoolean = (v) => parseString(v).toLowerCase() === "true" || parseInteger(v, 0) === 1;
 
-
 /**
  * Retrieves a runtime option by key. Checks command-line arguments first (--key=value or -key=value),
  * then falls back to process.env. Uses the provided parse function to coerce the value.
@@ -75,8 +74,8 @@ const getRuntimeOption = (optionKey, parseFunc = parseString) => {
     }
   }
   // fallback to environment variable
-  return parseFunc(process.env[optionKey] || '');
-}
+  return parseFunc(process.env[optionKey] || "");
+};
 
 //////////////////////////////////////////////////////
 // Global Imports & Path Constants
@@ -88,32 +87,32 @@ const http = require("http");
 const { exec, execSync } = require("child_process");
 const BASE_HOMEDIR_LINUX = require("os").homedir();
 
-const BASH_SYLE_PATH = getRuntimeOption('BASH_SYLE_PATH');
-const BASH_SYLE_AUTOCOMPLETE_PATH = getRuntimeOption('BASH_SYLE_AUTOCOMPLETE_PATH');
-const BASH_SYLE_COMMON_PATH = getRuntimeOption('BASH_SYLE_COMMON_PATH');
+const BASH_SYLE_PATH = getRuntimeOption("BASH_SYLE_PATH");
+const BASH_SYLE_AUTOCOMPLETE_PATH = getRuntimeOption("BASH_SYLE_AUTOCOMPLETE_PATH");
+const BASH_SYLE_COMMON_PATH = getRuntimeOption("BASH_SYLE_COMMON_PATH");
 
 // specific for windows and wsl only
 const BASE_C_DIR_WINDOW = "/mnt/c";
 const BASE_D_DIR_WINDOW = "/mnt/d";
 
 // default node installation (fnm) - values exported from run.sh
-const NODE_JS_VERSION = getRuntimeOption('NODE_JS_VERSION');
-const FNM_DIR = getRuntimeOption('FNM_DIR');
-const FNM_DEFAULT_NODE_PATH = getRuntimeOption('FNM_DEFAULT_NODE_PATH');
-const BASH_PROFILE_CODE_REPO_RAW_URL = getRuntimeOption('BASH_PROFILE_CODE_REPO_RAW_URL');
-const BASH_SYLE_COMMON = getRuntimeOption('BASH_SYLE_COMMON');
-const REPO_PATH_IDENTIFIER = getRuntimeOption('REPO_PATH_IDENTIFIER');
-const REPO_BRANCH_NAME = getRuntimeOption('REPO_BRANCH_NAME');
-const DEBUG_WRITE_TO_DIR = getRuntimeOption('DEBUG_WRITE_TO_DIR').toLowerCase();
-const HAS_SUDO_ACCESS = getRuntimeOption('HAS_SUDO_ACCESS', parseBoolean);
-const IS_FORCE_REFRESH = getRuntimeOption('IS_FORCE_REFRESH', parseBoolean);
-const IS_TEST_SCRIPT_MODE = getRuntimeOption('IS_TEST_SCRIPT_MODE', parseBoolean);
-const IS_LIGHT_WEIGHT_MODE = getRuntimeOption('IS_LIGHT_WEIGHT_MODE', parseBoolean);
-const PRE_SCRIPT_FILES = getRuntimeOption('PRE_SCRIPT_FILES');
-const RUN_ONLY_PRESCRIPTS = getRuntimeOption('RUN_ONLY_PRESCRIPTS', parseBoolean);
-const KEEP_TEMP_SCRIPTS = getRuntimeOption('KEEP_TEMP_SCRIPTS', parseBoolean);
+const NODE_JS_VERSION = getRuntimeOption("NODE_JS_VERSION");
+const FNM_DIR = getRuntimeOption("FNM_DIR");
+const FNM_DEFAULT_NODE_PATH = getRuntimeOption("FNM_DEFAULT_NODE_PATH");
+const BASH_PROFILE_CODE_REPO_RAW_URL = getRuntimeOption("BASH_PROFILE_CODE_REPO_RAW_URL");
+const BASH_SYLE_COMMON = getRuntimeOption("BASH_SYLE_COMMON");
+const REPO_PATH_IDENTIFIER = getRuntimeOption("REPO_PATH_IDENTIFIER");
+const REPO_BRANCH_NAME = getRuntimeOption("REPO_BRANCH_NAME");
+const DEBUG_WRITE_TO_DIR = getRuntimeOption("DEBUG_WRITE_TO_DIR").toLowerCase();
+const HAS_SUDO_ACCESS = getRuntimeOption("HAS_SUDO_ACCESS", parseBoolean);
+const IS_FORCE_REFRESH = getRuntimeOption("IS_FORCE_REFRESH", parseBoolean);
+const IS_TEST_SCRIPT_MODE = getRuntimeOption("IS_TEST_SCRIPT_MODE", parseBoolean);
+const IS_LIGHT_WEIGHT_MODE = getRuntimeOption("IS_LIGHT_WEIGHT_MODE", parseBoolean);
+const PRE_SCRIPT_FILES = getRuntimeOption("PRE_SCRIPT_FILES");
+const RUN_ONLY_PRESCRIPTS = getRuntimeOption("RUN_ONLY_PRESCRIPTS", parseBoolean);
+const KEEP_TEMP_SCRIPTS = getRuntimeOption("KEEP_TEMP_SCRIPTS", parseBoolean);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
-const LINE_BREAK_COUNT = getRuntimeOption('LINE_BREAK_COUNT', (v) => parseInteger(v, 10)); // console line break width
+const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 10)); // console line break width
 
 /**
  * Tracks the processing status of each script file during execution.
