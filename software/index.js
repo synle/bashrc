@@ -1809,9 +1809,6 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
   printOsFlags();
   printScriptsToRun(softwareFiles);
 
-  // Initialize bash-side counters for tracking results
-  console.log(`_RUN_SUCCESS=0; _RUN_FAIL=0; _RUN_TOTAL_DUR=0; _RUN_START=$(date +%s)`);
-
   for (let i = 0; i < softwareFiles.length; i++) {
     const originalFile = softwareFiles[i];
     let file = originalFile;
