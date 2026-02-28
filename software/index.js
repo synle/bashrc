@@ -65,6 +65,9 @@ const HAS_SUDO_ACCESS = parseBoolean(process.env.HAS_SUDO_ACCESS);
 const IS_FORCE_REFRESH = parseBoolean(process.env.IS_FORCE_REFRESH);
 const IS_TEST_SCRIPT_MODE = parseBoolean(process.env.IS_TEST_SCRIPT_MODE);
 const IS_LIGHT_WEIGHT_MODE = parseBoolean(process.env.IS_LIGHT_WEIGHT_MODE);
+const PRE_SCRIPT_FILES = parseString(process.env.PRE_SCRIPT_FILES);
+const RUN_ONLY_PRESCRIPTS = parseBoolean(process.env.RUN_ONLY_PRESCRIPTS);
+const KEEP_TEMP_SCRIPTS = parseBoolean(process.env.KEEP_TEMP_SCRIPTS);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
 const LINE_BREAK_COUNT = parseInt(process.env.LINE_BREAK_COUNT, 10) || 80; // console line break width
 
@@ -1541,6 +1544,44 @@ const echoColorAttention = (str) => echoColor(str, CONSOLE_COLORS[7]);
 // Script Processing & Execution
 //////////////////////////////////////////////////////
 /**
+ * Derives a predictable temp file path from a script file name.
+ * Used to write combined scripts to disk so errors show real file paths in stack traces.
+ * @param {string} file - The script file path
+ * @returns {string} A temp file path like /tmp/bashrc_sw_git.js
+ */
+function _getTempFilePath(file) {
+  const name = path.basename(file).replace(/[^a-zA-Z0-9._-]/g, "_");
+  return `/tmp/bashrc_sw_${name}`;
+}
+
+/**
+ * Generates a bash snippet that writes a script to a temp file, executes it,
+ * and on failure preserves the file and shows context around the error.
+ * On success, cleans up the temp file (unless KEEP_TEMP_SCRIPTS is set).
+ * @param {string} fetchCmd - The command to produce the script content (e.g. cat or curl)
+ * @param {string} tmpFile - The temp file path to write to
+ * @param {string} runner - The command to run the temp file (e.g. 'node', 'bash', 'sudo -E node')
+ * @param {string} label - Human-readable label for error messages (the script path)
+ * @returns {string} A bash command string
+ */
+function _generateTempFileCommand(fetchCmd, tmpFile, runner, label) {
+  const cleanupCmd = KEEP_TEMP_SCRIPTS ? "true" : `rm -f ${tmpFile}`;
+
+  // For 'node | bash' pattern: run node to generate bash script, save output, then run with bash
+  if (runner === "node | bash") {
+    const tmpBash = `${tmpFile}.sh`;
+    const cleanupBoth = KEEP_TEMP_SCRIPTS ? "true" : `rm -f ${tmpFile} ${tmpBash}`;
+    return `{ ${fetchCmd} ;} > ${tmpFile} && node ${tmpFile} > ${tmpBash}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED (node phase): ${label} (exit code $_EC). Re-run: node ${tmpFile}\\e[m'; cat ${tmpBash}; else bash ${tmpBash}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED (bash phase): ${label} (exit code $_EC). Re-run: bash ${tmpBash}\\e[m'; else ${cleanupBoth}; fi; fi`;
+  }
+
+  // Standard pattern: write to temp file, run directly, show context on error
+  // Captures stderr to a .err file so we can extract line numbers without re-running
+  const tmpErr = `${tmpFile}.err`;
+  const cleanupAll = KEEP_TEMP_SCRIPTS ? "true" : `rm -f ${tmpFile} ${tmpErr}`;
+  return `{ ${fetchCmd} ;} > ${tmpFile} && ${runner} ${tmpFile} 2>${tmpErr}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED: ${label} (exit code $_EC). Re-run with: ${runner} ${tmpFile}\\e[m'; cat ${tmpErr}; _ERR_LINE=$(grep -oE ':[0-9]+' ${tmpErr} | head -1 | tr -d ':'); if [ -n "$_ERR_LINE" ]; then _START=$(( _ERR_LINE > 10 ? _ERR_LINE - 10 : 1 )); _END=$(( _ERR_LINE + 10 )); echo -e '\\e[33m>> Context around line $_ERR_LINE:\\e[m'; sed -n "$_START,${_END}p" ${tmpFile} | cat -n; fi; else ${cleanupAll}; fi`;
+}
+
+/**
  * Generates and prints a bash command pipeline for fetching and executing a script file.
  * Determines the appropriate runner (node, bash, sudo) based on the file's extension pattern
  * (e.g. .su.js for sudo node, .sh.js for node piped to bash).
@@ -1647,7 +1688,10 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     // purge matched file from the list to prevent duplicate matches
     const idx = allRepoFiles.indexOf(foundMatchedPath);
     if (idx !== -1) allRepoFiles.splice(idx, 1);
-    console.log(`{ ${_generateScript(file, url)} ;} | ${_generatePipeOutput(file, url)}`);
+    const tmpFile = _getTempFilePath(file);
+    const fetchCmd = _generateScript(file, url);
+    const runner = _generatePipeOutput(file, url);
+    console.log(_generateTempFileCommand(fetchCmd, tmpFile, runner, file));
   } else {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
   }
