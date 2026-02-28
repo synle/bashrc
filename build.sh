@@ -172,12 +172,6 @@ fi
 if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || stat -f '%u' "${HOME}/.local" 2>/dev/null)" != "$(id -u)" ]; then
   sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
-
-# Run build-include substitutions (update BEGIN/END blocks) if node and the script exist
-if command -v node >/dev/null 2>&1 && [ -f "software/build-include.cjs" ]; then
-  echo '> Running build-include substitutions'
-  node software/build-include.cjs
-fi
 # END bootstrap/common-env.sh
 
 
