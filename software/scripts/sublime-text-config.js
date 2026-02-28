@@ -177,7 +177,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     draw_white_space: "selection", // Only render whitespace dots in selected text — faster than 'all'
     translate_tabs_to_spaces: true, // Insert spaces when pressing Tab
     tab_size: EDITOR_CONFIGS.tabSize, // Number of spaces per tab
-    trim_trailing_white_space_on_save: true, // Remove trailing spaces on every save
+    trim_trailing_white_space_on_save: "all", // Remove trailing spaces on every save
     ensure_newline_at_eof_on_save: true, // Always end files with a newline (POSIX convention)
     default_line_ending: "unix", // Use LF line endings by default
     show_line_endings: true, // Display the line ending type (LF/CRLF) in the status bar
