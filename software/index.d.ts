@@ -584,19 +584,14 @@ declare function _doWorkFullRun(): Promise<void>;
  * @returns {string} The trimmed string representation
  */
 declare function parseString(v: any): string;
-/**
- * Parses a value to an integer, returning defaultValue on failure.
- * @param {*} v - The value to parse
- * @param {number} defaultValue - Fallback when parsing fails
- * @returns {number}
- */
-declare function parseInteger(v: any, defaultValue: number): number;
+declare function parseInteger(v: any): any;
 /**
  * Parses a value to a boolean. Recognizes "true" (case-insensitive) and "1".
  * @param {*} v - The value to parse
  * @returns {boolean}
  */
 declare function parseBoolean(v: any): boolean;
+declare function getRuntimeOption(optionKey: any, parseFunc?: (v: any) => string): string;
 /** @type {typeof import("fs")} */
 declare const fs: typeof import("fs");
 /** @type {typeof import("path")} */
@@ -629,7 +624,7 @@ declare const PRE_SCRIPT_FILES: string;
 declare const RUN_ONLY_PRESCRIPTS: boolean;
 declare const KEEP_TEMP_SCRIPTS: boolean;
 declare const REPO_PREFIX_URL: string;
-declare const LINE_BREAK_COUNT: number;
+declare const LINE_BREAK_COUNT: any;
 /**
  * Tracks the processing status of each script file during execution.
  * Each entry records whether a script was found and processed successfully or encountered an error.
@@ -647,9 +642,9 @@ declare const scriptProcessingResults: Array<{
   status: "success" | "error";
   description: string;
 }>;
-declare let fontSize: number;
+declare const fontSize: any;
+declare const tabSize: any;
 declare const fontFamily: any;
-declare let tabSize: number;
 /**
  * Editor configuration object containing font settings, tab size, max line length,
  * and ignore lists for files, folders, and binaries.
