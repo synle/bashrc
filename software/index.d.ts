@@ -536,14 +536,8 @@ declare function printSectionBlock(header: string, lines?: string[]): void;
  * @param {Array<{file: string, path: string, description: string, status: string}>} results - The scriptProcessingResults array
  * @returns {void}
  */
-declare function printScriptProcessingResults(
-  results: Array<{
-    file: string;
-    path: string;
-    description: string;
-    status: string;
-  }>,
-): void;
+declare function formatDurationMinsSeconds(ms: any): void;
+declare function printScriptProcessingResults(results: any): void;
 /**
  * Shared runner for both test-specific and full-run modes.
  * Resolves script file paths, generates bash pipeline commands, and prints results.
