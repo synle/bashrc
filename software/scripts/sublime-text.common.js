@@ -26,4 +26,4 @@ globalThis._getPathSublimeText = async function _getPathSublimeText() {
   }
 
   return null;
-}
+};
