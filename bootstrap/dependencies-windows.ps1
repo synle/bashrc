@@ -396,6 +396,16 @@ Set-ItemProperty -Path $explorerAdvanced -Name "ShowTaskViewButton" -Type DWord 
 New-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer" `
     -Name "DisableEdgeDesktopShortcutCreation" -PropertyType DWORD -Value 1 -Force -ErrorAction SilentlyContinue
 
+# Disable Zone.Identifier files (NTFS alternate data streams)
+# Prevents Windows from tagging downloaded files, which WSL exposes as *:Zone.Identifier files
+@(
+    "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments",
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Attachments"
+) | ForEach-Object {
+    if (-not (Test-Path $_)) { New-Item -Path $_ -Force | Out-Null }
+    Set-ItemProperty -Path $_ -Name "SaveZoneInformation" -Type DWord -Value 1 -Force
+}
+
 # Restore old volume slider
 $mtcuvcPath = "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\MTCUVC"
 if (-not (Test-Path $mtcuvcPath)) { New-Item -Path $mtcuvcPath -Force | Out-Null }

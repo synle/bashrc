@@ -2,12 +2,13 @@
 
 build:
 	bash build.sh
+	@if [ "$$CI" != "true" ]; then bash format.sh; fi
 
-run:
+start:
 	bash run.sh
 
 test:
-	bash run.sh
+	bash run.sh --force
 
 format:
 	bash format.sh
