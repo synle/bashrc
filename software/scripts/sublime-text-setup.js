@@ -87,5 +87,5 @@ ${getPowershellLines()}
 }
 `;
 
-  writeText("software/scripts/sublime-text-setup", script);
+  writeText("software/scripts/sublime-text-setup", script, true, true);
 }

@@ -92,5 +92,5 @@ foreach ($target in $targets) {
 }
 `;
 
-  writeText("software/scripts/vs-code-setup", script);
+  writeText("software/scripts/vs-code-setup", script, true, true);
 }
