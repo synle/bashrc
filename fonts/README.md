@@ -3,7 +3,6 @@ These fonts are copied from the owner of Fira Code. Repo is at https://github.co
 ### Font Install Script
 
 <!-- BEGIN fonts/install.sh -->
-
 ```bash
 cd ~/Desktop
 curl -sSLJ --parallel --parallel-max 10 \
@@ -36,7 +35,6 @@ $urls = @(
 $urls | ForEach-Object { Start-BitsTransfer -Source $_ -Destination . }
 echo "Done downloading fonts"
 ```
-
 <!-- END fonts/install.sh -->
 
 ### Font Mappings

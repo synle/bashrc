@@ -20,7 +20,6 @@ This is my personal bash profile.
 Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
 <!-- BEGIN bootstrap/setup.sh -->
-
 ```bash
 curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="""
   bootstrap/profile-core.sh
@@ -32,7 +31,6 @@ curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -
   bootstrap/dependencies/arch_linux.sh
 """
 ```
-
 <!-- END bootstrap/setup.sh -->
 
 ## Fun Facts
