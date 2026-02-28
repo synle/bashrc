@@ -286,6 +286,7 @@ fi
 # Force refresh: remove existing fnm node and reinstall
 if [ "$IS_FORCE_REFRESH" = true ] && command -v fnm >/dev/null 2>&1; then
   fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
+  sudo rm -rf "/usr/local/bin/node" "/usr/local/bin/npm" "/usr/local/bin/yarn" "/usr/local/bin/npx"
 fi
 if [ "$is_os_android_termux" != "1" ]; then
   echo ">> Installing fnm (for nodejs)"
@@ -314,11 +315,11 @@ if [ "$is_os_android_termux" != "1" ]; then
 
   # Symlink fnm and node executables in /usr/local/bin
   echo "  >> Symlink for fnm and node executables in /usr/local/bin"
-  sudo rm -rf "/usr/local/bin/node" "/usr/local/bin/npm" "/usr/local/bin/yarn" "/usr/local/bin/npx"
-  sudo ln -s "$FNM_DEFAULT_NODE_PATH/bin/node" "/usr/local/bin/node" 2>/dev/null
-  sudo ln -s "$FNM_DEFAULT_NODE_PATH/bin/npm" "/usr/local/bin/npm" 2>/dev/null
-  sudo ln -s "$FNM_DEFAULT_NODE_PATH/bin/npx" "/usr/local/bin/npx" 2>/dev/null
-  sudo ln -s "$FNM_DEFAULT_NODE_PATH/bin/yarn" "/usr/local/bin/yarn" 2>/dev/null
+  for bin in node npm npx yarn; do
+    if [ ! -e "/usr/local/bin/$bin" ]; then
+      sudo ln -s "$FNM_DEFAULT_NODE_PATH/bin/$bin" "/usr/local/bin/$bin" 2>/dev/null
+    fi
+  done
 fi
 
 ####################################################################
