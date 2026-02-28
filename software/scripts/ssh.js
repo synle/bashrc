@@ -1,30 +1,17 @@
-const sshPortMap = {};
-
-const portToIp = {
-  2222: `
-    192.168.1.24
-    192.168.1.25
-    192.168.1.26
-  `,
+/** Maps IP addresses to non-standard SSH ports. IPs not listed here use DEFAULT_SSH_PORT. */
+const sshPortMap = {
+  "192.168.1.24": "2222",
+  "192.168.1.25": "2222",
+  "192.168.1.26": "2222",
 };
 
 const DEFAULT_SSH_PORT = "22";
 
 /**
- * Initializes SSH port mappings and writes the SSH client config file with home network hosts and connection settings.
+ * Writes the SSH client config file with home network hosts and connection settings.
  */
 async function doWork() {
   exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
-  // setting up the ssh port map
-  for (const port of Object.keys(portToIp)) {
-    const ips = portToIp[port]
-      .split("\n")
-      .map((s) => s.trim())
-      .filter((s) => s);
-    for (const ip of ips) {
-      sshPortMap[ip] = port;
-    }
-  }
 
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, ".ssh");
   const targetPath = path.join(baseSshPath, "config");
@@ -33,7 +20,7 @@ async function doWork() {
 
   await mkdir(baseSshPath);
 
-  await execBash(`touch "${targetPath}" && chmod 611 "${targetPath}"`);
+  await execBash(`touch "${targetPath}" && chmod 600 "${targetPath}"`);
 
   console.log("    >> Updating SSH Client Config", consoleLogColor4(targetPath));
 
@@ -57,7 +44,7 @@ async function doWork() {
         TCPKeepAlive no # Disable OS-level heartbeats to prevent accidental drops on Wi-Fi
 
         # --- IDENTITY & SECURITY ---
-        User syle
+        User ${process.env.USER || "syle"}
         IdentityFile ~/.ssh/id_rsa
         ForwardAgent yes
         IdentitiesOnly yes # Prevent the client from trying every key in your agent
@@ -93,7 +80,7 @@ async function doWork() {
   writeToBuildFile([{ file: "ssh-config", data: sshConfigTextContent }]);
 
   // make a backup
-  backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.config`), sshConfigTextContent);
+  backupText(path.join(BASE_HOMEDIR_LINUX, ".ssh", "bak.config"), sshConfigTextContent);
 
   writeText(targetPath, sshConfigTextContent);
 }

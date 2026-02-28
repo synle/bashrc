@@ -47,7 +47,7 @@ async function doWork() {
         target_binary=$(find_editor "$editor_name" "$@") || return 1
 
         # Prepare a new array for the converted paths
-        converted_args=()
+        local converted_args=()
         local unresolved_path=""
         local resolved_path=""
 

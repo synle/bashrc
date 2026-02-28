@@ -63,27 +63,23 @@ function _extractEmail(config) {
 
 /**
  * Returns the content for the global gitignore file with common OS and editor exclusions.
- * @returns {Promise<string>} The global gitignore content.
+ * @returns {string} The global gitignore content.
  */
-async function _getGlobalGitIgnore() {
-  return `
-      # OS files
-      .DS_Store
-      *.Identifier
+function _getGlobalGitIgnore() {
+  return trimLeftSpaces(`
+    # OS files
+    .DS_Store
+    *.Identifier
 
-      # Editors & Backups
-      *.swp
-      *.swo
-      *.rej
+    # Editors & Backups
+    *.swp
+    *.swo
+    *.rej
 
-      # Environments & Dependencies
-      venv/
-      node_modules/
-    `
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s)
-    .join("\n");
+    # Environments & Dependencies
+    venv/
+    node_modules/
+  `).trim();
 }
 
 /**

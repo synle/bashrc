@@ -61,7 +61,7 @@ echo 'Done installing VSCode Extensions'
 
 c:; cd "C:/Program Files/VSCodium/bin"
 ${VS_CODIUM_EXTENSIONS_TO_INSTALL.map((ext) => `codium --install-extension ${ext} --force`).join("\n")}
-echo 'Done installing VSCode Extensions'
+echo 'Done installing VSCodium Extensions'
     `,
     },
     {

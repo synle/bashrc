@@ -142,9 +142,9 @@ format_python() {
     if [ -f ".venv/bin/activate" ]; then
       echo "Activating local virtual environment (.venv)..."
       source .venv/bin/activate
-    elif [ -f "/home/syle/venv/bin/activate" ]; then
-      echo "Activating fallback environment (/home/syle/venv)..."
-      source /home/syle/venv/bin/activate
+    elif [ -f "\$HOME/venv/bin/activate" ]; then
+      echo "Activating fallback environment (\$HOME/venv)..."
+      source "\$HOME/venv/bin/activate"
     else
       echo "No virtual environment found. Using global Python."
     fi
@@ -175,7 +175,8 @@ format_cleanup() {
     return 1
   fi
 
-  local count=\$(find "\$base_dir" \\
+  local deleted
+  deleted=\$(find "\$base_dir" \\
     \\( \\
       -type f \\( \\
         ${junkFileNames} \\
@@ -185,21 +186,10 @@ format_cleanup() {
       \\) \\
     \\) \\
     ${findExcludes} \\
-    -print | wc -l)
+    -print -exec rm -rf {} + 2>/dev/null)
 
+  local count=\$(echo "\$deleted" | grep -c . 2>/dev/null || echo 0)
   if [ "\$count" -gt 0 ]; then
-    find "\$base_dir" \\
-      \\( \\
-        -type f \\( \\
-          ${junkFileNames} \\
-        \\) -o \\
-        -type d \\( \\
-          ${junkDirNames} \\
-        \\) \\
-      \\) \\
-      ${findExcludes} \\
-      -exec rm -rf {} +
-
     echo "Removed \$count junk items."
   else
     echo "No junk found."

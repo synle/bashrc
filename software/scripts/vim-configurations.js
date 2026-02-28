@@ -236,10 +236,12 @@ async function doWork() {
   writeText(targetPath, contentOnlyFullVimrc + contentVimrc);
 
   if (is_os_window) {
-    targetPath = path.join(getWindowUserBaseDir(), ".vimrc");
-    if (filePathExist(targetPath)) {
-      console.log("  >> Setting up vimrc on Windows", consoleLogColor4(targetPath));
-      writeText(targetPath, contentVimrc);
+    const windowsVimrcPath = path.join(getWindowUserBaseDir(), ".vimrc");
+    if (filePathExist(windowsVimrcPath)) {
+      console.log("  >> Setting up vimrc on Windows", consoleLogColor4(windowsVimrcPath));
+      writeText(windowsVimrcPath, contentVimrc);
+    } else {
+      console.log("  >> Skipped vimrc on Windows (file does not exist)", consoleLogColor4(windowsVimrcPath));
     }
   }
 }

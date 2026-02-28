@@ -1,5 +1,37 @@
+/**
+ * @file software/index.js - Bootstrap & utility library for the bashrc software setup system.
+ *
+ * This file serves two purposes:
+ * 1. **Utility library** - Provides shared functions (file I/O, text processing, network,
+ *    platform detection, console output) that individual setup scripts depend on.
+ * 2. **Bootstrap entry point** - When executed directly, discovers and orchestrates the
+ *    execution of platform-specific setup scripts via bash pipelines.
+ *
+ * Individual scripts (software/scripts/*.js) are fetched and evaluated with this file
+ * pre-loaded, giving them access to all exported utilities as globals.
+ *
+ * @module software/index
+ */
+
+/**
+ * Parses a value to a trimmed string, defaulting to empty string.
+ * @param {*} v - The value to parse
+ * @returns {string} The trimmed string representation
+ */
 const parseString = (v) => (v || "").trim();
+/**
+ * Parses a value to an integer, returning defaultValue on failure.
+ * @param {*} v - The value to parse
+ * @param {number} defaultValue - Fallback when parsing fails
+ * @returns {number}
+ */
 const parseInteger = (v, defaultValue) => parseInt(parseString(v)) || defaultValue;
+
+/**
+ * Parses a value to a boolean. Recognizes "true" (case-insensitive) and "1".
+ * @param {*} v - The value to parse
+ * @returns {boolean}
+ */
 const parseBoolean = (v) => parseString(v).toLowerCase() === "true" || parseInteger(v, 0) === 1;
 
 //////////////////////////////////////////////////////
@@ -9,6 +41,7 @@ const fs = require("fs");
 const path = require("path");
 const https = require("https");
 const http = require("http");
+const { exec, execSync } = require("child_process");
 const BASE_HOMEDIR_LINUX = require("os").homedir();
 
 const BASH_SYLE_PATH = parseString(process.env.BASH_SYLE_PATH);
@@ -33,7 +66,7 @@ const IS_FORCE_REFRESH = parseBoolean(process.env.IS_FORCE_REFRESH);
 const IS_TEST_SCRIPT_MODE = parseBoolean(process.env.IS_TEST_SCRIPT_MODE);
 const IS_LIGHT_WEIGHT_MODE = parseBoolean(process.env.IS_LIGHT_WEIGHT_MODE);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
-const LINE_BREAK_COUNT = parseInt(process.env.LINE_BREAK_COUNT, 100); // console line break
+const LINE_BREAK_COUNT = parseInt(process.env.LINE_BREAK_COUNT, 10) || 80; // console line break width
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -262,18 +295,14 @@ const COMMENT_BREAK = `### ${LINE_BREAK_EQUAL} ###`;
  * @returns {string} The resolved file path to use for I/O
  */
 function _getFilePath(filePath) {
-  let pathToUse = filePath;
   if (DEBUG_WRITE_TO_DIR.length > 0) {
     const fileName = filePath
-      .replace(/[\/\\\(\)]/g, "_")
-      .replace(/ /g, "_")
+      .replace(/[\/\\() ]/g, "_")
       .replace(/_\./g, ".")
-      .replace(/__+/g, "_");
-
-    pathToUse = path.join(DEBUG_WRITE_TO_DIR, fileName);
+      .replace(/_+/g, "_");
+    return path.join(DEBUG_WRITE_TO_DIR, fileName);
   }
-
-  return pathToUse;
+  return filePath;
 }
 
 /**
@@ -530,8 +559,6 @@ function writeToBuildFile(tasks) {
           .join("\n");
 
         if (commentPrefix) {
-          // added marker to help with trakcing and remove lalter
-
           comments += `\n${commentPrefix}${COMMENT_BREAK}`;
         }
 
@@ -1034,7 +1061,7 @@ function cleanupExtraWhitespaces(text) {
  * @returns {string[]} Array of unique, non-empty, non-comment lines
  */
 function convertTextToList(...texts) {
-  return convertRawTextToList(texts).filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
+  return convertRawTextToList(...texts).filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
 }
 
 /**
@@ -1070,31 +1097,30 @@ function convertTextToHosts(...texts) {
  * @returns {string} The dedented text
  */
 function trimLeftSpaces(text, spaceToTrim) {
-  try {
-    const lines = text.split("\n");
+  const lines = text.split("\n");
 
-    if (spaceToTrim === undefined) {
-      // if not present, we will attempt to look at the space to trim automatically
-      // look for the first non empty line
-      const firstLine = lines.filter((line) => line.trim())[0];
-      spaceToTrim = firstLine.match(/^[ ]+/g)[0].length;
-    }
-
-    return lines
-      .map((line) => {
-        let myLeftSpaces = 0;
-        try {
-          myLeftSpaces = line.match(/^[ ]+/g)[0].length;
-        } catch (err) {}
-
-        return line.substr(Math.min(spaceToTrim, myLeftSpaces));
-      })
-      .join("\n");
-  } catch (err) {
-    return text;
+  if (spaceToTrim === undefined) {
+    const firstLine = lines.find((line) => line.trim());
+    if (!firstLine) return text;
+    const match = firstLine.match(/^[ ]+/);
+    if (!match) return text;
+    spaceToTrim = match[0].length;
   }
+
+  return lines
+    .map((line) => {
+      const match = line.match(/^[ ]+/);
+      const myLeftSpaces = match ? match[0].length : 0;
+      return line.substring(Math.min(spaceToTrim, myLeftSpaces));
+    })
+    .join("\n");
 }
 
+/**
+ * Trims leading and trailing spaces from each line of a text block.
+ * @param {string} text - The multiline text to trim
+ * @returns {string} The text with each line trimmed
+ */
 function trimSpacesOnBothEnd(text) {
   return (text || "")
     .split("\n")
@@ -1119,10 +1145,10 @@ function calculatePercentage(count, total) {
  */
 function getRootDomainFrom(url) {
   const lastDotIndex = url.lastIndexOf(".");
-  const partialUrl = url.substr(0, lastDotIndex);
+  const partialUrl = url.substring(0, lastDotIndex);
   const secondLastDotIdx = partialUrl.lastIndexOf(".") || 0;
 
-  return url.substr(secondLastDotIdx + 1);
+  return url.substring(secondLastDotIdx + 1);
 }
 
 /**
@@ -1152,7 +1178,7 @@ function downloadFile(url, destination) {
       return resolve(false);
     }
 
-    var file = fs.createWriteStream(destination);
+    const file = fs.createWriteStream(destination);
     https
       .get(url, function (response) {
         response.pipe(file);
@@ -1185,27 +1211,19 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 
   const filesToDownload = files.filter((s) => s.includes("binaries/") && !s.toLowerCase().includes(".md")).filter(findHandler);
 
-  const promises = [];
-  for (const file of filesToDownload) {
-    promises.push(
-      new Promise(async (resolve) => {
-        const destinationFile = path.join(destinationBaseDir, path.basename(file));
+  const promises = filesToDownload.map(async (file) => {
+    const destinationFile = path.join(destinationBaseDir, path.basename(file));
+    try {
+      const downloaded = await downloadFile(file, destinationFile);
+      if (downloaded === true) {
+        console.log(consoleLogColor3("      >> Downloaded"), consoleLogColor4(destinationFile));
+      }
+    } catch (err) {
+      console.log(consoleLogColor3("      >> Error Downloading"), consoleLogColor4(file));
+    }
+  });
 
-        try {
-          const url = file;
-          const downloaded = await downloadFile(url, destinationFile);
-          if (downloaded === true) {
-            console.log(consoleLogColor3("      >> Downloaded"), consoleLogColor4(destinationFile));
-          }
-        } catch (err) {
-          console.log(consoleLogColor3("      >> Error Downloading"), consoleLogColor4(file));
-        }
-
-        resolve();
-      }),
-    );
-  }
-
+  await Promise.all(promises);
   return files;
 }
 
@@ -1257,16 +1275,9 @@ function filterRepoScripts(files) {
  * @returns {Promise<string[]>} Array of file paths in the repository
  */
 async function listRepoDir(source = "remote_api", fallthrough = false) {
-  if (source === "local" || fallthrough) {
-    try {
-      return filterRepoScripts(convertRawTextToList(await execBash("find .", true)));
-    } catch (_) {}
-  }
-
+  // Order: remote_api -> remote_cache -> local (matches the fallthrough chain)
   if (source === "remote_api" || fallthrough) {
     const url = `https://api.github.com/repos/${REPO_PATH_IDENTIFIER}/git/trees/${REPO_BRANCH_NAME}?recursive=1&cacheBust=${Date.now()}`;
-
-    // doing a nested and recursive call to get the files
     try {
       const json = await fetchUrlAsJson(url);
       return json.tree.map((file) => file.path);
@@ -1280,7 +1291,12 @@ async function listRepoDir(source = "remote_api", fallthrough = false) {
     } catch (_) {}
   }
 
-  // if things fail, let's just return empty array here
+  if (source === "local" || fallthrough) {
+    try {
+      return filterRepoScripts(convertRawTextToList(await execBash("find .", true)));
+    } catch (_) {}
+  }
+
   return [];
 }
 
@@ -1385,7 +1401,7 @@ async function fetchUrlAsString(url) {
     return execBash(`curl -s ${url}`);
   } catch (err) {
     return new Promise((resolve) => {
-      require("https").get(url, (res) => {
+      https.get(url, (res) => {
         let rawData = "";
         res.on("data", (chunk) => (rawData += chunk)).on("end", () => resolve(rawData));
       });
@@ -1426,21 +1442,17 @@ async function fetchUrlAsJson(url) {
 async function execBash(cmd, returnOutput = false, options) {
   if (!returnOutput) {
     return new Promise((resolve) => {
-      const { exec } = require("child_process");
       exec(cmd, options || {}, (error, stdout, stderr) => {
         resolve(stdout);
       });
     });
   }
-  return new Promise((resolve) => {
-    const { execSync } = require("child_process");
-    const stdout = execSync(cmd, {
-      ...(options || {}),
-      encoding: "utf8",
-      maxBuffer: 50 * 1024 * 1024,
-    }).toString();
-    resolve(stdout);
+  const stdout = execSync(cmd, {
+    ...(options || {}),
+    encoding: "utf8",
+    maxBuffer: 50 * 1024 * 1024,
   });
+  return stdout;
 }
 
 /**
@@ -1519,6 +1531,7 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
 const echoColorSuccess = (str) => echoColor(str, "32m");
 /** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
 const echoColorError = (str) => echoColor(str, "31m");
+/** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
 const echoColorWarning = (str) => echoColor(str, "33m");
 
 //////////////////////////////////////////////////////
@@ -1692,6 +1705,9 @@ function printScriptsToRun(scriptsToRun) {
 function printSectionBlock(header, lines = []) {
   console.log(echoColorError(LINE_BREAK_EQUAL));
   console.log(echoColorError(`>> ${header}`));
+  for (const line of lines) {
+    console.log(echoColorError(`   ${line}`));
+  }
   console.log(echoColorError(LINE_BREAK_EQUAL));
 }
 
