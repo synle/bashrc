@@ -364,8 +364,10 @@ clean_master_main_branch() {
   git reset --hard HEAD >/dev/null 2>&1
   git merge --abort >/dev/null 2>&1
   git rebase --abort >/dev/null 2>&1
+  git cherry-pick --abort >/dev/null 2>&1
+  git am --abort >/dev/null 2>&1
   git fetch --all --prune >/dev/null 2>&1
-  rm -rf .git/rebase-merge
+  rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD
 
   local temp_branch_name="tmp-clean-$(date +%s)"
   git checkout -B "$temp_branch_name" >/dev/null 2>&1
@@ -379,6 +381,9 @@ clean_master_main_branch() {
   done
 
   git branch -D "$temp_branch_name" >/dev/null 2>&1
+
+  echo "$(git log -1 --format='%h %an: %s' HEAD) ($(git branch --show-current))"
+  git diff --stat HEAD~1
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment.
