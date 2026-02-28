@@ -451,11 +451,11 @@ declare function fetchUrlAsJson(url: string): Promise<object>;
 /**
  * Executes a bash command and returns the output as a string.
  * @param {string} cmd - The shell command to execute
- * @param {boolean} [returnOutput=false] - If true, use execSync and return output. If false, use async exec and swallow errors.
+ * @param {boolean} [sync=false] - If true, use execSync (blocking, throws on error). If false, use async exec (non-blocking, swallows errors).
  * @param {object} [options] - Optional exec options (cwd, env, etc.)
- * @returns {Promise<string>} Resolves with the command's stdout
+ * @returns {Promise<string>|string} The command's stdout
  */
-declare function execBash(cmd: string, returnOutput?: boolean, options?: object): Promise<string>;
+declare function execBash(cmd: string, sync?: boolean, options?: object): Promise<string> | string;
 /**
  * Deletes a directory or file at the given path using rm -rf.
  * @param {string} targetPath - The path to delete
@@ -527,16 +527,22 @@ declare function printScriptProcessingResults(
   }>,
 ): void;
 /**
+ * Shared runner for both test-specific and full-run modes.
+ * Resolves script file paths, generates bash pipeline commands, and prints results.
+ * @param {string[]} softwareFiles - Array of script file paths to execute
+ * @param {string[]} allRepoFiles - Array of all repo file paths for matching
+ * @param {string} label - Description label for logging
+ * @returns {void}
+ */
+declare function _runScripts(softwareFiles: string[], allRepoFiles: string[], label: string): void;
+/**
  * Runs a subset of scripts specified by the TEST_SCRIPT_FILES environment variable.
- * Parses the comma/semicolon/whitespace-separated list, resolves each to a repo path,
- * and generates the bash pipeline commands to fetch and execute them.
  * @returns {Promise<void>}
  */
 declare function _doWorkTestFiles(): Promise<void>;
 /**
- * Runs the full software setup: discovers all platform-applicable script files,
- * orders them (bootstrap first, hosts/extensions last), and generates the bash
- * pipeline commands to fetch and execute each one sequentially.
+ * Runs the full software setup: discovers all platform-applicable script files
+ * and generates the bash pipeline commands to fetch and execute each one.
  * @returns {Promise<void>}
  */
 declare function _doWorkFullRun(): Promise<void>;

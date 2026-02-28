@@ -692,9 +692,9 @@ function parseJsonWithComments(oldText) {
   // Strip single-line comments (// ...) and block comments (/* ... */) before parsing.
   // Avoids using eval() for security. Handles most common JSON-with-comments patterns.
   const stripped = oldText
-    .replace(/\/\/.*$/gm, "")        // single-line comments
+    .replace(/\/\/.*$/gm, "") // single-line comments
     .replace(/\/\*[\s\S]*?\*\//g, "") // block comments
-    .replace(/,\s*([}\]])/g, "$1")    // trailing commas
+    .replace(/,\s*([}\]])/g, "$1") // trailing commas
     .trim();
   try {
     return JSON.parse(stripped);
