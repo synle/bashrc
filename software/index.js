@@ -1529,9 +1529,10 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
 /** @type {(str: string) => string} Generates a bash echo command with green (success) coloring */
 const echoColorSuccess = (str) => echoColor(str, "32m");
 /** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
-const echoColorError = (str) => echoColor(str, "31m");
+const echoColorError = (str) => echoColor(str,CONSOLE_COLORS[6]);
 /** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
 const echoColorWarning = (str) => echoColor(str, "33m");
+const echoColorAttention = (str) => echoColor(str, CONSOLE_COLORS[7]);
 
 //////////////////////////////////////////////////////
 // Script Processing & Execution
@@ -1702,12 +1703,12 @@ function printScriptsToRun(scriptsToRun) {
  * @returns {void}
  */
 function printSectionBlock(header, lines = []) {
-  console.log(echoColorError(LINE_BREAK_EQUAL));
-  console.log(echoColorError(`>> ${header}`));
+  console.log(echoColorWarning(LINE_BREAK_EQUAL));
+  console.log(echoColorAttention(`>> ${header}`));
   for (const line of lines) {
-    console.log(echoColorError(`   ${line}`));
+    console.log(echoColorWarning(`  ${line}`));
   }
-  console.log(echoColorError(LINE_BREAK_EQUAL));
+  console.log(echoColorWarning(LINE_BREAK_EQUAL));
 }
 
 /**
@@ -1756,7 +1757,7 @@ async function _doWorkTestFiles() {
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
   console.log(
-    echoColor1(
+    echoColor5(
       `>> _doWorkTestFiles => filesToTest (process.env.TEST_SCRIPT_FILES)=${filesToTest.length}, and allRepoFiles=${allRepoFiles.length}.`,
     ),
   );
