@@ -1,4 +1,12 @@
 // BEGIN software/scripts/editor.common.js
+/** Color theme constants */
+const SUBLIME_DARK_COLOR_SCHEME = "Monokai.sublime-color-scheme";
+const SUBLIME_LIGHT_COLOR_SCHEME = "Breakers.sublime-color-scheme";
+const SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME = "High Contrast Dark.sublime-color-scheme";
+const SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME = "High Contrast Light.sublime-color-scheme";
+const VSCODE_DARK_COLOR_THEME = "Default High Contrast";
+const VSCODE_LIGHT_COLOR_THEME = "Default High Contrast Light";
+
 /** Glob patterns for locating the Sublime Text binary across platforms */
 const _SUBL_PATHS = [
   "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl",
@@ -279,9 +287,9 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
 
     // --- Theming ---
     "window.autoDetectColorScheme": true, // Follow the OS light/dark mode preference
-    "workbench.preferredLightColorTheme": "Default High Contrast Light", // Theme for light mode
-    "workbench.preferredDarkColorTheme": "Default High Contrast", // Theme for dark mode
-    "workbench.colorTheme": "Default High Contrast", // Fallback theme when auto-detect is off
+    "workbench.preferredLightColorTheme": VSCODE_LIGHT_COLOR_THEME, // Theme for light mode
+    "workbench.preferredDarkColorTheme": VSCODE_DARK_COLOR_THEME, // Theme for dark mode
+    "workbench.colorTheme": VSCODE_DARK_COLOR_THEME, // Fallback theme when auto-detect is off
     "workbench.iconTheme": "material-icon-theme", // File icon theme for sidebar
 
     // --- Misc ---

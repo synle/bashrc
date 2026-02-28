@@ -1,4 +1,12 @@
 // BEGIN software/scripts/editor.common.js
+/** Color theme constants */
+const SUBLIME_DARK_COLOR_SCHEME = "Monokai.sublime-color-scheme";
+const SUBLIME_LIGHT_COLOR_SCHEME = "Breakers.sublime-color-scheme";
+const SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME = "High Contrast Dark.sublime-color-scheme";
+const SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME = "High Contrast Light.sublime-color-scheme";
+const VSCODE_DARK_COLOR_THEME = "Default High Contrast";
+const VSCODE_LIGHT_COLOR_THEME = "Default High Contrast Light";
+
 /** Glob patterns for locating the Sublime Text binary across platforms */
 const _SUBL_PATHS = [
   "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl",
@@ -119,7 +127,6 @@ async function _getPathSublimeText() {
 const toInstallExtensions = convertTextToList(`
   // icons and themes
   A File Icon
-  Dracula Color Scheme
 
   // language server and intelligence
   LSP

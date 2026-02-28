@@ -1,4 +1,12 @@
 // BEGIN software/scripts/editor.common.js
+/** Color theme constants */
+const SUBLIME_DARK_COLOR_SCHEME = "Monokai.sublime-color-scheme";
+const SUBLIME_LIGHT_COLOR_SCHEME = "Breakers.sublime-color-scheme";
+const SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME = "High Contrast Dark.sublime-color-scheme";
+const SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME = "High Contrast Light.sublime-color-scheme";
+const VSCODE_DARK_COLOR_THEME = "Default High Contrast";
+const VSCODE_LIGHT_COLOR_THEME = "Default High Contrast Light";
+
 /** Glob patterns for locating the Sublime Text binary across platforms */
 const _SUBL_PATHS = [
   "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl",
@@ -116,6 +124,8 @@ async function _getPathSublimeText() {
 }
 // END software/scripts/editor.common.js
 
+const USE_CUSTOM_HIGH_CONTRAST_THEME = true;
+
 let mySublimeTextConfigs = {};
 
 /**
@@ -204,8 +214,10 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     auto_complete_commit_on_tab: true, // Press Tab to accept autocomplete instead of requiring Enter
     ignored_packages: ["Vintage"], // Disable Vintage (vim mode) — not needed if you don't use vim bindings
     color_scheme: "auto", // Auto-switch color scheme based on OS dark/light mode
-    dark_color_scheme: is_prebuilt_config ? "Monokai.sublime-color-scheme" : "High Contrast Dark.sublime-color-scheme",
-    light_color_scheme: is_prebuilt_config ? "Breakers.sublime-color-scheme" : "High Contrast Light.sublime-color-scheme",
+    dark_color_scheme:
+      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME ? SUBLIME_DARK_COLOR_SCHEME : SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME,
+    light_color_scheme:
+      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME ? SUBLIME_LIGHT_COLOR_SCHEME : SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME,
 
     // --- Ignored Files ---
     file_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFiles), // Files hidden from sidebar and Goto Anything
@@ -249,17 +261,19 @@ async function doWork() {
   console.log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
 
-  // deploy custom color schemes
-  const colorSchemes = [
-    { src: "software/scripts/sublime-text-high-contrast-dark.sublime-color-scheme", dest: "High Contrast Dark.sublime-color-scheme" },
-    { src: "software/scripts/sublime-text-high-contrast-light.sublime-color-scheme", dest: "High Contrast Light.sublime-color-scheme" },
-  ];
-  for (const { src, dest } of colorSchemes) {
-    console.log(`    >> Deploying color scheme: ${dest}`);
-    const data = await fetchUrlAsJson(src);
+  // deploy custom color schemes (only when high contrast theme is enabled)
+  if (USE_CUSTOM_HIGH_CONTRAST_THEME) {
+    const colorSchemes = [
+      { src: "software/scripts/sublime-text-color-dark.jsonc", dest: SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME },
+      { src: "software/scripts/sublime-text-color-light.jsonc", dest: SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME },
+    ];
+    for (const { src, dest } of colorSchemes) {
+      console.log(`    >> Deploying color scheme: ${dest}`);
+      const data = await fetchUrlAsJson(src);
 
-    console.log(`      >> Parsing: ${dest}`, src);
-    writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
+      console.log(`      >> Parsing: ${dest}`, src);
+      writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
+    }
   }
 
   console.log(`    >> Deployed config:`, targetPath);
