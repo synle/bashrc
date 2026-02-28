@@ -24,6 +24,7 @@
   "scroll_speed": 0,
   "show_tab_close_buttons": false,
   "bold_folder_labels": true,
+  "sidebar_font_size": 14,
   "auto_hide_menu": true,
   "tree_animation_enabled": false,
   "animation_enabled": false,
