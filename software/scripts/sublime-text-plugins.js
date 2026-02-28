@@ -1,4 +1,5 @@
-includeSource("software/scripts/sublime-text.common.js");
+// BEGIN software/scripts/sublime-text.common.js
+// END software/scripts/sublime-text.common.js
 
 /**
  * Copies Sublime Text plugin files to both the prebuilt build directory and the local Sublime Text installation.

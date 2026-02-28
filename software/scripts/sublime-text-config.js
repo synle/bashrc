@@ -1,4 +1,5 @@
-includeSource("software/scripts/sublime-text.common.js");
+// BEGIN software/scripts/sublime-text.common.js
+// END software/scripts/sublime-text.common.js
 
 let mySublimeTextConfigs = {};
 

@@ -13,19 +13,24 @@
  *      <!-- BEGIN path/to/file.sh -->
  *      <!-- END path/to/file.sh -->
  *
+ *    For JS/TS files, use double-slash comments:
+ *      // BEGIN path/to/file.js
+ *      // END path/to/file.js
+ *
  * 2. Config mode (INCLUSIONS array):
  *    For non-file-path keys or when transforms are needed.
  *
  * Comment prefix is auto-detected from the target file extension:
  *   .md   -> "<!--" (with " -->" suffix on END marker)
  *   .html -> "<!--" (with " -->" suffix on END marker)
+ *   .js/.jsx/.ts/.tsx/.cjs/.mjs -> "//"
  *   *     -> "#"
  *
- * Scans all git-tracked *.sh and *.md files for BEGIN/END markers automatically.
+ * Scans all git-tracked *.sh, *.md, and *.js/.jsx/.ts/.tsx/.cjs/.mjs files for BEGIN/END markers automatically.
  * Optionally pass specific files as CLI args to process only those.
  *
  * Usage:
- *   node software/build-include.cjs                     # auto-scan tracked *.sh and *.md files
+ *   node software/build-include.cjs                     # auto-scan tracked *.sh, *.md, and *.js/ts files
  *   node software/build-include.cjs build.sh run.sh     # process specific files only
  */
 const fs = require("fs");
@@ -51,6 +56,12 @@ const COMMENT_STYLES = {
   ".md": { prefix: "<!--", suffix: " -->" },
   ".html": { prefix: "<!--", suffix: " -->" },
   ".xml": { prefix: "<!--", suffix: " -->" },
+  ".js": { prefix: "//", suffix: "" },
+  ".jsx": { prefix: "//", suffix: "" },
+  ".ts": { prefix: "//", suffix: "" },
+  ".tsx": { prefix: "//", suffix: "" },
+  ".cjs": { prefix: "//", suffix: "" },
+  ".mjs": { prefix: "//", suffix: "" },
 };
 const DEFAULT_COMMENT_STYLE = { prefix: "#", suffix: "" };
 
@@ -163,7 +174,10 @@ for (const inc of INCLUSIONS) {
 
 // Determine target files: CLI args (excluding flags) or auto-scan git-tracked *.sh and *.md files
 const cliTargets = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
-const trackedFiles = execSync('git ls-files "*.sh" "*.md"', { encoding: "utf8" }).trim().split("\n").filter(Boolean);
+const trackedFiles = execSync('git ls-files "*.sh" "*.md" "*.js" "*.jsx" "*.ts" "*.tsx" "*.cjs" "*.mjs"', { encoding: "utf8" })
+  .trim()
+  .split("\n")
+  .filter(Boolean);
 const inclusionTargets = INCLUSIONS.flatMap((inc) => inc.targets);
 const targetFiles = cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])];
 

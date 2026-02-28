@@ -1,11 +1,8 @@
-const fs = require("fs");
-const path = require("path");
-
 /**
  * Searches standard OS paths for VS Code and VSCodium installation directories.
  * @returns {string[]} Array of absolute paths to found VS Code/VSCodium config directories.
  */
-global._getTargetPaths = function () {
+function _getTargetPaths() {
   const res = [];
   const home = process.env.HOME || process.env.USERPROFILE;
 
@@ -63,4 +60,4 @@ global._getTargetPaths = function () {
   });
 
   return res;
-};
+}

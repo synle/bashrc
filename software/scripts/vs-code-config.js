@@ -1,4 +1,5 @@
-includeSource("software/scripts/vs-code.common.js");
+// BEGIN software/scripts/vs-code.common.js
+// END software/scripts/vs-code.common.js
 
 let COMMON_CONFIGS;
 
