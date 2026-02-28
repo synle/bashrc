@@ -1,8 +1,8 @@
-# bootstrap/dependencies-chrome-os-linux.sh
+# bootstrap/dependencies/chrome_os_linux.sh
 # ChromeOS (Crostini) dependencies - apt-get packages
 
 if [ "$is_os_chromeos" = "1" ]; then
-  echo ">> Begin setting up dependencies-chrome-os-linux.sh"
+  echo ">> Begin setting up dependencies/chrome_os_linux.sh"
 
   sudo apt-get update -y
 
@@ -23,5 +23,5 @@ if [ "$is_os_chromeos" = "1" ]; then
   installPackage vlc
 
 else
-  echo ">> Skipped dependencies-chrome-os-linux.sh"
+  echo ">> Skipped dependencies/chrome_os_linux.sh"
 fi

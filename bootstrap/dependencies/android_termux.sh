@@ -1,8 +1,8 @@
-# bootstrap/dependencies-android-termux.sh
+# bootstrap/dependencies/android_termux.sh
 # Android Termux dependencies - packages, theme, config
 
 if [ "$is_os_android_termux" = "1" ]; then
-  echo ">> Begin setting up dependencies-android-termux.sh"
+  echo ">> Begin setting up dependencies/android_termux.sh"
 
   touch ~/.bash_syle
 
@@ -27,6 +27,7 @@ termux-chroot
   installPackage tig
   installPackage python
   installPackage bat
+  installPackage perl
   installPackage curl
   installPackage tmux
 
@@ -89,5 +90,5 @@ use-black-ui = true
   curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod  --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-syle-content.js"
 
 else
-  echo ">> Skipped dependencies-android-termux.sh"
+  echo ">> Skipped dependencies/android_termux.sh"
 fi

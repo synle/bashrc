@@ -1,10 +1,10 @@
 ####################################################################
-# dependencies-windows.ps1 - All-in-one Windows setup, cleanup,
+# dependencies/windows.ps1 - All-in-one Windows setup, cleanup,
 # privacy hardening, and software installation.
 #
 # Run as Administrator:
 #   Set-ExecutionPolicy Unrestricted -Scope CurrentUser
-#   .\bootstrap\dependencies-windows.ps1
+#   .\bootstrap\dependencies/windows.ps1
 ####################################################################
 
 
@@ -975,7 +975,7 @@ foreach ($entry in $entriesToAdd) {
 }
 
 if ($uniqueNewEntries.Count -gt 0) {
-    Add-Content -Path $tempPath -Value "`n# Added by dependencies-windows.ps1 $(Get-Date)"
+    Add-Content -Path $tempPath -Value "`n# Added by dependencies/windows.ps1 $(Get-Date)"
     Add-Content -Path $tempPath -Value $uniqueNewEntries
     try {
         Move-Item -Path $tempPath -Destination $hostsPath -Force

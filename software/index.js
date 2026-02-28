@@ -1388,7 +1388,7 @@ async function getSoftwareScriptFiles() {
     [is_os_window, "software/scripts/windows"],
     [is_os_darwin_mac, "software/scripts/mac"],
     [is_os_arch_linux, "software/scripts/arch_linux"],
-    [is_os_android_termux, "software/scripts/android-termux"],
+    [is_os_android_termux, "software/scripts/android_termux"],
     [is_os_chromeos, "software/scripts/chromeos"],
   ]
     .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
