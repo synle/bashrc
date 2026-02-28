@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-12-40AM]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-02-40AM]
 // 
 // Preferences Settings
 // ############################################################################################################################################
@@ -27,7 +27,9 @@
   "auto_hide_menu": true,
   "tree_animation_enabled": false,
   "animation_enabled": false,
-  "theme": "Adaptive.sublime-theme",
+  "theme": "auto",
+  "dark_theme": "Adaptive.sublime-theme",
+  "light_theme": "Adaptive.sublime-theme",
   "show_folding_buttons": false,
   "fade_fold_buttons": false,
   "preview_on_click": true,
@@ -65,7 +67,9 @@
   "ignored_packages": [
     "Vintage"
   ],
-  "color_scheme": "Monokai.sublime-color-scheme",
+  "color_scheme": "auto",
+  "dark_color_scheme": "High Contrast Dark.sublime-color-scheme",
+  "light_color_scheme": "High Contrast Light.sublime-color-scheme",
   "file_exclude_patterns": [
     "._*",
     ".AppleDouble",

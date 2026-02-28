@@ -248,7 +248,7 @@ async function doWork() {
   console.log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
 
-   // deploy custom color schemes
+  // deploy custom color schemes
   const colorSchemes = [
     { src: "software/scripts/sublime-text-high-contrast-dark.sublime-color-scheme", dest: "High Contrast Dark.sublime-color-scheme" },
     { src: "software/scripts/sublime-text-high-contrast-light.sublime-color-scheme", dest: "High Contrast Light.sublime-color-scheme" },
