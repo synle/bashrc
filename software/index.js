@@ -1616,7 +1616,7 @@ function _generateTempFileCommand(fetchCmd, tmpFile, runner, label) {
   // Captures stderr to a .err file so we can extract line numbers without re-running
   const tmpErr = `${tmpFile}.err`;
   const cleanupAll = KEEP_TEMP_SCRIPTS ? "true" : `rm -f ${tmpFile} ${tmpErr}`;
-  return `{ ${fetchCmd} ;} > ${tmpFile} && ${runner} ${tmpFile} 2>${tmpErr}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED: ${label} (exit code $_EC). Re-run with: ${runner} ${tmpFile}\\e[m'; cat ${tmpErr}; _ERR_LINE=$(grep -oE ':[0-9]+' ${tmpErr} | head -1 | tr -d ':'); if [ -n "$_ERR_LINE" ]; then _START=$(( _ERR_LINE > 10 ? _ERR_LINE - 10 : 1 )); _END=$(( _ERR_LINE + 10 )); echo -e '\\e[33m>> Context around line $_ERR_LINE:\\e[m'; sed -n "$_START,${_END}p" ${tmpFile} | cat -n; fi; else ${cleanupAll}; fi`;
+  return `{ ${fetchCmd} ;} > ${tmpFile} && ${runner} ${tmpFile} 2>${tmpErr}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED: ${label} (exit code $_EC). Re-run with: ${runner} ${tmpFile}\\e[m'; cat ${tmpErr}; _ERR_LINE=$(grep -oE ':[0-9]+' ${tmpErr} | head -1 | tr -d ':'); if [ -n "$_ERR_LINE" ]; then _START=$(( _ERR_LINE > 10 ? _ERR_LINE - 10 : 1 )); _END=$(( _ERR_LINE + 10 )); echo -e '\\e[33m>> Context around line $_ERR_LINE:\\e[m'; sed -n "$_START,\${_END}p" ${tmpFile} | cat -n; fi; else ${cleanupAll}; fi`;
 }
 
 /**
@@ -1731,7 +1731,6 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     const fetchCmd = _generateScript(file, url);
     const runner = _generatePipeOutput(file, url);
     tempFileCommand = _generateTempFileCommand(fetchCmd, tmpFile, runner, file);
-    console.log(tempFileCommand);
   } else {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
   }
@@ -1967,6 +1966,6 @@ async function _doWorkFullRun() {
       await _doWorkFullRun();
     }
   } catch (err) {
-    console.log("<< Error", err);
+    console.error(">> Error", err);
   }
 })();
