@@ -1629,6 +1629,7 @@ function _generateTempFileCommand(fetchCmd, tmpFile, runner, label) {
  * @returns {void}
  */
 function processScriptFile(file, originalFile, allRepoFiles) {
+  const startTime = Date.now();
   const url = getFullUrl(`${file}?${Date.now()}`);
 
   /**
@@ -1735,6 +1736,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     console.log(echoColor3(`  >> ${originalFile} (${file}) - does not exist `));
   }
 
+  const endTime = Date.now();
   scriptProcessingResults.push({
     file: originalFile,
     path: file,
@@ -1743,6 +1745,9 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     status: fileExists ? "success" : "error",
     fileMatchState: fileMatchState || "",
     description: description || "",
+    startTime,
+    endTime,
+    durationMs: endTime - startTime,
   });
 }
 
@@ -1794,26 +1799,40 @@ function printSectionBlock(header, lines = []) {
  * @param {Array<{file: string, path: string, description: string, status: string}>} results - The scriptProcessingResults array
  * @returns {void}
  */
+function formatDurationMinsSeconds(ms) {
+  const totalSeconds = Math.floor(ms / 1000);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  if (mins > 0) {
+    return `${mins}m ${secs}s`;
+  }
+  return `${secs}s`;
+}
+
 function printScriptProcessingResults(results) {
   const successCount = results.filter((r) => r.status === "success").length;
   const errorCount = results.filter((r) => r.status === "error").length;
+  const totalDurationMs = results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
 
-  printSectionBlock(`Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`);
+  printSectionBlock(
+    `Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed) - Total: ${formatDurationMinsSeconds(totalDurationMs)}`,
+  );
 
   for (const result of results) {
+    const duration = result.durationMs != null ? ` (${formatDurationMinsSeconds(result.durationMs)})` : "";
     if (result.status === "success") {
       console.log(
         echoColorSuccess(
           !result.fileMatchState
-            ? `[Success] ${result.file}. ${result.description}`
-            : `[Success] ${result.file} (${result.path}). ${result.description}`,
+            ? `[Success] ${result.file}.${duration} ${result.description}`
+            : `[Success] ${result.file} (${result.path}).${duration} ${result.description}`,
         ),
       );
       if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
         console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
       }
     } else {
-      console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}`));
+      console.log(echoColorError(`[Error] ${result.file} (${result.path}).${duration} ${result.description}`));
       if (result.fileMatchState !== "not_found" && result.tempFileCommand) {
         // Non-file-expansion error: always show retry command for debugging
         console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
