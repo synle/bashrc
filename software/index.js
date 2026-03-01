@@ -117,7 +117,7 @@ const IS_DEBUG = getRuntimeOption("IS_DEBUG", parseBoolean);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
 /** @type {string} Prefix for all temp script files written to /tmp during execution */
 const TEMP_SCRIPT_PREFIX = "/tmp/bashrc_syle_sw_";
-const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 10)); // console line break width
+const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 80)); // console line break width
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -367,6 +367,7 @@ const LIMITED_SUPPORT_OSES = ["is_os_android_termux", "is_os_mingw64"];
 const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
 
 // line break and comment break
+const lineBreakCountToUse = Math.min(LINE_BREAK_COUNT, 100);
 const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
 const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
@@ -1476,18 +1477,18 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      echo(`  >> [Ignored] - No sudo access: ${file}`);
+      echo(`  >> `, colorRed(`Ignored No sudo access`), colorDim(file));
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        echo(`  >> [Ignored] - OS Specific ${file}`);
+        echo(`  >> `, colorRed(`Ignored OS Specific`), colorDim(file));
         return false;
       }
     }
 
-    echo(`  >> [Accepted]: ${file}`);
+    echo(`  >> `, colorGreen(`Accepted`), colorDim(file));
     return true;
   });
 }
@@ -1631,34 +1632,35 @@ function color(str, colorCode) {
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
  */
 function _getAutoColor(text) {
-  const lower = text.toLowerCase();
-
   // 1. Error/fail keywords => colorBgRed
-  if (/\b(fail|failed|error)\b/i.test(text)) {
+  // Updated to allow start of line (^) or space, and end of line ($) or space
+  if (/(?<=^| )(fail|failed|error)(?=$| )/i.test(text)) {
     return colorBgRed;
   }
 
   // 2. Success/done/finished keywords => colorGreen
-  if (/\b(done|success|finished|complete|completed)\b/i.test(text)) {
+  // Added (?<=^| ) and (?=$| ) so "done" at the start of a sentence matches
+  if (/(?<=^| )(done|success|finished|(?<!auto)complete|completed)(?=$| )/i.test(text)) {
     return colorGreen;
   }
 
   // 3. Marker-based coloring (>> or <<) with indentation levels
   const markerMatch = text.match(/^(\s*)(>>|<<)/);
   if (markerMatch) {
+    // Math.ceil handles the "accidental miss" by treating 0 and 1 space the same
     const indent = markerMatch[1].length;
     const direction = markerMatch[2];
 
     if (direction === ">>") {
-      if (indent <= 1) return colorYellow;
+      if (indent <= 2) return colorYellow;
       if (indent <= 5) return colorCyan;
       return colorMagenta;
     }
 
     if (direction === "<<") {
-      if (indent <= 1) return colorOrange;
+      if (indent <= 2) return colorOrange;
       if (indent <= 5) return colorBlue;
-      return colorGreen;
+      return colorMagenta;
     }
   }
 
@@ -1869,10 +1871,18 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     tempFileCommand = `cat ${tmpFile} | ${runner}`;
     const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`;
 
-    echo(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`);
+    echo(
+      `  >> processScriptFile`,
+      colorOrange(originalFile === file ? originalFile : `${originalFile} | ${file}`),
+      colorDim(IS_DEBUG ? tempFileCommand : ""),
+    );
     emitBash(fullCommand);
   } else {
-    echo(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `);
+    echo(
+      `  >> processScriptFile`,
+      colorOrange(originalFile === file ? originalFile : `${originalFile} | ${file}`),
+      colorRed(`does not exist `),
+    );
   }
 
   scriptProcessingResults.push({
@@ -1919,13 +1929,13 @@ function printScriptsToRun(scriptsToRun) {
  * @param {string[]} [lines=[]] - Optional array of content lines to display between the header and footer
  * @returns {void}
  */
-function printSectionBlock(header, lines = []) {
-  echo(colorYellow(LINE_BREAK_EQUAL));
-  echo(colorBgYellow(`>> ${header}`));
-  for (const line of lines) {
+function printSectionBlock(header, lines = [], addBlock = true) {
+  if (addBlock) echo(colorYellow(LINE_BREAK_EQUAL));
+  echo(colorBgYellow(`## ${header}`));
+  for (const line of lines || []) {
     echo(`  ${line}`);
   }
-  echo(colorYellow(LINE_BREAK_EQUAL));
+  if (addBlock) echo(colorYellow(LINE_BREAK_EQUAL));
 }
 
 //////////////////////////////////////////////////////
@@ -1952,7 +1962,7 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    echo(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`);
+    printSectionBlock(`_runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`, null, false);
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
@@ -1970,17 +1980,17 @@ function printScriptProcessingResults(results) {
   const successCount = results.filter((r) => r.status === "success").length;
   const errorCount = results.filter((r) => r.status === "error").length;
 
-  printSectionBlock(`Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`);
+  printSectionBlock(`Script Processing Results: ${results.length} files`, [`${successCount} success ${errorCount} failed`], false);
 
   for (const result of results) {
     if (result.status === "success") {
       echo(
         !result.fileMatchState
-          ? `[Success] ${result.file}. ${result.description}`
-          : `[Success] ${result.file} (${result.path}). ${result.description}`,
+          ? `Success - ${result.file}. ${result.description}`
+          : `Success - ${result.file} (${result.path}). ${result.description}`,
       );
     } else {
-      echo(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`);
+      echo(`Error - ${result.file} (${result.path}). ${result.description}.`, colorDim(`${result.tempFileCommand || ""}`));
     }
   }
 
