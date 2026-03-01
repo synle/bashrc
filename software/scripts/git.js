@@ -95,7 +95,7 @@ async function doWork() {
   const oldConfig = readText(configMain);
   const email = _extractEmail(oldConfig);
 
-  log(`    >> Installing git Aliases and Configs for Main OS: email=${email}`, configMain);
+  log(`    >> Installing git Aliases and Configs for Main OS`, email, configMain);
 
   // write to build file
   writeToBuildFile([

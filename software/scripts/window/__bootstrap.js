@@ -5,11 +5,9 @@ async function doWork() {
   log("  >> mkdir for D Drive", targetPath);
 
   if (!filePathExist(targetPath)) {
-    log("  >> Skipped - Path Not Found: ", targetPath);
-    return process.exit();
-  }
-
-  const pathsToCreate = convertTextToList(`
+    log("    >> Skipped - Path Not Found: ", targetPath);
+  }  else {
+    const pathsToCreate = convertTextToList(`
     ${path.join(targetPath, "Applications")}
     ${path.join(targetPath, "Desktop")}
     ${path.join(targetPath, "Documents")}
@@ -18,10 +16,11 @@ async function doWork() {
     ${path.join(targetPath, "Pictures")}
   `);
 
-  log(pathsToCreate);
+  log("    >> total", pathsToCreate.length);
 
   for (const pathToCreate of pathsToCreate) {
     log("    >> ", pathToCreate);
     await mkdir(pathToCreate);
+  }
   }
 }
