@@ -15,7 +15,7 @@ make format            # Format code with Prettier
 make clean             # Run clean.sh
 make start             # Run run.sh
 make nuke              # Remove all bashrc config (~/.bash_sy*, fnm, hushlogin)
-npm run test:unit      # Run unit tests (vitest)
+npm test               # Run unit tests (vitest)
 ```
 
 ### run.sh - Test/install scripts
@@ -123,7 +123,7 @@ GitHub Actions (`.github/workflows/build-main.yml`):
 - **Bash functions must use the `function` keyword**: Always write `function foo() {` not `foo() {`
 - **JSDoc on all functions/constants** in `software/index.js` — used by `tsc --declaration --allowJs` to generate `software/index.d.ts`
 - **Private helpers** in script files are prefixed with `_` (e.g., `_getGitConfig()`)
-- **Unit tests** use vitest (`npm run test:unit`). Tests live in `software/tests/`. Run after modifying `software/index.js` utilities. See "Testing" section below.
+- **Unit tests** use vitest (`npm test`). Tests live in `software/tests/`. Run after modifying `software/index.js` utilities. See "Testing" section below.
 - `make test` runs all scripts locally as a smoke test (not unit tests)
 - **Comment section headers** use two standardized forms:
   - **Paired** (for major sections): `################################################################################` (80 chars) / `# ---- Title ----` / `################################################################################`
@@ -231,8 +231,20 @@ command subcommand1|--opt1,--opt2,-s
 - `convertTextToList(...texts)` — Split text to unique trimmed lines, filtering comments
 - `resolveOsKey({mac, windows, linux})` — Returns the value matching the current OS
 - **Logging:** `echo(coloredStr)` — emits `node -e "console.log(...)"` into the bash pipeline (orchestration layer); `log(coloredStr)` — calls `console.log()` directly (script files). Both auto-color each argument via `_applyAutoColor` → `_getAutoColor` per element.
-- **Color helpers:** `colorGreen`, `colorYellow`, `colorCyan`, `colorDim`, `colorRed`, `colorBgRed`, `colorBgYellow`, `colorMagenta`, `colorOrange`, `colorBlue` — return ANSI-colored strings. Legacy `consoleLogColor{N}` aliases exist on globalThis for backward compatibility in script files.
-- **Auto-color system** (`_getAutoColor`): Colors each log argument independently. Priority: (1) `>>` / `<<` markers by indent level (yellow/cyan/magenta for `>>`, orange/blue/magenta for `<<`), (2) error keywords → `colorBgRed`, (3) success keywords → `colorGreen`, (4) path/URL-like strings → `colorDim`. Indent normalization: `Math.ceil(spaces / 2)` so odd spaces don't mis-bucket. Path/URL arguments (e.g. `/usr/local/bin`, `https://...`) are always dimmed, even alongside colored markers.
+- **Color helpers:** `colorGreen`, `colorYellow`, `colorCyan`, `colorDim`, `colorRed`, `colorBgRed`, `colorBgYellow`, `colorBgOrange`, `colorBgCyan`, `colorBgMagenta`, `colorMagenta`, `colorOrange`, `colorBlue` — return ANSI-colored strings. Legacy `consoleLogColor{N}` aliases exist on globalThis for backward compatibility in script files.
+- **Auto-color system** (`_getAutoColor` / `_applyAutoColor`): Colors each log argument independently. Priority: (1) repeated-char markers (highest), (2) error keywords → `colorBgRed`, (3) success keywords → `colorGreen`, (4) path/URL-like strings → `colorDim`. Markers use repeated characters to indicate nesting level (level = char count - 1). `_applyAutoColor` strips markers to a single char with indentation spaces equal to the marker count. Elements with existing ANSI codes are preserved.
+
+#### Log marker format
+
+Use repeated marker characters to indicate nesting depth. The number of characters determines the color level:
+
+| Marker | Level 0 | Level 1 | Level 2 | Level 3 | Level 4+ |
+|--------|---------|---------|---------|---------|----------|
+| `>`    | yellow  | green   | cyan    | blue    | magenta  |
+| `<`    | orange  | red     | blue    | magenta | magenta  |
+| `#`    | —       | bgYellow| bgOrange| bgCyan  | bgMagenta|
+
+Examples: `log("> Installing")`, `log(">> Setting up", path)`, `log(">>> Downloaded", file)`, `echo("## ${header}")`
 
 ## Testing
 
