@@ -87,12 +87,16 @@ const http = require("http");
 const { exec, execSync } = require("child_process");
 const BASE_HOMEDIR_LINUX = require("os").homedir();
 
+/** @type {string} Path to the main ~/.bash_syle profile file */
 const BASH_SYLE_PATH = getRuntimeOption("BASH_SYLE_PATH");
+/** @type {string} Path to the ~/.bash_syle_autocomplete file for autocomplete registrations */
 const BASH_SYLE_AUTOCOMPLETE_PATH = getRuntimeOption("BASH_SYLE_AUTOCOMPLETE_PATH");
+/** @type {string} Path to the ~/.bash_syle_common shared config file */
 const BASH_SYLE_COMMON_PATH = getRuntimeOption("BASH_SYLE_COMMON_PATH");
 
-// specific for windows and wsl only
+/** @type {string} WSL mount point for Windows C: drive */
 const BASE_C_DIR_WINDOW = "/mnt/c";
+/** @type {string} WSL mount point for Windows D: drive */
 const BASE_D_DIR_WINDOW = "/mnt/d";
 
 /** @type {string} Target Node.js version for fnm to install */
@@ -141,12 +145,11 @@ const scriptProcessingResults = [];
 //////////////////////////////////////////////////////
 // Editor Configuration
 //////////////////////////////////////////////////////
-// fontSize, fontFamily, and tabSize can be overridden via environment variables:
-// export FONT_SIZE=15;
-// export FONT_FAMILY='Fira Code'
-// export TAB_SIZE=2
+/** @type {number} Editor font size (min 10, default 10). Override with FONT_SIZE env var */
 const fontSize = getRuntimeOption("FONT_SIZE", (v) => parseInteger(v, 10));
+/** @type {number} Editor tab/indentation size (min 2, default 2). Override with TAB_SIZE env var */
 const tabSize = getRuntimeOption("TAB_SIZE", (v) => parseInteger(v, 2));
+/** @type {string} Editor font family (default 'Fira Code'). Override with FONT_FAMILY env var */
 const fontFamily = getRuntimeOption("FONT_FAMILY") || "Fira Code";
 
 /**
@@ -376,16 +379,22 @@ Object.keys(process.env)
  */
 const LIMITED_SUPPORT_OSES = ["is_os_android_termux", "is_os_mingw64"];
 
-// setting up the path for the extra tweaks
+/** @type {string} Base directory for user-specific custom tweaks (~/_extra or {WindowsHome}/_extra) */
 const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
 
-// line break and comment break
+//////////////////////////////////////////////////////
+// Formatting Constants
+//////////////////////////////////////////////////////
+/** @type {string} Hash-character line break for section separators (e.g. "####...####") */
 const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
+/** @type {string} Slash-character line break for section separators (e.g. "////...////") */
 const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
+/** @type {string} Equal-character line break for section separators (e.g. "====...====") */
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
 
-// text block delimiters used by updateTextBlock / appendTextBlock / prependTextBlock
+/** @type {string} Opening delimiter for managed text blocks (used by updateTextBlock/appendTextBlock/prependTextBlock) */
 const TEXT_BLOCK_START_MARKER = "BEGIN_CONTENT";
+/** @type {string} Closing delimiter for managed text blocks (used by updateTextBlock/appendTextBlock/prependTextBlock) */
 const TEXT_BLOCK_END_MARKER = "END_CONTENT";
 
 //////////////////////////////////////////////////////
@@ -885,7 +894,7 @@ function getOsxApplicationSupportCodeUserPath() {
 }
 
 //////////////////////////////////////////////////////
-// Text Processing Utilities
+// Text Block Management
 //////////////////////////////////////////////////////
 /**
  * Inserts or replaces a delimited text block within a larger text body.
@@ -970,6 +979,9 @@ function prependTextBlock(resultTextContent, configKey, configValue, commentPref
   return updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, true);
 }
 
+//////////////////////////////////////////////////////
+// Profile Registration
+//////////////////////////////////////////////////////
 /**
  * Reads a profile file, inserts or updates a config block, and writes it back.
  * Generic version that works with any profile file path.
@@ -1100,6 +1112,9 @@ function registerPlatformTweaks(platformName, fileName, content, sourceOverride)
   writeText(targetPath, content);
 }
 
+//////////////////////////////////////////////////////
+// Guard Clauses
+//////////////////////////////////////////////////////
 /**
  * Guard clause: exits the process based on whether the given path exists or not.
  * @param {string} targetPath - The path to check
@@ -1187,6 +1202,9 @@ function resolveOsKey(keys) {
   return keys.linux;
 }
 
+//////////////////////////////////////////////////////
+// Text Processing Utilities
+//////////////////////////////////////////////////////
 /**
  * Collapses runs of 3+ consecutive newlines into double newlines and trims the result.
  * @param {string} text - The text to clean up
@@ -1290,15 +1308,6 @@ function getRootDomainFrom(url) {
   const secondLastDotIdx = partialUrl.lastIndexOf(".") || 0;
 
   return url.substring(secondLastDotIdx + 1);
-}
-
-/**
- * Creates a directory (and any necessary parent directories) at the given path.
- * @param {string} targetPath - The directory path to create
- * @returns {Promise<string>} Resolves with the stdout of the mkdir command
- */
-function mkdir(targetPath) {
-  return execBash(`mkdir -p "${targetPath}"`);
 }
 
 //////////////////////////////////////////////////////
@@ -1614,6 +1623,15 @@ async function execBash(cmd, sync = false, options) {
 }
 
 /**
+ * Creates a directory (and any necessary parent directories) at the given path.
+ * @param {string} targetPath - The directory path to create
+ * @returns {Promise<string>} Resolves with the stdout of the mkdir command
+ */
+function mkdir(targetPath) {
+  return execBash(`mkdir -p "${targetPath}"`);
+}
+
+/**
  * Deletes a directory or file at the given path using rm -rf.
  * @param {string} targetPath - The path to delete
  * @param {boolean} [recursive=true] - Whether to delete recursively (adds -r flag)
@@ -1677,7 +1695,12 @@ function _getAutoColor(text) {
     return colorGreen;
   }
 
-  // 3. Marker-based coloring (>> or <<) with indentation levels
+  // 3. Path or URL-like text => colorDim
+  if (/^(\/[\w./-]+|~\/[\w./-]+|https?:\/\/\S+|[a-zA-Z]:\\[\w.\\/-]+)$/.test(text.trim())) {
+    return colorDim;
+  }
+
+  // 4. Marker-based coloring (>> or <<) with indentation levels
   const markerMatch = text.match(/^(\s*)(>>|<<)/);
   if (markerMatch) {
     const level = Math.ceil(markerMatch[1].length / 2);
