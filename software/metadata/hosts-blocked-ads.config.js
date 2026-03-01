@@ -1,85 +1,47 @@
-let BLOCKED_HOST_SOURCE_URLS;
+const BLOCKED_HOST_SOURCE_URLS = convertTextToList(`
+  https://adaway.org/hosts.txt
+  http://winhelp2002.mvps.org/hosts.txt
+  https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
+  https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+`);
 
 /**
  * Fetches blocked ad hosts from multiple upstream sources, deduplicates and sorts them, then writes the result to a config file.
  */
 async function doWork() {
-  BLOCKED_HOST_SOURCE_URLS = convertTextToList(`
-    https://adaway.org/hosts.txt
-    http://winhelp2002.mvps.org/hosts.txt
-    https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
-    https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-  `);
+  log(LINE_BREAK_HASH);
+  log(">> BLOCKED_HOST_SOURCE_URLS");
+  log(LINE_BREAK_HASH);
+  for (const url of BLOCKED_HOST_SOURCE_URLS) {
+    log(">>>", url);
+  }
+  log(LINE_BREAK_HASH);
 
-  BLOCKED_HOST_SOURCE_URLS = []; // TODO: this call is expensive, let's remove it
-
-  let h;
-  let res = [];
-
-  log(
-    `
-${"".padStart(90, "=")}
->> BLOCKED_HOST_SOURCE_URLS
-${"".padStart(90, "=")}
-${BLOCKED_HOST_SOURCE_URLS.join("\n")}
-${"".padStart(90, "=")}
-`,
+  const results = await Promise.allSettled(
+    BLOCKED_HOST_SOURCE_URLS.map(async (url) => {
+      url = url.toLowerCase();
+      try {
+        const raw = await fetchUrlAsString(url);
+        const hosts = convertTextToHosts(raw);
+        log(">> Fetched Success", url, hosts.length);
+        return hosts;
+      } catch (err) {
+        log("<< Fetched Failed", url);
+        return [];
+      }
+    }),
   );
 
-  // don't block it
-  const promises = [];
+  const allHosts = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 
-  for (let url of BLOCKED_HOST_SOURCE_URLS) {
-    url = url.toLowerCase();
-
-    promises.push(
-      new Promise(async (resolve) => {
-        try {
-          h = await fetchUrlAsString(url);
-          h = convertTextToHosts(h);
-          log("Fetched Success", url, h.length);
-          res = res.concat(h);
-        } catch (err) {
-          log("Fetched Failed", url);
-        }
-        resolve();
-      }),
-    );
-  }
-
-  await Promise.allSettled(promises);
-
-  res = [...new Set(res)].sort((a, b) => {
+  const dedupedHosts = [...new Set(allHosts)].sort((a, b) => {
     const ha = getRootDomainFrom(a);
     const hb = getRootDomainFrom(b);
-
-    if (ha > hb) {
-      return 1;
-    }
-
-    if (ha < hb) {
-      return -1;
-    }
-
-    if (ha === hb) {
-      if (a > b) {
-        return 1;
-      }
-
-      if (a < b) {
-        return -1;
-      }
-
-      if (a === b) {
-        return 0;
-      }
-    }
+    return ha.localeCompare(hb) || a.localeCompare(b);
   });
 
-  log("Total Hosts", res.length);
+  log(">> Total Hosts", dedupedHosts.length);
 
   const targetPath = "./software/metadata/hosts-blocked-ads.config";
-
-  log("Update the hosts", targetPath);
-  writeText(targetPath, res.join("\n"));
+  writeTextIfSignificantChange(targetPath, dedupedHosts.join("\n"), 0.25);
 }

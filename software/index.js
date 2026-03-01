@@ -540,6 +540,41 @@ function writeText(filePath, text, override = true, suppressError = false) {
 }
 
 /**
+ * Writes text content to a file only if the content has changed by more than a given percentage threshold.
+ * Useful for files with volatile content (e.g., fetched host lists) where minor fluctuations should not trigger a write.
+ * @param {string} filePath - The file path to write to
+ * @param {string} text - The text content to write
+ * @param {number} [changeThreshold=0.1] - Minimum percentage of change (0 to 1) required to trigger a write. Defaults to 10%
+ * @returns {void}
+ */
+function writeTextIfSignificantChange(filePath, text, changeThreshold = 0.1) {
+  const pathToUse = _getFilePath(filePath);
+  const newContent = (text || "").trim();
+  const oldContent = readText(pathToUse).trim();
+
+  if (oldContent.length === 0) {
+    log(`<<<< Updated [New] newContent=${newContent.length}`, pathToUse);
+    fs.writeFileSync(pathToUse, newContent);
+    return;
+  }
+
+  if (newContent === oldContent) {
+    log(`<<<< Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
+    return;
+  }
+
+  const changeRatio = Math.abs(newContent.length - oldContent.length) / oldContent.length;
+  const changePercent = calculatePercentage(Math.abs(newContent.length - oldContent.length), oldContent.length);
+
+  if (changeRatio >= changeThreshold) {
+    log(`<<<< Updated [Modified ${changePercent}] newContent=${newContent.length}`, pathToUse);
+    fs.writeFileSync(pathToUse, newContent);
+  } else {
+    log(`<<<< Skipped [BelowThreshold ${changePercent}] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
+  }
+}
+
+/**
  * Creates a file if it doesn't already exist. If the file exists, it is left unchanged.
  * @param {string} filePath - The file path to create
  * @param {string} [defaultContent=''] - The default content to write if the file is created
