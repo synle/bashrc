@@ -19,7 +19,7 @@ async function doWork() {
     log(">>> total", pathsToCreate.length);
 
     for (const pathToCreate of pathsToCreate) {
-      log(">>> ", pathToCreate);
+      log(">>>> ", pathToCreate);
       await mkdir(pathToCreate);
     }
   }
