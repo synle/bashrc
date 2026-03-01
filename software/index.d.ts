@@ -389,11 +389,19 @@ declare function downloadFile(url: string, destination: string): Promise<boolean
 /**
  * Downloads an asset from an external URL to a local destination using curl.
  * Unlike downloadFile, this supports redirects and does not prepend the repo URL.
+ * If destination is a directory, the filename is derived from the URL.
  * @param {string} url - The full URL to download from
- * @param {string} destination - The local file path to save to
+ * @param {string} destination - The local file path or directory to save to
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 declare function downloadAsset(url: string, destination: string): Promise<string>;
+/**
+ * Downloads multiple assets in parallel using a single curl command.
+ * @param {string[]} urls - Array of full URLs to download
+ * @param {string} destinationDir - The local directory to save files to (filenames derived from URLs)
+ * @returns {Promise<string>} Resolves with the command's stdout
+ */
+declare function downloadAssets(urls: string[], destinationDir: string): Promise<string>;
 /**
  * Downloads binary files from the main GitHub repo that match a filter function.
  * Only considers files under the "binaries/" path, excluding markdown files.
@@ -447,12 +455,13 @@ declare function getFullUrl(url: string): string;
  */
 declare function fetchUrlAsString(url: string): Promise<string>;
 /**
- * Performs a shallow git clone of a repository's master branch into the specified directory.
+ * Performs a shallow git clone of a repository into the specified directory.
  * @param {string} repo - The git repository URL to clone
  * @param {string} destinationDir - The local directory to clone into
+ * @param {boolean} [cloneAll=false] - If true, clone all branches; otherwise clone only the default branch
  * @returns {Promise<string>} Resolves with the stdout of the git clone command
  */
-declare function gitClone(repo: string, destinationDir: string): Promise<string>;
+declare function gitClone(repo: string, destinationDir: string, cloneAll?: boolean): Promise<string>;
 /**
  * Fetches a URL and parses the response as JSON (supports comments in the JSON).
  * @param {string} url - The URL or relative path to fetch
@@ -480,6 +489,12 @@ declare function deleteFolder(targetPath: string, recursive?: boolean): Promise<
  * @returns {string} A bash echo command string
  */
 declare function echo(str: string): string;
+/**
+ * Emits a string to stdout for bash to execute in the `node | bash` pipeline.
+ * Use this instead of console.log when outputting bash commands from the orchestration layer.
+ * @param {...any} args - The bash command(s) to emit
+ */
+declare function emitBash(...args: any[]): void;
 /**
  * Generates a bash echo command string that outputs colored text using ANSI escape codes.
  * @param {string} str - The text to echo
@@ -688,16 +703,16 @@ declare let HOME_HOST_NAMES: any[];
  * Flag               | Env Variable          | Script Folder                     | Platforms
  * -------------------|-----------------------|-----------------------------------|------------------------------
  * is_os_mac          | is_os_mac=1           | software/scripts/mac/             | macOS (darwin)
- * is_os_ubuntu       | is_os_ubuntu=1        | (none)                            | Ubuntu, Debian, Mint
+ * is_os_ubuntu       | is_os_ubuntu=1        | software/scripts/ubuntu/          | Ubuntu, Debian, Mint
  * is_os_chromeos     | is_os_chromeos=1      | software/scripts/chromeos/        | ChromeOS
- * is_os_mingw64      | is_os_mingw64=1       | (none)                            | MSYS2 / Cygwin / MinGW64
+ * is_os_mingw64      | is_os_mingw64=1       | software/scripts/mingw64/         | MSYS2 / Cygwin / MinGW64
  * is_os_android_termux | is_os_android_termux=1 | software/scripts/android_termux/ | Android Termux
  * is_os_arch_linux   | is_os_arch_linux=1    | software/scripts/arch_linux/      | Arch Linux, SteamOS
- * is_os_steamdeck    | is_os_steamdeck=1     | (none)                            | Steam Deck (SteamOS subset)
+ * is_os_steamdeck    | is_os_steamdeck=1     | software/scripts/steamdeck/       | Steam Deck (SteamOS subset)
  * is_os_steamos      | is_os_steamos=1       | software/scripts/steamos/         | SteamOS
- * is_os_redhat       | is_os_redhat=1        | (none)                            | Fedora, RHEL, CentOS, Rocky
+ * is_os_redhat       | is_os_redhat=1        | software/scripts/redhat/          | Fedora, RHEL, CentOS, Rocky
  * is_os_window       | is_os_window=1        | software/scripts/window/          | Windows (WSL /mnt/c detected)
- * is_os_wsl          | is_os_wsl=1           | (none)                            | Windows Subsystem for Linux
+ * is_os_wsl          | is_os_wsl=1           | software/scripts/wsl/             | Windows Subsystem for Linux
  *
  * Flags without a script folder are still used for conditional logic in individual scripts
  * (e.g. `exitIfUnsupportedOs()`, platform-specific file paths).
@@ -719,6 +734,12 @@ declare const OS_SCRIPT_PATHS: Array<[boolean, string]>;
 /** @type {boolean} Fedora, RHEL, CentOS, Rocky */ declare const is_os_redhat: boolean;
 /** @type {boolean} Windows (WSL /mnt/c detected) */ declare const is_os_window: boolean;
 /** @type {boolean} Windows Subsystem for Linux */ declare const is_os_wsl: boolean;
+/**
+ * List of OS flags considered limited-support platforms. Scripts calling
+ * `exitIfLimitedSupportOs()` will exit early when running on any of these.
+ * @type {string[]}
+ */
+declare const LIMITED_SUPPORT_OSES: string[];
 declare const BASE_SY_CUSTOM_TWEAKS_DIR: any;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
