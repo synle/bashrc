@@ -524,21 +524,7 @@ declare function color(str: string, colorCode: string): string;
  * @returns {boolean} True if the text matches a path or URL pattern
  */
 declare function _looksLikePathOrUrl(text: string): boolean;
-/**
- * Determines the appropriate color function for a log line based on marker keywords,
- * indentation level, and marker direction (>> or <<).
- *
- * Color priority:
- * 1. >> / << markers (highest) — colored by indentation level
- * 2. Error/fail keywords => colorBgRed
- * 3. Success/done keywords => colorGreen
- * 4. Path or URL-like text => colorDim
- * 5. Otherwise no auto-color (returns null)
- *
- * @param {string} text - The joined log text to analyze
- * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
- */
-declare function _getAutoColor(text: string): ((str: string) => string) | null;
+declare function _getAutoColor(text: any): (str: string) => string;
 /**
  * Applies auto-color to log data. If the joined text matches a color rule,
  * wraps each non-dim element with that color. Elements already wrapped in
@@ -827,6 +813,24 @@ declare const LINE_BREAK_EQUAL: string;
 declare const TEXT_BLOCK_START_MARKER: string;
 /** @type {string} Closing delimiter for managed text blocks (used by updateTextBlock/appendTextBlock/prependTextBlock) */
 declare const TEXT_BLOCK_END_MARKER: string;
+/**
+ * Determines the appropriate color function for a log line based on marker keywords,
+ * indentation level, and marker direction (>> or <<).
+ *
+ * Color priority:
+ * 1. >>, <<, ## markers (highest) — colored by indentation level
+ *    >> uses foreground colors (yellow/cyan/magenta)
+ *    << uses foreground colors (orange/blue/magenta)
+ *    ## uses background colors (bgYellow/bgCyan/bgMagenta)
+ * 2. Error/fail keywords => colorBgRed
+ * 3. Success/done keywords => colorGreen
+ * 4. Path or URL-like text => colorDim
+ * 5. Otherwise no auto-color (returns null)
+ *
+ * @param {string} text - The joined log text to analyze
+ * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
+ */
+declare const _MARKER_REGEX: RegExp;
 declare namespace LOG_COLORS {
   let green: string;
   let yellow: string;
@@ -835,6 +839,10 @@ declare namespace LOG_COLORS {
   let red: string;
   let bgRed: string;
   let bgYellow: string;
+  let bgCyan: string;
+  let bgMagenta: string;
+  let bgOrange: string;
+  let bgBlue: string;
   let magenta: string;
   let orange: string;
   let blue: string;
@@ -846,6 +854,10 @@ declare namespace LOG_COLORS {
 /** @type {(str: string) => string} */ declare const colorRed: (str: string) => string;
 /** @type {(str: string) => string} */ declare const colorBgRed: (str: string) => string;
 /** @type {(str: string) => string} */ declare const colorBgYellow: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorBgCyan: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorBgMagenta: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorBgOrange: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorBgBlue: (str: string) => string;
 /** @type {(str: string) => string} */ declare const colorMagenta: (str: string) => string;
 /** @type {(str: string) => string} */ declare const colorOrange: (str: string) => string;
 /** @type {(str: string) => string} */ declare const colorBlue: (str: string) => string;
