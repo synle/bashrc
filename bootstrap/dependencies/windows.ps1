@@ -1607,51 +1607,11 @@ powercfg -SETACVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 76
 
 powercfg -SetActive SCHEME_CURRENT
 
-Write-Host "System tweaks applied." -ForegroundColor Green
-
-
-
-################################################################################
-# ---- System Tweaks ----
-################################################################################
-
-Write-Host "`n=== Applying System Tweaks ===" -ForegroundColor Cyan
-
-# Disable Fast Startup — Windows uses hybrid shutdown by default, which can cause issues
-# with dual-boot OS detection, USB devices not reinitializing, and updates not applying
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type DWord -Value 0 -Force
-
-# Disable USB selective suspend — prevents Windows from powering off USB ports during idle,
-# which can cause keyboards, mice, and external drives to randomly disconnect
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB\DisableSelectiveSuspend" -Type DWord -Value 1 -Force
-
-# Set default terminal to Windows Terminal (Win11) — new console apps open in Windows Terminal
-# instead of the legacy conhost.exe window
-$wtStartupPath = "HKCU:\Console\%%Startup"
-if (-not (Test-Path $wtStartupPath)) { New-Item -Path $wtStartupPath -Force | Out-Null }
-Set-ItemProperty -Path $wtStartupPath -Name "DelegationConsole" -Value "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}" -Force
-Set-ItemProperty -Path $wtStartupPath -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}" -Force
-
-# Enable long file paths — removes the legacy 260-character MAX_PATH limit,
-# needed for deep node_modules trees and long Git repo paths
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Type DWord -Value 1 -Force
-
-# Enable Developer Mode — allows sideloading UWP apps, creating symlinks without admin,
-# and unlocks Settings > Developer options (same as toggling it in the UI)
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Type DWord -Value 1 -Force
-
-# Power button and lid actions (values: 0=Do nothing, 1=Sleep, 2=Hibernate, 3=Shut down)
-# SETDCVALUEINDEX = on battery, SETACVALUEINDEX = plugged in
-
-# Lid close action: shut down (laptops only, ignored on desktops)
-powercfg -SETDCVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 5ca83367-6e45-459f-a27b-476b1d01c936 3
-powercfg -SETACVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 5ca83367-6e45-459f-a27b-476b1d01c936 3
-
-# Power button press: shut down
-powercfg -SETDCVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 7648efa3-dd9c-4e3e-b566-50f929386280 3
-powercfg -SETACVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 7648efa3-dd9c-4e3e-b566-50f929386280 3
-
-powercfg -SetActive SCHEME_CURRENT
+# Restore classic Windows 10 right-click context menu — disables the Windows 11 modern
+# "Show more options" menu so all items appear immediately on right-click
+$classicMenuPath = "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
+if (-not (Test-Path $classicMenuPath)) { New-Item -Path $classicMenuPath -Force | Out-Null }
+Set-ItemProperty -Path $classicMenuPath -Name "(Default)" -Value "" -Force
 
 Write-Host "System tweaks applied." -ForegroundColor Green
 
