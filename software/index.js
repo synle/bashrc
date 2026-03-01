@@ -964,6 +964,8 @@ function prependTextBlock(resultTextContent, configKey, configValue, commentPref
  * @param {string} content - The content to prepend
  */
 function registerWithBashSyleProfile(configKey, content) {
+  log(`  >> Register BashSyle Profile`, colorRed(configKey));
+
   let textContent = readText(BASH_SYLE_PATH);
   textContent = prependTextBlock(textContent, configKey, content);
   writeText(BASH_SYLE_PATH, textContent);
@@ -976,6 +978,8 @@ function registerWithBashSyleProfile(configKey, content) {
  * @param {string} content - The content to prepend
  */
 function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
+  log(`  >> Register BashSyle Autocomplete with RawContent`, colorRed(configKey));
+
   let textContent = readText(BASH_SYLE_AUTOCOMPLETE_PATH);
   textContent = appendTextBlock(textContent, configKey, content);
   writeText(BASH_SYLE_AUTOCOMPLETE_PATH, textContent);
@@ -989,6 +993,8 @@ function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
  * @param {string} specUrl - URL or local path to the complete-spec file
  */
 async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl) {
+  log(`  >> Register BashSyle Autocomplete with CompleteSpec`, colorRed(command));
+
   const specFileName = `.bash_syle_complete-spec-${command}`;
   const specPath = path.join(BASE_HOMEDIR_LINUX, specFileName);
 
@@ -1144,21 +1150,6 @@ function exitIfNotTargetOs(...osFlags) {
   }
   log(`    >> Skipped : Only supported on ${flags.join(", ")}`);
   return process.exit();
-}
-
-/**
- * Downloads application binaries from the main repo into the Windows applications directory.
- * @param {string} applicationName - The application name
- * @param {function} findFilter - Filter function for downloadFilesFromMainRepo
- */
-async function downloadWindowsApp(applicationName, findFilter) {
-  const targetPath = await getWindowsApplicationBinaryDir(applicationName);
-  log(`  >> Download ${applicationName} for Windows:`, targetPath);
-  try {
-    await downloadFilesFromMainRepo(findFilter, targetPath);
-  } catch (err) {
-    log(`error ${err}`);
-  }
 }
 
 /**
@@ -1323,6 +1314,8 @@ function downloadFile(url, destination) {
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 function downloadAsset(url, destination) {
+  log(`  >> Downloading Asset ${path.basename(url)}:`, url);
+
   const dest =
     fs.existsSync(destination) && fs.statSync(destination).isDirectory() ? path.join(destination, path.basename(url)) : destination;
   return execBash(`curl -sL "${url}" -o "${dest}"`);
@@ -1335,8 +1328,25 @@ function downloadAsset(url, destination) {
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 function downloadAssets(urls, destinationDir) {
+  log(`  >> Downloading Assets: total=${urls.length}`);
+
   const args = urls.map((url) => `-sL "${url}" -o "${path.join(destinationDir, path.basename(url))}"`).join(" ");
   return execBash(`curl --parallel --parallel-max 10 ${args}`);
+}
+
+/**
+ * Downloads application binaries from the main repo into the Windows applications directory.
+ * @param {string} applicationName - The application name
+ * @param {function} findFilter - Filter function for downloadFilesFromMainRepo
+ */
+async function downloadWindowsApp(applicationName, findFilter) {
+  const targetPath = await getWindowsApplicationBinaryDir(applicationName);
+  log(`  >> Downloading Windows App:`,  colorRed(applicationName), targetPath);
+  try {
+    await downloadFilesFromMainRepo(findFilter, targetPath);
+  } catch (err) {
+    log(`error ${err}`);
+  }
 }
 
 /**
