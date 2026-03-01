@@ -1245,9 +1245,6 @@ $bluelightPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Sto
 # Night light strength and schedule are stored as binary blobs; disable auto-schedule via registry
 $nightLightPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore\Store\DefaultAccount\Current\default`$windows.data.bluelightreduction.bluelightreductionstate\windows.data.bluelightreduction.bluelightreductionstate"
 
-# Set display scaling to 100% (96 DPI) - only applies after logoff
-Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "LogPixels" -Type DWord -Value 96 -Force -ErrorAction SilentlyContinue
-Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "Win8DpiScaling" -Type DWord -Value 1 -Force -ErrorAction SilentlyContinue
 
 Write-Host "Display settings applied." -ForegroundColor Green
 
@@ -1368,8 +1365,8 @@ Set-ItemProperty -Path $taskbarPath -Name "ShowTaskViewButton" -Type DWord -Valu
 # Hide Copilot button (0=hide, 1=show)
 Set-ItemProperty -Path $taskbarPath -Name "ShowCopilotButton" -Type DWord -Value 0 -Force
 
-# Taskbar alignment: Left (0=Left, 1=Center)
-Set-ItemProperty -Path $taskbarPath -Name "TaskbarAl" -Type DWord -Value 0 -Force
+# Taskbar alignment: Center (0=Left, 1=Center)
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarAl" -Type DWord -Value 1 -Force
 
 # Hide recently opened items in Start, Jump Lists, and File Explorer (0=hide, 1=show)
 Set-ItemProperty -Path $taskbarPath -Name "Start_TrackDocs" -Type DWord -Value 0 -Force
