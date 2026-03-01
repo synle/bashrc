@@ -48,6 +48,15 @@ declare function findFirstDirFromList(findProps: Array<[string, RegExp]>): strin
  */
 declare function writeText(filePath: string, text: string, override?: boolean, suppressError?: boolean): void;
 /**
+ * Writes text content to a file only if the content has changed by more than a given percentage threshold.
+ * Useful for files with volatile content (e.g., fetched host lists) where minor fluctuations should not trigger a write.
+ * @param {string} filePath - The file path to write to
+ * @param {string} text - The text content to write
+ * @param {number} [changeThreshold=0.1] - Minimum percentage of change (0 to 1) required to trigger a write. Defaults to 10%
+ * @returns {void}
+ */
+declare function writeTextIfSignificantChange(filePath: string, text: string, changeThreshold?: number): void;
+/**
  * Creates a file if it doesn't already exist. If the file exists, it is left unchanged.
  * @param {string} filePath - The file path to create
  * @param {string} [defaultContent=''] - The default content to write if the file is created
