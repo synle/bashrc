@@ -1,9 +1,9 @@
 /** * Downloads and installs Greenshot screenshot tool for Windows. */
 async function doWork() {
-  console.log("  >> Installing Windows Only - GreenShot");
+  log("  >> Installing Windows Only - GreenShot");
 
   const targetPath = path.join(getWindowAppDataRoamingUserPath(), "Greenshot", "Greenshot.ini");
-  console.log("    >> Configs", consoleLogColor4(targetPath));
+  log("    >> Configs", colorDim(targetPath));
 
   exitIfPathNotFound(targetPath);
 

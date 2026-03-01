@@ -3,7 +3,7 @@ async function doWork() {
   // wipe out the old bash_syle first
   const coreBashProfileFiles = [BASH_SYLE_PATH, BASH_SYLE_AUTOCOMPLETE_PATH];
   for (const file of coreBashProfileFiles) {
-    console.log("  >> Wiping out the old bash profile asset: ", file);
+    log("  >> Wiping out the old bash profile asset: ", file);
     writeText(file, ``);
   }
 
@@ -15,7 +15,7 @@ async function doWork() {
   // bootstrap .bash_profile (login shells on all platforms)
   {
     const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
-    console.log("  >> Updating .bash_profile with bash_syle entry point", consoleLogColor4(targetPath));
+    log("  >> Updating .bash_profile with bash_syle entry point", colorDim(targetPath));
     let textContent = readText(targetPath);
     textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
     writeText(targetPath, textContent);
@@ -24,7 +24,7 @@ async function doWork() {
   // bootstrap .bashrc (interactive non-login shells)
   {
     const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
-    console.log("  >> Updating .bashrc with bash_syle entry point", consoleLogColor4(targetPath));
+    log("  >> Updating .bashrc with bash_syle entry point", colorDim(targetPath));
     let textContent = readText(targetPath);
     textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
     writeText(targetPath, textContent);

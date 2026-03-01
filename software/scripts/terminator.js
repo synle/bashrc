@@ -4,7 +4,7 @@ async function doWork() {
   await mkdir(targetPath);
 
   targetPath = path.join(targetPath, "config");
-  console.log("  >> Download Terminator Config - ChromeOS ", targetPath);
+  log("  >> Download Terminator Config - ChromeOS ", targetPath);
 
   const content = await fetchUrlAsString("software/scripts/terminator.config");
 
@@ -20,7 +20,7 @@ ${content}
   ]);
 
   if (is_os_window || is_os_mac || is_os_arch_linux) {
-    console.log("    >> Skipped");
+    log("    >> Skipped");
     return;
   }
 

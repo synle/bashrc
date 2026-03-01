@@ -34,7 +34,7 @@ function getPowershellTargetBlock() {
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  console.log(`  >> VS Code Setup Script:`);
+  log(`  >> VS Code Setup Script:`);
 
   const script = `
 ${LINE_BREAK_HASH}

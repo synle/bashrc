@@ -46,12 +46,12 @@ async function doWork() {
     const commandLines = extractSection(convertRawTextToList(stdout), "Commands:");
     const commands = commandLines.filter((line) => line.match(/[ ][ ]+[ ]+/)).map((line) => line.split(" ")[0].trim());
 
-    console.log("  >> Resolving docker commands", commands.length);
+    log("  >> Resolving docker commands", commands.length);
     const res = [];
 
     await Promise.all(
       commands.map(async (command) => {
-        console.log(`    >> Resolving command > docker ${command}`);
+        log(`    >> Resolving command > docker ${command}`);
         try {
           const entry = await getOptionsForCommand(command);
           if (entry) res.push(entry);
@@ -62,9 +62,9 @@ async function doWork() {
     res.push(`docker|${commands.join(",")}`);
     const newContent = res.sort().join("\n");
 
-    console.log("  >> Update autocomplete docker config > ", targetPath);
+    log("  >> Update autocomplete docker config > ", targetPath);
     safeWriteText(targetPath, newContent, backupContent);
   } catch (err) {
-    console.log(consoleLogColor1(`  >> Skipped: autocomplete-spec-docker (${err.message})`));
+    log(`  >> Skipped: autocomplete-spec-docker (${err.message})`);
   }
 }

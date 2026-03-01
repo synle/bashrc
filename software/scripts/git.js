@@ -42,7 +42,7 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
       touchFile(GIT_DEFAULT_MESSAGE_PATH);
     }
   } catch (err) {
-    console.log("Failed to get git config template", err);
+    log("Failed to get git config template", err);
   }
 
   return templateGitConfig.trim();
@@ -86,7 +86,7 @@ function _getGlobalGitIgnore() {
  * Installs git aliases, configs, and global gitignore for the current system and optionally for Windows.
  */
 async function doWork() {
-  console.log("  >> Installing git Aliases and Configs");
+  log("  >> Installing git Aliases and Configs");
 
   const configMain = path.join(BASE_HOMEDIR_LINUX, ".gitconfig");
   const configGitIgnoreGlobal = path.join(BASE_HOMEDIR_LINUX, ".gitignore_global");
@@ -95,7 +95,7 @@ async function doWork() {
   const oldConfig = readText(configMain);
   const email = _extractEmail(oldConfig);
 
-  console.log(`    >> Installing git Aliases and Configs for Main OS: email=${email}`, configMain);
+  log(`    >> Installing git Aliases and Configs for Main OS: email=${email}`, configMain);
 
   // write to build file
   writeToBuildFile([
@@ -126,7 +126,7 @@ async function doWork() {
   if (is_os_window) {
     const configWindows = path.join(getWindowUserBaseDir(), ".gitconfig");
 
-    console.log("    >> Installing git Aliases and Configs for Windows", configWindows);
+    log("    >> Installing git Aliases and Configs for Windows", configWindows);
     writeText(configWindows, await _getGitConfig({ email }));
   }
 }

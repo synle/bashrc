@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".fzf");
 
-  console.log("  >> Download and installing fzf:", consoleLogColor4(targetPath));
+  log("  >> Download and installing fzf:", colorDim(targetPath));
 
   if (IS_FORCE_REFRESH) {
     await deleteFolder(targetPath);
@@ -16,7 +16,7 @@ async function doWork() {
     ${targetPath}/install --no-key-bindings --no-completion --no-update-rc &>/dev/null;
   `);
 
-  console.log("    >> Register binary with bashrc", BASH_SYLE_PATH);
+  log("    >> Register binary with bashrc", colorDim(BASH_SYLE_PATH));
   registerWithBashSyleProfile("fzf - Fuzzy Find", `[ -f ~/.fzf.bash ] && . ~/.fzf.bash`);
 
   registerWithBashSyleProfile(

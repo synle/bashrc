@@ -21,7 +21,7 @@ async function _getPath() {
       return path.join(targetPath, "Microsoft.PowerShell_profile.ps1");
     }
   } catch (err) {
-    console.log("  >> Failed to get the path for Powershell Profile", err);
+    log("  >> Failed to get the path for Powershell Profile", err);
   }
 
   return null;
@@ -223,7 +223,7 @@ async function doWork() {
     clear; # clean up the prompt
   `);
 
-  console.log("  >> Setting up Windows Powershell Profile");
+  log("  >> Setting up Windows Powershell Profile");
   writeToBuildFile([
     { file: "windows-powershell-profile.ps1", data: outputContent, comment: "Windows powershell script", commentStyle: "bash" },
   ]);
@@ -231,7 +231,7 @@ async function doWork() {
   // let targetPath = await _getPath();
 
   // if (!targetPath) {
-  //   console.log(consoleLogColor1('    >> Skipped : Not Found'));
+  //   log('    >> Skipped : Not Found');
   //   return process.exit();
   // }
 

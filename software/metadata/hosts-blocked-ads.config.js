@@ -16,7 +16,7 @@ async function doWork() {
   let h;
   let res = [];
 
-  console.log(
+  log(
     `
 ${"".padStart(90, "=")}
 >> BLOCKED_HOST_SOURCE_URLS
@@ -37,10 +37,10 @@ ${"".padStart(90, "=")}
         try {
           h = await fetchUrlAsString(url);
           h = convertTextToHosts(h);
-          console.log("Fetched Success", url, h.length);
+          log("Fetched Success", url, h.length);
           res = res.concat(h);
         } catch (err) {
-          console.log("Fetched Failed", url);
+          log("Fetched Failed", url);
         }
         resolve();
       }),
@@ -76,10 +76,10 @@ ${"".padStart(90, "=")}
     }
   });
 
-  console.log("Total Hosts", res.length);
+  log("Total Hosts", res.length);
 
   const targetPath = "./software/metadata/hosts-blocked-ads.config";
 
-  console.log("Update the hosts", targetPath);
+  log("Update the hosts", targetPath);
   writeText(targetPath, res.join("\n"));
 }

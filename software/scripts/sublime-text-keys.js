@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    console.log("      >> Failed to get the path", err);
+    log("      >> Failed to get the path", colorDim(err));
   }
 
   return null;
@@ -304,7 +304,7 @@ async function doWork() {
   ];
   // end COMMON_KEY_BINDINGS
 
-  console.log(`  >> Sublime Text Keybindings:`);
+  log(`  >> Sublime Text Keybindings:`);
 
   // write to build file
   const comments = "Preferences Key Bindings";
@@ -334,7 +334,7 @@ async function doWork() {
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  console.log("    >> For my own system", targetPath);
+  log("    >> For my own system", colorDim(targetPath));
   exitIfPathNotFound(targetPath);
 
   writeConfigToFile(targetPath, "Packages/User/Default.sublime-keymap", _getConfigs());

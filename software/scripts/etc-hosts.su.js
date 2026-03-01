@@ -15,11 +15,11 @@ async function _getBlockedHostNames() {
     try {
       let h = await fetchUrlAsString(`software/metadata/hosts-blocked-ads.config`);
       h = convertTextToHosts(h);
-      console.log("      >> URL fetch for host success", url);
-      console.log("        >> Total Hosts Found", h.length);
+      log("      >> URL fetch for host success", url);
+      log("        >> Total Hosts Found", h.length);
       DYNAMIC_BLOCK_HOST_NAMES = [...DYNAMIC_BLOCK_HOST_NAMES, ...h];
     } catch (err) {
-      console.log("      >> URL fetch for host failed", url, err);
+      log("      >> URL fetch for host failed", url, err);
     }
 
     mappingsToUse = [...mappingsToUse, ...DYNAMIC_BLOCK_HOST_NAMES];
@@ -79,7 +79,7 @@ async function doWork() {
   const targetPath = _getEtcHosts();
   let etcHostTextContent = readText(targetPath);
 
-  console.log("  >> Updating ETC Host", consoleLogColor4(targetPath));
+  log("  >> Updating ETC Host", colorDim(targetPath));
 
   // make a backup
   backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.etc_host`), etcHostTextContent);
@@ -102,17 +102,17 @@ async function doWork() {
 
   // write if there are change
   try {
-    console.log("      >> Update host mappings");
-    console.log("        >> Total Home Hosts", HOME_HOST_NAMES.length);
-    console.log("        >> Total Blocked Hosts", BLOCK_HOST_NAMES.length);
+    log("      >> Update host mappings");
+    log("        >> Total Home Hosts", HOME_HOST_NAMES.length);
+    log("        >> Total Blocked Hosts", BLOCK_HOST_NAMES.length);
 
     writeText(targetPath, etcHostTextContent.trim());
-    console.log("      >> Done updating etc hosts: ", consoleLogColor4(targetPath));
+    log("      >> Done updating etc hosts: ", colorDim(targetPath));
 
     if (is_os_window) {
-      console.log("        >> Only Windows run command: ipconfig /flushdns");
+      log("        >> Only Windows run command: ipconfig /flushdns");
     }
   } catch (err) {
-    console.log("      >> Skipped : Permission denied (needs to Run as Admin for Windows WSL)");
+    log("      >> Skipped : Permission denied (needs to Run as Admin for Windows WSL)");
   }
 }

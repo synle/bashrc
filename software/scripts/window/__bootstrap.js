@@ -2,10 +2,10 @@
 async function doWork() {
   let targetPath = BASE_D_DIR_WINDOW;
 
-  console.log("  >> mkdir for D Drive", targetPath);
+  log("  >> mkdir for D Drive", colorDim(targetPath));
 
   if (!filePathExist(targetPath)) {
-    console.log("  >> Skipped - Path Not Found: ", consoleLogColor4(targetPath));
+    log("  >> Skipped - Path Not Found: ", colorDim(targetPath));
     return process.exit();
   }
 
@@ -18,10 +18,10 @@ async function doWork() {
     ${path.join(targetPath, "Pictures")}
   `);
 
-  console.log(pathsToCreate);
+  log(pathsToCreate);
 
   for (const pathToCreate of pathsToCreate) {
-    console.log("    >> ", pathToCreate);
+    log("    >> ", pathToCreate);
     await mkdir(pathToCreate);
   }
 }

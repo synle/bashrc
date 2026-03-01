@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    console.log("      >> Failed to get the path", err);
+    log("      >> Failed to get the path", colorDim(err));
   }
 
   return null;
@@ -182,10 +182,10 @@ async function doWork() {
   exitIfLimitedSupportOs();
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
 
-  console.log(`  >> Setting up Sublime Text MouseMaps`);
+  log(`  >> Setting up Sublime Text MouseMaps`);
 
   // write to build file
-  console.log(`    >> For prebuilt configs`);
+  log(`    >> For prebuilt configs`);
   writeToBuildFile([
     { file: "sublime-text-mouse", data: _formatKey(MOUSE_MAPS, WINDOWS_OS_KEY), isJson: true },
     { file: "sublime-text-mouse-macosx", data: _formatKey(MOUSE_MAPS, MAC_OSX_KEY), isJson: true },
@@ -193,10 +193,10 @@ async function doWork() {
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  console.log("    >> For my system", targetPath);
+  log("    >> For my system", colorDim(targetPath));
   exitIfPathNotFound(targetPath);
 
   const fileDestPath = path.join(targetPath, "Packages/User/Default.sublime-mousemap");
-  console.log("      >> fileDestPath", fileDestPath);
+  log("      >> fileDestPath", colorDim(fileDestPath));
   writeJson(fileDestPath, _formatKey(MOUSE_MAPS, is_os_mac ? MAC_OSX_KEY : WINDOWS_OS_KEY));
 }

@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = `/usr/local/share/fonts`;
 
-  console.log("  >> Download Ligatures Fonts - for ChromeOS Ubuntu:", targetPath);
+  log("  >> Download Ligatures Fonts - for ChromeOS Ubuntu:", colorDim(targetPath));
 
   exitIfPathNotFound(targetPath);
 
@@ -10,10 +10,10 @@ async function doWork() {
 
   const fonts = files.filter((f) => f.includes(".ttf"));
 
-  console.log("  >> Downloading fonts", fonts.length);
+  log("  >> Downloading fonts", colorDim(fonts.length));
 
   if (fonts.length === 0) {
-    console.log(consoleLogColor1("    >> Skipped : No fonts found"));
+    log("    >> Skipped : No fonts found");
     return process.exit();
   }
 
@@ -27,10 +27,10 @@ async function doWork() {
           const url = font;
           const downloaded = await downloadFile(url, destination);
           if (downloaded === true) {
-            console.log(consoleLogColor3("      >> Downloaded"), consoleLogColor4(destination));
+            log("      >> Downloaded", colorDim(destination));
           }
         } catch (err) {
-          console.log(consoleLogColor3("      >> Error Downloading"), consoleLogColor4(font));
+          log("      >> Error Downloading", colorDim(font));
         }
 
         resolve();

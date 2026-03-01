@@ -1,8 +1,8 @@
 /** * Applies WSL-specific tweaks and configurations for Windows Subsystem for Linux. */
 async function doWork() {
   const targetPath = path.join(getWindowUserBaseDir(), ".wslconfig");
-  console.log("  >> WSL Tweaks: Updating configuration", targetPath);
-  console.log('  >> Note: Run "wsl --shutdown" for changes to take effect.');
+  log("  >> WSL Tweaks: Updating configuration", colorDim(targetPath));
+  log('  >> Note: Run "wsl --shutdown" for changes to take effect.');
 
   const desiredSettings = {
     guiApplications: "false",

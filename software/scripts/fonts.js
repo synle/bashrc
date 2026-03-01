@@ -9,30 +9,30 @@ async function doWork() {
     if (IS_FORCE_REFRESH || !fs.existsSync(termuxFontPath)) {
       await mkdir(termuxFontDir);
       const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Regular.ttf`;
-      console.log("  >> Downloading Termux font:", termuxFontPath);
+      log("  >> Downloading Termux font:", colorDim(termuxFontPath));
       await downloadAsset(fontUrl, termuxFontPath);
     } else {
-      console.log("  >> Termux font already installed, skipping:", termuxFontPath);
+      log("  >> Termux font already installed, skipping:", colorDim(termuxFontPath));
     }
     return;
   }
 
   const targetFontPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
 
-  console.log("  >> Download Ligatures Fonts:", targetFontPath);
+  log("  >> Download Ligatures Fonts:", colorDim(targetFontPath));
 
   const files = await listRepoDir();
   const fonts = files.filter((f) => f.includes(".ttf"));
 
   if (fonts.length === 0) {
-    console.log(consoleLogColor1("    >> Skipped : No fonts found"));
+    log("    >> Skipped : No fonts found");
     return;
   }
 
-  console.log("  >> Found fonts:", fonts.length);
+  log("  >> Found fonts:", colorDim(fonts.length));
 
   if (IS_FORCE_REFRESH) {
-    console.log("  >> Force refresh: deleting old font files");
+    log("  >> Force refresh: deleting old font files");
     await deleteFolder(targetFontPath);
   }
 
@@ -42,13 +42,13 @@ async function doWork() {
       fonts.map((font) => {
         const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/${font}`;
         const destination = path.join(targetFontPath, path.basename(font));
-        console.log("    >> Downloading:", path.basename(font));
+        log("    >> Downloading:", colorDim(path.basename(font)));
         return downloadAsset(fontUrl, destination);
       }),
     );
-    console.log("  >> Fonts downloaded to:", targetFontPath);
+    log("  >> Fonts downloaded to:", colorDim(targetFontPath));
   } else {
-    console.log("  >> Fonts already installed, skipping:", targetFontPath);
+    log("  >> Fonts already installed, skipping:", colorDim(targetFontPath));
   }
 
   // write to build file

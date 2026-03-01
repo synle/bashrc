@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    console.log("      >> Failed to get the path", err);
+    log("      >> Failed to get the path", colorDim(err));
   }
 
   return null;
@@ -129,22 +129,22 @@ async function _getPathSublimeText() {
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  console.log(`  >> Sublime Text Plugins:`);
+  log(`  >> Sublime Text Plugins:`);
   const allPlugins = [`sublime-text-plugins-refresh-on-focus.py`];
 
   // write to build file
-  console.log(`    >> For prebuilt configs`);
+  log(`    >> For prebuilt configs`);
   for (const pluginCodePath of allPlugins) {
-    console.log(`      >> ${pluginCodePath}`);
+    log(`      >> ${pluginCodePath}`);
     writeToBuildFile({ file: pluginCodePath, data: readText(path.join("software/scripts", pluginCodePath)) });
   }
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  console.log("    >> For my own system", targetPath);
+  log("    >> For my own system", colorDim(targetPath));
   for (const pluginCodePath of allPlugins) {
     const fileDestPath = path.join(targetPath, path.join("Packages/User/", pluginCodePath));
-    console.log("      >> fileDestPath", fileDestPath);
+    log("      >> fileDestPath", colorDim(fileDestPath));
     writeText(fileDestPath, readText(path.join("software/scripts", pluginCodePath)));
   }
 }

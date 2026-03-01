@@ -116,7 +116,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    console.log("      >> Failed to get the path", err);
+    log("      >> Failed to get the path", colorDim(err));
   }
 
   return null;

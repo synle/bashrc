@@ -1,9 +1,9 @@
 /** * Configures Sumatra PDF reader theme and settings for Windows. */
 async function doWork() {
-  console.log("  >> Installing Windows Only - Sumatra Dracula Theme");
+  log("  >> Installing Windows Only - Sumatra Dracula Theme");
 
   const targetPath = path.join(getWindowAppDataLocalUserPath(), "SumatraPDF", "SumatraPDF-settings.txt");
-  console.log("    >> Configs", consoleLogColor4(targetPath));
+  log("    >> Configs", colorDim(targetPath));
 
   exitIfPathNotFound(targetPath);
 

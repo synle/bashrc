@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    console.log("      >> Failed to get the path", err);
+    log("      >> Failed to get the path", colorDim(err));
   }
 
   return null;
@@ -323,7 +323,7 @@ async function doWork() {
   ];
   // end COMMON_KEY_BINDINGS
 
-  console.log(`  >> VS Code Keybindings:`);
+  log(`  >> VS Code Keybindings:`);
 
   // write to build file
   const comments = "Preferences Open Keyboard Shortcuts (JSON)";
@@ -353,7 +353,7 @@ async function doWork() {
 
   // for my own system
   let targetPaths = await _getVSCodeAndVSCodiumPaths();
-  console.log("    >> For my own system: ", targetPaths?.length);
+  log("    >> For my own system: ", colorDim(targetPaths?.length));
   for (const targetPath of targetPaths) {
     writeConfigToFile(targetPath, "User/keybindings.json", _getConfigs());
   }

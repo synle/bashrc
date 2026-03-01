@@ -5,10 +5,10 @@ async function doWork() {
   await mkdir(targetPath);
 
   targetPath = path.join(targetPath, "kde_konsole_profile.ini");
-  console.log("  >> Download KDE Konsole Profile", targetPath);
+  log("  >> Download KDE Konsole Profile", colorDim(targetPath));
 
   if (!is_os_arch_linux) {
-    console.log(consoleLogColor1("    >> Skipped : Only Arch Linux"));
+    log("    >> Skipped : Only Arch Linux");
     return process.exit();
   }
 

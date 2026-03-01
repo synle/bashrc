@@ -31,13 +31,13 @@ async function doWork() {
   exitIfLimitedSupportOs();
   let targetPath = _getPathSublimeMerge();
 
-  console.log("    >> Setting up Sublime Merge:", consoleLogColor4(targetPath));
+  log("    >> Setting up Sublime Merge:", colorDim(targetPath));
 
   // write to build file
   writeToBuildFile([{ file: "sublime-merge", data: SUBLIME_MERGE_CONFIG, isJson: true }]);
   exitIfPathNotFound(targetPath);
 
   const sublimeMergeConfigPath = path.join(targetPath, "Packages/User/Preferences.sublime-settings");
-  console.log("    >>", sublimeMergeConfigPath);
+  log("    >>", sublimeMergeConfigPath);
   writeJson(sublimeMergeConfigPath, SUBLIME_MERGE_CONFIG);
 }

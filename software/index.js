@@ -511,13 +511,10 @@ function writeText(filePath, text, override = true, suppressError = false) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      log(
-        colorCyan(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`),
-        colorDim(pathToUse),
-      );
+      log(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, colorDim(pathToUse));
     }
   } else {
-    log(colorCyan(`      << Updated [Modified] newContent=${newContent.length}`), colorDim(pathToUse));
+    log(`      << Updated [Modified] newContent=${newContent.length}`, colorDim(pathToUse));
     fs.writeFileSync(pathToUse, newContent);
   }
 }
@@ -531,9 +528,9 @@ function writeText(filePath, text, override = true, suppressError = false) {
 function touchFile(filePath, defaultContent = "") {
   const pathToUse = path.resolve(filePath);
   if (filePathExist(pathToUse)) {
-    log(colorCyan("      << Skipped [NotModified]"), colorDim(pathToUse));
+    log("      << Skipped [NotModified]", colorDim(pathToUse));
   } else {
-    log(colorCyan("      >> File Created"), colorDim(pathToUse));
+    log("      >> File Created", colorDim(pathToUse));
     fs.writeFileSync(pathToUse, defaultContent);
   }
 }
@@ -552,9 +549,9 @@ function backupText(filePath, text) {
     const backupPathToUse = pathToUse + "." + Date.now();
     writeText(backupPathToUse, oldText);
     writeText(pathToUse, text);
-    log(colorCyan("      << Backup Created"), colorDim(backupPathToUse));
+    log("      << Backup Created", colorDim(backupPathToUse));
   } else {
-    log(colorCyan("      << Backup Skipped [NotModified]"), colorDim(pathToUse));
+    log("      << Backup Skipped [NotModified]", colorDim(pathToUse));
   }
 }
 
@@ -653,10 +650,10 @@ function writeToBuildFile(tasks) {
       }
 
       if (isJson) {
-        log(colorGreen("    >> DEBUG Mode: write JSON to file"), colorDim(file));
+        log("    >> DEBUG Mode: write JSON to file", colorDim(file));
         writeJson(file, data, comments);
       } else {
-        log(colorGreen("    >> DEBUG Mode: write TEXT to file"), colorDim(file));
+        log("    >> DEBUG Mode: write TEXT to file", colorDim(file));
         data = (data || "").trim();
         writeText(file, (comments + data).trim());
       }
@@ -1082,7 +1079,7 @@ function exitIfPathCheck(targetPath, exitIfFound = false, message) {
   const found = filePathExist(targetPath);
   if (exitIfFound ? found : !found) {
     const defaultMessage = exitIfFound ? "Skipped : Found Folder" : "Skipped : Not Found";
-    log(colorGreen(`    >> ${message || defaultMessage}`), targetPath);
+    log(`    >> ${message || defaultMessage}`, targetPath);
     return process.exit();
   }
 }
@@ -1114,7 +1111,7 @@ function exitIfUnsupportedOs(...osFlags) {
   const flags = osFlags.flat();
   for (const flag of flags) {
     if (global[flag]) {
-      log(colorGreen(`    >> Skipped : Not supported on ${flag}`));
+      log(`    >> Skipped : Not supported on ${flag}`);
       return process.exit();
     }
   }
@@ -1126,7 +1123,7 @@ function exitIfUnsupportedOs(...osFlags) {
  */
 function exitIfLimitedSupportOs() {
   if (IS_LIGHT_WEIGHT_MODE) {
-    log(colorGreen(`    >> Skipped : Lightweight mode`));
+    log(`    >> Skipped : Lightweight mode`);
     return process.exit();
   }
   return exitIfUnsupportedOs(LIMITED_SUPPORT_OSES);
@@ -1144,7 +1141,7 @@ function exitIfNotTargetOs(...osFlags) {
       return;
     }
   }
-  log(colorGreen(`    >> Skipped : Only supported on ${flags.join(", ")}`));
+  log(`    >> Skipped : Only supported on ${flags.join(", ")}`);
   return process.exit();
 }
 
@@ -1159,7 +1156,7 @@ async function downloadWindowsApp(applicationName, findFilter) {
   try {
     await downloadFilesFromMainRepo(findFilter, targetPath);
   } catch (err) {
-    log(colorBgRed(`error ${err}`));
+    log(`error ${err}`);
   }
 }
 
@@ -1302,7 +1299,7 @@ function downloadFile(url, destination) {
 
   return new Promise((resolve, reject) => {
     if (filePathExist(destination)) {
-      log(colorCyan("      << Skipped [NotModified]"), colorDim(destination));
+      log("      << Skipped [NotModified]", colorDim(destination));
       return resolve(false);
     }
 
@@ -1358,10 +1355,10 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
     try {
       const downloaded = await downloadFile(file, destinationFile);
       if (downloaded === true) {
-        log(colorCyan("      >> Downloaded"), colorDim(destinationFile));
+        log("      >> Downloaded", colorDim(destinationFile));
       }
     } catch (err) {
-      log(colorCyan("      >> Error Downloading"), colorDim(file));
+      log("      >> Error Downloading", colorDim(file));
     }
   });
 
@@ -1479,18 +1476,18 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      echo(colorBgRed(`  >> [Ignored] - No sudo access: ${file}`));
+      echo(`  >> [Ignored] - No sudo access: ${file}`);
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        echo(colorBgRed(`  >> [Ignored] - OS Specific ${file}`));
+        echo(`  >> [Ignored] - OS Specific ${file}`);
         return false;
       }
     }
 
-    echo(colorGreen(`  >> [Accepted]: ${file}`));
+    echo(`  >> [Accepted]: ${file}`);
     return true;
   });
 }
@@ -1616,24 +1613,103 @@ function color(str, colorCode) {
 }
 
 /**
+ * Determines the appropriate color function for a log line based on marker keywords,
+ * indentation level, and marker direction (>> or <<).
+ *
+ * Color priority:
+ * 1. Error/fail keywords => colorBgRed
+ * 2. Success/done keywords => colorGreen
+ * 3. >> marker layer 1 (0-1 spaces) => colorYellow
+ * 4. >> marker layer 2 (2-5 spaces) => colorCyan
+ * 5. >> marker layer 3 (6+ spaces) => colorMagenta
+ * 6. << marker layer 1 (0-1 spaces) => colorOrange
+ * 7. << marker layer 2 (2-5 spaces) => colorBlue
+ * 8. << marker layer 3 (6+ spaces) => colorGreen
+ * 9. Otherwise no auto-color (returns null)
+ *
+ * @param {string} text - The joined log text to analyze
+ * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
+ */
+function _getAutoColor(text) {
+  const lower = text.toLowerCase();
+
+  // 1. Error/fail keywords => colorBgRed
+  if (/\b(fail|failed|error)\b/i.test(text)) {
+    return colorBgRed;
+  }
+
+  // 2. Success/done/finished keywords => colorGreen
+  if (/\b(done|success|finished|complete|completed)\b/i.test(text)) {
+    return colorGreen;
+  }
+
+  // 3. Marker-based coloring (>> or <<) with indentation levels
+  const markerMatch = text.match(/^(\s*)(>>|<<)/);
+  if (markerMatch) {
+    const indent = markerMatch[1].length;
+    const direction = markerMatch[2];
+
+    if (direction === ">>") {
+      if (indent <= 1) return colorYellow;
+      if (indent <= 5) return colorCyan;
+      return colorMagenta;
+    }
+
+    if (direction === "<<") {
+      if (indent <= 1) return colorOrange;
+      if (indent <= 5) return colorBlue;
+      return colorGreen;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Applies auto-color to log data. If the joined text matches a color rule,
+ * wraps each non-dim element with that color. Elements already wrapped in
+ * ANSI dim codes are preserved as-is.
+ * @param {any[]} data - The log arguments
+ * @returns {any[]} The potentially colorized log arguments
+ */
+function _applyAutoColor(data) {
+  const joined = data.map((s) => String(s)).join(" ");
+  const autoColor = _getAutoColor(joined);
+  if (!autoColor) return data;
+
+  return data.map((elem) => {
+    const str = String(elem);
+    // Preserve elements that are already dim-colored
+    if (str.includes("\x1b[2m")) return elem;
+    // Strip any existing ANSI codes before re-coloring
+    const stripped = str.replace(/\x1b\[[0-9;]*m/g, "");
+    return autoColor(stripped);
+  });
+}
+
+/**
  * Logs colored text via the bash pipeline by emitting a `node -e "console.log(...)"` command.
  * Uses JSON.stringify for safe encoding of ANSI escape codes and special characters.
+ * Auto-applies colors based on marker keywords and indentation level.
  * Use this in the orchestration layer (index.js) where stdout is piped to bash.
- * @param {...string} data - ANSI-colored strings to log
+ * @param {...string} data - Strings to log (colors applied automatically)
  */
 function echo(...data) {
-  const joined = data.map((s) => String(s)).join(" ");
+  const coloredData = _applyAutoColor(data);
+  const joined = coloredData.map((s) => String(s)).join(" ");
   const jsonStr = JSON.stringify(joined).replace(/'/g, "'\\''");
   emitBash(`node -e 'console.log(${jsonStr})'`);
 }
 
 /**
  * Logs colored text directly to the Node.js console (stderr-safe).
+ * Auto-applies colors based on marker keywords and indentation level.
  * Use this inside individual script files where stdout is NOT piped to bash.
- * @param {...string} data - ANSI-colored strings to log
+ * @param {...string} data - Strings to log (colors applied automatically)
  */
 function log(...data) {
-  console.log(...data);
+  const coloredData = _applyAutoColor(data);
+  console.log(...coloredData);
 }
 
 /**
@@ -1664,32 +1740,6 @@ const LOG_COLORS = {
 /** @type {(str: string) => string} */ const colorOrange = (str) => color(str, LOG_COLORS.orange);
 /** @type {(str: string) => string} */ const colorBlue = (str) => color(str, LOG_COLORS.blue);
 
-/**
- * ANSI color codes used to dynamically generate legacy global color helper functions.
- * The loop below creates consoleLogColor{N} for each non-null entry,
- * where N is the array index. Index 0 is intentionally null (unused).
- * These are preserved for backward compatibility in script files.
- */
-const CONSOLE_COLORS = [
-  null, // 0: Not used
-  "32m", // 1: Green (Success)
-  "33m", // 2: Yellow (Warning)
-  "36m", // 3: Cyan (Info)
-  "2m", // 4: Dim (Metadata)
-  "1;31m", // 5: Bold Red (Standard Error)
-  "41;97;1m", // 6: BG Red + White Text (CRITICAL ERROR)
-  "43;30m", // 7: BG Yellow + Black Text (ATTENTION)
-  "35m", // 8: Magenta (System)
-  "38;5;208m", // 9: Orange (256-color mode - unique Warning)
-];
-
-for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
-  const colorCode = CONSOLE_COLORS[idx];
-
-  if (colorCode) {
-    globalThis["consoleLogColor" + idx] = (str) => color(str, colorCode);
-  }
-}
 
 //////////////////////////////////////////////////////
 // Script Processing & Execution
@@ -1820,10 +1870,10 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     tempFileCommand = `cat ${tmpFile} | ${runner}`;
     const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`;
 
-    echo(colorCyan(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`));
+    echo(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`);
     emitBash(fullCommand);
   } else {
-    echo(colorCyan(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `));
+    echo(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `);
   }
 
   scriptProcessingResults.push({
@@ -1850,7 +1900,7 @@ function printOsFlags() {
       .forEach((envKey) => {
         const isEnabled = process.env[envKey] === "1";
         const label = envKey.padEnd(30, " ") + ":";
-        echo(isEnabled ? colorGreen(`${label} Yes`) : colorDim(`${label} No`));
+        echo(isEnabled ? `${label} Yes` : colorDim(`${label} No`));
       });
   }
 }
@@ -1874,7 +1924,7 @@ function printSectionBlock(header, lines = []) {
   echo(colorYellow(LINE_BREAK_EQUAL));
   echo(colorBgYellow(`>> ${header}`));
   for (const line of lines) {
-    echo(colorYellow(`  ${line}`));
+    echo(`  ${line}`);
   }
   echo(colorYellow(LINE_BREAK_EQUAL));
 }
@@ -1903,7 +1953,7 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    echo(colorYellow(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
+    echo(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`);
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
@@ -1926,14 +1976,12 @@ function printScriptProcessingResults(results) {
   for (const result of results) {
     if (result.status === "success") {
       echo(
-        colorGreen(
-          !result.fileMatchState
-            ? `[Success] ${result.file}. ${result.description}`
-            : `[Success] ${result.file} (${result.path}). ${result.description}`,
-        ),
+        !result.fileMatchState
+          ? `[Success] ${result.file}. ${result.description}`
+          : `[Success] ${result.file} (${result.path}). ${result.description}`,
       );
     } else {
-      echo(colorBgRed(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`));
+      echo(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`);
     }
   }
 
@@ -1954,7 +2002,7 @@ async function _doWorkTestFiles() {
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  echo(colorRed(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`));
+  echo(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`);
 
   const softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
@@ -1974,13 +2022,7 @@ async function _doWorkTestFiles() {
 async function _doWorkFullRun() {
   const softwareFiles = await getSoftwareScriptFiles();
 
-  echo(
-    colorGreen(
-      `
->> Installing Configurations: ${softwareFiles.length} Files
-`,
-    ),
-  );
+  echo(`>> Installing Configurations: ${softwareFiles.length} Files`);
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
   _runScripts(softwareFiles, allRepoFiles, "Full Run");
@@ -2003,7 +2045,7 @@ async function _doWorkFullRun() {
     .filter(([, value]) => !value)
     .map(([key]) => key);
   if (missingEnvVars.length > 0) {
-    echo(colorBgRed(`Missing required environment variables: ${missingEnvVars.join(", ")}`));
+    echo(`Missing required environment variables error: ${missingEnvVars.join(", ")}`);
     process.exit(1);
   }
 
@@ -2026,11 +2068,11 @@ async function _doWorkFullRun() {
   // for debugging
   process
     .on("unhandledRejection", (reason, p) => {
-      echo(colorBgRed(`[Error] unhandledRejection ${reason} Unhandled Rejection at Promise ${p}`));
+      echo(`[Error] unhandledRejection ${reason} Unhandled Rejection at Promise ${p}`);
       process.exit(1);
     })
     .on("uncaughtException", (err) => {
-      echo(colorBgRed(`[Error] uncaughtException ${err} Uncaught Exception thrown`));
+      echo(`[Error] uncaughtException ${err} Uncaught Exception thrown`);
       process.exit(1);
     });
 
@@ -2047,6 +2089,6 @@ async function _doWorkFullRun() {
       await _doWorkFullRun();
     }
   } catch (err) {
-    echo(colorBgRed(`>> Error ${err}`));
+    echo(`>> Error ${err}`);
   }
 })();

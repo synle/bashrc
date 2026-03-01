@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = "/etc/ssh/sshd_config";
 
-  console.log("  >> Setting up SSH Server sshd_config", consoleLogColor4(targetPath));
+  log("  >> Setting up SSH Server sshd_config", colorDim(targetPath));
 
   exitIfPathNotFound(targetPath, "Not supported - Exit - targetPath not found");
 
@@ -11,7 +11,7 @@ async function doWork() {
     portToUse = "2222";
   }
 
-  console.log("   >> Needs Firewall Changes:", "https://bit.ly/3pMqCIg");
+  log("   >> Needs Firewall Changes:", "https://bit.ly/3pMqCIg");
 
   replaceTextLineByLine(targetPath, [
     [new RegExp(`[# ]*Port[ ]*[0-9]+`), `Port ${portToUse}`],

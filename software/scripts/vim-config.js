@@ -232,16 +232,16 @@ async function doWork() {
   writeToBuildFile([{ file: "vimrc", data: contentVimrc }]);
 
   targetPath = path.join(BASE_HOMEDIR_LINUX, ".vimrc");
-  console.log("  >> Setting up vimrc on Linux / Mac / WSL", consoleLogColor4(targetPath));
+  log("  >> Setting up vimrc on Linux / Mac / WSL", colorDim(targetPath));
   writeText(targetPath, contentOnlyFullVimrc + contentVimrc);
 
   if (is_os_window) {
     const windowsVimrcPath = path.join(getWindowUserBaseDir(), ".vimrc");
     if (filePathExist(windowsVimrcPath)) {
-      console.log("  >> Setting up vimrc on Windows", consoleLogColor4(windowsVimrcPath));
+      log("  >> Setting up vimrc on Windows", colorDim(windowsVimrcPath));
       writeText(windowsVimrcPath, contentVimrc);
     } else {
-      console.log("  >> Skipped vimrc on Windows (file does not exist)", consoleLogColor4(windowsVimrcPath));
+      log("  >> Skipped vimrc on Windows (file does not exist)", colorDim(windowsVimrcPath));
     }
   }
 }
