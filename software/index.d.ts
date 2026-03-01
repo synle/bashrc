@@ -497,16 +497,45 @@ declare function emitBash(...args: any[]): void;
  */
 declare function color(str: string, colorCode: string): string;
 /**
+ * Determines the appropriate color function for a log line based on marker keywords,
+ * indentation level, and marker direction (>> or <<).
+ *
+ * Color priority:
+ * 1. Error/fail keywords => colorBgRed
+ * 2. Success/done keywords => colorGreen
+ * 3. >> marker layer 1 (0-1 spaces) => colorYellow
+ * 4. >> marker layer 2 (2-5 spaces) => colorCyan
+ * 5. >> marker layer 3 (6+ spaces) => colorMagenta
+ * 6. << marker layer 1 (0-1 spaces) => colorOrange
+ * 7. << marker layer 2 (2-5 spaces) => colorBlue
+ * 8. << marker layer 3 (6+ spaces) => colorGreen
+ * 9. Otherwise no auto-color (returns null)
+ *
+ * @param {string} text - The joined log text to analyze
+ * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
+ */
+declare function _getAutoColor(text: string): ((str: string) => string) | null;
+/**
+ * Applies auto-color to log data. If the joined text matches a color rule,
+ * wraps each non-dim element with that color. Elements already wrapped in
+ * ANSI dim codes are preserved as-is.
+ * @param {any[]} data - The log arguments
+ * @returns {any[]} The potentially colorized log arguments
+ */
+declare function _applyAutoColor(data: any[]): any[];
+/**
  * Logs colored text via the bash pipeline by emitting a `node -e "console.log(...)"` command.
  * Uses JSON.stringify for safe encoding of ANSI escape codes and special characters.
+ * Auto-applies colors based on marker keywords and indentation level.
  * Use this in the orchestration layer (index.js) where stdout is piped to bash.
- * @param {...string} data - ANSI-colored strings to log
+ * @param {...string} data - Strings to log (colors applied automatically)
  */
 declare function echo(...data: string[]): void;
 /**
  * Logs colored text directly to the Node.js console (stderr-safe).
+ * Auto-applies colors based on marker keywords and indentation level.
  * Use this inside individual script files where stdout is NOT piped to bash.
- * @param {...string} data - ANSI-colored strings to log
+ * @param {...string} data - Strings to log (colors applied automatically)
  */
 declare function log(...data: string[]): void;
 /**
@@ -766,10 +795,3 @@ declare namespace LOG_COLORS {
 /** @type {(str: string) => string} */ declare const colorMagenta: (str: string) => string;
 /** @type {(str: string) => string} */ declare const colorOrange: (str: string) => string;
 /** @type {(str: string) => string} */ declare const colorBlue: (str: string) => string;
-/**
- * ANSI color codes used to dynamically generate legacy global color helper functions.
- * The loop below creates consoleLogColor{N} for each non-null entry,
- * where N is the array index. Index 0 is intentionally null (unused).
- * These are preserved for backward compatibility in script files.
- */
-declare const CONSOLE_COLORS: string[];

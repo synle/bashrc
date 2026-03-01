@@ -1740,7 +1740,6 @@ const LOG_COLORS = {
 /** @type {(str: string) => string} */ const colorOrange = (str) => color(str, LOG_COLORS.orange);
 /** @type {(str: string) => string} */ const colorBlue = (str) => color(str, LOG_COLORS.blue);
 
-
 //////////////////////////////////////////////////////
 // Script Processing & Execution
 //////////////////////////////////////////////////////
