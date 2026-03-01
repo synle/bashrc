@@ -1666,43 +1666,30 @@ function color(str, colorCode) {
 }
 
 /**
+ * Checks if a string looks like a file path or URL.
+ * @param {string} text - The text to check
+ * @returns {boolean} True if the text matches a path or URL pattern
+ */
+function _looksLikePathOrUrl(text) {
+  return /^(\/[\w./-]+|~\/[\w./-]+|https?:\/\/\S+|[a-zA-Z]:\\[\w.\\/-]+)$/.test(text);
+}
+
+/**
  * Determines the appropriate color function for a log line based on marker keywords,
  * indentation level, and marker direction (>> or <<).
  *
  * Color priority:
- * 1. Error/fail keywords => colorBgRed
- * 2. Success/done keywords => colorGreen
- * 3. >> marker layer 1 (0-1 spaces) => colorYellow
- * 4. >> marker layer 2 (2-5 spaces) => colorCyan
- * 5. >> marker layer 3 (6+ spaces) => colorMagenta
- * 6. << marker layer 1 (0-1 spaces) => colorOrange
- * 7. << marker layer 2 (2-5 spaces) => colorBlue
- * 8. << marker layer 3 (6+ spaces) => colorGreen
- * 9. Otherwise no auto-color (returns null)
+ * 1. >> / << markers (highest) — colored by indentation level
+ * 2. Error/fail keywords => colorBgRed
+ * 3. Success/done keywords => colorGreen
+ * 4. Path or URL-like text => colorDim
+ * 5. Otherwise no auto-color (returns null)
  *
  * @param {string} text - The joined log text to analyze
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
  */
 function _getAutoColor(text) {
-  // 1. Error/fail keywords => colorBgRed
-  if (/(?<=^| )(err|error|errors|fail|failed|failing|failure|failures)(?=$| )/i.test(text)) {
-    return colorBgRed;
-  }
-
-  // 2. Success/done/finished keywords => colorGreen
-  // (?<!auto) prevents matching "autocomplete"
-  if (
-    /(?<=^| )(done|success|succeed|succeeded|succeeds|finished|accept|accepted|(?<!auto)complete|(?<!auto)completed)(?=$| )/i.test(text)
-  ) {
-    return colorGreen;
-  }
-
-  // 3. Path or URL-like text => colorDim
-  if (/^(\/[\w./-]+|~\/[\w./-]+|https?:\/\/\S+|[a-zA-Z]:\\[\w.\\/-]+)$/.test(text.trim())) {
-    return colorDim;
-  }
-
-  // 4. Marker-based coloring (>> or <<) with indentation levels
+  // 1. Marker-based coloring (>> or <<) with indentation levels — highest priority
   const markerMatch = text.match(/^(\s*)(>>|<<)/);
   if (markerMatch) {
     const level = Math.ceil(markerMatch[1].length / 2);
@@ -1721,6 +1708,24 @@ function _getAutoColor(text) {
     }
   }
 
+  // 2. Error/fail keywords => colorBgRed
+  if (/(?<=^| )(err|error|errors|fail|failed|failing|failure|failures)(?=$| )/i.test(text)) {
+    return colorBgRed;
+  }
+
+  // 3. Success/done/finished keywords => colorGreen
+  // (?<!auto) prevents matching "autocomplete"
+  if (
+    /(?<=^| )(done|success|succeed|succeeded|succeeds|finished|accept|accepted|(?<!auto)complete|(?<!auto)completed)(?=$| )/i.test(text)
+  ) {
+    return colorGreen;
+  }
+
+  // 4. Path or URL-like text => colorDim
+  if (_looksLikePathOrUrl(text.trim())) {
+    return colorDim;
+  }
+
   return null;
 }
 
@@ -1732,10 +1737,6 @@ function _getAutoColor(text) {
  * @returns {any[]} The potentially colorized log arguments
  */
 function _applyAutoColor(data) {
-  const joined = data.map((s) => String(s)).join(" ");
-  const autoColor = _getAutoColor(joined);
-  if (!autoColor) return data;
-
   return data.map((elem) => {
     let str = String(elem);
     // Preserve elements that are already dim-colored
@@ -1747,7 +1748,8 @@ function _applyAutoColor(data) {
       const level = Math.ceil(spaces.length / 2);
       return "".padStart(level * 2, " ") + marker;
     });
-    return autoColor(str);
+    const autoColor = _getAutoColor(str);
+    return autoColor ? autoColor(str) : str;
   });
 }
 

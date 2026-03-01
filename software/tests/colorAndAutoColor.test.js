@@ -249,9 +249,14 @@ describe("_getAutoColor", () => {
 });
 
 describe("_applyAutoColor", () => {
-  it("should colorize elements when keyword matches", () => {
-    const result = _applyAutoColor(["task", "done"]);
-    expect(result.every((s) => String(s).includes("\x1b["))).toBe(true);
+  it("should colorize element that matches a keyword", () => {
+    const result = _applyAutoColor(["done"]);
+    expect(String(result[0])).toContain("\x1b[");
+  });
+
+  it("should leave non-matching elements unchanged", () => {
+    const result = _applyAutoColor(["task"]);
+    expect(result[0]).toBe("task");
   });
 
   it("should return data unchanged when no match", () => {
@@ -262,17 +267,8 @@ describe("_applyAutoColor", () => {
 
   it("should preserve dim-colored elements", () => {
     const dimStr = "\x1b[2mdim text\x1b[0m";
-    const result = _applyAutoColor([">> hello", dimStr]);
-    expect(result[1]).toBe(dimStr);
-  });
-
-  it("should strip existing ANSI codes before re-coloring", () => {
-    const colored = "\x1b[31mred text\x1b[0m";
-    const result = _applyAutoColor([">> hello", colored]);
-    const str = String(result[1]);
-    // should not contain the original red code
-    expect(str).not.toContain("\x1b[31m");
-    expect(str).toContain("red text");
+    const result = _applyAutoColor([dimStr]);
+    expect(result[0]).toBe(dimStr);
   });
 
   it("should normalize odd leading spaces before markers", () => {
@@ -280,5 +276,35 @@ describe("_applyAutoColor", () => {
     const str = String(result[0]);
     // 3 spaces → ceil(3/2)*2 = 4 spaces
     expect(str).toContain("    >> hello");
+  });
+
+  it("should dim path-like elements", () => {
+    const result = _applyAutoColor(["  >> Register ProfileBlock", "/Users/syle/.bash_syle"]);
+    const pathStr = String(result[1]);
+    expect(pathStr).toContain("\x1b[2m");
+    expect(pathStr).toContain("/Users/syle/.bash_syle");
+  });
+
+  it("should dim URL-like elements", () => {
+    const result = _applyAutoColor(["  >> Fetching", "https://example.com/file.txt"]);
+    const urlStr = String(result[1]);
+    expect(urlStr).toContain("\x1b[2m");
+    expect(urlStr).toContain("https://example.com/file.txt");
+  });
+
+  it("should not dim non-path elements", () => {
+    const result = _applyAutoColor(["  >> Register ProfileBlock", "Editor Config"]);
+    const textStr = String(result[1]);
+    expect(textStr).not.toContain("\x1b[2m");
+  });
+
+  it("should color each element independently", () => {
+    const result = _applyAutoColor([">> Installing", "done", "/usr/local/bin"]);
+    // >> marker → colored
+    expect(String(result[0])).toContain("\x1b[");
+    // "done" → green
+    expect(String(result[1])).toContain("\x1b[32m");
+    // path → dim
+    expect(String(result[2])).toContain("\x1b[2m");
   });
 });
