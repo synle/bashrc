@@ -62,12 +62,8 @@ async function _getBlockedHostNames(staticBlockedHosts) {
 async function doWork() {
   exitIfLimitedSupportOs();
 
-  const staticBlockedHosts = _consolidateHosts(
-    convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`)),
-  );
-  const whitelistedHosts = _consolidateHosts(
-    convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`)),
-  );
+  const staticBlockedHosts = _consolidateHosts(convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`)));
+  const whitelistedHosts = _consolidateHosts(convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`)));
 
   const targetPath = _getEtcHostsPath();
   let etcHostTextContent = readText(targetPath);
@@ -82,9 +78,7 @@ async function doWork() {
     HOME_HOST_NAMES.map(([hostName, hostIp]) => `${hostIp} ${hostName}`).join("\n"),
   );
 
-  const blockedHosts = (await _getBlockedHostNames(staticBlockedHosts)).filter(
-    (hostName) => !whitelistedHosts.includes(hostName),
-  );
+  const blockedHosts = (await _getBlockedHostNames(staticBlockedHosts)).filter((hostName) => !whitelistedHosts.includes(hostName));
 
   etcHostTextContent = appendTextBlock(
     etcHostTextContent,
