@@ -2,9 +2,10 @@
  * Parses the IP address config file and generates hostname mapping files in grouped, flattened, and etc-hosts formats.
  */
 async function doWork() {
-  const targetPath = "software/metadata/ip-address.config";
+  const sourcePath = "software/metadata/ip-address.config";
+  const targetPath = ".build/ip-address.config";
 
-  const hostMappingApiResponse = await fetchUrlAsString(targetPath);
+  const hostMappingApiResponse = await fetchUrlAsString(sourcePath);
 
   const HOST_SPLIT_REGEX = /[\:,|]/gi;
   const UNWANTED_KEYWORDS = ["NO_SSH", "OSX_REMOTE", "WINDOWS_REMOTE"];

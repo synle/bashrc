@@ -2190,7 +2190,7 @@ async function _doWorkFullRun() {
 
   // getting the ip address mapping
   try {
-    HOME_HOST_NAMES = await fetchUrlAsJson(`software/metadata/ip-address.config.hostnamesFlattened`);
+    HOME_HOST_NAMES = await fetchUrlAsJson(`.build/ip-address.config.hostnamesFlattened`);
   } catch (err) {
     HOME_HOST_NAMES = [];
   }
