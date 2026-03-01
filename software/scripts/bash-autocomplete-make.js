@@ -2,7 +2,7 @@
  * Installs Make bash autocomplete for Makefile target names.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   console.log("    >> Make Bash Autocomplete");
 
   registerWithBashSyleAutocompleteWithRawContent(

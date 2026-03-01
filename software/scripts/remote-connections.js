@@ -102,7 +102,7 @@ UserName=${DEFAULT_CONNECTION_USER}
  * Creates the remote connections directory and generates both RDP and VNC connection files for home network hosts.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   await mkdir(BASE_REMOTE_CONNECTIONS_PATH);
 
   doWorkVnc();

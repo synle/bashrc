@@ -65,7 +65,7 @@ function _consolidateHosts(hosts) {
  * Loads blocked and whitelisted host configs, then updates the system etc hosts file with home network mappings and blocked hosts.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   // initiate the vars
   STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`));
 

@@ -33,7 +33,7 @@ function getPowershellTargetBlock() {
  * Generates the VS Code / VSCodium setup script for both bash and PowerShell environments.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   console.log(`  >> VS Code Setup Script:`);
 
   const script = `

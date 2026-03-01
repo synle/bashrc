@@ -11,7 +11,7 @@ const DEFAULT_SSH_PORT = "22";
  * Writes the SSH client config file with home network hosts and connection settings.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
 
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, ".ssh");
   const targetPath = path.join(baseSshPath, "config");

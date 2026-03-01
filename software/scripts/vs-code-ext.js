@@ -46,7 +46,7 @@ const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(onlyCodiumExtensions, 
  * Generates platform-specific extension installation scripts for VS Code and VSCodium.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   console.log(`  >> VS Code Extensions:`);
 
   // write to build file

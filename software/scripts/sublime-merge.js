@@ -28,7 +28,7 @@ function _getPathSublimeMerge() {
  * Writes Sublime Merge settings to the build output and applies them to the local installation.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   let targetPath = _getPathSublimeMerge();
 
   console.log("    >> Setting up Sublime Merge:", consoleLogColor4(targetPath));

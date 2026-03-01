@@ -98,7 +98,7 @@ function _getVSCodeAndVSCodiumPaths() {
  * @returns {Promise<string|null>} Path to the Sublime Text config directory, or null if not found.
  */
 async function _getPathSublimeText() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
 
   try {
@@ -179,7 +179,7 @@ function _formatKey(mouseMaps, osKeyToUse) {
  * Resolves OS key, writes prebuilt mouse map configs per platform, and applies the config to the local Sublime Text installation.
  */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   OS_KEY = resolveOsKey({ windows: WINDOWS_OS_KEY, mac: MAC_OSX_KEY, linux: LINUX_OS_KEY });
 
   console.log(`  >> Setting up Sublime Text MouseMaps`);

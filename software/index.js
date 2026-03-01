@@ -130,10 +130,9 @@ const scriptProcessingResults = [];
 // export FONT_SIZE=15;
 // export FONT_FAMILY='Fira Code'
 // export TAB_SIZE=2
-const fontSize = parseInteger(process.env.FONT_SIZE, 10);
-const tabSize = parseInteger(process.env.TAB_SIZE, 2);
-
-const fontFamily = process.env.FONT_FAMILY || "Fira Code";
+const fontSize = getRuntimeOption("FONT_SIZE", (v) => parseInteger(v, 10));
+const tabSize = getRuntimeOption("TAB_SIZE", (v) => parseInteger(v, 2));
+const fontFamily = getRuntimeOption("FONT_FAMILY") || "Fira Code";
 
 /**
  * Editor configuration object containing font settings, tab size, max line length,
@@ -295,7 +294,6 @@ const EDITOR_CONFIGS = {
  * @type {Array}
  */
 let HOME_HOST_NAMES = [];
-
 
 //////////////////////////////////////////////////////
 // OS Flags
@@ -864,7 +862,7 @@ function getWindowAppDataLocalUserPath() {
  * @returns {string} The path to ~/Library/Application Support
  */
 function getOsxApplicationSupportCodeUserPath() {
-  return path.join(process.env.HOME, "Library/Application Support");
+  return path.join(BASE_HOMEDIR_LINUX, "Library/Application Support");
 }
 
 //////////////////////////////////////////////////////
@@ -1102,12 +1100,41 @@ function exitIfPathFound(targetPath, message) {
  * @param {...string} osFlags - OS flag names to check (e.g. "is_os_android_termux", "is_os_arch_linux")
  */
 function exitIfUnsupportedOs(...osFlags) {
-  for (const flag of osFlags) {
+  const flags = osFlags.flat();
+  for (const flag of flags) {
     if (global[flag]) {
       console.log(consoleLogColor1(`    >> Skipped : Not supported on ${flag}`));
       return process.exit();
     }
   }
+}
+
+/**
+ * Guard clause: exits if the current OS is a limited-support platform (LIMITED_SUPPORT_OSES)
+ * or if IS_LIGHT_WEIGHT_MODE is enabled.
+ */
+function exitIfLimitedSupportOs() {
+  if (IS_LIGHT_WEIGHT_MODE) {
+    console.log(consoleLogColor1(`    >> Skipped : Lightweight mode`));
+    return process.exit();
+  }
+  return exitIfUnsupportedOs(LIMITED_SUPPORT_OSES);
+}
+
+/**
+ * Guard clause: exits the process if the current OS does NOT match any of the given OS flags.
+ * Inverse of exitIfUnsupportedOs — use this to restrict a script to specific platforms only.
+ * @param {...string} osFlags - OS flag names that are allowed (e.g. "is_os_mac", "is_os_window")
+ */
+function exitIfNotTargetOs(...osFlags) {
+  const flags = osFlags.flat();
+  for (const flag of flags) {
+    if (global[flag]) {
+      return;
+    }
+  }
+  console.log(consoleLogColor1(`    >> Skipped : Only supported on ${flags.join(", ")}`));
+  return process.exit();
 }
 
 /**
@@ -1423,9 +1450,7 @@ async function getSoftwareScriptFiles() {
   let softwareFiles = files.filter((f) => !f.includes(".common.js")).sort();
 
   // Exclude OS-specific script folders that don't belong to the current platform.
-  const pathsToIgnore = OS_SCRIPT_PATHS
-    .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
-    .filter((s) => !!s);
+  const pathsToIgnore = OS_SCRIPT_PATHS.map(([valid, pathToCheck]) => (!valid ? pathToCheck : "")).filter((s) => !!s);
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
@@ -1762,7 +1787,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
  * @returns {void}
  */
 function printOsFlags() {
-  if (process.env.SHOULD_PRINT_OS_FLAGS === "true") {
+  if (SHOULD_PRINT_OS_FLAGS) {
     printSectionBlock(`OS Flags`);
     console.log(`
       node -e """
@@ -1840,9 +1865,7 @@ function printScriptProcessingResults(results) {
   const successCount = results.filter((r) => r.status === "success").length;
   const errorCount = results.filter((r) => r.status === "error").length;
 
-  printSectionBlock(
-    `Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`,
-  );
+  printSectionBlock(`Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`);
 
   for (const result of results) {
     if (result.status === "success") {
@@ -1854,10 +1877,9 @@ function printScriptProcessingResults(results) {
         ),
       );
     } else {
-      console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ''}`));
+      console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`));
     }
   }
-
 
   // Clean up temp scripts on success, keep them on failure or debug mode for inspection
   if (errorCount === 0 && !IS_DEBUG) {
@@ -1865,15 +1887,12 @@ function printScriptProcessingResults(results) {
   }
 }
 
-
 /**
  * Runs a subset of scripts specified by the TEST_SCRIPT_FILES environment variable.
  * @returns {Promise<void>}
  */
 async function _doWorkTestFiles() {
-  const filesToTest = process.env.TEST_SCRIPT_FILES || "";
-
-  if (!filesToTest) {
+  if (!TEST_SCRIPT_FILES) {
     console.log(`echo '''    >> Skipped'''`);
     return;
   }
@@ -1881,11 +1900,11 @@ async function _doWorkTestFiles() {
   const allRepoFiles = await getAllRepoSoftwareFiles();
   console.log(
     echoColor5(
-      `>> _doWorkTestFiles => filesToTest (process.env.TEST_SCRIPT_FILES)=${filesToTest.length}, and allRepoFiles=${allRepoFiles.length}.`,
+      `>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`,
     ),
   );
 
-  const softwareFiles = filesToTest
+  const softwareFiles = TEST_SCRIPT_FILES
     .split(/[,;\s]/)
     .map((s) => s.trim())
     .filter((s) => !!s);
@@ -1969,7 +1988,7 @@ async function _doWorkFullRun() {
     if (typeof doWork === "function") {
       // if doWork is defined externally (e.g. by a script concatenated after this file), use it
       await doWork();
-    } else if (process.env.TEST_SCRIPT_FILES) {
+    } else if (TEST_SCRIPT_FILES) {
       // test specific files
       await _doWorkTestFiles();
     } else {

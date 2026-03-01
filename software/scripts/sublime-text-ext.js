@@ -98,7 +98,7 @@ function _getVSCodeAndVSCodiumPaths() {
  * @returns {Promise<string|null>} Path to the Sublime Text config directory, or null if not found.
  */
 async function _getPathSublimeText() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
 
   try {
@@ -164,7 +164,7 @@ const toInstallExtensions = convertTextToList(`
 `);
 
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux", "is_os_arch_linux", "is_os_chromeos");
+  exitIfLimitedSupportOs();
   console.log(`  >> Sublime Text Extensions:`);
 
   // write to build file
