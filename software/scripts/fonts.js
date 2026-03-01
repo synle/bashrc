@@ -2,7 +2,21 @@ const linuxFontPath = "/usr/share/fonts/truetype";
 
 /** * Downloads ligature fonts and generates platform-specific font installation guides. */
 async function doWork() {
-  exitIfUnsupportedOs("is_os_android_termux");
+  // Android Termux: download FiraCode to ~/.termux/font.ttf
+  if (is_os_android_termux) {
+    const termuxFontDir = path.join(HOME_DIR, ".termux");
+    const termuxFontPath = path.join(termuxFontDir, "font.ttf");
+    if (IS_FORCE_REFRESH || !fs.existsSync(termuxFontPath)) {
+      await mkdir(termuxFontDir);
+      const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Regular.ttf`;
+      console.log("  >> Downloading Termux font:", termuxFontPath);
+      await downloadAsset(fontUrl, termuxFontPath);
+    } else {
+      console.log("  >> Termux font already installed, skipping:", termuxFontPath);
+    }
+    return;
+  }
+
   const targetFontPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
 
   console.log("  >> Download Ligatures Fonts:", targetFontPath);

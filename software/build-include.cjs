@@ -15,7 +15,8 @@
  *
  *    For JS/TS files, use double-slash comments:
  *      // BEGIN path/to/file.js
- *      // END path/to/file.js
+
+// END path/to/file.js
  *
  * 2. Config mode (INCLUSIONS array):
  *    For non-file-path keys or when transforms are needed.

@@ -46,6 +46,7 @@ if [ "$is_os_ubuntu" = "1" ]; then
   ##########################################################
   # User Permissions
   ##########################################################
+  echo '>> Setting up user permissions'
   sudo usermod -aG input ${USER}
   sudo usermod -aG video ${USER}
 

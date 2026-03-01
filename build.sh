@@ -21,11 +21,10 @@
 #   host-mappings   Build Host Mappings (skip in CI)
 #   backup-xfce     Backup XFCE Configuration (if applicable)
 #   webapp          Build Web App
-#   build-include   Update files with BEGIN/END block inclusions
 ####################################################################
 
 # All valid step names
-ALL_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp build-include"
+ALL_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
 
 ####################################################################
 # Parse arguments
@@ -81,6 +80,7 @@ echo "Steps to run: $_normalized"
 # Sets up repo identifiers, URL exports, OS detection flags,
 # and writes ~/.bash_syle_common
 ####################################################################
+{
 export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="master"
 export BASH_SYLE='~/.bash_syle'
@@ -108,6 +108,7 @@ is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d 
 is_os_android_termux=0 && { [ -n "$TERMUX_VERSION" ] || [ -d /data/data/com.termux ]; } && is_os_android_termux=1
 is_os_arch_linux=0 && command grep -Eiq "ID(_LIKE)?=(arch|steamos)" /etc/os-release 2>/dev/null && is_os_arch_linux=1
 is_os_steamdeck=0 && [[ "$is_os_arch_linux" == "1" ]] && command grep -qi "ID=steamos" /etc/os-release 2>/dev/null && is_os_steamdeck=1
+is_os_steamos=0 && command grep -qi "ID=steamos" /etc/os-release 2>/dev/null && is_os_steamos=1
 is_os_redhat=0 && command grep -Eiq "ID(_LIKE)?=(fedora|rhel|centos|rocky|alma)" /etc/os-release 2>/dev/null && is_os_redhat=1
 is_os_window=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && is_os_window=1
 is_os_wsl=0 && { [[ "$is_os_window" == "1" ]] || command grep -qi microsoft /proc/version 2>/dev/null; } && is_os_wsl=1
@@ -232,6 +233,7 @@ function run_files() {
   fi | node | bash
   unset TEST_SCRIPT_FILES
 }
+}
 # END bootstrap/common-env.sh
 
 
@@ -328,14 +330,6 @@ npm run build
 echo '>> Built webapp artifacts:'
 find dist
 echo '> DONE Building'
-fi
-
-##########################################################
-# step: build-include - Update files with BEGIN/END block inclusions
-##########################################################
-if should_run build-include; then
-echo '> Running build-include substitutions'
-node software/build-include.cjs
 fi
 
 exit
