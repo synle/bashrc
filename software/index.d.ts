@@ -420,7 +420,7 @@ declare function downloadAssets(urls: string[], destinationDir: string): Promise
 declare function downloadWindowsApp(applicationName: string, findFilter: Function): Promise<void>;
 /**
  * Downloads binary files from the main GitHub repo that match a filter function.
- * Only considers files under the "binaries/" path, excluding markdown files.
+ * Only considers files under the "assets/" path, excluding markdown files.
  * @param {function(string): boolean} findHandler - Filter function to select which files to download
  * @param {string} destinationBaseDir - The local directory to save downloaded files to
  * @returns {Promise<string[]>} The full list of repo files (not just downloaded ones)
