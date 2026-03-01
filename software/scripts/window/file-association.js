@@ -37,6 +37,14 @@ async function doWork() {
     cmd /c 'ftype ${sevenZipProgramBinaryName}="${sevenZipBinaryPath}" "%1"'
 
     ${LINE_BREAK_HASH}
+    # 7-Zip context menu settings
+    # Only show: Extract Here (0x02), Extract to <folder> (0x04), Add to <name>.zip (0x20)
+    ${LINE_BREAK_HASH}
+    New-Item -Path "HKCU:\\Software\\7-Zip\\Options" -Force | Out-Null
+    Set-ItemProperty -Path "HKCU:\\Software\\7-Zip\\Options" -Name "ContextMenu" -Value 0x26 -Type DWord
+    Set-ItemProperty -Path "HKCU:\\Software\\7-Zip\\Options" -Name "CascadedMenu" -Value 1 -Type DWord
+
+    ${LINE_BREAK_HASH}
     # text file association
     ${LINE_BREAK_HASH}
     $textExtensions = @(
@@ -81,6 +89,10 @@ async function doWork() {
     cmd /c "ftype ${sublimeProgramBinaryName}="
     cmd /c "ftype ${vlcProgramBinaryName}="
     cmd /c "ftype ${sevenZipProgramBinaryName}="
+
+    # Remove 7-Zip context menu registry settings
+    Remove-ItemProperty -Path "HKCU:\\Software\\7-Zip\\Options" -Name "ContextMenu" -Force -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path "HKCU:\\Software\\7-Zip\\Options" -Name "CascadedMenu" -Force -ErrorAction SilentlyContinue
 
     # Remove file association overrides from registry
     $extensions = @(
