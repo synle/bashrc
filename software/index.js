@@ -1472,18 +1472,18 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      console.log(echoColorError(`  >> [Ignored] - No sudo access: ${file}`));
+      emitBash(echoColorError(`  >> [Ignored] - No sudo access: ${file}`));
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        console.log(echoColorError(`  >> [Ignored] - OS Specific ${file}`));
+        emitBash(echoColorError(`  >> [Ignored] - OS Specific ${file}`));
         return false;
       }
     }
 
-    console.log(echoColorSuccess(`  >> [Accepted]: ${file}`));
+    emitBash(echoColorSuccess(`  >> [Accepted]: ${file}`));
     return true;
   });
 }
@@ -1596,6 +1596,15 @@ function deleteFolder(targetPath, recursive = true) {
  */
 function echo(str) {
   return `echo '''${str}'''`;
+}
+
+/**
+ * Emits a string to stdout for bash to execute in the `node | bash` pipeline.
+ * Use this instead of console.log when outputting bash commands from the orchestration layer.
+ * @param {...any} args - The bash command(s) to emit
+ */
+function emitBash(...args) {
+  console.log(...args);
 }
 
 /**
@@ -1784,10 +1793,10 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     tempFileCommand = `cat ${tmpFile} | ${runner}`;
     const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`;
 
-    console.log(echoColor3(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`));
-    console.log(fullCommand);
+    emitBash(echoColor3(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`));
+    emitBash(fullCommand);
   } else {
-    console.log(echoColor3(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `));
+    emitBash(echoColor3(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `));
   }
 
   scriptProcessingResults.push({
@@ -1809,7 +1818,7 @@ function processScriptFile(file, originalFile, allRepoFiles) {
 function printOsFlags() {
   if (SHOULD_PRINT_OS_FLAGS) {
     printSectionBlock(`OS Flags`);
-    console.log(`
+    emitBash(`
       node -e """
         Object.keys(process.env)
           .filter(envKey => envKey.indexOf('is_os_') === 0)
@@ -1835,12 +1844,12 @@ function printScriptsToRun(scriptsToRun) {
  * @returns {void}
  */
 function printSectionBlock(header, lines = []) {
-  console.log(echoColorWarning(LINE_BREAK_EQUAL));
-  console.log(echoColorAttention(`>> ${header}`));
+  emitBash(echoColorWarning(LINE_BREAK_EQUAL));
+  emitBash(echoColorAttention(`>> ${header}`));
   for (const line of lines) {
-    console.log(echoColorWarning(`  ${line}`));
+    emitBash(echoColorWarning(`  ${line}`));
   }
-  console.log(echoColorWarning(LINE_BREAK_EQUAL));
+  emitBash(echoColorWarning(LINE_BREAK_EQUAL));
 }
 
 //////////////////////////////////////////////////////
@@ -1867,7 +1876,7 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    console.log(echoColor2(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
+    emitBash(echoColor2(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
@@ -1889,7 +1898,7 @@ function printScriptProcessingResults(results) {
 
   for (const result of results) {
     if (result.status === "success") {
-      console.log(
+      emitBash(
         echoColorSuccess(
           !result.fileMatchState
             ? `[Success] ${result.file}. ${result.description}`
@@ -1897,13 +1906,13 @@ function printScriptProcessingResults(results) {
         ),
       );
     } else {
-      console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`));
+      emitBash(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`));
     }
   }
 
   // Clean up temp scripts on success, keep them on failure or debug mode for inspection
   if (errorCount === 0 && !IS_DEBUG) {
-    console.log(`rm -f ${TEMP_SCRIPT_PREFIX}*`);
+    emitBash(`rm -f ${TEMP_SCRIPT_PREFIX}*`);
   }
 }
 
@@ -1913,12 +1922,12 @@ function printScriptProcessingResults(results) {
  */
 async function _doWorkTestFiles() {
   if (!TEST_SCRIPT_FILES) {
-    console.log(`echo '''    >> Skipped'''`);
+    emitBash(`echo '''    >> Skipped'''`);
     return;
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  console.log(echoColor5(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`));
+  emitBash(echoColor5(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`));
 
   const softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
@@ -1938,7 +1947,7 @@ async function _doWorkTestFiles() {
 async function _doWorkFullRun() {
   const softwareFiles = await getSoftwareScriptFiles();
 
-  console.log(
+  emitBash(
     echoColor1(
       `
 >> Installing Configurations: ${softwareFiles.length} Files
