@@ -344,7 +344,7 @@ fi
 ############################################################################################
 if should_run update-hosts; then
 echo '> Update /etc/hosts'
-run_files "$run_mode" "software/scripts/etc-hosts.su.js"
+run_files "$run_mode" "software/metadata/hosts-blocked-ads.config.js"
 fi
 
 exit

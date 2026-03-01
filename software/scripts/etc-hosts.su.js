@@ -113,6 +113,6 @@ async function doWork() {
       log(">>> Only Windows run command: ipconfig /flushdns");
     }
   } catch (err) {
-    log(">> Skipped : Permission denied (needs to Run as Admin for Windows WSL)");
+    log(">>", "Error : Permission denied (needs to Run as Admin for Windows WSL)", err);
   }
 }

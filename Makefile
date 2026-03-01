@@ -7,7 +7,6 @@ build:
 build_hosts:
 	bash build.sh update-hosts
 
-
 start:
 	bash run.sh
 
