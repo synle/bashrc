@@ -11,6 +11,7 @@ run:
 	bash run.sh
 
 test:
+	@if [ "$$CI" = "true" ]; then npm test; fi
 	bash run.sh --force
 
 format:

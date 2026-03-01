@@ -123,7 +123,7 @@ GitHub Actions (`.github/workflows/build-main.yml`):
 - **Bash functions must use the `function` keyword**: Always write `function foo() {` not `foo() {`
 - **JSDoc on all functions/constants** in `software/index.js` — used by `tsc --declaration --allowJs` to generate `software/index.d.ts`
 - **Private helpers** in script files are prefixed with `_` (e.g., `_getGitConfig()`)
-- **Unit tests** use vitest (`npm run test:unit`). Tests live in `software/tests/`. Run after modifying `software/index.js` utilities.
+- **Unit tests** use vitest (`npm run test:unit`). Tests live in `software/tests/`. Run after modifying `software/index.js` utilities. See "Testing" section below.
 - `make test` runs all scripts locally as a smoke test (not unit tests)
 - **Comment section headers** use two standardized forms:
   - **Paired** (for major sections): `################################################################################` (80 chars) / `# ---- Title ----` / `################################################################################`
@@ -173,9 +173,46 @@ async function doWork() {
 - `writeConfigToFile(basePath, fileName, data, isJson?)` — Write JSON config files (editors)
 - `touchFile(filePath, defaultContent?)` — Create file only if it doesn't exist
 - `writeToBuildFile([{file, data, commentStyle?}])` — Write to `.build/` directory (build-configs step)
-- `registerWithBashSyleProfile(configKey, content)` — Register a delimited block in `~/.bash_syle`
-- `registerWithBashSyleAutocompleteWithRawContent(configKey, content)` — Register autocomplete in `~/.bash_syle_autocomplete`
-- `prependTextBlock(content, configKey, configValue)` / `appendTextBlock(...)` — Manage delimited sections within file content
+- `registerProfileBlock({profilePath, configKey, content, isPrepend?, addCodeFolding?})` — Generic: reads file, inserts/updates a delimited block, writes back. `isPrepend` (default false) controls position, `addCodeFolding` (default true) wraps content in `{ }`
+- `registerWithBashSyleProfile(configKey, content)` — Delegates to `registerProfileBlock` with `BASH_SYLE_PATH`, prepend, code folding
+- `registerWithBashSyleAutocompleteWithRawContent(configKey, content)` — Delegates to `registerProfileBlock` with `BASH_SYLE_AUTOCOMPLETE_PATH`, append, no code folding
+- `registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl)` — Downloads spec file and registers spec-based autocomplete (see Complete-Spec section)
+- `prependTextBlock(content, configKey, configValue)` / `appendTextBlock(...)` — Manage delimited sections within file content (uses `# BEGIN_CONTENT key` / `# END_CONTENT key` markers)
+
+### Complete-Spec Autocomplete System
+
+A spec-file-based bash autocomplete system. Instead of hand-writing per-command completion functions, a simple text spec file maps commands/subcommands to their options, and a generic completer reads it at tab-completion time.
+
+**Spec file format** — one line per command/subcommand:
+
+```
+command|subcommand1,subcommand2,--flag1,--flag2
+command subcommand1|--opt1,--opt2,-s
+```
+
+- Left of `|` = command prefix (space-separated), right of `|` = comma-separated completions
+- Base command line lists subcommands; subcommand lines list flags/options
+
+**Files:**
+
+| File | Purpose |
+|------|---------|
+| `software/scripts/bash-autocomplete-complete-spec.js` | Script that registers spec-based autocomplete (currently docker) |
+| `software/scripts/bash-autocomplete-complete-spec-<cmd>` | Spec data file for `<cmd>` |
+| `~/.bash_syle_complete-spec-<cmd>` | Runtime copy on user's machine |
+| `~/.bash_syle_autocomplete` | Where the generated completer function is written |
+
+**Registration flow** (`registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl)`):
+
+1. Downloads spec file via `fetchUrlAsString`
+2. Saves to `~/.bash_syle_complete-spec-<command>`
+3. Generates a `__spec_complete_<command>()` bash function that greps the spec file at completion time (tries longest prefix first)
+4. Registers via `complete -F __spec_complete_<command> <command>` into `~/.bash_syle_autocomplete`
+
+**Adding a new command:**
+
+1. Create spec file: `software/scripts/bash-autocomplete-complete-spec-<command>`
+2. Add to existing script or create new one calling `registerWithBashSyleAutocompleteWithCompleteSpec("<command>", "software/scripts/bash-autocomplete-complete-spec-<command>")`
 
 ### Runtime flags
 
@@ -193,5 +230,30 @@ async function doWork() {
 - `trimLeftSpaces(text)` — Remove common leading whitespace (for heredoc-style template strings)
 - `convertTextToList(...texts)` — Split text to unique trimmed lines, filtering comments
 - `resolveOsKey({mac, windows, linux})` — Returns the value matching the current OS
-- **Logging:** `echo(coloredStr)` — emits `node -e "console.log(...)"` into the bash pipeline (orchestration layer); `log(coloredStr)` — calls `console.log()` directly (script files)
-- **Color helpers (for logWithBash):** `colorGreen`, `colorYellow`, `colorCyan`, `colorDim`, `colorRed`, `colorBgRed`, `colorBgYellow`, `colorMagenta`, `colorOrange`, `colorBlue` — return ANSI-colored strings. Legacy `consoleLogColor{N}` aliases exist on globalThis for backward compatibility in script files.
+- **Logging:** `echo(coloredStr)` — emits `node -e "console.log(...)"` into the bash pipeline (orchestration layer); `log(coloredStr)` — calls `console.log()` directly (script files). Both auto-color each argument via `_applyAutoColor` → `_getAutoColor` per element.
+- **Color helpers:** `colorGreen`, `colorYellow`, `colorCyan`, `colorDim`, `colorRed`, `colorBgRed`, `colorBgYellow`, `colorMagenta`, `colorOrange`, `colorBlue` — return ANSI-colored strings. Legacy `consoleLogColor{N}` aliases exist on globalThis for backward compatibility in script files.
+- **Auto-color system** (`_getAutoColor`): Colors each log argument independently. Priority: (1) `>>` / `<<` markers by indent level (yellow/cyan/magenta for `>>`, orange/blue/magenta for `<<`), (2) error keywords → `colorBgRed`, (3) success keywords → `colorGreen`, (4) path/URL-like strings → `colorDim`. Indent normalization: `Math.ceil(spaces / 2)` so odd spaces don't mis-bucket. Path/URL arguments (e.g. `/usr/local/bin`, `https://...`) are always dimmed, even alongside colored markers.
+
+## Testing
+
+Unit tests use **vitest** (v0.34.6) with a **Node `vm` sandbox** that executes actual `software/index.js` code.
+
+### Test setup (`software/tests/setup.js`)
+
+- Loads `software/index.js`, strips the IIFE bootstrap, replaces `const`/`let` with `var` so declarations become sandbox properties
+- Runs in `vm.runInNewContext` with mocked `require` (fs, path, os, child_process), `process.env`, and `process.exit`
+- Overrides I/O functions with in-memory mocks: `readText`/`writeText` use `fileSystem` object, `fetchUrlAsString`/`fetchUrlAsJson` use `fetchResponses` object
+- `getIndexFunction(name)` / `getIndexConstant(name)` — access any sandbox function or constant by name
+- `fileSystem` and `fetchResponses` auto-reset between tests via `beforeEach`
+
+### Test files
+
+| File | Covers |
+|------|--------|
+| `updateTextBlock.test.js` | `updateTextBlock`, `appendTextBlock`, `prependTextBlock` |
+| `registerProfile.test.js` | `registerProfileBlock`, `registerWithBashSyleProfile`, `registerWithBashSyleAutocompleteWithRawContent`, `registerWithBashSyleAutocompleteWithCompleteSpec` |
+| `parsers.test.js` | `parseString`, `parseInteger`, `parseBoolean` |
+| `textUtils.test.js` | `cleanupExtraWhitespaces`, `convertTextToList`, `convertRawTextToList`, `convertTextToHosts`, `trimLeftSpaces`, `trimSpacesOnBothEnd`, `calculatePercentage`, `getRootDomainFrom`, `clone`, `getFullUrl` |
+| `colorAndAutoColor.test.js` | `color`, `_getAutoColor`, `_applyAutoColor` |
+| `fileIO.test.js` | `readText`, `writeText`, `appendText`, `writeJson`, `writeConfigToFile`, `parseJsonWithComments` |
+| `guardClauses.test.js` | `resolveOsKey` |
