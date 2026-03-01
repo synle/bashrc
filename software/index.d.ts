@@ -519,19 +519,21 @@ declare function emitBash(...args: any[]): void;
  */
 declare function color(str: string, colorCode: string): string;
 /**
+ * Checks if a string looks like a file path or URL.
+ * @param {string} text - The text to check
+ * @returns {boolean} True if the text matches a path or URL pattern
+ */
+declare function _looksLikePathOrUrl(text: string): boolean;
+/**
  * Determines the appropriate color function for a log line based on marker keywords,
  * indentation level, and marker direction (>> or <<).
  *
  * Color priority:
- * 1. Error/fail keywords => colorBgRed
- * 2. Success/done keywords => colorGreen
- * 3. >> marker layer 1 (0-1 spaces) => colorYellow
- * 4. >> marker layer 2 (2-5 spaces) => colorCyan
- * 5. >> marker layer 3 (6+ spaces) => colorMagenta
- * 6. << marker layer 1 (0-1 spaces) => colorOrange
- * 7. << marker layer 2 (2-5 spaces) => colorBlue
- * 8. << marker layer 3 (6+ spaces) => colorGreen
- * 9. Otherwise no auto-color (returns null)
+ * 1. >> / << markers (highest) — colored by indentation level
+ * 2. Error/fail keywords => colorBgRed
+ * 3. Success/done keywords => colorGreen
+ * 4. Path or URL-like text => colorDim
+ * 5. Otherwise no auto-color (returns null)
  *
  * @param {string} text - The joined log text to analyze
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies

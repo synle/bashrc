@@ -195,12 +195,12 @@ command subcommand1|--opt1,--opt2,-s
 
 **Files:**
 
-| File | Purpose |
-|------|---------|
-| `software/scripts/bash-autocomplete-complete-spec.js` | Script that registers spec-based autocomplete (currently docker) |
-| `software/scripts/bash-autocomplete-complete-spec-<cmd>` | Spec data file for `<cmd>` |
-| `~/.bash_syle_complete-spec-<cmd>` | Runtime copy on user's machine |
-| `~/.bash_syle_autocomplete` | Where the generated completer function is written |
+| File                                                     | Purpose                                                          |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| `software/scripts/bash-autocomplete-complete-spec.js`    | Script that registers spec-based autocomplete (currently docker) |
+| `software/scripts/bash-autocomplete-complete-spec-<cmd>` | Spec data file for `<cmd>`                                       |
+| `~/.bash_syle_complete-spec-<cmd>`                       | Runtime copy on user's machine                                   |
+| `~/.bash_syle_autocomplete`                              | Where the generated completer function is written                |
 
 **Registration flow** (`registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl)`):
 
@@ -248,12 +248,12 @@ Unit tests use **vitest** (v0.34.6) with a **Node `vm` sandbox** that executes a
 
 ### Test files
 
-| File | Covers |
-|------|--------|
-| `updateTextBlock.test.js` | `updateTextBlock`, `appendTextBlock`, `prependTextBlock` |
-| `registerProfile.test.js` | `registerProfileBlock`, `registerWithBashSyleProfile`, `registerWithBashSyleAutocompleteWithRawContent`, `registerWithBashSyleAutocompleteWithCompleteSpec` |
-| `parsers.test.js` | `parseString`, `parseInteger`, `parseBoolean` |
-| `textUtils.test.js` | `cleanupExtraWhitespaces`, `convertTextToList`, `convertRawTextToList`, `convertTextToHosts`, `trimLeftSpaces`, `trimSpacesOnBothEnd`, `calculatePercentage`, `getRootDomainFrom`, `clone`, `getFullUrl` |
-| `colorAndAutoColor.test.js` | `color`, `_getAutoColor`, `_applyAutoColor` |
-| `fileIO.test.js` | `readText`, `writeText`, `appendText`, `writeJson`, `writeConfigToFile`, `parseJsonWithComments` |
-| `guardClauses.test.js` | `resolveOsKey` |
+| File                        | Covers                                                                                                                                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `updateTextBlock.test.js`   | `updateTextBlock`, `appendTextBlock`, `prependTextBlock`                                                                                                                                                 |
+| `registerProfile.test.js`   | `registerProfileBlock`, `registerWithBashSyleProfile`, `registerWithBashSyleAutocompleteWithRawContent`, `registerWithBashSyleAutocompleteWithCompleteSpec`                                              |
+| `parsers.test.js`           | `parseString`, `parseInteger`, `parseBoolean`                                                                                                                                                            |
+| `textUtils.test.js`         | `cleanupExtraWhitespaces`, `convertTextToList`, `convertRawTextToList`, `convertTextToHosts`, `trimLeftSpaces`, `trimSpacesOnBothEnd`, `calculatePercentage`, `getRootDomainFrom`, `clone`, `getFullUrl` |
+| `colorAndAutoColor.test.js` | `color`, `_getAutoColor`, `_applyAutoColor`                                                                                                                                                              |
+| `fileIO.test.js`            | `readText`, `writeText`, `appendText`, `writeJson`, `writeConfigToFile`, `parseJsonWithComments`                                                                                                         |
+| `guardClauses.test.js`      | `resolveOsKey`                                                                                                                                                                                           |
