@@ -57,6 +57,10 @@ async function doWork() {
     padding: "2 0 2 0", // top right bottom left padding
     bellStyle: "all", // audible + visual bell
     historySize, // scrollback buffer size
+    scrollbarState: "visible", // scrollbar visibility (options: "visible", "hidden")
+    antialiasingMode: "cleartype", // font smoothing mode (options: "cleartype", "grayscale", "aliased")
+    intenseTextStyle: "bright", // how bold/intense text is rendered (options: "bright", "bold", "all", "none")
+    adjustIndistinguishableColors: "indexed", // auto-adjust colors too similar to background (options: "indexed", "always", "never")
     // useAcrylic: true,                             // translucent background (disabled)
   };
 
@@ -76,6 +80,12 @@ async function doWork() {
     // input
     multiLinePasteWarning: false, // suppress multi-line paste warning
     focusFollowMouse: true, // focus pane on mouse hover
+
+    // window
+    launchMode: "maximized", // start maximized (options: "default", "maximized", "fullscreen", "focus", "maximizedFocus")
+    showTerminalTitleInTitlebar: true, // show active terminal title in the window title bar (true/false)
+    startOnUserLogin: true, // auto-launch Windows Terminal on user login (true/false)
+    snapToGridOnResize: true, // snap window resize to character cell boundaries (true/false)
 
     // window size and position
     initialCols: 80, // default column count
