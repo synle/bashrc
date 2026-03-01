@@ -38,9 +38,7 @@ describe("findDirList", () => {
   });
 
   it("should return empty array when no directories match", () => {
-    mockFsDirEntries["/src"] = [
-      { name: "lib", isDirectory: () => true, isFile: () => false },
-    ];
+    mockFsDirEntries["/src"] = [{ name: "lib", isDirectory: () => true, isFile: () => false }];
     const result = findDirList("/src", /^nothing$/);
     expect(result).toEqual([]);
   });
@@ -81,35 +79,25 @@ describe("findDirSingle", () => {
   });
 
   it("should return null when nothing matches", () => {
-    mockFsDirEntries["/mnt"] = [
-      { name: "c", isDirectory: () => true, isFile: () => false },
-    ];
+    mockFsDirEntries["/mnt"] = [{ name: "c", isDirectory: () => true, isFile: () => false }];
     expect(findDirSingle("/mnt", /^z$/)).toBeUndefined();
   });
 });
 
 describe("findFileRecursive", () => {
   it("should find a file at top level", () => {
-    mockFsDirEntries["/project"] = [
-      { name: "readme.md", isDirectory: () => false, isFile: () => true },
-    ];
+    mockFsDirEntries["/project"] = [{ name: "readme.md", isDirectory: () => false, isFile: () => true }];
     expect(findFileRecursive("/project", /readme/)).toBe("/project/readme.md");
   });
 
   it("should find a file in a subdirectory", () => {
-    mockFsDirEntries["/project"] = [
-      { name: "src", isDirectory: () => true, isFile: () => false },
-    ];
-    mockFsDirEntries["/project/src"] = [
-      { name: "app.js", isDirectory: () => false, isFile: () => true },
-    ];
+    mockFsDirEntries["/project"] = [{ name: "src", isDirectory: () => true, isFile: () => false }];
+    mockFsDirEntries["/project/src"] = [{ name: "app.js", isDirectory: () => false, isFile: () => true }];
     expect(findFileRecursive("/project", /app\.js/)).toBe("/project/src/app.js");
   });
 
   it("should return null when file not found", () => {
-    mockFsDirEntries["/project"] = [
-      { name: "lib", isDirectory: () => true, isFile: () => false },
-    ];
+    mockFsDirEntries["/project"] = [{ name: "lib", isDirectory: () => true, isFile: () => false }];
     mockFsDirEntries["/project/lib"] = [];
     expect(findFileRecursive("/project", /missing/)).toBeNull();
   });
@@ -121,9 +109,7 @@ describe("findFileRecursive", () => {
 
 describe("findFirstDirFromList", () => {
   it("should return first matching directory from list of search props", () => {
-    mockFsDirEntries["/opt"] = [
-      { name: "homebrew", isDirectory: () => true, isFile: () => false },
-    ];
+    mockFsDirEntries["/opt"] = [{ name: "homebrew", isDirectory: () => true, isFile: () => false }];
     const result = findFirstDirFromList([
       ["/nonexistent", /test/],
       ["/opt", /homebrew/],
@@ -133,9 +119,7 @@ describe("findFirstDirFromList", () => {
 
   it("should return undefined when nothing matches", () => {
     mockFsDirEntries["/opt"] = [];
-    const result = findFirstDirFromList([
-      ["/opt", /nothing/],
-    ]);
+    const result = findFirstDirFromList([["/opt", /nothing/]]);
     expect(result).toBeUndefined();
   });
 });

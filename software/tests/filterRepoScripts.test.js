@@ -45,20 +45,12 @@ describe("filterRepoScripts", () => {
   });
 
   it("should deduplicate entries", () => {
-    const result = filterRepoScripts([
-      "software/scripts/git.js",
-      "software/scripts/git.js",
-      "software/scripts/git.js",
-    ]);
+    const result = filterRepoScripts(["software/scripts/git.js", "software/scripts/git.js", "software/scripts/git.js"]);
     expect(result.filter((f) => f === "software/scripts/git.js").length).toBe(1);
   });
 
   it("should sort by slash depth first, then alphabetically", () => {
-    const result = filterRepoScripts([
-      "software/scripts/mac/dock.js",
-      "software/scripts/git.js",
-      "software/scripts/vim.js",
-    ]);
+    const result = filterRepoScripts(["software/scripts/mac/dock.js", "software/scripts/git.js", "software/scripts/vim.js"]);
     // fewer slashes first
     expect(result.indexOf("software/scripts/git.js")).toBeLessThan(result.indexOf("software/scripts/mac/dock.js"));
   });
@@ -94,11 +86,7 @@ describe("filterRepoScripts", () => {
   });
 
   it("should exclude files with unsupported extensions", () => {
-    const result = filterRepoScripts([
-      "software/scripts/config.yaml",
-      "software/scripts/data.csv",
-      "software/scripts/style.css",
-    ]);
+    const result = filterRepoScripts(["software/scripts/config.yaml", "software/scripts/data.csv", "software/scripts/style.css"]);
     expect(result).toEqual([]);
   });
 });
