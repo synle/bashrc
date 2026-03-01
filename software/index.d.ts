@@ -390,12 +390,6 @@ declare function calculatePercentage(count: number, total: number): string;
  */
 declare function getRootDomainFrom(url: string): string;
 /**
- * Creates a directory (and any necessary parent directories) at the given path.
- * @param {string} targetPath - The directory path to create
- * @returns {Promise<string>} Resolves with the stdout of the mkdir command
- */
-declare function mkdir(targetPath: string): Promise<string>;
-/**
  * Downloads a file from a URL to a local destination. Skips download if the file already exists.
  * @param {string} url - The URL to download from (can be relative to REPO_PREFIX_URL)
  * @param {string} destination - The local file path to save to
@@ -498,6 +492,12 @@ declare function fetchUrlAsJson(url: string): Promise<object>;
  * @returns {Promise<string>|string} The command's stdout
  */
 declare function execBash(cmd: string, sync?: boolean, options?: object): Promise<string> | string;
+/**
+ * Creates a directory (and any necessary parent directories) at the given path.
+ * @param {string} targetPath - The directory path to create
+ * @returns {Promise<string>} Resolves with the stdout of the mkdir command
+ */
+declare function mkdir(targetPath: string): Promise<string>;
 /**
  * Deletes a directory or file at the given path using rm -rf.
  * @param {string} targetPath - The path to delete
@@ -678,11 +678,16 @@ declare const http: typeof import("http");
 declare const exec: any;
 declare const execSync: any;
 declare const BASE_HOMEDIR_LINUX: "";
-declare const BASH_SYLE_PATH: any;
-declare const BASH_SYLE_AUTOCOMPLETE_PATH: any;
-declare const BASH_SYLE_COMMON_PATH: any;
-declare const BASE_C_DIR_WINDOW: "/mnt/c";
-declare const BASE_D_DIR_WINDOW: "/mnt/d";
+/** @type {string} Path to the main ~/.bash_syle profile file */
+declare const BASH_SYLE_PATH: string;
+/** @type {string} Path to the ~/.bash_syle_autocomplete file for autocomplete registrations */
+declare const BASH_SYLE_AUTOCOMPLETE_PATH: string;
+/** @type {string} Path to the ~/.bash_syle_common shared config file */
+declare const BASH_SYLE_COMMON_PATH: string;
+/** @type {string} WSL mount point for Windows C: drive */
+declare const BASE_C_DIR_WINDOW: string;
+/** @type {string} WSL mount point for Windows D: drive */
+declare const BASE_D_DIR_WINDOW: string;
 /** @type {string} Target Node.js version for fnm to install */
 declare const NODE_JS_VERSION: string;
 /** @type {string} Path to the fnm (Fast Node Manager) installation directory */
@@ -732,9 +737,12 @@ declare const scriptProcessingResults: Array<{
   fileMatchState: string | undefined;
   description: string;
 }>;
-declare const fontSize: any;
-declare const tabSize: any;
-declare const fontFamily: any;
+/** @type {number} Editor font size (min 10, default 10). Override with FONT_SIZE env var */
+declare const fontSize: number;
+/** @type {number} Editor tab/indentation size (min 2, default 2). Override with TAB_SIZE env var */
+declare const tabSize: number;
+/** @type {string} Editor font family (default 'Fira Code'). Override with FONT_FAMILY env var */
+declare const fontFamily: string;
 /**
  * Editor configuration object containing font settings, tab size, max line length,
  * and ignore lists for files, folders, and binaries.
@@ -805,12 +813,18 @@ declare const OS_SCRIPT_PATHS: Array<[boolean, string]>;
  * @type {string[]}
  */
 declare const LIMITED_SUPPORT_OSES: string[];
+/** @type {string} Base directory for user-specific custom tweaks (~/_extra or {WindowsHome}/_extra) */
 declare const BASE_SY_CUSTOM_TWEAKS_DIR: string;
+/** @type {string} Hash-character line break for section separators (e.g. "####...####") */
 declare const LINE_BREAK_HASH: string;
+/** @type {string} Slash-character line break for section separators (e.g. "////...////") */
 declare const LINE_BREAK_SLASH: string;
+/** @type {string} Equal-character line break for section separators (e.g. "====...====") */
 declare const LINE_BREAK_EQUAL: string;
-declare const TEXT_BLOCK_START_MARKER: "BEGIN_CONTENT";
-declare const TEXT_BLOCK_END_MARKER: "END_CONTENT";
+/** @type {string} Opening delimiter for managed text blocks (used by updateTextBlock/appendTextBlock/prependTextBlock) */
+declare const TEXT_BLOCK_START_MARKER: string;
+/** @type {string} Closing delimiter for managed text blocks (used by updateTextBlock/appendTextBlock/prependTextBlock) */
+declare const TEXT_BLOCK_END_MARKER: string;
 declare namespace LOG_COLORS {
   let green: string;
   let yellow: string;

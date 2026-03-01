@@ -6,7 +6,7 @@ async function doWork() {
 
   if (!filePathExist(targetPath)) {
     log("    >> Skipped - Path Not Found: ", targetPath);
-  }  else {
+  } else {
     const pathsToCreate = convertTextToList(`
     ${path.join(targetPath, "Applications")}
     ${path.join(targetPath, "Desktop")}
@@ -16,11 +16,11 @@ async function doWork() {
     ${path.join(targetPath, "Pictures")}
   `);
 
-  log("    >> total", pathsToCreate.length);
+    log("    >> total", pathsToCreate.length);
 
-  for (const pathToCreate of pathsToCreate) {
-    log("    >> ", pathToCreate);
-    await mkdir(pathToCreate);
-  }
+    for (const pathToCreate of pathsToCreate) {
+      log("    >> ", pathToCreate);
+      await mkdir(pathToCreate);
+    }
   }
 }

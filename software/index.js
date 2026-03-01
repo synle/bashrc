@@ -1691,7 +1691,9 @@ function _getAutoColor(text) {
 
   // 2. Success/done/finished keywords => colorGreen
   // (?<!auto) prevents matching "autocomplete"
-  if (/(?<=^| )(done|success|succeed|succeeded|succeeds|finished|accept|accepted|(?<!auto)complete|(?<!auto)completed)(?=$| )/i.test(text)) {
+  if (
+    /(?<=^| )(done|success|succeed|succeeded|succeeds|finished|accept|accepted|(?<!auto)complete|(?<!auto)completed)(?=$| )/i.test(text)
+  ) {
     return colorGreen;
   }
 
