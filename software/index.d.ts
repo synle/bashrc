@@ -526,9 +526,10 @@ declare function color(str: string, colorCode: string): string;
 declare function _looksLikePathOrUrl(text: string): boolean;
 declare function _getAutoColor(text: any): (str: string) => string;
 /**
- * Applies auto-color to log data. If the joined text matches a color rule,
- * wraps each non-dim element with that color. Elements already wrapped in
- * ANSI dim codes are preserved as-is.
+ * Applies auto-color to each log element independently via _getAutoColor.
+ * Elements with existing ANSI codes are preserved as-is.
+ * Marker elements (e.g. `>>>`) are stripped to a single char with indentation
+ * matching the marker count (e.g. `>>> hello` → `   > hello`).
  * @param {any[]} data - The log arguments
  * @returns {any[]} The potentially colorized log arguments
  */
@@ -818,18 +819,19 @@ declare const TEXT_BLOCK_END_MARKER: string;
  * indentation level, and marker direction (>> or <<).
  *
  * Color priority:
- * 1. >>, <<, ## markers (highest) — colored by indentation level
- *    >> uses foreground colors (yellow/cyan/magenta)
- *    << uses foreground colors (orange/blue/magenta)
- *    ## uses background colors (bgYellow/bgCyan/bgMagenta)
+ * 1. Repeated-char markers (highest) — level = marker length - 1
+ *    `>` markers: yellow(0), green(1), cyan(2), blue(3), magenta(4+)
+ *    `<` markers: orange(0), red(1), blue(2), magenta(3+)
+ *    `#` markers (min 2): bgYellow(0-1), bgOrange(2), bgCyan(3), bgMagenta(4+)
  * 2. Error/fail keywords => colorBgRed
  * 3. Success/done keywords => colorGreen
  * 4. Path or URL-like text => colorDim
  * 5. Otherwise no auto-color (returns null)
  *
- * @param {string} text - The joined log text to analyze
+ * @param {string} text - The log text to analyze
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
  */
+/** @type {RegExp} Matches repeated marker chars (>, <, ##) at start of string, followed by space or end */
 declare const _MARKER_REGEX: RegExp;
 declare namespace LOG_COLORS {
   let green: string;

@@ -238,11 +238,11 @@ command subcommand1|--opt1,--opt2,-s
 
 Use repeated marker characters to indicate nesting depth. The number of characters determines the color level:
 
-| Marker | Level 0 | Level 1 | Level 2 | Level 3 | Level 4+ |
-|--------|---------|---------|---------|---------|----------|
-| `>`    | yellow  | green   | cyan    | blue    | magenta  |
-| `<`    | orange  | red     | blue    | magenta | magenta  |
-| `#`    | —       | bgYellow| bgOrange| bgCyan  | bgMagenta|
+| Marker | Level 0 | Level 1  | Level 2  | Level 3 | Level 4+  |
+| ------ | ------- | -------- | -------- | ------- | --------- |
+| `>`    | yellow  | green    | cyan     | blue    | magenta   |
+| `<`    | orange  | red      | blue     | magenta | magenta   |
+| `#`    | —       | bgYellow | bgOrange | bgCyan  | bgMagenta |
 
 Examples: `log("> Installing")`, `log(">> Setting up", path)`, `log(">>> Downloaded", file)`, `echo("## ${header}")`
 
