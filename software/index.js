@@ -1755,15 +1755,15 @@ function _getAutoColor(text) {
       if (level === 0) return colorOrange;
       if (level === 1) return colorRed;
       if (level === 2) return colorBlue;
-      if (level === 3) return colorMagenta;
+      if (level === 3) return colorCyan;
       return colorMagenta;
     }
 
     if (ch === "#") {
       if (level <= 1) return colorBgYellow;
-      if (level === 2) return colorBgOrange;
-      if (level === 3) return colorBgCyan;
-      return colorBgMagenta;
+      if (level === 2) return colorOrange;
+      if (level === 3) return colorCyan;
+      return colorMagenta;
     }
   }
 
@@ -2050,7 +2050,10 @@ function printOsFlags() {
  * @returns {void}
  */
 function printScriptsToRun(scriptsToRun) {
-  printSectionBlock(`Scripts to Run: ${scriptsToRun.length} files`, scriptsToRun);
+  echo(`# Scripts to Run: ${scriptsToRun.length} files`)
+  for(const script of scriptsToRun){
+    echo(`>>`, script)
+  }
 }
 
 /**
@@ -2092,7 +2095,7 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    printSectionBlock(`_runScripts | ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`, null, false);
+    echo(`## _runScripts | ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`)
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
@@ -2141,12 +2144,11 @@ async function _doWorkTestFiles() {
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  echo(`> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`);
-
   const softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
     .filter((s) => !!s);
 
+  echo(`> _doWorkTestFiles => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `);
   _runScripts(softwareFiles, allRepoFiles, "Test Files");
 }
 
@@ -2163,8 +2165,6 @@ async function _doWorkFullRun() {
   const softwareFiles = await getSoftwareScriptFiles();
 
   echo(`> _doWorkFullRun => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `);
-
-  const allRepoFiles = await getAllRepoSoftwareFiles();
   _runScripts(softwareFiles, allRepoFiles, "Full Run");
 }
 
