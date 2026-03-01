@@ -1573,7 +1573,7 @@ async function getSoftwareScriptFiles() {
         echo(`>>`, `Accepted`, file);
       }
     }
-    return true;
+    return !error;
   });
 }
 
