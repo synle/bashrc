@@ -95,6 +95,7 @@ const BASH_SYLE_COMMON_PATH = getRuntimeOption("BASH_SYLE_COMMON_PATH");
 const BASE_C_DIR_WINDOW = "/mnt/c";
 const BASE_D_DIR_WINDOW = "/mnt/d";
 
+// TODO: document all these constants
 // default node installation (fnm) - values exported from run.sh
 const NODE_JS_VERSION = getRuntimeOption("NODE_JS_VERSION");
 const FNM_DIR = getRuntimeOption("FNM_DIR");
