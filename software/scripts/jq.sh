@@ -23,10 +23,10 @@ echo '>> Installing jq: ' $DEST_PATH;
 echo '>>> Downloading jq'
 if [ "$is_os_mac" == "1" ]; then
   echo '>>>> For OSX'
-  DOWNLOAD_PATH="$BASH_PROFILE_CODE_REPO_RAW_URL/binaries/jq-osx"
+  DOWNLOAD_PATH="$BASH_PROFILE_CODE_REPO_RAW_URL/assets/jq-osx"
 else
   echo '>>>> For Linux'
-  DOWNLOAD_PATH="$BASH_PROFILE_CODE_REPO_RAW_URL/binaries/jq-linux"
+  DOWNLOAD_PATH="$BASH_PROFILE_CODE_REPO_RAW_URL/assets/jq-linux"
 fi
 
 echo ">>>>>> $DOWNLOAD_PATH"

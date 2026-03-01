@@ -11,6 +11,6 @@ DEST_PATH=/usr/local/bin/prettyping
 
 echo '>> Installing prettyping: ' $DEST_PATH;
 echo '>>> Downloading prettyping'
-curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/binaries/prettyping" > $TEMP_PATH
+curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/assets/prettyping" > $TEMP_PATH
 chmod +x $TEMP_PATH
 sudo mv $TEMP_PATH $DEST_PATH

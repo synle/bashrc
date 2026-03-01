@@ -53,17 +53,17 @@ async function doWork() {
 
 
     # Downloading Fonts
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/CascadiaCode.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/CascadiaCodePL.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/CascadiaMono.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/CascadiaMonoPL.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Bold.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Light.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Medium.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Regular.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Retina.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-SemiBold.ttf
-    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/Trace.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/CascadiaCode.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/CascadiaCodePL.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/CascadiaMono.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/CascadiaMonoPL.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-Bold.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-Light.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-Medium.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-Regular.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-Retina.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-SemiBold.ttf
+    Start-BitsTransfer -Source ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/Trace.ttf
 
     #######################################################
     #>

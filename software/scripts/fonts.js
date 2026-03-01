@@ -8,7 +8,7 @@ async function doWork() {
     const termuxFontPath = path.join(termuxFontDir, "font.ttf");
     if (IS_FORCE_REFRESH || !fs.existsSync(termuxFontPath)) {
       await mkdir(termuxFontDir);
-      const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Regular.ttf`;
+      const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-Regular.ttf`;
       log(">> Downloading Termux font:", termuxFontPath);
       await downloadAsset(fontUrl, termuxFontPath);
     } else {
@@ -57,14 +57,14 @@ async function doWork() {
   const linuxFontGuide = `# Fonts - Linux / MacOS
 cd ~/Desktop
 curl -sSLJ --parallel --parallel-max 10 \\
-${fontBaseNames.map((fontBaseName) => `  -O ${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName}`).join(" \\\n")}
+${fontBaseNames.map((fontBaseName) => `  -O ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/${fontBaseName}`).join(" \\\n")}
 echo "Done downloading fonts"`;
 
   // Start-BitsTransfer: Use ForEach-Object to pass each URL explicitly to -Source, since Start-BitsTransfer cannot bind plain strings from the pipeline
   const windowFontGuide = `# Fonts - Windows
 cd ([Environment]::GetFolderPath('Desktop'))
 $urls = @(
-${fontBaseNames.map((fontBaseName) => `  "${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/${fontBaseName}"`).join(",\n")}
+${fontBaseNames.map((fontBaseName) => `  "${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/${fontBaseName}"`).join(",\n")}
 )
 $urls | ForEach-Object { Start-BitsTransfer -Source $_ -Destination . }
 echo "Done downloading fonts"`;

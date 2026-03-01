@@ -1384,7 +1384,7 @@ async function downloadWindowsApp(applicationName, findFilter) {
 
 /**
  * Downloads binary files from the main GitHub repo that match a filter function.
- * Only considers files under the "binaries/" path, excluding markdown files.
+ * Only considers files under the "assets/" path, excluding markdown files.
  * @param {function(string): boolean} findHandler - Filter function to select which files to download
  * @param {string} destinationBaseDir - The local directory to save downloaded files to
  * @returns {Promise<string[]>} The full list of repo files (not just downloaded ones)
@@ -1392,7 +1392,7 @@ async function downloadWindowsApp(applicationName, findFilter) {
 async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
   const files = await listRepoDir("remote_api");
 
-  const filesToDownload = files.filter((s) => s.includes("binaries/") && !s.toLowerCase().includes(".md")).filter(findHandler);
+  const filesToDownload = files.filter((s) => s.includes("assets/") && !s.toLowerCase().includes(".md")).filter(findHandler);
 
   const promises = filesToDownload.map(async (file) => {
     const destinationFile = path.join(destinationBaseDir, path.basename(file));

@@ -1056,13 +1056,13 @@ function MacOSXNotesDom() {
     <>
       <TargetSystemOSWarningDom targetDomString="mac" />
       <DynamicTextArea path="/bootstrap/setup.sh" />
-      <DynamicTextArea path="/mac/README.md" />
-      <DynamicTextArea path="/fonts/install.sh" />
+      <DynamicTextArea path="/docs/mac/README.md" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
       <DynamicTextArea path="/.build/inputrc" />
       <DynamicTextArea path="/.build/vimrc" />
-      <DynamicTextArea path="/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
       <CommonEditorSetupDom is_os_mac={true} />
 
       {/* Mac */}
@@ -1083,15 +1083,15 @@ function LinuxNotesDom() {
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
       <DynamicTextArea path="/bootstrap/setup.sh" />
-      <DynamicTextArea path="/linux/linux-mint-config.sh" />
-      <DynamicTextArea path="/linux/README.md" />
-      <DynamicTextArea path="/fonts/install.sh" />
+      <DynamicTextArea path="/docs/linux/linux-mint-config.sh" />
+      <DynamicTextArea path="/docs/linux/README.md" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/gitignore_global" />
       <DynamicTextArea path="/.build/ssh-config" />
       <DynamicTextArea path="/.build/inputrc" />
       <DynamicTextArea path="/.build/vimrc" />
-      <DynamicTextArea path="/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
       <CommonEditorSetupDom />
       {/* Linux */}
       <div className="form-label">Other Applications</div>
@@ -1111,10 +1111,10 @@ function AndroidNotesDom() {
     <>
       <TargetSystemOSWarningDom is_os_android_termux={true} />
 
-      <DynamicTextArea path="/android/android.sh" />
-      <DynamicTextArea path="/android/sponsorblock.json" />
-      <DynamicTextArea path="/android/rvx-yt.txt" />
-      <DynamicTextArea path="/android/rvx-yt-music.txt" />
+      <DynamicTextArea path="/docs/android/android.sh" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/android/rvx-yt.txt" />
+      <DynamicTextArea path="/docs/android/rvx-yt-music.txt" />
 
       {/* Android */}
       <div className="form-label">Android Applications</div>
@@ -1157,11 +1157,11 @@ function WindowsNotesDom() {
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
       <DynamicTextArea path="/bootstrap/setup.sh" />
-      <DynamicTextArea path="/windows/README.md" />
+      <DynamicTextArea path="/docs/window/README.md" />
       <DynamicTextArea path="/bootstrap/dependencies/windows.ps1" />
-      <DynamicTextArea path="/fonts/install.sh" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/windows-terminal" />
-      <DynamicTextArea path="/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
       <CommonEditorSetupDom is_os_window={true} />
 
       {/* other links */}

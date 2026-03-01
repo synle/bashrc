@@ -22,17 +22,17 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 
 # Downloading Fonts
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCode.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaCodePL.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMono.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/CascadiaMonoPL.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Bold.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Light.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Medium.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Regular.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-Retina.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/FiraCode-SemiBold.ttf
-Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/fonts/Trace.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/CascadiaCode.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/CascadiaCodePL.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/CascadiaMono.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/CascadiaMonoPL.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/FiraCode-Bold.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/FiraCode-Light.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/FiraCode-Medium.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/FiraCode-Regular.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/FiraCode-Retina.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/FiraCode-SemiBold.ttf
+Start-BitsTransfer -Source https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Trace.ttf
 
 #######################################################
 #>

@@ -14,7 +14,7 @@ else
   echo '>> Installing diff-so-fancy: ' $DEST_PATH;
   TEMP_PATH=/tmp/diff-so-fancy
   rm -rf $TEMP_PATH
-  curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/binaries/diff-so-fancy" > $TEMP_PATH
+  curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/assets/diff-so-fancy" > $TEMP_PATH
   chmod +x $TEMP_PATH
   if [ "$is_os_android_termux" = "1" ]; then
     mv $TEMP_PATH $DEST_PATH
