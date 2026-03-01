@@ -1577,7 +1577,9 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\P
 
 # Disable USB selective suspend — prevents Windows from powering off USB ports during idle,
 # which can cause keyboards, mice, and external drives to randomly disconnect
-Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB\DisableSelectiveSuspend" -Type DWord -Value 1 -Force
+$usbPath = "HKLM:\SYSTEM\CurrentControlSet\Services\USB"
+if (!(Test-Path $usbPath)) { New-Item -Path $usbPath -Force | Out-Null }
+New-ItemProperty -Path $usbPath -Name "DisableSelectiveSuspend" -PropertyType DWord -Value 1 -Force
 
 # Set default terminal to Windows Terminal (Win11) — new console apps open in Windows Terminal
 # instead of the legacy conhost.exe window
