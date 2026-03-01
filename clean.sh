@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-####################################################################
-# clean.sh - Clean build artifacts from source files
+################################################################################
+# ---- clean.sh - Clean build artifacts from source files ----
 #
 # Cleans:
 #   - Auto-generated file notes from build output files
@@ -10,7 +10,7 @@
 # Usage:
 #   bash clean.sh                        # Clean all
 #   bash clean.sh build.sh run.sh        # Clean specific files (inclusions only)
-####################################################################
+################################################################################
 
 echo '> Running clean-autogen-notes'
 git ls-files | while read -r file; do

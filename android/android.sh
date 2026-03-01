@@ -27,8 +27,8 @@ function remove_app(){
 }
 
 
-#################################################################
-# --- Setting tweaks ---
+################################################################################
+# ---- Setting tweaks ----
 # Animation Speed: 0.5 is the community standard for "snappy"
 put_setting global window_animation_scale 0
 put_setting global transition_animation_scale 0.4
@@ -48,7 +48,7 @@ put_setting global wifi_watchdog_on 0             # Prevent aggressive Wi-Fi/Dat
 put_setting global analytics_enabled 0            # Disable system analytics
 put_setting global usage_reporting_enabled 0      # Disable usage reporting
 
-# --- SECURE SETTINGS (User-specific behavior) ---
+# ---- SECURE SETTINGS (User-specific behavior) ----
 # Touch Responsiveness: 250ms is "Instant," 400ms is "Standard Short"
 put_setting secure long_press_timeout 250
 put_setting secure multi_press_timeout 250
@@ -76,7 +76,7 @@ put_setting secure send_security_reports 0         # Disables sending security l
 put_setting global nearby_scanning_enabled 0       # Disables "Nearby Device" constant beaconing
 put_setting global adaptive_connectivity_enabled 0 # Prevents Google from tracking Wi-Fi quality/location
 
-# --- App removals ---
+# ---- App removals ----
 remove_app com.android.chrome
 remove_app com.google.android.youtube # YouTube
 remove_app com.microsoft.skydrive # OneDrive

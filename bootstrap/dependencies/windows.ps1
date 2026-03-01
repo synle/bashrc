@@ -1,17 +1,17 @@
-####################################################################
+################################################################################
 # dependencies/windows.ps1 - All-in-one Windows setup, cleanup,
 # privacy hardening, and software installation.
 #
 # Run as Administrator:
-#   Set-ExecutionPolicy Unrestricted -Scope CurrentUser
-#   .\bootstrap\dependencies/windows.ps1
-####################################################################
+# ----  Set-Executionpolicy Unrestricted -Scope Currentuser ----
+# ----  .\Bootstrap\Dependencies/Windows.Ps1 ----
+################################################################################
 
 
 
-# ================================
-# Create Powershell Script Profile
-# ================================
+################################################################################
+# ---- Create Powershell Script Profile ----
+################################################################################
 
 if (!(Test-Path $profile)) {
     New-Item -Path $profile -Type File -Force
@@ -22,9 +22,9 @@ if (!(Test-Path $profile)) {
 
 
 
-# ================================
-# NTP Time Server
-# ================================
+################################################################################
+# ---- Ntp Time Server ----
+################################################################################
 
 $NtpServers = "time.cloudflare.com,0x8 time.google.com,0x8 time.windows.com,0x8"
 w32tm /config /manualpeerlist:"$NtpServers" /syncfromflags:manual /update
@@ -38,9 +38,9 @@ Restart-Service w32time
 
 
 
-# ================================
-# Adobe Photoshop Debug Mode
-# ================================
+################################################################################
+# ---- Adobe Photoshop Debug Mode ----
+################################################################################
 
 $regPath  = "HKCU:\Software\Adobe\CSXS.6"
 $regName  = "PlayerDebugMode"
@@ -51,14 +51,14 @@ Write-Host "Adobe Photoshop debug mode enabled."
 
 
 
-# ================================================================================================
-#  REMOVE BLOATWARE APPS
-# ================================================================================================
+################################################################################
+# ---- Remove Bloatware Apps ----
+################################################################################
 
 Write-Host "`n=== Removing Bloatware Apps ===" -ForegroundColor Cyan
 
 $appsToRemove = @(
-    # ---- Microsoft default apps ----
+    # ---- Microsoft Default Apps ----
     'Clipchamp.Clipchamp',                  # [safe] Microsoft video editor, rarely used
     'Microsoft.3DBuilder',                  # [safe] 3D model creation tool, discontinued
     'Microsoft.3DViewer',                   # [safe] 3D model viewer, niche use
@@ -128,7 +128,7 @@ $appsToRemove = @(
     'MSTeams',                              # [safe] Teams (new) pre-install, alternate package name
     'Microsoft.Advertising.Xaml',           # [safe] Ad framework used by other apps
 
-    # ---- Third-party bloatware ----
+    # ---- Third-Party Bloatware ----
     '2FE3CB00.PicsArt-PhotoStudio',         # [safe] PicsArt photo editor
     '46928bounde.EclipseManager',           # [safe] OEM Eclipse IDE manager
     '4DF9E0F8.Netflix',                     # [safe] Netflix streaming app
@@ -232,9 +232,9 @@ Write-Host "App cleanup complete." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  ONEDRIVE / SKYDRIVE REMOVAL
-# ================================================================================================
+################################################################################
+# ---- Onedrive / Skydrive Removal ----
+################################################################################
 
 Write-Host "`n=== Removing OneDrive / SkyDrive ===" -ForegroundColor Cyan
 
@@ -339,9 +339,9 @@ Write-Host "OneDrive/SkyDrive removed." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  CORTANA & WEB SEARCH
-# ================================================================================================
+################################################################################
+# ---- Cortana & Web Search ----
+################################################################################
 
 Write-Host "`n=== Disabling Cortana & Web Search ===" -ForegroundColor Cyan
 
@@ -369,9 +369,9 @@ Write-Host "Cortana & Search hardened." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  EXPLORER TWEAKS
-# ================================================================================================
+################################################################################
+# ---- Explorer Tweaks ----
+################################################################################
 
 Write-Host "`n=== Applying Explorer Tweaks ===" -ForegroundColor Cyan
 
@@ -430,9 +430,9 @@ Write-Host "Explorer tweaks applied." -ForegroundColor Green
 
 
 
-# ================================
-# Clean Up macOS Junk Files
-# ================================
+################################################################################
+# ---- Clean Up Macos Junk Files ----
+################################################################################
 
 Write-Host "`n=== Cleaning macOS junk files (._*, .DS_Store) ===" -ForegroundColor Cyan
 
@@ -452,9 +452,9 @@ Write-Host "macOS junk files cleanup done." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  MOUSE & KEYBOARD TWEAKS
-# ================================================================================================
+################################################################################
+# ---- Mouse & Keyboard Tweaks ----
+################################################################################
 
 Write-Host "`n=== Applying Mouse & Keyboard Tweaks ===" -ForegroundColor Cyan
 
@@ -485,9 +485,9 @@ Write-Host "Mouse & Keyboard tweaks applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  PRIVACY HARDENING
-# ================================================================================================
+################################################################################
+# ---- Privacy Hardening ----
+################################################################################
 
 Write-Host "`n=== Applying Privacy Settings ===" -ForegroundColor Cyan
 
@@ -580,9 +580,9 @@ Write-Host "Privacy settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  EDGE PRIVACY (Legacy UWP + Chromium)
-# ================================================================================================
+################################################################################
+# ---- Edge Privacy (Legacy Uwp + Chromium) ----
+################################################################################
 
 Write-Host "`n=== Applying Edge Privacy Settings ===" -ForegroundColor Cyan
 
@@ -621,9 +621,9 @@ Write-Host "Edge privacy applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  GAME DVR / GAME BAR
-# ================================================================================================
+################################################################################
+# ---- Game Dvr / Game Bar ----
+################################################################################
 
 Write-Host "`n=== Disabling Game DVR ===" -ForegroundColor Cyan
 
@@ -636,9 +636,9 @@ Write-Host "Game DVR disabled." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  TELEMETRY / TRACKING
-# ================================================================================================
+################################################################################
+# ---- Telemetry / Tracking ----
+################################################################################
 
 Write-Host "`n=== Disabling Telemetry ===" -ForegroundColor Cyan
 
@@ -687,9 +687,9 @@ Write-Host "Telemetry disabled." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  WINDOWS RECALL / COPILOT / TIMELINE
-# ================================================================================================
+################################################################################
+# ---- Windows Recall / Copilot / Timeline ----
+################################################################################
 
 Write-Host "`n=== Disabling Recall, Copilot & Timeline ===" -ForegroundColor Cyan
 
@@ -730,9 +730,9 @@ Write-Host "Recall, Copilot & Timeline disabled." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  PERFORMANCE OPTIMIZATIONS
-# ================================================================================================
+################################################################################
+# ---- Performance Optimizations ----
+################################################################################
 
 Write-Host "`n=== Applying Performance Optimizations ===" -ForegroundColor Cyan
 
@@ -764,21 +764,21 @@ Write-Host "Performance optimizations applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  HOSTS FILE BLOCKING
-# ================================================================================================
+################################################################################
+# ---- Hosts File Blocking ----
+################################################################################
 
 Write-Host "`n=== Updating HOSTS File ===" -ForegroundColor Cyan
 
 $entriesToAdd = @(
-    # ---- Adobe license servers ----
+    # ---- Adobe License Servers ----
     "0.0.0.0 lmlicenses.wip4.adobe.com",
     "0.0.0.0 lm.licenses.adobe.com",
     "0.0.0.0 activate.adobe.com",
     "0.0.0.0 practivate.adobe.com",
     "0.0.0.0 na1r.services.adobe.com",
 
-    # ---- Microsoft telemetry ----
+    # ---- Microsoft Telemetry ----
     "0.0.0.0 officecdn.microsoft.com",
     "0.0.0.0 officecdn.microsoft.com.edgesuite.net",
     "0.0.0.0 config.office.com",
@@ -845,7 +845,7 @@ $entriesToAdd = @(
     "0.0.0.0 settings-ssl.xboxlive.com-c.edgekey.net.globalredir.akadns.net",
     "0.0.0.0 client.wns.windows.com",
 
-    # ---- Microsoft Edge / MSN / Bing ----
+    # ---- Microsoft Edge / Msn / Bing ----
     "0.0.0.0 a-0001.a-msedge.net",
     "0.0.0.0 a-0002.a-msedge.net",
     "0.0.0.0 a-0003.a-msedge.net",
@@ -877,7 +877,7 @@ $entriesToAdd = @(
     "0.0.0.0 bingads.microsoft.com",
     "0.0.0.0 www.bingads.microsoft.com",
 
-    # ---- Ad networks ----
+    # ---- Ad Networks ----
     "0.0.0.0 ads.msn.com",
     "0.0.0.0 a.ads1.msn.com",
     "0.0.0.0 a.ads2.msn.com",
@@ -936,7 +936,7 @@ $entriesToAdd = @(
     "0.0.0.0 hubspot.net.edge.net",
     "0.0.0.0 hubspot.net.edgekey.net",
 
-    # ---- Error reporting / bug tracking ----
+    # ---- Error Reporting / Bug Tracking ----
     "0.0.0.0 api.bugsnag.com",
     "0.0.0.0 app.bugsnag.com",
     "0.0.0.0 notify.bugsnag.com",
@@ -944,7 +944,7 @@ $entriesToAdd = @(
     "0.0.0.0 app.getsentry.com",
     "0.0.0.0 browser.sentry-cdn.com",
 
-    # ---- Akamai CDN (telemetry-related) ----
+    # ---- Akamai Cdn (Telemetry-Related) ----
     "0.0.0.0 184-86-53-99.deploy.static.akamaitechnologies.com",
     "0.0.0.0 a1621.g.akamai.net",
     "0.0.0.0 a1856.g2.akamai.net",
@@ -962,7 +962,7 @@ $entriesToAdd = @(
     "0.0.0.0 e3843.g.akamaiedge.net",
     "0.0.0.0 e9483.a.akamaiedge.net",
 
-    # ---- Skype (may cause issues with Skype) ----
+    # ---- Skype (May Cause Issues With Skype) ----
     "0.0.0.0 apps.skype.com",
     "0.0.0.0 pricelist.skype.com",
     "0.0.0.0 s.gateway.messenger.live.com",
@@ -1012,9 +1012,9 @@ if ($uniqueNewEntries.Count -gt 0) {
 
 
 
-# ================================================================================================
-#  FIREWALL BLOCKING
-# ================================================================================================
+################################################################################
+# ---- Firewall Blocking ----
+################################################################################
 
 Write-Host "`n=== Applying Firewall Rules ===" -ForegroundColor Cyan
 
@@ -1086,9 +1086,9 @@ Write-Host "Firewall rules applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  DEFENDER EXCLUSION
-# ================================================================================================
+################################################################################
+# ---- Defender Exclusion ----
+################################################################################
 
 Write-Host "`n=== Adding Defender Exclusions ===" -ForegroundColor Cyan
 Add-MpPreference -ExclusionPath "C:\Program Files (x86)\Microsoft Office\Office14"
@@ -1096,9 +1096,9 @@ Write-Host "Defender exclusion added." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  DISK CLEANUP
-# ================================================================================================
+################################################################################
+# ---- Disk Cleanup ----
+################################################################################
 
 Write-Host "`n=== Running Disk Cleanup ===" -ForegroundColor Cyan
 
@@ -1110,19 +1110,19 @@ Write-Host "Disk cleanup complete." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  PASSWORD / USER SETTINGS
-#  UNSAFE: These require Active Directory module and may fail on non-domain machines.
-# ================================================================================================
+################################################################################
+# ---- Password / User Settings ----
+# ---- Unsafe: These Require Active Directory Module And May Fail On Non-Domain Machines. ----
+################################################################################
 
 Set-ADUser -Identity "Sy Le" -PasswordNeverExpires $true -ErrorAction SilentlyContinue
 Set-ADUser -Identity "syle" -PasswordNeverExpires $true -ErrorAction SilentlyContinue
 
 
 
-# ================================================================================================
-#  WSL SETUP
-# ================================================================================================
+################################################################################
+# ---- Wsl Setup ----
+################################################################################
 
 Write-Host "`n=== Setting up WSL ===" -ForegroundColor Cyan
 
@@ -1133,9 +1133,9 @@ Write-Host "WSL setup complete." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  WINGET INSTALL & UPGRADE
-# ================================================================================================
+################################################################################
+# ---- Winget Install & Upgrade ----
+################################################################################
 
 Write-Host "`n=== Installing Winget Packages ===" -ForegroundColor Cyan
 
@@ -1185,9 +1185,9 @@ winget upgrade --all --include-unknown
 
 
 
-# ================================================================================================
-# Add known paths to PATH if they exist
-# ================================================================================================
+################################################################################
+# ---- Add Known Paths To Path If They Exist ----
+################################################################################
 
 $pathCandidates = @(
     "$env:JAVA_HOME\bin"                                          # java jdk
@@ -1226,9 +1226,9 @@ if ($added.Count -gt 0) {
 $currentPath = (($currentPath -split ";") | Where-Object { $_ -ne "" } | Select-Object -Unique) -join ";"
 [Environment]::SetEnvironmentVariable("Path", $currentPath, "User")
 
-# ================================================================================================
-#  SYSTEM > DISPLAY SETTINGS
-# ================================================================================================
+################################################################################
+# ---- System > Display Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Display Settings ===" -ForegroundColor Cyan
 
@@ -1245,9 +1245,9 @@ Write-Host "Display settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  SYSTEM > NOTIFICATIONS SETTINGS
-# ================================================================================================
+################################################################################
+# ---- System > Notifications Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Notification Settings ===" -ForegroundColor Cyan
 
@@ -1279,9 +1279,9 @@ Write-Host "Notification settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  SYSTEM > MULTITASKING SETTINGS
-# ================================================================================================
+################################################################################
+# ---- System > Multitasking Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Multitasking Settings ===" -ForegroundColor Cyan
 
@@ -1306,9 +1306,9 @@ Write-Host "Multitasking settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  SYSTEM > CLIPBOARD SETTINGS
-# ================================================================================================
+################################################################################
+# ---- System > Clipboard Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Clipboard Settings ===" -ForegroundColor Cyan
 
@@ -1322,9 +1322,9 @@ Write-Host "Clipboard settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  SYSTEM > STORAGE SETTINGS
-# ================================================================================================
+################################################################################
+# ---- System > Storage Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Storage Settings ===" -ForegroundColor Cyan
 
@@ -1337,9 +1337,9 @@ Write-Host "Storage settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  PERSONALIZATION > TASKBAR SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Personalization > Taskbar Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Taskbar Settings ===" -ForegroundColor Cyan
 
@@ -1379,9 +1379,9 @@ Write-Host "Taskbar settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  PERSONALIZATION > START MENU SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Personalization > Start Menu Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Start Menu Settings ===" -ForegroundColor Cyan
 
@@ -1401,9 +1401,9 @@ Write-Host "Start menu settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  PERSONALIZATION > LOCK SCREEN SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Personalization > Lock Screen Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Lock Screen Settings ===" -ForegroundColor Cyan
 
@@ -1421,9 +1421,9 @@ Write-Host "Lock screen settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  PERSONALIZATION > THEMES & COLORS
-# ================================================================================================
+################################################################################
+# ---- Personalization > Themes & Colors ----
+################################################################################
 
 Write-Host "`n=== Applying Theme Settings ===" -ForegroundColor Cyan
 
@@ -1445,9 +1445,9 @@ Write-Host "Theme settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  DEVICES > TYPING SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Devices > Typing Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Typing Settings ===" -ForegroundColor Cyan
 
@@ -1467,9 +1467,9 @@ Write-Host "Typing settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  GAMING SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Gaming Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Gaming Settings ===" -ForegroundColor Cyan
 
@@ -1487,9 +1487,9 @@ Write-Host "Gaming settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  ACCESSIBILITY SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Accessibility Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Accessibility Settings ===" -ForegroundColor Cyan
 
@@ -1506,9 +1506,9 @@ Write-Host "Accessibility settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  WINDOWS UPDATE SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Windows Update Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Windows Update Settings ===" -ForegroundColor Cyan
 
@@ -1531,9 +1531,9 @@ Write-Host "Windows Update settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
-#  SOUND SETTINGS
-# ================================================================================================
+################################################################################
+# ---- Sound Settings ----
+################################################################################
 
 Write-Host "`n=== Applying Sound Settings ===" -ForegroundColor Cyan
 
@@ -1547,6 +1547,6 @@ Write-Host "Sound settings applied." -ForegroundColor Green
 
 
 
-# ================================================================================================
+################################################################################
 
 Write-Host "`nSetup complete! Log off or reboot for all changes to take effect." -ForegroundColor Cyan

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 {
-####################################################################
-# build.sh - Build pipeline with selectable steps
+################################################################################
+# ---- build.sh - Build pipeline with selectable steps ----
 #
 # Usage:
 #   bash build.sh                                    # Run all steps
@@ -21,14 +21,14 @@
 #   host-mappings   Build Host Mappings (skip in CI)
 #   backup-xfce     Backup XFCE Configuration (if applicable)
 #   webapp          Build Web App
-####################################################################
+################################################################################
 
 # All valid step names
 ALL_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
 
-####################################################################
-# Parse arguments
-####################################################################
+################################################################################
+# ---- Parse arguments ----
+################################################################################
 _steps_to_run=""
 _parsing_into=""
 
@@ -75,11 +75,11 @@ function should_run() { case " $_normalized " in *" $1 "*) return 0 ;; *) return
 echo "Steps to run: $_normalized"
 
 # BEGIN bootstrap/common-env.sh
-####################################################################
-# common-env.sh - Shared environment setup for run.sh and build.sh
+################################################################################
+# ---- common-env.sh - Shared environment setup for run.sh and build.sh ----
 # Sets up repo identifiers, URL exports, OS detection flags,
 # and writes ~/.bash_syle_common
-####################################################################
+################################################################################
 {
 export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="master"
@@ -243,9 +243,9 @@ export IS_TEST_SCRIPT_MODE=1
 install_fnm_node
 
 echo '< build.sh'
-##########################################################
-# step: jsdocs - Build JSDocs for JS Code
-##########################################################
+############################################################################################
+# ---- step: jsdocs - Build JSDocs for JS Code ----
+############################################################################################
 if should_run jsdocs; then
 echo '> Build JSDocs for JS Code'
 # Generate .d.ts: preprocess index.js to strip require() calls, then run tsc
@@ -265,9 +265,9 @@ cp /tmp/_dts-out/_index-for-tsc.d.ts software/index.d.ts
 rm -rf /tmp/_index-for-tsc.js /tmp/_dts-out
 fi
 
-##########################################################
-# step: script-indexes - Generate Script List Indexes
-##########################################################
+############################################################################################
+# ---- step: script-indexes - Generate Script List Indexes ----
+############################################################################################
 if should_run script-indexes; then
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
@@ -275,19 +275,19 @@ run_files "software/metadata/script-list.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
 fi
 
-##########################################################
-# step: prebuild-hosts - Prebuild Host Mappings
-##########################################################
+############################################################################################
+# ---- step: prebuild-hosts - Prebuild Host Mappings ----
+############################################################################################
 if should_run prebuild-hosts; then
 echo '> Prebuilding Host Mappings'
 run_files "software/metadata/ip-address.config.js"
 fi
 
-##########################################################
-# step: build-configs - Build Raw JSON and Config Artifacts
+############################################################################################
+# ---- step: build-configs - Build Raw JSON and Config Artifacts ----
 # Compile common configs used for sublime and vscode keybindings.
 # Only process files containing the method "writeToBuildFile".
-##########################################################
+############################################################################################
 if should_run build-configs; then
 echo '> Build raw JSON and raw JSON configs'
 CONFIG_BUILD_PATH="./.build"
@@ -299,17 +299,17 @@ find $CONFIG_BUILD_PATH
 unset DEBUG_WRITE_TO_DIR DEBUG_WRITE_TO_DIR
 fi
 
-##########################################################
-# step: host-mappings - Build Host Mappings (skip in CI)
-##########################################################
+############################################################################################
+# ---- step: host-mappings - Build Host Mappings (skip in CI) ----
+############################################################################################
 if should_run host-mappings && [ "$CI" != "true" ]; then
 echo '> Build Host Mappings'
 run_files "software/metadata/hosts-blocked-ads.config.js"
 fi
 
-##########################################################
-# step: backup-xfce - Backup XFCE Configuration (if applicable)
-##########################################################
+############################################################################################
+# ---- step: backup-xfce - Backup XFCE Configuration (if applicable) ----
+############################################################################################
 if should_run backup-xfce && [ -d "$HOME/.config/xfce4" ]; then
   echo "Backing up XFCE configuration..."
   mkdir -p ./linux
@@ -318,9 +318,9 @@ if should_run backup-xfce && [ -d "$HOME/.config/xfce4" ]; then
   echo "Backup complete: ./linux/xfce-config.tar.gz"
 fi
 
-##########################################################
-# step: webapp - Build Web App
-##########################################################
+############################################################################################
+# ---- step: webapp - Build Web App ----
+############################################################################################
 if should_run webapp; then
 echo '> Building webapp'
 echo '>> Installing npm dependencies'

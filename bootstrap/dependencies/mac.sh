@@ -12,22 +12,22 @@ if [ "$is_os_mac" = "1" ]; then
 
   echo ">> Mac UI & System Optimization..."
 
-  # --- Window Animations ---
+  # ---- Window Animations ----
   defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false # Disable opening/closing window animations
   defaults write -g QLPanelAnimationDuration -float 0 # Disable Quick Look fade-in/out
   defaults write NSGlobalDomain NSWindowResizeTime -float 0.001 # Accelerate window resizing (Cocoa apps)
   defaults write com.apple.finder DisableAllAnimations -bool true # Disable Finder animations (Info windows, etc.)
 
-  # --- Dock & Mission Control ---
+  # ---- Dock & Mission Control ----
   defaults write com.apple.dock launchanim -bool false # Disable Dock opening animations
   defaults write com.apple.dock expose-animation-duration -float 0.1 # Speed up Mission Control animations
   defaults write com.apple.dock autohide-delay -float 0 # Remove Dock hide/show delay
   defaults write com.apple.dock autohide-time-modifier -float 0.1 # Speed up the animation of showing the Dock
 
-  # --- Safari & Web ---
+  # ---- Safari & Web ----
   defaults write com.apple.Safari WebKitInitialTimedLayoutDelay -float 0.1 # Reduce rendering delay
 
-  # --- System & Finder Behaviors ---
+  # ---- System & Finder Behaviors ----
   defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true # Disable .DS_Store on network volumes
   defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true # Disable .DS_Store on USB volumes
   defaults write -g NSScrollAnimationEnabled -bool false # Disable smooth scrolling
@@ -37,18 +37,18 @@ if [ "$is_os_mac" = "1" ]; then
   defaults write com.apple.finder _FXShowPosixPathInTitle -bool true # Show full POSIX path in Finder title bar
   defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false # Disable file extension change warning
 
-  # --- Mouse / Trackpad Speed ---
+  # ---- Mouse / Trackpad Speed ----
   defaults write -g com.apple.mouse.scaling -float 3 # Increase mouse tracking speed
   defaults write -g com.apple.trackpad.scaling -float 3 # Increase trackpad tracking speed
 
-  # --- Key Repeat Speed ---
+  # ---- Key Repeat Speed ----
   defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false # Disable press-and-hold for faster key repeat
   defaults delete NSGlobalDomain KeyRepeat
   defaults delete NSGlobalDomain InitialKeyRepeat
 
-  ##########################################################
-  # Misc Performance
-  ##########################################################
+  ################################################################################
+  # ---- Misc Performance ----
+  ################################################################################
   echo ">> Misc Performance tweaks..."
 
   # Reduce transparency effects (less compositing overhead)
@@ -85,9 +85,9 @@ if [ "$is_os_mac" = "1" ]; then
   done
   echo "  >> Done"
 
-  ##########################################################
-  # Shell Setup
-  ##########################################################
+  ################################################################################
+  # ---- Shell Setup ----
+  ################################################################################
   echo '>> Set default shell as BASH (Catalina Mods): chsh -s /bin/bash'
   touch "$BASH_SYLE_PATH" ~/.bash_profile ~/.bashrc
   chown "$USER" "$BASH_SYLE_PATH" ~/.bash_profile ~/.bashrc
@@ -97,9 +97,9 @@ if [ "$is_os_mac" = "1" ]; then
     chsh -s /bin/bash "$USER"
   fi
 
-  ##########################################################
-  # Headless Chrome Fixes
-  ##########################################################
+  ################################################################################
+  # ---- Headless Chrome Fixes ----
+  ################################################################################
   echo '>> Headless Chrome Fixes for MacOSX'
   mkdir -p ~/Library/LaunchAgents
 cat <<EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
@@ -123,9 +123,9 @@ cat <<EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
 EOF
   launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
 
-  ##########################################################
-  # Homebrew
-  ##########################################################
+  ################################################################################
+  # ---- Homebrew ----
+  ################################################################################
   hasHomebrewInstalled=1
   type brew &> /dev/null || hasHomebrewInstalled=0
   if [ "$hasHomebrewInstalled" = "0" ]; then
@@ -139,9 +139,9 @@ EOF
   echo '>> Update Homebrew'
   brew update &> /dev/null
 
-  ##########################################################
-  # Install Packages
-  ##########################################################
+  ################################################################################
+  # ---- Install Packages ----
+  ################################################################################
   echo '>> Installing packages with Homebrew'
   installPackage bat
   installPackage fzf
@@ -154,9 +154,9 @@ EOF
   installPackage font-fira-code
   installPackage font-cascadia
 
-  ##########################################################
-  # Cleanup
-  ##########################################################
+  ################################################################################
+  # ---- Cleanup ----
+  ################################################################################
   if [ "$IS_FORCE_REFRESH" = "1" ] || [ ! -f "$BASH_SYLE_COMMON" ]; then
     echo '>> Kill all dock icons'
     defaults write com.apple.dock persistent-apps -array

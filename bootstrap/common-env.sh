@@ -1,8 +1,8 @@
-####################################################################
-# common-env.sh - Shared environment setup for run.sh and build.sh
+################################################################################
+# ---- common-env.sh - Shared environment setup for run.sh and build.sh ----
 # Sets up repo identifiers, URL exports, OS detection flags,
 # and writes ~/.bash_syle_common
-####################################################################
+################################################################################
 {
 export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="master"

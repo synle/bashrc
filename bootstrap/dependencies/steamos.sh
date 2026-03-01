@@ -14,24 +14,24 @@ if [ "$is_os_steamos" = "1" ]; then
   echo '>> Make the partition readable (Steam Deck is immutable)'
   sudo btrfs property set -ts / ro false
 
-  ##########################################################
-  # Setting up pacman
-  ##########################################################
+  ################################################################################
+  # ---- Setting up pacman ----
+  ################################################################################
   echo '>> Setting up pacman to install stuffs'
   sudo pacman-key --init
   sudo pacman-key --populate archlinux
 
-  ##########################################################
-  # Install Packages
-  ##########################################################
+  ################################################################################
+  # ---- Install Packages ----
+  ################################################################################
   installPackage bat
   installPackage ddcutil
   installPackage i2c-tools
   echo '>> Done installPackage'
 
-  ##########################################################
-  # Boot Video Directory
-  ##########################################################
+  ################################################################################
+  # ---- Boot Video Directory ----
+  ################################################################################
   # https://steamdeckrepo.com
   echo '>> Create the folder for boot video'
   mkdir -p ~/.steam/root/config/uioverrides/movies/

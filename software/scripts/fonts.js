@@ -38,12 +38,14 @@ async function doWork() {
 
   if (!fs.existsSync(targetFontPath)) {
     await mkdir(targetFontPath);
-    await Promise.all(fonts.map((font) => {
-      const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/${font}`;
-      const destination = path.join(targetFontPath, path.basename(font));
-      console.log("    >> Downloading:", path.basename(font));
-      return downloadAsset(fontUrl, destination);
-    }));
+    await Promise.all(
+      fonts.map((font) => {
+        const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/${font}`;
+        const destination = path.join(targetFontPath, path.basename(font));
+        console.log("    >> Downloading:", path.basename(font));
+        return downloadAsset(fontUrl, destination);
+      }),
+    );
     console.log("  >> Fonts downloaded to:", targetFontPath);
   } else {
     console.log("  >> Fonts already installed, skipping:", targetFontPath);

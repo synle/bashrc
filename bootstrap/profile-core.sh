@@ -40,9 +40,9 @@ done
 export PATH="$(echo "$PATH" | tr ':' '\n' | awk '!seen[$0]++' | tr '\n' ':' | sed 's/:$//')"
 unset path_candidates
 
-##########################################################
-# History
-##########################################################
+################################################################################
+# ---- History ----
+################################################################################
 export HISTSIZE=80000
 export HISTFILESIZE=80000
 export HISTTIMEFORMAT="[%F %T] "
@@ -80,8 +80,8 @@ ignored_history=(
 export HISTIGNORE=$(IFS=":"; echo "${ignored_history[*]}")
 unset ignored_history
 
-##########################################################
-# Track Visited Directories
+################################################################################
+# ---- Track Visited Directories ----
 # Maintains a list of recently visited directories in
 # RECENT_PATHS_FILE. The list is capped at RECENT_PATHS_MAX
 # entries, most recent first, deduplicated, and auto-pruned
@@ -92,7 +92,7 @@ unset ignored_history
 #   _recent_paths - reads and cleans the paths file
 #   golast - cd to the most recently visited directory
 #   fuzzy_paths (fp) - fzf picker for visited directories
-##########################################################
+################################################################################
 RECENT_PATHS_FILE=~/.bash_syle_paths
 RECENT_PATHS_MAX=100
 
@@ -138,9 +138,9 @@ golast() {
 PROMPT_COMMAND="_track_pwd; history -a; history -c; history -r;${PROMPT_COMMAND}"
 
 
-##########################################################
-# Custom Bash autocomplete filters for commands and file patterns
-##########################################################
+################################################################################
+# ---- Custom Bash autocomplete filters for commands and file patterns ----
+################################################################################
 ignored_commands=(
   "*/clean-staging"
   "*/CleanPCCSP.dll"
@@ -160,9 +160,9 @@ export EXECIGNORE="$EXECIGNORE${cmd_string}"
 export FIGNORE="$FIGNORE${file_string}"
 unset ignored_commands cmd_string ignored_files file_string
 
-##########################################################
-# Common Aliases
-##########################################################
+################################################################################
+# ---- Common Aliases ----
+################################################################################
 alias ..="cd .."
 alias bs="bash"
 alias v="vim"
@@ -198,9 +198,9 @@ alias cl="claude --dangerously-skip-permissions"
 alias c="cl"
 alias cm='cl --model opus'
 
-##########################################################
-# Utility Functions
-##########################################################
+################################################################################
+# ---- Utility Functions ----
+################################################################################
 # short form echo that removes leading + trailing blank lines,
 # finds the first non-empty line, detects its indentation,
 # and trims that indentation from all lines
@@ -354,9 +354,9 @@ pwd2() {
 }
 
 
-##########################################################
-# Git Helpers
-##########################################################
+################################################################################
+# ---- Git Helpers ----
+################################################################################
 # Resets the working tree, deletes local master/main, and re-tracks the default branch from origin (preferring master over main).
 clean_master_main_branch() {
   git stash >/dev/null 2>&1
@@ -400,9 +400,9 @@ function gogit(){
   cd "$git_home" 2>/dev/null || echo "gogit: $git_home is not present"
 }
 
-##########################################################
-# Search Functions
-##########################################################
+################################################################################
+# ---- Search Functions ----
+################################################################################
 search_file() {
   local pattern
   pattern=$(_require_search_input "$@") || return 0
@@ -442,9 +442,9 @@ _require_search_input() {
 }
 
 
-##########################################################
-# Filter Functions
-##########################################################
+################################################################################
+# ---- Filter Functions ----
+################################################################################
 filter_unwanted(){
   grep -v "\.DS_Store" \
   | grep -v "\.git/" \
@@ -495,9 +495,9 @@ filter_text_files_only(){
   | uniq
 }
 
-##########################################################
-# Chmod Calculator
-##########################################################
+################################################################################
+# ---- Chmod Calculator ----
+################################################################################
 chmod_calculator(){
   node -e """
     console.log('Chmod Calculator - Enter permission for x w r:');
@@ -522,9 +522,9 @@ chmod_calculator(){
 }
 alias calc_chmod='chmod_calculator'
 
-##########################################################
-# FZF Lightweight Aliases and Functions
-##########################################################
+################################################################################
+# ---- FZF Lightweight Aliases and Functions ----
+################################################################################
 alias fv=fuzzy_vim
 alias fvim=fuzzy_vim
 alias fview=fuzzy_view_file
@@ -582,9 +582,9 @@ fuzzy_paths(){
   _fuzzy_cd "$(_recent_paths)"
 }
 
-##########################################################
-# Date / Time
-##########################################################
+################################################################################
+# ---- Date / Time ----
+################################################################################
 ## Returns HH:MM:SS AM/PM with colored AM/PM indicator
 # AM = bright white (light), PM = dark gray (dark)
 # Uses \001/\002 for PS1-safe non-printing character wrapping
@@ -622,9 +622,9 @@ date2(){
   date +'%a, %b %d, %Y  %r'
 }
 
-##########################################################
-# Telemetry / Environment
-##########################################################
+################################################################################
+# ---- Telemetry / Environment ----
+################################################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 
 # for ssh socket control
@@ -635,10 +635,10 @@ mkdir -p ~/.ssh/sockets
 # export ANTHROPIC_AUTH_TOKEN="ollama"
 # export ANTHROPIC_API_KEY="local-development"
 
-##########################################################
-# Prompt
+################################################################################
+# ---- Prompt ----
 # "\$(br 5 no-clear reverse | sed 's/\(\x1b\[[0-9;]*m\)/\x01\1\x02/g')"
-##########################################################
+################################################################################
 # 08:31:59PM U=04:31:59AM syle @ Sy-Omen45L
 # ~/git/bashrc
 # >>>

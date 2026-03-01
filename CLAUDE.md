@@ -123,6 +123,9 @@ GitHub Actions (`.github/workflows/build-main.yml`):
 - **JSDoc on all functions/constants** in `software/index.js` — used by `tsc --declaration --allowJs` to generate `software/index.d.ts`
 - **Private helpers** in script files are prefixed with `_` (e.g., `_getGitConfig()`)
 - No test suite exists; `make test` runs all scripts locally as a smoke test
+- **Comment section headers** use two standardized forms:
+  - **Paired** (for major sections): `################################################################################` (80 chars) / `# ---- Title ----` / `################################################################################`
+  - **Standalone** (for sub-sections): `# ---- title ----`
 
 ## Script File Conventions
 

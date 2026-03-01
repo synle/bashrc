@@ -12,9 +12,9 @@ if [ "$is_os_ubuntu" = "1" ]; then
   echo '>> update packages'
   sudo apt-get update -y &> /dev/null
 
-  ##########################################################
-  # Install Packages
-  ##########################################################
+  ################################################################################
+  # ---- Install Packages ----
+  ################################################################################
   echo '>> Installing packages with apt-get'
 
   # Core tools
@@ -43,9 +43,9 @@ if [ "$is_os_ubuntu" = "1" ]; then
   installPackage software-properties-common
   installPackage build-essential
 
-  ##########################################################
-  # User Permissions
-  ##########################################################
+  ################################################################################
+  # ---- User Permissions ----
+  ################################################################################
   echo '>> Setting up user permissions'
   sudo usermod -aG input ${USER}
   sudo usermod -aG video ${USER}

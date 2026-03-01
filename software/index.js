@@ -1318,7 +1318,8 @@ function downloadFile(url, destination) {
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 function downloadAsset(url, destination) {
-  const dest = fs.existsSync(destination) && fs.statSync(destination).isDirectory() ? path.join(destination, path.basename(url)) : destination;
+  const dest =
+    fs.existsSync(destination) && fs.statSync(destination).isDirectory() ? path.join(destination, path.basename(url)) : destination;
   return execBash(`curl -sL "${url}" -o "${dest}"`);
 }
 

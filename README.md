@@ -18,6 +18,7 @@ https://synle.github.io/bashrc/
 ## Installation
 
 <!-- BEGIN bootstrap/setup.sh -->
+
 ```bash
 curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="""
   bootstrap/profile-core.sh
@@ -30,6 +31,7 @@ curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -
   bootstrap/dependencies/steamos.sh
 """
 ```
+
 <!-- END bootstrap/setup.sh -->
 
 ## Usage
