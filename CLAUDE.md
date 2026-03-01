@@ -191,4 +191,5 @@ async function doWork() {
 - `trimLeftSpaces(text)` — Remove common leading whitespace (for heredoc-style template strings)
 - `convertTextToList(...texts)` — Split text to unique trimmed lines, filtering comments
 - `resolveOsKey({mac, windows, linux})` — Returns the value matching the current OS
-- `consoleLogColor1(text)` — Yellow, `consoleLogColor3(text)` — Cyan, `consoleLogColor4(text)` — Green
+- **Logging:** `logWithBash(coloredStr)` — emits `node -e "console.log(...)"` into the bash pipeline (orchestration layer); `logWithNode(coloredStr)` — calls `console.log()` directly (script files)
+- **Color helpers:** `color1(text)`–`color9(text)`, `colorSuccess(text)`, `colorError(text)`, `colorWarning(text)`, `colorAttention(text)` — return ANSI-colored strings. Legacy `consoleLogColor{N}` aliases exist for backward compatibility in script files.

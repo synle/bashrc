@@ -7,6 +7,9 @@ build:
 start:
 	bash run.sh
 
+run:
+	bash run.sh
+
 test:
 	bash run.sh --force
 
