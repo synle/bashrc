@@ -12,9 +12,7 @@ async function doWork() {
 
   console.log("    >> Cloning and building", consoleLogColor4(targetPath));
 
-  await execBash(`
-    git clone --depth 1 --single-branch -b master https://github.com/synle/make-component.git "${targetPath}"
-  `);
+  await gitClone("https://github.com/synle/make-component.git", targetPath);
 
   await execBash(`npm i && npm run build`, false, {
     cwd: targetPath,

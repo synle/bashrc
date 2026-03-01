@@ -1312,12 +1312,25 @@ function downloadFile(url, destination) {
 /**
  * Downloads an asset from an external URL to a local destination using curl.
  * Unlike downloadFile, this supports redirects and does not prepend the repo URL.
+ * If destination is a directory, the filename is derived from the URL.
  * @param {string} url - The full URL to download from
- * @param {string} destination - The local file path to save to
+ * @param {string} destination - The local file path or directory to save to
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 function downloadAsset(url, destination) {
-  return execBash(`curl -sL "${url}" -o "${destination}"`);
+  const dest = fs.existsSync(destination) && fs.statSync(destination).isDirectory() ? path.join(destination, path.basename(url)) : destination;
+  return execBash(`curl -sL "${url}" -o "${dest}"`);
+}
+
+/**
+ * Downloads multiple assets in parallel using a single curl command.
+ * @param {string[]} urls - Array of full URLs to download
+ * @param {string} destinationDir - The local directory to save files to (filenames derived from URLs)
+ * @returns {Promise<string>} Resolves with the command's stdout
+ */
+function downloadAssets(urls, destinationDir) {
+  const args = urls.map((url) => `-sL "${url}" -o "${path.join(destinationDir, path.basename(url))}"`).join(" ");
+  return execBash(`curl --parallel --parallel-max 10 ${args}`);
 }
 
 /**
@@ -1514,13 +1527,15 @@ async function fetchUrlAsString(url) {
 }
 
 /**
- * Performs a shallow git clone of a repository's master branch into the specified directory.
+ * Performs a shallow git clone of a repository into the specified directory.
  * @param {string} repo - The git repository URL to clone
  * @param {string} destinationDir - The local directory to clone into
+ * @param {boolean} [cloneAll=false] - If true, clone all branches; otherwise clone only the default branch
  * @returns {Promise<string>} Resolves with the stdout of the git clone command
  */
-function gitClone(repo, destinationDir) {
-  return execBash(`git clone --depth 1 -b master "${repo}" "${destinationDir}" &>/dev/null`);
+function gitClone(repo, destinationDir, cloneAll = false) {
+  const branchFlag = cloneAll ? "" : "--single-branch";
+  return execBash(`git clone --depth 1 ${branchFlag} "${repo}" "${destinationDir}" &>/dev/null`);
 }
 
 /**

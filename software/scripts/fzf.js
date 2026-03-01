@@ -10,9 +10,7 @@ async function doWork() {
 
   exitIfPathFound(targetPath);
 
-  await execBash(`
-    git clone https://github.com/junegunn/fzf.git ${targetPath} &>/dev/null;
-    `);
+  await gitClone("https://github.com/junegunn/fzf.git", targetPath);
 
   await execBash(`
     ${targetPath}/install --no-key-bindings --no-completion --no-update-rc &>/dev/null;
