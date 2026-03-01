@@ -235,10 +235,32 @@ declare function appendTextBlock(resultTextContent: string, configKey: string, c
  */
 declare function prependTextBlock(resultTextContent: string, configKey: string, configValue: string, commentPrefix?: string): string;
 /**
- * Reads BASH_SYLE_PATH, prepends a config block, and writes it back.
- * Replaces the common 3-line read/prepend/write pattern.
+ * Reads a profile file, inserts or updates a config block, and writes it back.
+ * Generic version that works with any profile file path.
+ * @param {Object} options
+ * @param {string} options.profilePath - The file path to read/write the config block
+ * @param {string} options.configKey - The config key for the text block
+ * @param {string} options.content - The content to register
+ * @param {boolean} [options.isPrepend=false] - When true, prepends the block; when false, appends it
+ * @param {boolean} [options.addCodeFolding=true] - When true, wraps content with { } for editor code folding
+ */
+declare function registerProfileBlock({
+  profilePath,
+  configKey,
+  content,
+  isPrepend,
+  addCodeFolding,
+}: {
+  profilePath: string;
+  configKey: string;
+  content: string;
+  isPrepend?: boolean;
+  addCodeFolding?: boolean;
+}): void;
+/**
+ * Reads BASH_SYLE_PATH, prepends a config block with code folding, and writes it back.
  * @param {string} configKey - The config key for the text block
- * @param {string} content - The content to prepend
+ * @param {string} content - The content to register
  */
 declare function registerWithBashSyleProfile(configKey: string, content: string): void;
 /**
@@ -661,28 +683,42 @@ declare const BASH_SYLE_AUTOCOMPLETE_PATH: any;
 declare const BASH_SYLE_COMMON_PATH: any;
 declare const BASE_C_DIR_WINDOW: "/mnt/c";
 declare const BASE_D_DIR_WINDOW: "/mnt/d";
-declare const NODE_JS_VERSION: any;
-declare const FNM_DIR: any;
-declare const FNM_DEFAULT_NODE_PATH: any;
-declare const BASH_PROFILE_CODE_REPO_RAW_URL: any;
-declare const BASH_SYLE_COMMON: any;
-declare const REPO_PATH_IDENTIFIER: any;
-declare const REPO_BRANCH_NAME: any;
-declare const DEBUG_WRITE_TO_DIR: any;
-declare const TEST_SCRIPT_FILES: any;
-declare const SHOULD_PRINT_OS_FLAGS: any;
-declare const HAS_SUDO_ACCESS: any;
-declare const IS_FORCE_REFRESH: any;
-declare const IS_TEST_SCRIPT_MODE: any;
-declare const IS_LIGHT_WEIGHT_MODE: any;
-declare const PRE_SCRIPT_FILES: any;
-declare const RUN_ONLY_PRESCRIPTS: any;
+/** @type {string} Target Node.js version for fnm to install */
+declare const NODE_JS_VERSION: string;
+/** @type {string} Path to the fnm (Fast Node Manager) installation directory */
+declare const FNM_DIR: string;
+/** @type {string} Path to the default Node.js binary managed by fnm */
+declare const FNM_DEFAULT_NODE_PATH: string;
+/** @type {string} Base URL for fetching raw files from the repo (e.g. GitHub raw content URL) */
+declare const BASH_PROFILE_CODE_REPO_RAW_URL: string;
+/** @type {string} Path to the shared bash_syle_common config file */
+declare const BASH_SYLE_COMMON: string;
+/** @type {string} GitHub repo identifier in "owner/repo" format */
+declare const REPO_PATH_IDENTIFIER: string;
+/** @type {string} Git branch name to fetch remote content from */
+declare const REPO_BRANCH_NAME: string;
+/** @type {string} When set, redirects config file writes to this directory (used by build-configs step) */
+declare const DEBUG_WRITE_TO_DIR: string;
+/** @type {string} Comma-separated list of specific script files to run (empty for full run) */
+declare const TEST_SCRIPT_FILES: string;
+/** @type {boolean} When true, prints active OS detection flags at startup */
+declare const SHOULD_PRINT_OS_FLAGS: boolean;
+/** @type {boolean} When true, indicates the user has sudo access for elevated scripts */
+declare const HAS_SUDO_ACCESS: boolean;
+/** @type {boolean} When true, deletes and re-downloads resources before installing */
+declare const IS_FORCE_REFRESH: boolean;
+/** @type {boolean} When true, runs in local test mode (reads files from disk instead of fetching remotely) */
+declare const IS_TEST_SCRIPT_MODE: boolean;
+/** @type {boolean} When true, skips advanced/heavy features for a minimal install */
+declare const IS_LIGHT_WEIGHT_MODE: boolean;
 /** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
 declare const IS_DEBUG: boolean;
+/** @type {string} Full URL prefix for raw GitHub content (constructed from REPO_PATH_IDENTIFIER and REPO_BRANCH_NAME) */
 declare const REPO_PREFIX_URL: string;
 /** @type {string} Prefix for all temp script files written to /tmp during execution */
 declare const TEMP_SCRIPT_PREFIX: string;
-declare const LINE_BREAK_COUNT: any;
+/** @type {number} Console line break width for separator lines (default 80) */
+declare const LINE_BREAK_COUNT: number;
 /**
  * Tracks the processing status of each script file during execution.
  * @type {Array<{file: string, path: string, script: string, tempFileCommand: string, status: 'success'|'error', fileMatchState: string|undefined, description: string}>}
@@ -770,7 +806,6 @@ declare const OS_SCRIPT_PATHS: Array<[boolean, string]>;
  */
 declare const LIMITED_SUPPORT_OSES: string[];
 declare const BASE_SY_CUSTOM_TWEAKS_DIR: string;
-declare const lineBreakCountToUse: number;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
 declare const LINE_BREAK_EQUAL: string;
