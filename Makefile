@@ -11,6 +11,7 @@ test:
 	bash run.sh --force
 
 format:
+	bash build.sh build-include
 	bash format.sh
 
 clean:

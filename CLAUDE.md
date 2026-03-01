@@ -1,154 +1,124 @@
-               # CLAUDE.md
+# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-Nav Generator is a client-side React application that converts bookmark lists into self-contained data URLs that can be bookmarked in browsers. The entire application runs in the browser with no backend dependencies.
+Personal bash profile and dotfiles management system (`synle/bashrc`). Automates setup of shell configuration, editor settings, fonts, Git config, and OS-specific tweaks across macOS, Ubuntu/Debian, WSL, Android Termux, Arch Linux/Steam Deck, and ChromeOS.
 
-## Development Commands
-
-### Building
+## Commands
 
 ```bash
-npm run build          # Production build using Vite
-./build.sh            # Alternative build script
+make test              # Run all scripts locally (bash run.sh --force)
+make build             # Run build.sh + format code
+make format            # Format code with Prettier
+make clean             # Run clean.sh
+make start             # Run run.sh
+make nuke              # Remove all bashrc config (~/.bash_sy*, fnm, hushlogin)
 ```
 
-The build outputs directly to the root directory:
-
-- `index.js` - Compiled JavaScript bundle (IIFE format)
-- `index.css` - Compiled styles from SCSS
-- `index.js.map` - Source map
-
-### Local Development
+### run.sh - Test/install scripts
 
 ```bash
-npm start             # Start HTTP server with CORS support (port 8080)
-./dev.sh             # Watch mode - auto-rebuilds on file changes every 3 seconds
+bash run.sh                          # Full local run
+bash run.sh --prod                   # Full run fetching from GitHub
+bash run.sh --files="git.js"         # Run specific script(s)
+bash run.sh git.js vim-config.js     # Bare args as files
+bash run.sh --debug                  # Keep temp files, show retry commands
+bash run.sh --force-refresh          # Reinstall fnm/Node
+bash run.sh --verbose                # Enable bash tracing (set -x)
+bash run.sh --lightweight            # Lightweight install mode
 ```
 
-### Code Formatting
+### build.sh - Build pipeline
 
 ```bash
-npm run format        # Format HTML, JSX, SCSS, YML, MD, JSON files with Prettier
+bash build.sh                        # Run all build steps
+bash build.sh --steps="jsdocs,webapp" # Run specific steps
 ```
+
+Steps: `jsdocs`, `script-indexes`, `prebuild-hosts`, `build-configs`, `host-mappings`, `backup-xfce`, `webapp`, `build-include`
 
 ## Architecture
 
-### Single-File React Application
+### Execution Pipeline: `node | bash`
 
-The entire application is contained in `index.jsx` (~3,300 lines), structured as:
+The core execution model pipes Node.js output into bash:
 
-1. **Modal System** (lines 36-252)
-   - Custom Modal, AlertModal, PromptModal components
-   - Override native `window.alert()`, `window.confirm()`, `window.prompt()`
-   - Modal manager for rendering/unmounting modals
+1. `run.sh` or `build.sh` sources `bootstrap/common-env.sh` (inlined via BEGIN/END blocks)
+2. `run_files()` in common-env.sh does: `cat software/index.js | node | bash` (local) or `curl ... | node | bash` (prod)
+3. `software/index.js` runs in Node, discovers script files, and **prints bash commands to stdout**
+4. Bash receives and executes those commands
 
-2. **Schema Parser** (lines 315-750)
-   - Parses custom bookmark syntax into structured data
-   - Syntax markers:
-     - `!` - Page title
-     - `#` - Section headers
-     - `|` - Same-tab links
-     - `|||` - New-tab links
-     - ` ``` ` - Code blocks
-     - `---` - HTML blocks
-     - `>>>` - Tabs
-     - `@` - Custom favicon URLs
+This means Node generates commands instantly but bash executes them over time. Any timing/status tracking must happen on the bash side, not in Node.
 
-3. **Core Components** (lines 750-2800)
-   - `SearchBox` - Fuzzy search with keyboard navigation
-   - `PageRead` - View mode for rendered navigation
-   - `PageEdit` - Edit mode with schema editor
-   - `SchemaRender` - Converts parsed schema to React elements
-   - `SchemaEditor` - Monaco Editor wrapper with textarea fallback
-   - `App` - Main application component with view mode routing
-   - `PageVersionHistory` - IndexedDB-based version history
-   - `PageChromeBookmarkImport` - Import Chrome bookmarks
-   - `PageChromeBookmarkExport` - Export as Chrome bookmarks
-   - `PageBackupDownload` - Download schema as file
+### software/index.js (~1900 lines)
 
-4. **Utilities** (lines 2800-3291)
-   - Theme toggle (dark/light mode stored in localStorage)
-   - IndexedDB operations for version history
-   - Data URL generation and navigation
-   - Bookmark file parsing (Chrome format)
+Dual-purpose file:
 
-### Service Worker (`sw-nav.js`)
+- **Utility library**: Provides globals (file I/O, text processing, network helpers, platform detection) that individual scripts depend on
+- **Bootstrap entry point**: Discovers platform-specific scripts, generates temp files in `/tmp/bashrc_syle_sw_*`, and emits bash commands to execute them
 
-Implements stale-while-revalidate caching strategy:
+Key constants: `IS_TEST_SCRIPT_MODE`, `IS_DEBUG`, `TEMP_SCRIPT_PREFIX`, `OS_SCRIPT_PATHS`
 
-- Cache version tied to build timestamp (injected during build)
-- 1-week TTL for cached resources
-- Caches: HTML, JS, CSS, images, and specific file types
-- Auto-updates and cleans expired cache entries
+JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/index.d.ts`. OS flag constants need explicit `const` declarations for .d.ts generation.
 
-### Build Configuration (`vite.config.js`)
+### OS Flags Convention
 
-- Custom plugin `updateServiceWorker()` injects build timestamp into service worker
-- Outputs IIFE bundle (not ES modules) to root directory
-- Source maps enabled
-- SCSS preprocessing
-- Minification enabled for production
+OS detection happens in `bootstrap/common-env.sh` and exports `is_os_<name>=1` env vars. In `index.js`, these become boolean globals via `getRuntimeOption()`.
 
-### Styling (`index.scss`, `common.scss`)
+Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`
 
-- SCSS with shared variables in `common.scss`
-- Custom elements: `<load>`, `<tabs>`, `<tab>`
-- Theme variables for dark/light modes
-- Responsive design
+| Flag | Folder | Platform |
+|------|--------|----------|
+| `is_os_mac` | `software/scripts/mac/` | macOS |
+| `is_os_ubuntu` | (none) | Ubuntu, Debian, Mint |
+| `is_os_chromeos` | `software/scripts/chromeos/` | ChromeOS |
+| `is_os_mingw64` | (none) | MSYS2/Cygwin |
+| `is_os_android_termux` | `software/scripts/android_termux/` | Android Termux |
+| `is_os_arch_linux` | `software/scripts/arch_linux/` | Arch Linux |
+| `is_os_steamdeck` | (none) | Steam Deck (SteamOS) |
+| `is_os_redhat` | (none) | Fedora, RHEL, CentOS |
+| `is_os_window` | `software/scripts/window/` | Windows (WSL/MinGW) |
+| `is_os_wsl` | (none) | Windows Subsystem for Linux |
 
-### Generated Output
+### bootstrap/common-env.sh
 
-The build creates a data URL embedded in `index.html` that contains:
+Shared environment setup inlined into `run.sh` and `build.sh` via `# BEGIN`/`# END` markers. Contains:
+- Repository URL exports
+- OS detection (sets `is_os_*` flags)
+- `run_files()` helper function
+- CI mode echo override for GitHub Actions groups
 
-- Entire navigation schema in `<script type='schema'>` tag
-- Self-contained HTML that loads CSS and JS from GitHub Pages
-- Can be bookmarked directly in the browser
+### build-include system
 
-## Key Concepts
+`software/build-include.cjs` processes `# BEGIN path/to/file` / `# END path/to/file` markers in target files, replacing the block content with the referenced file. This is how `common-env.sh` gets inlined into `run.sh` and `build.sh`.
 
-### Data URL Architecture
+Run with: `bash build.sh --steps="build-include"` or `node software/build-include.cjs`
 
-The application generates self-contained data URLs that:
+### Script Files
 
-1. Load external CSS/JS from GitHub Pages (`https://synle.github.io/nav-generator/`)
-2. Embed the navigation schema inline in a `<script type='schema'>` tag
-3. Can be bookmarked and work offline (after first load via service worker)
+- `software/scripts/*.js` - Cross-platform scripts (git, vim, fonts, editors, etc.)
+- `software/scripts/<os>/` - OS-specific scripts
+- `software/scripts/<os>/_only.sh` - Shell scripts run only on that OS
+- `software/metadata/` - Generated configs (script list, host mappings, IP addresses)
 
-### Schema Language
+### Webapp
 
-The custom markup language is intentionally minimal for easy typing in the editor. The parser (`_parseSchemaString` function) converts this to a structured format for rendering.
-
-### Monaco Editor Integration
-
-- Loads Monaco from CDN (`https://unpkg.com/monaco-editor@0.40.0`)
-- Custom syntax highlighting for nav-generator schema
-- Falls back to textarea if Monaco fails to load within 5 seconds
-- Auto-formats with word wrap and minimap disabled
-
-### Version History
-
-- Uses IndexedDB (`VersionsDB`) to store schema snapshots
-- Auto-saves on each edit (deduplicated by value)
-- Restore previous versions via dedicated page
+A React webapp at `webapp/` built with Vite. Provides a web UI for browsing scripts and configuration. Built via `bash build.sh --steps="webapp"` or `npm run build`.
 
 ## CI/CD
 
-GitHub Actions workflow (`.github/workflows/build-main.yml`):
+GitHub Actions (`.github/workflows/build-main.yml`):
+- Triggers on push to master
+- Runs `build.sh`, commits artifacts back to repo
+- Deploys to GitHub Pages
 
-- Triggers on push to main/master
-- Calls reusable workflow from `synle/gha-workflows`
-- Runs `build.sh` and commits artifacts back to repository
-- Allows direct deployment to GitHub Pages
+## Key Patterns
 
-## Important Notes
-
-- **No tests**: This project has no test suite
-- **Single file**: Most application logic is in one large `index.jsx` file, not split into modules
-- **Build outputs to root**: Unlike typical projects, build artifacts are committed to the root directory for GitHub Pages deployment
-- **Monaco timeout**: The editor has a 5-second timeout before falling back to textarea
-- **Custom HTML elements**: Uses non-standard elements like `<load>`, `<tabs>`, `<tab>` for styling purposes
-- **eval() usage**: JavaScript links (`javascript://`) use eval() for execution (line 1585)
-- **No TypeScript**: Pure JavaScript/JSX without type checking
+- `getRuntimeOption(key, parseFunc)` - Standard way to read env vars/CLI args in index.js
+- `writeToFile(filePath, content)` / `appendToFile()` - File output helpers
+- `writeToBuildFile(name, content)` - Write to `.build/` directory (used by build-configs step)
+- `processScriptFile()` - Generates bash commands to fetch/execute a script via temp files
+- `printScriptProcessingResults()` - Emits summary of script execution results, cleans temp files
+- No test suite exists; `make test` runs all scripts locally as a smoke test
