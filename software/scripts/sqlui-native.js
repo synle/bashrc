@@ -9,7 +9,7 @@ async function doWork() {
   let fileName;
   if (is_os_window) {
     fileName = `sqlui-native-${SQLUI_NATIVE_VERSION}-x64.exe`;
-  } else if (is_os_darwin_mac) {
+  } else if (is_os_mac) {
     fileName = `sqlui-native-${SQLUI_NATIVE_VERSION}-x64.dmg`;
   } else {
     fileName = `sqlui-native-${SQLUI_NATIVE_VERSION}.AppImage`;
@@ -35,7 +35,7 @@ async function doWork() {
 
   console.log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
 
-  if (is_os_darwin_mac) {
+  if (is_os_mac) {
     writeText(path.join(targetPath, "README.txt"), "xattr -cr /Applications/sqlui-native.app");
     console.log("  >> Created README.txt with macOS quarantine fix");
   }

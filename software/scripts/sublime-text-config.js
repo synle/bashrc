@@ -106,7 +106,7 @@ async function _getPathSublimeText() {
       return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
     }
 
-    if (is_os_darwin_mac) {
+    if (is_os_mac) {
       return findDirSingle(getOsxApplicationSupportCodeUserPath(), regexBinary);
     }
 
@@ -146,10 +146,10 @@ function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
  * Builds the full Sublime Text settings object with editor, performance, and OS-specific configs.
  * @param {object} options - Configuration options.
  * @param {boolean} [options.is_prebuilt_config] - Whether to use fallback font sizes for prebuilt configs.
- * @param {boolean} [options.is_os_darwin_mac] - Whether the target OS is macOS.
+ * @param {boolean} [options.is_os_mac] - Whether the target OS is macOS.
  * @returns {object} The Sublime Text settings object.
  */
-function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
+function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
   const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
   const configs = {
@@ -159,7 +159,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
     hot_exit: false, // Don't save unsaved buffers on close — start fresh every time
     remember_open_files: false, // Don't reopen files from previous session on startup
     gpu_window_buffer: true, // Use GPU buffer for the window — smoother rendering
-    hardware_acceleration: is_os_darwin_mac ? "metal" : "opengl", // Metal for macOS, OpenGL for everything else
+    hardware_acceleration: is_os_mac ? "metal" : "opengl", // Metal for macOS, OpenGL for everything else
     index_workers: 2, // Limit indexing threads to 2 — prevents CPU hogging while still enabling Goto Symbol
 
     // --- Typography & Rendering ---
@@ -242,14 +242,14 @@ async function doWork() {
   writeToBuildFile([
     {
       file: "sublime-text-config",
-      data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: false }),
+      data: _getConfigs({ is_prebuilt_config: true, is_os_mac: false }),
       isJson: true,
       comments,
       commentStyle: "json",
     },
     {
       file: "sublime-text-config-macosx",
-      data: _getConfigs({ is_prebuilt_config: true, is_os_darwin_mac: true }),
+      data: _getConfigs({ is_prebuilt_config: true, is_os_mac: true }),
       isJson: true,
       comments,
       commentStyle: "json",
@@ -277,5 +277,5 @@ async function doWork() {
   }
 
   console.log(`    >> Deployed config:`, targetPath);
-  writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
+  writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_mac: is_os_mac }));
 }

@@ -61,7 +61,7 @@ export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
 
 
 # OS detection upfront
-is_os_darwin_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && is_os_darwin_mac=1
+is_os_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && is_os_mac=1
 is_os_ubuntu=0 && command grep -Eiq "ID(_LIKE)?=(ubuntu|debian|mint)" /etc/os-release 2>/dev/null && is_os_ubuntu=1
 is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /proc/version 2>/dev/null && ! command grep -qi "microsoft" /proc/version 2>/dev/null; }; } && is_os_chromeos=1
 is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d /mingw64 ]; } && is_os_mingw64=1
@@ -210,7 +210,7 @@ for arg in "$@"; do
       ;;
     --debug|-debug|-D)
       debug_mode=true
-      export KEEP_TEMP_SCRIPTS=1
+      export IS_DEBUG=1
       _parsing_into=""
       ;;
     -*)

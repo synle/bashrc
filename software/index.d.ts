@@ -673,7 +673,7 @@ declare let HOME_HOST_NAMES: any[];
 /** @type {boolean} */
 declare const is_os_window: boolean;
 /** @type {boolean} */
-declare const is_os_darwin_mac: boolean;
+declare const is_os_mac: boolean;
 /** @type {boolean} */
 declare const is_os_arch_linux: boolean;
 /** @type {boolean} */

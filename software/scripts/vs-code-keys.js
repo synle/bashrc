@@ -106,7 +106,7 @@ async function _getPathSublimeText() {
       return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
     }
 
-    if (is_os_darwin_mac) {
+    if (is_os_mac) {
       return findDirSingle(getOsxApplicationSupportCodeUserPath(), regexBinary);
     }
 
@@ -155,7 +155,7 @@ function _formatKey(keybindings, osKeyToUse) {
  * @returns {object[]} Array of resolved keybinding objects.
  */
 function _getConfigs() {
-  return is_os_darwin_mac
+  return is_os_mac
     ? _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY)
     : _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY);
 }

@@ -8,7 +8,7 @@ DEST_PATH=/opt/jq
 
 echo '  >> Installing jq: ' $DEST_PATH;
 echo '    >> Downloading jq'
-if [ $is_os_darwin_mac == "1" ]; then
+if [ $is_os_mac == "1" ]; then
   echo '      >> For OSX'
   DOWNLOAD_PATH="$BASH_PROFILE_CODE_REPO_RAW_URL/binaries/jq-osx"
 else

@@ -169,7 +169,7 @@ async function doWork() {
     // ----------------------------------------------------------
     // Keybindings (loaded from external jsonc file)
     // ----------------------------------------------------------
-    keybindings: [...(parseJsonWithComments(await fetchUrlAsString("software/scripts/windows/terminal-keys.jsonc")) || [])],
+    keybindings: [...(parseJsonWithComments(await fetchUrlAsString("software/scripts/window/terminal-keys.jsonc")) || [])],
   };
 
   // ----------------------------------------------------------

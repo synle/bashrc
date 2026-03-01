@@ -18,7 +18,7 @@ function _getPathSublimeMerge() {
   if (is_os_window) {
     return findDirSingle(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Merge/);
   }
-  if (is_os_darwin_mac) {
+  if (is_os_mac) {
     return path.join(getOsxApplicationSupportCodeUserPath(), "Sublime Merge");
   }
   return null;

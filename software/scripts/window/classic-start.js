@@ -1,7 +1,7 @@
 /** * Downloads and installs Classic Start menu for Windows. */
 async function doWork() {
   console.log("  >> Installing Windows Only - Classic Start Configs");
-  const res = await fetchUrlAsString(`software/scripts/windows/classic_start.config.xml`);
+  const res = await fetchUrlAsString(`software/scripts/window/classic_start.config.xml`);
 
   writeToBuildFile([{ file: "windows-classic-start-menu.xml", data: res }]);
 

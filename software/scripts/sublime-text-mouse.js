@@ -106,7 +106,7 @@ async function _getPathSublimeText() {
       return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
     }
 
-    if (is_os_darwin_mac) {
+    if (is_os_mac) {
       return findDirSingle(getOsxApplicationSupportCodeUserPath(), regexBinary);
     }
 
@@ -198,5 +198,5 @@ async function doWork() {
 
   const fileDestPath = path.join(targetPath, "Packages/User/Default.sublime-mousemap");
   console.log("      >> fileDestPath", fileDestPath);
-  writeJson(fileDestPath, _formatKey(MOUSE_MAPS, is_os_darwin_mac ? MAC_OSX_KEY : WINDOWS_OS_KEY));
+  writeJson(fileDestPath, _formatKey(MOUSE_MAPS, is_os_mac ? MAC_OSX_KEY : WINDOWS_OS_KEY));
 }

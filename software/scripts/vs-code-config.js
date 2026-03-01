@@ -106,7 +106,7 @@ async function _getPathSublimeText() {
       return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
     }
 
-    if (is_os_darwin_mac) {
+    if (is_os_mac) {
       return findDirSingle(getOsxApplicationSupportCodeUserPath(), regexBinary);
     }
 
@@ -159,10 +159,10 @@ function _convertIgnoredFilesAndFoldersForVSCode(files = [], folders = [], isWat
  * Builds the full VS Code settings object with editor, performance, theming, and language configs.
  * @param {object} options - Configuration options.
  * @param {boolean} [options.is_prebuilt_config] - Whether to use fallback font sizes for prebuilt configs.
- * @param {boolean} [options.is_os_darwin_mac] - Whether the target OS is macOS.
+ * @param {boolean} [options.is_os_mac] - Whether the target OS is macOS.
  * @returns {object} The VS Code settings object.
  */
-function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
+function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
   const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
   const syntaxHighlightOpts = {
@@ -325,7 +325,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_darwin_mac = false }) {
   };
 
   // Mac-specific overrides
-  if (is_os_darwin_mac) {
+  if (is_os_mac) {
     configs["workbench.fontAliasing"] = "antialiased"; // Sharper text rendering on macOS Retina displays
   }
 
@@ -342,14 +342,14 @@ async function doWork() {
   // write to build file
   const comments = "Preferences Open User Settings (JSON)";
   writeToBuildFile([
-    { file: "vs-code-config", data: _getConfigs({ is_os_darwin_mac: false }), isJson: true, comments, commentStyle: "json" },
-    { file: "vs-code-config-macosx", data: _getConfigs({ is_os_darwin_mac: true }), isJson: true, comments, commentStyle: "json" },
+    { file: "vs-code-config", data: _getConfigs({ is_os_mac: false }), isJson: true, comments, commentStyle: "json" },
+    { file: "vs-code-config-macosx", data: _getConfigs({ is_os_mac: true }), isJson: true, comments, commentStyle: "json" },
   ]);
 
   // for my own system
   let targetPaths = await _getVSCodeAndVSCodiumPaths();
   console.log("    >> For my own system: ", targetPaths?.length);
   for (const targetPath of targetPaths) {
-    writeConfigToFile(targetPath, "User/settings.json", _getConfigs({ is_os_darwin_mac: is_os_darwin_mac }));
+    writeConfigToFile(targetPath, "User/settings.json", _getConfigs({ is_os_mac: is_os_mac }));
   }
 }

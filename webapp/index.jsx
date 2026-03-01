@@ -288,7 +288,7 @@ function ScriptOutputSection({ script }) {
   const formValueOutput = useMemo(() => {
     const osFlag = formValue.osToRun;
     const osFlags = {
-      is_os_darwin_mac: osFlag === "mac",
+      is_os_mac: osFlag === "mac",
       is_os_window: osFlag === "windows",
       is_os_wsl: osFlag === "windows",
       is_os_ubuntu: ["windows", "chrome_os", "ubuntu"].indexOf(osFlag) >= 0,
@@ -1061,7 +1061,7 @@ function MacOSXNotesDom() {
       <DynamicTextArea path="/.build/inputrc" />
       <DynamicTextArea path="/.build/vimrc" />
       <DynamicTextArea path="/android/sponsorblock.json" />
-      <CommonEditorSetupDom is_os_darwin_mac={true} />
+      <CommonEditorSetupDom is_os_mac={true} />
 
       {/* Mac */}
       <div className="form-label">Other Applications</div>
@@ -1248,16 +1248,16 @@ function WindowsNotesDom() {
  * Shared editor setup section that renders VS Code/VSCodium/Sublime Text setup scripts
  * and the appropriate VS Code extension list for the target OS.
  * @param {Object} props
- * @param {boolean} [props.is_os_darwin_mac] - If true, shows macOS VS Code extensions.
+ * @param {boolean} [props.is_os_mac] - If true, shows macOS VS Code extensions.
  * @param {boolean} [props.is_os_window] - If true, shows Windows VS Code extensions.
  * @param {boolean} [props.is_os_ubuntu] - If true (or default), shows Linux VS Code extensions.
  * @returns {React.ReactElement} The combined editor setup scripts and extension lists.
  */
 function CommonEditorSetupDom(props) {
-  const { is_os_darwin_mac, is_os_window, is_os_ubuntu } = props;
+  const { is_os_mac, is_os_window, is_os_ubuntu } = props;
 
   let domVSCodeExtension = <DynamicTextArea path="/.build/vs-code-ext-linux" />;
-  if (is_os_darwin_mac) {
+  if (is_os_mac) {
     domVSCodeExtension = <DynamicTextArea path="/.build/vs-code-ext-macosx" />;
   } else if (is_os_window) {
     domVSCodeExtension = <DynamicTextArea path="/.build/vs-code-ext-windows" />;

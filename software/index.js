@@ -110,20 +110,16 @@ const IS_TEST_SCRIPT_MODE = getRuntimeOption("IS_TEST_SCRIPT_MODE", parseBoolean
 const IS_LIGHT_WEIGHT_MODE = getRuntimeOption("IS_LIGHT_WEIGHT_MODE", parseBoolean);
 const PRE_SCRIPT_FILES = getRuntimeOption("PRE_SCRIPT_FILES");
 const RUN_ONLY_PRESCRIPTS = getRuntimeOption("RUN_ONLY_PRESCRIPTS", parseBoolean);
-const KEEP_TEMP_SCRIPTS = getRuntimeOption("KEEP_TEMP_SCRIPTS", parseBoolean);
+/** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
+const IS_DEBUG = getRuntimeOption("IS_DEBUG", parseBoolean);
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
+/** @type {string} Prefix for all temp script files written to /tmp during execution */
+const TEMP_SCRIPT_PREFIX = "/tmp/bashrc_syle_sw_";
 const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 10)); // console line break width
 
 /**
  * Tracks the processing status of each script file during execution.
- * Each entry records whether a script was found and processed successfully or encountered an error.
- * @type {Array<{file: string, path: string, script: string, tempFileCommand: string, status: 'success'|'error', description: string}>}
- * @property {string} file - The original file name before prefix expansion
- * @property {string} path - The resolved file path after prefix expansion
- * @property {string} script - The generated bash command used to fetch/execute the script
- * @property {string} tempFileCommand - The generated temp file command for retry/debugging
- * @property {string} status - 'success' if the script was found, 'error' if not found
- * @property {string} description - Error detail message, empty string on success
+ * @type {Array<{file: string, path: string, script: string, tempFileCommand: string, status: 'success'|'error', fileMatchState: string|undefined, description: string}>}
  */
 const scriptProcessingResults = [];
 
@@ -291,7 +287,7 @@ const EDITOR_CONFIGS = {
 };
 
 //////////////////////////////////////////////////////
-// Host Config & OS Flags
+// Host Config
 //////////////////////////////////////////////////////
 /**
  * The host config is located here:
@@ -300,20 +296,63 @@ const EDITOR_CONFIGS = {
  */
 let HOME_HOST_NAMES = [];
 
-// os flags - read from environment and also set on global for script file access
+
+//////////////////////////////////////////////////////
+// OS Flags
+//////////////////////////////////////////////////////
+/**
+ * OS detection flags and script path mappings.
+ *
+ * Flags are set by bootstrap/common-env.sh based on platform detection and exported
+ * as environment variables (e.g. `is_os_mac=1`). This section reads them into JS.
+ *
+ * Convention: each flag follows the pattern `is_os_<name>`, where `<name>` maps
+ * directly to a folder under `software/scripts/<name>/` containing OS-specific scripts.
+ *
+ * Flag               | Env Variable          | Script Folder                     | Platforms
+ * -------------------|-----------------------|-----------------------------------|------------------------------
+ * is_os_mac          | is_os_mac=1           | software/scripts/mac/             | macOS (darwin)
+ * is_os_ubuntu       | is_os_ubuntu=1        | (none)                            | Ubuntu, Debian, Mint
+ * is_os_chromeos     | is_os_chromeos=1      | software/scripts/chromeos/        | ChromeOS
+ * is_os_mingw64      | is_os_mingw64=1       | (none)                            | MSYS2 / Cygwin / MinGW64
+ * is_os_android_termux | is_os_android_termux=1 | software/scripts/android_termux/ | Android Termux
+ * is_os_arch_linux   | is_os_arch_linux=1    | software/scripts/arch_linux/      | Arch Linux, SteamOS
+ * is_os_steamdeck    | is_os_steamdeck=1     | (none)                            | Steam Deck (SteamOS subset)
+ * is_os_redhat       | is_os_redhat=1        | (none)                            | Fedora, RHEL, CentOS, Rocky
+ * is_os_window       | is_os_window=1        | software/scripts/window/          | Windows (WSL /mnt/c detected)
+ * is_os_wsl          | is_os_wsl=1           | (none)                            | Windows Subsystem for Linux
+ *
+ * Flags without a script folder are still used for conditional logic in individual scripts
+ * (e.g. `exitIfUnsupportedOs()`, platform-specific file paths).
+ *
+ * OS_SCRIPT_PATHS is built dynamically: for each `is_os_*` env var, if a matching
+ * `software/scripts/<name>/` folder exists, it's added as [flagValue, folderPath].
+ * This is used by getSoftwareScriptFiles() to exclude non-matching OS folders.
+ */
+
+/** @type {Array<[boolean, string]>} OS flag values paired with their script folder paths */
+const OS_SCRIPT_PATHS = [];
 Object.keys(process.env)
   .filter((envKey) => envKey.indexOf("is_os_") === 0)
-  .forEach((envKey) => (global[envKey] = parseInt(process.env[envKey] || "0") > 0));
-/** @type {boolean} */
-const is_os_window = !!global.is_os_window;
-/** @type {boolean} */
-const is_os_darwin_mac = !!global.is_os_darwin_mac;
-/** @type {boolean} */
-const is_os_arch_linux = !!global.is_os_arch_linux;
-/** @type {boolean} */
-const is_os_android_termux = !!global.is_os_android_termux;
-/** @type {boolean} */
-const is_os_chromeos = !!global.is_os_chromeos;
+  .forEach((envKey) => {
+    global[envKey] = getRuntimeOption(envKey, parseBoolean);
+    const scriptPath = `software/scripts/${envKey.replace("is_os_", "")}`;
+    if (fs.existsSync(scriptPath)) {
+      OS_SCRIPT_PATHS.push([global[envKey], scriptPath]);
+    }
+  });
+
+// Explicit const declarations so tsc emits these in the .d.ts (see table above)
+/** @type {boolean} macOS (darwin) */ const is_os_mac = !!global.is_os_mac;
+/** @type {boolean} Ubuntu, Debian, Mint */ const is_os_ubuntu = !!global.is_os_ubuntu;
+/** @type {boolean} ChromeOS */ const is_os_chromeos = !!global.is_os_chromeos;
+/** @type {boolean} MSYS2 / Cygwin / MinGW64 */ const is_os_mingw64 = !!global.is_os_mingw64;
+/** @type {boolean} Android Termux */ const is_os_android_termux = !!global.is_os_android_termux;
+/** @type {boolean} Arch Linux, SteamOS */ const is_os_arch_linux = !!global.is_os_arch_linux;
+/** @type {boolean} Steam Deck (SteamOS subset) */ const is_os_steamdeck = !!global.is_os_steamdeck;
+/** @type {boolean} Fedora, RHEL, CentOS, Rocky */ const is_os_redhat = !!global.is_os_redhat;
+/** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_window = !!global.is_os_window;
+/** @type {boolean} Windows Subsystem for Linux */ const is_os_wsl = !!global.is_os_wsl;
 
 // setting up the path for the extra tweaks
 const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
@@ -1092,7 +1131,7 @@ async function downloadWindowsApp(applicationName, findFilter) {
  * @returns {string} The resolved OS key
  */
 function resolveOsKey(keys) {
-  if (is_os_darwin_mac) return keys.mac;
+  if (is_os_mac) return keys.mac;
   if (is_os_window) return keys.windows;
   return keys.linux;
 }
@@ -1384,14 +1423,7 @@ async function getSoftwareScriptFiles() {
   let softwareFiles = files.filter((f) => !f.includes(".common.js")).sort();
 
   // Exclude OS-specific script folders that don't belong to the current platform.
-  // Each script self-guards against unsupported OSes via exitIfUnsupportedOs().
-  const pathsToIgnore = [
-    [is_os_window, "software/scripts/windows"],
-    [is_os_darwin_mac, "software/scripts/mac"],
-    [is_os_arch_linux, "software/scripts/arch_linux"],
-    [is_os_android_termux, "software/scripts/android_termux"],
-    [is_os_chromeos, "software/scripts/chromeos"],
-  ]
+  const pathsToIgnore = OS_SCRIPT_PATHS
     .map(([valid, pathToCheck]) => (!valid ? pathToCheck : ""))
     .filter((s) => !!s);
 
@@ -1582,43 +1614,15 @@ const echoColorAttention = (str) => echoColor(str, CONSOLE_COLORS[7]);
 // Script Processing & Execution
 //////////////////////////////////////////////////////
 /**
- * Derives a predictable temp file path from a script file name.
- * Used to write combined scripts to disk so errors show real file paths in stack traces.
+ * Derives a temp file path from a script file name using TEMP_SCRIPT_PREFIX and a timestamp.
  * @param {string} file - The script file path
- * @returns {string} A temp file path like /tmp/bashrc_sw_git.js
+ * @returns {string} A temp file path like /tmp/bashrc_syle_sw_git.js_2026_02_28_14_39_14
  */
 function _getTempFilePath(file) {
   const name = path.basename(file).replace(/[^a-zA-Z0-9._-]/g, "_");
-  // TODO: append Date.now() at the end to be safe /tmp/bashrc_syle_sw_${name}_${Date.now()}, clean me up to just be yyyy_MM_DD_hh:mm:ss (hh lets do military time)
-  const RUNNER_SCRIPT_ID = Date.now();
-  return `/tmp/bashrc_syle_sw_${RUNNER_SCRIPT_ID}`;
-}
-
-/**
- * Generates a bash snippet that writes a script to a temp file, executes it,
- * and on failure preserves the file and shows context around the error.
- * On success, cleans up the temp file (unless KEEP_TEMP_SCRIPTS is set).
- * @param {string} fetchCmd - The command to produce the script content (e.g. cat or curl)
- * @param {string} tmpFile - The temp file path to write to
- * @param {string} runner - The command to run the temp file (e.g. 'node', 'bash', 'sudo -E node')
- * @param {string} label - Human-readable label for error messages (the script path)
- * @returns {string} A bash command string
- */
-function _generateTempFileCommand(fetchCmd, tmpFile, runner, label) {
-  const cleanupCmd = KEEP_TEMP_SCRIPTS ? "true" : `rm -f ${tmpFile}`;
-
-  // For 'node | bash' pattern: run node to generate bash script, save output, then run with bash
-  if (runner === "node | bash") {
-    const tmpBash = `${tmpFile}.sh`;
-    const cleanupBoth = KEEP_TEMP_SCRIPTS ? "true" : `rm -f ${tmpFile} ${tmpBash}`;
-    return `{ ${fetchCmd} ;} > ${tmpFile} && node ${tmpFile} > ${tmpBash}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED (node phase): ${label} (exit code $_EC). Re-run: node ${tmpFile}\\e[m'; cat ${tmpBash}; else bash ${tmpBash}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED (bash phase): ${label} (exit code $_EC). Re-run: bash ${tmpBash}\\e[m'; else ${cleanupBoth}; fi; fi`;
-  }
-
-  // Standard pattern: write to temp file, run directly, show context on error
-  // Captures stderr to a .err file so we can extract line numbers without re-running
-  const tmpErr = `${tmpFile}.err`;
-  const cleanupAll = KEEP_TEMP_SCRIPTS ? "true" : `rm -f ${tmpFile} ${tmpErr}`;
-  return `{ ${fetchCmd} ;} > ${tmpFile} && ${runner} ${tmpFile} 2>${tmpErr}; _EC=$?; if [ $_EC -ne 0 ]; then echo -e '\\e[31m>> FAILED: ${label} (exit code $_EC). Re-run with: ${runner} ${tmpFile}\\e[m'; cat ${tmpErr}; _ERR_LINE=$(grep -oE ':[0-9]+' ${tmpErr} | head -1 | tr -d ':'); if [ -n "$_ERR_LINE" ]; then _START=$(( _ERR_LINE > 10 ? _ERR_LINE - 10 : 1 )); _END=$(( _ERR_LINE + 10 )); echo -e '\\e[33m>> Context around line $_ERR_LINE:\\e[m'; sed -n "$_START,\${_END}p" ${tmpFile} | cat -n; fi; else ${cleanupAll}; fi`;
+  const now = new Date();
+  const ts = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, "0")}_${String(now.getDate()).padStart(2, "0")}_${String(now.getHours()).padStart(2, "0")}_${String(now.getMinutes()).padStart(2, "0")}_${String(now.getSeconds()).padStart(2, "0")}`;
+  return `${TEMP_SCRIPT_PREFIX}${name}_${ts}`;
 }
 
 /**
@@ -1725,24 +1729,21 @@ function processScriptFile(file, originalFile, allRepoFiles) {
   }
 
   let tempFileCommand = "";
-  const start = new Date();
   if (fileExists) {
     // purge matched file from the list to prevent duplicate matches
     const idx = allRepoFiles.indexOf(foundMatchedPath);
     if (idx !== -1) allRepoFiles.splice(idx, 1);
-    const tmpFile = _getTempFilePath(file);// /tmp/bashrc_sw_script-list.js
-    const fetchCmd = _generateScript(file, url); // cat software/index.js && cat software/metadata/script-list.js
-    const runner = _generatePipeOutput(file, url); // node
-    const resultLabel = !fileMatchState ? originalFile : `${originalFile} (${file})`;
-    const descSuffix = description ? ` ${description}` : "";
-    tempFileCommand  = `cat ${tmpFile} | ${runner}`
-    const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`
-    console.log(echoColor3(`  >> processScriptFile | ${originalFile} (${file}) - ${tempFileCommand}`));
-    console.log(fullCommand); // this is to tell the system to trigger the command
+    const tmpFile = _getTempFilePath(file);
+    const fetchCmd = _generateScript(file, url);
+    const runner = _generatePipeOutput(file, url);
+    tempFileCommand = `cat ${tmpFile} | ${runner}`;
+    const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`;
+
+    console.log(echoColor3(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`));
+    console.log(fullCommand);
   } else {
     console.log(echoColor3(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `));
   }
-  const end = new Date();
 
   scriptProcessingResults.push({
     file: originalFile,
@@ -1750,13 +1751,8 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     script: _generateScript(file, url),
     tempFileCommand,
     status: fileExists ? "success" : "error",
-    fileMatchState: fileMatchState || "",
+    fileMatchState,
     description: description || "",
-
-    // TODO: remove these start and end time, it's buggy, can't be done
-    start,
-    end,
-    durationMs: end - start
   });
 }
 
@@ -1836,50 +1832,36 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
 /**
  * Prints the script processing results with a section header.
  * Success entries are printed in green, error entries in red.
- * @param {Array<{file: string, path: string, description: string, status: string}>} results - The scriptProcessingResults array
+ * Cleans up temp scripts on success unless IS_DEBUG is on.
+ * @param {typeof scriptProcessingResults} results - The scriptProcessingResults array
  * @returns {void}
  */
-function formatDurationMinsSeconds(ms) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  if (mins > 0) {
-    return `${mins}m ${secs}s`;
-  }
-  return `${secs}s`;
-}
-
 function printScriptProcessingResults(results) {
   const successCount = results.filter((r) => r.status === "success").length;
   const errorCount = results.filter((r) => r.status === "error").length;
-  const totalDurationMs = results.reduce((sum, r) => sum + (r.durationMs || 0), 0);
 
   printSectionBlock(
-    `Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed) - Total: ${formatDurationMinsSeconds(totalDurationMs)}`,
+    `Script Processing Results: ${results.length} files (${successCount} success, ${errorCount} failed)`,
   );
 
   for (const result of results) {
-    const duration = result.durationMs != null ? ` (${formatDurationMinsSeconds(result.durationMs)})` : "";
     if (result.status === "success") {
       console.log(
         echoColorSuccess(
           !result.fileMatchState
-            ? `[Success] ${result.file}.${duration} ${result.description}`
-            : `[Success] ${result.file} (${result.path}).${duration} ${result.description}`,
+            ? `[Success] ${result.file}. ${result.description}`
+            : `[Success] ${result.file} (${result.path}). ${result.description}`,
         ),
       );
-      if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
-        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
-      }
     } else {
-      console.log(echoColorError(`[Error] ${result.file} (${result.path}).${duration} ${result.description}`));
-      if (result.fileMatchState !== "not_found" && result.tempFileCommand) {
-        // Non-file-expansion error: always show retry command for debugging
-        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
-      } else if (KEEP_TEMP_SCRIPTS && result.tempFileCommand) {
-        console.log(echoColor3(`  Retry: ${result.tempFileCommand}`));
-      }
+      console.log(echoColorError(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ''}`));
     }
+  }
+
+
+  // Clean up temp scripts on success, keep them on failure or debug mode for inspection
+  if (errorCount === 0 && !IS_DEBUG) {
+    console.log(`rm -f ${TEMP_SCRIPT_PREFIX}*`);
   }
 }
 

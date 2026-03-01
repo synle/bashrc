@@ -19,7 +19,7 @@ ${content}
     },
   ]);
 
-  if (is_os_window || is_os_darwin_mac || is_os_arch_linux) {
+  if (is_os_window || is_os_mac || is_os_arch_linux) {
     console.log("    >> Skipped");
     return;
   }

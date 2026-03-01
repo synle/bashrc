@@ -2,7 +2,7 @@
 async function doWork() {
   console.log("  >> Installing Mac Only - Iterm Dracula Theme");
 
-  if (!is_os_darwin_mac) {
+  if (!is_os_mac) {
     console.log("    >> Skipped - mac only");
     return process.exit();
   }

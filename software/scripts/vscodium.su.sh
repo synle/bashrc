@@ -25,7 +25,7 @@ if [ "${is_os_ubuntu}" -eq 1 ] && [ "${is_os_window}" -eq 0 ]; then
 fi
 
 # macOS Installation
-if [ "${is_os_darwin_mac}" -eq 1 ]; then
+if [ "${is_os_mac}" -eq 1 ]; then
     # Auto-detect architecture
     arch=$(uname -m)
     [ "$arch" == "x86_64" ] && arch="x64" || arch="arm64"

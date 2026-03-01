@@ -7,7 +7,7 @@ installPackage() {
   brew cask install &> /dev/null
 }
 
-if [ "$is_os_darwin_mac" = "1" ]; then
+if [ "$is_os_mac" = "1" ]; then
   echo ">> Begin setting up dependencies/mac.sh"
 
   echo ">> Mac UI & System Optimization..."

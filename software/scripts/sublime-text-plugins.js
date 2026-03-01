@@ -106,7 +106,7 @@ async function _getPathSublimeText() {
       return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
     }
 
-    if (is_os_darwin_mac) {
+    if (is_os_mac) {
       return findDirSingle(getOsxApplicationSupportCodeUserPath(), regexBinary);
     }
 
