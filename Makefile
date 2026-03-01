@@ -4,6 +4,10 @@ build:
 	bash build.sh
 	@if [ "$$CI" != "true" ]; then bash format.sh; fi
 
+build_hosts:
+	bash build.sh update-hosts
+
+
 start:
 	bash run.sh
 

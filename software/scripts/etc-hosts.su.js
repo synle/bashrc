@@ -102,17 +102,17 @@ async function doWork() {
 
   // write if there are change
   try {
-    log(">>> Update host mappings");
-    log(">>>> Total Home Hosts", HOME_HOST_NAMES.length);
-    log(">>>> Total Blocked Hosts", BLOCK_HOST_NAMES.length);
+    log(">> Update host mappings");
+    log(">>> Total Home Hosts", HOME_HOST_NAMES.length);
+    log(">>> Total Blocked Hosts", BLOCK_HOST_NAMES.length);
 
     writeText(targetPath, etcHostTextContent.trim());
-    log(">>> Done updating etc hosts: ", targetPath);
+    log(">> Done updating etc hosts: ", targetPath);
 
     if (is_os_window) {
-      log(">>>> Only Windows run command: ipconfig /flushdns");
+      log(">>> Only Windows run command: ipconfig /flushdns");
     }
   } catch (err) {
-    log(">>> Skipped : Permission denied (needs to Run as Admin for Windows WSL)");
+    log(">> Skipped : Permission denied (needs to Run as Admin for Windows WSL)");
   }
 }
