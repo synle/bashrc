@@ -426,6 +426,13 @@ foreach ($guid in $folderGuids) {
     ) | ForEach-Object { Remove-Item -Path $_ -ErrorAction SilentlyContinue }
 }
 
+# Disable recent files and frequent folders in Quick Access sidebar (0=hide, 1=show)
+Set-ItemProperty -Path $explorerAdvanced -Name "ShowRecent" -Type DWord -Value 0 -Force
+Set-ItemProperty -Path $explorerAdvanced -Name "ShowFrequent" -Type DWord -Value 0 -Force
+
+# Always show file transfer details dialog (speed, items remaining, throughput graph)
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager" -Name "EnthusiastMode" -Type DWord -Value 1 -Force
+
 Write-Host "Explorer tweaks applied." -ForegroundColor Green
 
 
@@ -750,7 +757,8 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" 
 # Remove startup delay
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" -Name "StartupDelayInMSec" -Type DWord -Value 0 -Force
 
-# Disable hibernation to save disk space
+# Disable hibernation — removes hiberfil.sys (can be several GB) and prevents hibernate
+# as a power option. Also required for Fast Startup to stay off (Fast Startup uses hibernate internally).
 powercfg /hibernate off
 
 # Set power plan to High Performance
@@ -1367,13 +1375,23 @@ Set-ItemProperty -Path $taskbarPath -Name "TaskbarAl" -Type DWord -Value 0 -Forc
 Set-ItemProperty -Path $taskbarPath -Name "Start_TrackDocs" -Type DWord -Value 0 -Force
 
 # Auto-hide taskbar (disabled by default, uncomment to enable)
-# Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3" ...
+# Byte 8 of Settings binary: 0x02 = auto-hide on, 0x03 = auto-hide off (default)
+# $stuckRects = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3"
+# $settings = (Get-ItemProperty -Path $stuckRects -Name "Settings").Settings
+# $settings[8] = 0x02
+# Set-ItemProperty -Path $stuckRects -Name "Settings" -Type Binary -Value $settings
 
 # Never combine taskbar buttons (0=always combine, 1=when full, 2=never)
 Set-ItemProperty -Path $taskbarPath -Name "TaskbarGlomLevel" -Type DWord -Value 0 -Force
 
 # Show labels on taskbar buttons (0=large icons with labels, 1=small icons no labels)
 Set-ItemProperty -Path $taskbarPath -Name "TaskbarSmallIcons" -Type DWord -Value 1 -Force
+
+# Enable "End Task" in taskbar right-click context menu (Win11 only, force-kills apps without Task Manager)
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarEndTask" -Type DWord -Value 1 -Force
+
+# Show seconds in taskbar clock (0=hide, 1=show)
+Set-ItemProperty -Path $taskbarPath -Name "ShowSecondsInSystemClock" -Type DWord -Value 1 -Force
 
 Write-Host "Taskbar settings applied." -ForegroundColor Green
 
@@ -1544,6 +1562,52 @@ Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authenti
 Set-ItemProperty -Path "HKCU:\AppEvents\Schemes" -Name "(Default)" -Value ".None" -Force
 
 Write-Host "Sound settings applied." -ForegroundColor Green
+
+
+
+################################################################################
+# ---- System Tweaks ----
+################################################################################
+
+Write-Host "`n=== Applying System Tweaks ===" -ForegroundColor Cyan
+
+# Disable Fast Startup — Windows uses hybrid shutdown by default, which can cause issues
+# with dual-boot OS detection, USB devices not reinitializing, and updates not applying
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type DWord -Value 0 -Force
+
+# Disable USB selective suspend — prevents Windows from powering off USB ports during idle,
+# which can cause keyboards, mice, and external drives to randomly disconnect
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB\DisableSelectiveSuspend" -Type DWord -Value 1 -Force
+
+# Set default terminal to Windows Terminal (Win11) — new console apps open in Windows Terminal
+# instead of the legacy conhost.exe window
+$wtStartupPath = "HKCU:\Console\%%Startup"
+if (-not (Test-Path $wtStartupPath)) { New-Item -Path $wtStartupPath -Force | Out-Null }
+Set-ItemProperty -Path $wtStartupPath -Name "DelegationConsole" -Value "{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}" -Force
+Set-ItemProperty -Path $wtStartupPath -Name "DelegationTerminal" -Value "{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}" -Force
+
+# Enable long file paths — removes the legacy 260-character MAX_PATH limit,
+# needed for deep node_modules trees and long Git repo paths
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Type DWord -Value 1 -Force
+
+# Enable Developer Mode — allows sideloading UWP apps, creating symlinks without admin,
+# and unlocks Settings > Developer options (same as toggling it in the UI)
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" -Name "AllowDevelopmentWithoutDevLicense" -Type DWord -Value 1 -Force
+
+# Power button and lid actions (values: 0=Do nothing, 1=Sleep, 2=Hibernate, 3=Shut down)
+# SETDCVALUEINDEX = on battery, SETACVALUEINDEX = plugged in
+
+# Lid close action: shut down (laptops only, ignored on desktops)
+powercfg -SETDCVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 5ca83367-6e45-459f-a27b-476b1d01c936 3
+powercfg -SETACVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 5ca83367-6e45-459f-a27b-476b1d01c936 3
+
+# Power button press: shut down
+powercfg -SETDCVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 7648efa3-dd9c-4e3e-b566-50f929386280 3
+powercfg -SETACVALUEINDEX SCHEME_CURRENT 4f971e89-eebd-4455-a8de-9e59040e7347 7648efa3-dd9c-4e3e-b566-50f929386280 3
+
+powercfg -SetActive SCHEME_CURRENT
+
+Write-Host "System tweaks applied." -ForegroundColor Green
 
 
 
