@@ -572,7 +572,7 @@ declare function printScriptsToRun(scriptsToRun: string[]): void;
  * @param {string[]} [lines=[]] - Optional array of content lines to display between the header and footer
  * @returns {void}
  */
-declare function printSectionBlock(header: string, lines?: string[]): void;
+declare function printSectionBlock(header: string, lines?: string[], addBlock?: boolean): void;
 /**
  * Shared runner for both test-specific and full-run modes.
  * Resolves script file paths, generates bash pipeline commands, and prints results.
@@ -770,6 +770,7 @@ declare const OS_SCRIPT_PATHS: Array<[boolean, string]>;
  */
 declare const LIMITED_SUPPORT_OSES: string[];
 declare const BASE_SY_CUSTOM_TWEAKS_DIR: any;
+declare const lineBreakCountToUse: number;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
 declare const LINE_BREAK_EQUAL: string;
