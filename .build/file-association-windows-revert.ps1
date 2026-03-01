@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-07-40PM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-08-20PM]
 # 
 # Revert File Associations for Windows
 # Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows-revert.ps1
@@ -12,6 +12,7 @@
 # Remove custom file types
 cmd /c "ftype sublime="
 cmd /c "ftype vlc="
+cmd /c "ftype 7-Zip="
 
 # Remove file association overrides from registry
 $extensions = @(
@@ -273,6 +274,35 @@ $extensions = @(
 ".dash"
 ".dvr"
 ".rec"
+".zip"
+".7z"
+".rar"
+".gz"
+".gzip"
+".tar"
+".tgz"
+".bz2"
+".bzip2"
+".xz"
+".lzma"
+".zst"
+".zstd"
+".iso"
+".img"
+".vhd"
+".wim"
+".cab"
+".arj"
+".lzh"
+".lha"
+".z"
+".cpio"
+".rpm"
+".deb"
+".dmg"
+".jar"
+".war"
+".ear"
 )
 
 foreach ($ext in $extensions) {

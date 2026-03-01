@@ -1,17 +1,18 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-07-40PM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-08-20PM]
 # 
 # File Associations for Windows
 # Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows.ps1
-# Sets Sublime Text and VLC as default apps for text and media files
+# Sets Sublime Text, VLC, and 7-Zip as default apps for text, media, and archive files
 # To revert, run file-association-windows-revert.ps1 as Administrator
 # ############################################################################################################################################
 
 # Requires running as Administrator
-# Sets Sublime Text as default for text files and VLC as default for media files
+# Sets Sublime Text as default for text files, VLC as default for media files, and 7-Zip as default for archive files
 
 # Register file types
 cmd /c 'ftype sublime="C:/Program Files/Sublime Text/sublime_text.exe" "%1"'
 cmd /c 'ftype vlc="C:/Program Files/VideoLAN/VLC/vlc.exe" "%1"'
+cmd /c 'ftype 7-Zip="C:/Program Files/7-Zip/7zFM.exe" "%1"'
 
 ############################################################################################################################################
 # text file association
@@ -289,6 +290,45 @@ $mediaExtensions = @(
 
 foreach ($ext in $mediaExtensions) {
   cmd /c "assoc $ext=vlc"
+}
+
+############################################################################################################################################
+# archive file association (7-Zip)
+############################################################################################################################################
+$archiveExtensions = @(
+  ".zip"
+".7z"
+".rar"
+".gz"
+".gzip"
+".tar"
+".tgz"
+".bz2"
+".bzip2"
+".xz"
+".lzma"
+".zst"
+".zstd"
+".iso"
+".img"
+".vhd"
+".wim"
+".cab"
+".arj"
+".lzh"
+".lha"
+".z"
+".cpio"
+".rpm"
+".deb"
+".dmg"
+".jar"
+".war"
+".ear"
+)
+
+foreach ($ext in $archiveExtensions) {
+  cmd /c "assoc $ext=7-Zip"
 }
 
 # Rebuild icon cache

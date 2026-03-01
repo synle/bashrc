@@ -822,7 +822,7 @@ declare const TEXT_BLOCK_END_MARKER: string;
  * 1. Repeated-char markers (highest) — level = marker length - 1
  *    `>` markers: yellow(0), green(1), cyan(2), blue(3), magenta(4+)
  *    `<` markers: orange(0), red(1), blue(2), magenta(3+)
- *    `#` markers (min 2): bgYellow(0-1), bgOrange(2), bgCyan(3), bgMagenta(4+)
+ *    `#` markers: bgYellow(0-1), bgOrange(2), bgCyan(3), bgMagenta(4+)
  * 2. Error/fail keywords => colorBgRed
  * 3. Success/done keywords => colorGreen
  * 4. Path or URL-like text => colorDim
@@ -831,7 +831,7 @@ declare const TEXT_BLOCK_END_MARKER: string;
  * @param {string} text - The log text to analyze
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
  */
-/** @type {RegExp} Matches repeated marker chars (>, <, ##) at start of string, followed by space or end */
+/** @type {RegExp} Matches repeated marker chars (>, <, #) at start of string, followed by space or end */
 declare const _MARKER_REGEX: RegExp;
 declare namespace LOG_COLORS {
   let green: string;

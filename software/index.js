@@ -1519,22 +1519,22 @@ async function getSoftwareScriptFiles() {
   const pathsToIgnore = OS_SCRIPT_PATHS.map(([valid, pathToCheck]) => (!valid ? pathToCheck : "")).filter((s) => !!s);
 
   return softwareFiles.filter((file) => {
-    let error = '';
+    let error = "";
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      error = `Ignored No sudo access`
+      error = `Ignored No sudo access`;
     } else {
       for (const pathToIgnore of pathsToIgnore) {
         if (file.includes(pathToIgnore)) {
-          error = `Ignored OS Specific`
-          break
+          error = `Ignored OS Specific`;
+          break;
         }
       }
     }
 
-    if(IS_DEBUG){
-      if(error){
+    if (IS_DEBUG) {
+      if (error) {
         echo(`>>`, `Error`, error, file);
-      } else{
+      } else {
         echo(`>>`, `Accepted`, file);
       }
     }
