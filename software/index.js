@@ -2159,9 +2159,10 @@ async function _doWorkTestFiles() {
  * @returns {Promise<void>}
  */
 async function _doWorkFullRun() {
+  const allRepoFiles = await getAllRepoSoftwareFiles();
   const softwareFiles = await getSoftwareScriptFiles();
 
-  echo(`> Installing Configurations: ${softwareFiles.length} Files`);
+  echo(`> _doWorkFullRun => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `);
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
   _runScripts(softwareFiles, allRepoFiles, "Full Run");
