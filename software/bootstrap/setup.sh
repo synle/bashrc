@@ -8,4 +8,5 @@ curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -
   software/bootstrap/dependencies/android_termux.sh
   software/bootstrap/dependencies/arch_linux.sh
   software/bootstrap/dependencies/steamos.sh
-"""
+""" && \ 
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod
