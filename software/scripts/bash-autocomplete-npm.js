@@ -3,7 +3,7 @@
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  log("    >> npm/npx Bash Autocomplete");
+  log(">>> npm/npx Bash Autocomplete");
 
   registerWithBashSyleAutocompleteWithRawContent(
     "npm npx Autocomplete",

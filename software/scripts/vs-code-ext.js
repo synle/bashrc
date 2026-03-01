@@ -47,7 +47,7 @@ const VS_CODIUM_EXTENSIONS_TO_INSTALL = convertTextToList(onlyCodiumExtensions, 
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  log(`  >> VS Code Extensions:`);
+  log(`>> VS Code Extensions:`);
 
   // write to build file
   writeToBuildFile([

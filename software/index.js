@@ -531,10 +531,10 @@ function writeText(filePath, text, override = true, suppressError = false) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      log(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
+      log(`<<<< Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
     }
   } else {
-    log(`      << Updated [Modified] newContent=${newContent.length}`, pathToUse);
+    log(`<<<< Updated [Modified] newContent=${newContent.length}`, pathToUse);
     fs.writeFileSync(pathToUse, newContent);
   }
 }
@@ -548,9 +548,9 @@ function writeText(filePath, text, override = true, suppressError = false) {
 function touchFile(filePath, defaultContent = "") {
   const pathToUse = path.resolve(filePath);
   if (filePathExist(pathToUse)) {
-    log("      << Skipped [NotModified]", pathToUse);
+    log("<<< Skipped [NotModified]", pathToUse);
   } else {
-    log("      >> File Created", pathToUse);
+    log(">>> File Created", pathToUse);
     fs.writeFileSync(pathToUse, defaultContent);
   }
 }
@@ -569,9 +569,9 @@ function backupText(filePath, text) {
     const backupPathToUse = pathToUse + "." + Date.now();
     writeText(backupPathToUse, oldText);
     writeText(pathToUse, text);
-    log("      << Backup Created", backupPathToUse);
+    log("<<< Backup Created", backupPathToUse);
   } else {
-    log("      << Backup Skipped [NotModified]", pathToUse);
+    log("<<< Backup Skipped [NotModified]", pathToUse);
   }
 }
 
@@ -670,10 +670,10 @@ function writeToBuildFile(tasks) {
       }
 
       if (isJson) {
-        log("    >> DEBUG Mode: write JSON to file", file);
+        log(">> DEBUG Mode: write JSON to file", file);
         writeJson(file, data, comments);
       } else {
-        log("    >> DEBUG Mode: write TEXT to file", file);
+        log(">> DEBUG Mode: write TEXT to file", file);
         data = (data || "").trim();
         writeText(file, (comments + data).trim());
       }
@@ -693,7 +693,7 @@ function writeToBuildFile(tasks) {
  */
 function writeConfigToFile(basePath, fileName, data, isJson = true) {
   const fileDestPath = path.join(basePath, fileName);
-  log("      >> File Path", fileDestPath);
+  log(">>> File Path", fileDestPath);
   if (isJson) {
     writeJson(fileDestPath, data);
   } else {
@@ -993,7 +993,7 @@ function prependTextBlock(resultTextContent, configKey, configValue, commentPref
  * @param {boolean} [options.addCodeFolding=true] - When true, wraps content with { } for editor code folding
  */
 function registerProfileBlock({ profilePath, configKey, content, isPrepend = false, addCodeFolding = true }) {
-  log(`  >> Register ProfileBlock`, colorRed(configKey), profilePath);
+  log(`>> Register ProfileBlock`, colorRed(configKey), profilePath);
 
   const wrappedContent = addCodeFolding ? `{\n${content.trim()}\n}` : content;
   let textContent = readText(profilePath);
@@ -1035,7 +1035,7 @@ async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl
 
   // download and save the spec file
   const specContent = await fetchUrlAsString(specUrl);
-  log(`    >> Writing complete-spec for ${command}`, specPath);
+  log(`>>> Writing complete-spec for ${command}`, specPath);
   writeText(specPath, specContent);
 
   // register a pure-bash completer that reads from the spec file
@@ -1104,11 +1104,11 @@ function safeWriteText(targetPath, newContent, backupContent, minRatio = 0.1) {
 function registerPlatformTweaks(platformName, fileName, content, sourceOverride) {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, fileName);
 
-  log(`  >> Register ${platformName} profile`, BASH_SYLE_PATH);
+  log(`>> Register ${platformName} profile`, BASH_SYLE_PATH);
   const sourceLine = sourceOverride || `. ${targetPath}`;
   registerWithBashSyleProfile(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
 
-  log(`  >> Installing ${platformName} tweaks:`, targetPath);
+  log(`>> Installing ${platformName} tweaks:`, targetPath);
   writeText(targetPath, content);
 }
 
@@ -1125,7 +1125,7 @@ function exitIfPathCheck(targetPath, exitIfFound = false, message) {
   const found = filePathExist(targetPath);
   if (exitIfFound ? found : !found) {
     const defaultMessage = exitIfFound ? "Skipped : Found Folder" : "Skipped : Not Found";
-    log(`    >> ${message || defaultMessage}`, targetPath);
+    log(`>>> ${message || defaultMessage}`, targetPath);
     return process.exit();
   }
 }
@@ -1157,7 +1157,7 @@ function exitIfUnsupportedOs(...osFlags) {
   const flags = osFlags.flat();
   for (const flag of flags) {
     if (global[flag]) {
-      log(`    >> Skipped : Not supported on ${flag}`);
+      log(`>>> Skipped : Not supported on ${flag}`);
       return process.exit();
     }
   }
@@ -1169,7 +1169,7 @@ function exitIfUnsupportedOs(...osFlags) {
  */
 function exitIfLimitedSupportOs() {
   if (IS_LIGHT_WEIGHT_MODE) {
-    log(`    >> Skipped : Lightweight mode`);
+    log(`>>> Skipped : Lightweight mode`);
     return process.exit();
   }
   return exitIfUnsupportedOs(LIMITED_SUPPORT_OSES);
@@ -1187,7 +1187,7 @@ function exitIfNotTargetOs(...osFlags) {
       return;
     }
   }
-  log(`    >> Skipped : Only supported on ${flags.join(", ")}`);
+  log(`>>> Skipped : Only supported on ${flags.join(", ")}`);
   return process.exit();
 }
 
@@ -1324,7 +1324,7 @@ function downloadFile(url, destination) {
 
   return new Promise((resolve, reject) => {
     if (filePathExist(destination)) {
-      log("      << Skipped [NotModified]", destination);
+      log("<<< Skipped [NotModified]", destination);
       return resolve(false);
     }
 
@@ -1347,7 +1347,7 @@ function downloadFile(url, destination) {
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 function downloadAsset(url, destination) {
-  log(`  >> Downloading Asset ${path.basename(url)}:`, url);
+  log(`>> Downloading Asset ${path.basename(url)}:`, url);
 
   const dest =
     fs.existsSync(destination) && fs.statSync(destination).isDirectory() ? path.join(destination, path.basename(url)) : destination;
@@ -1361,7 +1361,7 @@ function downloadAsset(url, destination) {
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 function downloadAssets(urls, destinationDir) {
-  log(`  >> Downloading Assets: total=${urls.length}`);
+  log(`>> Downloading Assets: total=${urls.length}`);
 
   const args = urls.map((url) => `-sL "${url}" -o "${path.join(destinationDir, path.basename(url))}"`).join(" ");
   return execBash(`curl --parallel --parallel-max 10 ${args}`);
@@ -1374,7 +1374,7 @@ function downloadAssets(urls, destinationDir) {
  */
 async function downloadWindowsApp(applicationName, findFilter) {
   const targetPath = await getWindowsApplicationBinaryDir(applicationName);
-  log(`  >> Downloading Windows App:`, colorRed(applicationName), targetPath);
+  log(`>> Downloading Windows App:`, colorRed(applicationName), targetPath);
   try {
     await downloadFilesFromMainRepo(findFilter, targetPath);
   } catch (err) {
@@ -1399,10 +1399,10 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
     try {
       const downloaded = await downloadFile(file, destinationFile);
       if (downloaded === true) {
-        log("      >> Downloaded", destinationFile);
+        log(">>> Downloaded", destinationFile);
       }
     } catch (err) {
-      log("      >> Error Downloading", file);
+      log(">>> Error Downloading", file);
     }
   });
 
@@ -1520,18 +1520,18 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      echo(`  >> `, colorRed(`Ignored No sudo access`), file);
+      echo(`>> `, colorRed(`Ignored No sudo access`), file);
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        echo(`  >> `, colorRed(`Ignored OS Specific`), file);
+        echo(`>> `, colorRed(`Ignored OS Specific`), file);
         return false;
       }
     }
 
-    echo(`  >> `, colorGreen(`Accepted`), file);
+    echo(`>> `, colorGreen(`Accepted`), file);
     return true;
   });
 }
@@ -1638,7 +1638,7 @@ function mkdir(targetPath) {
  * @returns {Promise<string>} Resolves when deletion is complete
  */
 function deleteFolder(targetPath, recursive = true) {
-  log(`  >> Deleting ${targetPath}`);
+  log(`>> Deleting ${targetPath}`);
   const flags = recursive ? "-rf" : "-f";
   return execBash(`rm ${flags} "${targetPath}"`);
 }
@@ -1691,28 +1691,29 @@ function _looksLikePathOrUrl(text) {
  * @param {string} text - The joined log text to analyze
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
  */
-const _MARKER_REGEX = /^(\s*)(>>|<<|##)/;
+const _MARKER_REGEX = /^(>{1,}|<{1,}|#{2,})\s/;
 
 function _getAutoColor(text) {
-  // 1. Marker-based coloring (>>, <<, ##) with indentation levels — highest priority
+  // 1. Marker-based coloring (>, >>, >>>, <, <<, ##, ###) — level = marker length - 1
   const markerMatch = text.match(_MARKER_REGEX);
   if (markerMatch) {
-    const level = Math.ceil(markerMatch[1].length / 2);
-    const direction = markerMatch[2];
+    const marker = markerMatch[1];
+    const ch = marker[0];
+    const level = marker.length - 1;
 
-    if (direction === ">>") {
+    if (ch === ">") {
       if (level <= 1) return colorYellow;
       if (level <= 3) return colorCyan;
       return colorMagenta;
     }
 
-    if (direction === "<<") {
+    if (ch === "<") {
       if (level <= 1) return colorOrange;
       if (level <= 3) return colorBlue;
       return colorMagenta;
     }
 
-    if (direction === "##") {
+    if (ch === "#") {
       if (level <= 1) return colorBgYellow;
       if (level <= 3) return colorBgCyan;
       return colorBgMagenta;
@@ -1752,11 +1753,6 @@ function _applyAutoColor(data) {
     let str = String(elem);
     // Preserve elements that already have user-provided ANSI color codes
     if (str.includes("\x1b[")) return elem;
-    // Normalize leading spaces before markers to even counts
-    str = str.replace(_MARKER_REGEX, (_, spaces, marker) => {
-      const level = Math.ceil(spaces.length / 2);
-      return "".padStart(level * 2, " ") + marker;
-    });
     const autoColor = _getAutoColor(str);
     return autoColor ? autoColor(str) : str;
   });
@@ -1953,14 +1949,14 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`;
 
     echo(
-      `  >> processScriptFile`,
+      `>> processScriptFile`,
       colorOrange(originalFile === file ? originalFile : `${originalFile} | ${file}`),
       colorDim(IS_DEBUG ? tempFileCommand : ""),
     );
     emitBash(fullCommand);
   } else {
     echo(
-      `  >> processScriptFile`,
+      `>> processScriptFile`,
       colorOrange(originalFile === file ? originalFile : `${originalFile} | ${file}`),
       colorRed(`does not exist `),
     );
@@ -2087,12 +2083,12 @@ function printScriptProcessingResults(results) {
  */
 async function _doWorkTestFiles() {
   if (!TEST_SCRIPT_FILES) {
-    echo(`    >> Skipped`);
+    echo(`>> Skipped`);
     return;
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  echo(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`);
+  echo(`> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`);
 
   const softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
@@ -2112,7 +2108,7 @@ async function _doWorkTestFiles() {
 async function _doWorkFullRun() {
   const softwareFiles = await getSoftwareScriptFiles();
 
-  echo(`>> Installing Configurations: ${softwareFiles.length} Files`);
+  echo(`> Installing Configurations: ${softwareFiles.length} Files`);
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
   _runScripts(softwareFiles, allRepoFiles, "Full Run");
@@ -2179,6 +2175,6 @@ async function _doWorkFullRun() {
       await _doWorkFullRun();
     }
   } catch (err) {
-    echo(`>> Error ${err}`);
+    echo(`> Error ${err}`);
   }
 })();

@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-echo '>> Chrome OS Only stuffs'
+echo '> Chrome OS Only stuffs'

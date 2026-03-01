@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo '  >> Setup termux config'
+echo '>> Setup termux config'
 
 mkdir -p ~/.termux
 

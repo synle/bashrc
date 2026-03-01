@@ -84,7 +84,7 @@ async function doWork() {
     ${psFooter}
   `);
 
-  log("  >> Installing Windows Only - File Associations for PowerShell");
+  log(">> Installing Windows Only - File Associations for PowerShell");
   writeToBuildFile([
     {
       file: "file-association-windows.ps1",

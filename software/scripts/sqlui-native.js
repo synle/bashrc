@@ -19,24 +19,24 @@ async function doWork() {
   const destination = path.join(targetPath, fileName);
 
   if (IS_FORCE_REFRESH) {
-    log("  >> Force refresh: deleting old sqlui-native files");
+    log(">> Force refresh: deleting old sqlui-native files");
     await deleteFolder(targetPath);
   }
 
   if (fs.existsSync(targetPath)) {
-    log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} already installed, skipping:`, targetPath);
+    log(`>> sqlui-native v${SQLUI_NATIVE_VERSION} already installed, skipping:`, targetPath);
     return;
   }
 
-  log(`  >> Installing sqlui-native v${SQLUI_NATIVE_VERSION} to:`, targetPath);
+  log(`>> Installing sqlui-native v${SQLUI_NATIVE_VERSION} to:`, targetPath);
 
   await mkdir(targetPath);
   await downloadAsset(url, destination);
 
-  log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
+  log(`>> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
 
   if (is_os_mac) {
     writeText(path.join(targetPath, "README.txt"), "xattr -cr /Applications/sqlui-native.app");
-    log("  >> Created README.txt with macOS quarantine fix");
+    log(">> Created README.txt with macOS quarantine fix");
   }
 }

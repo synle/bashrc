@@ -16,13 +16,13 @@ async function doWork() {
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, ".ssh");
   const targetPath = path.join(baseSshPath, "config");
 
-  log("    >> Setting up SSH Client config", targetPath);
+  log(">>> Setting up SSH Client config", targetPath);
 
   await mkdir(baseSshPath);
 
   await execBash(`touch "${targetPath}" && chmod 600 "${targetPath}"`);
 
-  log("    >> Updating SSH Client Config", targetPath);
+  log(">>> Updating SSH Client Config", targetPath);
 
   let sshConfigTextContent = readText(targetPath);
 
@@ -74,7 +74,7 @@ async function doWork() {
   sshConfigTextContent = sshConfigTextContent.trim();
 
   // write if there are change
-  log(sshConnections.map(([hostName, hostIp]) => `      >> ${hostIp} ${hostName}`).join("\n"));
+  log(sshConnections.map(([hostName, hostIp]) => `>>>> ${hostIp} ${hostName}`).join("\n"));
 
   // write to build file
   writeToBuildFile([{ file: "ssh-config", data: sshConfigTextContent }]);

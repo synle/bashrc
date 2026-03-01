@@ -2,10 +2,10 @@
 async function doWork() {
   let targetPath = BASE_D_DIR_WINDOW;
 
-  log("  >> mkdir for D Drive", targetPath);
+  log(">> mkdir for D Drive", targetPath);
 
   if (!filePathExist(targetPath)) {
-    log("    >> Skipped - Path Not Found: ", targetPath);
+    log(">>> Skipped - Path Not Found: ", targetPath);
   } else {
     const pathsToCreate = convertTextToList(`
     ${path.join(targetPath, "Applications")}
@@ -16,10 +16,10 @@ async function doWork() {
     ${path.join(targetPath, "Pictures")}
   `);
 
-    log("    >> total", pathsToCreate.length);
+    log(">>> total", pathsToCreate.length);
 
     for (const pathToCreate of pathsToCreate) {
-      log("    >> ", pathToCreate);
+      log(">>> ", pathToCreate);
       await mkdir(pathToCreate);
     }
   }

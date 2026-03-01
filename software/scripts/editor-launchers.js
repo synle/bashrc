@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", err);
+    log(">>>> Failed to get the path", err);
   }
 
   return null;
@@ -126,14 +126,14 @@ async function _getPathSublimeText() {
 
 /** * Registers editor launcher functions (find_editor, run_editor, run_editor_cli) and shell aliases for subl/code. */
 async function doWork() {
-  log("  >> Editor Launchers:");
+  log(">> Editor Launchers:");
 
   if (is_os_android_termux) {
-    log("  >> Skipped: Editor launchers not supported on Android Termux");
+    log(">> Skipped: Editor launchers not supported on Android Termux");
     return;
   }
 
-  log("  >> Registering editor launchers (find_editor, run_editor, subl, code)");
+  log(">> Registering editor launchers (find_editor, run_editor, subl, code)");
 
   // Section 1: Common editor launcher functions
   registerWithBashSyleProfile(

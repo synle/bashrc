@@ -5,21 +5,21 @@ async function doWork() {
   const tmpZip = "/tmp/url-porter.zip";
 
   if (IS_FORCE_REFRESH) {
-    log("  >> Force refresh: deleting old url-porter files");
+    log(">> Force refresh: deleting old url-porter files");
     await deleteFolder(targetPath);
   }
 
   if (fs.existsSync(targetPath)) {
-    log("  >> url-porter already installed, skipping:", targetPath);
+    log(">> url-porter already installed, skipping:", targetPath);
     return;
   }
 
-  log("  >> Installing url-porter extension to:", targetPath);
+  log(">> Installing url-porter extension to:", targetPath);
 
   await mkdir(targetPath);
   await downloadAsset(zipUrl, tmpZip);
   await execBash(`unzip -oq "${tmpZip}" -d "${targetPath}"`);
   await deleteFolder(tmpZip);
 
-  log("  >> url-porter installed:", targetPath);
+  log(">> url-porter installed:", targetPath);
 }

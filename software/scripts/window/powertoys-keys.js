@@ -1,10 +1,10 @@
 /** * Generates PowerToys keyboard remapping configuration for Windows. */
 async function doWork() {
-  log("  >> Installing Powertoys Keyboard Config");
+  log(">> Installing Powertoys Keyboard Config");
 
   // %LOCALAPPDATA%/Microsoft/PowerToys/Keyboard Manager
   const targetPath = path.join(getWindowAppDataLocalUserPath(), "Microsoft/PowerToys/Keyboard Manager");
-  log("    >> Configs", targetPath);
+  log(">>> Configs", targetPath);
 
   exitIfPathNotFound(targetPath);
 

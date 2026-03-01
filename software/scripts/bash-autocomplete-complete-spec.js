@@ -4,7 +4,7 @@
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  log("    >> Docker Bash Autocomplete");
+  log(">>> Docker Bash Autocomplete");
 
   await registerWithBashSyleAutocompleteWithCompleteSpec("docker", "software/scripts/bash-autocomplete-complete-spec-docker");
 }

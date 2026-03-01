@@ -239,7 +239,7 @@ function format_cleanup_light() {
 # Text File Formatting (trim trailing whitespace)
 # ----------------------------------------------------
 function format_other_text_based_files() {
-  echo '>> Formatting text-based files...'
+  echo '> Formatting text-based files...'
 
   EXCLUDE_DIRS=(
 ${excludeDirsArray}
@@ -270,7 +270,7 @@ ${excludeFilesArray}
       fi
     done
 
-  echo '>> DONE Formatting All Text-Based Files'
+  echo '> DONE Formatting All Text-Based Files'
 }
 `.trim();
 

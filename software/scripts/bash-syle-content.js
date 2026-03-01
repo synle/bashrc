@@ -1,6 +1,6 @@
 /** * Assembles the .bash_syle file by combining core and advanced shell profile content. */
 async function doWork() {
-  log("  >> Setting up .bash_syle");
+  log(">> Setting up .bash_syle");
 
   let res = readText(BASH_SYLE_PATH);
   res += `\n\n\n`;
@@ -34,19 +34,19 @@ ${contentProfileAdvanced}
   `.trim();
 
   // core profile
-  log("    >> Core profile");
+  log(">>> Core profile");
   res += contentProfileCore.trim();
 
   // append advanced profile only for fancier OS
-  log("    >> Advanced profile");
+  log(">>> Advanced profile");
 
   if (IS_LIGHT_WEIGHT_MODE) {
-    log("      >> Skipped : Lightweight mode");
+    log(">>>> Skipped : Lightweight mode");
   } else if (is_os_window || is_os_mac || is_os_ubuntu) {
-    log("      >> Installed only for more advanced OS");
+    log(">>>> Installed only for more advanced OS");
     res += contentProfileAdvanced.trim();
   } else {
-    log("      >> Skipped : Only Mac or Windows");
+    log(">>>> Skipped : Only Mac or Windows");
   }
 
   // remove double new lines

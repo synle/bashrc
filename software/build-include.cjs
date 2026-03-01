@@ -186,7 +186,7 @@ let totalUpdated = 0;
 
 for (const target of targetFiles) {
   if (!fs.existsSync(target)) {
-    console.log(`  >> File not found: ${target}, skipping`);
+    console.log(`>> File not found: ${target}, skipping`);
     continue;
   }
 
@@ -213,7 +213,7 @@ for (const target of targetFiles) {
       } else if (isFilePath(key)) {
         // Auto mode: key is the file path
         if (!fs.existsSync(key)) {
-          console.log(`  >> Source file not found: ${key} (referenced in ${target}), skipping`);
+          console.log(`>> Source file not found: ${key} (referenced in ${target}), skipping`);
           continue;
         }
         sourceContent = autoTransform(fs.readFileSync(key, "utf8"), key, target);
@@ -229,9 +229,9 @@ for (const target of targetFiles) {
     if (replaced && replaced !== content) {
       content = replaced;
       changed = true;
-      console.log(`  >> ${isCleanMode ? "Cleaned" : "Updated"} ${target} (block: ${key})`);
+      console.log(`>> ${isCleanMode ? "Cleaned" : "Updated"} ${target} (block: ${key})`);
     } else {
-      console.log(`  >> No changes needed in ${target} (block: ${key})`);
+      console.log(`>> No changes needed in ${target} (block: ${key})`);
     }
   }
 
@@ -241,4 +241,4 @@ for (const target of targetFiles) {
   }
 }
 
-console.log(`  >> ${modeName}: ${totalUpdated} file(s) updated`);
+console.log(`>> ${modeName}: ${totalUpdated} file(s) updated`);

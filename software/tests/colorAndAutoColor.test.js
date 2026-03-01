@@ -153,88 +153,63 @@ describe("_getAutoColor", () => {
     expect(getColorCode("Success")).toBe(CODES.green);
   });
 
-  // ---- >> marker direction ----
-  it("should return colorYellow for >> with 0 spaces", () => {
+  // ---- > marker (level = marker count - 1) ----
+  it("should return colorYellow for > (level 0)", () => {
+    expect(getColorCode("> hello")).toBe(CODES.yellow);
+  });
+
+  it("should return colorYellow for >> (level 1)", () => {
     expect(getColorCode(">> hello")).toBe(CODES.yellow);
   });
 
-  it("should return colorYellow for >> with 2 spaces", () => {
-    expect(getColorCode("  >> hello")).toBe(CODES.yellow);
+  it("should return colorCyan for >>> (level 2)", () => {
+    expect(getColorCode(">>> hello")).toBe(CODES.cyan);
   });
 
-  it("should return colorCyan for >> with 4 spaces", () => {
-    expect(getColorCode("    >> hello")).toBe(CODES.cyan);
+  it("should return colorCyan for >>>> (level 3)", () => {
+    expect(getColorCode(">>>> hello")).toBe(CODES.cyan);
   });
 
-  it("should return colorCyan for >> with 6 spaces", () => {
-    expect(getColorCode("      >> hello")).toBe(CODES.cyan);
+  it("should return colorMagenta for >>>>> (level 4+)", () => {
+    expect(getColorCode(">>>>> hello")).toBe(CODES.magenta);
   });
 
-  it("should return colorMagenta for >> with 8+ spaces", () => {
-    expect(getColorCode("        >> hello")).toBe(CODES.magenta);
+  // ---- < marker ----
+  it("should return colorOrange for < (level 0)", () => {
+    expect(getColorCode("< hello")).toBe(CODES.orange);
   });
 
-  // ---- << marker direction ----
-  it("should return colorOrange for << with 0 spaces", () => {
+  it("should return colorOrange for << (level 1)", () => {
     expect(getColorCode("<< hello")).toBe(CODES.orange);
   });
 
-  it("should return colorOrange for << with 2 spaces", () => {
-    expect(getColorCode("  << hello")).toBe(CODES.orange);
+  it("should return colorBlue for <<< (level 2)", () => {
+    expect(getColorCode("<<< hello")).toBe(CODES.blue);
   });
 
-  it("should return colorBlue for << with 4 spaces", () => {
-    expect(getColorCode("    << hello")).toBe(CODES.blue);
+  it("should return colorBlue for <<<< (level 3)", () => {
+    expect(getColorCode("<<<< hello")).toBe(CODES.blue);
   });
 
-  it("should return colorBlue for << with 6 spaces", () => {
-    expect(getColorCode("      << hello")).toBe(CODES.blue);
+  it("should return colorMagenta for <<<<< (level 4+)", () => {
+    expect(getColorCode("<<<<< hello")).toBe(CODES.magenta);
   });
 
-  it("should return colorMagenta for << with 8+ spaces", () => {
-    expect(getColorCode("        << hello")).toBe(CODES.magenta);
-  });
-
-  // ---- odd-space indent bucketing ----
-  it("should bucket 1 space same as 2 spaces for >>", () => {
-    expect(getColorCode(" >> hello")).toBe(CODES.yellow);
-  });
-
-  it("should bucket 3 spaces same as 4 spaces for >>", () => {
-    expect(getColorCode("   >> hello")).toBe(CODES.cyan);
-  });
-
-  it("should bucket 5 spaces same as 6 spaces for >>", () => {
-    expect(getColorCode("     >> hello")).toBe(CODES.cyan);
-  });
-
-  it("should bucket 7 spaces same as 8 spaces for >>", () => {
-    expect(getColorCode("       >> hello")).toBe(CODES.magenta);
-  });
-
-  // ---- ## marker direction (background colors) ----
-  it("should return colorBgYellow for ## with 0 spaces", () => {
+  // ---- ## marker (background colors) ----
+  it("should return colorBgYellow for ## (level 1)", () => {
     expect(getColorCode("## header")).toBe(CODES.bgYellow);
   });
 
-  it("should return colorBgYellow for ## with 2 spaces", () => {
-    expect(getColorCode("  ## header")).toBe(CODES.bgYellow);
+  it("should return colorBgCyan for ### (level 2)", () => {
+    expect(getColorCode("### header")).toBe(CODES.bgCyan);
   });
 
-  it("should return colorBgCyan for ## with 4 spaces", () => {
-    expect(getColorCode("    ## header")).toBe(CODES.bgCyan);
+  it("should return colorBgCyan for #### (level 3)", () => {
+    expect(getColorCode("#### header")).toBe(CODES.bgCyan);
   });
 
-  it("should return colorBgCyan for ## with 6 spaces", () => {
-    expect(getColorCode("      ## header")).toBe(CODES.bgCyan);
-  });
-
-  it("should return colorBgMagenta for ## with 8+ spaces", () => {
-    expect(getColorCode("        ## header")).toBe(CODES.bgMagenta);
-  });
-
-  it("should bucket 3 spaces same as 4 spaces for ##", () => {
-    expect(getColorCode("   ## header")).toBe(CODES.bgCyan);
+  it("should return colorBgMagenta for ##### (level 4+)", () => {
+    expect(getColorCode("##### header")).toBe(CODES.bgMagenta);
   });
 
   // ---- path/URL detection ----
@@ -299,36 +274,29 @@ describe("_applyAutoColor", () => {
     expect(result[0]).toBe(dimStr);
   });
 
-  it("should normalize odd leading spaces before markers", () => {
-    const result = _applyAutoColor(["   >> hello"]);
-    const str = String(result[0]);
-    // 3 spaces → ceil(3/2)*2 = 4 spaces
-    expect(str).toContain("    >> hello");
-  });
-
   it("should dim path-like elements", () => {
-    const result = _applyAutoColor(["  >> Register ProfileBlock", "/Users/syle/.bash_syle"]);
+    const result = _applyAutoColor([">> Register ProfileBlock", "/Users/syle/.bash_syle"]);
     const pathStr = String(result[1]);
     expect(pathStr).toContain("\x1b[2m");
     expect(pathStr).toContain("/Users/syle/.bash_syle");
   });
 
   it("should dim URL-like elements", () => {
-    const result = _applyAutoColor(["  >> Fetching", "https://example.com/file.txt"]);
+    const result = _applyAutoColor([">> Fetching", "https://example.com/file.txt"]);
     const urlStr = String(result[1]);
     expect(urlStr).toContain("\x1b[2m");
     expect(urlStr).toContain("https://example.com/file.txt");
   });
 
   it("should not dim non-path elements", () => {
-    const result = _applyAutoColor(["  >> Register ProfileBlock", "Editor Config"]);
+    const result = _applyAutoColor([">> Register ProfileBlock", "Editor Config"]);
     const textStr = String(result[1]);
     expect(textStr).not.toContain("\x1b[2m");
   });
 
   it("should color each element independently", () => {
-    const result = _applyAutoColor([">> Installing", "done", "/usr/local/bin"]);
-    // >> marker → colored
+    const result = _applyAutoColor(["> Installing", "done", "/usr/local/bin"]);
+    // > marker → colored
     expect(String(result[0])).toContain("\x1b[");
     // "done" → green
     expect(String(result[1])).toContain("\x1b[32m");

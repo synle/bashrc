@@ -33,7 +33,7 @@ function _getPath() {
     }
     return null;
   } catch (e) {
-    log("  >> Skipped Windows Terminal Config - Error");
+    log(">> Skipped Windows Terminal Config - Error");
     return process.exit();
   }
 }
@@ -219,11 +219,11 @@ async function doWork() {
   // ============================================================================
   const targetPath = path.join(_getPath(), "LocalState/settings.json");
   if (!filePathExist(targetPath)) {
-    log("  >> Skipped Windows Terminal Config - Settings Path Not Found: ", targetPath);
+    log(">> Skipped Windows Terminal Config - Settings Path Not Found: ", targetPath);
     return process.exit();
   }
 
-  log("  >> Setting up Microsoft Windows Terminal", targetPath);
+  log(">> Setting up Microsoft Windows Terminal", targetPath);
 
   const oldSettings = readJson(targetPath);
 

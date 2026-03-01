@@ -3,7 +3,7 @@
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  log("    >> SSH Bash Autocomplete");
+  log(">>> SSH Bash Autocomplete");
 
   registerWithBashSyleAutocompleteWithRawContent(
     "SSH Autocomplete",

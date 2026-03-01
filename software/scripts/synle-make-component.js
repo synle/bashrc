@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".synle-make-component");
 
-  log("  >> Download and installing synle-make-component:", targetPath);
+  log(">> Download and installing synle-make-component:", targetPath);
 
   if (IS_FORCE_REFRESH) {
     await deleteFolder(targetPath);
@@ -10,7 +10,7 @@ async function doWork() {
 
   exitIfPathFound(targetPath);
 
-  log("    >> Cloning and building", targetPath);
+  log(">>> Cloning and building", targetPath);
 
   await gitClone("https://github.com/synle/make-component.git", targetPath);
 
@@ -18,7 +18,7 @@ async function doWork() {
     cwd: targetPath,
   });
 
-  log("    >> Register binary with bashrc", BASH_SYLE_PATH);
+  log(">>> Register binary with bashrc", BASH_SYLE_PATH);
   registerWithBashSyleProfile(
     "Sy Make Component",
     trimLeftSpaces(`

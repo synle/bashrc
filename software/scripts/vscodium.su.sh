@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
 # Skip on unsupported OS
-[ "$is_os_android_termux" = "1" ] && { echo "    >> Skipped : Not supported on is_os_android_termux"; exit 0; }
-[ "$is_os_arch_linux" = "1" ] && { echo "    >> Skipped : Not supported on is_os_arch_linux"; exit 0; }
-[ "$is_os_chromeos" = "1" ] && { echo "    >> Skipped : Not supported on is_os_chromeos"; exit 0; }
+[ "$is_os_android_termux" = "1" ] && { echo ">>> Skipped : Not supported on is_os_android_termux"; exit 0; }
+[ "$is_os_arch_linux" = "1" ] && { echo ">>> Skipped : Not supported on is_os_arch_linux"; exit 0; }
+[ "$is_os_chromeos" = "1" ] && { echo ">>> Skipped : Not supported on is_os_chromeos"; exit 0; }
 
 version=$(curl -s https://api.github.com/repos/VSCodium/vscodium/releases/latest \
     | node -e "process.stdin.on('data', d => console.log(JSON.parse(d).tag_name))")
 
-echo ">> Installing vscodium : $version"
+echo "> Installing vscodium : $version"
 
 # Linux Installation
 if [ "${is_os_ubuntu}" -eq 1 ] && [ "${is_os_window}" -eq 0 ]; then
     file="codium_${version}_amd64.deb"
     url="https://github.com/VSCodium/vscodium/releases/download/${version}/${file}"
 
-    echo "  >> ubuntu: $url"
+    echo ">> ubuntu: $url"
 
     pushd /tmp >/dev/null || exit
     wget -q "$url" -O "$file"
@@ -33,7 +33,7 @@ if [ "${is_os_mac}" -eq 1 ]; then
     file="VSCodium.${arch}.${version}.dmg"
     url="https://github.com/VSCodium/vscodium/releases/download/${version}/${file}"
 
-    echo "  >> osx: $url"
+    echo ">> osx: $url"
 
     pushd /tmp >/dev/null || exit
     # -s (silent), -L (follow redirects), -O (save as remote name)

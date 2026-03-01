@@ -86,7 +86,7 @@ function _getGlobalGitIgnore() {
  * Installs git aliases, configs, and global gitignore for the current system and optionally for Windows.
  */
 async function doWork() {
-  log("  >> Installing git Aliases and Configs");
+  log(">> Installing git Aliases and Configs");
 
   const configMain = path.join(BASE_HOMEDIR_LINUX, ".gitconfig");
   const configGitIgnoreGlobal = path.join(BASE_HOMEDIR_LINUX, ".gitignore_global");
@@ -95,7 +95,7 @@ async function doWork() {
   const oldConfig = readText(configMain);
   const email = _extractEmail(oldConfig);
 
-  log(`    >> Installing git Aliases and Configs for Main OS`, email, configMain);
+  log(`>>> Installing git Aliases and Configs for Main OS`, email, configMain);
 
   // write to build file
   writeToBuildFile([
@@ -126,7 +126,7 @@ async function doWork() {
   if (is_os_window) {
     const configWindows = path.join(getWindowUserBaseDir(), ".gitconfig");
 
-    log("    >> Installing git Aliases and Configs for Windows", configWindows);
+    log(">>> Installing git Aliases and Configs for Windows", configWindows);
     writeText(configWindows, await _getGitConfig({ email }));
   }
 }

@@ -6,7 +6,7 @@ const DEFAULT_CONNECTION_USER = "syle";
  * Generates RDP connection files for Windows remote hosts in the home network.
  */
 async function doWorkRdp() {
-  log("  >> Setting up Remote Desktop (RDP) Connections");
+  log(">> Setting up Remote Desktop (RDP) Connections");
 
   const hosts = HOME_HOST_NAMES.filter(
     ([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) =>
@@ -16,7 +16,7 @@ async function doWorkRdp() {
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + ".rdp");
 
-    log("    >> RDP: ", targetPath);
+    log(">>> RDP: ", targetPath);
 
     const content = `
 use multimon:i:0
@@ -70,7 +70,7 @@ kdcproxyname:s:
  * Generates VNC connection files for macOS remote hosts in the home network.
  */
 async function doWorkVnc() {
-  log("  >> Setting up VNC Connections");
+  log(">> Setting up VNC Connections");
 
   const hosts = HOME_HOST_NAMES.filter(
     ([hostName, hostIp, { NO_SSH, OSX_REMOTE, WINDOWS_REMOTE, IS_FIRST_IP_IN_GROUP }]) =>
@@ -80,7 +80,7 @@ async function doWorkVnc() {
   for (const [hostName, hostIp] of hosts) {
     const targetPath = path.join(BASE_REMOTE_CONNECTIONS_PATH, hostName + ".vnc");
 
-    log("    >> VNC: ", hostName);
+    log(">>> VNC: ", hostName);
 
     const content = `
 AuthCertificate=

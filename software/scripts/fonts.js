@@ -9,30 +9,30 @@ async function doWork() {
     if (IS_FORCE_REFRESH || !fs.existsSync(termuxFontPath)) {
       await mkdir(termuxFontDir);
       const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/fonts/FiraCode-Regular.ttf`;
-      log("  >> Downloading Termux font:", termuxFontPath);
+      log(">> Downloading Termux font:", termuxFontPath);
       await downloadAsset(fontUrl, termuxFontPath);
     } else {
-      log("  >> Termux font already installed, skipping:", termuxFontPath);
+      log(">> Termux font already installed, skipping:", termuxFontPath);
     }
     return;
   }
 
   const targetFontPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "fonts");
 
-  log("  >> Download Ligatures Fonts:", targetFontPath);
+  log(">> Download Ligatures Fonts:", targetFontPath);
 
   const files = await listRepoDir();
   const fonts = files.filter((f) => f.includes(".ttf"));
 
   if (fonts.length === 0) {
-    log("    >> Skipped : No fonts found");
+    log(">>> Skipped : No fonts found");
     return;
   }
 
-  log("  >> Found fonts:", fonts.length);
+  log(">> Found fonts:", fonts.length);
 
   if (IS_FORCE_REFRESH) {
-    log("  >> Force refresh: deleting old font files");
+    log(">> Force refresh: deleting old font files");
     await deleteFolder(targetFontPath);
   }
 
@@ -45,9 +45,9 @@ async function doWork() {
       }),
       targetFontPath,
     );
-    log("  >> Fonts downloaded to:", targetFontPath);
+    log(">> Fonts downloaded to:", targetFontPath);
   } else {
-    log("  >> Fonts already installed, skipping:", targetFontPath);
+    log(">> Fonts already installed, skipping:", targetFontPath);
   }
 
   // write to build file

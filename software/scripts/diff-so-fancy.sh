@@ -9,9 +9,9 @@ fi
 
 # Skip download if already installed (unless force refresh)
 if [ -f "$DEST_PATH" ] && [ "$IS_FORCE_REFRESH" != "1" ]; then
-  echo "  >> diff-so-fancy already installed, skipping: $DEST_PATH"
+  echo ">> diff-so-fancy already installed, skipping: $DEST_PATH"
 else
-  echo '  >> Installing diff-so-fancy: ' $DEST_PATH;
+  echo '>> Installing diff-so-fancy: ' $DEST_PATH;
   TEMP_PATH=/tmp/diff-so-fancy
   rm -rf $TEMP_PATH
   curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/binaries/diff-so-fancy" > $TEMP_PATH

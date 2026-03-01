@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo '  >> Setup termux properties'
+echo '>> Setup termux properties'
 
 # termux config
 echo '''

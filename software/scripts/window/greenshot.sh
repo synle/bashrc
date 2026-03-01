@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo '>> Greenshot (disable auto-update, added hotkeys)'
+echo '> Greenshot (disable auto-update, added hotkeys)'
 
 sed -i -E '
 s/^[[:space:]]*RegionHotkey=.*/RegionHotkey=Alt + Shift + D4/;

@@ -2,17 +2,17 @@
 async function doWork() {
   let targetPath = "/etc/libreoffice";
 
-  log("  >> Install libreoffice configs:", targetPath);
+  log(">> Install libreoffice configs:", targetPath);
 
   if (!is_os_chromeos && !is_os_arch_linux) {
-    log("    >> Skipped : Not Applicable");
+    log(">>> Skipped : Not Applicable");
     return process.exit();
   }
 
   exitIfPathNotFound(targetPath);
 
   targetPath = path.join(targetPath, "sofficerc");
-  log("    >> Update Configs:", targetPath);
+  log(">>> Update Configs:", targetPath);
 
   let newContent = readText(targetPath);
 

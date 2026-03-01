@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".inputrc");
 
-  log("  >> Updating .inputrc", targetPath);
+  log(">> Updating .inputrc", targetPath);
 
   const content = `
 # To install manually:

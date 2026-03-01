@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", err);
+    log(">>>> Failed to get the path", err);
   }
 
   return null;
@@ -165,7 +165,7 @@ const toInstallExtensions = convertTextToList(`
 
 async function doWork() {
   exitIfLimitedSupportOs();
-  log(`  >> Sublime Text Extensions:`);
+  log(`>> Sublime Text Extensions:`);
 
   // write to build file
   writeToBuildFile([
@@ -177,7 +177,7 @@ async function doWork() {
 
   // write Package Control settings to local Sublime Text installation
   let targetPath = await _getPathSublimeText();
-  log("    >> For my own system", targetPath);
+  log(">>> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
 
   const pkgControlPath = path.join(targetPath, "Packages/User/Package Control.sublime-settings");

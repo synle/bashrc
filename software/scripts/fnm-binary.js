@@ -1,7 +1,7 @@
 /** * Registers fnm (Fast Node Manager) binary paths and env setup script with bashrc. */
 async function doWork() {
-  log(`  >> Register fnm binary with bashrc`, FNM_DIR);
-  log(`    >> Register fnm default node path with bashrc`, FNM_DEFAULT_NODE_PATH);
+  log(`>> Register fnm binary with bashrc`, FNM_DIR);
+  log(`>>> Register fnm default node path with bashrc`, FNM_DEFAULT_NODE_PATH);
 
   registerWithBashSyleProfile(
     "fnm - fast node manager",

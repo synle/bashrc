@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", err);
+    log(">>>> Failed to get the path", err);
   }
 
   return null;
@@ -234,11 +234,11 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
  */
 async function doWork() {
   exitIfUnsupportedOs("is_os_android_termux");
-  log(`  >> Sublime Text Configurations / Settings:`);
+  log(`>> Sublime Text Configurations / Settings:`);
 
   // write to build file
   const comments = "Preferences Settings";
-  log(`    >> For prebuilt configs`);
+  log(`>>> For prebuilt configs`);
   writeToBuildFile([
     {
       file: "sublime-text-config",
@@ -258,7 +258,7 @@ async function doWork() {
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  log("    >> For my own system", targetPath);
+  log(">>> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
 
   // deploy custom color schemes (only when high contrast theme is enabled)
@@ -268,14 +268,14 @@ async function doWork() {
       { src: "software/scripts/sublime-text-color-light.jsonc", dest: SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME },
     ];
     for (const { src, dest } of colorSchemes) {
-      log(`    >> Deploying color scheme: ${dest}`);
+      log(`>>> Deploying color scheme: ${dest}`);
       const data = await fetchUrlAsJson(src);
 
-      log(`      >> Parsing: ${dest}`, src);
+      log(`>>>> Parsing: ${dest}`, src);
       writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
     }
   }
 
-  log(`    >> Deployed config:`, targetPath);
+  log(`>>> Deployed config:`, targetPath);
   writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_mac: is_os_mac }));
 }

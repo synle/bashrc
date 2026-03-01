@@ -3,7 +3,7 @@
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  log("    >> Make Bash Autocomplete");
+  log(">>> Make Bash Autocomplete");
 
   registerWithBashSyleAutocompleteWithRawContent(
     "Make Autocomplete",

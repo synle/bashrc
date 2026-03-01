@@ -77,7 +77,7 @@ async function doWork() {
     ${shFooter}
   `);
 
-  log("  >> Installing Mac Only - File Associations");
+  log(">> Installing Mac Only - File Associations");
   writeToBuildFile([
     {
       file: "file-association-mac.sh",

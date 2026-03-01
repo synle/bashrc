@@ -3,7 +3,7 @@
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  log("    >> Git Bash Autocomplete");
+  log(">>> Git Bash Autocomplete");
   const gitAutocompleteScript = await fetchUrlAsString(
     "https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash",
   );

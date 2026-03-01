@@ -261,23 +261,23 @@ function _getBraveConfigs() {
 async function doWork() {
   // Only run on macOS and Windows (and Linux if Brave is installed)
   if (!is_os_mac && !is_os_window) {
-    log("  >> Skipping: Brave Browser config only targets macOS and Windows");
+    log(">> Skipping: Brave Browser config only targets macOS and Windows");
     return;
   }
 
-  log(`  >> Brave Browser Configurations / Settings:`);
+  log(`>> Brave Browser Configurations / Settings:`);
 
   if (true) {
-    log(`  >> Skipped for testing`);
+    log(`>> Skipped for testing`);
     return;
   }
 
   const profilePath = _getBraveProfilePath();
-  log("    >> Profile path:", profilePath);
+  log(">>> Profile path:", profilePath);
   exitIfPathNotFound(profilePath);
 
   const prefsFile = path.join(profilePath, "Preferences");
-  log("    >> Preferences file:", prefsFile);
+  log(">>> Preferences file:", prefsFile);
   exitIfPathNotFound(prefsFile);
 
   // Read existing preferences (preserve all user data like bookmarks, history, etc.)
@@ -285,7 +285,7 @@ async function doWork() {
   try {
     existingPrefs = readJson(prefsFile);
   } catch (e) {
-    log("    >> Warning: Could not read existing Preferences, starting fresh", e);
+    log(">>> Warning: Could not read existing Preferences, starting fresh", e);
   }
 
   // Deep merge our desired settings into the existing preferences
@@ -293,7 +293,7 @@ async function doWork() {
   const mergedPrefs = _deepMerge(existingPrefs, desiredSettings);
 
   // Write back the merged preferences
-  log("    >> Writing merged Brave Browser preferences");
+  log(">>> Writing merged Brave Browser preferences");
   writeText(prefsFile, JSON.stringify(mergedPrefs, null, 2));
-  log("    >> Done. Restart Brave Browser for changes to take effect.");
+  log(">>> Done. Restart Brave Browser for changes to take effect.");
 }

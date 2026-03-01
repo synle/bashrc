@@ -3,7 +3,7 @@
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  log("    >> Yarn Bash Autocomplete");
+  log(">>> Yarn Bash Autocomplete");
 
   registerWithBashSyleAutocompleteWithRawContent(
     "Yarn Autocomplete",

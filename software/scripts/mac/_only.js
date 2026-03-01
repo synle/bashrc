@@ -1,7 +1,7 @@
 /** * Gate check that exits early if the current OS is not macOS. */
 async function doWork() {
   const onlyMacProfile = readText("software/scripts/mac/_only-profile.bash").trim();
-  log("    >> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
+  log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
 
   // register platform tweaks for mac
   registerPlatformTweaks("Only Mac", ".bash_syle_only_mac", onlyMacProfile);

@@ -1,6 +1,6 @@
 /** * Registers bash aliases for jq and a json file viewer function. */
 async function doWork() {
-  log("  >> Setting up jq alias in bashrc", BASH_SYLE_PATH);
+  log(">> Setting up jq alias in bashrc", BASH_SYLE_PATH);
   registerWithBashSyleProfile(
     "jq",
     trimLeftSpaces(`

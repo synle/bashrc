@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", err);
+    log(">>>> Failed to get the path", err);
   }
 
   return null;
@@ -337,7 +337,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
  */
 async function doWork() {
   exitIfUnsupportedOs("is_os_android_termux");
-  log(`  >> VS Code Configurations / Settings:`);
+  log(`>> VS Code Configurations / Settings:`);
 
   // write to build file
   const comments = "Preferences Open User Settings (JSON)";
@@ -348,7 +348,7 @@ async function doWork() {
 
   // for my own system
   let targetPaths = await _getVSCodeAndVSCodiumPaths();
-  log("    >> For my own system: ", targetPaths?.length);
+  log(">>> For my own system: ", targetPaths?.length);
   for (const targetPath of targetPaths) {
     writeConfigToFile(targetPath, "User/settings.json", _getConfigs({ is_os_mac: is_os_mac }));
   }

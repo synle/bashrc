@@ -1,9 +1,9 @@
 /** * Configures iTerm2 terminal settings for macOS. */
 async function doWork() {
-  log("  >> Installing Mac Only - Iterm Dracula Theme");
+  log(">> Installing Mac Only - Iterm Dracula Theme");
 
   if (!is_os_mac) {
-    log("    >> Skipped - mac only");
+    log(">>> Skipped - mac only");
     return process.exit();
   }
 
@@ -11,11 +11,11 @@ async function doWork() {
   let targetPath;
 
   targetPath = path.join(baseTargetPath, "iterm.Dracula.itermcolors");
-  log("    >> Iterm Dracula Theme Path", targetPath);
+  log(">>> Iterm Dracula Theme Path", targetPath);
   writeText(targetPath, await fetchUrlAsString("software/scripts/mac/iterm-color-scheme-dracula.xml"));
 
   targetPath = path.join(baseTargetPath, "iterm.itermkeymap");
-  log("    >> Iterm Keymap", targetPath);
+  log(">>> Iterm Keymap", targetPath);
   writeText(targetPath, await fetchUrlAsString("software/scripts/mac/iterm-keys.jsonc"));
 
   targetPath = findDirSingle(getOsxApplicationSupportCodeUserPath(), /iTerm[ ]*[a-z0-9]*/i);
@@ -25,7 +25,7 @@ async function doWork() {
     await mkdir(targetPath);
     targetPath = path.join(targetPath, "switch_automatic.py");
 
-    log("    >> Auto switch color scheme", targetPath);
+    log(">>> Auto switch color scheme", targetPath);
     writeText(targetPath, await fetchUrlAsString("software/scripts/mac/iterm-auto-theme.py"));
   }
 }

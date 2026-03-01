@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".fzf");
 
-  log("  >> Download and installing fzf:", targetPath);
+  log(">> Download and installing fzf:", targetPath);
 
   if (IS_FORCE_REFRESH) {
     await deleteFolder(targetPath);
@@ -16,7 +16,7 @@ async function doWork() {
     ${targetPath}/install --no-key-bindings --no-completion --no-update-rc &>/dev/null;
   `);
 
-  log("    >> Register binary with bashrc", BASH_SYLE_PATH);
+  log(">>> Register binary with bashrc", BASH_SYLE_PATH);
   registerWithBashSyleProfile("fzf - Fuzzy Find", `[ -f ~/.fzf.bash ] && . ~/.fzf.bash`);
 
   registerWithBashSyleProfile(
@@ -27,7 +27,7 @@ async function doWork() {
       add_bookmark(){
         local _temp_bookmark="/tmp/syle_bookmark"
 
-        echo "$1" >> "$BOOKMARK_PATH"
+        echo "$1">> "$BOOKMARK_PATH"
 
         # Remove duplicates, sort, and update the bookmark file
         sort "$BOOKMARK_PATH" | uniq > "$_temp_bookmark" && mv "$_temp_bookmark" "$BOOKMARK_PATH"
