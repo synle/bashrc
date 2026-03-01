@@ -484,31 +484,31 @@ declare function execBash(cmd: string, sync?: boolean, options?: object): Promis
  */
 declare function deleteFolder(targetPath: string, recursive?: boolean): Promise<string>;
 /**
- * Generates a bash echo command string that outputs the given text.
- * @param {string} str - The text to echo
- * @returns {string} A bash echo command string
- */
-declare function echo(str: string): string;
-/**
  * Emits a string to stdout for bash to execute in the `node | bash` pipeline.
  * Use this instead of console.log when outputting bash commands from the orchestration layer.
  * @param {...any} args - The bash command(s) to emit
  */
 declare function emitBash(...args: any[]): void;
 /**
- * Generates a bash echo command string that outputs colored text using ANSI escape codes.
- * @param {string} str - The text to echo
- * @param {string} color - The ANSI color code (e.g. '32m' for green)
- * @returns {string} A bash echo command string with color escape sequences
- */
-declare function echoColor(str: string, color: string): string;
-/**
- * Wraps a string with ANSI color escape codes for use with console.log.
+ * Wraps a string with ANSI color escape codes.
  * @param {string} str - The text to colorize
- * @param {string} color - The ANSI color code (e.g. '32m' for green)
+ * @param {string} colorCode - The ANSI color code (e.g. '32m' for green)
  * @returns {string} The string wrapped in ANSI color escape sequences
  */
-declare function consoleLogColor(str: string, color: string): string;
+declare function color(str: string, colorCode: string): string;
+/**
+ * Logs colored text via the bash pipeline by emitting a `node -e "console.log(...)"` command.
+ * Uses JSON.stringify for safe encoding of ANSI escape codes and special characters.
+ * Use this in the orchestration layer (index.js) where stdout is piped to bash.
+ * @param {...string} data - ANSI-colored strings to log
+ */
+declare function echo(...data: string[]): void;
+/**
+ * Logs colored text directly to the Node.js console (stderr-safe).
+ * Use this inside individual script files where stdout is NOT piped to bash.
+ * @param {...string} data - ANSI-colored strings to log
+ */
+declare function log(...data: string[]): void;
 /**
  * Derives a temp file path from a script file name using TEMP_SCRIPT_PREFIX and a timestamp.
  * @param {string} file - The script file path
@@ -744,18 +744,32 @@ declare const BASE_SY_CUSTOM_TWEAKS_DIR: any;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
 declare const LINE_BREAK_EQUAL: string;
+declare namespace LOG_COLORS {
+  let green: string;
+  let yellow: string;
+  let cyan: string;
+  let dim: string;
+  let red: string;
+  let bgRed: string;
+  let bgYellow: string;
+  let magenta: string;
+  let orange: string;
+  let blue: string;
+}
+/** @type {(str: string) => string} */ declare const colorGreen: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorYellow: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorCyan: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorDim: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorRed: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorBgRed: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorBgYellow: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorMagenta: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorOrange: (str: string) => string;
+/** @type {(str: string) => string} */ declare const colorBlue: (str: string) => string;
 /**
- * ANSI color codes used to dynamically generate global color helper functions.
- * The loop below creates echoColor{N} and consoleLogColor{N} for each non-null entry,
+ * ANSI color codes used to dynamically generate legacy global color helper functions.
+ * The loop below creates consoleLogColor{N} for each non-null entry,
  * where N is the array index. Index 0 is intentionally null (unused).
- * Additionally, echoColorSuccess (green) and echoColorError (red) are defined as named aliases.
+ * These are preserved for backward compatibility in script files.
  */
 declare const CONSOLE_COLORS: string[];
-/** @type {(str: string) => string} Generates a bash echo command with green (success) coloring */
-declare const echoColorSuccess: (str: string) => string;
-/** @type {(str: string) => string} Generates a bash echo command with red (error) coloring */
-declare const echoColorError: (str: string) => string;
-/** @type {(str: string) => string} Generates a bash echo command with yellow (warning) coloring */
-declare const echoColorWarning: (str: string) => string;
-/** @type {(str: string) => string} Generates a bash echo command with attention (BG Yellow + Black) coloring */
-declare const echoColorAttention: (str: string) => string;
