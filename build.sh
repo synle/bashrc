@@ -218,15 +218,16 @@ function install_fnm_node() {
 }
 
 # run_files - Run script files through software/index.js
-# Uses cat (local) when IS_TEST_SCRIPT_MODE=1, curl (prod) otherwise.
 # Usage:
-#   run_files "git.js,vim.js"    # run specific files
-#   run_files                    # full run (no TEST_SCRIPT_FILES set)
+#   run_files "local" "git.js,vim.js"  # local mode, run specific files
+#   run_files "prod"                   # prod mode, full run
+#   run_files "local"                  # local mode, full run
 function run_files() {
-  if [ -n "$1" ]; then
-    export TEST_SCRIPT_FILES="$1"
+  local mode="$1"
+  if [ -n "$2" ]; then
+    export TEST_SCRIPT_FILES="$2"
   fi
-  if [ "$IS_TEST_SCRIPT_MODE" = "1" ]; then
+  if [ "$mode" = "local" ]; then
     cat software/index.js
   else
     curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js"
@@ -238,7 +239,8 @@ function run_files() {
 
 
 # build.sh always runs locally
-export IS_TEST_SCRIPT_MODE=1
+run_mode="local"
+if [ "$run_mode" = "local" ]; then export IS_TEST_SCRIPT_MODE=1; fi
 
 install_fnm_node
 
@@ -271,7 +273,7 @@ fi
 if should_run script-indexes; then
 echo '> Generate Script List Indexes'
 export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-run_files "software/metadata/script-list.js"
+run_files "$run_mode" "software/metadata/script-list.js"
 cat $SCRIPT_INDEX_CONFIG_FILE
 fi
 
@@ -280,7 +282,7 @@ fi
 ############################################################################################
 if should_run prebuild-hosts; then
 echo '> Prebuilding Host Mappings'
-run_files "software/metadata/ip-address.config.js"
+run_files "$run_mode" "software/metadata/ip-address.config.js"
 fi
 
 ############################################################################################
@@ -293,7 +295,7 @@ echo '> Build raw JSON and raw JSON configs'
 CONFIG_BUILD_PATH="./.build"
 mkdir -p $CONFIG_BUILD_PATH
 export DEBUG_WRITE_TO_DIR="$CONFIG_BUILD_PATH" && \
-run_files "$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
+run_files "$run_mode" "$(grep -R -l 'writeToBuildFile' 'software/' | grep -v 'index.js')"
 echo '>> Built Configs:'
 find $CONFIG_BUILD_PATH
 unset DEBUG_WRITE_TO_DIR DEBUG_WRITE_TO_DIR
@@ -304,7 +306,7 @@ fi
 ############################################################################################
 if should_run host-mappings && [ "$CI" != "true" ]; then
 echo '> Build Host Mappings'
-run_files "software/metadata/hosts-blocked-ads.config.js"
+run_files "$run_mode" "software/metadata/hosts-blocked-ads.config.js"
 fi
 
 ############################################################################################

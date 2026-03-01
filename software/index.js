@@ -373,6 +373,10 @@ const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
 const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
 
+// text block delimiters used by updateTextBlock / appendTextBlock / prependTextBlock
+const TEXT_BLOCK_START_MARKER = "BEGIN_CONTENT";
+const TEXT_BLOCK_END_MARKER = "END_CONTENT";
+
 //////////////////////////////////////////////////////
 // Directory Search Utilities
 //////////////////////////////////////////////////////
@@ -892,7 +896,10 @@ function getOsxApplicationSupportCodeUserPath() {
 function updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, isPrepend) {
   configValue = configValue.trim();
 
-  const regex = new RegExp(`(\\n)*(${commentPrefix} ${configKey})(\\n)[\\S\\s]+?(${commentPrefix} END ${configKey})(\\n)*`);
+  // match both new format (BEGIN_CONTENT/END_CONTENT) and legacy format (configKey/END configKey)
+  const regex = new RegExp(
+    `(\\n)*(${commentPrefix} (?:${TEXT_BLOCK_START_MARKER} )?${configKey})(\\n)[\\S\\s]+?(${commentPrefix} (?:${TEXT_BLOCK_END_MARKER}|END) ${configKey})(\\n)*`,
+  );
 
   if (resultTextContent.match(regex)) {
     resultTextContent = resultTextContent
@@ -900,9 +907,9 @@ function updateTextBlock(resultTextContent, configKey, configValue, commentPrefi
         regex,
         `
 
-${commentPrefix} ${configKey}
+${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${configKey}
 ${configValue}
-${commentPrefix} END ${configKey}
+${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${configKey}
 
 `,
       )
@@ -913,18 +920,18 @@ ${commentPrefix} END ${configKey}
     resultTextContent = `
 ${resultTextContent}
 
-${commentPrefix} ${configKey}
+${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${configKey}
 ${configValue}
-${commentPrefix} END ${configKey}
+${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${configKey}
 
 `;
   } else {
     // prepend
     resultTextContent = `
 
-${commentPrefix} ${configKey}
+${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${configKey}
 ${configValue}
-${commentPrefix} END ${configKey}
+${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${configKey}
 
 ${resultTextContent}
 
