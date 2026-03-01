@@ -1,4 +1,4 @@
-# SY CUSTOM CONFIG - All Hosts
+# BEGIN_CONTENT SY CUSTOM CONFIG - All Hosts
 Host *
   # --- CONNECTION MULTIPLEXING (The Speed King) ---
   ControlMaster auto
@@ -20,9 +20,9 @@ Host *
   # --- LATENCY REDUCTION ---
   CheckHostIP no # Skip DNS lookups on the client side
   AddressFamily inet # Faster connection for modern systems
-# END SY CUSTOM CONFIG - All Hosts
+# END_CONTENT SY CUSTOM CONFIG - All Hosts
 
-# SY CUSTOM CONFIG - Home Network Hosts
+# BEGIN_CONTENT SY CUSTOM CONFIG - Home Network Hosts
 Host sy-pi3
   HostName 192.168.1.20
   Port 22
@@ -114,4 +114,4 @@ Host sy-g14-2023
 Host sy-asus-g14-2023
   HostName 192.168.1.29
   Port 22
-# END SY CUSTOM CONFIG - Home Network Hosts
+# END_CONTENT SY CUSTOM CONFIG - Home Network Hosts

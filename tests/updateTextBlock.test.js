@@ -199,7 +199,9 @@ some content
 # ${TEXT_BLOCK_END_MARKER} MY_BLOCK`;
 
       const result = appendTextBlock(input, "MY_BLOCK", `has # ${TEXT_BLOCK_END_MARKER} inside`);
-      expect(result).toContain(`# ${TEXT_BLOCK_START_MARKER} MY_BLOCK\nhas # ${TEXT_BLOCK_END_MARKER} inside\n# ${TEXT_BLOCK_END_MARKER} MY_BLOCK`);
+      expect(result).toContain(
+        `# ${TEXT_BLOCK_START_MARKER} MY_BLOCK\nhas # ${TEXT_BLOCK_END_MARKER} inside\n# ${TEXT_BLOCK_END_MARKER} MY_BLOCK`,
+      );
     });
   });
 });

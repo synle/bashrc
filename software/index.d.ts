@@ -774,6 +774,8 @@ declare const lineBreakCountToUse: number;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
 declare const LINE_BREAK_EQUAL: string;
+declare const TEXT_BLOCK_START_MARKER: "BEGIN_CONTENT";
+declare const TEXT_BLOCK_END_MARKER: "END_CONTENT";
 declare namespace LOG_COLORS {
   let green: string;
   let yellow: string;
