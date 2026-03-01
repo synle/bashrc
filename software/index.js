@@ -511,13 +511,13 @@ function writeText(filePath, text, override = true, suppressError = false) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      logWithNode(
-        color3(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`),
-        color4(pathToUse),
+      log(
+        colorCyan(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`),
+        colorDim(pathToUse),
       );
     }
   } else {
-    logWithNode(color3(`      << Updated [Modified] newContent=${newContent.length}`), color4(pathToUse));
+    log(colorCyan(`      << Updated [Modified] newContent=${newContent.length}`), colorDim(pathToUse));
     fs.writeFileSync(pathToUse, newContent);
   }
 }
@@ -531,9 +531,9 @@ function writeText(filePath, text, override = true, suppressError = false) {
 function touchFile(filePath, defaultContent = "") {
   const pathToUse = path.resolve(filePath);
   if (filePathExist(pathToUse)) {
-    logWithNode(color3("      << Skipped [NotModified]"), color4(pathToUse));
+    log(colorCyan("      << Skipped [NotModified]"), colorDim(pathToUse));
   } else {
-    logWithNode(color3("      >> File Created"), color4(pathToUse));
+    log(colorCyan("      >> File Created"), colorDim(pathToUse));
     fs.writeFileSync(pathToUse, defaultContent);
   }
 }
@@ -552,9 +552,9 @@ function backupText(filePath, text) {
     const backupPathToUse = pathToUse + "." + Date.now();
     writeText(backupPathToUse, oldText);
     writeText(pathToUse, text);
-    logWithNode(color3("      << Backup Created"), color4(backupPathToUse));
+    log(colorCyan("      << Backup Created"), colorDim(backupPathToUse));
   } else {
-    logWithNode(color3("      << Backup Skipped [NotModified]"), color4(pathToUse));
+    log(colorCyan("      << Backup Skipped [NotModified]"), colorDim(pathToUse));
   }
 }
 
@@ -653,10 +653,10 @@ function writeToBuildFile(tasks) {
       }
 
       if (isJson) {
-        logWithNode(color1("    >> DEBUG Mode: write JSON to file"), color4(file));
+        log(colorGreen("    >> DEBUG Mode: write JSON to file"), colorDim(file));
         writeJson(file, data, comments);
       } else {
-        logWithNode(color1("    >> DEBUG Mode: write TEXT to file"), color4(file));
+        log(colorGreen("    >> DEBUG Mode: write TEXT to file"), colorDim(file));
         data = (data || "").trim();
         writeText(file, (comments + data).trim());
       }
@@ -676,7 +676,7 @@ function writeToBuildFile(tasks) {
  */
 function writeConfigToFile(basePath, fileName, data, isJson = true) {
   const fileDestPath = path.join(basePath, fileName);
-  console.log("      >> File Path", fileDestPath);
+  log("      >> File Path", fileDestPath);
   if (isJson) {
     writeJson(fileDestPath, data);
   } else {
@@ -996,7 +996,7 @@ async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl
 
   // download and save the spec file
   const specContent = await fetchUrlAsString(specUrl);
-  logWithNode(`    >> Writing complete-spec for ${command}`, color4(specPath));
+  log(`    >> Writing complete-spec for ${command}`, colorDim(specPath));
   writeText(specPath, specContent);
 
   // register a pure-bash completer that reads from the spec file
@@ -1064,11 +1064,11 @@ function safeWriteText(targetPath, newContent, backupContent, minRatio = 0.1) {
 function registerPlatformTweaks(platformName, fileName, content, sourceOverride) {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, fileName);
 
-  console.log(`  >> Register ${platformName} profile`, BASH_SYLE_PATH);
+  log(`  >> Register ${platformName} profile`, BASH_SYLE_PATH);
   const sourceLine = sourceOverride || `. ${targetPath}`;
   registerWithBashSyleProfile(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
 
-  logWithNode(`  >> Installing ${platformName} tweaks:`, color4(targetPath));
+  log(`  >> Installing ${platformName} tweaks:`, colorDim(targetPath));
   writeText(targetPath, content);
 }
 
@@ -1082,7 +1082,7 @@ function exitIfPathCheck(targetPath, exitIfFound = false, message) {
   const found = filePathExist(targetPath);
   if (exitIfFound ? found : !found) {
     const defaultMessage = exitIfFound ? "Skipped : Found Folder" : "Skipped : Not Found";
-    logWithNode(color1(`    >> ${message || defaultMessage}`), targetPath);
+    log(colorGreen(`    >> ${message || defaultMessage}`), targetPath);
     return process.exit();
   }
 }
@@ -1114,7 +1114,7 @@ function exitIfUnsupportedOs(...osFlags) {
   const flags = osFlags.flat();
   for (const flag of flags) {
     if (global[flag]) {
-      logWithNode(color1(`    >> Skipped : Not supported on ${flag}`));
+      log(colorGreen(`    >> Skipped : Not supported on ${flag}`));
       return process.exit();
     }
   }
@@ -1126,7 +1126,7 @@ function exitIfUnsupportedOs(...osFlags) {
  */
 function exitIfLimitedSupportOs() {
   if (IS_LIGHT_WEIGHT_MODE) {
-    logWithNode(color1(`    >> Skipped : Lightweight mode`));
+    log(colorGreen(`    >> Skipped : Lightweight mode`));
     return process.exit();
   }
   return exitIfUnsupportedOs(LIMITED_SUPPORT_OSES);
@@ -1144,7 +1144,7 @@ function exitIfNotTargetOs(...osFlags) {
       return;
     }
   }
-  logWithNode(color1(`    >> Skipped : Only supported on ${flags.join(", ")}`));
+  log(colorGreen(`    >> Skipped : Only supported on ${flags.join(", ")}`));
   return process.exit();
 }
 
@@ -1155,11 +1155,11 @@ function exitIfNotTargetOs(...osFlags) {
  */
 async function downloadWindowsApp(applicationName, findFilter) {
   const targetPath = await getWindowsApplicationBinaryDir(applicationName);
-  console.log(`  >> Download ${applicationName} for Windows:`, targetPath);
+  log(`  >> Download ${applicationName} for Windows:`, targetPath);
   try {
     await downloadFilesFromMainRepo(findFilter, targetPath);
   } catch (err) {
-    console.error("error", err);
+    log(colorBgRed(`error ${err}`));
   }
 }
 
@@ -1302,7 +1302,7 @@ function downloadFile(url, destination) {
 
   return new Promise((resolve, reject) => {
     if (filePathExist(destination)) {
-      logWithNode(color3("      << Skipped [NotModified]"), color4(destination));
+      log(colorCyan("      << Skipped [NotModified]"), colorDim(destination));
       return resolve(false);
     }
 
@@ -1358,10 +1358,10 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
     try {
       const downloaded = await downloadFile(file, destinationFile);
       if (downloaded === true) {
-        logWithNode(color3("      >> Downloaded"), color4(destinationFile));
+        log(colorCyan("      >> Downloaded"), colorDim(destinationFile));
       }
     } catch (err) {
-      logWithNode(color3("      >> Error Downloading"), color4(file));
+      log(colorCyan("      >> Error Downloading"), colorDim(file));
     }
   });
 
@@ -1479,18 +1479,18 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      logWithBash(colorError(`  >> [Ignored] - No sudo access: ${file}`));
+      echo(colorBgRed(`  >> [Ignored] - No sudo access: ${file}`));
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        logWithBash(colorError(`  >> [Ignored] - OS Specific ${file}`));
+        echo(colorBgRed(`  >> [Ignored] - OS Specific ${file}`));
         return false;
       }
     }
 
-    logWithBash(colorSuccess(`  >> [Accepted]: ${file}`));
+    echo(colorGreen(`  >> [Accepted]: ${file}`));
     return true;
   });
 }
@@ -1588,7 +1588,7 @@ async function execBash(cmd, sync = false, options) {
  * @returns {Promise<string>} Resolves when deletion is complete
  */
 function deleteFolder(targetPath, recursive = true) {
-  console.log(`  >> Deleting ${targetPath}`);
+  log(`  >> Deleting ${targetPath}`);
   const flags = recursive ? "-rf" : "-f";
   return execBash(`rm ${flags} "${targetPath}"`);
 }
@@ -1596,15 +1596,6 @@ function deleteFolder(targetPath, recursive = true) {
 //////////////////////////////////////////////////////
 // Console Colors & Output
 //////////////////////////////////////////////////////
-/**
- * Generates a bash echo command string that outputs the given text.
- * @param {string} str - The text to echo
- * @returns {string} A bash echo command string
- */
-function echo(str) {
-  return `echo '''${str}'''`;
-}
-
 /**
  * Emits a string to stdout for bash to execute in the `node | bash` pipeline.
  * Use this instead of console.log when outputting bash commands from the orchestration layer.
@@ -1630,7 +1621,7 @@ function color(str, colorCode) {
  * Use this in the orchestration layer (index.js) where stdout is piped to bash.
  * @param {...string} data - ANSI-colored strings to log
  */
-function logWithBash(...data) {
+function echo(...data) {
   const joined = data.map((s) => String(s)).join(" ");
   const jsonStr = JSON.stringify(joined).replace(/'/g, "'\\''");
   emitBash(`node -e 'console.log(${jsonStr})'`);
@@ -1641,16 +1632,43 @@ function logWithBash(...data) {
  * Use this inside individual script files where stdout is NOT piped to bash.
  * @param {...string} data - ANSI-colored strings to log
  */
-function logWithNode(...data) {
+function log(...data) {
   console.log(...data);
 }
 
 /**
- * ANSI color codes used to dynamically generate global color helper functions.
- * The loop below creates color{N} for each non-null entry,
+ * Named color map for echo. Each key is a descriptive color name
+ * mapped to its ANSI escape code. Used to generate colorGreen, colorRed, etc.
+ */
+const LOG_COLORS = {
+  green: "32m",
+  yellow: "33m",
+  cyan: "36m",
+  dim: "2m",
+  red: "1;31m",
+  bgRed: "41;97;1m",
+  bgYellow: "43;30m",
+  magenta: "35m",
+  orange: "38;5;208m",
+  blue: "34m",
+};
+
+/** @type {(str: string) => string} */ const colorGreen = (str) => color(str, LOG_COLORS.green);
+/** @type {(str: string) => string} */ const colorYellow = (str) => color(str, LOG_COLORS.yellow);
+/** @type {(str: string) => string} */ const colorCyan = (str) => color(str, LOG_COLORS.cyan);
+/** @type {(str: string) => string} */ const colorDim = (str) => color(str, LOG_COLORS.dim);
+/** @type {(str: string) => string} */ const colorRed = (str) => color(str, LOG_COLORS.red);
+/** @type {(str: string) => string} */ const colorBgRed = (str) => color(str, LOG_COLORS.bgRed);
+/** @type {(str: string) => string} */ const colorBgYellow = (str) => color(str, LOG_COLORS.bgYellow);
+/** @type {(str: string) => string} */ const colorMagenta = (str) => color(str, LOG_COLORS.magenta);
+/** @type {(str: string) => string} */ const colorOrange = (str) => color(str, LOG_COLORS.orange);
+/** @type {(str: string) => string} */ const colorBlue = (str) => color(str, LOG_COLORS.blue);
+
+/**
+ * ANSI color codes used to dynamically generate legacy global color helper functions.
+ * The loop below creates consoleLogColor{N} for each non-null entry,
  * where N is the array index. Index 0 is intentionally null (unused).
- * Additionally, colorSuccess (green) and colorError (red) are defined as named aliases.
- * Legacy consoleLogColor{N} aliases are preserved for backward compatibility in script files.
+ * These are preserved for backward compatibility in script files.
  */
 const CONSOLE_COLORS = [
   null, // 0: Not used
@@ -1669,19 +1687,9 @@ for (let idx = 0; idx < CONSOLE_COLORS.length; idx++) {
   const colorCode = CONSOLE_COLORS[idx];
 
   if (colorCode) {
-    globalThis["color" + idx] = (str) => color(str, colorCode);
     globalThis["consoleLogColor" + idx] = (str) => color(str, colorCode);
   }
 }
-
-/** @type {(str: string) => string} Returns string with green (success) coloring */
-const colorSuccess = (str) => color(str, "32m");
-/** @type {(str: string) => string} Returns string with red (error) coloring */
-const colorError = (str) => color(str, CONSOLE_COLORS[6]);
-/** @type {(str: string) => string} Returns string with yellow (warning) coloring */
-const colorWarning = (str) => color(str, "33m");
-/** @type {(str: string) => string} Returns string with attention (BG Yellow + Black) coloring */
-const colorAttention = (str) => color(str, CONSOLE_COLORS[7]);
 
 //////////////////////////////////////////////////////
 // Script Processing & Execution
@@ -1812,10 +1820,10 @@ function processScriptFile(file, originalFile, allRepoFiles) {
     tempFileCommand = `cat ${tmpFile} | ${runner}`;
     const fullCommand = `(${fetchCmd}) > ${tmpFile} && ${tempFileCommand}`;
 
-    logWithBash(color3(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`));
+    echo(colorCyan(`  >> processScriptFile | ${originalFile} (${file})${IS_DEBUG ? ` - ${tempFileCommand}` : ""}`));
     emitBash(fullCommand);
   } else {
-    logWithBash(color3(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `));
+    echo(colorCyan(`  >> processScriptFile | ${originalFile} (${file}) - does not exist `));
   }
 
   scriptProcessingResults.push({
@@ -1837,13 +1845,13 @@ function processScriptFile(file, originalFile, allRepoFiles) {
 function printOsFlags() {
   if (SHOULD_PRINT_OS_FLAGS) {
     printSectionBlock(`OS Flags`);
-    emitBash(`
-      node -e """
-        Object.keys(process.env)
-          .filter(envKey => envKey.indexOf('is_os_') === 0)
-          .forEach(envKey => console.log(envKey.padEnd(30, ' ') + ':', process.env[envKey] === '1' ? 'Yes': 'No'))
-      """
-    `);
+    Object.keys(process.env)
+      .filter((envKey) => envKey.indexOf("is_os_") === 0)
+      .forEach((envKey) => {
+        const isEnabled = process.env[envKey] === "1";
+        const label = envKey.padEnd(30, " ") + ":";
+        echo(isEnabled ? colorGreen(`${label} Yes`) : colorDim(`${label} No`));
+      });
   }
 }
 
@@ -1863,12 +1871,12 @@ function printScriptsToRun(scriptsToRun) {
  * @returns {void}
  */
 function printSectionBlock(header, lines = []) {
-  logWithBash(colorWarning(LINE_BREAK_EQUAL));
-  logWithBash(colorAttention(`>> ${header}`));
+  echo(colorYellow(LINE_BREAK_EQUAL));
+  echo(colorBgYellow(`>> ${header}`));
   for (const line of lines) {
-    logWithBash(colorWarning(`  ${line}`));
+    echo(colorYellow(`  ${line}`));
   }
-  logWithBash(colorWarning(LINE_BREAK_EQUAL));
+  echo(colorYellow(LINE_BREAK_EQUAL));
 }
 
 //////////////////////////////////////////////////////
@@ -1895,7 +1903,7 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    logWithBash(color2(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
+    echo(colorYellow(`>> _runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`));
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
@@ -1917,15 +1925,15 @@ function printScriptProcessingResults(results) {
 
   for (const result of results) {
     if (result.status === "success") {
-      logWithBash(
-        colorSuccess(
+      echo(
+        colorGreen(
           !result.fileMatchState
             ? `[Success] ${result.file}. ${result.description}`
             : `[Success] ${result.file} (${result.path}). ${result.description}`,
         ),
       );
     } else {
-      logWithBash(colorError(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`));
+      echo(colorBgRed(`[Error] ${result.file} (${result.path}). ${result.description}. ${result.tempFileCommand || ""}`));
     }
   }
 
@@ -1941,12 +1949,12 @@ function printScriptProcessingResults(results) {
  */
 async function _doWorkTestFiles() {
   if (!TEST_SCRIPT_FILES) {
-    emitBash(`echo '''    >> Skipped'''`);
+    echo(`    >> Skipped`);
     return;
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  logWithBash(color5(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`));
+  echo(colorRed(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`));
 
   const softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
@@ -1966,8 +1974,8 @@ async function _doWorkTestFiles() {
 async function _doWorkFullRun() {
   const softwareFiles = await getSoftwareScriptFiles();
 
-  logWithBash(
-    color1(
+  echo(
+    colorGreen(
       `
 >> Installing Configurations: ${softwareFiles.length} Files
 `,
@@ -1995,7 +2003,7 @@ async function _doWorkFullRun() {
     .filter(([, value]) => !value)
     .map(([key]) => key);
   if (missingEnvVars.length > 0) {
-    console.error(`Missing required environment variables: ${missingEnvVars.join(", ")}`);
+    echo(colorBgRed(`Missing required environment variables: ${missingEnvVars.join(", ")}`));
     process.exit(1);
   }
 
@@ -2018,11 +2026,11 @@ async function _doWorkFullRun() {
   // for debugging
   process
     .on("unhandledRejection", (reason, p) => {
-      console.error("[Error] unhandledRejection", reason, "Unhandled Rejection at Promise", p);
+      echo(colorBgRed(`[Error] unhandledRejection ${reason} Unhandled Rejection at Promise ${p}`));
       process.exit(1);
     })
     .on("uncaughtException", (err) => {
-      console.error("[Error] uncaughtException", err, "Uncaught Exception thrown");
+      echo(colorBgRed(`[Error] uncaughtException ${err} Uncaught Exception thrown`));
       process.exit(1);
     });
 
@@ -2039,6 +2047,6 @@ async function _doWorkFullRun() {
       await _doWorkFullRun();
     }
   } catch (err) {
-    console.error(">> Error", err);
+    echo(colorBgRed(`>> Error ${err}`));
   }
 })();
