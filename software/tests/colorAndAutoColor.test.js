@@ -18,6 +18,9 @@ function getColorCode(text) {
 // Known ANSI codes from index.js color helpers
 const CODES = {
   bgRed: "41;97;1m",
+  bgYellow: "43;30m",
+  bgCyan: "46;30m",
+  bgMagenta: "45;97;1m",
   green: "32m",
   yellow: "33m",
   cyan: "36m",
@@ -207,6 +210,31 @@ describe("_getAutoColor", () => {
 
   it("should bucket 7 spaces same as 8 spaces for >>", () => {
     expect(getColorCode("       >> hello")).toBe(CODES.magenta);
+  });
+
+  // ---- ## marker direction (background colors) ----
+  it("should return colorBgYellow for ## with 0 spaces", () => {
+    expect(getColorCode("## header")).toBe(CODES.bgYellow);
+  });
+
+  it("should return colorBgYellow for ## with 2 spaces", () => {
+    expect(getColorCode("  ## header")).toBe(CODES.bgYellow);
+  });
+
+  it("should return colorBgCyan for ## with 4 spaces", () => {
+    expect(getColorCode("    ## header")).toBe(CODES.bgCyan);
+  });
+
+  it("should return colorBgCyan for ## with 6 spaces", () => {
+    expect(getColorCode("      ## header")).toBe(CODES.bgCyan);
+  });
+
+  it("should return colorBgMagenta for ## with 8+ spaces", () => {
+    expect(getColorCode("        ## header")).toBe(CODES.bgMagenta);
+  });
+
+  it("should bucket 3 spaces same as 4 spaces for ##", () => {
+    expect(getColorCode("   ## header")).toBe(CODES.bgCyan);
   });
 
   // ---- path/URL detection ----

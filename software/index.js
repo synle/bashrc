@@ -1679,7 +1679,10 @@ function _looksLikePathOrUrl(text) {
  * indentation level, and marker direction (>> or <<).
  *
  * Color priority:
- * 1. >> / << markers (highest) — colored by indentation level
+ * 1. >>, <<, ## markers (highest) — colored by indentation level
+ *    >> uses foreground colors (yellow/cyan/magenta)
+ *    << uses foreground colors (orange/blue/magenta)
+ *    ## uses background colors (bgYellow/bgCyan/bgMagenta)
  * 2. Error/fail keywords => colorBgRed
  * 3. Success/done keywords => colorGreen
  * 4. Path or URL-like text => colorDim
@@ -1688,9 +1691,11 @@ function _looksLikePathOrUrl(text) {
  * @param {string} text - The joined log text to analyze
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
  */
+const _MARKER_REGEX = /^(\s*)(>>|<<|##)/;
+
 function _getAutoColor(text) {
-  // 1. Marker-based coloring (>> or <<) with indentation levels — highest priority
-  const markerMatch = text.match(/^(\s*)(>>|<<)/);
+  // 1. Marker-based coloring (>>, <<, ##) with indentation levels — highest priority
+  const markerMatch = text.match(_MARKER_REGEX);
   if (markerMatch) {
     const level = Math.ceil(markerMatch[1].length / 2);
     const direction = markerMatch[2];
@@ -1705,6 +1710,12 @@ function _getAutoColor(text) {
       if (level <= 1) return colorOrange;
       if (level <= 3) return colorBlue;
       return colorMagenta;
+    }
+
+    if (direction === "##") {
+      if (level <= 1) return colorBgYellow;
+      if (level <= 3) return colorBgCyan;
+      return colorBgMagenta;
     }
   }
 
@@ -1739,12 +1750,10 @@ function _getAutoColor(text) {
 function _applyAutoColor(data) {
   return data.map((elem) => {
     let str = String(elem);
-    // Preserve elements that are already dim-colored
-    if (str.includes("\x1b[2m")) return elem;
-    // Strip any existing ANSI codes before re-coloring
-    str = str.replace(/\x1b\[[0-9;]*m/g, "");
-    // Normalize leading spaces before >> or << markers to even counts
-    str = str.replace(/^(\s*)(>>|<<)/, (_, spaces, marker) => {
+    // Preserve elements that already have user-provided ANSI color codes
+    if (str.includes("\x1b[")) return elem;
+    // Normalize leading spaces before markers to even counts
+    str = str.replace(_MARKER_REGEX, (_, spaces, marker) => {
       const level = Math.ceil(spaces.length / 2);
       return "".padStart(level * 2, " ") + marker;
     });
@@ -1790,6 +1799,10 @@ const LOG_COLORS = {
   red: "1;31m",
   bgRed: "41;97;1m",
   bgYellow: "43;30m",
+  bgCyan: "46;30m",
+  bgMagenta: "45;97;1m",
+  bgOrange: "48;5;208;30m",
+  bgBlue: "44;97;1m",
   magenta: "35m",
   orange: "38;5;208m",
   blue: "34m",
@@ -1802,6 +1815,10 @@ const LOG_COLORS = {
 /** @type {(str: string) => string} */ const colorRed = (str) => color(str, LOG_COLORS.red);
 /** @type {(str: string) => string} */ const colorBgRed = (str) => color(str, LOG_COLORS.bgRed);
 /** @type {(str: string) => string} */ const colorBgYellow = (str) => color(str, LOG_COLORS.bgYellow);
+/** @type {(str: string) => string} */ const colorBgCyan = (str) => color(str, LOG_COLORS.bgCyan);
+/** @type {(str: string) => string} */ const colorBgMagenta = (str) => color(str, LOG_COLORS.bgMagenta);
+/** @type {(str: string) => string} */ const colorBgOrange = (str) => color(str, LOG_COLORS.bgOrange);
+/** @type {(str: string) => string} */ const colorBgBlue = (str) => color(str, LOG_COLORS.bgBlue);
 /** @type {(str: string) => string} */ const colorMagenta = (str) => color(str, LOG_COLORS.magenta);
 /** @type {(str: string) => string} */ const colorOrange = (str) => color(str, LOG_COLORS.orange);
 /** @type {(str: string) => string} */ const colorBlue = (str) => color(str, LOG_COLORS.blue);
@@ -1995,7 +2012,7 @@ function printScriptsToRun(scriptsToRun) {
  */
 function printSectionBlock(header, lines = [], addBlock = true) {
   if (addBlock) echo(colorYellow(LINE_BREAK_EQUAL));
-  echo(colorBgYellow(`## ${header}`));
+  echo(`## ${header}`);
   for (const line of lines || []) {
     echo(`  ${line}`);
   }
