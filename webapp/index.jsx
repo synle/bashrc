@@ -223,6 +223,7 @@ function OsSelectionInputSection() {
             <option value="chrome_os">Chrome OS with Linux</option>
             <option value="ubuntu">Ubuntu</option>
             <option value="arch_linux_steamdeck">Arch Linux (Steam Deck)</option>
+            <option value="steamos">SteamOS</option>
             <option value="android_termux">Android Termux</option>
           </select>
         </div>
@@ -297,6 +298,7 @@ function ScriptOutputSection({ script }) {
       is_os_android_termux: osFlag === "android_termux",
       is_os_arch_linux: osFlag.includes("arch_linux"),
       is_os_steamdeck: osFlag === "arch_linux_steamdeck",
+      is_os_steamos: osFlag === "steamos",
     };
     const osKeys = Object.keys(osFlags);
 

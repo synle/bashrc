@@ -21,11 +21,10 @@
 #   host-mappings   Build Host Mappings (skip in CI)
 #   backup-xfce     Backup XFCE Configuration (if applicable)
 #   webapp          Build Web App
-#   build-include   Update files with BEGIN/END block inclusions
 ####################################################################
 
 # All valid step names
-ALL_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp build-include"
+ALL_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
 
 ####################################################################
 # Parse arguments
@@ -328,14 +327,6 @@ npm run build
 echo '>> Built webapp artifacts:'
 find dist
 echo '> DONE Building'
-fi
-
-##########################################################
-# step: build-include - Update files with BEGIN/END block inclusions
-##########################################################
-if should_run build-include; then
-echo '> Running build-include substitutions'
-node software/build-include.cjs
 fi
 
 exit
