@@ -27,6 +27,7 @@ curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -
   bootstrap/dependencies/chrome_os_linux.sh
   bootstrap/dependencies/android_termux.sh
   bootstrap/dependencies/arch_linux.sh
+  bootstrap/dependencies/steamos.sh
 """
 ```
 <!-- END bootstrap/setup.sh -->
