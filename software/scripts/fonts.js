@@ -38,10 +38,13 @@ async function doWork() {
 
   if (!fs.existsSync(targetFontPath)) {
     await mkdir(targetFontPath);
-    await downloadAssets(fonts.map((font) => {
+    await downloadAssets(
+      fonts.map((font) => {
         const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/${font}`;
-        return fontUrl
-      }), targetFontPath)
+        return fontUrl;
+      }),
+      targetFontPath,
+    );
     log("  >> Fonts downloaded to:", colorDim(targetFontPath));
   } else {
     log("  >> Fonts already installed, skipping:", colorDim(targetFontPath));

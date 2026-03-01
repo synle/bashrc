@@ -279,36 +279,36 @@ declare function registerPlatformTweaks(platformName: string, fileName: string, 
  * @param {boolean} [exitIfFound=false] - If true, exits when path exists. If false, exits when path does not exist.
  * @param {string} [message] - Optional message (defaults to "Skipped : Found Folder" or "Skipped : Not Found")
  */
-declare function exitIfPathCheck(targetPath: string, exitIfFound?: boolean, message?: string): any;
+declare function exitIfPathCheck(targetPath: string, exitIfFound?: boolean, message?: string): never;
 /**
  * Guard clause: exits the process if the given path does not exist.
  * @param {string} targetPath - The path to check
  * @param {string} [message] - Optional message (defaults to "Skipped : Not Found")
  */
-declare function exitIfPathNotFound(targetPath: string, message?: string): any;
+declare function exitIfPathNotFound(targetPath: string, message?: string): never;
 /**
  * Guard clause: exits the process if the given path already exists.
  * @param {string} targetPath - The path to check
  * @param {string} [message] - Optional message (defaults to "Skipped : Found Folder")
  */
-declare function exitIfPathFound(targetPath: string, message?: string): any;
+declare function exitIfPathFound(targetPath: string, message?: string): never;
 /**
  * Guard clause: exits the process if the current OS matches any of the given OS flags.
  * Used by individual scripts to self-guard against unsupported platforms.
  * @param {...string} osFlags - OS flag names to check (e.g. "is_os_android_termux", "is_os_arch_linux")
  */
-declare function exitIfUnsupportedOs(...osFlags: string[]): any;
+declare function exitIfUnsupportedOs(...osFlags: string[]): never;
 /**
  * Guard clause: exits if the current OS is a limited-support platform (LIMITED_SUPPORT_OSES)
  * or if IS_LIGHT_WEIGHT_MODE is enabled.
  */
-declare function exitIfLimitedSupportOs(): any;
+declare function exitIfLimitedSupportOs(): never;
 /**
  * Guard clause: exits the process if the current OS does NOT match any of the given OS flags.
  * Inverse of exitIfUnsupportedOs — use this to restrict a script to specific platforms only.
  * @param {...string} osFlags - OS flag names that are allowed (e.g. "is_os_mac", "is_os_window")
  */
-declare function exitIfNotTargetOs(...osFlags: string[]): any;
+declare function exitIfNotTargetOs(...osFlags: string[]): never;
 /**
  * Resolves OS_KEY based on current platform flags.
  * @param {object} keys - Object with { windows, mac, linux } key values
@@ -769,7 +769,7 @@ declare const OS_SCRIPT_PATHS: Array<[boolean, string]>;
  * @type {string[]}
  */
 declare const LIMITED_SUPPORT_OSES: string[];
-declare const BASE_SY_CUSTOM_TWEAKS_DIR: any;
+declare const BASE_SY_CUSTOM_TWEAKS_DIR: string;
 declare const lineBreakCountToUse: number;
 declare const LINE_BREAK_HASH: string;
 declare const LINE_BREAK_SLASH: string;
