@@ -4,6 +4,9 @@ const sublimeBinaryPath = `C:/Program Files/Sublime Text/sublime_text.exe`;
 const vlcProgramBinaryName = "vlc";
 const vlcBinaryPath = `C:/Program Files/VideoLAN/VLC/vlc.exe`;
 
+const sevenZipProgramBinaryName = "7-Zip";
+const sevenZipBinaryPath = `C:/Program Files/7-Zip/7zFM.exe`;
+
 const psFooter = `
 # Rebuild icon cache
 Write-Host "Rebuilding icon cache..."
@@ -21,15 +24,17 @@ Write-Host "Done. Please restart your computer to fully apply the changes."
 async function doWork() {
   const textExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.textfile.config"));
   const mediaExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.media.config"));
-  const allExtensions = [...textExtensions, ...mediaExtensions];
+  const archiveExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.archive.config"));
+  const allExtensions = [...textExtensions, ...mediaExtensions, ...archiveExtensions];
 
   const associationContent = trimLeftSpaces(`
     # Requires running as Administrator
-    # Sets Sublime Text as default for text files and VLC as default for media files
+    # Sets Sublime Text as default for text files, VLC as default for media files, and 7-Zip as default for archive files
 
     # Register file types
     cmd /c 'ftype ${sublimeProgramBinaryName}="${sublimeBinaryPath}" "%1"'
     cmd /c 'ftype ${vlcProgramBinaryName}="${vlcBinaryPath}" "%1"'
+    cmd /c 'ftype ${sevenZipProgramBinaryName}="${sevenZipBinaryPath}" "%1"'
 
     ${LINE_BREAK_HASH}
     # text file association
@@ -53,6 +58,17 @@ async function doWork() {
       cmd /c "assoc $ext=${vlcProgramBinaryName}"
     }
 
+    ${LINE_BREAK_HASH}
+    # archive file association (7-Zip)
+    ${LINE_BREAK_HASH}
+    $archiveExtensions = @(
+    ${archiveExtensions.map((ext) => `  ".${ext}"`).join("\n")}
+    )
+
+    foreach ($ext in $archiveExtensions) {
+      cmd /c "assoc $ext=${sevenZipProgramBinaryName}"
+    }
+
     ${psFooter}
   `);
 
@@ -64,6 +80,7 @@ async function doWork() {
     # Remove custom file types
     cmd /c "ftype ${sublimeProgramBinaryName}="
     cmd /c "ftype ${vlcProgramBinaryName}="
+    cmd /c "ftype ${sevenZipProgramBinaryName}="
 
     # Remove file association overrides from registry
     $extensions = @(
@@ -92,7 +109,7 @@ async function doWork() {
       comments: `
         File Associations for Windows
         Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows.ps1
-        Sets Sublime Text and VLC as default apps for text and media files
+        Sets Sublime Text, VLC, and 7-Zip as default apps for text, media, and archive files
         To revert, run file-association-windows-revert.ps1 as Administrator
       `,
       commentStyle: "bash",
