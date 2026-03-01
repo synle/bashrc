@@ -377,26 +377,26 @@ Write-Host "`n=== Applying Explorer Tweaks ===" -ForegroundColor Cyan
 
 $explorerAdvanced = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
 
-# Show hidden files and folders
-Set-ItemProperty -Path $explorerAdvanced -Name "Hidden" -Type DWord -Value 1 -Force
-# Show file extensions
+# Show hidden files and folders (1=show, 2=hide)
+Set-ItemProperty -Path $explorerAdvanced -Name "Hidden" -Type DWord -Value 2 -Force
+# Show file extensions (0=show extensions, 1=hide extensions)
 Set-ItemProperty -Path $explorerAdvanced -Name "HideFileExt" -Type DWord -Value 0 -Force
-# Show drives with no media
+# Show drives with no media (0=show, 1=hide)
 Set-ItemProperty -Path $explorerAdvanced -Name "HideDrivesWithNoMedia" -Type DWord -Value 0 -Force
-# Hide OneDrive sync provider notifications
+# Hide OneDrive sync provider notifications (0=hide, 1=show)
 Set-ItemProperty -Path $explorerAdvanced -Name "ShowSyncProviderNotifications" -Type DWord -Value 0 -Force
-# Disable Aero-Shake minimize
+# Disable Aero-Shake minimize (0=enabled, 1=disabled)
 Set-ItemProperty -Path $explorerAdvanced -Name "DisallowShaking" -Type DWord -Value 1 -Force
-# Set default Explorer view to This PC
+# Set default Explorer view to This PC (1=This PC, 2=Quick Access, 3=Downloads)
 Set-ItemProperty -Path $explorerAdvanced -Name "LaunchTo" -Type DWord -Value 1 -Force
-# Hide Task View button
+# Hide Task View button (0=hide, 1=show)
 Set-ItemProperty -Path $explorerAdvanced -Name "ShowTaskViewButton" -Type DWord -Value 0 -Force
 
-# Disable Edge desktop shortcut on new profiles
+# Disable Edge desktop shortcut on new profiles (0=enabled, 1=disabled)
 New-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer" `
     -Name "DisableEdgeDesktopShortcutCreation" -PropertyType DWORD -Value 1 -Force -ErrorAction SilentlyContinue
 
-# Disable Zone.Identifier files (NTFS alternate data streams)
+# Disable Zone.Identifier files (NTFS alternate data streams) (1=disable zone info, 2=enable zone info)
 # Prevents Windows from tagging downloaded files, which WSL exposes as *:Zone.Identifier files
 @(
     "HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments",
@@ -406,7 +406,7 @@ New-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Explorer
     Set-ItemProperty -Path $_ -Name "SaveZoneInformation" -Type DWord -Value 1 -Force
 }
 
-# Restore old volume slider
+# Restore old volume slider (0=old horizontal slider, 1=new vertical slider)
 $mtcuvcPath = "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\MTCUVC"
 if (-not (Test-Path $mtcuvcPath)) { New-Item -Path $mtcuvcPath -Force | Out-Null }
 Set-ItemProperty -Path $mtcuvcPath -Name "EnableMtcUvc" -Type DWord -Value 0 -Force
@@ -1348,32 +1348,32 @@ $taskbarPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advance
 # Hide Search box from taskbar (0=hidden, 1=icon, 2=search box)
 Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Type DWord -Value 0 -Force
 
-# Hide Widgets button
+# Hide Widgets button (0=hide, 1=show)
 Set-ItemProperty -Path $taskbarPath -Name "TaskbarDa" -Type DWord -Value 0 -Force
 
-# Hide Chat (Teams) button
+# Hide Chat (Teams) button (0=hide, 1=show)
 Set-ItemProperty -Path $taskbarPath -Name "TaskbarMn" -Type DWord -Value 0 -Force
 
-# Hide Task View button
+# Hide Task View button (0=hide, 1=show)
 Set-ItemProperty -Path $taskbarPath -Name "ShowTaskViewButton" -Type DWord -Value 0 -Force
 
-# Hide Copilot button
+# Hide Copilot button (0=hide, 1=show)
 Set-ItemProperty -Path $taskbarPath -Name "ShowCopilotButton" -Type DWord -Value 0 -Force
 
 # Taskbar alignment: Left (0=Left, 1=Center)
 Set-ItemProperty -Path $taskbarPath -Name "TaskbarAl" -Type DWord -Value 0 -Force
 
-# Hide recently opened items in Start, Jump Lists, and File Explorer
+# Hide recently opened items in Start, Jump Lists, and File Explorer (0=hide, 1=show)
 Set-ItemProperty -Path $taskbarPath -Name "Start_TrackDocs" -Type DWord -Value 0 -Force
 
 # Auto-hide taskbar (disabled by default, uncomment to enable)
 # Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3" ...
 
 # Never combine taskbar buttons (0=always combine, 1=when full, 2=never)
-Set-ItemProperty -Path $taskbarPath -Name "TaskbarGlomLevel" -Type DWord -Value 2 -Force
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarGlomLevel" -Type DWord -Value 0 -Force
 
-# Show labels on taskbar buttons
-Set-ItemProperty -Path $taskbarPath -Name "TaskbarSmallIcons" -Type DWord -Value 0 -Force
+# Show labels on taskbar buttons (0=large icons with labels, 1=small icons no labels)
+Set-ItemProperty -Path $taskbarPath -Name "TaskbarSmallIcons" -Type DWord -Value 1 -Force
 
 Write-Host "Taskbar settings applied." -ForegroundColor Green
 

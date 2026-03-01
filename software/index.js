@@ -1519,19 +1519,25 @@ async function getSoftwareScriptFiles() {
   const pathsToIgnore = OS_SCRIPT_PATHS.map(([valid, pathToCheck]) => (!valid ? pathToCheck : "")).filter((s) => !!s);
 
   return softwareFiles.filter((file) => {
+    let error = '';
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      echo(`>>`, "Error", `Ignored No sudo access`, file);
-      return false;
-    }
-
-    for (const pathToIgnore of pathsToIgnore) {
-      if (file.includes(pathToIgnore)) {
-        echo(`>>`, "Error", `Ignored OS Specific`, file);
-        return false;
+      error = `Ignored No sudo access`
+    } else {
+      for (const pathToIgnore of pathsToIgnore) {
+        if (file.includes(pathToIgnore)) {
+          error = `Ignored OS Specific`
+          break
+        }
       }
     }
 
-    echo(`>>`, `Accepted`, file);
+    if(IS_DEBUG){
+      if(error){
+        echo(`>>`, `Error`, error, file);
+      } else{
+        echo(`>>`, `Accepted`, file);
+      }
+    }
     return true;
   });
 }
@@ -1682,7 +1688,7 @@ function _looksLikePathOrUrl(text) {
  * 1. Repeated-char markers (highest) — level = marker length - 1
  *    `>` markers: yellow(0), green(1), cyan(2), blue(3), magenta(4+)
  *    `<` markers: orange(0), red(1), blue(2), magenta(3+)
- *    `#` markers (min 2): bgYellow(0-1), bgOrange(2), bgCyan(3), bgMagenta(4+)
+ *    `#` markers: bgYellow(0-1), bgOrange(2), bgCyan(3), bgMagenta(4+)
  * 2. Error/fail keywords => colorBgRed
  * 3. Success/done keywords => colorGreen
  * 4. Path or URL-like text => colorDim
@@ -1691,8 +1697,8 @@ function _looksLikePathOrUrl(text) {
  * @param {string} text - The log text to analyze
  * @returns {((str: string) => string) | null} A color function or null if no auto-color applies
  */
-/** @type {RegExp} Matches repeated marker chars (>, <, ##) at start of string, followed by space or end */
-const _MARKER_REGEX = /^(>{1,}|<{1,}|#{2,})(\s|$)/;
+/** @type {RegExp} Matches repeated marker chars (>, <, #) at start of string, followed by space or end */
+const _MARKER_REGEX = /^(>{1,}|<{1,}|#{1,})(\s|$)/;
 
 function _getAutoColor(text) {
   // 1. Repeated-char markers — level = marker length - 1 (e.g. >>> = level 2)
@@ -1763,7 +1769,7 @@ function _applyAutoColor(data) {
     const autoColor = _getAutoColor(str);
     if (autoColor) {
       // Strip repeated markers to single char, indent by marker count
-      str = str.replace(_MARKER_REGEX, (_, marker) => "".padStart(marker.length, " ") + marker[0] + " ");
+      str = str.replace(_MARKER_REGEX, (_, marker) => "".padStart(marker.length - 1, " ") + marker[0] + " ");
       return autoColor(str);
     }
     return str;
@@ -2051,7 +2057,7 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    printSectionBlock(`_runScripts >> ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`, null, false);
+    printSectionBlock(`_runScripts | ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`, null, false);
     processScriptFile(file, originalFile, allRepoFiles);
   }
 
