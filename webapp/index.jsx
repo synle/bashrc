@@ -1055,7 +1055,7 @@ function MacOSXNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="mac" />
-      <DynamicTextArea path="/bootstrap/setup.sh" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/mac/README.md" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
@@ -1082,7 +1082,7 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_ubuntu={true} />
-      <DynamicTextArea path="/bootstrap/setup.sh" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/linux/linux-mint-config.sh" />
       <DynamicTextArea path="/docs/linux/README.md" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
@@ -1156,9 +1156,9 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom is_os_window={true} />
-      <DynamicTextArea path="/bootstrap/setup.sh" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/window/README.md" />
-      <DynamicTextArea path="/bootstrap/dependencies/windows.ps1" />
+      <DynamicTextArea path="/software/bootstrap/dependencies/windows.ps1" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/windows-terminal" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
@@ -1311,7 +1311,7 @@ function App() {
         const configsByKey = {};
 
         const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs] = await Promise.all([
-          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/bootstrap/setup.sh`)
+          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/software/bootstrap/setup.sh`)
             .then((res) => res.text())
             .then((res) => res.trim()),
           fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)

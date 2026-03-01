@@ -319,7 +319,7 @@ let HOME_HOST_NAMES = [];
 /**
  * OS detection flags and script path mappings.
  *
- * Flags are set by bootstrap/common-env.sh based on platform detection and exported
+ * Flags are set by software/bootstrap/common-env.sh based on platform detection and exported
  * as environment variables (e.g. `is_os_mac=1`). This section reads them into JS.
  *
  * Convention: each flag follows the pattern `is_os_<name>`, where `<name>` maps
@@ -1446,7 +1446,7 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 }
 
 /**
- * Deduplicates and filters raw file list to valid software/bootstrap script paths.
+ * Deduplicates and filters raw file list to valid software script paths.
  * Normalizes prefixes, removes non-script files, and returns unique entries.
  * @param {string[]} files - Raw list of file paths to filter
  * @returns {string[]} Deduplicated, filtered, and normalized script file paths
@@ -1454,7 +1454,7 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 function filterRepoScripts(files) {
   const filtered = (files || [])
     .map((s) => s.trim().replace(/^\.\//, ""))
-    .filter((f) => f && (f.startsWith("software/") || f.startsWith("bootstrap/")))
+    .filter((f) => f && (f.startsWith("software/")))
     .filter((f) => !f.endsWith(".json") && !f.endsWith(".test.js") && f !== "software/index.js")
     .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)));
 
@@ -1755,15 +1755,14 @@ function _getAutoColor(text) {
       if (level === 0) return colorOrange;
       if (level === 1) return colorRed;
       if (level === 2) return colorBlue;
-      if (level === 3) return colorCyan;
       return colorMagenta;
     }
 
     if (ch === "#") {
       if (level <= 1) return colorBgYellow;
-      if (level === 2) return colorOrange;
-      if (level === 3) return colorCyan;
-      return colorMagenta;
+      if (level === 2) return colorBgOrange;
+      if (level === 3) return colorBgCyan;
+      return colorBgMagenta;
     }
   }
 

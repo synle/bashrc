@@ -1,4 +1,4 @@
-# bootstrap/dependencies/steamos.sh
+# software/bootstrap/dependencies/steamos.sh
 # SteamOS dependencies - packages, config
 
 installPackage() {

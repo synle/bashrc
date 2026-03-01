@@ -1,4 +1,4 @@
-# bootstrap/profile-core.sh
+# software/bootstrap/profile-core.sh
 export EDITOR='vim'
 export BASH_PATH=~/.bash_syle
 

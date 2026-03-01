@@ -1,4 +1,4 @@
-# bootstrap/dependencies/chrome_os_linux.sh
+# software/bootstrap/dependencies/chrome_os_linux.sh
 # ChromeOS (Crostini) dependencies - apt-get packages
 
 if [ "$is_os_chromeos" = "1" ]; then

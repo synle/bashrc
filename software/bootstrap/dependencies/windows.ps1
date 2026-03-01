@@ -4,7 +4,7 @@
 #
 # Run as Administrator:
 # ----  Set-Executionpolicy Unrestricted -Scope Currentuser ----
-# ----  .\Bootstrap\Dependencies/Windows.Ps1 ----
+# ----  .\Software\Bootstrap\Dependencies/Windows.Ps1 ----
 ################################################################################
 
 

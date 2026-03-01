@@ -1,4 +1,4 @@
-# bootstrap/dependencies/mac.sh
+# software/bootstrap/dependencies/mac.sh
 # macOS dependencies - Homebrew packages, system preferences, shell setup
 
 installPackage() {

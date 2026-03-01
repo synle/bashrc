@@ -1,4 +1,4 @@
-# bootstrap/profile-advanced.sh
+# software/bootstrap/profile-advanced.sh
 
 ################################################################################
 # ---- Docker Aliases and Functions ----
@@ -203,7 +203,7 @@ add_bookmark search_dir
 ################################################################################
 # ---- Refresh script ----
 ################################################################################
-alias refresh="curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/bootstrap/setup.sh| bash -s -- --prod"
+alias refresh="curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh| bash -s -- --prod"
 
 ################################################################################
 # ---- Prompt ----

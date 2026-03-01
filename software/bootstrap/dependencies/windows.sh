@@ -1,4 +1,4 @@
-# bootstrap/dependencies/windows.sh
+# software/bootstrap/dependencies/windows.sh
 # Windows (WSL) dependencies - drive symlinks, folder setup, WSL2 config
 
 if [ "$is_os_window" = "1" ]; then

@@ -1,4 +1,4 @@
-# bootstrap/dependencies/arch_linux.sh
+# software/bootstrap/dependencies/arch_linux.sh
 # Arch Linux dependencies - packages, config
 
 if [ "$is_os_arch_linux" = "1" ]; then

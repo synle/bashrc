@@ -46,7 +46,7 @@ Steps: `jsdocs`, `script-indexes`, `prebuild-hosts`, `build-configs`, `host-mapp
 
 The core execution model pipes Node.js output into bash:
 
-1. `run.sh` or `build.sh` sources `bootstrap/common-env.sh` (inlined via BEGIN/END blocks)
+1. `run.sh` or `build.sh` sources `software/bootstrap/common-env.sh` (inlined via BEGIN/END blocks)
 2. `run_files(mode, files)` in common-env.sh does: `cat software/index.js | node | bash` (mode=local) or `curl ... | node | bash` (mode=prod)
 3. `software/index.js` runs in Node, discovers script files, and **prints bash commands to stdout**
 4. Bash receives and executes those commands
@@ -66,7 +66,7 @@ JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/i
 
 ### OS Flags Convention
 
-OS detection happens in `bootstrap/common-env.sh` and exports `is_os_<name>=1` env vars. In `index.js`, these become boolean globals via `getRuntimeOption()`.
+OS detection happens in `software/bootstrap/common-env.sh` and exports `is_os_<name>=1` env vars. In `index.js`, these become boolean globals via `getRuntimeOption()`.
 
 Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`
 
@@ -84,7 +84,7 @@ Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`
 | `is_os_window`         | `software/scripts/window/`         | Windows (WSL/MinGW)         |
 | `is_os_wsl`            | `software/scripts/wsl/`            | Windows Subsystem for Linux |
 
-### bootstrap/common-env.sh
+### software/bootstrap/common-env.sh
 
 Shared environment setup inlined into `run.sh` and `build.sh` via `# BEGIN`/`# END` markers. Contains:
 
@@ -252,7 +252,7 @@ Unit tests use **vitest** (v0.34.6) with a **Node `vm` sandbox** that executes a
 
 ### Test setup (`software/tests/setup.js`)
 
-- Loads `software/index.js`, strips the IIFE bootstrap, replaces `const`/`let` with `var` so declarations become sandbox properties
+- Loads `software/index.js`, strips the IIFE entry point, replaces `const`/`let` with `var` so declarations become sandbox properties
 - Runs in `vm.runInNewContext` with mocked `require` (fs, path, os, child_process), `process.env`, and `process.exit`
 - Overrides I/O functions with in-memory mocks: `readText`/`writeText` use `fileSystem` object, `fetchUrlAsString`/`fetchUrlAsJson` use `fetchResponses` object
 - `getIndexFunction(name)` / `getIndexConstant(name)` — access any sandbox function or constant by name

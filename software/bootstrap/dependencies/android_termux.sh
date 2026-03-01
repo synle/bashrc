@@ -1,4 +1,4 @@
-# bootstrap/dependencies/android_termux.sh
+# software/bootstrap/dependencies/android_termux.sh
 # Android Termux dependencies - packages, theme, config
 
 if [ "$is_os_android_termux" = "1" ]; then

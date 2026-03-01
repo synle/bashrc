@@ -5,8 +5,8 @@ async function doWork() {
   let res = readText(BASH_SYLE_PATH);
   res += `\n\n\n`;
 
-  let contentProfileCore = await fetchUrlAsString(`bootstrap/profile-core.sh`);
-  let contentProfileAdvanced = await fetchUrlAsString(`bootstrap/profile-advanced.sh`);
+  let contentProfileCore = await fetchUrlAsString(`software/bootstrap/profile-core.sh`);
+  let contentProfileAdvanced = await fetchUrlAsString(`software/bootstrap/profile-advanced.sh`);
 
   // add the header
   contentProfileCore = `

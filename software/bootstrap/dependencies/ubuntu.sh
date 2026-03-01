@@ -1,4 +1,4 @@
-# bootstrap/dependencies/ubuntu.sh
+# software/bootstrap/dependencies/ubuntu.sh
 # Ubuntu / Debian dependencies - apt-get packages and user permissions
 
 installPackage() {
