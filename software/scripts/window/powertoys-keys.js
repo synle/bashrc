@@ -4,7 +4,7 @@ async function doWork() {
 
   // %LOCALAPPDATA%/Microsoft/PowerToys/Keyboard Manager
   const targetPath = path.join(getWindowAppDataLocalUserPath(), "Microsoft/PowerToys/Keyboard Manager");
-  log("    >> Configs", colorDim(targetPath));
+  log("    >> Configs", targetPath);
 
   exitIfPathNotFound(targetPath);
 

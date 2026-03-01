@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", colorDim(err));
+    log("      >> Failed to get the path", err);
   }
 
   return null;
@@ -193,10 +193,10 @@ async function doWork() {
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  log("    >> For my system", colorDim(targetPath));
+  log("    >> For my system", targetPath);
   exitIfPathNotFound(targetPath);
 
   const fileDestPath = path.join(targetPath, "Packages/User/Default.sublime-mousemap");
-  log("      >> fileDestPath", colorDim(fileDestPath));
+  log("      >> fileDestPath", fileDestPath);
   writeJson(fileDestPath, _formatKey(MOUSE_MAPS, is_os_mac ? MAC_OSX_KEY : WINDOWS_OS_KEY));
 }

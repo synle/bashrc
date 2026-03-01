@@ -5,7 +5,7 @@ async function doWork() {
   await mkdir(targetPath);
 
   targetPath = path.join(targetPath, "kde_konsole_profile.ini");
-  log("  >> Download KDE Konsole Profile", colorDim(targetPath));
+  log("  >> Download KDE Konsole Profile", targetPath);
 
   if (!is_os_arch_linux) {
     log("    >> Skipped : Only Arch Linux");

@@ -273,11 +273,11 @@ async function doWork() {
   }
 
   const profilePath = _getBraveProfilePath();
-  log("    >> Profile path:", colorDim(profilePath));
+  log("    >> Profile path:", profilePath);
   exitIfPathNotFound(profilePath);
 
   const prefsFile = path.join(profilePath, "Preferences");
-  log("    >> Preferences file:", colorDim(prefsFile));
+  log("    >> Preferences file:", prefsFile);
   exitIfPathNotFound(prefsFile);
 
   // Read existing preferences (preserve all user data like bookmarks, history, etc.)
@@ -285,7 +285,7 @@ async function doWork() {
   try {
     existingPrefs = readJson(prefsFile);
   } catch (e) {
-    log("    >> Warning: Could not read existing Preferences, starting fresh", colorDim(e));
+    log("    >> Warning: Could not read existing Preferences, starting fresh", e);
   }
 
   // Deep merge our desired settings into the existing preferences

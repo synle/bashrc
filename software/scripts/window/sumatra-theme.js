@@ -3,7 +3,7 @@ async function doWork() {
   log("  >> Installing Windows Only - Sumatra Dracula Theme");
 
   const targetPath = path.join(getWindowAppDataLocalUserPath(), "SumatraPDF", "SumatraPDF-settings.txt");
-  log("    >> Configs", colorDim(targetPath));
+  log("    >> Configs", targetPath);
 
   exitIfPathNotFound(targetPath);
 

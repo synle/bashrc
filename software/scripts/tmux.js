@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".tmux.conf");
 
-  log("  >> Updating .tmux.conf", colorDim(targetPath));
+  log("  >> Updating .tmux.conf", targetPath);
 
   writeText(
     targetPath,

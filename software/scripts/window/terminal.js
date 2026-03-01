@@ -219,11 +219,11 @@ async function doWork() {
   // ============================================================================
   const targetPath = path.join(_getPath(), "LocalState/settings.json");
   if (!filePathExist(targetPath)) {
-    log("  >> Skipped Windows Terminal Config - Settings Path Not Found: ", colorDim(targetPath));
+    log("  >> Skipped Windows Terminal Config - Settings Path Not Found: ", targetPath);
     return process.exit();
   }
 
-  log("  >> Setting up Microsoft Windows Terminal", colorDim(targetPath));
+  log("  >> Setting up Microsoft Windows Terminal", targetPath);
 
   const oldSettings = readJson(targetPath);
 

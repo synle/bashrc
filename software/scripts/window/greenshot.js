@@ -3,7 +3,7 @@ async function doWork() {
   log("  >> Installing Windows Only - GreenShot");
 
   const targetPath = path.join(getWindowAppDataRoamingUserPath(), "Greenshot", "Greenshot.ini");
-  log("    >> Configs", colorDim(targetPath));
+  log("    >> Configs", targetPath);
 
   exitIfPathNotFound(targetPath);
 

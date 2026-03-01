@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", colorDim(err));
+    log("      >> Failed to get the path", err);
   }
 
   return null;
@@ -334,7 +334,7 @@ async function doWork() {
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  log("    >> For my own system", colorDim(targetPath));
+  log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
 
   writeConfigToFile(targetPath, "Packages/User/Default.sublime-keymap", _getConfigs());

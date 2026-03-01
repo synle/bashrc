@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", colorDim(err));
+    log("      >> Failed to get the path", err);
   }
 
   return null;
@@ -141,10 +141,10 @@ async function doWork() {
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  log("    >> For my own system", colorDim(targetPath));
+  log("    >> For my own system", targetPath);
   for (const pluginCodePath of allPlugins) {
     const fileDestPath = path.join(targetPath, path.join("Packages/User/", pluginCodePath));
-    log("      >> fileDestPath", colorDim(fileDestPath));
+    log("      >> fileDestPath", fileDestPath);
     writeText(fileDestPath, readText(path.join("software/scripts", pluginCodePath)));
   }
 }

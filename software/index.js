@@ -522,10 +522,10 @@ function writeText(filePath, text, override = true, suppressError = false) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      log(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, colorDim(pathToUse));
+      log(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
     }
   } else {
-    log(`      << Updated [Modified] newContent=${newContent.length}`, colorDim(pathToUse));
+    log(`      << Updated [Modified] newContent=${newContent.length}`, pathToUse);
     fs.writeFileSync(pathToUse, newContent);
   }
 }
@@ -539,9 +539,9 @@ function writeText(filePath, text, override = true, suppressError = false) {
 function touchFile(filePath, defaultContent = "") {
   const pathToUse = path.resolve(filePath);
   if (filePathExist(pathToUse)) {
-    log("      << Skipped [NotModified]", colorDim(pathToUse));
+    log("      << Skipped [NotModified]", pathToUse);
   } else {
-    log("      >> File Created", colorDim(pathToUse));
+    log("      >> File Created", pathToUse);
     fs.writeFileSync(pathToUse, defaultContent);
   }
 }
@@ -560,9 +560,9 @@ function backupText(filePath, text) {
     const backupPathToUse = pathToUse + "." + Date.now();
     writeText(backupPathToUse, oldText);
     writeText(pathToUse, text);
-    log("      << Backup Created", colorDim(backupPathToUse));
+    log("      << Backup Created", backupPathToUse);
   } else {
-    log("      << Backup Skipped [NotModified]", colorDim(pathToUse));
+    log("      << Backup Skipped [NotModified]", pathToUse);
   }
 }
 
@@ -661,10 +661,10 @@ function writeToBuildFile(tasks) {
       }
 
       if (isJson) {
-        log("    >> DEBUG Mode: write JSON to file", colorDim(file));
+        log("    >> DEBUG Mode: write JSON to file", file);
         writeJson(file, data, comments);
       } else {
-        log("    >> DEBUG Mode: write TEXT to file", colorDim(file));
+        log("    >> DEBUG Mode: write TEXT to file", file);
         data = (data || "").trim();
         writeText(file, (comments + data).trim());
       }
@@ -1023,7 +1023,7 @@ async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl
 
   // download and save the spec file
   const specContent = await fetchUrlAsString(specUrl);
-  log(`    >> Writing complete-spec for ${command}`, colorDim(specPath));
+  log(`    >> Writing complete-spec for ${command}`, specPath);
   writeText(specPath, specContent);
 
   // register a pure-bash completer that reads from the spec file
@@ -1096,7 +1096,7 @@ function registerPlatformTweaks(platformName, fileName, content, sourceOverride)
   const sourceLine = sourceOverride || `. ${targetPath}`;
   registerWithBashSyleProfile(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
 
-  log(`  >> Installing ${platformName} tweaks:`, colorDim(targetPath));
+  log(`  >> Installing ${platformName} tweaks:`, targetPath);
   writeText(targetPath, content);
 }
 
@@ -1315,7 +1315,7 @@ function downloadFile(url, destination) {
 
   return new Promise((resolve, reject) => {
     if (filePathExist(destination)) {
-      log("      << Skipped [NotModified]", colorDim(destination));
+      log("      << Skipped [NotModified]", destination);
       return resolve(false);
     }
 
@@ -1390,10 +1390,10 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
     try {
       const downloaded = await downloadFile(file, destinationFile);
       if (downloaded === true) {
-        log("      >> Downloaded", colorDim(destinationFile));
+        log("      >> Downloaded", destinationFile);
       }
     } catch (err) {
-      log("      >> Error Downloading", colorDim(file));
+      log("      >> Error Downloading", file);
     }
   });
 
@@ -1511,18 +1511,18 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      echo(`  >> `, colorRed(`Ignored No sudo access`), colorDim(file));
+      echo(`  >> `, colorRed(`Ignored No sudo access`), file);
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        echo(`  >> `, colorRed(`Ignored OS Specific`), colorDim(file));
+        echo(`  >> `, colorRed(`Ignored OS Specific`), file);
         return false;
       }
     }
 
-    echo(`  >> `, colorGreen(`Accepted`), colorDim(file));
+    echo(`  >> `, colorGreen(`Accepted`), file);
     return true;
   });
 }
@@ -1667,33 +1667,31 @@ function color(str, colorCode) {
  */
 function _getAutoColor(text) {
   // 1. Error/fail keywords => colorBgRed
-  // Updated to allow start of line (^) or space, and end of line ($) or space
-  if (/(?<=^| )(fail|failed|error)(?=$| )/i.test(text)) {
+  if (/(?<=^| )(err|error|errors|fail|failed|failing|failure|failures)(?=$| )/i.test(text)) {
     return colorBgRed;
   }
 
   // 2. Success/done/finished keywords => colorGreen
-  // Added (?<=^| ) and (?=$| ) so "done" at the start of a sentence matches
-  if (/(?<=^| )(done|success|finished|(?<!auto)complete|completed)(?=$| )/i.test(text)) {
+  // (?<!auto) prevents matching "autocomplete"
+  if (/(?<=^| )(done|success|succeed|succeeded|succeeds|finished|accept|accepted|(?<!auto)complete|(?<!auto)completed)(?=$| )/i.test(text)) {
     return colorGreen;
   }
 
   // 3. Marker-based coloring (>> or <<) with indentation levels
   const markerMatch = text.match(/^(\s*)(>>|<<)/);
   if (markerMatch) {
-    // Math.ceil handles the "accidental miss" by treating 0 and 1 space the same
-    const indent = markerMatch[1].length;
+    const level = Math.ceil(markerMatch[1].length / 2);
     const direction = markerMatch[2];
 
     if (direction === ">>") {
-      if (indent <= 2) return colorYellow;
-      if (indent <= 5) return colorCyan;
+      if (level <= 1) return colorYellow;
+      if (level <= 3) return colorCyan;
       return colorMagenta;
     }
 
     if (direction === "<<") {
-      if (indent <= 2) return colorOrange;
-      if (indent <= 5) return colorBlue;
+      if (level <= 1) return colorOrange;
+      if (level <= 3) return colorBlue;
       return colorMagenta;
     }
   }
@@ -1714,12 +1712,17 @@ function _applyAutoColor(data) {
   if (!autoColor) return data;
 
   return data.map((elem) => {
-    const str = String(elem);
+    let str = String(elem);
     // Preserve elements that are already dim-colored
     if (str.includes("\x1b[2m")) return elem;
     // Strip any existing ANSI codes before re-coloring
-    const stripped = str.replace(/\x1b\[[0-9;]*m/g, "");
-    return autoColor(stripped);
+    str = str.replace(/\x1b\[[0-9;]*m/g, "");
+    // Normalize leading spaces before >> or << markers to even counts
+    str = str.replace(/^(\s*)(>>|<<)/, (_, spaces, marker) => {
+      const level = Math.ceil(spaces.length / 2);
+      return "".padStart(level * 2, " ") + marker;
+    });
+    return autoColor(str);
   });
 }
 

@@ -2,10 +2,10 @@
 async function doWork() {
   let targetPath = BASE_D_DIR_WINDOW;
 
-  log("  >> mkdir for D Drive", colorDim(targetPath));
+  log("  >> mkdir for D Drive", targetPath);
 
   if (!filePathExist(targetPath)) {
-    log("  >> Skipped - Path Not Found: ", colorDim(targetPath));
+    log("  >> Skipped - Path Not Found: ", targetPath);
     return process.exit();
   }
 

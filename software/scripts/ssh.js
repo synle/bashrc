@@ -16,13 +16,13 @@ async function doWork() {
   const baseSshPath = path.join(BASE_HOMEDIR_LINUX, ".ssh");
   const targetPath = path.join(baseSshPath, "config");
 
-  log("    >> Setting up SSH Client config", colorDim(targetPath));
+  log("    >> Setting up SSH Client config", targetPath);
 
   await mkdir(baseSshPath);
 
   await execBash(`touch "${targetPath}" && chmod 600 "${targetPath}"`);
 
-  log("    >> Updating SSH Client Config", colorDim(targetPath));
+  log("    >> Updating SSH Client Config", targetPath);
 
   let sshConfigTextContent = readText(targetPath);
 

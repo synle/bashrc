@@ -7,6 +7,6 @@ async function doWork() {
 
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "windows", "classic-start.xml");
 
-  log("    >> Classic Start Configs", colorDim(targetPath));
+  log("    >> Classic Start Configs", targetPath);
   writeText(targetPath, res);
 }

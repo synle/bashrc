@@ -2,7 +2,7 @@
 async function doWork() {
   const targetPath = "/etc/ssh/sshd_config";
 
-  log("  >> Setting up SSH Server sshd_config", colorDim(targetPath));
+  log("  >> Setting up SSH Server sshd_config", targetPath);
 
   exitIfPathNotFound(targetPath, "Not supported - Exit - targetPath not found");
 

@@ -31,7 +31,7 @@ async function doWork() {
   exitIfLimitedSupportOs();
   let targetPath = _getPathSublimeMerge();
 
-  log("    >> Setting up Sublime Merge:", colorDim(targetPath));
+  log("    >> Setting up Sublime Merge:", targetPath);
 
   // write to build file
   writeToBuildFile([{ file: "sublime-merge", data: SUBLIME_MERGE_CONFIG, isJson: true }]);

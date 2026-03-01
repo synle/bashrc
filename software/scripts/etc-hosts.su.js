@@ -79,7 +79,7 @@ async function doWork() {
   const targetPath = _getEtcHosts();
   let etcHostTextContent = readText(targetPath);
 
-  log("  >> Updating ETC Host", colorDim(targetPath));
+  log("  >> Updating ETC Host", targetPath);
 
   // make a backup
   backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.etc_host`), etcHostTextContent);
@@ -107,7 +107,7 @@ async function doWork() {
     log("        >> Total Blocked Hosts", BLOCK_HOST_NAMES.length);
 
     writeText(targetPath, etcHostTextContent.trim());
-    log("      >> Done updating etc hosts: ", colorDim(targetPath));
+    log("      >> Done updating etc hosts: ", targetPath);
 
     if (is_os_window) {
       log("        >> Only Windows run command: ipconfig /flushdns");

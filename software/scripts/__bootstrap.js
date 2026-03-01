@@ -15,7 +15,7 @@ async function doWork() {
   // bootstrap .bash_profile (login shells on all platforms)
   {
     const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
-    log("  >> Updating .bash_profile with bash_syle entry point", colorDim(targetPath));
+    log("  >> Updating .bash_profile with bash_syle entry point", targetPath);
     let textContent = readText(targetPath);
     textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
     writeText(targetPath, textContent);
@@ -24,7 +24,7 @@ async function doWork() {
   // bootstrap .bashrc (interactive non-login shells)
   {
     const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
-    log("  >> Updating .bashrc with bash_syle entry point", colorDim(targetPath));
+    log("  >> Updating .bashrc with bash_syle entry point", targetPath);
     let textContent = readText(targetPath);
     textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
     writeText(targetPath, textContent);

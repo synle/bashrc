@@ -11,11 +11,11 @@ async function doWork() {
   let targetPath;
 
   targetPath = path.join(baseTargetPath, "iterm.Dracula.itermcolors");
-  log("    >> Iterm Dracula Theme Path", colorDim(targetPath));
+  log("    >> Iterm Dracula Theme Path", targetPath);
   writeText(targetPath, await fetchUrlAsString("software/scripts/mac/iterm-color-scheme-dracula.xml"));
 
   targetPath = path.join(baseTargetPath, "iterm.itermkeymap");
-  log("    >> Iterm Keymap", colorDim(targetPath));
+  log("    >> Iterm Keymap", targetPath);
   writeText(targetPath, await fetchUrlAsString("software/scripts/mac/iterm-keys.jsonc"));
 
   targetPath = findDirSingle(getOsxApplicationSupportCodeUserPath(), /iTerm[ ]*[a-z0-9]*/i);
@@ -25,7 +25,7 @@ async function doWork() {
     await mkdir(targetPath);
     targetPath = path.join(targetPath, "switch_automatic.py");
 
-    log("    >> Auto switch color scheme", colorDim(targetPath));
+    log("    >> Auto switch color scheme", targetPath);
     writeText(targetPath, await fetchUrlAsString("software/scripts/mac/iterm-auto-theme.py"));
   }
 }

@@ -117,7 +117,7 @@ async function _getPathSublimeText() {
     // for debian or chrome os debian linux
     return findDirSingle(BASE_HOMEDIR_LINUX + "/.config", regexBinary);
   } catch (err) {
-    log("      >> Failed to get the path", colorDim(err));
+    log("      >> Failed to get the path", err);
   }
 
   return null;
@@ -258,7 +258,7 @@ async function doWork() {
 
   // for my own system
   let targetPath = await _getPathSublimeText();
-  log("    >> For my own system", colorDim(targetPath));
+  log("    >> For my own system", targetPath);
   exitIfPathNotFound(targetPath);
 
   // deploy custom color schemes (only when high contrast theme is enabled)
@@ -271,11 +271,11 @@ async function doWork() {
       log(`    >> Deploying color scheme: ${dest}`);
       const data = await fetchUrlAsJson(src);
 
-      log(`      >> Parsing: ${dest}`, colorDim(src));
+      log(`      >> Parsing: ${dest}`, src);
       writeConfigToFile(targetPath, `Packages/User/${dest}`, data);
     }
   }
 
-  log(`    >> Deployed config:`, colorDim(targetPath));
+  log(`    >> Deployed config:`, targetPath);
   writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_mac: is_os_mac }));
 }

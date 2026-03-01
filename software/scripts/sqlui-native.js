@@ -24,16 +24,16 @@ async function doWork() {
   }
 
   if (fs.existsSync(targetPath)) {
-    log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} already installed, skipping:`, colorDim(targetPath));
+    log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} already installed, skipping:`, targetPath);
     return;
   }
 
-  log(`  >> Installing sqlui-native v${SQLUI_NATIVE_VERSION} to:`, colorDim(targetPath));
+  log(`  >> Installing sqlui-native v${SQLUI_NATIVE_VERSION} to:`, targetPath);
 
   await mkdir(targetPath);
   await downloadAsset(url, destination);
 
-  log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, colorDim(destination));
+  log(`  >> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
 
   if (is_os_mac) {
     writeText(path.join(targetPath, "README.txt"), "xattr -cr /Applications/sqlui-native.app");
