@@ -20,14 +20,14 @@ https://synle.github.io/bashrc/
 <!-- BEGIN software/bootstrap/setup.sh -->
 ```bash
 curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files="""
-  bootstrap/profile-core.sh
-  bootstrap/dependencies/mac.sh
-  bootstrap/dependencies/ubuntu.sh
-  bootstrap/dependencies/windows.sh
-  bootstrap/dependencies/chrome_os_linux.sh
-  bootstrap/dependencies/android_termux.sh
-  bootstrap/dependencies/arch_linux.sh
-  bootstrap/dependencies/steamos.sh
+  software/bootstrap/profile-core.sh
+  software/bootstrap/dependencies/mac.sh
+  software/bootstrap/dependencies/ubuntu.sh
+  software/bootstrap/dependencies/windows.sh
+  software/bootstrap/dependencies/chrome_os_linux.sh
+  software/bootstrap/dependencies/android_termux.sh
+  software/bootstrap/dependencies/arch_linux.sh
+  software/bootstrap/dependencies/steamos.sh
 """
 ```
 <!-- END software/bootstrap/setup.sh -->

@@ -1454,7 +1454,7 @@ async function downloadFilesFromMainRepo(findHandler, destinationBaseDir) {
 function filterRepoScripts(files) {
   const filtered = (files || [])
     .map((s) => s.trim().replace(/^\.\//, ""))
-    .filter((f) => f && (f.startsWith("software/")))
+    .filter((f) => f && f.startsWith("software/"))
     .filter((f) => !f.endsWith(".json") && !f.endsWith(".test.js") && f !== "software/index.js")
     .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)));
 
@@ -2049,9 +2049,9 @@ function printOsFlags() {
  * @returns {void}
  */
 function printScriptsToRun(scriptsToRun) {
-  echo(`# Scripts to Run: ${scriptsToRun.length} files`)
-  for(const script of scriptsToRun){
-    echo(`>>`, script)
+  echo(`# Scripts to Run: ${scriptsToRun.length} files`);
+  for (const script of scriptsToRun) {
+    echo(`>>`, script);
   }
 }
 
@@ -2094,7 +2094,7 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
       file = `software/scripts/${file}`;
     }
 
-    echo(`## _runScripts | ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`)
+    echo(`## _runScripts | ${file} (${calculatePercentage(i + 1, softwareFiles.length)}%)`);
     processScriptFile(file, originalFile, allRepoFiles);
   }
 

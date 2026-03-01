@@ -436,7 +436,7 @@ declare function downloadWindowsApp(applicationName: string, findFilter: Functio
  */
 declare function downloadFilesFromMainRepo(findHandler: (arg0: string) => boolean, destinationBaseDir: string): Promise<string[]>;
 /**
- * Deduplicates and filters raw file list to valid software/bootstrap script paths.
+ * Deduplicates and filters raw file list to valid software script paths.
  * Normalizes prefixes, removes non-script files, and returns unique entries.
  * @param {string[]} files - Raw list of file paths to filter
  * @returns {string[]} Deduplicated, filtered, and normalized script file paths
@@ -765,7 +765,7 @@ declare let HOME_HOST_NAMES: any[];
 /**
  * OS detection flags and script path mappings.
  *
- * Flags are set by bootstrap/common-env.sh based on platform detection and exported
+ * Flags are set by software/bootstrap/common-env.sh based on platform detection and exported
  * as environment variables (e.g. `is_os_mac=1`). This section reads them into JS.
  *
  * Convention: each flag follows the pattern `is_os_<name>`, where `<name>` maps
