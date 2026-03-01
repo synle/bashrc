@@ -13,7 +13,7 @@
 #   """
 #   bash build.sh jsdocs webapp                      # Bare args treated as steps
 #
-# Available steps:
+# Available steps (default):
 #   jsdocs          Build JSDocs for JS Code
 #   script-indexes  Generate Script List Indexes
 #   prebuild-hosts  Prebuild Host Mappings
@@ -21,10 +21,14 @@
 #   host-mappings   Build Host Mappings (skip in CI)
 #   backup-xfce     Backup XFCE Configuration (if applicable)
 #   webapp          Build Web App
+#
+# Extra steps (not included in default run):
+#   update-hosts    Update /etc/hosts with blocked ad hosts
 ################################################################################
 
 # All valid step names
-ALL_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
+ALL_MAIN_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
+ALL_OPTIONAL_STEPS="update-hosts"
 
 ################################################################################
 # ---- Parse arguments ----
@@ -58,7 +62,7 @@ _normalized=""
 for step in $(echo "$_steps_to_run" | tr ',\n' ' '); do
   step=$(echo "$step" | xargs) # trim whitespace
   [ -z "$step" ] && continue
-  case " $ALL_STEPS " in
+  case " $ALL_MAIN_STEPS $ALL_OPTIONAL_STEPS " in
     *" $step "*) _normalized="${_normalized:+$_normalized }$step" ;;
     *) echo "WARNING: Unknown step '$step', skipping" ;;
   esac
@@ -66,7 +70,7 @@ done
 
 # If no steps specified, run all
 if [ -z "$_normalized" ]; then
-  _normalized="$ALL_STEPS"
+  _normalized="$ALL_MAIN_STEPS"
 fi
 
 # Helper to check if a step should run
@@ -332,6 +336,15 @@ npm run build
 echo '>> Built webapp artifacts:'
 find dist
 echo '> DONE Building'
+fi
+
+############################################################################################
+# ---- step: update-hosts - Update /etc/hosts with blocked ad hosts ----
+# Extra step: not included in default run, must be explicitly requested
+############################################################################################
+if should_run update-hosts; then
+echo '> Update /etc/hosts'
+run_files "$run_mode" "software/scripts/etc-hosts.su.js"
 fi
 
 exit

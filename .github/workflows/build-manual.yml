@@ -1,0 +1,33 @@
+name: build-manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "Build step to run (jsdocs, script-indexes, prebuild-hosts, build-configs, host-mappings, backup-xfce, webapp, update-hosts)"
+        required: true
+        type: choice
+        options:
+          - jsdocs
+          - script-indexes
+          - prebuild-hosts
+          - build-configs
+          - host-mappings
+          - backup-xfce
+          - webapp
+          - update-hosts
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run build step "${{ inputs.step }}"
+        run: bash build.sh --steps="${{ inputs.step }}"
