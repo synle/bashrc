@@ -180,7 +180,10 @@ async function doWork() {
     { keys: ["OS_KEY+shift+;"], command: "alignment" },
     {
       key: "f5",
-      command: "refresh_folder_list",
+      command: "chain",
+      args: {
+        commands: [["revert"], ["refresh_folder_list"]],
+      },
     },
     {
       key: "OS_KEY+r",

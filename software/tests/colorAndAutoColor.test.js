@@ -19,11 +19,13 @@ function getColorCode(text) {
 const CODES = {
   bgRed: "41;97;1m",
   bgYellow: "43;30m",
+  bgOrange: "48;5;208;30m",
   bgCyan: "46;30m",
   bgMagenta: "45;97;1m",
   green: "32m",
   yellow: "33m",
   cyan: "36m",
+  red: "1;31m",
   magenta: "35m",
   orange: "38;5;208m",
   blue: "34m",
@@ -158,16 +160,16 @@ describe("_getAutoColor", () => {
     expect(getColorCode("> hello")).toBe(CODES.yellow);
   });
 
-  it("should return colorYellow for >> (level 1)", () => {
-    expect(getColorCode(">> hello")).toBe(CODES.yellow);
+  it("should return colorGreen for >> (level 1)", () => {
+    expect(getColorCode(">> hello")).toBe(CODES.green);
   });
 
   it("should return colorCyan for >>> (level 2)", () => {
     expect(getColorCode(">>> hello")).toBe(CODES.cyan);
   });
 
-  it("should return colorCyan for >>>> (level 3)", () => {
-    expect(getColorCode(">>>> hello")).toBe(CODES.cyan);
+  it("should return colorBlue for >>>> (level 3)", () => {
+    expect(getColorCode(">>>> hello")).toBe(CODES.blue);
   });
 
   it("should return colorMagenta for >>>>> (level 4+)", () => {
@@ -179,16 +181,16 @@ describe("_getAutoColor", () => {
     expect(getColorCode("< hello")).toBe(CODES.orange);
   });
 
-  it("should return colorOrange for << (level 1)", () => {
-    expect(getColorCode("<< hello")).toBe(CODES.orange);
+  it("should return colorRed for << (level 1)", () => {
+    expect(getColorCode("<< hello")).toBe(CODES.red);
   });
 
   it("should return colorBlue for <<< (level 2)", () => {
     expect(getColorCode("<<< hello")).toBe(CODES.blue);
   });
 
-  it("should return colorBlue for <<<< (level 3)", () => {
-    expect(getColorCode("<<<< hello")).toBe(CODES.blue);
+  it("should return colorMagenta for <<<< (level 3)", () => {
+    expect(getColorCode("<<<< hello")).toBe(CODES.magenta);
   });
 
   it("should return colorMagenta for <<<<< (level 4+)", () => {
@@ -200,8 +202,8 @@ describe("_getAutoColor", () => {
     expect(getColorCode("## header")).toBe(CODES.bgYellow);
   });
 
-  it("should return colorBgCyan for ### (level 2)", () => {
-    expect(getColorCode("### header")).toBe(CODES.bgCyan);
+  it("should return colorBgOrange for ### (level 2)", () => {
+    expect(getColorCode("### header")).toBe(CODES.bgOrange);
   });
 
   it("should return colorBgCyan for #### (level 3)", () => {

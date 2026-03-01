@@ -1520,18 +1520,18 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      echo(`>> `, colorRed(`Ignored No sudo access`), file);
+      echo(`>>`, 'Error', `Ignored No sudo access`, file);
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        echo(`>> `, colorRed(`Ignored OS Specific`), file);
+        echo(`>>`, 'Error', `Ignored OS Specific`, file);
         return false;
       }
     }
 
-    echo(`>> `, colorGreen(`Accepted`), file);
+    echo(`>>`, `Accepted`, file);
     return true;
   });
 }
@@ -1702,20 +1702,25 @@ function _getAutoColor(text) {
     const level = marker.length - 1;
 
     if (ch === ">") {
-      if (level <= 1) return colorYellow;
-      if (level <= 3) return colorCyan;
+      if (level === 0) return colorYellow;
+      if (level === 1) return colorGreen;
+      if (level === 2) return colorCyan;
+      if (level === 3) return colorBlue;
       return colorMagenta;
     }
 
     if (ch === "<") {
-      if (level <= 1) return colorOrange;
-      if (level <= 3) return colorBlue;
+      if (level === 0) return colorOrange;
+      if (level === 1) return colorRed;
+      if (level === 2) return colorBlue;
+      if (level === 3) return colorMagenta;
       return colorMagenta;
     }
 
     if (ch === "#") {
       if (level <= 1) return colorBgYellow;
-      if (level <= 3) return colorBgCyan;
+      if (level === 2) return colorBgOrange;
+      if (level === 3) return colorBgCyan;
       return colorBgMagenta;
     }
   }
@@ -1754,7 +1759,12 @@ function _applyAutoColor(data) {
     // Preserve elements that already have user-provided ANSI color codes
     if (str.includes("\x1b[")) return elem;
     const autoColor = _getAutoColor(str);
-    return autoColor ? autoColor(str) : str;
+    if (autoColor) {
+      // Strip repeated markers to single char, indent by marker count
+      str = str.replace(_MARKER_REGEX, (_, marker) => "".padStart(marker.length, " ") + marker[0] + " ");
+      return autoColor(str);
+    }
+    return str;
   });
 }
 
