@@ -892,7 +892,7 @@ function getOsxApplicationSupportCodeUserPath() {
 function updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, isPrepend) {
   configValue = configValue.trim();
 
-  const regex = new RegExp(`(\\n)*(${commentPrefix} ${configKey})(\\n)[\\S\\s]+(${commentPrefix} END ${configKey})(\\n)*`);
+  const regex = new RegExp(`(\\n)*(${commentPrefix} ${configKey})(\\n)[\\S\\s]+?(${commentPrefix} END ${configKey})(\\n)*`);
 
   if (resultTextContent.match(regex)) {
     resultTextContent = resultTextContent
