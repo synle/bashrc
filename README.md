@@ -1,23 +1,21 @@
 # synle/bashrc
 
-This is my personal bash profile.
+Personal bash profile and dotfiles management system. Automates shell configuration, editor settings, fonts, Git config, and OS-specific tweaks.
 
 ## Demo
 
-<https://synle.github.io/bashrc/>
+https://synle.github.io/bashrc/
 
 ## Supported Platforms
 
 - macOS
-- Ubuntu / Debian
-- Windows Subsystem for Linux (WSL) - Debian based only
+- Ubuntu / Debian / Mint
+- Windows Subsystem for Linux (WSL)
 - Android Termux
 - Arch Linux / Steam Deck
 - ChromeOS
 
 ## Installation
-
-Run this on full system (e.g., macOS, Ubuntu, or Windows Subsystem for Linux):
 
 <!-- BEGIN bootstrap/setup.sh -->
 ```bash
@@ -33,37 +31,80 @@ curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -
 ```
 <!-- END bootstrap/setup.sh -->
 
+## Usage
+
+```bash
+make test              # Run all scripts locally
+make build             # Build artifacts and format code
+make format            # Run build-include + format code
+make clean             # Clean up
+```
+
+### run.sh
+
+```bash
+bash run.sh                          # Full local run
+bash run.sh --prod                   # Full run from GitHub
+bash run.sh --files="git.js"         # Run specific file(s)
+bash run.sh git.js vim-config.js     # Bare args as files
+bash run.sh --debug                  # Keep temp files, show retry commands
+bash run.sh --force-refresh          # Reinstall fnm/Node
+```
+
+### build.sh
+
+```bash
+bash build.sh                         # Run all build steps
+bash build.sh --steps="jsdocs,webapp"  # Run specific steps
+```
+
 ## Fun Facts
 
-Here are some fun facts about my personal setups.
+### Current Equipment
 
-### Steam Deck
+#### Legion Go Deck
 
-Upgraded from 64GB eMMC to 1TB 2230 NVME.
+Upgraded to 2TB 2280 NVMe with an adapter. Installed SteamOS.
 
-### Windows Laptop (Gigabyte Aero 16)
+#### Laptop (Asus ROG G14)
 
-- Intel i7 12700H
-- Geforce 3070 TI
-- Upgraded to 64GB RAM
-- Replaced 1TB NVME SSD with 2TB NVME
-- Downgraded to Windows 10 with WSL 2 and Debian
+- AMD 7940S
+- GeForce 4060
+- Upgraded to 40GB RAM
+- Upgraded to 2TB NVMe
+- Dual boot Windows 11 / Linux Mint
 
-### macOS Laptop (Macbook Pro 14 M1 - 16GB RAM and 512GB Hard drive)
+#### AI Workstation (HP Omen 40L)
 
-- Rocking macOS Ventura
+- Intel Core Ultra 9 285K
+- 64GB Kingston FURY DDR5-5600
+- NVIDIA GeForce RTX 5090 (32GB GDDR7)
+- Dual boot Windows 11 / Linux Mint
 
-### On the Go (Samsung Chromebook - 8GB RAM and 128GB Hard drive)
+### Past Equipment
 
-- Running ChromeOS with Container running Ubuntu
+#### Steam Deck
 
-### Desktop (Lenovo P520) - 64GB RAM, 2TB NVME
+Upgraded from 64GB eMMC to 1TB 2230 NVMe.
+
+#### Laptop (Gigabyte Aero 16)
+
+- Intel Core i7-12700H
+- GeForce 3070 Ti
+- Upgraded to 64GB RAM, 2TB NVMe
+- Windows 10 with WSL 2 / Debian
+
+#### macOS Laptop (MacBook Pro 14" M1 - 16GB / 512GB)
+
+#### Chromebook (Samsung - 8GB / 128GB)
+
+- ChromeOS with Ubuntu container
+
+#### Desktop (Lenovo P520)
 
 - Intel Xeon W-2145
 - Upgraded to 128GB RAM
-- Added 2x2TB NVME SSD
-- Added 8TB 3.5 Toshiba HDD
-- Added Gigabyte Eagle 3090
-- Removed the front fan brackets and added 2x120mm intake fans
-- Drilled a hole on top case for 120mm exhaust fan
-- Dual booting Windows 10 and Ubuntu 22.04
+- 2x2TB NVMe, 8TB HDD
+- Gigabyte Eagle 3090
+- Custom fan mods (2x120mm intake, 120mm exhaust)
+- Dual boot Windows 10 / Ubuntu 22.04

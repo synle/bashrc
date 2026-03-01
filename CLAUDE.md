@@ -114,6 +114,10 @@ GitHub Actions (`.github/workflows/build-main.yml`):
 - Runs `build.sh`, commits artifacts back to repo
 - Deploys to GitHub Pages
 
+## Coding Conventions
+
+- **Bash functions must use the `function` keyword**: Always write `function foo() {` not `foo() {`
+
 ## Key Patterns
 
 - `getRuntimeOption(key, parseFunc)` - Standard way to read env vars/CLI args in index.js

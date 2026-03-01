@@ -75,7 +75,7 @@ unset os_flags
 
 ### specific to CI mode - override echo to emit GitHub Actions groups
 if [ "$CI" = "true" ]; then
-    echo() {
+    function echo() {
         case "$*" in
             ">"*|"<"*)
                 command echo "::endgroup::"
@@ -95,12 +95,55 @@ if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || 
   sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
 
+# install_fnm_node - Install fnm and Node.js (skip on Android Termux)
+# Handles force refresh, fnm download, Node install, and /usr/local/bin symlinks.
+function install_fnm_node() {
+  # Force refresh: remove existing fnm node and reinstall
+  if [ "$IS_FORCE_REFRESH" = "1" ] && command -v fnm >/dev/null 2>&1; then
+    fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
+    sudo rm -rf "/usr/local/bin/node" "/usr/local/bin/npm" "/usr/local/bin/yarn" "/usr/local/bin/npx"
+  fi
+  if [ "$is_os_android_termux" != "1" ]; then
+    echo ">> Installing fnm (for nodejs)"
+    if ! command -v fnm >/dev/null 2>&1; then
+      echo "  >> Downloading fnm"
+      curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell >/dev/null 2>&1
+    fi
+
+    # Source fnm
+    export PATH="$FNM_DIR:$PATH"
+    eval "$(fnm env)"
+
+    # Install Node if missing
+    if ! fnm ls "$NODE_JS_VERSION" >/dev/null 2>&1; then
+      fnm install "$NODE_JS_VERSION" >/dev/null 2>&1
+    else
+      echo "Node $NODE_JS_VERSION already installed — skip"
+    fi
+
+    # Set + use default quietly
+    fnm default "$NODE_JS_VERSION" >/dev/null 2>&1
+    fnm use "$NODE_JS_VERSION" >/dev/null 2>&1
+
+    # Export resolved node path for downstream scripts
+    export FNM_DEFAULT_NODE_PATH="$FNM_DIR/node-versions/$(node -v 2>/dev/null)/installation"
+
+    # Symlink fnm and node executables in /usr/local/bin
+    echo "  >> Symlink for fnm and node executables in /usr/local/bin"
+    for bin in node npm npx yarn; do
+      if [ ! -e "/usr/local/bin/$bin" ]; then
+        sudo ln -s "$FNM_DEFAULT_NODE_PATH/bin/$bin" "/usr/local/bin/$bin" 2>/dev/null
+      fi
+    done
+  fi
+}
+
 # run_files - Run script files through software/index.js
 # Uses cat (local) when IS_TEST_SCRIPT_MODE=1, curl (prod) otherwise.
 # Usage:
 #   run_files "git.js,vim.js"    # run specific files
 #   run_files                    # full run (no TEST_SCRIPT_FILES set)
-run_files() {
+function run_files() {
   if [ -n "$1" ]; then
     export TEST_SCRIPT_FILES="$1"
   fi
