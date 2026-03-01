@@ -24,3 +24,4 @@ yarn-error.log*
 ###
 yarn.lock
 claude
+.build/_home_*
