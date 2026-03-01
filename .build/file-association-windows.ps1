@@ -15,6 +15,14 @@ cmd /c 'ftype vlc="C:/Program Files/VideoLAN/VLC/vlc.exe" "%1"'
 cmd /c 'ftype 7-Zip="C:/Program Files/7-Zip/7zFM.exe" "%1"'
 
 ############################################################################################################################################
+# 7-Zip context menu settings
+# Only show: Extract Here (0x02), Extract to <folder> (0x04), Add to <name>.zip (0x20)
+############################################################################################################################################
+New-Item -Path "HKCU:\Software\7-Zip\Options" -Force | Out-Null
+Set-ItemProperty -Path "HKCU:\Software\7-Zip\Options" -Name "ContextMenu" -Value 0x26 -Type DWord
+Set-ItemProperty -Path "HKCU:\Software\7-Zip\Options" -Name "CascadedMenu" -Value 1 -Type DWord
+
+############################################################################################################################################
 # text file association
 ############################################################################################################################################
 $textExtensions = @(

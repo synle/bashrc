@@ -14,6 +14,10 @@ cmd /c "ftype sublime="
 cmd /c "ftype vlc="
 cmd /c "ftype 7-Zip="
 
+# Remove 7-Zip context menu registry settings
+Remove-ItemProperty -Path "HKCU:\Software\7-Zip\Options" -Name "ContextMenu" -Force -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path "HKCU:\Software\7-Zip\Options" -Name "CascadedMenu" -Force -ErrorAction SilentlyContinue
+
 # Remove file association overrides from registry
 $extensions = @(
   ".txt"
