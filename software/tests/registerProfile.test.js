@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import path from "path";
 import { fileSystem, fetchResponses, getIndexFunction, getIndexConstant } from "./setup.js";
 
+const registerProfileBlock = getIndexFunction("registerProfileBlock");
 const registerWithBashSyleProfile = getIndexFunction("registerWithBashSyleProfile");
 const registerWithBashSyleAutocompleteWithRawContent = getIndexFunction("registerWithBashSyleAutocompleteWithRawContent");
 const registerWithBashSyleAutocompleteWithCompleteSpec = getIndexFunction("registerWithBashSyleAutocompleteWithCompleteSpec");
@@ -14,6 +15,57 @@ const BASE_HOMEDIR_LINUX = getIndexConstant("BASE_HOMEDIR_LINUX");
 
 // ---- tests ----
 
+describe("registerProfileBlock", () => {
+  const TEST_PROFILE = "/mock/home/.test_profile";
+
+  it("should append a block with code folding by default", () => {
+    fileSystem[TEST_PROFILE] = "existing content";
+
+    registerProfileBlock({ profilePath: TEST_PROFILE, configKey: "My Block", content: "echo hello" });
+
+    const written = fileSystem[TEST_PROFILE];
+    expect(written).toContain(`# ${TEXT_BLOCK_START_MARKER} My Block`);
+    expect(written).toContain("{\necho hello\n}");
+    expect(written.indexOf("existing content")).toBeLessThan(written.indexOf(`# ${TEXT_BLOCK_START_MARKER} My Block`));
+  });
+
+  it("should prepend when isPrepend is true", () => {
+    fileSystem[TEST_PROFILE] = "existing content";
+
+    registerProfileBlock({ profilePath: TEST_PROFILE, configKey: "My Block", content: "echo hello", isPrepend: true });
+
+    const written = fileSystem[TEST_PROFILE];
+    expect(written.indexOf(`# ${TEXT_BLOCK_START_MARKER} My Block`)).toBeLessThan(written.indexOf("existing content"));
+  });
+
+  it("should skip code folding when addCodeFolding is false", () => {
+    registerProfileBlock({ profilePath: TEST_PROFILE, configKey: "My Block", content: "echo hello", addCodeFolding: false });
+
+    const written = fileSystem[TEST_PROFILE];
+    expect(written).toContain("echo hello");
+    expect(written).not.toContain("{\necho hello\n}");
+  });
+
+  it("should work with any file path", () => {
+    const customPath = "/mock/home/.custom_rc";
+
+    registerProfileBlock({ profilePath: customPath, configKey: "Custom", content: "custom content" });
+
+    expect(fileSystem[customPath]).toContain("custom content");
+    expect(fileSystem[customPath]).toContain(`# ${TEXT_BLOCK_START_MARKER} Custom`);
+  });
+
+  it("should update an existing block in place", () => {
+    fileSystem[TEST_PROFILE] = `# ${TEXT_BLOCK_START_MARKER} My Block\n{\nold\n}\n# ${TEXT_BLOCK_END_MARKER} My Block`;
+
+    registerProfileBlock({ profilePath: TEST_PROFILE, configKey: "My Block", content: "new stuff" });
+
+    const written = fileSystem[TEST_PROFILE];
+    expect(written).toContain("new stuff");
+    expect(written).not.toContain("\nold\n");
+  });
+});
+
 describe("registerWithBashSyleProfile", () => {
   it("should write a prepended block to BASH_SYLE_PATH when file is empty", () => {
     registerWithBashSyleProfile("Sy Git Config", "export GIT_EDITOR=vim");
@@ -22,6 +74,13 @@ describe("registerWithBashSyleProfile", () => {
     expect(written).toContain(`# ${TEXT_BLOCK_START_MARKER} Sy Git Config`);
     expect(written).toContain("export GIT_EDITOR=vim");
     expect(written).toContain(`# ${TEXT_BLOCK_END_MARKER} Sy Git Config`);
+  });
+
+  it("should wrap content with { } for bash code folding by default", () => {
+    registerWithBashSyleProfile("Sy Folding", "alias foo=bar");
+
+    const written = fileSystem[BASH_SYLE_PATH];
+    expect(written).toContain("{\nalias foo=bar\n}");
   });
 
   it("should prepend new block before existing content", () => {

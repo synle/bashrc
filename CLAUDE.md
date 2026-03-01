@@ -47,7 +47,7 @@ Steps: `jsdocs`, `script-indexes`, `prebuild-hosts`, `build-configs`, `host-mapp
 The core execution model pipes Node.js output into bash:
 
 1. `run.sh` or `build.sh` sources `bootstrap/common-env.sh` (inlined via BEGIN/END blocks)
-2. `run_files()` in common-env.sh does: `cat software/index.js | node | bash` (local) or `curl ... | node | bash` (prod)
+2. `run_files(mode, files)` in common-env.sh does: `cat software/index.js | node | bash` (mode=local) or `curl ... | node | bash` (mode=prod)
 3. `software/index.js` runs in Node, discovers script files, and **prints bash commands to stdout**
 4. Bash receives and executes those commands
 
@@ -123,7 +123,8 @@ GitHub Actions (`.github/workflows/build-main.yml`):
 - **Bash functions must use the `function` keyword**: Always write `function foo() {` not `foo() {`
 - **JSDoc on all functions/constants** in `software/index.js` — used by `tsc --declaration --allowJs` to generate `software/index.d.ts`
 - **Private helpers** in script files are prefixed with `_` (e.g., `_getGitConfig()`)
-- No test suite exists; `make test` runs all scripts locally as a smoke test
+- **Unit tests** use vitest (`npm run test:unit`). Tests live in `software/tests/`. Run after modifying `software/index.js` utilities.
+- `make test` runs all scripts locally as a smoke test (not unit tests)
 - **Comment section headers** use two standardized forms:
   - **Paired** (for major sections): `################################################################################` (80 chars) / `# ---- Title ----` / `################################################################################`
   - **Standalone** (for sub-sections): `# ---- title ----`

@@ -95,30 +95,42 @@ const BASH_SYLE_COMMON_PATH = getRuntimeOption("BASH_SYLE_COMMON_PATH");
 const BASE_C_DIR_WINDOW = "/mnt/c";
 const BASE_D_DIR_WINDOW = "/mnt/d";
 
-// TODO: document all these constants
-// default node installation (fnm) - values exported from run.sh
+/** @type {string} Target Node.js version for fnm to install */
 const NODE_JS_VERSION = getRuntimeOption("NODE_JS_VERSION");
+/** @type {string} Path to the fnm (Fast Node Manager) installation directory */
 const FNM_DIR = getRuntimeOption("FNM_DIR");
+/** @type {string} Path to the default Node.js binary managed by fnm */
 const FNM_DEFAULT_NODE_PATH = getRuntimeOption("FNM_DEFAULT_NODE_PATH");
+/** @type {string} Base URL for fetching raw files from the repo (e.g. GitHub raw content URL) */
 const BASH_PROFILE_CODE_REPO_RAW_URL = getRuntimeOption("BASH_PROFILE_CODE_REPO_RAW_URL");
+/** @type {string} Path to the shared bash_syle_common config file */
 const BASH_SYLE_COMMON = getRuntimeOption("BASH_SYLE_COMMON");
+/** @type {string} GitHub repo identifier in "owner/repo" format */
 const REPO_PATH_IDENTIFIER = getRuntimeOption("REPO_PATH_IDENTIFIER");
+/** @type {string} Git branch name to fetch remote content from */
 const REPO_BRANCH_NAME = getRuntimeOption("REPO_BRANCH_NAME");
+/** @type {string} When set, redirects config file writes to this directory (used by build-configs step) */
 const DEBUG_WRITE_TO_DIR = getRuntimeOption("DEBUG_WRITE_TO_DIR").toLowerCase();
-const TEST_SCRIPT_FILES = getRuntimeOption("TEST_SCRIPT_FILES", parseBoolean);
+/** @type {string} Comma-separated list of specific script files to run (empty for full run) */
+const TEST_SCRIPT_FILES = getRuntimeOption("TEST_SCRIPT_FILES");
+/** @type {boolean} When true, prints active OS detection flags at startup */
 const SHOULD_PRINT_OS_FLAGS = getRuntimeOption("SHOULD_PRINT_OS_FLAGS", parseBoolean);
+/** @type {boolean} When true, indicates the user has sudo access for elevated scripts */
 const HAS_SUDO_ACCESS = getRuntimeOption("HAS_SUDO_ACCESS", parseBoolean);
+/** @type {boolean} When true, deletes and re-downloads resources before installing */
 const IS_FORCE_REFRESH = getRuntimeOption("IS_FORCE_REFRESH", parseBoolean);
+/** @type {boolean} When true, runs in local test mode (reads files from disk instead of fetching remotely) */
 const IS_TEST_SCRIPT_MODE = getRuntimeOption("IS_TEST_SCRIPT_MODE", parseBoolean);
+/** @type {boolean} When true, skips advanced/heavy features for a minimal install */
 const IS_LIGHT_WEIGHT_MODE = getRuntimeOption("IS_LIGHT_WEIGHT_MODE", parseBoolean);
-const PRE_SCRIPT_FILES = getRuntimeOption("PRE_SCRIPT_FILES");
-const RUN_ONLY_PRESCRIPTS = getRuntimeOption("RUN_ONLY_PRESCRIPTS", parseBoolean);
 /** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
 const IS_DEBUG = getRuntimeOption("IS_DEBUG", parseBoolean);
+/** @type {string} Full URL prefix for raw GitHub content (constructed from REPO_PATH_IDENTIFIER and REPO_BRANCH_NAME) */
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
 /** @type {string} Prefix for all temp script files written to /tmp during execution */
 const TEMP_SCRIPT_PREFIX = "/tmp/bashrc_syle_sw_";
-const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 80)); // console line break width
+/** @type {number} Console line break width for separator lines (default 80) */
+const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 80));
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -959,17 +971,33 @@ function prependTextBlock(resultTextContent, configKey, configValue, commentPref
 }
 
 /**
- * Reads BASH_SYLE_PATH, prepends a config block, and writes it back.
- * Replaces the common 3-line read/prepend/write pattern.
+ * Reads a profile file, inserts or updates a config block, and writes it back.
+ * Generic version that works with any profile file path.
+ * @param {Object} options
+ * @param {string} options.profilePath - The file path to read/write the config block
+ * @param {string} options.configKey - The config key for the text block
+ * @param {string} options.content - The content to register
+ * @param {boolean} [options.isPrepend=false] - When true, prepends the block; when false, appends it
+ * @param {boolean} [options.addCodeFolding=true] - When true, wraps content with { } for editor code folding
+ */
+function registerProfileBlock({ profilePath, configKey, content, isPrepend = false, addCodeFolding = true }) {
+  log(`  >> Register ProfileBlock`, colorRed(configKey), profilePath);
+
+  const wrappedContent = addCodeFolding ? `{\n${content.trim()}\n}` : content;
+  let textContent = readText(profilePath);
+  textContent = isPrepend
+    ? prependTextBlock(textContent, configKey, wrappedContent)
+    : appendTextBlock(textContent, configKey, wrappedContent);
+  writeText(profilePath, textContent);
+}
+
+/**
+ * Reads BASH_SYLE_PATH, prepends a config block with code folding, and writes it back.
  * @param {string} configKey - The config key for the text block
- * @param {string} content - The content to prepend
+ * @param {string} content - The content to register
  */
 function registerWithBashSyleProfile(configKey, content) {
-  log(`  >> Register BashSyle Profile`, colorRed(configKey));
-
-  let textContent = readText(BASH_SYLE_PATH);
-  textContent = prependTextBlock(textContent, configKey, content);
-  writeText(BASH_SYLE_PATH, textContent);
+  registerProfileBlock({ profilePath: BASH_SYLE_PATH, configKey, content, isPrepend: true });
 }
 
 /**
@@ -979,11 +1007,7 @@ function registerWithBashSyleProfile(configKey, content) {
  * @param {string} content - The content to prepend
  */
 function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
-  log(`  >> Register BashSyle Autocomplete with RawContent`, colorRed(configKey));
-
-  let textContent = readText(BASH_SYLE_AUTOCOMPLETE_PATH);
-  textContent = appendTextBlock(textContent, configKey, content);
-  writeText(BASH_SYLE_AUTOCOMPLETE_PATH, textContent);
+  registerProfileBlock({ profilePath: BASH_SYLE_AUTOCOMPLETE_PATH, configKey, content, addCodeFolding: false });
 }
 
 /**
@@ -994,8 +1018,6 @@ function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
  * @param {string} specUrl - URL or local path to the complete-spec file
  */
 async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl) {
-  log(`  >> Register BashSyle Autocomplete with CompleteSpec`, colorRed(command));
-
   const specFileName = `.bash_syle_complete-spec-${command}`;
   const specPath = path.join(BASE_HOMEDIR_LINUX, specFileName);
 
@@ -1389,7 +1411,7 @@ function filterRepoScripts(files) {
   const filtered = (files || [])
     .map((s) => s.trim().replace(/^\.\//, ""))
     .filter((f) => f && (f.startsWith("software/") || f.startsWith("bootstrap/")))
-    .filter((f) => !f.endsWith(".json") && f !== "software/index.js")
+    .filter((f) => !f.endsWith(".json") && !f.endsWith(".test.js") && f !== "software/index.js")
     .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)));
 
   // this is a list of files to run last
