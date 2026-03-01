@@ -137,7 +137,8 @@ where-is = branch -r --contains # Usage: git where-is <hash_id>, Identify which 
 
 # Interactive rebase last n commits
 rn = "!bash -c 'git rebase -i HEAD~${1:-1}' --"
-rn-vscode = "!bash -c 'GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}' --"
+rn-code = "!bash -c 'GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}' --"
+ri-code = "!bash -c 'GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}' --"
 ###SNIPPET_GIT_REBASE_INTERACTIVE###
 
 # extra content
