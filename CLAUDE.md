@@ -117,12 +117,72 @@ GitHub Actions (`.github/workflows/build-main.yml`):
 ## Coding Conventions
 
 - **Bash functions must use the `function` keyword**: Always write `function foo() {` not `foo() {`
-
-## Key Patterns
-
-- `getRuntimeOption(key, parseFunc)` - Standard way to read env vars/CLI args in index.js
-- `writeToFile(filePath, content)` / `appendToFile()` - File output helpers
-- `writeToBuildFile(name, content)` - Write to `.build/` directory (used by build-configs step)
-- `processScriptFile()` - Generates bash commands to fetch/execute a script via temp files
-- `printScriptProcessingResults()` - Emits summary of script execution results, cleans temp files
+- **JSDoc on all functions/constants** in `software/index.js` — used by `tsc --declaration --allowJs` to generate `software/index.d.ts`
+- **Private helpers** in script files are prefixed with `_` (e.g., `_getGitConfig()`)
 - No test suite exists; `make test` runs all scripts locally as a smoke test
+
+## Script File Conventions
+
+### Script structure
+
+Each script in `software/scripts/` follows this pattern:
+
+```javascript
+// 1. Optional helper functions (prefixed with _)
+async function _getConfig() { ... }
+
+// 2. Main entry point — always named doWork()
+/** * Description of what this script does. */
+async function doWork() {
+  // Guard clauses first
+  exitIfUnsupportedOs("is_os_android_termux");
+  exitIfPathNotFound(targetPath);
+
+  // Then do the work
+  writeText(targetPath, content);
+}
+```
+
+### File extension determines execution mode
+
+| Extension | Execution | Example |
+|-----------|-----------|---------|
+| `.js` | `node` | `git.js` |
+| `.sh` | `bash` | `diff-so-fancy.sh` |
+| `.sh.js` | `node \| bash` | (node outputs bash commands) |
+| `.su.js` | `sudo -E node` | `etc-hosts.su.js` |
+| `.su.sh.js` | `sudo -E node \| bash` | (elevated node piped to bash) |
+
+### Guard functions (call at top of `doWork()`)
+
+- `exitIfUnsupportedOs(...osFlags)` — Exit early if running on a listed OS. Example: `exitIfUnsupportedOs("is_os_android_termux", "is_os_chromeos")`
+- `exitIfPathNotFound(targetPath, message?)` — Exit if required path doesn't exist
+- `exitIfPathFound(targetPath, message?)` — Exit if path already exists (skip install)
+
+### File writing utilities
+
+- `writeText(filePath, text, override?, suppressError?)` — Write text file, skips if content unchanged
+- `writeConfigToFile(basePath, fileName, data, isJson?)` — Write JSON config files (editors)
+- `touchFile(filePath, defaultContent?)` — Create file only if it doesn't exist
+- `writeToBuildFile([{file, data, commentStyle?}])` — Write to `.build/` directory (build-configs step)
+- `registerWithBashSyleProfile(configKey, content)` — Register a delimited block in `~/.bash_syle`
+- `registerWithBashSyleAutocompleteWithRawContent(configKey, content)` — Register autocomplete in `~/.bash_syle_autocomplete`
+- `prependTextBlock(content, configKey, configValue)` / `appendTextBlock(...)` — Manage delimited sections within file content
+
+### Runtime flags
+
+- `IS_FORCE_REFRESH` — When true, delete and re-download resources before installing. Example: `if (IS_FORCE_REFRESH) { await deleteFolder(targetPath); }`
+- `IS_LIGHT_WEIGHT_MODE` — When true, skip advanced/heavy features. Scripts check this to skip optional installs.
+- `IS_DEBUG` — When true, keep temp scripts in `/tmp` and show retry commands on failure
+
+### Other common utilities
+
+- `getRuntimeOption(key, parseFunc)` — Read env vars/CLI args with parser (`parseString`, `parseBoolean`, `parseInteger`)
+- `readText(filePath)` — Read file contents (returns empty string on error)
+- `fetchUrlAsString(url)` / `fetchUrlAsJson(url)` — Fetch remote content
+- `downloadAsset(url, destination)` — Download file to disk
+- `execBash(cmd, sync?, options?)` — Execute shell command
+- `trimLeftSpaces(text)` — Remove common leading whitespace (for heredoc-style template strings)
+- `convertTextToList(...texts)` — Split text to unique trimmed lines, filtering comments
+- `resolveOsKey({mac, windows, linux})` — Returns the value matching the current OS
+- `consoleLogColor1(text)` — Yellow, `consoleLogColor3(text)` — Cyan, `consoleLogColor4(text)` — Green

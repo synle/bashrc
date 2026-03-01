@@ -111,7 +111,7 @@ ri-vscode = "!bash -c 'GIT_EDITOR=\"code --wait\" git ri' --"
 
 # Log & Diff
 logbaseline = log --decorate --all --abbrev-commit --date=short --graph
-ls = "!bash -c 'git logbaseline --pretty=format:\"%%C(yellow)%%h %%C(blue)%%ad %%C(green)%%an %%C(reset)%%s\"' --"
+ls = "!bash -c 'git logbaseline --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s\"' --"
 lls = "!bash -c 'git logbaseline --oneline --author-date-order' --"
 l = "!bash -c 'git ls --stat' --"
 ll = "!bash -c 'git lls --stat' --"
