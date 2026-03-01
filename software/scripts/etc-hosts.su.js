@@ -1,110 +1,101 @@
-let DYNAMIC_BLOCK_HOST_NAMES = [];
-let STATIC_BLOCK_HOST_NAMES = [];
-let WHITE_LIST_HOST_NAMES = [];
-let ROUTED_BLOCKED_IP = "0.0.0.0";
-
-/**
- * Fetches blocked hostnames from static and dynamic sources, filtering out whitelisted entries.
- * @returns {Promise<string[]>} Array of hostnames to block.
- */
-async function _getBlockedHostNames() {
-  let mappingsToUse = [...STATIC_BLOCK_HOST_NAMES];
-  if (!is_os_window) {
-    // for non windows, we can more hosts from the blocked hosts...
-    const url = `software/metadata/hosts-blocked-ads.config`;
-    try {
-      let h = await fetchUrlAsString(`software/metadata/hosts-blocked-ads.config`);
-      h = convertTextToHosts(h);
-      log(">>> URL fetch for host success", url);
-      log(">>>> Total Hosts Found", h.length);
-      DYNAMIC_BLOCK_HOST_NAMES = [...DYNAMIC_BLOCK_HOST_NAMES, ...h];
-    } catch (err) {
-      log(">>> URL fetch for host failed", url, err);
-    }
-
-    mappingsToUse = [...mappingsToUse, ...DYNAMIC_BLOCK_HOST_NAMES];
-  }
-
-  mappingsToUse = mappingsToUse.map((s) => s.toLowerCase());
-
-  return [...new Set(mappingsToUse)];
-}
+const ROUTED_BLOCKED_IP = "0.0.0.0";
 
 /**
  * Returns the path to the system etc hosts file based on the current OS.
  * @returns {string} Path to the hosts file.
  */
-function _getEtcHosts() {
-  const windowsEtcHostDir = path.join(BASE_C_DIR_WINDOW, "/Windows/System32/drivers/etc/hosts");
+function _getEtcHostsPath() {
+  const windowsEtcHostPath = path.join(BASE_C_DIR_WINDOW, "/Windows/System32/drivers/etc/hosts");
 
-  if (filePathExist(windowsEtcHostDir) || is_os_window) {
-    return windowsEtcHostDir;
+  if (filePathExist(windowsEtcHostPath) || is_os_window) {
+    return windowsEtcHostPath;
   }
 
   return "/etc/hosts";
 }
 
 /**
- * Consolidates hosts by removing duplicates and adding www-prefixed variants.
+ * Deduplicates hosts, lowercases them, and adds www-prefixed variants.
  * @param {string[]} hosts - Array of hostnames to consolidate.
  * @returns {string[]} Deduplicated array with www variants included.
  */
 function _consolidateHosts(hosts) {
-  const newHosts = [...hosts];
+  const expanded = [...hosts];
 
   for (const host of hosts) {
     if (!host.includes("www.")) {
-      newHosts.push("www." + host);
+      expanded.push("www." + host);
     }
   }
 
-  return [...new Set(newHosts.map((s) => s.toLowerCase()))];
+  return [...new Set(expanded.map((s) => s.toLowerCase()))];
 }
 
 /**
- * Loads blocked and whitelisted host configs, then updates the system etc hosts file with home network mappings and blocked hosts.
+ * Fetches blocked hostnames from static and dynamic sources.
+ * On non-Windows, also fetches the ad-blocking hosts list.
+ * @param {string[]} staticBlockedHosts - Manually curated blocked hosts.
+ * @returns {Promise<string[]>} Array of hostnames to block.
+ */
+async function _getBlockedHostNames(staticBlockedHosts) {
+  const hosts = [...staticBlockedHosts];
+
+  if (!is_os_window) {
+    const url = `software/metadata/hosts-blocked-ads.config`;
+    try {
+      const dynamicHosts = convertTextToHosts(await fetchUrlAsString(url));
+      log(">>> URL fetch for host success", url);
+      log(">>>> Total Hosts Found", dynamicHosts.length);
+      hosts.push(...dynamicHosts);
+    } catch (err) {
+      log(">>> URL fetch for host failed", url, err);
+    }
+  }
+
+  return [...new Set(hosts.map((s) => s.toLowerCase()))];
+}
+
+/**
+ * Loads blocked and whitelisted host configs, then updates the system etc hosts file
+ * with home network mappings and blocked hosts.
  */
 async function doWork() {
   exitIfLimitedSupportOs();
-  // initiate the vars
-  STATIC_BLOCK_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`));
 
-  WHITE_LIST_HOST_NAMES = convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`));
+  const staticBlockedHosts = _consolidateHosts(
+    convertTextToList(await fetchUrlAsString(`software/metadata/hosts-blocked-manual.config`)),
+  );
+  const whitelistedHosts = _consolidateHosts(
+    convertTextToList(await fetchUrlAsString(`software/metadata/hosts-whitelisted.config`)),
+  );
 
-  STATIC_BLOCK_HOST_NAMES = _consolidateHosts(STATIC_BLOCK_HOST_NAMES);
-  WHITE_LIST_HOST_NAMES = _consolidateHosts(WHITE_LIST_HOST_NAMES);
-
-  DYNAMIC_BLOCK_HOST_NAMES = [];
-
-  const targetPath = _getEtcHosts();
+  const targetPath = _getEtcHostsPath();
   let etcHostTextContent = readText(targetPath);
 
   log(">> Updating ETC Host", targetPath);
 
-  // make a backup
   backupText(path.join(BASE_HOMEDIR_LINUX, `.ssh/bak.etc_host`), etcHostTextContent);
 
-  // add tweaks...
   etcHostTextContent = appendTextBlock(
     etcHostTextContent,
-    "Sy Home Hosts", // key
+    "Sy Home Hosts",
     HOME_HOST_NAMES.map(([hostName, hostIp]) => `${hostIp} ${hostName}`).join("\n"),
   );
 
-  // blocked hostname
-  const BLOCK_HOST_NAMES = (await _getBlockedHostNames()).filter((hostName) => !WHITE_LIST_HOST_NAMES.includes(hostName));
+  const blockedHosts = (await _getBlockedHostNames(staticBlockedHosts)).filter(
+    (hostName) => !whitelistedHosts.includes(hostName),
+  );
 
   etcHostTextContent = appendTextBlock(
     etcHostTextContent,
-    "Sy Blocked Hosts", // key
-    BLOCK_HOST_NAMES.map((hostName) => `${ROUTED_BLOCKED_IP} ${hostName}`).join("\n"),
+    "Sy Blocked Hosts",
+    blockedHosts.map((hostName) => `${ROUTED_BLOCKED_IP} ${hostName}`).join("\n"),
   );
 
-  // write if there are change
   try {
     log(">> Update host mappings");
     log(">>> Total Home Hosts", HOME_HOST_NAMES.length);
-    log(">>> Total Blocked Hosts", BLOCK_HOST_NAMES.length);
+    log(">>> Total Blocked Hosts", blockedHosts.length);
 
     writeText(targetPath, etcHostTextContent.trim());
     log(">> Done updating etc hosts: ", targetPath);
