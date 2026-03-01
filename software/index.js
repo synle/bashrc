@@ -368,7 +368,6 @@ const LIMITED_SUPPORT_OSES = ["is_os_android_termux", "is_os_mingw64"];
 const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
 
 // line break and comment break
-const lineBreakCountToUse = Math.min(LINE_BREAK_COUNT, 100);
 const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
 const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
@@ -504,14 +503,8 @@ function writeText(filePath, text, override = true, suppressError = false) {
   const oldContent = readText(pathToUse).trim();
 
   // strip everything before and including the LINE_BREAK_HASH line so timestamp-only changes don't trigger a write
-  const commentBreakIdx_old = oldContent.indexOf(LINE_BREAK_HASH);
-  const commentBreakIdx_new = newContent.indexOf(LINE_BREAK_HASH);
-  const oldContentStripped = (
-    commentBreakIdx_old >= 0 ? oldContent.substring(oldContent.indexOf("\n", commentBreakIdx_old) + 1) : oldContent
-  ).trim();
-  const newContentStripped = (
-    commentBreakIdx_new >= 0 ? newContent.substring(newContent.indexOf("\n", commentBreakIdx_new) + 1) : newContent
-  ).trim();
+  const oldContentStripped = oldContent.trim();
+  const newContentStripped = newContent.trim();
 
   if (oldContentStripped === newContentStripped || override !== true) {
     // if content don't change, then don't save
@@ -1012,13 +1005,14 @@ async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl
   writeText(specPath, specContent);
 
   // register a pure-bash completer that reads from the spec file
-  registerWithBashSyleAutocompleteWithRawContent(
-    `${command} Autocomplete`,
-    trimLeftSpaces(
+  registerProfileBlock({
+    profilePath: BASH_SYLE_AUTOCOMPLETE_PATH,
+    configKey: `${command} Autocomplete`,
+    content: trimLeftSpaces(
       `
-      ##################################################
+      ${LINE_BREAK_HASH}
       # ${command} (spec-based autocomplete)
-      ##################################################
+      ${LINE_BREAK_HASH}
       __spec_complete_${command}()
       {
         local cur="\${COMP_WORDS[COMP_CWORD]}"
@@ -1045,7 +1039,7 @@ async function registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl
       complete -F __spec_complete_${command} ${command}
     ` + "\n\n\n",
     ),
-  );
+  });
 }
 
 /**

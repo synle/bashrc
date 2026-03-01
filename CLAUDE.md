@@ -15,6 +15,7 @@ make format            # Format code with Prettier
 make clean             # Run clean.sh
 make start             # Run run.sh
 make nuke              # Remove all bashrc config (~/.bash_sy*, fnm, hushlogin)
+npm run test:unit      # Run unit tests (vitest)
 ```
 
 ### run.sh - Test/install scripts
