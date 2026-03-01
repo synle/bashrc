@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-06-40PM]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-07-20PM]
 // 
 // Preferences Key Bindings
 // ############################################################################################################################################
@@ -12,7 +12,17 @@
     "command": "alignment"
   },
   {
-    "command": "refresh_folder_list",
+    "command": "chain",
+    "args": {
+      "commands": [
+        [
+          "revert"
+        ],
+        [
+          "refresh_folder_list"
+        ]
+      ]
+    },
     "keys": [
       "f5"
     ]

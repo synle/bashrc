@@ -185,7 +185,7 @@ async function doWork() {
       key: "f5",
       command: "workbench.files.action.refreshFilesExplorer",
     },
-    { "key": "f5", "command": "workbench.action.files.revert" },
+    { key: "f5", command: "workbench.action.files.revert" },
     { key: "OS_KEY+h", command: "editor.action.startFindReplaceAction", when: "editorFocus || editorIsOpen" },
     { key: "OS_KEY+h", command: "testing.toggleTestingPeekHistory", when: "testing.isPeekVisible" },
     {

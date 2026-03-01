@@ -1520,13 +1520,13 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      echo(`>>`, 'Error', `Ignored No sudo access`, file);
+      echo(`>>`, "Error", `Ignored No sudo access`, file);
       return false;
     }
 
     for (const pathToIgnore of pathsToIgnore) {
       if (file.includes(pathToIgnore)) {
-        echo(`>>`, 'Error', `Ignored OS Specific`, file);
+        echo(`>>`, "Error", `Ignored OS Specific`, file);
         return false;
       }
     }

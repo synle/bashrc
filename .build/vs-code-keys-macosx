@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-06-40PM]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-07-20PM]
 // 
 // Preferences Open Keyboard Shortcuts (JSON)
 // ############################################################################################################################################
@@ -44,6 +44,10 @@
   {
     "key": "f5",
     "command": "workbench.files.action.refreshFilesExplorer"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.action.files.revert"
   },
   {
     "key": "cmd+h",
