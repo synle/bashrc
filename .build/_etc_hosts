@@ -7,7 +7,7 @@ ff00::0 ip6-mcastprefix
 ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 ff02::3 ip6-allhosts
-10.1.0.252 runnervmnay03.motzxs420emefmycxb4gafpwpg.bx.internal.cloudapp.net runnervmnay03
+10.1.0.212 runnervmnay03.dtj4yddoao4ujjevhu1asbapuf.cx.internal.cloudapp.net runnervmnay03
 
 # Sy Home Hosts
 192.168.1.1 sy-router-main

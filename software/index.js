@@ -1341,7 +1341,7 @@ function downloadAssets(urls, destinationDir) {
  */
 async function downloadWindowsApp(applicationName, findFilter) {
   const targetPath = await getWindowsApplicationBinaryDir(applicationName);
-  log(`  >> Downloading Windows App:`,  colorRed(applicationName), targetPath);
+  log(`  >> Downloading Windows App:`, colorRed(applicationName), targetPath);
   try {
     await downloadFilesFromMainRepo(findFilter, targetPath);
   } catch (err) {

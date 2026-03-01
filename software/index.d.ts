@@ -310,12 +310,6 @@ declare function exitIfLimitedSupportOs(): any;
  */
 declare function exitIfNotTargetOs(...osFlags: string[]): any;
 /**
- * Downloads application binaries from the main repo into the Windows applications directory.
- * @param {string} applicationName - The application name
- * @param {function} findFilter - Filter function for downloadFilesFromMainRepo
- */
-declare function downloadWindowsApp(applicationName: string, findFilter: Function): Promise<void>;
-/**
  * Resolves OS_KEY based on current platform flags.
  * @param {object} keys - Object with { windows, mac, linux } key values
  * @returns {string} The resolved OS key
@@ -402,6 +396,12 @@ declare function downloadAsset(url: string, destination: string): Promise<string
  * @returns {Promise<string>} Resolves with the command's stdout
  */
 declare function downloadAssets(urls: string[], destinationDir: string): Promise<string>;
+/**
+ * Downloads application binaries from the main repo into the Windows applications directory.
+ * @param {string} applicationName - The application name
+ * @param {function} findFilter - Filter function for downloadFilesFromMainRepo
+ */
+declare function downloadWindowsApp(applicationName: string, findFilter: Function): Promise<void>;
 /**
  * Downloads binary files from the main GitHub repo that match a filter function.
  * Only considers files under the "binaries/" path, excluding markdown files.
