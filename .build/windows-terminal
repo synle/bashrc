@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-08-40PM]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-09-20PM]
 // 
 // Open settings file (JSON)
 // ############################################################################################################################################
@@ -12,6 +12,10 @@
   "confirmCloseAllTabs": true,
   "multiLinePasteWarning": false,
   "focusFollowMouse": true,
+  "launchMode": "maximized",
+  "showTerminalTitleInTitlebar": true,
+  "startOnUserLogin": true,
+  "snapToGridOnResize": true,
   "initialCols": 80,
   "initialRows": 30,
   "initialPosition": "5,5",
@@ -353,7 +357,11 @@
         "fontSize": 9,
         "padding": "2 0 2 0",
         "bellStyle": "all",
-        "historySize": 50000
+        "historySize": 50000,
+        "scrollbarState": "visible",
+        "antialiasingMode": "cleartype",
+        "intenseTextStyle": "bright",
+        "adjustIndistinguishableColors": "indexed"
       },
       {
         "name": "SSH Localhost",
@@ -367,7 +375,11 @@
         "fontSize": 9,
         "padding": "2 0 2 0",
         "bellStyle": "all",
-        "historySize": 50000
+        "historySize": 50000,
+        "scrollbarState": "visible",
+        "antialiasingMode": "cleartype",
+        "intenseTextStyle": "bright",
+        "adjustIndistinguishableColors": "indexed"
       },
       {
         "name": "WSL Linux",
@@ -379,7 +391,11 @@
         "fontSize": 9,
         "padding": "2 0 2 0",
         "bellStyle": "all",
-        "historySize": 50000
+        "historySize": 50000,
+        "scrollbarState": "visible",
+        "antialiasingMode": "cleartype",
+        "intenseTextStyle": "bright",
+        "adjustIndistinguishableColors": "indexed"
       }
     ]
   },
