@@ -16,6 +16,7 @@
     "setup:light": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-syle-content.js\"",
     "setup:hosts": "curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --files=\"software/scripts/etc-hosts.su.js\"",
     "test": "bash run.sh",
+    "test:unit": "vitest run --config vitest.config.js",
     "test:hosts": "sh run.sh --files=\"software/scripts/etc-hosts.su.js\"",
     "list:scripts": "cat software/metadata/script-list.config"
   },
@@ -31,6 +32,7 @@
     "sass": "^1.97.3",
     "typescript": "^5.9.3",
     "vite": "^4.4.0",
-    "vite-plugin-singlefile": "^0.13.5"
+    "vite-plugin-singlefile": "^0.13.5",
+    "vitest": "^0.34.6"
   }
 }
