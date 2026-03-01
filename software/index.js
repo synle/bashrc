@@ -1900,14 +1900,9 @@ async function _doWorkTestFiles() {
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  console.log(
-    echoColor5(
-      `>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`,
-    ),
-  );
+  console.log(echoColor5(`>> _doWorkTestFiles => TEST_SCRIPT_FILES=${TEST_SCRIPT_FILES.length}, and allRepoFiles=${allRepoFiles.length}.`));
 
-  const softwareFiles = TEST_SCRIPT_FILES
-    .split(/[,;\s]/)
+  const softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
     .filter((s) => !!s);
 
