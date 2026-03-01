@@ -511,7 +511,10 @@ function writeText(filePath, text, override = true, suppressError = false) {
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      log(colorCyan(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`), colorDim(pathToUse));
+      log(
+        colorCyan(`      << Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`),
+        colorDim(pathToUse),
+      );
     }
   } else {
     log(colorCyan(`      << Updated [Modified] newContent=${newContent.length}`), colorDim(pathToUse));
