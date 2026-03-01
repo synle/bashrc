@@ -342,7 +342,7 @@ npm() {
     doctor|edit|exec|explain|explore|find-dupes|fund|get|help|hook|init|install|install-ci-test|\
     install-test|link|ll|login|logout|ls|org|outdated|owner|pack|ping|pkg|prefix|profile|\
     prune|publish|query|rebuild|repo|restart|root|run|run-script|search|set|shrinkwrap|\
-    star|stars|start|stop|team|test|token|uninstall|unpublish|unstar|update|version|view|whoami)
+    star|stars|start|stop|team|test|token|uninstall|unpublish|unstar|update|version|view|whoami|i)
       command npm "$@" ;;
     *) command npm run "$@" ;;
   esac
