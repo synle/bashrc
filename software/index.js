@@ -312,16 +312,16 @@ let HOME_HOST_NAMES = [];
  * Flag               | Env Variable          | Script Folder                     | Platforms
  * -------------------|-----------------------|-----------------------------------|------------------------------
  * is_os_mac          | is_os_mac=1           | software/scripts/mac/             | macOS (darwin)
- * is_os_ubuntu       | is_os_ubuntu=1        | (none)                            | Ubuntu, Debian, Mint
+ * is_os_ubuntu       | is_os_ubuntu=1        | software/scripts/ubuntu/          | Ubuntu, Debian, Mint
  * is_os_chromeos     | is_os_chromeos=1      | software/scripts/chromeos/        | ChromeOS
- * is_os_mingw64      | is_os_mingw64=1       | (none)                            | MSYS2 / Cygwin / MinGW64
+ * is_os_mingw64      | is_os_mingw64=1       | software/scripts/mingw64/         | MSYS2 / Cygwin / MinGW64
  * is_os_android_termux | is_os_android_termux=1 | software/scripts/android_termux/ | Android Termux
  * is_os_arch_linux   | is_os_arch_linux=1    | software/scripts/arch_linux/      | Arch Linux, SteamOS
- * is_os_steamdeck    | is_os_steamdeck=1     | (none)                            | Steam Deck (SteamOS subset)
+ * is_os_steamdeck    | is_os_steamdeck=1     | software/scripts/steamdeck/       | Steam Deck (SteamOS subset)
  * is_os_steamos      | is_os_steamos=1       | software/scripts/steamos/         | SteamOS
- * is_os_redhat       | is_os_redhat=1        | (none)                            | Fedora, RHEL, CentOS, Rocky
+ * is_os_redhat       | is_os_redhat=1        | software/scripts/redhat/          | Fedora, RHEL, CentOS, Rocky
  * is_os_window       | is_os_window=1        | software/scripts/window/          | Windows (WSL /mnt/c detected)
- * is_os_wsl          | is_os_wsl=1           | (none)                            | Windows Subsystem for Linux
+ * is_os_wsl          | is_os_wsl=1           | software/scripts/wsl/             | Windows Subsystem for Linux
  *
  * Flags without a script folder are still used for conditional logic in individual scripts
  * (e.g. `exitIfUnsupportedOs()`, platform-specific file paths).
@@ -355,6 +355,13 @@ Object.keys(process.env)
 /** @type {boolean} Fedora, RHEL, CentOS, Rocky */ const is_os_redhat = !!global.is_os_redhat;
 /** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_window = !!global.is_os_window;
 /** @type {boolean} Windows Subsystem for Linux */ const is_os_wsl = !!global.is_os_wsl;
+
+/**
+ * List of OS flags considered limited-support platforms. Scripts calling
+ * `exitIfLimitedSupportOs()` will exit early when running on any of these.
+ * @type {string[]}
+ */
+const LIMITED_SUPPORT_OSES = ["is_os_android_termux", "is_os_mingw64"];
 
 // setting up the path for the extra tweaks
 const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
