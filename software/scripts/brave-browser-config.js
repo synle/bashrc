@@ -267,9 +267,9 @@ async function doWork() {
 
   log(`  >> Brave Browser Configurations / Settings:`);
 
-  if(true){
+  if (true) {
     log(`  >> Skipped for testing`);
-    return
+    return;
   }
 
   const profilePath = _getBraveProfilePath();
