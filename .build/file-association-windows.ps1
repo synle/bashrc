@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-11-20PM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-01-11-40PM]
 # 
 # File Associations for Windows
 # Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows.ps1
