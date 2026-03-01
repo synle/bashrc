@@ -1,5 +1,3 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-02-28-12-40AM]
-# 
 # File Associations for macOS
 # Requires duti: brew install duti
 # Sets Sublime Text and VLC as default apps for text and media files

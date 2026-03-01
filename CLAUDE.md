@@ -69,22 +69,23 @@ OS detection happens in `bootstrap/common-env.sh` and exports `is_os_<name>=1` e
 
 Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`
 
-| Flag | Folder | Platform |
-|------|--------|----------|
-| `is_os_mac` | `software/scripts/mac/` | macOS |
-| `is_os_ubuntu` | (none) | Ubuntu, Debian, Mint |
-| `is_os_chromeos` | `software/scripts/chromeos/` | ChromeOS |
-| `is_os_mingw64` | (none) | MSYS2/Cygwin |
-| `is_os_android_termux` | `software/scripts/android_termux/` | Android Termux |
-| `is_os_arch_linux` | `software/scripts/arch_linux/` | Arch Linux |
-| `is_os_steamdeck` | (none) | Steam Deck (SteamOS) |
-| `is_os_redhat` | (none) | Fedora, RHEL, CentOS |
-| `is_os_window` | `software/scripts/window/` | Windows (WSL/MinGW) |
-| `is_os_wsl` | (none) | Windows Subsystem for Linux |
+| Flag                   | Folder                             | Platform                    |
+| ---------------------- | ---------------------------------- | --------------------------- |
+| `is_os_mac`            | `software/scripts/mac/`            | macOS                       |
+| `is_os_ubuntu`         | (none)                             | Ubuntu, Debian, Mint        |
+| `is_os_chromeos`       | `software/scripts/chromeos/`       | ChromeOS                    |
+| `is_os_mingw64`        | (none)                             | MSYS2/Cygwin                |
+| `is_os_android_termux` | `software/scripts/android_termux/` | Android Termux              |
+| `is_os_arch_linux`     | `software/scripts/arch_linux/`     | Arch Linux                  |
+| `is_os_steamdeck`      | (none)                             | Steam Deck (SteamOS)        |
+| `is_os_redhat`         | (none)                             | Fedora, RHEL, CentOS        |
+| `is_os_window`         | `software/scripts/window/`         | Windows (WSL/MinGW)         |
+| `is_os_wsl`            | (none)                             | Windows Subsystem for Linux |
 
 ### bootstrap/common-env.sh
 
 Shared environment setup inlined into `run.sh` and `build.sh` via `# BEGIN`/`# END` markers. Contains:
+
 - Repository URL exports
 - OS detection (sets `is_os_*` flags)
 - `run_files()` helper function
@@ -110,6 +111,7 @@ A React webapp at `webapp/` built with Vite. Provides a web UI for browsing scri
 ## CI/CD
 
 GitHub Actions (`.github/workflows/build-main.yml`):
+
 - Triggers on push to master
 - Runs `build.sh`, commits artifacts back to repo
 - Deploys to GitHub Pages
@@ -145,12 +147,12 @@ async function doWork() {
 
 ### File extension determines execution mode
 
-| Extension | Execution | Example |
-|-----------|-----------|---------|
-| `.js` | `node` | `git.js` |
-| `.sh` | `bash` | `diff-so-fancy.sh` |
-| `.sh.js` | `node \| bash` | (node outputs bash commands) |
-| `.su.js` | `sudo -E node` | `etc-hosts.su.js` |
+| Extension   | Execution              | Example                       |
+| ----------- | ---------------------- | ----------------------------- |
+| `.js`       | `node`                 | `git.js`                      |
+| `.sh`       | `bash`                 | `diff-so-fancy.sh`            |
+| `.sh.js`    | `node \| bash`         | (node outputs bash commands)  |
+| `.su.js`    | `sudo -E node`         | `etc-hosts.su.js`             |
 | `.su.sh.js` | `sudo -E node \| bash` | (elevated node piped to bash) |
 
 ### Guard functions (call at top of `doWork()`)
