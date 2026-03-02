@@ -29,16 +29,39 @@ function batcat_full() {
 }
 
 ################################################################################
+# ---- Open (cross-platform) ----
+################################################################################
+function open() {
+  echo "open $@ | $(pwd)"
+  if [ "$is_os_mac" = "1" ]; then
+    command open "$@"
+  elif command -v explorer.exe &>/dev/null; then
+    explorer.exe "$@"
+  elif command -v dolphin &>/dev/null; then
+    dolphin "$@" 1>&- 2>&- &
+  elif command -v thunar &>/dev/null; then
+    thunar "$@" 1>&- 2>&- &
+  elif command -v xdg-open &>/dev/null; then
+    xdg-open "$@" 1>&- 2>&- &
+  else
+    echo "No file manager found"
+  fi
+}
+export -f open
+
+################################################################################
 # ---- Clipboard (pbcopy / pbpaste) ----
 ################################################################################
-if ! command -v pbcopy &>/dev/null; then
+if [ "$is_os_mac" != "1" ]; then
+  if command -v xclip &>/dev/null; then
     function pbcopy() { xclip -selection clipboard; }
-    export -f pbcopy
-fi
-
-if ! command -v pbpaste &>/dev/null; then
     function pbpaste() { xclip -selection clipboard -o; }
-    export -f pbpaste
+  else
+    function pbcopy() { cat > ~/.bash_syle_clipboard; }
+    function pbpaste() { cat ~/.bash_syle_clipboard; }
+  fi
+  export -f pbcopy
+  export -f pbpaste
 fi
 
 ################################################################################

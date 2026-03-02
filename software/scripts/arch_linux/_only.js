@@ -5,10 +5,6 @@ async function doWork() {
     ".bash_syle_only_arch_linux",
     trimLeftSpaces(`
       # Only Arch Linux alias
-      function open(){
-        pwd
-        dolphin "$1" 1>&- 2>&-  &
-      }
 
       # set brightness via ddc/ci (for external monitor)
       # more info here - https://moverest.xyz/blog/control-display-with-ddc-ci/

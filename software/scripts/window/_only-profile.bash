@@ -1,10 +1,4 @@
-open(){
-  echo "open $@"
-  pwd
-  explorer.exe "$@"
-}
-
-cmd(){
+function cmd(){
   cmd.exe '/C' "$@"
 }
 
