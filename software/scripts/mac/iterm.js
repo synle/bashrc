@@ -21,6 +21,5 @@ async function doWork() {
     execBash(`defaults import com.googlecode.iterm2 "${plistPath}"`, true);
   }
 
-
   log(">>> To apply: iTerm2 > Settings > Profiles > Other Actions > Import JSON Profiles");
 }
