@@ -356,9 +356,7 @@ Object.keys(process.env)
   .forEach((envKey) => {
     global[envKey] = getRuntimeOption(envKey, parseBoolean);
     const scriptPath = `software/scripts/${envKey.replace("is_os_", "")}`;
-    if (fs.existsSync(scriptPath)) {
-      OS_SCRIPT_PATHS.push([global[envKey], scriptPath]);
-    }
+    OS_SCRIPT_PATHS.push([global[envKey], scriptPath]);
   });
 
 // Explicit const declarations so tsc emits these in the .d.ts (see table above)
