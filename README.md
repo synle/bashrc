@@ -12,7 +12,7 @@ https://synle.github.io/bashrc/
 - Ubuntu / Debian / Mint
 - Windows Subsystem for Linux (WSL)
 - Android Termux
-- Arch Linux / Steam Deck
+- Arch Linux / SteamOS
 - ChromeOS
 
 ## Installation

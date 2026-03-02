@@ -335,7 +335,6 @@ let HOME_HOST_NAMES = [];
  * is_os_mingw64      | is_os_mingw64=1       | software/scripts/mingw64/         | MSYS2 / Cygwin / MinGW64
  * is_os_android_termux | is_os_android_termux=1 | software/scripts/android_termux/ | Android Termux
  * is_os_arch_linux   | is_os_arch_linux=1    | software/scripts/arch_linux/      | Arch Linux, SteamOS
- * is_os_steamdeck    | is_os_steamdeck=1     | software/scripts/steamdeck/       | Steam Deck (SteamOS subset)
  * is_os_steamos      | is_os_steamos=1       | software/scripts/steamos/         | SteamOS
  * is_os_redhat       | is_os_redhat=1        | software/scripts/redhat/          | Fedora, RHEL, CentOS, Rocky
  * is_os_window       | is_os_window=1        | software/scripts/window/          | Windows (WSL /mnt/c detected)
@@ -366,7 +365,6 @@ Object.keys(process.env)
 /** @type {boolean} MSYS2 / Cygwin / MinGW64 */ const is_os_mingw64 = !!global.is_os_mingw64;
 /** @type {boolean} Android Termux */ const is_os_android_termux = !!global.is_os_android_termux;
 /** @type {boolean} Arch Linux, SteamOS */ const is_os_arch_linux = !!global.is_os_arch_linux;
-/** @type {boolean} Steam Deck (SteamOS subset) */ const is_os_steamdeck = !!global.is_os_steamdeck;
 /** @type {boolean} SteamOS */ const is_os_steamos = !!global.is_os_steamos;
 /** @type {boolean} Fedora, RHEL, CentOS, Rocky */ const is_os_redhat = !!global.is_os_redhat;
 /** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_window = !!global.is_os_window;

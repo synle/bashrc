@@ -11,7 +11,7 @@ async function doWork() {
       alias set-brightness='sudo modprobe i2c-dev; sudo ddcutil setvcp 10'
       alias brightness='set-brightness'
 
-      # override steamdeck prompt and properly use PS1 prompt
+      # override steamos prompt and properly use PS1 prompt
       PROMPT_COMMAND=""
     `).trim(),
   );

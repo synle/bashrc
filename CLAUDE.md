@@ -78,7 +78,6 @@ Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`.
 | `is_os_mingw64`        | `software/scripts/mingw64/`        | MSYS2/Cygwin                |
 | `is_os_android_termux` | `software/scripts/android_termux/` | Android Termux              |
 | `is_os_arch_linux`     | `software/scripts/arch_linux/`     | Arch Linux                  |
-| `is_os_steamdeck`      | `software/scripts/steamdeck/`      | Steam Deck (SteamOS)        |
 | `is_os_steamos`        | `software/scripts/steamos/`        | SteamOS                     |
 | `is_os_redhat`         | `software/scripts/redhat/`         | Fedora, RHEL, CentOS        |
 | `is_os_window`         | `software/scripts/window/`         | Windows (WSL/MinGW)         |

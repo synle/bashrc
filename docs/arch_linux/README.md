@@ -1,6 +1,6 @@
-# Arch Linux / Steam Deck Notes
+# Arch Linux / SteamOS Notes
 
-## Setting Up Steam Deck
+## Setting Up SteamOS
 
 Reference: <https://www.reddit.com/r/SteamDeck/comments/t8al0i/install_arch_packages_on_your_steam_deck/>
 
@@ -10,7 +10,7 @@ Reference: <https://www.reddit.com/r/SteamDeck/comments/t8al0i/install_arch_pack
 # Set password
 passwd
 
-# Steam Deck file system is immutable and resets after each update.
+# SteamOS file system is immutable and resets after each update.
 # Disable read only mode to allow adding new software.
 sudo btrfs property set -ts / ro false
 ```

@@ -793,7 +793,6 @@ declare let HOME_HOST_NAMES: any[];
  * is_os_mingw64      | is_os_mingw64=1       | software/scripts/mingw64/         | MSYS2 / Cygwin / MinGW64
  * is_os_android_termux | is_os_android_termux=1 | software/scripts/android_termux/ | Android Termux
  * is_os_arch_linux   | is_os_arch_linux=1    | software/scripts/arch_linux/      | Arch Linux, SteamOS
- * is_os_steamdeck    | is_os_steamdeck=1     | software/scripts/steamdeck/       | Steam Deck (SteamOS subset)
  * is_os_steamos      | is_os_steamos=1       | software/scripts/steamos/         | SteamOS
  * is_os_redhat       | is_os_redhat=1        | software/scripts/redhat/          | Fedora, RHEL, CentOS, Rocky
  * is_os_window       | is_os_window=1        | software/scripts/window/          | Windows (WSL /mnt/c detected)
@@ -814,7 +813,6 @@ declare const OS_SCRIPT_PATHS: Array<[boolean, string]>;
 /** @type {boolean} MSYS2 / Cygwin / MinGW64 */ declare const is_os_mingw64: boolean;
 /** @type {boolean} Android Termux */ declare const is_os_android_termux: boolean;
 /** @type {boolean} Arch Linux, SteamOS */ declare const is_os_arch_linux: boolean;
-/** @type {boolean} Steam Deck (SteamOS subset) */ declare const is_os_steamdeck: boolean;
 /** @type {boolean} SteamOS */ declare const is_os_steamos: boolean;
 /** @type {boolean} Fedora, RHEL, CentOS, Rocky */ declare const is_os_redhat: boolean;
 /** @type {boolean} Windows (WSL /mnt/c detected) */ declare const is_os_window: boolean;

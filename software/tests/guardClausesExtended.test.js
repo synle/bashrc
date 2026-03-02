@@ -74,16 +74,16 @@ describe("exitIfUnsupportedOs", () => {
 
   it("should handle multiple OS flags", () => {
     setSandboxGlobal("is_os_chromeos", false);
-    setSandboxGlobal("is_os_steamdeck", true);
-    exitIfUnsupportedOs("is_os_chromeos", "is_os_steamdeck");
+    setSandboxGlobal("is_os_steamos", true);
+    exitIfUnsupportedOs("is_os_chromeos", "is_os_steamos");
     expect(processExitCalled).toBe(true);
-    setSandboxGlobal("is_os_steamdeck", false);
+    setSandboxGlobal("is_os_steamos", false);
   });
 
   it("should not exit when no flags match", () => {
     setSandboxGlobal("is_os_chromeos", false);
-    setSandboxGlobal("is_os_steamdeck", false);
-    exitIfUnsupportedOs("is_os_chromeos", "is_os_steamdeck");
+    setSandboxGlobal("is_os_steamos", false);
+    exitIfUnsupportedOs("is_os_chromeos", "is_os_steamos");
     expect(processExitCalled).toBe(false);
   });
 });
