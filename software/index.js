@@ -2131,7 +2131,10 @@ function printScriptProcessingResults(results) {
   const successCount = results.filter((r) => r.status === "success").length;
   const errorCount = results.filter((r) => r.status === "error").length;
 
-  printSectionBlock(`Script Processing Results: ${results.length} files`, [`${successCount} success ${errorCount} failed`], false);
+  echo(`\n\n\n`)
+  echo(LINE_BREAK_EQUAL)
+  echo(`# Script Processing Results: ${results.length} files`)
+  echo(`## ${successCount} Success / ${errorCount} Failed`)
 
   for (const result of results) {
     if (result.status === "success") {
