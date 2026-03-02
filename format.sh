@@ -8,6 +8,40 @@
   echo '> Running build-include substitutions'
   node software/build-include.cjs
 
+  ##########################################################
+  # step: jsdocs - Build JSDocs for JS Code
+  ##########################################################
+  echo '> Build JSDocs for JS Code'
+  # Generate .d.ts for index.js: preprocess to strip require() calls, then run tsc
+  node -e '
+  const fs = require("fs");
+  let src = fs.readFileSync("software/index.js", "utf8");
+  src = src.replace(/^const (\w+) = require\("(\w+)"\);$/gm, (_, n, m) =>
+    `/** @type {typeof import("${m}")} */\nconst ${n} = /** @type {any} */ (null);`);
+  src = src.replace(/^const (\w+) = require\("[^"]+"\)\.\w+\(\);?$/gm, (_, n) =>
+    `const ${n} = "";`);
+  src = src.replace(/require\("[^"]+"\)/g, "({})");
+  fs.writeFileSync("/tmp/_index-for-tsc.js", src);
+  '
+  npx tsc /tmp/_index-for-tsc.js --declaration --allowJs --emitDeclarationOnly \
+    --outDir /tmp/_dts-out --lib esnext --skipLibCheck --target esnext
+  cp /tmp/_dts-out/_index-for-tsc.d.ts software/index.d.ts
+  rm -rf /tmp/_index-for-tsc.js /tmp/_dts-out
+
+  # Generate .d.ts for build-include.common.cjs: strip require() and module.exports, then run tsc
+  node -e '
+  const fs = require("fs");
+  let src = fs.readFileSync("software/build-include.common.cjs", "utf8");
+  src = src.replace(/^const (\w+) = require\("(\w+)"\);$/gm, (_, n, m) =>
+    `/** @type {typeof import("${m}")} */\nconst ${n} = /** @type {any} */ (null);`);
+  src = src.replace(/^module\.exports\s*=\s*\{[\s\S]*\};?\s*$/m, "");
+  fs.writeFileSync("/tmp/_build-include-common-for-tsc.js", src);
+  '
+  npx tsc /tmp/_build-include-common-for-tsc.js --declaration --allowJs --emitDeclarationOnly \
+    --outDir /tmp/_dts-out --lib esnext --skipLibCheck --target esnext
+  cp /tmp/_dts-out/_build-include-common-for-tsc.d.ts software/build-include.common.d.ts
+  rm -rf /tmp/_build-include-common-for-tsc.js /tmp/_dts-out
+
   FORMAT_SCRIPT_URL=https://raw.githubusercontent.com/synle/gha-workflows/refs/heads/main/format.sh
   echo ">> formatting script: $FORMAT_SCRIPT_URL"
   curl -s "$FORMAT_SCRIPT_URL" | bash - > /dev/null 2>&1

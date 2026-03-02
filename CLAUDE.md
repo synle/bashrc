@@ -39,10 +39,10 @@ bash run.sh --lightweight            # Lightweight install mode
 
 ```bash
 bash build.sh                        # Run all build steps
-bash build.sh --steps="jsdocs,webapp" # Run specific steps
+bash build.sh --steps="webapp"        # Run specific steps
 ```
 
-Steps: `jsdocs`, `script-indexes`, `prebuild-hosts`, `build-configs`, `host-mappings`, `backup-xfce`, `webapp`, `build-include`
+Steps: `script-indexes`, `prebuild-hosts`, `build-configs`, `host-mappings`, `backup-xfce`, `webapp`, `build-include`
 
 ## Architecture
 

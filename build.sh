@@ -5,16 +5,15 @@
 #
 # Usage:
 #   bash build.sh                                    # Run all steps
-#   bash build.sh --steps="jsdocs,webapp"            # Run specific steps (comma-separated)
-#   bash build.sh --steps="jsdocs webapp"            # Run specific steps (space-separated)
+#   bash build.sh --steps="webapp"                    # Run specific steps (comma-separated)
+#   bash build.sh --steps="webapp build-configs"      # Run specific steps (space-separated)
 #   bash build.sh --steps="""                        # Run specific steps (multiline)
-#     jsdocs
 #     webapp
+#     build-configs
 #   """
-#   bash build.sh jsdocs webapp                      # Bare args treated as steps
+#   bash build.sh webapp build-configs                # Bare args treated as steps
 #
 # Available steps (default):
-#   jsdocs          Build JSDocs for JS Code
 #   script-indexes  Generate Script List Indexes
 #   prebuild-hosts  Prebuild Host Mappings
 #   build-configs   Build Raw JSON and Config Artifacts
@@ -27,7 +26,7 @@
 ################################################################################
 
 # All valid step names
-ALL_MAIN_STEPS="jsdocs script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
+ALL_MAIN_STEPS="script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
 ALL_OPTIONAL_STEPS="update-hosts"
 
 ################################################################################
@@ -268,42 +267,6 @@ if [ "$run_mode" = "local" ]; then export IS_TEST_SCRIPT_MODE=1; fi
 install_fnm_node
 
 echo '< build.sh'
-############################################################################################
-# ---- step: jsdocs - Build JSDocs for JS Code ----
-############################################################################################
-if should_run jsdocs; then
-echo '> Build JSDocs for JS Code'
-# Generate .d.ts: preprocess index.js to strip require() calls, then run tsc
-node -e '
-const fs = require("fs");
-let src = fs.readFileSync("software/index.js", "utf8");
-src = src.replace(/^const (\w+) = require\("(\w+)"\);$/gm, (_, n, m) =>
-  `/** @type {typeof import("${m}")} */\nconst ${n} = /** @type {any} */ (null);`);
-src = src.replace(/^const (\w+) = require\("[^"]+"\)\.\w+\(\);?$/gm, (_, n) =>
-  `const ${n} = "";`);
-src = src.replace(/require\("[^"]+"\)/g, "({})");
-fs.writeFileSync("/tmp/_index-for-tsc.js", src);
-'
-npx tsc /tmp/_index-for-tsc.js --declaration --allowJs --emitDeclarationOnly \
-  --outDir /tmp/_dts-out --lib esnext --skipLibCheck --target esnext
-cp /tmp/_dts-out/_index-for-tsc.d.ts software/index.d.ts
-rm -rf /tmp/_index-for-tsc.js /tmp/_dts-out
-
-# Generate .d.ts for build-include.common.cjs: strip require() and module.exports, then run tsc
-node -e '
-const fs = require("fs");
-let src = fs.readFileSync("software/build-include.common.cjs", "utf8");
-src = src.replace(/^const (\w+) = require\("(\w+)"\);$/gm, (_, n, m) =>
-  `/** @type {typeof import("${m}")} */\nconst ${n} = /** @type {any} */ (null);`);
-src = src.replace(/^module\.exports\s*=\s*\{[\s\S]*\};?\s*$/m, "");
-fs.writeFileSync("/tmp/_build-include-common-for-tsc.js", src);
-'
-npx tsc /tmp/_build-include-common-for-tsc.js --declaration --allowJs --emitDeclarationOnly \
-  --outDir /tmp/_dts-out --lib esnext --skipLibCheck --target esnext
-cp /tmp/_dts-out/_build-include-common-for-tsc.d.ts software/build-include.common.d.ts
-rm -rf /tmp/_build-include-common-for-tsc.js /tmp/_dts-out
-fi
-
 ############################################################################################
 # ---- step: script-indexes - Generate Script List Indexes ----
 ############################################################################################
