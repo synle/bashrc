@@ -66,7 +66,7 @@ Dual-purpose file:
 
 Key constants: `IS_TEST_SCRIPT_MODE`, `IS_DEBUG`, `TEMP_SCRIPT_PREFIX`, `OS_SCRIPT_PATHS`
 
-JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/index.d.ts`. OS flag constants need explicit `const` declarations for .d.ts generation.
+JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/index.d.ts` and `software/build-include.common.d.ts`. OS flag constants need explicit `const` declarations for .d.ts generation.
 
 ### OS Flags Convention
 
@@ -131,7 +131,7 @@ JSONC files reference color map entries via inline trailing comments: `// {{them
 - `software/scripts/*.js` - Cross-platform scripts (git, vim, fonts, editors, etc.)
 - `software/scripts/<os>/` - OS-specific scripts
 - `software/scripts/<os>/_only.sh` - Shell scripts run only on that OS
-- `software/build-include.common.cjs` - Shared functions and color map for build-include (testable)
+- `software/build-include.common.cjs` - Shared pure functions for BEGIN/END block management, color map, and inline markers. Used by both `build-include.cjs` (build time) and `index.js` (runtime). `tsc` generates `software/build-include.common.d.ts`.
 - `software/scripts/*-color-dark.jsonc` / `*-color-light.jsonc` - Theme color configs with inline `// {{theme.key}}` markers
 - `software/metadata/` - Generated configs (script list, host mappings, IP addresses)
 
@@ -206,7 +206,9 @@ async function doWork() {
 - `registerWithBashSyleProfile(configKey, content)` — Delegates to `registerProfileBlock` with `BASH_SYLE_PATH`, prepend, code folding
 - `registerWithBashSyleAutocompleteWithRawContent(configKey, content)` — Delegates to `registerProfileBlock` with `BASH_SYLE_AUTOCOMPLETE_PATH`, append, no code folding
 - `registerWithBashSyleAutocompleteWithCompleteSpec(command, specUrl)` — Downloads spec file and registers spec-based autocomplete (see Complete-Spec section)
-- `prependTextBlock(content, configKey, configValue)` / `appendTextBlock(...)` — Manage delimited sections within file content (uses `# BEGIN_CONTENT key` / `# END_CONTENT key` markers)
+- `updateTextBlock(content, key, sourceContent, commentPrefix, commentSuffix?, insertMode?, cleanupSpace?)` — Core function: replaces content between `# BEGIN key` / `# END key` markers. `insertMode` controls behavior when markers not found: `'append'` adds to end, `'prepend'` adds to beginning, `null`/`undefined` leaves content unchanged. `commentSuffix` supports HTML-style markers (e.g. `' -->'`). `cleanupSpace` (default false) collapses extra whitespace.
+- `appendTextBlock(content, key, sourceContent, commentPrefix?)` — Delegates to `updateTextBlock` with `insertMode='append'` and `cleanupSpace=true`
+- `prependTextBlock(content, key, sourceContent, commentPrefix?)` — Delegates to `updateTextBlock` with `insertMode='prepend'` and `cleanupSpace=true`
 
 ### Complete-Spec Autocomplete System
 
@@ -364,4 +366,4 @@ Unit tests use **vitest** (v0.34.6) with a **Node `vm` sandbox** that executes a
 | `colorAndAutoColor.test.js` | `color`, `_getAutoColor`, `_applyAutoColor`                                                                                                                                                              |
 | `fileIO.test.js`            | `readText`, `writeText`, `appendText`, `writeJson`, `writeConfigToFile`, `parseJsonWithComments`                                                                                                         |
 | `guardClauses.test.js`      | `resolveOsKey`                                                                                                                                                                                           |
-| `buildInclude.test.js`      | `getCommentStyle`, `stripShebang`, `isFilePath`, `autoTransform`, `findMarkers`, `replaceBlock`, `cleanBlock`, `toJsonLiteral`, `processInlineMarkers`, `COLOR_MAP`                                      |
+| `buildInclude.test.js`      | `getCommentStyle`, `stripShebang`, `isFilePath`, `autoTransform`, `findMarkers`, `replaceBlock`, `cleanBlock`, `getRawBlockContent`, `toJsonLiteral`, `processInlineMarkers`, `COLOR_MAP`                |

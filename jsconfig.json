@@ -5,6 +5,6 @@
     "checkJs": false,
     "baseUrl": "."
   },
-  "include": ["software/index.d.ts", "**/*.js"],
+  "include": ["software/index.d.ts", "software/build-include.common.d.ts", "**/*.js"],
   "exclude": ["node_modules", "dist"]
 }

@@ -288,6 +288,20 @@ npx tsc /tmp/_index-for-tsc.js --declaration --allowJs --emitDeclarationOnly \
   --outDir /tmp/_dts-out --lib esnext --skipLibCheck --target esnext
 cp /tmp/_dts-out/_index-for-tsc.d.ts software/index.d.ts
 rm -rf /tmp/_index-for-tsc.js /tmp/_dts-out
+
+# Generate .d.ts for build-include.common.cjs: strip require() and module.exports, then run tsc
+node -e '
+const fs = require("fs");
+let src = fs.readFileSync("software/build-include.common.cjs", "utf8");
+src = src.replace(/^const (\w+) = require\("(\w+)"\);$/gm, (_, n, m) =>
+  `/** @type {typeof import("${m}")} */\nconst ${n} = /** @type {any} */ (null);`);
+src = src.replace(/^module\.exports\s*=\s*\{[\s\S]*\};?\s*$/m, "");
+fs.writeFileSync("/tmp/_build-include-common-for-tsc.js", src);
+'
+npx tsc /tmp/_build-include-common-for-tsc.js --declaration --allowJs --emitDeclarationOnly \
+  --outDir /tmp/_dts-out --lib esnext --skipLibCheck --target esnext
+cp /tmp/_dts-out/_build-include-common-for-tsc.d.ts software/build-include.common.d.ts
+rm -rf /tmp/_build-include-common-for-tsc.js /tmp/_dts-out
 fi
 
 ############################################################################################

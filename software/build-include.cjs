@@ -42,6 +42,7 @@ const {
   findMarkers,
   cleanBlock,
   replaceBlock,
+  getRawBlockContent,
   processInlineMarkers,
   cleanInlineMarkers,
   COLOR_MAP,
@@ -111,10 +112,16 @@ for (const target of targetFiles) {
       } else if (isFilePath(key)) {
         // Auto mode: key is the file path
         if (!fs.existsSync(key)) {
-          console.log(`>> Source file not found: ${key} (referenced in ${target}), skipping`);
-          continue;
+          // Fallback: render the raw content already between the markers
+          sourceContent = getRawBlockContent(content, key, commentPrefix, commentSuffix);
+          if (sourceContent === null) {
+            console.log(`>> Source file not found: ${key} (referenced in ${target}), skipping`);
+            continue;
+          }
+          console.log(`>> Source file not found: ${key} (referenced in ${target}), keeping raw content`);
+        } else {
+          sourceContent = autoTransform(fs.readFileSync(key, "utf8"), key, target);
         }
-        sourceContent = autoTransform(fs.readFileSync(key, "utf8"), key, target);
       } else {
         // Unknown key, not a file path, no config — skip
         continue;

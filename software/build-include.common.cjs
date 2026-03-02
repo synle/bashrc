@@ -1,8 +1,15 @@
 /**
- * build-include.common.cjs - Shared pure functions for build-include.
- * Extracted for testability. Used by build-include.cjs at build time.
+ * build-include.common.cjs - Shared pure functions for BEGIN/END block management.
+ * Used by build-include.cjs at build time and index.js at runtime.
+ * Exports TEXT_BLOCK_START_MARKER/TEXT_BLOCK_END_MARKER constants and block
+ * manipulation functions (replaceBlock, getRawBlockContent, cleanBlock, findMarkers).
  */
 const path = require("path");
+
+/** @type {string} Opening delimiter for managed text blocks */
+const TEXT_BLOCK_START_MARKER = "BEGIN";
+/** @type {string} Closing delimiter for managed text blocks */
+const TEXT_BLOCK_END_MARKER = "END";
 
 /** Comment style per file extension */
 const COMMENT_STYLES = {
@@ -79,7 +86,7 @@ function findMarkers(content, targetFile) {
   const escapedSuffix = suffix.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   // Match: prefix BEGIN key suffix (suffix is optional with possible whitespace)
-  const pattern = escapedSuffix ? `${escapedPrefix} BEGIN (.+?)\\s*${escapedSuffix}` : `${escapedPrefix} BEGIN (.+)`;
+  const pattern = escapedSuffix ? `${escapedPrefix} ${TEXT_BLOCK_START_MARKER} (.+?)\\s*${escapedSuffix}` : `${escapedPrefix} ${TEXT_BLOCK_START_MARKER} (.+)`;
 
   const regex = new RegExp(pattern, "g");
   const markers = [];
@@ -103,17 +110,54 @@ function cleanBlock(content, key, commentPrefix, commentSuffix) {
 
 /**
  * Replace content between BEGIN/END markers.
+ * If markers are not found, behavior depends on insertMode:
+ * 'append' adds to end, 'prepend' adds to beginning, null/undefined returns null.
+ * @param {string} content - The full text content
+ * @param {string} key - The marker key
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} commentPrefix - Comment prefix (e.g. '#', '//')
+ * @param {string} [commentSuffix=''] - Comment suffix (e.g. ' -->', '')
+ * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns null.
+ * @returns {string|null} The modified content, or null if markers not found and no insertMode
  */
-function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix) {
-  const BEGIN = `${commentPrefix} BEGIN ${key}${commentSuffix}`;
-  const END = `${commentPrefix} END ${key}${commentSuffix}`;
+function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix = '', insertMode) {
+  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
+  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
+  const block = `${BEGIN}\n${sourceContent}\n${END}`;
+
+  const beginIdx = content.indexOf(BEGIN);
+  const endIdx = content.indexOf(END);
+
+  if (beginIdx !== -1 && endIdx !== -1) {
+    return content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
+  } else if (insertMode === 'append') {
+    return `${content}\n\n${block}\n`;
+  } else if (insertMode === 'prepend') {
+    return `\n${block}\n\n${content}\n`;
+  }
+
+  return null;
+}
+
+/**
+ * Get the raw content between BEGIN/END markers without modifying it.
+ * Returns null if markers are not found.
+ * @param {string} content - The full text content
+ * @param {string} key - The marker key
+ * @param {string} commentPrefix - Comment prefix (e.g. '#', '//')
+ * @param {string} commentSuffix - Comment suffix (e.g. ' -->', '')
+ * @returns {string|null} The content between the markers, or null if markers not found
+ */
+function getRawBlockContent(content, key, commentPrefix, commentSuffix) {
+  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
+  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
 
   const beginIdx = content.indexOf(BEGIN);
   const endIdx = content.indexOf(END);
 
   if (beginIdx === -1 || endIdx === -1) return null;
 
-  return content.slice(0, beginIdx) + BEGIN + "\n" + sourceContent + "\n" + content.slice(endIdx);
+  return content.slice(beginIdx + BEGIN.length + 1, endIdx).trim();
 }
 
 /** Convert a hex color (#RRGGBB) to float RGB components (0-1 range) for iTerm plist format */
@@ -273,6 +317,8 @@ function cleanInlineMarkers(content) {
 }
 
 module.exports = {
+  TEXT_BLOCK_START_MARKER,
+  TEXT_BLOCK_END_MARKER,
   COMMENT_STYLES,
   DEFAULT_COMMENT_STYLE,
   CODE_FENCE_LANGUAGES,
@@ -285,6 +331,7 @@ module.exports = {
   findMarkers,
   cleanBlock,
   replaceBlock,
+  getRawBlockContent,
   toJsonLiteral,
   processInlineMarkers,
   cleanInlineMarkers,
