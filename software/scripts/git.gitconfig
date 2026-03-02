@@ -92,6 +92,7 @@ del = branch -D # Force delete branch
 
 # Pull / Push / Fetch
 fap = fetch --all --prune # Fetch all and purge deleted remotes
+fapr = "!bash -c 'git fap && git r' --" # Fetch all, prune, then rebase
 p = pull
 pu = pull
 po = push origin
