@@ -1568,7 +1568,7 @@ async function getSoftwareScriptFiles() {
       }
     }
 
-    if (IS_DEBUG) {
+    if (true || IS_DEBUG) {
       if (error) {
         echo(`>>`, `Error`, error, file);
       } else {
