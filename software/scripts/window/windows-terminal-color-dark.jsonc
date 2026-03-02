@@ -1,0 +1,24 @@
+// High contrast dark color scheme (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark")
+{
+  "name": "Sy Dark",
+  "background": "#000000",
+  "foreground": "#FFFFFF",
+  "cursorColor": "#FFFFFF",
+  "selectionBackground": "#264F78",
+  "black": "#000000",
+  "blue": "#569CD6",
+  "brightBlack": "#858585",
+  "brightBlue": "#4FC1FF",
+  "brightCyan": "#A4FFFF",
+  "brightGreen": "#69FF94",
+  "brightPurple": "#FF92DF",
+  "brightRed": "#FF6E6E",
+  "brightWhite": "#FFFFFF",
+  "brightYellow": "#FFFFA5",
+  "cyan": "#4EC9B0",
+  "green": "#608B4E",
+  "purple": "#C586C0",
+  "red": "#F44747",
+  "white": "#CCCCCC",
+  "yellow": "#DCDCAA"
+}

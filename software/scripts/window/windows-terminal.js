@@ -8,58 +8,10 @@ async function doWork() {
   log(">> Setting up Microsoft Windows Terminal", targetPath);
 
   // ----------------------------------------------------------
-  // High contrast dark color scheme (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark")
+  // High contrast dark/light color schemes (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark/Light")
   // ----------------------------------------------------------
-  const syDarkScheme = {
-    name: "Sy Dark",
-    background: "#000000",
-    foreground: "#FFFFFF",
-    cursorColor: "#FFFFFF",
-    selectionBackground: "#264F78",
-    black: "#000000",
-    blue: "#569CD6",
-    brightBlack: "#858585",
-    brightBlue: "#4FC1FF",
-    brightCyan: "#A4FFFF",
-    brightGreen: "#69FF94",
-    brightPurple: "#FF92DF",
-    brightRed: "#FF6E6E",
-    brightWhite: "#FFFFFF",
-    brightYellow: "#FFFFA5",
-    cyan: "#4EC9B0",
-    green: "#608B4E",
-    purple: "#C586C0",
-    red: "#F44747",
-    white: "#CCCCCC",
-    yellow: "#DCDCAA",
-  };
-
-  // ----------------------------------------------------------
-  // High contrast light color scheme (matches VS Code "Default High Contrast Light" / Sublime "High Contrast Light")
-  // ----------------------------------------------------------
-  const syLightScheme = {
-    name: "Sy Light",
-    background: "#FFFFFF",
-    foreground: "#000000",
-    cursorColor: "#000000",
-    selectionBackground: "#ADD6FF",
-    black: "#000000",
-    blue: "#0000FF",
-    brightBlack: "#6E7681",
-    brightBlue: "#0451A5",
-    brightCyan: "#267F99",
-    brightGreen: "#098658",
-    brightPurple: "#AF00DB",
-    brightRed: "#A31515",
-    brightWhite: "#FFFFFF",
-    brightYellow: "#795E26",
-    cyan: "#0070C1",
-    green: "#008000",
-    purple: "#800080",
-    red: "#800000",
-    white: "#CCCCCC",
-    yellow: "#795E26",
-  };
+  const syDarkScheme = parseJsonWithComments(await fetchUrlAsString("software/scripts/window/windows-terminal-color-dark.jsonc"));
+  const syLightScheme = parseJsonWithComments(await fetchUrlAsString("software/scripts/window/windows-terminal-color-light.jsonc"));
 
   // ----------------------------------------------------------
   // Default profile appearance
