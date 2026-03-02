@@ -1,6 +1,7 @@
 [user]
 name = Sy Le
-###SNIPPET_GIT_USER_EMAIL###
+# BEGIN_CONTENT GIT_USER_EMAIL
+# END_CONTENT GIT_USER_EMAIL
 
 
 [core]
@@ -140,7 +141,8 @@ where-is = branch -r --contains # Usage: git where-is <hash_id>, Identify which 
 rn = "!f() { git rebase -i HEAD~${1:-1}; }; f"
 rn-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
 ri-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}; }; f"
-###SNIPPET_GIT_REBASE_INTERACTIVE###
+# BEGIN_CONTENT GIT_REBASE_INTERACTIVE
+# END_CONTENT GIT_REBASE_INTERACTIVE
 
-# extra content
-###SNIPPET_GIT_EXTRA_CORE_CONFIGS###
+# BEGIN_CONTENT GIT_EXTRA_CORE_CONFIGS
+# END_CONTENT GIT_EXTRA_CORE_CONFIGS

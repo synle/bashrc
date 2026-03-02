@@ -25,11 +25,10 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
   let templateGitConfig = await fetchUrlAsString("software/scripts/git.gitconfig");
 
   try {
-    templateGitConfig = templateGitConfig
-      .replace("###SNIPPET_GIT_USER_EMAIL###", email)
-      .replace("###SNIPPET_GIT_EXTRA_CORE_CONFIGS###", extraCoreConfigs)
-      .replace("###SNIPPET_GIT_REBASE_INTERACTIVE###", _getRebaseInteractiveSnippet())
-      .trim();
+    templateGitConfig = appendTextBlock(templateGitConfig, "GIT_USER_EMAIL", email);
+    templateGitConfig = appendTextBlock(templateGitConfig, "GIT_EXTRA_CORE_CONFIGS", extraCoreConfigs);
+    templateGitConfig = appendTextBlock(templateGitConfig, "GIT_REBASE_INTERACTIVE", _getRebaseInteractiveSnippet());
+    templateGitConfig = templateGitConfig.trim();
 
     if (addDefaultCommitTemplate === true) {
       const GIT_DEFAULT_MESSAGE_PATH = `${BASE_HOMEDIR_LINUX}/.gitmessage`;
