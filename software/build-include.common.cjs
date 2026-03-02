@@ -1,0 +1,234 @@
+/**
+ * build-include.common.cjs - Shared pure functions for build-include.
+ * Extracted for testability. Used by build-include.cjs at build time.
+ */
+const path = require("path");
+
+/** Comment style per file extension */
+const COMMENT_STYLES = {
+  ".md": { prefix: "<!--", suffix: " -->" },
+  ".html": { prefix: "<!--", suffix: " -->" },
+  ".xml": { prefix: "<!--", suffix: " -->" },
+  ".js": { prefix: "//", suffix: "" },
+  ".jsx": { prefix: "//", suffix: "" },
+  ".ts": { prefix: "//", suffix: "" },
+  ".tsx": { prefix: "//", suffix: "" },
+  ".cjs": { prefix: "//", suffix: "" },
+  ".mjs": { prefix: "//", suffix: "" },
+  ".jsonc": { prefix: "//", suffix: "" },
+};
+const DEFAULT_COMMENT_STYLE = { prefix: "#", suffix: "" };
+
+/** Get comment style for a target file */
+function getCommentStyle(targetFile) {
+  const ext = path.extname(targetFile).toLowerCase();
+  return COMMENT_STYLES[ext] || DEFAULT_COMMENT_STYLE;
+}
+
+/** Strip shebang line from shell scripts */
+function stripShebang(content) {
+  return content.replace(/^#!.*\n/, "");
+}
+
+/** Check if a key looks like a file path */
+function isFilePath(key) {
+  return key.includes("/") || key.includes(".");
+}
+
+/** Map source file extensions to markdown code fence languages */
+const CODE_FENCE_LANGUAGES = {
+  ".sh": "bash",
+  ".bash": "bash",
+  ".zsh": "bash",
+  ".ps1": "powershell",
+};
+
+/**
+ * Auto-transform source content based on the source file extension
+ * and what makes sense in the target context.
+ */
+function autoTransform(sourceContent, sourceFile, targetFile) {
+  const sourceExt = path.extname(sourceFile).toLowerCase();
+  const targetExt = path.extname(targetFile).toLowerCase();
+
+  // Strip shebang from shell scripts
+  if ([".sh", ".bash", ".zsh"].includes(sourceExt)) {
+    sourceContent = stripShebang(sourceContent);
+  }
+
+  // When including in markdown, wrap code files in a fenced code block
+  const codeLang = CODE_FENCE_LANGUAGES[sourceExt];
+  if (targetExt === ".md" && codeLang) {
+    const code = sourceContent
+      .split("\n")
+      .filter((line) => !line.startsWith("#") && line.trim() !== "")
+      .join("\n")
+      .trim();
+    return "```" + codeLang + "\n" + code + "\n```";
+  }
+
+  return sourceContent;
+}
+
+/**
+ * Scan a file for all BEGIN markers and return { key, commentPrefix, commentSuffix } for each.
+ */
+function findMarkers(content, targetFile) {
+  const { prefix, suffix } = getCommentStyle(targetFile);
+  const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedSuffix = suffix.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  // Match: prefix BEGIN key suffix (suffix is optional with possible whitespace)
+  const pattern = escapedSuffix ? `${escapedPrefix} BEGIN (.+?)\\s*${escapedSuffix}` : `${escapedPrefix} BEGIN (.+)`;
+
+  const regex = new RegExp(pattern, "g");
+  const markers = [];
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    markers.push({
+      key: match[1].trim(),
+      commentPrefix: prefix,
+      commentSuffix: suffix,
+    });
+  }
+  return markers;
+}
+
+/**
+ * Remove content between BEGIN/END markers, leaving the markers with empty content.
+ */
+function cleanBlock(content, key, commentPrefix, commentSuffix) {
+  return replaceBlock(content, key, "", commentPrefix, commentSuffix);
+}
+
+/**
+ * Replace content between BEGIN/END markers.
+ */
+function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix) {
+  const BEGIN = `${commentPrefix} BEGIN ${key}${commentSuffix}`;
+  const END = `${commentPrefix} END ${key}${commentSuffix}`;
+
+  const beginIdx = content.indexOf(BEGIN);
+  const endIdx = content.indexOf(END);
+
+  if (beginIdx === -1 || endIdx === -1) return null;
+
+  return content.slice(0, beginIdx) + BEGIN + "\n" + sourceContent + "\n" + content.slice(endIdx);
+}
+
+/**
+ * Central color map for dark and light themes.
+ * Colors shared across Windows Terminal, Sublime Text, and iTerm config files.
+ * Referenced via inline markers in JSONC files: // {{dark.key}} or // {{light.key}}
+ */
+const COLOR_MAP = {
+  dark: {
+    themeName: "Sy Dark",
+    background: "#000000",
+    foreground: "#FFFFFF",
+    cursorColor: "#FFFFFF",
+    selection: "#264F78",
+    black: "#000000",
+    blue: "#569CD6",
+    brightBlack: "#858585",
+    brightBlue: "#4FC1FF",
+    brightCyan: "#A4FFFF",
+    brightGreen: "#69FF94",
+    brightPurple: "#FF92DF",
+    brightRed: "#FF6E6E",
+    brightWhite: "#FFFFFF",
+    brightYellow: "#FFFFA5",
+    cyan: "#4EC9B0",
+    green: "#608B4E",
+    purple: "#C586C0",
+    red: "#F44747",
+    white: "#CCCCCC",
+    yellow: "#DCDCAA",
+    lightBlue: "#9CDCFE",
+    lightGreen: "#B5CEA8",
+    orange: "#CE9178",
+    gold: "#D7BA7D",
+    darkRed: "#D16969",
+  },
+  light: {
+    themeName: "Sy Light",
+    background: "#FFFFFF",
+    foreground: "#000000",
+    cursorColor: "#000000",
+    selection: "#ADD6FF",
+    black: "#000000",
+    blue: "#0000FF",
+    brightBlack: "#6E7681",
+    brightBlue: "#0451A5",
+    brightCyan: "#267F99",
+    brightGreen: "#098658",
+    brightPurple: "#AF00DB",
+    brightRed: "#A31515",
+    brightWhite: "#FFFFFF",
+    brightYellow: "#795E26",
+    cyan: "#0070C1",
+    green: "#008000",
+    purple: "#800080",
+    red: "#800000",
+    white: "#CCCCCC",
+    yellow: "#795E26",
+    darkBlue: "#001080",
+    linkBlue: "#0451A5",
+    darkGreen: "#098658",
+    brown: "#795E26",
+    darkRed: "#800000",
+  },
+};
+
+/** Regex matching a JSON/JS value (quoted string | boolean | null | number) followed by // {{map.key}} */
+const INLINE_MARKER_REGEX = /("([^"]*)"|'([^']*)'|true|false|null|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(\s*[,;]?\s*)\/\/ \{\{(\w+)\.(\w+)\}\}/g;
+
+/** Serialize a JS value to its literal form, preserving original quote style */
+function toJsonLiteral(value, quoteChar) {
+  if (typeof value === "string") return `${quoteChar || '"'}${value}${quoteChar || '"'}`;
+  return String(value);
+}
+
+/**
+ * Process inline markers in JSONC content, replacing values from the provided map.
+ * Returns { content, changed } where changed indicates if any values were updated.
+ */
+function processInlineMarkers(content, colorMap, targetName) {
+  let changed = false;
+  const warnings = [];
+
+  const updated = content.replace(INLINE_MARKER_REGEX, (match, rawValue, dblInner, sglInner, trailing, map, key) => {
+    const mapObj = colorMap[map];
+    if (!mapObj || !(key in mapObj)) {
+      warnings.push(`>> Warning: unknown inline marker {{${map}.${key}}} in ${targetName}`);
+      return match;
+    }
+    const newValue = mapObj[key];
+    // Preserve original quote style: single quotes if matched via single-quote group
+    const quoteChar = sglInner !== undefined ? "'" : '"';
+    const newLiteral = toJsonLiteral(newValue, quoteChar);
+    if (rawValue !== newLiteral) {
+      changed = true;
+    }
+    return `${newLiteral}${trailing}// {{${map}.${key}}}`;
+  });
+
+  return { content: updated, changed, warnings };
+}
+
+module.exports = {
+  COMMENT_STYLES,
+  DEFAULT_COMMENT_STYLE,
+  CODE_FENCE_LANGUAGES,
+  COLOR_MAP,
+  INLINE_MARKER_REGEX,
+  getCommentStyle,
+  stripShebang,
+  isFilePath,
+  autoTransform,
+  findMarkers,
+  cleanBlock,
+  replaceBlock,
+  toJsonLiteral,
+  processInlineMarkers,
+};

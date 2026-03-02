@@ -30,8 +30,8 @@ async function doWork() {
     intenseTextStyle: "bright",
     adjustIndistinguishableColors: "indexed",
     colorScheme: {
-      dark: "Sy Dark",
-      light: "Sy Light",
+      dark: syDarkScheme.name,
+      light: syLightScheme.name,
     },
   };
 

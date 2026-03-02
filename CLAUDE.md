@@ -100,13 +100,39 @@ Shared environment setup inlined into `run.sh` and `build.sh` via `# BEGIN`/`# E
 
 `software/build-include.cjs` processes `# BEGIN path/to/file` / `# END path/to/file` markers in target files, replacing the block content with the referenced file. This is how `common-env.sh` gets inlined into `run.sh` and `build.sh`.
 
+It also processes **inline markers** in JSONC files. These markers reference the central color map (`software/scripts/color-map.cjs`) and keep quoted string values in sync across theme files:
+
+```jsonc
+"background": "#000000", // {{dark.background}}
+"mode": "some_value", // {{config.mode}}
+"enabled": true, // {{config.enabled}}
+"count": 42, // {{config.count}}
+"value": null, // {{config.value}}
+```
+
+When `build-include.cjs` runs, it replaces any JSON value (strings, booleans, `null`, integers, floats) preceding a `// {{map.key}}` marker with the corresponding entry from the map while preserving the marker comment.
+
 Run with: `bash build.sh --steps="build-include"` or `node software/build-include.cjs`
+
+### Central color map
+
+`software/build-include.common.cjs` exports a `COLOR_MAP` with shared `dark` and `light` theme colors used across multiple config files (Windows Terminal JSONC, Sublime Text JSONC). Colors unique to a single file (e.g., Sublime's `accent`, `guide`, `popup_css`) stay hardcoded in that file.
+
+JSONC files reference color map entries via inline trailing comments: `// {{theme.key}}` (e.g., `// {{dark.blue}}`, `// {{light.selection}}`). The `build-include.cjs` build step resolves these markers.
+
+**Adding a new shared color:**
+
+1. Add the key/value to the appropriate theme in `COLOR_MAP` inside `software/build-include.common.cjs`
+2. Add `// {{theme.key}}` markers to the hex values in the consuming JSONC files
+3. Run `node software/build-include.cjs` to verify
 
 ### Script Files
 
 - `software/scripts/*.js` - Cross-platform scripts (git, vim, fonts, editors, etc.)
 - `software/scripts/<os>/` - OS-specific scripts
 - `software/scripts/<os>/_only.sh` - Shell scripts run only on that OS
+- `software/build-include.common.cjs` - Shared functions and color map for build-include (testable)
+- `software/scripts/*-color-dark.jsonc` / `*-color-light.jsonc` - Theme color configs with inline `// {{theme.key}}` markers
 - `software/metadata/` - Generated configs (script list, host mappings, IP addresses)
 
 ### Webapp
@@ -338,3 +364,4 @@ Unit tests use **vitest** (v0.34.6) with a **Node `vm` sandbox** that executes a
 | `colorAndAutoColor.test.js` | `color`, `_getAutoColor`, `_applyAutoColor`                                                                                                                                                              |
 | `fileIO.test.js`            | `readText`, `writeText`, `appendText`, `writeJson`, `writeConfigToFile`, `parseJsonWithComments`                                                                                                         |
 | `guardClauses.test.js`      | `resolveOsKey`                                                                                                                                                                                           |
+| `buildInclude.test.js`      | `getCommentStyle`, `stripShebang`, `isFilePath`, `autoTransform`, `findMarkers`, `replaceBlock`, `cleanBlock`, `toJsonLiteral`, `processInlineMarkers`, `COLOR_MAP`                                     |

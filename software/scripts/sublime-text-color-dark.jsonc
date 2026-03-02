@@ -1,22 +1,22 @@
 {
   // High Contrast Dark - modeled after VS Code Default High Contrast
   "variables": {
-    "bg": "#000000",
-    "fg": "#FFFFFF",
-    "blue": "#569CD6",
-    "bright_blue": "#4FC1FF",
-    "light_blue": "#9CDCFE",
-    "teal": "#4EC9B0",
-    "green": "#608B4E",
-    "light_green": "#B5CEA8",
-    "yellow": "#DCDCAA",
-    "orange": "#CE9178",
-    "gold": "#D7BA7D",
-    "red": "#F44747",
-    "dark_red": "#D16969",
-    "pink": "#C586C0",
-    "selection": "#264F78",
-    "gutter_fg": "#858585",
+    "bg": "#000000", // {{dark.background}}
+    "fg": "#FFFFFF", // {{dark.foreground}}
+    "blue": "#569CD6", // {{dark.blue}}
+    "bright_blue": "#4FC1FF", // {{dark.brightBlue}}
+    "light_blue": "#9CDCFE", // {{dark.lightBlue}}
+    "teal": "#4EC9B0", // {{dark.cyan}}
+    "green": "#608B4E", // {{dark.green}}
+    "light_green": "#B5CEA8", // {{dark.lightGreen}}
+    "yellow": "#DCDCAA", // {{dark.yellow}}
+    "orange": "#CE9178", // {{dark.orange}}
+    "gold": "#D7BA7D", // {{dark.gold}}
+    "red": "#F44747", // {{dark.red}}
+    "dark_red": "#D16969", // {{dark.darkRed}}
+    "pink": "#C586C0", // {{dark.purple}}
+    "selection": "#264F78", // {{dark.selection}}
+    "gutter_fg": "#858585", // {{dark.brightBlack}}
     "guide": "#404040",
   },
   "globals": {

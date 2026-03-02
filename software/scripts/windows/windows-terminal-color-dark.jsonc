@@ -1,24 +1,24 @@
 // High contrast dark color scheme (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark")
 {
-  "name": "Sy Dark",
-  "background": "#000000",
-  "foreground": "#FFFFFF",
-  "cursorColor": "#FFFFFF",
-  "selectionBackground": "#264F78",
-  "black": "#000000",
-  "blue": "#569CD6",
-  "brightBlack": "#858585",
-  "brightBlue": "#4FC1FF",
-  "brightCyan": "#A4FFFF",
-  "brightGreen": "#69FF94",
-  "brightPurple": "#FF92DF",
-  "brightRed": "#FF6E6E",
-  "brightWhite": "#FFFFFF",
-  "brightYellow": "#FFFFA5",
-  "cyan": "#4EC9B0",
-  "green": "#608B4E",
-  "purple": "#C586C0",
-  "red": "#F44747",
-  "white": "#CCCCCC",
-  "yellow": "#DCDCAA",
+  "name": "Sy Dark", // {{dark.themeName}}
+  "background": "#000000", // {{dark.background}}
+  "foreground": "#FFFFFF", // {{dark.foreground}}
+  "cursorColor": "#FFFFFF", // {{dark.cursorColor}}
+  "selectionBackground": "#264F78", // {{dark.selection}}
+  "black": "#000000", // {{dark.black}}
+  "blue": "#569CD6", // {{dark.blue}}
+  "brightBlack": "#858585", // {{dark.brightBlack}}
+  "brightBlue": "#4FC1FF", // {{dark.brightBlue}}
+  "brightCyan": "#A4FFFF", // {{dark.brightCyan}}
+  "brightGreen": "#69FF94", // {{dark.brightGreen}}
+  "brightPurple": "#FF92DF", // {{dark.brightPurple}}
+  "brightRed": "#FF6E6E", // {{dark.brightRed}}
+  "brightWhite": "#FFFFFF", // {{dark.brightWhite}}
+  "brightYellow": "#FFFFA5", // {{dark.brightYellow}}
+  "cyan": "#4EC9B0", // {{dark.cyan}}
+  "green": "#608B4E", // {{dark.green}}
+  "purple": "#C586C0", // {{dark.purple}}
+  "red": "#F44747", // {{dark.red}}
+  "white": "#CCCCCC", // {{dark.white}}
+  "yellow": "#DCDCAA", // {{dark.yellow}}
 }

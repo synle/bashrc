@@ -1,24 +1,24 @@
 // High contrast light color scheme (matches VS Code "Default High Contrast Light" / Sublime "High Contrast Light")
 {
-  "name": "Sy Light",
-  "background": "#FFFFFF",
-  "foreground": "#000000",
-  "cursorColor": "#000000",
-  "selectionBackground": "#ADD6FF",
-  "black": "#000000",
-  "blue": "#0000FF",
-  "brightBlack": "#6E7681",
-  "brightBlue": "#0451A5",
-  "brightCyan": "#267F99",
-  "brightGreen": "#098658",
-  "brightPurple": "#AF00DB",
-  "brightRed": "#A31515",
-  "brightWhite": "#FFFFFF",
-  "brightYellow": "#795E26",
-  "cyan": "#0070C1",
-  "green": "#008000",
-  "purple": "#800080",
-  "red": "#800000",
-  "white": "#CCCCCC",
-  "yellow": "#795E26",
+  "name": "Sy Light", // {{light.themeName}}
+  "background": "#FFFFFF", // {{light.background}}
+  "foreground": "#000000", // {{light.foreground}}
+  "cursorColor": "#000000", // {{light.cursorColor}}
+  "selectionBackground": "#ADD6FF", // {{light.selection}}
+  "black": "#000000", // {{light.black}}
+  "blue": "#0000FF", // {{light.blue}}
+  "brightBlack": "#6E7681", // {{light.brightBlack}}
+  "brightBlue": "#0451A5", // {{light.brightBlue}}
+  "brightCyan": "#267F99", // {{light.brightCyan}}
+  "brightGreen": "#098658", // {{light.brightGreen}}
+  "brightPurple": "#AF00DB", // {{light.brightPurple}}
+  "brightRed": "#A31515", // {{light.brightRed}}
+  "brightWhite": "#FFFFFF", // {{light.brightWhite}}
+  "brightYellow": "#795E26", // {{light.brightYellow}}
+  "cyan": "#0070C1", // {{light.cyan}}
+  "green": "#008000", // {{light.green}}
+  "purple": "#800080", // {{light.purple}}
+  "red": "#800000", // {{light.red}}
+  "white": "#CCCCCC", // {{light.white}}
+  "yellow": "#795E26", // {{light.yellow}}
 }

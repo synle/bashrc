@@ -1,21 +1,21 @@
 {
   // High Contrast Light - modeled after VS Code Default High Contrast Light
   "variables": {
-    "bg": "#FFFFFF",
-    "fg": "#000000",
-    "blue": "#0000FF",
-    "dark_blue": "#001080",
-    "link_blue": "#0451A5",
-    "constant_blue": "#0070C1",
-    "teal": "#267F99",
-    "green": "#008000",
-    "dark_green": "#098658",
-    "brown": "#795E26",
-    "red": "#A31515",
-    "dark_red": "#800000",
-    "pink": "#AF00DB",
-    "selection": "#ADD6FF",
-    "gutter_fg": "#6E7681",
+    "bg": "#FFFFFF", // {{light.background}}
+    "fg": "#000000", // {{light.foreground}}
+    "blue": "#0000FF", // {{light.blue}}
+    "dark_blue": "#001080", // {{light.darkBlue}}
+    "link_blue": "#0451A5", // {{light.linkBlue}}
+    "constant_blue": "#0070C1", // {{light.cyan}}
+    "teal": "#267F99", // {{light.brightCyan}}
+    "green": "#008000", // {{light.green}}
+    "dark_green": "#098658", // {{light.darkGreen}}
+    "brown": "#795E26", // {{light.brown}}
+    "red": "#A31515", // {{light.brightRed}}
+    "dark_red": "#800000", // {{light.darkRed}}
+    "pink": "#AF00DB", // {{light.brightPurple}}
+    "selection": "#ADD6FF", // {{light.selection}}
+    "gutter_fg": "#6E7681", // {{light.brightBlack}}
     "guide": "#D0D0D0",
   },
   "globals": {
