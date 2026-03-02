@@ -749,7 +749,7 @@ declare const scriptProcessingResults: Array<{
   fileMatchState: string | undefined;
   description: string;
 }>;
-/** @type {number} Editor font size (min 10, default 10). Override with FONT_SIZE env var */
+/** @type {number} Editor font size (min 10, default 14). Override with FONT_SIZE env var */
 declare const fontSize: number;
 /** @type {number} Editor tab/indentation size (min 2, default 2). Override with TAB_SIZE env var */
 declare const tabSize: number;
