@@ -57,8 +57,9 @@ if [ "$is_os_mac" != "1" ]; then
     function pbcopy() { xclip -selection clipboard; }
     function pbpaste() { xclip -selection clipboard -o; }
   else
-    function pbcopy() { cat > ~/.bash_syle_clipboard; }
-    function pbpaste() { cat ~/.bash_syle_clipboard; }
+    CLIPBOARD_PATH=~/.syle_clipboard
+    function pbcopy() { cat > $CLIPBOARD_PATH; }
+    function pbpaste() { cat $CLIPBOARD_PATH; }
   fi
   export -f pbcopy
   export -f pbpaste
