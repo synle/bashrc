@@ -20,6 +20,7 @@ async function doWork() {
     cursorShape: "vintage",
     cursorHeight: 50,
     fontFace: EDITOR_CONFIGS.fontFamily,
+    fontWeight: "semi-bold",
     fontSize: Math.min(EDITOR_CONFIGS.fontSize, 9),
     padding: "2 0 2 0",
     bellStyle: "all",

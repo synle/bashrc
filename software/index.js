@@ -147,8 +147,8 @@ const scriptProcessingResults = [];
 //////////////////////////////////////////////////////
 // Editor Configuration
 //////////////////////////////////////////////////////
-/** @type {number} Editor font size (min 10, default 10). Override with FONT_SIZE env var */
-const fontSize = getRuntimeOption("FONT_SIZE", (v) => parseInteger(v, 10));
+/** @type {number} Editor font size (min 10, default 14). Override with FONT_SIZE env var */
+const fontSize = getRuntimeOption("FONT_SIZE", (v) => parseInteger(v, 14));
 /** @type {number} Editor tab/indentation size (min 2, default 2). Override with TAB_SIZE env var */
 const tabSize = getRuntimeOption("TAB_SIZE", (v) => parseInteger(v, 2));
 /** @type {string} Editor font family (default 'Fira Code'). Override with FONT_FAMILY env var */
