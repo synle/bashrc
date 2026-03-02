@@ -126,13 +126,6 @@ EOF
   ################################################################################
   # ---- Homebrew ----
   ################################################################################
-  hasHomebrewInstalled=1
-  type brew &> /dev/null || hasHomebrewInstalled=0
-  if [ "$hasHomebrewInstalled" = "0" ]; then
-    echo '>> Installing Homebrew Package Manager'
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  fi
-
   echo '>> Installing homebrew repos (brew tap)'
   brew tap homebrew/cask-fonts &> /dev/null
 
