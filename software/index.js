@@ -2020,6 +2020,12 @@ function processScriptFile(file, originalFile, allRepoFiles) {
       colorOrange(originalFile === file ? originalFile : `${originalFile} | ${file}`),
       colorDim(IS_DEBUG ? tempFileCommand : ""),
     );
+
+    // Refresh sudo timestamp before running sudo scripts so macOS doesn't re-prompt
+    if (file.includes(".su.")) {
+      emitBash(`sudo -v 2>/dev/null`);
+    }
+
     emitBash(fullCommand);
   } else {
     echo(
