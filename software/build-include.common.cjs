@@ -116,68 +116,95 @@ function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix)
   return content.slice(0, beginIdx) + BEGIN + "\n" + sourceContent + "\n" + content.slice(endIdx);
 }
 
+/** Convert a hex color (#RRGGBB) to float RGB components (0-1 range) for iTerm plist format */
+function _hexToFloatRgb(hex) {
+  return {
+    R: parseInt(hex.slice(1, 3), 16) / 255,
+    G: parseInt(hex.slice(3, 5), 16) / 255,
+    B: parseInt(hex.slice(5, 7), 16) / 255,
+  };
+}
+
+/** Generate _R, _G, _B float entries for all hex colors in a theme object */
+function _generateFloatColors(theme) {
+  const floats = {};
+  for (const [key, value] of Object.entries(theme)) {
+    if (typeof value === "string" && /^#[0-9A-Fa-f]{6}$/.test(value)) {
+      const { R, G, B } = _hexToFloatRgb(value);
+      floats[`${key}_R`] = R;
+      floats[`${key}_G`] = G;
+      floats[`${key}_B`] = B;
+    }
+  }
+  return floats;
+}
+
 /**
  * Central color map for dark and light themes.
  * Colors shared across Windows Terminal, Sublime Text, and iTerm config files.
  * Referenced via inline markers in JSONC files: // {{dark.key}} or // {{light.key}}
+ * Float RGB variants (e.g. dark.red_R, dark.red_G, dark.red_B) are auto-generated
+ * from hex values for iTerm plist format.
  */
+const _darkHex = {
+  themeName: "Sy Dark",
+  background: "#000000",
+  foreground: "#FFFFFF",
+  cursorColor: "#FFFFFF",
+  selection: "#264F78",
+  black: "#000000",
+  blue: "#569CD6",
+  brightBlack: "#858585",
+  brightBlue: "#4FC1FF",
+  brightCyan: "#A4FFFF",
+  brightGreen: "#69FF94",
+  brightPurple: "#FF92DF",
+  brightRed: "#FF6E6E",
+  brightWhite: "#FFFFFF",
+  brightYellow: "#FFFFA5",
+  cyan: "#4EC9B0",
+  green: "#608B4E",
+  purple: "#C586C0",
+  red: "#F44747",
+  white: "#CCCCCC",
+  yellow: "#DCDCAA",
+  lightBlue: "#9CDCFE",
+  lightGreen: "#B5CEA8",
+  orange: "#CE9178",
+  gold: "#D7BA7D",
+  darkRed: "#D16969",
+};
+const _lightHex = {
+  themeName: "Sy Light",
+  background: "#FFFFFF",
+  foreground: "#000000",
+  cursorColor: "#000000",
+  selection: "#ADD6FF",
+  black: "#000000",
+  blue: "#0000FF",
+  brightBlack: "#6E7681",
+  brightBlue: "#0451A5",
+  brightCyan: "#267F99",
+  brightGreen: "#098658",
+  brightPurple: "#AF00DB",
+  brightRed: "#A31515",
+  brightWhite: "#FFFFFF",
+  brightYellow: "#795E26",
+  cyan: "#0070C1",
+  green: "#008000",
+  purple: "#800080",
+  red: "#800000",
+  white: "#CCCCCC",
+  yellow: "#795E26",
+  darkBlue: "#001080",
+  linkBlue: "#0451A5",
+  darkGreen: "#098658",
+  brown: "#795E26",
+  darkRed: "#800000",
+};
 const COLOR_MAP = {
-  dark: {
-    themeName: "Sy Dark",
-    background: "#000000",
-    foreground: "#FFFFFF",
-    cursorColor: "#FFFFFF",
-    selection: "#264F78",
-    black: "#000000",
-    blue: "#569CD6",
-    brightBlack: "#858585",
-    brightBlue: "#4FC1FF",
-    brightCyan: "#A4FFFF",
-    brightGreen: "#69FF94",
-    brightPurple: "#FF92DF",
-    brightRed: "#FF6E6E",
-    brightWhite: "#FFFFFF",
-    brightYellow: "#FFFFA5",
-    cyan: "#4EC9B0",
-    green: "#608B4E",
-    purple: "#C586C0",
-    red: "#F44747",
-    white: "#CCCCCC",
-    yellow: "#DCDCAA",
-    lightBlue: "#9CDCFE",
-    lightGreen: "#B5CEA8",
-    orange: "#CE9178",
-    gold: "#D7BA7D",
-    darkRed: "#D16969",
-  },
-  light: {
-    themeName: "Sy Light",
-    background: "#FFFFFF",
-    foreground: "#000000",
-    cursorColor: "#000000",
-    selection: "#ADD6FF",
-    black: "#000000",
-    blue: "#0000FF",
-    brightBlack: "#6E7681",
-    brightBlue: "#0451A5",
-    brightCyan: "#267F99",
-    brightGreen: "#098658",
-    brightPurple: "#AF00DB",
-    brightRed: "#A31515",
-    brightWhite: "#FFFFFF",
-    brightYellow: "#795E26",
-    cyan: "#0070C1",
-    green: "#008000",
-    purple: "#800080",
-    red: "#800000",
-    white: "#CCCCCC",
-    yellow: "#795E26",
-    darkBlue: "#001080",
-    linkBlue: "#0451A5",
-    darkGreen: "#098658",
-    brown: "#795E26",
-    darkRed: "#800000",
-  },
+  dark: { ..._darkHex, ..._generateFloatColors(_darkHex) },
+  light: { ..._lightHex, ..._generateFloatColors(_lightHex) },
 };
 
 /** Regex matching a JSON/JS value (quoted string | boolean | null | number) followed by // {{map.key}} */

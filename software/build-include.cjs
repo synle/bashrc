@@ -141,9 +141,7 @@ for (const target of targetFiles) {
 
 // --- Inline marker processing for JSONC and software/scripts/**/*.js files ---
 {
-  const inlineMarkerFiles = targetFiles.filter(
-    (f) => f.endsWith(".jsonc") || (f.endsWith(".js") && f.startsWith("software/scripts/")),
-  );
+  const inlineMarkerFiles = targetFiles.filter((f) => f.endsWith(".jsonc") || (f.endsWith(".js") && f.startsWith("software/scripts/")));
 
   for (const target of inlineMarkerFiles) {
     if (!fs.existsSync(target)) continue;

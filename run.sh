@@ -140,10 +140,11 @@ function install_fnm_node() {
   if [ "$is_os_android_termux" != "1" ]; then
     # Homebrew (macOS only)
     if [ "$is_os_mac" == "1" ]; then
-      if [ "$IS_FORCE_REFRESH" = "1" ] && command -v brew >/dev/null 2>&1; then
-        echo ">> Uninstalling Homebrew (force refresh)"
-        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" >/dev/null 2>&1
-      fi
+      # NOTE: this is destructive, let's not remove homebrew in any circumstances
+      # if [ "$IS_FORCE_REFRESH" = "1" ] && command -v brew >/dev/null 2>&1; then
+      #   echo ">> Uninstalling Homebrew (force refresh)"
+      #   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" >/dev/null 2>&1
+      # fi
 
       if [ "$IS_FORCE_REFRESH" = "1" ] || ! command -v brew >/dev/null 2>&1; then
         echo ">> Installing Homebrew"
