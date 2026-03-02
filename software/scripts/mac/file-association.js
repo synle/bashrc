@@ -15,6 +15,9 @@ async function doWork() {
   const mediaExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.media.config"));
   const allExtensions = [...textExtensions, ...mediaExtensions];
 
+  // install duti if not already installed
+  execBash(`command -v duti &>/dev/null || brew install duti`, true);
+
   const associationContent = trimLeftSpaces(`
     #!/usr/bin/env bash
     # Sets Sublime Text as default for text files and VLC as default for media files

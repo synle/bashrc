@@ -22,4 +22,5 @@ async function doWork() {
   }
 
   log(">>> To apply: iTerm2 > Settings > Profiles > Other Actions > Import JSON Profiles");
+  log(">>> To export plist: defaults export com.googlecode.iterm2 ~/iterm2-settings.plist");
 }
