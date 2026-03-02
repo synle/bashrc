@@ -261,13 +261,15 @@ Scripts are auto-discovered — just create the file in the right location and i
 
 ```javascript
 // Optional private helpers (prefixed with _)
-async function _getMyConfig() { /* ... */ }
+async function _getMyConfig() {
+  /* ... */
+}
 
 /** * Installs and configures <tool name>. */
 async function doWork() {
   // Guard clauses first
-  exitIfUnsupportedOs("is_os_android_termux");  // skip on unsupported OS
-  exitIfPathFound(targetPath);                   // skip if already installed
+  exitIfUnsupportedOs("is_os_android_termux"); // skip on unsupported OS
+  exitIfPathFound(targetPath); // skip if already installed
 
   // Force refresh: delete and reinstall
   if (IS_FORCE_REFRESH) {
