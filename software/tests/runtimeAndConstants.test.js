@@ -98,14 +98,14 @@ describe("constants", () => {
 
   it("should have editor defaults", () => {
     expect(fontFamily).toBe("Fira Code");
-    expect(fontSize).toBe(10);
+    expect(fontSize).toBe(14);
     expect(tabSize).toBe(2);
   });
 
   it("should have EDITOR_CONFIGS with expected properties", () => {
     expect(EDITOR_CONFIGS).toBeDefined();
     expect(EDITOR_CONFIGS.fontFamily).toBe("Fira Code");
-    expect(EDITOR_CONFIGS.fontSize).toBe(10);
+    expect(EDITOR_CONFIGS.fontSize).toBe(14);
     expect(EDITOR_CONFIGS.tabSize).toBe(2);
   });
 
