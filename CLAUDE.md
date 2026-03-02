@@ -68,7 +68,7 @@ JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/i
 
 OS detection happens in `software/bootstrap/common-env.sh` and exports `is_os_<name>=1` env vars. In `index.js`, these become boolean globals via `getRuntimeOption()`.
 
-Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`
+Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`. `OS_SCRIPT_PATHS` is built from env var names directly (no filesystem check) so filtering works in both local and `--prod` (remote) modes.
 
 | Flag                   | Folder                             | Platform                    |
 | ---------------------- | ---------------------------------- | --------------------------- |
@@ -245,6 +245,70 @@ Use repeated marker characters to indicate nesting depth. The number of characte
 | `#`    | —       | bgYellow | bgOrange | bgCyan  | bgMagenta |
 
 Examples: `log("> Installing")`, `log(">> Setting up", path)`, `log(">>> Downloaded", file)`, `echo("## ${header}")`
+
+## Adding a New Script
+
+Scripts are auto-discovered — just create the file in the right location and it will be picked up on the next run. No registration needed.
+
+### Steps
+
+1. **Choose location and extension:**
+   - Cross-platform: `software/scripts/<name>.js` or `.sh`
+   - OS-specific: `software/scripts/<os>/<name>.js` or `.sh`
+   - Needs sudo: add `.su` before extension (`.su.js`, `.su.sh`)
+
+2. **Create the file with a `doWork()` entry point:**
+
+```javascript
+// Optional private helpers (prefixed with _)
+async function _getMyConfig() { /* ... */ }
+
+/** * Installs and configures <tool name>. */
+async function doWork() {
+  // Guard clauses first
+  exitIfUnsupportedOs("is_os_android_termux");  // skip on unsupported OS
+  exitIfPathFound(targetPath);                   // skip if already installed
+
+  // Force refresh: delete and reinstall
+  if (IS_FORCE_REFRESH) {
+    await deleteFolder(targetPath);
+  }
+
+  log(">> Installing <tool>");
+
+  // Download a binary
+  await downloadAsset(url, destination);
+
+  // Or register a bash alias/function into ~/.bash_syle
+  registerWithBashSyleProfile("my tool", `alias mytool='/path/to/mytool'`);
+
+  // Or write a config file
+  writeText(configPath, configContent);
+}
+```
+
+3. **Test locally:**
+   - Single script: `bash run.sh --files="your-script.js"`
+   - Full run: `bash run.sh` or `make test`
+
+### Script auto-discovery
+
+`getSoftwareScriptFiles()` in `index.js` scans `software/scripts/` for `.js` and `.sh` files. OS-specific folders are filtered by `OS_SCRIPT_PATHS` — scripts in `software/scripts/ubuntu/` only run when `is_os_ubuntu=1`. Files matching `.su.*` extensions are skipped without sudo access. No manual registration is needed.
+
+### Adding a shell-only script (.sh)
+
+Shell scripts don't use `doWork()` — they're plain bash. Use the `is_os_*` env vars for OS checks:
+
+```bash
+#!/usr/bin/env bash
+if [ "$is_os_mac" != "1" ]; then echo ">> Skipped: not macOS"; exit 0; fi
+echo ">> Installing tool"
+# ... install commands ...
+```
+
+### Adding OS bootstrap dependencies
+
+To add system packages for an OS, edit the corresponding file in `software/bootstrap/dependencies/<os>.sh` (e.g., `mac.sh`, `ubuntu.sh`). These run before software scripts during `--setup` mode.
 
 ## Testing
 

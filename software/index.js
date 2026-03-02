@@ -344,8 +344,8 @@ let HOME_HOST_NAMES = [];
  * Flags without a script folder are still used for conditional logic in individual scripts
  * (e.g. `exitIfUnsupportedOs()`, platform-specific file paths).
  *
- * OS_SCRIPT_PATHS is built dynamically: for each `is_os_*` env var, if a matching
- * `software/scripts/<name>/` folder exists, it's added as [flagValue, folderPath].
+ * OS_SCRIPT_PATHS is built dynamically: for each `is_os_*` env var, the corresponding
+ * `software/scripts/<name>/` path is added as [flagValue, folderPath].
  * This is used by getSoftwareScriptFiles() to exclude non-matching OS folders.
  */
 
