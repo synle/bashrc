@@ -43,6 +43,7 @@ const {
   cleanBlock,
   replaceBlock,
   processInlineMarkers,
+  cleanInlineMarkers,
   COLOR_MAP,
 } = require("./build-include.common.cjs");
 
@@ -75,7 +76,7 @@ const cliTargets = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 const trackedFiles = execSync('git ls-files "*.sh" "*.md" "*.js" "*.jsx" "*.ts" "*.tsx" "*.cjs" "*.mjs" "*.jsonc"', { encoding: "utf8" })
   .trim()
   .split("\n")
-  .filter(Boolean);
+  .filter((f) => f && !f.startsWith("software/tests/"));
 const inclusionTargets = INCLUSIONS.flatMap((inc) => inc.targets);
 const targetFiles = cliTargets.length > 0 ? cliTargets : [...new Set([...trackedFiles, ...inclusionTargets])];
 
@@ -138,10 +139,11 @@ for (const target of targetFiles) {
   }
 }
 
-// --- Inline marker processing for JSONC and software/scripts/*.js files ---
-if (!isCleanMode) {
-  const colorMap = COLOR_MAP;
-  const inlineMarkerFiles = targetFiles.filter((f) => f.endsWith(".jsonc") || (f.endsWith(".js") && f.startsWith("software/scripts/")));
+// --- Inline marker processing for JSONC and software/scripts/**/*.js files ---
+{
+  const inlineMarkerFiles = targetFiles.filter(
+    (f) => f.endsWith(".jsonc") || (f.endsWith(".js") && f.startsWith("software/scripts/")),
+  );
 
   for (const target of inlineMarkerFiles) {
     if (!fs.existsSync(target)) continue;

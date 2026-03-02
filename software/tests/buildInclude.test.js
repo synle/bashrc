@@ -226,6 +226,79 @@ describe("cleanInlineMarkers", () => {
   });
 });
 
+describe("cleanInlineMarkers", () => {
+  it("should replace double-quoted strings with empty string", () => {
+    const input = '"background": "#000000", // {{dark.background}}';
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe('"background": "", // {{dark.background}}');
+  });
+
+  it("should replace single-quoted strings with empty string preserving quotes", () => {
+    const input = "const bg = '#000000'; // {{dark.background}}";
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe("const bg = ''; // {{dark.background}}");
+  });
+
+  it("should replace booleans with false", () => {
+    const input = '"enabled": true, // {{config.enabled}}';
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe('"enabled": false, // {{config.enabled}}');
+  });
+
+  it("should not mark changed when boolean is already false", () => {
+    const input = '"enabled": false, // {{config.enabled}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should replace numbers with 0", () => {
+    const input = '"count": 42, // {{config.count}}';
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe('"count": 0, // {{config.count}}');
+  });
+
+  it("should not mark changed when number is already 0", () => {
+    const input = '"count": 0, // {{config.count}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should keep null as null", () => {
+    const input = '"value": null, // {{config.value}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should not mark changed when string is already empty", () => {
+    const input = '"background": "", // {{dark.background}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should clean multiple markers in one content block", () => {
+    const input = [
+      '"background": "#000000", // {{dark.background}}',
+      '"enabled": true, // {{config.enabled}}',
+      '"count": 42, // {{config.count}}',
+    ].join("\n");
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toContain('"", // {{dark.background}}');
+    expect(content).toContain("false, // {{config.enabled}}");
+    expect(content).toContain("0, // {{config.count}}");
+  });
+
+  it("should preserve trailing punctuation and whitespace", () => {
+    const input = '"background": "#000000",  // {{dark.background}}';
+    const { content } = cleanInlineMarkers(input);
+    expect(content).toBe('"background": "",  // {{dark.background}}');
+  });
+});
+
 describe("toJsonLiteral", () => {
   it("should wrap strings in quotes", () => {
     expect(toJsonLiteral("#FF0000")).toBe('"#FF0000"');
@@ -431,12 +504,12 @@ describe("e2e: compile, clean, recompile flow", () => {
   });
 
   it("should handle mixed BEGIN/END blocks and inline markers in full flow", () => {
-    const original = ["// BEGIN header", "old header", "// END header", "{", '  "background": "#AAAAAA", // {{dark.background}}', "}"].join(
+    const original = ["# BEGIN header", "old header", "# END header", "{", '  "background": "#AAAAAA", // {{dark.background}}', "}"].join(
       "\n",
     );
 
     // Step 1: Process BEGIN/END block
-    const afterBlock = replaceBlock(original, "header", "new header", "//", "");
+    const afterBlock = replaceBlock(original, "header", "new header", "#", "");
     expect(afterBlock).toContain("new header");
 
     // Step 2: Process inline markers
