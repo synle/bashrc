@@ -55,8 +55,8 @@ describe("getRuntimeOption", () => {
 
 describe("constants", () => {
   it("should have correct text block markers", () => {
-    expect(TEXT_BLOCK_START_MARKER).toBe("BEGIN_CONTENT");
-    expect(TEXT_BLOCK_END_MARKER).toBe("END_CONTENT");
+    expect(TEXT_BLOCK_START_MARKER).toBe("BEGIN");
+    expect(TEXT_BLOCK_END_MARKER).toBe("END");
   });
 
   it("should have LINE_BREAK_COUNT as a number", () => {

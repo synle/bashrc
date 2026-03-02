@@ -391,9 +391,9 @@ const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
 
 /** @type {string} Opening delimiter for managed text blocks (used by updateTextBlock/appendTextBlock/prependTextBlock) */
-const TEXT_BLOCK_START_MARKER = "BEGIN_CONTENT";
+const TEXT_BLOCK_START_MARKER = "BEGIN";
 /** @type {string} Closing delimiter for managed text blocks (used by updateTextBlock/appendTextBlock/prependTextBlock) */
-const TEXT_BLOCK_END_MARKER = "END_CONTENT";
+const TEXT_BLOCK_END_MARKER = "END";
 
 //////////////////////////////////////////////////////
 // Directory Search Utilities
@@ -928,9 +928,9 @@ function getOsxApplicationSupportCodeUserPath() {
 function updateTextBlock(resultTextContent, configKey, configValue, commentPrefix, isPrepend) {
   configValue = configValue.trim();
 
-  // match both new format (BEGIN_CONTENT/END_CONTENT) and legacy format (configKey/END configKey)
+  // match # BEGIN key ... # END key markers
   const regex = new RegExp(
-    `(\\n)*(${commentPrefix} (?:${TEXT_BLOCK_START_MARKER} )?${configKey})(\\n)[\\S\\s]+?(${commentPrefix} (?:${TEXT_BLOCK_END_MARKER}|END) ${configKey})(\\n)*`,
+    `(\\n)*(${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${configKey})(\\n)[\\S\\s]+?(${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${configKey})(\\n)*`,
   );
 
   if (resultTextContent.match(regex)) {

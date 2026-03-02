@@ -72,11 +72,11 @@ bottom`;
     });
   });
 
-  describe("backward compatibility - upgrade legacy format to new format", () => {
-    it("should match legacy format and rewrite with new markers", () => {
+  describe("should match and replace existing BEGIN/END blocks", () => {
+    it("should replace content within existing markers", () => {
       const input = `before
 
-# MY_BLOCK
+# BEGIN MY_BLOCK
 old legacy content
 # END MY_BLOCK
 
@@ -84,17 +84,15 @@ after`;
       const result = appendTextBlock(input, "MY_BLOCK", "new content");
       expect(result).toContain(`# ${TEXT_BLOCK_START_MARKER} MY_BLOCK\nnew content\n# ${TEXT_BLOCK_END_MARKER} MY_BLOCK`);
       expect(result).not.toContain("old legacy content");
-      expect(result).not.toMatch(/# MY_BLOCK\n/);
-      expect(result).not.toContain("# END MY_BLOCK");
     });
 
-    it("should upgrade legacy // prefix blocks too", () => {
-      const input = `// MY_BLOCK
+    it("should replace content with // prefix blocks too", () => {
+      const input = `// BEGIN MY_BLOCK
 old
 // END MY_BLOCK`;
       const result = appendTextBlock(input, "MY_BLOCK", "new", "//");
       expect(result).toContain(`// ${TEXT_BLOCK_START_MARKER} MY_BLOCK\nnew\n// ${TEXT_BLOCK_END_MARKER} MY_BLOCK`);
-      expect(result).not.toContain("// END MY_BLOCK");
+      expect(result).not.toContain("old");
     });
   });
 
@@ -193,7 +191,7 @@ ccc
   });
 
   describe("block with content that looks like a delimiter", () => {
-    it("should handle content containing # END_CONTENT in the value", () => {
+    it("should handle content containing # END in the value", () => {
       const input = `# ${TEXT_BLOCK_START_MARKER} MY_BLOCK
 some content
 # ${TEXT_BLOCK_END_MARKER} MY_BLOCK`;

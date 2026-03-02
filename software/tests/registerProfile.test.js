@@ -211,7 +211,7 @@ describe("registerWithBashSyleAutocompleteWithCompleteSpec", () => {
     expect(fileSystem[specPath]).toBe("docker|build,run,push,pull");
 
     const written = fileSystem[BASH_SYLE_AUTOCOMPLETE_PATH];
-    const startCount = (written.match(/BEGIN_CONTENT docker Autocomplete/g) || []).length;
+    const startCount = (written.match(/BEGIN docker Autocomplete/g) || []).length;
     expect(startCount).toBe(1);
   });
 });
