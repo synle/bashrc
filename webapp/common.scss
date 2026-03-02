@@ -94,9 +94,9 @@
   // Font sizes
   --fontSize1: 1.1rem;
   --fontSize2: 1rem;
-  --fontSize3: .9rem;
-  --fontSize4: .8rem;
-  --fontSize5: .6rem;
+  --fontSize3: 0.9rem;
+  --fontSize4: 0.8rem;
+  --fontSize5: 0.6rem;
 
   // Spacing
   --spaceSize0: 0;
@@ -269,7 +269,7 @@ a[role="button"] {
     border-color: transparent;
   }
 
-  >*:first-child {
+  > *:first-child {
     width: 16px;
     height: 16px;
     line-height: 16px;
