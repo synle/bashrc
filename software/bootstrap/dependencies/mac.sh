@@ -147,6 +147,9 @@ EOF
   installPackage font-fira-code
   installPackage font-cascadia
   installPackage duti
+  installPackage gh
+  installPackage git-lfs
+  installPackage xz
 
   ################################################################################
   # ---- Cleanup ----

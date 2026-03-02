@@ -26,7 +26,10 @@ if [ "$is_os_steamos" = "1" ]; then
   ################################################################################
   installPackage bat
   installPackage ddcutil
+  installPackage gh
+  installPackage git-lfs
   installPackage i2c-tools
+  installPackage xz
   echo '>> Done installPackage'
 
   ################################################################################

@@ -42,6 +42,9 @@ if [ "$is_os_ubuntu" = "1" ]; then
   installPackage gnupg
   installPackage software-properties-common
   installPackage build-essential
+  installPackage gh
+  installPackage git-lfs
+  installPackage xz-utils
 
   ################################################################################
   # ---- User Permissions ----
