@@ -92,19 +92,19 @@
   --fontWeightLight: 400;
 
   // Font sizes
-  --fontSize1: 1.4rem;
-  --fontSize2: 1.2rem;
-  --fontSize3: 1.1rem;
-  --fontSize4: 1rem;
-  --fontSize5: 0.9rem;
+  --fontSize1: 1.1rem;
+  --fontSize2: 1rem;
+  --fontSize3: .9rem;
+  --fontSize4: .8rem;
+  --fontSize5: .6rem;
 
   // Spacing
   --spaceSize0: 0;
   --spaceSize1: 0.3rem;
-  --spaceSize2: 0.6rem;
-  --spaceSize3: 0.75rem;
+  --spaceSize2: 0.5rem;
+  --spaceSize3: 0.7rem;
   --spaceSize4: 1rem;
-  --spaceSize5: 2rem;
+  --spaceSize5: 1.2rem;
 
   // Borders
   --borderSize1: 2px;
@@ -269,10 +269,12 @@ a[role="button"] {
     border-color: transparent;
   }
 
-  img {
+  >*:first-child {
     width: 16px;
     height: 16px;
+    line-height: 16px;
     flex-shrink: 0;
+    margin-right: var(--spaceSize2);
   }
 }
 
@@ -293,7 +295,7 @@ textarea {
   }
 
   &:focus {
-    background: var(--colorBgHover) !important;
+    background: var(--colorBgSecondary) !important;
   }
 }
 
