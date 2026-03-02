@@ -2184,7 +2184,9 @@ async function _doWorkFullRun() {
   const softwareFiles = await getSoftwareScriptFiles();
   const allFiles = [...bootstrapFiles, ...softwareFiles];
 
-  echo(`> _doWorkFullRun => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `);
+  echo(
+    `> _doWorkFullRun => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `,
+  );
   _runScripts(allFiles, allRepoFiles, "Full Run");
 }
 
@@ -2202,7 +2204,9 @@ async function _doWorkSetup() {
   const softwareFiles = await getSoftwareScriptFiles();
   const allFiles = [...bootstrapFiles, ...softwareFiles];
 
-  echo(`> _doWorkSetup => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `);
+  echo(
+    `> _doWorkSetup => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `,
+  );
   _runScripts(allFiles, allRepoFiles, "Setup");
 }
 

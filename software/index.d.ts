@@ -466,6 +466,12 @@ declare function getAllRepoSoftwareFiles(): Promise<string[]>;
  */
 declare function getSoftwareScriptFiles(): Promise<string[]>;
 /**
+ * Gets list of bootstrap dependency scripts for the current platform.
+ * Filters to only include .sh files under software/bootstrap/dependencies/.
+ * @returns {Promise<string[]>} Array of bootstrap dependency script file paths
+ */
+declare function getBootstrapScriptFiles(): Promise<string[]>;
+/**
  * Converts a relative URL to an absolute URL by prepending REPO_PREFIX_URL.
  * If the URL already starts with "http", it is returned as-is.
  * @param {string} url - The URL or relative path to resolve
@@ -616,11 +622,17 @@ declare function printScriptProcessingResults(results: typeof scriptProcessingRe
  */
 declare function _doWorkTestFiles(): Promise<void>;
 /**
- * Runs the full software setup: discovers all platform-applicable script files
- * and generates the bash pipeline commands to fetch and execute each one.
+ * Runs the full software setup: discovers bootstrap dependencies and platform-applicable
+ * script files, runs bootstrap first then software scripts.
  * @returns {Promise<void>}
  */
 declare function _doWorkFullRun(): Promise<void>;
+/**
+ * Runs setup mode: discovers and executes only the bootstrap dependency scripts
+ * for the current platform, then runs the full software scripts.
+ * @returns {Promise<void>}
+ */
+declare function _doWorkSetup(): Promise<void>;
 /**
  * @file software/index.js - Bootstrap & utility library for the bashrc software setup system.
  *
@@ -714,6 +726,8 @@ declare const IS_FORCE_REFRESH: boolean;
 declare const IS_TEST_SCRIPT_MODE: boolean;
 /** @type {boolean} When true, skips advanced/heavy features for a minimal install */
 declare const IS_LIGHT_WEIGHT_MODE: boolean;
+/** @type {boolean} When true, runs setup mode (bootstrap dependencies + software scripts) */
+declare const IS_SETUP: boolean;
 /** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
 declare const IS_DEBUG: boolean;
 /** @type {string} Full URL prefix for raw GitHub content (constructed from REPO_PATH_IDENTIFIER and REPO_BRANCH_NAME) */
