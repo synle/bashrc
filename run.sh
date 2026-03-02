@@ -329,6 +329,13 @@ case "$files_to_test" in *software/bootstrap/dependencies*) _needs_sudo=true ;; 
 
 if [ "$_needs_sudo" = true ]; then
   sudo echo '> Initializing Environment [with sudo]'
+
+  # Keep sudo alive in background so macOS doesn't re-prompt for password
+  # during long-running scripts. Refreshes the sudo timestamp every 50 seconds.
+  # The loop exits automatically when the parent process (run.sh) finishes.
+  while true; do sudo -n true; sleep 30; done 2>/dev/null &
+  _sudo_keepalive_pid=$!
+  trap 'kill $_sudo_keepalive_pid 2>/dev/null' EXIT
 else
   echo '> Initializing Environment'
 fi
