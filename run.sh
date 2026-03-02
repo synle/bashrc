@@ -139,40 +139,35 @@ fi
 # Handles force refresh, fnm download, Node install, and /usr/local/bin symlinks.
 function install_fnm_node() {
   if [ "$is_os_android_termux" != "1" ]; then
+    # Homebrew (macOS only)
     if [ "$is_os_mac" == "1" ]; then
-      # 1. Uninstall if force refresh is on and brew exists
       if [ "$IS_FORCE_REFRESH" = "1" ] && command -v brew >/dev/null 2>&1; then
-          echo "   >> Uninstalling Homebrew due to force refresh..."
-          # NONINTERACTIVE=1 bypasses the "Press RETURN to continue" prompt
-          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
+        echo ">> Uninstalling Homebrew (force refresh)"
+        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" >/dev/null 2>&1
       fi
 
-      # 2. Install if force refresh is on OR brew is missing
-      # We remove the 'command -v brew' check here because we WANT it to install if it's gone
       if [ "$IS_FORCE_REFRESH" = "1" ] || ! command -v brew >/dev/null 2>&1; then
-          echo "   >> Installing Homebrew..."
-          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        echo ">> Installing Homebrew"
+        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >/dev/null 2>&1
 
-          # Recommended: Ensure the path is loaded for the rest of the script
-          if [ -f /opt/homebrew/bin/brew ]; then
-              eval "$(/opt/homebrew/bin/brew shellenv)"
-          elif [ -f /usr/local/bin/brew ]; then
-              eval "$(/usr/local/bin/brew shellenv)"
-          fi
+        if [ -f /opt/homebrew/bin/brew ]; then
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+        elif [ -f /usr/local/bin/brew ]; then
+          eval "$(/usr/local/bin/brew shellenv)"
+        fi
       fi
     fi
 
     # Force refresh: remove existing fnm node and reinstall
     if [ "$IS_FORCE_REFRESH" = "1" ] && command -v fnm >/dev/null 2>&1; then
-      #TODO fix message
-      echo "   >> Uninstalling fnm due to force refresh"
+      echo ">> Uninstalling fnm node (force refresh)"
       fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
       sudo rm -rf "/usr/local/bin/node" "/usr/local/bin/npm" "/usr/local/bin/yarn" "/usr/local/bin/npx"
     fi
 
+    # Install fnm
     echo ">> Installing fnm (for nodejs)"
     if ! command -v fnm >/dev/null 2>&1; then
-      echo "  >> Downloading fnm"
       curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell >/dev/null 2>&1
     fi
 
@@ -182,12 +177,11 @@ function install_fnm_node() {
 
     # Install Node if missing
     if ! fnm ls "$NODE_JS_VERSION" >/dev/null 2>&1; then
+      echo ">> Installing Node $NODE_JS_VERSION"
       fnm install "$NODE_JS_VERSION" >/dev/null 2>&1
-    else
-      echo "Node $NODE_JS_VERSION already installed — skip"
     fi
 
-    # Set + use default quietly
+    # Set + use default
     fnm default "$NODE_JS_VERSION" >/dev/null 2>&1
     fnm use "$NODE_JS_VERSION" >/dev/null 2>&1
 
@@ -195,7 +189,6 @@ function install_fnm_node() {
     export FNM_DEFAULT_NODE_PATH="$FNM_DIR/node-versions/$(node -v 2>/dev/null)/installation"
 
     # Symlink fnm and node executables in /usr/local/bin
-    echo "  >> Symlink for fnm and node executables in /usr/local/bin"
     for bin in node npm npx yarn; do
       if [ ! -e "/usr/local/bin/$bin" ]; then
         sudo ln -s "$FNM_DEFAULT_NODE_PATH/bin/$bin" "/usr/local/bin/$bin" 2>/dev/null
