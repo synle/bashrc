@@ -31,6 +31,8 @@ async function doWork() {
     }
   }
 
-  log(">>> To enable auto dark/light switching: iTerm2 > Settings > Profiles > Colors > 'Use different colors for light mode and dark mode'");
+  log(
+    ">>> To enable auto dark/light switching: iTerm2 > Settings > Profiles > Colors > 'Use different colors for light mode and dark mode'",
+  );
   log(">>> Set Dark preset to 'Sy Dark' and Light preset to 'Sy Light'");
 }
