@@ -147,16 +147,18 @@ if (!isCleanMode) {
     if (!fs.existsSync(target)) continue;
 
     const content = fs.readFileSync(target, "utf8");
-    const result = processInlineMarkers(content, colorMap, target);
+    const result = isCleanMode ? cleanInlineMarkers(content) : processInlineMarkers(content, COLOR_MAP, target);
 
-    for (const warning of result.warnings) {
-      console.log(warning);
+    if (result.warnings) {
+      for (const warning of result.warnings) {
+        console.log(warning);
+      }
     }
 
     if (result.changed) {
       fs.writeFileSync(target, result.content);
       totalUpdated++;
-      console.log(`>> Updated ${target} (inline markers)`);
+      console.log(`>> ${isCleanMode ? "Cleaned" : "Updated"} ${target} (inline markers)`);
     }
   }
 }

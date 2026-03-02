@@ -10,6 +10,7 @@ const {
   replaceBlock,
   toJsonLiteral,
   processInlineMarkers,
+  cleanInlineMarkers,
   COLOR_MAP,
   COMMENT_STYLES,
   DEFAULT_COMMENT_STYLE,
@@ -149,6 +150,79 @@ describe("cleanBlock", () => {
 
   it("should return null when markers not found", () => {
     expect(cleanBlock("no markers", "key", "#", "")).toBeNull();
+  });
+});
+
+describe("cleanInlineMarkers", () => {
+  it("should replace double-quoted strings with empty string", () => {
+    const input = '"background": "#000000", // {{dark.background}}';
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe('"background": "", // {{dark.background}}');
+  });
+
+  it("should replace single-quoted strings with empty string preserving quotes", () => {
+    const input = "const bg = '#000000'; // {{dark.background}}";
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe("const bg = ''; // {{dark.background}}");
+  });
+
+  it("should replace booleans with false", () => {
+    const input = '"enabled": true, // {{config.enabled}}';
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe('"enabled": false, // {{config.enabled}}');
+  });
+
+  it("should not mark changed when boolean is already false", () => {
+    const input = '"enabled": false, // {{config.enabled}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should replace numbers with 0", () => {
+    const input = '"count": 42, // {{config.count}}';
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toBe('"count": 0, // {{config.count}}');
+  });
+
+  it("should not mark changed when number is already 0", () => {
+    const input = '"count": 0, // {{config.count}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should keep null as null", () => {
+    const input = '"value": null, // {{config.value}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should not mark changed when string is already empty", () => {
+    const input = '"background": "", // {{dark.background}}';
+    const { changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(false);
+  });
+
+  it("should clean multiple markers in one content block", () => {
+    const input = [
+      '"background": "#000000", // {{dark.background}}',
+      '"enabled": true, // {{config.enabled}}',
+      '"count": 42, // {{config.count}}',
+    ].join("\n");
+    const { content, changed } = cleanInlineMarkers(input);
+    expect(changed).toBe(true);
+    expect(content).toContain('"", // {{dark.background}}');
+    expect(content).toContain("false, // {{config.enabled}}");
+    expect(content).toContain("0, // {{config.count}}");
+  });
+
+  it("should preserve trailing punctuation and whitespace", () => {
+    const input = '"background": "#000000",  // {{dark.background}}';
+    const { content } = cleanInlineMarkers(input);
+    expect(content).toBe('"background": "",  // {{dark.background}}');
   });
 });
 
@@ -372,13 +446,13 @@ describe("e2e: compile, clean, recompile flow", () => {
     expect(afterInline.content).toContain("new header");
 
     // Step 3: Clean BEGIN/END block
-    const cleaned = cleanBlock(afterInline.content, "header", "//", "");
-    expect(cleaned).toContain("// BEGIN header\n\n// END header");
+    const cleaned = cleanBlock(afterInline.content, "header", "#", "");
+    expect(cleaned).toContain("# BEGIN header\n\n# END header");
     // Inline markers are untouched by clean (they're self-contained)
     expect(cleaned).toContain('"#000000", // {{dark.background}}');
 
     // Step 4: Recompile BEGIN/END block
-    const recompiled = replaceBlock(cleaned, "header", "new header", "//", "");
+    const recompiled = replaceBlock(cleaned, "header", "new header", "#", "");
     expect(recompiled).toBe(afterInline.content);
   });
 

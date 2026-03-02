@@ -216,6 +216,35 @@ function processInlineMarkers(content, colorMap, targetName) {
   return { content: updated, changed, warnings };
 }
 
+/**
+ * Clean inline markers in content, replacing values with type-appropriate defaults.
+ * Strings become "", booleans become false, numbers become 0, null stays null.
+ * Returns { content, changed } where changed indicates if any values were updated.
+ */
+function cleanInlineMarkers(content) {
+  let changed = false;
+
+  const updated = content.replace(INLINE_MARKER_REGEX, (match, rawValue, dblInner, sglInner, trailing, map, key) => {
+    const quoteChar = sglInner !== undefined ? "'" : '"';
+    let defaultLiteral;
+    if (dblInner !== undefined || sglInner !== undefined) {
+      defaultLiteral = `${quoteChar}${quoteChar}`;
+    } else if (rawValue === "true" || rawValue === "false") {
+      defaultLiteral = "false";
+    } else if (rawValue === "null") {
+      defaultLiteral = "null";
+    } else {
+      defaultLiteral = "0";
+    }
+    if (rawValue !== defaultLiteral) {
+      changed = true;
+    }
+    return `${defaultLiteral}${trailing}// {{${map}.${key}}}`;
+  });
+
+  return { content: updated, changed };
+}
+
 module.exports = {
   COMMENT_STYLES,
   DEFAULT_COMMENT_STYLE,
@@ -231,4 +260,5 @@ module.exports = {
   replaceBlock,
   toJsonLiteral,
   processInlineMarkers,
+  cleanInlineMarkers,
 };
