@@ -1,7 +1,7 @@
 # software/bootstrap/dependencies/steamos.sh
 # SteamOS dependencies - packages, config
 
-installPackage() {
+function installPackage() {
   echo "  >> $@"
   sudo pacman -Sy $@ &> /dev/null
 }

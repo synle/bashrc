@@ -97,7 +97,7 @@ RECENT_PATHS_FILE=~/.bash_syle_paths
 RECENT_PATHS_MAX=100
 
 # reads the paths file, removes entries that no longer exist, and outputs the cleaned list
-_recent_paths() {
+function _recent_paths() {
   local tmp="/tmp/.bash_syle_paths_tmp"
   while IFS= read -r dir; do
     [ -d "$dir" ] && echo "$dir"
@@ -108,7 +108,7 @@ _recent_paths() {
 
 # prepends the current directory to the paths file (deduped, capped at RECENT_PATHS_MAX)
 # skips home directory. runs automatically via PROMPT_COMMAND.
-_track_pwd() {
+function _track_pwd() {
   local current="$(pwd)"
   [ "$current" = "$HOME" ] && return
   local tmp="/tmp/.bash_syle_paths_tmp"
@@ -117,7 +117,7 @@ _track_pwd() {
 }
 
 # cd to the most recently visited directory
-golast() {
+function golast() {
   local dir
   dir=$(_recent_paths | head -1)
   if [ -n "$dir" ] && [ -d "$dir" ]; then
@@ -204,7 +204,7 @@ alias cm='cl --model opus'
 # short form echo that removes leading + trailing blank lines,
 # finds the first non-empty line, detects its indentation,
 # and trims that indentation from all lines
-ech() {
+function ech() {
   printf '%s' "$@" \
   | sed -e '1{/^[[:space:]]*$/d;}' -e '${/^[[:space:]]*$/d;}' \
   | awk 'NR==1{
@@ -216,17 +216,17 @@ ech() {
     }1'
 }
 
-p() {
+function p() {
   activate_py
   python "$@"
 }
 
-pi() {
+function pi() {
   activate_py
   pip install -r "$@"
 }
 
-activate_py(){
+function activate_py() {
   # Check if Python virtual environment is already activated
   if [[ -z "$VIRTUAL_ENV" ]]; then
     # Try activating local venv first
@@ -243,7 +243,7 @@ activate_py(){
 rainbow_block="##########"
 rainbow_colors=(91 93 92 96 94 95)
 
-rainbow_print() {
+function rainbow_print() {
     # 1. Determine the color set
     # If $1 is provided and looks like a list of numbers, use it.
     # Otherwise, fall back to the global rainbow_colors.
@@ -277,7 +277,7 @@ rainbow_print() {
 # br 3 no-clear
 # Print the default 5 blocks WITHOUT clearing:
 # br 5 no-clear
-br() {
+function br() {
     local repeat_count=${1:-5}
     local clear_flag=${2:-"clear"}
     local reverse_flag=${3:-"normal"}
@@ -309,7 +309,7 @@ br() {
 # sleep 3          # Simulate a long command
 # kill $SPIN_PID   # Stop the spinner
 # echo "Done!"
-spinner() {
+function spinner() {
   local chars="/-\|"
   # Using your preferred high-contrast neon colors
   local colors=(91 93 92 96 94 95)
@@ -336,7 +336,7 @@ spinner() {
   done
 }
 
-npm() {
+function npm() {
   case "${1-}" in
     ""|-*|access|adduser|audit|bugs|cache|ci|completion|config|dedupe|deprecate|diff|dist-tag|\
     doctor|edit|exec|explain|explore|find-dupes|fund|get|help|hook|init|install|install-ci-test|\
@@ -348,16 +348,16 @@ npm() {
   esac
 }
 
-renpm(){
+function renpm() {
   rm -rf node_modules bower_components /tmp/*.cache;
   npm install
 }
 
-tree(){
+function tree() {
   find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 }
 
-pwd2() {
+function pwd2() {
   echo '===== pwd ===================================='
   command pwd
 
@@ -370,7 +370,7 @@ pwd2() {
 # ---- Git Helpers ----
 ################################################################################
 # Resets the working tree, deletes local master/main, and re-tracks the default branch from origin (preferring master over main).
-clean_master_main_branch() {
+function clean_master_main_branch() {
   git stash >/dev/null 2>&1
   git clean -fd >/dev/null 2>&1
   git reset --hard HEAD >/dev/null 2>&1
@@ -399,7 +399,7 @@ clean_master_main_branch() {
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment.
-commit_empty_trigger_deploy() {
+function commit_empty_trigger_deploy() {
   local temp_branch_name="empty-commit-$(date +%s)"
   git checkout -b "$temp_branch_name" >/dev/null 2>&1
   git commit --allow-empty -m "Trigger deployment - EMPTY PR" >/dev/null 2>&1
@@ -415,32 +415,32 @@ function gogit(){
 ################################################################################
 # ---- Search Functions ----
 ################################################################################
-search_file() {
+function search_file() {
   local pattern
   pattern=$(_require_search_input "$@") || return 0
   find . -type f -iname "*$pattern*" | filter_unwanted | grep -i "$pattern"
 }
 
 # Lists all tracked files via git, falls back to find if not in a git repo.
-search_file_with_git() {
+function search_file_with_git() {
   git ls-tree -r --name-only HEAD 2>/dev/null || find . -type f 2>/dev/null | uniq
 }
 
 # Lists all directories (excluding hidden) from a given path, defaults to current directory.
-search_dir_with_git() {
+function search_dir_with_git() {
   find "${1:-.}" -path '*/.*' -prune -o -type d -print 2>/dev/null
   echo ".."
 }
 
 # Searches for directories matching a pattern in the current directory (case-insensitive).
-search_dir() {
+function search_dir() {
   local pattern
   pattern=$(_require_search_input "$@") || return 0
   find . -type d -iname "*$pattern*" | filter_unwanted | grep -i "$pattern"
 }
 
 # Returns the input text, prompting the user interactively if none was provided.
-_require_search_input() {
+function _require_search_input() {
   if [ -n "$*" ]; then
     echo "$*"
   else
@@ -457,7 +457,7 @@ _require_search_input() {
 ################################################################################
 # ---- Filter Functions ----
 ################################################################################
-filter_unwanted(){
+function filter_unwanted() {
   grep -v "\.DS_Store" \
   | grep -v "\.git/" \
   | grep -v "node_modules" \
@@ -477,7 +477,7 @@ filter_unwanted(){
   | uniq
 }
 
-filter_text_files_only(){
+function filter_text_files_only() {
   filter_unwanted \
   | grep -v "\.jpeg$" \
   | grep -v "\.jpg$" \
@@ -510,7 +510,7 @@ filter_text_files_only(){
 ################################################################################
 # ---- Chmod Calculator ----
 ################################################################################
-chmod_calculator(){
+function chmod_calculator() {
   node -e """
     console.log('Chmod Calculator - Enter permission for x w r:');
     var stdin = process.openStdin();
@@ -544,11 +544,11 @@ alias fcd=fuzzy_directory
 alias fp=fuzzy_paths
 
 # simple view file alias - will be overridden by advanced bash
-view_file(){
+function view_file() {
   vim "$@"
 }
 
-fuzzy_vim(){
+function fuzzy_vim() {
   local OUT=$( \
     search_file_with_git | \
     filter_text_files_only | \
@@ -563,7 +563,7 @@ vim \"$OUT\"
   fi
 }
 
-fuzzy_view_file(){
+function fuzzy_view_file() {
   local OUT=$( \
     search_file_with_git | \
     filter_text_files_only | \
@@ -578,7 +578,7 @@ view_file \"$OUT\"
   fi
 }
 
-_fuzzy_cd() {
+function _fuzzy_cd() {
   local OUT=$(echo "$1" | fzf +m)
   if [ -n "$OUT" ] && [ -d "$OUT" ]; then
     echo "cd \"$OUT\""
@@ -586,11 +586,11 @@ _fuzzy_cd() {
   fi
 }
 
-fuzzy_directory(){
+function fuzzy_directory() {
   _fuzzy_cd "$(search_dir_with_git | filter_unwanted)"
 }
 
-fuzzy_paths(){
+function fuzzy_paths() {
   _fuzzy_cd "$(_recent_paths)"
 }
 
@@ -600,7 +600,7 @@ fuzzy_paths(){
 ## Returns HH:MM:SS AM/PM with colored AM/PM indicator
 # AM = bright white (light), PM = dark gray (dark)
 # Uses \001/\002 for PS1-safe non-printing character wrapping
-get_time() {
+function get_time() {
   local tz=${1:-""}
   local time_str ampm
 
@@ -622,7 +622,7 @@ get_time() {
   fi
 }
 
-date2(){
+function date2() {
   # High-intensity colors for the labels
   echo $'\e[1;31m>> UTC\e[m'
   date -u +'%a, %b %d, %Y  %r'

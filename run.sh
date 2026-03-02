@@ -250,6 +250,10 @@ for arg in "$@"; do
       export IS_LIGHT_WEIGHT_MODE=1
       _parsing_into=""
       ;;
+    --setup|-setup|--is-setup|-is-setup)
+      export IS_SETUP=1
+      _parsing_into=""
+      ;;
     --verbose|-verbose|-V)
       verbose_mode=true
       set -x
@@ -290,6 +294,7 @@ force_refresh       = $force_refresh
 debug               = $debug_mode
 verbose             = $verbose_mode
 lightweight         = ${IS_LIGHT_WEIGHT_MODE:-0}
+setup               = ${IS_SETUP:-0}
 test_script_mode    = $IS_TEST_SCRIPT_MODE
 os_flags            = ${active_os_flags:-[none]}
 "

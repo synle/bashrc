@@ -127,6 +127,8 @@ const IS_FORCE_REFRESH = getRuntimeOption("IS_FORCE_REFRESH", parseBoolean);
 const IS_TEST_SCRIPT_MODE = getRuntimeOption("IS_TEST_SCRIPT_MODE", parseBoolean);
 /** @type {boolean} When true, skips advanced/heavy features for a minimal install */
 const IS_LIGHT_WEIGHT_MODE = getRuntimeOption("IS_LIGHT_WEIGHT_MODE", parseBoolean);
+/** @type {boolean} When true, runs setup mode (bootstrap dependencies + software scripts) */
+const IS_SETUP = getRuntimeOption("IS_SETUP", parseBoolean);
 /** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
 const IS_DEBUG = getRuntimeOption("IS_DEBUG", parseBoolean);
 /** @type {string} Full URL prefix for raw GitHub content (constructed from REPO_PATH_IDENTIFIER and REPO_BRANCH_NAME) */
@@ -1578,6 +1580,23 @@ async function getSoftwareScriptFiles() {
 }
 
 /**
+ * Gets list of bootstrap dependency scripts for the current platform.
+ * Filters to only include .sh files under software/bootstrap/dependencies/.
+ * @returns {Promise<string[]>} Array of bootstrap dependency script file paths
+ */
+async function getBootstrapScriptFiles() {
+  let files;
+
+  if (IS_TEST_SCRIPT_MODE === true) {
+    files = await listRepoDir("local");
+  } else {
+    files = await listRepoDir("remote_api");
+  }
+
+  return filterRepoScripts(files).filter((f) => f.includes("software/bootstrap/dependencies/") && f.endsWith(".sh"));
+}
+
+/**
  * Converts a relative URL to an absolute URL by prepending REPO_PREFIX_URL.
  * If the URL already starts with "http", it is returned as-is.
  * @param {string} url - The URL or relative path to resolve
@@ -2155,16 +2174,36 @@ async function _doWorkTestFiles() {
 // doWork: Full Run (when TEST_SCRIPT_FILES is not set)
 //////////////////////////////////////////////////////
 /**
- * Runs the full software setup: discovers all platform-applicable script files
- * and generates the bash pipeline commands to fetch and execute each one.
+ * Runs the full software setup: discovers bootstrap dependencies and platform-applicable
+ * script files, runs bootstrap first then software scripts.
  * @returns {Promise<void>}
  */
 async function _doWorkFullRun() {
   const allRepoFiles = await getAllRepoSoftwareFiles();
+  const bootstrapFiles = await getBootstrapScriptFiles();
   const softwareFiles = await getSoftwareScriptFiles();
+  const allFiles = [...bootstrapFiles, ...softwareFiles];
 
-  echo(`> _doWorkFullRun => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `);
-  _runScripts(softwareFiles, allRepoFiles, "Full Run");
+  echo(`> _doWorkFullRun => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `);
+  _runScripts(allFiles, allRepoFiles, "Full Run");
+}
+
+//////////////////////////////////////////////////////
+// doWork: Setup (when IS_SETUP is set)
+//////////////////////////////////////////////////////
+/**
+ * Runs setup mode: discovers and executes only the bootstrap dependency scripts
+ * for the current platform, then runs the full software scripts.
+ * @returns {Promise<void>}
+ */
+async function _doWorkSetup() {
+  const allRepoFiles = await getAllRepoSoftwareFiles();
+  const bootstrapFiles = await getBootstrapScriptFiles();
+  const softwareFiles = await getSoftwareScriptFiles();
+  const allFiles = [...bootstrapFiles, ...softwareFiles];
+
+  echo(`> _doWorkSetup => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `);
+  _runScripts(allFiles, allRepoFiles, "Setup");
 }
 
 //////////////////////////////////////////////////////
@@ -2220,6 +2259,9 @@ async function _doWorkFullRun() {
     if (typeof doWork === "function") {
       // if doWork is defined externally (e.g. by a script concatenated after this file), use it
       await doWork();
+    } else if (IS_SETUP) {
+      // setup mode: bootstrap dependencies + software scripts
+      await _doWorkSetup();
     } else if (TEST_SCRIPT_FILES) {
       // test specific files
       await _doWorkTestFiles();

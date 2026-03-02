@@ -1,7 +1,7 @@
 # software/bootstrap/dependencies/ubuntu.sh
 # Ubuntu / Debian dependencies - apt-get packages and user permissions
 
-installPackage() {
+function installPackage() {
   echo "  >> $@"
   sudo apt-get install -y --fix-missing $@ &> /dev/null
 }

@@ -1,7 +1,7 @@
 # software/bootstrap/dependencies/mac.sh
 # macOS dependencies - Homebrew packages, system preferences, shell setup
 
-installPackage() {
+function installPackage() {
   echo "  >> $@"
   brew install $@ &> /dev/null
   brew cask install &> /dev/null

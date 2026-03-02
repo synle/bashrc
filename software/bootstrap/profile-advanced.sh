@@ -3,7 +3,7 @@
 ################################################################################
 # ---- Docker Aliases and Functions ----
 ################################################################################
-dexec_bash(){
+function dexec_bash() {
   echo "docker exec -it $@ /bin/bash";
   docker exec -it $@ /bin/bash
 }
@@ -19,7 +19,7 @@ touch ~/.syle_bookmark
 ################################################################################
 # ---- Bat / Cat Setup ----
 ################################################################################
-batcat_full() {
+function batcat_full() {
     # Try the 'bat' command first
     bat "$@" 2>/dev/null
     if [ $? -ne 0 ]; then
@@ -32,12 +32,12 @@ batcat_full() {
 # ---- Clipboard (pbcopy / pbpaste) ----
 ################################################################################
 if ! command -v pbcopy &>/dev/null; then
-    pbcopy() { xclip -selection clipboard; }
+    function pbcopy() { xclip -selection clipboard; }
     export -f pbcopy
 fi
 
 if ! command -v pbpaste &>/dev/null; then
-    pbpaste() { xclip -selection clipboard -o; }
+    function pbpaste() { xclip -selection clipboard -o; }
     export -f pbpaste
 fi
 
@@ -47,7 +47,7 @@ fi
 # Pass a path to watch, a file filter, and a command to run when those files are updated
 # watch.sh "node_modules/everest-*/src/templates" "*.handlebars" "ynpm compile-templates"
 # Source: https://gist.github.com/JarredMack/b33900d64c0e448fd5ff1e1bd760789e
-watch(){
+function watch() {
   WORKING_PATH=$(pwd)
   DIR=$1
   FILTER=$2
@@ -69,7 +69,7 @@ watch(){
 ################################################################################
 # ---- Network Utilities ----
 ################################################################################
-list_port(){
+function list_port() {
   echo "list port $@"
   lsof -i tcp:$@
 }
@@ -77,7 +77,7 @@ list_port(){
 ################################################################################
 # ---- Git Utilities ----
 ################################################################################
-git_compare(){
+function git_compare() {
   #get current branch name
   branch_name=$(git symbolic-ref -q HEAD)
   branch_name=${branch_name##refs/heads/}
@@ -106,7 +106,7 @@ git_compare(){
 ################################################################################
 # ---- Copy with Progress Bar ----
 ################################################################################
-cp2(){
+function cp2() {
   echo "==== copy ===="
   echo "src:" "$1"
   echo "dest:" "$2";
@@ -125,7 +125,7 @@ alias gl='glog'
 alias gp='git push'
 
 # override viewfile with more advanced function
-view_file(){
+function view_file() {
   local editorCmd
 
   if [[ $# -eq 0 ]] ; then
@@ -137,7 +137,7 @@ view_file(){
   $editorCmd "$1"
 }
 
-fuzzy_git_show(){
+function fuzzy_git_show() {
   git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset' --abbrev-commit --date=relative --color=always \
   |
   fzf --ansi --no-sort --reverse --tiebreak=index --bind=ctrl-s:toggle-sort --color light --preview='echo {} | cut -d " " -f1 | xargs git show' \
@@ -148,7 +148,7 @@ fuzzy_git_show(){
   FZF-EOF"
 }
 
-fuzzy_git_cobranch(){
+function fuzzy_git_cobranch() {
   local branches branch
   branches=$(git branch --all | grep -v HEAD | sed 's/remotes\/origin\///g' | sed "s/.* //" | sed 's/ //g' | sed "s#remotes/[^/]*/##" | sort | uniq) &&
   branch=$(echo "$branches" |
@@ -162,14 +162,14 @@ export FZF_COMPLETION_TRIGGER='*'
 ################################################################################
 # ---- Prompt Helpers ----
 ################################################################################
-parse_git_branch(){
+function parse_git_branch() {
 node -e """
   const { exec } = require('child_process');
   exec('git branch | grep \"*\"', (error, stdout, stderr) => !error && console.log('['+stdout.replace('*','').trim()+']'));
 """
 }
 
-ifconfig2(){
+function ifconfig2() {
 node -e """
   const { networkInterfaces } = require('os');
   const nets = Object.values(networkInterfaces());
@@ -177,7 +177,7 @@ node -e """
 """
 }
 
-shorter_pwd_path(){
+function shorter_pwd_path() {
   local trim_count=3  # Set the number of parts to retain in the path
   IFS='/' read -r -a splits <<< "$(pwd)"
   result=""
@@ -203,7 +203,7 @@ add_bookmark search_dir
 ################################################################################
 # ---- Refresh script ----
 ################################################################################
-alias refresh="curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh| bash -s -- --prod"
+alias refresh="curl -s $BASH_PROFILE_CODE_REPO_RAW_URL/run.sh | bash -s -- --prod --setup"
 
 ################################################################################
 # ---- Prompt ----
