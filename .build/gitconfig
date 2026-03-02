@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-02-03-40AM]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-02-04-00AM]
 # ############################################################################################################################################
 
 [user]
@@ -95,6 +95,7 @@ del = branch -D # Force delete branch
 
 # Pull / Push / Fetch
 fap = fetch --all --prune # Fetch all and purge deleted remotes
+fapr = "!bash -c 'git fap && git r' --" # Fetch all, prune, then rebase
 p = pull
 pu = pull
 po = push origin
