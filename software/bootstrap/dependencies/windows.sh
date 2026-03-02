@@ -1,7 +1,7 @@
 # software/bootstrap/dependencies/windows.sh
 # Windows (WSL) dependencies - drive symlinks, folder setup, WSL2 config
 
-if [ "$is_os_window" = "1" ]; then
+if [ "$is_os_windows" = "1" ]; then
   echo ">> Begin setting up dependencies/windows.sh"
 
   WSL_DRIVES="c d e f g h"

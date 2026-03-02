@@ -13,7 +13,7 @@ function _getBraveProfilePath() {
   }
 
   // Windows via WSL or MinGW: /mnt/c/Users/*/AppData/Local/BraveSoftware/Brave-Browser/User Data/Default
-  if (is_os_window) {
+  if (is_os_windows) {
     const windowsMounts = ["/mnt/c/Users", "/c/Users"];
     for (const mount of windowsMounts) {
       if (!fs.existsSync(mount)) continue;
@@ -260,7 +260,7 @@ function _getBraveConfigs() {
  */
 async function doWork() {
   // Only run on macOS and Windows (and Linux if Brave is installed)
-  if (!is_os_mac && !is_os_window) {
+  if (!is_os_mac && !is_os_windows) {
     log(">> Skipping: Brave Browser config only targets macOS and Windows");
     return;
   }

@@ -248,6 +248,6 @@ export PS1_Advanced="\n\
 export PS1="$PS1_Advanced"
 
 # on WSL, cd to last visited directory on shell start
-if [ "$is_os_window" = "1" ]; then
+if [ "$is_os_windows" = "1" ]; then
   golast
 fi

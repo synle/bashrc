@@ -101,7 +101,7 @@ async function _getPathSublimeText() {
   const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
 
   try {
-    if (is_os_window) {
+    if (is_os_windows) {
       return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
     }
 

@@ -42,7 +42,7 @@ ${contentProfileAdvanced}
 
   if (IS_LIGHT_WEIGHT_MODE) {
     log(">>>> Skipped : Lightweight mode");
-  } else if (is_os_window || is_os_mac || is_os_ubuntu) {
+  } else if (is_os_windows || is_os_mac || is_os_ubuntu) {
     log(">>>> Installed only for more advanced OS");
     res += contentProfileAdvanced.trim();
   } else {

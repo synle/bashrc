@@ -11,7 +11,7 @@ version=$(curl -s https://api.github.com/repos/VSCodium/vscodium/releases/latest
 echo "> Installing vscodium : $version"
 
 # Linux Installation
-if [ "${is_os_ubuntu}" -eq 1 ] && [ "${is_os_window}" -eq 0 ]; then
+if [ "${is_os_ubuntu}" -eq 1 ] && [ "${is_os_windows}" -eq 0 ]; then
     file="codium_${version}_amd64.deb"
     url="https://github.com/VSCodium/vscodium/releases/download/${version}/${file}"
 

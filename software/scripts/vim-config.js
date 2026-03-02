@@ -235,7 +235,7 @@ async function doWork() {
   log(">> Setting up vimrc on Linux / Mac / WSL", targetPath);
   writeText(targetPath, contentOnlyFullVimrc + contentVimrc);
 
-  if (is_os_window) {
+  if (is_os_windows) {
     const windowsVimrcPath = path.join(getWindowUserBaseDir(), ".vimrc");
     if (filePathExist(windowsVimrcPath)) {
       log(">> Setting up vimrc on Windows", windowsVimrcPath);

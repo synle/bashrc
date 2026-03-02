@@ -102,7 +102,7 @@ async function _getPathSublimeText() {
   const regexBinary = /Sublime[ -]*Text[0-9]*[0-9]*/i;
 
   try {
-    if (is_os_window) {
+    if (is_os_windows) {
       return findDirSingle(getWindowAppDataRoamingUserPath(), regexBinary);
     }
 
@@ -181,7 +181,7 @@ async function doWork() {
             # Check if the argument is a path (starts with / or .)
             if [[ "$arg" == /* ]] || [[ "$arg" == .* ]]; then
                 unresolved_path=$(realpath "$arg")
-                if [ "$is_os_window" = "1" ]; then
+                if [ "$is_os_windows" = "1" ]; then
                     resolved_path=$(wslpath -m "$arg")
                 else
                     resolved_path="$unresolved_path"
@@ -195,7 +195,7 @@ async function doWork() {
         if [[ "$target_binary" == "flatpak:vscodium" ]]; then
           (nohup flatpak run com.vscodium.codium "\${editor_args[@]}" >/dev/null 2>&1 &)
         else
-          if [ "$is_os_window" = "1" ]; then
+          if [ "$is_os_windows" = "1" ]; then
               # Use the converted_args here
               (nohup "$target_binary" "\${converted_args[@]}" >/dev/null 2>&1 &)
           else

@@ -7,7 +7,7 @@ const ROUTED_BLOCKED_IP = "0.0.0.0";
 function _getEtcHostsPath() {
   const windowsEtcHostPath = path.join(BASE_C_DIR_WINDOW, "/Windows/System32/drivers/etc/hosts");
 
-  if (filePathExist(windowsEtcHostPath) || is_os_window) {
+  if (filePathExist(windowsEtcHostPath) || is_os_windows) {
     return windowsEtcHostPath;
   }
 
@@ -40,7 +40,7 @@ function _consolidateHosts(hosts) {
 async function _getBlockedHostNames(staticBlockedHosts) {
   const hosts = [...staticBlockedHosts];
 
-  if (!is_os_window) {
+  if (!is_os_windows) {
     const url = `software/metadata/hosts-blocked-ads.config`;
     try {
       const dynamicHosts = convertTextToHosts(await fetchUrlAsString(url));
@@ -94,7 +94,7 @@ async function doWork() {
     writeText(targetPath, etcHostTextContent.trim());
     log(">> Done updating etc hosts: ", targetPath);
 
-    if (is_os_window) {
+    if (is_os_windows) {
       log(">>> Only Windows run command: ipconfig /flushdns");
     }
   } catch (err) {

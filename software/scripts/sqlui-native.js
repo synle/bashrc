@@ -7,7 +7,7 @@ async function doWork() {
   const baseUrl = `https://github.com/synle/sqlui-native/releases/download/${SQLUI_NATIVE_VERSION}`;
 
   let fileName;
-  if (is_os_window) {
+  if (is_os_windows) {
     fileName = `sqlui-native-${SQLUI_NATIVE_VERSION}-x64.exe`;
   } else if (is_os_mac) {
     fileName = `sqlui-native-${SQLUI_NATIVE_VERSION}-x64.dmg`;

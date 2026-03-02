@@ -290,7 +290,7 @@ function ScriptOutputSection({ script }) {
     const osFlag = formValue.osToRun;
     const osFlags = {
       is_os_mac: osFlag === "mac",
-      is_os_window: osFlag === "windows",
+      is_os_windows: osFlag === "windows",
       is_os_wsl: osFlag === "windows",
       is_os_ubuntu: ["windows", "chrome_os", "ubuntu"].indexOf(osFlag) >= 0,
       is_os_chromeos: osFlag === "chrome_os",
@@ -1154,14 +1154,14 @@ function AndroidNotesDom() {
 function WindowsNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom is_os_window={true} />
+      <TargetSystemOSWarningDom is_os_windows={true} />
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
-      <DynamicTextArea path="/docs/window/README.md" />
+      <DynamicTextArea path="/docs/windows/README.md" />
       <DynamicTextArea path="/software/bootstrap/dependencies/windows.ps1" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/windows-terminal" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
-      <CommonEditorSetupDom is_os_window={true} />
+      <CommonEditorSetupDom is_os_windows={true} />
 
       {/* other links */}
       <div className="form-label">Windows Related</div>
@@ -1250,17 +1250,17 @@ function WindowsNotesDom() {
  * and the appropriate VS Code extension list for the target OS.
  * @param {Object} props
  * @param {boolean} [props.is_os_mac] - If true, shows macOS VS Code extensions.
- * @param {boolean} [props.is_os_window] - If true, shows Windows VS Code extensions.
+ * @param {boolean} [props.is_os_windows] - If true, shows Windows VS Code extensions.
  * @param {boolean} [props.is_os_ubuntu] - If true (or default), shows Linux VS Code extensions.
  * @returns {React.ReactElement} The combined editor setup scripts and extension lists.
  */
 function CommonEditorSetupDom(props) {
-  const { is_os_mac, is_os_window, is_os_ubuntu } = props;
+  const { is_os_mac, is_os_windows, is_os_ubuntu } = props;
 
   let domVSCodeExtension = <DynamicTextArea path="/.build/vs-code-ext-linux" />;
   if (is_os_mac) {
     domVSCodeExtension = <DynamicTextArea path="/.build/vs-code-ext-macosx" />;
-  } else if (is_os_window) {
+  } else if (is_os_windows) {
     domVSCodeExtension = <DynamicTextArea path="/.build/vs-code-ext-windows" />;
   }
 

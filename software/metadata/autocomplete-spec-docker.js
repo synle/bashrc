@@ -1,4 +1,4 @@
-const dockerCommandToUse = is_os_window === true ? "docker.exe" : "docker";
+const dockerCommandToUse = is_os_windows === true ? "docker.exe" : "docker";
 
 /**
  * Extracts lines after "marker:" (e.g. "Options:", "Commands:") from parsed help output.

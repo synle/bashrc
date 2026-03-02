@@ -98,8 +98,8 @@ describe("exitIfNotTargetOs", () => {
 
   it("should exit when current OS does not match any target flag", () => {
     setSandboxGlobal("is_os_mac", false);
-    setSandboxGlobal("is_os_window", false);
-    exitIfNotTargetOs("is_os_mac", "is_os_window");
+    setSandboxGlobal("is_os_windows", false);
+    exitIfNotTargetOs("is_os_mac", "is_os_windows");
     expect(processExitCalled).toBe(true);
   });
 

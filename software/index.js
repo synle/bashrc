@@ -337,7 +337,7 @@ let HOME_HOST_NAMES = [];
  * is_os_arch_linux   | is_os_arch_linux=1    | software/scripts/arch_linux/      | Arch Linux, SteamOS
  * is_os_steamos      | is_os_steamos=1       | software/scripts/steamos/         | SteamOS
  * is_os_redhat       | is_os_redhat=1        | software/scripts/redhat/          | Fedora, RHEL, CentOS, Rocky
- * is_os_window       | is_os_window=1        | software/scripts/window/          | Windows (WSL /mnt/c detected)
+ * is_os_windows       | is_os_windows=1        | software/scripts/windows/         | Windows (WSL /mnt/c detected)
  * is_os_wsl          | is_os_wsl=1           | software/scripts/wsl/             | Windows Subsystem for Linux
  *
  * Flags without a script folder are still used for conditional logic in individual scripts
@@ -367,7 +367,7 @@ Object.keys(process.env)
 /** @type {boolean} Arch Linux, SteamOS */ const is_os_arch_linux = !!global.is_os_arch_linux;
 /** @type {boolean} SteamOS */ const is_os_steamos = !!global.is_os_steamos;
 /** @type {boolean} Fedora, RHEL, CentOS, Rocky */ const is_os_redhat = !!global.is_os_redhat;
-/** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_window = !!global.is_os_window;
+/** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_windows = !!global.is_os_windows;
 /** @type {boolean} Windows Subsystem for Linux */ const is_os_wsl = !!global.is_os_wsl;
 
 /**
@@ -378,7 +378,7 @@ Object.keys(process.env)
 const LIMITED_SUPPORT_OSES = ["is_os_android_termux", "is_os_mingw64"];
 
 /** @type {string} Base directory for user-specific custom tweaks (~/_extra or {WindowsHome}/_extra) */
-const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_window ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
+const BASE_SY_CUSTOM_TWEAKS_DIR = path.join(is_os_windows ? getWindowUserBaseDir() : BASE_HOMEDIR_LINUX, "_extra");
 
 //////////////////////////////////////////////////////
 // Formatting Constants
@@ -1211,7 +1211,7 @@ function exitIfLimitedSupportOs() {
 /**
  * Guard clause: exits the process if the current OS does NOT match any of the given OS flags.
  * Inverse of exitIfUnsupportedOs — use this to restrict a script to specific platforms only.
- * @param {...string} osFlags - OS flag names that are allowed (e.g. "is_os_mac", "is_os_window")
+ * @param {...string} osFlags - OS flag names that are allowed (e.g. "is_os_mac", "is_os_windows")
  */
 function exitIfNotTargetOs(...osFlags) {
   const flags = osFlags.flat();
@@ -1231,7 +1231,7 @@ function exitIfNotTargetOs(...osFlags) {
  */
 function resolveOsKey(keys) {
   if (is_os_mac) return keys.mac;
-  if (is_os_window) return keys.windows;
+  if (is_os_windows) return keys.windows;
   return keys.linux;
 }
 

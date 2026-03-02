@@ -123,7 +123,7 @@ async function doWork() {
   writeText(configGitIgnoreGlobal, await _getGlobalGitIgnore());
 
   // Windows Only - write to the main gitconfig for windows host
-  if (is_os_window) {
+  if (is_os_windows) {
     const configWindows = path.join(getWindowUserBaseDir(), ".gitconfig");
 
     log(">>> Installing git Aliases and Configs for Windows", configWindows);

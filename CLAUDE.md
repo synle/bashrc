@@ -84,7 +84,7 @@ Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`.
 | `is_os_arch_linux`     | `software/scripts/arch_linux/`     | Arch Linux                  |
 | `is_os_steamos`        | `software/scripts/steamos/`        | SteamOS                     |
 | `is_os_redhat`         | `software/scripts/redhat/`         | Fedora, RHEL, CentOS        |
-| `is_os_window`         | `software/scripts/window/`         | Windows (WSL/MinGW)         |
+| `is_os_windows`        | `software/scripts/windows/`        | Windows (WSL/MinGW)         |
 | `is_os_wsl`            | `software/scripts/wsl/`            | Windows Subsystem for Linux |
 
 ### software/bootstrap/common-env.sh

@@ -15,7 +15,7 @@ const SUBLIME_MERGE_CONFIG = {
  * @returns {string|null} Path to Sublime Merge config directory, or null if not found.
  */
 function _getPathSublimeMerge() {
-  if (is_os_window) {
+  if (is_os_windows) {
     return findDirSingle(getWindowAppDataRoamingUserPath(), /Sublime[ ]*Merge/);
   }
   if (is_os_mac) {

@@ -10,8 +10,8 @@ async function doWork() {
   // ----------------------------------------------------------
   // High contrast dark/light color schemes (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark/Light")
   // ----------------------------------------------------------
-  const syDarkScheme = parseJsonWithComments(await fetchUrlAsString("software/scripts/window/windows-terminal-color-dark.jsonc"));
-  const syLightScheme = parseJsonWithComments(await fetchUrlAsString("software/scripts/window/windows-terminal-color-light.jsonc"));
+  const syDarkScheme = parseJsonWithComments(await fetchUrlAsString("software/scripts/windows/windows-terminal-color-dark.jsonc"));
+  const syLightScheme = parseJsonWithComments(await fetchUrlAsString("software/scripts/windows/windows-terminal-color-light.jsonc"));
 
   // ----------------------------------------------------------
   // Default profile appearance
@@ -38,7 +38,7 @@ async function doWork() {
   // ----------------------------------------------------------
   // Keybindings (loaded from external jsonc file)
   // ----------------------------------------------------------
-  const keybindings = parseJsonWithComments(await fetchUrlAsString("software/scripts/window/windows-terminal-keys.jsonc")) || [];
+  const keybindings = parseJsonWithComments(await fetchUrlAsString("software/scripts/windows/windows-terminal-keys.jsonc")) || [];
 
   // ----------------------------------------------------------
   // Build new settings from existing config
@@ -118,7 +118,7 @@ async function doWork() {
  */
 function _getPath() {
   try {
-    if (is_os_window) {
+    if (is_os_windows) {
       const localPackgesPath = path.join(getWindowUserBaseDir(), "AppData/Local/Packages/");
       return findDirSingle(localPackgesPath, /Microsoft\.WindowsTerminal/i);
     }

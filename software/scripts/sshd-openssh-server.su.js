@@ -7,7 +7,7 @@ async function doWork() {
   exitIfPathNotFound(targetPath, "Not supported - Exit - targetPath not found");
 
   let portToUse = "22";
-  if (is_os_window) {
+  if (is_os_windows) {
     portToUse = "2222";
   }
 
