@@ -100,12 +100,38 @@ fi
 # install_fnm_node - Install fnm and Node.js (skip on Android Termux)
 # Handles force refresh, fnm download, Node install, and /usr/local/bin symlinks.
 function install_fnm_node() {
-  # Force refresh: remove existing fnm node and reinstall
-  if [ "$IS_FORCE_REFRESH" = "1" ] && command -v fnm >/dev/null 2>&1; then
-    fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
-    sudo rm -rf "/usr/local/bin/node" "/usr/local/bin/npm" "/usr/local/bin/yarn" "/usr/local/bin/npx"
-  fi
   if [ "$is_os_android_termux" != "1" ]; then
+    if [ "$is_os_mac" == "1" ]; then
+      # 1. Uninstall if force refresh is on and brew exists
+      if [ "$IS_FORCE_REFRESH" = "1" ] && command -v brew >/dev/null 2>&1; then
+          echo "   >> Uninstalling Homebrew due to force refresh..."
+          # NONINTERACTIVE=1 bypasses the "Press RETURN to continue" prompt
+          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
+      fi
+
+      # 2. Install if force refresh is on OR brew is missing
+      # We remove the 'command -v brew' check here because we WANT it to install if it's gone
+      if [ "$IS_FORCE_REFRESH" = "1" ] || ! command -v brew >/dev/null 2>&1; then
+          echo "   >> Installing Homebrew..."
+          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+          # Recommended: Ensure the path is loaded for the rest of the script
+          if [ -f /opt/homebrew/bin/brew ]; then
+              eval "$(/opt/homebrew/bin/brew shellenv)"
+          elif [ -f /usr/local/bin/brew ]; then
+              eval "$(/usr/local/bin/brew shellenv)"
+          fi
+      fi
+    fi
+
+    # Force refresh: remove existing fnm node and reinstall
+    if [ "$IS_FORCE_REFRESH" = "1" ] && command -v fnm >/dev/null 2>&1; then
+      #TODO fix message
+      echo "   >> Uninstalling fnm due to force refresh"
+      fnm uninstall "$NODE_JS_VERSION" >/dev/null 2>&1
+      sudo rm -rf "/usr/local/bin/node" "/usr/local/bin/npm" "/usr/local/bin/yarn" "/usr/local/bin/npx"
+    fi
+
     echo ">> Installing fnm (for nodejs)"
     if ! command -v fnm >/dev/null 2>&1; then
       echo "  >> Downloading fnm"
