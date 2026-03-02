@@ -4,6 +4,7 @@
 [user]
 name = Sy Le
 # BEGIN GIT_USER_EMAIL
+; email = test_email@gmail.com #update this email
 # END GIT_USER_EMAIL
 
 [core]
@@ -144,20 +145,6 @@ rn = "!f() { git rebase -i HEAD~${1:-1}; }; f"
 rn-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
 ri-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}; }; f"
 # BEGIN GIT_REBASE_INTERACTIVE
-# END GIT_REBASE_INTERACTIVE
-
-# BEGIN GIT_EXTRA_CORE_CONFIGS
-# END GIT_EXTRA_CORE_CONFIGS
-
-# BEGIN GIT_USER_EMAIL
-; email = test_email@gmail.com #update this email
-# END GIT_USER_EMAIL
-
-# BEGIN GIT_EXTRA_CORE_CONFIGS
-
-# END GIT_EXTRA_CORE_CONFIGS
-
-# BEGIN GIT_REBASE_INTERACTIVE
 r2 = rebase -i HEAD~2
 r2-vscode = !GIT_EDITOR=\"code --wait\" git r2
 r3 = rebase -i HEAD~3
@@ -249,3 +236,7 @@ r950-vscode = !GIT_EDITOR=\"code --wait\" git r950
 r1000 = rebase -i HEAD~1000
 r1000-vscode = !GIT_EDITOR=\"code --wait\" git r1000
 # END GIT_REBASE_INTERACTIVE
+
+# BEGIN GIT_EXTRA_CORE_CONFIGS
+
+# END GIT_EXTRA_CORE_CONFIGS

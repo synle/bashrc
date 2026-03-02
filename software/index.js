@@ -928,7 +928,7 @@ function getOsxApplicationSupportCodeUserPath() {
  * @param {boolean} [cleanupSpace=false] - Whether to collapse extra whitespace
  * @returns {string} The modified text content
  */
-function updateTextBlock(content, key, sourceContent, commentPrefix, commentSuffix = '', insertMode, cleanupSpace=false) {
+function updateTextBlock(content, key, sourceContent, commentPrefix, commentSuffix = "", insertMode, cleanupSpace = false) {
   sourceContent = sourceContent.trim();
 
   const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
@@ -941,18 +941,18 @@ function updateTextBlock(content, key, sourceContent, commentPrefix, commentSuff
   if (beginIdx !== -1 && endIdx !== -1) {
     // Replace existing block
     content = (content.slice(0, beginIdx) + block + content.slice(endIdx + END.length)).trim();
-  } else if (insertMode === 'append') {
+  } else if (insertMode === "append") {
     // Append: block not found, add to end
     content = `${content}\n\n${block}\n`;
-  } else if (insertMode === 'prepend') {
+  } else if (insertMode === "prepend") {
     // Prepend: block not found, add to beginning
     content = `\n${block}\n\n${content}\n`;
   }
 
-  if(cleanupSpace){
-    content = cleanupExtraWhitespaces(content)
+  if (cleanupSpace) {
+    content = cleanupExtraWhitespaces(content);
   }
-  return content
+  return content;
 }
 
 /**
@@ -964,7 +964,7 @@ function updateTextBlock(content, key, sourceContent, commentPrefix, commentSuff
  * @returns {string} The modified text content
  */
 function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return updateTextBlock(content, key, sourceContent, commentPrefix, '', 'append', true);
+  return updateTextBlock(content, key, sourceContent, commentPrefix, "", "append", true);
 }
 
 /**
@@ -976,7 +976,7 @@ function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
  * @returns {string} The modified text content
  */
 function prependTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return updateTextBlock(content, key, sourceContent, commentPrefix, '', 'prepend', true);
+  return updateTextBlock(content, key, sourceContent, commentPrefix, "", "prepend", true);
 }
 
 //////////////////////////////////////////////////////

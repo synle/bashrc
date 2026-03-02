@@ -86,7 +86,9 @@ function findMarkers(content, targetFile) {
   const escapedSuffix = suffix.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   // Match: prefix BEGIN key suffix (suffix is optional with possible whitespace)
-  const pattern = escapedSuffix ? `${escapedPrefix} ${TEXT_BLOCK_START_MARKER} (.+?)\\s*${escapedSuffix}` : `${escapedPrefix} ${TEXT_BLOCK_START_MARKER} (.+)`;
+  const pattern = escapedSuffix
+    ? `${escapedPrefix} ${TEXT_BLOCK_START_MARKER} (.+?)\\s*${escapedSuffix}`
+    : `${escapedPrefix} ${TEXT_BLOCK_START_MARKER} (.+)`;
 
   const regex = new RegExp(pattern, "g");
   const markers = [];
@@ -120,7 +122,7 @@ function cleanBlock(content, key, commentPrefix, commentSuffix) {
  * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns null.
  * @returns {string|null} The modified content, or null if markers not found and no insertMode
  */
-function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix = '', insertMode) {
+function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix = "", insertMode) {
   const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
   const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
   const block = `${BEGIN}\n${sourceContent}\n${END}`;
@@ -130,9 +132,9 @@ function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix 
 
   if (beginIdx !== -1 && endIdx !== -1) {
     return content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
-  } else if (insertMode === 'append') {
+  } else if (insertMode === "append") {
     return `${content}\n\n${block}\n`;
-  } else if (insertMode === 'prepend') {
+  } else if (insertMode === "prepend") {
     return `\n${block}\n\n${content}\n`;
   }
 
