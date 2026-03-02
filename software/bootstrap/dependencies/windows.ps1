@@ -748,6 +748,8 @@ Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer
 
 # Disable window minimize/maximize animations
 Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Type String -Value "0" -Force
+# Increase window border padding to make it easier to grab and resize windows
+Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "PaddedBorderWidth" -Type String -Value "-100" -Force
 # Disable taskbar button animations
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Type DWord -Value 0 -Force
 # Disable Aero transparency/blur effects
@@ -1190,6 +1192,43 @@ foreach ($pkg in $wingetPackages) {
 
 Write-Host "`nUpgrading all winget packages..." -ForegroundColor Cyan
 winget upgrade --all --include-unknown
+
+
+
+################################################################################
+# ---- Brave Browser Shortcut Flags ----
+################################################################################
+
+# Add --windows-native-window flag to all Brave shortcuts so it uses the native
+# Windows frame (easier to grab and resize)
+
+Write-Host "`n=== Updating Brave Browser Shortcuts ===" -ForegroundColor Cyan
+
+$braveFlag = "--windows-native-window"
+$braveShortcutPaths = @(
+    "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar",
+    "$env:APPDATA\Microsoft\Internet Explorer\Quick Launch",
+    "$env:PUBLIC\Desktop",
+    "$env:USERPROFILE\Desktop",
+    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs"
+)
+
+$wshShell = New-Object -ComObject WScript.Shell
+foreach ($searchPath in $braveShortcutPaths) {
+    if (!(Test-Path $searchPath)) { continue }
+    Get-ChildItem -Path $searchPath -Filter "*.lnk" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+        $lnk = $wshShell.CreateShortcut($_.FullName)
+        if ($lnk.TargetPath -like "*brave*") {
+            if ($lnk.Arguments -like "*$braveFlag*") {
+                Write-Host "  Already set: $($_.FullName)" -ForegroundColor Yellow
+            } else {
+                $lnk.Arguments = ("$($lnk.Arguments) $braveFlag").Trim()
+                $lnk.Save()
+                Write-Host "  Updated: $($_.FullName)" -ForegroundColor Green
+            }
+        }
+    }
+}
 
 
 
