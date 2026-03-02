@@ -250,10 +250,7 @@ describe("processInlineMarkers", () => {
   });
 
   it("should handle multiple markers in one content block", () => {
-    const input = [
-      '"background": "#AAAAAA", // {{dark.background}}',
-      '"foreground": "#BBBBBB", // {{dark.foreground}}',
-    ].join("\n");
+    const input = ['"background": "#AAAAAA", // {{dark.background}}', '"foreground": "#BBBBBB", // {{dark.foreground}}'].join("\n");
     const { content, changed } = processInlineMarkers(input, testMap, "test.jsonc");
     expect(changed).toBe(true);
     expect(content).toContain('"#000000", // {{dark.background}}');
@@ -261,10 +258,7 @@ describe("processInlineMarkers", () => {
   });
 
   it("should handle different theme maps in same content", () => {
-    const input = [
-      '"bg": "#111111", // {{dark.background}}',
-      '"bg": "#222222", // {{light.background}}',
-    ].join("\n");
+    const input = ['"bg": "#111111", // {{dark.background}}', '"bg": "#222222", // {{light.background}}'].join("\n");
     const { content } = processInlineMarkers(input, testMap, "test.jsonc");
     expect(content).toContain('"#000000", // {{dark.background}}');
     expect(content).toContain('"#FFFFFF", // {{light.background}}');
@@ -312,10 +306,7 @@ describe("processInlineMarkers", () => {
   });
 
   it("should handle mixed double and single quotes in same content", () => {
-    const input = [
-      '"background": "#AAAAAA", // {{dark.background}}',
-      "const fg = '#BBBBBB'; // {{dark.foreground}}",
-    ].join("\n");
+    const input = ['"background": "#AAAAAA", // {{dark.background}}', "const fg = '#BBBBBB'; // {{dark.foreground}}"].join("\n");
     const { content } = processInlineMarkers(input, testMap, "test.jsonc");
     expect(content).toContain('"#000000", // {{dark.background}}');
     expect(content).toContain("'#FFFFFF'; // {{dark.foreground}}");
@@ -330,10 +321,10 @@ describe("e2e: compile, clean, recompile flow", () => {
   it("should compile inline markers, clean preserves markers, recompile restores values", () => {
     // Step 1: Start with drifted values and compile
     const original = [
-      '{',
+      "{",
       '  "background": "#AAAAAA", // {{dark.background}}',
       '  "foreground": "#BBBBBB", // {{dark.foreground}}',
-      '}',
+      "}",
     ].join("\n");
 
     const compiled = processInlineMarkers(original, testMap, "test.jsonc");
@@ -366,14 +357,9 @@ describe("e2e: compile, clean, recompile flow", () => {
   });
 
   it("should handle mixed BEGIN/END blocks and inline markers in full flow", () => {
-    const original = [
-      '// BEGIN header',
-      'old header',
-      '// END header',
-      '{',
-      '  "background": "#AAAAAA", // {{dark.background}}',
-      '}',
-    ].join("\n");
+    const original = ["// BEGIN header", "old header", "// END header", "{", '  "background": "#AAAAAA", // {{dark.background}}', "}"].join(
+      "\n",
+    );
 
     // Step 1: Process BEGIN/END block
     const afterBlock = replaceBlock(original, "header", "new header", "//", "");

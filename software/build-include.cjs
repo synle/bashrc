@@ -36,7 +36,15 @@
  */
 const fs = require("fs");
 const { execSync } = require("child_process");
-const { isFilePath, autoTransform, findMarkers, cleanBlock, replaceBlock, processInlineMarkers, COLOR_MAP } = require("./build-include.common.cjs");
+const {
+  isFilePath,
+  autoTransform,
+  findMarkers,
+  cleanBlock,
+  replaceBlock,
+  processInlineMarkers,
+  COLOR_MAP,
+} = require("./build-include.common.cjs");
 
 /**
  * Explicit inclusions for keys that aren't file paths or need transforms.
@@ -133,9 +141,7 @@ for (const target of targetFiles) {
 // --- Inline marker processing for JSONC and software/scripts/*.js files ---
 if (!isCleanMode) {
   const colorMap = COLOR_MAP;
-  const inlineMarkerFiles = targetFiles.filter(
-    (f) => f.endsWith(".jsonc") || (f.endsWith(".js") && f.startsWith("software/scripts/")),
-  );
+  const inlineMarkerFiles = targetFiles.filter((f) => f.endsWith(".jsonc") || (f.endsWith(".js") && f.startsWith("software/scripts/")));
 
   for (const target of inlineMarkerFiles) {
     if (!fs.existsSync(target)) continue;
