@@ -24,4 +24,4 @@ clean:
 	bash clean.sh
 
 nuke:
-	rm -rf ~/.bash_sy* ~/.local/share/fnm ~/.hushlogin
+	rm -rf ~/.nvm ~/.bash_sy* ~/.local/share/fnm ~/.hushlogin
