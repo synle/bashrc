@@ -153,6 +153,7 @@ EOF
   installPackage android-platform-tools
   installPackage font-fira-code
   installPackage font-cascadia
+  installPackage duti
 
   ################################################################################
   # ---- Cleanup ----
