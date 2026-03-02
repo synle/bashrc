@@ -1,38 +1,26 @@
-/** * Configures iTerm2 terminal settings for macOS - deploys high contrast dark/light color schemes and keymaps. */
+/** * Configures iTerm2 terminal settings for macOS - deploys profile with colors, keymaps, and preferences. */
 async function doWork() {
   exitIfUnsupportedOs("is_os_ubuntu", "is_os_android_termux", "is_os_chromeos", "is_os_arch_linux");
 
-  log(">> Installing Mac Only - iTerm High Contrast Themes & Keymap");
+  log(">> Installing Mac Only - iTerm Profile Config");
 
   const baseTargetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "mac");
 
-  // Deploy high contrast dark color scheme (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark")
-  const darkThemePath = path.join(baseTargetPath, "Sy Dark.itermcolors");
-  log(">>> iTerm Dark Theme (High Contrast)", darkThemePath);
-  writeText(darkThemePath, await fetchUrlAsString("software/scripts/mac/iterm-color-scheme-dracula.xml"));
+  // Deploy iTerm profile with high contrast dark color scheme (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark")
+  // and high contrast light color scheme (matches VS Code "Default High Contrast Light" / Sublime "High Contrast Light")
+  const profilePath = path.join(baseTargetPath, "iterm-profile.json");
+  log(">>> iTerm Profile", profilePath);
+  writeText(profilePath, await fetchUrlAsString("software/scripts/mac/iterm-profile.jsonc"));
 
-  // Deploy high contrast light color scheme (matches VS Code "Default High Contrast Light" / Sublime "High Contrast Light")
-  const lightThemePath = path.join(baseTargetPath, "Sy Light.itermcolors");
-  log(">>> iTerm Light Theme (High Contrast)", lightThemePath);
-  writeText(lightThemePath, await fetchUrlAsString("software/scripts/mac/iterm-color-scheme-light.xml"));
-
-  // Deploy keymap
-  const keymapPath = path.join(baseTargetPath, "iterm.itermkeymap");
-  log(">>> iTerm Keymap", keymapPath);
-  writeText(keymapPath, await fetchUrlAsString("software/scripts/mac/iterm-keys.jsonc"));
-
-  // Remove legacy auto-theme Python script (iTerm2 3.5+ has native dark/light mode support)
-  const itermAppSupportPath = findDirSingle(getOsxApplicationSupportCodeUserPath(), /iTerm[ ]*[a-z0-9]*/i);
-  if (filePathExist(itermAppSupportPath)) {
-    const legacyScript = path.join(itermAppSupportPath, "Scripts/AutoLaunch/switch_automatic.py");
-    if (filePathExist(legacyScript)) {
-      log(">>> Removing legacy auto-theme script", legacyScript);
-      execBash(`rm -f "${legacyScript}"`, true);
-    }
+  // Import iTerm plist preferences when force refresh is enabled
+  if (IS_FORCE_REFRESH) {
+    const plistPath = path.join(baseTargetPath, "iterm.plist");
+    log(">>> Downloading iTerm plist", plistPath);
+    await downloadAsset(getFullUrl("software/scripts/mac/iterm.plist"), plistPath);
+    log(">>> Importing iTerm plist preferences");
+    execBash(`defaults import com.googlecode.iterm2 "${plistPath}"`, true);
   }
 
-  log(
-    ">>> To enable auto dark/light switching: iTerm2 > Settings > Profiles > Colors > 'Use different colors for light mode and dark mode'",
-  );
-  log(">>> Set Dark preset to 'Sy Dark' and Light preset to 'Sy Light'");
+
+  log(">>> To apply: iTerm2 > Settings > Profiles > Other Actions > Import JSON Profiles");
 }
