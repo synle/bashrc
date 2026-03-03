@@ -21,11 +21,12 @@ const BASH_PROFILE_CODE_REPO_EDIT_URL = `${REPO_URL}/edit/${REPO_BRANCH_NAME}`;
 const LIGHT_WEIGHT_SCRIPTS = window.LIGHT_WEIGHT_SCRIPTS;
 
 /** @type {string} The OS flag key matching the current browser's detected platform. */
-const currentSystemFlag =
-  navigator.platform.toUpperCase().indexOf("MAC") >= 0
-    ? "is_os_mac"
-    : navigator.platform.indexOf("Win") > -1
-      ? "is_os_windows"
+const currentSystemFlag = /mac/i.test(navigator.platform)
+  ? "is_os_mac"
+  : /win/i.test(navigator.platform)
+    ? "is_os_windows"
+    : /android/i.test(navigator.userAgent)
+      ? "is_os_android_termux"
       : "is_os_ubuntu";
 
 /**
@@ -103,16 +104,26 @@ async function copyTextToClipboard(text) {
 }
 
 /**
- * Parses, normalizes, deduplicates, and sorts environment variable paths for a given OS.
- * Merges user-provided paths with OS-specific defaults, normalizes path separators,
- * replaces well-known Windows directories with environment variable placeholders,
- * and removes duplicates.
- * @param {string} env - Raw environment variable paths input (newline, semicolon, or colon separated).
- * @param {string} osFlag - The target OS identifier ('windows', 'mac', or other for generic).
- * @param {boolean} shouldUseDefaultEnvs - Whether to include OS-specific default environment paths.
- * @param {string} [envSepToReturn] - The separator to join the resulting paths. Defaults to ';' for Windows/generic or ':' for Mac.
- * @returns {string} The deduplicated, sorted, and joined environment variable paths.
+ * Hook that syncs React state with the URL hash fragment.
+ * Listens for browser back/forward navigation via the hashchange event.
+ * @param {string} fallback - The default route when no hash is present.
+ * @returns {[string, function(string): void]} A tuple of [currentRoute, setRoute].
  */
+function useHashRoute(fallback) {
+  const getHash = () => window.location.hash.slice(1) || fallback;
+  const [route, setRouteState] = useState(getHash);
+
+  useEffect(() => {
+    const onHashChange = () => setRouteState(getHash());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  const setRoute = (hash) => {
+    window.location.hash = hash;
+  };
+  return [route, setRoute];
+}
 
 // create contexts
 const MainAppContext = React.createContext();
@@ -372,31 +383,26 @@ function ScriptOutputSection({ script }) {
  * @returns {React.ReactElement} The main body container with collapse controls and selected config body.
  */
 function MainBodyContainer() {
-  const { appData } = useContext(MainAppContext);
-  const selectedConfig = appData.configs.find((config) => config.idx === appData.formValue.commandChoice);
+  const { appData, route } = useContext(MainAppContext);
+  const selectedConfig = appData.configs.find((config) => config.idx === route) || appData.configs[0];
 
   return <div id="mainBodyContainer">{selectedConfig.renderBody()}</div>;
 }
 
 /**
  * Top tab bar navigation that renders a button for each available configuration.
- * Highlights the currently selected tab and triggers commandChoice changes on click.
- * Consumes MainAppContext for the configs list and input change handling.
+ * Highlights the currently selected tab and updates the hash route on click.
+ * Consumes MainAppContext for the configs list and route handling.
  * @returns {React.ReactElement} The top navigation tab bar.
  */
 function TopNavigationContainer() {
-  const { appData, onInputChange } = useContext(MainAppContext);
-  const formValue = appData.formValue;
+  const { appData, route, setRoute } = useContext(MainAppContext);
 
   return (
     <div id="topNavigationContainer">
       <div className="nav-radio-group">
         {appData.configs.map((config) => (
-          <button
-            key={config.idx}
-            className={formValue.commandChoice === config.idx ? "selected" : ""}
-            onClick={() => onInputChange("commandChoice", config.idx)}
-          >
+          <button key={config.idx} className={route === config.idx ? "selected" : ""} onClick={() => setRoute(config.idx)}>
             {config.text}
           </button>
         ))}
@@ -935,7 +941,7 @@ function CodeEditor({ content = "", syntax, height, readOnly = false, options: e
   const language = syntax || detectLanguageFromContent(content);
 
   // Calculate height based on content line count so the editor stretches to fit
-  const lineHeight = 20;
+  const lineHeight = 16;
   const padding = 20;
   const lineCount = content.split("\n").length;
   const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
@@ -1362,6 +1368,15 @@ function CommonEditorSetupDom(props) {
  */
 function App() {
   const [appData, setAppData] = useState();
+  const [route, setRoute] = useHashRoute(
+    currentSystemFlag === "is_os_mac"
+      ? "command-option-setup-mac-osx"
+      : currentSystemFlag === "is_os_windows"
+        ? "command-option-setup-windows"
+        : currentSystemFlag === "is_os_android_termux"
+          ? "command-option-setup-android-termux"
+          : "command-option-setup-ubuntu",
+  );
   const [theme, setTheme] = useState(() => {
     return getStorage("theme", "light");
   });
@@ -1474,13 +1489,6 @@ function App() {
           setupHostsScript,
           ipAddressMappingConfigs,
           formValue: {
-            commandChoice:
-              getStorage("commandChoice") ||
-              (currentSystemFlag === "is_os_mac"
-                ? "command-option-setup-mac-osx"
-                : currentSystemFlag === "is_os_windows"
-                  ? "command-option-setup-windows"
-                  : "command-option-setup-ubuntu"),
             osToRun: getStorage("osToRun") || "windows",
             debugWriteToDir: getStorage("debugWriteToDir") || "",
             setupDependencies: getStorage("setupDependencies") || "yes",
@@ -1537,6 +1545,8 @@ function App() {
           appData,
           setAppData: onSetAppData,
           onInputChange,
+          route,
+          setRoute,
         }}
       >
         <EditorCollapseContext.Provider
