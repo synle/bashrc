@@ -27,6 +27,13 @@ if (!fs.existsSync(scriptPath)) {
   process.exit(1);
 }
 
+// Guard: reject non-script files (e.g. old combined.js temp files, launch.json, etc.)
+if (!scriptPath.includes("software/scripts/")) {
+  console.error(`[debug-runner] Error: expected a file under software/scripts/, got: ${scriptPath}`);
+  console.error(`[debug-runner] Open a script file (e.g. software/scripts/fonts.js) in the editor, then press F5.`);
+  process.exit(1);
+}
+
 const indexPath = path.resolve(__dirname, "index.js");
 if (!fs.existsSync(indexPath)) {
   console.error(`index.js not found: ${indexPath}`);

@@ -396,10 +396,10 @@ A launch configuration is provided to debug individual `.js` script files with b
 
 ### Files
 
-| File                        | Purpose                                                         |
-| --------------------------- | --------------------------------------------------------------- |
+| File                         | Purpose                                                         |
+| ---------------------------- | --------------------------------------------------------------- |
 | `.vscode/launch.json`        | VS Code debug launch configuration                              |
-| `.vscode/settings.json`     | Sets WSL as default terminal (for Windows/WSL users)            |
+| `.vscode/settings.json`      | Sets WSL as default terminal (for Windows/WSL users)            |
 | `software/.debug-runner.cjs` | Helper that concatenates `index.js` + script file and runs them |
 
 ### Usage
