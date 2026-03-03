@@ -53,6 +53,7 @@ export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/$REPO_PATH_IDENTIFIER/$REPO_BRANCH_NAME" # https://raw.githubusercontent.com/synle/bashrc/master
 
 # environment toolings
+export TZ="UTC" # forces all date/time operations (Node.js, Python, etc.) to use UTC
 export NODE_JS_VERSION="24"
 export FNM_DIR="$HOME/.local/share/fnm"
 
