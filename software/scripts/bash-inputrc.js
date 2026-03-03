@@ -21,6 +21,10 @@ set mark-symlinked-directories on      # Append / to symlinked directories durin
 set completion-map-case on             # Treat hyphens and underscores as equivalent during completion
 set skip-completed-text on             # Don't duplicate text when completing in the middle of a word
 set menu-complete-display-prefix on    # Show the common prefix before cycling through completions
+set match-hidden-files off             # Don't complete dotfiles unless you type the leading .
+set page-completions off               # Show all completions at once instead of paging with --More--
+set completion-query-items 250         # Raise threshold before "Display all N possibilities?" prompt (default 100)
+set echo-control-characters off        # Don't print ^C on Ctrl+C — cleaner terminal output
 
 ################################################################################
 # ---- Editing Behavior ----
@@ -68,6 +72,11 @@ set revert-all-at-newline on           # Reset edited history entries when you p
 ################################################################################
 # ---- Custom Shortcuts ----
 ################################################################################
+"\\C-l": clear-screen                  # Ctrl+L — clear screen (explicit, some terminals don't set this)
+"\\C-e": edit-and-execute-command      # Ctrl+E — open current command in $EDITOR
+"\\C-o": "fuzzy_directory\\r"          # Ctrl+O — run fuzzy directory picker
+"\\C-t": "fuzzy_vim\\r"               # Ctrl+T — run fuzzy vim opener
+"\\C-p": "fuzzy_view_file\\r"         # Ctrl+P — run fuzzy file viewer
 "\\C-b": "fuzzy_favorite_command\\r"   # Ctrl+B — run fuzzy favorite command picker
 "\\C-n": "fuzzy_make_component\\r"       # Ctrl+N — run fuzzy make-component scaffold
     `.trim();

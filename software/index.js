@@ -390,10 +390,56 @@ const LINE_BREAK_SLASH = "".padStart(LINE_BREAK_COUNT, "/");
 /** @type {string} Equal-character line break for section separators (e.g. "====...====") */
 const LINE_BREAK_EQUAL = "".padStart(LINE_BREAK_COUNT, "=");
 
-/** @type {string} Opening delimiter for managed text blocks — mirrors TEXT_BLOCK_START_MARKER in build-include.common.cjs */
+// BEGIN software/common.cjs
+/** @type {string} Opening delimiter for managed text blocks */
 const TEXT_BLOCK_START_MARKER = "BEGIN";
-/** @type {string} Closing delimiter for managed text blocks — mirrors TEXT_BLOCK_END_MARKER in build-include.common.cjs */
+/** @type {string} Closing delimiter for managed text blocks */
 const TEXT_BLOCK_END_MARKER = "END";
+
+/**
+ * Replace content between BEGIN/END markers.
+ * If markers are not found, behavior depends on insertMode:
+ * 'append' adds to end, 'prepend' adds to beginning, null/undefined returns content as-is.
+ * @param {string} content - The full text content
+ * @param {string} key - The marker key
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} commentPrefix - Comment prefix (e.g. '#', '//')
+ * @param {string} [commentSuffix=''] - Comment suffix (e.g. ' -->', '')
+ * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns content as-is.
+ * @returns {string} The modified content, or original content if markers not found and no insertMode
+ */
+function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix = "", insertMode) {
+  sourceContent = sourceContent.trim();
+
+  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
+  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
+  const block = `${BEGIN}\n${sourceContent}\n${END}`;
+
+  const beginIdx = content.indexOf(BEGIN);
+  const endIdx = content.indexOf(END);
+
+  if (beginIdx !== -1 && endIdx !== -1) {
+    return content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
+  } else if (insertMode === "append") {
+    return `${content}\n\n${block}\n`;
+  } else if (insertMode === "prepend") {
+    return `\n${block}\n\n${content}\n`;
+  }
+
+  return content;
+}
+
+// Only export when required as a module (e.g. by build-include.cjs).
+// Skip when this file is inlined into index.js via BEGIN/END markers,
+// where index.js runs as the main module (require.main === module).
+if (typeof module !== "undefined" && require.main !== module) {
+  module.exports = {
+    TEXT_BLOCK_START_MARKER,
+    TEXT_BLOCK_END_MARKER,
+    replaceBlock,
+  };
+}
+// END software/common.cjs
 
 //////////////////////////////////////////////////////
 // Directory Search Utilities
@@ -915,47 +961,6 @@ function getOsxApplicationSupportCodeUserPath() {
 // Text Block Management
 //////////////////////////////////////////////////////
 /**
- * Inserts or replaces a delimited text block within a larger text body.
- * The block is bounded by "{commentPrefix} BEGIN {key}" and "{commentPrefix} END {key}" markers.
- * If the block already exists, it is replaced. If not found, behavior depends on insertMode:
- * 'append' adds to end, 'prepend' adds to beginning, null/undefined leaves content unchanged.
- * @param {string} content - The full text content to modify
- * @param {string} key - The identifier for the text block (used in delimiter comments)
- * @param {string} sourceContent - The new content for the block
- * @param {string} commentPrefix - The comment character/prefix (e.g. '#', '//')
- * @param {string} [commentSuffix=''] - The comment suffix (e.g. ' -->', '')
- * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined keeps content as-is.
- * @param {boolean} [cleanupSpace=false] - Whether to collapse extra whitespace
- * @returns {string} The modified text content
- */
-function updateTextBlock(content, key, sourceContent, commentPrefix, commentSuffix = "", insertMode, cleanupSpace = false) {
-  sourceContent = sourceContent.trim();
-
-  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
-  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
-  const block = `${BEGIN}\n${sourceContent}\n${END}`;
-
-  const beginIdx = content.indexOf(BEGIN);
-  const endIdx = content.indexOf(END);
-
-  if (beginIdx !== -1 && endIdx !== -1) {
-    // Replace existing block
-    content = (content.slice(0, beginIdx) + block + content.slice(endIdx + END.length)).trim();
-  } else if (insertMode === "append") {
-    // Append: block not found, add to end
-    content = `${content}\n\n${block}\n`;
-  } else if (insertMode === "prepend") {
-    // Prepend: block not found, add to beginning
-    content = `\n${block}\n\n${content}\n`;
-  }
-
-  if (cleanupSpace) {
-    content = cleanupExtraWhitespaces(content);
-  }
-  return content;
-}
-
-/**
  * Appends a delimited text block to the end of a text body (or replaces it if it already exists).
  * @param {string} content - The full text content to modify
  * @param {string} key - The identifier for the text block
@@ -964,7 +969,7 @@ function updateTextBlock(content, key, sourceContent, commentPrefix, commentSuff
  * @returns {string} The modified text content
  */
 function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return updateTextBlock(content, key, sourceContent, commentPrefix, "", "append", true);
+  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "append"));
 }
 
 /**
@@ -976,7 +981,7 @@ function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
  * @returns {string} The modified text content
  */
 function prependTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return updateTextBlock(content, key, sourceContent, commentPrefix, "", "prepend", true);
+  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "prepend"));
 }
 
 //////////////////////////////////////////////////////

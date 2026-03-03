@@ -66,7 +66,7 @@ Dual-purpose file:
 
 Key constants: `IS_TEST_SCRIPT_MODE`, `IS_DEBUG`, `TEMP_SCRIPT_PREFIX`, `OS_SCRIPT_PATHS`
 
-JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/index.d.ts` and `software/build-include.common.d.ts`. OS flag constants need explicit `const` declarations for .d.ts generation.
+JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/index.d.ts`. OS flag constants need explicit `const` declarations for .d.ts generation.
 
 ### OS Flags Convention
 
@@ -98,7 +98,7 @@ Shared environment setup inlined into `run.sh` and `build.sh` via `# BEGIN`/`# E
 
 ### build-include system
 
-`software/build-include.cjs` processes `# BEGIN path/to/file` / `# END path/to/file` markers in target files, replacing the block content with the referenced file. This is how `common-env.sh` gets inlined into `run.sh` and `build.sh`.
+`software/build-include.cjs` processes `# BEGIN path/to/file` / `# END path/to/file` markers in target files, replacing the block content with the referenced file. This is how `common-env.sh` gets inlined into `run.sh` and `build.sh`, and how `common.cjs` gets inlined into `index.js`.
 
 It also processes **inline markers** in JSONC files. These markers reference the central color map (`software/scripts/color-map.cjs`) and keep quoted string values in sync across theme files:
 
@@ -116,13 +116,13 @@ Run with: `bash build.sh --steps="build-include"` or `node software/build-includ
 
 ### Central color map
 
-`software/build-include.common.cjs` exports a `COLOR_MAP` with shared `dark` and `light` theme colors used across multiple config files (Windows Terminal JSONC, Sublime Text JSONC). Colors unique to a single file (e.g., Sublime's `accent`, `guide`, `popup_css`) stay hardcoded in that file.
+`software/build-include.cjs` exports a `COLOR_MAP` with shared `dark` and `light` theme colors used across multiple config files (Windows Terminal JSONC, Sublime Text JSONC). Colors unique to a single file (e.g., Sublime's `accent`, `guide`, `popup_css`) stay hardcoded in that file.
 
 JSONC files reference color map entries via inline trailing comments: `// {{theme.key}}` (e.g., `// {{dark.blue}}`, `// {{light.selection}}`). The `build-include.cjs` build step resolves these markers.
 
 **Adding a new shared color:**
 
-1. Add the key/value to the appropriate theme in `COLOR_MAP` inside `software/build-include.common.cjs`
+1. Add the key/value to the appropriate theme in `COLOR_MAP` inside `software/build-include.cjs`
 2. Add `// {{theme.key}}` markers to the hex values in the consuming JSONC files
 3. Run `node software/build-include.cjs` to verify
 
@@ -131,7 +131,8 @@ JSONC files reference color map entries via inline trailing comments: `// {{them
 - `software/scripts/*.js` - Cross-platform scripts (git, vim, fonts, editors, etc.)
 - `software/scripts/<os>/` - OS-specific scripts
 - `software/scripts/<os>/_only.sh` - Shell scripts run only on that OS
-- `software/build-include.common.cjs` - Shared pure functions for BEGIN/END block management, color map, and inline markers. Used by both `build-include.cjs` (build time) and `index.js` (runtime). `tsc` generates `software/build-include.common.d.ts`.
+- `software/common.cjs` - Core shared constants (`TEXT_BLOCK_START_MARKER`, `TEXT_BLOCK_END_MARKER`) and `replaceBlock` function. Inlined into `index.js` at build time via BEGIN/END markers, and required by `build-include.cjs`. Uses `require.main !== module` guard to skip `module.exports` when inlined.
+- `software/build-include.cjs` - BEGIN/END block substitution engine and inline marker processor. Contains build-specific functions (comment styles, color map, marker scanning) plus CLI entry point. Uses `require.main !== module` guard: exports functions when required by tests, runs CLI when executed directly.
 - `software/scripts/*-color-dark.jsonc` / `*-color-light.jsonc` - Theme color configs with inline `// {{theme.key}}` markers
 - `software/metadata/` - Generated configs (script list, host mappings, IP addresses)
 

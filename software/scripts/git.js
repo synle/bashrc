@@ -1,17 +1,28 @@
 /**
- * Generates git rebase interactive alias snippets for various commit counts.
- * @returns {string} Git config alias entries for interactive rebase shortcuts.
+ * Generates numbered git alias snippets for interactive rebase and patch operations.
+ * @returns {string} Git config alias entries for r{N}, r{N}-vscode, patch-get{N}, patch-view{N}, and patch-download{N}.
  */
-function _getRebaseInteractiveSnippet() {
+function _getNumberedAliasSnippet() {
   const items = [];
-  for (let i = 2; i <= 10; i += 1) items.push(i);
+  for (let i = 1; i <= 10; i += 1) items.push(i);
   for (let i = 10; i <= 100; i += 5) items.push(i);
   for (let i = 150; i <= 1000; i += 50) items.push(i);
-  return [...new Set(items)].map((n) => `r${n} = rebase -i HEAD~${n}\nr${n}-vscode = !GIT_EDITOR=\\"code --wait\\" git r${n}`).join("\n");
+  return [...new Set(items)]
+    .map(
+      (n) =>
+        trimLeftSpaces(`
+          r${n} = "!git rn ${n}"
+          r${n}-vscode = "!git rn-code ${n}"
+          patch-get${n} = "!git patch-getn ${n}"
+          patch-view${n} = "!git patch-viewn ${n}"
+          patch-download${n} = "!git patch-downloadn ${n}"
+        `),
+    )
+    .join("\n");
 }
 
 /**
- * Builds the full git config content from a template, injecting email, core configs, and rebase aliases.
+ * Builds the full git config content from a template, injecting email, core configs, and numbered aliases.
  * @param {object} options - Configuration options.
  * @param {string} options.email - The git user email to inject.
  * @param {string} [options.extraCoreConfigs] - Additional git core config entries.
@@ -27,7 +38,7 @@ async function _getGitConfig({ email, extraCoreConfigs, addDefaultCommitTemplate
   try {
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_USER_EMAIL", email);
     templateGitConfig = appendTextBlock(templateGitConfig, "GIT_EXTRA_CORE_CONFIGS", extraCoreConfigs);
-    templateGitConfig = appendTextBlock(templateGitConfig, "GIT_REBASE_INTERACTIVE", _getRebaseInteractiveSnippet());
+    templateGitConfig = appendTextBlock(templateGitConfig, "GIT_NUMBERED_ALIASES", _getNumberedAliasSnippet());
     templateGitConfig = templateGitConfig.trim();
 
     if (addDefaultCommitTemplate === true) {

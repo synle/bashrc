@@ -14,7 +14,7 @@ const {
   COLOR_MAP,
   COMMENT_STYLES,
   DEFAULT_COMMENT_STYLE,
-} = require("../build-include.common.cjs");
+} = require("../build-include.cjs");
 
 // ---- tests ----
 
@@ -112,8 +112,8 @@ describe("replaceBlock", () => {
     expect(result).toBe("# BEGIN key\nnew content\n# END key");
   });
 
-  it("should return null when markers not found", () => {
-    expect(replaceBlock("no markers", "key", "content", "#", "")).toBeNull();
+  it("should return original content when markers not found", () => {
+    expect(replaceBlock("no markers", "key", "content", "#", "")).toBe("no markers");
   });
 
   it("should preserve content before and after markers", () => {
@@ -148,8 +148,8 @@ describe("cleanBlock", () => {
     expect(result).toBe("header\n# BEGIN key\n\n# END key\nfooter");
   });
 
-  it("should return null when markers not found", () => {
-    expect(cleanBlock("no markers", "key", "#", "")).toBeNull();
+  it("should return original content when markers not found", () => {
+    expect(cleanBlock("no markers", "key", "#", "")).toBe("no markers");
   });
 });
 

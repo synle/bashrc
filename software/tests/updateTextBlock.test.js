@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { getIndexFunction, getIndexConstant } from "./setup.js";
 
-const updateTextBlock = getIndexFunction("updateTextBlock");
+const replaceBlock = getIndexFunction("replaceBlock");
 const appendTextBlock = getIndexFunction("appendTextBlock");
 const prependTextBlock = getIndexFunction("prependTextBlock");
 const TEXT_BLOCK_START_MARKER = getIndexConstant("TEXT_BLOCK_START_MARKER");
@@ -9,7 +9,7 @@ const TEXT_BLOCK_END_MARKER = getIndexConstant("TEXT_BLOCK_END_MARKER");
 
 // ---- tests ----
 
-describe("updateTextBlock", () => {
+describe("replaceBlock", () => {
   describe("append - new block into empty content", () => {
     it("should append a new block to empty content", () => {
       const result = appendTextBlock("", "MY_BLOCK", "line1\nline2");
