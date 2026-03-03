@@ -14,17 +14,24 @@ if [ "$IS_FORCE_REFRESH" == "1" ] && command -v uv &>/dev/null; then
   rm -rf "$HOME/.local/bin/uv" "$HOME/.local/bin/uvx"
 fi
 
-# Skip if already installed
+# Install uv if not already installed
 if command -v uv &>/dev/null; then
   echo ">> Skipped uv: already installed at $(which uv)"
-  exit 0
+else
+  echo '>> Installing uv'
+  if [ "$is_os_mac" == "1" ]; then
+    echo '>>> Installing with Homebrew'
+    brew install uv
+  else
+    echo '>>> Installing with official installer'
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+  fi
 fi
 
-echo '>> Installing uv'
-if [ "$is_os_mac" == "1" ]; then
-  echo '>>> Installing with Homebrew'
-  brew install uv
+# Set up Python virtual environment at ~/.venv
+if [ ! -d "$HOME/.venv" ]; then
+  echo '>> Creating Python 3.12 virtual environment at ~/.venv'
+  uv venv --python 3.12 "$HOME/.venv"
 else
-  echo '>>> Installing with official installer'
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+  echo '>> Skipped ~/.venv: already exists'
 fi

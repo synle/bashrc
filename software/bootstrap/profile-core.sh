@@ -2,7 +2,9 @@
 export EDITOR='vim'
 export BASH_PATH=~/.bash_syle
 
-# add known paths to PATH if they exist
+################################################################################
+# ---- PATH Setup ----
+################################################################################
 path_candidates=(
   # common (linux / mac / wsl)
   /bin                                  # core system binaries
@@ -50,7 +52,6 @@ export HISTCONTROL=ignoreboth  # avoid duplicate entries and commands starting w
 shopt -s histappend  # append instead of overwrite history file
 shopt -s cmdhist  # save multi-line commands as one entry
 
-# command to ignore in the list
 ignored_history=(
   "ls"
   "ll"
@@ -129,18 +130,10 @@ function golast() {
 }
 
 # write + reload history after every command (share history across terminals)
-# Before every prompt — meaning after every command you run and right before bash shows >>> again.
-# Example flow:
-# 1. You type ls and hit Enter
-# 2. ls runs
-# 3. Bash runs everything in PROMPT_COMMAND
-# 4. Bash displays your prompt (>>>)
-# 5. You type next command...
 PROMPT_COMMAND="_track_pwd; history -a; history -c; history -r;${PROMPT_COMMAND}"
 
-
 ################################################################################
-# ---- Custom Bash autocomplete filters for commands and file patterns ----
+# ---- Autocomplete Filters ----
 ################################################################################
 ignored_commands=(
   "*/clean-staging"
@@ -162,41 +155,44 @@ export FIGNORE="$FIGNORE${file_string}"
 unset ignored_commands cmd_string ignored_files file_string
 
 ################################################################################
-# ---- Common Aliases ----
+# ---- Aliases: Navigation ----
 ################################################################################
 alias ..="cd .."
-alias bs="bash"
-alias v="vim"
-alias vi="vim"
-alias l="ls -a"
-alias ls="ls -1"
-alias ll="ls -la"
-alias g="git"
-alias gg="git --no-pager"
-alias n="node"
-alias y="yarn"
-alias s='ssh -4'
-alias b="bat --style=plain"
-alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
-alias fzf='fzf --no-sort'
-alias grep='grep --color'
-alias gr='grep -i'
 alias clear='/usr/bin/clear'
 
-# git aliases
+# ---- Aliases: File Listing ----
+alias ls="ls -1 -F --color"
+alias ll="ls -lah"
+alias ls_newest="ll -t"                  # sort by modification time (newest first)
+alias ls_newest_last="ls_newest -r"      # sort by modification time (oldest first)
+alias ls_biggest="ll -S"                 # sort by file size (biggest first)
+alias ls_biggest_last="ls_biggest -r"    # sort by file size (smallest first)
+
+# ---- Aliases: Editors / Tools ----
+alias bs="bash"
+alias vi="vim"
+alias fzf='fzf --no-sort'
+alias grep='grep --color'
+alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
+
+# ---- Aliases: Git ----
+alias g="git"
+alias gg="git --no-pager"
 alias merge="git fetch --all --prune && git merge"
 alias merge_master="merge origin/master"
-alias pp="pi"
 
-# python aliases
+# ---- Aliases: Node ----
+alias n="node"
+alias y="yarn"
+
+# ---- Aliases: Python ----
 alias pytest="python -m pytest"
 alias pytest-single="python -m pytest -vvl -k"
 alias flake="flake8"
 alias flake8="python -m flake8"
 
-# claude aliases
+# ---- Aliases: Claude ----
 alias cl="claude --dangerously-skip-permissions"
-alias c="cl"
 alias cm='cl --model opus'
 
 ################################################################################
@@ -217,126 +213,47 @@ function ech() {
     }1'
 }
 
-function p() {
-  activate_py
-  python "$@"
+function tree() {
+  find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 }
 
-function pi() {
-  activate_py
-  pip install -r "$@"
+function pwd2() {
+  echo '===== pwd ===================================='
+  command pwd
+  echo "cd \"$(command pwd)\""
+  echo '=============================================='
 }
 
+################################################################################
+# ---- Python ----
+################################################################################
 function activate_py() {
-  # Check if Python virtual environment is already activated
+  type -P python &>/dev/null && return
   if [[ -z "$VIRTUAL_ENV" ]]; then
-    # Try activating local venv first
-    if [[ -f "./venv/bin/activate" ]]; then
-      source ./venv/bin/activate
-    # Then try user home venv
-    elif [[ -f "$HOME/venv/bin/activate" ]]; then
-      source "$HOME/venv/bin/activate"
+    if [[ -f "./.venv/bin/activate" ]]; then
+      source ./.venv/bin/activate # uv's default (local project)
+    elif [[ -f "./venv/bin/activate" ]]; then
+      source ./venv/bin/activate # traditional venv (local project)
+    elif [[ -f "$HOME/.venv/bin/activate" ]]; then
+      source "$HOME/.venv/bin/activate" # uv's default (home directory)
     fi
   fi
 }
 
-
-rainbow_block="##########"
-rainbow_colors=(91 93 92 96 94 95)
-
-function rainbow_print() {
-    # 1. Determine the color set
-    # If $1 is provided and looks like a list of numbers, use it.
-    # Otherwise, fall back to the global rainbow_colors.
-    local colors
-    if [[ -n "$1" && "$1" =~ ^[0-9[:space:]]+$ ]]; then
-        colors=($1)
-        shift # Remove colors from arguments so $1 becomes the text
-    else
-        colors=("${rainbow_colors[@]}")
-    fi
-
-    # 2. Get the input text (from remaining $1 or stdin)
-    local input="${1:-$(cat -)}"
-    local color_count=${#colors[@]}
-
-    # 3. Print
-    for (( i=0; i<${#input}; i++ )); do
-        local color_idx=$(( i % color_count ))
-        local color=${colors[$color_idx]}
-        printf "\e[%sm%s\e[0m" "$color" "${input:$i:1}"
-    done
-    echo
+function python() {
+  activate_py
+  command python "$@"
 }
 
-# How to use it:
-# Default behavior (Clears screen, prints 5 blocks):
-# br
-# Print 10 blocks (Still clears screen):
-# br 10
-# Print 3 blocks WITHOUT clearing:
-# br 3 no-clear
-# Print the default 5 blocks WITHOUT clearing:
-# br 5 no-clear
-function br() {
-    local repeat_count=${1:-5}
-    local clear_flag=${2:-"clear"}
-    local reverse_flag=${3:-"normal"}
-
-    [[ "$clear_flag" != "no-clear" ]] && clear
-
-    local colors=("${rainbow_colors[@]}")
-
-    if [[ "$reverse_flag" == "reverse" ]]; then
-        local reversed=()
-        for ((i=${#colors[@]}-1; i>=0; i--)); do
-            reversed+=("${colors[i]}")
-        done
-        colors=("${reversed[@]}")
-    fi
-
-    local line=""
-    for ((i=0; i<repeat_count; i++)); do
-        line+="$rainbow_block"
-    done
-
-    # Pass the local color array as a space-separated string
-    echo "$line" | rainbow_print "${colors[*]}"
+function pip() {
+  activate_py
+  command pip "$@"
 }
 
-# # Usage:
-# spinner &        # Start spinner in the background
-# SPIN_PID=$!      # Get the Process ID
-# sleep 3          # Simulate a long command
-# kill $SPIN_PID   # Stop the spinner
-# echo "Done!"
-function spinner() {
-  local chars="/-\|"
-  # Using your preferred high-contrast neon colors
-  local colors=(91 93 92 96 94 95)
-  local c_idx=0
-
-  # Hide the cursor so it looks cleaner
-  tput civis
-
-  # Trap to restore the cursor if you hit Ctrl+C
-  trap "tput cnorm; exit" SIGINT
-
-  while true; do
-    for (( i=0; i<${#chars}; i++ )); do
-      local color="${colors[$c_idx]}"
-
-      # Print the character in the current neon color
-      echo -ne $'\e[1;'"${color}m${chars:$i:1}"$'\e[m'"\r"
-
-      sleep 0.1
-
-      # Move to the next color in the array
-      c_idx=$(( (c_idx + 1) % ${#colors[@]} ))
-    done
-  done
-}
-
+################################################################################
+# ---- Node / NPM ----
+################################################################################
+# wraps npm so bare subcommand names run as `npm run <name>`
 function npm() {
   case "${1-}" in
     ""|-*|access|adduser|audit|bugs|cache|ci|completion|config|dedupe|deprecate|diff|dist-tag|\
@@ -355,23 +272,81 @@ function renpm() {
   npm install
 }
 
-function tree() {
-  find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
+################################################################################
+# ---- Diff (file diff or git hash compare) ----
+################################################################################
+function diff() {
+  if [ $# -ne 2 ]; then
+    command diff -w --color -y --suppress-common-lines "$@"
+    return
+  fi
+
+  local file1_valid=false file2_valid=false
+  [ -f "$1" ] && file1_valid=true
+  [ -f "$2" ] && file2_valid=true
+
+  # both files exist — diff them
+  if $file1_valid && $file2_valid; then
+    if type -P code &>/dev/null; then
+      code --diff "$1" "$2"
+    else
+      command diff -w --color -y --suppress-common-lines "$1" "$2"
+    fi
+    return
+  fi
+
+  # one file exists, one doesn't
+  if $file1_valid && ! $file2_valid; then
+    echo "File not found: $2"
+    return 1
+  fi
+  if ! $file1_valid && $file2_valid; then
+    echo "File not found: $1"
+    return 1
+  fi
+
+  # neither file exists — check if they look like git hashes
+  local hash_re='^[a-f0-9]{4,40}$'
+  local hash1_valid=false hash2_valid=false
+  if [[ "$1" =~ $hash_re ]] && git rev-parse --verify "$1" &>/dev/null; then
+    hash1_valid=true
+  fi
+  if [[ "$2" =~ $hash_re ]] && git rev-parse --verify "$2" &>/dev/null; then
+    hash2_valid=true
+  fi
+
+  if $hash1_valid && $hash2_valid; then
+    echo "git diff $1 $2"
+    git diff "$1" "$2"
+
+    # open github compare if remote is available
+    local repo_url
+    repo_url=$(git config --get remote.origin.url 2>/dev/null)
+    if [ -n "$repo_url" ]; then
+      repo_url="${repo_url#*:}"
+      repo_url="${repo_url%.git}"
+      repo_url="${repo_url#*github.com/}"
+      local compare_url="https://github.com/${repo_url}/compare/${1}...${2}"
+      echo "$compare_url"
+      open "$compare_url"
+    fi
+    return
+  fi
+
+  # partial match — tell user which is invalid
+  if ! $hash1_valid && ! $file1_valid; then
+    echo "File or hash not found: $1"
+  fi
+  if ! $hash2_valid && ! $file2_valid; then
+    echo "File or hash not found: $2"
+  fi
+  return 1
 }
-
-function pwd2() {
-  echo '===== pwd ===================================='
-  command pwd
-
-  echo "cd \"$(command pwd)\""
-  echo '=============================================='
-}
-
 
 ################################################################################
 # ---- Git Helpers ----
 ################################################################################
-# Resets the working tree, deletes local master/main, and re-tracks the default branch from origin (preferring master over main).
+# Resets the working tree, deletes local master/main, and re-tracks the default branch from origin
 function clean_master_main_branch() {
   git stash >/dev/null 2>&1
   git clean -fd >/dev/null 2>&1
@@ -383,7 +358,7 @@ function clean_master_main_branch() {
   git fetch --all --prune >/dev/null 2>&1
   rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD
 
-  local temp_branch_name="tmp-clean-$(date +%s)"
+  local temp_branch_name="tmp-clean-$(command date +%s)"
   git checkout -B "$temp_branch_name" >/dev/null 2>&1
   git branch -D master main >/dev/null 2>&1
 
@@ -400,15 +375,15 @@ function clean_master_main_branch() {
   git diff --stat HEAD~1
 }
 
-# Creates an empty commit on a new branch and pushes it to trigger a deployment.
+# Creates an empty commit on a new branch and pushes it to trigger a deployment
 function commit_empty_trigger_deploy() {
-  local temp_branch_name="empty-commit-$(date +%s)"
+  local temp_branch_name="empty-commit-$(command date +%s)"
   git checkout -b "$temp_branch_name" >/dev/null 2>&1
   git commit --allow-empty -m "Trigger deployment - EMPTY PR" >/dev/null 2>&1
   git push -u origin "$temp_branch_name" >/dev/null 2>&1
 }
 
-# Go to git home $MY_GIT_HOME
+# cd to git home directory ($MY_GIT_HOME or ~/git)
 function gogit(){
   local git_home="${MY_GIT_HOME:-$HOME/git}"
   cd "$git_home" 2>/dev/null || echo "gogit: $git_home is not present"
@@ -417,44 +392,18 @@ function gogit(){
 ################################################################################
 # ---- Search Functions ----
 ################################################################################
-function search_file() {
-  local pattern
-  pattern=$(_require_search_input "$@") || return 0
-  find . -type f -iname "*$pattern*" | filter_unwanted | grep -i "$pattern"
-}
+alias gr="grep --color -rin"   # recursive, case-insensitive, line numbers
+alias gre="gr -Fw"             # gr + fixed string, whole word match
 
-# Lists all tracked files via git, falls back to find if not in a git repo.
-function search_file_with_git() {
-  git ls-tree -r --name-only HEAD 2>/dev/null || find . -type f 2>/dev/null | uniq
-}
-
-# Lists all directories (excluding hidden) from a given path, defaults to current directory.
-function search_dir_with_git() {
-  find "${1:-.}" -path '*/.*' -prune -o -type d -print 2>/dev/null
-  echo ".."
-}
-
-# Searches for directories matching a pattern in the current directory (case-insensitive).
-function search_dir() {
-  local pattern
-  pattern=$(_require_search_input "$@") || return 0
-  find . -type d -iname "*$pattern*" | filter_unwanted | grep -i "$pattern"
-}
-
-# Returns the input text, prompting the user interactively if none was provided.
-function _require_search_input() {
-  if [ -n "$*" ]; then
-    echo "$*"
+# search content in files: uses git grep in git repos (respects .gitignore), falls back to grep
+# flags: -F fixed string, -w whole word, -i case-insensitive, -n line numbers
+function search() {
+  if git rev-parse --is-inside-work-tree &>/dev/null; then
+    git grep -Fwin "$@" # fixed string, whole word, case-insensitive, line numbers (respects .gitignore)
   else
-    read -rp "Enter search pattern: " input
-    if [ -z "$input" ]; then
-      echo "No input provided." >&2
-      return 1
-    fi
-    echo "$input"
+    grep --color -rFwin "$@" . # recursive, fixed string, whole word, case-insensitive, line numbers
   fi
 }
-
 
 ################################################################################
 # ---- Filter Functions ----
@@ -510,36 +459,8 @@ function filter_text_files_only() {
 }
 
 ################################################################################
-# ---- Chmod Calculator ----
+# ---- FZF Functions ----
 ################################################################################
-function chmod_calculator() {
-  node -e """
-    console.log('Chmod Calculator - Enter permission for x w r:');
-    var stdin = process.openStdin();
-    stdin.addListener('data', (d) => {
-      console.log('Value:', _getValue((d).toString().toLowerCase().trim()))
-      process.exit();
-    });
-    const _getValue = (str) => {
-      if(str.length === 0 || str.length > 3){
-        return 'Invalid';
-      }
-
-      return [...str].reduce((val, c) => {
-        if(c === 'x'){ val += 1; }
-        if(c === 'w'){ val += 2; }
-        if(c === 'r'){ val += 4; }
-        return val;
-      }, 0)
-    };
-  """
-}
-alias calc_chmod='chmod_calculator'
-
-################################################################################
-# ---- FZF Lightweight Aliases and Functions ----
-################################################################################
-
 # simple view file alias - will be overridden by advanced bash
 function view_file() {
   vim "$@"
@@ -596,24 +517,118 @@ function fuzzy_open() {
 }
 
 ################################################################################
+# ---- Rainbow / Visual ----
+################################################################################
+rainbow_block="##########"
+rainbow_colors=(91 93 92 96 94 95)
+
+function rainbow_print() {
+    local colors
+    if [[ -n "$1" && "$1" =~ ^[0-9[:space:]]+$ ]]; then
+        colors=($1)
+        shift
+    else
+        colors=("${rainbow_colors[@]}")
+    fi
+
+    local input="${1:-$(cat -)}"
+    local color_count=${#colors[@]}
+
+    for (( i=0; i<${#input}; i++ )); do
+        local color_idx=$(( i % color_count ))
+        local color=${colors[$color_idx]}
+        printf "\e[%sm%s\e[0m" "$color" "${input:$i:1}"
+    done
+    echo
+}
+
+# br [count] [no-clear] [reverse]
+function br() {
+    local repeat_count=${1:-5}
+    local clear_flag=${2:-"clear"}
+    local reverse_flag=${3:-"normal"}
+
+    [[ "$clear_flag" != "no-clear" ]] && clear
+
+    local colors=("${rainbow_colors[@]}")
+
+    if [[ "$reverse_flag" == "reverse" ]]; then
+        local reversed=()
+        for ((i=${#colors[@]}-1; i>=0; i--)); do
+            reversed+=("${colors[i]}")
+        done
+        colors=("${reversed[@]}")
+    fi
+
+    local line=""
+    for ((i=0; i<repeat_count; i++)); do
+        line+="$rainbow_block"
+    done
+
+    echo "$line" | rainbow_print "${colors[*]}"
+}
+
+# spinner &; SPIN_PID=$!; sleep 3; kill $SPIN_PID
+function spinner() {
+  local chars="/-\|"
+  local colors=(91 93 92 96 94 95)
+  local c_idx=0
+
+  tput civis
+  trap "tput cnorm; exit" SIGINT
+
+  while true; do
+    for (( i=0; i<${#chars}; i++ )); do
+      local color="${colors[$c_idx]}"
+      echo -ne $'\e[1;'"${color}m${chars:$i:1}"$'\e[m'"\r"
+      sleep 0.1
+      c_idx=$(( (c_idx + 1) % ${#colors[@]} ))
+    done
+  done
+}
+
+################################################################################
+# ---- Chmod ----
+################################################################################
+function chmod() {
+  if [ $# -eq 0 ]; then
+    ech """
+      chmod cheat sheet:
+        chmod +x file        # add execute for everyone
+        chmod u+x file       # add execute for owner
+        chmod g+w file       # add write for group
+        chmod o-r file       # remove read for others
+        chmod u+rwx file     # owner: read + write + execute
+        chmod go-wx file     # group & others: remove write + execute
+        chmod a+r file       # all: add read
+        chmod u+x,g+r,o-w file
+
+        Who:   u (user/owner), g (group), o (others), a (all)
+        What:  + (add), - (remove), = (set exactly / replaces)
+        Perms: r (read), w (write), x (execute)
+    """
+  else
+    command chmod "$@"
+  fi
+}
+
+################################################################################
 # ---- Date / Time ----
 ################################################################################
-## Returns HH:MM:SS AM/PM with colored AM/PM indicator
-# AM = bright white (light), PM = dark gray (dark)
-# Uses \001/\002 for PS1-safe non-printing character wrapping
+# Returns HH:MM:SS AM/PM with colored AM/PM indicator for PS1
 function get_time() {
   local tz=${1:-""}
   local time_str ampm
 
   if [ "$tz" = "UTC" ]; then
-    time_str=$(date -u +'%I:%M:%S')
-    ampm=$(date -u +'%p')
+    time_str=$(command date -u +'%I:%M:%S')
+    ampm=$(command date -u +'%p')
   elif [ -n "$tz" ]; then
-    time_str=$(TZ="$tz" date +'%I:%M:%S')
-    ampm=$(TZ="$tz" date +'%p')
+    time_str=$(TZ="$tz" command date +'%I:%M:%S')
+    ampm=$(TZ="$tz" command date +'%p')
   else
-    time_str=$(date +'%I:%M:%S')
-    ampm=$(date +'%p')
+    time_str=$(command date +'%I:%M:%S')
+    ampm=$(command date +'%p')
   fi
 
   if [ "$ampm" = "AM" ]; then
@@ -623,16 +638,20 @@ function get_time() {
   fi
 }
 
-function date2() {
-  # High-intensity colors for the labels
-  echo $'\e[1;31m>> UTC\e[m'
-  date -u +'%a, %b %d, %Y  %r'
+# no args: show UTC, PST, LOCAL; with args: passthrough to date
+function date() {
+  if [ $# -eq 0 ]; then
+    echo $'\e[1;31m>> UTC\e[m'
+    command date -u +'%a, %b %d, %Y  %r'
 
-  echo $'\e[1;96m>> PST (California)\e[m'
-  TZ="America/Los_Angeles" date +'%a, %b %d, %Y  %r'
+    echo $'\e[1;96m>> PST (California)\e[m'
+    TZ="America/Los_Angeles" command date +'%a, %b %d, %Y  %r'
 
-  echo $'\e[1;92m>> LOCAL\e[m'
-  date +'%a, %b %d, %Y  %r'
+    echo $'\e[1;92m>> LOCAL\e[m'
+    command date +'%a, %b %d, %Y  %r'
+  else
+    command date "$@"
+  fi
 }
 
 ################################################################################
@@ -640,26 +659,62 @@ function date2() {
 ################################################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 
-# for ssh socket control
-mkdir -p ~/.ssh/sockets
+################################################################################
+# ---- Prompt Helpers ----
+################################################################################
+# shows branch name, remote (if not origin), and ahead/behind counts
+function parse_git_branch() {
+  type -P git &>/dev/null || return
+  local branch ahead behind remote remote_name info=""
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+  remote=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
+  if [ -n "$remote" ]; then
+    remote_name="${remote%%/*}"
+    [ "$remote_name" != "origin" ] && info+=" ${remote_name}/"
+    ahead=$(git rev-list --count @{u}..HEAD 2>/dev/null)
+    behind=$(git rev-list --count HEAD..@{u} 2>/dev/null)
+    [ "$ahead" -gt 0 ] 2>/dev/null && info+=" +${ahead}"
+    [ "$behind" -gt 0 ] 2>/dev/null && info+=" -${behind}"
+  fi
+  echo "[${branch}${info}]"
+}
 
-# # Point Claude to your local Ollama port
-# export ANTHROPIC_BASE_URL="http://localhost:11434"
-# export ANTHROPIC_AUTH_TOKEN="ollama"
-# export ANTHROPIC_API_KEY="local-development"
+# shows local IP addresses (works without hostname or ifconfig)
+function ifconfig2() {
+  hostname -I 2>/dev/null | tr ' ' '\n' | grep '\.' | grep -v '^127\.' | sort -u | paste -sd',' - \
+    || ifconfig 2>/dev/null | grep 'inet ' | awk '{print $2}' | grep -v '^127\.' | sort -u | paste -sd',' -
+}
+
+# truncates deep paths, keeping last 3 parts full
+function shorter_pwd_path() {
+  local trim_count=3
+  local current_path="${PWD/#$HOME/~}"
+  IFS='/' read -r -a splits <<< "$current_path"
+  result=""
+
+  for idx in "${!splits[@]}"; do
+    if [ $idx -lt $((${#splits[@]} - $trim_count)) ]; then
+      result+="${splits[$idx]:0:1}/"
+    else
+      result+="${splits[$idx]}/"
+    fi
+  done
+
+  echo "${result%/}"
+}
 
 ################################################################################
 # ---- Prompt ----
-# "\$(br 5 no-clear reverse | sed 's/\(\x1b\[[0-9;]*m\)/\x01\1\x02/g')"
 ################################################################################
-# 08:31:59PM U=04:31:59AM syle @ Sy-Omen45L
-# ~/git/bashrc
+# 08:32:43PM U=04:32:43AM syle @ Sy-Omen45L 10.255.255.254,172.28.2.202
+# ~/git/bashrc [master]
 # >>>
-export PS1_Simple="\n\
-\[\e[1;93m\]\$(get_time) \
-\[\e[1;95m\]U=\$(get_time \"UTC\") \
-\[\e[1;96m\]\u\[\e[m\] @ \
-\[\e[1;92m\]\h\[\e[m\]\n\
-\[\e[1;31m\]\w\[\e[m\]\n\
+export PS1="\n\
+\[\e[1;92m\]\$(get_time) \
+\[\e[1;93m\]U=\$(get_time \"UTC\") \
+\[\e[1;94m\]\u\[\e[m\] @ \
+\[\e[1;95m\]\h \
+\[\e[1;93m\]\$(ifconfig2)\[\e[m\]\n\
+\[\e[1;31m\]\$(shorter_pwd_path)\[\e[m\] \
+\[\e[1;36m\]\$(parse_git_branch)\[\e[m\]\n\
 >>> "
-export PS1="$PS1_Simple"

@@ -359,10 +359,8 @@ $LINE_BREAK_HASH
 $LINE_BREAK_HASH
 "
 
-# Final touch: make current user owner of ~/.local (only if ownership differs)
-if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || stat -f '%u' "${HOME}/.local" 2>/dev/null)" != "$(id -u)" ]; then
-  sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
-fi
+# directory used for SSH connection multiplexing/sharing. When you have this in your SSH config
+mkdir -p ~/.ssh/sockets
 
 # Source .bash_syle
 echo '''
