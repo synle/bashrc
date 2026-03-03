@@ -93,6 +93,7 @@ export BASH_SYLE_PATH=$(eval echo $BASH_SYLE)
 export BASH_SYLE_AUTOCOMPLETE_PATH=$(eval echo $BASH_SYLE_AUTOCOMPLETE)
 export BASH_SYLE_COMMON_PATH=$(eval echo $BASH_SYLE_COMMON)
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://raw.githubusercontent.com/$REPO_PATH_IDENTIFIER/$REPO_BRANCH_NAME" # https://raw.githubusercontent.com/synle/bashrc/master
+export LIGHT_WEIGHT_SCRIPTS="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-syle-content.js"
 
 # environment toolings
 export TZ="UTC" # forces all date/time operations (Node.js, Python, etc.) to use UTC

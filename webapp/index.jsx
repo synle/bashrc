@@ -21,11 +21,12 @@ const BASH_PROFILE_CODE_REPO_EDIT_URL = `${REPO_URL}/edit/${REPO_BRANCH_NAME}`;
 const LIGHT_WEIGHT_SCRIPTS = window.LIGHT_WEIGHT_SCRIPTS;
 
 /** @type {string} The OS flag key matching the current browser's detected platform. */
-const currentSystemFlag = navigator.platform.toUpperCase().indexOf("MAC") >= 0
-  ? "is_os_mac"
-  : navigator.platform.indexOf("Win") > -1
-    ? "is_os_windows"
-    : "is_os_ubuntu";
+const currentSystemFlag =
+  navigator.platform.toUpperCase().indexOf("MAC") >= 0
+    ? "is_os_mac"
+    : navigator.platform.indexOf("Win") > -1
+      ? "is_os_windows"
+      : "is_os_ubuntu";
 
 /**
  * Ordered list of OS setup note entries. Each entry maps an OS flag to its display label and NotesDom component.
@@ -59,7 +60,6 @@ const OS_FLAGS = OS_NOTES_LIST.map((e) => e.key)
  * @type {Object<string, {key: string, label: string, Component: Function}>}
  */
 const OS_KEY_TO_NOTES_MAP = Object.fromEntries(OS_NOTES_LIST.map((e) => [e.key, e]));
-
 
 /**
  * Writes a value to localStorage under the given key.
