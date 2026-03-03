@@ -24,6 +24,12 @@ workers = 0 # Parallel file checkout (auto-detect CPU)
 [fetch]
 writeCommitGraph = true # Keeps the commit graph updated on fetch
 
+[init]
+defaultBranch = main # Use 'main' as default branch name
+
+[advice]
+defaultBranchName = false # Suppress hint about setting init.defaultBranch
+
 [pull]
 rebase = false
 
