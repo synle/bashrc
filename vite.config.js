@@ -23,7 +23,9 @@ const updateServiceWorker = () => ({
       }
 
       fs.writeFileSync(swDestPath, content);
-      console.log(`Service Worker copied to dist and updated with build timestamp: ${timestamp}`);
+      console.log(
+        `Service Worker copied to dist and updated with build timestamp: ${timestamp}`,
+      );
     } else {
       console.warn(`Service Worker not found at ${swSourcePath}`);
     }
@@ -35,10 +37,26 @@ const requiredEnvs = {};
 for (const envKey of requiredEnvKeys) {
   process.env[envKey] = (process.env[envKey] || "").trim();
   if (!process.env[envKey]) {
-    throw new Error(`${envKey} environment variable is not defined. Run software/bootstrap/common-env.sh first.`);
+    throw new Error(
+      `${envKey} environment variable is not defined. Run software/bootstrap/common-env.sh first.`,
+    );
   }
   requiredEnvs[`window.${envKey}`] = JSON.stringify(process.env[envKey]);
 }
+
+const OS_FLAGS = [
+  "is_os_mac",
+  "is_os_ubuntu",
+  "is_os_chromeos",
+  "is_os_mingw64",
+  "is_os_android_termux",
+  "is_os_arch_linux",
+  "is_os_steamos",
+  "is_os_redhat",
+  "is_os_windows",
+  "is_os_wsl",
+];
+requiredEnvs["window.OS_FLAGS"] = JSON.stringify(OS_FLAGS);
 
 export default defineConfig({
   root: "webapp",

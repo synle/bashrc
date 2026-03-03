@@ -1114,7 +1114,7 @@ Write-Host "`n=== Running Disk Cleanup ===" -ForegroundColor Cyan
 
 Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item -Path "C:\Windows\Prefetch\*" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "Disk cleanup complete." -ForegroundColor Green
 
