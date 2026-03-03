@@ -32,20 +32,31 @@ const currentSystemFlag = /mac/i.test(navigator.platform)
 /**
  * Ordered list of OS setup note entries. Each entry maps an OS flag to its display label and NotesDom component.
  * The array order defines the default display order in the navigation tabs.
+ * Label is derived from key: strips "is_os_", replaces underscores with spaces, capitalizes each word.
+ * Override map handles special cases (Mac OSX, SteamOS, ChromeOS, WSL).
  * @type {Array<{key: string, label: string, Component: Function}>}
  */
 const OS_NOTES_LIST = [
-  { key: "is_os_windows", label: "Setup Windows", Component: WindowsNotesDom },
-  { key: "is_os_mac", label: "Setup Mac OSX", Component: MacOSXNotesDom },
-  { key: "is_os_ubuntu", label: "Setup Ubuntu", Component: LinuxNotesDom },
-  { key: "is_os_redhat", label: "Setup Redhat", Component: LinuxNotesDom },
-  { key: "is_os_arch_linux", label: "Setup Arch Linux", Component: LinuxNotesDom },
-  { key: "is_os_steamos", label: "Setup SteamOS", Component: LinuxNotesDom },
-  { key: "is_os_android_termux", label: "Setup Android Termux", Component: AndroidNotesDom },
-  { key: "is_os_chromeos", label: "Setup ChromeOS", Component: LinuxNotesDom },
-  { key: "is_os_mingw64", label: "Setup Mingw64", Component: GenericLightWeightNotesDom },
-  { key: "is_os_wsl", label: "Setup WSL", Component: LinuxNotesDom },
-];
+  { key: "is_os_windows", Component: WindowsNotesDom },
+  { key: "is_os_mac", Component: MacOSXNotesDom },
+  { key: "is_os_ubuntu", Component: LinuxNotesDom },
+  { key: "is_os_redhat", Component: LinuxNotesDom },
+  { key: "is_os_arch_linux", Component: LinuxNotesDom },
+  { key: "is_os_steamos", Component: LinuxNotesDom },
+  { key: "is_os_android_termux", Component: AndroidNotesDom },
+  { key: "is_os_chromeos", Component: LinuxNotesDom },
+  { key: "is_os_mingw64", Component: GenericLightWeightNotesDom },
+  { key: "is_os_wsl", Component: LinuxNotesDom },
+].map((entry) => ({
+  ...entry,
+  // Derive label from key: strip "is_os_", replace underscores with spaces, capitalize each word
+  label: entry.key
+    .replace("is_os_", "")
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ")
+    .replace(/\b(os|wsl)\b/gi, (m) => m.toUpperCase()),
+}));
 
 /**
  * Sorted list of active OS flag keys. Filtered to only include flags passed in from Vite (via window.OS_FLAGS),
@@ -266,14 +277,11 @@ function OsSelectionInputSection() {
             }}
             defaultValue={formValue.osToRun}
           >
-            <option value="windows">Windows with WSL</option>
-            <option value="ming_64">Windows with Ming_64</option>
-            <option value="mac">Mac OSX</option>
-            <option value="chrome_os">Chrome OS with Linux</option>
-            <option value="ubuntu">Ubuntu</option>
-            <option value="arch_linux_steamos">Arch Linux (SteamOS)</option>
-            <option value="steamos">SteamOS</option>
-            <option value="android_termux">Android Termux</option>
+            {OS_NOTES_LIST.map((entry) => (
+              <option key={entry.key} value={entry.key}>
+                {entry.label}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -338,15 +346,16 @@ function ScriptOutputSection({ script }) {
   const formValueOutput = useMemo(() => {
     const osFlag = formValue.osToRun;
     const osFlags = {
-      is_os_mac: osFlag === "mac",
-      is_os_windows: osFlag === "windows",
-      is_os_wsl: osFlag === "windows",
-      is_os_ubuntu: ["windows", "chrome_os", "ubuntu"].indexOf(osFlag) >= 0,
-      is_os_chromeos: osFlag === "chrome_os",
-      is_os_mingw64: osFlag === "ming_64",
-      is_os_android_termux: osFlag === "android_termux",
-      is_os_arch_linux: osFlag.includes("arch_linux"),
-      is_os_steamos: osFlag === "steamos" || osFlag === "arch_linux_steamos",
+      is_os_mac: osFlag === "is_os_mac",
+      is_os_windows: osFlag === "is_os_windows",
+      is_os_wsl: osFlag === "is_os_windows" || osFlag === "is_os_wsl",
+      is_os_ubuntu: osFlag === "is_os_ubuntu" || osFlag === "is_os_windows" || osFlag === "is_os_chromeos",
+      is_os_chromeos: osFlag === "is_os_chromeos",
+      is_os_mingw64: osFlag === "is_os_mingw64",
+      is_os_android_termux: osFlag === "is_os_android_termux",
+      is_os_arch_linux: osFlag === "is_os_arch_linux",
+      is_os_steamos: osFlag === "is_os_steamos",
+      is_os_redhat: osFlag === "is_os_redhat",
     };
     const osKeys = Object.keys(osFlags);
 
@@ -1064,34 +1073,18 @@ const CommonOtherAppDom = (
  * match (or matches) the user's current system. Renders nothing if the target is
  * not in the known OS map.
  * @param {Object} props
- * @param {string} [props.targetDomString] - The target OS identifier ('mac', 'windows', 'ubuntu', 'android').
- * @returns {React.ReactElement|null} A styled heading with the match/mismatch message, or null.
+ * @param {string} [props.targetDomString] - The target OS flag (e.g., 'is_os_mac', 'is_os_windows', 'is_os_android_termux').
+ * @returns {React.ReactElement|null} A styled warning heading if the target doesn't match, or null.
  */
 function TargetSystemOSWarningDom({ targetDomString }) {
-  // 1. Map target strings to their corresponding system flag and display name
-  const osMap = {
-    mac: { name: "OSX", flag: "is_os_mac" },
-    windows: { name: "Windows", flag: "is_os_windows" },
-    ubuntu: { name: "Linux (Ubuntu)", flag: "is_os_ubuntu" },
-    android: { name: "Android", flag: "is_os_android_termux" },
-  };
+  const checkedFlags = ["is_os_mac", "is_os_windows", "is_os_android_termux"];
+  if (!checkedFlags.includes(targetDomString)) return null;
+  if (currentSystemFlag === targetDomString) return null;
 
-  const target = osMap[targetDomString];
+  const entry = OS_KEY_TO_NOTES_MAP[targetDomString];
+  const name = entry ? entry.label : targetDomString;
 
-  // 2. Guard clause: if the target isn't in our map, render nothing
-  if (!target) return null;
-
-  // 3. Handle the Android edge case or standard mismatch logic
-  if (targetDomString === "android") {
-    return <h3 className="text-error">This is only meant for Android.</h3>;
-  }
-
-  const isMatch = currentSystemFlag === target.flag;
-  return (
-    <h3 className={isMatch ? "text-info" : "text-error"}>
-      {isMatch ? "OS Choice matches your OS" : `OS choice (${target.name}) doesn't match your system.`}
-    </h3>
-  );
+  return <h3 className="text-error">This is meant for {name}. Your system is detected as a different OS.</h3>;
 }
 
 /**
@@ -1116,7 +1109,7 @@ function GenericNotesDom({ osFlag }) {
 function MacOSXNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom targetDomString="mac" />
+      <TargetSystemOSWarningDom targetDomString="is_os_mac" />
       <DynamicTextArea path="/docs/mac/README.md" collapsed />
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
@@ -1143,7 +1136,7 @@ function MacOSXNotesDom() {
 function LinuxNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom is_os_ubuntu={true} />
+      <TargetSystemOSWarningDom targetDomString="is_os_ubuntu" />
       <DynamicTextArea path="/docs/linux/README.md" collapsed />
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/linux/linux-mint-config.sh" />
@@ -1191,7 +1184,7 @@ function GenericLightWeightNotesDom() {
 function AndroidNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom is_os_android_termux={true} />
+      <TargetSystemOSWarningDom targetDomString="is_os_android_termux" />
       <DynamicTextArea path="/docs/android/android.sh" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
       <DynamicTextArea path="/docs/android/rvx-yt.txt" />
@@ -1236,7 +1229,7 @@ function AndroidNotesDom() {
 function WindowsNotesDom() {
   return (
     <>
-      <TargetSystemOSWarningDom is_os_windows={true} />
+      <TargetSystemOSWarningDom targetDomString="is_os_windows" />
       <DynamicTextArea path="/docs/windows/README.md" collapsed />
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/software/bootstrap/dependencies/windows.ps1" />
@@ -1431,7 +1424,7 @@ function App() {
           const entry = OS_KEY_TO_NOTES_MAP[flag];
           if (!entry) return null;
           return {
-            text: entry.label,
+            text: `Setup ${entry.label}`,
             renderBody: () => <GenericNotesDom osFlag={flag} />,
           };
         }).filter(Boolean);
@@ -1493,7 +1486,7 @@ function App() {
           setupHostsScript,
           ipAddressMappingConfigs,
           formValue: {
-            osToRun: getStorage("osToRun") || "windows",
+            osToRun: getStorage("osToRun") || "is_os_windows",
             debugWriteToDir: getStorage("debugWriteToDir") || "",
             setupDependencies: getStorage("setupDependencies") || "yes",
             scriptsToUse: (getStorage("scriptsToUse") || "").split("\n").filter((s) => s.trim()),
