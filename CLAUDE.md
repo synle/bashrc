@@ -64,7 +64,7 @@ Dual-purpose file:
 - **Utility library**: Provides globals (file I/O, text processing, network helpers, platform detection) that individual scripts depend on
 - **Bootstrap entry point**: Discovers platform-specific scripts, generates temp files in `/tmp/bashrc_syle_sw_*`, and emits bash commands to execute them
 
-Key constants: `IS_TEST_SCRIPT_MODE`, `IS_DEBUG`, `TEMP_SCRIPT_PREFIX`, `OS_SCRIPT_PATHS`
+Key constants: `IS_TEST_SCRIPT_MODE`, `IS_DEBUG`, `TEMP_SCRIPT_PREFIX`, `OS_SCRIPT_PATHS`, `CURRENT_USER`
 
 JSDoc is used throughout and `tsc --declaration --allowJs` generates `software/index.d.ts`. OS flag constants need explicit `const` declarations for .d.ts generation.
 
@@ -92,6 +92,7 @@ Each flag maps to a script folder: `is_os_<name>` -> `software/scripts/<name>/`.
 Shared environment setup inlined into `run.sh` and `build.sh` via `# BEGIN`/`# END` markers. Contains:
 
 - Repository URL exports
+- `TZ=UTC` — forces all Node.js/Python date operations to use UTC during script execution
 - OS detection (sets `is_os_*` flags)
 - `run_files()` helper function
 - CI mode echo override for GitHub Actions groups
@@ -254,6 +255,7 @@ command subcommand1|--opt1,--opt2,-s
 
 ### Other common utilities
 
+- `CURRENT_USER` — Current system username from `process.env.USER || process.env.USERNAME || "unknown"`. Use instead of hardcoding usernames.
 - `getRuntimeOption(key, parseFunc)` — Read env vars/CLI args with parser (`parseString`, `parseBoolean`, `parseInteger`)
 - `readText(filePath)` — Read file contents (returns empty string on error)
 - `fetchUrlAsString(url)` / `fetchUrlAsJson(url)` — Fetch remote content
@@ -343,6 +345,25 @@ echo ">> Installing tool"
 ### Adding OS bootstrap dependencies
 
 To add system packages for an OS, edit the corresponding file in `software/bootstrap/dependencies/<os>.sh` (e.g., `mac.sh`, `ubuntu.sh`). These run before software scripts during `--setup` mode.
+
+#### Dependency file conventions
+
+- **`installPackage()` must be defined inside the `if` block** — not at file top level, to avoid polluting global scope
+- **`installPackage()` must use the `function` keyword** — consistent with bash function conventions
+- **3-state messaging**: "already installed", "installing" → "done", or "failed to install"
+- **Packages are grouped** with `# ---- Category ----` sub-section headers: Core tools, CLI utilities, Git extensions, Dev tools/Build, OS-specific
+- **Settings with side effects** should include a `# WARNING:` comment block explaining the risk and a `# To revert:` command
+
+#### Package manager per OS
+
+| OS               | Check command | Install command                      |
+| ---------------- | ------------- | ------------------------------------ |
+| mac.sh           | `brew list`   | `brew install`                       |
+| ubuntu.sh        | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
+| arch_linux.sh    | `pacman -Q`   | `sudo pacman -S --noconfirm`         |
+| steamos.sh       | `pacman -Q`   | `sudo pacman -Sy`                    |
+| android_termux.sh| `dpkg -s`     | `pkg install -y`                     |
+| chrome_os_linux.sh| `dpkg -s`    | `sudo apt-get install -y --fix-missing` |
 
 ## Testing
 
