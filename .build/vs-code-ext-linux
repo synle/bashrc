@@ -1,76 +1,75 @@
-# to delete all previous extensions
-# /usr/bin/code --list-extensions | xargs -L 1 /usr/bin/code --uninstall-extension
-# /usr/bin/codium --list-extensions | xargs -L 1 /usr/bin/codium --uninstall-extension
-
-/usr/bin/code --install-extension ms-vscode-remote.vscode-remote-extensionpack --force &>/dev/null &
-/usr/bin/code --install-extension ms-dotnettools.csharp --force &>/dev/null &
-/usr/bin/code --install-extension ms-vscode.cpptools --force &>/dev/null &
-/usr/bin/code --install-extension visualstudioexptteam.vscodeintellicode --force &>/dev/null &
-/usr/bin/code --install-extension andrejunges.handlebars --force &>/dev/null &
-/usr/bin/code --install-extension dakara.transformer --force &>/dev/null &
-/usr/bin/code --install-extension dracula-theme.theme-dracula --force &>/dev/null &
-/usr/bin/code --install-extension PKief.material-icon-theme --force &>/dev/null &
-/usr/bin/code --install-extension oderwat.indent-rainbow --force &>/dev/null &
-/usr/bin/code --install-extension aaron-bond.better-comments --force &>/dev/null &
-/usr/bin/code --install-extension ms-python.python --force &>/dev/null &
-/usr/bin/code --install-extension ms-python.isort --force &>/dev/null &
-/usr/bin/code --install-extension golang.go --force &>/dev/null &
-/usr/bin/code --install-extension redhat.java --force &>/dev/null &
-/usr/bin/code --install-extension redhat.vscode-yaml --force &>/dev/null &
-/usr/bin/code --install-extension wholroyd.jinja --force &>/dev/null &
-/usr/bin/code --install-extension clinyong.vscode-css-modules --force &>/dev/null &
-/usr/bin/code --install-extension esbenp.prettier-vscode --force &>/dev/null &
-/usr/bin/code --install-extension dbaeumer.vscode-eslint --force &>/dev/null &
-/usr/bin/code --install-extension streetsidesoftware.code-spell-checker --force &>/dev/null &
-/usr/bin/code --install-extension wmaurer.change-case --force &>/dev/null &
-/usr/bin/code --install-extension nicoespeon.abracadabra --force &>/dev/null &
-/usr/bin/code --install-extension formulahendry.code-runner --force &>/dev/null &
-/usr/bin/code --install-extension ms-azuretools.vscode-docker --force &>/dev/null &
-/usr/bin/code --install-extension ms-toolsai.jupyter --force &>/dev/null &
+_installed__usr_bin_code=$(/usr/bin/code --list-extensions 2>/dev/null)
+echo "$_installed__usr_bin_code" | grep -qi "^ms-vscode-remote.vscode-remote-extensionpack$" || /usr/bin/code --install-extension ms-vscode-remote.vscode-remote-extensionpack &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^ms-dotnettools.csharp$" || /usr/bin/code --install-extension ms-dotnettools.csharp &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^ms-vscode.cpptools$" || /usr/bin/code --install-extension ms-vscode.cpptools &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^visualstudioexptteam.vscodeintellicode$" || /usr/bin/code --install-extension visualstudioexptteam.vscodeintellicode &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^andrejunges.handlebars$" || /usr/bin/code --install-extension andrejunges.handlebars &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^dakara.transformer$" || /usr/bin/code --install-extension dakara.transformer &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^dracula-theme.theme-dracula$" || /usr/bin/code --install-extension dracula-theme.theme-dracula &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^PKief.material-icon-theme$" || /usr/bin/code --install-extension PKief.material-icon-theme &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^oderwat.indent-rainbow$" || /usr/bin/code --install-extension oderwat.indent-rainbow &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^aaron-bond.better-comments$" || /usr/bin/code --install-extension aaron-bond.better-comments &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^ms-python.python$" || /usr/bin/code --install-extension ms-python.python &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^ms-python.isort$" || /usr/bin/code --install-extension ms-python.isort &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^golang.go$" || /usr/bin/code --install-extension golang.go &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^redhat.java$" || /usr/bin/code --install-extension redhat.java &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^redhat.vscode-yaml$" || /usr/bin/code --install-extension redhat.vscode-yaml &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^wholroyd.jinja$" || /usr/bin/code --install-extension wholroyd.jinja &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^clinyong.vscode-css-modules$" || /usr/bin/code --install-extension clinyong.vscode-css-modules &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^esbenp.prettier-vscode$" || /usr/bin/code --install-extension esbenp.prettier-vscode &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^dbaeumer.vscode-eslint$" || /usr/bin/code --install-extension dbaeumer.vscode-eslint &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^streetsidesoftware.code-spell-checker$" || /usr/bin/code --install-extension streetsidesoftware.code-spell-checker &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^wmaurer.change-case$" || /usr/bin/code --install-extension wmaurer.change-case &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^nicoespeon.abracadabra$" || /usr/bin/code --install-extension nicoespeon.abracadabra &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^formulahendry.code-runner$" || /usr/bin/code --install-extension formulahendry.code-runner &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^ms-azuretools.vscode-docker$" || /usr/bin/code --install-extension ms-azuretools.vscode-docker &>/dev/null &
+echo "$_installed__usr_bin_code" | grep -qi "^ms-toolsai.jupyter$" || /usr/bin/code --install-extension ms-toolsai.jupyter &>/dev/null &
 echo 'Done installing VSCode Extensions'
 
-/usr/bin/codium --install-extension jeanp413.open-remote-ssh --force &>/dev/null &
-/usr/bin/codium --install-extension devcontainers.vscode-dev-containers --force &>/dev/null &
-/usr/bin/codium --install-extension dracula-theme.theme-dracula --force &>/dev/null &
-/usr/bin/codium --install-extension PKief.material-icon-theme --force &>/dev/null &
-/usr/bin/codium --install-extension oderwat.indent-rainbow --force &>/dev/null &
-/usr/bin/codium --install-extension aaron-bond.better-comments --force &>/dev/null &
-/usr/bin/codium --install-extension ms-python.python --force &>/dev/null &
-/usr/bin/codium --install-extension ms-python.isort --force &>/dev/null &
-/usr/bin/codium --install-extension golang.go --force &>/dev/null &
-/usr/bin/codium --install-extension redhat.java --force &>/dev/null &
-/usr/bin/codium --install-extension redhat.vscode-yaml --force &>/dev/null &
-/usr/bin/codium --install-extension wholroyd.jinja --force &>/dev/null &
-/usr/bin/codium --install-extension clinyong.vscode-css-modules --force &>/dev/null &
-/usr/bin/codium --install-extension esbenp.prettier-vscode --force &>/dev/null &
-/usr/bin/codium --install-extension dbaeumer.vscode-eslint --force &>/dev/null &
-/usr/bin/codium --install-extension streetsidesoftware.code-spell-checker --force &>/dev/null &
-/usr/bin/codium --install-extension wmaurer.change-case --force &>/dev/null &
-/usr/bin/codium --install-extension nicoespeon.abracadabra --force &>/dev/null &
-/usr/bin/codium --install-extension formulahendry.code-runner --force &>/dev/null &
-/usr/bin/codium --install-extension ms-azuretools.vscode-docker --force &>/dev/null &
-/usr/bin/codium --install-extension ms-toolsai.jupyter --force &>/dev/null &
+_installed__usr_bin_codium=$(/usr/bin/codium --list-extensions 2>/dev/null)
+echo "$_installed__usr_bin_codium" | grep -qi "^jeanp413.open-remote-ssh$" || /usr/bin/codium --install-extension jeanp413.open-remote-ssh &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^devcontainers.vscode-dev-containers$" || /usr/bin/codium --install-extension devcontainers.vscode-dev-containers &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^dracula-theme.theme-dracula$" || /usr/bin/codium --install-extension dracula-theme.theme-dracula &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^PKief.material-icon-theme$" || /usr/bin/codium --install-extension PKief.material-icon-theme &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^oderwat.indent-rainbow$" || /usr/bin/codium --install-extension oderwat.indent-rainbow &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^aaron-bond.better-comments$" || /usr/bin/codium --install-extension aaron-bond.better-comments &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^ms-python.python$" || /usr/bin/codium --install-extension ms-python.python &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^ms-python.isort$" || /usr/bin/codium --install-extension ms-python.isort &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^golang.go$" || /usr/bin/codium --install-extension golang.go &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^redhat.java$" || /usr/bin/codium --install-extension redhat.java &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^redhat.vscode-yaml$" || /usr/bin/codium --install-extension redhat.vscode-yaml &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^wholroyd.jinja$" || /usr/bin/codium --install-extension wholroyd.jinja &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^clinyong.vscode-css-modules$" || /usr/bin/codium --install-extension clinyong.vscode-css-modules &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^esbenp.prettier-vscode$" || /usr/bin/codium --install-extension esbenp.prettier-vscode &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^dbaeumer.vscode-eslint$" || /usr/bin/codium --install-extension dbaeumer.vscode-eslint &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^streetsidesoftware.code-spell-checker$" || /usr/bin/codium --install-extension streetsidesoftware.code-spell-checker &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^wmaurer.change-case$" || /usr/bin/codium --install-extension wmaurer.change-case &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^nicoespeon.abracadabra$" || /usr/bin/codium --install-extension nicoespeon.abracadabra &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^formulahendry.code-runner$" || /usr/bin/codium --install-extension formulahendry.code-runner &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^ms-azuretools.vscode-docker$" || /usr/bin/codium --install-extension ms-azuretools.vscode-docker &>/dev/null &
+echo "$_installed__usr_bin_codium" | grep -qi "^ms-toolsai.jupyter$" || /usr/bin/codium --install-extension ms-toolsai.jupyter &>/dev/null &
 echo 'Done installing VSCodium Extensions'
 
-flatpak run com.vscodium.codium --install-extension jeanp413.open-remote-ssh --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension devcontainers.vscode-dev-containers --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension dracula-theme.theme-dracula --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension PKief.material-icon-theme --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension oderwat.indent-rainbow --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension aaron-bond.better-comments --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension ms-python.python --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension ms-python.isort --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension golang.go --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension redhat.java --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension redhat.vscode-yaml --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension wholroyd.jinja --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension clinyong.vscode-css-modules --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension esbenp.prettier-vscode --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension dbaeumer.vscode-eslint --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension streetsidesoftware.code-spell-checker --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension wmaurer.change-case --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension nicoespeon.abracadabra --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension formulahendry.code-runner --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension ms-azuretools.vscode-docker --force &>/dev/null &
-flatpak run com.vscodium.codium --install-extension ms-toolsai.jupyter --force &>/dev/null &
+_installed_flatpak_run_com_vscodium_codium=$(flatpak run com.vscodium.codium --list-extensions 2>/dev/null)
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^jeanp413.open-remote-ssh$" || flatpak run com.vscodium.codium --install-extension jeanp413.open-remote-ssh &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^devcontainers.vscode-dev-containers$" || flatpak run com.vscodium.codium --install-extension devcontainers.vscode-dev-containers &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^dracula-theme.theme-dracula$" || flatpak run com.vscodium.codium --install-extension dracula-theme.theme-dracula &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^PKief.material-icon-theme$" || flatpak run com.vscodium.codium --install-extension PKief.material-icon-theme &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^oderwat.indent-rainbow$" || flatpak run com.vscodium.codium --install-extension oderwat.indent-rainbow &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^aaron-bond.better-comments$" || flatpak run com.vscodium.codium --install-extension aaron-bond.better-comments &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^ms-python.python$" || flatpak run com.vscodium.codium --install-extension ms-python.python &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^ms-python.isort$" || flatpak run com.vscodium.codium --install-extension ms-python.isort &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^golang.go$" || flatpak run com.vscodium.codium --install-extension golang.go &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^redhat.java$" || flatpak run com.vscodium.codium --install-extension redhat.java &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^redhat.vscode-yaml$" || flatpak run com.vscodium.codium --install-extension redhat.vscode-yaml &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^wholroyd.jinja$" || flatpak run com.vscodium.codium --install-extension wholroyd.jinja &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^clinyong.vscode-css-modules$" || flatpak run com.vscodium.codium --install-extension clinyong.vscode-css-modules &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^esbenp.prettier-vscode$" || flatpak run com.vscodium.codium --install-extension esbenp.prettier-vscode &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^dbaeumer.vscode-eslint$" || flatpak run com.vscodium.codium --install-extension dbaeumer.vscode-eslint &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^streetsidesoftware.code-spell-checker$" || flatpak run com.vscodium.codium --install-extension streetsidesoftware.code-spell-checker &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^wmaurer.change-case$" || flatpak run com.vscodium.codium --install-extension wmaurer.change-case &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^nicoespeon.abracadabra$" || flatpak run com.vscodium.codium --install-extension nicoespeon.abracadabra &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^formulahendry.code-runner$" || flatpak run com.vscodium.codium --install-extension formulahendry.code-runner &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^ms-azuretools.vscode-docker$" || flatpak run com.vscodium.codium --install-extension ms-azuretools.vscode-docker &>/dev/null &
+echo "$_installed_flatpak_run_com_vscodium_codium" | grep -qi "^ms-toolsai.jupyter$" || flatpak run com.vscodium.codium --install-extension ms-toolsai.jupyter &>/dev/null &
 echo 'Done installing VSCodium Extensions'

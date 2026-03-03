@@ -62,10 +62,7 @@ function _getExtInstallScript(codeBin, extensions) {
   const installedVar = `_installed_${codeBin.replace(/[^a-zA-Z0-9]/g, "_")}`;
   return [
     `${installedVar}=$(${codeBin} --list-extensions 2>/dev/null)`,
-    ...extensions.map(
-      (ext) =>
-        `echo "$${installedVar}" | grep -qi "^${ext}$" || ${codeBin} --install-extension ${ext} &>/dev/null &`,
-    ),
+    ...extensions.map((ext) => `echo "$${installedVar}" | grep -qi "^${ext}$" || ${codeBin} --install-extension ${ext} &>/dev/null &`),
   ].join("\n");
 }
 
