@@ -941,8 +941,8 @@ function CodeEditor({ content = "", syntax, height, readOnly = false, options: e
   const language = syntax || detectLanguageFromContent(content);
 
   // Calculate height based on content line count so the editor stretches to fit
-  const lineHeight = 16;
-  const padding = 20;
+  const lineHeight = 14;
+  const padding = 14;
   const lineCount = content.split("\n").length;
   const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
 
@@ -978,11 +978,16 @@ function EnhancedTextArea(props) {
 
   const content = restProps.value || restProps.defaultValue || "";
   const { collapseAll, tick } = useContext(EditorCollapseContext);
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    setCollapsed(collapseAll);
-  }, [collapseAll, tick]);
+    if(defaultCollapsed === true){
+      setCollapsed(defaultCollapsed);
+    }else {
+      setCollapsed(collapseAll);
+    }
+
+  }, [collapseAll, tick, defaultCollapsed]);
 
   // Detect language: first try from URL, then from content
   const languageFromUrl = detectLanguageFromUrl(url);
