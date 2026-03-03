@@ -721,7 +721,7 @@ function parse_git_branch() {
   type -P git &>/dev/null || return
   local branch now
   branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return
-  now=$(printf '%(%s)T' -1)
+  now=$(command date +%s)
   _git_branch_count=$((_git_branch_count + 1))
   # refresh on branch change, time expiry, or call count
   if [ "$branch" != "$_git_branch_last" ] || [ -z "$_git_branch_cache" ] || [ $(( now - _git_branch_time )) -ge $_git_branch_max_age ] || [ $_git_branch_count -ge $_git_branch_max_calls ]; then
@@ -749,7 +749,7 @@ function ifconfig() {
   command ifconfig "$@"
 }
 function ifconfig2() {
-  local now=$(printf '%(%s)T' -1)
+  local now=$(command date +%s)
   _ifconfig2_count=$((_ifconfig2_count + 1))
   if [ -z "$_ifconfig2_cache" ] || [ $(( now - _ifconfig2_time )) -ge $_ifconfig2_max_age ] || [ $_ifconfig2_count -ge $_ifconfig2_max_calls ]; then
     _ifconfig2_cache=$(_ifconfig2_fetch)
