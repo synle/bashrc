@@ -685,6 +685,7 @@ function date() {
 # ---- Telemetry / Environment ----
 ################################################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
+export ELECTRON_ENABLE_LOGGING="0" # suppresses Electron's internal console spam for slight perf gain
 
 ################################################################################
 # ---- Prompt Helpers ----

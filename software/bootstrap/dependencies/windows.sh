@@ -26,15 +26,6 @@ if [ "$is_os_windows" = "1" ]; then
     done
   fi
 
-  echo '>> Creating the Powershell User Profile: the following might need be run manually'
-  echo 'New-Item $profile -Type File -Force'
-
-  echo '>> Setting up WSL2 binary'
-  dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart || echo "Error: dism.exe needs to be run as Administrator"
-  dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart || echo "Error: dism.exe needs to be run as Administrator"
-
-  echo '  >> wsl --set-default-version 2'
-
 else
   echo ">> Skipped dependencies/windows.sh"
 fi

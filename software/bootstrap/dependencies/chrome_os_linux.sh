@@ -6,24 +6,39 @@ if [ "$is_os_chromeos" = "1" ]; then
 
   sudo apt-get update -y
 
-  installPackage() {
+  function installPackage() {
     if dpkg -s "$1" &>/dev/null; then
       echo "  >> $@ (already installed)"
       return
     fi
     echo "  >> $@ (installing)"
-    sudo apt-get install -y --fix-missing $@ &> /dev/null
+    if sudo apt-get install -y --fix-missing $@ &> /dev/null; then
+      echo "  >> $@ (done)"
+    else
+      echo "  >> $@ (failed to install)"
+    fi
   }
 
+  echo '>> Installing packages with apt-get'
+
+  # ---- Core tools ----
   installPackage curl
   installPackage git
-  installPackage libreoffice
   installPackage make
-  installPackage nautilus
   installPackage python
+  installPackage vim
+
+  # ---- CLI utilities ----
+  installPackage bat
+  installPackage fzf
+  installPackage pv
+  installPackage entr
+
+  # ---- OS-specific ----
+  installPackage libreoffice
+  installPackage nautilus
   installPackage remmina
   installPackage terminator
-  installPackage vim
   installPackage vlc
 
 else

@@ -1,15 +1,6 @@
 # software/bootstrap/dependencies/ubuntu.sh
 # Ubuntu / Debian dependencies - apt-get packages and user permissions
 
-function installPackage() {
-  if dpkg -s "$1" &>/dev/null; then
-    echo "  >> $@ (already installed)"
-    return
-  fi
-  echo "  >> $@ (installing)"
-  sudo apt-get install -y --fix-missing $@ &> /dev/null
-}
-
 if [ "$is_os_ubuntu" = "1" ]; then
   echo ">> Begin setting up dependencies/ubuntu.sh"
 
@@ -20,34 +11,46 @@ if [ "$is_os_ubuntu" = "1" ]; then
   # ---- Install Packages ----
   ################################################################################
   echo '>> Installing packages with apt-get'
+  function installPackage() {
+    if dpkg -s "$1" &>/dev/null; then
+      echo "  >> $@ (already installed)"
+      return
+    fi
+    echo "  >> $@ (installing)"
+    if sudo apt-get install -y --fix-missing $@ &> /dev/null; then
+      echo "  >> $@ (done)"
+    else
+      echo "  >> $@ (failed to install)"
+    fi
+  }
 
-  # Core tools
+  # ---- Core tools ----
   installPackage curl
+  installPackage git
   installPackage make
   installPackage python
   installPackage vim
 
-  # CLI utilities
+  # ---- CLI utilities ----
   installPackage bat
   installPackage fzf
-  installPackage git
   installPackage pv
+  installPackage entr
   installPackage net-tools
 
-  # Development tools
+  # ---- Dev tools / Build ----
   installPackage default-jdk
   installPackage unzip
-  installPackage entr
-
-  # Server / Network
-  installPackage openssh-server
-
-  # Build essentials
   installPackage gnupg
   installPackage software-properties-common
   installPackage build-essential
+
+  # ---- Git extensions ----
   installPackage gh
   installPackage git-lfs
+
+  # ---- OS-specific ----
+  installPackage openssh-server
   installPackage xz-utils
 
   ################################################################################

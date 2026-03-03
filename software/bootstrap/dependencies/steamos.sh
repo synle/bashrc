@@ -1,15 +1,6 @@
 # software/bootstrap/dependencies/steamos.sh
 # SteamOS dependencies - packages, config
 
-function installPackage() {
-  if pacman -Q "$1" &>/dev/null; then
-    echo "  >> $@ (already installed)"
-    return
-  fi
-  echo "  >> $@ (installing)"
-  sudo pacman -Sy $@ &> /dev/null
-}
-
 if [ "$is_os_steamos" = "1" ]; then
   echo ">> Begin setting up dependencies/steamos.sh"
 
@@ -28,12 +19,41 @@ if [ "$is_os_steamos" = "1" ]; then
   ################################################################################
   # ---- Install Packages ----
   ################################################################################
+  echo '>> Installing packages with pacman'
+  function installPackage() {
+    if pacman -Q "$1" &>/dev/null; then
+      echo "  >> $@ (already installed)"
+      return
+    fi
+    echo "  >> $@ (installing)"
+    if sudo pacman -Sy $@ &> /dev/null; then
+      echo "  >> $@ (done)"
+    else
+      echo "  >> $@ (failed to install)"
+    fi
+  }
+
+  # ---- Core tools ----
+  installPackage curl
+  installPackage git
+  installPackage make
+  installPackage vim
+
+  # ---- CLI utilities ----
   installPackage bat
-  installPackage ddcutil
+  installPackage fzf
+  installPackage pv
+  installPackage entr
+
+  # ---- Git extensions ----
   installPackage gh
   installPackage git-lfs
+
+  # ---- OS-specific ----
+  installPackage ddcutil
   installPackage i2c-tools
   installPackage xz
+
   echo '>> Done installPackage'
 
   ################################################################################
