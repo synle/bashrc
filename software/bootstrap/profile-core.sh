@@ -76,6 +76,7 @@ ignored_history=(
   "git diff"
   "git log"
   "git fetch*"
+  "fuzzy_*"
 )
 export HISTIGNORE=$(IFS=":"; echo "${ignored_history[*]}")
 unset ignored_history
@@ -91,7 +92,7 @@ unset ignored_history
 #   _track_pwd - runs via PROMPT_COMMAND after every command
 #   _recent_paths - reads and cleans the paths file
 #   golast - cd to the most recently visited directory
-#   fuzzy_paths (fp) - fzf picker for visited directories
+#   fuzzy_paths - fzf picker for visited directories
 ################################################################################
 RECENT_PATHS_FILE=~/.bash_syle_paths
 RECENT_PATHS_MAX=100
@@ -538,61 +539,60 @@ alias calc_chmod='chmod_calculator'
 ################################################################################
 # ---- FZF Lightweight Aliases and Functions ----
 ################################################################################
-alias fv=fuzzy_vim
-alias fvim=fuzzy_vim
-alias fview=fuzzy_view_file
-alias fcd=fuzzy_directory
-alias fp=fuzzy_paths
 
 # simple view file alias - will be overridden by advanced bash
 function view_file() {
   vim "$@"
 }
 
-function fuzzy_vim() {
-  local OUT=$( \
-    search_file_with_git | \
-    filter_text_files_only | \
-    fzf \
-  )
-
-  if [ -n "$OUT" ]; then
-    echo """
-vim \"$OUT\"
-    """
-    vim "$OUT"
-  fi
-}
-
-function fuzzy_view_file() {
-  local OUT=$( \
-    search_file_with_git | \
-    filter_text_files_only | \
-    fzf \
-  )
-
-  if [ -n "$OUT" ]; then
-    echo """
-view_file \"$OUT\"
-    """
-    view_file "$OUT"
-  fi
-}
-
-function _fuzzy_cd() {
-  local OUT=$(echo "$1" | fzf +m)
+function fuzzy_paths() {
+  local OUT=$(echo "$(_recent_paths)" | fzf +m --layout=reverse)
   if [ -n "$OUT" ] && [ -d "$OUT" ]; then
     echo "cd \"$OUT\""
     cd "$OUT"
   fi
 }
 
-function fuzzy_directory() {
-  _fuzzy_cd "$(search_dir_with_git | filter_unwanted)"
+function _fuzzy_list_all() {
+  local blue=$'\033[34m'
+  local reset=$'\033[0m'
+  if git rev-parse --is-inside-work-tree &>/dev/null; then
+    git ls-tree -r -d --name-only HEAD 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
+    git ls-files --full-name 2>/dev/null | sort -u
+  else
+    find . -type d 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
+    find . -type f 2>/dev/null | sort -u
+  fi | filter_unwanted
 }
 
-function fuzzy_paths() {
-  _fuzzy_cd "$(_recent_paths)"
+function fuzzy_open() {
+  local VIEW_COMMAND="$1"
+  local OUT=$(_fuzzy_list_all | fzf --ansi --layout=reverse)
+
+  if [ -z "$OUT" ]; then
+    return
+  fi
+
+  # check if selection is a directory (trailing /)
+  local IS_DIR=false
+  if [[ "$OUT" == */ ]]; then
+    IS_DIR=true
+    OUT="${OUT%/}"
+  fi
+
+  local FULL_PATH
+  FULL_PATH=$(cd "$(git rev-parse --show-toplevel 2>/dev/null || echo ".")" && realpath "$OUT")
+
+  echo "pwd: $(pwd)"
+  echo "target: $FULL_PATH"
+
+  if [ "$IS_DIR" = true ]; then
+    open "$FULL_PATH"
+  elif [ -n "$VIEW_COMMAND" ] && command -v "$VIEW_COMMAND" &>/dev/null || type "$VIEW_COMMAND" &>/dev/null; then
+    "$VIEW_COMMAND" "$OUT"
+  else
+    view_file "$OUT"
+  fi
 }
 
 ################################################################################

@@ -176,7 +176,7 @@ function fuzzy_git_cobranch() {
   local branches branch
   branches=$(git branch --all | grep -v HEAD | sed 's/remotes\/origin\///g' | sed "s/.* //" | sed 's/ //g' | sed "s#remotes/[^/]*/##" | sort | uniq) &&
   branch=$(echo "$branches" |
-  fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m) &&
+  fzf-tmux -d $(( 2 + $(wc -l <<< "$branches") )) +m --layout=reverse) &&
   git checkout $(echo "$branch")
 }
 
