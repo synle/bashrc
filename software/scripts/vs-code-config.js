@@ -185,6 +185,12 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     "telemetry.telemetryLevel": "off", // Disable all telemetry data collection
     "workbench.settings.enableNaturalLanguageSearch": false, // Don't send settings searches to Microsoft servers
 
+    // --- AI & Copilot ---
+    "github.copilot.enable": { "*": false }, // Disable GitHub Copilot completions for all languages
+    "chat.agent.enabled": false, // Disable AI chat agent
+    "chat.mcp.enabled": false, // Disable MCP (Model Context Protocol) servers
+    "workbench.enableExperiments": false, // Disable A/B experiments from Microsoft
+
     // --- Suggestions & Hover ---
     "editor.hover.delay": 200, // Delay in ms before showing hover tooltips
     "editor.hover.enabled": true, // Show hover tooltips (type info, docs)
