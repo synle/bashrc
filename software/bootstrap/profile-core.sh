@@ -385,17 +385,27 @@ function clean_master_main_branch() {
   git fetch --all --prune >/dev/null 2>&1
   rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD
 
+  # Detect the default branch from origin (e.g., main or master)
+  local default_branch
+  default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||')
+  if [ -z "$default_branch" ]; then
+    for b in main master; do
+      if git rev-parse --verify "origin/$b" >/dev/null 2>&1; then
+        default_branch="$b"
+        break
+      fi
+    done
+  fi
+
+  if [ -z "$default_branch" ]; then
+    echo "Error: could not determine default branch from origin"
+    return 1
+  fi
+
   local temp_branch_name="tmp-clean-$(command date +%s)"
   git checkout -B "$temp_branch_name" >/dev/null 2>&1
   git branch -D master main >/dev/null 2>&1
-
-  for b in master main; do
-    if git rev-parse --verify "origin/$b" >/dev/null 2>&1; then
-      git checkout --track "origin/$b" >/dev/null 2>&1
-      break
-    fi
-  done
-
+  git checkout -B "$default_branch" "origin/$default_branch" >/dev/null 2>&1
   git branch -D "$temp_branch_name" >/dev/null 2>&1
 
   echo "$(git log -1 --format='%h %an: %s' HEAD) ($(git branch --show-current))"
