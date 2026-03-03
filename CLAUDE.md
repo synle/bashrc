@@ -141,11 +141,13 @@ JSONC files reference color map entries via inline trailing comments: `// {{them
 
 A React webapp at `webapp/` built with Vite. Provides a web UI for browsing scripts and configuration. Built via `bash build.sh --steps="webapp"` or `npm run build`.
 
-**Hash-based routing:** Tab navigation uses `window.location.hash` as the source of truth (via the `useHashRoute` hook). Each tab's hash value is its config `idx` (e.g., `#command-option-setup-mac-osx`). Browser back/forward navigates between tabs. No external router dependency.
+**Route and config setup:** Configs (tabs) are built in `App._loadData()`. OS configs come from `OS_FLAGS` mapped through `OS_KEY_TO_NOTES_MAP`, plus static configs (Lightweight Profile, Etc Hosts, Test Full Run, Test Single Script). Each config gets an `idx` derived from its `text` (e.g., `"Setup Windows"` → `"command-option-setup-windows"`) and a `renderBody()` function returning the tab's React component. `MainBodyContainer` matches `route` against `config.idx` to render the selected tab; `TopNavigationContainer` uses the same match to highlight the active tab.
+
+**Hash-based routing:** Tab navigation uses `window.location.hash` as the source of truth (via the `useHashRoute` hook at line ~123). Each tab's hash value is its config `idx` (e.g., `#command-option-setup-windows`). Browser back/forward navigates between tabs. No external router dependency. The default route is derived from `currentSystemFlag` in the `App` component.
 
 **OS detection (`currentSystemFlag`):** Detects the visitor's platform to auto-select the default tab. Uses case-insensitive regex: `/mac/i` on `navigator.platform` → macOS, `/win/i` → Windows, `/android/i` on `navigator.userAgent` → Android Termux, otherwise Ubuntu.
 
-**OS flags as values:** The webapp uses `is_os_*` flag keys (from `OS_NOTES_LIST`) as values throughout — in `formValue.osToRun`, the OS selection dropdown, `TargetSystemOSWarningDom`, and the `osFlags` mapping in `ScriptOutputSection`. This keeps the webapp consistent with the shell-side OS flag convention.
+**OS flags as values:** The webapp uses `is_os_*` flag keys (from `OS_NOTES_LIST`) as values throughout — in `formValue.osToRun`, the OS selection dropdown, `TargetSystemOSWarningDom`, and the `osFlags` mapping in `ScriptOutputSection`. Labels are derived from keys automatically (strip `is_os_`, split on `_`, capitalize each word, uppercase `OS`/`WSL`). This keeps the webapp consistent with the shell-side OS flag convention.
 
 ## CI/CD
 

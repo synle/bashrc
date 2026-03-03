@@ -180,7 +180,7 @@ function ScriptNameInputSection() {
 
   return (
     <>
-      <div className="form-row">
+      <div className="form-row" name="formValue.scriptsToUse">
         <div className="form-label">Scripts To Run</div>
         <div className="form-input">
           {formValue.scriptsToUse.map((scriptToUse, idx) => (
@@ -213,7 +213,7 @@ function ScriptNameInputSection() {
         ))}
       </datalist>
 
-      <div className="form-row">
+      <div className="form-row" name="formValue.debugWriteToDir">
         <div className="form-label">Debug Write To File</div>
         <div className="form-input">
           <div className="nav-radio-group">
@@ -232,7 +232,6 @@ function ScriptNameInputSection() {
           {formValue.debugWriteToDir && (
             <>
               <input
-                id="debugWriteToDir"
                 name="debugWriteToDir"
                 list="writeToFilePathOptions"
                 type="text"
@@ -266,11 +265,10 @@ function OsSelectionInputSection() {
 
   return (
     <>
-      <div className="form-row">
+      <div className="form-row" name="formValue.osToRun">
         <div className="form-label">OS Type</div>
         <div className="form-input">
           <select
-            id="osToRun"
             name="osToRun"
             onChange={(e) => {
               onInputChange(e.target.name, e.target.value);
@@ -302,7 +300,7 @@ function SetupDependenciesSection() {
   const formValue = useContext(MainAppContext).appData.formValue;
 
   return (
-    <div className="form-row">
+    <div className="form-row" name="formValue.setupDependencies">
       <div className="form-label">Setup Dependencies</div>
       <div className="form-input">
         <div className="nav-radio-group">
@@ -382,7 +380,7 @@ function ScriptOutputSection({ script }) {
       .trim();
   }, [formValue, script]);
 
-  return <EnhancedTextArea id="formValueOutput" placeholder="Output" readOnly value={formValueOutput} />;
+  return <EnhancedTextArea placeholder="Output" readOnly value={formValueOutput} />;
 }
 
 /**
