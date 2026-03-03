@@ -17,7 +17,7 @@ async function doWork() {
     const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
     log(">> Updating .bash_profile with bash_syle entry point", targetPath);
     let textContent = readText(targetPath);
-    textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
+    textContent = prependTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
     writeText(targetPath, textContent);
   }
 
@@ -26,7 +26,7 @@ async function doWork() {
     const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
     log(">> Updating .bashrc with bash_syle entry point", targetPath);
     let textContent = readText(targetPath);
-    textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
+    textContent = prependTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
     writeText(targetPath, textContent);
   }
 }

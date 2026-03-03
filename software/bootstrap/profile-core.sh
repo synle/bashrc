@@ -679,10 +679,25 @@ function parse_git_branch() {
   echo "[${branch}${info}]"
 }
 
-# shows local IP addresses (works without hostname or ifconfig)
-function ifconfig2() {
+# shows local IP addresses (cached, refreshes after max_age seconds or max_calls calls)
+_ifconfig2_cache=""
+_ifconfig2_count=0
+_ifconfig2_time=0
+_ifconfig2_max_age=1200   # 20 minutes
+_ifconfig2_max_calls=30
+function _ifconfig2_fetch() {
   hostname -I 2>/dev/null | tr ' ' '\n' | grep '\.' | grep -v '^127\.' | sort -u | paste -sd',' - \
     || ifconfig 2>/dev/null | grep 'inet ' | awk '{print $2}' | grep -v '^127\.' | sort -u | paste -sd',' -
+}
+function ifconfig2() {
+  local now=$(printf '%(%s)T' -1)
+  _ifconfig2_count=$((_ifconfig2_count + 1))
+  if [ -z "$_ifconfig2_cache" ] || [ $(( now - _ifconfig2_time )) -ge $_ifconfig2_max_age ] || [ $_ifconfig2_count -ge $_ifconfig2_max_calls ]; then
+    _ifconfig2_cache=$(_ifconfig2_fetch)
+    _ifconfig2_time=$now
+    _ifconfig2_count=0
+  fi
+  echo "$_ifconfig2_cache"
 }
 
 # truncates deep paths, keeping last 3 parts full
