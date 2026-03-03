@@ -396,10 +396,10 @@ A launch configuration is provided to debug individual `.js` script files with b
 
 ### Files
 
-| File                         | Purpose                                                              |
-| ---------------------------- | -------------------------------------------------------------------- |
-| `.vscode/launch.json`        | VS Code debug launch configuration                                   |
-| `software/.debug-runner.js`  | Helper that concatenates `index.js` + script file and runs them      |
+| File                        | Purpose                                                         |
+| --------------------------- | --------------------------------------------------------------- |
+| `.vscode/launch.json`       | VS Code debug launch configuration                              |
+| `software/.debug-runner.js` | Helper that concatenates `index.js` + script file and runs them |
 
 ### Usage
 
