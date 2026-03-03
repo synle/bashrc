@@ -2,7 +2,11 @@
 # Arch Linux dependencies - packages, config
 
 function installPackage() {
-  echo "  >> $@"
+  if pacman -Q "$1" &>/dev/null; then
+    echo "  >> $@ (already installed)"
+    return
+  fi
+  echo "  >> $@ (installing)"
   sudo pacman -S --noconfirm $@ &> /dev/null
 }
 

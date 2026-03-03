@@ -7,7 +7,11 @@ if [ "$is_os_chromeos" = "1" ]; then
   sudo apt-get update -y
 
   installPackage() {
-    echo "  >> $@"
+    if dpkg -s "$1" &>/dev/null; then
+      echo "  >> $@ (already installed)"
+      return
+    fi
+    echo "  >> $@ (installing)"
     sudo apt-get install -y --fix-missing $@ &> /dev/null
   }
 

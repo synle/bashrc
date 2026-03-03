@@ -2,7 +2,11 @@
 # Ubuntu / Debian dependencies - apt-get packages and user permissions
 
 function installPackage() {
-  echo "  >> $@"
+  if dpkg -s "$1" &>/dev/null; then
+    echo "  >> $@ (already installed)"
+    return
+  fi
+  echo "  >> $@ (installing)"
   sudo apt-get install -y --fix-missing $@ &> /dev/null
 }
 

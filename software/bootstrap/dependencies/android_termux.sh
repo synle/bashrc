@@ -14,7 +14,11 @@ termux-chroot
   # ---- Install Packages ----
   ################################################################################
   installPackage() {
-    echo "  >> $@"
+    if dpkg -s "$1" &>/dev/null; then
+      echo "  >> $@ (already installed)"
+      return
+    fi
+    echo "  >> $@ (installing)"
     pkg install -y $@ &> /dev/null
   }
 

@@ -2,9 +2,12 @@
 # macOS dependencies - Homebrew packages, system preferences, shell setup
 
 function installPackage() {
-  echo "  >> $@"
+  if brew list "$1" &>/dev/null; then
+    echo "  >> $@ (already installed)"
+    return
+  fi
+  echo "  >> $@ (installing)"
   brew install $@ &> /dev/null
-  brew cask install &> /dev/null
 }
 
 if [ "$is_os_mac" = "1" ]; then
