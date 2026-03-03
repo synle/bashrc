@@ -12,6 +12,12 @@
   "extensions.ignoreRecommendations": true,
   "telemetry.telemetryLevel": "off",
   "workbench.settings.enableNaturalLanguageSearch": false,
+  "github.copilot.enable": {
+    "*": false
+  },
+  "chat.agent.enabled": false,
+  "chat.mcp.enabled": false,
+  "workbench.enableExperiments": false,
   "editor.hover.delay": 200,
   "editor.hover.enabled": true,
   "editor.quickSuggestionsDelay": 0,
