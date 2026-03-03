@@ -10,14 +10,7 @@
  * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns content as-is.
  * @returns {string} The modified content, or original content if markers not found and no insertMode
  */
-declare function replaceBlock(
-  content: string,
-  key: string,
-  sourceContent: string,
-  commentPrefix: string,
-  commentSuffix?: string,
-  insertMode?: "append" | "prepend" | null,
-): string;
+declare function replaceBlock(content: string, key: string, sourceContent: string, commentPrefix: string, commentSuffix?: string, insertMode?: "append" | "prepend" | null): string;
 /** @type {string} Opening delimiter for managed text blocks */
 declare const TEXT_BLOCK_START_MARKER: string;
 /** @type {string} Closing delimiter for managed text blocks */

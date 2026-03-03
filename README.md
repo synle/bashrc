@@ -18,11 +18,9 @@ https://synle.github.io/bashrc/
 ## Installation
 
 <!-- BEGIN software/bootstrap/setup.sh -->
-
 ```bash
 curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --setup
 ```
-
 <!-- END software/bootstrap/setup.sh -->
 
 ## Usage

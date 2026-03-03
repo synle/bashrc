@@ -14,11 +14,4 @@ export const TEXT_BLOCK_END_MARKER: string;
  * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns content as-is.
  * @returns {string} The modified content, or original content if markers not found and no insertMode
  */
-export function replaceBlock(
-  content: string,
-  key: string,
-  sourceContent: string,
-  commentPrefix: string,
-  commentSuffix?: string,
-  insertMode?: "append" | "prepend" | null,
-): string;
+export function replaceBlock(content: string, key: string, sourceContent: string, commentPrefix: string, commentSuffix?: string, insertMode?: "append" | "prepend" | null): string;

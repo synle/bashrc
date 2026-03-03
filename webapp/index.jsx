@@ -981,12 +981,11 @@ function EnhancedTextArea(props) {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    if(defaultCollapsed === true){
+    if (defaultCollapsed === true) {
       setCollapsed(defaultCollapsed);
-    }else {
+    } else {
       setCollapsed(collapseAll);
     }
-
   }, [collapseAll, tick, defaultCollapsed]);
 
   // Detect language: first try from URL, then from content
