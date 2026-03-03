@@ -5,7 +5,7 @@
       "name": "Debug Script (Current File)",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/software/.debug-runner.js",
+      "program": "${workspaceFolder}/software/.debug-runner.cjs",
       "args": ["${file}"],
       "cwd": "${workspaceFolder}",
       "env": {
