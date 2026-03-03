@@ -663,8 +663,14 @@ export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 # ---- Prompt Helpers ----
 ################################################################################
 # shows branch name, remote (if not origin), and ahead/behind counts
-function parse_git_branch() {
-  type -P git &>/dev/null || return
+# cached: refreshes on branch change, after max_age seconds, or max_calls calls
+_git_branch_cache=""
+_git_branch_last=""
+_git_branch_count=0
+_git_branch_time=0
+_git_branch_max_age=300   # 5 minutes
+_git_branch_max_calls=10
+function _parse_git_branch_fetch() {
   local branch ahead behind remote remote_name info=""
   branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return
   remote=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
@@ -677,6 +683,21 @@ function parse_git_branch() {
     [ "$behind" -gt 0 ] 2>/dev/null && info+=" -${behind}"
   fi
   echo "[${branch}${info}]"
+}
+function parse_git_branch() {
+  type -P git &>/dev/null || return
+  local branch now
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+  now=$(printf '%(%s)T' -1)
+  _git_branch_count=$((_git_branch_count + 1))
+  # refresh on branch change, time expiry, or call count
+  if [ "$branch" != "$_git_branch_last" ] || [ -z "$_git_branch_cache" ] || [ $(( now - _git_branch_time )) -ge $_git_branch_max_age ] || [ $_git_branch_count -ge $_git_branch_max_calls ]; then
+    _git_branch_cache=$(_parse_git_branch_fetch)
+    _git_branch_last="$branch"
+    _git_branch_time=$now
+    _git_branch_count=0
+  fi
+  echo "$_git_branch_cache"
 }
 
 # shows local IP addresses (cached, refreshes after max_age seconds or max_calls calls)
