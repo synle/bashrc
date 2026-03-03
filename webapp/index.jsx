@@ -5,44 +5,61 @@ import Toastify from "toastify-js";
 import "toastify-js/src/toastify.css";
 import "./index.scss";
 
+/** @type {string} GitHub repository path identifier (e.g., "synle/bashrc"). Injected by Vite at build time. */
 const REPO_PATH_IDENTIFIER = window.REPO_PATH_IDENTIFIER;
+/** @type {string} Git branch name (e.g., "master"). Injected by Vite at build time. */
 const REPO_BRANCH_NAME = window.REPO_BRANCH_NAME;
+/** @type {string} Full GitHub repository URL. */
 const REPO_URL = `https://github.com/${REPO_PATH_IDENTIFIER}`;
+/** @type {string} Base URL for fetching raw file content from GitHub. */
 const BASH_PROFILE_CODE_REPO_RAW_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}`;
+/** @type {string} Base URL for viewing files on GitHub (blob view). */
 const BASH_PROFILE_CODE_REPO_VIEW_URL = `${REPO_URL}/blob/${REPO_BRANCH_NAME}`;
+/** @type {string} Base URL for editing files on GitHub (edit view). */
 const BASH_PROFILE_CODE_REPO_EDIT_URL = `${REPO_URL}/edit/${REPO_BRANCH_NAME}`;
+/** @type {string} Comma-separated list of script filenames used for lightweight profile setup. Injected by Vite at build time. */
+const LIGHT_WEIGHT_SCRIPTS = window.LIGHT_WEIGHT_SCRIPTS;
 
-const isCurrentSystemMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-const isCurrentSystemWindows = navigator.platform.indexOf("Win") > -1;
-const isCurrentSystemUbuntu = !isCurrentSystemMac && !isCurrentSystemWindows;
-
-const OS_FLAGS = window.OS_FLAGS || [];
+/** @type {string} The OS flag key matching the current browser's detected platform. */
+const currentSystemFlag = navigator.platform.toUpperCase().indexOf("MAC") >= 0
+  ? "is_os_mac"
+  : navigator.platform.indexOf("Win") > -1
+    ? "is_os_windows"
+    : "is_os_ubuntu";
 
 /**
- * Maps an OS flag key to its display label and NotesDom component.
+ * Ordered list of OS setup note entries. Each entry maps an OS flag to its display label and NotesDom component.
+ * The array order defines the default display order in the navigation tabs.
+ * @type {Array<{key: string, label: string, Component: Function}>}
  */
-const OS_KEY_TO_NOTES_MAP = {
-  is_os_mac: { label: "Setup Mac OSX", Component: MacOSXNotesDom },
-  is_os_ubuntu: { label: "Setup Ubuntu", Component: LinuxNotesDom },
-  is_os_chromeos: { label: "Setup ChromeOS", Component: LinuxNotesDom },
-  is_os_mingw64: { label: "Setup Mingw64", Component: GenericLightWeightNotesDom },
-  is_os_android_termux: { label: "Setup Android Termux", Component: AndroidNotesDom },
-  is_os_arch_linux: { label: "Setup Arch Linux", Component: LinuxNotesDom },
-  is_os_steamos: { label: "Setup SteamOS", Component: LinuxNotesDom },
-  is_os_redhat: { label: "Setup Redhat", Component: LinuxNotesDom },
-  is_os_windows: { label: "Setup Windows", Component: WindowsNotesDom },
-  is_os_wsl: { label: "Setup WSL", Component: LinuxNotesDom },
-};
+const OS_NOTES_LIST = [
+  { key: "is_os_windows", label: "Setup Windows", Component: WindowsNotesDom },
+  { key: "is_os_mac", label: "Setup Mac OSX", Component: MacOSXNotesDom },
+  { key: "is_os_ubuntu", label: "Setup Ubuntu", Component: LinuxNotesDom },
+  { key: "is_os_redhat", label: "Setup Redhat", Component: LinuxNotesDom },
+  { key: "is_os_arch_linux", label: "Setup Arch Linux", Component: LinuxNotesDom },
+  { key: "is_os_steamos", label: "Setup SteamOS", Component: LinuxNotesDom },
+  { key: "is_os_android_termux", label: "Setup Android Termux", Component: AndroidNotesDom },
+  { key: "is_os_chromeos", label: "Setup ChromeOS", Component: LinuxNotesDom },
+  { key: "is_os_mingw64", label: "Setup Mingw64", Component: GenericLightWeightNotesDom },
+  { key: "is_os_wsl", label: "Setup WSL", Component: LinuxNotesDom },
+];
 
-// this is the default settings used on the first page load
-let defaultCommandOption = "command-option-setup-lightweight-profile";
-if (isCurrentSystemMac) {
-  defaultCommandOption = "command-option-setup-mac-osx";
-} else if (isCurrentSystemWindows) {
-  defaultCommandOption = "command-option-setup-windows";
-} else if (isCurrentSystemUbuntu) {
-  defaultCommandOption = "command-option-setup-ubuntu";
-}
+/**
+ * Sorted list of active OS flag keys. Filtered to only include flags passed in from Vite (via window.OS_FLAGS),
+ * sorted with the current system's OS first.
+ * @type {string[]}
+ */
+const OS_FLAGS = OS_NOTES_LIST.map((e) => e.key)
+  .filter((k) => (window.OS_FLAGS || []).includes(k))
+  .sort((a, b) => (a === currentSystemFlag ? -1 : b === currentSystemFlag ? 1 : 0));
+
+/**
+ * Lookup map from OS flag key to its OS notes entry. Built from OS_NOTES_LIST.
+ * @type {Object<string, {key: string, label: string, Component: Function}>}
+ */
+const OS_KEY_TO_NOTES_MAP = Object.fromEntries(OS_NOTES_LIST.map((e) => [e.key, e]));
+
 
 /**
  * Writes a value to localStorage under the given key.
@@ -1038,25 +1055,15 @@ const CommonOtherAppDom = (
  * not in the known OS map.
  * @param {Object} props
  * @param {string} [props.targetDomString] - The target OS identifier ('mac', 'windows', 'ubuntu', 'android').
- * @param {boolean} [props.isCurrentSystemMac] - Whether the current system is macOS.
- * @param {boolean} [props.isCurrentSystemWindows] - Whether the current system is Windows.
- * @param {boolean} [props.isCurrentSystemUbuntu] - Whether the current system is Ubuntu/Linux.
- * @param {boolean} [props.isCurrentSystemAndroid] - Whether the current system is Android.
  * @returns {React.ReactElement|null} A styled heading with the match/mismatch message, or null.
  */
-function TargetSystemOSWarningDom({
-  targetDomString,
-  isCurrentSystemMac,
-  isCurrentSystemWindows,
-  isCurrentSystemUbuntu,
-  isCurrentSystemAndroid,
-}) {
-  // 1. Map target strings to their corresponding system detection booleans
+function TargetSystemOSWarningDom({ targetDomString }) {
+  // 1. Map target strings to their corresponding system flag and display name
   const osMap = {
-    mac: { name: "OSX", isMatch: isCurrentSystemMac },
-    windows: { name: "Windows", isMatch: isCurrentSystemWindows },
-    ubuntu: { name: "Linux (Ubuntu)", isMatch: isCurrentSystemUbuntu },
-    android: { name: "Android", isMatch: isCurrentSystemAndroid },
+    mac: { name: "OSX", flag: "is_os_mac" },
+    windows: { name: "Windows", flag: "is_os_windows" },
+    ubuntu: { name: "Linux (Ubuntu)", flag: "is_os_ubuntu" },
+    android: { name: "Android", flag: "is_os_android_termux" },
   };
 
   const target = osMap[targetDomString];
@@ -1069,9 +1076,10 @@ function TargetSystemOSWarningDom({
     return <h3 className="text-error">This is only meant for Android.</h3>;
   }
 
+  const isMatch = currentSystemFlag === target.flag;
   return (
-    <h3 className={target.isMatch ? "text-info" : "text-error"}>
-      {target.isMatch ? "OS Choice matches your OS" : `OS choice (${target.name}) doesn't match your system.`}
+    <h3 className={isMatch ? "text-info" : "text-error"}>
+      {isMatch ? "OS Choice matches your OS" : `OS choice (${target.name}) doesn't match your system.`}
     </h3>
   );
 }
@@ -1152,8 +1160,10 @@ function LinuxNotesDom() {
 function GenericLightWeightNotesDom() {
   return (
     <>
+      <ScriptOutputSection
+        script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
+      />
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
-      <DynamicTextArea path="/docs/android/sponsorblock.json" />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
       <DynamicTextArea path="/.build/inputrc" />
@@ -1413,7 +1423,7 @@ function App() {
             text: "Setup Lightweight Profile",
             renderBody: () => (
               <ScriptOutputSection
-                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --lightweight --files="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-syle-content.js"`}
+                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
               />
             ),
           },
@@ -1464,7 +1474,13 @@ function App() {
           setupHostsScript,
           ipAddressMappingConfigs,
           formValue: {
-            commandChoice: getStorage("commandChoice") || defaultCommandOption,
+            commandChoice:
+              getStorage("commandChoice") ||
+              (currentSystemFlag === "is_os_mac"
+                ? "command-option-setup-mac-osx"
+                : currentSystemFlag === "is_os_windows"
+                  ? "command-option-setup-windows"
+                  : "command-option-setup-ubuntu"),
             osToRun: getStorage("osToRun") || "windows",
             debugWriteToDir: getStorage("debugWriteToDir") || "",
             setupDependencies: getStorage("setupDependencies") || "yes",

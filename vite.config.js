@@ -30,7 +30,7 @@ const updateServiceWorker = () => ({
   },
 });
 
-const requiredEnvKeys = ["REPO_PATH_IDENTIFIER", "REPO_BRANCH_NAME"];
+const requiredEnvKeys = ["REPO_PATH_IDENTIFIER", "REPO_BRANCH_NAME", "LIGHT_WEIGHT_SCRIPTS"];
 const requiredEnvs = {};
 for (const envKey of requiredEnvKeys) {
   process.env[envKey] = (process.env[envKey] || "").trim();
@@ -40,18 +40,7 @@ for (const envKey of requiredEnvKeys) {
   requiredEnvs[`window.${envKey}`] = JSON.stringify(process.env[envKey]);
 }
 
-const OS_FLAGS = [
-  "is_os_mac",
-  "is_os_ubuntu",
-  "is_os_chromeos",
-  "is_os_mingw64",
-  "is_os_android_termux",
-  "is_os_arch_linux",
-  "is_os_steamos",
-  "is_os_redhat",
-  "is_os_windows",
-  "is_os_wsl",
-];
+const OS_FLAGS = Object.keys(process.env).filter((key) => key.startsWith("is_os_"));
 requiredEnvs["window.OS_FLAGS"] = JSON.stringify(OS_FLAGS);
 
 export default defineConfig({
