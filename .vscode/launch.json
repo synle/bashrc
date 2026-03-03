@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Script (Current File)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/software/.debug-runner.js",
+      "args": ["${file}"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "IS_TEST_SCRIPT_MODE": "true",
+        "BASH_PROFILE_CODE_REPO_RAW_URL": "https://raw.githubusercontent.com/synle/bashrc/master",
+        "BASH_SYLE_COMMON": "~/.bash_syle_common",
+        "BASH_SYLE_PATH": "${env:HOME}/.bash_syle",
+        "BASH_SYLE_AUTOCOMPLETE_PATH": "${env:HOME}/.bash_syle_autocomplete",
+        "BASH_SYLE_COMMON_PATH": "${env:HOME}/.bash_syle_common",
+        "is_os_mac": "1",
+        "TZ": "UTC"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

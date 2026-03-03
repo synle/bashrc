@@ -389,3 +389,34 @@ Unit tests use **vitest** (v0.34.6) with a **Node `vm` sandbox** that executes a
 | `fileIO.test.js`            | `readText`, `writeText`, `appendText`, `writeJson`, `writeConfigToFile`, `parseJsonWithComments`                                                                                                         |
 | `guardClauses.test.js`      | `resolveOsKey`                                                                                                                                                                                           |
 | `buildInclude.test.js`      | `getCommentStyle`, `stripShebang`, `isFilePath`, `autoTransform`, `findMarkers`, `replaceBlock`, `cleanBlock`, `getRawBlockContent`, `toJsonLiteral`, `processInlineMarkers`, `COLOR_MAP`                |
+
+## VS Code Debugging
+
+A launch configuration is provided to debug individual `.js` script files with breakpoints.
+
+### Files
+
+| File                         | Purpose                                                              |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `.vscode/launch.json`        | VS Code debug launch configuration                                   |
+| `software/.debug-runner.js`  | Helper that concatenates `index.js` + script file and runs them      |
+
+### Usage
+
+1. Open any `.js` script file in the editor (e.g., `software/scripts/url-porter.js`)
+2. Press **F5** or use **Run > Start Debugging**
+3. Select **"Debug Script (Current File)"** if prompted
+
+The debug runner mimics the production pipeline (`cat index.js && cat script.js | node`) by concatenating `software/index.js` with the open file into a temp file, then executing it. The IIFE at the bottom of `index.js` detects the script's `doWork()` function and calls it.
+
+### Environment variables
+
+The launch config pre-sets these env vars:
+
+- `IS_TEST_SCRIPT_MODE=true` — uses `cat` (local files) instead of `curl` for fetches
+- `BASH_PROFILE_CODE_REPO_RAW_URL` — repo raw URL for remote fetches
+- `BASH_SYLE_COMMON`, `BASH_SYLE_PATH`, `BASH_SYLE_AUTOCOMPLETE_PATH`, `BASH_SYLE_COMMON_PATH` — standard profile paths
+- `is_os_mac=1` — OS flag (change to match your target platform)
+- `TZ=UTC`
+
+To debug with a different OS flag, edit `.vscode/launch.json` and change `is_os_mac` to the desired flag (e.g., `"is_os_ubuntu": "1"`).
