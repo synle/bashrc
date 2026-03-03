@@ -23,9 +23,7 @@ const updateServiceWorker = () => ({
       }
 
       fs.writeFileSync(swDestPath, content);
-      console.log(
-        `Service Worker copied to dist and updated with build timestamp: ${timestamp}`,
-      );
+      console.log(`Service Worker copied to dist and updated with build timestamp: ${timestamp}`);
     } else {
       console.warn(`Service Worker not found at ${swSourcePath}`);
     }
@@ -37,9 +35,7 @@ const requiredEnvs = {};
 for (const envKey of requiredEnvKeys) {
   process.env[envKey] = (process.env[envKey] || "").trim();
   if (!process.env[envKey]) {
-    throw new Error(
-      `${envKey} environment variable is not defined. Run software/bootstrap/common-env.sh first.`,
-    );
+    throw new Error(`${envKey} environment variable is not defined. Run software/bootstrap/common-env.sh first.`);
   }
   requiredEnvs[`window.${envKey}`] = JSON.stringify(process.env[envKey]);
 }
