@@ -356,14 +356,14 @@ To add system packages for an OS, edit the corresponding file in `software/boots
 
 #### Package manager per OS
 
-| OS               | Check command | Install command                      |
-| ---------------- | ------------- | ------------------------------------ |
-| mac.sh           | `brew list`   | `brew install`                       |
-| ubuntu.sh        | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
-| arch_linux.sh    | `pacman -Q`   | `sudo pacman -S --noconfirm`         |
-| steamos.sh       | `pacman -Q`   | `sudo pacman -Sy`                    |
-| android_termux.sh| `dpkg -s`     | `pkg install -y`                     |
-| chrome_os_linux.sh| `dpkg -s`    | `sudo apt-get install -y --fix-missing` |
+| OS                 | Check command | Install command                         |
+| ------------------ | ------------- | --------------------------------------- |
+| mac.sh             | `brew list`   | `brew install`                          |
+| ubuntu.sh          | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
+| arch_linux.sh      | `pacman -Q`   | `sudo pacman -S --noconfirm`            |
+| steamos.sh         | `pacman -Q`   | `sudo pacman -Sy`                       |
+| android_termux.sh  | `dpkg -s`     | `pkg install -y`                        |
+| chrome_os_linux.sh | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
 
 ## Testing
 
