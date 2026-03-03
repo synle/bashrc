@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-02]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-03]
 # ############################################################################################################################################
 
 [user]
@@ -33,14 +33,28 @@ rebase = false
 
 [push]
 default = current
+autoSetupRemote = true # Auto-track remote branch on first push
 
 [diff]
 tool = vimdiff
 prompt = false
+algorithm = histogram # Better diff output than default myers
 
 [merge]
 tool = vimdiff
 prompt = false
+
+[rerere]
+enabled = true # Reuse recorded conflict resolutions
+
+[transfer]
+fsckObjects = true # Validate objects on push/fetch to catch corruption
+
+[column]
+ui = auto # Show branch/tag lists in columns when terminal is wide
+
+[branch]
+sort = -committerdate # Most recently committed branches first
 
 [color]
 ui = true
@@ -67,45 +81,57 @@ auto = true
 strategy = incremental
 
 [alias]
-# General
-s = "!git status -sb && git diff --stat"
+# ---- Status & Staging ----
+s = "!git status -sb && git diff --stat" # Status + diff summary
 stat = status -sb # Short status with branch info
 a = add
 aa = add -A # Add all (including untracked)
 ap = add -p # Interactive patch mode
 au = add -u # Add only tracked files
 
-# Commit
+# ---- Commit ----
 c  = commit --allow-empty --no-verify
 cm = commit --allow-empty --no-verify -m
 amend  = commit --allow-empty --no-verify --amend
 amendm = commit --allow-empty --no-verify --amend -m
+wip = "!git aa && git cm wip" # Quick save-all as a wip commit
+unwip = "!git log -1 --format=%s | grep -qi '^wip$' && git undo" # Undo last commit only if it was a wip
 
-# Patch and Smart patch download (default: HEAD~1, but accepts range)
-patch = apply --reject --whitespace=fix
-patch-apply = "!git patch"
-patch-download = format-patch -1 --root
-patch-download-raw = "!git patch-download --stdout"
+# ---- Undo ----
+undo = reset HEAD~1 --mixed # Undo last commit, keep changes unstaged
 
-# Branch & Checkout
+# ---- Patch ----
+patch = apply --reject --whitespace=fix # Apply a .patch file
+patch-getn = "!f() { git format-patch -${1:-1}; }; f" # Save last N commits as .patch files
+patch-get = "!git patch-getn 1" # Save last commit as .patch file
+patch-viewn = "!f() { git format-patch -${1:-1} --stdout; }; f" # Print last N commits patch to stdout
+patch-view = "!git patch-viewn 1" # Print last commit patch to stdout
+patch-downloadn = "!f() { git patch-getn ${1:-1} && git patch-rename; }; f" # patch-get + rename with repo-date prefix
+patch-download = "!git patch-downloadn 1" # Download last commit patch with repo-date prefix
+patch-rename = "!f() { r=$(basename $(git rev-parse --show-toplevel)); d=$(date +%Y_%m_%d_%H_%M); for p in *.patch; do [ -f \"$p\" ] || continue; case \"$p\" in [0-9]*) ;; *) echo \"skip $p\"; continue ;; esac; n=\"${r}-${d}-${p}\"; mv \"$p\" \"$n\"; echo \"$n\"; done; }; f" # Rename .patch files with repo-date prefix (skips already-renamed)
+
+# ---- Branch & Checkout ----
 co = checkout
 cob = checkout -b # Create and switch to new branch
 b = branch -vv # List branches with upstream/commit info
 ba = branch -a -vv # List all local/remote branches
 del = branch -D # Force delete branch
+gone = "!git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -D" # Delete local branches whose remote was deleted
+root = rev-parse --show-toplevel # Print repo root path
+current = branch --show-current # Print current branch name
 
-# Pull / Push / Fetch
+# ---- Pull / Push / Fetch ----
 fap = fetch --all --prune # Fetch all and purge deleted remotes
 fapr = "!git fap && git r" # Fetch all, prune, then rebase
 p = pull
 pu = pull
 po = push origin
 pof = push origin --force
-pdel-branch = push origin --delete # Delete a remote branch: branch-name
-pdel-tag = push origin --delete --tag # Delete a remote tag: tag-name
-track = "!git branch --set-upstream-to=origin/$(git branch --show-current)" # track
+pdel-branch = push origin --delete # Delete a remote branch: git pdel-branch <branch>
+pdel-tag = push origin --delete --tag # Delete a remote tag: git pdel-tag <tag>
+track = "!git branch --set-upstream-to=origin/$(git branch --show-current)" # Set upstream to origin
 
-# Rebase & Merge
+# ---- Rebase & Merge ----
 rv = revert
 rvc = revert --continue
 mc = merge --continue
@@ -113,129 +139,318 @@ r = rebase --reapply-cherry-picks
 rc = rebase --reapply-cherry-picks --continue
 ri = rebase -i # Interactive rebase
 ri-vscode = "!GIT_EDITOR=\"code --wait\" git ri"
+rn = "!f() { git rebase -i HEAD~${1:-1}; }; f" # Interactive rebase last N commits
+rn-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
+ri-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}; }; f"
 
-# Log & Diff
+# ---- Log & Diff ----
 logbaseline = log --decorate --all --abbrev-commit --date=short --graph
 ls = "!git logbaseline --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s\""
 lls = "!git logbaseline --oneline --author-date-order"
-l = "!git ls --stat"
-ll = "!git lls --stat"
+l = "!git ls --stat" # Log with file stats
+ll = "!git lls --stat" # Oneline log with file stats
 d = diff --word-diff -w # Word-level diff ignoring whitespace
-dh = diff --word-diff -w HEAD^
-ds = diff --word-diff -w --staged # Word-level diff ignoring whitespace
+dh = diff --word-diff -w HEAD^ # Diff against previous commit
+ds = diff --word-diff -w --staged # Diff staged changes
 stats = shortlog -sn # Commit counts per author
 
-# Maintenance & Advanced
-cleanfd = "!git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; git am --abort 2>/dev/null; rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD; git clean -f -d" # Abort conflicts and remove untracked files/directories
+# ---- Cherry-pick ----
 cp = cherry-pick
 cpc = cherry-pick --continue
 cpn = cherry-pick -n # Cherry-pick without committing
-clone0 = clone --depth 1 --single-branch  # Shallow Clone
-clone1 = clone --single-branch  # Full Clone
+
+# ---- Clone ----
+clone0 = clone --depth 1 --single-branch  # Shallow clone
+clone1 = clone --single-branch  # Full clone (single branch)
 cl0 = "!f() { git clone0 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
 cl1 = "!f() { git clone1 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
 
-# Search & Reflog
-search-logs = "!f() { git log -G \"$1\" -- .; }; f" # Usage: git search-logs <some_text_to_search>, Search the 'diff' content of all commits in the current directory for a specific string
-search-reflog = rev-list --all -- # git search-history -- "config.old.json" Usage: git search-reflog <file_name>, Find every commit across ALL branches/tags that ever touched a specific file. Useful for finding where a file was deleted or moved
-where-is = branch -r --contains # Usage: git where-is <hash_id>, Identify which remote branches contain a specific commit hash
+# ---- Search ----
+search-logs = "!f() { git log -G \"$1\" -- .; }; f" # Search diff content of all commits: git search-logs <text>
+search-reflog = rev-list --all -- # Find commits that touched a file: git search-reflog <file>
+where-is = branch -r --contains # Find which remote branches contain a commit: git where-is <hash>
 
-# Interactive rebase last n commits
-rn = "!f() { git rebase -i HEAD~${1:-1}; }; f"
-rn-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
-ri-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}; }; f"
-# BEGIN GIT_REBASE_INTERACTIVE
-r2 = rebase -i HEAD~2
-r2-vscode = !GIT_EDITOR=\"code --wait\" git r2
-r3 = rebase -i HEAD~3
-r3-vscode = !GIT_EDITOR=\"code --wait\" git r3
-r4 = rebase -i HEAD~4
-r4-vscode = !GIT_EDITOR=\"code --wait\" git r4
-r5 = rebase -i HEAD~5
-r5-vscode = !GIT_EDITOR=\"code --wait\" git r5
-r6 = rebase -i HEAD~6
-r6-vscode = !GIT_EDITOR=\"code --wait\" git r6
-r7 = rebase -i HEAD~7
-r7-vscode = !GIT_EDITOR=\"code --wait\" git r7
-r8 = rebase -i HEAD~8
-r8-vscode = !GIT_EDITOR=\"code --wait\" git r8
-r9 = rebase -i HEAD~9
-r9-vscode = !GIT_EDITOR=\"code --wait\" git r9
-r10 = rebase -i HEAD~10
-r10-vscode = !GIT_EDITOR=\"code --wait\" git r10
-r15 = rebase -i HEAD~15
-r15-vscode = !GIT_EDITOR=\"code --wait\" git r15
-r20 = rebase -i HEAD~20
-r20-vscode = !GIT_EDITOR=\"code --wait\" git r20
-r25 = rebase -i HEAD~25
-r25-vscode = !GIT_EDITOR=\"code --wait\" git r25
-r30 = rebase -i HEAD~30
-r30-vscode = !GIT_EDITOR=\"code --wait\" git r30
-r35 = rebase -i HEAD~35
-r35-vscode = !GIT_EDITOR=\"code --wait\" git r35
-r40 = rebase -i HEAD~40
-r40-vscode = !GIT_EDITOR=\"code --wait\" git r40
-r45 = rebase -i HEAD~45
-r45-vscode = !GIT_EDITOR=\"code --wait\" git r45
-r50 = rebase -i HEAD~50
-r50-vscode = !GIT_EDITOR=\"code --wait\" git r50
-r55 = rebase -i HEAD~55
-r55-vscode = !GIT_EDITOR=\"code --wait\" git r55
-r60 = rebase -i HEAD~60
-r60-vscode = !GIT_EDITOR=\"code --wait\" git r60
-r65 = rebase -i HEAD~65
-r65-vscode = !GIT_EDITOR=\"code --wait\" git r65
-r70 = rebase -i HEAD~70
-r70-vscode = !GIT_EDITOR=\"code --wait\" git r70
-r75 = rebase -i HEAD~75
-r75-vscode = !GIT_EDITOR=\"code --wait\" git r75
-r80 = rebase -i HEAD~80
-r80-vscode = !GIT_EDITOR=\"code --wait\" git r80
-r85 = rebase -i HEAD~85
-r85-vscode = !GIT_EDITOR=\"code --wait\" git r85
-r90 = rebase -i HEAD~90
-r90-vscode = !GIT_EDITOR=\"code --wait\" git r90
-r95 = rebase -i HEAD~95
-r95-vscode = !GIT_EDITOR=\"code --wait\" git r95
-r100 = rebase -i HEAD~100
-r100-vscode = !GIT_EDITOR=\"code --wait\" git r100
-r150 = rebase -i HEAD~150
-r150-vscode = !GIT_EDITOR=\"code --wait\" git r150
-r200 = rebase -i HEAD~200
-r200-vscode = !GIT_EDITOR=\"code --wait\" git r200
-r250 = rebase -i HEAD~250
-r250-vscode = !GIT_EDITOR=\"code --wait\" git r250
-r300 = rebase -i HEAD~300
-r300-vscode = !GIT_EDITOR=\"code --wait\" git r300
-r350 = rebase -i HEAD~350
-r350-vscode = !GIT_EDITOR=\"code --wait\" git r350
-r400 = rebase -i HEAD~400
-r400-vscode = !GIT_EDITOR=\"code --wait\" git r400
-r450 = rebase -i HEAD~450
-r450-vscode = !GIT_EDITOR=\"code --wait\" git r450
-r500 = rebase -i HEAD~500
-r500-vscode = !GIT_EDITOR=\"code --wait\" git r500
-r550 = rebase -i HEAD~550
-r550-vscode = !GIT_EDITOR=\"code --wait\" git r550
-r600 = rebase -i HEAD~600
-r600-vscode = !GIT_EDITOR=\"code --wait\" git r600
-r650 = rebase -i HEAD~650
-r650-vscode = !GIT_EDITOR=\"code --wait\" git r650
-r700 = rebase -i HEAD~700
-r700-vscode = !GIT_EDITOR=\"code --wait\" git r700
-r750 = rebase -i HEAD~750
-r750-vscode = !GIT_EDITOR=\"code --wait\" git r750
-r800 = rebase -i HEAD~800
-r800-vscode = !GIT_EDITOR=\"code --wait\" git r800
-r850 = rebase -i HEAD~850
-r850-vscode = !GIT_EDITOR=\"code --wait\" git r850
-r900 = rebase -i HEAD~900
-r900-vscode = !GIT_EDITOR=\"code --wait\" git r900
-r950 = rebase -i HEAD~950
-r950-vscode = !GIT_EDITOR=\"code --wait\" git r950
-r1000 = rebase -i HEAD~1000
-r1000-vscode = !GIT_EDITOR=\"code --wait\" git r1000
-# END GIT_REBASE_INTERACTIVE
+# ---- Cleanup ----
+cleanfd = "!git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; git am --abort 2>/dev/null; rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD; git clean -f -d" # Abort all in-progress operations and remove untracked files
+
+# ---- Numbered Aliases (generated) ----
+# BEGIN GIT_NUMBERED_ALIASES
+r1 = "!git rn 1"
+r1-vscode = "!git rn-code 1"
+patch-get1 = "!git patch-getn 1"
+patch-view1 = "!git patch-viewn 1"
+patch-download1 = "!git patch-downloadn 1"
+
+r2 = "!git rn 2"
+r2-vscode = "!git rn-code 2"
+patch-get2 = "!git patch-getn 2"
+patch-view2 = "!git patch-viewn 2"
+patch-download2 = "!git patch-downloadn 2"
+
+r3 = "!git rn 3"
+r3-vscode = "!git rn-code 3"
+patch-get3 = "!git patch-getn 3"
+patch-view3 = "!git patch-viewn 3"
+patch-download3 = "!git patch-downloadn 3"
+
+r4 = "!git rn 4"
+r4-vscode = "!git rn-code 4"
+patch-get4 = "!git patch-getn 4"
+patch-view4 = "!git patch-viewn 4"
+patch-download4 = "!git patch-downloadn 4"
+
+r5 = "!git rn 5"
+r5-vscode = "!git rn-code 5"
+patch-get5 = "!git patch-getn 5"
+patch-view5 = "!git patch-viewn 5"
+patch-download5 = "!git patch-downloadn 5"
+
+r6 = "!git rn 6"
+r6-vscode = "!git rn-code 6"
+patch-get6 = "!git patch-getn 6"
+patch-view6 = "!git patch-viewn 6"
+patch-download6 = "!git patch-downloadn 6"
+
+r7 = "!git rn 7"
+r7-vscode = "!git rn-code 7"
+patch-get7 = "!git patch-getn 7"
+patch-view7 = "!git patch-viewn 7"
+patch-download7 = "!git patch-downloadn 7"
+
+r8 = "!git rn 8"
+r8-vscode = "!git rn-code 8"
+patch-get8 = "!git patch-getn 8"
+patch-view8 = "!git patch-viewn 8"
+patch-download8 = "!git patch-downloadn 8"
+
+r9 = "!git rn 9"
+r9-vscode = "!git rn-code 9"
+patch-get9 = "!git patch-getn 9"
+patch-view9 = "!git patch-viewn 9"
+patch-download9 = "!git patch-downloadn 9"
+
+r10 = "!git rn 10"
+r10-vscode = "!git rn-code 10"
+patch-get10 = "!git patch-getn 10"
+patch-view10 = "!git patch-viewn 10"
+patch-download10 = "!git patch-downloadn 10"
+
+r15 = "!git rn 15"
+r15-vscode = "!git rn-code 15"
+patch-get15 = "!git patch-getn 15"
+patch-view15 = "!git patch-viewn 15"
+patch-download15 = "!git patch-downloadn 15"
+
+r20 = "!git rn 20"
+r20-vscode = "!git rn-code 20"
+patch-get20 = "!git patch-getn 20"
+patch-view20 = "!git patch-viewn 20"
+patch-download20 = "!git patch-downloadn 20"
+
+r25 = "!git rn 25"
+r25-vscode = "!git rn-code 25"
+patch-get25 = "!git patch-getn 25"
+patch-view25 = "!git patch-viewn 25"
+patch-download25 = "!git patch-downloadn 25"
+
+r30 = "!git rn 30"
+r30-vscode = "!git rn-code 30"
+patch-get30 = "!git patch-getn 30"
+patch-view30 = "!git patch-viewn 30"
+patch-download30 = "!git patch-downloadn 30"
+
+r35 = "!git rn 35"
+r35-vscode = "!git rn-code 35"
+patch-get35 = "!git patch-getn 35"
+patch-view35 = "!git patch-viewn 35"
+patch-download35 = "!git patch-downloadn 35"
+
+r40 = "!git rn 40"
+r40-vscode = "!git rn-code 40"
+patch-get40 = "!git patch-getn 40"
+patch-view40 = "!git patch-viewn 40"
+patch-download40 = "!git patch-downloadn 40"
+
+r45 = "!git rn 45"
+r45-vscode = "!git rn-code 45"
+patch-get45 = "!git patch-getn 45"
+patch-view45 = "!git patch-viewn 45"
+patch-download45 = "!git patch-downloadn 45"
+
+r50 = "!git rn 50"
+r50-vscode = "!git rn-code 50"
+patch-get50 = "!git patch-getn 50"
+patch-view50 = "!git patch-viewn 50"
+patch-download50 = "!git patch-downloadn 50"
+
+r55 = "!git rn 55"
+r55-vscode = "!git rn-code 55"
+patch-get55 = "!git patch-getn 55"
+patch-view55 = "!git patch-viewn 55"
+patch-download55 = "!git patch-downloadn 55"
+
+r60 = "!git rn 60"
+r60-vscode = "!git rn-code 60"
+patch-get60 = "!git patch-getn 60"
+patch-view60 = "!git patch-viewn 60"
+patch-download60 = "!git patch-downloadn 60"
+
+r65 = "!git rn 65"
+r65-vscode = "!git rn-code 65"
+patch-get65 = "!git patch-getn 65"
+patch-view65 = "!git patch-viewn 65"
+patch-download65 = "!git patch-downloadn 65"
+
+r70 = "!git rn 70"
+r70-vscode = "!git rn-code 70"
+patch-get70 = "!git patch-getn 70"
+patch-view70 = "!git patch-viewn 70"
+patch-download70 = "!git patch-downloadn 70"
+
+r75 = "!git rn 75"
+r75-vscode = "!git rn-code 75"
+patch-get75 = "!git patch-getn 75"
+patch-view75 = "!git patch-viewn 75"
+patch-download75 = "!git patch-downloadn 75"
+
+r80 = "!git rn 80"
+r80-vscode = "!git rn-code 80"
+patch-get80 = "!git patch-getn 80"
+patch-view80 = "!git patch-viewn 80"
+patch-download80 = "!git patch-downloadn 80"
+
+r85 = "!git rn 85"
+r85-vscode = "!git rn-code 85"
+patch-get85 = "!git patch-getn 85"
+patch-view85 = "!git patch-viewn 85"
+patch-download85 = "!git patch-downloadn 85"
+
+r90 = "!git rn 90"
+r90-vscode = "!git rn-code 90"
+patch-get90 = "!git patch-getn 90"
+patch-view90 = "!git patch-viewn 90"
+patch-download90 = "!git patch-downloadn 90"
+
+r95 = "!git rn 95"
+r95-vscode = "!git rn-code 95"
+patch-get95 = "!git patch-getn 95"
+patch-view95 = "!git patch-viewn 95"
+patch-download95 = "!git patch-downloadn 95"
+
+r100 = "!git rn 100"
+r100-vscode = "!git rn-code 100"
+patch-get100 = "!git patch-getn 100"
+patch-view100 = "!git patch-viewn 100"
+patch-download100 = "!git patch-downloadn 100"
+
+r150 = "!git rn 150"
+r150-vscode = "!git rn-code 150"
+patch-get150 = "!git patch-getn 150"
+patch-view150 = "!git patch-viewn 150"
+patch-download150 = "!git patch-downloadn 150"
+
+r200 = "!git rn 200"
+r200-vscode = "!git rn-code 200"
+patch-get200 = "!git patch-getn 200"
+patch-view200 = "!git patch-viewn 200"
+patch-download200 = "!git patch-downloadn 200"
+
+r250 = "!git rn 250"
+r250-vscode = "!git rn-code 250"
+patch-get250 = "!git patch-getn 250"
+patch-view250 = "!git patch-viewn 250"
+patch-download250 = "!git patch-downloadn 250"
+
+r300 = "!git rn 300"
+r300-vscode = "!git rn-code 300"
+patch-get300 = "!git patch-getn 300"
+patch-view300 = "!git patch-viewn 300"
+patch-download300 = "!git patch-downloadn 300"
+
+r350 = "!git rn 350"
+r350-vscode = "!git rn-code 350"
+patch-get350 = "!git patch-getn 350"
+patch-view350 = "!git patch-viewn 350"
+patch-download350 = "!git patch-downloadn 350"
+
+r400 = "!git rn 400"
+r400-vscode = "!git rn-code 400"
+patch-get400 = "!git patch-getn 400"
+patch-view400 = "!git patch-viewn 400"
+patch-download400 = "!git patch-downloadn 400"
+
+r450 = "!git rn 450"
+r450-vscode = "!git rn-code 450"
+patch-get450 = "!git patch-getn 450"
+patch-view450 = "!git patch-viewn 450"
+patch-download450 = "!git patch-downloadn 450"
+
+r500 = "!git rn 500"
+r500-vscode = "!git rn-code 500"
+patch-get500 = "!git patch-getn 500"
+patch-view500 = "!git patch-viewn 500"
+patch-download500 = "!git patch-downloadn 500"
+
+r550 = "!git rn 550"
+r550-vscode = "!git rn-code 550"
+patch-get550 = "!git patch-getn 550"
+patch-view550 = "!git patch-viewn 550"
+patch-download550 = "!git patch-downloadn 550"
+
+r600 = "!git rn 600"
+r600-vscode = "!git rn-code 600"
+patch-get600 = "!git patch-getn 600"
+patch-view600 = "!git patch-viewn 600"
+patch-download600 = "!git patch-downloadn 600"
+
+r650 = "!git rn 650"
+r650-vscode = "!git rn-code 650"
+patch-get650 = "!git patch-getn 650"
+patch-view650 = "!git patch-viewn 650"
+patch-download650 = "!git patch-downloadn 650"
+
+r700 = "!git rn 700"
+r700-vscode = "!git rn-code 700"
+patch-get700 = "!git patch-getn 700"
+patch-view700 = "!git patch-viewn 700"
+patch-download700 = "!git patch-downloadn 700"
+
+r750 = "!git rn 750"
+r750-vscode = "!git rn-code 750"
+patch-get750 = "!git patch-getn 750"
+patch-view750 = "!git patch-viewn 750"
+patch-download750 = "!git patch-downloadn 750"
+
+r800 = "!git rn 800"
+r800-vscode = "!git rn-code 800"
+patch-get800 = "!git patch-getn 800"
+patch-view800 = "!git patch-viewn 800"
+patch-download800 = "!git patch-downloadn 800"
+
+r850 = "!git rn 850"
+r850-vscode = "!git rn-code 850"
+patch-get850 = "!git patch-getn 850"
+patch-view850 = "!git patch-viewn 850"
+patch-download850 = "!git patch-downloadn 850"
+
+r900 = "!git rn 900"
+r900-vscode = "!git rn-code 900"
+patch-get900 = "!git patch-getn 900"
+patch-view900 = "!git patch-viewn 900"
+patch-download900 = "!git patch-downloadn 900"
+
+r950 = "!git rn 950"
+r950-vscode = "!git rn-code 950"
+patch-get950 = "!git patch-getn 950"
+patch-view950 = "!git patch-viewn 950"
+patch-download950 = "!git patch-downloadn 950"
+
+r1000 = "!git rn 1000"
+r1000-vscode = "!git rn-code 1000"
+patch-get1000 = "!git patch-getn 1000"
+patch-view1000 = "!git patch-viewn 1000"
+patch-download1000 = "!git patch-downloadn 1000"
+# END GIT_NUMBERED_ALIASES
 
 # BEGIN GIT_EXTRA_CORE_CONFIGS
 

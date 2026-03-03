@@ -8,9 +8,8 @@ function _getNumberedAliasSnippet() {
   for (let i = 10; i <= 100; i += 5) items.push(i);
   for (let i = 150; i <= 1000; i += 50) items.push(i);
   return [...new Set(items)]
-    .map(
-      (n) =>
-        trimLeftSpaces(`
+    .map((n) =>
+      trimLeftSpaces(`
           r${n} = "!git rn ${n}"
           r${n}-vscode = "!git rn-code ${n}"
           patch-get${n} = "!git patch-getn ${n}"
