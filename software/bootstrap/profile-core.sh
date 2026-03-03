@@ -176,6 +176,33 @@ alias grep='grep --color'
 alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 
 # ---- Aliases: Git ----
+# git wrapper: invalidates branch cache on state-changing commands
+function git() {
+  command git "$@"
+  case "${1-}" in
+    # core commands
+    checkout|switch|pull|push|fetch|merge|rebase|commit|reset|stash|cherry-pick|revert|am|apply)
+      _invalidate_git_cache 2>/dev/null ;;
+    # git aliases: commit (c, cm, amend, wip, unwip)
+    c|cm|amend|amendm|wip|unwip)
+      _invalidate_git_cache 2>/dev/null ;;
+    # git aliases: checkout/branch (co, cob, del, gone)
+    co|cob|del|gone)
+      _invalidate_git_cache 2>/dev/null ;;
+    # git aliases: pull/push/fetch (p, pu, po, pof, fap, fapr, track)
+    p|pu|po|pof|fap|fapr|track)
+      _invalidate_git_cache 2>/dev/null ;;
+    # git aliases: rebase/merge/revert (r, rc, ri, rv, rvc, mc, cp, cpc, cpn)
+    r|rc|ri|rv|rvc|mc|cp|cpc|cpn)
+      _invalidate_git_cache 2>/dev/null ;;
+    # git aliases: undo/cleanup (undo, cleanfd, patch)
+    undo|cleanfd|patch)
+      _invalidate_git_cache 2>/dev/null ;;
+    # git aliases: status/branch/log/diff info
+    s|stat|status|b|ba|del|branch|d|ds|dh|diff|l|ll|ls|lls|log)
+      _invalidate_git_cache 2>/dev/null ;;
+  esac
+}
 alias g="git"
 alias gg="git --no-pager"
 alias merge="git fetch --all --prune && git merge"
@@ -664,12 +691,17 @@ export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 ################################################################################
 # shows branch name, remote (if not origin), and ahead/behind counts
 # cached: refreshes on branch change, after max_age seconds, or max_calls calls
+# invalidated automatically by git() wrapper on state-changing commands
 _git_branch_cache=""
 _git_branch_last=""
 _git_branch_count=0
 _git_branch_time=0
-_git_branch_max_age=300   # 5 minutes
-_git_branch_max_calls=10
+_git_branch_max_age=1200  # 20 minutes
+_git_branch_max_calls=30
+function _invalidate_git_cache() {
+  _git_branch_cache=""
+  _git_branch_last=""
+}
 function _parse_git_branch_fetch() {
   local branch ahead behind remote remote_name info=""
   branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return
@@ -704,11 +736,16 @@ function parse_git_branch() {
 _ifconfig2_cache=""
 _ifconfig2_count=0
 _ifconfig2_time=0
-_ifconfig2_max_age=1200   # 20 minutes
-_ifconfig2_max_calls=30
+_ifconfig2_max_age=1800   # 30 minutes
+_ifconfig2_max_calls=60
 function _ifconfig2_fetch() {
   hostname -I 2>/dev/null | tr ' ' '\n' | grep '\.' | grep -v '^127\.' | sort -u | paste -sd',' - \
-    || ifconfig 2>/dev/null | grep 'inet ' | awk '{print $2}' | grep -v '^127\.' | sort -u | paste -sd',' -
+    || command ifconfig 2>/dev/null | grep 'inet ' | awk '{print $2}' | grep -v '^127\.' | sort -u | paste -sd',' -
+}
+# running ifconfig manually invalidates the IP cache and shows full output
+function ifconfig() {
+  _ifconfig2_cache=""
+  command ifconfig "$@"
 }
 function ifconfig2() {
   local now=$(printf '%(%s)T' -1)
