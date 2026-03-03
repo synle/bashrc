@@ -67,7 +67,7 @@ if [ "$is_os_mac" != "1" ]; then
     function pbcopy() { xclip -selection clipboard; }
     function pbpaste() { xclip -selection clipboard -o; }
   else
-    CLIPBOARD_PATH=~/.syle_clipboard
+    CLIPBOARD_PATH=~/.${USER}_clipboard
     function pbcopy() { cat > $CLIPBOARD_PATH; }
     function pbpaste() { cat $CLIPBOARD_PATH; }
   fi
@@ -160,7 +160,6 @@ export FZF_COMPLETION_TRIGGER='*'
 ################################################################################
 # ---- Bookmarks ----
 ################################################################################
-touch ~/.syle_bookmark
 add_bookmark fuzzy_open
 
 ################################################################################

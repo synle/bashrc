@@ -1,6 +1,6 @@
 /** * Clones, builds, and registers the synle-make-component tool with bashrc and fzf integration. */
 async function doWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".syle_make_component");
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, `.${CURRENT_USER}_make_component`);
 
   log(">> Download and installing synle-make-component:", targetPath);
 

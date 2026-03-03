@@ -1,7 +1,7 @@
 /** * Clones, installs, and registers fzf (fuzzy finder) with bashrc and bookmark aliases. */
 async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".fzf");
-  const bookmarkPath = path.join(BASE_HOMEDIR_LINUX, ".syle_bookmark");
+  const bookmarkPath = path.join(BASE_HOMEDIR_LINUX, `.${CURRENT_USER}_bookmark`);
 
   log(">> Download and installing fzf:", targetPath);
 

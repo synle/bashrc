@@ -29,6 +29,7 @@ else
 fi
 
 # Set up Python virtual environment at ~/.venv
+export UV_VENV_CLEAR="1"
 if [ ! -d "$HOME/.venv" ]; then
   echo '>> Creating Python 3.12 virtual environment at ~/.venv'
   uv venv --python 3.12 "$HOME/.venv"

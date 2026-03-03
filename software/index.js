@@ -131,6 +131,8 @@ const IS_LIGHT_WEIGHT_MODE = getRuntimeOption("IS_LIGHT_WEIGHT_MODE", parseBoole
 const IS_SETUP = getRuntimeOption("IS_SETUP", parseBoolean);
 /** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
 const IS_DEBUG = getRuntimeOption("IS_DEBUG", parseBoolean);
+/** @type {string} Current system username (falls back to USER env var or "unknown") */
+const CURRENT_USER = process.env.USER || process.env.USERNAME || "unknown";
 /** @type {string} Full URL prefix for raw GitHub content (constructed from REPO_PATH_IDENTIFIER and REPO_BRANCH_NAME) */
 const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/${REPO_BRANCH_NAME}/`;
 /** @type {string} Prefix for all temp script files written to /tmp during execution */

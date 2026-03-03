@@ -686,6 +686,7 @@ function date() {
 ################################################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out azure cli telemetry
 export ELECTRON_ENABLE_LOGGING="0" # suppresses Electron's internal console spam for slight perf gain
+export UV_VENV_CLEAR="1" # skip "replace existing venv?" prompt in uv venv
 
 ################################################################################
 # ---- Prompt Helpers ----
@@ -720,7 +721,7 @@ function _parse_git_branch_fetch() {
 function parse_git_branch() {
   type -P git &>/dev/null || return
   local branch now
-  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || { _git_branch_cache=""; _git_branch_last=""; return; }
   now=$(command date +%s)
   _git_branch_count=$((_git_branch_count + 1))
   # refresh on branch change, time expiry, or call count

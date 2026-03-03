@@ -44,7 +44,7 @@ async function doWork() {
         TCPKeepAlive no # Disable OS-level heartbeats to prevent accidental drops on Wi-Fi
 
         # --- IDENTITY & SECURITY ---
-        User ${process.env.USER || "syle"}
+        User ${CURRENT_USER}
         IdentityFile ~/.ssh/id_rsa
         ForwardAgent yes
         IdentitiesOnly yes # Prevent the client from trying every key in your agent
