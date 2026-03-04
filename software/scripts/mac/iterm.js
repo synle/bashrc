@@ -10,7 +10,7 @@ async function doWork() {
   // and high contrast light color scheme (matches VS Code "Default High Contrast Light" / Sublime "High Contrast Light")
   const profilePath = path.join(baseTargetPath, "iterm-profile.json");
   log(">>> iTerm Profile", profilePath);
-  writeText(profilePath, await fetchUrlAsString("software/scripts/mac/iterm-profile.jsonc"));
+  writeJson(profilePath, await fetchUrlAsJson("software/scripts/mac/iterm-profile.jsonc"));
 
   // Import iTerm plist preferences when force refresh is enabled
   if (IS_FORCE_REFRESH) {
@@ -22,5 +22,5 @@ async function doWork() {
   }
 
   log(">>> To apply: iTerm2 > Settings > Profiles > Other Actions > Import JSON Profiles");
-  log(">>> To export plist: defaults export com.googlecode.iterm2 ~/iterm2-settings.plist");
+  log(">>> To export plist: defaults export com.googlecode.iterm2 ./iterm.plist");
 }

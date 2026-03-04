@@ -30,6 +30,7 @@ if [ "$is_os_chromeos" = "1" ]; then
   installPackage fzf
   installPackage pv
   installPackage entr
+  installPackage tmux
 
   # ---- OS-specific ----
   installPackage libreoffice

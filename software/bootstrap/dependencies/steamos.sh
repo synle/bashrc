@@ -41,6 +41,7 @@ if [ "$is_os_steamos" = "1" ]; then
   installPackage fzf
   installPackage pv
   installPackage entr
+  installPackage tmux
 
   # ---- Git extensions ----
   installPackage gh

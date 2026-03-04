@@ -114,6 +114,14 @@
     },
     "keys": "alt+d",
   },
+  {
+    "command": {
+      "action": "splitPane",
+      "split": "vertical",
+      "splitMode": "duplicate",
+    },
+    "keys": "alt+'",
+  },
   { "command": { "action": "moveFocus", "direction": "down" }, "keys": "alt+down" },
   { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
   {

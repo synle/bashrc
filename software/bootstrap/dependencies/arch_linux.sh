@@ -29,6 +29,7 @@ if [ "$is_os_arch_linux" = "1" ]; then
   installPackage fzf
   installPackage pv
   installPackage entr
+  installPackage tmux
 
   # ---- Git extensions ----
   installPackage github-cli

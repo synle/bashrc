@@ -177,6 +177,7 @@ EOF
   installPackage fzf
   installPackage pv
   installPackage entr
+  installPackage tmux
 
   # ---- Git extensions ----
   installPackage gh

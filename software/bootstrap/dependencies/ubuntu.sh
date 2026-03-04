@@ -33,6 +33,7 @@ if [ "$is_os_ubuntu" = "1" ]; then
   installPackage fzf
   installPackage pv
   installPackage entr
+  installPackage tmux
   installPackage net-tools
 
   # ---- Dev tools / Build ----
