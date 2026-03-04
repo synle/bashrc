@@ -188,6 +188,7 @@ EOF
   installPackage java
   installPackage duti
   installPackage xz
+  installPackage iterm
 
   ################################################################################
   # ---- Cleanup ----
