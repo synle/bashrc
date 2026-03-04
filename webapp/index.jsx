@@ -1,4 +1,23 @@
-import Editor from "@monaco-editor/react";
+import Prism from "prismjs";
+import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-yaml";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-sql";
+import "prismjs/components/prism-markup";
+import "prismjs/components/prism-powershell";
+import "prismjs/components/prism-ruby";
+import "prismjs/components/prism-go";
+import "prismjs/components/prism-java";
+import "prismjs/components/prism-c";
+import "prismjs/components/prism-cpp";
+import "prismjs/components/prism-csharp";
+import "prismjs/components/prism-php";
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Toastify from "toastify-js";
@@ -601,8 +620,8 @@ function detectLanguageFromUrl(url) {
 
   const extension = url.split(".").pop().toLowerCase();
   const extensionMap = {
-    sh: "shell",
-    bash: "shell",
+    sh: "bash",
+    bash: "bash",
     md: "markdown",
     ps1: "powershell",
     js: "javascript",
@@ -620,9 +639,9 @@ function detectLanguageFromUrl(url) {
     cpp: "cpp",
     cs: "csharp",
     php: "php",
-    html: "html",
+    html: "markup",
     css: "css",
-    xml: "xml",
+    xml: "markup",
     sql: "sql",
   };
 
@@ -650,13 +669,13 @@ function detectLanguageFromLabel(label) {
  * @returns {string} The detected language identifier (e.g., 'shell', 'python', 'markdown', 'json').
  */
 function detectLanguageFromContent(content) {
-  if (!content || typeof content !== "string") return "shell";
+  if (!content || typeof content !== "string") return "bash";
 
   const trimmedContent = content.trim();
 
   // Check for shebang
   if (trimmedContent.startsWith("#!")) {
-    if (trimmedContent.includes("/bash") || trimmedContent.includes("/sh")) return "shell";
+    if (trimmedContent.includes("/bash") || trimmedContent.includes("/sh")) return "bash";
     if (trimmedContent.includes("/python")) return "python";
     if (trimmedContent.includes("/node")) return "javascript";
   }
@@ -673,7 +692,7 @@ function detectLanguageFromContent(content) {
 
   // Check for common shell patterns
   if (/^(export|alias|function|sudo|apt-get|yum|brew|echo|cd|ls|mkdir)\s/m.test(trimmedContent)) {
-    return "shell";
+    return "bash";
   }
 
   // Check for JSON
@@ -684,8 +703,8 @@ function detectLanguageFromContent(content) {
     } catch (e) {}
   }
 
-  // Default to shell for most bash scripts
-  return "shell";
+  // Default to bash for most bash scripts
+  return "bash";
 }
 
 /**
@@ -760,18 +779,16 @@ function Modal(props) {
 }
 
 /**
- * A button that opens a full-screen read-only Monaco Editor modal to view text content.
+ * A button that opens a full-screen read-only code viewer modal to view text content.
  * Supports ESC key to close the modal. Auto-detects the language from the label or content.
  * @param {Object} props
- * @param {string} props.value - The text content to display in the full-screen editor.
+ * @param {string} props.value - The text content to display in the full-screen viewer.
  * @param {string} [props.label] - Optional label used as the modal title and for language detection.
- * @returns {React.ReactElement} A button and a modal containing a read-only Monaco Editor.
+ * @returns {React.ReactElement} A button and a modal containing a read-only code viewer.
  */
 function FullScreenTextViewer(props) {
   const { value, label } = props;
   const [isOpen, setIsOpen] = useState(false);
-  const { theme } = useContext(ThemeContext);
-  const editorTheme = theme === "dark" ? "vs-dark" : "light";
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -790,26 +807,7 @@ function FullScreenTextViewer(props) {
     <>
       <ActionButton onClick={() => setIsOpen(true)}>Fullscreen</ActionButton>
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={label}>
-        <Editor
-          height="100%"
-          language={language}
-          value={value || ""}
-          theme={editorTheme}
-          options={{
-            readOnly: true,
-            domReadOnly: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            scrollbar: {
-              vertical: "hidden",
-              horizontal: "hidden",
-            },
-            fontSize: 14,
-            lineNumbers: "on",
-            wordWrap: "on",
-            automaticLayout: true,
-          }}
-        />
+        <CodeEditor content={value || ""} syntax={language} readOnly />
       </Modal>
     </>
   );
@@ -938,56 +936,28 @@ function Settings() {
  * @returns {React.ReactElement} The enhanced text area section with header actions and Monaco Editor.
  */
 /**
- * A reusable Monaco Editor wrapper component.
+ * A reusable PrismJS-based code viewer component.
  * @param {Object} props
- * @param {string} props.content - The text content to display in the editor.
+ * @param {string} props.content - The text content to display.
  * @param {string} [props.syntax] - The language/syntax to use. If not provided, auto-detected from content.
- * @param {string} [props.height] - The editor height (e.g., '300px'). If not provided, auto-calculated from content line count.
- * @param {boolean} [props.readOnly] - Whether the editor is read-only.
- * @param {Object} [props.options] - Additional Monaco Editor options to merge.
- * @returns {React.ReactElement} A Monaco Editor instance.
+ * @param {boolean} [props.readOnly] - Whether the editor is read-only (kept for API compatibility).
+ * @returns {React.ReactElement} A syntax-highlighted code block.
  */
-function CodeEditor({ content = "", syntax, height, readOnly = false, options: extraOptions, ...restProps }) {
-  const { theme } = useContext(ThemeContext);
-  const editorTheme = theme === "dark" ? "vs-dark" : "light";
+function CodeEditor({ content = "", syntax, readOnly = false }) {
   const language = syntax || detectLanguageFromContent(content);
-  const [editorHeight, setEditorHeight] = useState(height || "100px");
+  const grammar = Prism.languages[language];
+  const highlighted = grammar ? Prism.highlight(content, grammar, language) : _escapeHtml(content);
 
-  const onMount = useCallback((editor) => {
-    const updateHeight = () => {
-      const contentHeight = editor.getContentHeight();
-      setEditorHeight(`${Math.max(100, contentHeight)}px`);
-    };
-    updateHeight();
-    editor.onDidContentSizeChange(updateHeight);
-  }, []);
+  return <pre className="prism-code-block"><code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: highlighted }} /></pre>;
+}
 
-  return (
-    <Editor
-      height={editorHeight}
-      onMount={onMount}
-      language={language}
-      value={content}
-      theme={editorTheme}
-      options={{
-        readOnly,
-        domReadOnly: readOnly,
-        minimap: { enabled: false },
-        scrollBeyondLastLine: false,
-        scrollbar: {
-          vertical: "hidden",
-          horizontal: "hidden",
-          handleMouseWheel: false,
-        },
-        fontSize: 13,
-        lineNumbers: "on",
-        wordWrap: "on",
-        automaticLayout: true,
-        ...extraOptions,
-      }}
-      {...restProps}
-    />
-  );
+/**
+ * Escapes HTML special characters in a string for safe insertion into innerHTML.
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+function _escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 function EnhancedTextArea(props) {
@@ -1639,3 +1609,60 @@ function App() {
 
 const root = createRoot(document.getElementById("root"));
 root.render(<App />);
+
+// ---- Old Monaco Editor Code (commented out) ----
+// // "@monaco-editor/react": "^4.7.0"
+// import Editor from "@monaco-editor/react";
+//
+// function CodeEditor({ content = "", syntax, height, readOnly = false, options: extraOptions, ...restProps }) {
+//   const { theme } = useContext(ThemeContext);
+//   const editorTheme = theme === "dark" ? "vs-dark" : "light";
+//   const language = syntax || detectLanguageFromContent(content);
+//   const [editorHeight, setEditorHeight] = useState(height || "100px");
+//
+//   const onMount = useCallback((editor) => {
+//     const updateHeight = () => {
+//       const contentHeight = editor.getContentHeight();
+//       setEditorHeight(`${Math.max(100, contentHeight)}px`);
+//     };
+//     updateHeight();
+//     editor.onDidContentSizeChange(updateHeight);
+//   }, []);
+//
+//   return (
+//     <Editor
+//       height={editorHeight}
+//       onMount={onMount}
+//       language={language}
+//       value={content}
+//       theme={editorTheme}
+//       options={{
+//         readOnly,
+//         domReadOnly: readOnly,
+//         minimap: { enabled: false },
+//         scrollBeyondLastLine: false,
+//         scrollbar: { vertical: "hidden", horizontal: "hidden", handleMouseWheel: false },
+//         fontSize: 13,
+//         lineNumbers: "on",
+//         wordWrap: "on",
+//         automaticLayout: true,
+//         ...extraOptions,
+//       }}
+//       {...restProps}
+//     />
+//   );
+// }
+//
+// // FullScreenTextViewer Monaco usage:
+// // <Editor
+// //   height="100%"
+// //   language={language}
+// //   value={value || ""}
+// //   theme={editorTheme}
+// //   options={{
+// //     readOnly: true, domReadOnly: true,
+// //     minimap: { enabled: false }, scrollBeyondLastLine: false,
+// //     scrollbar: { vertical: "hidden", horizontal: "hidden" },
+// //     fontSize: 14, lineNumbers: "on", wordWrap: "on", automaticLayout: true,
+// //   }}
+// // />
