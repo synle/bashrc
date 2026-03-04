@@ -23,11 +23,8 @@ if [ "$is_os_steamos" = "1" ]; then
   function installPackage() {
     if pacman -Q "$1" &>/dev/null; then
       echo "  >> $@ (already installed)"
-      return
-    fi
-    echo "  >> $@ (installing)"
-    if sudo pacman -Sy $@ &> /dev/null; then
-      echo "  >> $@ (done)"
+    elif sudo pacman -Sy $@ &> /dev/null; then
+      echo "  >> $@ (installed)"
     else
       echo "  >> $@ (failed to install)"
     fi

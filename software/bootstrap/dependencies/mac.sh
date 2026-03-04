@@ -158,15 +158,13 @@ EOF
   ################################################################################
   echo '>> Installing packages with Homebrew'
   function installPackage() {
-    if brew list "$1" &>/dev/null; then
-      echo "  >> $@ (already installed)"
-      return
-    fi
-    echo "  >> $@ (installing)"
-    if brew install $@ &> /dev/null; then
-      echo "  >> $@ (done)"
+    local pkg_name="${@: -1}"
+    if brew list "$pkg_name" &>/dev/null; then
+      echo "  >> $pkg_name (already installed)"
+    elif brew install $@ &> /dev/null; then
+      echo "  >> $pkg_name (installed)"
     else
-      echo "  >> $@ (failed to install)"
+      echo "  >> $pkg_name (failed to install)"
     fi
   }
 
@@ -185,10 +183,8 @@ EOF
   installPackage git-lfs
 
   # ---- OS-specific ----
+  installPackage --force android-platform-tools
   installPackage java
-  installPackage android-platform-tools
-  installPackage font-fira-code
-  installPackage font-cascadia
   installPackage duti
   installPackage xz
 

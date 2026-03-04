@@ -274,7 +274,15 @@ function python() {
 
 function pip() {
   activate_py
-  command pip "$@"
+  if command -v pip &>/dev/null; then
+    command pip "$@"
+  elif command -v pip3 &>/dev/null; then
+    pip3 "$@"
+  elif [ -n "$VIRTUAL_ENV" ] && command -v uv &>/dev/null; then
+    uv pip "$@"
+  else
+    echo "pip: not installed"
+  fi
 }
 
 ################################################################################
@@ -423,7 +431,30 @@ function commit_empty_trigger_deploy() {
 # cd to git home directory ($MY_GIT_HOME or ~/git)
 function gogit(){
   local git_home="${MY_GIT_HOME:-$HOME/git}"
-  cd "$git_home" 2>/dev/null || echo "gogit: $git_home is not present"
+  mkdir -p "$git_home" 2>/dev/null
+  cd "$git_home"
+}
+
+# cd to Downloads directory (tries multiple paths in order)
+function godownload(){
+  local candidates=(
+    "$HOME/Downloads"
+    "/mnt/d/Downloads"
+  )
+  # on WSL, try to resolve the Windows user Downloads folder via wslpath
+  if command -v wslpath &>/dev/null; then
+    local win_home
+    win_home="$(wslpath "$(cmd.exe /C 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null)"
+    if [ -n "$win_home" ]; then
+      candidates+=("$win_home/Downloads")
+    fi
+  fi
+  for dir in "${candidates[@]}"; do
+    if [ -d "$dir" ]; then
+      cd "$dir" && return
+    fi
+  done
+  echo "godownload: no Downloads directory found"
 }
 
 ################################################################################

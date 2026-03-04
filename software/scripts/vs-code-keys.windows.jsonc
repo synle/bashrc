@@ -63,10 +63,6 @@
     "when": "textInputFocus && !editorReadonly",
   },
   {
-    "key": "alt+ctrl+c",
-    "command": "workbench.files.action.compareWithSaved",
-  },
-  {
     "key": "alt+shift+]",
     "command": "workbench.action.nextEditor",
   },
@@ -77,10 +73,6 @@
   {
     "key": "alt+w",
     "command": "workbench.action.closeActiveEditor",
-  },
-  {
-    "key": "alt+d",
-    "command": "workbench.action.splitEditor",
   },
   {
     "key": "alt+shift+d",
@@ -160,10 +152,6 @@
     "when": "textInputFocus",
   },
   {
-    "key": "alt+n",
-    "command": "workbench.action.files.newUntitledFile",
-  },
-  {
     "key": "alt+shift+n",
     "command": "workbench.action.newWindow",
   },
@@ -194,16 +182,6 @@
     "key": "alt+`",
     "command": "workbench.action.terminal.toggleTerminal",
     "when": "terminal.active",
-  },
-  {
-    "key": "alt+g",
-    "command": "editor.action.moveSelectionToNextFindMatch",
-    "when": "editorFocus",
-  },
-  {
-    "key": "alt+shift+g",
-    "command": "editor.action.moveSelectionToPreviousFindMatch",
-    "when": "editorFocus",
   },
   // --- COPY (Alt+C) ---
   {

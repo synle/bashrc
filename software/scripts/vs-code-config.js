@@ -203,7 +203,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     "editor.renderWhitespace": "all", // Show dots for all whitespace characters
     "editor.renderControlCharacters": true, // Show control characters (tabs, zero-width spaces)
     "editor.maxTokenizationLineLength": 7000, // Skip syntax highlighting for lines longer than this
-    "editor.folding": false, // Disable code folding — saves CPU on large files
+    "editor.folding": true, // Enable code folding
     "editor.cursorBlinking": "solid", // No cursor blink animation — saves rendering cycles
     "editor.occurrencesHighlight": false, // Don't highlight other occurrences of the selected word
     "editor.selectionHighlight": false, // Don't highlight text matching the current selection

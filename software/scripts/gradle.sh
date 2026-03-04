@@ -12,7 +12,7 @@
 if [ "$IS_FORCE_REFRESH" == "1" ] && command -v gradle &>/dev/null; then
   echo ">> Force refresh: removing gradle"
   if [ "$is_os_mac" == "1" ]; then
-    brew uninstall gradle 2>/dev/null
+    brew uninstall gradle &>/dev/null
   else
     sudo rm -f /usr/local/bin/gradle
     sudo rm -rf /opt/gradle
@@ -28,12 +28,12 @@ fi
 echo '>> Installing gradle'
 if [ "$is_os_mac" == "1" ]; then
   echo '>>> Installing with Homebrew'
-  brew install gradle
+  brew install gradle &>/dev/null
 else
   echo '>>> Installing with package manager'
   if [ "$is_os_redhat" == "1" ]; then
-    sudo yum install -y gradle 2>/dev/null || sudo dnf install -y gradle 2>/dev/null
+    sudo yum install -y gradle &>/dev/null || sudo dnf install -y gradle &>/dev/null
   else
-    sudo apt-get install -y gradle
+    sudo apt-get install -y gradle &>/dev/null
   fi
 fi

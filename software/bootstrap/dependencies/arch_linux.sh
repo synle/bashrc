@@ -11,11 +11,8 @@ if [ "$is_os_arch_linux" = "1" ]; then
   function installPackage() {
     if pacman -Q "$1" &>/dev/null; then
       echo "  >> $@ (already installed)"
-      return
-    fi
-    echo "  >> $@ (installing)"
-    if sudo pacman -S --noconfirm $@ &> /dev/null; then
-      echo "  >> $@ (done)"
+    elif sudo pacman -S --noconfirm $@ &> /dev/null; then
+      echo "  >> $@ (installed)"
     else
       echo "  >> $@ (failed to install)"
     fi

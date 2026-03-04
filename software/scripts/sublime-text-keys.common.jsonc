@@ -1,0 +1,101 @@
+// Common keybindings shared across all platforms.
+// OS_KEY = COMMAND key on macOS, ALT key on Windows/Linux.
+[
+  { "keys": ["OS_KEY+shift+;"], "command": "alignment" },
+  {
+    "key": "f5",
+    "command": "chain",
+    "args": {
+      "commands": [["revert"], ["refresh_folder_list"]],
+    },
+  },
+  {
+    "key": "OS_KEY+r",
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": "@",
+    },
+  },
+  {
+    "key": "OS_KEY+;",
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": ":",
+    },
+  },
+  // fold/unfold block (OS_KEY+< to fold, OS_KEY+> to unfold)
+  {
+    "key": "OS_KEY+,",
+    "command": "fold",
+  },
+  {
+    "key": "OS_KEY+.",
+    "command": "unfold",
+  },
+  // jump to bracket (ctrl+m across all platforms and editors)
+  {
+    "key": "ctrl+m",
+    "command": "move_to",
+    "args": { "to": "brackets" },
+  },
+  {
+    "key": "OS_KEY+o",
+    "command": "prompt_open_file",
+  },
+  {
+    "key": "OS_KEY+\\",
+    "command": "toggle_side_bar",
+  },
+  {
+    "key": "OS_KEY+enter",
+    "command": "goto_definition",
+  },
+  {
+    "key": "shift+enter",
+    "command": "quick_goto_variable",
+  },
+  // new file (OS_KEY+n across all editors)
+  {
+    "key": "OS_KEY+n",
+    "command": "new_file",
+  },
+  {
+    "key": "OS_KEY+ctrl+g",
+    "command": "find_all_under",
+  },
+  {
+    "key": "OS_KEY+shift+g",
+    "command": "find_prev",
+  },
+  {
+    "key": "OS_KEY+g",
+    "command": "find_next",
+  },
+  { "keys": ["OS_KEY+h"], "command": "show_panel", "args": { "panel": "replace", "reverse": false } },
+  {
+    "key": "OS_KEY+f",
+    "command": "show_panel",
+    "args": {
+      "panel": "find",
+      "reverse": false,
+    },
+  },
+  {
+    "key": "OS_KEY+shift+f",
+    "command": "show_panel",
+    "args": {
+      "panel": "find_in_files",
+    },
+  },
+  { "key": ["OS_KEY+1"], "command": "select_by_index", "args": { "index": 0 } },
+  { "key": ["OS_KEY+2"], "command": "select_by_index", "args": { "index": 1 } },
+  { "key": ["OS_KEY+3"], "command": "select_by_index", "args": { "index": 2 } },
+  { "key": ["OS_KEY+4"], "command": "select_by_index", "args": { "index": 3 } },
+  { "key": ["OS_KEY+5"], "command": "select_by_index", "args": { "index": 4 } },
+  { "key": ["OS_KEY+6"], "command": "select_by_index", "args": { "index": 5 } },
+  { "key": ["OS_KEY+7"], "command": "select_by_index", "args": { "index": 6 } },
+  { "key": ["OS_KEY+8"], "command": "select_by_index", "args": { "index": 7 } },
+  { "key": ["OS_KEY+9"], "command": "select_by_index", "args": { "index": 8 } },
+]

@@ -1,13 +1,5 @@
 [
   {
-    "key": "alt+r",
-    "command": "show_overlay",
-    "args": {
-      "overlay": "goto",
-      "text": "@",
-    },
-  },
-  {
     "key": "alt+p",
     "command": "show_overlay",
     "args": {
@@ -25,14 +17,6 @@
   {
     "key": "alt+ctrl+p",
     "command": "prompt_select_workspace",
-  },
-  {
-    "key": "alt+shift+g",
-    "command": "find_prev",
-  },
-  {
-    "key": "alt+g",
-    "command": "find_next",
   },
   {
     "key": "ctrl+up",
@@ -121,10 +105,6 @@
   {
     "key": "alt+shift+n",
     "command": "new_window",
-  },
-  {
-    "key": "alt+n",
-    "command": "new_file",
   },
   {
     "key": "alt+w",

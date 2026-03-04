@@ -31,12 +31,12 @@ async function doWork() {
   log(`>> Installing sqlui-native v${SQLUI_NATIVE_VERSION} to:`, targetPath);
 
   await mkdir(targetPath);
-  await downloadAsset(url, destination);
+  downloadAsset(url, destination);
 
   log(`>> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
 
   if (is_os_mac) {
-    writeText(path.join(targetPath, "README.txt"), "xattr -cr /Applications/sqlui-native.app");
-    log(">> Created README.txt with macOS quarantine fix");
+    execBash("xattr -cr /Applications/sqlui-native.app");
+    log(">> Cleared macOS quarantine for sqlui-native", colorDim(`xattr -cr /Applications/sqlui-native.app`));
   }
 }

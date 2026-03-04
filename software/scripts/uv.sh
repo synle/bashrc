@@ -27,10 +27,10 @@ else
   echo '>> Installing uv'
   if [ "$is_os_mac" == "1" ]; then
     echo '>>> Installing with Homebrew'
-    brew install uv
+    brew install uv &>/dev/null
   else
     echo '>>> Installing with official installer'
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -LsSf https://astral.sh/uv/install.sh | sh &>/dev/null
   fi
 fi
 
@@ -38,7 +38,7 @@ fi
 export UV_VENV_CLEAR="1"
 if [ ! -d "$HOME/.venv" ]; then
   echo '>> Creating Python 3.12 virtual environment at ~/.venv'
-  uv venv --python 3.12 "$HOME/.venv"
+  uv venv --python 3.12 "$HOME/.venv" &>/dev/null
 else
   echo '>> Skipped ~/.venv: already exists'
 fi

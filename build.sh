@@ -101,8 +101,9 @@ export NODE_JS_VERSION="24"
 export FNM_DIR="$HOME/.local/share/fnm"
 
 # misc
-export LINE_BREAK_COUNT=140
+export LINE_BREAK_COUNT=100
 export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
+export PRINT_WIDTH_BREAK_COUNT=140
 
 
 # OS detection upfront
@@ -148,6 +149,7 @@ export BASH_SYLE_COMMON='$BASH_SYLE_COMMON'
 
 export LINE_BREAK_COUNT='$LINE_BREAK_COUNT'
 export LINE_BREAK_HASH='$LINE_BREAK_HASH'
+export PRINT_WIDTH_BREAK_COUNT='$PRINT_WIDTH_BREAK_COUNT'
 
 alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
 """ > "$BASH_SYLE_COMMON_PATH"
@@ -251,11 +253,13 @@ function run_files() {
   if [ -n "$2" ]; then
     export TEST_SCRIPT_FILES="$2"
   fi
+  export RUN_FILES_LOG="/tmp/syle_bashrc_$(date '+%Y_%m_%d_%H_%M').sh"
+  cp "$BASH_SYLE_COMMON_PATH" "$RUN_FILES_LOG" 2>/dev/null
   if [ "$mode" = "local" ]; then
     cat software/index.js
   else
     curl -s "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js"
-  fi | node | bash
+  fi | node | tee -a "$RUN_FILES_LOG" | bash
   unset TEST_SCRIPT_FILES
 }
 }

@@ -139,6 +139,8 @@ const REPO_PREFIX_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIE
 const TEMP_SCRIPT_PREFIX = "/tmp/bashrc_syle_sw_";
 /** @type {number} Console line break width for separator lines (default 80) */
 const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 80));
+/** @type {number} Code print width for formatting (default 140) */
+const PRINT_WIDTH_BREAK_COUNT = getRuntimeOption("PRINT_WIDTH_BREAK_COUNT", (v) => parseInteger(v, 140));
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -177,7 +179,7 @@ const EDITOR_CONFIGS = {
   fontFamilyDefaultFallback: "Courier New",
   tabSize,
   /** Print/ruler column width in the editor @type {number} */
-  maxLineSize: 140,
+  maxLineSize: PRINT_WIDTH_BREAK_COUNT,
   /** Junk files to delete during cleanup (macOS metadata, OS artifacts, patch rejects) @type {string[]} */
   junkFiles: [
     "._*",

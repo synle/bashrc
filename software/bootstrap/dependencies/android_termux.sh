@@ -16,11 +16,8 @@ termux-chroot
   function installPackage() {
     if dpkg -s "$1" &>/dev/null; then
       echo "  >> $@ (already installed)"
-      return
-    fi
-    echo "  >> $@ (installing)"
-    if pkg install -y $@ &> /dev/null; then
-      echo "  >> $@ (done)"
+    elif pkg install -y $@ &> /dev/null; then
+      echo "  >> $@ (installed)"
     else
       echo "  >> $@ (failed to install)"
     fi

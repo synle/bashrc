@@ -14,11 +14,8 @@ if [ "$is_os_ubuntu" = "1" ]; then
   function installPackage() {
     if dpkg -s "$1" &>/dev/null; then
       echo "  >> $@ (already installed)"
-      return
-    fi
-    echo "  >> $@ (installing)"
-    if sudo apt-get install -y --fix-missing $@ &> /dev/null; then
-      echo "  >> $@ (done)"
+    elif sudo apt-get install -y --fix-missing $@ &> /dev/null; then
+      echo "  >> $@ (installed)"
     else
       echo "  >> $@ (failed to install)"
     fi
