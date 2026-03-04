@@ -12,6 +12,7 @@
 ollama run deepseek-r1:32b
 ollama run deepseek-r1:70b
 ollama run glm-4.7-flash
+ollama run qwen3.5:9b
 
 
 # manage models
