@@ -951,16 +951,21 @@ function CodeEditor({ content = "", syntax, height, readOnly = false, options: e
   const { theme } = useContext(ThemeContext);
   const editorTheme = theme === "dark" ? "vs-dark" : "light";
   const language = syntax || detectLanguageFromContent(content);
+  const [editorHeight, setEditorHeight] = useState(height || "100px");
 
-  // Calculate height based on content line count so the editor stretches to fit
-  const lineHeight = 16;
-  const padding = 20;
-  const lineCount = content.split("\n").length;
-  const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
+  const onMount = useCallback((editor) => {
+    const updateHeight = () => {
+      const contentHeight = editor.getContentHeight();
+      setEditorHeight(`${Math.max(100, contentHeight)}px`);
+    };
+    updateHeight();
+    editor.onDidContentSizeChange(updateHeight);
+  }, []);
 
   return (
     <Editor
-      height={computedHeight}
+      height={editorHeight}
+      onMount={onMount}
       language={language}
       value={content}
       theme={editorTheme}
