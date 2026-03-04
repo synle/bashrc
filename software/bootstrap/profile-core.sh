@@ -311,16 +311,11 @@ function pip() {
 ################################################################################
 # wraps npm so bare subcommand names run as `npm run <name>`
 function npm() {
-  case "${1-}" in
-    ""|-*|access|adduser|audit|bugs|cache|ci|completion|config|dedupe|deprecate|diff|dist-tag|\
-    doctor|edit|exec|explain|explore|find-dupes|fund|get|help|hook|init|install|install-ci-test|\
-    install-test|link|ll|login|logout|ls|org|outdated|owner|pack|ping|pkg|prefix|profile|\
-    prune|publish|query|rebuild|repo|restart|root|run|run-script|search|set|shrinkwrap|\
-    star|stars|start|stop|team|test|token|uninstall|unpublish|unstar|update|version|view|whoami|\
-    i|t|r|rm|un|rb|c|s|se|up|ln|it|cit|ddp|la|v|x)
-      command npm "$@" ;;
-    *) command npm run "$@" ;;
-  esac
+  if [ -z "${1-}" ] || [[ "${1-}" == -* ]] || command npm help "$1" &>/dev/null; then
+    command npm "$@"
+  else
+    command npm run "$@"
+  fi
 }
 
 function renpm() {
@@ -594,10 +589,10 @@ function fuzzy_open() {
   FULL_PATH=$(cd "$(git rev-parse --show-toplevel 2>/dev/null || echo ".")" && realpath "$OUT")
 
   echo "pwd: $(pwd)"
-  echo "target: $FULL_PATH"
+  echo "cd: $FULL_PATH"
 
   if [ "$IS_DIR" = true ]; then
-    open "$FULL_PATH"
+    cd "$FULL_PATH"
   elif [ -n "$VIEW_COMMAND" ] && command -v "$VIEW_COMMAND" &>/dev/null || type "$VIEW_COMMAND" &>/dev/null; then
     "$VIEW_COMMAND" "$OUT"
   else
