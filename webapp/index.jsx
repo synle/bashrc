@@ -797,8 +797,13 @@ function FullScreenTextViewer(props) {
           theme={editorTheme}
           options={{
             readOnly: true,
+            domReadOnly: true,
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
+            scrollbar: {
+              vertical: "hidden",
+              horizontal: "hidden",
+            },
             fontSize: 14,
             lineNumbers: "on",
             wordWrap: "on",
@@ -948,8 +953,8 @@ function CodeEditor({ content = "", syntax, height, readOnly = false, options: e
   const language = syntax || detectLanguageFromContent(content);
 
   // Calculate height based on content line count so the editor stretches to fit
-  const lineHeight = 14;
-  const padding = 14;
+  const lineHeight = 16;
+  const padding = 20;
   const lineCount = content.split("\n").length;
   const computedHeight = height || `${Math.max(100, lineCount * lineHeight + padding)}px`;
 
@@ -961,6 +966,7 @@ function CodeEditor({ content = "", syntax, height, readOnly = false, options: e
       theme={editorTheme}
       options={{
         readOnly,
+        domReadOnly: readOnly,
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         scrollbar: {
