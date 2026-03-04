@@ -11,6 +11,8 @@
 ```bash
 ollama run deepseek-r1:32b
 ollama run deepseek-r1:70b
+ollama run glm-4.7-flash
+
 
 # manage models
 ollama list
