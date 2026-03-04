@@ -1,7 +1,8 @@
-const SQLUI_NATIVE_VERSION = "1.64.4";
+const SQLUI_NATIVE_RELEASE_URL = "https://raw.githubusercontent.com/synle/sqlui-native/refs/heads/main/release.json";
 
 /** * Downloads the sqlui-native application binary for the current platform. */
 async function doWork() {
+  const SQLUI_NATIVE_VERSION = (await fetchUrlAsJson(SQLUI_NATIVE_RELEASE_URL)).version;
   exitIfLimitedSupportOs();
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "sqlui-native");
   const baseUrl = `https://github.com/synle/sqlui-native/releases/download/${SQLUI_NATIVE_VERSION}`;
@@ -23,20 +24,24 @@ async function doWork() {
     await deleteFolder(targetPath);
   }
 
-  if (fs.existsSync(targetPath)) {
-    log(`>> sqlui-native v${SQLUI_NATIVE_VERSION} already installed, skipping:`, targetPath);
-    return;
-  }
+  // if (fs.existsSync(targetPath)) {
+  //   log(`>> sqlui-native v${SQLUI_NATIVE_VERSION} already installed, skipping:`, targetPath);
+  //   return;
+  // }
 
   log(`>> Installing sqlui-native v${SQLUI_NATIVE_VERSION} to:`, targetPath);
 
   await mkdir(targetPath);
-  downloadAsset(url, destination);
+  downloadAsset(url, destination).then(() => {
+    log(`>> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
 
-  log(`>> sqlui-native v${SQLUI_NATIVE_VERSION} downloaded:`, destination);
-
-  if (is_os_mac) {
-    execBash("xattr -cr /Applications/sqlui-native.app");
-    log(">> Cleared macOS quarantine for sqlui-native", colorDim(`xattr -cr /Applications/sqlui-native.app`));
-  }
+    if (is_os_mac) {
+      const mountPoint = `/tmp/sqlui-native-dmg`;
+      execBash(`hdiutil attach "${destination}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
+      execBash(`cp -R "${mountPoint}/sqlui-native.app" /Applications/`);
+      execBash(`hdiutil detach "${mountPoint}" -quiet`);
+      execBash("xattr -cr /Applications/sqlui-native.app");
+      log(">> Installed sqlui-native.app to /Applications");
+    }
+  });
 }
