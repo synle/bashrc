@@ -1,9 +1,9 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-03]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-04]
 # 
 # Revert File Associations for Windows
 # Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows-revert.ps1
 # This removes all custom file associations set by file-association-windows.ps1
-# ############################################################################################################################################
+# ####################################################################################################
 
 # Requires running as Administrator
 # This script reverts all file associations set by windows-file-association.ps1

@@ -1,7 +1,7 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-03]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-04]
 // 
 // Preferences Key Bindings
-// ############################################################################################################################################
+// ####################################################################################################
 
 
 [
@@ -48,12 +48,24 @@
     ]
   },
   {
+    "command": "fold",
+    "keys": [
+      "super+,"
+    ]
+  },
+  {
+    "command": "unfold",
+    "keys": [
+      "super+."
+    ]
+  },
+  {
     "command": "move_to",
     "args": {
       "to": "brackets"
     },
     "keys": [
-      "super+m"
+      "ctrl+m"
     ]
   },
   {
@@ -83,7 +95,7 @@
   {
     "command": "new_file",
     "keys": [
-      "super+t"
+      "super+n"
     ]
   },
   {

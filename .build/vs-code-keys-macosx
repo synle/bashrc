@@ -1,7 +1,7 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-03]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-04]
 // 
 // Preferences Open Keyboard Shortcuts (JSON)
-// ############################################################################################################################################
+// ####################################################################################################
 
 
 [
@@ -72,12 +72,18 @@
     "command": "workbench.action.gotoLine"
   },
   {
-    "key": "cmd+m",
-    "command": "workbench.action.toggleMaximizedPanel"
-  },
-  {
     "key": "cmd+r",
     "command": "workbench.action.gotoSymbol"
+  },
+  {
+    "key": "cmd+,",
+    "command": "editor.fold",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "cmd+.",
+    "command": "editor.unfold",
+    "when": "editorTextFocus"
   },
   {
     "key": "ctrl+m",
@@ -122,6 +128,16 @@
     "command": "workbench.action.findInFiles"
   },
   {
+    "key": "cmd+g",
+    "command": "editor.action.moveSelectionToNextFindMatch",
+    "when": "editorFocus"
+  },
+  {
+    "key": "cmd+shift+g",
+    "command": "editor.action.moveSelectionToPreviousFindMatch",
+    "when": "editorFocus"
+  },
+  {
     "key": "cmd+'",
     "command": "workbench.action.debug.stepOver",
     "when": "debugState == 'stopped'"
@@ -130,6 +146,16 @@
     "key": "cmd+shift+'",
     "command": "workbench.action.debug.stepInto",
     "when": "debugState != 'inactive'"
+  },
+  {
+    "key": "cmd+enter",
+    "command": "editor.action.revealDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus"
+  },
+  {
+    "key": "shift+enter",
+    "command": "editor.action.goToReferences",
+    "when": "editorHasReferenceProvider && editorTextFocus"
   },
   {
     "key": "f2",
@@ -194,10 +220,6 @@
   {
     "key": "cmd+-",
     "command": "editor.action.fontZoomOut"
-  },
-  {
-    "key": "shift+ctrl+cmd+\\",
-    "command": "workbench.action.toggleAuxiliaryBar"
   },
   {
     "key": "shift+ctrl+cmd+\\",

@@ -1,7 +1,7 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-03]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-04]
 // 
 // Preferences Key Bindings
-// ############################################################################################################################################
+// ####################################################################################################
 
 
 [
@@ -48,12 +48,24 @@
     ]
   },
   {
+    "command": "fold",
+    "keys": [
+      "alt+,"
+    ]
+  },
+  {
+    "command": "unfold",
+    "keys": [
+      "alt+."
+    ]
+  },
+  {
     "command": "move_to",
     "args": {
       "to": "brackets"
     },
     "keys": [
-      "alt+m"
+      "ctrl+m"
     ]
   },
   {
@@ -83,7 +95,7 @@
   {
     "command": "new_file",
     "keys": [
-      "alt+t"
+      "alt+n"
     ]
   },
   {
@@ -218,16 +230,6 @@
     "command": "show_overlay",
     "args": {
       "overlay": "goto",
-      "text": "@"
-    },
-    "keys": [
-      "alt+r"
-    ]
-  },
-  {
-    "command": "show_overlay",
-    "args": {
-      "overlay": "goto",
       "show_files": true
     },
     "keys": [
@@ -247,18 +249,6 @@
     "command": "prompt_select_workspace",
     "keys": [
       "alt+ctrl+p"
-    ]
-  },
-  {
-    "command": "find_prev",
-    "keys": [
-      "alt+shift+g"
-    ]
-  },
-  {
-    "command": "find_next",
-    "keys": [
-      "alt+g"
     ]
   },
   {
@@ -387,12 +377,6 @@
     "command": "new_window",
     "keys": [
       "alt+shift+n"
-    ]
-  },
-  {
-    "command": "new_file",
-    "keys": [
-      "alt+n"
     ]
   },
   {
