@@ -1,4 +1,4 @@
-# software/bootstrap/profile-core.sh
+fu# software/bootstrap/profile-core.sh
 export EDITOR='vim'
 export BASH_PATH=~/.bash_syle
 
@@ -155,6 +155,21 @@ export FIGNORE="$FIGNORE${file_string}"
 unset ignored_commands cmd_string ignored_files file_string
 
 ################################################################################
+# ---- Bat / Cat Setup ----
+# uses bat (mac/homebrew) or batcat (debian/ubuntu), falls back to cat
+################################################################################
+function batcat() {
+  # type -P only searches for actual binaries in $PATH, ignoring aliases and functions.
+  if type -P bat &>/dev/null; then
+      command bat --paging=never --style=plain "$@"
+  elif type -P batcat &>/dev/null; then
+      command batcat --paging=never --style=plain "$@"
+  else
+      command cat "$@"
+  fi
+}
+
+################################################################################
 # ---- Aliases: Navigation ----
 ################################################################################
 alias ..="cd .."
@@ -171,7 +186,11 @@ alias ls_biggest_last="ls_biggest -r"    # sort by file size (smallest first)
 # ---- Aliases: Editors / Tools ----
 alias bs="bash"
 alias vi="vim"
+alias v="vim"
+alias cat='batcat'
+alias c="cat"
 alias fzf='fzf --no-sort'
+alias fvim='fuzzy_open vim'
 alias grep='grep --color'
 alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 
@@ -179,6 +198,7 @@ alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
 # git wrapper: invalidates branch cache on state-changing commands
 function git() {
   command git "$@"
+  local _git_exit=$?
   case "${1-}" in
     # core commands
     checkout|switch|pull|push|fetch|merge|rebase|commit|reset|stash|cherry-pick|revert|am|apply)
@@ -202,6 +222,7 @@ function git() {
     s|stat|status|b|ba|del|branch|d|ds|dh|diff|l|ll|ls|lls|log)
       _invalidate_git_cache 2>/dev/null ;;
   esac
+  return $_git_exit
 }
 alias g="git"
 alias gg="git --no-pager"

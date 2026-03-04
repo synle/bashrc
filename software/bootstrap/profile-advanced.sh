@@ -8,26 +8,8 @@ alias drun='docker run'
 alias dexec='dexec_bash'
 alias apt='sudo apt-get'
 
-# ---- Aliases: Cat (bat/batcat wrapper) ----
-alias cat='batcat'
-
 # ---- Aliases: Git (fzf) ----
 alias glog='fuzzy_git_show'
-
-################################################################################
-# ---- Bat / Cat Setup ----
-# uses bat (mac/homebrew) or batcat (debian/ubuntu), falls back to cat
-################################################################################
-function batcat() {
-  # type -P only searches for actual binaries in $PATH, ignoring aliases and functions.
-  if type -P bat &>/dev/null; then
-      command bat --paging=never "$@"
-  elif type -P batcat &>/dev/null; then
-      command batcat --paging=never "$@"
-  else
-      cat "$@"
-  fi
-}
 
 ################################################################################
 # ---- Docker ----
