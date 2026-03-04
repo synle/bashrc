@@ -948,7 +948,11 @@ function CodeEditor({ content = "", syntax, readOnly = false }) {
   const grammar = Prism.languages[language];
   const highlighted = grammar ? Prism.highlight(content, grammar, language) : _escapeHtml(content);
 
-  return <pre className="prism-code-block"><code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: highlighted }} /></pre>;
+  return (
+    <pre className="prism-code-block">
+      <code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: highlighted }} />
+    </pre>
+  );
 }
 
 /**
