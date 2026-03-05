@@ -43,6 +43,8 @@ if [ "$is_os_redhat" = "1" ]; then
 
   # ---- Dev tools / Build ----
   installDnfPackage gradle
+  installDnfPackage rust
+  installDnfPackage golang
   installDnfPackage java-latest-openjdk
   installDnfPackage unzip
   installDnfPackage gnupg2

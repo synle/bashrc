@@ -212,6 +212,10 @@ EOF
   # ---- Dev tools / Build ----
   installBrewPackage gradle
   installBrewPackage uv
+  installBrewPackage rust
+  installBrewPackage go
+  installBrewPackage bun
+  installBrewPackage deno
 
   # ---- OS-specific ----
   installBrewPackage --force android-platform-tools

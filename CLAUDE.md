@@ -362,22 +362,24 @@ To add system packages for an OS, edit the corresponding file in `software/boots
 
 #### Dependency file conventions
 
-- **`installPackage()` must be defined inside the `if` block** — not at file top level, to avoid polluting global scope
-- **`installPackage()` must use the `function` keyword** — consistent with bash function conventions
+- **`install<Manager>Package()` must be defined inside the `if` block** — not at file top level, to avoid polluting global scope. Named after the package manager: `installBrewPackage`, `installAptPackage`, `installDnfPackage`, `installPacmanPackage`, `installPkgPackage`
+- **`install<Manager>Package()` must use the `function` keyword** — consistent with bash function conventions
 - **3-state messaging**: "already installed", "installing" → "done", or "failed to install"
 - **Packages are grouped** with `# ---- Category ----` sub-section headers: Core tools, CLI utilities, Git extensions, Dev tools/Build, OS-specific
 - **Settings with side effects** should include a `# WARNING:` comment block explaining the risk and a `# To revert:` command
+- **Prefer dependency files over script files** for package installs. If a package is available via the OS package manager, add it to the dependency file rather than creating a standalone script in `software/scripts/`. Scripts should only handle installs that need custom logic (e.g., curl installer, config setup, venv creation).
 
 #### Package manager per OS
 
-| OS                 | Check command | Install command                         |
-| ------------------ | ------------- | --------------------------------------- |
-| mac.sh             | `brew list`   | `brew install`                          |
-| ubuntu.sh          | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
-| arch_linux.sh      | `pacman -Q`   | `sudo pacman -S --noconfirm`            |
-| steamos.sh         | `pacman -Q`   | `sudo pacman -Sy`                       |
-| android_termux.sh  | `dpkg -s`     | `pkg install -y`                        |
-| chrome_os_linux.sh | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
+| OS                 | Function name          | Check command | Install command                         |
+| ------------------ | ---------------------- | ------------- | --------------------------------------- |
+| mac.sh             | `installBrewPackage`   | `brew list`   | `brew install`                          |
+| ubuntu.sh          | `installAptPackage`    | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
+| redhat.sh          | `installDnfPackage`    | `rpm -q`      | `sudo dnf install -y` / `sudo yum install -y` |
+| arch_linux.sh      | `installPacmanPackage` | `pacman -Q`   | `sudo pacman -S --noconfirm`            |
+| steamos.sh         | `installPacmanPackage` | `pacman -Q`   | `sudo pacman -Sy`                       |
+| android_termux.sh  | `installPkgPackage`    | `dpkg -s`     | `pkg install -y`                        |
+| chrome_os_linux.sh | `installAptPackage`    | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
 
 ## Testing
 

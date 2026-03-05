@@ -40,6 +40,10 @@ if [ "$is_os_arch_linux" = "1" ]; then
   installPacmanPackage fd
   installPacmanPackage tree
 
+  # ---- Dev tools / Build ----
+  installPacmanPackage rust
+  installPacmanPackage go
+
   # ---- Git extensions ----
   installPacmanPackage github-cli
   installPacmanPackage git-lfs

@@ -47,6 +47,8 @@ if [ "$is_os_ubuntu" = "1" ]; then
 
   # ---- Dev tools / Build ----
   installAptPackage gradle
+  installAptPackage rustc
+  installAptPackage golang-go
   installAptPackage default-jdk
   installAptPackage unzip
   installAptPackage gnupg

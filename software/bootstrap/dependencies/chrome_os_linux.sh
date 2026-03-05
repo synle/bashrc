@@ -43,6 +43,8 @@ if [ "$is_os_chromeos" = "1" ]; then
 
   # ---- Dev tools / Build ----
   installAptPackage gradle
+  installAptPackage rustc
+  installAptPackage golang-go
 
   # ---- GUI apps ----
   installAptPackage libreoffice
