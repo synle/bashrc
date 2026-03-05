@@ -28,6 +28,7 @@ if [ "$is_os_chromeos" = "1" ]; then
   # ---- CLI utilities ----
   installAptPackage bat
   installAptPackage fzf
+  installAptPackage ripgrep
   installAptPackage pv
   installAptPackage entr
   installAptPackage tmux
@@ -49,6 +50,7 @@ if [ "$is_os_chromeos" = "1" ]; then
   }
 
   installSnapPackage postman
+  installSnapPackage blender --classic
 
 else
   echo ">> Skipped dependencies/chrome_os_linux.sh"

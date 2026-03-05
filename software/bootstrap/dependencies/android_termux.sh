@@ -35,6 +35,7 @@ termux-chroot
   # ---- CLI utilities ----
   installPkgPackage bat
   installPkgPackage fzf
+  installPkgPackage ripgrep
   installPkgPackage pv
   installPkgPackage entr
 

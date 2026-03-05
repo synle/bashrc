@@ -183,6 +183,7 @@ EOF
   # ---- CLI utilities ----
   installBrewPackage bat
   installBrewPackage fzf
+  installBrewPackage ripgrep
   installBrewPackage pv
   installBrewPackage entr
   installBrewPackage tmux
@@ -205,6 +206,8 @@ EOF
   installBrewPackage --cask vlc
   installBrewPackage --cask docker
   installBrewPackage --cask balenaetcher
+  installBrewPackage --cask keka
+  installBrewPackage --cask blender
 
   ################################################################################
   # ---- Cleanup ----

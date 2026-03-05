@@ -27,6 +27,7 @@ if [ "$is_os_arch_linux" = "1" ]; then
   # ---- CLI utilities ----
   installPacmanPackage bat
   installPacmanPackage fzf
+  installPacmanPackage ripgrep
   installPacmanPackage pv
   installPacmanPackage entr
   installPacmanPackage tmux
@@ -54,6 +55,7 @@ if [ "$is_os_arch_linux" = "1" ]; then
     }
 
     installFlatpakPackage postman com.getpostman.Postman
+    installFlatpakPackage blender org.blender.Blender
   fi
 
 else

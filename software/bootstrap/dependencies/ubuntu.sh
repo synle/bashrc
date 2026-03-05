@@ -31,6 +31,7 @@ if [ "$is_os_ubuntu" = "1" ]; then
   # ---- CLI utilities ----
   installAptPackage bat
   installAptPackage fzf
+  installAptPackage ripgrep
   installAptPackage pv
   installAptPackage entr
   installAptPackage tmux
@@ -65,6 +66,7 @@ if [ "$is_os_ubuntu" = "1" ]; then
     }
 
     installSnapPackage postman
+    installSnapPackage blender --classic
   fi
 
   ################################################################################

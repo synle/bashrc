@@ -39,6 +39,7 @@ if [ "$is_os_steamos" = "1" ]; then
   # ---- CLI utilities ----
   installPacmanPackage bat
   installPacmanPackage fzf
+  installPacmanPackage ripgrep
   installPacmanPackage pv
   installPacmanPackage entr
   installPacmanPackage tmux
