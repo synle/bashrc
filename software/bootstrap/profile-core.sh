@@ -192,7 +192,18 @@ alias c="cat"
 alias fzf='fzf --no-sort'
 alias fvim='fuzzy_open vim'
 alias grep='grep --color'
-alias curl="curl -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' -H 'Pragma: no-cache' -H 'Expires: 0' -H 'If-None-Match:'"
+# prevent curl from using cached responses
+alias curl="curl \
+  -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' \
+  -H 'Pragma: no-cache' \
+  -H 'Expires: 0' \
+  -H 'If-None-Match:' \
+  -H 'If-Modified-Since:'"
+# Cache-Control: no-cache, no-store, must-revalidate, max-age=0 — HTTP/1.1: don't cache, don't store, revalidate, expire immediately
+# Pragma: no-cache — HTTP/1.0 fallback
+# Expires: 0 — forces expiration
+# If-None-Match: — empties ETag to prevent 304 responses
+# If-Modified-Since: — empties last-modified check to prevent 304 responses
 
 # ---- Aliases: Git ----
 # git wrapper: invalidates branch cache on state-changing commands

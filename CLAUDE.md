@@ -13,13 +13,19 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 ## Commands
 
 ```bash
-make test              # Run all scripts locally (bash run.sh --force)
-make build             # Run build.sh + format code
+make build             # Build artifacts + format code (nukes config in CI first)
+make test              # Run unit tests (CI only) + run all scripts with --force
+make dry_run           # Run unit tests (CI only) + run all scripts without --force
+make start             # Alias for dry_run
+make run               # Alias for dry_run
 make format            # Format code with Prettier
 make clean             # Run clean.sh
-make start             # Run run.sh
+make setup             # Bootstrap setup from GitHub (prod)
+make setup_local       # Bootstrap setup from local files
 make nuke              # Remove all bashrc config (~/.bash_sy*, fnm, hushlogin)
 npm test               # Run unit tests (vitest)
+npm run dev            # Start webapp dev server (Vite)
+npm run build          # Build webapp for production (Vite)
 ```
 
 ### run.sh - Test/install scripts

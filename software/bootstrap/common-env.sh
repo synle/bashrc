@@ -173,7 +173,10 @@ function install_fnm_node() {
 #   run_files "local" "git.js,vim.js"  # local mode, run specific files
 #   run_files "prod"                   # prod mode, full run
 #   run_files "local"                  # local mode, full run
-function run_files() {
+# prevent curl from using cached responses
+alias curl="curl -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' -H 'Pragma: no-cache' -H 'Expires: 0' -H 'If-None-Match:' -H 'If-Modified-Since:'"
+
+# run_files - Run script files through software/index.js
   local mode="$1"
   if [ -n "$2" ]; then
     export TEST_SCRIPT_FILES="$2"
