@@ -1,5 +1,6 @@
 const sublimeBundleId = "com.sublimetext.4";
 const vlcBundleId = "org.videolan.vlc";
+const kekaBundleId = "com.aone.keka";
 
 const shFooter = `
 echo ""
@@ -13,14 +14,15 @@ echo "  killall Finder"
 async function doWork() {
   const textExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.textfile.config"));
   const mediaExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.media.config"));
-  const allExtensions = [...textExtensions, ...mediaExtensions];
+  const archiveExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.archive.config"));
+  const allExtensions = [...textExtensions, ...mediaExtensions, ...archiveExtensions];
 
   // install duti if not already installed
   execBash(`command -v duti &>/dev/null || brew install duti`, true);
 
   const associationContent = trimLeftSpaces(`
     #!/usr/bin/env bash
-    # Sets Sublime Text as default for text files and VLC as default for media files
+    # Sets Sublime Text for text files, VLC for media files, and Keka for archive files
     # Requires duti: brew install duti
 
     if ! command -v duti &>/dev/null; then
@@ -48,6 +50,17 @@ async function doWork() {
 
     for ext in "\${MEDIA_EXTENSIONS[@]}"; do
       duti -s ${vlcBundleId} ".$ext" all 2>/dev/null
+    done
+
+    ${LINE_BREAK_HASH}
+    # archive file association
+    ${LINE_BREAK_HASH}
+    ARCHIVE_EXTENSIONS=(
+    ${archiveExtensions.map((ext) => `  "${ext}"`).join("\n")}
+    )
+
+    for ext in "\${ARCHIVE_EXTENSIONS[@]}"; do
+      duti -s ${kekaBundleId} ".$ext" all 2>/dev/null
     done
 
     ${shFooter}
@@ -88,7 +101,7 @@ async function doWork() {
       comments: `
         File Associations for macOS
         Requires duti: brew install duti
-        Sets Sublime Text and VLC as default apps for text and media files
+        Sets Sublime Text, VLC, and Keka as default apps for text, media, and archive files
         To revert, run file-association-mac-revert.sh
       `,
       commentStyle: "bash",
