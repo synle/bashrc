@@ -180,30 +180,35 @@ if [ -d "${HOME}/.local" ] && [ "$(stat -c '%u' "${HOME}/.local" 2>/dev/null || 
   sudo chown -R "$(whoami)" "${HOME}/.local" 2>/dev/null
 fi
 
+# Homebrew (macOS only)
+# Homebrew is required for macOS — it's used to install packages, GUI apps,
+# fonts, and other dependencies. Without it, the rest of the setup will fail.
+# This runs early so brew is available for everything else (fnm, node, etc.).
+if [ "$is_os_mac" == "1" ]; then
+  # install homebrew if not already present
+  if ! command -v brew >/dev/null 2>&1; then
+    echo ">> Installing Homebrew"
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >/dev/null 2>&1
+  fi
+
+  # source brew shellenv so brew is available in the current shell
+  if [ -f /opt/homebrew/bin/brew ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [ -f /usr/local/bin/brew ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+
+  # early exit if brew is still not available
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "[Error] Homebrew is required on macOS but failed to install. Exiting."
+    exit 1
+  fi
+fi
+
 # install_fnm_node - Install fnm and Node.js (skip on Android Termux)
 # Handles force refresh, fnm download, Node install, and /usr/local/bin symlinks.
 function install_fnm_node() {
   if [ "$is_os_android_termux" != "1" ]; then
-    # Homebrew (macOS only)
-    if [ "$is_os_mac" == "1" ]; then
-      # NOTE: this is destructive, let's not remove homebrew in any circumstances
-      # if [ "$IS_FORCE_REFRESH" = "1" ] && command -v brew >/dev/null 2>&1; then
-      #   echo ">> Uninstalling Homebrew (force refresh)"
-      #   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" >/dev/null 2>&1
-      # fi
-
-      if [ "$IS_FORCE_REFRESH" = "1" ] || ! command -v brew >/dev/null 2>&1; then
-        echo ">> Installing Homebrew"
-        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" >/dev/null 2>&1
-
-        if [ -f /opt/homebrew/bin/brew ]; then
-          eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f /usr/local/bin/brew ]; then
-          eval "$(/usr/local/bin/brew shellenv)"
-        fi
-      fi
-    fi
-
     # Force refresh: remove existing fnm node and reinstall
     if [ "$IS_FORCE_REFRESH" = "1" ] && command -v fnm >/dev/null 2>&1; then
       echo ">> Uninstalling fnm node (force refresh)"

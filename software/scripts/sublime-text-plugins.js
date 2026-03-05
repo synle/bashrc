@@ -136,7 +136,8 @@ async function doWork() {
   log(`>>> For prebuilt configs`);
   for (const pluginCodePath of allPlugins) {
     log(`>>>> ${pluginCodePath}`);
-    writeToBuildFile({ file: pluginCodePath, data: readText(path.join("software/scripts", pluginCodePath)) });
+    const pluginContent = await fetchUrlAsString(path.join("software/scripts", pluginCodePath));
+    writeToBuildFile({ file: pluginCodePath, data: pluginContent });
   }
 
   // for my own system
@@ -145,6 +146,7 @@ async function doWork() {
   for (const pluginCodePath of allPlugins) {
     const fileDestPath = path.join(targetPath, path.join("Packages/User/", pluginCodePath));
     log(">>>> fileDestPath", fileDestPath);
-    writeText(fileDestPath, readText(path.join("software/scripts", pluginCodePath)));
+    const pluginContent = await fetchUrlAsString(path.join("software/scripts", pluginCodePath));
+    writeText(fileDestPath, pluginContent);
   }
 }

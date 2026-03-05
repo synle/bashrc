@@ -1,6 +1,6 @@
 /** * Gate check that exits early if the current OS is not macOS. */
 async function doWork() {
-  const onlyMacProfile = readText("software/scripts/mac/_only-profile.bash").trim();
+  const onlyMacProfile = (await fetchUrlAsString("software/scripts/mac/_only-profile.bash")).trim();
   log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
 
   // register platform tweaks for mac
