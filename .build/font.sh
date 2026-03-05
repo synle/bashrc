@@ -19,6 +19,10 @@ curl -sSLJ --parallel --parallel-max 10 \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/GeistMono-SemiBold.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Hack-Bold.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Hack-Regular.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Bold.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Light.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Medium.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Regular.otf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Iosevka-Bold.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Iosevka-ExtraBold.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Iosevka-Light.ttf \
@@ -33,6 +37,19 @@ curl -sSLJ --parallel --parallel-max 10 \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/JetBrainsMono-Regular.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/JetBrainsMono-SemiBold.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/JetBrainsMono-Thin.ttf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceArgon-Bold.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceArgon-Regular.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceKrypton-Bold.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceKrypton-Regular.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Bold.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Light.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Medium.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Regular.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-SemiBold.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceRadon-Bold.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceRadon-Regular.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceXenon-Bold.otf \
+  -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceXenon-Regular.otf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/RecursiveMonoLnrSt-Bold.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/RecursiveMonoLnrSt-Light.ttf \
   -O https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/RecursiveMonoLnrSt-Med.ttf \
@@ -73,6 +90,10 @@ $urls = @(
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/GeistMono-SemiBold.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Hack-Bold.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Hack-Regular.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Bold.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Light.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Medium.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/IntelOneMono-Regular.otf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Iosevka-Bold.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Iosevka-ExtraBold.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/Iosevka-Light.ttf",
@@ -87,6 +108,19 @@ $urls = @(
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/JetBrainsMono-Regular.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/JetBrainsMono-SemiBold.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/JetBrainsMono-Thin.ttf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceArgon-Bold.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceArgon-Regular.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceKrypton-Bold.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceKrypton-Regular.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Bold.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Light.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Medium.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-Regular.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceNeon-SemiBold.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceRadon-Bold.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceRadon-Regular.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceXenon-Bold.otf",
+  "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/MonaspaceXenon-Regular.otf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/RecursiveMonoLnrSt-Bold.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/RecursiveMonoLnrSt-Light.ttf",
   "https://raw.githubusercontent.com/synle/bashrc/master/assets/fonts/RecursiveMonoLnrSt-Med.ttf",
