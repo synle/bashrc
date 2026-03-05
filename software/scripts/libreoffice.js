@@ -131,8 +131,8 @@ async function doWork() {
   // disable Java runtime (saves ~100MB RAM, not needed for most tasks)
   _setRegistryValue("/org.openoffice.Office.Common/Java", "Enabled", "false");
 
-  // reduce undo steps (less memory for undo history)
-  _setRegistryValue("/org.openoffice.Office.Common/Undo", "Steps", "20");
+  // increase undo steps for safety
+  _setRegistryValue("/org.openoffice.Office.Common/Undo", "Steps", "100");
 
   // increase graphics cache to 256MB (smoother image/chart handling)
   _setRegistryValue("/org.openoffice.Office.Common/Cache", "GraphicManager/TotalCacheSize", "256000000");
@@ -140,8 +140,9 @@ async function doWork() {
   // disable autocorrect (faster typing, no background processing)
   _setRegistryValue("/org.openoffice.Office.Common/AutoCorrect", "Enabled", "false");
 
-  // disable autosave (reduces background disk I/O)
-  _setRegistryValue("/org.openoffice.Office.Recovery/AutoSave", "Enabled", "false");
+  // enable autosave to prevent data loss (interval in minutes)
+  _setRegistryValue("/org.openoffice.Office.Recovery/AutoSave", "Enabled", "true");
+  _setRegistryValue("/org.openoffice.Office.Recovery/AutoSave", "TimeIntervall", "5");
 
   // disable macro execution (faster document open + security)
   _setRegistryValue("/org.openoffice.Office.Common/Security/Scripting", "DisableMacrosExecution", "true");
