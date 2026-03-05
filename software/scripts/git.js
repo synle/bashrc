@@ -123,7 +123,15 @@ async function doWork() {
     configMain,
     await _getGitConfig({
       email,
-      extraCoreConfigs: "pager = delta",
+      extraCoreConfigs: trimLeftSpaces(`
+        pager = delta
+
+        [delta]
+        navigate = true
+        side-by-side = true
+        line-numbers = true
+        syntax-theme = Dracula
+      `),
       addDefaultCommitTemplate: true,
     }),
   );

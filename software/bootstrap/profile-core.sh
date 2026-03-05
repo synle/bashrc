@@ -189,7 +189,7 @@ alias vi="vim"
 alias v="vim"
 alias cat='batcat'
 alias c="cat"
-alias fzf='fzf --no-sort'
+alias fzf='fzf --no-sort --cycle'
 alias fvim='fuzzy_open vim'
 alias grep='grep --color'
 # prevent curl from using cached responses
