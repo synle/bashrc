@@ -25,12 +25,10 @@
 #   bash run.sh --lightweight                      # Export IS_LIGHT_WEIGHT_MODE=1 for lightweight installs
 #   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
 #   bash run.sh -D                                 # Shorthand for --debug
-#   bash run.sh --parallel                          # Run scripts in parallel (where safe)
-#   bash run.sh -P                                 # Shorthand for --parallel
 #   bash run.sh --verbose                          # Enable verbose mode (set -x for bash tracing)
 #   bash run.sh -V                                 # Shorthand for --verbose
 #
-# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -force-refresh, -f, -lightweight, -parallel, -P, -debug, -D, -verbose, -V
+# Single dash also works: -prod, -local, -dev, -mode=..., -files=..., -force-refresh, -f, -lightweight, -debug, -D, -verbose, -V
 ################################################################################
 
 ################################################################################
@@ -294,10 +292,6 @@ for arg in "$@"; do
       set -x
       _parsing_into=""
       ;;
-    --parallel|-parallel|-P)
-      export RUN_PARALLEL=1
-      _parsing_into=""
-      ;;
     --debug|-debug|-D)
       debug_mode=true
       export IS_DEBUG=1
@@ -332,7 +326,6 @@ files               = ${files_to_test:-[full run]}
 force_refresh       = $force_refresh
 debug               = $debug_mode
 verbose             = $verbose_mode
-parallel            = ${RUN_PARALLEL:-0}
 lightweight         = ${IS_LIGHT_WEIGHT_MODE:-0}
 setup               = ${IS_SETUP:-0}
 test_script_mode    = $IS_TEST_SCRIPT_MODE

@@ -131,7 +131,6 @@ const IS_LIGHT_WEIGHT_MODE = getRuntimeOption("IS_LIGHT_WEIGHT_MODE", parseBoole
 const IS_SETUP = getRuntimeOption("IS_SETUP", parseBoolean);
 /** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
 const IS_DEBUG = getRuntimeOption("IS_DEBUG", parseBoolean);
-/** @type {boolean} */ const RUN_PARALLEL = getRuntimeOption("RUN_PARALLEL", parseBoolean);
 /** @type {string} Current system username (falls back to USER env var or "unknown") */
 const CURRENT_USER = process.env.USER || process.env.USERNAME || "unknown";
 /** @type {string} Full URL prefix for raw GitHub content (constructed from REPO_PATH_IDENTIFIER and REPO_BRANCH_NAME) */
@@ -1876,10 +1875,9 @@ function _getTempFilePath(file) {
  * @param {string} file - The script file path (relative to the repo), after prefix expansion
  * @param {string} originalFile - The original file name before prefix expansion (e.g. before adding 'software/scripts/')
  * @param {string[]} allRepoFiles - List of all file paths in the repository for regex matching
- * @param {boolean} [deferEmit=false] - If true, return the bash command instead of emitting it
- * @returns {string|void} The bash command string when deferEmit is true, void otherwise
+ * @returns {void}
  */
-function processScriptFile(file, originalFile, allRepoFiles, deferEmit = false) {
+function processScriptFile(file, originalFile, allRepoFiles) {
   const url = getFullUrl(`${file}?${Date.now()}`);
 
   /**
@@ -1990,20 +1988,6 @@ function processScriptFile(file, originalFile, allRepoFiles, deferEmit = false) 
       colorDim(IS_DEBUG ? tempFileCommand : ""),
     );
 
-    if (deferEmit) {
-      // Return the command for batched parallel execution
-      scriptProcessingResults.push({
-        file: originalFile,
-        path: file,
-        script: _generateScript(file, url),
-        tempFileCommand,
-        status: fileExists ? "success" : "error",
-        fileMatchState,
-        description: description || "",
-      });
-      return fullCommand;
-    }
-
     // Refresh sudo timestamp before running sudo scripts so macOS doesn't re-prompt
     if (file.includes(".su.")) {
       emitBash(`sudo -v 2>/dev/null`);
@@ -2106,117 +2090,6 @@ function _runScripts(softwareFiles, allRepoFiles, label) {
 }
 
 /**
- * Files that write to shared profile files (~/.bash_syle or ~/.bash_syle_autocomplete)
- * must run sequentially to avoid race conditions with concurrent read-modify-write cycles.
- * @type {string[]}
- */
-const SEQUENTIAL_SCRIPTS = [
-  "bash-syle-content.js",
-  "fnm-binary.js",
-  "prettyping.js",
-  "jq.js",
-  "fzf.js",
-  "format.js",
-  "editor-launchers.js",
-  "synle-make-component.js",
-  "bash-autocomplete-git.js",
-  "bash-autocomplete-npm.js",
-  "bash-autocomplete-make.js",
-  "bash-autocomplete-ssh.js",
-  "bash-autocomplete-yarn.js",
-  "bash-autocomplete-complete-spec.js",
-];
-
-/**
- * Checks if a script file must run sequentially (not safe to parallelize).
- * Files starting with _ or __ (e.g. _only.js, __bootstrap.js) run first in order.
- * Files that write to shared profile files (registerWithBashSyleProfile, etc.) must also be sequential.
- * @param {string} file - The script file path
- * @returns {boolean} True if the script must run sequentially
- */
-function _isSequentialScript(file) {
-  const baseName = path.basename(file);
-  // Files starting with _ must run sequentially (e.g., _only.js, __bootstrap.js)
-  if (baseName.startsWith("_")) return true;
-  // Files that write to shared profile files
-  if (SEQUENTIAL_SCRIPTS.some((s) => baseName === s)) return true;
-  // Sudo scripts should run sequentially (need sudo -v refresh)
-  if (file.includes(".su.")) return true;
-  return false;
-}
-
-/**
- * Parallel script runner that splits scripts into sequential and parallel queues.
- * Sequential queue: files starting with _ and files that write to shared profile files.
- * Parallel queue: everything else, run concurrently using bash background jobs.
- * @param {string[]} softwareFiles - Array of script file paths to execute
- * @param {string[]} allRepoFiles - Array of all repo file paths for matching
- * @param {string} label - Description label for logging
- * @returns {void}
- */
-function _runScriptsInParallel(softwareFiles, allRepoFiles, label) {
-  printOsFlags();
-  printScriptsToRun(softwareFiles);
-
-  // Split into sequential and parallel queues
-  const sequentialFiles = [];
-  const parallelFiles = [];
-  for (const file of softwareFiles) {
-    const baseName = path.basename(file.startsWith("software/") ? file : `software/scripts/${file}`);
-    if (_isSequentialScript(file)) {
-      sequentialFiles.push(file);
-    } else {
-      parallelFiles.push(file);
-    }
-  }
-
-  echo(`# Parallel Mode: ${sequentialFiles.length} sequential, ${parallelFiles.length} parallel`);
-
-  // Phase 1: Run sequential scripts first (in order)
-  if (sequentialFiles.length > 0) {
-    echo(`## Phase 1: Sequential scripts (${sequentialFiles.length} files)`);
-    for (let i = 0; i < sequentialFiles.length; i++) {
-      const originalFile = sequentialFiles[i];
-      let file = originalFile;
-      if (!file.startsWith("software/")) {
-        file = `software/scripts/${file}`;
-      }
-      echo(`## _runScriptsInParallel | sequential | ${file} (${calculatePercentage(i + 1, sequentialFiles.length)}%)`);
-      processScriptFile(file, originalFile, allRepoFiles);
-    }
-  }
-
-  // Phase 2: Run parallel scripts concurrently using bash background jobs
-  if (parallelFiles.length > 0) {
-    echo(`## Phase 2: Parallel scripts (${parallelFiles.length} files)`);
-    const deferredCommands = [];
-
-    for (let i = 0; i < parallelFiles.length; i++) {
-      const originalFile = parallelFiles[i];
-      let file = originalFile;
-      if (!file.startsWith("software/")) {
-        file = `software/scripts/${file}`;
-      }
-      echo(`## _runScriptsInParallel | parallel | ${file} (${calculatePercentage(i + 1, parallelFiles.length)}%)`);
-      const cmd = processScriptFile(file, originalFile, allRepoFiles, true);
-      if (cmd) {
-        deferredCommands.push(cmd);
-      }
-    }
-
-    // Emit all parallel commands as background jobs, then wait
-    if (deferredCommands.length > 0) {
-      for (const cmd of deferredCommands) {
-        emitBash(`( ${cmd} ) &`);
-      }
-      emitBash(`wait`);
-    }
-  }
-
-  printScriptProcessingResults(scriptProcessingResults);
-}
-
-/**
  * Prints the script processing results with a section header.
  * Success entries are printed in green, error entries in red.
  * Cleans up temp scripts on success unless IS_DEBUG is on.
@@ -2266,11 +2139,7 @@ async function _doWorkTestFiles() {
     .filter((s) => !!s);
 
   echo(`> _doWorkTestFiles => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `);
-  if (RUN_PARALLEL) {
-    _runScriptsInParallel(softwareFiles, allRepoFiles, "Test Files");
-  } else {
-    _runScripts(softwareFiles, allRepoFiles, "Test Files");
-  }
+  _runScripts(softwareFiles, allRepoFiles, "Test Files");
 }
 
 //////////////////////////////////////////////////////
@@ -2290,11 +2159,7 @@ async function _doWorkFullRun() {
   echo(
     `> _doWorkFullRun => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `,
   );
-  if (RUN_PARALLEL) {
-    _runScriptsInParallel(allFiles, allRepoFiles, "Full Run");
-  } else {
-    _runScripts(allFiles, allRepoFiles, "Full Run");
-  }
+  _runScripts(allFiles, allRepoFiles, "Full Run");
 }
 
 //////////////////////////////////////////////////////
@@ -2314,11 +2179,7 @@ async function _doWorkSetup() {
   echo(
     `> _doWorkSetup => bootstrap=${bootstrapFiles.length} software=${softwareFiles.length} total=${allFiles.length} allRepoFiles=${allRepoFiles.length} `,
   );
-  if (RUN_PARALLEL) {
-    _runScriptsInParallel(allFiles, allRepoFiles, "Setup");
-  } else {
-    _runScripts(allFiles, allRepoFiles, "Setup");
-  }
+  _runScripts(allFiles, allRepoFiles, "Setup");
 }
 
 //////////////////////////////////////////////////////
