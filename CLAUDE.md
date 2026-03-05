@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Important Rules
 
 - **Do not modify anything in the `.build/` folder.** The `.build/` directory contains generated artifacts and should never be manually edited or changed by any task.
+- **Always run `bash format.sh` after making changes.** This ensures code formatting stays consistent across the codebase.
 
 ## Project Overview
 
