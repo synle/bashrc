@@ -3,6 +3,7 @@
 
 if [ "$is_os_windows" = "1" ]; then
   echo ">> Begin setting up dependencies/windows.sh"
+  sudo -v
 
   WSL_DRIVES="c d e f g h"
   D_DRIVE_FOLDERS="Applications Desktop Documents Downloads Games Pictures"

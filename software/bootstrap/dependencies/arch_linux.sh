@@ -3,6 +3,7 @@
 
 if [ "$is_os_arch_linux" = "1" ]; then
   echo ">> Begin setting up dependencies/arch_linux.sh"
+  sudo -v
 
   ################################################################################
   # ---- Install Packages ----

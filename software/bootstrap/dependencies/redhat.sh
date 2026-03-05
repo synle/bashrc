@@ -3,6 +3,7 @@
 
 if [ "$is_os_redhat" = "1" ]; then
   echo ">> Begin setting up dependencies/redhat.sh"
+  sudo -v
 
   ################################################################################
   # ---- Install Packages ----

@@ -3,6 +3,7 @@
 
 if [ "$is_os_mac" = "1" ]; then
   echo ">> Begin setting up dependencies/mac.sh"
+  sudo -v
 
   echo ">> Mac UI & System Optimization..."
 

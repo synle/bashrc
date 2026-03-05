@@ -3,6 +3,7 @@
 
 if [ "$is_os_ubuntu" = "1" ]; then
   echo ">> Begin setting up dependencies/ubuntu.sh"
+  sudo -v
 
   echo '>> update packages'
   sudo apt-get update -y &> /dev/null

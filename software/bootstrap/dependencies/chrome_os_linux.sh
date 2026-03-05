@@ -3,6 +3,7 @@
 
 if [ "$is_os_chromeos" = "1" ]; then
   echo ">> Begin setting up dependencies/chrome_os_linux.sh"
+  sudo -v
 
   sudo apt-get update -y
 

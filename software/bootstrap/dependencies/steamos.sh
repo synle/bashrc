@@ -3,6 +3,7 @@
 
 if [ "$is_os_steamos" = "1" ]; then
   echo ">> Begin setting up dependencies/steamos.sh"
+  sudo -v
 
   # Steam Deck file system is immutable and will be removed after each update.
   # This command opens it up for write.
