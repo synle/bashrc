@@ -65,6 +65,28 @@ if [ "$is_os_ubuntu" = "1" ]; then
   installAptPackage openssh-server
   installAptPackage xz-utils
 
+  # ---- VSCodium (deb install, non-WSL only) ----
+  if [ "$is_os_windows" != "1" ]; then
+    echo -n ">> vscodium >> Installing with dpkg >> "
+    if command -v codium &>/dev/null; then
+      echo "Skipped"
+    else
+      vscodium_version=$(curl -s https://api.github.com/repos/VSCodium/vscodium/releases/latest \
+        | node -e "let b='';process.stdin.on('data',d=>b+=d);process.stdin.on('end',()=>console.log(JSON.parse(b).tag_name))")
+      vscodium_file="codium_${vscodium_version}_amd64.deb"
+      vscodium_url="https://github.com/VSCodium/vscodium/releases/download/${vscodium_version}/${vscodium_file}"
+      pushd /tmp >/dev/null || true
+      wget -q "$vscodium_url" -O "$vscodium_file"
+      if sudo dpkg -i "$vscodium_file" >/dev/null 2>&1 || sudo apt -f install -y >/dev/null 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+      rm -f "$vscodium_file"
+      popd >/dev/null || true
+    fi
+  fi
+
   # ---- GUI apps (only if a display server is available) ----
   if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     echo '>> Installing GUI apps'

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # install uv - fast Python package manager (https://github.com/astral-sh/uv)
 
+# Skip on lightweight mode
+[ "$IS_LIGHT_WEIGHT_MODE" = "1" ] && { echo ">>> Skipped : Lightweight mode"; exit 0; }
+
 # Skip on OS where uv is installed via dependency files or unsupported
 [ "$is_os_mac" = "1" ] && { echo ">>> Skipped : Installed via dependencies/mac.sh"; exit 0; }
 [ "$is_os_android_termux" = "1" ] && { echo ">>> Skipped : Not supported on is_os_android_termux"; exit 0; }

@@ -1,28 +1,22 @@
 #!/usr/bin/env bash
 
+# Skip on lightweight mode
+[ "$IS_LIGHT_WEIGHT_MODE" = "1" ] && { echo ">>> Skipped : Lightweight mode"; exit 0; }
+
 # Skip on unsupported OS
 [ "$is_os_android_termux" = "1" ] && { echo ">>> Skipped : Not supported on is_os_android_termux"; exit 0; }
 [ "$is_os_arch_linux" = "1" ] && { echo ">>> Skipped : Not supported on is_os_arch_linux"; exit 0; }
 [ "$is_os_chromeos" = "1" ] && { echo ">>> Skipped : Not supported on is_os_chromeos"; exit 0; }
+[ "$is_os_steamos" = "1" ] && { echo ">>> Skipped : Not supported on is_os_steamos"; exit 0; }
+[ "$is_os_mingw64" = "1" ] && { echo ">>> Skipped : Not supported on is_os_mingw64"; exit 0; }
+[ "$is_os_redhat" = "1" ] && { echo ">>> Skipped : Not supported on is_os_redhat"; exit 0; }
+[ "$is_os_ubuntu" = "1" ] && { echo ">>> Skipped : Installed via dependencies/ubuntu.sh"; exit 0; }
+[ "$is_os_windows" = "1" ] && { echo ">>> Skipped : Not supported on is_os_windows"; exit 0; }
 
 version=$(curl -s https://api.github.com/repos/VSCodium/vscodium/releases/latest \
     | node -e "let b='';process.stdin.on('data',d=>b+=d);process.stdin.on('end',()=>console.log(JSON.parse(b).tag_name))")
 
 echo "> Installing vscodium : $version"
-
-# Linux Installation
-if [ "${is_os_ubuntu}" -eq 1 ] && [ "${is_os_windows}" -eq 0 ]; then
-    file="codium_${version}_amd64.deb"
-    url="https://github.com/VSCodium/vscodium/releases/download/${version}/${file}"
-
-    echo ">> ubuntu: $url"
-
-    pushd /tmp >/dev/null || exit
-    wget -q "$url" -O "$file"
-    sudo dpkg -i "$file" >/dev/null 2>&1 || sudo apt -f install -y >/dev/null 2>&1
-    popd >/dev/null || exit
-    echo "VSCodium ${version} ($file) installed - Ubuntu."
-fi
 
 # macOS Installation
 if [ "${is_os_mac}" -eq 1 ]; then

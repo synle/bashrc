@@ -15,6 +15,7 @@ path_candidates=(
   /usr/local/sbin                       # local admin binaries
   ~/.bun/bin                            # bun javascript runtime
   ~/.cargo/bin                          # rust / cargo
+  ~/.claude/bin                         # claude cli
   ~/.deno/bin                           # deno javascript runtime
   ~/go/bin                              # go binaries (GOPATH)
   /usr/local/go/bin                     # go sdk
