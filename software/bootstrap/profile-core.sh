@@ -272,6 +272,30 @@ function ech() {
     }1'
 }
 
+function download() {
+  local url="$1"
+  local dest="${2:-.}"
+
+  if [ -z "$url" ]; then
+    echo "Usage: download <url> [dest_path_or_dir]"
+    return 1
+  fi
+
+  local filename
+  filename=$(basename "$url")
+
+  if [ -d "$dest" ]; then
+    # dest is an existing directory — download into it
+    command curl -fSL -o "${dest%/}/${filename}" "$url"
+  elif [ -d "$(dirname "$dest")" ]; then
+    # dest looks like a file path — download and rename
+    command curl -fSL -o "$dest" "$url"
+  else
+    echo "download: destination directory does not exist: $(dirname "$dest")"
+    return 1
+  fi
+}
+
 function tree() {
   find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
 }
