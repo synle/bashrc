@@ -9,6 +9,19 @@
   node software/build-include.cjs
 
   ##########################################################
+  # step: script-indexes - Generate Script List Indexes
+  ##########################################################
+  echo '> Generate Script List Indexes'
+  SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config"
+  find software -type f \( -name "*.js" -o -name "*.sh" \) \
+    -not -path "*/node_modules/*" \
+    -not -path "*/.build/*" \
+    -not -name "*.cjs" \
+    -not -name "*.d.ts" \
+    | sort > "$SCRIPT_INDEX_CONFIG_FILE"
+  echo ">> Written $(wc -l < "$SCRIPT_INDEX_CONFIG_FILE" | xargs) files to $SCRIPT_INDEX_CONFIG_FILE"
+
+  ##########################################################
   # step: jsdocs - Build JSDocs for JS Code
   ##########################################################
   echo '> Build JSDocs for JS Code'

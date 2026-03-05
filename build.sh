@@ -14,7 +14,6 @@
 #   bash build.sh webapp build-configs                # Bare args treated as steps
 #
 # Available steps (default):
-#   script-indexes  Generate Script List Indexes
 #   prebuild-hosts  Prebuild Host Mappings
 #   build-configs   Build Raw JSON and Config Artifacts
 #   host-mappings   Build Host Mappings (skip in CI)
@@ -26,7 +25,7 @@
 ################################################################################
 
 # All valid step names
-ALL_MAIN_STEPS="script-indexes prebuild-hosts build-configs host-mappings backup-xfce webapp"
+ALL_MAIN_STEPS="prebuild-hosts build-configs host-mappings backup-xfce webapp"
 ALL_OPTIONAL_STEPS="update-hosts"
 
 ################################################################################
@@ -283,16 +282,6 @@ if [ "$run_mode" = "local" ]; then export IS_TEST_SCRIPT_MODE=1; fi
 install_fnm_node
 
 echo '< build.sh'
-############################################################################################
-# ---- step: script-indexes - Generate Script List Indexes ----
-############################################################################################
-if should_run script-indexes; then
-echo '> Generate Script List Indexes'
-export SCRIPT_INDEX_CONFIG_FILE="software/metadata/script-list.config" && \
-run_files "$run_mode" "software/metadata/script-list.js"
-cat $SCRIPT_INDEX_CONFIG_FILE
-fi
-
 ############################################################################################
 # ---- step: prebuild-hosts - Prebuild Host Mappings ----
 ############################################################################################
