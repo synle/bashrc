@@ -12,6 +12,15 @@ async function doWork() {
   log(">>> iTerm Profile", profilePath);
   writeJson(profilePath, await fetchUrlAsJson("software/scripts/mac/iterm-profile.jsonc"));
 
+  // Deploy standalone color scheme files
+  const colorDarkPath = path.join(baseTargetPath, "iterm-color-dark.json");
+  log(">>> iTerm Color Dark", colorDarkPath);
+  writeJson(colorDarkPath, await fetchUrlAsJson("software/scripts/mac/iterm-color-dark.jsonc"));
+
+  const colorLightPath = path.join(baseTargetPath, "iterm-color-light.json");
+  log(">>> iTerm Color Light", colorLightPath);
+  writeJson(colorLightPath, await fetchUrlAsJson("software/scripts/mac/iterm-color-light.jsonc"));
+
   // Import iTerm plist preferences when force refresh is enabled
   if (IS_FORCE_REFRESH) {
     const plistPath = path.join(baseTargetPath, "iterm.plist");

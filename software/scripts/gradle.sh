@@ -7,16 +7,13 @@
 [ "$is_os_arch_linux" = "1" ] && { echo ">>> Skipped : Not supported on is_os_arch_linux"; exit 0; }
 [ "$is_os_steamos" = "1" ] && { echo ">>> Skipped : Not supported on is_os_steamos"; exit 0; }
 [ "$is_os_mingw64" = "1" ] && { echo ">>> Skipped : Not supported on is_os_mingw64"; exit 0; }
+[ "$is_os_mac" = "1" ] && { echo ">>> Skipped : Installed via Homebrew in dependencies/mac.sh"; exit 0; }
 
 # Force refresh: remove existing binary
 if [ "$IS_FORCE_REFRESH" == "1" ] && command -v gradle &>/dev/null; then
   echo ">> Force refresh: removing gradle"
-  if [ "$is_os_mac" == "1" ]; then
-    brew uninstall gradle &>/dev/null
-  else
-    sudo rm -f /usr/local/bin/gradle
-    sudo rm -rf /opt/gradle
-  fi
+  sudo rm -f /usr/local/bin/gradle
+  sudo rm -rf /opt/gradle
 fi
 
 # Skip if already installed
@@ -26,14 +23,9 @@ if command -v gradle &>/dev/null; then
 fi
 
 echo '>> Installing gradle'
-if [ "$is_os_mac" == "1" ]; then
-  echo '>>> Installing with Homebrew'
-  brew install gradle &>/dev/null
+echo '>>> Installing with package manager'
+if [ "$is_os_redhat" == "1" ]; then
+  sudo yum install -y gradle &>/dev/null || sudo dnf install -y gradle &>/dev/null
 else
-  echo '>>> Installing with package manager'
-  if [ "$is_os_redhat" == "1" ]; then
-    sudo yum install -y gradle &>/dev/null || sudo dnf install -y gradle &>/dev/null
-  else
-    sudo apt-get install -y gradle &>/dev/null
-  fi
+  sudo apt-get install -y gradle &>/dev/null
 fi

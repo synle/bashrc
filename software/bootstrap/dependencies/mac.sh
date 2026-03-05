@@ -201,6 +201,9 @@ EOF
   installBrewPackage gh
   installBrewPackage git-lfs
 
+  # ---- Dev tools / Build ----
+  installBrewPackage gradle
+
   # ---- OS-specific ----
   installBrewPackage --force android-platform-tools
   installBrewPackage java

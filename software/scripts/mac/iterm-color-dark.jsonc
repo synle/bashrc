@@ -1,0 +1,118 @@
+{
+  // iTerm2 High Contrast Dark color scheme
+  "Ansi 0 Color (Dark)": {
+    "Green Component": 0, // {{dark.black_G}}
+    "Blue Component": 0, // {{dark.black_B}}
+    "Red Component": 0, // {{dark.black_R}}
+  },
+  "Ansi 1 Color (Dark)": {
+    "Green Component": 0.2784313725490196, // {{dark.red_G}}
+    "Blue Component": 0.2784313725490196, // {{dark.red_B}}
+    "Red Component": 0.9568627450980393, // {{dark.red_R}}
+  },
+  "Ansi 2 Color (Dark)": {
+    "Green Component": 0.5450980392156862, // {{dark.green_G}}
+    "Blue Component": 0.3058823529411765, // {{dark.green_B}}
+    "Red Component": 0.3764705882352941, // {{dark.green_R}}
+  },
+  "Ansi 3 Color (Dark)": {
+    "Green Component": 0.8627450980392157, // {{dark.yellow_G}}
+    "Blue Component": 0.6666666666666666, // {{dark.yellow_B}}
+    "Red Component": 0.8627450980392157, // {{dark.yellow_R}}
+  },
+  "Ansi 4 Color (Dark)": {
+    "Green Component": 0.611764705882353, // {{dark.blue_G}}
+    "Blue Component": 0.8392156862745098, // {{dark.blue_B}}
+    "Red Component": 0.33725490196078434, // {{dark.blue_R}}
+  },
+  "Ansi 5 Color (Dark)": {
+    "Green Component": 0.5254901960784314, // {{dark.purple_G}}
+    "Blue Component": 0.7529411764705882, // {{dark.purple_B}}
+    "Red Component": 0.7725490196078432, // {{dark.purple_R}}
+  },
+  "Ansi 6 Color (Dark)": {
+    "Green Component": 0.788235294117647, // {{dark.cyan_G}}
+    "Blue Component": 0.6901960784313725, // {{dark.cyan_B}}
+    "Red Component": 0.3058823529411765, // {{dark.cyan_R}}
+  },
+  "Ansi 7 Color (Dark)": {
+    "Green Component": 0.8, // {{dark.white_G}}
+    "Blue Component": 0.8, // {{dark.white_B}}
+    "Red Component": 0.8, // {{dark.white_R}}
+  },
+  "Ansi 8 Color (Dark)": {
+    "Green Component": 0.5215686274509804, // {{dark.brightBlack_G}}
+    "Blue Component": 0.5215686274509804, // {{dark.brightBlack_B}}
+    "Red Component": 0.5215686274509804, // {{dark.brightBlack_R}}
+  },
+  "Ansi 9 Color (Dark)": {
+    "Green Component": 0.43137254901960786, // {{dark.brightRed_G}}
+    "Blue Component": 0.43137254901960786, // {{dark.brightRed_B}}
+    "Red Component": 1, // {{dark.brightRed_R}}
+  },
+  "Ansi 10 Color (Dark)": {
+    "Green Component": 1, // {{dark.brightGreen_G}}
+    "Blue Component": 0.5803921568627451, // {{dark.brightGreen_B}}
+    "Red Component": 0.4117647058823529, // {{dark.brightGreen_R}}
+  },
+  "Ansi 11 Color (Dark)": {
+    "Green Component": 1, // {{dark.brightYellow_G}}
+    "Blue Component": 0.6470588235294118, // {{dark.brightYellow_B}}
+    "Red Component": 1, // {{dark.brightYellow_R}}
+  },
+  "Ansi 12 Color (Dark)": {
+    "Green Component": 0.7568627450980392, // {{dark.brightBlue_G}}
+    "Blue Component": 1, // {{dark.brightBlue_B}}
+    "Red Component": 0.30980392156862746, // {{dark.brightBlue_R}}
+  },
+  "Ansi 13 Color (Dark)": {
+    "Green Component": 0.5725490196078431, // {{dark.brightPurple_G}}
+    "Blue Component": 0.8745098039215686, // {{dark.brightPurple_B}}
+    "Red Component": 1, // {{dark.brightPurple_R}}
+  },
+  "Ansi 14 Color (Dark)": {
+    "Green Component": 1, // {{dark.brightCyan_G}}
+    "Blue Component": 1, // {{dark.brightCyan_B}}
+    "Red Component": 0.6431372549019608, // {{dark.brightCyan_R}}
+  },
+  "Ansi 15 Color (Dark)": {
+    "Green Component": 1, // {{dark.brightWhite_G}}
+    "Blue Component": 1, // {{dark.brightWhite_B}}
+    "Red Component": 1, // {{dark.brightWhite_R}}
+  },
+  "Background Color (Dark)": {
+    "Green Component": 0, // {{dark.background_G}}
+    "Blue Component": 0, // {{dark.background_B}}
+    "Red Component": 0, // {{dark.background_R}}
+  },
+  "Foreground Color (Dark)": {
+    "Green Component": 1, // {{dark.foreground_G}}
+    "Blue Component": 1, // {{dark.foreground_B}}
+    "Red Component": 1, // {{dark.foreground_R}}
+  },
+  "Bold Color (Dark)": {
+    "Green Component": 1, // {{dark.foreground_G}}
+    "Blue Component": 1, // {{dark.foreground_B}}
+    "Red Component": 1, // {{dark.foreground_R}}
+  },
+  "Selected Text Color (Dark)": {
+    "Green Component": 1, // {{dark.foreground_G}}
+    "Blue Component": 1, // {{dark.foreground_B}}
+    "Red Component": 1, // {{dark.foreground_R}}
+  },
+  "Selection Color (Dark)": {
+    "Green Component": 0.30980392156862746, // {{dark.selection_G}}
+    "Blue Component": 0.47058823529411764, // {{dark.selection_B}}
+    "Red Component": 0.14901960784313725, // {{dark.selection_R}}
+  },
+  "Cursor Color (Dark)": {
+    "Green Component": 1, // {{dark.cursorColor_G}}
+    "Blue Component": 1, // {{dark.cursorColor_B}}
+    "Red Component": 1, // {{dark.cursorColor_R}}
+  },
+  "Cursor Text Color (Dark)": {
+    "Green Component": 0, // {{dark.background_G}}
+    "Blue Component": 0, // {{dark.background_B}}
+    "Red Component": 0, // {{dark.background_R}}
+  },
+}
