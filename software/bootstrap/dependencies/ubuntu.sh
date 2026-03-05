@@ -43,6 +43,7 @@ if [ "$is_os_ubuntu" = "1" ]; then
   installAptPackage zoxide
   installAptPackage eza
   installAptPackage fd-find
+  installAptPackage tree
 
   # ---- Dev tools / Build ----
   installAptPackage default-jdk

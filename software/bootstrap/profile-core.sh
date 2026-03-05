@@ -323,7 +323,11 @@ function download() {
 }
 
 function tree() {
-  find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
+  if type -P tree &>/dev/null; then
+    command tree "$@"
+  else
+    command find . -type d | sed -e "s/[^-][^\/]*\//  |/g" -e "s/|\([^ ]\)/|-\1/"
+  fi
 }
 
 function pwd2() {
@@ -634,12 +638,12 @@ function fuzzy_paths() {
 function _fuzzy_list_all() {
   local blue=$'\033[34m'
   local reset=$'\033[0m'
-  if git rev-parse --is-inside-work-tree &>/dev/null; then
-    git ls-tree -r -d --name-only HEAD 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
-    git ls-files --full-name 2>/dev/null | sort -u
-  elif type fd &>/dev/null; then
+  if type fd &>/dev/null; then
     fd --type d --color never 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
     fd --type f --color never 2>/dev/null | sort -u
+  elif git rev-parse --is-inside-work-tree &>/dev/null; then
+    git ls-tree -r -d --name-only HEAD 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
+    git ls-files --full-name 2>/dev/null | sort -u
   else
     command find . -type d 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
     command find . -type f 2>/dev/null | sort -u

@@ -45,6 +45,7 @@ termux-chroot
   installPkgPackage zoxide
   installPkgPackage eza
   installPkgPackage fd
+  installPkgPackage tree
 
   # ---- OS-specific ----
   installPkgPackage proot # needed for android termux fhd fixes

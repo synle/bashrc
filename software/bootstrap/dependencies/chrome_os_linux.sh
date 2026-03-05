@@ -39,6 +39,7 @@ if [ "$is_os_chromeos" = "1" ]; then
   installAptPackage zoxide
   installAptPackage eza
   installAptPackage fd-find
+  installAptPackage tree
 
   # ---- GUI apps ----
   installAptPackage libreoffice

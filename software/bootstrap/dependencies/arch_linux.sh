@@ -38,6 +38,7 @@ if [ "$is_os_arch_linux" = "1" ]; then
   installPacmanPackage zoxide
   installPacmanPackage eza
   installPacmanPackage fd
+  installPacmanPackage tree
 
   # ---- Git extensions ----
   installPacmanPackage github-cli

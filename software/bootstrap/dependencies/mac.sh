@@ -203,6 +203,7 @@ EOF
   installBrewPackage zoxide
   installBrewPackage eza
   installBrewPackage fd
+  installBrewPackage tree
 
   # ---- Git extensions ----
   installBrewPackage gh
