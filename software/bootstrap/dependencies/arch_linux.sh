@@ -9,12 +9,13 @@ if [ "$is_os_arch_linux" = "1" ]; then
   ################################################################################
   echo '>> Installing packages with pacman'
   function installPacmanPackage() {
+    echo -n ">> $@ >> Installing with Pacman >> "
     if pacman -Q "$1" &>/dev/null; then
-      echo ">> $@ > pacman > already installed"
+      echo "Skipped"
     elif sudo pacman -S --noconfirm $@ &> /dev/null; then
-      echo ">> $@ > pacman > installed"
+      echo "Success"
     else
-      echo ">> $@ > pacman > failed to install"
+      echo "Error"
     fi
   }
 
@@ -45,12 +46,13 @@ if [ "$is_os_arch_linux" = "1" ]; then
     function installFlatpakPackage() {
       local pkg_name="$1"
       local flatpak_id="$2"
+      echo -n ">> $pkg_name >> Installing with Flatpak >> "
       if flatpak list --app | grep -q "$flatpak_id" &>/dev/null; then
-        echo ">> $pkg_name > flatpak > already installed"
+        echo "Skipped"
       elif flatpak install -y flathub "$flatpak_id" &>/dev/null; then
-        echo ">> $pkg_name > flatpak > installed"
+        echo "Success"
       else
-        echo ">> $pkg_name > flatpak > failed to install"
+        echo "Error"
       fi
     }
 

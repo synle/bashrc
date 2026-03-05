@@ -30,12 +30,13 @@ if [ "$is_os_windows" = "1" ]; then
   if command -v winget.exe &>/dev/null; then
     echo '>> Installing Windows GUI apps with winget'
     function installWingetPackage() {
+      echo -n ">> $1 >> Installing with Winget >> "
       if winget.exe list --id "$1" -e &>/dev/null; then
-        echo ">> $1 > winget > already installed"
+        echo "Skipped"
       elif winget.exe install --id "$1" -e --accept-source-agreements --accept-package-agreements &>/dev/null; then
-        echo ">> $1 > winget > installed"
+        echo "Success"
       else
-        echo ">> $1 > winget > failed to install"
+        echo "Error"
       fi
     }
 

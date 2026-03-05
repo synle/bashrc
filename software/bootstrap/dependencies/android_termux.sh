@@ -14,12 +14,13 @@ termux-chroot
   # ---- Install Packages ----
   ################################################################################
   function installPkgPackage() {
+    echo -n ">> $@ >> Installing with Pkg >> "
     if dpkg -s "$1" &>/dev/null; then
-      echo ">> $@ > pkg > already installed"
+      echo "Skipped"
     elif pkg install -y $@ &> /dev/null; then
-      echo ">> $@ > pkg > installed"
+      echo "Success"
     else
-      echo ">> $@ > pkg > failed to install"
+      echo "Error"
     fi
   }
 

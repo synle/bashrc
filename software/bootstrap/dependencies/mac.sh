@@ -171,17 +171,18 @@ EOF
         *)           install_flags="$install_flags $arg" ;;
       esac
     done
+    echo -n ">> $pkg_name >> Installing with Brew >> "
     # fast path: check /Applications directly, no brew call needed
     if [ -n "$app_name" ] && [ -d "/Applications/$app_name" ]; then
-      echo ">> $pkg_name > brew > already installed"
+      echo "Skipped"
       return
     fi
     if brew list $list_flags "$pkg_name" &>/dev/null; then
-      echo ">> $pkg_name > brew > already installed"
+      echo "Skipped"
     elif brew install $install_flags "$pkg_name" &> /dev/null; then
-      echo ">> $pkg_name > brew > installed"
+      echo "Success"
     else
-      echo ">> $pkg_name > brew > failed to install"
+      echo "Error"
     fi
   }
 

@@ -21,12 +21,13 @@ if [ "$is_os_steamos" = "1" ]; then
   ################################################################################
   echo '>> Installing packages with pacman'
   function installPacmanPackage() {
+    echo -n ">> $@ >> Installing with Pacman >> "
     if pacman -Q "$1" &>/dev/null; then
-      echo ">> $@ > pacman > already installed"
+      echo "Skipped"
     elif sudo pacman -Sy $@ &> /dev/null; then
-      echo ">> $@ > pacman > installed"
+      echo "Success"
     else
-      echo ">> $@ > pacman > failed to install"
+      echo "Error"
     fi
   }
 

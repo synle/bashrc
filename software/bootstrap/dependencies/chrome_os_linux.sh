@@ -7,12 +7,13 @@ if [ "$is_os_chromeos" = "1" ]; then
   sudo apt-get update -y
 
   function installAptPackage() {
+    echo -n ">> $@ >> Installing with Apt >> "
     if dpkg -s "$1" &>/dev/null; then
-      echo ">> $@ > apt > already installed"
+      echo "Skipped"
     elif sudo apt-get install -y --fix-missing $@ &> /dev/null; then
-      echo ">> $@ > apt > installed"
+      echo "Success"
     else
-      echo ">> $@ > apt > failed to install"
+      echo "Error"
     fi
   }
 
@@ -40,12 +41,13 @@ if [ "$is_os_chromeos" = "1" ]; then
   installAptPackage terminator
   installAptPackage vlc
   function installSnapPackage() {
+    echo -n ">> $1 >> Installing with Snap >> "
     if snap list "$1" &>/dev/null; then
-      echo ">> $1 > snap > already installed"
+      echo "Skipped"
     elif sudo snap install $@ &>/dev/null; then
-      echo ">> $1 > snap > installed"
+      echo "Success"
     else
-      echo ">> $1 > snap > failed to install"
+      echo "Error"
     fi
   }
 
