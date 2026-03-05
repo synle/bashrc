@@ -185,12 +185,21 @@ else
 fi
 
 # ---- Aliases: File Listing ----
-alias ls="ls -1 -F --color"
-alias ll="ls -lah"
-alias ls_newest="ll -t"                  # sort by modification time (newest first)
-alias ls_newest_last="ls_newest -r"      # sort by modification time (oldest first)
-alias ls_biggest="ll -S"                 # sort by file size (biggest first)
-alias ls_biggest_last="ls_biggest -r"    # sort by file size (smallest first)
+if command -v eza &>/dev/null; then
+  alias ls="eza -1 -F --color=always --icons"
+  alias ll="eza -lah --icons --git"
+  alias ls_newest="ll --sort=modified"           # sort by modification time (newest first)
+  alias ls_newest_last="ls_newest --reverse"     # sort by modification time (oldest first)
+  alias ls_biggest="ll --sort=size"              # sort by file size (biggest first)
+  alias ls_biggest_last="ls_biggest --reverse"   # sort by file size (smallest first)
+else
+  alias ls="ls -1 -F --color"
+  alias ll="ls -lah"
+  alias ls_newest="ll -t"                  # sort by modification time (newest first)
+  alias ls_newest_last="ls_newest -r"      # sort by modification time (oldest first)
+  alias ls_biggest="ll -S"                 # sort by file size (biggest first)
+  alias ls_biggest_last="ls_biggest -r"    # sort by file size (smallest first)
+fi
 
 # ---- Aliases: Editors / Tools ----
 alias bs="bash"

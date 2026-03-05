@@ -36,6 +36,7 @@ if [ "$is_os_arch_linux" = "1" ]; then
   installPacmanPackage yq
   installPacmanPackage git-delta
   installPacmanPackage zoxide
+  installPacmanPackage eza
 
   # ---- Git extensions ----
   installPacmanPackage github-cli

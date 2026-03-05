@@ -201,6 +201,7 @@ EOF
   installBrewPackage yq
   installBrewPackage git-delta
   installBrewPackage zoxide
+  installBrewPackage eza
 
   # ---- Git extensions ----
   installBrewPackage gh
