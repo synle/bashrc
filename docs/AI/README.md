@@ -51,12 +51,12 @@ curl $OLLAMA_HOST/api/version
 
 A 5090 has 24GB VRAM and can run large models entirely on the GPU for fast inference.
 
-| Model | Size | VRAM Usage | Notes |
-|---|---|---|---|
-| `deepseek-r1:70b` | ~40GB | Spills to RAM | Best quality, slower due to partial CPU offload |
-| `deepseek-r1:32b` | ~19GB | ~19GB | **Recommended** - fits in VRAM, great quality, fast |
-| `qwen2.5-coder:32b` | ~19GB | ~19GB | **Best for coding** - code generation, completion, debugging |
-| `qwen3.5:9b` | ~5GB | ~5GB | Very fast, good for quick tasks |
+| Model               | Size  | VRAM Usage    | Notes                                                        |
+| ------------------- | ----- | ------------- | ------------------------------------------------------------ |
+| `deepseek-r1:70b`   | ~40GB | Spills to RAM | Best quality, slower due to partial CPU offload              |
+| `deepseek-r1:32b`   | ~19GB | ~19GB         | **Recommended** - fits in VRAM, great quality, fast          |
+| `qwen2.5-coder:32b` | ~19GB | ~19GB         | **Best for coding** - code generation, completion, debugging |
+| `qwen3.5:9b`        | ~5GB  | ~5GB          | Very fast, good for quick tasks                              |
 
 ```bash
 # recommended for 5090 desktop
@@ -72,13 +72,13 @@ The 32b model fits entirely in VRAM and runs at full GPU speed. The 70b model ex
 
 M-series chips share memory between CPU and GPU. With 32GB, you have room for mid-size models but not the largest ones.
 
-| Model | Size | Memory Usage | Notes |
-|---|---|---|---|
-| `deepseek-r1:32b` | ~19GB | ~19GB | Fits but leaves little room for other apps |
-| `deepseek-r1:14b` | ~9GB | ~9GB | **Recommended** - good quality, comfortable memory headroom |
-| `qwen2.5-coder:14b` | ~9GB | ~9GB | **Best for coding** - code generation, completion, debugging |
-| `qwen3.5:9b` | ~5GB | ~5GB | Lightweight, fast, good for quick tasks |
-| `llama3.1:8b` | ~4.7GB | ~4.7GB | Lightest, snappy responses |
+| Model               | Size   | Memory Usage | Notes                                                        |
+| ------------------- | ------ | ------------ | ------------------------------------------------------------ |
+| `deepseek-r1:32b`   | ~19GB  | ~19GB        | Fits but leaves little room for other apps                   |
+| `deepseek-r1:14b`   | ~9GB   | ~9GB         | **Recommended** - good quality, comfortable memory headroom  |
+| `qwen2.5-coder:14b` | ~9GB   | ~9GB         | **Best for coding** - code generation, completion, debugging |
+| `qwen3.5:9b`        | ~5GB   | ~5GB         | Lightweight, fast, good for quick tasks                      |
+| `llama3.1:8b`       | ~4.7GB | ~4.7GB       | Lightest, snappy responses                                   |
 
 ```bash
 # recommended for M1 32GB
@@ -103,19 +103,19 @@ Other alternatives:
 
 #### Desktop with RTX 5090 (24GB VRAM)
 
-| Model | Size | VRAM Usage | Notes |
-|---|---|---|---|
-| `llava:34b` | ~20GB | ~20GB | **Recommended** - best image understanding, fits in VRAM |
-| `llama3.2-vision:11b` | ~7GB | ~7GB | Good quality, fast |
-| `minicpm-v` | ~5GB | ~5GB | Lightweight, good for OCR and documents |
+| Model                 | Size  | VRAM Usage | Notes                                                    |
+| --------------------- | ----- | ---------- | -------------------------------------------------------- |
+| `llava:34b`           | ~20GB | ~20GB      | **Recommended** - best image understanding, fits in VRAM |
+| `llama3.2-vision:11b` | ~7GB  | ~7GB       | Good quality, fast                                       |
+| `minicpm-v`           | ~5GB  | ~5GB       | Lightweight, good for OCR and documents                  |
 
 #### MacBook Pro M1 with 32GB Unified Memory
 
-| Model | Size | Memory Usage | Notes |
-|---|---|---|---|
-| `llava:13b` | ~8GB | ~8GB | **Recommended** - good quality with comfortable memory headroom |
-| `llama3.2-vision:11b` | ~7GB | ~7GB | Strong alternative, similar footprint |
-| `minicpm-v` | ~5GB | ~5GB | Lightweight, good for OCR and documents |
+| Model                 | Size | Memory Usage | Notes                                                           |
+| --------------------- | ---- | ------------ | --------------------------------------------------------------- |
+| `llava:13b`           | ~8GB | ~8GB         | **Recommended** - good quality with comfortable memory headroom |
+| `llama3.2-vision:11b` | ~7GB | ~7GB         | Strong alternative, similar footprint                           |
+| `minicpm-v`           | ~5GB | ~5GB         | Lightweight, good for OCR and documents                         |
 
 #### Usage
 

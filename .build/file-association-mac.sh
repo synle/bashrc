@@ -2,12 +2,12 @@
 # 
 # File Associations for macOS
 # Requires duti: brew install duti
-# Sets Sublime Text and VLC as default apps for text and media files
+# Sets Sublime Text, VLC, and Keka as default apps for text, media, and archive files
 # To revert, run file-association-mac-revert.sh
 # ####################################################################################################
 
 #!/usr/bin/env bash
-# Sets Sublime Text as default for text files and VLC as default for media files
+# Sets Sublime Text for text files, VLC for media files, and Keka for archive files
 # Requires duti: brew install duti
 
 if ! command -v duti &>/dev/null; then
@@ -291,6 +291,45 @@ MEDIA_EXTENSIONS=(
 
 for ext in "${MEDIA_EXTENSIONS[@]}"; do
   duti -s org.videolan.vlc ".$ext" all 2>/dev/null
+done
+
+####################################################################################################
+# archive file association
+####################################################################################################
+ARCHIVE_EXTENSIONS=(
+  "zip"
+"7z"
+"rar"
+"gz"
+"gzip"
+"tar"
+"tgz"
+"bz2"
+"bzip2"
+"xz"
+"lzma"
+"zst"
+"zstd"
+"iso"
+"img"
+"vhd"
+"wim"
+"cab"
+"arj"
+"lzh"
+"lha"
+"z"
+"cpio"
+"rpm"
+"deb"
+"dmg"
+"jar"
+"war"
+"ear"
+)
+
+for ext in "${ARCHIVE_EXTENSIONS[@]}"; do
+  duti -s com.aone.keka ".$ext" all 2>/dev/null
 done
 
 echo ""
