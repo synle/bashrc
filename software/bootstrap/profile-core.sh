@@ -13,7 +13,11 @@ path_candidates=(
   /usr/sbin                             # standard unix admin binaries
   /usr/local/bin                        # user-installed binaries
   /usr/local/sbin                       # local admin binaries
+  ~/.bun/bin                            # bun javascript runtime
   ~/.cargo/bin                          # rust / cargo
+  ~/.deno/bin                           # deno javascript runtime
+  ~/go/bin                              # go binaries (GOPATH)
+  /usr/local/go/bin                     # go sdk
   ~/.fzf/bin                            # fzf fuzzy finder
   ~/.local/bin                          # pip / user-local binaries
   ~/.volta/bin                          # volta node version manager
