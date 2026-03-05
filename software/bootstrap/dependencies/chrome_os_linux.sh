@@ -41,6 +41,9 @@ if [ "$is_os_chromeos" = "1" ]; then
   installAptPackage fd-find
   installAptPackage tree
 
+  # ---- Dev tools / Build ----
+  installAptPackage gradle
+
   # ---- GUI apps ----
   installAptPackage libreoffice
   installAptPackage nautilus

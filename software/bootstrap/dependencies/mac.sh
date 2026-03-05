@@ -211,6 +211,7 @@ EOF
 
   # ---- Dev tools / Build ----
   installBrewPackage gradle
+  installBrewPackage uv
 
   # ---- OS-specific ----
   installBrewPackage --force android-platform-tools
@@ -224,13 +225,8 @@ EOF
   installBrewPackage --cask --app="Sublime Merge.app"        sublime-merge
   installBrewPackage --cask --app="Visual Studio Code.app"   visual-studio-code
 
-  # TODO: let's do it outside
-  # brew reinstall --cask --force  balenaetcher  blender vlc keka
-  # installBrewPackage --cask --app="VLC.app"                  vlc
-  # installBrewPackage --cask --app="Docker.app"               docker
-  # installBrewPackage --cask --app="balenaEtcher.app"         balenaetcher
-  # installBrewPackage --cask --app="Keka.app"                 keka
-  # installBrewPackage --cask --app="Blender.app"              blender
+  # ---- GUI apps (reinstall in background) ----
+  brew reinstall --cask --force balenaetcher blender vlc keka docker &>/dev/null &
 
   ################################################################################
   # ---- Cleanup ----

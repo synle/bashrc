@@ -23,15 +23,12 @@ fi
 # Install uv if not already installed
 if command -v uv &>/dev/null; then
   echo ">> Skipped uv: already installed at $(which uv)"
+elif [ "$is_os_mac" == "1" ]; then
+  echo ">> Skipped uv: Installed via dependencies/mac.sh"
 else
   echo '>> Installing uv'
-  if [ "$is_os_mac" == "1" ]; then
-    echo '>>> Installing with Homebrew'
-    brew install uv &>/dev/null
-  else
-    echo '>>> Installing with official installer'
-    curl -LsSf https://astral.sh/uv/install.sh | sh &>/dev/null
-  fi
+  echo '>>> Installing with official installer'
+  curl -LsSf https://astral.sh/uv/install.sh | sh &>/dev/null
 fi
 
 # Set up Python virtual environment at ~/.venv

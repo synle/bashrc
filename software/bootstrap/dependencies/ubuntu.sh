@@ -46,6 +46,7 @@ if [ "$is_os_ubuntu" = "1" ]; then
   installAptPackage tree
 
   # ---- Dev tools / Build ----
+  installAptPackage gradle
   installAptPackage default-jdk
   installAptPackage unzip
   installAptPackage gnupg
