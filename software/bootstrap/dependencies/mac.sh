@@ -157,16 +157,25 @@ EOF
   # ---- Install Packages ----
   ################################################################################
   echo '>> Installing packages with Homebrew'
+  # installBrewPackage [--cask] [--app="App Name.app"] [--force] <pkg>
+  #   --app: skip install immediately if /Applications/<name> exists (no brew call)
   function installBrewPackage() {
     local pkg_name="${@: -1}"
     local list_flags=""
     local install_flags=""
+    local app_name=""
     for arg in "${@:1:$#-1}"; do
-      install_flags="$install_flags $arg"
       case "$arg" in
-        --cask) list_flags="$list_flags --cask" ;;
+        --cask)      list_flags="$list_flags --cask"; install_flags="$install_flags $arg --force" ;;
+        --app=*)     app_name="${arg#--app=}" ;;
+        *)           install_flags="$install_flags $arg" ;;
       esac
     done
+    # fast path: check /Applications directly, no brew call needed
+    if [ -n "$app_name" ] && [ -d "/Applications/$app_name" ]; then
+      echo ">> $pkg_name > brew > already installed"
+      return
+    fi
     if brew list $list_flags "$pkg_name" &>/dev/null; then
       echo ">> $pkg_name > brew > already installed"
     elif brew install $install_flags "$pkg_name" &> /dev/null; then
@@ -199,15 +208,15 @@ EOF
   installBrewPackage xz
 
   # ---- GUI apps ----
-  installBrewPackage --cask iterm2
-  installBrewPackage --cask sublime-text
-  installBrewPackage --cask sublime-merge
-  installBrewPackage --cask visual-studio-code
-  installBrewPackage --cask vlc
-  installBrewPackage --cask docker
-  installBrewPackage --cask balenaetcher
-  installBrewPackage --cask keka
-  installBrewPackage --cask blender
+  installBrewPackage --cask --app="iTerm.app"                iterm2
+  installBrewPackage --cask --app="Sublime Text.app"         sublime-text
+  installBrewPackage --cask --app="Sublime Merge.app"        sublime-merge
+  installBrewPackage --cask --app="Visual Studio Code.app"   visual-studio-code
+  installBrewPackage --cask --app="VLC.app"                  vlc
+  installBrewPackage --cask --app="Docker.app"               docker
+  installBrewPackage --cask --app="balenaEtcher.app"         balenaetcher
+  installBrewPackage --cask --app="Keka.app"                 keka
+  installBrewPackage --cask --app="Blender.app"              blender
 
   ################################################################################
   # ---- Cleanup ----
