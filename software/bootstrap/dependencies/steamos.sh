@@ -49,6 +49,7 @@ if [ "$is_os_steamos" = "1" ]; then
   installPacmanPackage git-delta
   installPacmanPackage zoxide
   installPacmanPackage eza
+  installPacmanPackage fd
 
   # ---- Git extensions ----
   installPacmanPackage gh

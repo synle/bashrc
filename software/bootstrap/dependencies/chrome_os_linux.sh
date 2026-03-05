@@ -38,6 +38,7 @@ if [ "$is_os_chromeos" = "1" ]; then
   installAptPackage git-delta
   installAptPackage zoxide
   installAptPackage eza
+  installAptPackage fd-find
 
   # ---- GUI apps ----
   installAptPackage libreoffice

@@ -201,12 +201,20 @@ else
   alias ls_biggest_last="ls_biggest -r"    # sort by file size (smallest first)
 fi
 
+# ---- find (fd wrapper) ----
+if type -P fd &>/dev/null; then
+  alias f='fd'
+elif type -P fdfind &>/dev/null; then
+  alias f='fdfind'
+  alias fd='fdfind'
+fi
+
 # ---- Aliases: Editors / Tools ----
 alias bs="bash"
 alias vi="vim"
 alias v="vim"
 alias cat='batcat'
-alias c="cat"
+alias c="command cat"
 alias fzf='fzf --no-sort --cycle'
 alias fvim='fuzzy_open vim'
 alias grep='grep --color'
@@ -629,9 +637,12 @@ function _fuzzy_list_all() {
   if git rev-parse --is-inside-work-tree &>/dev/null; then
     git ls-tree -r -d --name-only HEAD 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
     git ls-files --full-name 2>/dev/null | sort -u
+  elif type fd &>/dev/null; then
+    fd --type d --color never 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
+    fd --type f --color never 2>/dev/null | sort -u
   else
-    find . -type d 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
-    find . -type f 2>/dev/null | sort -u
+    command find . -type d 2>/dev/null | sort -u | sed "s|.*|${blue}&/${reset}|"
+    command find . -type f 2>/dev/null | sort -u
   fi | filter_unwanted
 }
 
