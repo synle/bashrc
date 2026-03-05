@@ -85,9 +85,21 @@ async function doWork() {
   log(">>> MS Office compatibility tweaks");
 
   // default save formats: docx, xlsx, pptx instead of ODF
-  _setRegistryValue("/org.openoffice.Setup/Office/Factories/com.sun.star.text.TextDocument", "ooSetupFactoryDefaultFilter", "MS Word 2007 XML");
-  _setRegistryValue("/org.openoffice.Setup/Office/Factories/com.sun.star.sheet.SpreadsheetDocument", "ooSetupFactoryDefaultFilter", "Calc MS Excel 2007 XML");
-  _setRegistryValue("/org.openoffice.Setup/Office/Factories/com.sun.star.presentation.PresentationDocument", "ooSetupFactoryDefaultFilter", "Impress MS PowerPoint 2007 XML");
+  _setRegistryValue(
+    "/org.openoffice.Setup/Office/Factories/com.sun.star.text.TextDocument",
+    "ooSetupFactoryDefaultFilter",
+    "MS Word 2007 XML",
+  );
+  _setRegistryValue(
+    "/org.openoffice.Setup/Office/Factories/com.sun.star.sheet.SpreadsheetDocument",
+    "ooSetupFactoryDefaultFilter",
+    "Calc MS Excel 2007 XML",
+  );
+  _setRegistryValue(
+    "/org.openoffice.Setup/Office/Factories/com.sun.star.presentation.PresentationDocument",
+    "ooSetupFactoryDefaultFilter",
+    "Impress MS PowerPoint 2007 XML",
+  );
 
   // use MS Office font substitutions (Calibri, Cambria, etc.)
   _setRegistryValue("/org.openoffice.Office.Common/Font/Substitution", "Replacement", "true");
