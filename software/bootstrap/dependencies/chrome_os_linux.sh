@@ -6,38 +6,49 @@ if [ "$is_os_chromeos" = "1" ]; then
 
   sudo apt-get update -y
 
-  function installPackage() {
+  function installAptPackage() {
     if dpkg -s "$1" &>/dev/null; then
-      echo "  >> $@ (already installed)"
+      echo ">> $@ > apt > already installed"
     elif sudo apt-get install -y --fix-missing $@ &> /dev/null; then
-      echo "  >> $@ (installed)"
+      echo ">> $@ > apt > installed"
     else
-      echo "  >> $@ (failed to install)"
+      echo ">> $@ > apt > failed to install"
     fi
   }
 
   echo '>> Installing packages with apt-get'
 
   # ---- Core tools ----
-  installPackage curl
-  installPackage git
-  installPackage make
-  installPackage python
-  installPackage vim
+  installAptPackage curl
+  installAptPackage git
+  installAptPackage make
+  installAptPackage python
+  installAptPackage vim
 
   # ---- CLI utilities ----
-  installPackage bat
-  installPackage fzf
-  installPackage pv
-  installPackage entr
-  installPackage tmux
+  installAptPackage bat
+  installAptPackage fzf
+  installAptPackage pv
+  installAptPackage entr
+  installAptPackage tmux
 
-  # ---- OS-specific ----
-  installPackage libreoffice
-  installPackage nautilus
-  installPackage remmina
-  installPackage terminator
-  installPackage vlc
+  # ---- GUI apps ----
+  installAptPackage libreoffice
+  installAptPackage nautilus
+  installAptPackage remmina
+  installAptPackage terminator
+  installAptPackage vlc
+  function installSnapPackage() {
+    if snap list "$1" &>/dev/null; then
+      echo ">> $1 > snap > already installed"
+    elif sudo snap install $@ &>/dev/null; then
+      echo ">> $1 > snap > installed"
+    else
+      echo ">> $1 > snap > failed to install"
+    fi
+  }
+
+  installSnapPackage postman
 
 else
   echo ">> Skipped dependencies/chrome_os_linux.sh"

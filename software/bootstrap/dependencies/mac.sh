@@ -157,38 +157,54 @@ EOF
   # ---- Install Packages ----
   ################################################################################
   echo '>> Installing packages with Homebrew'
-  function installPackage() {
+  function installBrewPackage() {
     local pkg_name="${@: -1}"
-    if brew list "$pkg_name" &>/dev/null; then
-      echo "  >> $pkg_name (already installed)"
-    elif brew install $@ &> /dev/null; then
-      echo "  >> $pkg_name (installed)"
+    local list_flags=""
+    local install_flags=""
+    for arg in "${@:1:$#-1}"; do
+      install_flags="$install_flags $arg"
+      case "$arg" in
+        --cask) list_flags="$list_flags --cask" ;;
+      esac
+    done
+    if brew list $list_flags "$pkg_name" &>/dev/null; then
+      echo ">> $pkg_name > brew > already installed"
+    elif brew install $install_flags "$pkg_name" &> /dev/null; then
+      echo ">> $pkg_name > brew > installed"
     else
-      echo "  >> $pkg_name (failed to install)"
+      echo ">> $pkg_name > brew > failed to install"
     fi
   }
 
   # ---- Core tools ----
-  installPackage git
-  installPackage python
+  installBrewPackage git
+  installBrewPackage python
 
   # ---- CLI utilities ----
-  installPackage bat
-  installPackage fzf
-  installPackage pv
-  installPackage entr
-  installPackage tmux
+  installBrewPackage bat
+  installBrewPackage fzf
+  installBrewPackage pv
+  installBrewPackage entr
+  installBrewPackage tmux
 
   # ---- Git extensions ----
-  installPackage gh
-  installPackage git-lfs
+  installBrewPackage gh
+  installBrewPackage git-lfs
 
   # ---- OS-specific ----
-  installPackage --force android-platform-tools
-  installPackage java
-  installPackage duti
-  installPackage xz
-  installPackage iterm
+  installBrewPackage --force android-platform-tools
+  installBrewPackage java
+  installBrewPackage duti
+  installBrewPackage xz
+
+  # ---- GUI apps ----
+  installBrewPackage --cask iterm2
+  installBrewPackage --cask sublime-text
+  installBrewPackage --cask sublime-merge
+  installBrewPackage --cask visual-studio-code
+  installBrewPackage --cask vlc
+  installBrewPackage --cask docker
+  installBrewPackage --cask balenaetcher
 
   ################################################################################
   # ---- Cleanup ----

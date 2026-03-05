@@ -13,37 +13,37 @@ termux-chroot
   ################################################################################
   # ---- Install Packages ----
   ################################################################################
-  function installPackage() {
+  function installPkgPackage() {
     if dpkg -s "$1" &>/dev/null; then
-      echo "  >> $@ (already installed)"
+      echo ">> $@ > pkg > already installed"
     elif pkg install -y $@ &> /dev/null; then
-      echo "  >> $@ (installed)"
+      echo ">> $@ > pkg > installed"
     else
-      echo "  >> $@ (failed to install)"
+      echo ">> $@ > pkg > failed to install"
     fi
   }
 
   echo '>> Installing packages with pkg'
 
   # ---- Core tools ----
-  installPackage curl
-  installPackage git
-  installPackage make
-  installPackage python
-  installPackage vim
+  installPkgPackage curl
+  installPkgPackage git
+  installPkgPackage make
+  installPkgPackage python
+  installPkgPackage vim
 
   # ---- CLI utilities ----
-  installPackage bat
-  installPackage fzf
-  installPackage pv
-  installPackage entr
+  installPkgPackage bat
+  installPkgPackage fzf
+  installPkgPackage pv
+  installPkgPackage entr
 
   # ---- OS-specific ----
-  installPackage proot # needed for android termux fhd fixes
-  installPackage nodejs
-  installPackage perl
-  installPackage tig
-  installPackage tmux
+  installPkgPackage proot # needed for android termux fhd fixes
+  installPkgPackage nodejs
+  installPkgPackage perl
+  installPkgPackage tig
+  installPkgPackage tmux
 
   ################################################################################
   # ---- Update and Clean ----

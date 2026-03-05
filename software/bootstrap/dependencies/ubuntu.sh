@@ -11,45 +11,61 @@ if [ "$is_os_ubuntu" = "1" ]; then
   # ---- Install Packages ----
   ################################################################################
   echo '>> Installing packages with apt-get'
-  function installPackage() {
+  function installAptPackage() {
     if dpkg -s "$1" &>/dev/null; then
-      echo "  >> $@ (already installed)"
+      echo ">> $@ > apt > already installed"
     elif sudo apt-get install -y --fix-missing $@ &> /dev/null; then
-      echo "  >> $@ (installed)"
+      echo ">> $@ > apt > installed"
     else
-      echo "  >> $@ (failed to install)"
+      echo ">> $@ > apt > failed to install"
     fi
   }
 
   # ---- Core tools ----
-  installPackage curl
-  installPackage git
-  installPackage make
-  installPackage python
-  installPackage vim
+  installAptPackage curl
+  installAptPackage git
+  installAptPackage make
+  installAptPackage python
+  installAptPackage vim
 
   # ---- CLI utilities ----
-  installPackage bat
-  installPackage fzf
-  installPackage pv
-  installPackage entr
-  installPackage tmux
-  installPackage net-tools
+  installAptPackage bat
+  installAptPackage fzf
+  installAptPackage pv
+  installAptPackage entr
+  installAptPackage tmux
+  installAptPackage net-tools
 
   # ---- Dev tools / Build ----
-  installPackage default-jdk
-  installPackage unzip
-  installPackage gnupg
-  installPackage software-properties-common
-  installPackage build-essential
+  installAptPackage default-jdk
+  installAptPackage unzip
+  installAptPackage gnupg
+  installAptPackage software-properties-common
+  installAptPackage build-essential
 
   # ---- Git extensions ----
-  installPackage gh
-  installPackage git-lfs
+  installAptPackage gh
+  installAptPackage git-lfs
 
   # ---- OS-specific ----
-  installPackage openssh-server
-  installPackage xz-utils
+  installAptPackage openssh-server
+  installAptPackage xz-utils
+
+  # ---- GUI apps (only if a display server is available) ----
+  if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+    echo '>> Installing GUI apps'
+    function installSnapPackage() {
+      if snap list "$1" &>/dev/null; then
+        echo ">> $1 > snap > already installed"
+      elif sudo snap install $@ &>/dev/null; then
+        echo ">> $1 > snap > installed"
+      else
+        echo ">> $1 > snap > failed to install"
+      fi
+    }
+
+    installSnapPackage postman
+  fi
 
   ################################################################################
   # ---- User Permissions ----

@@ -20,39 +20,39 @@ if [ "$is_os_steamos" = "1" ]; then
   # ---- Install Packages ----
   ################################################################################
   echo '>> Installing packages with pacman'
-  function installPackage() {
+  function installPacmanPackage() {
     if pacman -Q "$1" &>/dev/null; then
-      echo "  >> $@ (already installed)"
+      echo ">> $@ > pacman > already installed"
     elif sudo pacman -Sy $@ &> /dev/null; then
-      echo "  >> $@ (installed)"
+      echo ">> $@ > pacman > installed"
     else
-      echo "  >> $@ (failed to install)"
+      echo ">> $@ > pacman > failed to install"
     fi
   }
 
   # ---- Core tools ----
-  installPackage curl
-  installPackage git
-  installPackage make
-  installPackage vim
+  installPacmanPackage curl
+  installPacmanPackage git
+  installPacmanPackage make
+  installPacmanPackage vim
 
   # ---- CLI utilities ----
-  installPackage bat
-  installPackage fzf
-  installPackage pv
-  installPackage entr
-  installPackage tmux
+  installPacmanPackage bat
+  installPacmanPackage fzf
+  installPacmanPackage pv
+  installPacmanPackage entr
+  installPacmanPackage tmux
 
   # ---- Git extensions ----
-  installPackage gh
-  installPackage git-lfs
+  installPacmanPackage gh
+  installPacmanPackage git-lfs
 
   # ---- OS-specific ----
-  installPackage ddcutil
-  installPackage i2c-tools
-  installPackage xz
+  installPacmanPackage ddcutil
+  installPacmanPackage i2c-tools
+  installPacmanPackage xz
 
-  echo '>> Done installPackage'
+  echo '>> Done installPacmanPackage'
 
   ################################################################################
   # ---- Boot Video Directory ----
