@@ -1,5 +1,49 @@
 const linuxFontPath = "/usr/share/fonts/truetype";
 
+/** @param {string} fileName - Font filename like "FiraCode-Regular.ttf" @returns {string} Display name like "Fira Code Regular" */
+function _getFontDisplayName(fileName) {
+  return fileName
+    .replace(/\.(ttf|otf)$/, "")
+    .replace(/[-_]/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
+}
+
+/** @param {string[]} fontFileNames - Array of font filenames @param {string} [fontBaseUrl=""] - Base URL prefix for font file paths (empty for relative) @returns {string} HTML content for font preview page */
+function _getFontPreviewHtml(fontFileNames, fontBaseUrl = "") {
+  const prefix = fontBaseUrl ? `${fontBaseUrl}/` : "";
+  const sampleText = `=&gt; ==&gt; !== === &gt;= &lt;= != &amp;&amp; || -&gt; --&gt; &lt;-- :: ... ?? ?. |&gt; ++ -- ** // /* */ := += -=`;
+
+  return trimLeftSpaces(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ligature Font Preview</title>
+    <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: sans-serif; background: #1e1e1e; color: #d4d4d4; padding: 20px; }
+    h1 { margin-bottom: 20px; color: #fff; }
+    .font-card { background: #2d2d2d; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; }
+    .font-name { font-size: 13px; color: #888; margin-bottom: 8px; font-family: sans-serif; }
+    .font-preview { font-size: 18px; line-height: 1.6; color: #e0e0e0; }
+    ${fontFileNames.map((file, i) => `@font-face { font-family: "font-${i}"; src: url("${prefix}${file}"); }`).join("\n")}
+    </style>
+    </head>
+    <body>
+    <h1>Ligature Font Preview</h1>
+    ${fontFileNames
+      .map((file, i) => {
+        const name = _getFontDisplayName(file);
+        return `<div class="font-card"><div class="font-name">${name} — ${file}</div><div class="font-preview" style="font-family: 'font-${i}', monospace">${sampleText}</div></div>`;
+      })
+      .join("\n")}
+    </body>
+    </html>
+  `);
+}
+
 /** * Downloads ligature fonts and generates platform-specific font installation guides. */
 async function doWork() {
   // Android Termux: download FiraCode to ~/.termux/font.ttf
@@ -22,7 +66,7 @@ async function doWork() {
   log(">> Download Ligatures Fonts:", targetFontPath);
 
   const files = await listRepoDir();
-  const fonts = files.filter((f) => f.includes(".ttf"));
+  const fonts = files.filter((f) => f.includes(".ttf") || f.includes(".otf"));
 
   if (fonts.length === 0) {
     log(">>> Skipped : No fonts found");
@@ -72,5 +116,17 @@ echo "Done downloading fonts"`;
   writeToBuildFile({
     file: "font.sh",
     data: `${linuxFontGuide}\n\n${windowFontGuide}`,
+  });
+
+  // generate font preview HTML (local copy with relative paths)
+  const fontPreviewHtml = _getFontPreviewHtml(fontBaseNames);
+  writeText(path.join(targetFontPath, "preview.html"), fontPreviewHtml);
+  log(">> Font preview HTML:", path.join(targetFontPath, "preview.html"));
+
+  // generate font preview HTML for GitHub Pages (uses raw GitHub URLs)
+  const fontPreviewHtmlHosted = _getFontPreviewHtml(fontBaseNames, `${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts`);
+  writeToBuildFile({
+    file: "font-preview.html",
+    data: fontPreviewHtmlHosted,
   });
 }

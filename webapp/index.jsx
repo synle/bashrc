@@ -1032,6 +1032,9 @@ const CommonOtherAppDom = (
     <LinkButton block href={`${BASH_PROFILE_CODE_REPO_VIEW_URL}/fonts`}>
       Custom Fonts
     </LinkButton>
+    <LinkButton block href="font-preview.html">
+      Font Preview
+    </LinkButton>
     <LinkButton block href="https://www.sublimetext.com/download">
       Sublime Text
     </LinkButton>

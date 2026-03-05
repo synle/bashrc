@@ -340,6 +340,8 @@ echo '>> Installing npm dependencies'
 npm install
 echo '>> Building webapp with Vite'
 npm run build
+echo '>> Copying font preview to dist'
+cp .build/font-preview.html dist/font-preview.html 2>/dev/null || true
 echo '>> Built webapp artifacts:'
 find dist
 echo '> DONE Building'

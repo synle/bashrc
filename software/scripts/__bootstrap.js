@@ -46,7 +46,7 @@ async function doWork() {
     if command -v fzf &>/dev/null; then
       __fzf_history__(){
         local selected
-        selected=$(history | sed 's/^ *[0-9]* *\\(\\[[^]]*\\] \\)*//' | $(command -v tac >/dev/null 2>&1 && echo tac || echo 'tail -r') | awk '!seen[$0]++' | fzf --height=40% --reverse --tac +s -e -q "\${READLINE_LINE}")
+        selected=$(history | sed 's/^ *[0-9]* *\\(\\[[^]]*\\] \\)*//' | $(command -v tac >/dev/null 2>&1 && echo tac || echo 'tail -r') | awk '!seen[$0]++' | fzf --height=60% --reverse --tac +s -e -q "\${READLINE_LINE}")
         if [ -n "$selected" ]; then
           READLINE_LINE="$selected"
           READLINE_POINT=\${#selected}
