@@ -6,29 +6,34 @@ export BASH_PATH=~/.bash_syle
 # ---- PATH Setup ----
 ################################################################################
 path_candidates=(
-  # common (linux / mac / wsl)
-  /bin                                  # core system binaries
-  /sbin                                 # core system admin binaries
-  /usr/bin                              # standard unix binaries
-  /usr/sbin                             # standard unix admin binaries
+  # ---- user-installed paths (higher priority, checked first) ----
   /usr/local/bin                        # user-installed binaries
   /usr/local/sbin                       # local admin binaries
+  /usr/local/go/bin                     # go sdk
+  # ---- system defaults (lower priority, fallback) ----
+  /usr/bin                              # standard unix binaries
+  /usr/sbin                             # standard unix admin binaries
+  /bin                                  # core system binaries
+  /sbin                                 # core system admin binaries
+  # ---- home directory tools (lowest priority) ----
+  ~/.local/bin                          # pip / user-local binaries
   ~/.bun/bin                            # bun javascript runtime
   ~/.cargo/bin                          # rust / cargo
   ~/.claude/bin                         # claude cli
   ~/.deno/bin                           # deno javascript runtime
-  ~/go/bin                              # go binaries (GOPATH)
-  /usr/local/go/bin                     # go sdk
   ~/.fzf/bin                            # fzf fuzzy finder
-  ~/.local/bin                          # pip / user-local binaries
   ~/.volta/bin                          # volta node version manager
+  ~/go/bin                              # go binaries (GOPATH)
   ~/miniconda3/bin                      # miniconda python
   ~/miniconda3/condabin                 # conda command
-  # mac
+  # ---- mac ----
   /opt/homebrew/bin                     # homebrew (apple silicon)
   /opt/homebrew/sbin                    # homebrew admin (apple silicon)
   /usr/local/Homebrew/bin               # homebrew (intel mac)
-  # wsl / linux
+  "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" # vs code (code)
+  "/Applications/VSCodium.app/Contents/Resources/app/bin" # vscodium (codium)
+  "/Applications/Sublime Text.app/Contents/SharedSupport/bin" # sublime text (subl)
+  # ---- wsl / linux ----
   /snap/bin                             # snap packages
   /usr/games                            # linux game binaries
   /usr/local/games                      # local game binaries
