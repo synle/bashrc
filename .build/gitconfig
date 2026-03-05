@@ -15,6 +15,9 @@ fsmonitor = true # Background daemon for status speed
 untrackedCache = true # Caches untracked files
 commitGraph = true # Speeds up log/history traversal
 preloadIndex = true # Multi-threaded index scanning
+# BEGIN GIT_EXTRA_CORE_CONFIGS
+
+# END GIT_EXTRA_CORE_CONFIGS
 
 [feature]
 manyFiles = true # Grouped performance features
@@ -72,12 +75,6 @@ frag = cyan
 old = red
 new = green
 whitespace = red reverse
-
-[delta]
-navigate = true
-side-by-side = true
-line-numbers = true
-syntax-theme = Dracula
 
 [maintenance]
 auto = true
@@ -155,6 +152,10 @@ ll = "!git lls --stat" # Oneline log with file stats
 d = diff --word-diff -w # Word-level diff ignoring whitespace
 dh = diff --word-diff -w HEAD^ # Diff against previous commit
 ds = diff --word-diff -w --staged # Diff staged changes
+d1 = "!git -c delta.side-by-side=false diff --word-diff -w" # Inline diff (no side-by-side)
+dh1 = "!git -c delta.side-by-side=false diff --word-diff -w HEAD^" # Inline diff against previous commit
+ds1 = "!git -c delta.side-by-side=false diff --word-diff -w --staged" # Inline diff staged changes
+show1 = "!git -c delta.side-by-side=false show" # Show commit inline (no side-by-side)
 stats = shortlog -sn # Commit counts per author
 
 # ---- Cherry-pick ----
@@ -454,7 +455,3 @@ patch-get1000 = "!git patch-getn 1000"
 patch-view1000 = "!git patch-viewn 1000"
 patch-download1000 = "!git patch-downloadn 1000"
 # END GIT_NUMBERED_ALIASES
-
-# BEGIN GIT_EXTRA_CORE_CONFIGS
-
-# END GIT_EXTRA_CORE_CONFIGS
