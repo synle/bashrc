@@ -42,17 +42,13 @@ async function doWork() {
     bind '"\\C-b": "fuzzy_favorite_command\\r"'        # Ctrl+B — fuzzy favorite command picker
     bind '"\\C-n": "fuzzy_make_component\\r"'          # Ctrl+N — fuzzy make-component scaffold
 
-    # Ctrl+R — fzf history search (falls back to default reverse-i-search)
+    # Ctrl+R — fzf history search (places selected command on prompt)
     if command -v fzf &>/dev/null; then
       __fzf_history__(){
-        local selected
-        selected=$(history | sed 's/^ *[0-9]* *\\(\\[[^]]*\\] \\)*//' | $(command -v tac >/dev/null 2>&1 && echo tac || echo 'tail -r') | awk '!seen[$0]++' | fzf --height=60% --reverse --tac +s -e -q "\${READLINE_LINE}")
-        if [ -n "$selected" ]; then
-          READLINE_LINE="$selected"
-          READLINE_POINT=\${#selected}
-        fi
+        history | sed 's/^ *[0-9]* *\\(\\[[^]]*\\] \\)*//' | \$(command -v tac >/dev/null 2>&1 && echo tac || echo 'tail -r') | awk '!seen[\$0]++' | fzf --height=60% --reverse --tac +s -e
       }
-      bind -x '"\\C-r": "__fzf_history__"'
+      bind '"\\C-\\e(": redraw-current-line'
+      bind '"\\C-r": "\\C-e \\C-u\\C-y\\ey\\C-u\`__fzf_history__\`\\e\\C-e\\C-\\e("'
     fi
   `);
 
