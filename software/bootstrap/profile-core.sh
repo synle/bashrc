@@ -192,7 +192,7 @@ alias c="cat"
 alias fzf='fzf --no-sort'
 alias fvim='fuzzy_open vim'
 alias grep='grep --color'
-alias cu="curl -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache'"
+alias curl="curl -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' -H 'Pragma: no-cache' -H 'Expires: 0' -H 'If-None-Match:'"
 
 # ---- Aliases: Git ----
 # git wrapper: invalidates branch cache on state-changing commands
@@ -476,13 +476,21 @@ function godownload(){
 ################################################################################
 # ---- Search Functions ----
 ################################################################################
-alias gr="grep --color -rin"   # recursive, case-insensitive, line numbers
-alias gre="gr -Fw"             # gr + fixed string, whole word match
+if command -v rg &>/dev/null; then
+  alias grep='rg'
+  alias gr="rg -in"               # recursive, case-insensitive, line numbers (rg is recursive by default)
+  alias gre="rg -inw -F"          # gr + fixed string, whole word match
+else
+  alias gr="grep --color -rin"    # recursive, case-insensitive, line numbers
+  alias gre="grep --color -rinFw" # gr + fixed string, whole word match
+fi
 
-# search content in files: uses git grep in git repos (respects .gitignore), falls back to grep
+# search content in files: uses rg if available, git grep in git repos, falls back to grep
 # flags: -F fixed string, -w whole word, -i case-insensitive, -n line numbers
 function search() {
-  if git rev-parse --is-inside-work-tree &>/dev/null; then
+  if command -v rg &>/dev/null; then
+    rg -Fwin "$@" # ripgrep: fixed string, whole word, case-insensitive, line numbers (respects .gitignore)
+  elif git rev-parse --is-inside-work-tree &>/dev/null; then
     git grep -Fwin "$@" # fixed string, whole word, case-insensitive, line numbers (respects .gitignore)
   else
     grep --color -rFwin "$@" . # recursive, fixed string, whole word, case-insensitive, line numbers
@@ -493,53 +501,57 @@ function search() {
 # ---- Filter Functions ----
 ################################################################################
 function filter_unwanted() {
-  grep -v "\.DS_Store" \
-  | grep -v "\.git/" \
-  | grep -v "node_modules" \
-  | grep -v "bower_components" \
-  | grep -v "__pycache__" \
-  | grep -v "\.pyc$" \
-  | grep -v "/venv/" \
-  | grep -v "/\.venv/" \
-  | grep -v "/dist/" \
-  | grep -v "/build/" \
-  | grep -v "/\.next/" \
-  | grep -v "/\.cache/" \
-  | grep -v "/coverage/" \
-  | grep -v "/\.idea/" \
-  | grep -v "/\.gradle/" \
-  | grep -v "/target/" \
-  | uniq
+  local patterns=(
+    '\.DS_Store'
+    '\.git/'
+    '\.pyc$'
+    '/\.?venv/'
+    '/\.cache/'
+    '/\.gradle/'
+    '/\.idea/'
+    '/\.next/'
+    '/build/'
+    '/coverage/'
+    '/dist/'
+    '/target/'
+    '__pycache__'
+    'bower_components'
+    'node_modules'
+  )
+  local joined
+  joined=$(IFS='|'; echo "${patterns[*]}")
+  command grep -v -E "$joined" | uniq
 }
 
 function filter_text_files_only() {
-  filter_unwanted \
-  | grep -v "\.jpeg$" \
-  | grep -v "\.jpg$" \
-  | grep -v "\.png$" \
-  | grep -v "\.gif$" \
-  | grep -v "\.ico$" \
-  | grep -v "\.bmp$" \
-  | grep -v "\.webp$" \
-  | grep -v "\.svg$" \
-  | grep -v "\.mp4$" \
-  | grep -v "\.mp3$" \
-  | grep -v "\.mov$" \
-  | grep -v "\.zip$" \
-  | grep -v "\.tar$" \
-  | grep -v "\.gz$" \
-  | grep -v "\.rar$" \
-  | grep -v "\.pdf$" \
-  | grep -v "\.woff2\?$" \
-  | grep -v "\.ttf$" \
-  | grep -v "\.eot$" \
-  | grep -v "\.jar$" \
-  | grep -v "\.class$" \
-  | grep -v "\.exe$" \
-  | grep -v "\.dll$" \
-  | grep -v "\.so$" \
-  | grep -v "\.dylib$" \
-  | uniq
+  local patterns=(
+    '\.bmp$'
+    '\.class$'
+    '\.dll$'
+    '\.dylib$'
+    '\.eot$'
+    '\.exe$'
+    '\.gif$'
+    '\.gz$'
+    '\.ico$'
+    '\.jar$'
+    '\.jpe?g$'
+    '\.mov$'
+    '\.mp[34]$'
+    '\.pdf$'
+    '\.png$'
+    '\.rar$'
+    '\.so$'
+    '\.svg$'
+    '\.tar$'
+    '\.ttf$'
+    '\.webp$'
+    '\.woff2?$'
+    '\.zip$'
+  )
+  local joined
+  joined=$(IFS='|'; echo "${patterns[*]}")
+  filter_unwanted | command grep -v -E "$joined" | uniq
 }
 
 ################################################################################
