@@ -336,14 +336,11 @@ $run_description
 $LINE_BREAK_HASH
 "
 
-_needs_sudo=false
-case "$files_to_test" in *software/bootstrap/dependencies*) _needs_sudo=true ;; esac
-
-if [ "$_needs_sudo" = true ]; then
-  sudo echo '> Initializing Environment [with sudo]'
-else
-  echo '> Initializing Environment'
-fi
+sudo -v
+# background sudo keep-alive: refresh sudo timestamp every 50 seconds until this script exits
+(while kill -0 $$ 2>/dev/null; do sudo -n true 2>/dev/null; sleep 50; done) &
+_sudo_keepalive_pid=$!
+echo '> Initializing Environment [with sudo]'
 
 
 install_fnm_node
@@ -370,6 +367,9 @@ $LINE_BREAK_HASH
 >> script: $RUN_FILES_LOG
 $LINE_BREAK_HASH
 "
+
+# stop sudo keep-alive background process
+[ -n "$_sudo_keepalive_pid" ] && kill "$_sudo_keepalive_pid" 2>/dev/null
 
 # directory used for SSH connection multiplexing/sharing. When you have this in your SSH config
 mkdir -p ~/.ssh/sockets
