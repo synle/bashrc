@@ -4,22 +4,17 @@ import { getIndexFunction, fileSystem } from "./setup.js";
 const registerPlatformTweaks = getIndexFunction("registerPlatformTweaks");
 
 describe("registerPlatformTweaks", () => {
-  it("should write tweaks content to the target file", () => {
-    registerPlatformTweaks("Only Mac", ".bash_syle_only_mac", "# mac tweaks\nalias ls='ls -G'");
-    const targetKey = Object.keys(fileSystem).find((k) => k.includes(".bash_syle_only_mac"));
-    expect(targetKey).toBeDefined();
-    expect(fileSystem[targetKey]).toContain("mac tweaks");
+  it("should append tweaks content directly into bash_syle profile", () => {
+    registerPlatformTweaks("Mac", "# mac tweaks\nalias ls='ls -G'");
+    const profile = fileSystem["/mock/home/.bash_syle"] || "";
+    expect(profile).toContain("mac tweaks");
+    expect(profile).toContain("Mac - PLATFORM SPECIFIC TWEAKS");
   });
 
-  it("should register source line in bash_syle profile", () => {
-    registerPlatformTweaks("Only Ubuntu", ".bash_syle_only_ubuntu", "# ubuntu tweaks");
+  it("should register platform name as config key", () => {
+    registerPlatformTweaks("Ubuntu", "# ubuntu tweaks");
     const profile = fileSystem["/mock/home/.bash_syle"] || "";
-    expect(profile).toContain("Only Ubuntu - PLATFORM SPECIFIC TWEAKS");
-  });
-
-  it("should use sourceOverride when provided", () => {
-    registerPlatformTweaks("Android Termux", ".bash_syle_only_termux", "# termux tweaks", ". ~/custom-source");
-    const profile = fileSystem["/mock/home/.bash_syle"] || "";
-    expect(profile).toContain("custom-source");
+    expect(profile).toContain("Ubuntu - PLATFORM SPECIFIC TWEAKS");
+    expect(profile).toContain("ubuntu tweaks");
   });
 });

@@ -1,8 +1,7 @@
 /** * Gate check that exits early if the current OS is not Arch Linux. */
 async function doWork() {
   registerPlatformTweaks(
-    "Only Arch Linux",
-    ".bash_syle_only_arch_linux",
+    "Arch Linux",
     trimLeftSpaces(`
       # Only Arch Linux alias
 

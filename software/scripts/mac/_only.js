@@ -4,7 +4,7 @@ async function doWork() {
   log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
 
   // register platform tweaks for mac
-  registerPlatformTweaks("Only Mac", ".bash_syle_only_mac", onlyMacProfile);
+  registerPlatformTweaks("Mac", onlyMacProfile);
 
   // homebrew
   log(">>> Register Homebrew with bashrc", BASH_SYLE_PATH);

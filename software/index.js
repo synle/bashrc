@@ -1106,19 +1106,10 @@ function safeWriteText(targetPath, newContent, backupContent, minRatio = 0.1) {
 /**
  * Registers a platform-specific tweaks file with BASH_SYLE_PATH and writes the tweaks content.
  * @param {string} platformName - Display name (e.g. "Only Mac")
- * @param {string} fileName - The dotfile name (e.g. ".bash_syle_only_mac")
- * @param {string} content - The tweaks content to write to the file
- * @param {string} [sourceOverride] - Optional override for the source line (e.g. ". ~/filename" for Android Termux)
+ * @param {string} content - The tweaks content to append to the profile
  */
-function registerPlatformTweaks(platformName, fileName, content, sourceOverride) {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, fileName);
-
-  log(`>> Register ${platformName} profile`, BASH_SYLE_PATH);
-  const sourceLine = sourceOverride || `. ${targetPath}`;
-  registerWithBashSyleProfile(`${platformName} - PLATFORM SPECIFIC TWEAKS`, sourceLine);
-
-  log(`>> Installing ${platformName} tweaks:`, targetPath);
-  writeText(targetPath, content);
+function registerPlatformTweaks(platformName, content) {
+  registerProfileBlock({ profilePath: BASH_SYLE_PATH, configKey: `${platformName} - PLATFORM SPECIFIC TWEAKS`, content });
 }
 
 //////////////////////////////////////////////////////
