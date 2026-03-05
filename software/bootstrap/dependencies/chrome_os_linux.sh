@@ -36,6 +36,7 @@ if [ "$is_os_chromeos" = "1" ]; then
   installAptPackage jq
   installAptPackage yq
   installAptPackage git-delta
+  installAptPackage zoxide
 
   # ---- GUI apps ----
   installAptPackage libreoffice

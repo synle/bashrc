@@ -42,6 +42,7 @@ termux-chroot
   installPkgPackage jq
   installPkgPackage yq
   installPkgPackage git-delta
+  installPkgPackage zoxide
 
   # ---- OS-specific ----
   installPkgPackage proot # needed for android termux fhd fixes

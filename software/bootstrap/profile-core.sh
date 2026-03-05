@@ -175,6 +175,15 @@ function batcat() {
 alias ..="cd .."
 alias clear='/usr/bin/clear'
 
+# ---- cd (zoxide wrapper) ----
+if command -v zoxide &>/dev/null; then
+  eval "$(zoxide init bash --cmd cd)"
+else
+  function cd() {
+    command cd "$@"
+  }
+fi
+
 # ---- Aliases: File Listing ----
 alias ls="ls -1 -F --color"
 alias ll="ls -lah"
