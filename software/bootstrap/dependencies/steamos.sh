@@ -44,6 +44,9 @@ if [ "$is_os_steamos" = "1" ]; then
   installPacmanPackage pv
   installPacmanPackage entr
   installPacmanPackage tmux
+  installPacmanPackage jq
+  installPacmanPackage yq
+  installPacmanPackage git-delta
 
   # ---- Git extensions ----
   installPacmanPackage gh

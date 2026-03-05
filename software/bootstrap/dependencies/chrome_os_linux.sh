@@ -33,6 +33,9 @@ if [ "$is_os_chromeos" = "1" ]; then
   installAptPackage pv
   installAptPackage entr
   installAptPackage tmux
+  installAptPackage jq
+  installAptPackage yq
+  installAptPackage git-delta
 
   # ---- GUI apps ----
   installAptPackage libreoffice

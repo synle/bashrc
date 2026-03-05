@@ -123,7 +123,7 @@ async function doWork() {
     configMain,
     await _getGitConfig({
       email,
-      extraCoreConfigs: "pager=diff-so-fancy | less --tabs=2 -RFX",
+      extraCoreConfigs: "pager = delta",
       addDefaultCommitTemplate: true,
     }),
   );

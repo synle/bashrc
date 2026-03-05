@@ -10,8 +10,8 @@ describe("filterRepoScripts", () => {
   });
 
   it("should keep .sh files under software/", () => {
-    const result = filterRepoScripts(["software/scripts/diff-so-fancy.sh"]);
-    expect(result).toContain("software/scripts/diff-so-fancy.sh");
+    const result = filterRepoScripts(["software/scripts/gradle.sh"]);
+    expect(result).toContain("software/scripts/gradle.sh");
   });
 
   it("should strip ./ prefix", () => {

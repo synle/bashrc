@@ -32,6 +32,9 @@ if [ "$is_os_arch_linux" = "1" ]; then
   installPacmanPackage pv
   installPacmanPackage entr
   installPacmanPackage tmux
+  installPacmanPackage jq
+  installPacmanPackage yq
+  installPacmanPackage git-delta
 
   # ---- Git extensions ----
   installPacmanPackage github-cli

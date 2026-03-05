@@ -197,6 +197,9 @@ EOF
   installBrewPackage pv
   installBrewPackage entr
   installBrewPackage tmux
+  installBrewPackage jq
+  installBrewPackage yq
+  installBrewPackage git-delta
 
   # ---- Git extensions ----
   installBrewPackage gh

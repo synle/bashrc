@@ -48,7 +48,7 @@ unset path_candidates
 export HISTSIZE=80000
 export HISTFILESIZE=80000
 export HISTTIMEFORMAT="[%F %T] "
-export HISTCONTROL=ignoreboth  # avoid duplicate entries and commands starting with space
+export HISTCONTROL=ignoreboth:erasedups  # avoid duplicate entries, commands starting with space, and erase older dupes
 shopt -s histappend  # append instead of overwrite history file
 shopt -s cmdhist  # save multi-line commands as one entry
 

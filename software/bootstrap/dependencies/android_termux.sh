@@ -39,6 +39,9 @@ termux-chroot
   installPkgPackage ripgrep
   installPkgPackage pv
   installPkgPackage entr
+  installPkgPackage jq
+  installPkgPackage yq
+  installPkgPackage git-delta
 
   # ---- OS-specific ----
   installPkgPackage proot # needed for android termux fhd fixes

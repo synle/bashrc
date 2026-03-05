@@ -37,6 +37,9 @@ if [ "$is_os_ubuntu" = "1" ]; then
   installAptPackage entr
   installAptPackage tmux
   installAptPackage net-tools
+  installAptPackage jq
+  installAptPackage yq
+  installAptPackage git-delta
 
   # ---- Dev tools / Build ----
   installAptPackage default-jdk
