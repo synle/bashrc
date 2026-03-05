@@ -372,15 +372,15 @@ To add system packages for an OS, edit the corresponding file in `software/boots
 
 #### Package manager per OS
 
-| OS                 | Function name          | Check command | Install command                         |
-| ------------------ | ---------------------- | ------------- | --------------------------------------- |
-| mac.sh             | `installBrewPackage`   | `brew list`   | `brew install`                          |
-| ubuntu.sh          | `installAptPackage`    | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
+| OS                 | Function name          | Check command | Install command                               |
+| ------------------ | ---------------------- | ------------- | --------------------------------------------- |
+| mac.sh             | `installBrewPackage`   | `brew list`   | `brew install`                                |
+| ubuntu.sh          | `installAptPackage`    | `dpkg -s`     | `sudo apt-get install -y --fix-missing`       |
 | redhat.sh          | `installDnfPackage`    | `rpm -q`      | `sudo dnf install -y` / `sudo yum install -y` |
-| arch_linux.sh      | `installPacmanPackage` | `pacman -Q`   | `sudo pacman -S --noconfirm`            |
-| steamos.sh         | `installPacmanPackage` | `pacman -Q`   | `sudo pacman -Sy`                       |
-| android_termux.sh  | `installPkgPackage`    | `dpkg -s`     | `pkg install -y`                        |
-| chrome_os_linux.sh | `installAptPackage`    | `dpkg -s`     | `sudo apt-get install -y --fix-missing` |
+| arch_linux.sh      | `installPacmanPackage` | `pacman -Q`   | `sudo pacman -S --noconfirm`                  |
+| steamos.sh         | `installPacmanPackage` | `pacman -Q`   | `sudo pacman -Sy`                             |
+| android_termux.sh  | `installPkgPackage`    | `dpkg -s`     | `pkg install -y`                              |
+| chrome_os_linux.sh | `installAptPackage`    | `dpkg -s`     | `sudo apt-get install -y --fix-missing`       |
 
 ## Testing
 
