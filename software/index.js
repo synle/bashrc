@@ -1491,7 +1491,7 @@ async function listRepoDir(source = "remote_api", fallthrough = false) {
  * @returns {Promise<string[]>} Array of all script file paths sorted by depth then alphabetically
  */
 async function getAllRepoSoftwareFiles() {
-  return listRepoDir("local", true);
+  return filterRepoScripts(await listRepoDir("local", true));
 }
 
 /**
