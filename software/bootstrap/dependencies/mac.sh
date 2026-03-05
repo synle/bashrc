@@ -205,6 +205,7 @@ EOF
   installBrewPackage eza
   installBrewPackage fd
   installBrewPackage tree
+  installBrewPackage prettyping
 
   # ---- Git extensions ----
   installBrewPackage gh

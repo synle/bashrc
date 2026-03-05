@@ -52,6 +52,7 @@ if [ "$is_os_steamos" = "1" ]; then
   installPacmanPackage eza
   installPacmanPackage fd
   installPacmanPackage tree
+  installPacmanPackage prettyping
 
   # ---- Git extensions ----
   installPacmanPackage gh

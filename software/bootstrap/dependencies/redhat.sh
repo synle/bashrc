@@ -41,6 +41,7 @@ if [ "$is_os_redhat" = "1" ]; then
   installDnfPackage eza
   installDnfPackage fd-find
   installDnfPackage tree
+  installDnfPackage prettyping
 
   # ---- Dev tools / Build ----
   installDnfPackage gradle

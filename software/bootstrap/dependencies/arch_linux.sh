@@ -40,6 +40,7 @@ if [ "$is_os_arch_linux" = "1" ]; then
   installPacmanPackage eza
   installPacmanPackage fd
   installPacmanPackage tree
+  installPacmanPackage prettyping
 
   # ---- Dev tools / Build ----
   installPacmanPackage rust

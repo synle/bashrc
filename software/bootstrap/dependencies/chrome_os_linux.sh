@@ -41,6 +41,7 @@ if [ "$is_os_chromeos" = "1" ]; then
   installAptPackage eza
   installAptPackage fd-find
   installAptPackage tree
+  installAptPackage prettyping
 
   # ---- Dev tools / Build ----
   installAptPackage gradle
