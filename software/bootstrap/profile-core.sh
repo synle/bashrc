@@ -134,7 +134,7 @@ function golast() {
 }
 
 # write + reload history after every command (share history across terminals)
-PROMPT_COMMAND="_track_pwd; history -a; history -c; history -r;${PROMPT_COMMAND}"
+PROMPT_COMMAND="_track_pwd; history -a; history -c; history -r${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
 ################################################################################
 # ---- Autocomplete Filters ----
