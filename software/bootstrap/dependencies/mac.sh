@@ -214,7 +214,7 @@ EOF
   installBrewPackage uv
   installBrewPackage rust
   installBrewPackage go
-  installBrewPackage bun
+  installBrewPackage oven-sh/bun/bun
   installBrewPackage deno
 
   # ---- OS-specific ----
