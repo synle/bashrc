@@ -6,7 +6,7 @@
 [ "$is_os_chromeos" = "1" ] && { echo ">>> Skipped : Not supported on is_os_chromeos"; exit 0; }
 
 version=$(curl -s https://api.github.com/repos/VSCodium/vscodium/releases/latest \
-    | node -e "process.stdin.on('data', d => console.log(JSON.parse(d).tag_name))")
+    | node -e "let b='';process.stdin.on('data',d=>b+=d);process.stdin.on('end',()=>console.log(JSON.parse(b).tag_name))")
 
 echo "> Installing vscodium : $version"
 
