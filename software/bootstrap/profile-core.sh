@@ -393,9 +393,28 @@ function npm() {
   fi
 }
 
+# wraps yarn so bare subcommand names run as `yarn run <name>`, falls back to npm
+function yarn() {
+  if command -v yarn &>/dev/null; then
+    if [ -z "${1-}" ] || [[ "${1-}" == -* ]] || command yarn help "$1" &>/dev/null; then
+      command yarn "$@"
+    else
+      command yarn run "$@"
+    fi
+  else
+    npm "$@"
+  fi
+}
+
 function renpm() {
-  rm -rf node_modules bower_components /tmp/*.cache;
-  npm install
+  rm -rf node_modules;
+  if [ -f yarn.lock ]; then
+    yarn install
+  elif [ -f package-lock.json ]; then
+    npm ci
+  else
+    npm install
+  fi
 }
 
 ################################################################################
