@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-05]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-06]
 # 
 # Revert File Associations for macOS
 # This resets the Launch Services database to restore default file associations
