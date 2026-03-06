@@ -20,7 +20,10 @@ dry_run:
 
 # Bootstrap setup from GitHub (prod)
 setup:
-	curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --setup
+# BEGIN software/bootstrap/setup.sh
+# software/bootstrap/setup.sh - Universal bootstrap script for all platforms - Auto-detects OS and installs the appropriate dependencies
+curl -s https://raw.githubusercontent.com/synle/bashrc/master/run.sh | bash -s -- --prod --setup
+# END software/bootstrap/setup.sh
 
 # Bootstrap setup from local files
 setup_local:
@@ -40,4 +43,4 @@ run: dry_run
 
 # Remove all bashrc config and caches
 nuke:
-	rm -rf ~/.nvm ~/.bash_syle* ~/.local/share/fnm ~/.hushlogin ~./syle* ~/_extra/
+	rm -rf ~/.nvm ~/.bash_syle* ~/.local/share/fnm ~/.hushlogin ~./syle* ~/_extra/ ./dist

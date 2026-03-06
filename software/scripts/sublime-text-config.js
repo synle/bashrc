@@ -185,7 +185,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     preview_on_click: true, // Single-click a file in sidebar to preview without fully opening it
 
     // --- Editing & Whitespace ---
-    draw_white_space: "selection", // Only render whitespace dots in selected text — faster than 'all'
+    draw_white_space: "all", // Render whitespace dots to distinguish spaces from tabs
     translate_tabs_to_spaces: true, // Insert spaces when pressing Tab
     tab_size: EDITOR_CONFIGS.tabSize, // Number of spaces per tab
     trim_trailing_white_space_on_save: "all", // Remove trailing spaces on every save

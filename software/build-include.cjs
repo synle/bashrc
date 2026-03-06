@@ -367,7 +367,7 @@ if (typeof module !== "undefined" && require.main !== module) {
 
   // Determine target files: CLI args (excluding flags) or auto-scan git-tracked *.sh and *.md files
   const cliTargets = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
-  const trackedFiles = execSync('git ls-files "*.sh" "*.md" "*.js" "*.jsx" "*.ts" "*.tsx" "*.cjs" "*.mjs" "*.jsonc"', { encoding: "utf8" })
+  const trackedFiles = execSync('git ls-files "*.sh" "*.md" "*.js" "*.jsx" "*.ts" "*.tsx" "*.cjs" "*.mjs" "*.jsonc" "Makefile"', { encoding: "utf8" })
     .trim()
     .split("\n")
     .filter((f) => f && !f.startsWith("software/tests/"));
