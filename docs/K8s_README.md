@@ -40,7 +40,7 @@ Kubernetes (K8s) is an open-source container orchestration platform. It automate
 - **Scaling**: Scale from 1 to 1000 instances with a single command.
 - **Load balancing**: Distributes traffic across healthy instances.
 - **Rolling updates**: Deploy new versions with zero downtime.
-- **Declarative config**: You describe the *desired state*, K8s makes it happen.
+- **Declarative config**: You describe the _desired state_, K8s makes it happen.
 
 **Analogy**: Think of K8s as a datacenter operating system. You tell it "I want 3 copies of my app running," and it figures out where to place them, keeps them alive, and routes traffic to them.
 
@@ -73,7 +73,7 @@ Cluster (the whole K8s environment)
 
 ### Desired State vs Current State
 
-K8s is **declarative**. You write YAML files that say "I want 3 replicas of my app." K8s constantly compares the *desired state* (your YAML) to the *current state* (what's actually running) and reconciles any differences.
+K8s is **declarative**. You write YAML files that say "I want 3 replicas of my app." K8s constantly compares the _desired state_ (your YAML) to the _current state_ (what's actually running) and reconciles any differences.
 
 ```
 You write YAML: "I want 3 pods"
@@ -138,20 +138,20 @@ selector:
 
 **Control Plane components:**
 
-| Component | What it does |
-|-----------|-------------|
-| **API Server** | Front door to K8s. All `kubectl` commands go through it. |
-| **etcd** | Stores all cluster data (desired state, current state). A distributed key-value database. |
-| **Scheduler** | Decides which node to place a new pod on (based on resources, constraints). |
+| Component              | What it does                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **API Server**         | Front door to K8s. All `kubectl` commands go through it.                                                                   |
+| **etcd**               | Stores all cluster data (desired state, current state). A distributed key-value database.                                  |
+| **Scheduler**          | Decides which node to place a new pod on (based on resources, constraints).                                                |
 | **Controller Manager** | Runs control loops that watch state and make corrections (e.g., "ReplicaSet controller" ensures the right number of pods). |
 
 **Node components:**
 
-| Component | What it does |
-|-----------|-------------|
-| **kubelet** | Agent on each node. Receives instructions from the API server, manages pods on that node. |
-| **kube-proxy** | Handles networking rules so pods can communicate with each other and the outside world. |
-| **Container Runtime** | Actually runs containers (Docker, containerd, CRI-O). |
+| Component             | What it does                                                                              |
+| --------------------- | ----------------------------------------------------------------------------------------- |
+| **kubelet**           | Agent on each node. Receives instructions from the API server, manages pods on that node. |
+| **kube-proxy**        | Handles networking rules so pods can communicate with each other and the outside world.   |
+| **Container Runtime** | Actually runs containers (Docker, containerd, CRI-O).                                     |
 
 ---
 
@@ -190,11 +190,11 @@ kind: Deployment
 metadata:
   name: my-app
 spec:
-  replicas: 3              # Run 3 copies of this pod
+  replicas: 3 # Run 3 copies of this pod
   selector:
     matchLabels:
-      app: my-app           # Find pods with this label
-  template:                 # Pod template (what each pod looks like)
+      app: my-app # Find pods with this label
+  template: # Pod template (what each pod looks like)
     metadata:
       labels:
         app: my-app
@@ -223,20 +223,20 @@ metadata:
   name: my-app-service
 spec:
   selector:
-    app: my-app             # Route traffic to pods with this label
+    app: my-app # Route traffic to pods with this label
   ports:
-    - port: 80              # Port the service listens on
-      targetPort: 3000      # Port on the pod to forward to
-  type: ClusterIP           # Only accessible inside the cluster
+    - port: 80 # Port the service listens on
+      targetPort: 3000 # Port on the pod to forward to
+  type: ClusterIP # Only accessible inside the cluster
 ```
 
 **Service types:**
 
-| Type | Accessible from | Use case |
-|------|----------------|----------|
-| `ClusterIP` | Inside the cluster only | Backend services talking to each other |
-| `NodePort` | Outside via `<NodeIP>:<port>` (30000-32767) | Dev/testing, direct access |
-| `LoadBalancer` | Outside via cloud provider load balancer | Production, cloud environments |
+| Type           | Accessible from                             | Use case                               |
+| -------------- | ------------------------------------------- | -------------------------------------- |
+| `ClusterIP`    | Inside the cluster only                     | Backend services talking to each other |
+| `NodePort`     | Outside via `<NodeIP>:<port>` (30000-32767) | Dev/testing, direct access             |
+| `LoadBalancer` | Outside via cloud provider load balancer    | Production, cloud environments         |
 
 ### Ingress
 
@@ -296,8 +296,8 @@ metadata:
   name: app-secrets
 type: Opaque
 data:
-  DATABASE_PASSWORD: cGFzc3dvcmQxMjM=   # base64 of "password123"
-  API_KEY: bXlzZWNyZXRrZXk=             # base64 of "mysecretkey"
+  DATABASE_PASSWORD: cGFzc3dvcmQxMjM= # base64 of "password123"
+  API_KEY: bXlzZWNyZXRrZXk= # base64 of "mysecretkey"
 ```
 
 To create base64 values:
@@ -680,7 +680,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: yourusername/my-backend:1.0.0    # Change to your image
+          image: yourusername/my-backend:1.0.0 # Change to your image
           # For minikube with local images, add:
           # imagePullPolicy: Never
           ports:
@@ -692,19 +692,19 @@ spec:
               value: "production"
           # Resource limits - prevents a pod from consuming too much
           resources:
-            requests:               # Minimum guaranteed resources
-              cpu: "100m"           # 100 millicores = 0.1 CPU
-              memory: "128Mi"       # 128 megabytes
-            limits:                 # Maximum allowed resources
-              cpu: "500m"           # 500 millicores = 0.5 CPU
-              memory: "256Mi"       # 256 megabytes
+            requests: # Minimum guaranteed resources
+              cpu: "100m" # 100 millicores = 0.1 CPU
+              memory: "128Mi" # 128 megabytes
+            limits: # Maximum allowed resources
+              cpu: "500m" # 500 millicores = 0.5 CPU
+              memory: "256Mi" # 256 megabytes
           # Health check: is the container alive?
           livenessProbe:
             httpGet:
               path: /api/health
               port: 3000
-            initialDelaySeconds: 10   # Wait 10s before first check
-            periodSeconds: 15         # Check every 15s
+            initialDelaySeconds: 10 # Wait 10s before first check
+            periodSeconds: 15 # Check every 15s
           # Ready check: should traffic be sent to this pod?
           readinessProbe:
             httpGet:
@@ -724,12 +724,12 @@ metadata:
   namespace: my-app
 spec:
   selector:
-    app: backend                # Matches pods with label app=backend
+    app: backend # Matches pods with label app=backend
   ports:
-    - port: 80                  # Service port (what other services connect to)
-      targetPort: 3000          # Container port (where your app listens)
+    - port: 80 # Service port (what other services connect to)
+      targetPort: 3000 # Container port (where your app listens)
       protocol: TCP
-  type: ClusterIP               # Internal only — Ingress will expose it
+  type: ClusterIP # Internal only — Ingress will expose it
 ```
 
 **File: `k8s/frontend-deployment.yaml`**
@@ -754,7 +754,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: yourusername/my-frontend:1.0.0   # Change to your image
+          image: yourusername/my-frontend:1.0.0 # Change to your image
           ports:
             - containerPort: 80
           resources:
@@ -810,7 +810,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: myapp.local           # Use this for local dev (add to /etc/hosts)
+    - host: myapp.local # Use this for local dev (add to /etc/hosts)
       http:
         paths:
           # API routes go to backend
@@ -1109,7 +1109,7 @@ spec:
     app: python-backend
   ports:
     - port: 80
-      targetPort: 5000        # Gunicorn listens on 5000
+      targetPort: 5000 # Gunicorn listens on 5000
       protocol: TCP
   type: ClusterIP
 ```
@@ -1231,18 +1231,19 @@ curl http://localhost:5000/api/health
 
 ### Node.js vs Python: Key Differences in K8s
 
-| Aspect | Node.js | Python (Flask) |
-|--------|---------|---------------|
-| **Production server** | Node itself (single-threaded event loop) | Gunicorn (multi-process WSGI server) |
-| **Default port** | 3000 (convention) | 5000 (Flask default) |
-| **Concurrency model** | Async I/O, single process handles many connections | Multiple worker processes via gunicorn |
-| **Container port** | `containerPort: 3000` | `containerPort: 5000` |
-| **Health check** | Same pattern — HTTP GET to `/api/health` | Same pattern — HTTP GET to `/api/health` |
-| **Image size** | `node:20-alpine` ~180MB | `python:3.12-slim` ~150MB |
-| **CPU tuning** | Increase pod replicas (horizontal) | Increase `WEB_CONCURRENCY` (vertical) AND pod replicas |
-| **Memory** | V8 can be hungry, set `--max-old-space-size` | Generally lighter per worker, but `workers * memory` adds up |
+| Aspect                | Node.js                                            | Python (Flask)                                               |
+| --------------------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| **Production server** | Node itself (single-threaded event loop)           | Gunicorn (multi-process WSGI server)                         |
+| **Default port**      | 3000 (convention)                                  | 5000 (Flask default)                                         |
+| **Concurrency model** | Async I/O, single process handles many connections | Multiple worker processes via gunicorn                       |
+| **Container port**    | `containerPort: 3000`                              | `containerPort: 5000`                                        |
+| **Health check**      | Same pattern — HTTP GET to `/api/health`           | Same pattern — HTTP GET to `/api/health`                     |
+| **Image size**        | `node:20-alpine` ~180MB                            | `python:3.12-slim` ~150MB                                    |
+| **CPU tuning**        | Increase pod replicas (horizontal)                 | Increase `WEB_CONCURRENCY` (vertical) AND pod replicas       |
+| **Memory**            | V8 can be hungry, set `--max-old-space-size`       | Generally lighter per worker, but `workers * memory` adds up |
 
 **Important**: The K8s YAML is nearly identical for both. The only things that change are:
+
 - The Docker image name
 - The `containerPort` (3000 vs 5000)
 - The `targetPort` in the Service (3000 vs 5000)
@@ -1314,12 +1315,12 @@ External request
 
 ### Volume types
 
-| Type | Lifetime | Use case |
-|------|----------|----------|
-| `emptyDir` | Same as pod | Temp scratch space, shared between containers in a pod |
-| `hostPath` | Same as node | Access host filesystem (dev only, not portable) |
+| Type                    | Lifetime           | Use case                                                     |
+| ----------------------- | ------------------ | ------------------------------------------------------------ |
+| `emptyDir`              | Same as pod        | Temp scratch space, shared between containers in a pod       |
+| `hostPath`              | Same as node       | Access host filesystem (dev only, not portable)              |
 | `PersistentVolumeClaim` | Independent of pod | Databases, file uploads, anything that must survive restarts |
-| `configMap` / `secret` | Cluster lifetime | Mount config files into pods |
+| `configMap` / `secret`  | Cluster lifetime   | Mount config files into pods                                 |
 
 ### Example: Pod with a PVC
 
@@ -1331,7 +1332,7 @@ metadata:
   namespace: my-app
 spec:
   accessModes:
-    - ReadWriteOnce           # One node can mount read-write at a time
+    - ReadWriteOnce # One node can mount read-write at a time
   resources:
     requests:
       storage: 5Gi
@@ -1342,7 +1343,7 @@ metadata:
   name: backend
   namespace: my-app
 spec:
-  replicas: 1                 # Only 1 if using ReadWriteOnce
+  replicas: 1 # Only 1 if using ReadWriteOnce
   selector:
     matchLabels:
       app: backend
@@ -1356,7 +1357,7 @@ spec:
           image: yourusername/my-backend:1.0.0
           volumeMounts:
             - name: data-volume
-              mountPath: /app/data    # Inside the container, data persists here
+              mountPath: /app/data # Inside the container, data persists here
       volumes:
         - name: data-volume
           persistentVolumeClaim:
@@ -1418,9 +1419,9 @@ data:
   DATABASE_PASSWORD: cGFzc3dvcmQxMjM=
 ---
 # In the deployment:
-          envFrom:
-            - secretRef:
-                name: backend-secrets
+envFrom:
+  - secretRef:
+      name: backend-secrets
 ```
 
 ### Creating secrets from command line
@@ -1447,11 +1448,11 @@ K8s uses probes to know if your app is healthy.
 
 ### Three types of probes
 
-| Probe | Question it answers | What happens on failure |
-|-------|-------------------|----------------------|
-| **livenessProbe** | "Is the process alive?" | K8s kills and restarts the container |
-| **readinessProbe** | "Can it handle traffic?" | K8s stops sending traffic to this pod |
-| **startupProbe** | "Has it finished starting?" | K8s waits (doesn't check liveness/readiness yet) |
+| Probe              | Question it answers         | What happens on failure                          |
+| ------------------ | --------------------------- | ------------------------------------------------ |
+| **livenessProbe**  | "Is the process alive?"     | K8s kills and restarts the container             |
+| **readinessProbe** | "Can it handle traffic?"    | K8s stops sending traffic to this pod            |
+| **startupProbe**   | "Has it finished starting?" | K8s waits (doesn't check liveness/readiness yet) |
 
 ### Probe methods
 
@@ -1489,10 +1490,10 @@ readinessProbe:
   httpGet:
     path: /api/health
     port: 3000
-  initialDelaySeconds: 5       # Start checking after 5s
-  periodSeconds: 5             # Check every 5s
-  successThreshold: 1          # 1 success = ready
-  failureThreshold: 3          # 3 failures = not ready, stop sending traffic
+  initialDelaySeconds: 5 # Start checking after 5s
+  periodSeconds: 5 # Check every 5s
+  successThreshold: 1 # 1 success = ready
+  failureThreshold: 3 # 3 failures = not ready, stop sending traffic
 ```
 
 ---
@@ -1528,13 +1529,13 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 70    # Scale up when avg CPU > 70%
+          averageUtilization: 70 # Scale up when avg CPU > 70%
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 80    # Scale up when avg memory > 80%
+          averageUtilization: 80 # Scale up when avg memory > 80%
 ```
 
 ```bash
@@ -1572,8 +1573,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1          # Max extra pods during update (can be number or %)
-      maxUnavailable: 0    # Never have fewer than desired replicas
+      maxSurge: 1 # Max extra pods during update (can be number or %)
+      maxUnavailable: 0 # Never have fewer than desired replicas
 ```
 
 - `maxSurge: 1` + `maxUnavailable: 0` = safest. Always maintains full capacity.
@@ -1634,11 +1635,11 @@ metadata:
   namespace: my-app
 spec:
   hard:
-    requests.cpu: "4"          # Total CPU requests across all pods
+    requests.cpu: "4" # Total CPU requests across all pods
     requests.memory: "8Gi"
     limits.cpu: "8"
     limits.memory: "16Gi"
-    pods: "20"                 # Max 20 pods in this namespace
+    pods: "20" # Max 20 pods in this namespace
 ```
 
 ---
@@ -1672,7 +1673,7 @@ metadata:
   name: pod-reader
   namespace: my-app
 rules:
-  - apiGroups: [""]           # core API group
+  - apiGroups: [""] # core API group
     resources: ["pods", "services"]
     verbs: ["get", "list", "watch"]
 ---
@@ -1861,6 +1862,7 @@ STATUS: ImagePullBackOff
 
 **Cause**: K8s can't pull your Docker image.
 **Fix**:
+
 - Check image name and tag: `kubectl describe pod <name> -n my-app`
 - For private registries, create an image pull secret:
 
@@ -1955,28 +1957,28 @@ STATUS: OOMKilled
 
 ## Glossary
 
-| Term | Definition |
-|------|-----------|
-| **Cluster** | A set of nodes running K8s |
-| **Node** | A machine (VM or physical) in the cluster |
-| **Pod** | Smallest deployable unit, wraps one or more containers |
-| **Deployment** | Manages pods: desired replica count, rolling updates |
-| **Service** | Stable network endpoint for a set of pods |
-| **Ingress** | Routes external HTTP traffic to services |
-| **ConfigMap** | Non-sensitive configuration data |
-| **Secret** | Sensitive configuration data (base64-encoded) |
-| **Namespace** | Virtual cluster for resource isolation |
-| **PV/PVC** | Persistent storage that outlives pods |
-| **HPA** | Horizontal Pod Autoscaler — auto-scales by metrics |
-| **DaemonSet** | Ensures a pod runs on every (or selected) node |
-| **StatefulSet** | Like Deployment but for stateful apps (stable network IDs, ordered startup) |
-| **Job** | Runs a pod to completion (batch work) |
-| **CronJob** | Runs a Job on a schedule |
-| **kubelet** | Agent on each node that manages pods |
-| **kube-proxy** | Handles networking rules on each node |
-| **etcd** | Distributed key-value store for all cluster data |
-| **Helm** | Package manager for K8s (charts = templated YAML bundles) |
-| **Taint/Toleration** | Controls which pods can run on which nodes |
-| **Affinity** | Rules for pod placement preferences |
-| **Init Container** | Runs before app containers (migrations, wait-for-db, etc.) |
-| **Sidecar** | Helper container that runs alongside the main container |
+| Term                 | Definition                                                                  |
+| -------------------- | --------------------------------------------------------------------------- |
+| **Cluster**          | A set of nodes running K8s                                                  |
+| **Node**             | A machine (VM or physical) in the cluster                                   |
+| **Pod**              | Smallest deployable unit, wraps one or more containers                      |
+| **Deployment**       | Manages pods: desired replica count, rolling updates                        |
+| **Service**          | Stable network endpoint for a set of pods                                   |
+| **Ingress**          | Routes external HTTP traffic to services                                    |
+| **ConfigMap**        | Non-sensitive configuration data                                            |
+| **Secret**           | Sensitive configuration data (base64-encoded)                               |
+| **Namespace**        | Virtual cluster for resource isolation                                      |
+| **PV/PVC**           | Persistent storage that outlives pods                                       |
+| **HPA**              | Horizontal Pod Autoscaler — auto-scales by metrics                          |
+| **DaemonSet**        | Ensures a pod runs on every (or selected) node                              |
+| **StatefulSet**      | Like Deployment but for stateful apps (stable network IDs, ordered startup) |
+| **Job**              | Runs a pod to completion (batch work)                                       |
+| **CronJob**          | Runs a Job on a schedule                                                    |
+| **kubelet**          | Agent on each node that manages pods                                        |
+| **kube-proxy**       | Handles networking rules on each node                                       |
+| **etcd**             | Distributed key-value store for all cluster data                            |
+| **Helm**             | Package manager for K8s (charts = templated YAML bundles)                   |
+| **Taint/Toleration** | Controls which pods can run on which nodes                                  |
+| **Affinity**         | Rules for pod placement preferences                                         |
+| **Init Container**   | Runs before app containers (migrations, wait-for-db, etc.)                  |
+| **Sidecar**          | Helper container that runs alongside the main container                     |

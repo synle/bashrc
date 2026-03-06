@@ -36,14 +36,14 @@ Docker is a platform that packages applications and their dependencies into ligh
 
 ### Containers vs Virtual Machines
 
-| Feature           | Container                        | Virtual Machine                  |
-| ----------------- | -------------------------------- | -------------------------------- |
-| Boot time         | Seconds                         | Minutes                         |
-| Size              | MBs (shares host kernel)        | GBs (full OS)                   |
-| Isolation         | Process-level (namespaces/cgroups) | Hardware-level (hypervisor)   |
-| Performance       | Near-native                     | Slight overhead                 |
-| Portability       | Very high                       | High (but heavier)              |
-| Resource usage    | Minimal                         | Significant                     |
+| Feature        | Container                          | Virtual Machine             |
+| -------------- | ---------------------------------- | --------------------------- |
+| Boot time      | Seconds                            | Minutes                     |
+| Size           | MBs (shares host kernel)           | GBs (full OS)               |
+| Isolation      | Process-level (namespaces/cgroups) | Hardware-level (hypervisor) |
+| Performance    | Near-native                        | Slight overhead             |
+| Portability    | Very high                          | High (but heavier)          |
+| Resource usage | Minimal                            | Significant                 |
 
 Containers share the host OS kernel and isolate the application process using Linux namespaces (PID, network, mount, user) and cgroups (resource limits). VMs run an entire guest OS on top of a hypervisor.
 
@@ -357,12 +357,12 @@ LABEL version="1.0.0"
 
 ### ENTRYPOINT vs CMD
 
-| Scenario                             | ENTRYPOINT       | CMD               | Result              |
-| ------------------------------------ | ---------------- | ------------------ | ------------------- |
-| Only CMD                             | —                | `["node", "app.js"]` | `node app.js`       |
-| Only ENTRYPOINT                      | `["node"]`       | —                  | `node`              |
-| Both                                 | `["node"]`       | `["app.js"]`       | `node app.js`       |
-| Both + runtime override              | `["node"]`       | `["app.js"]`       | `docker run img test.js` => `node test.js` |
+| Scenario                | ENTRYPOINT | CMD                  | Result                                     |
+| ----------------------- | ---------- | -------------------- | ------------------------------------------ |
+| Only CMD                | —          | `["node", "app.js"]` | `node app.js`                              |
+| Only ENTRYPOINT         | `["node"]` | —                    | `node`                                     |
+| Both                    | `["node"]` | `["app.js"]`         | `node app.js`                              |
+| Both + runtime override | `["node"]` | `["app.js"]`         | `docker run img test.js` => `node test.js` |
 
 Rule of thumb: Use `CMD` for most apps. Use `ENTRYPOINT` + `CMD` when your container is a wrapper around a single executable and you want to allow argument overrides.
 
@@ -845,10 +845,10 @@ services:
   webapp:
     # ---- Build from Dockerfile ----
     build:
-      context: .                    # Build context directory
-      dockerfile: Dockerfile.prod   # Custom Dockerfile name
+      context: . # Build context directory
+      dockerfile: Dockerfile.prod # Custom Dockerfile name
       args:
-        APP_VERSION: "2.0"          # Build-time ARGs
+        APP_VERSION: "2.0" # Build-time ARGs
 
     # ---- Or use a pre-built image ----
     image: nginx:alpine
@@ -858,13 +858,13 @@ services:
 
     # ---- Port mapping ----
     ports:
-      - "8080:80"          # host:container
-      - "127.0.0.1:9090:80"  # bind to localhost only
+      - "8080:80" # host:container
+      - "127.0.0.1:9090:80" # bind to localhost only
 
     # ---- Environment variables ----
     environment:
       NODE_ENV: production
-      API_KEY: ${API_KEY}   # Read from host env or .env file
+      API_KEY: ${API_KEY} # Read from host env or .env file
 
     # ---- Load env from file ----
     env_file:
@@ -873,9 +873,9 @@ services:
 
     # ---- Volume mounts ----
     volumes:
-      - ./src:/app/src              # Bind mount (host path)
-      - app-data:/app/data          # Named volume
-      - /app/node_modules           # Anonymous volume (prevents overwrite)
+      - ./src:/app/src # Bind mount (host path)
+      - app-data:/app/data # Named volume
+      - /app/node_modules # Anonymous volume (prevents overwrite)
 
     # ---- Networking ----
     networks:
@@ -885,9 +885,9 @@ services:
     # ---- Dependency ordering ----
     depends_on:
       db:
-        condition: service_healthy  # Wait for health check to pass
+        condition: service_healthy # Wait for health check to pass
       redis:
-        condition: service_started  # Just wait for container to start
+        condition: service_started # Just wait for container to start
 
     # ---- Restart policy ----
     restart: unless-stopped
@@ -987,7 +987,7 @@ APP_PORT=8080
 services:
   app:
     ports:
-      - "${APP_PORT:-3000}:3000"   # Default to 3000 if not set
+      - "${APP_PORT:-3000}:3000" # Default to 3000 if not set
   db:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -1066,7 +1066,7 @@ services:
   api:
     build: .
     environment:
-      DB_HOST: db        # <-- Uses the service name as hostname
+      DB_HOST: db # <-- Uses the service name as hostname
   db:
     image: postgres:16
 ```
@@ -1351,12 +1351,12 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 ```
 
-| Option           | Meaning                                    | Default |
-| ---------------- | ------------------------------------------ | ------- |
-| `--interval`     | Time between checks                        | 30s     |
-| `--timeout`      | Max time for a single check                | 30s     |
-| `--start-period` | Grace period for container startup         | 0s      |
-| `--retries`      | Consecutive failures before "unhealthy"    | 3       |
+| Option           | Meaning                                 | Default |
+| ---------------- | --------------------------------------- | ------- |
+| `--interval`     | Time between checks                     | 30s     |
+| `--timeout`      | Max time for a single check             | 30s     |
+| `--start-period` | Grace period for container startup      | 0s      |
+| `--retries`      | Consecutive failures before "unhealthy" | 3       |
 
 ### In docker-compose.yml
 
@@ -1473,6 +1473,7 @@ docker start -ai debug
 ### Size reduction strategies
 
 1. **Use Alpine or slim base images**
+
    ```dockerfile
    # Instead of: FROM node:20       (~350MB)
    # Use:        FROM node:20-slim  (~80MB)
@@ -1480,6 +1481,7 @@ docker start -ai debug
    ```
 
 2. **Combine RUN commands** (fewer layers)
+
    ```dockerfile
    # Bad: 3 layers
    RUN apt-get update
@@ -1493,6 +1495,7 @@ docker start -ai debug
    ```
 
 3. **Clean up in the same layer**
+
    ```dockerfile
    RUN pip install --no-cache-dir -r requirements.txt
    RUN npm ci && npm cache clean --force
@@ -1502,6 +1505,7 @@ docker start -ai debug
 4. **Use multi-stage builds** (see section above)
 
 5. **Order instructions by change frequency** (most stable first)
+
    ```dockerfile
    # Rarely changes — cached
    FROM node:20-alpine
@@ -1670,16 +1674,17 @@ docker push myregistry/myapp:latest
 
 When you need to run containers in production at scale, you need an orchestrator.
 
-| Tool              | Complexity | Use case                              |
-| ----------------- | ---------- | ------------------------------------- |
-| Docker Compose    | Low        | Local dev, single-host deployments    |
-| Docker Swarm      | Medium     | Simple multi-host orchestration       |
-| Kubernetes (K8s)  | High       | Production-grade, large-scale systems |
-| AWS ECS/Fargate   | Medium     | AWS-managed container platform        |
-| Google Cloud Run  | Low        | Serverless containers                 |
-| Fly.io / Railway  | Low        | Simple deployment platforms           |
+| Tool             | Complexity | Use case                              |
+| ---------------- | ---------- | ------------------------------------- |
+| Docker Compose   | Low        | Local dev, single-host deployments    |
+| Docker Swarm     | Medium     | Simple multi-host orchestration       |
+| Kubernetes (K8s) | High       | Production-grade, large-scale systems |
+| AWS ECS/Fargate  | Medium     | AWS-managed container platform        |
+| Google Cloud Run | Low        | Serverless containers                 |
+| Fly.io / Railway | Low        | Simple deployment platforms           |
 
 Orchestrators handle:
+
 - **Scaling** — run N replicas of a service
 - **Load balancing** — distribute traffic across replicas
 - **Self-healing** — restart crashed containers automatically
@@ -1694,20 +1699,24 @@ Orchestrators handle:
 ### 1. "Why is my build so slow?"
 
 Your build context is too large. Check with:
+
 ```bash
 # See what's being sent to Docker
 docker build . 2>&1 | head -5
 # "Sending build context to Docker daemon  500MB"
 ```
+
 Fix: Add a `.dockerignore` file to exclude `node_modules`, `.git`, etc.
 
 ### 2. "My container exits immediately"
 
 The main process (CMD/ENTRYPOINT) exited. Common causes:
+
 - The process runs in the background (daemonizes). Containers need a foreground process.
 - The process crashes. Check `docker logs <container>`.
 
 Fix: Run the process in the foreground:
+
 ```dockerfile
 # Nginx
 CMD ["nginx", "-g", "daemon off;"]
@@ -1719,6 +1728,7 @@ CMD ["apachectl", "-D", "FOREGROUND"]
 ### 3. "Changes to my code aren't showing up"
 
 Docker layer caching served an old layer. Fix:
+
 ```bash
 # Rebuild without cache
 docker build --no-cache -t myapp .
@@ -1731,6 +1741,7 @@ docker compose up --build
 
 - Did you map the port? `docker run -p 8080:3000`
 - Is the app listening on `0.0.0.0`, not `127.0.0.1`?
+
   ```javascript
   // Wrong: only accessible from inside the container
   app.listen(3000, "127.0.0.1");
@@ -1742,15 +1753,17 @@ docker compose up --build
 ### 5. "My node_modules are missing with bind mounts"
 
 Bind mount overwrites the container's `/app` directory:
+
 ```yaml
 volumes:
-  - ./:/app              # Overwrites everything, including node_modules
-  - /app/node_modules    # Fix: anonymous volume preserves container's node_modules
+  - ./:/app # Overwrites everything, including node_modules
+  - /app/node_modules # Fix: anonymous volume preserves container's node_modules
 ```
 
 ### 6. "Permission denied on mounted files"
 
 Host file UIDs don't match container user UIDs. Fix:
+
 ```dockerfile
 # Match container user to host user
 ARG UID=1000
@@ -1762,6 +1775,7 @@ USER appuser
 ### 7. "My image is huge"
 
 See [Image Optimization](#image-optimization). Quick wins:
+
 - Switch to `alpine` or `slim` base
 - Add `.dockerignore`
 - Use multi-stage builds

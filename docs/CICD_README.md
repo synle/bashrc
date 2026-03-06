@@ -52,6 +52,7 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 ```
 
 This creates:
+
 - `~/.ssh/id_ed25519` — your private key (never share this)
 - `~/.ssh/id_ed25519.pub` — your public key (this goes on servers)
 
@@ -157,11 +158,10 @@ Playbooks are YAML files that describe what to do on the servers. Create `setup.
 
 ```yaml
 # ~/ansible/setup.yml
-
 ---
 - name: Initial server setup
   hosts: all
-  become: yes  # run commands as sudo
+  become: yes # run commands as sudo
 
   tasks:
     # ---- System Updates ----
@@ -322,7 +322,6 @@ Move tasks into `roles/common/tasks/main.yml`:
 
 ```yaml
 # roles/common/tasks/main.yml
-
 ---
 - name: Update apt cache
   apt:
@@ -344,7 +343,6 @@ Reference the role in your playbook:
 
 ```yaml
 # setup.yml
-
 ---
 - name: Initial server setup
   hosts: all
@@ -515,7 +513,7 @@ spec:
     spec:
       containers:
         - name: node-app
-          image: ghcr.io/YOUR_USER/my-node-app:latest  # replaced by CI
+          image: ghcr.io/YOUR_USER/my-node-app:latest # replaced by CI
           ports:
             - containerPort: 3000
           env:
@@ -725,7 +723,7 @@ spec:
     spec:
       containers:
         - name: python-app
-          image: ghcr.io/YOUR_USER/my-python-app:latest  # replaced by CI
+          image: ghcr.io/YOUR_USER/my-python-app:latest # replaced by CI
           ports:
             - containerPort: 5000
           env:
@@ -839,7 +837,6 @@ You can combine Ansible with Docker and Kubernetes for a full provisioning + dep
 
 ```yaml
 # deploy-k8s-app.yml
-
 ---
 - name: Deploy Dockerized app to Kubernetes
   hosts: all
@@ -931,6 +928,7 @@ ssh root@YOUR_SERVER_IP    # type "yes" when prompted, then exit
 ### "No hosts matched"
 
 Check your `hosts.ini` file and make sure:
+
 - The group name matches what's in your playbook's `hosts:` field
 - `ansible.cfg` points to the correct inventory file
 
