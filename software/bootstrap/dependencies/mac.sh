@@ -221,6 +221,7 @@ EOF
 
   # ---- OS-specific ----
   installBrewPackage --force android-platform-tools
+  installBrewPackage --cask font-jetbrains-mono-nerd-font
   installBrewPackage java
   installBrewPackage duti
   installBrewPackage xz
@@ -246,6 +247,14 @@ EOF
     echo '>> Disable spotlight indexing'
     sudo mdutil -i off
   fi
+
+  ################################################################################
+  # ---- Shell Setup ----
+  ################################################################################
+  echo '>> Iterm TouchID'
+  sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local
+  sudo sed -i '' 's/^#auth/auth/' /etc/pam.d/sudo_local
+  defaults write com.googlecode.iterm2 CustomToolTip -string "No";
 
 else
   echo ">> Skipped dependencies/mac.sh"
