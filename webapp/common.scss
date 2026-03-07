@@ -243,7 +243,7 @@ a[role="button"] {
   background: var(--colorBgMain);
   color: var(--colorTextLink);
   font-family: var(--fontFamilyMain);
-  font-size: var(--fontSize4);
+  font-size: var(--fontSize3);
   font-weight: var(--fontWeightSemiBold);
   text-transform: uppercase;
 
@@ -287,7 +287,7 @@ textarea {
   font-weight: var(--fontWeightLight);
   background: var(--colorBgMain);
   outline: none;
-  font-size: var(--fontSize4);
+  font-size: var(--fontSize3);
   font-family: var(--fontFamilyMain);
 
   &:hover {
@@ -532,7 +532,7 @@ textarea {
     border: var(--borderSize1) solid var(--colorBorderMain);
     border-radius: 8px;
     padding: var(--spaceSize3);
-    font-size: var(--fontSize4);
+    font-size: var(--fontSize3);
     resize: vertical;
 
     &--readonly {
@@ -640,8 +640,4 @@ textarea {
 
 .text-muted {
   color: var(--colorTextSecondary) !important;
-}
-
-code {
-  font-size: var(--fontSize3);
 }

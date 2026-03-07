@@ -546,7 +546,7 @@ function ActionButton(props) {
  * @returns {React.ReactElement} A read-only EnhancedTextArea with the fetched content.
  */
 function DynamicTextArea(props) {
-  let { path, url, height, collapsed = false } = props;
+  let { path, url, height, collapsed = true } = props;
   const [text, setText] = useState("");
   const [success, setSuccess] = useState(true);
 
@@ -1098,8 +1098,8 @@ function MacOSXNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_mac" />
-      <DynamicTextArea path="/docs/mac/README.md" collapsed />
-      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
+      <DynamicTextArea path="/docs/mac/README.md" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
@@ -1125,8 +1125,8 @@ function LinuxNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_ubuntu" />
-      <DynamicTextArea path="/docs/linux/README.md" collapsed />
-      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
+      <DynamicTextArea path="/docs/linux/README.md" />
       <DynamicTextArea path="/docs/linux/linux-mint-config.sh" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
@@ -1151,10 +1151,10 @@ function LinuxNotesDom() {
 function GenericLightWeightNotesDom() {
   return (
     <>
+      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
       <ScriptOutputSection
         script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --prod --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
       />
-      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
       <DynamicTextArea path="/.build/inputrc" />
@@ -1218,8 +1218,8 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_windows" />
-      <DynamicTextArea path="/docs/windows/README.md" collapsed />
-      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
+      <DynamicTextArea path="/docs/windows/README.md" />
       <DynamicTextArea path="/software/bootstrap/dependencies/windows.ps1" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/windows-terminal" />

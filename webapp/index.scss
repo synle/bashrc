@@ -96,7 +96,7 @@ textarea {
 
   &.code {
     font-family: var(--fontFamilyMonospace);
-    font-size: 0.9rem;
+    font-size: var(--fontSize3);
   }
 }
 
@@ -261,6 +261,10 @@ input {
 
   .editor-header {
     margin-top: 0;
+  }
+
+  .prism-code-block {
+    font-size: var(--fontSize3);
   }
 }
 
