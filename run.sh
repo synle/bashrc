@@ -341,10 +341,6 @@ $run_description
 $LINE_BREAK_HASH
 "
 
-sudo -v
-echo '> Initializing Environment [with sudo]'
-
-
 install_fnm_node
 
 ################################################################################

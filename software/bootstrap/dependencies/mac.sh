@@ -3,7 +3,6 @@
 
 if [ "$is_os_mac" = "1" ]; then
   echo ">> Begin setting up dependencies/mac.sh"
-  sudo -v
 
   echo ">> Mac UI & System Optimization..."
 
@@ -92,13 +91,6 @@ if [ "$is_os_mac" = "1" ]; then
   defaults write com.apple.dock autohide -bool true # Auto-hides the Dock to free screen space and reduce compositing when not in use
   defaults write com.apple.TimeMachine DoNotOfferNewDisksForBackup -bool true # Stops the "use this disk for Time Machine?" popup when plugging in external drives
   defaults write com.apple.ImageCapture disableHotPlug -bool true # Stops Photos/Image Capture from auto-opening when plugging in a device (iPhone, camera, SD card)
-  sudo pmset -a sms 0 # Disables sudden motion sensor (useless on SSDs, saves unnecessary disk head parking overhead)
-  # WARNING: hibernatemode 0 and standby 0 improve sleep/wake speed but have side effects:
-  #   - hibernatemode 0: RAM is NOT saved to disk on sleep. If battery fully drains, unsaved work is LOST.
-  #   - standby 0: Mac stays in regular sleep forever (~1-2% battery/hour). Left in a bag overnight = dead battery.
-  #   To revert to safe defaults: sudo pmset -a hibernatemode 3 && sudo pmset -a standby 1
-  sudo pmset -a hibernatemode 0 # Skips writing RAM to disk on sleep for faster sleep/wake (Electron apps don't have to re-render)
-  sudo pmset -a standby 0 # Disables delayed deep sleep transition so wake is always instant
 
 
   echo "  >> Restarting affected services..."
@@ -235,10 +227,22 @@ EOF
   # ---- GUI apps (reinstall in background) ----
   brew reinstall --cask --force balenaetcher blender vlc keka docker &>/dev/null &
 
+
+  ################################################################################
+  # ---- Power Management ----
+  ################################################################################
+  sudo pmset -a sms 0 # Disables sudden motion sensor (useless on SSDs, saves unnecessary disk head parking overhead)
+  # WARNING: hibernatemode 0 and standby 0 improve sleep/wake speed but have side effects:
+  #   - hibernatemode 0: RAM is NOT saved to disk on sleep. If battery fully drains, unsaved work is LOST.
+  #   - standby 0: Mac stays in regular sleep forever (~1-2% battery/hour). Left in a bag overnight = dead battery.
+  #   To revert to safe defaults: sudo pmset -a hibernatemode 3 && sudo pmset -a standby 1
+  sudo pmset -a hibernatemode 0 # Skips writing RAM to disk on sleep for faster sleep/wake (Electron apps don't have to re-render)
+  sudo pmset -a standby 0 # Disables delayed deep sleep transition so wake is always instant
+
   ################################################################################
   # ---- Cleanup ----
   ################################################################################
-  if [ "$IS_FORCE_REFRESH" = "1" ] || [ ! -f "$BASH_SYLE_COMMON" ]; then
+  if [ "$IS_FORCE_REFRESH" = "1" ] && [ ! -f "$BASH_SYLE_COMMON" ]; then
     echo '>> Kill all dock icons'
     defaults write com.apple.dock persistent-apps -array
     killall Dock
@@ -249,13 +253,14 @@ EOF
   fi
 
   ################################################################################
-  # ---- Shell Setup ----
+  # ---- iTerm / Terminal Setup ----
   ################################################################################
-  echo '>> Iterm TouchID'
-  sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local
-  sudo sed -i '' 's/^#auth/auth/' /etc/pam.d/sudo_local
-  defaults write com.googlecode.iterm2 CustomToolTip -string "No";
-
+  echo '>> iTerm TouchID sudo'
+  if [ "$IS_FORCE_REFRESH" = "1" ] && [ -f /etc/pam.d/sudo_local.template ]; then
+    sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local
+    sudo sed -i '' 's/^#auth/auth/' /etc/pam.d/sudo_local
+  fi
+  defaults write com.googlecode.iterm2 CustomToolTip -string "No"
 else
   echo ">> Skipped dependencies/mac.sh"
 fi

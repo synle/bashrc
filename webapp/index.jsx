@@ -972,15 +972,11 @@ function EnhancedTextArea(props) {
 
   const content = restProps.value || restProps.defaultValue || "";
   const { collapseAll, tick } = useContext(EditorCollapseContext);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   useEffect(() => {
-    if (defaultCollapsed === true) {
-      setCollapsed(defaultCollapsed);
-    } else {
-      setCollapsed(collapseAll);
-    }
-  }, [collapseAll, tick, defaultCollapsed]);
+    setCollapsed(collapseAll);
+  }, [collapseAll, tick]);
 
   // Detect language: first try from URL, then from content
   const languageFromUrl = detectLanguageFromUrl(url);
