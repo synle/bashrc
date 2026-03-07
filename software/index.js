@@ -119,8 +119,6 @@ const DEBUG_WRITE_TO_DIR = getRuntimeOption("DEBUG_WRITE_TO_DIR").toLowerCase();
 const TEST_SCRIPT_FILES = getRuntimeOption("TEST_SCRIPT_FILES");
 /** @type {boolean} When true, prints active OS detection flags at startup */
 const SHOULD_PRINT_OS_FLAGS = getRuntimeOption("SHOULD_PRINT_OS_FLAGS", parseBoolean);
-/** @type {boolean} When true, indicates the user has sudo access for elevated scripts */
-const HAS_SUDO_ACCESS = getRuntimeOption("HAS_SUDO_ACCESS", parseBoolean);
 /** @type {boolean} When true, deletes and re-downloads resources before installing */
 const IS_FORCE_REFRESH = getRuntimeOption("IS_FORCE_REFRESH", parseBoolean);
 /** @type {boolean} When true, runs in local test mode (reads files from disk instead of fetching remotely) */
@@ -1520,14 +1518,10 @@ async function getSoftwareScriptFiles() {
 
   return softwareFiles.filter((file) => {
     let error = "";
-    if (!HAS_SUDO_ACCESS && [".su.sh.js", ".su.js", ".su.sh"].some((ext) => file.endsWith(ext))) {
-      error = `Ignored No sudo access`;
-    } else {
-      for (const pathToIgnore of pathsToIgnore) {
-        if (file.includes(pathToIgnore)) {
-          error = `Ignored OS Specific`;
-          break;
-        }
+    for (const pathToIgnore of pathsToIgnore) {
+      if (file.includes(pathToIgnore)) {
+        error = `Ignored OS Specific`;
+        break;
       }
     }
 
