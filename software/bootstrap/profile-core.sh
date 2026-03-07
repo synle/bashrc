@@ -384,22 +384,27 @@ function pip() {
 ################################################################################
 # ---- Node / NPM ----
 ################################################################################
+# checks if a script name exists in ./package.json
+function _has_pkg_script() {
+  [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)" 2>/dev/null
+}
+
 # wraps npm so bare subcommand names run as `npm run <name>`
 function npm() {
-  if [ -z "${1-}" ] || [[ "${1-}" == -* ]] || command npm help "$1" &>/dev/null; then
-    command npm "$@"
-  else
+  if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
     command npm run "$@"
+  else
+    command npm "$@"
   fi
 }
 
 # wraps yarn so bare subcommand names run as `yarn run <name>`, falls back to npm
 function yarn() {
-  if command -v yarn &>/dev/null; then
-    if [ -z "${1-}" ] || [[ "${1-}" == -* ]] || command yarn help "$1" &>/dev/null; then
-      command yarn "$@"
-    else
+  if command -v yarn &>/dev/null && command yarn --version &>/dev/null; then
+    if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
       command yarn run "$@"
+    else
+      command yarn "$@"
     fi
   else
     npm "$@"
