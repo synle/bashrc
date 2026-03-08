@@ -288,23 +288,11 @@ input {
   }
 
   a {
-    display: block;
-    border: var(--borderSize1) solid var(--colorBorderSecondary);
-    border-radius: 6px;
-    background: var(--colorBgSecondary);
-    box-shadow: 0 2px 4px var(--colorShadow);
-    transition: all 0.2s ease;
     flex: 0 0 calc(50% - var(--spaceSize3));
 
     @include tablet {
       flex: 0 0 calc(20% - var(--gridGapWidth));
       min-width: 200px;
-    }
-
-    &:hover {
-      background: var(--colorBgHover);
-      text-decoration: none;
-      box-shadow: 0 4px 8px var(--colorShadow);
     }
   }
 }
