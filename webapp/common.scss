@@ -308,8 +308,8 @@ input {
   padding: var(--spaceSize2) var(--spaceSize3);
   background-color: var(--colorBgSecondary);
   color: var(--colorTextMain);
-  border: 1px solid var(--colorBorderMain);
-  border-radius: 4px;
+  border: var(--borderSize1) solid var(--colorBorderMain);
+  border-radius: var(--borderSize2);
   font-size: var(--fontSize3);
   line-height: 1.4;
   cursor: pointer;
@@ -338,11 +338,10 @@ input {
 textarea {
   background-color: var(--colorBgSecondary);
   color: var(--colorTextMain);
-  border: 1px solid var(--colorBorderMain);
+  border: var(--borderSize1) solid var(--colorBorderMain);
+  border-radius: var(--borderSize2);
   padding: var(--spaceSize2) var(--spaceSize3);
-  border-radius: 4px;
-  padding: 8px;
-  font-size: 14px;
+  font-size: var(--fontSize3);
   line-height: 1.4;
   width: 100%;
   resize: vertical;
@@ -463,8 +462,8 @@ textarea {
 
     &::after {
       content: "▼";
-      margin-left: 0.5rem;
-      font-size: 0.7rem;
+      margin-left: var(--spaceSize2);
+      font-size: var(--fontSize4);
       display: inline-block;
       transition: transform 0.2s ease;
     }
