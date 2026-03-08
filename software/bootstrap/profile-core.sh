@@ -955,8 +955,7 @@ function shorter_pwd_path() {
 # 08:32:43PM U=04:32:43AM syle @ Sy-Omen45L 10.255.255.254,172.28.2.202
 # ~/git/bashrc [master]
 # >>>
-export PS1="\n\
-\[\e[1;92m\]\$(get_time) \
+export PS1="\[\e[1;92m\]\$(get_time) \
 \[\e[1;93m\]U=\$(get_time \"UTC\") \
 \[\e[1;94m\]\u\[\e[m\] @ \
 \[\e[1;95m\]\h \
