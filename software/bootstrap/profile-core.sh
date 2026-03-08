@@ -196,8 +196,8 @@ fi
 
 # ---- Aliases: File Listing ----
 if command -v eza &>/dev/null; then
-  alias ls="eza -1 -F --color=always --icons"
-  alias ll="eza -lah --icons --git"
+  alias ls="eza -1 -F --color=always"
+  alias ll="ls -lah --git"
   alias ls_newest="ll --sort=modified"           # sort by modification time (newest first)
   alias ls_newest_last="ls_newest --reverse"     # sort by modification time (oldest first)
   alias ls_biggest="ll --sort=size"              # sort by file size (biggest first)
