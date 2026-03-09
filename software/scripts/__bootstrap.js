@@ -45,7 +45,7 @@ async function doWork() {
     # Ctrl+R — fzf history search (places selected command on prompt)
     if command -v fzf &>/dev/null; then
       __fzf_history__(){
-        history | sed 's/^ *[0-9]* *\\(\\[[^]]*\\] \\)*//' | sed 's/^[[:space:]]*//;s/[[:space:]]*\$//' | \$(command -v tac >/dev/null 2>&1 && echo tac || echo 'tail -r') | awk 'NF && !seen[\$0]++' | fzf --height=60% --reverse --tac +s -e
+        history | sed 's/^ *[0-9]* *\\(\\[[^]]*\\] \\)*//' | sed 's/^[[:space:]]*//;s/[[:space:]]*\$//' | \$(command -v tac >/dev/null 2>&1 && echo tac || echo 'tail -r') | awk 'NF && !seen[\$0]++' | fzf --height=60% --reverse --tac +s
       }
       bind '"\\C-\\e(": redraw-current-line'
       bind '"\\C-r": "\\C-e \\C-u\\C-y\\ey\\C-u\`__fzf_history__\`\\e\\C-e\\C-\\e("'
