@@ -390,7 +390,7 @@ function activate_node() {
   if [ "$use_system" != "1" ] && [ "$use_system" != "true" ] && command -v fnm &>/dev/null; then
     eval "$(fnm env)" 2>/dev/null
     local default_version
-    default_version=$(fnm ls 2>/dev/null | command grep -i "default" | command grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
+    default_version=$(fnm ls 2>/dev/null | grep -i "default" | grep -o "v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
     if [ -n "$default_version" ]; then
       echo "activate_node: fnm node $default_version ($(fnm exec --using="$default_version" which node 2>/dev/null))"
       fnm use "$default_version" &>/dev/null
