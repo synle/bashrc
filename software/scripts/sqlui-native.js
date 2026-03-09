@@ -40,26 +40,8 @@ async function doWork() {
       execBash(`hdiutil attach "${destination}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
       execBash(`cp -R "${mountPoint}/sqlui-native.app" /Applications/`);
       execBash(`hdiutil detach "${mountPoint}" -quiet`);
-      execBash("xattr -cr /Applications/sqlui-native.app");
       log(">> Installed sqlui-native.app to /Applications");
-
-      writeText(
-        path.join(targetPath, "README.txt"),
-        trimLeftSpaces(`
-          # Why do we need "xattr -cr /Applications/sqlui-native.app"?
-          #
-          # macOS Gatekeeper quarantines apps downloaded outside the App Store by setting
-          # an extended attribute (com.apple.quarantine) on the .app bundle. This causes
-          # the "app is damaged and can't be opened" or "unidentified developer" error
-          # when you try to launch the app.
-          #
-          # "xattr -cr" recursively clears all extended attributes from the app bundle,
-          # removing the quarantine flag so macOS allows the app to run.
-          #
-          # To fix manually if needed:
-          xattr -cr /Applications/sqlui-native.app
-        `).trim(),
-      );
+      clearMacQuarantine(path.join(targetPath, "README.txt"), "/Applications/sqlui-native.app");
     }
   });
 }

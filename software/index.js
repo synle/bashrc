@@ -768,6 +768,32 @@ function writeConfigToFile(basePath, fileName, data, isJson = true) {
 }
 
 /**
+ * Clears macOS Gatekeeper quarantine on an app and writes a README explaining the fix.
+ * @param {string} readmePath - The file path to write the README to
+ * @param {string} appPath - The macOS .app path (e.g. "/Applications/MyApp.app")
+ */
+function clearMacQuarantine(readmePath, appPath) {
+  execBash(`xattr -cr "${appPath}"`);
+  writeText(
+    readmePath,
+    trimLeftSpaces(`
+      # Why do we need "xattr -cr ${appPath}"?
+      #
+      # macOS Gatekeeper quarantines apps downloaded outside the App Store by setting
+      # an extended attribute (com.apple.quarantine) on the .app bundle. This causes
+      # the "app is damaged and can't be opened" or "unidentified developer" error
+      # when you try to launch the app.
+      #
+      # "xattr -cr" recursively clears all extended attributes from the app bundle,
+      # removing the quarantine flag so macOS allows the app to run.
+      #
+      # To fix manually if needed:
+      xattr -cr ${appPath}
+    `).trim(),
+  );
+}
+
+/**
  * Appends text to the end of an existing file's content.
  * @param {string} filePath - The file path to append to
  * @param {string} text - The text to append

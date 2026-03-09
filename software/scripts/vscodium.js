@@ -42,8 +42,8 @@ async function doWork() {
       execBash(`hdiutil attach "${destination}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
       execBash(`cp -Rf "${mountPoint}/VSCodium.app" /Applications/`);
       execBash(`hdiutil detach "${mountPoint}" -quiet`);
-      execBash("xattr -cr /Applications/VSCodium.app");
       log(">> Installed VSCodium.app to /Applications");
+      clearMacQuarantine(path.join(targetPath, "README.txt"), "/Applications/VSCodium.app");
     });
   } else if (is_os_windows) {
     const fileName = `VSCodiumSetup-x64-${version}.exe`;
