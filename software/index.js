@@ -768,14 +768,19 @@ function writeConfigToFile(basePath, fileName, data, isJson = true) {
 }
 
 /**
- * Mounts a macOS DMG file, copies all .app bundles to /Applications, and unmounts.
+ * Mounts a macOS DMG file, copies all .app bundles to /Applications, unmounts, and clears quarantine.
  * @param {string} dmgPath - The path to the .dmg file to install
+ * @param {string} appName - The .app bundle name (e.g. "MyApp.app")
  */
-async function installMacDmg(dmgPath) {
+async function installMacDmg(dmgPath, appName) {
+  const appPath = `/Applications/${appName}`;
   const mountPoint = `/tmp/dmg-${Date.now()}`;
   await execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
   await execBash(`cp -Rf "${mountPoint}"/*.app /Applications/`);
   await execBash(`hdiutil detach "${mountPoint}" -quiet`);
+  log(">> Installed", appPath);
+  const readmePath = path.join(path.dirname(dmgPath), "README.txt");
+  clearMacQuarantine(readmePath, appPath);
 }
 
 /**

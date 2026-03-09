@@ -28,9 +28,7 @@ async function doWork() {
     await mkdir(targetPath);
     downloadAsset(url, destination).then(async () => {
       log(`>> sqlui-native v${version} downloaded:`, destination);
-      await installMacDmg(destination);
-      log(">> Installed sqlui-native.app to /Applications");
-      clearMacQuarantine(path.join(targetPath, "README.txt"), "/Applications/sqlui-native.app");
+      await installMacDmg(destination, "sqlui-native.app");
     });
   } else if (is_os_windows) {
     const fileName = `sqlui-native-${version}-x64.exe`;

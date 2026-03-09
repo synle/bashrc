@@ -37,9 +37,7 @@ async function doWork() {
     await mkdir(targetPath);
     downloadAsset(url, destination).then(async () => {
       log(`>> VSCodium v${version} downloaded:`, destination);
-      await installMacDmg(destination);
-      log(">> Installed VSCodium.app to /Applications");
-      clearMacQuarantine(path.join(targetPath, "README.txt"), "/Applications/VSCodium.app");
+      await installMacDmg(destination, "VSCodium.app");
     });
   } else if (is_os_windows) {
     const fileName = `VSCodiumSetup-x64-${version}.exe`;
