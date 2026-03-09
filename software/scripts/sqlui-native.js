@@ -26,9 +26,9 @@ async function doWork() {
     const destination = path.join(targetPath, fileName);
 
     await mkdir(targetPath);
-    downloadAsset(url, destination).then(() => {
+    downloadAsset(url, destination).then(async () => {
       log(`>> sqlui-native v${version} downloaded:`, destination);
-      installMacDmg(destination);
+      await installMacDmg(destination);
       log(">> Installed sqlui-native.app to /Applications");
       clearMacQuarantine(path.join(targetPath, "README.txt"), "/Applications/sqlui-native.app");
     });

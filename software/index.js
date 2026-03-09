@@ -771,11 +771,11 @@ function writeConfigToFile(basePath, fileName, data, isJson = true) {
  * Mounts a macOS DMG file, copies all .app bundles to /Applications, and unmounts.
  * @param {string} dmgPath - The path to the .dmg file to install
  */
-function installMacDmg(dmgPath) {
+async function installMacDmg(dmgPath) {
   const mountPoint = `/tmp/dmg-${Date.now()}`;
-  execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
-  execBash(`cp -Rf "${mountPoint}"/*.app /Applications/`);
-  execBash(`hdiutil detach "${mountPoint}" -quiet`);
+  await execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
+  await execBash(`cp -Rf "${mountPoint}"/*.app /Applications/`);
+  await execBash(`hdiutil detach "${mountPoint}" -quiet`);
 }
 
 /**
