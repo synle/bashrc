@@ -384,6 +384,29 @@ function pip() {
 ################################################################################
 # ---- Node / NPM ----
 ################################################################################
+# activates node via fnm or system fallback. pass 1/true to bypass fnm and use system node
+function activate_node() {
+  local use_system="${1-}"
+  if [ "$use_system" != "1" ] && [ "$use_system" != "true" ] && command -v fnm &>/dev/null; then
+    eval "$(fnm env)" 2>/dev/null
+    local default_version
+    default_version=$(fnm ls 2>/dev/null | command grep -i "default" | command grep -oE "v[0-9]+\.[0-9]+\.[0-9]+")
+    if [ -n "$default_version" ]; then
+      echo "activate_node: fnm node $default_version ($(fnm exec --using="$default_version" which node 2>/dev/null))"
+      fnm use "$default_version" &>/dev/null
+    fi
+  else
+    local node_path
+    node_path=$(which node 2>/dev/null)
+    if [ -n "$node_path" ]; then
+      echo "activate_node: node found at $node_path"
+      if [ -L "$node_path" ]; then
+        echo "activate_node: symlink target $(readlink -f "$node_path")"
+      fi
+    fi
+  fi
+}
+
 # checks if a script name exists in ./package.json
 function _has_pkg_script() {
   [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)" 2>/dev/null
