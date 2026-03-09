@@ -6,6 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Do not modify anything in the `.build/` folder.** The `.build/` directory contains generated artifacts and should never be manually edited or changed by any task.
 - **Always run `bash format.sh` after making changes.** This ensures code formatting stays consistent across the codebase.
+- **Use grep/regex syntax compatible with both `grep` and `rg` (ripgrep).** In this project, `grep` may be aliased to `rg`. Avoid `grep -E` (rg interprets `-E` as encoding, not extended regex). Use basic regex patterns instead — e.g. `[0-9][0-9]*` instead of `[0-9]+`, and `grep -o` instead of `grep -oE`.
 
 ## Project Overview
 
