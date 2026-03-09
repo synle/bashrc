@@ -3,9 +3,7 @@ const SQLUI_NATIVE_RELEASE_URL = "https://raw.githubusercontent.com/synle/sqlui-
 /** * Downloads the sqlui-native application binary for the current platform. */
 async function doWork() {
   exitIfLimitedSupportOs();
-  exitIfUnsupportedOs(
-    "is_os_mingw64",
-  );
+  exitIfUnsupportedOs("is_os_mingw64");
 
   const version = (await fetchUrlAsJson(SQLUI_NATIVE_RELEASE_URL)).version;
   const targetPath = path.join(BASE_SY_CUSTOM_TWEAKS_DIR, "sqlui-native");
