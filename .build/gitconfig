@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-08]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-09]
 # ####################################################################################################
 
 [user]
@@ -144,7 +144,7 @@ rn-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i HEAD~${1:-1}; }; f"
 ri-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}; }; f"
 
 # ---- Log & Diff ----
-logbaseline = log --decorate --all --abbrev-commit --date=short --graph
+logbaseline = log --decorate --abbrev-commit --date=short --graph
 ls = "!git logbaseline --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s\""
 lls = "!git logbaseline --oneline --author-date-order"
 l = "!git ls --stat" # Log with file stats
