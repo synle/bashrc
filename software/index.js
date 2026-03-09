@@ -768,6 +768,17 @@ function writeConfigToFile(basePath, fileName, data, isJson = true) {
 }
 
 /**
+ * Mounts a macOS DMG file, copies all .app bundles to /Applications, and unmounts.
+ * @param {string} dmgPath - The path to the .dmg file to install
+ */
+function installMacDmg(dmgPath) {
+  const mountPoint = `/tmp/dmg-${Date.now()}`;
+  execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
+  execBash(`cp -Rf "${mountPoint}"/*.app /Applications/`);
+  execBash(`hdiutil detach "${mountPoint}" -quiet`);
+}
+
+/**
  * Clears macOS Gatekeeper quarantine on an app and writes a README explaining the fix.
  * @param {string} readmePath - The file path to write the README to
  * @param {string} appPath - The macOS .app path (e.g. "/Applications/MyApp.app")

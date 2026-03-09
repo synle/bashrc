@@ -37,11 +37,7 @@ async function doWork() {
     await mkdir(targetPath);
     downloadAsset(url, destination).then(() => {
       log(`>> VSCodium v${version} downloaded:`, destination);
-
-      const mountPoint = `/tmp/vscodium-dmg`;
-      execBash(`hdiutil attach "${destination}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
-      execBash(`cp -Rf "${mountPoint}/VSCodium.app" /Applications/`);
-      execBash(`hdiutil detach "${mountPoint}" -quiet`);
+      installMacDmg(destination);
       log(">> Installed VSCodium.app to /Applications");
       clearMacQuarantine(path.join(targetPath, "README.txt"), "/Applications/VSCodium.app");
     });
