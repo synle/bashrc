@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-09]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-10]
 # ####################################################################################################
 
 [user]
@@ -133,7 +133,8 @@ p = pull
 pu = pull
 po = push origin
 pof = push origin --force
-pdel = push origin --delete # Delete a remote branch / tag: git pdel <branch/tag>
+pdel-branch = push origin --delete # Delete a remote branch: git pdel-branch <branch>
+pdel-tag = push origin --delete --tag # Delete a remote tag: git pdel-tag <tag>
 track = "!git branch --set-upstream-to=origin/$(git branch --show-current)" # Set upstream to origin
 
 # ---- Rebase & Merge ----
