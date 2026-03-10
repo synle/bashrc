@@ -1,0 +1,761 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-10]
+// 
+// Preferences Open Keyboard Shortcuts (JSON)
+// ####################################################################################################
+
+
+[
+  {
+    "key": "cmd+1",
+    "command": "workbench.action.openEditorAtIndex1",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+2",
+    "command": "workbench.action.openEditorAtIndex2",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+3",
+    "command": "workbench.action.openEditorAtIndex3",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+4",
+    "command": "workbench.action.openEditorAtIndex4",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+5",
+    "command": "workbench.action.openEditorAtIndex5",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+6",
+    "command": "workbench.action.openEditorAtIndex6",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+7",
+    "command": "workbench.action.openEditorAtIndex7",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+8",
+    "command": "workbench.action.openEditorAtIndex8",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+9",
+    "command": "workbench.action.openEditorAtIndex9",
+    "when": "isMac"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.files.action.refreshFilesExplorer",
+    "when": "isMac"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.action.files.revert",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+h",
+    "command": "editor.action.startFindReplaceAction",
+    "when": "editorFocus || editorIsOpen && isMac"
+  },
+  {
+    "key": "cmd+h",
+    "command": "testing.toggleTestingPeekHistory",
+    "when": "testing.isPeekVisible && isMac"
+  },
+  {
+    "key": "cmd+\\",
+    "command": "workbench.action.toggleSidebarVisibility",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+shift+\\",
+    "command": "workbench.action.toggleActivityBarVisibility",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+;",
+    "command": "workbench.action.gotoLine",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+r",
+    "command": "workbench.action.gotoSymbol",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+,",
+    "command": "editor.fold",
+    "when": "editorTextFocus && isMac"
+  },
+  {
+    "key": "cmd+.",
+    "command": "editor.unfold",
+    "when": "editorTextFocus && isMac"
+  },
+  {
+    "key": "ctrl+m",
+    "command": "editor.action.jumpToBracket",
+    "when": "editorFocus && isMac"
+  },
+  {
+    "key": "cmd+shift+l",
+    "command": "editor.action.insertCursorAtEndOfEachLineSelected",
+    "when": "editorTextFocus && isMac"
+  },
+  {
+    "key": "cmd+shift+'",
+    "command": "workbench.action.showAllSymbols",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+ctrl+g",
+    "command": "editor.action.selectHighlights",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+ctrl+p",
+    "command": "workbench.action.openWorkspace",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+ctrl+p",
+    "command": "projectManager.listProjects",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+ctrl+c",
+    "command": "workbench.files.action.compareWithSaved",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+n",
+    "command": "workbench.action.files.newUntitledFile",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+f",
+    "command": "actions.find",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+shift+f",
+    "command": "workbench.action.findInFiles",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+g",
+    "command": "editor.action.moveSelectionToNextFindMatch",
+    "when": "editorFocus && isMac"
+  },
+  {
+    "key": "cmd+shift+g",
+    "command": "editor.action.moveSelectionToPreviousFindMatch",
+    "when": "editorFocus && isMac"
+  },
+  {
+    "key": "cmd+'",
+    "command": "workbench.action.debug.stepOver",
+    "when": "debugState == 'stopped' && isMac"
+  },
+  {
+    "key": "cmd+shift+'",
+    "command": "workbench.action.debug.stepInto",
+    "when": "debugState != 'inactive' && isMac"
+  },
+  {
+    "key": "cmd+enter",
+    "command": "editor.action.revealDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus && isMac"
+  },
+  {
+    "key": "shift+enter",
+    "command": "editor.action.goToReferences",
+    "when": "editorHasReferenceProvider && editorTextFocus && isMac"
+  },
+  {
+    "key": "f2",
+    "command": "editor.action.rename",
+    "when": "editorHasRenameProvider && editorTextFocus && !editorReadonly && isMac"
+  },
+  {
+    "key": "f2",
+    "command": "workbench.action.terminal.renameInstance",
+    "when": "terminalHasBeenCreated && terminalTabsFocus && terminalTabsSingularSelection || terminalProcessSupported && terminalTabsFocus && terminalTabsSingularSelection && isMac"
+  },
+  {
+    "key": "f2",
+    "command": "debug.renameWatchExpression",
+    "when": "watchExpressionsFocused && isMac"
+  },
+  {
+    "key": "f2",
+    "command": "debug.setVariable",
+    "when": "variablesFocused && isMac"
+  },
+  {
+    "key": "f2",
+    "command": "remote.tunnel.label",
+    "when": "tunnelViewFocus && tunnelType == 'Forwarded' && tunnelViewMultiSelection == 'undefined' && isMac"
+  },
+  {
+    "key": "f2",
+    "command": "renameFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus && isMac"
+  },
+  {
+    "key": "f2",
+    "command": "abracadabra.renameSymbol",
+    "when": "editorTextFocus && isMac"
+  },
+  {
+    "key": "cmd+shift+1",
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled && isMac"
+  },
+  {
+    "key": "cmd+shift+2",
+    "command": "workbench.view.search",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+shift+`",
+    "command": "workbench.view.debug",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+shift+=",
+    "command": "workbench.action.zoomIn",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+shift+-",
+    "command": "workbench.action.zoomOut",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+=",
+    "command": "editor.action.fontZoomIn",
+    "when": "isMac"
+  },
+  {
+    "key": "cmd+-",
+    "command": "editor.action.fontZoomOut",
+    "when": "isMac"
+  },
+  {
+    "key": "shift+ctrl+cmd+\\",
+    "command": "workbench.action.toggleAuxiliaryBar",
+    "when": "isMac"
+  },
+  {
+    "key": "alt+1",
+    "command": "workbench.action.openEditorAtIndex1",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+2",
+    "command": "workbench.action.openEditorAtIndex2",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+3",
+    "command": "workbench.action.openEditorAtIndex3",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+4",
+    "command": "workbench.action.openEditorAtIndex4",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+5",
+    "command": "workbench.action.openEditorAtIndex5",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+6",
+    "command": "workbench.action.openEditorAtIndex6",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+7",
+    "command": "workbench.action.openEditorAtIndex7",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+8",
+    "command": "workbench.action.openEditorAtIndex8",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+9",
+    "command": "workbench.action.openEditorAtIndex9",
+    "when": "!isMac"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.files.action.refreshFilesExplorer",
+    "when": "!isMac"
+  },
+  {
+    "key": "f5",
+    "command": "workbench.action.files.revert",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+h",
+    "command": "editor.action.startFindReplaceAction",
+    "when": "editorFocus || editorIsOpen && !isMac"
+  },
+  {
+    "key": "alt+h",
+    "command": "testing.toggleTestingPeekHistory",
+    "when": "testing.isPeekVisible && !isMac"
+  },
+  {
+    "key": "alt+\\",
+    "command": "workbench.action.toggleSidebarVisibility",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+\\",
+    "command": "workbench.action.toggleActivityBarVisibility",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+;",
+    "command": "workbench.action.gotoLine",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+r",
+    "command": "workbench.action.gotoSymbol",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+,",
+    "command": "editor.fold",
+    "when": "editorTextFocus && !isMac"
+  },
+  {
+    "key": "alt+.",
+    "command": "editor.unfold",
+    "when": "editorTextFocus && !isMac"
+  },
+  {
+    "key": "ctrl+m",
+    "command": "editor.action.jumpToBracket",
+    "when": "editorFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+l",
+    "command": "editor.action.insertCursorAtEndOfEachLineSelected",
+    "when": "editorTextFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+'",
+    "command": "workbench.action.showAllSymbols",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+ctrl+g",
+    "command": "editor.action.selectHighlights",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+ctrl+p",
+    "command": "workbench.action.openWorkspace",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+ctrl+p",
+    "command": "projectManager.listProjects",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+ctrl+c",
+    "command": "workbench.files.action.compareWithSaved",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+n",
+    "command": "workbench.action.files.newUntitledFile",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+f",
+    "command": "actions.find",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+f",
+    "command": "workbench.action.findInFiles",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+g",
+    "command": "editor.action.moveSelectionToNextFindMatch",
+    "when": "editorFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+g",
+    "command": "editor.action.moveSelectionToPreviousFindMatch",
+    "when": "editorFocus && !isMac"
+  },
+  {
+    "key": "alt+'",
+    "command": "workbench.action.debug.stepOver",
+    "when": "debugState == 'stopped' && !isMac"
+  },
+  {
+    "key": "alt+shift+'",
+    "command": "workbench.action.debug.stepInto",
+    "when": "debugState != 'inactive' && !isMac"
+  },
+  {
+    "key": "alt+enter",
+    "command": "editor.action.revealDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus && !isMac"
+  },
+  {
+    "key": "shift+enter",
+    "command": "editor.action.goToReferences",
+    "when": "editorHasReferenceProvider && editorTextFocus && !isMac"
+  },
+  {
+    "key": "f2",
+    "command": "editor.action.rename",
+    "when": "editorHasRenameProvider && editorTextFocus && !editorReadonly && !isMac"
+  },
+  {
+    "key": "f2",
+    "command": "workbench.action.terminal.renameInstance",
+    "when": "terminalHasBeenCreated && terminalTabsFocus && terminalTabsSingularSelection || terminalProcessSupported && terminalTabsFocus && terminalTabsSingularSelection && !isMac"
+  },
+  {
+    "key": "f2",
+    "command": "debug.renameWatchExpression",
+    "when": "watchExpressionsFocused && !isMac"
+  },
+  {
+    "key": "f2",
+    "command": "debug.setVariable",
+    "when": "variablesFocused && !isMac"
+  },
+  {
+    "key": "f2",
+    "command": "remote.tunnel.label",
+    "when": "tunnelViewFocus && tunnelType == 'Forwarded' && tunnelViewMultiSelection == 'undefined' && !isMac"
+  },
+  {
+    "key": "f2",
+    "command": "renameFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus && !isMac"
+  },
+  {
+    "key": "f2",
+    "command": "abracadabra.renameSymbol",
+    "when": "editorTextFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+1",
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled && !isMac"
+  },
+  {
+    "key": "alt+shift+2",
+    "command": "workbench.view.search",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+`",
+    "command": "workbench.view.debug",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+=",
+    "command": "workbench.action.zoomIn",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+-",
+    "command": "workbench.action.zoomOut",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+=",
+    "command": "editor.action.fontZoomIn",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+-",
+    "command": "editor.action.fontZoomOut",
+    "when": "!isMac"
+  },
+  {
+    "key": "shift+ctrl+alt+\\",
+    "command": "workbench.action.toggleAuxiliaryBar",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+p",
+    "command": "workbench.action.showCommands",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+p",
+    "command": "workbench.action.quickOpen",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+right",
+    "command": "cursorEnd",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+left",
+    "command": "cursorHome",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+h",
+    "command": "workbench.action.replaceInFiles",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+a",
+    "command": "editor.action.selectAll",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+a",
+    "command": "editor.action.webvieweditor.selectAll",
+    "when": "!editorFocus && !inputFocus && activeEditor == 'WebviewEditor' && !isMac"
+  },
+  {
+    "key": "alt+a",
+    "command": "list.selectAll",
+    "when": "listFocus && listSupportsMultiselect && !inputFocus && !isMac"
+  },
+  {
+    "key": "alt+s",
+    "command": "workbench.action.files.save",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+l",
+    "command": "expandLineSelection",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+s",
+    "command": "workbench.action.files.saveAll",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+z",
+    "command": "undo",
+    "when": "textInputFocus && !editorReadonly && !isMac"
+  },
+  {
+    "key": "alt+shift+z",
+    "command": "redo",
+    "when": "textInputFocus && !editorReadonly && !isMac"
+  },
+  {
+    "key": "alt+y",
+    "command": "redo",
+    "when": "textInputFocus && !editorReadonly && !isMac"
+  },
+  {
+    "key": "alt+shift+]",
+    "command": "workbench.action.nextEditor",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+[",
+    "command": "workbench.action.previousEditor",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+w",
+    "command": "workbench.action.closeActiveEditor",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+shift+d",
+    "command": "workbench.action.splitEditorDown",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+down",
+    "command": "cursorPageDown",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+up",
+    "command": "cursorPageUp",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+up",
+    "command": "cursorPageUpSelect",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+down",
+    "command": "cursorPageDownSelect",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+left",
+    "command": "cursorHomeSelect",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+right",
+    "command": "cursorEndSelect",
+    "when": "textInputFocus && !isMac",
+    "args": {
+      "sticky": false
+    }
+  },
+  {
+    "key": "alt+ctrl+left",
+    "command": "cursorTop",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+ctrl+up",
+    "command": "cursorTop",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+ctrl+shift+up",
+    "command": "cursorTopSelect",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+ctrl+right",
+    "command": "cursorBottom",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+ctrl+down",
+    "command": "cursorBottom",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+ctrl+shift+down",
+    "command": "cursorBottomSelect",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+ctrl+shift+left",
+    "command": "cursorTopSelect",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+ctrl+shift+right",
+    "command": "cursorBottomSelect",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+shift+n",
+    "command": "workbench.action.newWindow",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+d",
+    "command": "editor.action.addSelectionToNextFindMatch",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+/",
+    "command": "editor.action.commentLine",
+    "when": "editorTextFocus && !editorReadonly && !isMac"
+  },
+  {
+    "key": "alt+[",
+    "command": "editor.action.outdentLines",
+    "when": "editorTextFocus && !editorReadonly && !isMac"
+  },
+  {
+    "key": "alt+]",
+    "command": "editor.action.indentLines",
+    "when": "editorTextFocus && !editorReadonly && !isMac"
+  },
+  {
+    "key": "alt+o",
+    "command": "workbench.action.files.openFile",
+    "when": "!isMac"
+  },
+  {
+    "key": "alt+`",
+    "command": "workbench.action.terminal.toggleTerminal",
+    "when": "terminal.active && !isMac"
+  },
+  {
+    "key": "alt+c",
+    "command": "editor.action.clipboardCopyAction",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+c",
+    "command": "workbench.action.terminal.copySelection",
+    "when": "terminalFocus && terminalHasBeenCreated && terminalTextSelected && !isMac"
+  },
+  {
+    "key": "alt+c",
+    "command": "filesExplorer.copy",
+    "when": "filesExplorerFocus && !inputFocus && !isMac"
+  },
+  {
+    "key": "alt+c",
+    "command": "search.action.copyMatch",
+    "when": "fileMatchOrMatchFocus && !isMac"
+  },
+  {
+    "key": "alt+c",
+    "command": "problems.action.copy",
+    "when": "focusedView == 'workbench.panel.markers.view' && !isMac"
+  },
+  {
+    "key": "alt+c",
+    "command": "keybindings.editor.copyKeybindingEntry",
+    "when": "inKeybindings && keybindingFocus && !isMac"
+  },
+  {
+    "key": "alt+v",
+    "command": "editor.action.clipboardPasteAction",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+v",
+    "command": "workbench.action.terminal.paste",
+    "when": "terminalFocus && !isMac"
+  },
+  {
+    "key": "alt+v",
+    "command": "filesExplorer.paste",
+    "when": "filesExplorerFocus && !inputFocus && !isMac"
+  },
+  {
+    "key": "alt+x",
+    "command": "editor.action.clipboardCutAction",
+    "when": "textInputFocus && !isMac"
+  },
+  {
+    "key": "alt+x",
+    "command": "filesExplorer.cut",
+    "when": "filesExplorerFocus && !inputFocus && !isMac"
+  }
+]
