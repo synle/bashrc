@@ -161,6 +161,32 @@ function _getConfigs() {
 }
 
 /**
+ * Appends a platform condition to the "when" clause of each keybinding.
+ * @param {object[]} keybindings - Array of VS Code keybinding objects.
+ * @param {string} clause - The when-clause condition to append (e.g. "isMac").
+ * @returns {object[]} Keybindings with the clause appended to their "when" property.
+ */
+function _addWhenClause(keybindings, clause) {
+  return keybindings.map((kb) => ({
+    ...kb,
+    when: kb.when ? `${kb.when} && ${clause}` : clause,
+  }));
+}
+
+/**
+ * Returns a single combined keybinding config for all platforms using isMac/!isMac when-clauses.
+ * @returns {object[]} Array of resolved keybinding objects with platform conditions.
+ */
+function _getCombinedConfigs() {
+  return [
+    ..._addWhenClause(_formatKey(COMMON_KEY_BINDINGS, MAC_OSX_KEY), "isMac"),
+    ..._addWhenClause(_formatKey(COMMON_KEY_BINDINGS, WINDOWS_OS_KEY), "!isMac"),
+    ..._addWhenClause(MAC_ONLY_KEY_BINDINGS, "isMac"),
+    ..._addWhenClause(WINDOWS_ONLY_KEY_BINDINGS, "!isMac"),
+  ];
+}
+
+/**
  * Loads OS-specific keybinding configs, defines common keybindings, writes prebuilt configs per platform, and applies to the local VS Code installation.
  */
 async function doWork() {
@@ -177,22 +203,8 @@ async function doWork() {
   const comments = "Preferences Open Keyboard Shortcuts (JSON)";
   writeToBuildFile([
     {
-      file: "vs-code-keys-windows",
-      data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
-      isJson: true,
-      comments,
-      commentStyle: "json",
-    },
-    {
-      file: "vs-code-keys-linux",
-      data: _formatKey([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], WINDOWS_OS_KEY),
-      isJson: true,
-      comments,
-      commentStyle: "json",
-    },
-    {
-      file: "vs-code-keys-macosx",
-      data: _formatKey([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], MAC_OSX_KEY),
+      file: "vs-code-keys-combined",
+      data: _getCombinedConfigs(),
       isJson: true,
       comments,
       commentStyle: "json",
