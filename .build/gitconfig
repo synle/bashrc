@@ -113,6 +113,12 @@ patch-rename = "!f() { r=$(basename $(git rev-parse --show-toplevel)); d=$(date 
 # ---- Branch & Checkout ----
 co = checkout
 cob = checkout -b # Create and switch to new branch
+cop = checkout -  # checkout previous branch
+theirs = checkout --theirs  -- # choose theirs
+ours = checkout --ours  -- # choose ours
+hash = "!f() { git checkout $1 -- $2; }; f"  # from hash - git hash 7a2b3c4 path/to/file.txt
+their = "!git theirs"
+our = "!git ours"
 b = branch -vv # List branches with upstream/commit info
 ba = branch -a -vv # List all local/remote branches
 del = branch -D # Force delete branch
@@ -127,8 +133,7 @@ p = pull
 pu = pull
 po = push origin
 pof = push origin --force
-pdel-branch = push origin --delete # Delete a remote branch: git pdel-branch <branch>
-pdel-tag = push origin --delete --tag # Delete a remote tag: git pdel-tag <tag>
+pdel = push origin --delete # Delete a remote branch / tag: git pdel <branch/tag>
 track = "!git branch --set-upstream-to=origin/$(git branch --show-current)" # Set upstream to origin
 
 # ---- Rebase & Merge ----
@@ -145,8 +150,8 @@ ri-code = "!f() { GIT_EDITOR=\"code --wait\" git rebase -i ${1:-1}; }; f"
 
 # ---- Log & Diff ----
 logbaseline = log --decorate --abbrev-commit --date=short --graph
-ls = "!git logbaseline --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s\""
-lls = "!git logbaseline --oneline --author-date-order"
+ls = "!git logbaseline --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(green)%an %C(reset)%s\""
+lls = "!git logbaseline --date=format-local:'%Y-%m-%d %H:%M' --pretty=format:\"%C(yellow)%h %C(blue)%ad %C(reset)%s\" --author-date-order"
 l = "!git ls --stat" # Log with file stats
 ll = "!git lls --stat" # Oneline log with file stats
 d = diff --word-diff -w # Word-level diff ignoring whitespace
