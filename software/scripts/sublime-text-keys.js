@@ -9,9 +9,16 @@ const VSCODE_LIGHT_COLOR_THEME = "Default High Contrast Light";
 
 /** Glob patterns for locating the Sublime Text binary across platforms */
 const _SUBL_PATHS = [
+  // macOS (Sublime 3 & 4)
   "/Applications/Sublime*Text.app/Contents/SharedSupport/bin/subl",
+  "/Applications/Sublime*Text.app/Contents/MacOS/sublime_text",
+
+  // Windows (WSL paths)
   "/mnt/c/Program*Files/Sublime*Text*/sublime*.exe",
-  "/mnt/c/Program*Files/Sublime*Text*/subl*",
+  "/mnt/c/Program*Files/Sublime*Text*/subl*.exe",
+  "/mnt/c/Users/*/AppData/Local/Programs/Sublime*Text/sublime*.exe",
+
+  // Linux
   "/opt/sublime_text/subl*",
   "/usr/bin/subl",
   "/usr/local/bin/subl",
@@ -19,14 +26,30 @@ const _SUBL_PATHS = [
 
 /** Glob patterns for locating the VS Code / VSCodium binary across platforms */
 const _CODE_PATHS = [
-  "/mnt/c/Users/Sy*/AppData/Local/Programs/Microsoft*Code/Code.exe",
-  "/mnt/c/Users/Le*/AppData/Local/Programs/Microsoft*Code/Code.exe",
-  "/mnt/c/Program*Files/VSCodium/VSCodium.exe",
-  "/mnt/c/Program*Files/Microsoft*VS*Code/Code.exe",
+  // macOS
+  "/Applications/Visual*Studio*Code.app/Contents/Resources/app/bin/code",
+  "/Applications/Visual*Studio*Code*Insiders.app/Contents/Resources/app/bin/code",
+  "/Applications/VSCodium.app/Contents/Resources/app/bin/codium",
+
+  // macOS (Homebrew / manual CLI install)
+  "/opt/homebrew/bin/code",
+  "/opt/homebrew/bin/codium",
+  "/usr/local/bin/code",
   "/usr/local/bin/codium",
+
+  // Windows (WSL paths)
+  "/mnt/c/Users/*/AppData/Local/Programs/Microsoft*Code/Code.exe",
+  "/mnt/c/Users/*/AppData/Local/Programs/Microsoft*Code*Insiders/Code*.exe",
+  "/mnt/c/Program*Files/Microsoft*VS*Code/Code.exe",
+  "/mnt/c/Program*Files/VSCodium/VSCodium.exe",
+
+  // Linux
+  "/usr/bin/code",
   "/usr/local/bin/code",
   "/usr/bin/codium",
-  "/usr/bin/code",
+  "/usr/local/bin/codium",
+  "/snap/bin/code",
+  "/snap/bin/codium",
 ];
 
 /**
