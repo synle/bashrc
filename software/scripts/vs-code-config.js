@@ -228,7 +228,7 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     "editor.maxTokenizationLineLength": 7000, // Skip syntax highlighting for lines longer than this
     "editor.folding": true, // Enable code folding
     "editor.cursorBlinking": "solid", // No cursor blink animation — saves rendering cycles
-    "editor.occurrencesHighlight": false, // Don't highlight other occurrences of the selected word
+    "editor.occurrencesHighlight": "off", // Don't highlight other occurrences of the selected word
     "editor.selectionHighlight": false, // Don't highlight text matching the current selection
     "editor.codeLens": false, // Disable CodeLens (reference counts) — major CPU saver
     "editor.links": false, // Don't scan for and underline URLs in code
@@ -259,11 +259,11 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     "editor.lightbulb.enabled": "off", // Disable the lightbulb quick-fix icon
 
     // --- Git & Source Control ---
-    "git.enabled": true, // Keep git enabled so VS Code respects .gitignore for file exclusions
+    "git.enabled": false, // Disable git integration entirely — reduces background I/O
     "git.autorefresh": false, // Don't auto-refresh git status — reduces I/O on large repos
     "git.decorations.enabled": false, // Hide git status badges on files in sidebar
     "git.ignoreLimitWarning": true, // Suppress "repository has too many changes" warnings
-    "git.autofetch": true, // Periodically fetch from remote to keep local refs up to date
+    "git.autofetch": false, // Don't auto-fetch from remote — reduces background network I/O
     "scm.diffDecorations": "none", // Remove gutter diff color indicators (added/modified/deleted)
     "github.codespaces.showStatusbar": false, // Hide Codespaces status bar item
 
@@ -282,16 +282,13 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     "editor.wordWrap": "wordWrapColumn", // Wrap lines at a specific column
     "editor.wordWrapColumn": EDITOR_CONFIGS.maxLineSize, // Column at which to wrap lines
 
-    // --- Explorer ---
-    "explorer.excludeGitIgnore": true, // Hide .gitignore'd files from the Explorer sidebar
-
     // --- Files & Search ---
     "files.eol": "\n", // Use LF line endings by default
     "files.insertFinalNewline": true, // Always end files with a newline (POSIX convention)
     "files.trimTrailingWhitespace": true, // Remove trailing whitespace on save
     "files.hotExit": "off", // Don't save unsaved buffers on close — start fresh every time
     "search.followSymlinks": false, // Don't follow symlinks during search — prevents infinite loops
-    "search.useIgnoreFiles": true, // Respect .gitignore and .ignore files during search
+    "search.useIgnoreFiles": false, // Don't use .gitignore for search — ensures all project files are searchable
 
     // --- Languages & Formatting ---
     "editor.codeActionsOnSave": {
@@ -313,6 +310,11 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     "security.workspace.trust.enabled": false, // Disable workspace trust prompts — trust all workspaces
     "explorer.copyRelativePathSeparator": "/", // Always use forward slashes when copying relative paths
     "remote.SSH.remotePlatform": { "127.0.0.1": "linux" }, // Default remote platform for localhost SSH
+    "remote.SSH.localServerDownload": "auto", // Auto-download VS Code server to remote hosts
+    "remote.SSH.connectTimeout": 120, // SSH connection timeout in seconds (2 minutes)
+    "terminal.integrated.enablePersistentSessions": false, // Don't restore terminal sessions on restart
+    "terminal.integrated.defaultProfile.linux": "bash", // Use bash as default terminal shell on Linux
+    "terminal.integrated.defaultProfile.osx": "bash", // Use bash as default terminal shell on macOS
 
     // --- Theming ---
     "window.autoDetectColorScheme": true, // Follow the OS light/dark mode preference
