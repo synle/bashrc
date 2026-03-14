@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-12]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-14]
 # ####################################################################################################
 
 [user]
@@ -172,8 +172,8 @@ cpn = cherry-pick -n # Cherry-pick without committing
 # ---- Clone ----
 clone0 = clone --depth 1 --single-branch  # Shallow clone
 clone1 = clone --single-branch  # Full clone (single branch)
-cl0 = "!f() { git clone0 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
-cl1 = "!f() { git clone1 \"$@\" >/dev/null 2>&1 & disown; echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
+cl0 = "!f() { git clone0 \"$@\" >/dev/null 2>&1 & echo \"[cl0] Shallow clone of ${1} started in background...\"; }; f"
+cl1 = "!f() { git clone1 \"$@\" >/dev/null 2>&1 & echo \"[cl1] Full clone of master for ${1} started in background...\"; }; f"
 
 # ---- Search ----
 search-logs = "!f() { git log -G \"$1\" -- .; }; f" # Search diff content of all commits: git search-logs <text>

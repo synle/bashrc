@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-12]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-14]
 # 
 # Revert File Associations for Windows
 # Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows-revert.ps1
