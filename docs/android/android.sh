@@ -30,7 +30,7 @@ function remove_app(){
 ################################################################################
 # ---- Setting tweaks ----
 # Animation Speed: 0.5 is the community standard for "snappy"
-put_setting global window_animation_scale 0
+put_setting global window_animation_scale 0.4
 put_setting global transition_animation_scale 0.4
 put_setting global animator_duration_scale 0.4
 

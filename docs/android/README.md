@@ -80,3 +80,6 @@ function removePermissionLocation(){
   pm revoke $@ android.permission.ACCESS_FINE_LOCATION
 }
 ```
+
+
+https://github.com/synle/bashrc/blob/master/docs/android/android.sh
