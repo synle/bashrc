@@ -120,7 +120,7 @@
       },
       "Silence Bell": false,
       "Rows": 25,
-      "Guid": "D6E1224F-EA7A-46FE-B398-0560C4D1BDD0",
+      "Guid": "AE40F61D-6B89-4F1D-95DC-D54169500FAE",
       "Ansi 14 Color (Dark)": {
         "Green Component": 1, // {{dark.brightCyan_G}}
         "Blue Component": 1, // {{dark.brightCyan_B}}
@@ -435,7 +435,7 @@
         "Alpha Component": 1,
         "Green Component": 0.60392159223556519,
       },
-      "Normal Font": "FiraCodeRoman-SemiBold 15",
+      "Normal Font": "FiraCodeRoman-Bold 16",
       "Unlimited Scrollback": false,
       "Ansi 12 Color (Light)": {
         "Green Component": 0.3176470588235294, // {{light.brightBlue_G}}
@@ -578,7 +578,7 @@
           "Version": 2,
           "Apply Mode": 0,
           "Action": 28,
-          "Text": "D6E1224F-EA7A-46FE-B398-0560C4D1BDD0",
+          "Text": "AE40F61D-6B89-4F1D-95DC-D54169500FAE",
           "Escaping": 2,
         },
       },
