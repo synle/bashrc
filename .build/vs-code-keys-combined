@@ -251,6 +251,16 @@
     "when": "isMac"
   },
   {
+    "key": "ctrl+d",
+    "command": "workbench.action.splitEditor",
+    "when": "isMac"
+  },
+  {
+    "key": "ctrl+'",
+    "command": "workbench.action.splitEditorDown",
+    "when": "isMac"
+  },
+  {
     "key": "shift+ctrl+cmd+\\",
     "command": "workbench.action.toggleAuxiliaryBar",
     "when": "isMac"
@@ -498,6 +508,16 @@
   {
     "key": "alt+-",
     "command": "editor.action.fontZoomOut",
+    "when": "!isMac"
+  },
+  {
+    "key": "ctrl+d",
+    "command": "workbench.action.splitEditor",
+    "when": "!isMac"
+  },
+  {
+    "key": "ctrl+'",
+    "command": "workbench.action.splitEditorDown",
     "when": "!isMac"
   },
   {
