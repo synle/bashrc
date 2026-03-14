@@ -98,4 +98,23 @@
   { "key": ["OS_KEY+7"], "command": "select_by_index", "args": { "index": 6 } },
   { "key": ["OS_KEY+8"], "command": "select_by_index", "args": { "index": 7 } },
   { "key": ["OS_KEY+9"], "command": "select_by_index", "args": { "index": 8 } },
+  // split editor (ctrl+d vertical, ctrl+' horizontal)
+  {
+    "key": "ctrl+d",
+    "command": "set_layout",
+    "args": {
+      "cols": [0.0, 0.5, 1.0],
+      "rows": [0.0, 1.0],
+      "cells": [[0, 0, 1, 1], [1, 0, 2, 1]],
+    },
+  },
+  {
+    "key": "ctrl+'",
+    "command": "set_layout",
+    "args": {
+      "cols": [0.0, 1.0],
+      "rows": [0.0, 0.5, 1.0],
+      "cells": [[0, 0, 1, 1], [0, 1, 1, 2]],
+    },
+  },
 ]

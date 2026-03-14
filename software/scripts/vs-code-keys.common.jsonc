@@ -169,6 +169,15 @@
     "key": "OS_KEY+-",
     "command": "editor.action.fontZoomOut",
   },
+  // split editor (ctrl+d vertical, ctrl+' horizontal)
+  {
+    "key": "ctrl+d",
+    "command": "workbench.action.splitEditor",
+  },
+  {
+    "key": "ctrl+'",
+    "command": "workbench.action.splitEditorDown",
+  },
   // toggle right sidebar
   {
     "key": "shift+ctrl+OS_KEY+\\",
