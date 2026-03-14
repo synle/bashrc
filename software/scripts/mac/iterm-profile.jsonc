@@ -573,11 +573,19 @@
           "Text": "f",
           "Escaping": 0,
         },
-        // Cmd+': new window with current profile
+        // Cmd+D: split vertically with current profile
+        "0x64-0x100000-0x2": {
+          "Version": 2,
+          "Apply Mode": 0,
+          "Action": 26,
+          "Text": "AE40F61D-6B89-4F1D-95DC-D54169500FAE",
+          "Escaping": 2,
+        },
+        // Cmd+': split horizontally with current profile
         "0x27-0x100000-0x27": {
           "Version": 2,
           "Apply Mode": 0,
-          "Action": 28,
+          "Action": 25,
           "Text": "AE40F61D-6B89-4F1D-95DC-D54169500FAE",
           "Escaping": 2,
         },
