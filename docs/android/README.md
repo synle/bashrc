@@ -81,5 +81,4 @@ function removePermissionLocation(){
 }
 ```
 
-
 https://github.com/synle/bashrc/blob/master/docs/android/android.sh
