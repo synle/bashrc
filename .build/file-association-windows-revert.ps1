@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-14]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-15]
 # 
 # Revert File Associations for Windows
 # Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows-revert.ps1
@@ -13,6 +13,7 @@
 cmd /c "ftype sublime="
 cmd /c "ftype vlc="
 cmd /c "ftype 7-Zip="
+cmd /c "ftype PhotoViewer="
 
 # Remove 7-Zip context menu registry settings
 Remove-ItemProperty -Path "HKCU:\Software\7-Zip\Options" -Name "ContextMenu" -Force -ErrorAction SilentlyContinue
@@ -307,6 +308,32 @@ $extensions = @(
 ".jar"
 ".war"
 ".ear"
+".bmp"
+".gif"
+".ico"
+".jpeg"
+".jpg"
+".jfif"
+".png"
+".tif"
+".tiff"
+".webp"
+".arw"
+".cr2"
+".cr3"
+".dng"
+".nef"
+".orf"
+".raf"
+".rw2"
+".srw"
+".heic"
+".heif"
+".avif"
+".svg"
+".wdp"
+".hdp"
+".jxr"
 )
 
 foreach ($ext in $extensions) {

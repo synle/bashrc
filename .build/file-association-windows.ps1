@@ -1,8 +1,8 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-14]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-03-15]
 # 
 # File Associations for Windows
 # Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows.ps1
-# Sets Sublime Text, VLC, and 7-Zip as default apps for text, media, and archive files
+# Sets Sublime Text, VLC, 7-Zip, and Windows Photo Viewer as default apps for text, media, archive, and image files
 # To revert, run file-association-windows-revert.ps1 as Administrator
 # ####################################################################################################
 
@@ -13,6 +13,7 @@
 cmd /c 'ftype sublime="C:/Program Files/Sublime Text/sublime_text.exe" "%1"'
 cmd /c 'ftype vlc="C:/Program Files/VideoLAN/VLC/vlc.exe" "%1"'
 cmd /c 'ftype 7-Zip="C:/Program Files/7-Zip/7zFM.exe" "%1"'
+cmd /c 'ftype PhotoViewer=%SystemRoot%\\System32\\rundll32.exe "%ProgramFiles%\\Windows Photo Viewer\\PhotoViewer.dll", ImageView_Fullscreen %1'
 
 ####################################################################################################
 # 7-Zip context menu settings
@@ -337,6 +338,42 @@ $archiveExtensions = @(
 
 foreach ($ext in $archiveExtensions) {
   cmd /c "assoc $ext=7-Zip"
+}
+
+####################################################################################################
+# image file association (Windows Photo Viewer)
+####################################################################################################
+$imageExtensions = @(
+  ".bmp"
+".gif"
+".ico"
+".jpeg"
+".jpg"
+".jfif"
+".png"
+".tif"
+".tiff"
+".webp"
+".arw"
+".cr2"
+".cr3"
+".dng"
+".nef"
+".orf"
+".raf"
+".rw2"
+".srw"
+".heic"
+".heif"
+".avif"
+".svg"
+".wdp"
+".hdp"
+".jxr"
+)
+
+foreach ($ext in $imageExtensions) {
+  cmd /c "assoc $ext=PhotoViewer"
 }
 
 # Rebuild icon cache
