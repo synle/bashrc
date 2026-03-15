@@ -1,6 +1,8 @@
 ################################################################################
-# dependencies/windows.ps1 - All-in-one Windows setup, cleanup,
-# privacy hardening, and software installation.
+# dependencies/windows.ps1 - Windows setup, cleanup, privacy hardening,
+# and software installation.
+#
+# Prerequisites: Run windows-bootstrap.ps1 first on a fresh install.
 #
 # Run as Administrator:
 # ----  Set-Executionpolicy Unrestricted -Scope Currentuser ----
@@ -712,7 +714,13 @@ foreach ($svc in $recallServices) {
     Set-Service $svc -StartupType Disabled -ErrorAction SilentlyContinue
 }
 
-dism /online /disable-feature /featurename:Recall /norestart 2>$null
+$recallFeature = (Get-WindowsOptionalFeature -Online -FeatureName Recall -ErrorAction SilentlyContinue)
+if ($recallFeature -and $recallFeature.State -eq "Enabled") {
+    Write-Host "Disabling Recall feature..."
+    dism /online /disable-feature /featurename:Recall /norestart 2>$null
+} else {
+    Write-Host "Recall feature is already disabled or not present." -ForegroundColor Yellow
+}
 
 # --- Copilot ---
 $copilotKey = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
@@ -1182,7 +1190,8 @@ $wingetPackages = @(
     "WinFSP.SSHFS",
     "WinMerge.WinMerge",
     "WinSCP.WinSCP",
-    "Zoom.Zoom"
+    "Zoom.Zoom",
+    "Microsoft.WindowsTerminal"
 )
 
 foreach ($pkg in $wingetPackages) {
@@ -1652,6 +1661,10 @@ if (-not (Test-Path $classicMenuPath)) { New-Item -Path $classicMenuPath -Force 
 Set-ItemProperty -Path $classicMenuPath -Name "(Default)" -Value "" -Force
 
 Write-Host "System tweaks applied." -ForegroundColor Green
+
+
+
+################################################################################
 
 
 

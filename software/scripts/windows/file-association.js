@@ -7,6 +7,9 @@ const vlcBinaryPath = `C:/Program Files/VideoLAN/VLC/vlc.exe`;
 const sevenZipProgramBinaryName = "7-Zip";
 const sevenZipBinaryPath = `C:/Program Files/7-Zip/7zFM.exe`;
 
+const photoViewerProgramBinaryName = "PhotoViewer";
+const photoViewerDllPath = `%SystemRoot%\\\\System32\\\\rundll32.exe "%ProgramFiles%\\\\Windows Photo Viewer\\\\PhotoViewer.dll", ImageView_Fullscreen %1`;
+
 const psFooter = `
 # Rebuild icon cache
 Write-Host "Rebuilding icon cache..."
@@ -25,7 +28,8 @@ async function doWork() {
   const textExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.textfile.config"));
   const mediaExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.media.config"));
   const archiveExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.archive.config"));
-  const allExtensions = [...textExtensions, ...mediaExtensions, ...archiveExtensions];
+  const imageExtensions = convertTextToList(await fetchUrlAsString("software/metadata/file-association.image.config"));
+  const allExtensions = [...textExtensions, ...mediaExtensions, ...archiveExtensions, ...imageExtensions];
 
   const associationContent = trimLeftSpaces(`
     # Requires running as Administrator
@@ -35,6 +39,7 @@ async function doWork() {
     cmd /c 'ftype ${sublimeProgramBinaryName}="${sublimeBinaryPath}" "%1"'
     cmd /c 'ftype ${vlcProgramBinaryName}="${vlcBinaryPath}" "%1"'
     cmd /c 'ftype ${sevenZipProgramBinaryName}="${sevenZipBinaryPath}" "%1"'
+    cmd /c 'ftype ${photoViewerProgramBinaryName}=${photoViewerDllPath}'
 
     ${LINE_BREAK_HASH}
     # 7-Zip context menu settings
@@ -77,6 +82,17 @@ async function doWork() {
       cmd /c "assoc $ext=${sevenZipProgramBinaryName}"
     }
 
+    ${LINE_BREAK_HASH}
+    # image file association (Windows Photo Viewer)
+    ${LINE_BREAK_HASH}
+    $imageExtensions = @(
+    ${imageExtensions.map((ext) => `  ".${ext}"`).join("\n")}
+    )
+
+    foreach ($ext in $imageExtensions) {
+      cmd /c "assoc $ext=${photoViewerProgramBinaryName}"
+    }
+
     ${psFooter}
   `);
 
@@ -89,6 +105,7 @@ async function doWork() {
     cmd /c "ftype ${sublimeProgramBinaryName}="
     cmd /c "ftype ${vlcProgramBinaryName}="
     cmd /c "ftype ${sevenZipProgramBinaryName}="
+    cmd /c "ftype ${photoViewerProgramBinaryName}="
 
     # Remove 7-Zip context menu registry settings
     Remove-ItemProperty -Path "HKCU:\\Software\\7-Zip\\Options" -Name "ContextMenu" -Force -ErrorAction SilentlyContinue
@@ -121,7 +138,7 @@ async function doWork() {
       comments: `
         File Associations for Windows
         Run as Administrator: powershell -ExecutionPolicy Bypass -File file-association-windows.ps1
-        Sets Sublime Text, VLC, and 7-Zip as default apps for text, media, and archive files
+        Sets Sublime Text, VLC, 7-Zip, and Windows Photo Viewer as default apps for text, media, archive, and image files
         To revert, run file-association-windows-revert.ps1 as Administrator
       `,
       commentStyle: "bash",
