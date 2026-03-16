@@ -1216,6 +1216,7 @@ function WindowsNotesDom() {
       <TargetSystemOSWarningDom targetDomString="is_os_windows" />
       <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
       <DynamicTextArea path="/docs/windows/README.md" />
+      <DynamicTextArea path="/software/bootstrap/dependencies/windows-bootstrap.ps1" />
       <DynamicTextArea path="/software/bootstrap/dependencies/windows.ps1" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/windows-terminal" />
