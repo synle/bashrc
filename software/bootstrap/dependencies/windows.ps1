@@ -903,7 +903,8 @@ $wingetPackages = @(
     "WinMerge.WinMerge",
     "WinSCP.WinSCP",
     "Zoom.Zoom",
-    "Microsoft.WindowsTerminal"
+    "Microsoft.WindowsTerminal",
+    "CharlesMilette.TranslucentTB"
 )
 
 foreach ($pkg in $wingetPackages) {
