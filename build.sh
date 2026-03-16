@@ -199,6 +199,24 @@ echo "Steps to run: $_normalized"
     fi
   fi
 
+  # unzip (non-macOS only)
+  # unzip is required by the fnm installer to extract the binary.
+  # This runs early so fnm can install successfully on a fresh system.
+  if [ "$is_os_mac" != "1" ] && [ "$is_os_android_termux" != "1" ]; then
+    if ! command -v unzip >/dev/null 2>&1; then
+      echo ">> Installing unzip"
+      if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update -y >/dev/null 2>&1 && sudo apt-get install -y unzip >/dev/null 2>&1
+      elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y unzip >/dev/null 2>&1
+      elif command -v yum >/dev/null 2>&1; then
+        sudo yum install -y unzip >/dev/null 2>&1
+      elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --noconfirm unzip >/dev/null 2>&1
+      fi
+    fi
+  fi
+
   # install_fnm_node - Install fnm and Node.js (skip on Android Termux)
   # Handles force refresh, fnm download, Node install, and /usr/local/bin symlinks.
   function install_fnm_node() {
