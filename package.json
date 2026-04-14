@@ -24,7 +24,7 @@
     "prettier": "^3.8.1",
     "puppeteer": "^24.40.0",
     "sass": "^1.97.3",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "vite": "^4.4.0",
     "vite-plugin-singlefile": "^0.13.5",
     "vitest": "^0.34.6"
