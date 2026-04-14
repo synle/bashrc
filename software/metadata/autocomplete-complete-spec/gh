@@ -1,0 +1,57 @@
+auth|login,logout,refresh,setup-git,status,switch,token
+auth login|--git-protocol,--hostname,-h,--scopes,-s,--web,-w,--with-token,--insecure-storage,--skip-ssh-key
+auth logout|--hostname,-h
+auth status|--hostname,-h,--show-token,-t,--active
+auth token|--hostname,-h
+browse|--branch,-b,--commit,-c,--no-browser,-n,--projects,-p,--releases,-r,--repo,-R,--settings,-s,--wiki,-w
+issue|close,comment,create,delete,develop,edit,list,lock,pin,reopen,status,transfer,unlock,unpin,view
+issue create|--assignee,-a,--body,-b,--body-file,-F,--label,-l,--milestone,-m,--project,-p,--recover,--template,-T,--title,-t,--web,-w,--repo,-R
+issue list|--assignee,-a,--author,-A,--json,-q,--jq,--label,-l,--limit,-L,--mention,--milestone,-m,--search,-S,--state,-s,--web,-w,--repo,-R,--app
+issue view|--comments,-c,--json,-q,--jq,--web,-w,--repo,-R
+issue close|--comment,-c,--reason,-r,--repo,-R
+issue edit|--add-assignee,--add-label,--add-project,--body,-b,--body-file,-F,--milestone,-m,--remove-assignee,--remove-label,--remove-project,--title,-t,--repo,-R
+pr|checkout,checks,close,comment,create,diff,edit,list,lock,merge,ready,reopen,review,status,unlock,view
+pr create|--assignee,-a,--base,-B,--body,-b,--body-file,-F,--draft,-d,--fill,-f,--fill-first,--fill-verbose,--head,-H,--label,-l,--milestone,-m,--no-maintainer-edit,--project,-p,--recover,--reviewer,-r,--template,-T,--title,-t,--web,-w,--repo,-R
+pr list|--assignee,-a,--author,-A,--base,-B,--draft,-d,--head,-H,--json,-q,--jq,--label,-l,--limit,-L,--search,-S,--state,-s,--web,-w,--repo,-R,--app
+pr view|--comments,-c,--json,-q,--jq,--web,-w,--repo,-R
+pr checkout|--branch,-b,--detach,--force,-f,--recurse-submodules,--repo,-R
+pr merge|--admin,--auto,--body,-b,--delete-branch,-d,--disable-auto,--match-head-commit,--merge,-m,--rebase,-r,--squash,-s,--subject,-t,--repo,-R
+pr diff|--color,--name-only,--patch,--web,-w,--repo,-R
+pr checks|--fail-fast,--interval,-i,--required,--watch,-w,--web,--repo,-R
+pr close|--comment,-c,--delete-branch,-d,--repo,-R
+pr edit|--add-assignee,--add-label,--add-project,--add-reviewer,--base,-B,--body,-b,--body-file,-F,--milestone,-m,--remove-assignee,--remove-label,--remove-project,--remove-reviewer,--title,-t,--repo,-R
+pr review|--approve,-a,--body,-b,--body-file,-F,--comment,-c,--request-changes,-r,--repo,-R
+repo|archive,clone,create,delete,deploy-key,edit,fork,list,rename,set-default,sync,unarchive,view
+repo clone|--upstream-remote-name,-u
+repo create|--add-readme,--clone,-c,--description,-d,--disable-issues,--disable-wiki,--gitignore,-g,--homepage,-h,--include-all-branches,--internal,--license,-l,--private,--public,--push,-p,--remote,-r,--source,-s,--team,-t,--template,-tp
+repo list|--archived,--fork,--json,-q,--jq,--language,-l,--limit,-L,--no-archived,--source,--topic,--visibility
+repo view|--branch,-b,--json,-q,--jq,--web,-w,--repo,-R
+repo fork|--clone,--fork-name,--org,--remote,--remote-name,--repo,-R
+run|cancel,delete,download,list,rerun,view,watch
+run list|--branch,-b,--commit,--created,--event,-e,--json,-q,--jq,--limit,-L,--status,-s,--user,-u,--workflow,-w,--repo,-R
+run view|--attempt,--exit-status,--job,-j,--json,-q,--jq,--log,--log-failed,--verbose,-v,--web,-w,--repo,-R
+run watch|--exit-status,--interval,-i,--repo,-R
+workflow|disable,enable,list,run,view
+workflow run|--field,-f,--json,--ref,-r,--repo,-R
+workflow list|--all,-a,--json,-q,--jq,--limit,-L,--repo,-R
+release|create,delete,delete-asset,download,edit,list,upload,view
+release create|--draft,-d,--generate-notes,--latest,--notes,-n,--notes-file,-F,--notes-start-tag,--prerelease,-p,--target,--title,-t,--verify-tag,--repo,-R
+release list|--exclude-drafts,--exclude-pre-releases,--json,-q,--jq,--limit,-L,--order,--repo,-R
+release view|--json,-q,--jq,--web,-w,--repo,-R
+gist|clone,create,delete,edit,list,rename,view
+gist create|--desc,-d,--filename,-f,--public,-p,--web,-w
+gist list|--limit,-L,--public,--secret
+search|code,commits,issues,prs,repos
+search repos|--archived,--created,--followers,--forks,--good-first-issues,--help-wanted-issues,--include-forks,--json,-q,--jq,--language,-l,--license,--limit,-L,--match,--number-topics,--order,--owner,--size,--sort,--stars,--topic,--updated,--visibility,--web,-w
+search issues|--archived,--assignee,--author,--closed,--commenter,--created,--include-prs,--interactions,--involves,--json,-q,--jq,--label,--language,-l,--limit,-L,--match,--mention,--milestone,--no-assignee,--no-label,--no-milestone,--no-project,--order,--owner,--project,--reactions,--repo,-R,--sort,--state,--team-mention,--updated,--visibility,--web,-w
+search prs|--archived,--assignee,--author,--closed,--commenter,--created,--draft,--interactions,--involves,--json,-q,--jq,--label,--language,-l,--limit,-L,--match,--mention,--merged,--milestone,--no-assignee,--no-label,--no-milestone,--no-project,--order,--owner,--project,--reactions,--repo,-R,--review,--review-requested,--reviewed-by,--sort,--state,--team-mention,--team-review-requested,--updated,--visibility,--web,-w
+api|--cache,--field,-f,--header,-H,--hostname,--include,-i,--input,--jq,-q,--method,-X,--paginate,-p,--preview,-P,--raw-field,-F,--silent,--slurp,--template,-t,--verbose
+config|get,list,set,clear-cache
+config set|--host,-h
+config get|--host,-h
+extension|browse,create,exec,install,list,remove,search,upgrade
+secret|delete,list,set
+secret set|--app,-a,--body,-b,--env,-e,--no-store,--org,-o,--repos,-r,--visibility,-v,--repo,-R
+variable|delete,get,list,set
+alias|delete,import,list,set
+cache|delete,list

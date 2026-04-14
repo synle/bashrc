@@ -1,0 +1,183 @@
+{
+  // High Contrast Dark - modeled after VS Code Default High Contrast
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Sy Dark", // {{dark.themeName}}
+  "author": "synle",
+  "themes": [
+    {
+      "name": "Sy Dark", // {{dark.themeName}}
+      "appearance": "dark",
+      "style": {
+        // --- Editor Chrome ---
+        "background": "#0a0a0a", // {{dark.background}}
+        "editor.background": "#0a0a0a", // {{dark.background}}
+        "editor.foreground": "#e0e0e0", // {{dark.foreground}}
+        "editor.gutter.background": "#0a0a0a", // {{dark.background}}
+        "editor.line.active": "#454545", // {{dark.brightGray}}
+        "editor.active_line.background": "#454545", // {{dark.brightGray}}
+        "editor.highlighted_line.background": "#454545", // {{dark.brightGray}}
+        "editor.subheader.background": "#0a0a0a", // {{dark.background}}
+
+        // --- Text ---
+        "text": "#e0e0e0", // {{dark.foreground}}
+        "text.muted": "#858585", // {{dark.brightBlack}}
+        "text.placeholder": "#858585", // {{dark.brightBlack}}
+        "text.disabled": "#858585", // {{dark.brightBlack}}
+        "text.accent": "#569cd6", // {{dark.blue}}
+
+        // --- Cursor ---
+        "editor.document_highlight.read_background": "#264f78", // {{dark.selection}}
+        "editor.document_highlight.write_background": "#264f78", // {{dark.selection}}
+
+        // --- Selection ---
+        "selection.background": "#264f78", // {{dark.selection}}
+
+        // --- UI Elements ---
+        "element.background": "#0a0a0a", // {{dark.background}}
+        "element.hover": "#1e1e1e", // {{dark.gray}}
+        "element.active": "#454545", // {{dark.brightGray}}
+        "element.selected": "#264f78", // {{dark.selection}}
+        "element.disabled": "#1e1e1e", // {{dark.gray}}
+        "ghost_element.background": "#0a0a0a", // {{dark.background}}
+        "ghost_element.hover": "#1e1e1e", // {{dark.gray}}
+        "ghost_element.active": "#454545", // {{dark.brightGray}}
+        "ghost_element.selected": "#264f78", // {{dark.selection}}
+        "ghost_element.disabled": "#1e1e1e", // {{dark.gray}}
+        "drop_target.background": "#264f78", // {{dark.selection}}
+
+        // --- Surface / Panel ---
+        "surface.background": "#0a0a0a", // {{dark.background}}
+        "elevated_surface.background": "#0a0a0a", // {{dark.background}}
+        "panel.background": "#0a0a0a", // {{dark.background}}
+        "panel.focused_border": "#569cd6", // {{dark.blue}}
+        "pane.focused_border": "#569cd6", // {{dark.blue}}
+        "title_bar.background": "#0a0a0a", // {{dark.background}}
+        "title_bar.inactive_background": "#0a0a0a", // {{dark.background}}
+        "toolbar.background": "#0a0a0a", // {{dark.background}}
+        "tab_bar.background": "#0a0a0a", // {{dark.background}}
+        "tab.inactive_background": "#0a0a0a", // {{dark.background}}
+        "tab.active_background": "#0a0a0a", // {{dark.background}}
+        "search.match_background": "#ffffa5", // {{dark.brightYellow}}
+        "status_bar.background": "#0a0a0a", // {{dark.background}}
+        "scrollbar.thumb.background": "#858585", // {{dark.brightBlack}}
+        "scrollbar.thumb.border": "#858585", // {{dark.brightBlack}}
+        "scrollbar.track.background": "#0a0a0a", // {{dark.background}}
+        "scrollbar.track.border": "#0a0a0a", // {{dark.background}}
+
+        // --- Borders ---
+        "border": "#454545", // {{dark.brightGray}}
+        "border.variant": "#454545", // {{dark.brightGray}}
+        "border.focused": "#569cd6", // {{dark.blue}}
+        "border.selected": "#569cd6", // {{dark.blue}}
+        "border.transparent": "#0a0a0a", // {{dark.background}}
+        "border.disabled": "#454545", // {{dark.brightGray}}
+
+        // --- Links ---
+        "link_text.hover": "#569cd6", // {{dark.blue}}
+
+        // --- Conflict / Diff ---
+        "conflict": "#ce9178", // {{dark.orange}}
+        "conflict.background": "#ce9178", // {{dark.orange}}
+        "conflict.border": "#ce9178", // {{dark.orange}}
+        "created": "#608b4e", // {{dark.green}}
+        "created.background": "#608b4e", // {{dark.green}}
+        "created.border": "#608b4e", // {{dark.green}}
+        "deleted": "#f44747", // {{dark.red}}
+        "deleted.background": "#f44747", // {{dark.red}}
+        "deleted.border": "#f44747", // {{dark.red}}
+        "modified": "#569cd6", // {{dark.blue}}
+        "modified.background": "#569cd6", // {{dark.blue}}
+        "modified.border": "#569cd6", // {{dark.blue}}
+
+        // --- Diagnostics ---
+        "error": "#f44747", // {{dark.red}}
+        "error.background": "#f44747", // {{dark.red}}
+        "error.border": "#f44747", // {{dark.red}}
+        "warning": "#dcdcaa", // {{dark.yellow}}
+        "warning.background": "#dcdcaa", // {{dark.yellow}}
+        "warning.border": "#dcdcaa", // {{dark.yellow}}
+        "info": "#569cd6", // {{dark.blue}}
+        "info.background": "#569cd6", // {{dark.blue}}
+        "info.border": "#569cd6", // {{dark.blue}}
+        "hint": "#4ec9b0", // {{dark.cyan}}
+        "hint.background": "#4ec9b0", // {{dark.cyan}}
+        "hint.border": "#4ec9b0", // {{dark.cyan}}
+        "predictive": "#858585", // {{dark.brightBlack}}
+        "renamed": "#569cd6", // {{dark.blue}}
+        "renamed.background": "#569cd6", // {{dark.blue}}
+        "renamed.border": "#569cd6", // {{dark.blue}}
+        "success": "#608b4e", // {{dark.green}}
+        "success.background": "#608b4e", // {{dark.green}}
+        "success.border": "#608b4e", // {{dark.green}}
+        "unreachable": "#858585", // {{dark.brightBlack}}
+        "unreachable.background": "#858585", // {{dark.brightBlack}}
+        "unreachable.border": "#858585", // {{dark.brightBlack}}
+
+        // --- Syntax ---
+        "syntax": {
+          "attribute": { "color": "#9CDCFE" }, // {{dark.lightBlue}}
+          "boolean": { "color": "#569CD6" }, // {{dark.blue}}
+          "comment": { "color": "#608B4E" }, // {{dark.green}}
+          "comment.doc": { "color": "#608B4E" }, // {{dark.green}}
+          "constant": { "color": "#4FC1FF" }, // {{dark.brightBlue}}
+          "constructor": { "color": "#4EC9B0" }, // {{dark.cyan}}
+          "embedded": { "color": "#CE9178" }, // {{dark.orange}}
+          "emphasis": { "color": "#569CD6", "font_style": "italic" }, // {{dark.blue}}
+          "emphasis.strong": { "color": "#569CD6", "font_weight": 700 }, // {{dark.blue}}
+          "enum": { "color": "#4EC9B0" }, // {{dark.cyan}}
+          "function": { "color": "#DCDCAA" }, // {{dark.yellow}}
+          "hint": { "color": "#4EC9B0" }, // {{dark.cyan}}
+          "keyword": { "color": "#569CD6" }, // {{dark.blue}}
+          "label": { "color": "#9CDCFE" }, // {{dark.lightBlue}}
+          "link_text": { "color": "#CE9178" }, // {{dark.orange}}
+          "link_uri": { "color": "#CE9178" }, // {{dark.orange}}
+          "number": { "color": "#B5CEA8" }, // {{dark.lightGreen}}
+          "operator": { "color": "#FFFFFF" }, // {{dark.foreground}}
+          "predictive": { "color": "#858585" }, // {{dark.brightBlack}}
+          "preproc": { "color": "#C586C0" }, // {{dark.purple}}
+          "primary": { "color": "#9CDCFE" }, // {{dark.lightBlue}}
+          "property": { "color": "#9CDCFE" }, // {{dark.lightBlue}}
+          "punctuation": { "color": "#FFFFFF" }, // {{dark.foreground}}
+          "punctuation.bracket": { "color": "#FFFFFF" }, // {{dark.foreground}}
+          "punctuation.delimiter": { "color": "#FFFFFF" }, // {{dark.foreground}}
+          "punctuation.list_marker": { "color": "#569CD6" }, // {{dark.blue}}
+          "punctuation.special": { "color": "#D7BA7D" }, // {{dark.gold}}
+          "string": { "color": "#CE9178" }, // {{dark.orange}}
+          "string.escape": { "color": "#D7BA7D" }, // {{dark.gold}}
+          "string.regex": { "color": "#D16969" }, // {{dark.darkRed}}
+          "string.special": { "color": "#D7BA7D" }, // {{dark.gold}}
+          "string.special.symbol": { "color": "#D7BA7D" }, // {{dark.gold}}
+          "tag": { "color": "#569CD6" }, // {{dark.blue}}
+          "text.literal": { "color": "#CE9178" }, // {{dark.orange}}
+          "title": { "color": "#569CD6", "font_weight": 700 }, // {{dark.blue}}
+          "type": { "color": "#4EC9B0" }, // {{dark.cyan}}
+          "variable": { "color": "#9CDCFE" }, // {{dark.lightBlue}}
+          "variable.special": { "color": "#569CD6" }, // {{dark.blue}}
+          "variant": { "color": "#4EC9B0" }, // {{dark.cyan}}
+        },
+
+        // --- Terminal ---
+        "terminal.background": "#0a0a0a", // {{dark.background}}
+        "terminal.foreground": "#e0e0e0", // {{dark.foreground}}
+        "terminal.bright_foreground": "#ffffff", // {{dark.brightWhite}}
+        "terminal.dim_foreground": "#858585", // {{dark.brightBlack}}
+        "terminal.ansi.black": "#000000", // {{dark.black}}
+        "terminal.ansi.red": "#f44747", // {{dark.red}}
+        "terminal.ansi.green": "#608b4e", // {{dark.green}}
+        "terminal.ansi.yellow": "#dcdcaa", // {{dark.yellow}}
+        "terminal.ansi.blue": "#569cd6", // {{dark.blue}}
+        "terminal.ansi.magenta": "#c586c0", // {{dark.purple}}
+        "terminal.ansi.cyan": "#4ec9b0", // {{dark.cyan}}
+        "terminal.ansi.white": "#cccccc", // {{dark.white}}
+        "terminal.ansi.bright_black": "#858585", // {{dark.brightBlack}}
+        "terminal.ansi.bright_red": "#ff6e6e", // {{dark.brightRed}}
+        "terminal.ansi.bright_green": "#69ff94", // {{dark.brightGreen}}
+        "terminal.ansi.bright_yellow": "#ffffa5", // {{dark.brightYellow}}
+        "terminal.ansi.bright_blue": "#4fc1ff", // {{dark.brightBlue}}
+        "terminal.ansi.bright_magenta": "#ff92df", // {{dark.brightPurple}}
+        "terminal.ansi.bright_cyan": "#a4ffff", // {{dark.brightCyan}}
+        "terminal.ansi.bright_white": "#ffffff", // {{dark.brightWhite}}
+      },
+    },
+  ],
+}

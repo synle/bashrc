@@ -1,0 +1,252 @@
+// Zed Settings
+// ################################################################################
+
+
+{
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "hard_tabs": false,
+  "soft_wrap": "editor_width",
+  "auto_indent_on_paste": true,
+  "linked_edits": true,
+  "multi_cursor_modifier": "cmd_or_ctrl",
+  "colorize_brackets": true,
+  "show_whitespaces": "all",
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
+  "format_on_save": "on",
+  "vim_mode": false,
+  "search": {
+    "include_ignored": false
+  },
+  "cursor_blink": false,
+  "minimap": {
+    "show": "never"
+  },
+  "scrollbar": {
+    "show": "auto"
+  },
+  "gutter": {
+    "line_numbers": true,
+    "folds": false
+  },
+  "indent_guides": {
+    "enabled": false
+  },
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false
+  },
+  "tabs": {
+    "close_position": "right",
+    "git_status": false
+  },
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "auto_update": false,
+  "git": {
+    "enabled": true,
+    "autoFetch": true,
+    "git_gutter": "hide"
+  },
+  "auto_install_extensions": {
+    "material-icon-theme": true
+  },
+  "icon_theme": "Material Icon Theme",
+  "theme": {
+    "mode": "system",
+    "light": "One Light",
+    "dark": "One Dark"
+  },
+  "buffer_font_family": "Courier New",
+  "buffer_font_weight": 700,
+  "buffer_font_size": 16,
+  "ui_font_size": 16,
+  "tab_size": 2,
+  "preferred_line_length": 140,
+  "terminal": {
+    "font_size": 16,
+    "font_family": "Courier New",
+    "shell": {
+      "program": "bash"
+    }
+  },
+  "languages": {
+    "JavaScript": {
+      "tab_size": 2,
+      "format_on_save": "on"
+    },
+    "TypeScript": {
+      "tab_size": 2,
+      "format_on_save": "on"
+    },
+    "JSON": {
+      "tab_size": 2,
+      "format_on_save": "on"
+    },
+    "HTML": {
+      "tab_size": 2,
+      "format_on_save": "on"
+    },
+    "Markdown": {
+      "tab_size": 2,
+      "soft_wrap": "preferred_line_length"
+    },
+    "YAML": {
+      "tab_size": 2,
+      "format_on_save": "on"
+    }
+  },
+  "file_scan_exclusions": [
+    "**/.angular",
+    "**/.astro",
+    "**/.bundle",
+    "**/.cache",
+    "**/.docusaurus",
+    "**/.ebextensions",
+    "**/.eggs",
+    "**/.generated",
+    "**/.git",
+    "**/.gradle",
+    "**/.hg",
+    "**/.hypothesis",
+    "**/.idea",
+    "**/.mypy_cache",
+    "**/.next",
+    "**/.nox",
+    "**/.nuxt",
+    "**/.nx",
+    "**/.parcel-cache",
+    "**/.pnpm-store",
+    "**/.pytest_cache",
+    "**/.ruff_*",
+    "**/.ruff_cache",
+    "**/.sass-cache",
+    "**/.serverless",
+    "**/.svelte-kit",
+    "**/.svn",
+    "**/.terraform",
+    "**/.tox",
+    "**/.turbo",
+    "**/.uv",
+    "**/.venv",
+    "**/.yarn",
+    "**/__pycache*",
+    "**/__pycache__",
+    "**/__pypackages__",
+    "**/bower_components",
+    "**/build",
+    "**/coverage",
+    "**/CVS",
+    "**/dist",
+    "**/htmlcov",
+    "**/node_modules",
+    "**/target",
+    "**/tmp",
+    "**/vendor",
+    "**/venv",
+    "**/webpack-dist",
+    "**/._*",
+    "**/.AppleDouble",
+    "**/.DS_Store",
+    "**/.LSOverride",
+    "**/.Spotlight-*",
+    "**/.Trashes",
+    "**/Desktop.ini",
+    "**/ehthumbs.db",
+    "**/Thumbs.db",
+    "**/*.code-search",
+    "**/*.Identifier",
+    "**/*.sublime-workspace",
+    "**/*.suo",
+    "**/*.swp",
+    "**/.eslintcache",
+    "**/*.stylelintcache",
+    "**/*.tsbuildinfo",
+    "**/*.js.map",
+    "**/*.map",
+    "**/*.min.js",
+    "**/bun.lockb",
+    "**/package-lock.json",
+    "**/pnpm-lock.yaml",
+    "**/yarn.lock",
+    "**/*.orig",
+    "**/*.rej",
+    "**/*.pid",
+    "**/*.pid.lock",
+    "**/*.egg",
+    "**/*.egg-info",
+    "**/*.py[cod]",
+    "**/*.pyc",
+    "**/*.pyo",
+    "**/*.seed",
+    "**/*.7z",
+    "**/*.a",
+    "**/*.aac",
+    "**/*.apk",
+    "**/*.avi",
+    "**/*.bmp",
+    "**/*.bz2",
+    "**/*.class",
+    "**/*.db",
+    "**/*.dds",
+    "**/*.deb",
+    "**/*.dll",
+    "**/*.dmg",
+    "**/*.doc",
+    "**/*.docx",
+    "**/*.dylib",
+    "**/*.eot",
+    "**/*.exe",
+    "**/*.flac",
+    "**/*.flv",
+    "**/*.gif",
+    "**/*.gz",
+    "**/*.heic",
+    "**/*.ico",
+    "**/*.idb",
+    "**/*.jar",
+    "**/*.jpeg",
+    "**/*.jpg",
+    "**/*.lib",
+    "**/*.mkv",
+    "**/*.mov",
+    "**/*.mp3",
+    "**/*.mp4",
+    "**/*.msi",
+    "**/*.ncb",
+    "**/*.o",
+    "**/*.obj",
+    "**/*.ogg",
+    "**/*.pdb",
+    "**/*.pdf",
+    "**/*.png",
+    "**/*.ppt",
+    "**/*.pptx",
+    "**/*.psd",
+    "**/*.rar",
+    "**/*.rpm",
+    "**/*.sdf",
+    "**/*.so",
+    "**/*.sqlite",
+    "**/*.svg",
+    "**/*.swf",
+    "**/*.tar",
+    "**/*.tga",
+    "**/*.tiff",
+    "**/*.ttf",
+    "**/*.wasm",
+    "**/*.wav",
+    "**/*.webp",
+    "**/*.wmv",
+    "**/*.woff",
+    "**/*.woff2",
+    "**/*.xls",
+    "**/*.xlsx",
+    "**/*.xz",
+    "**/*.zip"
+  ]
+}

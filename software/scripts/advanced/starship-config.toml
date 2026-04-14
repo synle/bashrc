@@ -1,0 +1,192 @@
+# Starship prompt config - matches bashrc PS1 layout
+# Line 1: local_time U=utc_time user @ hostname ip_address
+# Line 2: directory [git_branch ahead/behind]
+# Line 3: >>>
+
+format = """
+${env_var.LOCAL_TIME} \
+[U=](bold yellow)${env_var.UTC_TIME} \
+[$username](bold blue) @ \
+[$hostname](bold purple) \
+${env_var.IP_ADDR}\
+$fill
+${env_var.SHORT_PWD} \
+$git_branch\
+$git_status\
+$fill
+${env_var.BASH_VER}[>](bold white) """
+
+# increase git command timeout from default 500ms to 2000ms
+command_timeout = 2000
+
+# disable default newline at top of prompt
+add_newline = false
+
+[username]
+show_always = true
+style_user = "bold blue"
+style_root = "bold red"
+format = "[$user]($style)"
+
+[hostname]
+ssh_only = false
+style = "bold purple"
+format = "[$hostname]($style)"
+
+[directory]
+disabled = true
+
+[git_branch]
+style = "bold cyan"
+format = "[\\[$branch\\]]($style)"
+
+[git_status]
+style = "bold cyan"
+format = "[ $ahead_behind]($style)"
+ahead = "+$count"
+behind = "-$count"
+diverged = "+$ahead_count -$behind_count"
+up_to_date = ""
+
+[fill]
+symbol = " "
+
+# disable modules not needed in prompt
+[package]
+disabled = true
+
+[nodejs]
+disabled = true
+
+[python]
+disabled = true
+
+[rust]
+disabled = true
+
+[golang]
+disabled = true
+
+[java]
+disabled = true
+
+[dotnet]
+disabled = true
+
+[ruby]
+disabled = true
+
+[php]
+disabled = true
+
+[lua]
+disabled = true
+
+[perl]
+disabled = true
+
+[swift]
+disabled = true
+
+[kotlin]
+disabled = true
+
+[dart]
+disabled = true
+
+[elixir]
+disabled = true
+
+[elm]
+disabled = true
+
+[erlang]
+disabled = true
+
+[haskell]
+disabled = true
+
+[julia]
+disabled = true
+
+[nim]
+disabled = true
+
+[ocaml]
+disabled = true
+
+[purescript]
+disabled = true
+
+[zig]
+disabled = true
+
+[terraform]
+disabled = true
+
+[vagrant]
+disabled = true
+
+[nix_shell]
+disabled = true
+
+[conda]
+disabled = true
+
+[docker_context]
+disabled = true
+
+[aws]
+disabled = true
+
+[gcloud]
+disabled = true
+
+[azure]
+disabled = true
+
+[kubernetes]
+disabled = true
+
+[cmd_duration]
+disabled = true
+
+[line_break]
+disabled = true
+
+[memory_usage]
+disabled = true
+
+[battery]
+disabled = true
+
+[time]
+disabled = true
+
+[character]
+disabled = true
+
+[env_var.LOCAL_TIME]
+variable = "STARSHIP_LOCAL_TIME"
+default = ""
+format = "[$env_value](bold green)"
+
+[env_var.UTC_TIME]
+variable = "STARSHIP_UTC_TIME"
+default = ""
+format = "[$env_value](bold yellow)"
+
+[env_var.IP_ADDR]
+variable = "STARSHIP_IP_ADDR"
+default = ""
+format = "[$env_value](bold yellow)"
+
+[env_var.SHORT_PWD]
+variable = "STARSHIP_SHORT_PWD"
+default = ""
+format = "[$env_value](bold red)"
+
+[env_var.BASH_VER]
+variable = "STARSHIP_BASH_VER"
+default = ""
+format = "[$env_value](bold dim white)"

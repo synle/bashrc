@@ -1,0 +1,22 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-14]
+// 
+// Preferences Settings
+// ################################################################################
+
+
+{
+  "hardware_acceleration": "opengl",
+  "update_check": false,
+  "font_face": "Courier New",
+  "font_size": 16,
+  "side_bar_layout": "tabs",
+  "hide_menu": false,
+  "theme": "auto",
+  "dark_theme": "Merge Dark.sublime-theme",
+  "light_theme": "Merge.sublime-theme",
+  "expand_merge_commits_by_default": false,
+  "tab_size": 2,
+  "translate_tabs_to_spaces": false,
+  "draw_white_space": "all",
+  "scroll_speed": 0
+}

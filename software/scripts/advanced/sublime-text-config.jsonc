@@ -1,0 +1,58 @@
+{
+  // --- Core Performance & Behavior ---
+  "update_check": false, // Disable update checking on startup. Values: true, false
+  "atomic_save": true, // Write to a temp file first, then move — prevents corruption on crash. Values: true, false
+  "hot_exit": false, // Don't save unsaved buffers on close — start fresh every time. Values: false, "hot_exit_always", "hot_exit_only_on_quit"
+  "remember_open_files": false, // Don't reopen files from previous session on startup. Values: true, false
+  "gpu_window_buffer": true, // Use GPU buffer for the window — smoother rendering. Values: true, false, "auto"
+  "index_workers": 2, // Limit indexing threads to 2 — prevents CPU hogging while still enabling Goto Symbol. Values: integer (0 disables indexing)
+
+  // --- Typography & Rendering ---
+  "font_options": ["gray_antialias", "subpixel_antialias"], // Font rendering hints. Values: "bold", "italic", "gray_antialias", "subpixel_antialias", "no_antialias", "no_bold", "no_italic"
+  "line_padding_top": 1, // 1px padding above each line for readability. Values: integer (px)
+  "highlight_line": true, // Highlight the line the cursor is on. Values: true, false
+  "scroll_speed": 0.0, // Instant scrolling — no animation delay. Values: float (0.0 = instant, 1.0 = default)
+
+  // --- UI Cleanliness ---
+  "show_tab_close_buttons": false, // Hide per-tab close buttons — use keyboard or middle-click instead. Values: true, false
+  "bold_folder_labels": true, // Make folder names bold in the sidebar for visual hierarchy. Values: true, false
+  "auto_hide_menu": true, // Hide the menu bar until Alt is pressed — more vertical space. Values: true, false
+  "tree_animation_enabled": false, // Disable sidebar expand/collapse animation. Values: true, false
+  "animation_enabled": false, // Disable all UI animations globally. Values: true, false
+  "theme": "auto", // Auto-switch theme based on OS dark/light mode. Values: "auto", or any installed theme name
+  "dark_theme": "Adaptive.sublime-theme", // Theme for dark mode. Values: any installed theme name
+  "light_theme": "Adaptive.sublime-theme", // Theme for light mode. Values: any installed theme name
+  "show_folding_buttons": false, // Hide code folding arrows in the gutter — saves CPU on large files. Values: true, false
+  "fade_fold_buttons": false, // No fade effect for fold buttons (moot when buttons are hidden). Values: true, false
+  "preview_on_click": true, // Single-click a file in sidebar to preview without fully opening it. Values: true, false
+
+  // --- Editing & Whitespace ---
+  "draw_white_space": "all", // Render whitespace dots to distinguish spaces from tabs. Values: "none", "selection", "all"
+  "translate_tabs_to_spaces": true, // Insert spaces when pressing Tab. Values: true, false
+  "trim_trailing_white_space_on_save": "all", // Remove trailing spaces on every save. Values: false, "all", "not_on_caret"
+  "ensure_newline_at_eof_on_save": true, // Always end files with a newline (POSIX convention). Values: true, false
+  "default_line_ending": "unix", // Use LF line endings by default. Values: "system", "unix", "windows"
+  "show_line_endings": true, // Display the line ending type (LF/CRLF) in the status bar. Values: true, false
+  "spell_check": false, // Disable spell checking — significantly speeds up typing in large files. Values: true, false
+  "inlay_hints_enabled": false, // Disable LSP inlay hints — removes ghost-text lag. Values: true, false
+
+  // --- Project & Search ---
+  "index_exclude_gitignore": true, // Respect .gitignore — don't index ignored files. Values: true, false
+
+  // --- Features & Extensions ---
+  "highlight_modified_tabs": true, // Show a dot on tabs with unsaved changes. Values: true, false
+  "alignment_chars": ["=", ":"], // Characters used by the Alignment plugin. Values: array of strings
+  "open_externally_patterns": ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.zip", "*.pdf"], // Open these file types in OS default app instead of editor. Values: array of glob patterns
+
+  // --- Git ---
+  "show_git_status": false, // Disable git status badges in sidebar — reduces I/O on large repos. Values: true, false
+  "mini_diff": false, // Disable inline diff markers in the gutter. Values: true, false
+
+  // --- Misc ---
+  "close_windows_when_empty": false, // Keep the window open even when all tabs are closed. Values: true, false
+  "show_definitions": false, // Disable the inline definition popup on hover — reduces lag. Values: true, false
+  "auto_complete_commit_on_tab": true, // Press Tab to accept autocomplete instead of requiring Enter. Values: true, false
+  "ignored_packages": ["Vintage"], // Disable Vintage (vim mode) — not needed if you don't use vim bindings. Values: array of package names
+  "color_scheme": "auto", // Auto-switch color scheme based on OS dark/light mode. Values: "auto", or any installed color scheme path
+  "index_exclude_patterns": ["*.log", "node_modules/*", ".git/*", "dist/*", "build/*"], // Patterns excluded from the indexer entirely. Values: array of glob patterns
+}

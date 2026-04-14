@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# SOURCE software/bootstrap/common-functions.bash
+
+################################################################################
+# ---- Bash Readline Keybindings ----
+################################################################################
+# Wrap all keybindings in interactive check — bind requires readline, which is
+# only available in interactive shells. Using a guard block instead of early
+# return so this file can be inlined into the profile without cutting it short.
+if [[ $- == *i* ]]; then
+
+  # Tab Completion — fzf-tab-completion with fallback to menu-complete
+  if [ -f ~/.fzf-tab-completion/bash/fzf-bash-completion.sh ] && type -P fzf &> /dev/null && . ~/.fzf-tab-completion/bash/fzf-bash-completion.sh 2> /dev/null && type fzf_bash_completion &> /dev/null; then
+    # Wrap fzf_bash_completer to strip trailing space after directory slash
+    # so tab-completing into nested paths works without the extra space
+    eval "$(declare -f fzf_bash_completer | command sed '1s/fzf_bash_completer/_fzf_bash_completer_orig/')"
+    function fzf_bash_completer() {
+      _fzf_bash_completer_orig "$@"
+      COMPREPLY="${COMPREPLY/%\/ /\/}"
+    }
+    bind -x '"\t": fzf_bash_completion'
+  else
+    bind '"\t": menu-complete'
+  fi
+  bind '"\e[Z": menu-complete-backward' # Shift+Tab — cycle completions backward
+
+  # Cursor Movement — Linux / WSL
+  bind '"\e[1;5A": beginning-of-line' # Ctrl+Up — jump to beginning of line
+  bind '"\e[1;5B": end-of-line'       # Ctrl+Down — jump to end of line
+  bind '"\e[1;5D": backward-word'     # Ctrl+Left — jump one word backward
+  bind '"\e[1;5C": forward-word'      # Ctrl+Right — jump one word forward
+
+  # Cursor Movement — macOS (Option key)
+  bind '"\e\e[C": forward-word'      # Option+Right — jump one word forward
+  bind '"\e\e[D": backward-word'     # Option+Left — jump one word backward
+  bind '"\e\e[A": beginning-of-line' # Option+Up — jump to beginning of line
+  bind '"\e\e[B": end-of-line'       # Option+Down — jump to end of line
+
+  # History Navigation
+  bind '"\e[A": history-search-backward' # Up arrow — search history backward matching prefix
+  bind '"\e[B": history-search-forward'  # Down arrow — search history forward matching prefix
+
+  # Shortcuts
+  bind '"\C-a": beginning-of-line'          # Ctrl+A — jump to beginning of line
+  bind '"\C-e": end-of-line'                # Ctrl+E — jump to end of line
+  bind '"\C-l": clear-screen'               # Ctrl+L — clear screen
+  bind '"\C-x": edit-and-execute-command'   # Ctrl+X — open command in $EDITOR
+  bind '"\C-t": "fuzzy_edit vim\r"'         # Ctrl+T — fuzzy edit with vim
+  bind '"\C-y": "fuzzy_edit\r"'             # Ctrl+Y — fuzzy edit (default editor)
+  bind '"\C-p": "fuzzy_cd\r"'               # Ctrl+P — fuzzy cd to directory
+  bind '"\C-b": "fuzzy_favorite_command\r"' # Ctrl+B — fuzzy favorite command picker
+  bind '"\C-g": "fuzzy_git_show\r"'         # Ctrl+G — fuzzy git log browser
+  bind '"\C-n": "fuzzy_make_component\r"'   # Ctrl+N — fuzzy make-component scaffold
+
+  # ---- bind -x here (requires bash 5+) ----
+  # bind -x executes a shell function directly instead of injecting keystrokes via
+  # readline macros. The function sets READLINE_LINE / READLINE_POINT to place the
+  # result on the prompt — more reliable than the old macro approach.
+
+  # Ctrl+R — fzf history search (places selected command on prompt)
+  # reads from ~/.bash_history file directly so it searches commands from all tabs
+  # (since we no longer reload shared history into memory with history -c/-r)
+  if type -P fzf &> /dev/null; then
+    function __fzf_history__() {
+      local selected
+      selected=$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.bash_history | command grep -v '^#' | $(type -P tac &> /dev/null && echo tac || echo 'tail -r') | awk 'NF && !seen[$0]++' | fzf --height=60% --reverse --tac +s)
+      if [ -n "$selected" ]; then
+        READLINE_LINE="$selected"
+        READLINE_POINT=${#selected}
+      fi
+    }
+    bind -x '"\C-r": __fzf_history__'
+  fi
+
+fi # end interactive shell guard

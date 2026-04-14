@@ -1,0 +1,113 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-14]
+// 
+// Preferences Key Bindings
+// ################################################################################
+
+
+[
+  {
+    "command": "show_search",
+    "keys": [
+      "super+f"
+    ]
+  },
+  {
+    "command": "toggle_side_bar",
+    "keys": [
+      "super+\\"
+    ]
+  },
+  {
+    "command": "reset_font_size",
+    "keys": [
+      "super+0"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 0
+    },
+    "keys": [
+      "super+1"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 1
+    },
+    "keys": [
+      "super+2"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 2
+    },
+    "keys": [
+      "super+3"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 3
+    },
+    "keys": [
+      "super+4"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 4
+    },
+    "keys": [
+      "super+5"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 5
+    },
+    "keys": [
+      "super+6"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 6
+    },
+    "keys": [
+      "super+7"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 7
+    },
+    "keys": [
+      "super+8"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 8
+    },
+    "keys": [
+      "super+9"
+    ]
+  },
+  {
+    "command": "refresh",
+    "keys": [
+      "f5"
+    ]
+  }
+]

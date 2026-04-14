@@ -1,0 +1,55 @@
+
+
+################################################################################
+# for Linux and macOS using bash
+################################################################################
+REPO_BUILD="https://raw.githubusercontent.com/synle/bashrc/master/.build"
+
+# Resolve potential paths with wildcards
+W_PATH=$(ls -d {/mnt/c,/c}/Users/*/AppData/Roaming/Zed 2>/dev/null | head -n 1)
+L_PATH="$HOME/.config/zed"
+M_PATH="$HOME/.config/zed"
+
+if [ -n "$W_PATH" ] && [ -d "$W_PATH" ]; then
+    echo "Installing Zed config for Windows/WSL ($W_PATH)..."
+    TARGET_PATH="$W_PATH"
+    mkdir -p "$TARGET_PATH/themes"
+    curl -fsSL "$REPO_BUILD/zed-editor-config" -o "$TARGET_PATH/settings.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-keys-windows" -o "$TARGET_PATH/keymap.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-color-dark" -o "$TARGET_PATH/themes/sy-dark.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-color-light" -o "$TARGET_PATH/themes/sy-light.json"
+elif [ -n "$M_PATH" ] && [ -d "$M_PATH" ] && [ "$(uname)" = "Darwin" ]; then
+    echo "Installing Zed config for Mac ($M_PATH)..."
+    TARGET_PATH="$M_PATH"
+    mkdir -p "$TARGET_PATH/themes"
+    curl -fsSL "$REPO_BUILD/zed-editor-config-mac" -o "$TARGET_PATH/settings.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-keys" -o "$TARGET_PATH/keymap.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-color-dark" -o "$TARGET_PATH/themes/sy-dark.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-color-light" -o "$TARGET_PATH/themes/sy-light.json"
+elif [ -n "$L_PATH" ] && [ -d "$L_PATH" ]; then
+    echo "Installing Zed config for Linux ($L_PATH)..."
+    TARGET_PATH="$L_PATH"
+    mkdir -p "$TARGET_PATH/themes"
+    curl -fsSL "$REPO_BUILD/zed-editor-config" -o "$TARGET_PATH/settings.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-keys-linux" -o "$TARGET_PATH/keymap.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-color-dark" -o "$TARGET_PATH/themes/sy-dark.json"
+    curl -fsSL "$REPO_BUILD/zed-editor-color-light" -o "$TARGET_PATH/themes/sy-light.json"
+else
+    echo "Zed config directory not found. Skipping installation."
+fi
+
+
+################################################################################
+# for Windows using powershell
+################################################################################
+$ProgressPreference = 'SilentlyContinue'
+$RepoBuild = "https://raw.githubusercontent.com/synle/bashrc/master/.build"
+$W_Path = "$env:AppData/Zed"
+if (Test-Path $W_Path) {
+    Write-Host "Installing Zed config for Windows with PowerShell..."
+    New-Item -ItemType Directory -Force -Path "$W_Path/themes" | Out-Null
+    Invoke-WebRequest -Uri "$RepoBuild/zed-editor-config" -OutFile "$W_Path/settings.json" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/zed-editor-keys-windows" -OutFile "$W_Path/keymap.json" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/zed-editor-color-dark" -OutFile "$W_Path/themes/sy-dark.json" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/zed-editor-color-light" -OutFile "$W_Path/themes/sy-light.json" -UseBasicParsing
+}
