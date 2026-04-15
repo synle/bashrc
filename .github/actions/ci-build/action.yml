@@ -57,7 +57,7 @@ runs:
         name: ${{ inputs.artifact-name }}
         include-hidden-files: true
         path: .build/
-        retention-days: 30
+        retention-days: 14
         if-no-files-found: ignore
 
     - name: Upload Logs
@@ -66,7 +66,7 @@ runs:
       with:
         name: logs-${{ inputs.artifact-name }}
         path: /tmp/synle/bashrc/
-        retention-days: 30
+        retention-days: 14
         if-no-files-found: ignore
 
     - name: Profile syntax check
