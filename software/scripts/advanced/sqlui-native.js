@@ -3,37 +3,42 @@ const SQLUI_NATIVE_RELEASE_URL = "https://api.github.com/repos/synle/sqlui-nativ
 
 /** Downloads the sqlui-native application binary for the current platform. */
 async function doWork() {
-  if (IS_CI) return;
+  const version = await fetchGitHubReleaseVersion(SQLUI_NATIVE_RELEASE_URL);
+  if (!version) return;
 
-  const releaseData = await readJson`${SQLUI_NATIVE_RELEASE_URL}`;
-  const version = releaseData.tag_name;
   const targetPath = await getCustomTweaksPath("sqlui-native");
 
+  /** @type {string} */
+  let fileName;
   if (is_os_mac) {
-    log(`>> Installing sqlui-native ${version} for Mac to:`, targetPath);
-
-    await deleteFolder(targetPath);
-    await mkdir(targetPath);
-
     const arch = os.arch() === "arm64" ? "arm64" : "x64";
-    const fileName = `sqlui-native-${arch}.dmg`;
-    const url = `https://github.com/synle/sqlui-native/releases/download/${version}/${fileName}`;
-    const destination = path.join(targetPath, fileName);
-
-    await downloadAsset(url, destination);
-    log(`>> sqlui-native ${version} downloaded:`, destination);
-    await installMacDmg(destination, "sqlui-native.app");
+    fileName = `sqlui-native-${arch}.dmg`;
   } else {
-    log(`>> Installing sqlui-native ${version} for NonMac to:`, targetPath);
+    fileName = is_os_windows ? `sqlui-native-x64.exe` : `sqlui-native.AppImage`;
+  }
 
-    await deleteFolder(targetPath);
-    await mkdir(targetPath);
+  const url = `https://github.com/synle/sqlui-native/releases/download/${version}/${fileName}`;
 
-    const fileName = is_os_windows ? `sqlui-native-x64.exe` : `sqlui-native.AppImage`;
-    const url = `https://github.com/synle/sqlui-native/releases/download/${version}/${fileName}`;
-    const destination = path.join(targetPath, fileName);
+  if (IS_CI) {
+    log(`>> Backing up sqlui-native ${version} asset in CI`);
+    const ciTmpDest = path.join(BASHRC_TEMP_DIR, fileName);
+    await downloadReleaseAssetWithBackup("sqlui-native", version, url, ciTmpDest);
+    await deleteFile(ciTmpDest);
+    return;
+  }
 
-    await downloadAsset(url, destination);
+  log(`>> Installing sqlui-native ${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
+
+  await deleteFolder(targetPath);
+  await mkdir(targetPath);
+
+  const destination = path.join(targetPath, fileName);
+  const ok = await downloadReleaseAssetWithBackup("sqlui-native", version, url, destination);
+
+  if (ok) {
     log(`>> sqlui-native ${version} downloaded:`, destination);
+    if (is_os_mac) {
+      await installMacDmg(destination, "sqlui-native.app");
+    }
   }
 }

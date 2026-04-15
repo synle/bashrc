@@ -2640,6 +2640,100 @@ function downloadAssets(urls, destination) {
 }
 
 /**
+ * Fetches the latest release version tag from a GitHub Releases API URL.
+ * @param {string} releaseUrl - GitHub API releases/latest URL (e.g. "https://api.github.com/repos/owner/repo/releases/latest")
+ * @returns {Promise<string>} The tag_name from the release (e.g. "v1.2.0" or "1.2.0")
+ */
+async function fetchGitHubReleaseVersion(releaseUrl) {
+  const releaseData = await readJson`${releaseUrl}`;
+  return releaseData.tag_name || "";
+}
+
+/**
+ * Validates a downloaded asset file. Checks that the file exists, has non-zero size,
+ * and (for zip files) passes integrity verification via unzip -t.
+ * @param {string} filePath - The path to the downloaded file
+ * @returns {Promise<boolean>} True if the file is valid, false otherwise
+ */
+async function validateDownloadedAsset(filePath) {
+  try {
+    if (!pathExists(filePath)) return false;
+    const fileSize = fs.statSync(filePath).size || 0;
+    if (fileSize === 0) return false;
+    if (filePath.endsWith(".zip")) {
+      const result = await execBash(`unzip -t "${filePath}" 2>&1`);
+      if (!result.includes("No errors detected")) return false;
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/** @type {string} Backup directory for release assets, stored in the repo's assets/ directory when running from a local checkout */
+const RELEASE_ASSET_BACKUP_DIR = IS_LOCAL_REPO ? path.resolve("assets") : path.join(BASE_HOMEDIR_LINUX, ".asset_backups");
+
+/**
+ * Downloads a GitHub release asset with validation and fallback to backup.
+ * On successful download, saves a backup copy for future fallback. If the download
+ * fails or produces corrupt output (size 0, bad zip), restores from the last known
+ * good backup. In CI, additionally copies successful downloads to the CI temp
+ * directory for artifact upload.
+ * @param {string} appName - Application name (for logging and backup folder naming)
+ * @param {string} version - Version string for logging (e.g. "v1.2.0")
+ * @param {string} url - Download URL for the asset
+ * @param {string} destination - Local file path to save the downloaded asset
+ * @returns {Promise<boolean>} True if a valid asset is available at destination, false otherwise
+ */
+async function downloadReleaseAssetWithBackup(appName, version, url, destination) {
+  const backupDir = path.join(RELEASE_ASSET_BACKUP_DIR, appName);
+  const backupFile = path.join(backupDir, path.basename(destination));
+  const backupMetaFile = path.join(backupDir, "version.json");
+
+  log(`>> Downloading ${appName} ${version} asset ${path.basename(destination)}:`, url);
+
+  await downloadAsset(url, destination);
+
+  const isValid = await validateDownloadedAsset(destination);
+
+  if (!isValid) {
+    log(`>> Download of ${appName} ${version} failed or corrupt, checking backup...`);
+    if (pathExists(backupFile)) {
+      let backupLabel = backupFile;
+      try {
+        const meta = JSON.parse(fs.readFileSync(backupMetaFile, "utf8"));
+        backupLabel = `${meta.version}, backed up ${meta.timestamp}`;
+      } catch (_) {}
+      log(`>> Restoring ${appName} from backup (${backupLabel}):`, backupFile);
+      await mkdir(path.dirname(destination));
+      copyFile(backupFile, destination);
+    } else {
+      log(`>> No backup available for ${appName}, skipping`);
+      return false;
+    }
+  }
+
+  // Save backup and version metadata for future fallback
+  if (await validateDownloadedAsset(destination)) {
+    await mkdir(backupDir);
+    copyFile(destination, backupFile);
+    fs.writeFileSync(backupMetaFile, JSON.stringify({ appName, version, timestamp: new Date().toISOString() }, null, 2));
+    log(`>> Backup saved for ${appName} ${version}:`, backupFile);
+  }
+
+  // In CI, copy to temp dir for artifact upload
+  if (IS_CI && BASHRC_TEMP_DIR) {
+    const ciBackupDir = path.join(BASHRC_TEMP_DIR, "ci_asset_backups", appName);
+    await mkdir(ciBackupDir);
+    copyFile(destination, path.join(ciBackupDir, path.basename(destination)));
+    copyFile(backupMetaFile, path.join(ciBackupDir, "version.json"));
+    log(`>> CI asset backup saved for ${appName} ${version}`);
+  }
+
+  return true;
+}
+
+/**
  * Downloads application binaries from the main repo into the appropriate OS-specific applications directory.
  * On Windows, uses the WSL binary directory. On Linux/Mac, uses the custom tweaks directory (~/_extra).
  * Fetches the repo file list, filters to matching assets, and downloads them in parallel.

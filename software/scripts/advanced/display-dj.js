@@ -5,37 +5,43 @@ const DISPLAY_DJ_RELEASE_URL = "https://api.github.com/repos/synle/display-dj/re
 
 /** Downloads the display-dj application binary for the current platform. */
 async function doWork() {
-  if (IS_CI) return;
+  const rawVersion = await fetchGitHubReleaseVersion(DISPLAY_DJ_RELEASE_URL);
+  if (!rawVersion) return;
 
-  const releaseData = await readJson`${DISPLAY_DJ_RELEASE_URL}`;
-  const version = releaseData.tag_name.replace(/^v/, "");
+  const version = rawVersion.replace(/^v/, "");
   const targetPath = await getCustomTweaksPath("display-dj");
 
+  /** @type {string} */
+  let fileName;
   if (is_os_mac) {
-    log(`>> Installing display-dj v${version} for Mac to:`, targetPath);
-
-    await deleteFolder(targetPath);
-    await mkdir(targetPath);
-
     const arch = os.arch() === "arm64" ? "aarch64" : "x64";
-    const fileName = `Display.DJ_${version}_${arch}.dmg`;
-    const url = `https://github.com/synle/display-dj/releases/download/v${version}/${fileName}`;
-    const destination = path.join(targetPath, fileName);
-
-    await downloadAsset(url, destination);
-    log(`>> display-dj v${version} downloaded:`, destination);
-    await installMacDmg(destination, "Display DJ.app");
+    fileName = `Display.DJ_${version}_${arch}.dmg`;
   } else {
-    log(`>> Installing display-dj v${version} for NonMac to:`, targetPath);
+    fileName = is_os_windows ? `Display.DJ_${version}_x64-setup.exe` : `Display.DJ_${version}_amd64.AppImage`;
+  }
 
-    await deleteFolder(targetPath);
-    await mkdir(targetPath);
+  const url = `https://github.com/synle/display-dj/releases/download/v${version}/${fileName}`;
 
-    const fileName = is_os_windows ? `Display.DJ_${version}_x64-setup.exe` : `Display.DJ_${version}_amd64.AppImage`;
-    const url = `https://github.com/synle/display-dj/releases/download/v${version}/${fileName}`;
-    const destination = path.join(targetPath, fileName);
+  if (IS_CI) {
+    log(`>> Backing up display-dj v${version} asset in CI`);
+    const ciTmpDest = path.join(BASHRC_TEMP_DIR, fileName);
+    await downloadReleaseAssetWithBackup("display-dj", `v${version}`, url, ciTmpDest);
+    await deleteFile(ciTmpDest);
+    return;
+  }
 
-    await downloadAsset(url, destination);
+  log(`>> Installing display-dj v${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
+
+  await deleteFolder(targetPath);
+  await mkdir(targetPath);
+
+  const destination = path.join(targetPath, fileName);
+  const ok = await downloadReleaseAssetWithBackup("display-dj", `v${version}`, url, destination);
+
+  if (ok) {
     log(`>> display-dj v${version} downloaded:`, destination);
+    if (is_os_mac) {
+      await installMacDmg(destination, "Display DJ.app");
+    }
   }
 }

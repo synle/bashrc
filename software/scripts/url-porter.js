@@ -3,7 +3,20 @@ const URL_PORTER_RELEASE_URL = "https://api.github.com/repos/synle/url-porter/re
 
 /** Downloads and installs the url-porter Chrome extension. */
 async function doWork() {
-  if (IS_CI) return;
+  const version = await fetchGitHubReleaseVersion(URL_PORTER_RELEASE_URL);
+  if (!version) return;
+
+  const targetPath = await getCustomTweaksPath("url-porter");
+  const zipUrl = `https://github.com/synle/url-porter/releases/download/${version}/url-porter.zip`;
+  const tmpZip = `${BASHRC_TEMP_DIR}/url-porter.zip`;
+
+  if (IS_CI) {
+    log(`>> Backing up url-porter ${version} asset in CI`);
+    await mkdir(path.dirname(tmpZip));
+    await downloadReleaseAssetWithBackup("url-porter", version, zipUrl, tmpZip);
+    await deleteFile(tmpZip);
+    return;
+  }
 
   const hasBrowser = resolveOsKey({
     mac: () =>
@@ -26,18 +39,14 @@ async function doWork() {
     return;
   }
 
-  const releaseData = await readJson`${URL_PORTER_RELEASE_URL}`;
-  const version = releaseData.tag_name;
-  const targetPath = await getCustomTweaksPath("url-porter");
-  const zipUrl = `https://github.com/synle/url-porter/releases/download/${version}/url-porter.zip`;
-  const tmpZip = `${BASHRC_TEMP_DIR}/url-porter.zip`;
-
   log(`>> Installing url-porter ${version} extension to:`, targetPath);
 
   deleteFolder(targetPath).then(async () => {
     await mkdir(targetPath);
-    await downloadAsset(zipUrl, tmpZip);
-    await execBash(`unzip -oq "${tmpZip}" -d "${targetPath}"`);
+    const ok = await downloadReleaseAssetWithBackup("url-porter", version, zipUrl, tmpZip);
+    if (ok) {
+      await execBash(`unzip -oq "${tmpZip}" -d "${targetPath}"`);
+    }
     await deleteFile(tmpZip);
   });
 }
