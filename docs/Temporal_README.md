@@ -26,6 +26,7 @@ A thorough, beginner-friendly reference covering Temporal: a durable execution p
 18. [Production Considerations](#production-considerations)
 19. [Common Pitfalls](#common-pitfalls)
 20. [Cheat Sheet](#cheat-sheet)
+21. [Code Examples — Common Patterns](#code-examples--common-patterns)
 
 ---
 
@@ -1236,3 +1237,931 @@ Temporal also has official SDKs for:
 - **Java** — `io.temporal:temporal-sdk`
 - **.NET** — `Temporalio`
 - **PHP** — `temporal/sdk`
+
+---
+
+## Code Examples — Common Patterns
+
+End-to-end examples for the most common Temporal usage patterns. Each example includes Activities, Workflows, Workers, and Client code in both Python and TypeScript.
+
+All examples assume Temporal dev server is running on `localhost:7233`.
+
+---
+
+### 1. Scheduled Run (Cron)
+
+Run a Workflow on a recurring schedule, like a cron job. Temporal manages the schedule — if the server restarts, it picks back up automatically. Unlike traditional cron, you get full visibility into every run's history, retries, and failures.
+
+**TypeScript**
+
+```typescript
+// activities.ts — the actual work each scheduled run performs
+export async function generateDailyReport(): Promise<string> {
+  const date = new Date().toISOString().slice(0, 10);
+  console.log(`Generating report for ${date}`);
+  // query database, build CSV, upload to S3, etc.
+  return `report-${date}.csv`;
+}
+
+// workflows.ts — thin wrapper; Temporal calls this on every scheduled tick
+import { proxyActivities } from "@temporalio/workflow";
+import type * as activities from "./activities";
+
+const { generateDailyReport } = proxyActivities<typeof activities>({
+  startToCloseTimeout: "5 minutes",
+});
+
+// Each cron tick starts a new run of this Workflow.
+// The return value is stored in history — you can inspect it in the Web UI.
+export async function dailyReportWorkflow(): Promise<string> {
+  return await generateDailyReport();
+}
+
+// worker.ts — hosts the Workflow + Activity code, polls the task queue
+import { Worker } from "@temporalio/worker";
+import * as activities from "./activities";
+
+async function run() {
+  const worker = await Worker.create({
+    workflowsPath: require.resolve("./workflows"),
+    activities,
+    taskQueue: "report-queue",
+  });
+  await worker.run();
+}
+run().catch(console.error);
+
+// client.ts — creates the schedule (run once, Temporal keeps it going)
+import { Client } from "@temporalio/client";
+
+async function run() {
+  const client = new Client();
+
+  // Option A: use Temporal Schedules (recommended — full schedule management)
+  const schedule = await client.schedule.create({
+    scheduleId: "daily-report",
+    spec: {
+      // every day at 2:00 AM UTC
+      cronExpressions: ["0 2 * * *"],
+    },
+    action: {
+      type: "startWorkflow",
+      workflowType: "dailyReportWorkflow",
+      taskQueue: "report-queue",
+      // each run gets a unique ID like "daily-report-2025-01-15T02:00:00Z"
+    },
+  });
+  console.log(`Schedule created: ${schedule.scheduleId}`);
+
+  // Option B: use cron schedule directly on the Workflow (simpler, less control)
+  // const handle = await client.workflow.start("dailyReportWorkflow", {
+  //   taskQueue: "report-queue",
+  //   workflowId: "daily-report-cron",
+  //   cronSchedule: "0 2 * * *",   // every day at 2:00 AM UTC
+  // });
+}
+run().catch(console.error);
+```
+
+**Python**
+
+```python
+# activities.py
+from temporalio import activity
+from datetime import date
+
+
+@activity.defn
+async def generate_daily_report() -> str:
+    """Generate and upload the daily report."""
+    today = date.today().isoformat()
+    print(f"Generating report for {today}")
+    # query database, build CSV, upload to S3, etc.
+    return f"report-{today}.csv"
+
+
+# workflows.py
+from datetime import timedelta
+from temporalio import workflow
+
+with workflow.unsafe.imports_passed_through():
+    from activities import generate_daily_report
+
+
+@workflow.defn
+class DailyReportWorkflow:
+    """Generates a daily report. Each cron tick is a new Workflow run."""
+
+    @workflow.run
+    async def run(self) -> str:
+        return await workflow.execute_activity(
+            generate_daily_report,
+            start_to_close_timeout=timedelta(minutes=5),
+        )
+
+
+# worker.py
+import asyncio
+from temporalio.client import Client
+from temporalio.worker import Worker
+from activities import generate_daily_report
+from workflows import DailyReportWorkflow
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+    worker = Worker(
+        client,
+        task_queue="report-queue",
+        workflows=[DailyReportWorkflow],
+        activities=[generate_daily_report],
+    )
+    await worker.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+# client.py — create the schedule
+import asyncio
+from temporalio.client import Client, Schedule, ScheduleActionStartWorkflow, ScheduleSpec, ScheduleIntervalSpec
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+
+    # Option A: use Temporal Schedules (recommended — full schedule management)
+    await client.create_schedule(
+        "daily-report",
+        Schedule(
+            action=ScheduleActionStartWorkflow(
+                DailyReportWorkflow.run,
+                id="daily-report",
+                task_queue="report-queue",
+            ),
+            spec=ScheduleSpec(
+                cron_expressions=["0 2 * * *"],  # every day at 2:00 AM UTC
+            ),
+        ),
+    )
+    print("Schedule created: daily-report")
+
+    # Option B: use cron_schedule directly on the Workflow (simpler, less control)
+    # handle = await client.start_workflow(
+    #     DailyReportWorkflow.run,
+    #     id="daily-report-cron",
+    #     task_queue="report-queue",
+    #     cron_schedule="0 2 * * *",
+    # )
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**CLI — manage schedules**
+
+```bash
+# create a schedule via CLI
+temporal schedule create \
+  --schedule-id daily-report \
+  --cron '0 2 * * *' \
+  --task-queue report-queue \
+  --workflow-type DailyReportWorkflow
+
+# list all schedules
+temporal schedule list
+
+# describe a schedule
+temporal schedule describe --schedule-id daily-report
+
+# pause/unpause a schedule
+temporal schedule toggle --schedule-id daily-report --pause --reason "maintenance"
+temporal schedule toggle --schedule-id daily-report --unpause
+
+# trigger a schedule immediately (run now, outside the normal cadence)
+temporal schedule trigger --schedule-id daily-report
+
+# delete a schedule
+temporal schedule delete --schedule-id daily-report
+```
+
+---
+
+### 2. Fire and Forget
+
+Start a Workflow and return immediately — don't wait for the result. The Workflow runs in the background durably. Useful for background jobs where the caller doesn't need the outcome right away (send an email, generate a thumbnail, kick off a batch job).
+
+**TypeScript**
+
+```typescript
+// activities.ts
+export async function sendWelcomeEmail(email: string): Promise<void> {
+  console.log(`Sending welcome email to ${email}`);
+  // call email API (SendGrid, SES, etc.)
+}
+
+export async function createUserThumbnail(userId: string): Promise<void> {
+  console.log(`Generating thumbnail for user ${userId}`);
+  // download avatar, resize, upload to CDN
+}
+
+// workflows.ts
+import { proxyActivities } from "@temporalio/workflow";
+import type * as activities from "./activities";
+
+const { sendWelcomeEmail, createUserThumbnail } = proxyActivities<typeof activities>({
+  startToCloseTimeout: "1 minute",
+  retry: { maximumAttempts: 3 },
+});
+
+export async function sendWelcomeEmailWorkflow(email: string): Promise<void> {
+  await sendWelcomeEmail(email);
+}
+
+export async function createThumbnailWorkflow(userId: string): Promise<void> {
+  await createUserThumbnail(userId);
+}
+
+// client.ts — fire and forget: start() returns immediately, don't call .result()
+import { Client } from "@temporalio/client";
+
+async function run() {
+  const client = new Client();
+
+  // fire and forget — start() resolves as soon as Temporal accepts the Workflow
+  // the Workflow runs in the background; we don't await .result()
+  const handle = await client.workflow.start("sendWelcomeEmailWorkflow", {
+    taskQueue: "background-queue",
+    workflowId: `welcome-email-user-42`,
+    args: ["alice@example.com"],
+  });
+
+  console.log(`Workflow started: ${handle.workflowId} (fire-and-forget)`);
+  // handle.result() is NOT called — we're done here
+
+  // you can start many at once without waiting
+  await client.workflow.start("createThumbnailWorkflow", {
+    taskQueue: "background-queue",
+    workflowId: `thumbnail-user-42`,
+    args: ["user-42"],
+  });
+}
+run().catch(console.error);
+```
+
+**Python**
+
+```python
+# activities.py
+from temporalio import activity
+
+
+@activity.defn
+async def send_welcome_email(email: str) -> None:
+    """Send a welcome email to a new user."""
+    print(f"Sending welcome email to {email}")
+
+
+@activity.defn
+async def create_user_thumbnail(user_id: str) -> None:
+    """Generate and upload a user profile thumbnail."""
+    print(f"Generating thumbnail for user {user_id}")
+
+
+# workflows.py
+from datetime import timedelta
+from temporalio import workflow
+from temporalio.common import RetryPolicy
+
+with workflow.unsafe.imports_passed_through():
+    from activities import send_welcome_email, create_user_thumbnail
+
+
+@workflow.defn
+class SendWelcomeEmailWorkflow:
+    @workflow.run
+    async def run(self, email: str) -> None:
+        await workflow.execute_activity(
+            send_welcome_email, email,
+            start_to_close_timeout=timedelta(minutes=1),
+            retry_policy=RetryPolicy(maximum_attempts=3),
+        )
+
+
+@workflow.defn
+class CreateThumbnailWorkflow:
+    @workflow.run
+    async def run(self, user_id: str) -> None:
+        await workflow.execute_activity(
+            create_user_thumbnail, user_id,
+            start_to_close_timeout=timedelta(minutes=1),
+            retry_policy=RetryPolicy(maximum_attempts=3),
+        )
+
+
+# client.py — fire and forget
+import asyncio
+from temporalio.client import Client
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+
+    # fire and forget — start_workflow returns a handle immediately
+    # the Workflow runs in the background; we don't await handle.result()
+    handle = await client.start_workflow(
+        SendWelcomeEmailWorkflow.run,
+        "alice@example.com",
+        id="welcome-email-user-42",
+        task_queue="background-queue",
+    )
+    print(f"Workflow started: {handle.id} (fire-and-forget)")
+    # handle.result() is NOT called — we're done here
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Key difference:** `client.workflow.start()` (TS) / `client.start_workflow()` (Python) returns as soon as Temporal Server accepts the request. The Workflow runs durably in the background. If you never call `.result()`, that's fine — it's fire-and-forget. You can always check status later via the Web UI or CLI.
+
+---
+
+### 3. Synchronous Job (Wait for Result)
+
+Start a Workflow and block until it completes, then use the return value. This is the request/response pattern — useful for API endpoints that need the Workflow's output before responding to the caller.
+
+**TypeScript**
+
+```typescript
+// activities.ts
+export async function processPayment(orderId: string, amount: number): Promise<string> {
+  console.log(`Processing payment for order ${orderId}: $${amount}`);
+  // call Stripe, PayPal, etc.
+  return `txn_${orderId}_${Date.now()}`;
+}
+
+// workflows.ts
+import { proxyActivities } from "@temporalio/workflow";
+import type * as activities from "./activities";
+
+const { processPayment } = proxyActivities<typeof activities>({
+  startToCloseTimeout: "30 seconds",
+  retry: { maximumAttempts: 3 },
+});
+
+export async function processPaymentWorkflow(orderId: string, amount: number): Promise<string> {
+  // returns the transaction ID
+  return await processPayment(orderId, amount);
+}
+
+// client.ts — start and wait for result
+import { Client } from "@temporalio/client";
+
+async function run() {
+  const client = new Client();
+
+  // Option A: start + result (two steps — you get the handle for later use)
+  const handle = await client.workflow.start("processPaymentWorkflow", {
+    taskQueue: "payment-queue",
+    workflowId: `payment-order-123`,
+    args: ["order-123", 49.99],
+  });
+  // blocks until the Workflow completes and returns
+  const transactionId = await handle.result();
+  console.log(`Payment complete: ${transactionId}`);
+
+  // Option B: execute (one step — start + wait combined)
+  const transactionId2 = await client.workflow.execute("processPaymentWorkflow", {
+    taskQueue: "payment-queue",
+    workflowId: `payment-order-456`,
+    args: ["order-456", 99.99],
+  });
+  console.log(`Payment complete: ${transactionId2}`);
+}
+run().catch(console.error);
+```
+
+**Python**
+
+```python
+# activities.py
+from temporalio import activity
+import time
+
+
+@activity.defn
+async def process_payment(order_id: str, amount: float) -> str:
+    """Charge the customer and return a transaction ID."""
+    print(f"Processing payment for order {order_id}: ${amount}")
+    # call Stripe, PayPal, etc.
+    return f"txn_{order_id}_{int(time.time())}"
+
+
+# workflows.py
+from datetime import timedelta
+from temporalio import workflow
+from temporalio.common import RetryPolicy
+
+with workflow.unsafe.imports_passed_through():
+    from activities import process_payment
+
+
+@workflow.defn
+class ProcessPaymentWorkflow:
+    @workflow.run
+    async def run(self, order_id: str, amount: float) -> str:
+        return await workflow.execute_activity(
+            process_payment,
+            args=[order_id, amount],
+            start_to_close_timeout=timedelta(seconds=30),
+            retry_policy=RetryPolicy(maximum_attempts=3),
+        )
+
+
+# client.py — start and wait for result
+import asyncio
+from temporalio.client import Client
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+
+    # Option A: start + result (two steps)
+    handle = await client.start_workflow(
+        ProcessPaymentWorkflow.run,
+        args=["order-123", 49.99],
+        id="payment-order-123",
+        task_queue="payment-queue",
+    )
+    # blocks until the Workflow completes
+    transaction_id = await handle.result()
+    print(f"Payment complete: {transaction_id}")
+
+    # Option B: execute_workflow (one step — start + wait combined)
+    transaction_id2 = await client.execute_workflow(
+        ProcessPaymentWorkflow.run,
+        args=["order-456", 99.99],
+        id="payment-order-456",
+        task_queue="payment-queue",
+    )
+    print(f"Payment complete: {transaction_id2}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Key difference from fire-and-forget:** calling `handle.result()` (or using `execute`/`execute_workflow`) blocks until the Workflow finishes. If the Workflow takes 5 seconds, your code waits 5 seconds. Use this when your API response depends on the Workflow output.
+
+---
+
+### 4. Routing Work with Task Queues and Input Parameters
+
+A single task queue (e.g., `process-payment`) handles one type of work. The **input** carries the specifics (customer ID, amount, payment method). This is the standard Temporal pattern — the task queue is the "what kind of job," the input is the "which specific job."
+
+Think of it like a restaurant: the task queue is the kitchen station (grill, salad, dessert), and the input is the individual order ticket.
+
+**TypeScript**
+
+```typescript
+// activities.ts
+import { log } from "@temporalio/activity";
+
+interface PaymentRequest {
+  customerId: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string; // "credit_card" | "bank_transfer" | "crypto"
+}
+
+export async function chargeCustomer(request: PaymentRequest): Promise<string> {
+  log.info("Charging customer", { customerId: request.customerId, amount: request.amount });
+  // route to the right payment provider based on paymentMethod
+  switch (request.paymentMethod) {
+    case "credit_card":
+      return `stripe_txn_${request.customerId}_${Date.now()}`;
+    case "bank_transfer":
+      return `ach_txn_${request.customerId}_${Date.now()}`;
+    default:
+      throw new Error(`Unknown payment method: ${request.paymentMethod}`);
+  }
+}
+
+export async function sendReceipt(customerId: string, transactionId: string): Promise<void> {
+  log.info("Sending receipt", { customerId, transactionId });
+}
+
+// workflows.ts
+import { proxyActivities } from "@temporalio/workflow";
+import type * as activities from "./activities";
+
+const { chargeCustomer, sendReceipt } = proxyActivities<typeof activities>({
+  startToCloseTimeout: "30 seconds",
+  retry: { maximumAttempts: 5 },
+});
+
+interface PaymentInput {
+  customerId: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+}
+
+// One Workflow type, parameterized by input.
+// The task queue is "process-payment" for ALL payment jobs.
+// The input differentiates each job: which customer, how much, which method.
+export async function processPaymentWorkflow(input: PaymentInput): Promise<string> {
+  const txnId = await chargeCustomer(input);
+  await sendReceipt(input.customerId, txnId);
+  return txnId;
+}
+
+// worker.ts — one or many workers all poll "process-payment"
+import { Worker } from "@temporalio/worker";
+import * as activities from "./activities";
+
+async function run() {
+  const worker = await Worker.create({
+    workflowsPath: require.resolve("./workflows"),
+    activities,
+    taskQueue: "process-payment", // the "job type"
+  });
+  await worker.run();
+}
+run().catch(console.error);
+
+// client.ts — each call sends different input through the same queue
+import { Client } from "@temporalio/client";
+
+async function run() {
+  const client = new Client();
+
+  // same task queue, different inputs — Temporal routes to any available Worker
+  await client.workflow.start("processPaymentWorkflow", {
+    taskQueue: "process-payment",
+    workflowId: "payment-cust-100-order-abc",
+    args: [{
+      customerId: "cust-100",
+      amount: 49.99,
+      currency: "USD",
+      paymentMethod: "credit_card",
+    }],
+  });
+
+  await client.workflow.start("processPaymentWorkflow", {
+    taskQueue: "process-payment",
+    workflowId: "payment-cust-200-order-def",
+    args: [{
+      customerId: "cust-200",
+      amount: 1250.00,
+      currency: "EUR",
+      paymentMethod: "bank_transfer",
+    }],
+  });
+
+  console.log("Two payment workflows started on the same queue with different inputs");
+}
+run().catch(console.error);
+```
+
+**Python**
+
+```python
+# activities.py
+from temporalio import activity
+from dataclasses import dataclass
+import time
+
+
+@dataclass
+class PaymentRequest:
+    customer_id: str
+    amount: float
+    currency: str
+    payment_method: str  # "credit_card" | "bank_transfer" | "crypto"
+
+
+@activity.defn
+async def charge_customer(request: PaymentRequest) -> str:
+    """Charge the customer using the specified payment method."""
+    activity.logger.info(f"Charging {request.customer_id}: {request.amount} {request.currency}")
+    if request.payment_method == "credit_card":
+        return f"stripe_txn_{request.customer_id}_{int(time.time())}"
+    elif request.payment_method == "bank_transfer":
+        return f"ach_txn_{request.customer_id}_{int(time.time())}"
+    else:
+        raise ValueError(f"Unknown payment method: {request.payment_method}")
+
+
+@activity.defn
+async def send_receipt(customer_id: str, transaction_id: str) -> None:
+    """Email the payment receipt to the customer."""
+    activity.logger.info(f"Sending receipt to {customer_id}: {transaction_id}")
+
+
+# workflows.py
+from datetime import timedelta
+from temporalio import workflow
+from temporalio.common import RetryPolicy
+
+with workflow.unsafe.imports_passed_through():
+    from activities import charge_customer, send_receipt, PaymentRequest
+
+
+@workflow.defn
+class ProcessPaymentWorkflow:
+    """One Workflow type, parameterized by input.
+    The task queue is 'process-payment' for ALL payment jobs.
+    The input differentiates each job: which customer, how much, which method.
+    """
+
+    @workflow.run
+    async def run(self, request: PaymentRequest) -> str:
+        retry = RetryPolicy(maximum_attempts=5)
+        txn_id = await workflow.execute_activity(
+            charge_customer, request,
+            start_to_close_timeout=timedelta(seconds=30),
+            retry_policy=retry,
+        )
+        await workflow.execute_activity(
+            send_receipt, args=[request.customer_id, txn_id],
+            start_to_close_timeout=timedelta(seconds=30),
+        )
+        return txn_id
+
+
+# worker.py
+import asyncio
+from temporalio.client import Client
+from temporalio.worker import Worker
+from activities import charge_customer, send_receipt
+from workflows import ProcessPaymentWorkflow
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+    worker = Worker(
+        client,
+        task_queue="process-payment",  # the "job type"
+        workflows=[ProcessPaymentWorkflow],
+        activities=[charge_customer, send_receipt],
+    )
+    await worker.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+# client.py — each call sends different input through the same queue
+import asyncio
+from temporalio.client import Client
+from activities import PaymentRequest
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+
+    # same task queue, different inputs
+    await client.start_workflow(
+        ProcessPaymentWorkflow.run,
+        PaymentRequest("cust-100", 49.99, "USD", "credit_card"),
+        id="payment-cust-100-order-abc",
+        task_queue="process-payment",
+    )
+
+    await client.start_workflow(
+        ProcessPaymentWorkflow.run,
+        PaymentRequest("cust-200", 1250.00, "EUR", "bank_transfer"),
+        id="payment-cust-200-order-def",
+        task_queue="process-payment",
+    )
+
+    print("Two payment workflows started on the same queue with different inputs")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+### 5. Work Distribution — Dedicated vs Shared Workers
+
+Two strategies for distributing work across Workers:
+
+**Strategy A: Dedicated Worker (1 job type = 1 specialized worker)**
+Each task queue has its own Worker pool running specialized code. Use when different jobs need different dependencies, resources, or scaling profiles.
+
+**Strategy B: Shared Workers (1 generic queue = many workers picking up any job)**
+Multiple Workers poll the same queue. Each Workflow execution runs on exactly one Worker at a time, but any Worker in the pool can pick it up. Use for horizontal scaling of homogeneous work.
+
+```
+Strategy A — Dedicated Workers (separate queues per job type):
+
+  "process-payment" queue ──── Payment Worker (has Stripe SDK)
+  "send-email" queue ────────── Email Worker (has SendGrid SDK)
+  "generate-report" queue ───── Report Worker (has heavy CPU/memory)
+
+Strategy B — Shared Workers (one queue, many workers):
+
+                              ┌── Worker 1 (picks up next available job)
+  "process-payment" queue ────┼── Worker 2 (picks up next available job)
+                              ├── Worker 3 (picks up next available job)
+                              └── Worker N (horizontal scaling)
+```
+
+**TypeScript — Strategy A: Dedicated Workers**
+
+```typescript
+// payment-worker.ts — only handles payment workflows
+import { Worker } from "@temporalio/worker";
+import * as paymentActivities from "./activities/payment";
+
+async function run() {
+  const worker = await Worker.create({
+    workflowsPath: require.resolve("./workflows/payment"),
+    activities: paymentActivities,
+    taskQueue: "process-payment", // dedicated queue for payments only
+  });
+  await worker.run();
+}
+run().catch(console.error);
+
+// email-worker.ts — only handles email workflows
+import { Worker } from "@temporalio/worker";
+import * as emailActivities from "./activities/email";
+
+async function run() {
+  const worker = await Worker.create({
+    workflowsPath: require.resolve("./workflows/email"),
+    activities: emailActivities,
+    taskQueue: "send-email", // dedicated queue for emails only
+  });
+  await worker.run();
+}
+run().catch(console.error);
+```
+
+**TypeScript — Strategy B: Shared Workers (horizontal scaling)**
+
+```typescript
+// worker.ts — run N instances of this same worker for horizontal scaling
+// each instance polls the same queue; Temporal dispatches one task to one worker
+import { Worker } from "@temporalio/worker";
+import * as activities from "./activities";
+
+async function run() {
+  const worker = await Worker.create({
+    workflowsPath: require.resolve("./workflows"),
+    activities,
+    taskQueue: "process-payment",
+    // tune concurrency per worker instance
+    maxConcurrentWorkflowTaskExecutions: 100,
+    maxConcurrentActivityTaskExecutions: 50,
+  });
+  console.log(`Worker started (PID ${process.pid})`);
+  await worker.run();
+}
+run().catch(console.error);
+
+// deploy: run multiple instances of the same worker.ts
+// $ node worker.js &    # Worker 1
+// $ node worker.js &    # Worker 2
+// $ node worker.js &    # Worker 3
+// All three poll "process-payment" — Temporal load-balances across them.
+
+// client.ts — submit 1000 payment jobs; the 3 workers share the load
+import { Client } from "@temporalio/client";
+
+async function run() {
+  const client = new Client();
+
+  // each of these runs on exactly ONE worker, but ANY of the 3 can pick it up
+  for (let i = 0; i < 1000; i++) {
+    await client.workflow.start("processPaymentWorkflow", {
+      taskQueue: "process-payment",
+      workflowId: `payment-batch-${i}`,
+      args: [{ customerId: `cust-${i}`, amount: 9.99, currency: "USD", paymentMethod: "credit_card" }],
+    });
+  }
+  console.log("1000 payment workflows dispatched across the worker pool");
+}
+run().catch(console.error);
+```
+
+**Python — Strategy A: Dedicated Workers**
+
+```python
+# payment_worker.py — only handles payment workflows
+import asyncio
+from temporalio.client import Client
+from temporalio.worker import Worker
+from activities.payment import charge_customer, send_receipt
+from workflows.payment import ProcessPaymentWorkflow
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+    worker = Worker(
+        client,
+        task_queue="process-payment",  # dedicated queue for payments
+        workflows=[ProcessPaymentWorkflow],
+        activities=[charge_customer, send_receipt],
+    )
+    await worker.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+# email_worker.py — only handles email workflows
+import asyncio
+from temporalio.client import Client
+from temporalio.worker import Worker
+from activities.email import send_email
+from workflows.email import SendEmailWorkflow
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+    worker = Worker(
+        client,
+        task_queue="send-email",  # dedicated queue for emails
+        workflows=[SendEmailWorkflow],
+        activities=[send_email],
+    )
+    await worker.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**Python — Strategy B: Shared Workers (horizontal scaling)**
+
+```python
+# worker.py — run N instances for horizontal scaling
+# each instance polls the same queue; Temporal dispatches one task to one worker
+import asyncio
+import os
+from temporalio.client import Client
+from temporalio.worker import Worker
+from activities import charge_customer, send_receipt
+from workflows import ProcessPaymentWorkflow
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+    worker = Worker(
+        client,
+        task_queue="process-payment",
+        workflows=[ProcessPaymentWorkflow],
+        activities=[charge_customer, send_receipt],
+        # tune concurrency per worker instance
+        max_concurrent_workflow_tasks=100,
+        max_concurrent_activities=50,
+    )
+    print(f"Worker started (PID {os.getpid()})")
+    await worker.run()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+# deploy: run multiple instances of the same worker.py
+# $ python worker.py &    # Worker 1
+# $ python worker.py &    # Worker 2
+# $ python worker.py &    # Worker 3
+# All three poll "process-payment" — Temporal load-balances across them.
+
+
+# client.py — submit 1000 payment jobs; the 3 workers share the load
+import asyncio
+from temporalio.client import Client
+from activities import PaymentRequest
+
+
+async def main():
+    client = await Client.connect("localhost:7233")
+
+    # each of these runs on exactly ONE worker, but ANY of the 3 can pick it up
+    for i in range(1000):
+        await client.start_workflow(
+            ProcessPaymentWorkflow.run,
+            PaymentRequest(f"cust-{i}", 9.99, "USD", "credit_card"),
+            id=f"payment-batch-{i}",
+            task_queue="process-payment",
+        )
+    print("1000 payment workflows dispatched across the worker pool")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+**When to use which strategy:**
+
+| Scenario | Strategy | Why |
+| --- | --- | --- |
+| Different jobs need different SDKs/dependencies | A (Dedicated) | Payment worker has Stripe SDK, email worker has SendGrid |
+| Different jobs need different machine resources | A (Dedicated) | Report worker needs 16GB RAM, email worker needs 512MB |
+| Same job type needs higher throughput | B (Shared) | Add more workers polling the same queue |
+| Isolate failures between job types | A (Dedicated) | A bug in email code doesn't crash the payment worker |
+| Simple setup, all jobs are similar | B (Shared) | Less infrastructure to manage |
+| **Most real systems** | **A + B combined** | Dedicated queues per job type, multiple workers per queue |
