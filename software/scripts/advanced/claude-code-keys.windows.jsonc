@@ -1,11 +1,3 @@
 // Claude Code Windows/Linux-only keybindings.
 // These supplement the common keybindings with platform-specific shortcuts.
-[
-  {
-    "context": "Chat",
-    "bindings": {
-      // clear input (alt+backspace, matching deleteAllLeft / delete to BOL in VS Code, Sublime)
-      "alt+backspace": "chat:clearInput",
-    },
-  },
-]
+[]
