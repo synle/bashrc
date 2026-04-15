@@ -22,6 +22,9 @@ ${env_var.BASH_VER}[>](bold white) """
 # increase git command timeout from default 500ms to 2000ms
 command_timeout = 2000
 
+# increase directory scan timeout from default 30ms to 100ms
+scan_timeout = 100
+
 # disable default newline at top of prompt
 add_newline = false
 
