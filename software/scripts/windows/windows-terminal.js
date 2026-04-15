@@ -111,7 +111,7 @@ async function doWork() {
 
     // input
     multiLinePasteWarning: false,
-    focusFollowMouse: true,
+    focusFollowMouse: false, // require click to focus pane (like iTerm), set to true for hover-to-focus
 
     // window
     launchMode: "maximized",
