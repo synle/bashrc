@@ -46,25 +46,40 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local (current system)
-# and to the Windows host via cmd.exe when running under WSL.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
   # install for current system
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
 
   # install for Windows host via WSL
   if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    echo -n ">> $@ >> Installing with npm global (Windows) >> "
-    if cmd.exe /c "npm install -g $*" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
     else
-      echo "Error"
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
     fi
   fi
 }
