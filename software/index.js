@@ -2601,6 +2601,7 @@ function downloadAssets(urls, destination) {
   const args = [];
   const results = [];
   const pending = [];
+  const localCopied = [];
   for (const url of urls) {
     const dest = isDir ? path.join(destination, path.basename(url)) : destination;
     results.push(dest);
@@ -2616,14 +2617,25 @@ function downloadAssets(urls, destination) {
       continue;
     }
 
+    // local repo optimization: copy from repo instead of downloading from API
+    if (IS_LOCAL_REPO && REPO_PREFIX_URL && url.startsWith(REPO_PREFIX_URL)) {
+      const localPath = url.slice(REPO_PREFIX_URL.length);
+      if (pathExists(localPath)) {
+        copyFile(localPath, dest);
+        log("<<< Copied from local repo", localPath);
+        localCopied.push({ url, dest });
+        continue;
+      }
+    }
+
     args.push(`-fsSL "${url}" -o "${dest}"`);
     pending.push({ url, dest });
   }
 
-  if (args.length === 0) return Promise.resolve(results);
-  return execBash(`curl --parallel --parallel-max 10 ${args.join(" ")}`).then(() => {
+  /** @param {{ url: string, dest: string }[]} entries - Download entries to record in the metadata log */
+  function _recordDownloadMetadata(entries) {
     const metadata = [];
-    for (const { url, dest } of pending) {
+    for (const { url, dest } of entries) {
       let status = "Success";
       let fileSize = 0;
       try {
@@ -2635,6 +2647,14 @@ function downloadAssets(urls, destination) {
     if (metadata.length > 0) {
       fs.appendFileSync(DOWNLOAD_ASSET_METADATA_PATH, metadata.join("\n") + "\n");
     }
+  }
+
+  // record metadata for local copies
+  _recordDownloadMetadata(localCopied);
+
+  if (args.length === 0) return Promise.resolve(results);
+  return execBash(`curl --parallel --parallel-max 10 ${args.join(" ")}`).then(() => {
+    _recordDownloadMetadata(pending);
     return results;
   });
 }
@@ -2861,11 +2881,13 @@ async function listRepoDir(source = "remote_api", fallthrough = false) {
 
 /**
  * Get all available scripts used for searching and matching against partially matched scripts.
- * Only includes .js and .sh files under software/scripts/ (excludes tools, common, etc.).
+ * Includes .js and .sh files under software/scripts/ and software/metadata/ (excludes tools, common, etc.).
  * @returns {Promise<string[]>} Array of all script file paths sorted by depth then alphabetically
  */
 async function getAllRepoSoftwareFiles() {
-  return filterRepoScripts(await listRepoDir("local", true)).filter((f) => f.includes("software/scripts/"));
+  return filterRepoScripts(await listRepoDir("local", true)).filter(
+    (f) => f.includes("software/scripts/") || f.includes("software/metadata/"),
+  );
 }
 
 /**

@@ -7,6 +7,7 @@ async function doWork() {
 
   // fetch the toml config from the repo source file
   const starshipConfig = await readText`software/scripts/advanced/starship-config.toml`;
+  await mkdir(targetDir);
   await backupConfigFile(targetPath);
   await writeText(targetPath, starshipConfig);
 
