@@ -10,8 +10,9 @@ if is_force_refresh_stale "$HOME/.local/bin/starship"; then
 fi
 
 # Install starship if not already installed
-if type -P starship &> /dev/null; then
-  echo ">> Skipped starship: already installed at $(type -P starship)"
+_bin=$(has_persistent_binary starship)
+if [ -n "$_bin" ]; then
+  echo ">> Skipped starship: already installed at $_bin"
 else
   # NOTE: starship installer requires `sh` not `bash` (it errors with non-POSIX bash).
   # This is an exception to our `curl | bash` convention.

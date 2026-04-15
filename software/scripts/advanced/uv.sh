@@ -5,15 +5,16 @@
 
 # Force refresh: remove existing binary and venv if stale
 if is_force_refresh_stale "$HOME/.local/bin/uv"; then
-  if type -P uv &> /dev/null; then
+  if has_persistent_binary uv &> /dev/null; then
     echo ">> Force refresh: removing uv"
     rm -rf "$HOME/.local/bin/uv" "$HOME/.local/bin/uvx"
   fi
 fi
 
 # Install uv if not already installed
-if type -P uv &> /dev/null; then
-  echo ">> Skipped uv: already installed at $(type -P uv)"
+_bin=$(has_persistent_binary uv)
+if [ -n "$_bin" ]; then
+  echo ">> Skipped uv: already installed at $_bin"
 else
   echo '>> Installing uv'
   echo '>>> Installing with official installer'

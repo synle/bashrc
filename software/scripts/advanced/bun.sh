@@ -10,8 +10,9 @@ if is_force_refresh_stale "$HOME/.bun"; then
 fi
 
 # Install bun if not already installed
-if type -P bun &> /dev/null; then
-  echo ">> Skipped bun: already installed at $(type -P bun)"
+_bin=$(has_persistent_binary bun)
+if [ -n "$_bin" ]; then
+  echo ">> Skipped bun: already installed at $_bin"
 else
   echo '>> Installing bun'
   curl_bash_install https://bun.sh/install

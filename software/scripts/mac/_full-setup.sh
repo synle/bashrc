@@ -241,7 +241,7 @@ installBrewPackageInBackground xz
 
 # ---- Node.js (fnm) ----
 echo -n ">> fnm >> Installing with curl >> "
-if type -P fnm &> /dev/null; then
+if has_persistent_binary fnm &> /dev/null; then
   echo "Skipped"
 else
   if curl_bash_install https://fnm.vercel.app/install --skip-shell; then

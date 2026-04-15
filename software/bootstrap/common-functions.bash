@@ -57,6 +57,18 @@ function npm_install_global() {
   fi
 }
 
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2>/dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
+}
+
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
 # avoid updating mtime (which would reset staleness checks).
 function touch() {

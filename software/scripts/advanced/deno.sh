@@ -10,8 +10,9 @@ if is_force_refresh_stale "$HOME/.deno"; then
 fi
 
 # Install deno if not already installed
-if type -P deno &> /dev/null; then
-  echo ">> Skipped deno: already installed at $(type -P deno)"
+_bin=$(has_persistent_binary deno)
+if [ -n "$_bin" ]; then
+  echo ">> Skipped deno: already installed at $_bin"
 else
   echo '>> Installing deno'
   curl_bash_install https://deno.land/install.sh
