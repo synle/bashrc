@@ -13,6 +13,7 @@ async function doWork() {
     alias chrome='open "/Applications/Google\\ Chrome.app" --args --disable-smooth-scrolling'
     alias sqluinative='open "/Applications/sqlui-native.app" --args --disable-smooth-scrolling'
     alias sql="sqluinative"
+    alias displaydj='open "/Applications/Display DJ.app"'
 
     # make: use GNU Make (gmake) for .ONESHELL support (macOS ships Make 3.81)
     if type -P gmake &> /dev/null; then alias make='gmake'; fi
