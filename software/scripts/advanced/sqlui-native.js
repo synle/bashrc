@@ -1,15 +1,16 @@
-const SQLUI_NATIVE_RELEASE_URL = "https://api.github.com/repos/synle/sqlui-native/contents/release.json";
+/** @type {string} GitHub API URL for the latest sqlui-native release. */
+const SQLUI_NATIVE_RELEASE_URL = "https://api.github.com/repos/synle/sqlui-native/releases/latest";
 
 /** Downloads the sqlui-native application binary for the current platform. */
 async function doWork() {
   if (IS_CI) return;
 
-  if (is_os_mac) {
-    // mac: await download because we need to install the DMG after
-    const version = (await readJson`${SQLUI_NATIVE_RELEASE_URL}`).version;
-    const targetPath = await getCustomTweaksPath("sqlui-native");
+  const releaseData = await readJson`${SQLUI_NATIVE_RELEASE_URL}`;
+  const version = releaseData.tag_name;
+  const targetPath = await getCustomTweaksPath("sqlui-native");
 
-    log(`>> Installing sqlui-native v${version} for Mac to:`, targetPath);
+  if (is_os_mac) {
+    log(`>> Installing sqlui-native ${version} for Mac to:`, targetPath);
 
     await deleteFolder(targetPath);
     await mkdir(targetPath);
@@ -20,14 +21,10 @@ async function doWork() {
     const destination = path.join(targetPath, fileName);
 
     await downloadAsset(url, destination);
-    log(`>> sqlui-native v${version} downloaded:`, destination);
+    log(`>> sqlui-native ${version} downloaded:`, destination);
     await installMacDmg(destination, "sqlui-native.app");
   } else {
-    // non-mac: await the download to prevent early exit
-    const version = (await readJson`${SQLUI_NATIVE_RELEASE_URL}`).version;
-    const targetPath = await getCustomTweaksPath("sqlui-native");
-
-    log(`>> Installing sqlui-native v${version} for NonMac to:`, targetPath);
+    log(`>> Installing sqlui-native ${version} for NonMac to:`, targetPath);
 
     await deleteFolder(targetPath);
     await mkdir(targetPath);
@@ -37,6 +34,6 @@ async function doWork() {
     const destination = path.join(targetPath, fileName);
 
     await downloadAsset(url, destination);
-    log(`>> sqlui-native v${version} downloaded:`, destination);
+    log(`>> sqlui-native ${version} downloaded:`, destination);
   }
 }
