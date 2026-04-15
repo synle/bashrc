@@ -135,18 +135,18 @@ Key concepts at a glance:
 
 ### Key Files
 
-| Path                                       | Purpose                                                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `run.sh`                                   | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                   |
-| `software/bootstrap/common-env.sh`         | Shared constants (`LIMITED_SUPPORT_OSES`, `LIGHT_WEIGHT_SCRIPTS`), sourced by `run.sh` via BEGIN/END |
+| Path                                       | Purpose                                                                                                                                                                |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run.sh`                                   | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                                                                                     |
+| `software/bootstrap/common-env.sh`         | Shared constants (`LIMITED_SUPPORT_OSES`, `LIGHT_WEIGHT_SCRIPTS`), sourced by `run.sh` via BEGIN/END                                                                   |
 | `software/bootstrap/common-functions.bash` | Shared shell helpers (`npm_install_global`, `has_persistent_binary`, `curl_bash_install`, `is_force_refresh_stale`, etc.), sourced by `.sh` scripts via SOURCE markers |
-| `software/index.js`                        | Arg parsing (`parseRawArgs`), utility library, script runner, run info                               |
-| `software/scripts/*.js`                    | Cross-platform scripts                                                                               |
-| `software/scripts/<os>/`                   | OS-specific scripts                                                                                  |
-| `software/common.js`                       | Core shared constants and `replaceBlock`. Inlined into index.js                                      |
-| `software/tools/build-include.js`          | BEGIN/END block substitution engine + inline marker processor                                        |
-| `software/metadata/autocomplete.common.js` | Single source of truth for spec-based autocomplete mappings                                          |
-| `$BASHRC_TEMP_DIR/run_timing.json`         | Per-run timing data: start/end, per-script duration+status, results array (read by CI)               |
+| `software/index.js`                        | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                                                                                 |
+| `software/scripts/*.js`                    | Cross-platform scripts                                                                                                                                                 |
+| `software/scripts/<os>/`                   | OS-specific scripts                                                                                                                                                    |
+| `software/common.js`                       | Core shared constants and `replaceBlock`. Inlined into index.js                                                                                                        |
+| `software/tools/build-include.js`          | BEGIN/END block substitution engine + inline marker processor                                                                                                          |
+| `software/metadata/autocomplete.common.js` | Single source of truth for spec-based autocomplete mappings                                                                                                            |
+| `$BASHRC_TEMP_DIR/run_timing.json`         | Per-run timing data: start/end, per-script duration+status, results array (read by CI)                                                                                 |
 
 ## Testing
 

@@ -91,7 +91,7 @@ function npm_install_global() {
 # On success, prints the resolved path to stdout (capture with $()).
 function has_persistent_binary() {
   local bin
-  bin=$(type -P "$1" 2>/dev/null) || return 1
+  bin=$(type -P "$1" 2> /dev/null) || return 1
   [[ "$bin" == /tmp/* ]] && return 1
   echo "$bin"
 }
