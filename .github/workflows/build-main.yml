@@ -79,6 +79,7 @@ jobs:
         with:
           name: prep-patch
           path: /tmp/ci-patches/prep-patch/
+          retention-days: 30
           if-no-files-found: ignore
 
       - name: Upload webapp dist
@@ -86,6 +87,7 @@ jobs:
         with:
           name: webapp-dist
           path: dist/
+          retention-days: 30
           if-no-files-found: ignore
 
       - name: Prep Summary
@@ -334,6 +336,7 @@ jobs:
         with:
           name: publish-patch
           path: /tmp/ci-patches/publish-patch/
+          retention-days: 30
           if-no-files-found: ignore
 
       - name: Download webapp dist
