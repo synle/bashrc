@@ -152,6 +152,13 @@ function _getBraveConfigs() {
     },
 
     // =========================================================================
+    // tab groups — brave://settings (Tab group preferences)
+    // =========================================================================
+    "tabgroup.sync_enabled": false, // Tab Groups > "Sync tab groups across devices" = OFF
+    auto_open_synced_tab_groups: false, // Tab Groups > "Auto-open synced tab groups" = OFF
+    auto_pin_new_tab_groups: false, // Tab Groups > "Auto-pin new tab groups" = OFF
+
+    // =========================================================================
     // browser — General browser settings
     // =========================================================================
     browser: {
