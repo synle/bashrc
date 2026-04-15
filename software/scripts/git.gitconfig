@@ -133,7 +133,7 @@ current = branch --show-current # Print current branch name
 
 # ---- Pull / Push / Fetch ----
 fap = fetch --all --prune # Fetch all and purge deleted remotes
-fapr = "!git gc --prune=now && git fap && git r" # GC, fetch all, prune, then rebase
+fapr = "!git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git gc --prune=now && git fap && git r" # Reset fetch refspec, GC, fetch all, prune, then rebase
 p = pull
 pu = pull
 po = push origin
