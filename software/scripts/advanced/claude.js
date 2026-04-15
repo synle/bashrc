@@ -1,5 +1,7 @@
-/** Deploys Claude Code keybindings to ~/.claude/keybindings.json with platform-specific OS_KEY resolution. Run: `bash run.sh --files="claude-keybindings.js"` */
+/** Claude Code setup: keybindings and telemetry opt-out. Run: `bash run.sh --files="claude.js"` */
 // SOURCE software/scripts/advanced/editor.common.js
+
+////// Keybindings //////
 
 /** @type {string} Claude Code OS modifier key on macOS (meta = cmd in terminals). */
 const CLAUDE_MAC_OS_KEY = "meta";
@@ -58,7 +60,7 @@ function _mergeContextGroups(...arrays) {
  * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
  * @returns {object} Full Claude Code keybindings config with schema metadata.
  */
-function _getClaudeKeyConfig(isOsMac) {
+function _getKeyConfig(isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
   const osKey = isMac ? CLAUDE_MAC_OS_KEY : EDITOR_WINDOWS_OS_KEY;
 
@@ -74,17 +76,14 @@ function _getClaudeKeyConfig(isOsMac) {
   };
 }
 
-/** Deploys Claude Code keybindings to ~/.claude/keybindings.json. */
-async function doWork() {
-  const targetDir = path.join(BASE_HOMEDIR_LINUX, ".claude");
+/**
+ * Loads keybinding configs, writes prebuilt configs per platform, and deploys to ~/.claude/keybindings.json.
+ * @param {string} targetDir - Path to the ~/.claude directory.
+ */
+async function _doKeysWork(targetDir) {
   const targetPath = path.join(targetDir, "keybindings.json");
 
-  if (!fs.existsSync(targetDir)) {
-    log(">> Skipping Claude Code keybindings — ~/.claude not found");
-    return;
-  }
-
-  log(">> Configuring Claude Code keybindings:", targetPath);
+  log(">> Claude Code Keybindings:", targetPath);
 
   CLAUDE_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-keys.common.jsonc`) || [];
   CLAUDE_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-keys.windows.jsonc`) || [];
@@ -94,14 +93,14 @@ async function doWork() {
   await writeBuildArtifact([
     {
       file: `${BUILD_DIR}/claude-keys`,
-      data: _getClaudeKeyConfig(false),
+      data: _getKeyConfig(false),
       isJson: true,
       comments,
       commentStyle: "json",
     },
     {
       file: `${BUILD_DIR}/claude-keys-mac`,
-      data: _getClaudeKeyConfig(true),
+      data: _getKeyConfig(true),
       isJson: true,
       comments,
       commentStyle: "json",
@@ -110,5 +109,23 @@ async function doWork() {
 
   // deploy to local system
   await backupConfigFile(targetPath);
-  await writeJson(targetPath, _getClaudeKeyConfig());
+  await writeJson(targetPath, _getKeyConfig());
+}
+
+////// Main Entry Point //////
+
+/**
+ * Orchestrates all Claude Code setup: keybindings.
+ */
+async function doWork() {
+  const targetDir = path.join(BASE_HOMEDIR_LINUX, ".claude");
+
+  if (!fs.existsSync(targetDir)) {
+    log(">> Skipping Claude Code setup — ~/.claude not found");
+    return;
+  }
+
+  log(">> Configuring Claude Code:", targetDir);
+
+  await _doKeysWork(targetDir);
 }
