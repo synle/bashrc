@@ -14,14 +14,14 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-15T22:52:56.823Z
+# Generated: 2026-04-15T23:33:10.104Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history-profile.bash
-# software/scripts/bash-history-profile.bash | b9065bae10c33d3bbccc7c97c9e828bb | 4.5 KB | 2026-04-15
+# software/scripts/bash-history-profile.bash | 191de43e107098971362f4f16665b98a | 4.5 KB | 2026-04-15
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -69,15 +69,54 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
+  # install for current system
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    else
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+    fi
+  fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2> /dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -751,9 +790,9 @@ done
 export PATH="/Users/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
-# software/scripts/bash-path-candidate-profile.bash | 330e855efb6e3393702e0ca0c8f31bd5 | 3.6 KB | 2026-04-15
+# software/scripts/bash-path-candidate-profile.bash | 1df5fe5c6b69573b1ba7b48eef712fca | 3.6 KB | 2026-04-15
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -801,15 +840,54 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
+  # install for current system
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    else
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+    fi
+  fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2> /dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -1445,6 +1523,9 @@ alias cm='cl --model claude-opus-4-6[1m]'
 alias cm1='cm'
 alias cm2='cl --model opus'
 
+# ---- Aliases: Gemini ----
+alias gem="gemini"
+
 # ---- Aliases: SSH ----
 alias s="ssh"
 
@@ -1872,13 +1953,19 @@ function date() {
 }
 
 ################################################################################
-# ---- Telemetry / Environment ----
+# ---- Telemetry ----
 ################################################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1"    # opt out azure cli telemetry
 export DISABLE_TELEMETRY="1"                        # opt out of Claude Code telemetry
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1" # disable Claude Code non-essential traffic (telemetry, autoupdater, error reporting)
-export ELECTRON_ENABLE_LOGGING="0"                  # suppresses Electron's internal console spam for slight perf gain
-export UV_VENV_CLEAR="1"                            # skip "replace existing venv?" prompt in uv venv
+
+################################################################################
+# ---- Environment ----
+################################################################################
+export TERM="xterm-256color"       # enable 256-color support in terminal emulators
+export COLORTERM="truecolor"       # advertise 24-bit RGB color support to CLI apps
+export ELECTRON_ENABLE_LOGGING="0" # suppress Electron's internal console spam for slight perf gain
+export UV_VENV_CLEAR="1"           # skip "replace existing venv?" prompt in uv venv
 
 ################################################################################
 # ---- Prompt Helpers ----
@@ -2779,9 +2866,9 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys-profile.bash
-# software/scripts/bash-keys-profile.bash | b4db528717d1b5fbdd299c790f5851d3 | 4.8 KB | 2026-04-15
+# software/scripts/bash-keys-profile.bash | f807c559c43e4aab0d62ff277d37f664 | 4.8 KB | 2026-04-15
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -2829,15 +2916,54 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
+  # install for current system
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    else
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+    fi
+  fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2> /dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -3024,9 +3150,9 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys-profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.bash
-# software/scripts/bash-file-utils.bash | ec47e659052d2b4f163afa3a8cb623f3 | 27.7 KB | 2026-04-15
+# software/scripts/bash-file-utils.bash | f02347803de82296be9fbb9249d6e0af | 27.7 KB | 2026-04-15
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3074,15 +3200,54 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
+  # install for current system
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    else
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+    fi
+  fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2> /dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -3881,9 +4046,9 @@ DEDUP_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.bash
 # SOURCE_BEGIN software/scripts/bash-fzf-profile.bash
-# software/scripts/bash-fzf-profile.bash | 2f7d973d025652f982c1708a0204d095 | 17.1 KB | 2026-04-15
+# software/scripts/bash-fzf-profile.bash | 527b2a606d388dd141ac04621f995e26 | 17.1 KB | 2026-04-15
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3931,15 +4096,54 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
+  # install for current system
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    else
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+    fi
+  fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2> /dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -4429,9 +4633,9 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf-profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | 82c2f0e4bb170ca54e7713c586f8fcd9 | 2.2 KB | 2026-04-15
+# software/scripts/advanced/editor-launchers-common.bash | 4b4b0d846a5f3f403210d73d66c5653e | 2.2 KB | 2026-04-15
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4479,15 +4683,54 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
+  # install for current system
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    else
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+    fi
+  fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2> /dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -4876,7 +5119,7 @@ type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4924,15 +5167,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -5272,7 +5554,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5320,15 +5602,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -5668,7 +5989,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5716,15 +6037,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -6064,7 +6424,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6112,15 +6472,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -6460,7 +6859,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6508,15 +6907,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -6856,7 +7294,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6904,15 +7342,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -7252,7 +7729,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -7300,15 +7777,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -7648,7 +8164,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -7696,15 +8212,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -8044,7 +8599,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8092,15 +8647,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -8440,7 +9034,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8488,15 +9082,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -8836,7 +9469,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8884,15 +9517,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -9232,7 +9904,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9280,15 +9952,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -9628,7 +10339,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9676,15 +10387,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -10029,7 +10779,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -10077,15 +10827,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -10425,7 +11214,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -10473,15 +11262,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -10821,7 +11649,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -10869,15 +11697,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -11217,7 +12084,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -11265,15 +12132,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -11613,7 +12519,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -11661,15 +12567,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -12399,7 +13344,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -12447,15 +13392,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -12851,7 +13835,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -12899,15 +13883,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -13637,7 +14660,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -13685,15 +14708,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -14058,7 +15120,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -14106,15 +15168,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -14473,7 +15574,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -14521,15 +15622,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -14882,7 +16022,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -14930,15 +16070,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -15345,7 +16524,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -15393,15 +16572,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -15808,7 +17026,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -15856,15 +17074,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -16210,7 +17467,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -16258,15 +17515,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -16624,7 +17920,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -16672,15 +17968,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -17024,7 +18359,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17072,15 +18407,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -17424,7 +18798,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17472,15 +18846,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -17820,7 +19233,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17868,15 +19281,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -18216,7 +19668,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -18264,15 +19716,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -18612,7 +20103,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -18660,15 +20151,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -19008,7 +20538,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -19056,15 +20586,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -19440,7 +21009,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -19488,15 +21057,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -19836,7 +21444,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -19884,15 +21492,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -20232,7 +21879,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -20280,15 +21927,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -20628,7 +22314,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -20676,15 +22362,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -21024,7 +22749,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -21072,15 +22797,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -21458,7 +23222,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -21506,15 +23270,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -21854,7 +23657,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -21902,15 +23705,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -22250,7 +24092,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -22298,15 +24140,54 @@ curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
 fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-echo -n ">> $@ >> Installing with npm global >> "
-if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+local pkg="$1"
+local bin="${2:-${pkg##*/}}"
+
+# install for current system
+local _resolved
+_resolved=$(has_persistent_binary "$bin")
+if [ -n "$_resolved" ]; then
+echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
+else
+echo -n ">> $pkg >> Installing with npm global >> "
+if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
 echo "Success"
 else
 echo "Error"
 fi
+fi
+
+# install for Windows host via WSL
+if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+if cmd.exe /c "where $bin" &> /dev/null; then
+echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+else
+echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+echo "Success"
+else
+echo "Error"
+fi
+fi
+fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+local bin
+bin=$(type -P "$1" 2> /dev/null) || return 1
+[[ "$bin" == /tmp/* ]] && return 1
+echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
@@ -22731,9 +24612,9 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers-profile.bash
-# software/scripts/bash-command-wrappers-profile.bash | b726be766f74cbf74f324f97f14f3098 | 5.5 KB | 2026-04-15
+# software/scripts/bash-command-wrappers-profile.bash | 7eff4c33c253c51463d2ff451bf387c1 | 5.5 KB | 2026-04-15
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | 0af03bee8a417a98aca0034a3e0a5f31 | 4.5 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -22781,15 +24662,54 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
-# Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
+# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
+# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 function npm_install_global() {
-  echo -n ">> $@ >> Installing with npm global >> "
-  if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-    echo "Success"
+  local pkg="$1"
+  local bin="${2:-${pkg##*/}}"
+
+  # install for current system
+  local _resolved
+  _resolved=$(has_persistent_binary "$bin")
+  if [ -n "$_resolved" ]; then
+    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo "Error"
+    echo -n ">> $pkg >> Installing with npm global >> "
+    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    if cmd.exe /c "where $bin" &> /dev/null; then
+      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
+    else
+      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+        echo "Success"
+      else
+        echo "Error"
+      fi
+    fi
+  fi
+}
+
+# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
+# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
+# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
+# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
+# On success, prints the resolved path to stdout (capture with $()).
+function has_persistent_binary() {
+  local bin
+  bin=$(type -P "$1" 2> /dev/null) || return 1
+  [[ "$bin" == /tmp/* ]] && return 1
+  echo "$bin"
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
