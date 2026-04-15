@@ -95,7 +95,7 @@ IS_CI=0 && [ -n "$CI" ] && IS_CI=1
 NO_COLOR="${NO_COLOR:-0}" && [ -n "$NO_COLOR" ] && [ "$NO_COLOR" != "0" ] && NO_COLOR=1 || NO_COLOR=0
 
 os_flags=""
-for var in $(compgen -v | grep '^is_os_\|^IS_CI$\|^NO_COLOR$'); do
+for var in $(compgen -v | grep '^is_os_\|^IS_CI$'); do
   os_flags="$os_flags
 export $var=${!var}"
   unset "$var"
