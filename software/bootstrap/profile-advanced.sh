@@ -857,13 +857,19 @@ function date() {
 }
 
 ################################################################################
-# ---- Telemetry / Environment ----
+# ---- Telemetry ----
 ################################################################################
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1"    # opt out azure cli telemetry
 export DISABLE_TELEMETRY="1"                        # opt out of Claude Code telemetry
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1" # disable Claude Code non-essential traffic (telemetry, autoupdater, error reporting)
-export ELECTRON_ENABLE_LOGGING="0"                  # suppresses Electron's internal console spam for slight perf gain
-export UV_VENV_CLEAR="1"                            # skip "replace existing venv?" prompt in uv venv
+
+################################################################################
+# ---- Environment ----
+################################################################################
+export TERM="xterm-256color"      # enable 256-color support in terminal emulators
+export COLORTERM="truecolor"      # advertise 24-bit RGB color support to CLI apps
+export ELECTRON_ENABLE_LOGGING="0" # suppress Electron's internal console spam for slight perf gain
+export UV_VENV_CLEAR="1"          # skip "replace existing venv?" prompt in uv venv
 
 ################################################################################
 # ---- Prompt Helpers ----
