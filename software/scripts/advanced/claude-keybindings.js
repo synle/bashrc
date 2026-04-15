@@ -1,13 +1,13 @@
-/** Deploys Claude Code keybindings to ~/.claude/keybindings.json with platform-specific OS_KEY resolution. Run: `bash run.sh --files="claude-code-keybindings.js"` */
+/** Deploys Claude Code keybindings to ~/.claude/keybindings.json with platform-specific OS_KEY resolution. Run: `bash run.sh --files="claude-keybindings.js"` */
 // SOURCE software/scripts/advanced/editor.common.js
 
 /** @type {string} Claude Code OS modifier key on macOS (meta = cmd in terminals). */
-const CLAUDE_CODE_MAC_OS_KEY = "meta";
+const CLAUDE_MAC_OS_KEY = "meta";
 
 /** @type {object[]} Common keybindings loaded from JSONC. */
-let CLAUDE_CODE_COMMON_KEY_BINDINGS;
+let CLAUDE_COMMON_KEY_BINDINGS;
 /** @type {object[]} Windows/Linux-only keybindings loaded from JSONC. */
-let CLAUDE_CODE_WINDOWS_ONLY_KEY_BINDINGS;
+let CLAUDE_WINDOWS_ONLY_KEY_BINDINGS;
 
 /**
  * Replaces OS_KEY placeholders in Claude Code keybinding context groups with the actual OS-specific modifier key.
@@ -16,7 +16,7 @@ let CLAUDE_CODE_WINDOWS_ONLY_KEY_BINDINGS;
  * @param {string} osKeyToUse - The OS-specific modifier key to substitute (e.g. "alt", "meta").
  * @returns {object[]} Context groups with resolved binding keys.
  */
-function _formatClaudeCodeKeybindings(contextGroups, osKeyToUse) {
+function _formatClaudeKeybindings(contextGroups, osKeyToUse) {
   contextGroups = clone(contextGroups);
 
   for (const group of contextGroups) {
@@ -58,19 +58,19 @@ function _mergeContextGroups(...arrays) {
  * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
  * @returns {object} Full Claude Code keybindings config with schema metadata.
  */
-function _getClaudeCodeKeyConfig(isOsMac) {
+function _getClaudeKeyConfig(isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
-  const osKey = isMac ? CLAUDE_CODE_MAC_OS_KEY : EDITOR_WINDOWS_OS_KEY;
+  const osKey = isMac ? CLAUDE_MAC_OS_KEY : EDITOR_WINDOWS_OS_KEY;
 
   /** @type {object[]} Platform-specific bindings merged with common. */
   const merged = isMac
-    ? _mergeContextGroups(CLAUDE_CODE_COMMON_KEY_BINDINGS)
-    : _mergeContextGroups(CLAUDE_CODE_COMMON_KEY_BINDINGS, CLAUDE_CODE_WINDOWS_ONLY_KEY_BINDINGS);
+    ? _mergeContextGroups(CLAUDE_COMMON_KEY_BINDINGS)
+    : _mergeContextGroups(CLAUDE_COMMON_KEY_BINDINGS, CLAUDE_WINDOWS_ONLY_KEY_BINDINGS);
 
   return {
     $schema: "https://www.schemastore.org/claude-code-keybindings.json",
     $docs: "https://code.claude.com/docs/en/keybindings",
-    bindings: _formatClaudeCodeKeybindings(merged, osKey),
+    bindings: _formatClaudeKeybindings(merged, osKey),
   };
 }
 
@@ -86,22 +86,22 @@ async function doWork() {
 
   log(">> Configuring Claude Code keybindings:", targetPath);
 
-  CLAUDE_CODE_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-code-keys.common.jsonc`) || [];
-  CLAUDE_CODE_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-code-keys.windows.jsonc`) || [];
+  CLAUDE_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-keys.common.jsonc`) || [];
+  CLAUDE_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-keys.windows.jsonc`) || [];
 
   // write to build file (one per platform)
   const comments = "Claude Code Keybindings";
   await writeBuildArtifact([
     {
-      file: `${BUILD_DIR}/claude-code-keys`,
-      data: _getClaudeCodeKeyConfig(false),
+      file: `${BUILD_DIR}/claude-keys`,
+      data: _getClaudeKeyConfig(false),
       isJson: true,
       comments,
       commentStyle: "json",
     },
     {
-      file: `${BUILD_DIR}/claude-code-keys-mac`,
-      data: _getClaudeCodeKeyConfig(true),
+      file: `${BUILD_DIR}/claude-keys-mac`,
+      data: _getClaudeKeyConfig(true),
       isJson: true,
       comments,
       commentStyle: "json",
@@ -110,5 +110,5 @@ async function doWork() {
 
   // deploy to local system
   await backupConfigFile(targetPath);
-  await writeJson(targetPath, _getClaudeCodeKeyConfig());
+  await writeJson(targetPath, _getClaudeKeyConfig());
 }
