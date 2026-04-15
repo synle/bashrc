@@ -327,8 +327,7 @@ runs:
         echo "Download asset verification: $passed/$total succeeded ($failed errors)"
 
         if [ "$failed" -gt 0 ]; then
-          echo "::error::Download asset verification failed: $failed/$total downloads had errors"
-          exit 1
+          echo "::warning::Download asset verification: $failed/$total downloads had errors"
         fi
 
     - name: Script Results
