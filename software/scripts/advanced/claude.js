@@ -1,4 +1,4 @@
-/** Claude Code setup: keybindings and telemetry opt-out. Run: `bash run.sh --files="claude.js"` */
+/** Claude Code setup: settings, keybindings, and telemetry opt-out. Run: `bash run.sh --files="claude.js"` */
 // SOURCE software/scripts/advanced/editor.common.js
 
 ////// Keybindings //////
@@ -112,10 +112,55 @@ async function _doKeysWork(targetDir) {
   await writeJson(targetPath, _getKeyConfig());
 }
 
+////// Settings //////
+
+/**
+ * Managed settings to merge into ~/.claude/settings.json.
+ * Only these keys are touched — all other user settings are preserved.
+ * @type {Record<string, any>}
+ */
+const CLAUDE_MANAGED_SETTINGS = {
+  // skip confirmation prompt before entering bypass permissions mode. tradeoff: no safety prompt. risk: medium
+  skipDangerousModePermissionPrompt: true,
+  // auto-delete session files older than 30 days. tradeoff: lose old history. risk: low
+  cleanupPeriodDays: 30,
+  // hide tips in the loading spinner. tradeoff: miss occasional tips. risk: none
+  spinnerTipsEnabled: false,
+  // reduce UI animations for cleaner output. tradeoff: less visual feedback. risk: none
+  prefersReducedMotion: true,
+  // show more detail in transcript by default. tradeoff: noisier output. risk: none
+  viewMode: "verbose",
+  // enable extended thinking by default for better quality. tradeoff: more tokens, slightly slower. risk: low
+  alwaysThinkingEnabled: true,
+};
+
+/**
+ * Merges managed settings into ~/.claude/settings.json, preserving existing user settings.
+ * Only keys in CLAUDE_MANAGED_SETTINGS are written — other keys are left untouched.
+ * @param {string} targetDir - Path to the ~/.claude directory.
+ */
+async function _doSettingsWork(targetDir) {
+  const targetPath = path.join(targetDir, "settings.json");
+
+  log(">> Claude Code Settings:", targetPath);
+
+  /** @type {object} Existing user settings (empty object if file missing or invalid). */
+  let existing = {};
+  try {
+    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
+  } catch (e) {}
+
+  // merge: managed settings are applied as defaults, existing user overrides are preserved
+  const merged = { ...CLAUDE_MANAGED_SETTINGS, ...existing };
+
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, merged);
+}
+
 ////// Main Entry Point //////
 
 /**
- * Orchestrates all Claude Code setup: keybindings.
+ * Orchestrates all Claude Code setup: settings and keybindings.
  */
 async function doWork() {
   const targetDir = path.join(BASE_HOMEDIR_LINUX, ".claude");
@@ -127,5 +172,6 @@ async function doWork() {
 
   log(">> Configuring Claude Code:", targetDir);
 
+  await _doSettingsWork(targetDir);
   await _doKeysWork(targetDir);
 }
