@@ -427,6 +427,9 @@ alias cm='cl --model claude-opus-4-6[1m]'
 alias cm1='cm'
 alias cm2='cl --model opus'
 
+# ---- Aliases: Gemini ----
+alias gem="gemini"
+
 # ---- Aliases: SSH ----
 alias s="ssh"
 

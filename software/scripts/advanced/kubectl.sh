@@ -10,8 +10,9 @@ if is_force_refresh_stale "$HOME/.local/bin/kubectl"; then
 fi
 
 # Install kubectl if not already installed
-if type -P kubectl &> /dev/null; then
-  echo ">> Skipped kubectl: already installed at $(type -P kubectl)"
+_bin=$(has_persistent_binary kubectl)
+if [ -n "$_bin" ]; then
+  echo ">> Skipped kubectl: already installed at $_bin"
 else
   echo '>> Installing kubectl'
   KUBECTL_VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt)

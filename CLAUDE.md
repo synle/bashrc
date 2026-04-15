@@ -32,7 +32,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 - **Use grep/regex syntax compatible with both `grep` and `rg`.** `grep` may be aliased to `rg`. Avoid `grep -E` (rg interprets `-E` as encoding). Use basic regex — e.g. `[0-9][0-9]*` instead of `[0-9]+`.
 - **Use `((var))` for boolean flag checks (no spaces).** All boolean flags (`is_os_*`, `IS_CI`, `IS_FORCE_REFRESH`, etc.) use `0`/`1` values. Check with `((IS_CI))` (truthy) or `! ((IS_CI))` (falsy). `IS_CI` is derived from `$CI` in `run.sh` — do not use `$CI` directly.
 - **Use `command <tool>` to bypass shell aliases/wrappers when running commands.**
-- **Use `type -P` for binary detection, `type` for shell functions.** Do not use `which` or `command -v`.
+- **Use `has_persistent_binary` for binary detection in scripts, `type` for shell functions.** Do not use `which` or `command -v`. In `software/scripts/*.sh` files, always use `has_persistent_binary <name>` instead of `type -P` for checking if a binary is installed. It excludes `/tmp/` matches so the bootstrap node fallback directory (`/tmp/synle/bashrc/node/bin`) doesn't short-circuit real installs. On success it prints the resolved path to stdout. Use plain `type -P` only in `profile-*.sh`, `common-functions.bash`, `run.sh`, and `common-env.sh` (where `has_persistent_binary` may not yet be defined).
 - **Bash functions must use the `function` keyword.** `function foo() {` not `foo() {`.
 - **Do not use `disown` in shell scripts.** Use `( ... ) &` instead.
 - **Use `safe_source` instead of `source`/`. ` for sourcing scripts.** Validates syntax with `bash -n` before sourcing. Do NOT append `> /dev/null 2>&1`. **Exception:** In `run.sh` itself (the common-env section), use plain `. ` (safe_source not yet defined).

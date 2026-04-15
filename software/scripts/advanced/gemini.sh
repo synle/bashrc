@@ -5,8 +5,8 @@
 
 echo '> Installing gemini cli'
 
-_bin=$(type -P gemini 2>/dev/null)
-if [ -n "$_bin" ] && [[ "$_bin" != /tmp/* ]]; then
+_bin=$(has_persistent_binary gemini)
+if [ -n "$_bin" ]; then
   echo ">> Skipped gemini: already installed at $_bin"
 else
   echo '>> Downloading and Installing'
