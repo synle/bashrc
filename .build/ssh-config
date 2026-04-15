@@ -1,0 +1,53 @@
+# BEGIN SY CUSTOM CONFIG - All Hosts
+Host *
+  # --- CONNECTION MULTIPLEXING (The Speed King) ---
+  ControlMaster auto
+  ControlPath ~/.ssh/sockets/%r@%h-%p
+  ControlPersist 30m
+
+  # --- PACKET & TIMEOUT MANAGEMENT ---
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+  Compression no # Performance Tip: Disable compression on fast networks
+  TCPKeepAlive no # Disable OS-level heartbeats to prevent accidental drops on Wi-Fi
+
+  # --- IDENTITY & SECURITY ---
+  User syle
+  IdentityFile ~/.ssh/id_rsa
+  ForwardAgent yes
+  IdentitiesOnly yes # Prevent the client from trying every key in your agent
+
+  # --- LATENCY REDUCTION ---
+  CheckHostIP no # Skip DNS lookups on the client side
+  AddressFamily inet # Faster connection for modern systems
+# END SY CUSTOM CONFIG - All Hosts
+
+# BEGIN SY CUSTOM CONFIG - Home Network Hosts
+Host sy-p520-black
+  HostName 192.168.1.21
+  Port 22
+Host sy-wintel
+  HostName 192.168.1.22
+  Port 22
+Host sy-omen45l
+  HostName 192.168.1.45
+  Port 22
+Host sy-mbp-14-m1
+  HostName 192.168.1.24
+  Port 2222
+Host sy-mbp-16-m1
+  HostName 192.168.1.25
+  Port 2222
+Host sy-aero16
+  HostName 192.168.1.26
+  Port 2222
+Host sy-surfacebook3-15
+  HostName 192.168.1.27
+  Port 22
+Host sy-g14-2020
+  HostName 192.168.1.28
+  Port 22
+Host sy-g14-2023
+  HostName 192.168.1.29
+  Port 22
+# END SY CUSTOM CONFIG - Home Network Hosts

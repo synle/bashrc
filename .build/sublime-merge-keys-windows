@@ -1,0 +1,191 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-15]
+// 
+// Preferences Key Bindings
+// ################################################################################
+
+
+[
+  {
+    "command": "show_search",
+    "keys": [
+      "alt+f"
+    ]
+  },
+  {
+    "command": "toggle_side_bar",
+    "keys": [
+      "alt+\\"
+    ]
+  },
+  {
+    "command": "reset_font_size",
+    "keys": [
+      "alt+0"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 0
+    },
+    "keys": [
+      "alt+1"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 1
+    },
+    "keys": [
+      "alt+2"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 2
+    },
+    "keys": [
+      "alt+3"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 3
+    },
+    "keys": [
+      "alt+4"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 4
+    },
+    "keys": [
+      "alt+5"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 5
+    },
+    "keys": [
+      "alt+6"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 6
+    },
+    "keys": [
+      "alt+7"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 7
+    },
+    "keys": [
+      "alt+8"
+    ]
+  },
+  {
+    "command": "select_tab",
+    "args": {
+      "index": 8
+    },
+    "keys": [
+      "alt+9"
+    ]
+  },
+  {
+    "command": "refresh",
+    "keys": [
+      "f5"
+    ]
+  },
+  {
+    "command": "show_command_palette",
+    "keys": [
+      "alt+shift+p"
+    ]
+  },
+  {
+    "command": "quick_switch_repository",
+    "keys": [
+      "alt+p"
+    ]
+  },
+  {
+    "command": "copy",
+    "keys": [
+      "alt+c"
+    ]
+  },
+  {
+    "command": "increase_font_size",
+    "keys": [
+      "alt+="
+    ]
+  },
+  {
+    "command": "increase_font_size",
+    "keys": [
+      "alt+keypad_plus"
+    ]
+  },
+  {
+    "command": "decrease_font_size",
+    "keys": [
+      "alt+-"
+    ]
+  },
+  {
+    "command": "decrease_font_size",
+    "keys": [
+      "alt+keypad_minus"
+    ]
+  },
+  {
+    "command": "exit",
+    "keys": [
+      "alt+q"
+    ]
+  },
+  {
+    "command": "close_window",
+    "keys": [
+      "alt+w"
+    ]
+  },
+  {
+    "command": "new_window",
+    "keys": [
+      "alt+shift+n"
+    ]
+  },
+  {
+    "command": "undo",
+    "keys": [
+      "alt+z"
+    ]
+  },
+  {
+    "command": "redo",
+    "keys": [
+      "alt+y"
+    ]
+  },
+  {
+    "command": "redo",
+    "keys": [
+      "shift+alt+z"
+    ]
+  }
+]
