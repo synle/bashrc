@@ -1,3 +1,6 @@
+/** @type {string} GitHub API URL for the latest url-porter release. */
+const URL_PORTER_RELEASE_URL = "https://api.github.com/repos/synle/url-porter/releases/latest";
+
 /** Downloads and installs the url-porter Chrome extension. */
 async function doWork() {
   if (IS_CI) return;
@@ -23,11 +26,13 @@ async function doWork() {
     return;
   }
 
+  const releaseData = await readJson`${URL_PORTER_RELEASE_URL}`;
+  const version = releaseData.tag_name;
   const targetPath = await getCustomTweaksPath("url-porter");
-  const zipUrl = "https://synle.github.io/url-porter/url-porter.zip";
+  const zipUrl = `https://github.com/synle/url-porter/releases/download/${version}/url-porter.zip`;
   const tmpZip = `${BASHRC_TEMP_DIR}/url-porter.zip`;
 
-  log(">> Installing url-porter extension to:", targetPath);
+  log(`>> Installing url-porter ${version} extension to:`, targetPath);
 
   deleteFolder(targetPath).then(async () => {
     await mkdir(targetPath);
