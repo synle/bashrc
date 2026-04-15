@@ -25,18 +25,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "git diff --quiet && git diff --cached --quiet || bash -c 'set -o pipefail; make validate 2>&1 | tail -20'",
-            "timeout": 600,
-            "description": "Run validate if there are uncommitted changes — non-zero exit wakes Claude to fix"
-          }
-        ]
-      }
     ]
   }
 }
