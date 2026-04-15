@@ -106,7 +106,7 @@ async function doWork() {
 
     // tabs
     useTabSwitcher: false,
-    tabWidthMode: "compact",
+    tabWidthMode: "equal",
     confirmCloseAllTabs: true,
 
     // input
@@ -148,6 +148,7 @@ async function doWork() {
     defaults: defaultProfileStyles,
     list: allProfiles.map((profile) => {
       delete profile.colorScheme;
+      profile.hidden = ![/PowerShell/i, /Ubuntu/i].some((re) => profile.name?.match(re));
       return profile;
     }),
   };
