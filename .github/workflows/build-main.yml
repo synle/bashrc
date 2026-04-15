@@ -602,3 +602,10 @@ jobs:
             echo "::error::One or more test suites failed"
             exit 1
           fi
+
+      - name: Tag successful build
+        if: github.event_name == 'push'
+        run: |
+          TAG="v0.$(date -u +'%Y%m%d').${{ github.run_number }}"
+          git tag "$TAG"
+          git push origin "$TAG"
