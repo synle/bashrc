@@ -1013,6 +1013,8 @@ async function _atomicWrite(filePath, content) {
     log(`<<<< [DryRun] Would update (atomicWrite)`, filePath);
     return;
   }
+  // ensure POSIX trailing newline for text files
+  if (content.length > 0 && !content.endsWith("\n")) content += "\n";
   const tmpPath = filePath + ".tmp." + Date.now();
   try {
     fs.writeFileSync(tmpPath, content);

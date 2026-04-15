@@ -55,7 +55,7 @@ describe("writeTextIfSignificantChange", () => {
   it("should write when file is new (empty)", async () => {
     const filePath = "/mock/home/newfile.txt";
     await writeTextIfSignificantChange(filePath, "brand new content");
-    expect(fileSystem[filePath]).toBe("brand new content");
+    expect(fileSystem[filePath]).toBe("brand new content\n");
   });
 
   it("should skip when content is identical", async () => {
@@ -69,7 +69,7 @@ describe("writeTextIfSignificantChange", () => {
     const filePath = "/mock/home/bigchange.txt";
     fileSystem[filePath] = "short";
     await writeTextIfSignificantChange(filePath, "this is a much longer string with significant changes", 0.1);
-    expect(fileSystem[filePath]).toBe("this is a much longer string with significant changes");
+    expect(fileSystem[filePath]).toBe("this is a much longer string with significant changes\n");
   });
 
   it("should skip when change is below threshold", async () => {
