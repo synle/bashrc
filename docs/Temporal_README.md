@@ -1799,23 +1799,27 @@ async function run() {
   await client.workflow.start("processPaymentWorkflow", {
     taskQueue: "process-payment",
     workflowId: "payment-cust-100-order-abc",
-    args: [{
-      customerId: "cust-100",
-      amount: 49.99,
-      currency: "USD",
-      paymentMethod: "credit_card",
-    }],
+    args: [
+      {
+        customerId: "cust-100",
+        amount: 49.99,
+        currency: "USD",
+        paymentMethod: "credit_card",
+      },
+    ],
   });
 
   await client.workflow.start("processPaymentWorkflow", {
     taskQueue: "process-payment",
     workflowId: "payment-cust-200-order-def",
-    args: [{
-      customerId: "cust-200",
-      amount: 1250.00,
-      currency: "EUR",
-      paymentMethod: "bank_transfer",
-    }],
+    args: [
+      {
+        customerId: "cust-200",
+        amount: 1250.0,
+        currency: "EUR",
+        paymentMethod: "bank_transfer",
+      },
+    ],
   });
 
   console.log("Two payment workflows started on the same queue with different inputs");
@@ -2157,11 +2161,11 @@ if __name__ == "__main__":
 
 **When to use which strategy:**
 
-| Scenario | Strategy | Why |
-| --- | --- | --- |
-| Different jobs need different SDKs/dependencies | A (Dedicated) | Payment worker has Stripe SDK, email worker has SendGrid |
-| Different jobs need different machine resources | A (Dedicated) | Report worker needs 16GB RAM, email worker needs 512MB |
-| Same job type needs higher throughput | B (Shared) | Add more workers polling the same queue |
-| Isolate failures between job types | A (Dedicated) | A bug in email code doesn't crash the payment worker |
-| Simple setup, all jobs are similar | B (Shared) | Less infrastructure to manage |
-| **Most real systems** | **A + B combined** | Dedicated queues per job type, multiple workers per queue |
+| Scenario                                        | Strategy           | Why                                                       |
+| ----------------------------------------------- | ------------------ | --------------------------------------------------------- |
+| Different jobs need different SDKs/dependencies | A (Dedicated)      | Payment worker has Stripe SDK, email worker has SendGrid  |
+| Different jobs need different machine resources | A (Dedicated)      | Report worker needs 16GB RAM, email worker needs 512MB    |
+| Same job type needs higher throughput           | B (Shared)         | Add more workers polling the same queue                   |
+| Isolate failures between job types              | A (Dedicated)      | A bug in email code doesn't crash the payment worker      |
+| Simple setup, all jobs are similar              | B (Shared)         | Less infrastructure to manage                             |
+| **Most real systems**                           | **A + B combined** | Dedicated queues per job type, multiple workers per queue |

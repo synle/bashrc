@@ -218,11 +218,7 @@ const first = await Promise.race([t1(), t2(), t3()]);
 
 // with AbortController to cancel losers
 const ac = new AbortController();
-const first = await Promise.race([
-    t1(ac.signal),
-    t2(ac.signal),
-    t3(ac.signal),
-]);
+const first = await Promise.race([t1(ac.signal), t2(ac.signal), t3(ac.signal)]);
 ac.abort();
 ```
 
@@ -286,7 +282,7 @@ Start a task, don't wait for the result. Useful for logging, analytics, cache wa
 
 ```js
 // no await — promise runs in background
-t1().catch(err => console.error("background task failed:", err));
+t1().catch((err) => console.error("background task failed:", err));
 
 // or explicitly void it
 void t1();
@@ -347,8 +343,8 @@ Run all tasks, but handle failures gracefully. Don't let one failure kill everyt
 const results = await Promise.allSettled([t1(), t2(), t3()]);
 
 for (const r of results) {
-    if (r.status === "fulfilled") use(r.value);
-    else console.error("failed:", r.reason);
+  if (r.status === "fulfilled") use(r.value);
+  else console.error("failed:", r.reason);
 }
 ```
 
@@ -427,15 +423,18 @@ Process many tasks but limit how many run simultaneously. Prevents resource exha
 ```js
 // built-in: no native pool, use a simple helper
 async function pooled(tasks, limit) {
-    const results = [];
-    const executing = new Set();
-    for (const task of tasks) {
-        const p = task().then(r => { executing.delete(p); return r; });
-        executing.add(p);
-        results.push(p);
-        if (executing.size >= limit) await Promise.race(executing);
-    }
-    return Promise.all(results);
+  const results = [];
+  const executing = new Set();
+  for (const task of tasks) {
+    const p = task().then((r) => {
+      executing.delete(p);
+      return r;
+    });
+    executing.add(p);
+    results.push(p);
+    if (executing.size >= limit) await Promise.race(executing);
+  }
+  return Promise.all(results);
 }
 
 await pooled([() => t1(), () => t2(), () => t3(), () => t4()], 2);
@@ -535,12 +534,7 @@ Wrap a task with a deadline. Cancel if it exceeds the limit.
 ### Node.js
 
 ```js
-const result = await Promise.race([
-    t1(),
-    new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 5000)
-    ),
-]);
+const result = await Promise.race([t1(), new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000))]);
 
 // Node 16+ with AbortSignal.timeout
 const result = await t1({ signal: AbortSignal.timeout(5000) });
@@ -605,17 +599,17 @@ Process items through multiple stages, where each stage can run concurrently.
 ```js
 // async generator pipeline
 async function* stage1(items) {
-    for (const item of items) yield await fetch(item);
+  for (const item of items) yield await fetch(item);
 }
 async function* stage2(stream) {
-    for await (const item of stream) yield await transform(item);
+  for await (const item of stream) yield await transform(item);
 }
 async function* stage3(stream) {
-    for await (const item of stream) yield await save(item);
+  for await (const item of stream) yield await save(item);
 }
 
 for await (const result of stage3(stage2(stage1(urls)))) {
-    use(result);
+  use(result);
 }
 ```
 
@@ -715,13 +709,14 @@ Retry a flaky operation with increasing delays.
 
 ```js
 async function retry(fn, maxRetries = 3) {
-    for (let i = 0; i <= maxRetries; i++) {
-        try { return await fn(); }
-        catch (err) {
-            if (i === maxRetries) throw err;
-            await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
-        }
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === maxRetries) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, i)));
     }
+  }
 }
 
 const result = await retry(() => fetchData());
