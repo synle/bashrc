@@ -53,7 +53,7 @@ bashrc/
 │   │
 │   ├── bootstrap/                # Core bootstrap files
 │   │   ├── common-env.sh         # Shared env constants (OS flags, paths, limits)
-│   │   ├── common-functions.bash # Shared bash functions (curl_bash_install, etc.)
+│   │   ├── common-functions.bash # Shared bash functions (npm_install_global, has_persistent_binary, curl_bash_install, etc.)
 │   │   ├── profile-core.sh       # Core profile: PATH, aliases, exports
 │   │   ├── profile-advanced.sh   # Advanced profile: history, utilities, find_path, etc.
 │   │   └── setup.sh              # Installation bootstrap snippet
