@@ -146,11 +146,16 @@ async function doWork() {
   const allProfiles = newSettings.profiles?.list || newSettings.profiles || [];
   newSettings.profiles = {
     defaults: defaultProfileStyles,
-    list: allProfiles.map((profile) => {
-      delete profile.colorScheme;
-      profile.hidden = ![/PowerShell/i, /Ubuntu/i].some((re) => profile.name?.match(re));
-      return profile;
-    }),
+    list: allProfiles
+      .map((profile) => {
+        delete profile.colorScheme;
+        profile.hidden = ![/PowerShell/i, /Ubuntu/i].some((re) => profile.name?.match(re));
+        return profile;
+      })
+      .sort((a, b) => {
+        const rank = (p) => (/Ubuntu/i.test(p.name) ? 0 : /PowerShell/i.test(p.name) ? 1 : 2);
+        return rank(a) - rank(b);
+      }),
   };
 
   // set default profile to first WSL distro (Debian or Ubuntu)
