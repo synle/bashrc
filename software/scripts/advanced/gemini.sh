@@ -5,8 +5,9 @@
 
 echo '> Installing gemini cli'
 
-if [ -x "$HOME/.local/bin/gemini" ]; then
-  echo ">> Skipped gemini: already installed at $HOME/.local/bin/gemini"
+_bin=$(type -P gemini 2>/dev/null)
+if [ -n "$_bin" ] && [[ "$_bin" != /tmp/* ]]; then
+  echo ">> Skipped gemini: already installed at $_bin"
 else
   echo '>> Downloading and Installing'
   npm_install_global @google/gemini-cli
