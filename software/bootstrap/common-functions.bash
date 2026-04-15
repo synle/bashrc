@@ -46,14 +46,26 @@ function curl_bash_install() {
   fi
 }
 
-# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local.
+# npm_install_global <pkg...> - Installs npm packages globally to $HOME/.local (current system)
+# and to the Windows host via cmd.exe when running under WSL.
 # Logs status (Success/Error) and appends stderr to fullsetup.log for debugging.
 function npm_install_global() {
+  # install for current system
   echo -n ">> $@ >> Installing with npm global >> "
   if npm install -g --prefix "$HOME/.local" "$@" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo "Success"
   else
     echo "Error"
+  fi
+
+  # install for Windows host via WSL
+  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
+    echo -n ">> $@ >> Installing with npm global (Windows) >> "
+    if cmd.exe /c "npm install -g $*" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
+      echo "Success"
+    else
+      echo "Error"
+    fi
   fi
 }
 
