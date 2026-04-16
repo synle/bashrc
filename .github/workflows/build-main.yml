@@ -316,6 +316,13 @@ jobs:
           pattern: build-*
           merge-multiple: true
 
+      - name: Download release asset backups
+        uses: actions/download-artifact@v4
+        with:
+          path: assets/
+          pattern: assets-*
+          merge-multiple: true
+
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9
         with:
