@@ -96,15 +96,34 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
 # avoid updating mtime (which would reset staleness checks). For files inside $HOME,
 # fixes ownership to current user if owned by root.
-function touch() {
+function safe_touch() {
   for f in "$@"; do
     if [ ! -e "$f" ]; then
       command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
     elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
       sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
+  done
+}
+
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
     fi
   done
 }
@@ -118,7 +137,12 @@ function safe_chown() {
     shift
   fi
   for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
+    if [ -e "$f" ]; then
+      sudo chown $flags "$USER" "$f"
+      echo ">> safe_chown $flags >> $f >> Done"
+    else
+      echo ">> safe_chown $flags >> $f >> Skipped (not found)"
+    fi
   done
 }
 
@@ -133,7 +157,12 @@ function safe_chmod() {
   local mode="$1"
   shift
   for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
+    if [ -e "$f" ]; then
+      chmod $flags "$mode" "$f"
+      echo ">> safe_chmod $flags $mode >> $f >> Done"
+    else
+      echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+    fi
   done
 }
 

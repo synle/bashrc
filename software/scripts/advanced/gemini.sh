@@ -7,4 +7,4 @@ echo '> Installing gemini cli'
 npm_install_global @google/gemini-cli gemini
 
 # ensure ~/.gemini directory exists (gemini crashes on first run without it)
-mkdir -p "$HOME/.gemini"
+safe_mkdir "$HOME/.gemini"
