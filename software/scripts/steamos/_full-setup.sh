@@ -71,12 +71,14 @@ function installFlatpakPackageInBackground() {
 
 # install all queued background packages sequentially in a single background subshell
 function _installBackgroundPackages() {
+  _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
   echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
     rm -f "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
+  _BACKGROUND_INSTALL_PID=$!
 }
 
 ################################################################################
@@ -95,11 +97,10 @@ function updatePackageIndex() {
 
 # upgrade all installed packages and clean old cached packages (fire and forget)
 function upgradeAndCleanPackages() {
-  wait
   echo ">> Upgrading and cleaning packages (background) >>"
   (
-    sudo pacman -Su --noconfirm
-    sudo pacman -Sc --noconfirm
+    sudo pacman -Su --noconfirm < /dev/null
+    sudo pacman -Sc --noconfirm < /dev/null
   ) > /dev/null 2>&1 &
 }
 
@@ -114,8 +115,8 @@ echo '>> Make the partition readable (Steam Deck is immutable)'
 sudo btrfs property set -ts / ro false
 
 echo '>> Setting up pacman to install stuffs'
-sudo pacman-key --init
-sudo pacman-key --populate archlinux
+sudo pacman-key --init < /dev/null
+sudo pacman-key --populate archlinux < /dev/null
 if is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
 
 echo '>> Installing packages with pacman'
@@ -212,6 +213,6 @@ safe_mkdir "$HOME/.steam/root/config/uioverrides/movies/"
 # ---- Background Install and Upgrade ----
 ################################################################################
 _installBackgroundPackages
-wait
+_waitForBackgroundPackages
 _configureDisplayDjPermissions
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

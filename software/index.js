@@ -1448,7 +1448,11 @@ function parseJsonWithComments(oldText) {
     return JSON.parse(stripped);
   } catch (_) {
     // Fallback for edge cases (e.g. unquoted keys, JS expressions) — use Function instead of eval
-    return new Function(`return (${oldText})`)();
+    try {
+      return new Function(`return (${oldText})`)();
+    } catch (e) {
+      throw new Error(`parseJsonWithComments: failed to parse input - ${e.message}`);
+    }
   }
 }
 
@@ -2307,7 +2311,12 @@ function set(strings, ...values) {
  * @returns {*} The parsed JSON value (object, array, etc.)
  */
 function json(strings, ...values) {
-  return parseJsonWithComments(code(strings, ...values));
+  try {
+    return parseJsonWithComments(code(strings, ...values));
+  } catch (e) {
+    log("ERROR json tagged template:", e.message);
+    return {};
+  }
 }
 
 /** @type {Set<string>} Files currently being SOURCE-expanded (recursion guard) */
@@ -2491,7 +2500,12 @@ async function requireUrl(strings, ...values) {
  */
 async function readJson(strings, ...values) {
   const content = await readText(strings, ...values);
-  return parseJsonWithComments(content);
+  try {
+    return parseJsonWithComments(content);
+  } catch (e) {
+    log("ERROR readJson:", e.message);
+    return {};
+  }
 }
 
 /**

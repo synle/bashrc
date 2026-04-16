@@ -143,8 +143,12 @@ sandbox.writeText = (filePath, text) => {
 };
 sandbox.readJson = async (strings, ...values) => {
   const target = sandbox.text(strings, ...values).trim();
-  if (target in fileSystem) return sandbox.parseJsonWithComments(fileSystem[target] || "{}");
-  return JSON.parse(fetchResponses[target] || "{}");
+  try {
+    if (target in fileSystem) return sandbox.parseJsonWithComments(fileSystem[target] || "{}");
+    return JSON.parse(fetchResponses[target] || "{}");
+  } catch (e) {
+    return {};
+  }
 };
 sandbox.log = () => {};
 sandbox.echo = () => {};

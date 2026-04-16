@@ -78,12 +78,14 @@ function installSnapPackageInBackground() {
 
 # install all queued background packages sequentially in a single background subshell
 function _installBackgroundPackages() {
+  _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
   echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
     rm -f "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
+  _BACKGROUND_INSTALL_PID=$!
 }
 
 ################################################################################
@@ -102,12 +104,11 @@ function updatePackageIndex() {
 
 # upgrade all installed packages and remove unused dependencies (fire and forget)
 function upgradeAndCleanPackages() {
-  wait
   echo ">> Upgrading and cleaning packages (background) >>"
   (
-    sudo apt-get upgrade -y
-    sudo apt-get autoremove -y
-    sudo apt-get autoclean -y
+    sudo apt-get upgrade -y < /dev/null
+    sudo apt-get autoremove -y < /dev/null
+    sudo apt-get autoclean -y < /dev/null
   ) > /dev/null 2>&1 &
 }
 
@@ -216,6 +217,6 @@ sudo usermod -aG video ${USER}
 # ---- Background Install and Upgrade ----
 ################################################################################
 _installBackgroundPackages
-wait
+_waitForBackgroundPackages
 _configureDisplayDjPermissions
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

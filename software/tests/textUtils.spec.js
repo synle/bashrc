@@ -433,8 +433,8 @@ describe("json", () => {
     expect(result).toEqual({ background: "#ff0000" });
   });
 
-  it("should throw on empty input", () => {
-    expect(() => json``).toThrow();
+  it("should return empty object on empty input", () => {
+    expect(json``).toEqual({});
   });
 });
 

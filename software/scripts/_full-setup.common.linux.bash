@@ -64,6 +64,24 @@ function _installZedEditor() {
   fi
 }
 
+# ---- Background Install Wait ----
+
+# wait for background packages to finish (max 5 minutes to avoid blocking the build)
+function _waitForBackgroundPackages() {
+  if [ -z "$_BACKGROUND_INSTALL_PID" ]; then return; fi
+  local _max_wait=300
+  local _elapsed=0
+  while kill -0 "$_BACKGROUND_INSTALL_PID" 2> /dev/null && [ "$_elapsed" -lt "$_max_wait" ]; do
+    sleep 5
+    _elapsed=$((_elapsed + 5))
+  done
+  if kill -0 "$_BACKGROUND_INSTALL_PID" 2> /dev/null; then
+    echo ">> Background packages still running after ${_max_wait}s, proceeding"
+  else
+    echo ">> Background packages completed (${_elapsed}s)"
+  fi
+}
+
 # ---- Display DJ ----
 
 # configure i2c permissions for display-dj (DDC monitor control) — all Linux distros
