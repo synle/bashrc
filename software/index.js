@@ -3232,7 +3232,7 @@ function _getBundleRunnerType(file) {
   if (file.includes(".su.sh.js")) return null;
   if (file.includes(".su.sh")) return null;
   if (file.includes(".sh.js")) return null; // TODO: bundle .sh.js files (IIFE-wrap, single node | bash) in a future pass
-  if (file.includes(".su.js")) return "js";
+  if (file.includes(".su.js")) return "su.js";
   if (file.includes(".js")) return "js";
   if (file.includes(".sh")) return "sh";
   return null;
@@ -3584,6 +3584,7 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
   /** @type {Record<string, (entries: typeof groups[0]["entries"], allRepoFiles: string[], total: number) => Promise<void>>} */
   const bundleEmitters = {
     js: _emitBundledJsScripts,
+    "su.js": _emitBundledJsScripts,
     sh: _emitBundledShScripts,
   };
 

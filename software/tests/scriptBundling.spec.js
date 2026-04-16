@@ -16,8 +16,8 @@ describe("_getBundleRunnerType", () => {
     expect(_getBundleRunnerType("software/scripts/git.js")).toBe("js");
   });
 
-  it('should return "js" for .su.js files', () => {
-    expect(_getBundleRunnerType("software/scripts/advanced/etc-hosts.su.js")).toBe("js");
+  it('should return "su.js" for .su.js files', () => {
+    expect(_getBundleRunnerType("software/scripts/advanced/etc-hosts.su.js")).toBe("su.js");
   });
 
   it('should return "sh" for .sh files', () => {
