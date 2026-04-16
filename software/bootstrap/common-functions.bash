@@ -128,30 +128,44 @@ function safe_mkdir() {
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists
-# and is not already owned by the current user.
-# Pass -R as the first argument to chown recursively.
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      echo ">> safe_chown $flags >> $f >> Skipped (not found)"
-    elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$(id -u)" ]; then
-      echo ">> safe_chown $flags >> $f >> Skipped (already correct)"
-    else
-      sudo chown $flags "$USER" "$f"
-      echo ">> safe_chown $flags >> $f >> Done"
-    fi
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists
-# and permissions differ from the target mode.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -159,17 +173,15 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-    elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-      echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-    else
-      chmod $flags "$mode" "$f"
-      echo ">> safe_chmod $flags $mode >> $f >> Done"
-    fi
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
