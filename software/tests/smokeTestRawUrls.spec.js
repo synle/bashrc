@@ -105,3 +105,84 @@ describe("raw content url check", () => {
     );
   }
 });
+
+/**
+ * Three recognized GitHub raw content URL forms:
+ *   Form 1 (blob):     https://github.com/{owner}/{repo}/blob/HEAD/{path}?raw=1
+ *   Form 2 (raw):      https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}  [Preferred for browser fetch — has CORS headers]
+ *   Form 3 (API):      https://api.github.com/repos/{owner}/{repo}/contents/{path}
+ *
+ * Only Form 2 works for browser fetch() calls. Forms 1 and 3 will cause CORS errors.
+ */
+
+/** @type {RegExp} Matches Form 1: github.com blob/HEAD URLs. */
+const FORM1_BLOB_RE = /https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//;
+/** @type {RegExp} Matches Form 2: raw.githubusercontent.com URLs. */
+const FORM2_RAW_RE = /https:\/\/raw\.githubusercontent\.com\//;
+/** @type {RegExp} Matches Form 3: api.github.com contents URLs. */
+const FORM3_API_RE = /https:\/\/api\.github\.com\/repos\/[^/]+\/[^/]+\/contents\//;
+
+/**
+ * Scans webapp source files for GitHub raw content URLs and categorizes them by form.
+ * Returns entries with file, line number, matched URL, and form type.
+ */
+function extractWebappGitHubUrls() {
+  const entries = [];
+  const rootDir = join(dirname(fileURLToPath(import.meta.url)), "../..");
+  const webappFiles = listFiles(join(rootDir, "webapp"), [".js", ".jsx", ".ts", ".tsx"]);
+
+  for (const file of webappFiles) {
+    const relFile = relative(rootDir, file);
+    const lines = readFileSync(file, "utf-8").split("\n");
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineNum = i + 1;
+
+      // Skip comment-only lines
+      if (/^\s*(\/\/|\*|\/\*\*)/.test(line)) continue;
+
+      let form = null;
+      let match = null;
+
+      if (FORM1_BLOB_RE.test(line)) {
+        form = 1;
+        match = line.match(FORM1_BLOB_RE)[0];
+      } else if (FORM3_API_RE.test(line)) {
+        form = 3;
+        match = line.match(FORM3_API_RE)[0];
+      } else if (FORM2_RAW_RE.test(line)) {
+        form = 2;
+        match = line.match(FORM2_RAW_RE)[0];
+      }
+
+      if (form !== null) {
+        entries.push({ file: relFile, lineNum, form, match, line: line.trim() });
+      }
+    }
+  }
+
+  return entries;
+}
+
+const webappUrls = extractWebappGitHubUrls();
+
+describe("webapp github url CORS format check", () => {
+  it("should find at least one GitHub URL in webapp", () => {
+    expect(webappUrls.length).toBeGreaterThan(0);
+  });
+
+  for (const entry of webappUrls) {
+    const formLabel = entry.form === 1 ? "blob/HEAD" : entry.form === 2 ? "raw.githubusercontent.com" : "api.github.com/contents";
+
+    it(`${entry.file}:${entry.lineNum} > Form ${entry.form} (${formLabel})`, () => {
+      expect(
+        entry.form,
+        `Not in the right form — will cause CORS error in browser.\n` +
+          `  Found Form ${entry.form} (${formLabel}) at ${entry.file}:${entry.lineNum}\n` +
+          `  Line: ${entry.line}\n` +
+          `  Use https://raw.githubusercontent.com/ (Form 2) for browser fetch calls.`,
+      ).toBe(2);
+    });
+  }
+});
