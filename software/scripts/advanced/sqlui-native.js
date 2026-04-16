@@ -19,21 +19,13 @@ async function doWork() {
 
   const url = `https://github.com/synle/sqlui-native/releases/download/${version}/${fileName}`;
 
-  if (IS_CI) {
-    log(`>> Backing up sqlui-native ${version} asset in CI`);
-    const ciTmpDest = path.join(BASHRC_TEMP_DIR, fileName);
-    await downloadReleaseAssetWithBackup("sqlui-native", version, url, ciTmpDest);
-    await deleteFile(ciTmpDest);
-    return;
-  }
-
   log(`>> Installing sqlui-native ${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
 
   await deleteFolder(targetPath);
   await mkdir(targetPath);
 
   const destination = path.join(targetPath, fileName);
-  const ok = await downloadReleaseAssetWithBackup("sqlui-native", version, url, destination);
+  const ok = await downloadAsset(url, destination);
 
   if (ok) {
     log(`>> sqlui-native ${version} downloaded:`, destination);
