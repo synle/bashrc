@@ -134,7 +134,7 @@ jobs:
         && (needs.prep.result == 'success' || needs.prep.result == 'skipped')
       }}
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -164,7 +164,7 @@ jobs:
       }}
     runs-on: ubuntu-latest
     container: fedora:latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -197,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:latest
     continue-on-error: true
-    timeout-minutes: 12
+    timeout-minutes: 20
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -230,7 +230,7 @@ jobs:
     runs-on: ubuntu-latest
     container: debian:latest
     continue-on-error: true
-    timeout-minutes: 12
+    timeout-minutes: 20
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -261,7 +261,7 @@ jobs:
         && (needs.prep.result == 'success' || needs.prep.result == 'skipped')
       }}
     runs-on: macos-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
