@@ -59,7 +59,7 @@ runs:
         # and committed by the publish step (mirrors local RELEASE_ASSET_BACKUP_DIR=assets/)
         # Skip files over 50 MB — GitHub rejects pushes with files over 100 MB
         MAX_SIZE=$((50 * 1024 * 1024))
-        CI_BACKUPS=$(ls -d /tmp/synle/bashrc/*/ci_asset_backups 2>/dev/null | head -1)
+        CI_BACKUPS=$(ls -d /tmp/synle/bashrc/*/ci_asset_backups 2>/dev/null | head -1 || true)
         if [ -n "$CI_BACKUPS" ] && [ -d "$CI_BACKUPS" ]; then
           for app_dir in "$CI_BACKUPS"/*/; do
             [ -d "$app_dir" ] || continue
