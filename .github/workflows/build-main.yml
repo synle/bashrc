@@ -50,7 +50,6 @@ jobs:
 
       - name: CI Prep
         id: ci-prep
-        continue-on-error: true
         run: make ci_prep
 
       - name: Record time after ci-prep
