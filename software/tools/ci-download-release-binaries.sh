@@ -76,13 +76,14 @@
     release_json=$(curl -fsSL "$api_url" 2>/dev/null) || true
     if [ -z "$release_json" ]; then
       echo ""
-      echo ">> $(basename "$(dirname "$api_url")"): could not fetch release metadata, skipping"
+      echo ">> $(echo "$api_url" | sed 's|.*/repos/[^/]*/\([^/]*\)/.*|\1|'): could not fetch release metadata, skipping"
       return
     fi
 
-    local version app_name
+    # Derive app name from the API URL path: .../repos/{owner}/{repo}/releases/latest → {repo}
+    local app_name version
+    app_name=$(echo "$api_url" | sed 's|.*/repos/[^/]*/\([^/]*\)/.*|\1|')
     version=$(echo "$release_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name',''))" 2>/dev/null) || true
-    app_name=$(echo "$release_json" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('html_url','').split('/')[4] if len(d.get('html_url','').split('/'))>4 else '')" 2>/dev/null) || true
 
     if [ -z "$version" ] || [ -z "$app_name" ]; then
       echo ""

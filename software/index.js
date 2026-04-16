@@ -2687,15 +2687,30 @@ async function fetchGitHubReleaseVersion(releaseUrl) {
 }
 
 /**
+ * Extracts the repository name from a GitHub releases API URL.
+ * e.g. "https://api.github.com/repos/synle/url-porter/releases/latest" → "url-porter"
+ * @param {string} releaseApiUrl - GitHub API releases URL
+ * @returns {string} The repository name
+ */
+function getRepoNameFromReleaseUrl(releaseApiUrl) {
+  const parts = new URL(releaseApiUrl).pathname.split("/");
+  return parts[3] || "";
+}
+
+/**
  * Downloads a release asset with fallback to the local assets/ backup.
  * If the upstream download fails or produces a corrupt file (0 bytes),
- * copies the matching file from assets/<appName>/ instead.
- * @param {string} appName - Application name matching the assets/ subdirectory (e.g. "url-porter")
+ * copies the matching file from assets/<repoName>/ instead. The backup
+ * directory is derived from the release API URL (repo name), matching
+ * the same derivation used by ci-download-release-binaries.sh.
+ * @param {string} releaseApiUrl - GitHub API releases URL (e.g. "https://api.github.com/repos/synle/url-porter/releases/latest")
  * @param {string} url - Upstream download URL
  * @param {string} destination - Local file path to save the asset to
  * @returns {Promise<boolean>} True if a valid asset is available at destination, false otherwise
  */
-async function downloadAssetWithFallback(appName, url, destination) {
+async function downloadAssetWithFallback(releaseApiUrl, url, destination) {
+  const appName = getRepoNameFromReleaseUrl(releaseApiUrl);
+
   await downloadAsset(url, destination);
 
   const isValid = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
