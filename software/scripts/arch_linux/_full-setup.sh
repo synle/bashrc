@@ -20,9 +20,9 @@ function installFlatpakPackage() {
   else
     local _t0=$SECONDS
     if flatpak install -y flathub "$flatpak_id" &> /dev/null; then
-      echo "Success ($(( SECONDS - _t0 ))s)"
+      echo "Success ($((SECONDS - _t0))s)"
     else
-      echo "Error ($(( SECONDS - _t0 ))s)"
+      echo "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
@@ -38,9 +38,9 @@ function installPacmanPackage() {
   else
     local _t0=$SECONDS
     if sudo pacman -S --noconfirm --needed $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
-      echo "Success ($(( SECONDS - _t0 ))s)"
+      echo "Success ($((SECONDS - _t0))s)"
     else
-      echo "Error ($(( SECONDS - _t0 ))s)"
+      echo "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }

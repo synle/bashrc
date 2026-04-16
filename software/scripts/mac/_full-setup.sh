@@ -112,9 +112,9 @@ function installBrewPackage() {
   fi
   local _t0=$SECONDS
   if brew install $install_flags "$pkg_name" < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
-    echo "Success ($(( SECONDS - _t0 ))s)"
+    echo "Success ($((SECONDS - _t0))s)"
   else
-    echo "Error ($(( SECONDS - _t0 ))s) (see $BASHRC_TEMP_DIR/fullsetup.log)"
+    echo "Error ($((SECONDS - _t0))s) (see $BASHRC_TEMP_DIR/fullsetup.log)"
   fi
 }
 
