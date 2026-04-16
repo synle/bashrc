@@ -32,19 +32,19 @@ export HOMEBREW_NO_ANALYTICS=1
 ################################################################################
 # ---- Screenshots Directory ----
 ################################################################################
-mkdir -p ~/Desktop/_screenshots
+safe_mkdir "$HOME/Desktop/_screenshots"
 
 ################################################################################
 # ---- Shell Setup (touch files) ----
 ################################################################################
-touch "$BASH_SYLE_PATH"
+safe_touch "$BASH_SYLE_PATH"
 
 ################################################################################
 # ---- Headless Chrome Fixes ----
 ################################################################################
 echo '>> Headless Chrome Fixes for MacOSX'
-mkdir -p ~/Library/LaunchAgents
-cat << EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
+safe_mkdir "$HOME/Library/LaunchAgents"
+cat << EOF > "$HOME/Library/LaunchAgents/com.user.chrome.headless.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -63,7 +63,7 @@ cat << EOF > ~/Library/LaunchAgents/com.user.chrome.headless.plist
 </dict>
 </plist>
 EOF
-launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
+launchctl load "$HOME/Library/LaunchAgents/com.user.chrome.headless.plist"
 
 ################################################################################
 # ---- Homebrew ----

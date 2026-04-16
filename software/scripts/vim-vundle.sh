@@ -8,7 +8,7 @@ echo ">> Uninstalling Old Vundle Binary"
 rm -rf ~/.vim/bundle
 
 echo ">> Installing Vundle Binary - $VUNDLE_URL"
-mkdir -p ~/.vim/bundle
+safe_mkdir "$HOME/.vim/bundle"
 
 git clone $VUNDLE_URL $VUNDLE_DIR > /dev/null
 

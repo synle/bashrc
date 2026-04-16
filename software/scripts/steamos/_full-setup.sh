@@ -200,7 +200,7 @@ _configureSystemdPowerManagement
 ################################################################################
 # https://steamdeckrepo.com
 echo '>> Create the folder for boot video'
-mkdir -p ~/.steam/root/config/uioverrides/movies/
+safe_mkdir "$HOME/.steam/root/config/uioverrides/movies/"
 
 ################################################################################
 # ---- Background Install and Upgrade ----

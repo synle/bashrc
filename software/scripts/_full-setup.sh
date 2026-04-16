@@ -45,19 +45,19 @@ if ! ((IS_CI)); then
   ################################################################################
   # ---- Common Config Files ----
   ################################################################################
-  touch "$HOME/.hushlogin" # suppress "Last login" banner in new terminal sessions
-  touch "$HOME/.bash_profile"
-  touch "$HOME/.bashrc"
-  touch "$HOME/.gitconfig"
-  touch "$HOME/.gitmessage"
+  safe_touch "$HOME/.hushlogin" # suppress "Last login" banner in new terminal sessions
+  safe_touch "$HOME/.bash_profile"
+  safe_touch "$HOME/.bashrc"
+  safe_touch "$HOME/.gitconfig"
+  safe_touch "$HOME/.gitmessage"
 
   ################################################################################
   # ---- Common Directories ----
   ################################################################################
   echo ">> Creating common directories"
-  mkdir -p "$HOME/.local/bin"
-  mkdir -p "$HOME/.ssh/sockets"
-  mkdir -p "$HOME/.vim/bundle"
+  safe_mkdir "$HOME/.local/bin"
+  safe_mkdir "$HOME/.ssh/sockets"
+  safe_mkdir "$HOME/.vim/bundle"
 
   ################################################################################
   # ---- Permissions ----
@@ -65,7 +65,8 @@ if ! ((IS_CI)); then
   # have created as root. safe_chown skips paths that do not exist.
   ################################################################################
   echo ">> Setting permissions"
-  safe_chown "$HOME/.bash_profile" "$HOME/.bashrc"
+  safe_chown "$HOME/.bash_profile"
+  safe_chown "$HOME/.bashrc"
   safe_chown -R "$HOME/.bun"
   safe_chown -R "$HOME/.cargo"
   safe_chown -R "$HOME/.claude"
@@ -79,7 +80,8 @@ if ! ((IS_CI)); then
   safe_chown -R "$HOME/.venv"
   safe_chown -R "$HOME/.vim"
   safe_chmod 700 "$HOME/.ssh"
-  safe_chmod 600 "$HOME/.ssh/config" "$HOME/.ssh/id_rsa"
+  safe_chmod 600 "$HOME/.ssh/config"
+  safe_chmod 600 "$HOME/.ssh/id_rsa"
   safe_chmod 644 "$HOME/.ssh/id_rsa.pub"
 
 fi
