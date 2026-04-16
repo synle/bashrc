@@ -30,9 +30,9 @@ function installAptPackage() {
   else
     local _t0=$SECONDS
     if sudo apt-get install -y --fix-missing $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
-      echo "Success ($(( SECONDS - _t0 ))s)"
+      echo "Success ($((SECONDS - _t0))s)"
     else
-      echo "Error ($(( SECONDS - _t0 ))s)"
+      echo "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
@@ -45,9 +45,9 @@ function installSnapPackage() {
   else
     local _t0=$SECONDS
     if sudo snap install $@ &> /dev/null; then
-      echo "Success ($(( SECONDS - _t0 ))s)"
+      echo "Success ($((SECONDS - _t0))s)"
     else
-      echo "Error ($(( SECONDS - _t0 ))s)"
+      echo "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }

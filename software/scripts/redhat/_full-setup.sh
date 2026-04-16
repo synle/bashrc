@@ -32,9 +32,9 @@ function installDnfPackage() {
   else
     local _t0=$SECONDS
     if sudo dnf install -y --setopt=install_weak_deps=False $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || sudo yum install -y $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
-      echo "Success ($(( SECONDS - _t0 ))s)"
+      echo "Success ($((SECONDS - _t0))s)"
     else
-      echo "Error ($(( SECONDS - _t0 ))s)"
+      echo "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
@@ -47,9 +47,9 @@ function installSnapPackage() {
   else
     local _t0=$SECONDS
     if sudo snap install $@ &> /dev/null; then
-      echo "Success ($(( SECONDS - _t0 ))s)"
+      echo "Success ($((SECONDS - _t0))s)"
     else
-      echo "Error ($(( SECONDS - _t0 ))s)"
+      echo "Error ($((SECONDS - _t0))s)"
     fi
   fi
 }
