@@ -1,11 +1,11 @@
 /** Downloads the display-dj application binary for the current platform. */
 
-/** @type {string} GitHub API URL for the latest display-dj release. */
-const DISPLAY_DJ_RELEASE_URL = "https://api.github.com/repos/synle/display-dj/releases/latest";
+/** @type {string} GitHub repo identifier for display-dj releases. */
+const DISPLAY_DJ_REPO = "synle/display-dj";
 
 /** Downloads the display-dj application binary for the current platform. */
 async function doWork() {
-  const rawVersion = await fetchGitHubReleaseVersion(DISPLAY_DJ_RELEASE_URL);
+  const rawVersion = await fetchGitHubReleaseVersion(DISPLAY_DJ_REPO);
   if (!rawVersion) return;
 
   const version = rawVersion.replace(/^v/, "");
@@ -28,7 +28,7 @@ async function doWork() {
   await mkdir(targetPath);
 
   const destination = path.join(targetPath, fileName);
-  const ok = await downloadAssetWithFallback(DISPLAY_DJ_RELEASE_URL, url, destination);
+  const ok = await downloadAssetWithFallback(DISPLAY_DJ_REPO, url, destination);
 
   if (ok) {
     log(`>> display-dj v${version} downloaded:`, destination);

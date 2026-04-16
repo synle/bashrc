@@ -2677,29 +2677,48 @@ function downloadAssets(urls, destination) {
 }
 
 /**
- * Fetches the latest release version tag from a GitHub Releases API URL.
- * @param {string} releaseUrl - GitHub API releases/latest URL (e.g. "https://api.github.com/repos/owner/repo/releases/latest")
+ * Builds a GitHub Releases API URL from a repo identifier.
+ * Accepts "owner/repo" (defaults to latest) or "owner/repo/version".
+ * e.g. "synle/url-porter" → "https://api.github.com/repos/synle/url-porter/releases/latest"
+ * e.g. "synle/url-porter/v1.2.0" → "https://api.github.com/repos/synle/url-porter/releases/tags/v1.2.0"
+ * @param {string} repoId - Repository identifier ("owner/repo" or "owner/repo/version")
+ * @returns {string} Full GitHub API releases URL
+ */
+function getGitHubReleaseApiUrl(repoId) {
+  const parts = repoId.split("/");
+  const owner = parts[0];
+  const repo = parts[1];
+  const version = parts[2] || "latest";
+  if (version === "latest") {
+    return `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+  }
+  return `https://api.github.com/repos/${owner}/${repo}/releases/tags/${version}`;
+}
+
+/**
+ * Extracts the repository name from a repo identifier.
+ * e.g. "synle/url-porter" → "url-porter"
+ * This must match the derivation in ci-download-release-binaries.sh.
+ * @param {string} repoId - Repository identifier ("owner/repo" or "owner/repo/version")
+ * @returns {string} The repository name
+ */
+function getRepoNameFromId(repoId) {
+  return repoId.split("/")[1] || "";
+}
+
+/**
+ * Fetches the latest release version tag from a GitHub repo.
+ * @param {string} repoId - Repository identifier ("owner/repo" or "owner/repo/version")
  * @returns {Promise<string>} The tag_name from the release (e.g. "v1.2.0" or "1.2.0")
  */
-async function fetchGitHubReleaseVersion(releaseUrl) {
-  const releaseData = await readJson`${releaseUrl}`;
+async function fetchGitHubReleaseVersion(repoId) {
+  const releaseData = await readJson`${getGitHubReleaseApiUrl(repoId)}`;
   return releaseData.tag_name || "";
 }
 
 /**
- * Extracts the repository name from a GitHub releases API URL.
- * e.g. "https://api.github.com/repos/synle/url-porter/releases/latest" → "url-porter"
- * @param {string} releaseApiUrl - GitHub API releases URL
- * @returns {string} The repository name
- */
-function getRepoNameFromReleaseUrl(releaseApiUrl) {
-  const parts = new URL(releaseApiUrl).pathname.split("/");
-  return parts[3] || "";
-}
-
-/**
  * Downloads a release asset with fallback to the local assets/ backup.
- * The backup directory is derived from the release API URL (repo name),
+ * The backup directory is derived from the repo identifier (repo name),
  * matching the same derivation used by ci-download-release-binaries.sh.
  *
  * Flow:
@@ -2709,13 +2728,13 @@ function getRepoNameFromReleaseUrl(releaseApiUrl) {
  * 4. If the fallback file exists and is non-empty → copy it to destination, return true.
  * 5. If no fallback either → log and return false.
  *
- * @param {string} releaseApiUrl - GitHub API releases URL (e.g. "https://api.github.com/repos/synle/url-porter/releases/latest")
+ * @param {string} repoId - Repository identifier ("owner/repo" or "owner/repo/version")
  * @param {string} url - Upstream download URL
  * @param {string} destination - Local file path to save the asset to
  * @returns {Promise<boolean>} True if a valid asset is available at destination, false otherwise
  */
-async function downloadAssetWithFallback(releaseApiUrl, url, destination) {
-  const appName = getRepoNameFromReleaseUrl(releaseApiUrl);
+async function downloadAssetWithFallback(repoId, url, destination) {
+  const appName = getRepoNameFromId(repoId);
 
   // Step 1: attempt upstream download
   await downloadAsset(url, destination);
