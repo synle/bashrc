@@ -42,7 +42,7 @@ runs:
     - name: CI Build
       id: ci-build
       shell: bash
-      run: make ci_build
+      run: make ci_build 2>&1 | tee /tmp/ci_build_output.log
 
     - name: Record time after ci-build
       if: always()
@@ -132,6 +132,91 @@ runs:
         if [ "$any_failed" = "1" ]; then
           exit 1
         fi
+
+    - name: Package install summary
+      id: package-install
+      if: always()
+      shell: bash
+      run: |
+        log_file="/tmp/ci_build_output.log"
+        if [ ! -f "$log_file" ]; then
+          echo "### Package Install Summary (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo ":fast_forward: *No build log found*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        installed=0
+        failed=0
+        skipped=0
+        total=0
+        total_duration=0
+        install_table=""
+
+        # Parse lines matching: >> <pkg> >> Installing with <manager> >> <result>
+        while IFS= read -r line; do
+          # Strip ANSI escape codes
+          clean=$(echo "$line" | sed 's/\x1b\[[0-9;]*m//g')
+
+          # Match install output lines
+          if [[ "$clean" =~ ^\>\>\ (.+)\ \>\>\ Installing\ with\ (.+)\ \>\>\ (.+)$ ]]; then
+            pkg="${BASH_REMATCH[1]}"
+            manager="${BASH_REMATCH[2]}"
+            result="${BASH_REMATCH[3]}"
+            total=$((total + 1))
+
+            # Extract duration if present: "Success (12s)" or "Error (5s)"
+            duration=""
+            if [[ "$result" =~ \(([0-9]+)s\) ]]; then
+              duration="${BASH_REMATCH[1]}s"
+              total_duration=$((total_duration + ${BASH_REMATCH[1]}))
+            fi
+
+            # Determine status
+            if [[ "$result" == Skipped* ]]; then
+              icon=":fast_forward:"
+              skipped=$((skipped + 1))
+            elif [[ "$result" == Success* ]]; then
+              icon=":white_check_mark:"
+              installed=$((installed + 1))
+            else
+              icon=":x:"
+              failed=$((failed + 1))
+            fi
+
+            install_table+="| $icon | \`$pkg\` | $manager | $duration |"$'\n'
+          fi
+        done < "$log_file"
+
+        if [ "$total" -eq 0 ]; then
+          echo "### Package Install Summary (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo ":fast_forward: *No package installs detected*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        # Format total duration
+        if [ "$total_duration" -ge 60 ]; then
+          fmt_duration="$(( total_duration / 60 ))m $(( total_duration % 60 ))s"
+        else
+          fmt_duration="${total_duration}s"
+        fi
+
+        echo "### Package Install Summary (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "<summary>Total: $total | Installed: $installed | Skipped: $skipped | Failed: $failed | Duration: $fmt_duration</summary>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Result | Package | Manager | Duration |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|---------|---------|----------|" >> "$GITHUB_STEP_SUMMARY"
+        echo -n "$install_table" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        echo "Package install summary: $installed installed, $skipped skipped, $failed failed ($fmt_duration)"
 
     - name: Binary verification
       id: binary-check
@@ -422,6 +507,7 @@ runs:
         echo "| Result | Step | Duration |" >> $GITHUB_STEP_SUMMARY
         echo "|--------|------|----------|" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.ci-build.outcome }}') | CI Build | $(format_duration $D_BUILD) |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.package-install.outcome }}') | Package Install | |" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.profile-syntax.outcome }}') | Profile Syntax | |" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.binary-check.outcome }}') | Binary Verification | ${{ steps.binary-check.outputs.summary }} |" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.download-check.outcome }}') | Download Asset Verification | |" >> $GITHUB_STEP_SUMMARY
