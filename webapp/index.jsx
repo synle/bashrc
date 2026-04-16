@@ -137,8 +137,19 @@ const REPO_PATH_IDENTIFIER = window.REPO_PATH_IDENTIFIER;
 const REPO_BRANCH_NAME = window.REPO_BRANCH_NAME;
 /** @type {string} Full GitHub repository URL. */
 const REPO_URL = `https://github.com/${REPO_PATH_IDENTIFIER}`;
-/** @type {string} Base URL for fetching raw file content from GitHub (Contents API). */
-const BASH_PROFILE_CODE_REPO_RAW_URL = `https://api.github.com/repos/${REPO_PATH_IDENTIFIER}/contents`;
+/** @type {string} Base URL for fetching raw file content from GitHub (blob/HEAD). */
+const BASH_PROFILE_CODE_REPO_RAW_URL = `https://github.com/${REPO_PATH_IDENTIFIER}/blob/HEAD`;
+
+/**
+ * Constructs a GitHub raw content URL for a file in this repo.
+ * Appends ?raw=true to the blob URL so GitHub returns raw file content.
+ * @param {string} filePath - Relative path within the repo (e.g. "software/bootstrap/setup.sh")
+ * @returns {string} Full raw content URL
+ */
+function getGitHubRawUrl(filePath) {
+  return `${BASH_PROFILE_CODE_REPO_RAW_URL}/${filePath}?raw=true`;
+}
+
 /** @type {string} Base URL for viewing files on GitHub (blob view). */
 const BASH_PROFILE_CODE_REPO_VIEW_URL = `${REPO_URL}/blob/${REPO_BRANCH_NAME}`;
 /** @type {string} Base URL for editing files on GitHub (edit view). */
@@ -618,7 +629,7 @@ function DynamicTextArea(props) {
   const [text, setText] = useState("");
   const [success, setSuccess] = useState(true);
 
-  url = url || `${BASH_PROFILE_CODE_REPO_RAW_URL}/${path}`;
+  url = url || getGitHubRawUrl(path);
 
   useEffect(() => {
     async function _load() {
@@ -1039,7 +1050,10 @@ function EnhancedTextArea(props) {
   let formattedUrl = "";
 
   if (url) {
-    const shortUrl = url.replace(`${BASH_PROFILE_CODE_REPO_RAW_URL}/`, "").replace(/^(\.\/|\/)+/, "");
+    const shortUrl = url
+      .replace(`${BASH_PROFILE_CODE_REPO_RAW_URL}/`, "")
+      .replace(/\?raw=true$/, "")
+      .replace(/^(\.\/|\/)+/, "");
     label = label || shortUrl;
 
     editUrl = `${BASH_PROFILE_CODE_REPO_EDIT_URL}/${shortUrl}`;
@@ -1237,7 +1251,7 @@ function GenericLightWeightNotesDom() {
     <>
       <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
       <ScriptOutputSection
-        script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
+        script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
       />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
@@ -1352,7 +1366,7 @@ function WindowsNotesDom() {
 
       <div className="form-label">Other Applications</div>
       <div className="link-group">
-        <LinkButton block href={`${BASH_PROFILE_CODE_REPO_RAW_URL}/.build/Applications.zip`}>
+        <LinkButton block href={getGitHubRawUrl(".build/Applications.zip")}>
           Prebuilt Windows Applications
         </LinkButton>
         <LinkButton block href="https://ninite.com/">
@@ -1416,7 +1430,7 @@ function CommonEditorSetupDom(props) {
     <>
       <MultipleUrlDynamicTextArea
         label="VSCode / SublimeText Setup"
-        urls={[`${BASH_PROFILE_CODE_REPO_RAW_URL}/.build/sublime-text-setup`, `${BASH_PROFILE_CODE_REPO_RAW_URL}/.build/vs-code-setup`]}
+        urls={[getGitHubRawUrl(".build/sublime-text-setup"), getGitHubRawUrl(".build/vs-code-setup")]}
         commentString="#"
       />
       <DynamicTextArea path="/.build/sublime-text-ext" />
@@ -1464,10 +1478,10 @@ function App() {
         const configsByKey = {};
 
         const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs] = await Promise.all([
-          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/software/bootstrap/setup.sh`)
+          fetch(getGitHubRawUrl("software/bootstrap/setup.sh"))
             .then((res) => res.text())
             .then((res) => res.trim()),
-          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/script-list.config`)
+          fetch(getGitHubRawUrl("software/metadata/script-list.config"))
             .then((res) => res.text())
             .then((res) =>
               res
@@ -1476,10 +1490,10 @@ function App() {
                 .filter((s) => !!s && (s.includes(".js") || s.includes(".sh")))
                 .sort(),
             ),
-          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/package.json`)
+          fetch(getGitHubRawUrl("package.json"))
             .then((res) => res.json())
             .then((pkg) => pkg.scripts["setup:hosts"] || ""),
-          fetch(`${BASH_PROFILE_CODE_REPO_RAW_URL}/software/metadata/ip-address.config`)
+          fetch(getGitHubRawUrl("software/metadata/ip-address.config"))
             .then((res) => res.text())
             .then((s) =>
               s
@@ -1505,7 +1519,7 @@ function App() {
             text: "Setup Lightweight Profile",
             renderBody: () => (
               <ScriptOutputSection
-                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
+                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
               />
             ),
           },
@@ -1522,7 +1536,7 @@ function App() {
             renderBody: () => (
               <>
                 <OsSelectionInputSection />
-                <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash`} />
+                <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash`} />
               </>
             ),
           },
@@ -1533,7 +1547,7 @@ function App() {
                 <ScriptNameInputSection />
                 <OsSelectionInputSection />
                 <ScriptOutputSection
-                  script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh | bash -s -- --files="""\n{{SELECT_SCRIPTS}}\n"""`}
+                  script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash -s -- --files="""\n{{SELECT_SCRIPTS}}\n"""`}
                 />
               </>
             ),

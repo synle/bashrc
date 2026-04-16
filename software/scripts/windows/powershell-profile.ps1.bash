@@ -10,7 +10,7 @@
 # mkdir WindowsPowerShell
 # cd WindowsPowerShell
 # Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-# Invoke-WebRequest -Uri "https://api.github.com/repos/synle/bashrc/contents/.build/windows-powershell-profile.ps1.bash" -OutFile "Microsoft.PowerShell_profile.ps1"
+# Invoke-WebRequest -Uri "https://github.com/synle/bashrc/blob/HEAD/.build/windows-powershell-profile.ps1.bash?raw=true" -OutFile "Microsoft.PowerShell_profile.ps1"
 #
 # need to run this script at least once
 # Set-ExecutionPolicy RemoteSigned -Scope CurrentUser

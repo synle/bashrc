@@ -184,6 +184,13 @@ function safe_chmod() {
   fi
 }
 
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=true.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=true"
+}
+
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
 # max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
 function is_path_stale() {

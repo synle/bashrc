@@ -101,7 +101,7 @@ const sandbox = {
     env: {
       BASH_SYLE_PATH: "/mock/home/.bash_syle",
       BASH_SYLE_COMMON_PATH: "/mock/home/.bash_syle_common",
-      BASH_PROFILE_CODE_REPO_RAW_URL: "https://api.github.com/repos/test/bashrc/contents/",
+      BASH_PROFILE_CODE_REPO_RAW_URL: "https://github.com/test/bashrc/blob/HEAD/",
       REPO_PATH_IDENTIFIER: "test/bashrc",
       REPO_BRANCH_NAME: "master",
       NODE_JS_VERSION: "20",

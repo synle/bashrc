@@ -13,11 +13,11 @@ echo "> Setting up VS Code Extensions (background, log: $_VSCODE_EXT_LOG)"
 
 if ((is_os_mac)); then
   echo '>> mac'
-  (curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/.build/vs-code-ext-mac" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
+  (curl -fsSL "$(get_github_raw_url .build/vs-code-ext-mac)" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
 elif ((is_os_windows)); then
   echo '>> windows'
-  (curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/.build/vs-code-ext-windows" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
+  (curl -fsSL "$(get_github_raw_url .build/vs-code-ext-windows)" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
 else
   echo '>> linux'
-  (curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/.build/vs-code-ext-linux" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
+  (curl -fsSL "$(get_github_raw_url .build/vs-code-ext-linux)" | bash -) > "$_VSCODE_EXT_LOG" 2>&1 &
 fi

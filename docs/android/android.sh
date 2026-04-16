@@ -4,10 +4,10 @@
 # Shared functions and app lists. Not run directly - use with android.debloat.sh or android.restore.sh.
 #
 # Debloat:
-# curl -fsSL https://api.github.com/repos/synle/bashrc/contents/docs/android/android.sh https://api.github.com/repos/synle/bashrc/contents/docs/android/android.debloat.sh | sh
+# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=true https://github.com/synle/bashrc/blob/HEAD/docs/android/android.debloat.sh?raw=true | sh
 #
 # Restore:
-# curl -fsSL https://api.github.com/repos/synle/bashrc/contents/docs/android/android.sh https://api.github.com/repos/synle/bashrc/contents/docs/android/android.restore.sh | sh
+# curl -fsSL https://github.com/synle/bashrc/blob/HEAD/docs/android/android.sh?raw=true https://github.com/synle/bashrc/blob/HEAD/docs/android/android.restore.sh?raw=true
 #
 # Settings
 # Tracks applied settings for reset_all_settings. Example: "global window_animation_scale\nsecure long_press_timeout"

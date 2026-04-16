@@ -39,14 +39,14 @@
 # ---- Repo & Path Constants ----
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | afce79f0d70f620d42372b4ed6333ffc | 781 B
+# software/bootstrap/common-env.sh | 7e56376aa79dbd783c979a11ce593a31 | 763 B
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
 export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
-export BASH_PROFILE_CODE_REPO_RAW_URL="https://api.github.com/repos/$REPO_PATH_IDENTIFIER/contents" # https://api.github.com/repos/synle/bashrc/contents
+export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/blob/HEAD" # https://github.com/synle/bashrc/blob/HEAD
 export LIGHT_WEIGHT_SCRIPTS="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-syle-content.js"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
@@ -215,7 +215,7 @@ function run_files() {
   if [ -f "software/index.js" ]; then
     cat software/index.js
   else
-    curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js"
+    curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js?raw=true"
   fi | node | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.sh") | bash 2>&1 | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.log") 2>&1
 }
 

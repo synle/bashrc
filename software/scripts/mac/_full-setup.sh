@@ -11,7 +11,7 @@
 ################################################################################
 if ! type -P brew > /dev/null 2>&1; then
   echo ">> Installing Homebrew"
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://api.github.com/repos/Homebrew/install/contents/install.sh)" > /dev/null 2>&1
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://github.com/Homebrew/install/blob/HEAD/install.sh?raw=true)" > /dev/null 2>&1
   if [ -f /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   elif [ -f /usr/local/bin/brew ]; then
