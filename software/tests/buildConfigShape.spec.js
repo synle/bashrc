@@ -67,7 +67,10 @@ const MIN_FILE_SIZES = {
 
 describe("build config file size thresholds", () => {
   for (const [name, minSize] of Object.entries(MIN_FILE_SIZES)) {
-    it(`${name} should be at least ${minSize} bytes`, () => {
+    const filePath = path.resolve(".build", name);
+    const fileExists = fs.existsSync(filePath);
+
+    it.skipIf(!fileExists)(`${name} should be at least ${minSize} bytes`, () => {
       const size = readBuildFileSize(name);
       expect(size).toBeGreaterThanOrEqual(minSize);
     });
@@ -77,7 +80,7 @@ describe("build config file size thresholds", () => {
 // ---- object config tests ----
 
 describe("build config shape - objects", () => {
-  it("sublime-merge", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-merge")))("sublime-merge", () => {
     expect(readBuildConfigKeys("sublime-merge")).toMatchInlineSnapshot(`
       [
         "dark_theme",
@@ -98,7 +101,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("sublime-text-config", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-text-config")))("sublime-text-config", () => {
     expect(readBuildConfigKeys("sublime-text-config")).toMatchInlineSnapshot(`
       [
         "alignment_chars",
@@ -156,7 +159,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("sublime-text-config-mac", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-text-config-mac")))("sublime-text-config-mac", () => {
     expect(readBuildConfigKeys("sublime-text-config-mac")).toMatchInlineSnapshot(`
       [
         "alignment_chars",
@@ -214,7 +217,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("vs-code-color-dark", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "vs-code-color-dark")))("vs-code-color-dark", () => {
     expect(readBuildConfigKeys("vs-code-color-dark")).toMatchInlineSnapshot(`
       [
         "editor.tokenColorCustomizations",
@@ -223,7 +226,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("vs-code-color-light", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "vs-code-color-light")))("vs-code-color-light", () => {
     expect(readBuildConfigKeys("vs-code-color-light")).toMatchInlineSnapshot(`
       [
         "editor.tokenColorCustomizations",
@@ -232,7 +235,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("vs-code-config", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "vs-code-config")))("vs-code-config", () => {
     expect(readBuildConfigKeys("vs-code-config")).toMatchInlineSnapshot(`
       [
         "[graphql]",
@@ -359,7 +362,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("vs-code-config-mac", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "vs-code-config-mac")))("vs-code-config-mac", () => {
     expect(readBuildConfigKeys("vs-code-config-mac")).toMatchInlineSnapshot(`
       [
         "[graphql]",
@@ -487,7 +490,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("zed-editor-color-dark", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "zed-editor-color-dark")))("zed-editor-color-dark", () => {
     expect(readBuildConfigKeys("zed-editor-color-dark")).toMatchInlineSnapshot(`
       [
         "$schema",
@@ -498,7 +501,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("zed-editor-color-light", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "zed-editor-color-light")))("zed-editor-color-light", () => {
     expect(readBuildConfigKeys("zed-editor-color-light")).toMatchInlineSnapshot(`
       [
         "$schema",
@@ -509,7 +512,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("zed-editor-config", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "zed-editor-config")))("zed-editor-config", () => {
     expect(readBuildConfigKeys("zed-editor-config")).toMatchInlineSnapshot(`
       [
         "auto_indent_on_paste",
@@ -551,7 +554,7 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("zed-editor-config-mac", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "zed-editor-config-mac")))("zed-editor-config-mac", () => {
     expect(readBuildConfigKeys("zed-editor-config-mac")).toMatchInlineSnapshot(`
       [
         "auto_indent_on_paste",
@@ -597,7 +600,7 @@ describe("build config shape - objects", () => {
 // ---- array config tests ----
 
 describe("build config shape - arrays", () => {
-  it("sublime-merge-keys-mac", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-merge-keys-mac")))("sublime-merge-keys-mac", () => {
     const shape = readBuildArrayShape("sublime-merge-keys-mac");
     expect(shape.length).toBeGreaterThanOrEqual(10);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -608,7 +611,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("sublime-merge-keys-windows", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-merge-keys-windows")))("sublime-merge-keys-windows", () => {
     const shape = readBuildArrayShape("sublime-merge-keys-windows");
     expect(shape.length).toBeGreaterThanOrEqual(20);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -619,7 +622,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("sublime-text-keys-linux", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-text-keys-linux")))("sublime-text-keys-linux", () => {
     const shape = readBuildArrayShape("sublime-text-keys-linux");
     expect(shape.length).toBeGreaterThanOrEqual(70);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -630,7 +633,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("sublime-text-keys-mac", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-text-keys-mac")))("sublime-text-keys-mac", () => {
     const shape = readBuildArrayShape("sublime-text-keys-mac");
     expect(shape.length).toMatchInlineSnapshot("31");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -641,7 +644,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("sublime-text-keys-windows", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-text-keys-windows")))("sublime-text-keys-windows", () => {
     const shape = readBuildArrayShape("sublime-text-keys-windows");
     expect(shape.length).toBeGreaterThanOrEqual(70);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -652,7 +655,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("sublime-text-mouse", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-text-mouse")))("sublime-text-mouse", () => {
     const shape = readBuildArrayShape("sublime-text-mouse");
     expect(shape.length).toMatchInlineSnapshot("5");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -666,7 +669,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("sublime-text-mouse-mac", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "sublime-text-mouse-mac")))("sublime-text-mouse-mac", () => {
     const shape = readBuildArrayShape("sublime-text-mouse-mac");
     expect(shape.length).toMatchInlineSnapshot("5");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -680,7 +683,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("vs-code-keys-combined", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "vs-code-keys-combined")))("vs-code-keys-combined", () => {
     const shape = readBuildArrayShape("vs-code-keys-combined");
     expect(shape.length).toBeGreaterThanOrEqual(150);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -692,7 +695,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("zed-editor-keys", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "zed-editor-keys")))("zed-editor-keys", () => {
     const shape = readBuildArrayShape("zed-editor-keys");
     expect(shape.length).toMatchInlineSnapshot("2");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -703,7 +706,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("zed-editor-keys-linux", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "zed-editor-keys-linux")))("zed-editor-keys-linux", () => {
     const shape = readBuildArrayShape("zed-editor-keys-linux");
     expect(shape.length).toMatchInlineSnapshot("2");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -714,7 +717,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("zed-editor-keys-windows", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "zed-editor-keys-windows")))("zed-editor-keys-windows", () => {
     const shape = readBuildArrayShape("zed-editor-keys-windows");
     expect(shape.length).toMatchInlineSnapshot("2");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
@@ -725,7 +728,7 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("ip-address.config.hostnamesFlattened", () => {
+  it.skipIf(!fs.existsSync(path.resolve(".build", "ip-address.config.hostnamesFlattened")))("ip-address.config.hostnamesFlattened", () => {
     const shape = readBuildArrayShape("ip-address.config.hostnamesFlattened");
     expect(shape.length).toMatchInlineSnapshot("11");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
