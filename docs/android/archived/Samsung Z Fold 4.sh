@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # https://www.getdroidtips.com/uninstall-bloatware-samsung-z-flip-4-z-fold-4/#Samsung-Galaxy-Z-Flip-4-Galaxy-Z-Fold-4-Device-Overview
-curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android.sh?raw=true" | bash
+curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android.sh?raw=1" | bash
 
 function removeApp(){
   echo "> Remove:" $@

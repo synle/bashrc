@@ -316,7 +316,7 @@ sudo apt-get upgrade -y
 <https://github.com/linux-surface/linux-surface/wiki/Installation-and-Setup>
 
 ```bash
-wget -qO - https://github.com/linux-surface/linux-surface/blob/HEAD/pkg/keys/surface.asc?raw=true \
+wget -qO - https://github.com/linux-surface/linux-surface/blob/HEAD/pkg/keys/surface.asc?raw=1 \
     | gpg --dearmor | sudo dd of=/etc/apt/trusted.gpg.d/linux-surface.gpg
 
 echo "deb [arch=amd64] https://pkg.surfacelinux.com/debian release main" \

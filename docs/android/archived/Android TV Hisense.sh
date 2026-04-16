@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android TV.sh?raw=true" | bash
+curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/Core Android TV.sh?raw=1" | bash
 
 function removeApp(){
   echo "> Remove:" $@

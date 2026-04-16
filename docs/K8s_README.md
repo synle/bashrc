@@ -1708,7 +1708,7 @@ Without Helm, deploying to staging vs production means maintaining near-identica
 ```bash
 # Install Helm
 brew install helm              # macOS
-# or: curl https://github.com/helm/helm/blob/HEAD/scripts/get-helm-3?raw=true | bash
+# or: curl https://github.com/helm/helm/blob/HEAD/scripts/get-helm-3?raw=1 | bash
 
 # Add a chart repository
 helm repo add bitnami https://charts.bitnami.com/bitnami

@@ -43,6 +43,6 @@ Some settings may need to be verified through the UI:
 
 ```bash
 
-curl -fsSL https://github.com/synle/bashrc/blob/HEAD/software/scripts/mac/tweaks-electron-oclp.py?raw=true | python3
+curl -fsSL https://github.com/synle/bashrc/blob/HEAD/software/scripts/mac/tweaks-electron-oclp.py?raw=1 | python3
 
 ```

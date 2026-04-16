@@ -170,7 +170,7 @@ fi
 
 echo "Restoring XFCE configuration..."
 pushd "$TEMP_DIR" >/dev/null
-curl -fsSLO https://github.com/synle/bashrc/blob/HEAD/linux/xfce-config.tar.gz?raw=true
+curl -fsSLO https://github.com/synle/bashrc/blob/HEAD/linux/xfce-config.tar.gz?raw=1
 tar -xzf xfce-config.tar.gz -C ~/.config
 popd
 
