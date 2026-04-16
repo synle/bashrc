@@ -1,4 +1,4 @@
-/** Configures Krita: OpenGL high-quality filter, 65% RAM limit, 8GB swap, autosave 5min, 60fps cap, Level of Detail for large canvases, LCMS optimization. */
+/** Configures Krita: OpenGL high-quality filter, 65% RAM limit, 8GB swap, autosave 5min, 60fps cap, Level of Detail for large canvases, LCMS optimization, update check disabled. */
 /**
  * Finds the Krita config directory across platforms.
  * @param {string} fileName - The config file name (e.g., "kritarc", "kritadisplayrc").
@@ -71,6 +71,9 @@ function _getKritaRcSettings() {
     // ---- Color management ----
     { section: "General", key: "allowLCMSOptimization", value: "true" }, // faster color conversions (disable only for linear light precision work)
     { section: "General", key: "useBlackPointCompensation", value: "true" }, // better shadow mapping for print workflows
+
+    // ---- Telemetry & Updates ----
+    { section: "General", key: "CheckUpdates", value: "false" }, // disable automatic update checks on startup
   ];
 }
 

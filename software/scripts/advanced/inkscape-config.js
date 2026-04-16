@@ -1,4 +1,4 @@
-/** Configures Inkscape: autosave 5min (max 10 backups), 128MB render cache, high filter quality, 20 recent docs. */
+/** Configures Inkscape: autosave 5min (max 10 backups), 128MB render cache, high filter quality, 20 recent docs, usage stats disabled. */
 /**
  * Finds the Inkscape preferences.xml path across platforms.
  * @returns {string|undefined} Path to preferences.xml, or undefined if not found.
@@ -95,6 +95,9 @@ function _getInkscapeSettings() {
     // ---- UI ----
     { path: "options.maxrecentdocuments", attr: "value", value: "20" }, // recent documents list size
     { path: "options.bitmapautoreload", attr: "value", value: "1" }, // auto-reload linked bitmaps when changed on disk
+
+    // ---- Telemetry & Updates ----
+    { path: "options.stats", attr: "enabled", value: "0" }, // disable anonymous usage statistics
   ];
 }
 

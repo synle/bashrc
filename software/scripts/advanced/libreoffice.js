@@ -148,5 +148,17 @@ async function doWork() {
   // disable macro execution (faster document open + security)
   _setRegistryValue("/org.openoffice.Office.Common/Security/Scripting", "DisableMacrosExecution", "true");
 
+  // ---- telemetry & crash reporting ----
+  log(">>> Telemetry & crash reporting opt-out");
+
+  // disable crash report submission
+  _setRegistryValue("/org.openoffice.Office.Common/Misc", "CrashReport", "false");
+
+  // disable usage data collection
+  _setRegistryValue("/org.openoffice.Office.Common/Misc", "CollectUsageInformation", "false");
+
+  // disable update checks
+  _setRegistryValue("/org.openoffice.Office.Jobs/Jobs/UpdateCheck/Arguments", "AutoCheckEnabled", "false");
+
   await writeText(registryPath, regContent);
 }
