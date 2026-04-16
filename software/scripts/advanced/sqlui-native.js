@@ -1,9 +1,9 @@
-/** @type {string} GitHub API URL for the latest sqlui-native release. */
-const SQLUI_NATIVE_RELEASE_URL = "https://api.github.com/repos/synle/sqlui-native/releases/latest";
+/** @type {string} GitHub repo identifier for sqlui-native releases. */
+const SQLUI_NATIVE_REPO = "synle/sqlui-native";
 
 /** Downloads the sqlui-native application binary for the current platform. */
 async function doWork() {
-  const version = await fetchGitHubReleaseVersion(SQLUI_NATIVE_RELEASE_URL);
+  const version = await fetchGitHubReleaseVersion(SQLUI_NATIVE_REPO);
   if (!version) return;
 
   const targetPath = await getCustomTweaksPath("sqlui-native");
@@ -25,7 +25,7 @@ async function doWork() {
   await mkdir(targetPath);
 
   const destination = path.join(targetPath, fileName);
-  const ok = await downloadAssetWithFallback(SQLUI_NATIVE_RELEASE_URL, url, destination);
+  const ok = await downloadAssetWithFallback(SQLUI_NATIVE_REPO, url, destination);
 
   if (ok) {
     log(`>> sqlui-native ${version} downloaded:`, destination);

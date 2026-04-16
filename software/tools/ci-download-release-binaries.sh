@@ -54,6 +54,29 @@
     fi
   }
 
+  # Builds a GitHub Releases API URL from a repo identifier.
+  # Accepts "owner/repo" (defaults to latest) or "owner/repo/version".
+  # e.g. "synle/url-porter" → "https://api.github.com/repos/synle/url-porter/releases/latest"
+  # e.g. "synle/url-porter/v1.2.0" → "https://api.github.com/repos/synle/url-porter/releases/tags/v1.2.0"
+  # This must match getGitHubReleaseApiUrl() in index.js.
+  function get_release_api_url() {
+    local repo_id="$1"
+    local owner repo version
+    IFS='/' read -r owner repo version <<< "$repo_id"
+    version="${version:-latest}"
+    if [ "$version" = "latest" ]; then
+      echo "https://api.github.com/repos/${owner}/${repo}/releases/latest"
+    else
+      echo "https://api.github.com/repos/${owner}/${repo}/releases/tags/${version}"
+    fi
+  }
+
+  # Extracts the repo name from a repo identifier ("owner/repo" or "owner/repo/version").
+  # This must match getRepoNameFromId() in index.js.
+  function get_repo_name() {
+    echo "$1" | cut -d'/' -f2
+  }
+
   # Downloads a file and validates it has non-zero size. Returns 0 on success, 1 on failure.
   function download_and_validate() {
     local url="$1"
@@ -75,24 +98,27 @@
 
   # Processes a single GitHub release: fetch metadata, download eligible assets,
   # validate, and copy to assets/<app>/ if all pass. See file header for full flow.
-  # Usage: backup_release_assets <github_api_releases_latest_url>
+  # Usage: backup_release_assets <repo_id>  (e.g. "synle/url-porter" or "synle/url-porter/v1.2.0")
   function backup_release_assets() {
-    local api_url="$1"
+    local repo_id="$1"
 
-    # Step 1: fetch release metadata (version + asset list) from the GitHub API
+    # Step 1: build the API URL and fetch release metadata
+    local api_url app_name
+    api_url=$(get_release_api_url "$repo_id")
+    app_name=$(get_repo_name "$repo_id")
+
     local release_json
     release_json=$(curl -fsSL "$api_url" 2>/dev/null) || true
     if [ -z "$release_json" ]; then
       echo ""
-      echo ">> $(echo "$api_url" | sed 's|.*/repos/[^/]*/\([^/]*\)/.*|\1|'): could not fetch release metadata, skipping"
+      echo ">> $app_name: could not fetch release metadata, skipping"
       return
     fi
 
-    # Step 2: derive app name from the API URL path (not the response body)
-    # e.g. https://api.github.com/repos/synle/url-porter/releases/latest → url-porter
-    # This must match getRepoNameFromReleaseUrl() in index.js
-    local app_name version
-    app_name=$(echo "$api_url" | sed 's|.*/repos/[^/]*/\([^/]*\)/.*|\1|')
+    # Step 2: extract version from the release response
+    # App name is derived from the repo identifier, not the response body.
+    # This must match getRepoNameFromId() in index.js.
+    local version
     version=$(echo "$release_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name',''))" 2>/dev/null) || true
 
     if [ -z "$version" ] || [ -z "$app_name" ]; then
@@ -191,14 +217,14 @@ VEOF
   ##############################################################################
   # ---- Repos ----
   ##############################################################################
-  RELEASE_URLS=(
-    "https://api.github.com/repos/synle/url-porter/releases/latest"
-    "https://api.github.com/repos/synle/sqlui-native/releases/latest"
-    "https://api.github.com/repos/synle/display-dj/releases/latest"
+  RELEASE_REPOS=(
+    "synle/url-porter"
+    "synle/sqlui-native"
+    "synle/display-dj"
   )
 
-  for url in "${RELEASE_URLS[@]}"; do
-    backup_release_assets "$url"
+  for repo_id in "${RELEASE_REPOS[@]}"; do
+    backup_release_assets "$repo_id"
   done
 
   ##############################################################################
