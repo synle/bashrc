@@ -67,6 +67,8 @@ function _installZedEditor() {
 # ---- Background Install Wait ----
 
 # wait for background packages to finish (max 5 minutes to avoid blocking the build)
+# after waiting, dumps background log to stdout so CI summary can capture results
+# emits timeout entries for queued packages that did not complete
 function _waitForBackgroundPackages() {
   if [ -z "$_BACKGROUND_INSTALL_PID" ]; then return; fi
   local _max_wait=300
@@ -75,10 +77,22 @@ function _waitForBackgroundPackages() {
     sleep 5
     _elapsed=$((_elapsed + 5))
   done
+  local _timed_out=0
   if kill -0 "$_BACKGROUND_INSTALL_PID" 2> /dev/null; then
     echo ">> Background packages still running after ${_max_wait}s, proceeding"
+    _timed_out=1
   else
     echo ">> Background packages completed (${_elapsed}s)"
+  fi
+  if [ -f "$_BACKGROUND_INSTALL_LOG" ]; then
+    cat "$_BACKGROUND_INSTALL_LOG"
+  fi
+  if ((_timed_out)) && [ ${#_BACKGROUND_PKG_NAMES[@]} -gt 0 ]; then
+    for _pkg in "${_BACKGROUND_PKG_NAMES[@]}"; do
+      if ! grep -q ">> $_pkg >>" "$_BACKGROUND_INSTALL_LOG" 2> /dev/null; then
+        echo ">> $_pkg >> Installing with Background >> ⏸️ Skipped (timeout)"
+      fi
+    done
   fi
 }
 
