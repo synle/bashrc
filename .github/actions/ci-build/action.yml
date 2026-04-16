@@ -190,6 +190,13 @@ runs:
           safe_source "$profile"
         done
 
+        # Re-add known install paths that may have been pruned by the candidate
+        # script's [ -d ] check (e.g. container filesystem race conditions)
+        for p in ~/.temporalio/bin ~/.claude/bin ~/.cargo/bin; do
+          p="${p/#\~/$HOME}"
+          [ -d "$p" ] && [[ ":$PATH:" != *":$p:"* ]] && PATH="$p:$PATH"
+        done
+
         echo "PATH=$PATH"
 
         # ---- Required (all platforms, failure if missing) ----
