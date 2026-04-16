@@ -17,10 +17,13 @@ function installFlatpakPackage() {
   echo -n ">> $pkg_name >> Installing with Flatpak >> "
   if flatpak list --app | grep -q "$flatpak_id" &> /dev/null; then
     echo "Skipped"
-  elif flatpak install -y flathub "$flatpak_id" &> /dev/null; then
-    echo "Success"
   else
-    echo "Error"
+    local _t0=$SECONDS
+    if flatpak install -y flathub "$flatpak_id" &> /dev/null; then
+      echo "Success ($(( SECONDS - _t0 ))s)"
+    else
+      echo "Error ($(( SECONDS - _t0 ))s)"
+    fi
   fi
 }
 
@@ -32,10 +35,13 @@ function installPacmanPackage() {
   echo -n ">> $@ >> Installing with Pacman >> "
   if echo "$_PACMAN_INSTALLED" | grep -qxF "$1"; then
     echo "Skipped"
-  elif sudo pacman -S --noconfirm --needed $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
-    echo "Success"
   else
-    echo "Error"
+    local _t0=$SECONDS
+    if sudo pacman -S --noconfirm --needed $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+      echo "Success ($(( SECONDS - _t0 ))s)"
+    else
+      echo "Error ($(( SECONDS - _t0 ))s)"
+    fi
   fi
 }
 

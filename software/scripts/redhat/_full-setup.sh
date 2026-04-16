@@ -29,10 +29,13 @@ function installDnfPackage() {
   echo -n ">> $@ >> Installing with dnf/yum >> "
   if echo "$_RPM_INSTALLED" | grep -qxF "$1"; then
     echo "Skipped"
-  elif sudo dnf install -y --setopt=install_weak_deps=False $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || sudo yum install -y $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
-    echo "Success"
   else
-    echo "Error"
+    local _t0=$SECONDS
+    if sudo dnf install -y --setopt=install_weak_deps=False $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || sudo yum install -y $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+      echo "Success ($(( SECONDS - _t0 ))s)"
+    else
+      echo "Error ($(( SECONDS - _t0 ))s)"
+    fi
   fi
 }
 
@@ -41,10 +44,13 @@ function installSnapPackage() {
   echo -n ">> $1 >> Installing with Snap >> "
   if echo "$_SNAP_INSTALLED" | grep -qxF "$1"; then
     echo "Skipped"
-  elif sudo snap install $@ &> /dev/null; then
-    echo "Success"
   else
-    echo "Error"
+    local _t0=$SECONDS
+    if sudo snap install $@ &> /dev/null; then
+      echo "Success ($(( SECONDS - _t0 ))s)"
+    else
+      echo "Error ($(( SECONDS - _t0 ))s)"
+    fi
   fi
 }
 

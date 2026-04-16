@@ -22,10 +22,13 @@ function installPkgPackage() {
   echo -n ">> $@ >> Installing with Pkg >> "
   if echo "$_PKG_INSTALLED" | grep -qxF "$1"; then
     echo "Skipped"
-  elif pkg install -y $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
-    echo "Success"
   else
-    echo "Error"
+    local _t0=$SECONDS
+    if pkg install -y $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+      echo "Success ($(( SECONDS - _t0 ))s)"
+    else
+      echo "Error ($(( SECONDS - _t0 ))s)"
+    fi
   fi
 }
 
