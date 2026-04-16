@@ -11,23 +11,6 @@ echo ">> Begin installing dependencies..."
 if ! ((IS_CI)); then
 
   ################################################################################
-  # ---- Common Directories ----
-  ################################################################################
-  echo ">> Creating common directories"
-  mkdir -p "$HOME/.local/bin"
-  mkdir -p "$HOME/.ssh/sockets"
-  mkdir -p "$HOME/.vim/bundle"
-
-  ################################################################################
-  # ---- Common Config Files ----
-  ################################################################################
-  touch "$HOME/.hushlogin" # suppress "Last login" banner in new terminal sessions
-  touch "$HOME/.bash_profile"
-  touch "$HOME/.bashrc"
-  touch "$HOME/.gitconfig"
-  touch "$HOME/.gitmessage"
-
-  ################################################################################
   # ---- Git Email ----
   ################################################################################
   git_email="$(git config --global user.email 2> /dev/null || true)"
@@ -60,11 +43,41 @@ if ! ((IS_CI)); then
   fi
 
   ################################################################################
+  # ---- Common Config Files ----
+  ################################################################################
+  touch "$HOME/.hushlogin" # suppress "Last login" banner in new terminal sessions
+  touch "$HOME/.bash_profile"
+  touch "$HOME/.bashrc"
+  touch "$HOME/.gitconfig"
+  touch "$HOME/.gitmessage"
+
+  ################################################################################
+  # ---- Common Directories ----
+  ################################################################################
+  echo ">> Creating common directories"
+  mkdir -p "$HOME/.local/bin"
+  mkdir -p "$HOME/.ssh/sockets"
+  mkdir -p "$HOME/.vim/bundle"
+
+  ################################################################################
   # ---- Permissions ----
+  # Fix ownership on home directories that curl|bash installers or sudo may
+  # have created as root. safe_chown skips paths that do not exist.
   ################################################################################
   echo ">> Setting permissions"
   safe_chown "$HOME/.bash_profile" "$HOME/.bashrc"
+  safe_chown -R "$HOME/.bun"
+  safe_chown -R "$HOME/.cargo"
+  safe_chown -R "$HOME/.claude"
+  safe_chown -R "$HOME/.config"
+  safe_chown -R "$HOME/.deno"
+  safe_chown -R "$HOME/.fzf"
+  safe_chown -R "$HOME/.local"
   safe_chown -R "$HOME/.ssh"
+  safe_chown -R "$HOME/.temporalio"
+  safe_chown -R "$HOME/.tmux"
+  safe_chown -R "$HOME/.venv"
+  safe_chown -R "$HOME/.vim"
   safe_chmod 700 "$HOME/.ssh"
   safe_chmod 600 "$HOME/.ssh/config" "$HOME/.ssh/id_rsa"
   safe_chmod 644 "$HOME/.ssh/id_rsa.pub"
