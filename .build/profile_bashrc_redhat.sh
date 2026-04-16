@@ -14,7 +14,7 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-16T19:34:16.928Z
+# Generated: 2026-04-16T19:45:29.791Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -2123,6 +2123,16 @@ function date() {
 export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1"    # opt out azure cli telemetry
 export DISABLE_TELEMETRY="1"                        # opt out of Claude Code telemetry
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1" # disable Claude Code non-essential traffic (telemetry, autoupdater, error reporting)
+export DO_NOT_TRACK="1"                             # universal opt-out respected by many CLI tools (consoledonottrack.com)
+export NEXT_TELEMETRY_DISABLED="1"                  # opt out of Next.js telemetry
+export DOTNET_CLI_TELEMETRY_OPTOUT="1"              # opt out of .NET CLI telemetry
+export SAM_CLI_TELEMETRY="0"                        # opt out of AWS SAM CLI telemetry
+export GATSBY_TELEMETRY_DISABLED="1"                # opt out of Gatsby telemetry
+export ASTRO_TELEMETRY_DISABLED="1"                 # opt out of Astro telemetry
+export NUXT_TELEMETRY_DISABLED="1"                  # opt out of Nuxt telemetry
+export TURBO_TELEMETRY_DISABLED="1"                 # opt out of Turborepo telemetry
+export CHECKPOINT_DISABLE="1"                       # opt out of HashiCorp telemetry (Terraform, Vagrant, etc.)
+export ANGULAR_CLI_ANALYTICS="false"                # opt out of Angular CLI analytics
 
 ################################################################################
 # ---- Environment ----
