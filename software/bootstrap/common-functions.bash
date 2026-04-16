@@ -128,7 +128,8 @@ function safe_mkdir() {
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
+# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists
+# and is not already owned by the current user.
 # Pass -R as the first argument to chown recursively.
 function safe_chown() {
   local flags=""
@@ -137,16 +138,19 @@ function safe_chown() {
     shift
   fi
   for f in "$@"; do
-    if [ -e "$f" ]; then
+    if [ ! -e "$f" ]; then
+      echo ">> safe_chown $flags >> $f >> Skipped (not found)"
+    elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$(id -u)" ]; then
+      echo ">> safe_chown $flags >> $f >> Skipped (already correct)"
+    else
       sudo chown $flags "$USER" "$f"
       echo ">> safe_chown $flags >> $f >> Done"
-    else
-      echo ">> safe_chown $flags >> $f >> Skipped (not found)"
     fi
   done
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists
+# and permissions differ from the target mode.
 # Pass -R as the first argument to chmod recursively.
 function safe_chmod() {
   local flags=""
@@ -157,11 +161,13 @@ function safe_chmod() {
   local mode="$1"
   shift
   for f in "$@"; do
-    if [ -e "$f" ]; then
+    if [ ! -e "$f" ]; then
+      echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+    elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+      echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+    else
       chmod $flags "$mode" "$f"
       echo ">> safe_chmod $flags $mode >> $f >> Done"
-    else
-      echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
     fi
   done
 }
