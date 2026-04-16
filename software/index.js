@@ -249,12 +249,12 @@ const REPO_PREFIX_URL = `${BASH_PROFILE_CODE_REPO_RAW_URL}/`;
 
 /**
  * Constructs a GitHub raw content URL for a file in this repo.
- * Appends ?raw=true to the blob URL so GitHub returns raw file content.
+ * Appends ?raw=1 to the blob URL so GitHub returns raw file content.
  * @param {string} filePath - Relative path within the repo (e.g. "software/bootstrap/setup.sh")
  * @returns {string} Full raw content URL
  */
 function getGitHubRawUrl(filePath) {
-  return `${REPO_PREFIX_URL}${filePath}?raw=true`;
+  return `${REPO_PREFIX_URL}${filePath}?raw=1`;
 }
 
 /** @type {string} Temp directory for the current run (set by common-env.sh, e.g. /tmp/synle/bashrc/2026_03_24_14_00) */
@@ -2559,7 +2559,7 @@ function getRootDomainFrom(url) {
 }
 
 /**
- * Converts a relative URL to an absolute URL by prepending REPO_PREFIX_URL with ?raw=true.
+ * Converts a relative URL to an absolute URL by prepending REPO_PREFIX_URL with ?raw=1.
  * If the URL already starts with "http", it is returned as-is.
  * @param {string} url - The URL or relative path to resolve
  * @returns {string} The fully qualified URL
@@ -2634,7 +2634,7 @@ function downloadAssets(urls, destination) {
 
     // local repo optimization: copy from repo instead of downloading
     if (IS_LOCAL_REPO && REPO_PREFIX_URL && url.startsWith(REPO_PREFIX_URL)) {
-      const localPath = url.slice(REPO_PREFIX_URL.length).replace(/\?raw=true$/, "");
+      const localPath = url.slice(REPO_PREFIX_URL.length).replace(/\?raw=1$/, "");
       if (pathExists(localPath)) {
         copyFile(localPath, dest);
         log("<<< Copied from local repo", localPath);

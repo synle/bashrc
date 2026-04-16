@@ -215,7 +215,7 @@ function run_files() {
   if [ -f "software/index.js" ]; then
     cat software/index.js
   else
-    curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js?raw=true"
+    curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/index.js?raw=1"
   fi | node | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.sh") | bash 2>&1 | tee >(sed 's/\x1b\[[0-9;]*m//g' >> "$BASHRC_TEMP_DIR/run.log") 2>&1
 }
 

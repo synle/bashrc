@@ -93,7 +93,7 @@ describe("raw content url check", () => {
   });
 
   for (const entry of urls) {
-    const resolvedUrl = `${BASE_URL}/${entry.path}?raw=true`;
+    const resolvedUrl = `${BASE_URL}/${entry.path}?raw=1`;
 
     it(
       `${entry.file} > ${resolvedUrl}`,

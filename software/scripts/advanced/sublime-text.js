@@ -329,7 +329,7 @@ const buildFiles = [
 function getCurlLines(os) {
   return buildFiles
     .filter((f) => f.os === os)
-    .map((f) => `    curl -fsSL "$REPO_BUILD/${f.buildName}?raw=true" -o "$TARGET_PATH/${f.dest}"`)
+    .map((f) => `    curl -fsSL "$REPO_BUILD/${f.buildName}?raw=1" -o "$TARGET_PATH/${f.dest}"`)
     .join("\n");
 }
 
@@ -340,7 +340,7 @@ function getCurlLines(os) {
 function getPowershellLines() {
   return buildFiles
     .filter((f) => f.os === "windows")
-    .map((f) => `    Invoke-WebRequest -Uri "$RepoBuild/${f.buildName}?raw=true" -OutFile "$W_Path/${f.dest}" -UseBasicParsing`)
+    .map((f) => `    Invoke-WebRequest -Uri "$RepoBuild/${f.buildName}?raw=1" -OutFile "$W_Path/${f.dest}" -UseBasicParsing`)
     .join("\n");
 }
 
