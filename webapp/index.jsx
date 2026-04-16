@@ -137,17 +137,19 @@ const REPO_PATH_IDENTIFIER = window.REPO_PATH_IDENTIFIER;
 const REPO_BRANCH_NAME = window.REPO_BRANCH_NAME;
 /** @type {string} Full GitHub repository URL. */
 const REPO_URL = `https://github.com/${REPO_PATH_IDENTIFIER}`;
-/** @type {string} Base URL for fetching raw file content from GitHub (blob/HEAD). */
+/** @type {string} Base URL for blob/HEAD links (used in display strings like curl commands). */
 const BASH_PROFILE_CODE_REPO_RAW_URL = `https://github.com/${REPO_PATH_IDENTIFIER}/blob/HEAD`;
+/** @type {string} Base URL for browser fetch calls. Uses raw.githubusercontent.com because blob/HEAD?raw=1 redirects without CORS headers. */
+const GITHUB_RAW_FETCH_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/HEAD`;
 
 /**
- * Constructs a GitHub raw content URL for a file in this repo.
- * Appends ?raw=1 to the blob URL so GitHub returns raw file content.
+ * Constructs a CORS-compatible GitHub raw content URL for browser fetch calls.
+ * Uses raw.githubusercontent.com directly (has Access-Control-Allow-Origin: *).
  * @param {string} filePath - Relative path within the repo (e.g. "software/bootstrap/setup.sh")
  * @returns {string} Full raw content URL
  */
 function getGitHubRawUrl(filePath) {
-  return `${BASH_PROFILE_CODE_REPO_RAW_URL}/${filePath}?raw=1`;
+  return `${GITHUB_RAW_FETCH_URL}/${filePath}`;
 }
 
 /** @type {string} Base URL for viewing files on GitHub (blob view). */
@@ -1051,6 +1053,7 @@ function EnhancedTextArea(props) {
 
   if (url) {
     const shortUrl = url
+      .replace(`${GITHUB_RAW_FETCH_URL}/`, "")
       .replace(`${BASH_PROFILE_CODE_REPO_RAW_URL}/`, "")
       .replace(/\?raw=1$/, "")
       .replace(/^(\.\/|\/)+/, "");
