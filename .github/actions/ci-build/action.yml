@@ -50,6 +50,27 @@ runs:
       shell: bash
       run: echo "CI_BUILD_T1=$(date +%s)" >> "$GITHUB_ENV"
 
+    - name: Collect release asset backups
+      if: always()
+      shell: bash
+      run: |
+        # CI asset backups are saved to $BASHRC_TEMP_DIR/ci_asset_backups/<app>/
+        # Copy them into assets/ so they get uploaded with the build artifact
+        # and committed by the publish step (mirrors local RELEASE_ASSET_BACKUP_DIR=assets/)
+        CI_BACKUPS=$(ls -d /tmp/synle/bashrc/*/ci_asset_backups 2>/dev/null | head -1)
+        if [ -n "$CI_BACKUPS" ] && [ -d "$CI_BACKUPS" ]; then
+          for app_dir in "$CI_BACKUPS"/*/; do
+            [ -d "$app_dir" ] || continue
+            app_name=$(basename "$app_dir")
+            mkdir -p "assets/$app_name"
+            cp -r "$app_dir"* "assets/$app_name/" 2>/dev/null || true
+            echo "Collected $app_name assets:"
+            ls -lh "assets/$app_name/"
+          done
+        else
+          echo "No CI asset backups found"
+        fi
+
     - name: Upload Build Artifact
       if: always()
       uses: actions/upload-artifact@v4
@@ -57,6 +78,15 @@ runs:
         name: ${{ inputs.artifact-name }}
         include-hidden-files: true
         path: .build/
+        retention-days: 14
+        if-no-files-found: ignore
+
+    - name: Upload Release Asset Backups
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: assets-${{ inputs.artifact-name }}
+        path: assets/
         retention-days: 14
         if-no-files-found: ignore
 
