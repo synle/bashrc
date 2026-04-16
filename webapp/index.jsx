@@ -142,12 +142,12 @@ const BASH_PROFILE_CODE_REPO_RAW_URL = `https://github.com/${REPO_PATH_IDENTIFIE
 
 /**
  * Constructs a GitHub raw content URL for a file in this repo.
- * Appends ?raw=true to the blob URL so GitHub returns raw file content.
+ * Appends ?raw=1 to the blob URL so GitHub returns raw file content.
  * @param {string} filePath - Relative path within the repo (e.g. "software/bootstrap/setup.sh")
  * @returns {string} Full raw content URL
  */
 function getGitHubRawUrl(filePath) {
-  return `${BASH_PROFILE_CODE_REPO_RAW_URL}/${filePath}?raw=true`;
+  return `${BASH_PROFILE_CODE_REPO_RAW_URL}/${filePath}?raw=1`;
 }
 
 /** @type {string} Base URL for viewing files on GitHub (blob view). */
@@ -1052,7 +1052,7 @@ function EnhancedTextArea(props) {
   if (url) {
     const shortUrl = url
       .replace(`${BASH_PROFILE_CODE_REPO_RAW_URL}/`, "")
-      .replace(/\?raw=true$/, "")
+      .replace(/\?raw=1$/, "")
       .replace(/^(\.\/|\/)+/, "");
     label = label || shortUrl;
 
@@ -1251,7 +1251,7 @@ function GenericLightWeightNotesDom() {
     <>
       <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
       <ScriptOutputSection
-        script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
+        script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
       />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
@@ -1519,7 +1519,7 @@ function App() {
             text: "Setup Lightweight Profile",
             renderBody: () => (
               <ScriptOutputSection
-                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
+                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
               />
             ),
           },
@@ -1536,7 +1536,7 @@ function App() {
             renderBody: () => (
               <>
                 <OsSelectionInputSection />
-                <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash`} />
+                <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash`} />
               </>
             ),
           },
@@ -1547,7 +1547,7 @@ function App() {
                 <ScriptNameInputSection />
                 <OsSelectionInputSection />
                 <ScriptOutputSection
-                  script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=true | bash -s -- --files="""\n{{SELECT_SCRIPTS}}\n"""`}
+                  script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --files="""\n{{SELECT_SCRIPTS}}\n"""`}
                 />
               </>
             ),

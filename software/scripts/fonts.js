@@ -14,7 +14,7 @@ function _getFontDisplayName(fileName) {
 /** @param {string[]} fontFileNames - Array of font filenames @param {string} [fontBaseUrl=""] - Base URL prefix for font file paths (empty for relative) @returns {string} HTML content for font preview page */
 function _getFontPreviewHtml(fontFileNames, fontBaseUrl = "", isRawUrl = false) {
   const prefix = fontBaseUrl ? `${fontBaseUrl}/` : "";
-  const suffix = isRawUrl ? "?raw=true" : "";
+  const suffix = isRawUrl ? "?raw=1" : "";
   const sampleText = `=&gt; ==&gt; !== === &gt;= &lt;= != &amp;&amp; || -&gt; --&gt; &lt;-- :: ... ?? ?. |&gt; ++ -- ** // /* */ := += -=`;
 
   return trimLeftSpaces(`
