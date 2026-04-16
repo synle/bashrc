@@ -1518,17 +1518,21 @@ function _isDangerousPath(targetPath) {
  * @param {string} targetPath - The directory path to delete
  * @returns {Promise<string>} Resolves when deletion is complete
  */
-function deleteFolder(targetPath) {
+async function deleteFolder(targetPath) {
   if (_isDangerousPath(targetPath)) {
     log(`<< Refused to delete dangerous path: ${targetPath}`);
-    return Promise.resolve("");
+    return "";
   }
   if (IS_DRY_RUN) {
     log(`>> [DryRun] Would delete folder ${targetPath}`);
-    return Promise.resolve("");
+    return "";
   }
   log(`>> Deleting folder ${targetPath}`);
-  return execBash(`rm -rf "${targetPath}"`);
+  await execBash(`rm -rf "${targetPath}"`);
+  if (pathExists(targetPath)) {
+    throw new Error(`Failed to delete ${targetPath} (permission denied — is it root-owned? try: sudo rm -rf "${targetPath}")`);
+  }
+  return "";
 }
 
 /**
@@ -2679,15 +2683,25 @@ async function fetchGitHubReleaseVersion(releaseUrl) {
  */
 async function validateDownloadedAsset(filePath) {
   try {
-    if (!pathExists(filePath)) return false;
+    if (!pathExists(filePath)) {
+      log(`>> Validation failed: file not found: ${filePath}`);
+      return false;
+    }
     const fileSize = fs.statSync(filePath).size || 0;
-    if (fileSize === 0) return false;
+    if (fileSize === 0) {
+      log(`>> Validation failed: file is empty (0 bytes): ${filePath}`);
+      return false;
+    }
     if (filePath.endsWith(".zip")) {
       const result = await execBash(`unzip -t "${filePath}" 2>&1`);
-      if (!result.includes("No errors detected")) return false;
+      if (!result.includes("No errors detected")) {
+        log(`>> Validation failed: zip integrity check failed: ${filePath}`);
+        return false;
+      }
     }
     return true;
-  } catch (_) {
+  } catch (e) {
+    log(`>> Validation failed: ${e.code || e.message}: ${filePath}`);
     return false;
   }
 }
@@ -2737,10 +2751,15 @@ async function downloadReleaseAssetWithBackup(appName, version, url, destination
 
   // Save backup and version metadata for future fallback
   if (await validateDownloadedAsset(destination)) {
-    await mkdir(backupDir);
-    copyFile(destination, backupFile);
-    fs.writeFileSync(backupMetaFile, JSON.stringify({ appName, version, timestamp: new Date().toISOString() }, null, 2));
-    log(`>> Backup saved for ${appName} ${version}:`, backupFile);
+    try {
+      await mkdir(backupDir);
+      copyFile(destination, backupFile);
+      fs.writeFileSync(backupMetaFile, JSON.stringify({ appName, version, timestamp: new Date().toISOString() }, null, 2));
+      log(`>> Backup saved for ${appName} ${version}:`, backupFile);
+    } catch (e) {
+      const reason = e.code === "EACCES" ? `permission denied (is ${backupDir} root-owned? try: sudo chown -R $USER "${backupDir}")` : e.message;
+      throw new Error(`Failed to save backup for ${appName}: ${reason}`);
+    }
   }
 
   // In CI, copy to temp dir for artifact upload
