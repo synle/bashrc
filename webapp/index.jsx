@@ -144,7 +144,10 @@ const GITHUB_RAW_FETCH_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDEN
 
 /**
  * Constructs a CORS-compatible GitHub raw content URL for browser fetch calls.
- * Uses raw.githubusercontent.com directly (has Access-Control-Allow-Origin: *).
+ * NOTE: raw.githubusercontent.com is normally banned in this repo (see CLAUDE.md) because
+ * blob/HEAD?raw=1 is preferred — but blob/HEAD?raw=1 redirects (302) without CORS headers,
+ * so browser fetch() blocks it. This is the one exception: webapp browser fetches must use
+ * raw.githubusercontent.com directly (has Access-Control-Allow-Origin: *).
  * @param {string} filePath - Relative path within the repo (e.g. "software/bootstrap/setup.sh")
  * @returns {string} Full raw content URL
  */
