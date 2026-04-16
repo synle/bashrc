@@ -2686,6 +2686,32 @@ async function fetchGitHubReleaseVersion(releaseUrl) {
   return releaseData.tag_name || "";
 }
 
+/**
+ * Downloads a release asset with fallback to the local assets/ backup.
+ * If the upstream download fails or produces a corrupt file (0 bytes),
+ * copies the matching file from assets/<appName>/ instead.
+ * @param {string} appName - Application name matching the assets/ subdirectory (e.g. "url-porter")
+ * @param {string} url - Upstream download URL
+ * @param {string} destination - Local file path to save the asset to
+ * @returns {Promise<boolean>} True if a valid asset is available at destination, false otherwise
+ */
+async function downloadAssetWithFallback(appName, url, destination) {
+  await downloadAsset(url, destination);
+
+  const isValid = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
+  if (isValid) return true;
+
+  const fallbackFile = path.join(path.resolve("assets"), appName, path.basename(destination));
+  if (fs.existsSync(fallbackFile) && (fs.statSync(fallbackFile).size || 0) > 0) {
+    log(`>> Download of ${appName} failed, restoring from assets/ backup:`, fallbackFile);
+    await mkdir(path.dirname(destination));
+    copyFile(fallbackFile, destination);
+    return true;
+  }
+
+  log(`>> Download of ${appName} failed, no backup available in assets/${appName}/`);
+  return false;
+}
 
 /**
  * Downloads application binaries from the main repo into the appropriate OS-specific applications directory.
