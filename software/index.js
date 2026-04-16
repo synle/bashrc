@@ -2758,7 +2758,7 @@ async function downloadReleaseAssetWithBackup(appName, version, url, destination
       log(`>> Backup saved for ${appName} ${version}:`, backupFile);
     } catch (e) {
       const reason = e.code === "EACCES" ? `permission denied (is ${backupDir} root-owned? try: sudo chown -R $USER "${backupDir}")` : e.message;
-      throw new Error(`Failed to save backup for ${appName}: ${reason}`);
+      log(`>> Error: failed to save backup for ${appName}: ${reason}`);
     }
   }
 
