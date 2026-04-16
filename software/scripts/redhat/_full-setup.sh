@@ -80,12 +80,14 @@ function installSnapPackageInBackground() {
 
 # install all queued background packages sequentially in a single background subshell
 function _installBackgroundPackages() {
+  _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
   echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
     rm -f "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
+  _BACKGROUND_INSTALL_PID=$!
 }
 
 ################################################################################
@@ -104,12 +106,11 @@ function updatePackageIndex() {
 
 # upgrade all installed packages, remove unused deps, and clean cache (fire and forget)
 function upgradeAndCleanPackages() {
-  wait
   echo ">> Upgrading and cleaning packages (background) >>"
   (
-    sudo dnf upgrade -y || sudo yum upgrade -y
-    sudo dnf autoremove -y || sudo yum autoremove -y
-    sudo dnf clean all || sudo yum clean all
+    sudo dnf upgrade -y < /dev/null || sudo yum upgrade -y < /dev/null
+    sudo dnf autoremove -y < /dev/null || sudo yum autoremove -y < /dev/null
+    sudo dnf clean all < /dev/null || sudo yum clean all < /dev/null
   ) > /dev/null 2>&1 &
 }
 
@@ -215,6 +216,6 @@ _configureSystemdPowerManagement
 # ---- Background Install and Upgrade ----
 ################################################################################
 _installBackgroundPackages
-wait
+_waitForBackgroundPackages
 _configureDisplayDjPermissions
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

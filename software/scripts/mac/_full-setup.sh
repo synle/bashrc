@@ -137,12 +137,14 @@ function installBrewPackageInBackground() {
 
 # install all queued background packages in a single background subshell
 function _installBackgroundPackages() {
+  _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
   echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
     rm -f "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
+  _BACKGROUND_INSTALL_PID=$!
 }
 
 # refresh the brew formula/cask index so installs resolve the latest versions
@@ -157,11 +159,10 @@ function updatePackageIndex() {
 
 # wait for background jobs, then upgrade and clean packages in the background (fire and forget)
 function upgradeAndCleanPackages() {
-  wait
   echo ">> Upgrading and cleaning packages (background) >>"
   (
-    brew upgrade
-    brew cleanup
+    brew upgrade < /dev/null
+    brew cleanup < /dev/null
   ) > /dev/null 2>&1 &
 }
 
@@ -344,4 +345,5 @@ defaults write com.googlecode.iterm2 CustomToolTip -string "No"
 # ---- Background Install and Upgrade ----
 ################################################################################
 _installBackgroundPackages
+_waitForBackgroundPackages
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

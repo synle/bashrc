@@ -114,6 +114,17 @@ describe("parseJsonWithComments", () => {
     const input = '{"a": {"b": [1, 2, 3]}}';
     expect(parseJsonWithComments(input)).toEqual({ a: { b: [1, 2, 3] } });
   });
+
+  it("should throw on empty input", () => {
+    expect(() => parseJsonWithComments("")).toThrow("parseJsonWithComments: empty input");
+    expect(() => parseJsonWithComments(null)).toThrow("parseJsonWithComments: empty input");
+    expect(() => parseJsonWithComments(undefined)).toThrow("parseJsonWithComments: empty input");
+  });
+
+  it("should throw a descriptive error on malformed input", () => {
+    expect(() => parseJsonWithComments("{broken:::}")).toThrow("parseJsonWithComments: failed to parse input");
+    expect(() => parseJsonWithComments("not json at all ???")).toThrow("parseJsonWithComments: failed to parse input");
+  });
 });
 
 describe("readJson", () => {
@@ -127,6 +138,12 @@ describe("readJson", () => {
     fileSystem["/mock/config.jsonc"] = '{\n// comment\n"key": "value"\n}';
     const result = await readJson`${"/mock/config.jsonc"}`;
     expect(result).toEqual({ key: "value" });
+  });
+
+  it("should return empty object for malformed JSON", async () => {
+    fileSystem["/mock/bad.json"] = "{broken:::}";
+    const result = await readJson`${"/mock/bad.json"}`;
+    expect(result).toEqual({});
   });
 });
 

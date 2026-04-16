@@ -50,12 +50,30 @@ function installPkgPackageInBackground() {
 
 # install all queued background packages sequentially in a single background subshell
 function _installBackgroundPackages() {
+  _BACKGROUND_INSTALL_PID=""
   if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
   echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
   (
     safe_source "$_BACKGROUND_INSTALL_SCRIPT"
     rm -f "$_BACKGROUND_INSTALL_SCRIPT"
   ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
+  _BACKGROUND_INSTALL_PID=$!
+}
+
+# wait for background packages to finish (max 5 minutes to avoid blocking the build)
+function _waitForBackgroundPackages() {
+  if [ -z "$_BACKGROUND_INSTALL_PID" ]; then return; fi
+  local _max_wait=300
+  local _elapsed=0
+  while kill -0 "$_BACKGROUND_INSTALL_PID" 2> /dev/null && [ "$_elapsed" -lt "$_max_wait" ]; do
+    sleep 5
+    _elapsed=$((_elapsed + 5))
+  done
+  if kill -0 "$_BACKGROUND_INSTALL_PID" 2> /dev/null; then
+    echo ">> Background packages still running after ${_max_wait}s, proceeding"
+  else
+    echo ">> Background packages completed (${_elapsed}s)"
+  fi
 }
 
 ################################################################################
@@ -73,11 +91,10 @@ function updatePackageIndex() {
 
 # upgrade all installed packages and clean cached archives (fire and forget)
 function upgradeAndCleanPackages() {
-  wait
   echo ">> Upgrading and cleaning packages (background) >>"
   (
-    pkg upgrade -y
-    pkg autoclean -y
+    pkg upgrade -y < /dev/null
+    pkg autoclean -y < /dev/null
   ) > /dev/null 2>&1 &
 }
 
@@ -137,4 +154,5 @@ installPkgPackage tmux
 # ---- Background Install and Upgrade ----
 ################################################################################
 _installBackgroundPackages
+_waitForBackgroundPackages
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi
