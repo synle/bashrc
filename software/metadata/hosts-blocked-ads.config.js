@@ -2,7 +2,7 @@ const BLOCKED_HOST_SOURCE_URLS = set`
   https://adaway.org/hosts.txt
   http://winhelp2002.mvps.org/hosts.txt
   https://pgl.yoyo.org/adservers/serverlist.php?hostformat=hosts&showintro=0&mimetype=plaintext
-  https://github.com/StevenBlack/hosts/blob/HEAD/hosts?raw=true
+  https://github.com/StevenBlack/hosts/blob/HEAD/hosts?raw=1
 `;
 
 /**

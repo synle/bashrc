@@ -6,7 +6,7 @@
     "prebuild": "npm run format",
     "build": "vite build",
     "format": "npx --yes prettier --write --cache --ignore-unknown --no-error-on-unmatched-pattern --print-width 140 .",
-    "setup:hosts": "curl -s https://github.com/synle/bashrc/blob/HEAD/run.sh?raw=true | bash -s -- --files=\"software/scripts/etc-hosts.su.js\"",
+    "setup:hosts": "curl -s https://github.com/synle/bashrc/blob/HEAD/run.sh?raw=1 | bash -s -- --files=\"software/scripts/etc-hosts.su.js\"",
     "test": "vitest run --config vitest.config.js",
     "test:smoke": "vitest run --config vitest.smoke.config.js",
     "test:smoke:local": "vitest run --config vitest.smoke.local.config.js",

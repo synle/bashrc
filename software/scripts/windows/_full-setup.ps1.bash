@@ -128,7 +128,7 @@ $currentPath = (($currentPath -split ";") | Where-Object { $_ -ne "" } | Select-
 Write-Host "`n=== Updating HOSTS File ===" -ForegroundColor Cyan
 
 # Fetch blocked hosts from the central config (single source of truth for all platforms)
-$configUrl = "https://github.com/synle/bashrc/blob/HEAD/software/metadata/hosts-blocked-manual.consolidated.config?raw=true"
+$configUrl = "https://github.com/synle/bashrc/blob/HEAD/software/metadata/hosts-blocked-manual.consolidated.config?raw=1"
 try {
     $rawConfig = (Invoke-WebRequest -Uri $configUrl -UseBasicParsing).Content
 } catch {
