@@ -35,7 +35,7 @@ async function doWork() {
 
   deleteFolder(targetPath).then(async () => {
     await mkdir(targetPath);
-    const ok = await downloadAsset(zipUrl, tmpZip);
+    const ok = await downloadAssetWithFallback("url-porter", zipUrl, tmpZip);
     if (ok) {
       await execBash(`unzip -oq "${tmpZip}" -d "${targetPath}"`);
     }
