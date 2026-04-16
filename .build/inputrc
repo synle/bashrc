@@ -1,5 +1,5 @@
 # To install manually:
-# curl -o ~/.inputrc https://api.github.com/repos/synle/bashrc/contents/.build/inputrc
+# curl -o ~/.inputrc https://github.com/synle/bashrc/blob/HEAD/.build/inputrc?raw=1
 
 ################################################################################
 # ---- Completion Behavior ----

@@ -14,14 +14,14 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-16T00:28:38.532Z
+# Generated: 2026-04-16T15:50:15.157Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history-profile.bash
-# software/scripts/bash-history-profile.bash | c394154d029001b162c5e65745fb9718 | 4.5 KB | 2026-04-16
+# software/scripts/bash-history-profile.bash | 35956c75d69e58e32fddf6b37b2f5f8f | 4.5 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -119,29 +119,76 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
+    fi
+  done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -149,10 +196,22 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -778,9 +837,9 @@ function format_other_text_based_files() {
 export PATH="/github/home/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
-# software/scripts/bash-path-candidate-profile.bash | 8de265b6ab8ca452300e24bf31f71230 | 3.6 KB | 2026-04-16
+# software/scripts/bash-path-candidate-profile.bash | 7c6ac9a5002698f3bb1586d8e4e10a19 | 3.6 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -878,29 +937,76 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
+    fi
+  done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -908,10 +1014,22 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -1615,6 +1733,22 @@ alias clean='_clean_reset_head_to_main_branch' # hard reset current branch to or
 alias empty='_commit_empty_trigger_deploy'
 alias pr='_pr_view'
 
+# list source repo names for a GitHub user (default: synle)
+function repos() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "repos: list source repo names for a GitHub user
+  Usage: repos [owner]
+  Examples:
+    repos
+    repos synle
+    repos facebook"
+    return 1
+  fi
+
+  local owner="${1:-synle}"
+  gh repo list "$owner" --limit 100 --source --json name -q '.[].name'
+}
+
 # Opens the PR for the current branch in the browser (alternative: gh pr view --web)
 function _pr_view() {
   local remote_url
@@ -1755,6 +1889,49 @@ function gogit() {
   local git_home="${MY_GIT_HOME:-$HOME/git}"
   mkdir -p "$git_home" 2> /dev/null
   cd "$git_home"
+}
+
+# clone a repo by URL or owner/repo shorthand, tries SSH then falls back to HTTPS
+function clone() {
+  if [ -z "${1:-}" ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "clone: clone a repo by URL or owner/repo shorthand
+  Usage: clone <url-or-owner/repo>
+  Examples:
+    clone git@github.com:synle/bashrc.git
+    clone https://github.com/synle/bashrc.git
+    clone synle/bashrc"
+    return 1
+  fi
+
+  local input="$1"
+  local clone_url=""
+
+  if [[ "$input" =~ ^git@ ]] || [[ "$input" =~ ^https:// ]] || [[ "$input" =~ ^ssh:// ]]; then
+    # Full SSH or HTTPS URL — use as-is
+    clone_url="$input"
+    if ! git ls-remote "$clone_url" &> /dev/null; then
+      echo "clone: cannot access '$clone_url'"
+      return 1
+    fi
+  elif [[ "$input" =~ ^[^/]+/[^/]+$ ]]; then
+    # Short form: owner/repo — try SSH first, fall back to HTTPS
+    local ssh_url="git@github.com:${input}.git"
+    local https_url="https://github.com/${input}.git"
+    if git ls-remote "$ssh_url" &> /dev/null; then
+      clone_url="$ssh_url"
+    elif git ls-remote "$https_url" &> /dev/null; then
+      clone_url="$https_url"
+      echo "clone: SSH access failed, falling back to HTTPS"
+    else
+      echo "clone: cannot access '$input' via SSH or HTTPS"
+      return 1
+    fi
+  else
+    echo "clone: invalid input '$input' — expected a URL or owner/repo"
+    return 1
+  fi
+
+  git cl1 "$clone_url"
 }
 
 # cd to Downloads directory (tries multiple paths in order)
@@ -2796,9 +2973,9 @@ fi
 # ---- refresh / upgrade ----
 ################################################################################
 # refresh: re-run profile setup only (skip OS dependency installation)
-alias refresh="SKIP_SETUP=1 curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh | bash"
+alias refresh="SKIP_SETUP=1 curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh?raw=1 | bash"
 # upgrade: update OS packages + full setup with OS dependency installation
-alias upgrade="update && curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh | bash"
+alias upgrade="update && curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh?raw=1 | bash"
 
 ################################################################################
 # ---- Update Notifier ----
@@ -2854,9 +3031,9 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys-profile.bash
-# software/scripts/bash-keys-profile.bash | d337bc73a3ebcf1ca4a071ca1b4add3c | 4.8 KB | 2026-04-16
+# software/scripts/bash-keys-profile.bash | 7608252fae99975c5cda0b760714fd89 | 4.8 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -2954,29 +3131,76 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
+    fi
+  done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -2984,10 +3208,22 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -3138,9 +3374,9 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys-profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.bash
-# software/scripts/bash-file-utils.bash | d9d6fb029d83463581593eacd6292139 | 27.7 KB | 2026-04-16
+# software/scripts/bash-file-utils.bash | f5ee51a09b92aad95db321267ea71916 | 27.7 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3238,29 +3474,76 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
+    fi
+  done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -3268,10 +3551,22 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -4034,9 +4329,9 @@ DEDUP_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.bash
 # SOURCE_BEGIN software/scripts/bash-fzf-profile.bash
-# software/scripts/bash-fzf-profile.bash | 44c0c9c75e6e9f4cdbe0d60a674a96f4 | 17.1 KB | 2026-04-16
+# software/scripts/bash-fzf-profile.bash | 32b85beb8dbc7aaafa0c4de8f019b264 | 17.1 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4134,29 +4429,76 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
+    fi
+  done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -4164,10 +4506,22 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -4621,9 +4975,9 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf-profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | 07184e7f5d8034263c044de6b6986623 | 2.2 KB | 2026-04-16
+# software/scripts/advanced/editor-launchers-common.bash | 7198f9033d53ee086d2563c89366fea9 | 2.2 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4721,29 +5075,76 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
+    fi
+  done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -4751,10 +5152,22 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -5107,7 +5520,7 @@ type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5205,29 +5618,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -5235,10 +5695,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -5542,7 +6014,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5640,29 +6112,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -5670,10 +6189,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -5977,7 +6508,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6075,29 +6606,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -6105,10 +6683,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -6412,7 +7002,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6510,29 +7100,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -6540,10 +7177,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -6847,7 +7496,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6945,29 +7594,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -6975,10 +7671,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -7282,7 +7990,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -7380,29 +8088,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -7410,10 +8165,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -7717,7 +8484,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -7815,29 +8582,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -7845,10 +8659,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -8152,7 +8978,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8250,29 +9076,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -8280,10 +9153,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -8587,7 +9472,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8685,29 +9570,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -8715,10 +9647,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -9022,7 +9966,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9120,29 +10064,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -9150,10 +10141,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -9457,7 +10460,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9555,29 +10558,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -9585,10 +10635,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -9892,7 +10954,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9990,29 +11052,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -10020,10 +11129,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -10327,7 +11448,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -10425,29 +11546,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -10455,10 +11623,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -10767,7 +11947,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -10865,29 +12045,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -10895,10 +12122,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -11202,7 +12441,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -11300,29 +12539,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -11330,10 +12616,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -11637,7 +12935,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -11735,29 +13033,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -11765,10 +13110,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -12072,7 +13429,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -12170,29 +13527,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -12200,10 +13604,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -12507,7 +13923,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -12605,29 +14021,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -12635,10 +14098,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -13332,7 +14807,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -13430,29 +14905,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -13460,10 +14982,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -13823,7 +15357,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -13921,29 +15455,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -13951,10 +15532,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -14648,7 +16241,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -14746,29 +16339,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -14776,10 +16416,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -15150,7 +16802,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -15248,29 +16900,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -15278,10 +16977,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -15652,7 +17363,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -15750,29 +17461,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -15780,10 +17538,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -16093,7 +17863,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -16191,29 +17961,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -16221,10 +18038,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -16532,7 +18361,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -16630,29 +18459,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -16660,10 +18536,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -16967,7 +18855,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17065,29 +18953,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -17095,10 +19030,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -17402,7 +19349,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17500,29 +19447,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -17530,10 +19524,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -17837,7 +19843,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17935,29 +19941,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -17965,10 +20018,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -18272,7 +20337,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -18370,29 +20435,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -18400,10 +20512,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -18707,7 +20831,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -18805,29 +20929,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -18835,10 +21006,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -19180,7 +21363,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -19278,29 +21461,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -19308,10 +21538,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -19615,7 +21857,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -19713,29 +21955,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -19743,10 +22032,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -20050,7 +22351,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -20148,29 +22449,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -20178,10 +22526,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -20519,7 +22879,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -20617,29 +22977,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -20647,10 +23054,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -20954,7 +23373,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -21052,29 +23471,76 @@ bin=$(type -P "$1" 2> /dev/null) || return 1
 echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
 for f in "$@"; do
-[ -e "$f" ] || command touch "$f"
+if [ ! -e "$f" ]; then
+command touch "$f"
+echo ">> safe_touch >> $f >> Created"
+elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_touch >> $f >> Fixed ownership"
+else
+echo ">> safe_touch >> $f >> Skipped"
+fi
 done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+command mkdir -p "$@"
+for f in "$@"; do
+[[ "$f" == -* ]] && continue
+if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+sudo chown "$USER" "$f"
+echo ">> safe_mkdir >> $f >> Fixed ownership"
+else
+echo ">> safe_mkdir >> $f >> OK"
+fi
+done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
 local flags=""
 if [ "$1" = "-R" ]; then
 flags="-R"
 shift
 fi
-for f in "$@"; do
-[ -e "$f" ] && sudo chown $flags "$USER" "$f"
-done
+local target_user="$USER"
+if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+target_user="$1"
+shift
+fi
+local target_uid
+target_uid=$(id -u "$target_user")
+local f="$1"
+if [ ! -e "$f" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+else
+sudo chown $flags "$target_user" "$f"
+echo ">> safe_chown $flags $target_user >> $f >> Done"
+fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
 local flags=""
 if [ "$1" = "-R" ]; then
@@ -21082,10 +23548,22 @@ flags="-R"
 shift
 fi
 local mode="$1"
-shift
-for f in "$@"; do
-[ -e "$f" ] && chmod $flags "$mode" "$f"
-done
+local f="$2"
+if [ ! -e "$f" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+else
+chmod $flags "$mode" "$f"
+echo ">> safe_chmod $flags $mode >> $f >> Done"
+fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
@@ -21474,9 +23952,9 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers-profile.bash
-# software/scripts/bash-command-wrappers-profile.bash | 2874ddab713f09bcb5749f28a1132c11 | 5.5 KB | 2026-04-16
+# software/scripts/bash-command-wrappers-profile.bash | 5a67154adc0ae1a348ead7cf5ea35fce | 5.5 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
+# software/bootstrap/common-functions.bash | 1890209ab94c367ce7e091be2741e857 | 8.7 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -21574,29 +24052,76 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
-# touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
-function touch() {
+# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
+function safe_touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+      echo ">> safe_touch >> $f >> Created"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_touch >> $f >> Fixed ownership"
+    else
+      echo ">> safe_touch >> $f >> Skipped"
+    fi
   done
 }
 
-# safe_chown [-R] <path...> - Runs sudo chown on each path only if it exists.
-# Pass -R as the first argument to chown recursively.
+# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
+# current user for any resulting dir inside $HOME that is owned by root.
+function safe_mkdir() {
+  command mkdir -p "$@"
+  for f in "$@"; do
+    [[ "$f" == -* ]] && continue
+    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+      echo ">> safe_mkdir >> $f >> Fixed ownership"
+    else
+      echo ">> safe_mkdir >> $f >> OK"
+    fi
+  done
+}
+
+# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
+# and is not already owned by the target user. Defaults to $USER if no user given.
+# Pass -R as the first argument to chown recursively. Always pass one path per call.
+# Usage:
+#   safe_chown "$HOME/.bashrc"              # chown to $USER
+#   safe_chown -R "$HOME/.config"           # chown -R to $USER
+#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
+#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
 function safe_chown() {
   local flags=""
   if [ "$1" = "-R" ]; then
     flags="-R"
     shift
   fi
-  for f in "$@"; do
-    [ -e "$f" ] && sudo chown $flags "$USER" "$f"
-  done
+  local target_user="$USER"
+  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
+    target_user="$1"
+    shift
+  fi
+  local target_uid
+  target_uid=$(id -u "$target_user")
+  local f="$1"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
+    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
+  else
+    sudo chown $flags "$target_user" "$f"
+    echo ">> safe_chown $flags $target_user >> $f >> Done"
+  fi
 }
 
-# safe_chmod [-R] <mode> <path...> - Runs chmod on each path only if it exists.
+# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
+# and permissions differ from the target mode. Always pass one path per call.
 # Pass -R as the first argument to chmod recursively.
+# Usage:
+#   safe_chmod 700 "$HOME/.ssh"
+#   safe_chmod 600 "$HOME/.ssh/id_rsa"
 function safe_chmod() {
   local flags=""
   if [ "$1" = "-R" ]; then
@@ -21604,10 +24129,22 @@ function safe_chmod() {
     shift
   fi
   local mode="$1"
-  shift
-  for f in "$@"; do
-    [ -e "$f" ] && chmod $flags "$mode" "$f"
-  done
+  local f="$2"
+  if [ ! -e "$f" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
+  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
+    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
+  else
+    chmod $flags "$mode" "$f"
+    echo ">> safe_chmod $flags $mode >> $f >> Done"
+  fi
+}
+
+# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
+# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
+# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
+function get_github_raw_url() {
+  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
 }
 
 # is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than

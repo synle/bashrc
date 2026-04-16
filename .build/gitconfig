@@ -11,6 +11,7 @@ name = Sy Le
 [core]
 autocrlf = input
 editor = vim
+pager = less -R # explicit raw ANSI pass-through (fixes Git for Windows bundled less)
 excludesFile = ~/.gitignore_global
 fsmonitor = true # Background daemon for status speed
 untrackedCache = true # Caches untracked files
