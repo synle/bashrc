@@ -3,13 +3,21 @@
   ################################################################################
   # ---- ci-download-release-binaries.sh - Download latest release binaries ----
   #
-  # Downloads latest release assets from GitHub for configured repos. Auto-discovers
-  # all assets from each release, skips files over the size threshold (50 MB default),
-  # validates downloads, then copies to assets/<app>/ with a version.json.
+  # Downloads latest release assets from GitHub for configured repos.
+  # The assets/<app>/ directories are committed via the CI prep patch,
+  # making them available as fallbacks for downloadAssetWithFallback() at runtime.
   #
-  # Consistency rule: all downloadable artifacts for a given app must be valid — if
-  # any single binary is corrupted or unreachable, the entire backup for that app is
-  # skipped (preserving any existing backup).
+  # Flow per repo:
+  # 1. Fetch release metadata (version + asset list) from the GitHub API.
+  # 2. Derive app name from the API URL path (e.g. url-porter, sqlui-native).
+  # 3. Extract all assets with names, sizes, and download URLs.
+  # 4. Skip any asset over the size threshold (50 MB) using the API-reported size.
+  # 5. Download all eligible assets to a temp directory, validate each is non-empty.
+  # 6. All-or-nothing: if any download fails or is 0 bytes, skip the entire app:
+  #    - Existing backup in assets/<app>/ → keep it (don't overwrite with bad data).
+  #    - No existing backup → still OK (net new, nothing to protect).
+  # 7. If all valid → copy everything to assets/<app>/ and write version.json.
+  # 8. Print a ::group:: summary with per-app file counts and sizes.
   #
   # Usage:
   #   bash software/tools/ci-download-release-binaries.sh
@@ -65,13 +73,13 @@
     return 0
   }
 
-  # Fetches latest release metadata, downloads all assets under the size threshold,
-  # validates them, then copies to assets/<app>/ with version.json.
+  # Processes a single GitHub release: fetch metadata, download eligible assets,
+  # validate, and copy to assets/<app>/ if all pass. See file header for full flow.
   # Usage: backup_release_assets <github_api_releases_latest_url>
   function backup_release_assets() {
     local api_url="$1"
 
-    # Fetch release metadata (version + asset list with sizes and URLs)
+    # Step 1: fetch release metadata (version + asset list) from the GitHub API
     local release_json
     release_json=$(curl -fsSL "$api_url" 2>/dev/null) || true
     if [ -z "$release_json" ]; then
@@ -80,7 +88,9 @@
       return
     fi
 
-    # Derive app name from the API URL path: .../repos/{owner}/{repo}/releases/latest → {repo}
+    # Step 2: derive app name from the API URL path (not the response body)
+    # e.g. https://api.github.com/repos/synle/url-porter/releases/latest → url-porter
+    # This must match getRepoNameFromReleaseUrl() in index.js
     local app_name version
     app_name=$(echo "$api_url" | sed 's|.*/repos/[^/]*/\([^/]*\)/.*|\1|')
     version=$(echo "$release_json" | python3 -c "import sys,json; print(json.load(sys.stdin).get('tag_name',''))" 2>/dev/null) || true
@@ -91,7 +101,7 @@
       return
     fi
 
-    # Extract assets: name, size, download URL — skip assets over threshold
+    # Step 3: extract all assets with names, sizes, and download URLs
     local asset_data
     asset_data=$(echo "$release_json" | python3 -c "
 import sys, json
@@ -121,15 +131,17 @@ for a in data.get('assets', []):
     echo ""
     echo ">> $app_name $version"
 
-    # Download eligible assets to temp
+    # Step 4-5: download eligible assets to temp, skip any over size threshold
     while IFS=$'\t' read -r fname fsize url skip_flag; do
       [ -z "$fname" ] && continue
       total_count=$((total_count + 1))
+      # Step 4: skip assets over the size threshold (pre-download, API-reported size)
       if [ "$skip_flag" = "1" ]; then
         echo "  [SKIP] $fname ($(format_size "$fsize") > $(format_size "$MAX_FILE_SIZE") threshold)"
         skip_count=$((skip_count + 1))
         continue
       fi
+      # Step 5: download and validate non-empty
       download_count=$((download_count + 1))
       if ! download_and_validate "$url" "$app_temp/$fname"; then
         all_valid=0
@@ -141,16 +153,19 @@ for a in data.get('assets', []):
       return
     fi
 
+    # Step 6: all-or-nothing — if any download failed, skip the entire app
     if [ "$all_valid" -eq 0 ]; then
       if [ -f "$app_assets/version.json" ]; then
+        # Existing backup present — preserve it, don't overwrite with bad data
         echo "  [SKIP] Keeping existing backup for $app_name — one or more new artifacts invalid"
       else
+        # Net new — no existing backup to protect, skip is acceptable
         echo "  [SKIP] No existing backup for $app_name — skipping (net new, acceptable)"
       fi
       return
     fi
 
-    # All valid — copy to assets/
+    # Step 7: all valid — copy to assets/<app>/ and write version.json
     mkdir -p "$app_assets"
     for f in "$app_temp"/*; do
       [ -f "$f" ] || continue
@@ -162,7 +177,6 @@ for a in data.get('assets', []):
       echo "$app_name|$bname|$bsize" >> "$REPORT_FILE"
     done
 
-    # Write version.json metadata
     cat > "$app_assets/version.json" <<VEOF
 {
   "appName": "$app_name",
@@ -188,7 +202,7 @@ VEOF
   done
 
   ##############################################################################
-  # ---- Summary ----
+  # ---- Step 8: Summary ----
   ##############################################################################
   echo ""
   echo "::group::Release binary backup summary"

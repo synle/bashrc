@@ -2699,10 +2699,16 @@ function getRepoNameFromReleaseUrl(releaseApiUrl) {
 
 /**
  * Downloads a release asset with fallback to the local assets/ backup.
- * If the upstream download fails or produces a corrupt file (0 bytes),
- * copies the matching file from assets/<repoName>/ instead. The backup
- * directory is derived from the release API URL (repo name), matching
- * the same derivation used by ci-download-release-binaries.sh.
+ * The backup directory is derived from the release API URL (repo name),
+ * matching the same derivation used by ci-download-release-binaries.sh.
+ *
+ * Flow:
+ * 1. Download the file from the upstream GitHub release URL.
+ * 2. If the file exists and is non-empty → success, return true.
+ * 3. If that failed, look for assets/<repo>/<same filename> as a local fallback.
+ * 4. If the fallback file exists and is non-empty → copy it to destination, return true.
+ * 5. If no fallback either → log and return false.
+ *
  * @param {string} releaseApiUrl - GitHub API releases URL (e.g. "https://api.github.com/repos/synle/url-porter/releases/latest")
  * @param {string} url - Upstream download URL
  * @param {string} destination - Local file path to save the asset to
@@ -2711,11 +2717,14 @@ function getRepoNameFromReleaseUrl(releaseApiUrl) {
 async function downloadAssetWithFallback(releaseApiUrl, url, destination) {
   const appName = getRepoNameFromReleaseUrl(releaseApiUrl);
 
+  // Step 1: attempt upstream download
   await downloadAsset(url, destination);
 
+  // Step 2: validate — if file exists and non-empty, success
   const isValid = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
   if (isValid) return true;
 
+  // Step 3-4: upstream failed — try local fallback from assets/<repo>/
   const fallbackFile = path.join(path.resolve("assets"), appName, path.basename(destination));
   if (fs.existsSync(fallbackFile) && (fs.statSync(fallbackFile).size || 0) > 0) {
     log(`>> Download of ${appName} failed, restoring from assets/ backup:`, fallbackFile);
@@ -2724,6 +2733,7 @@ async function downloadAssetWithFallback(releaseApiUrl, url, destination) {
     return true;
   }
 
+  // Step 5: no fallback available
   log(`>> Download of ${appName} failed, no backup available in assets/${appName}/`);
   return false;
 }
