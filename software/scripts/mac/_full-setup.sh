@@ -68,9 +68,6 @@ launchctl load ~/Library/LaunchAgents/com.user.chrome.headless.plist
 ################################################################################
 # ---- Homebrew ----
 ################################################################################
-echo '>> Installing homebrew repos (brew tap)'
-brew tap homebrew/cask-fonts < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log
-
 # Cache all installed packages once upfront — avoids spawning brew list per package (~0.5-1s each)
 _BREW_INSTALLED_FORMULAE=$(brew list --formulae 2> /dev/null)
 _BREW_INSTALLED_CASKS=$(brew list --cask 2> /dev/null)
