@@ -441,7 +441,7 @@ runs:
             elif [[ "$result" == Success* ]]; then
               icon=":white_check_mark:"
               installed=$((installed + 1))
-              duration="${raw_duration}s"
+              if [ -n "$raw_duration" ]; then duration="${raw_duration}s"; fi
             elif [[ "$result" == *"timeout"* ]]; then
               icon=":pause_button:"
               timed_out=$((timed_out + 1))
