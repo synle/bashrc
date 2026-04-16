@@ -22,21 +22,13 @@ async function doWork() {
 
   const url = `https://github.com/synle/display-dj/releases/download/v${version}/${fileName}`;
 
-  if (IS_CI) {
-    log(`>> Backing up display-dj v${version} asset in CI`);
-    const ciTmpDest = path.join(BASHRC_TEMP_DIR, fileName);
-    await downloadReleaseAssetWithBackup("display-dj", `v${version}`, url, ciTmpDest);
-    await deleteFile(ciTmpDest);
-    return;
-  }
-
   log(`>> Installing display-dj v${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
 
   await deleteFolder(targetPath);
   await mkdir(targetPath);
 
   const destination = path.join(targetPath, fileName);
-  const ok = await downloadReleaseAssetWithBackup("display-dj", `v${version}`, url, destination);
+  const ok = await downloadAsset(url, destination);
 
   if (ok) {
     log(`>> display-dj v${version} downloaded:`, destination);

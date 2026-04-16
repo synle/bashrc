@@ -10,14 +10,6 @@ async function doWork() {
   const zipUrl = `https://github.com/synle/url-porter/releases/download/${version}/url-porter.zip`;
   const tmpZip = `${BASHRC_TEMP_DIR}/url-porter.zip`;
 
-  if (IS_CI) {
-    log(`>> Backing up url-porter ${version} asset in CI`);
-    await mkdir(path.dirname(tmpZip));
-    await downloadReleaseAssetWithBackup("url-porter", version, zipUrl, tmpZip);
-    await deleteFile(tmpZip);
-    return;
-  }
-
   const hasBrowser = resolveOsKey({
     mac: () =>
       pathExists("/Applications", /^Google Chrome\.app$/) ||
@@ -43,7 +35,7 @@ async function doWork() {
 
   deleteFolder(targetPath).then(async () => {
     await mkdir(targetPath);
-    const ok = await downloadReleaseAssetWithBackup("url-porter", version, zipUrl, tmpZip);
+    const ok = await downloadAsset(zipUrl, tmpZip);
     if (ok) {
       await execBash(`unzip -oq "${tmpZip}" -d "${targetPath}"`);
     }
