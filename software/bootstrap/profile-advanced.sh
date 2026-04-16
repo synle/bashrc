@@ -673,6 +673,49 @@ function gogit() {
   cd "$git_home"
 }
 
+# clone a repo by URL or owner/repo shorthand, tries SSH then falls back to HTTPS
+function clone() {
+  if [ -z "${1:-}" ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "clone: clone a repo by URL or owner/repo shorthand
+  Usage: clone <url-or-owner/repo>
+  Examples:
+    clone git@github.com:synle/bashrc.git
+    clone https://github.com/synle/bashrc.git
+    clone synle/bashrc"
+    return 1
+  fi
+
+  local input="$1"
+  local clone_url=""
+
+  if [[ "$input" =~ ^git@ ]] || [[ "$input" =~ ^https:// ]] || [[ "$input" =~ ^ssh:// ]]; then
+    # Full SSH or HTTPS URL — use as-is
+    clone_url="$input"
+    if ! git ls-remote "$clone_url" &> /dev/null; then
+      echo "clone: cannot access '$clone_url'"
+      return 1
+    fi
+  elif [[ "$input" =~ ^[^/]+/[^/]+$ ]]; then
+    # Short form: owner/repo — try SSH first, fall back to HTTPS
+    local ssh_url="git@github.com:${input}.git"
+    local https_url="https://github.com/${input}.git"
+    if git ls-remote "$ssh_url" &> /dev/null; then
+      clone_url="$ssh_url"
+    elif git ls-remote "$https_url" &> /dev/null; then
+      clone_url="$https_url"
+      echo "clone: SSH access failed, falling back to HTTPS"
+    else
+      echo "clone: cannot access '$input' via SSH or HTTPS"
+      return 1
+    fi
+  else
+    echo "clone: invalid input '$input' — expected a URL or owner/repo"
+    return 1
+  fi
+
+  git cl1 "$clone_url"
+}
+
 # cd to Downloads directory (tries multiple paths in order)
 function godownload() {
   local candidates=(

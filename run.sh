@@ -115,7 +115,6 @@ trap 'trap - INT TERM; kill 0' INT TERM
 # prevent curl from using cached responses
 alias curl="curl -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' -H 'Pragma: no-cache' -H 'Expires: 0' -H 'If-None-Match:' -H 'If-Modified-Since:'"
 
-
 ################################################################################
 # ---- CI Mode ----
 ################################################################################

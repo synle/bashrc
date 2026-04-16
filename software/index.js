@@ -2757,7 +2757,8 @@ async function downloadReleaseAssetWithBackup(appName, version, url, destination
       fs.writeFileSync(backupMetaFile, JSON.stringify({ appName, version, timestamp: new Date().toISOString() }, null, 2));
       log(`>> Backup saved for ${appName} ${version}:`, backupFile);
     } catch (e) {
-      const reason = e.code === "EACCES" ? `permission denied (is ${backupDir} root-owned? try: sudo chown -R $USER "${backupDir}")` : e.message;
+      const reason =
+        e.code === "EACCES" ? `permission denied (is ${backupDir} root-owned? try: sudo chown -R $USER "${backupDir}")` : e.message;
       log(`>> Error: failed to save backup for ${appName}: ${reason}`);
     }
   }
