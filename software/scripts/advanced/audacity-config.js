@@ -1,4 +1,4 @@
-/** Configures Audacity: 48kHz/32-bit float defaults, overdub enabled, latency tuning, auto-scroll. */
+/** Configures Audacity: 48kHz/32-bit float defaults, overdub enabled, latency tuning, auto-scroll, update check disabled. */
 /**
  * Finds the Audacity config file path across platforms.
  * @returns {string|undefined} Path to audacity.cfg, or undefined if not found.
@@ -60,6 +60,9 @@ function _getAudacitySettings() {
     // ---- GUI / Interface ----
     { section: "GUI", key: "AutoScroll", value: "1" }, // auto-scroll waveform display during playback
     { section: "GUI", key: "DefaultViewModeChoice", value: "Waveform" }, // default track view: Waveform, WaveformDB, or Spectrogram
+
+    // ---- Telemetry & Updates ----
+    { section: "Update", key: "DefaultUpdatesChecking", value: "0" }, // disable automatic update checks on startup
   ];
 }
 
