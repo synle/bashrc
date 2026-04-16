@@ -97,10 +97,15 @@ function has_persistent_binary() {
 }
 
 # touch <file> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks).
+# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
+# fixes ownership to current user if owned by root.
 function touch() {
   for f in "$@"; do
-    [ -e "$f" ] || command touch "$f"
+    if [ ! -e "$f" ]; then
+      command touch "$f"
+    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
+      sudo chown "$USER" "$f"
+    fi
   done
 }
 
