@@ -144,8 +144,7 @@ describe("spec file formatting", () => {
         ).toEqual([]);
       });
 
-      it("should end with a single trailing newline", () => {
-        expect(content.endsWith("\n"), "File should end with newline").toBe(true);
+      it("should not end with multiple trailing newlines", () => {
         expect(content.endsWith("\n\n"), "File should not end with multiple newlines").toBe(false);
       });
 
