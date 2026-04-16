@@ -216,8 +216,12 @@ build_hosts: build_update_hosts
 # ---- CI ----
 ################################################################################
 
-# CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, and dry-run test
-ci_prep: clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun
+# CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, and download release binaries
+ci_prep: clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun ci_download_release_binaries
+
+# Download latest release binaries (url-porter, sqlui-native, display-dj) into assets/
+ci_download_release_binaries:
+	bash software/tools/ci-download-release-binaries.sh
 
 # CI Phase 2: Build configs and run scripts with --setup to install dependencies via _full-setup.sh
 ci_build: build_prebuild_hosts build_configs build_host_mappings
