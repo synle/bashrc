@@ -10,7 +10,7 @@
       "cwd": "${workspaceFolder}",
       "env": {
         "IS_LOCAL_MODE": "true",
-        "BASH_PROFILE_CODE_REPO_RAW_URL": "https://api.github.com/repos/synle/bashrc/contents",
+        "BASH_PROFILE_CODE_REPO_RAW_URL": "https://github.com/synle/bashrc/blob/HEAD",
         "BASH_SYLE_PATH": "${env:HOME}/.bash_syle",
         "BASH_SYLE_COMMON_PATH": "${env:HOME}/.bash_syle_common",
         "is_os_mac": "1",

@@ -6,7 +6,7 @@ async function doWork() {
 
   const content = code`
     # To install manually:
-    # curl -o ~/.inputrc ${BASH_PROFILE_CODE_REPO_RAW_URL}/.build/inputrc
+    # curl -o ~/.inputrc ${BASH_PROFILE_CODE_REPO_RAW_URL}/.build/inputrc?raw=true
 
     ${LINE_BREAK_HASH}
     # ---- Completion Behavior ----

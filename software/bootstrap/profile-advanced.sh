@@ -1755,9 +1755,9 @@ fi
 # ---- refresh / upgrade ----
 ################################################################################
 # refresh: re-run profile setup only (skip OS dependency installation)
-alias refresh="SKIP_SETUP=1 curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh | bash"
+alias refresh="SKIP_SETUP=1 curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh?raw=true | bash"
 # upgrade: update OS packages + full setup with OS dependency installation
-alias upgrade="update && curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh | bash"
+alias upgrade="update && curl -fsSL $BASH_PROFILE_CODE_REPO_RAW_URL/software/bootstrap/setup.sh?raw=true | bash"
 
 ################################################################################
 # ---- Update Notifier ----

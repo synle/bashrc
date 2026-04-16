@@ -246,6 +246,17 @@ const REPO_USER_NAME = getRuntimeOption("REPO_USER_NAME") || "syle";
 const REPO_USER_EMAIL = getRuntimeOption("REPO_USER_EMAIL");
 /** @type {string} Full URL prefix for raw GitHub content (derived from BASH_PROFILE_CODE_REPO_RAW_URL) */
 const REPO_PREFIX_URL = `${BASH_PROFILE_CODE_REPO_RAW_URL}/`;
+
+/**
+ * Constructs a GitHub raw content URL for a file in this repo.
+ * Appends ?raw=true to the blob URL so GitHub returns raw file content.
+ * @param {string} filePath - Relative path within the repo (e.g. "software/bootstrap/setup.sh")
+ * @returns {string} Full raw content URL
+ */
+function getGitHubRawUrl(filePath) {
+  return `${REPO_PREFIX_URL}${filePath}?raw=true`;
+}
+
 /** @type {string} Temp directory for the current run (set by common-env.sh, e.g. /tmp/synle/bashrc/2026_03_24_14_00) */
 const BASHRC_TEMP_DIR = getRuntimeOption("BASHRC_TEMP_DIR");
 /** @type {string} Prefix for all temp script files written during execution (inside BASHRC_TEMP_DIR or /tmp fallback) */
@@ -2548,14 +2559,14 @@ function getRootDomainFrom(url) {
 }
 
 /**
- * Converts a relative URL to an absolute URL by prepending REPO_PREFIX_URL.
+ * Converts a relative URL to an absolute URL by prepending REPO_PREFIX_URL with ?raw=true.
  * If the URL already starts with "http", it is returned as-is.
  * @param {string} url - The URL or relative path to resolve
  * @returns {string} The fully qualified URL
  */
 function getFullUrl(url) {
   if (!url.startsWith("http")) {
-    url = `${REPO_PREFIX_URL}${url}`;
+    url = getGitHubRawUrl(url);
   }
   return url;
 }
@@ -2621,9 +2632,9 @@ function downloadAssets(urls, destination) {
       continue;
     }
 
-    // local repo optimization: copy from repo instead of downloading from API
+    // local repo optimization: copy from repo instead of downloading
     if (IS_LOCAL_REPO && REPO_PREFIX_URL && url.startsWith(REPO_PREFIX_URL)) {
-      const localPath = url.slice(REPO_PREFIX_URL.length);
+      const localPath = url.slice(REPO_PREFIX_URL.length).replace(/\?raw=true$/, "");
       if (pathExists(localPath)) {
         copyFile(localPath, dest);
         log("<<< Copied from local repo", localPath);

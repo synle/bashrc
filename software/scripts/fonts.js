@@ -12,8 +12,9 @@ function _getFontDisplayName(fileName) {
 }
 
 /** @param {string[]} fontFileNames - Array of font filenames @param {string} [fontBaseUrl=""] - Base URL prefix for font file paths (empty for relative) @returns {string} HTML content for font preview page */
-function _getFontPreviewHtml(fontFileNames, fontBaseUrl = "") {
+function _getFontPreviewHtml(fontFileNames, fontBaseUrl = "", isRawUrl = false) {
   const prefix = fontBaseUrl ? `${fontBaseUrl}/` : "";
+  const suffix = isRawUrl ? "?raw=true" : "";
   const sampleText = `=&gt; ==&gt; !== === &gt;= &lt;= != &amp;&amp; || -&gt; --&gt; &lt;-- :: ... ?? ?. |&gt; ++ -- ** // /* */ := += -=`;
 
   return trimLeftSpaces(`
@@ -30,7 +31,7 @@ function _getFontPreviewHtml(fontFileNames, fontBaseUrl = "") {
     .font-card { background: #2d2d2d; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; }
     .font-name { font-size: 13px; color: #888; margin-bottom: 8px; font-family: sans-serif; }
     .font-preview { font-size: 18px; line-height: 1.6; color: #e0e0e0; }
-    ${fontFileNames.map((file, i) => `@font-face { font-family: "font-${i}"; src: url("${prefix}${file}"); }`).join("\n")}
+    ${fontFileNames.map((file, i) => `@font-face { font-family: "font-${i}"; src: url("${prefix}${file}${suffix}"); }`).join("\n")}
     </style>
     </head>
     <body>
@@ -54,7 +55,7 @@ async function doWork() {
     const termuxFontPath = path.join(termuxFontDir, "font.ttf");
     if (isForceRefreshStale(termuxFontPath) || !fs.existsSync(termuxFontPath)) {
       await mkdir(termuxFontDir);
-      const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/FiraCode-Regular.ttf`;
+      const fontUrl = getGitHubRawUrl("assets/fonts/FiraCode-Regular.ttf");
       log(">> Downloading Termux font:", termuxFontPath);
       await downloadAsset(fontUrl, termuxFontPath);
     } else {
@@ -86,7 +87,7 @@ async function doWork() {
     log(">> Downloading fonts to:", targetFontPath);
     await downloadAssets(
       fonts.map((font) => {
-        const fontUrl = `${BASH_PROFILE_CODE_REPO_RAW_URL}/${font}`;
+        const fontUrl = getGitHubRawUrl(font);
         return fontUrl;
       }),
       targetFontPath,
@@ -103,14 +104,14 @@ async function doWork() {
   const linuxFontGuide = `# Fonts - Linux / MacOS
 cd ~/Desktop
 curl -fsSL --parallel --parallel-max 10 \\
-${fontBaseNames.map((fontBaseName) => `  -O ${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/${fontBaseName}`).join(" \\\n")}
+${fontBaseNames.map((fontBaseName) => `  -O ${getGitHubRawUrl(`assets/fonts/${fontBaseName}`)}`).join(" \\\n")}
 echo "Done downloading fonts"`;
 
   // Start-BitsTransfer: Use ForEach-Object to pass each URL explicitly to -Source, since Start-BitsTransfer cannot bind plain strings from the pipeline
   const windowFontGuide = `# Fonts - Windows
 cd ([Environment]::GetFolderPath('Desktop'))
 $urls = @(
-${fontBaseNames.map((fontBaseName) => `  "${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts/${fontBaseName}"`).join(",\n")}
+${fontBaseNames.map((fontBaseName) => `  "${getGitHubRawUrl(`assets/fonts/${fontBaseName}`)}"`).join(",\n")}
 )
 $urls | ForEach-Object { Start-BitsTransfer -Source $_ -Destination . }
 echo "Done downloading fonts"`;
@@ -126,7 +127,7 @@ echo "Done downloading fonts"`;
   log(">> Font preview HTML:", path.join(targetFontPath, "preview.html"));
 
   // generate font preview HTML for GitHub Pages (uses raw GitHub URLs)
-  const fontPreviewHtmlHosted = _getFontPreviewHtml(fontBaseNames, `${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts`);
+  const fontPreviewHtmlHosted = _getFontPreviewHtml(fontBaseNames, `${BASH_PROFILE_CODE_REPO_RAW_URL}/assets/fonts`, true);
   await writeBuildArtifact({
     file: `${BUILD_DIR}/font-preview.html`,
     data: fontPreviewHtmlHosted,

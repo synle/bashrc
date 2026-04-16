@@ -21,7 +21,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 - **Always use lowercase hex colors.** Write `#1e1e1e` not `#1E1E1E`.
 - **Never use `node:` prefix for Node built-in module requires/imports.** Write `require("fs")` not `require("node:fs")`. The `node:` prefix breaks on older Node versions (e.g., Volta-pinned projects).
 - **Always use `curl -fsSL` for curl commands.** No other flag combos.
-- **Never use `raw.githubusercontent.com`. Always use the GitHub Contents API.** Write `https://api.github.com/repos/{owner}/{repo}/contents/{path}` — not `https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}` and not `https://github.com/{owner}/{repo}/blob/{branch}/{path}?raw=true`. This applies to all GitHub repos, not just this one. For this repo, the base URL is exported as `$BASH_PROFILE_CODE_REPO_RAW_URL`.
+- **Never use `raw.githubusercontent.com` or `api.github.com/repos/.../contents`. Always use the blob/HEAD `?raw=true` format.** Write `https://github.com/{owner}/{repo}/blob/HEAD/{path}?raw=true` — not `https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}` and not `https://api.github.com/repos/{owner}/{repo}/contents/{path}`. This applies to all GitHub repos, not just this one. For this repo, use `getGitHubRawUrl(path)` in JS or `get_github_raw_url <path>` in bash (both construct the full URL from `$BASH_PROFILE_CODE_REPO_RAW_URL`).
 - **Use `log()` for all output. Never use raw `console.log` or `console.error`.** `log()` outputs to stderr via `console.error`, safe in the `node | bash` pipeline. Only `emitBash()` should write to stdout.
 
 ### Shell Conventions

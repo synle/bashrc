@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # use the one from s21 as the base and add more stuffs on top
-curl -fsSL "https://api.github.com/repos/synle/bashrc/contents/android/archived/Samsung S21 Ultra.sh" | bash
+curl -fsSL "https://github.com/synle/bashrc/blob/HEAD/android/archived/Samsung S21 Ultra.sh?raw=true" | bash
 
 function removeApp(){
   echo "> Remove:" $@
