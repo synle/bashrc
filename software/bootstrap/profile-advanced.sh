@@ -531,6 +531,22 @@ alias clean='_clean_reset_head_to_main_branch' # hard reset current branch to or
 alias empty='_commit_empty_trigger_deploy'
 alias pr='_pr_view'
 
+# list source repo names for a GitHub user (default: synle)
+function repos() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "repos: list source repo names for a GitHub user
+  Usage: repos [owner]
+  Examples:
+    repos
+    repos synle
+    repos facebook"
+    return 1
+  fi
+
+  local owner="${1:-synle}"
+  gh repo list "$owner" --limit 100 --source --json name -q '.[].name'
+}
+
 # Opens the PR for the current branch in the browser (alternative: gh pr view --web)
 function _pr_view() {
   local remote_url
