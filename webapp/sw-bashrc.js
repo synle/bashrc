@@ -130,8 +130,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   // Only intercept requests we want to cache
   if (!shouldCacheUrl(event.request.url)) {
-    // For external resources, just fetch normally
-    event.respondWith(fetch(event.request));
+    // For external resources, let the browser handle normally
     return;
   }
 
