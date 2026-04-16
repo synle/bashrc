@@ -57,15 +57,25 @@ runs:
         # CI asset backups are saved to $BASHRC_TEMP_DIR/ci_asset_backups/<app>/
         # Copy them into assets/ so they get uploaded with the build artifact
         # and committed by the publish step (mirrors local RELEASE_ASSET_BACKUP_DIR=assets/)
+        # Skip files over 50 MB — GitHub rejects pushes with files over 100 MB
+        MAX_SIZE=$((50 * 1024 * 1024))
         CI_BACKUPS=$(ls -d /tmp/synle/bashrc/*/ci_asset_backups 2>/dev/null | head -1)
         if [ -n "$CI_BACKUPS" ] && [ -d "$CI_BACKUPS" ]; then
           for app_dir in "$CI_BACKUPS"/*/; do
             [ -d "$app_dir" ] || continue
             app_name=$(basename "$app_dir")
             mkdir -p "assets/$app_name"
-            cp -r "$app_dir"* "assets/$app_name/" 2>/dev/null || true
-            echo "Collected $app_name assets:"
-            ls -lh "assets/$app_name/"
+            for f in "$app_dir"*; do
+              [ -f "$f" ] || continue
+              fsize=$(wc -c < "$f")
+              fname=$(basename "$f")
+              if [ "$fsize" -gt "$MAX_SIZE" ]; then
+                echo "Skipped $app_name/$fname ($(( fsize / 1024 / 1024 )) MB > 50 MB limit)"
+              else
+                cp "$f" "assets/$app_name/$fname"
+                echo "Collected $app_name/$fname ($(( fsize / 1024 )) KB)"
+              fi
+            done
           done
         else
           echo "No CI asset backups found"
