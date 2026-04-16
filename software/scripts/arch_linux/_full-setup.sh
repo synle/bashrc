@@ -147,9 +147,9 @@ installPacmanPackageInBackground mysql-clients
 installPacmanPackageInBackground sqlite
 installPacmanPackageInBackground redis
 
-# ---- Multimedia ----
-installPacmanPackage ffmpeg
-installPacmanPackage imagemagick
+# ---- Multimedia (background: heavy transitive deps, wait syncs before build) ----
+installPacmanPackageInBackground ffmpeg
+installPacmanPackageInBackground imagemagick
 
 # ---- OS-specific ----
 installPacmanPackageInBackground xz
