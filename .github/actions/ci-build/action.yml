@@ -41,7 +41,6 @@ runs:
 
     - name: CI Build
       id: ci-build
-      continue-on-error: true
       shell: bash
       run: make ci_build
 
