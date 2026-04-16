@@ -324,9 +324,9 @@ dev: build_all format
 doctor:
 	bash software/tools/doctor.sh
 
-# Scaffold a new script file (usage: make new-script name=my-tool [os=mac])
+# Scaffold a new script file (usage: make new-script name=my-tool [os=mac] [type=sh])
 new-script:
-	bash software/tools/new-script.sh name=$(name) os=$(os)
+	bash software/tools/new-script.sh name=$(name) os=$(os) type=$(type)
 
 # Restore ~/.bash_syle from backup
 rollback:
