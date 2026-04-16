@@ -107,24 +107,28 @@ describe("raw content url check", () => {
 });
 
 /**
- * Three recognized GitHub raw content URL forms:
- *   Form 1 (blob):     https://github.com/{owner}/{repo}/blob/HEAD/{path}?raw=1
- *   Form 2 (raw):      https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{path}  [Preferred for browser fetch — has CORS headers]
- *   Form 3 (API):      https://api.github.com/repos/{owner}/{repo}/contents/{path}
+ * Webapp GitHub URL CORS format check.
  *
- * Only Form 2 works for browser fetch() calls. Forms 1 and 3 will cause CORS errors.
+ * Browser fetch() calls must use this exact form (has Access-Control-Allow-Origin: *):
+ *   https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path}
+ *
+ * These forms will cause CORS errors in the browser:
+ *   Form 1 (blob):  https://github.com/{owner}/{repo}/blob/HEAD/{path}?raw=1   — 302 redirect, no CORS headers
+ *   Form 3 (API):   https://api.github.com/repos/{owner}/{repo}/contents/{path} — requires auth token for CORS
  */
 
-/** @type {RegExp} Matches Form 1: github.com blob/HEAD URLs. */
+/** @type {RegExp} Matches Form 1: github.com blob URLs. */
 const FORM1_BLOB_RE = /https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//;
-/** @type {RegExp} Matches Form 2: raw.githubusercontent.com URLs. */
+/** @type {RegExp} Matches Form 2: raw.githubusercontent.com URLs (correct form). */
 const FORM2_RAW_RE = /https:\/\/raw\.githubusercontent\.com\//;
+/** @type {RegExp} Matches Form 2 with /HEAD/ branch specifically. */
+const FORM2_RAW_HEAD_RE = /https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/HEAD\//;
 /** @type {RegExp} Matches Form 3: api.github.com contents URLs. */
 const FORM3_API_RE = /https:\/\/api\.github\.com\/repos\/[^/]+\/[^/]+\/contents\//;
 
 /**
- * Scans webapp source files for GitHub raw content URLs and categorizes them by form.
- * Returns entries with file, line number, matched URL, and form type.
+ * Scans webapp source files for GitHub raw content URLs and categorizes them.
+ * Returns entries with file, line number, matched URL, form type, and whether /HEAD/ is used.
  */
 function extractWebappGitHubUrls() {
   const entries = [];
@@ -144,6 +148,7 @@ function extractWebappGitHubUrls() {
 
       let form = null;
       let match = null;
+      let usesHead = false;
 
       if (FORM1_BLOB_RE.test(line)) {
         form = 1;
@@ -154,10 +159,11 @@ function extractWebappGitHubUrls() {
       } else if (FORM2_RAW_RE.test(line)) {
         form = 2;
         match = line.match(FORM2_RAW_RE)[0];
+        usesHead = FORM2_RAW_HEAD_RE.test(line);
       }
 
       if (form !== null) {
-        entries.push({ file: relFile, lineNum, form, match, line: line.trim() });
+        entries.push({ file: relFile, lineNum, form, match, usesHead, line: line.trim() });
       }
     }
   }
@@ -173,16 +179,23 @@ describe("webapp github url CORS format check", () => {
   });
 
   for (const entry of webappUrls) {
-    const formLabel = entry.form === 1 ? "blob/HEAD" : entry.form === 2 ? "raw.githubusercontent.com" : "api.github.com/contents";
-
-    it(`${entry.file}:${entry.lineNum} > Form ${entry.form} (${formLabel})`, () => {
+    it(`${entry.file}:${entry.lineNum}`, () => {
+      // Must use raw.githubusercontent.com (Form 2) — Forms 1 and 3 cause CORS errors
       expect(
         entry.form,
-        `Not in the right form — will cause CORS error in browser.\n` +
-          `  Found Form ${entry.form} (${formLabel}) at ${entry.file}:${entry.lineNum}\n` +
-          `  Line: ${entry.line}\n` +
-          `  Use https://raw.githubusercontent.com/ (Form 2) for browser fetch calls.`,
+        `CORS error: must use https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path}\n` +
+          `  Found: ${entry.line}\n` +
+          `  Form 1 (github.com/blob/) returns 302 redirect without CORS headers.\n` +
+          `  Form 3 (api.github.com/contents/) requires auth token for CORS.`,
       ).toBe(2);
+
+      // Must use /HEAD/ branch, not /master/ or /main/
+      expect(
+        entry.usesHead,
+        `Wrong branch: must use /HEAD/ in raw.githubusercontent.com URL\n` +
+          `  Found: ${entry.line}\n` +
+          `  Expected: https://raw.githubusercontent.com/{owner}/{repo}/HEAD/{path}`,
+      ).toBe(true);
     });
   }
 });
