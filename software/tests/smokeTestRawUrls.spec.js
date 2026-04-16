@@ -121,8 +121,8 @@ describe("raw content url check", () => {
 const FORM1_BLOB_RE = /https:\/\/github\.com\/[^/]+\/[^/]+\/blob\//;
 /** @type {RegExp} Matches Form 2: raw.githubusercontent.com URLs (correct form). */
 const FORM2_RAW_RE = /https:\/\/raw\.githubusercontent\.com\//;
-/** @type {RegExp} Matches Form 2 with /HEAD/ branch specifically. */
-const FORM2_RAW_HEAD_RE = /https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/HEAD\//;
+/** @type {RegExp} Matches Form 2 with /HEAD/ branch. Allows template expressions (${...}) in owner/repo positions. */
+const FORM2_RAW_HEAD_RE = /https:\/\/raw\.githubusercontent\.com\/.*\/HEAD[/"'`]/;
 /** @type {RegExp} Matches Form 3: api.github.com contents URLs. */
 const FORM3_API_RE = /https:\/\/api\.github\.com\/repos\/[^/]+\/[^/]+\/contents\//;
 
