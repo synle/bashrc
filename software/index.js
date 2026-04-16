@@ -2645,7 +2645,9 @@ function downloadAssets(urls, destination) {
       metadata.push(`${status} ${url} ${dest} ${fileSize}`);
     }
     if (metadata.length > 0) {
-      fs.appendFileSync(DOWNLOAD_ASSET_METADATA_PATH, metadata.join("\n") + "\n");
+      try {
+        fs.appendFileSync(DOWNLOAD_ASSET_METADATA_PATH, metadata.join("\n") + "\n");
+      } catch (_) {}
     }
   }
 

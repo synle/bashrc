@@ -72,7 +72,7 @@ runs:
               if [ "$fsize" -gt "$MAX_SIZE" ]; then
                 echo "Skipped $app_name/$fname ($(( fsize / 1024 / 1024 )) MB > 50 MB limit)"
               else
-                cp "$f" "assets/$app_name/$fname"
+                cp -f "$f" "assets/$app_name/$fname"
                 echo "Collected $app_name/$fname ($(( fsize / 1024 )) KB)"
               fi
             done
