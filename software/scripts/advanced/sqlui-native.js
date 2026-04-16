@@ -25,7 +25,7 @@ async function doWork() {
   await mkdir(targetPath);
 
   const destination = path.join(targetPath, fileName);
-  const ok = await downloadAssetWithFallback("sqlui-native", url, destination);
+  const ok = await downloadAssetWithFallback(SQLUI_NATIVE_RELEASE_URL, url, destination);
 
   if (ok) {
     log(`>> sqlui-native ${version} downloaded:`, destination);

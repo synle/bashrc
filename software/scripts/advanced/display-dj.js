@@ -28,7 +28,7 @@ async function doWork() {
   await mkdir(targetPath);
 
   const destination = path.join(targetPath, fileName);
-  const ok = await downloadAssetWithFallback("display-dj", url, destination);
+  const ok = await downloadAssetWithFallback(DISPLAY_DJ_RELEASE_URL, url, destination);
 
   if (ok) {
     log(`>> display-dj v${version} downloaded:`, destination);
