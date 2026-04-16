@@ -55,7 +55,7 @@ async function doWork() {
     const termuxFontPath = path.join(termuxFontDir, "font.ttf");
     if (isForceRefreshStale(termuxFontPath) || !fs.existsSync(termuxFontPath)) {
       await mkdir(termuxFontDir);
-      const fontUrl = getGitHubRawUrl("assets/fonts/FiraCode-Regular.ttf");
+      const fontUrl = getGitHubRawUrl("assets/fonts/Fira-Code-Regular.ttf");
       log(">> Downloading Termux font:", termuxFontPath);
       await downloadAsset(fontUrl, termuxFontPath);
     } else {
