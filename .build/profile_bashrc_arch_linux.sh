@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-15]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-16]
 # 
 # Precompiled bash profile for arch_linux
 # ################################################################################
@@ -14,14 +14,14 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-15T23:30:50.796Z
+# Generated: 2026-04-16T00:04:57.441Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history-profile.bash
-# software/scripts/bash-history-profile.bash | 191de43e107098971362f4f16665b98a | 4.5 KB | 2026-04-15
+# software/scripts/bash-history-profile.bash | c394154d029001b162c5e65745fb9718 | 4.5 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -778,9 +778,9 @@ function format_other_text_based_files() {
 export PATH="/github/home/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
-# software/scripts/bash-path-candidate-profile.bash | 1df5fe5c6b69573b1ba7b48eef712fca | 3.6 KB | 2026-04-15
+# software/scripts/bash-path-candidate-profile.bash | 8de265b6ab8ca452300e24bf31f71230 | 3.6 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -2854,9 +2854,9 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys-profile.bash
-# software/scripts/bash-keys-profile.bash | f807c559c43e4aab0d62ff277d37f664 | 4.8 KB | 2026-04-15
+# software/scripts/bash-keys-profile.bash | d337bc73a3ebcf1ca4a071ca1b4add3c | 4.8 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3138,9 +3138,9 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys-profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.bash
-# software/scripts/bash-file-utils.bash | f02347803de82296be9fbb9249d6e0af | 27.7 KB | 2026-04-15
+# software/scripts/bash-file-utils.bash | d9d6fb029d83463581593eacd6292139 | 27.7 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4034,9 +4034,9 @@ DEDUP_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.bash
 # SOURCE_BEGIN software/scripts/bash-fzf-profile.bash
-# software/scripts/bash-fzf-profile.bash | 527b2a606d388dd141ac04621f995e26 | 17.1 KB | 2026-04-15
+# software/scripts/bash-fzf-profile.bash | 44c0c9c75e6e9f4cdbe0d60a674a96f4 | 17.1 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4621,9 +4621,9 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf-profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | 4b4b0d846a5f3f403210d73d66c5653e | 2.2 KB | 2026-04-15
+# software/scripts/advanced/editor-launchers-common.bash | 07184e7f5d8034263c044de6b6986623 | 2.2 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5107,7 +5107,7 @@ type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5542,7 +5542,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5977,7 +5977,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6412,7 +6412,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -6847,7 +6847,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -7282,7 +7282,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -7717,7 +7717,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8152,7 +8152,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8587,7 +8587,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9022,7 +9022,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9457,7 +9457,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -9892,7 +9892,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -10327,7 +10327,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -10767,7 +10767,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -11202,7 +11202,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -11637,7 +11637,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -12072,7 +12072,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -12507,7 +12507,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -13332,7 +13332,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -13823,7 +13823,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -14648,7 +14648,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -15102,7 +15102,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -15604,7 +15604,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -16106,7 +16106,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -16547,7 +16547,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -16986,7 +16986,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17421,7 +17421,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -17856,7 +17856,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -18291,7 +18291,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -18726,7 +18726,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -19199,7 +19199,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -19634,7 +19634,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -20069,7 +20069,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -20538,7 +20538,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -20973,7 +20973,7 @@ fi
 ################################################################################
 #!/usr/bin/env bash
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -21493,9 +21493,9 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers-profile.bash
-# software/scripts/bash-command-wrappers-profile.bash | 7eff4c33c253c51463d2ff451bf387c1 | 5.5 KB | 2026-04-15
+# software/scripts/bash-command-wrappers-profile.bash | 2874ddab713f09bcb5749f28a1132c11 | 5.5 KB | 2026-04-16
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-15
+# software/bootstrap/common-functions.bash | d2ceb209540735d80d1118f9657a05f1 | 6.1 KB | 2026-04-16
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
