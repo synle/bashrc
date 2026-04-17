@@ -216,11 +216,8 @@ build_hosts: build_update_hosts
 # ---- CI ----
 ################################################################################
 
-# CI Phase 0: Clean build artifacts before prep
-ci_clean: clean_artifacts
-
 # CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, and download release binaries
-ci_prep: ci_clean clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun ci_download_release_binaries
+ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun ci_download_release_binaries
 
 # Download latest release binaries (url-porter, sqlui-native, display-dj) into assets/
 ci_download_release_binaries:
