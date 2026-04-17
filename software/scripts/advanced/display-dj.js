@@ -6,7 +6,6 @@ const DISPLAY_DJ_REPO = "synle/display-dj";
 /** Downloads the display-dj application binary for the current platform. */
 async function doWork() {
   const rawVersion = await fetchGitHubReleaseVersion(DISPLAY_DJ_REPO);
-  if (!rawVersion) return;
 
   const version = rawVersion.replace(/^v/, "");
   const targetPath = await getCustomTweaksPath("display-dj");

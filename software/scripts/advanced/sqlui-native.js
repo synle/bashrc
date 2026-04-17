@@ -4,7 +4,6 @@ const SQLUI_NATIVE_REPO = "synle/sqlui-native";
 /** Downloads the sqlui-native application binary for the current platform. */
 async function doWork() {
   const version = await fetchGitHubReleaseVersion(SQLUI_NATIVE_REPO);
-  if (!version) return;
 
   const targetPath = await getCustomTweaksPath("sqlui-native");
 
