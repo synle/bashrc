@@ -1735,9 +1735,14 @@ async function installMacDmg(dmgPath, appName) {
   }
   const appPath = `/Applications/${appName}`;
   const mountPoint = `/tmp/dmg-${Date.now()}`;
+  await execBash(`rm -rf "${appPath}"`);
   await execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
   await execBash(`cp -Rf "${mountPoint}"/*.app /Applications/`);
   await execBash(`hdiutil detach "${mountPoint}" -quiet`);
+  if (!fs.existsSync(appPath)) {
+    log(`>> Failed to install ${appPath} from DMG`);
+    return;
+  }
   log(">> Installed", appPath);
   const readmePath = path.join(path.dirname(dmgPath), "README.txt");
   await clearMacQuarantine(readmePath, appPath);
