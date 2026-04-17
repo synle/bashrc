@@ -14,7 +14,7 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-17T03:48:31.373Z
+# Generated: 2026-04-17T14:14:28.304Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -27962,6 +27962,19 @@ if type -P gmake &> /dev/null; then alias make='gmake'; fi
 
 # update: OS package manager update/upgrade only
 alias update='brew update && brew upgrade && brew cleanup'
+
+# clear macOS Gatekeeper quarantine on sideloaded apps
+if type -P xattr &> /dev/null; then
+  local _xattr_app_list=(
+    "/Applications/sqlui-native.app"
+    "/Applications/Display DJ.app"
+  )
+  local _xattr_app
+  for _xattr_app in "${_xattr_app_list[@]}"; do
+    [ -d "${_xattr_app}" ] && xattr -cr "${_xattr_app}"
+  done
+  unset _xattr_app_list _xattr_app
+fi
 # END Mac OS-specific Tweaks
 
 fi

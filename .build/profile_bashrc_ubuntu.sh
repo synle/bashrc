@@ -14,7 +14,7 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-17T03:48:29.546Z
+# Generated: 2026-04-17T14:14:08.389Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -391,8 +391,8 @@ function history_restore() {
 # SOURCE_END software/scripts/bash-history-profile.bash
 # BEGIN fnm - fast node manager
 # hookup binary - add default node version to PATH
-export FNM_DIR="/github/home/.local/share/fnm"
-export PATH="/github/home/.local/share/fnm:$PATH"
+export FNM_DIR="/home/runner/.local/share/fnm"
+export PATH="/home/runner/.local/share/fnm:$PATH"
 export PATH="/bin:$PATH"
 
 # initialize fnm
@@ -834,7 +834,7 @@ function format_other_text_based_files() {
 # END format script
 
 # BEGIN temporal-cli
-export PATH="/github/home/.temporalio/bin:$PATH"
+export PATH="/home/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
 # software/scripts/bash-path-candidate-profile.bash | 364300d8f75dda49e8c002ef7ec2cad2 | 3.6 KB | 2026-04-17
