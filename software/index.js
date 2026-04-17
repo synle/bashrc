@@ -3519,6 +3519,8 @@ async function _emitBundledJsScripts(entries, allRepoFiles, totalFiles) {
   let runner = `${nodeBin}`;
   if (hasSudo) {
     runner = `sudo -E ${nodeBin}`;
+    const suScripts = validEntries.filter((e) => e.file.includes(".su.js")).map((e) => e.file);
+    log(`[sudo] _emitBundledJsScripts: sudo -E ${nodeBin} for ${suScripts.join(", ")}`);
   }
   const tempFileCommand = `${runner} <<'${heredocDelimiter}'`;
   emitBash(tempFileCommand);
@@ -3732,11 +3734,6 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
   };
 
   for (const group of groups) {
-    // Refresh sudo timestamp once before running a group that contains sudo scripts so macOS doesn't re-prompt
-    if (!IS_DRY_RUN && group.entries.some((e) => e.file.includes(".su."))) {
-      emitBash(`sudo -v 2>/dev/null`);
-    }
-
     const emitter = bundleEmitters[group.type];
     if (emitter) {
       await emitter(group.entries, allRepoFiles, total);
