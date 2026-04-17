@@ -2769,7 +2769,9 @@ function getRepoNameFromId(repoId) {
  */
 async function fetchGitHubReleaseVersion(repoId) {
   const releaseData = await readJson`${getGitHubReleaseApiUrl(repoId)}`;
-  return releaseData.tag_name || "";
+  const version = releaseData.tag_name || "";
+  if (!version) throw new ScriptSkipError(`No official release found for ${repoId}`);
+  return version;
 }
 
 /**
@@ -2839,7 +2841,6 @@ async function downloadApp(applicationName, findFilter) {
  */
 async function installBrowserExtension(repo) {
   const version = await fetchGitHubReleaseVersion(repo);
-  if (!version) throw new ScriptSkipError(`No official release found for ${repo}`);
   const extensionName = repo.split("/").pop();
   const targetPath = await getCustomTweaksPath(extensionName);
   const zipUrl = `https://github.com/${repo}/releases/download/${version}/${extensionName}.zip`;
