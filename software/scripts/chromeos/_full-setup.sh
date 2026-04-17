@@ -183,6 +183,7 @@ if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
   installAptPackageInBackground x11-xserver-utils
   installAptPackageInBackground wlr-randr
 
+  installSnapPackageInBackground powershell --classic
   installSnapPackageInBackground postman
   installSnapPackageInBackground blender --classic
 

@@ -212,6 +212,7 @@ runs:
         check_binary_required temporal
 
         # ---- Warn (optional, warning if missing) ----
+        check_binary_warn pwsh "pwsh --version"
         check_binary_warn starship
         check_binary_warn ffmpeg "ffmpeg -version"
         # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`

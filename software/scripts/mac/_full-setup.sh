@@ -225,6 +225,7 @@ installBrewPackageInBackground gradle
 installBrewPackageInBackground rust
 installBrewPackageInBackground go
 installBrewPackageInBackground --cask dotnet-sdk
+installBrewPackageInBackground --cask powershell
 
 # ---- Database clients ----
 installBrewPackageInBackground mysql-client

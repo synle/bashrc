@@ -201,6 +201,7 @@ if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
   installDnfPackageInBackground xrandr
   installDnfPackageInBackground wlr-randr
 
+  installSnapPackageInBackground powershell --classic
   installSnapPackageInBackground postman
   installSnapPackageInBackground blender --classic
 
