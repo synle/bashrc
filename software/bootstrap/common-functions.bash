@@ -96,6 +96,13 @@ function has_persistent_binary() {
   echo "$bin"
 }
 
+# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
+# Helps track which script/function is requesting elevated privileges.
+function sudo() {
+  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
+  command sudo "$@"
+}
+
 # safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
 # avoid updating mtime (which would reset staleness checks). For files inside $HOME,
 # fixes ownership to current user if owned by root.
