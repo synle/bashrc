@@ -20,6 +20,17 @@ async function doWork() {
 
     # update: OS package manager update/upgrade only
     alias update='brew update && brew upgrade && brew cleanup'
+
+    # clear macOS Gatekeeper quarantine on sideloaded apps
+    if type -P xattr &> /dev/null; then
+      local _xattr_app
+      for _xattr_app in \
+        "/Applications/sqlui-native.app" \
+        "/Applications/Display DJ.app"; do
+        [ -d "\${_xattr_app}" ] && xattr -cr "\${_xattr_app}"
+      done
+      unset _xattr_app
+    fi
   `;
   log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
 
@@ -44,8 +55,4 @@ async function doWork() {
     done
   `,
   );
-
-  // write to build file
-  const comments = "This is a bash only meant for mac";
-  await writeBuildArtifact([{ file: `${BUILD_DIR}/only-mac-profile`, data: onlyMacProfile, comments, commentStyle: "bash" }]);
 }
