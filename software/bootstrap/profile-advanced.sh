@@ -948,27 +948,27 @@ function date() {
 # ---- Telemetry ----
 ################################################################################
 # universal
-export DO_NOT_TRACK="1"                             # universal opt-out respected by many CLI tools (consoledonottrack.com)
+export DO_NOT_TRACK="1" # universal opt-out respected by many CLI tools (consoledonottrack.com)
 # anthropic - claude code
 export DISABLE_TELEMETRY="1"                        # opt out of Claude Code telemetry
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1" # disable Claude Code non-essential traffic (telemetry, autoupdater, error reporting)
 # aws
-export SAM_CLI_TELEMETRY="0"                        # opt out of AWS SAM CLI telemetry
+export SAM_CLI_TELEMETRY="0" # opt out of AWS SAM CLI telemetry
 # google - angular
-export ANGULAR_CLI_ANALYTICS="false"                # opt out of Angular CLI analytics
+export ANGULAR_CLI_ANALYTICS="false" # opt out of Angular CLI analytics
 # hashicorp
-export CHECKPOINT_DISABLE="1"                       # opt out of HashiCorp telemetry (Terraform, Vagrant, etc.)
+export CHECKPOINT_DISABLE="1" # opt out of HashiCorp telemetry (Terraform, Vagrant, etc.)
 # microsoft - azure
-export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1"    # opt out of Azure CLI telemetry
+export FUNCTIONS_CORE_TOOLS_TELEMETRY_OPTOUT="1" # opt out of Azure CLI telemetry
 # microsoft - dotnet
-export DOTNET_CLI_TELEMETRY_OPTOUT="1"              # opt out of .NET CLI telemetry
+export DOTNET_CLI_TELEMETRY_OPTOUT="1" # opt out of .NET CLI telemetry
 # vercel
-export NEXT_TELEMETRY_DISABLED="1"                  # opt out of Next.js telemetry
-export TURBO_TELEMETRY_DISABLED="1"                 # opt out of Turborepo telemetry
+export NEXT_TELEMETRY_DISABLED="1"  # opt out of Next.js telemetry
+export TURBO_TELEMETRY_DISABLED="1" # opt out of Turborepo telemetry
 # web frameworks
-export ASTRO_TELEMETRY_DISABLED="1"                 # opt out of Astro telemetry
-export GATSBY_TELEMETRY_DISABLED="1"                # opt out of Gatsby telemetry
-export NUXT_TELEMETRY_DISABLED="1"                  # opt out of Nuxt telemetry
+export ASTRO_TELEMETRY_DISABLED="1"  # opt out of Astro telemetry
+export GATSBY_TELEMETRY_DISABLED="1" # opt out of Gatsby telemetry
+export NUXT_TELEMETRY_DISABLED="1"   # opt out of Nuxt telemetry
 
 ################################################################################
 # ---- Environment ----
@@ -976,12 +976,12 @@ export NUXT_TELEMETRY_DISABLED="1"                  # opt out of Nuxt telemetry
 # anthropic - claude code
 export CLAUDE_CODE_DISABLE_TERMINAL_TITLE="1" # prevent Claude Code from overwriting the terminal tab title
 # astral - uv
-export UV_VENV_CLEAR="1"           # skip "replace existing venv?" prompt in uv venv
+export UV_VENV_CLEAR="1" # skip "replace existing venv?" prompt in uv venv
 # github - electron
 export ELECTRON_ENABLE_LOGGING="0" # suppress Electron's internal console spam for slight perf gain
 # terminal
-export TERM="xterm-256color"       # enable 256-color support in terminal emulators
-export COLORTERM="truecolor"       # advertise 24-bit RGB color support to CLI apps
+export TERM="xterm-256color" # enable 256-color support in terminal emulators
+export COLORTERM="truecolor" # advertise 24-bit RGB color support to CLI apps
 
 ################################################################################
 # ---- Prompt Helpers ----
