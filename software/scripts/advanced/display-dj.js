@@ -1,36 +1,11 @@
-/** Downloads the display-dj application binary for the current platform. */
-
 /** @type {string} GitHub repo identifier for display-dj releases. */
 const DISPLAY_DJ_REPO = "synle/display-dj";
 
 /** Downloads the display-dj application binary for the current platform. */
 async function doWork() {
-  const rawVersion = await fetchGitHubReleaseVersion(DISPLAY_DJ_REPO);
-
-  const version = rawVersion.replace(/^v/, "");
-  const targetPath = await getCustomTweaksPath("display-dj");
-
-  /** @type {string} */
-  let fileName;
-  if (is_os_mac) {
+  await downloadAndInstallBinary(DISPLAY_DJ_REPO, (v) => {
+    const ver = v.replace(/^v/, "");
     const arch = os.arch() === "arm64" ? "aarch64" : "x64";
-    fileName = `Display.DJ_${version}_${arch}.dmg`;
-  } else {
-    fileName = is_os_windows ? `Display.DJ_${version}_x64-setup.exe` : `Display.DJ_${version}_amd64.AppImage`;
-  }
-
-  const url = `https://github.com/synle/display-dj/releases/download/v${version}/${fileName}`;
-
-  log(`>> Installing display-dj v${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
-
-  await deleteFolder(targetPath);
-  await mkdir(targetPath);
-
-  const destination = path.join(targetPath, fileName);
-  const ok = await downloadAssetWithFallback(DISPLAY_DJ_REPO, url, destination);
-
-  if (ok) {
-    log(`>> display-dj v${version} downloaded:`, destination);
-    await installMacDmg(destination, "Display DJ.app");
-  }
+    return is_os_mac ? `Display.DJ_${ver}_${arch}.dmg` : is_os_windows ? `Display.DJ_${ver}_x64-setup.exe` : `Display.DJ_${ver}_amd64.AppImage`;
+  }, "Display DJ.app");
 }

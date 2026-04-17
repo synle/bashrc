@@ -1806,6 +1806,33 @@ async function clearMacQuarantine(readmePath, appPath) {
   );
 }
 
+/**
+ * Downloads and installs a binary from a GitHub release.
+ * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
+ * @param {function(string): string} getFileName - Callback that receives the release version and returns the platform-specific file name
+ * @param {string} macAppName - The .app bundle name for macOS DMG install (e.g. "sqlui-native.app"), ignored on other platforms
+ */
+async function downloadAndInstallBinary(repo, getFileName, macAppName) {
+  const appLabel = repo.split("/")[1];
+  const version = await fetchGitHubReleaseVersion(repo);
+  const targetPath = await getCustomTweaksPath(appLabel);
+  const fileName = getFileName(version);
+  const url = `https://github.com/${repo}/releases/download/${version}/${fileName}`;
+
+  log(`>> Installing ${appLabel} ${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
+
+  await deleteFolder(targetPath);
+  await mkdir(targetPath);
+
+  const destination = path.join(targetPath, fileName);
+  const ok = await downloadAssetWithFallback(repo, url, destination);
+
+  if (ok) {
+    log(`>> ${appLabel} ${version} downloaded:`, destination);
+    await installMacDmg(destination, macAppName);
+  }
+}
+
 //////////////////////////////////////////////////////
 // Text Block Management
 //////////////////////////////////////////////////////
