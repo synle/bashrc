@@ -29,8 +29,6 @@ async function doWork() {
 
   if (ok) {
     log(`>> sqlui-native ${version} downloaded:`, destination);
-    if (is_os_mac) {
-      await installMacDmg(destination, "sqlui-native.app");
-    }
+    await installMacDmg(destination, "sqlui-native.app");
   }
 }
