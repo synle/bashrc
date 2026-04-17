@@ -58,4 +58,13 @@ async function doWork() {
     done
   `,
   );
+
+  // iTerm2 shell integration (added by iTerm2 > Install Shell Integration)
+  await registerPlatformTweaks(
+    "Mac",
+    code`
+    # iTerm2 shell integration
+    [ -f "\${HOME}/.iterm2_shell_integration.bash" ] && . "\${HOME}/.iterm2_shell_integration.bash"
+  `,
+  );
 }
