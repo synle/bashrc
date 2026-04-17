@@ -7,5 +7,5 @@ async function doWork() {
     const ver = v.replace(/^v/, "");
     const arch = os.arch() === "arm64" ? "aarch64" : "x64";
     return is_os_mac ? `Display.DJ_${ver}_${arch}.dmg` : is_os_windows ? `Display.DJ_${ver}_x64-setup.exe` : `Display.DJ_${ver}_amd64.AppImage`;
-  }, "Display DJ.app");
+  });
 }
