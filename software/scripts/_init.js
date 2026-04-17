@@ -69,29 +69,30 @@ ${LINE_BREAK_HASH}
   // flush immediately to expand short-form markers and resolve SOURCE includes
   await flushProfileBlocks(true);
 
+  const bashProfilePath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
+  const bashrcPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
+
   const entryPointSourceFiles = [BASH_SYLE_COMMON_PATH, ...coreBashProfileFiles];
   const entryPointContent = trimSpacesOnBothEnd(`
     function safe_source() { bash -n "$1" 2>/dev/null && . "$1" || echo "[Warning] source $1 failed" >&2; }
     ${entryPointSourceFiles.map((file) => 'safe_source "' + file + '"').join("\n")}
   `);
 
-  // bootstrap .bash_profile (login shells on all platforms)
-  {
-    const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
-    log(">> Updating .bash_profile with bash_syle entry point", targetPath);
-    let textContent = await readText`${targetPath}`;
-    textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
-    await writeText(targetPath, textContent);
-  }
+  // bootstrap .bash_profile (login shells on all platforms) — sources .bashrc
+  log(">> Updating .bash_profile to source .bashrc", bashProfilePath);
+  let textContent = await readText`${bashProfilePath}`;
+  const bashProfileContent = trimSpacesOnBothEnd(`
+    # just an entry point for the bashrc path
+    [ -f "${bashrcPath}" ] && . "${bashrcPath}"
+  `);
+  textContent = appendTextBlock(textContent, "Sy bash_syle entry point", bashProfileContent);
+  await writeText(bashProfilePath, textContent);
 
   // bootstrap .bashrc (interactive non-login shells)
-  {
-    const targetPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
-    log(">> Updating .bashrc with bash_syle entry point", targetPath);
-    let textContent = await readText`${targetPath}`;
-    textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
-    await writeText(targetPath, textContent);
-  }
+  log(">> Updating .bashrc with bash_syle entry point", bashrcPath);
+  let textContent = await readText`${bashrcPath}`;
+  textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
+  await writeText(bashrcPath, textContent);
 
   // snapshot after bootstrap assembled the template (before other scripts fill it in)
   await backupProfileSnapshot("bash_syle.1-after-bootstrap");
