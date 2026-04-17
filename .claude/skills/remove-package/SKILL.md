@@ -26,7 +26,8 @@ Remove `installXxxPackage <name>` lines from all platform `_full-setup.sh` files
 - `software/scripts/arch_linux/_full-setup.sh`
 - `software/scripts/steamos/_full-setup.sh`
 - `software/scripts/chromeos/_full-setup.sh`
-- `software/scripts/windows/_full-setup.ps1.bash` (winget packages in `$wingetPackagesEssential` or `$wingetPackagesBackground`)
+- `software/scripts/windows/_full-setup.sh` (essential winget packages via `_installWingetPackage` or `_installWingetPackageInBackground`)
+- `software/scripts/windows/_full-setup.ps1.bash` (non-essential winget packages in `$wingetPackagesBackground`)
 
 Check for distro-specific package name variants (e.g. `fd` vs `fd-find`, winget IDs like `sharkdp.fd`).
 

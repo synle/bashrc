@@ -17,14 +17,15 @@ Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS`
    - `software/scripts/arch_linux/_full-setup.sh` -> `installPacmanPackage <name>`
    - `software/scripts/steamos/_full-setup.sh` -> `installPacmanPackage <name>`
    - `software/scripts/chromeos/_full-setup.sh` -> `installAptPackage <name>`
-   - `software/scripts/windows/_full-setup.ps1.bash` -> add winget ID to `$wingetPackagesEssential` (core tools) or `$wingetPackagesBackground` (non-essential) under the matching `# ---- Category ----` comment. Look up the correct winget ID with `winget search <name>`.
+   - `software/scripts/windows/_full-setup.sh` -> add `_installWingetPackage "<winget.Id>"` (essential, blocking) or `_installWingetPackageInBackground "<winget.Id>"` (non-essential) call. Look up the correct winget ID with `winget search <name>`.
+   - `software/scripts/windows/_full-setup.ps1.bash` -> add winget ID to `$wingetPackagesBackground` (non-essential, heavy packages only) under the matching `# ---- Category ----` comment.
    - Place the new line alphabetically within the existing package group under the appropriate `# ---- Category ----` sub-section header.
    - Check if the package name differs per distro (e.g. `fd` vs `fd-find`, winget: `sharkdp.fd`) and use the correct name for each.
    - **All platforms must stay in sync.** If a tool has a winget equivalent, it must be added to Windows too.
 
 2. **curl/bash installer** (fallback) -- create a `.sh` script in `software/scripts/advanced/` following the pattern in `uv.sh` or `starship.sh`. Use `curl -fsSL <url> | bash`. Install any documented required dependencies first.
 
-3. **Windows-only tools** -- if the tool only has a Windows binary (no Unix equivalent), create `software/scripts/windows/<name>-windows.js` using `downloadWindowsApp()` or add to `$wingetPackagesBackground` in `software/scripts/windows/_full-setup.ps1.bash`.
+3. **Windows-only tools** -- if the tool only has a Windows binary (no Unix equivalent), create `software/scripts/windows/<name>-windows.js` using `downloadWindowsApp()` or add to `_installWingetPackageInBackground` in `software/scripts/windows/_full-setup.sh`.
 
 ### 2. Handle binary name mismatches
 
