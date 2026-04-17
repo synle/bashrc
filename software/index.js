@@ -1751,29 +1751,33 @@ function getOsxApplicationSupportCodeUserPath() {
 }
 
 /**
- * Mounts a macOS DMG file, copies all .app bundles to /Applications, unmounts, and clears quarantine.
+ * Mounts a macOS DMG file, discovers .app bundles, copies them to /Applications, unmounts, and clears quarantine.
  * @param {string} dmgPath - The path to the .dmg file to install
- * @param {string} appName - The .app bundle name (e.g. "MyApp.app")
  */
-async function installMacDmg(dmgPath, appName) {
+async function installMacDmg(dmgPath) {
   if (!is_os_mac) return;
   if (IS_DRY_RUN) {
-    log(`>> [DryRun] Would install DMG ${dmgPath} -> /Applications/${appName}`);
+    log(`>> [DryRun] Would install DMG ${dmgPath}`);
     return;
   }
-  const appPath = `/Applications/${appName}`;
   const mountPoint = `/tmp/dmg-${Date.now()}`;
-  await execBash(`rm -rf "${appPath}"`);
   await execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
+  const apps = fs.readdirSync(mountPoint).filter((f) => f.endsWith(".app"));
+  for (const appName of apps) {
+    await execBash(`rm -rf "/Applications/${appName}"`);
+  }
   await execBash(`cp -Rf "${mountPoint}"/*.app /Applications/`);
   await execBash(`hdiutil detach "${mountPoint}" -quiet`);
-  if (!fs.existsSync(appPath)) {
-    log(`>> Failed to install ${appPath} from DMG`);
-    return;
+  for (const appName of apps) {
+    const appPath = `/Applications/${appName}`;
+    if (fs.existsSync(appPath)) {
+      log(">> Installed", appPath);
+      const readmePath = path.join(path.dirname(dmgPath), "README.txt");
+      await clearMacQuarantine(readmePath, appPath);
+    } else {
+      log(`>> Failed to install ${appPath} from DMG`);
+    }
   }
-  log(">> Installed", appPath);
-  const readmePath = path.join(path.dirname(dmgPath), "README.txt");
-  await clearMacQuarantine(readmePath, appPath);
 }
 
 /**
@@ -1810,9 +1814,8 @@ async function clearMacQuarantine(readmePath, appPath) {
  * Downloads and installs a binary from a GitHub release.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string): string} getFileName - Callback that receives the release version and returns the platform-specific file name
- * @param {string} macAppName - The .app bundle name for macOS DMG install (e.g. "sqlui-native.app"), ignored on other platforms
  */
-async function downloadAndInstallBinary(repo, getFileName, macAppName) {
+async function downloadAndInstallBinary(repo, getFileName) {
   const appLabel = repo.split("/")[1];
   const version = await fetchGitHubReleaseVersion(repo);
   const targetPath = await getCustomTweaksPath(appLabel);
@@ -1829,7 +1832,7 @@ async function downloadAndInstallBinary(repo, getFileName, macAppName) {
 
   if (ok) {
     log(`>> ${appLabel} ${version} downloaded:`, destination);
-    await installMacDmg(destination, macAppName);
+    await installMacDmg(destination);
   }
 }
 
