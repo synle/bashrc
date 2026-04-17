@@ -323,7 +323,6 @@ function safe_pmset() {
   fi
 }
 
-safe_pmset sms 0 "Disable sudden motion sensor (useless on SSDs)"
 safe_pmset hibernatemode 0 "Disable hibernation (faster sleep/wake)"
 safe_pmset standby 0 "Disable standby (instant wake)"
 unset _pmset_current
