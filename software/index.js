@@ -1817,13 +1817,14 @@ async function clearMacQuarantine(readmePath, appPath) {
 /**
  * Downloads and installs a binary from a GitHub release.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
- * @param {function(string): string} getFileName - Callback that receives the release version and returns the platform-specific file name
+ * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
  */
 async function downloadAndInstallBinary(repo, getFileName) {
   const appLabel = repo.split("/")[1];
   const version = await fetchGitHubReleaseVersion(repo);
   const targetPath = await getCustomTweaksPath(appLabel);
-  const fileName = getFileName(version);
+  const isArm64 = os.arch() === "arm64";
+  const fileName = getFileName(version, isArm64);
   const url = `https://github.com/${repo}/releases/download/${version}/${fileName}`;
 
   log(`>> Installing ${appLabel} ${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);

@@ -21,14 +21,26 @@ async function doWork() {
     # update: OS package manager update/upgrade only
     alias update='brew update && brew upgrade && brew cleanup'
 
+    # clear macOS Gatekeeper quarantine on sideloaded apps
+    if type -P xattr &> /dev/null; then
+      _xattr_app_list=(
+        "/Applications/sqlui-native.app"
+        "/Applications/Display DJ.app"
+      )
+      _xattr_app=""
+      for _xattr_app in "\${_xattr_app_list[@]}"; do
+        [ -d "\${_xattr_app}" ] && xattr -cr "\${_xattr_app}"
+      done
+      unset _xattr_app_list _xattr_app
+    fi
   `;
   log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
 
   // register platform tweaks for mac
   await registerPlatformTweaks("Mac", onlyMacProfile);
 
-  // homebrew and mac system setup
-  log(">>> Register Homebrew and mac system setup with bashrc", BASH_SYLE_PATH);
+  // mac system setup (homebrew paths)
+  log(">>> Register mac system setup with bashrc", BASH_SYLE_PATH);
   await registerWithBashSyleProfile(
     "mac-system-setup",
     code`
@@ -44,19 +56,6 @@ async function doWork() {
         break
       fi
     done
-
-    # clear macOS Gatekeeper quarantine on sideloaded apps
-    if type -P xattr &> /dev/null; then
-      local _xattr_app_list=(
-        "/Applications/sqlui-native.app"
-        "/Applications/Display DJ.app"
-      )
-      local _xattr_app
-      for _xattr_app in "\${_xattr_app_list[@]}"; do
-        [ -d "\${_xattr_app}" ] && xattr -cr "\${_xattr_app}"
-      done
-      unset _xattr_app_list _xattr_app
-    fi
   `,
   );
 }
