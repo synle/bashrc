@@ -14,6 +14,7 @@ const profileFiles = globSync(path.join(ROOT_DIR, ".build/profile_bashrc_*.sh"))
 });
 const bootstrapFiles = globSync(path.join(ROOT_DIR, "software/bootstrap/*.{sh,bash}"));
 const rootScriptFiles = globSync(path.join(ROOT_DIR, "*.sh"));
+const fullSetupFiles = globSync(path.join(ROOT_DIR, "software/scripts/**/_full-setup{,.common.linux}.{sh,bash}"));
 
 /** Minimum char count per profile file (95% of current size as of 2026-03-23). */
 const MIN_CHARS_PROFILE_MAP = {
@@ -76,6 +77,20 @@ describe("bootstrap scripts syntax check", () => {
     it(`${path.basename(filePath)} - meets minimum size`, () => {
       const minChars = BOOTSTRAP_SIZE_OVERRIDES[path.basename(filePath)] || MIN_CHARS_BOOTSTRAP;
       assertMinSize(filePath, minChars);
+    });
+  });
+});
+
+describe("full-setup scripts syntax check", () => {
+  it("should find full-setup script files to test", () => {
+    expect(fullSetupFiles.length).toBeGreaterThan(0);
+  });
+
+  fullSetupFiles.forEach((filePath) => {
+    const relPath = path.relative(ROOT_DIR, filePath);
+
+    it(`${relPath} - no syntax errors`, () => {
+      assertNoSyntaxErrors(filePath);
     });
   });
 });

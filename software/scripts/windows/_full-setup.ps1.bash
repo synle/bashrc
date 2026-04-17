@@ -350,6 +350,7 @@ $wingetPackagesBackground = @(
     "Microsoft.DotNet.DesktopRuntime.6",
     "Microsoft.DotNet.DesktopRuntime.7",
     "Microsoft.DotNet.DesktopRuntime.8",
+    "Microsoft.PowerShell",
 
     # ---- GUI Applications ----
     "Audacity.Audacity",
