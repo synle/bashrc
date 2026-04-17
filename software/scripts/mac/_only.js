@@ -21,6 +21,30 @@ async function doWork() {
     # update: OS package manager update/upgrade only
     alias update='brew update && brew upgrade && brew cleanup'
 
+  `;
+  log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
+
+  // register platform tweaks for mac
+  await registerPlatformTweaks("Mac", onlyMacProfile);
+
+  // homebrew and mac system setup
+  log(">>> Register Homebrew and mac system setup with bashrc", BASH_SYLE_PATH);
+  await registerWithBashSyleProfile(
+    "mac-system-setup",
+    code`
+    # homebrew paths
+    for brew_prefix in /opt/homebrew /usr/local; do
+      if [ -d "$brew_prefix" ] && [ -x "$brew_prefix/bin/brew" ]; then
+        export HOMEBREW_PREFIX="$brew_prefix"
+        export HOMEBREW_CELLAR="$brew_prefix/Cellar"
+        export HOMEBREW_REPOSITORY="$brew_prefix"
+        export PATH="$brew_prefix/bin:$brew_prefix/sbin:$PATH"
+        export MANPATH="$brew_prefix/share/man:$MANPATH"
+        export INFOPATH="$brew_prefix/share/info:$INFOPATH"
+        break
+      fi
+    done
+
     # clear macOS Gatekeeper quarantine on sideloaded apps
     if type -P xattr &> /dev/null; then
       local _xattr_app_list=(
@@ -33,28 +57,6 @@ async function doWork() {
       done
       unset _xattr_app_list _xattr_app
     fi
-  `;
-  log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
-
-  // register platform tweaks for mac
-  await registerPlatformTweaks("Mac", onlyMacProfile);
-
-  // homebrew
-  log(">>> Register Homebrew with bashrc", BASH_SYLE_PATH);
-  await registerWithBashSyleProfile(
-    "homebrew",
-    code`
-    for brew_prefix in /opt/homebrew /usr/local; do
-      if [ -d "$brew_prefix" ] && [ -x "$brew_prefix/bin/brew" ]; then
-        export HOMEBREW_PREFIX="$brew_prefix"
-        export HOMEBREW_CELLAR="$brew_prefix/Cellar"
-        export HOMEBREW_REPOSITORY="$brew_prefix"
-        export PATH="$brew_prefix/bin:$brew_prefix/sbin:$PATH"
-        export MANPATH="$brew_prefix/share/man:$MANPATH"
-        export INFOPATH="$brew_prefix/share/info:$INFOPATH"
-        break
-      fi
-    done
   `,
   );
 }
