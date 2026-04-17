@@ -1790,7 +1790,7 @@ async function clearMacQuarantine(readmePath, appPath) {
     log(`>> [DryRun] Would clear quarantine on ${appPath}`);
     return;
   }
-  if (!fs.existsSync(appPath)) {
+  if (!pathExists(appPath)) {
     log(`>> Skipping quarantine clear, app not found: ${appPath}`);
     return;
   }
