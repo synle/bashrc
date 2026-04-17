@@ -20,6 +20,11 @@ function _getPrimaryOsName() {
   return _OS_PRIORITY.find((name) => activeSet.has(name)) || null;
 }
 
+/** Normalizes `test -e/-f ... && source ...` to `[ -f ... ] && . ...` for consistency. */
+function _normalizeSourceLines(content) {
+  return content.replace(/test -[ef] (".*?") && source (".*?")/g, '[ -f $1 ] && . $2');
+}
+
 async function doWork() {
   log(">> Cleaning up bash profile");
 
@@ -38,7 +43,20 @@ async function doWork() {
   let content = await readText`${BASH_SYLE_PATH}`;
   content = removeEmptyBlocks(content);
   content = cleanupExtraWhitespaces(content);
+  content = _normalizeSourceLines(content);
   await writeText(BASH_SYLE_PATH, content);
+
+  // normalize source lines in .bash_profile and .bashrc
+  const bashProfilePath = path.join(BASE_HOMEDIR_LINUX, ".bash_profile");
+  const bashrcPath = path.join(BASE_HOMEDIR_LINUX, ".bashrc");
+  for (const filePath of [bashProfilePath, bashrcPath]) {
+    let fileContent = await readText`${filePath}`;
+    const normalized = _normalizeSourceLines(fileContent);
+    if (normalized !== fileContent) {
+      log(">> Normalizing source lines in", filePath);
+      await writeText(filePath, normalized);
+    }
+  }
 
   // snapshot after cleanup
   await backupProfileSnapshot("bash_syle.3-after-cleanup");
