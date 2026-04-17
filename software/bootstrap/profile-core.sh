@@ -10,7 +10,7 @@
 # SOURCE | software/scripts/bash-history-profile.bash
 # BEGIN/END | fnm - fast node manager
 # BEGIN/END | format script
-# BEGIN/END | homebrew
+# BEGIN/END | mac-system-setup
 # BEGIN/END | temporal-cli
 # SOURCE | software/scripts/bash-path-candidate-profile.bash
 
