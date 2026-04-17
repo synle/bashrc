@@ -306,16 +306,27 @@ fi
 ################################################################################
 # ---- Power Management ----
 ################################################################################
-sudo pmset -a sms 0 # Disables sudden motion sensor (useless on SSDs, saves unnecessary disk head parking overhead)
-
-# Power: Disable Hibernation
 # WARNING: hibernatemode 0 and standby 0 improve sleep/wake speed but have side effects:
 #   - hibernatemode 0: RAM is NOT saved to disk on sleep. If battery fully drains, unsaved work is LOST.
 #   - standby 0: Mac stays in regular sleep forever (~1-2% battery/hour). Left in a bag overnight = dead battery.
 #   To revert to safe defaults: sudo pmset -a hibernatemode 3 && sudo pmset -a standby 1
-echo '>> Power: Disable Hibernation'
-sudo pmset -a hibernatemode 0 # Skips writing RAM to disk on sleep for faster sleep/wake (Electron apps don't have to re-render)
-sudo pmset -a standby 0       # Disables delayed deep sleep transition so wake is always instant
+_pmset_current=$(pmset -g custom 2> /dev/null)
+
+# safe_pmset <key> <value> <description> - Only calls sudo pmset if the current value differs.
+function safe_pmset() {
+  local key="$1" val="$2" desc="$3"
+  if echo "$_pmset_current" | grep -q " $key[[:space:]]*$val"; then
+    echo ">> Power: $desc >> Skipped (already $val)"
+  else
+    echo ">> Power: $desc"
+    sudo pmset -a "$key" "$val"
+  fi
+}
+
+safe_pmset sms 0 "Disable sudden motion sensor (useless on SSDs)"
+safe_pmset hibernatemode 0 "Disable hibernation (faster sleep/wake)"
+safe_pmset standby 0 "Disable standby (instant wake)"
+unset _pmset_current
 
 ################################################################################
 # ---- Cleanup ----
