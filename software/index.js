@@ -1729,6 +1729,7 @@ function getOsxApplicationSupportCodeUserPath() {
  * @param {string} appName - The .app bundle name (e.g. "MyApp.app")
  */
 async function installMacDmg(dmgPath, appName) {
+  if (!is_os_mac) return;
   if (IS_DRY_RUN) {
     log(`>> [DryRun] Would install DMG ${dmgPath} -> /Applications/${appName}`);
     return;

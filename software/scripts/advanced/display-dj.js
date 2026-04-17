@@ -32,8 +32,6 @@ async function doWork() {
 
   if (ok) {
     log(`>> display-dj v${version} downloaded:`, destination);
-    if (is_os_mac) {
-      await installMacDmg(destination, "Display DJ.app");
-    }
+    await installMacDmg(destination, "Display DJ.app");
   }
 }
