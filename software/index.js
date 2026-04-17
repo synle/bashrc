@@ -665,6 +665,24 @@ function resolveOsKey(keys) {
   return keys.linux;
 }
 
+/** @type {boolean} True when a Chromium-based browser (Chrome, Brave, Edge, Chromium) is installed. */
+const hasChromiumBrowser = resolveOsKey({
+  mac: () =>
+    pathExists("/Applications", /^Google Chrome\.app$/) ||
+    pathExists("/Applications", /^Brave Browser\.app$/) ||
+    pathExists("/Applications", /^Microsoft Edge\.app$/),
+  windows: () =>
+    pathExists(`${BASE_PROGRAM_FILES_WINDOW}/Google/Chrome`, /Application/) ||
+    pathExists(`${BASE_PROGRAM_FILES_WINDOW}/BraveSoftware/Brave-Browser`, /Application/) ||
+    pathExists(`${BASE_PROGRAM_FILES_WINDOW}/Microsoft/Edge`, /Application/),
+  linux: () =>
+    pathExists("/usr/bin", /^google-chrome$/) ||
+    pathExists("/usr/bin", /^brave-browser$/) ||
+    pathExists("/usr/bin", /^microsoft-edge$/) ||
+    pathExists("/usr/bin", /^chromium$/) ||
+    pathExists("/usr/bin", /^chromium-browser$/),
+})();
+
 //////////////////////////////////////////////////////
 // Formatting Constants
 //////////////////////////////////////////////////////
@@ -1568,6 +1586,15 @@ function deleteFile(targetPath) {
   return execBash(`rm -f "${targetPath}"`);
 }
 
+/**
+ * Extracts a zip archive to a target directory.
+ * @param {string} zipPath - Path to the zip file
+ * @param {string} targetPath - Directory to extract into
+ */
+function unzip(zipPath, targetPath) {
+  return execBash(`unzip -oq "${zipPath}" -d "${targetPath}"`);
+}
+
 /** @type {number} Two weeks in seconds — default threshold for staleness checks. */
 const DEFAULT_STALE_SECONDS = 1209600;
 
@@ -2119,6 +2146,15 @@ function exitIfNotSudo() {
   if (IS_DRY_RUN) return;
   if (typeof process.getuid === "function" && process.getuid() !== 0) {
     throw new ScriptSkipError("Requires sudo/root privileges");
+  }
+}
+
+/**
+ * Guard clause: exits if no Chromium-based browser (Chrome, Brave, Edge, Chromium) is installed.
+ */
+function exitIfNoChromiumBrowser() {
+  if (!hasChromiumBrowser) {
+    throw new ScriptSkipError("No Chromium browser found (Chrome/Brave/Edge)");
   }
 }
 
@@ -2794,6 +2830,28 @@ async function downloadApp(applicationName, findFilter) {
   const filesToDownload = files.filter((s) => s.includes("assets/") && !s.toLowerCase().includes(".md")).filter(filterFn);
   await downloadAssets(filesToDownload, targetPath);
   return targetPath;
+}
+
+/**
+ * Downloads and installs a browser extension from a GitHub release zip.
+ * Fetches the latest release version, deletes any previous install, downloads the zip, extracts, and cleans up.
+ * @param {string} repo - GitHub repo identifier (e.g. "synle/url-porter")
+ */
+async function installBrowserExtension(repo) {
+  const version = await fetchGitHubReleaseVersion(repo);
+  if (!version) throw new ScriptSkipError(`No official release found for ${repo}`);
+  const extensionName = repo.split("/").pop();
+  const targetPath = await getCustomTweaksPath(extensionName);
+  const zipUrl = `https://github.com/${repo}/releases/download/${version}/${extensionName}.zip`;
+  const tmpZip = `${BASHRC_TEMP_DIR}/${extensionName}.zip`;
+  log(`>> Installing ${extensionName} ${version} extension to:`, targetPath);
+  await deleteFolder(targetPath);
+  await mkdir(targetPath);
+  const ok = await downloadAssetWithFallback(repo, zipUrl, tmpZip);
+  if (ok) {
+    await unzip(tmpZip, targetPath);
+  }
+  await deleteFile(tmpZip);
 }
 
 //////////////////////////////////////////////////////
