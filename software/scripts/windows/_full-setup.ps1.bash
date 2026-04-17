@@ -20,7 +20,6 @@
 #       - Essential packages (blocking)
 #       - Background packages (parallel)
 #     - Install Media Extensions (Microsoft Store)
-#     - Install TranslucentTB (appinstaller, last - requires user interaction)
 #     - Brave Browser Shortcut Flags
 ################################################################################
 
@@ -498,29 +497,6 @@ if ($backgroundJob) {
     $backgroundJob | Remove-Job
     Write-Host "Background package installs complete." -ForegroundColor Green
 }
-
-################################################################################
-# ---- Install TranslucentTB (appinstaller) ----
-# Placed last because .appinstaller requires user interaction (accept/next).
-# winget fails with 0x80073cf3 (Appx dependency resolution), and the GitHub
-# release has no .msixbundle for silent Add-AppxPackage install.
-################################################################################
-
-Write-Host "`n=== Installing TranslucentTB ===" -ForegroundColor Cyan
-
-$translucentTbUrl = "https://github.com/TranslucentTB/TranslucentTB/releases/download/2026.1/TranslucentTB.appinstaller"
-$translucentTbInstaller = "$env:TEMP\TranslucentTB.appinstaller"
-
-try {
-  Invoke-WebRequest -Uri $translucentTbUrl -OutFile $translucentTbInstaller -UseBasicParsing
-  Start-Process -FilePath $translucentTbInstaller -Wait
-  Write-Host "TranslucentTB installed." -ForegroundColor Green
-} catch {
-  Write-Host "Skipped: TranslucentTB install failed. Error: $_" -ForegroundColor Yellow
-} finally {
-  Remove-Item -Path $translucentTbInstaller -ErrorAction SilentlyContinue
-}
-
 
 
 Write-Host "`nTo enable Windows Store on LTSC, run the following manually:" -ForegroundColor Yellow
