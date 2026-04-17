@@ -83,7 +83,7 @@ ${LINE_BREAK_HASH}
   const bashProfileContent = trimSpacesOnBothEnd(`
     # .bash_profile delegates to .bashrc for all shell init
     function safe_source() { bash -n "$1" 2>/dev/null && . "$1" || echo "[Warning] source $1 failed" >&2; }
-    [ -f "${bashrcPath}" ] && . "${bashrcPath}"
+    safe_source "${bashrcPath}"
   `);
   textContent = moveTextBlockToEnd(textContent, "Sy bash_syle entry point", bashProfileContent);
   await writeText(bashProfilePath, textContent);
