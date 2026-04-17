@@ -529,7 +529,6 @@ function diff() {
 ################################################################################
 alias clean='_clean_reset_head_to_main_branch' # hard reset current branch to origin default branch
 alias empty='_commit_empty_trigger_deploy'
-alias pr='_pr_view'
 
 # list source repo names for a GitHub user (default: synle)
 function repos() {
@@ -547,8 +546,38 @@ function repos() {
   gh repo list "$owner" --limit 100 --source --json name -q '.[].name'
 }
 
+# Opens the GitHub repo page for the current git remote in the browser
+function repo() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "repo: open the GitHub repo page for the current git remote
+  Usage: repo
+  Examples:
+    repo"
+    return 1
+  fi
+
+  local remote_url
+  remote_url=$(git remote get-url origin 2> /dev/null)
+  if [ -z "$remote_url" ]; then
+    echo "Error: no git remote found"
+    return 1
+  fi
+  # Normalize to https URL (handles git@, ssh://, and https:// remotes)
+  remote_url=$(echo "$remote_url" | sed 's|ssh://[^@]*@github.com/|https://github.com/|' | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||')
+  echo "$remote_url"
+  open "$remote_url"
+}
+
 # Opens the PR for the current branch in the browser (alternative: gh pr view --web)
-function _pr_view() {
+function pr() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "pr: open the pull request for the current branch
+  Usage: pr
+  Examples:
+    pr"
+    return 1
+  fi
+
   local remote_url
   remote_url=$(git remote get-url origin 2> /dev/null)
   if [ -z "$remote_url" ]; then
