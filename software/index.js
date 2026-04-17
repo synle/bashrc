@@ -1868,6 +1868,52 @@ function prependTextBlock(content, key, sourceContent, commentPrefix = "#") {
   return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "prepend"));
 }
 
+/**
+ * Strips an existing block (if present), then appends it to the end of the content.
+ * Guarantees the block is always at the bottom of the file regardless of prior position.
+ * @param {string} content - The full text content to modify
+ * @param {string} key - The identifier for the text block
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
+function moveTextBlockToEnd(content, key, sourceContent, commentPrefix = "#") {
+  content = _stripTextBlock(content, key, commentPrefix);
+  return appendTextBlock(content, key, sourceContent, commentPrefix);
+}
+
+/**
+ * Strips an existing block (if present), then prepends it to the start of the content.
+ * Guarantees the block is always at the top of the file regardless of prior position.
+ * @param {string} content - The full text content to modify
+ * @param {string} key - The identifier for the text block
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
+function moveTextBlockToStart(content, key, sourceContent, commentPrefix = "#") {
+  content = _stripTextBlock(content, key, commentPrefix);
+  return prependTextBlock(content, key, sourceContent, commentPrefix);
+}
+
+/**
+ * Removes a BEGIN/END block from content, returning the content without the block.
+ * @param {string} content - The full text content
+ * @param {string} key - The identifier for the text block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The content with the block removed
+ */
+function _stripTextBlock(content, key, commentPrefix = "#") {
+  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}`;
+  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}`;
+  const beginIdx = content.indexOf(BEGIN);
+  const endIdx = content.indexOf(END);
+  if (beginIdx !== -1 && endIdx !== -1) {
+    content = content.slice(0, beginIdx) + content.slice(endIdx + END.length);
+  }
+  return content;
+}
+
 //////////////////////////////////////////////////////
 // Profile Registration
 //////////////////////////////////////////////////////
