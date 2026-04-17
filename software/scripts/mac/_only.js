@@ -23,13 +23,15 @@ async function doWork() {
 
     # clear macOS Gatekeeper quarantine on sideloaded apps
     if type -P xattr &> /dev/null; then
+      local _xattr_app_list=(
+        "/Applications/sqlui-native.app"
+        "/Applications/Display DJ.app"
+      )
       local _xattr_app
-      for _xattr_app in \
-        "/Applications/sqlui-native.app" \
-        "/Applications/Display DJ.app"; do
+      for _xattr_app in "\${_xattr_app_list[@]}"; do
         [ -d "\${_xattr_app}" ] && xattr -cr "\${_xattr_app}"
       done
-      unset _xattr_app
+      unset _xattr_app_list _xattr_app
     fi
   `;
   log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
