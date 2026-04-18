@@ -294,6 +294,9 @@ describe("dynamic token expansion (bash integration)", () => {
     for (const dir of ignoredDirs) {
       fs.mkdirSync(path.join(tmpDir, dir), { recursive: true });
     }
+    // directories with spaces in names
+    fs.mkdirSync(path.join(tmpDir, "Display DJ.app"), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, "My Documents"), { recursive: true });
     // .git at root would trigger git fast-path — create nested for filtering tests
     fs.mkdirSync(path.join(tmpDir, "sub", ".git", "hooks"), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, "sub", ".git", "hooks", "pre-commit"), "hook");
@@ -609,6 +612,12 @@ describe("dynamic token expansion (bash integration)", () => {
       expect(all).toContain("subdir");
       expect(all).toContain("another");
       expect(all).toContain("src");
+    });
+
+    it("should handle directories with spaces in names", () => {
+      const script = buildCompletionTestScript("|__nested_folders__", ["testcmd", "Dis"], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      expect(results).toContain("Display DJ.app/");
     });
   });
 
