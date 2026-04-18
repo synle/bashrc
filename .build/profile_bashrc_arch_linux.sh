@@ -14,7 +14,7 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-18T05:16:54.166Z
+# Generated: 2026-04-18T05:42:53.796Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -1361,7 +1361,7 @@ function last_folder() {
 # append history to file after every command (but do NOT clear+reload with -c/-r,
 # so Up arrow navigates current tab's session history instead of showing commands
 # from other tabs. Ctrl+R / fuzzy_history search the shared file for cross-tab history)
-PROMPT_COMMAND="_track_folder; history -a; echo -ne '\033]0;'\"$(shorter_pwd_path)\"'\007'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+PROMPT_COMMAND="_track_folder; history -a; echo -ne '\033]0;'\"\$(shorter_pwd_path)\"'\007'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
 ################################################################################
 # ---- Track Recent Files ----
@@ -5064,7 +5064,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf-profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | 54d97945457fa2925a69f6695f529a2f | 2.5 KB | 2026-04-18
+# software/scripts/advanced/editor-launchers-common.bash | b1741cba94fd9fbe3edc35bbf2e1b285 | 2.6 KB | 2026-04-18
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
 # software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
@@ -5378,13 +5378,17 @@ function run_editor() {
     dir=$(dirname "$unresolved_path")
   fi
 
+  local path_info="Path:          $unresolved_path"
+  if [[ "$unresolved_path" != "$resolved_path" ]] && [[ -n "$resolved_path" ]]; then
+    path_info+=$'\n'"Resolved Path: $resolved_path"
+  fi
+
   echo "
 ====================================
 \"$target_binary\" ${editor_args[@]}
 PWD:           $(pwd)
 Dir:           $dir
-Path:          $unresolved_path
-Resolved Path: $resolved_path
+$path_info
 ====================================
   "
 }
