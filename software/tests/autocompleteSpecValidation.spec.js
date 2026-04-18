@@ -890,6 +890,15 @@ describe("bash-fzf-profile.bash (direct)", () => {
       expect(results).toContain("index.js");
     });
 
+    it("should resolve root / instead of falling back to current directory", () => {
+      const results = runFzfHelper('_fuzzy_list_all "/" folders 1');
+      // root should contain system dirs, not tmpDir contents
+      const all = results.join(" ");
+      expect(all).toContain("usr/");
+      expect(all).not.toContain("src/");
+      expect(all).not.toContain("docs/");
+    });
+
     it("should filter binary files in text_files mode", () => {
       const results = runFzfHelper("_fuzzy_list_all . text_files");
       expect(results.length).toBeGreaterThan(0);
