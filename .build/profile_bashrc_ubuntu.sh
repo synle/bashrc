@@ -14,7 +14,7 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-18T04:45:40.357Z
+# Generated: 2026-04-18T05:04:11.838Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -398,8 +398,8 @@ function history_restore() {
 # SOURCE_END software/scripts/bash-history-profile.bash
 # BEGIN fnm - fast node manager
 # hookup binary - add default node version to PATH
-export FNM_DIR="/home/runner/.local/share/fnm"
-export PATH="/home/runner/.local/share/fnm:$PATH"
+export FNM_DIR="/github/home/.local/share/fnm"
+export PATH="/github/home/.local/share/fnm:$PATH"
 export PATH="/bin:$PATH"
 
 # initialize fnm
@@ -841,7 +841,7 @@ function format_other_text_based_files() {
 # END format script
 
 # BEGIN temporal-cli
-export PATH="/home/runner/.temporalio/bin:$PATH"
+export PATH="/github/home/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
 # software/scripts/bash-path-candidate-profile.bash | 7909f5dee1b62ecf48b0b7df599e251e | 3.6 KB | 2026-04-18
@@ -1361,7 +1361,7 @@ function last_folder() {
 # append history to file after every command (but do NOT clear+reload with -c/-r,
 # so Up arrow navigates current tab's session history instead of showing commands
 # from other tabs. Ctrl+R / fuzzy_history search the shared file for cross-tab history)
-PROMPT_COMMAND="_track_folder; history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+PROMPT_COMMAND="_track_folder; history -a; echo -ne '\033]0;'\"$(shorter_pwd_path)\"'\007'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
 ################################################################################
 # ---- Track Recent Files ----
@@ -2278,7 +2278,7 @@ function ifconfig2() {
 # truncates deep paths, keeping last 3 parts full
 function shorter_pwd_path() {
   local trim_count=3
-  local current_path="${PWD/#$HOME/~}"
+  local current_path="${PWD/#$HOME/\~}"
   IFS='/' read -r -a splits <<< "$current_path"
   result=""
 
