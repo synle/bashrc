@@ -177,7 +177,6 @@ The CI build action (`ci-build/action.yml`) generates a job summary with collaps
 
 Use `/add-package` and `/add-os` skills for adding new packages or OS support — they contain the full step-by-step workflow. Use `/remove-package` and `/remove-os` for removal. Use `/run` to generate test commands. Use `/validate` to run formatting and tests.
 
-
 ## Git / PR Merge Policy
 
 - Always use **squash and merge** when merging PRs. Never use merge commits or rebase merges. This keeps the git history clean with one commit per PR.
