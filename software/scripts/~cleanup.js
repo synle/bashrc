@@ -22,7 +22,7 @@ function _getPrimaryOsName() {
 
 /** Normalizes `test -e/-f ... && source ...` to `[ -f ... ] && . ...` for consistency. */
 function _normalizeSourceLines(content) {
-  return content.replace(/test -[ef] (".*?") && source (".*?")/g, '[ -f $1 ] && . $2');
+  return content.replace(/test -[ef] (".*?") && source (".*?")/g, "[ -f $1 ] && . $2");
 }
 
 async function doWork() {

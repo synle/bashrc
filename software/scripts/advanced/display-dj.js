@@ -5,6 +5,10 @@ const DISPLAY_DJ_REPO = "synle/display-dj";
 async function doWork() {
   await downloadAndInstallBinary(DISPLAY_DJ_REPO, (v, isArm64) => {
     const ver = v.replace(/^v/, "");
-    return is_os_mac ? `Display.DJ_${ver}_${isArm64 ? "aarch64" : "x64"}.dmg` : is_os_windows ? `Display.DJ_${ver}_x64-setup.exe` : `Display.DJ_${ver}_amd64.AppImage`;
+    return is_os_mac
+      ? `Display.DJ_${ver}_${isArm64 ? "aarch64" : "x64"}.dmg`
+      : is_os_windows
+        ? `Display.DJ_${ver}_x64-setup.exe`
+        : `Display.DJ_${ver}_amd64.AppImage`;
   });
 }

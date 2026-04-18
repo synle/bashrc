@@ -55,6 +55,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 - **Prefer tagged template literals over function calls.** Use `code`, `list`, `set`, `json`, `readText`, `readJson` tagged template literals. `readText`/`readJson` are async (use `await`). Escape `${VAR}` as `\${VAR}`; backticks as `` \` ``.
 - **External files read by `readText` must avoid `${` and backticks** (interpreted by JS template literals). Skip this rule for files over 150 lines.
 - **Never use bare `fs.copyFileSync` for file copies.** It uses `FICLONE`/`copy_file_range` syscalls that fail with `EPERM` on cross-device and network (SMB) mounts. Wrap with a read+write fallback: `try { fs.copyFileSync(src, dest); } catch { fs.writeFileSync(dest, fs.readFileSync(src)); }`. In `_cp_node_helpers` contexts, use `safeCopyFile(src, dest)` instead.
+- **`.su.js` scripts run as root via `sudo -E node`.** They must be self-contained — no dependencies on state from other scripts or earlier pipeline stages. Always guard with `exitIfNotSudo()` as the first line of `doWork()`. All `.su.js` scripts are bundled into a single sudo call to avoid multiple password prompts.
 
 ### Profile & Config Conventions
 
