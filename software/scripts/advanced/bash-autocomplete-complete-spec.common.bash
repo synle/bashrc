@@ -2,9 +2,9 @@
 # convert newline-delimited stdin to a space-separated string for compgen -W
 function __to_opts() { tr '\n' ' '; }
 # same as __to_opts but deduplicates and sorts first
-function __to_opts_sorted() { sort -u | tr '\n' ' '; }
+function __to_opts_sorted() { sort -u | __to_opts; }
 # same as __to_opts but escapes spaces for filesystem paths (e.g. "Display DJ.app")
-function __to_path_opts() { sed 's/ /\\ /g' | tr '\n' ' '; }
+function __to_path_opts() { sed 's/ /\\ /g' | __to_opts; }
 # shared tab-completion handler — resolves spec data, expands dynamic tokens
 # (git branches, files, npm scripts, etc.), and populates COMPREPLY.
 # usage: __spec_complete "$spec_data" "$max_depth"
