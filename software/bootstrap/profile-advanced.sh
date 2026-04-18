@@ -1062,7 +1062,7 @@ function ifconfig2() {
 # truncates deep paths, keeping last 3 parts full
 function shorter_pwd_path() {
   local trim_count=3
-  local current_path="${PWD/#$HOME/~}"
+  local current_path="${PWD/#$HOME/\~}"
   IFS='/' read -r -a splits <<< "$current_path"
   result=""
 
