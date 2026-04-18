@@ -574,8 +574,12 @@ jobs:
             local duration=$(( $(date +%s) - t0 ))
 
             if [ "$rc" = "0" ]; then
+              echo "::notice::PASS: $name (${duration}s)"
               summary+="| :white_check_mark: | $name | ${duration}s |"$'\n'
             else
+              echo "::group::FAIL: $name (${duration}s)"
+              echo "$output"
+              echo "::endgroup::"
               summary+="| :x: | $name | ${duration}s |"$'\n'
               any_failed=1
             fi
