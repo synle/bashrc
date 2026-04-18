@@ -45,9 +45,18 @@ function run_editor() {
     # Use the converted_args here
     (nohup "$target_binary" "${converted_args[@]}" > /dev/null 2>&1 &)
   else
-    # If not a Windows window, you might still want standard args
-    # or the same conversion depending on your setup
     (nohup "$target_binary" "${editor_args[@]}" > /dev/null 2>&1 &)
+    # bring the editor window to the foreground on macOS
+    if ((is_os_mac)); then
+      local app_name=""
+      case "$editor_name" in
+      subl) app_name="Sublime Text" ;;
+      smerge) app_name="Sublime Merge" ;;
+      code) app_name="Visual Studio Code" ;;
+      zed) app_name="Zed" ;;
+      esac
+      [[ -n "$app_name" ]] && osascript -e "tell application \"$app_name\" to activate" 2> /dev/null &
+    fi
   fi
 
   local dir=""
