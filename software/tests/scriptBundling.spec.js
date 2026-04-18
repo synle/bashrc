@@ -1,5 +1,7 @@
 /** Tests for script bundling, resolution, and OS filtering utilities. */
 import { describe, it, expect } from "vitest";
+import fs from "fs";
+import path from "path";
 import { getIndexFunction, getIndexConstant, mockFsExistence, setSandboxGlobal } from "./setup.js";
 
 const _getBundleRunnerType = getIndexFunction("_getBundleRunnerType");
@@ -211,5 +213,35 @@ describe("exitIfNotSudo", () => {
   it("should not throw when process.getuid is not a function", () => {
     // sandbox process doesn't have getuid
     expect(() => exitIfNotSudo()).not.toThrow();
+  });
+
+  it("should be the first line of doWork() in all .su.js scripts", () => {
+    const scriptsDir = path.resolve("software/scripts");
+    const suFiles = [];
+    /** Recursively finds all .su.js files under a directory. */
+    function walk(dir) {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name.endsWith(".su.js")) suFiles.push(full);
+      }
+    }
+    walk(scriptsDir);
+    expect(suFiles.length).toBeGreaterThan(0);
+
+    const missing = [];
+    for (const file of suFiles) {
+      const content = fs.readFileSync(file, "utf-8");
+      const match = content.match(/(?:async\s+)?function\s+doWork\s*\([^)]*\)\s*\{([^}]*)/s);
+      if (!match) {
+        missing.push(`${path.relative(scriptsDir, file)}: no doWork() found`);
+        continue;
+      }
+      const body = match[1].trim();
+      if (!body.startsWith("exitIfNotSudo()")) {
+        missing.push(`${path.relative(scriptsDir, file)}: doWork() does not start with exitIfNotSudo()`);
+      }
+    }
+    expect(missing, `Scripts missing exitIfNotSudo() guard:\n${missing.join("\n")}`).toEqual([]);
   });
 });
