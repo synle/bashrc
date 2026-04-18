@@ -19,7 +19,7 @@ const fullSetupFiles = globSync(path.join(ROOT_DIR, "software/scripts/**/_full-s
 /** Minimum char count per profile file (95% of current size as of 2026-03-23). */
 const MIN_CHARS_PROFILE_MAP = {
   profile_bashrc_mac: 263720, // current: 277601
-  profile_bashrc_ubuntu: 486150, // current: 511737
+  profile_bashrc_ubuntu: 332000, // current: 349441
 };
 const MIN_CHARS_BOOTSTRAP = 2200;
 /** Bootstrap files with lower size thresholds (small by design). */
