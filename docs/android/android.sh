@@ -267,7 +267,7 @@ com.samsung.android.voc                     # Samsung Members - lose Samsung sup
 com.samsung.sree                            # Samsung Global Goals - lose lock screen charity ads and widget
 com.samsung.android.app.social              # Samsung What's New - lose Samsung promotional/feature update notifications
 com.samsung.android.app.tips                # Samsung Tips - lose tutorial pop-ups and feature discovery prompts
-com.samsung.android.app.sharelive           # Share Live - lose Samsung-to-Samsung screen sharing during voice calls; not video calling
+# [KEEP] com.samsung.android.app.sharelive   # Share Live - keep because it powers the Quick Share tile
 com.samsung.android.app.dressroom           # Samsung Dressing Room - lose AR virtual clothes try-on; Samsung shopping gimmick
 com.samsung.android.app.parentalcare        # Samsung Parental Controls - lose Samsung built-in parental controls
 com.google.android.gms.supervision          # Family Link - lose parental controls on this device; [Not Needed] if managing family access online
