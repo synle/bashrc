@@ -185,10 +185,11 @@ function _resolveSpecFile(entry) {
 
 /** Registers spec-based bash autocomplete for each command in SPEC_COMMANDS. */
 async function doWork() {
+  const commonFunctions = await readText`software/scripts/advanced/bash-autocomplete-complete-spec.common.bash`;
   const template = await readText`software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash`;
 
-  // build all autocomplete content into a single block
-  const parts = [];
+  // emit shared helpers (__to_opts, __to_opts_sorted, __spec_complete) once at the top
+  const parts = [commonFunctions];
   for (const entry of SPEC_COMMANDS) {
     const { command, os } = entry;
     if (os) {

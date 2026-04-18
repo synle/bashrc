@@ -208,8 +208,11 @@ describe("spec file formatting", () => {
 
 // ---- dynamic token expansion (bash integration tests) ----
 
-/** Template content from the bash autocomplete template file. */
-const templateContent = fs.readFileSync("software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash", "utf-8");
+/** Shared spec-based autocomplete helpers (emitted once before per-command wrappers). */
+const commonContent = fs.readFileSync("software/scripts/advanced/bash-autocomplete-complete-spec.common.bash", "utf-8");
+/** Per-command wrapper template from the bash autocomplete template file. */
+const templateContent =
+  commonContent + "\n" + fs.readFileSync("software/scripts/advanced/bash-autocomplete-complete-spec-skeleton.bash", "utf-8");
 
 /**
  * Builds a bash script that sources a completion function and simulates tab completion.
