@@ -14,7 +14,7 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-18T05:04:11.838Z
+# Generated: 2026-04-18T05:17:30.903Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -398,8 +398,8 @@ function history_restore() {
 # SOURCE_END software/scripts/bash-history-profile.bash
 # BEGIN fnm - fast node manager
 # hookup binary - add default node version to PATH
-export FNM_DIR="/github/home/.local/share/fnm"
-export PATH="/github/home/.local/share/fnm:$PATH"
+export FNM_DIR="/home/runner/.local/share/fnm"
+export PATH="/home/runner/.local/share/fnm:$PATH"
 export PATH="/bin:$PATH"
 
 # initialize fnm
@@ -841,7 +841,7 @@ function format_other_text_based_files() {
 # END format script
 
 # BEGIN temporal-cli
-export PATH="/github/home/.temporalio/bin:$PATH"
+export PATH="/home/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
 # software/scripts/bash-path-candidate-profile.bash | 7909f5dee1b62ecf48b0b7df599e251e | 3.6 KB | 2026-04-18
@@ -5064,7 +5064,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf-profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | 2dc048398aca432ac85e44c0fa9ae18a | 2.2 KB | 2026-04-18
+# software/scripts/advanced/editor-launchers-common.bash | 54d97945457fa2925a69f6695f529a2f | 2.5 KB | 2026-04-18
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
 # software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
@@ -5359,9 +5359,18 @@ function run_editor() {
     # Use the converted_args here
     (nohup "$target_binary" "${converted_args[@]}" > /dev/null 2>&1 &)
   else
-    # If not a Windows window, you might still want standard args
-    # or the same conversion depending on your setup
     (nohup "$target_binary" "${editor_args[@]}" > /dev/null 2>&1 &)
+    # bring the editor window to the foreground on macOS
+    if ((is_os_mac)); then
+      local app_name=""
+      case "$editor_name" in
+      subl) app_name="Sublime Text" ;;
+      smerge) app_name="Sublime Merge" ;;
+      code) app_name="Visual Studio Code" ;;
+      zed) app_name="Zed" ;;
+      esac
+      [[ -n "$app_name" ]] && osascript -e "tell application \"$app_name\" to activate" 2> /dev/null &
+    fi
   fi
 
   local dir=""
