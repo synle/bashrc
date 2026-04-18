@@ -123,7 +123,8 @@ function _fuzzy_list_all() {
   # resolve tilde, relative paths, and trailing slashes so "." check and node both work
   [[ "$dir" == \~* ]] && eval dir="$dir" 2> /dev/null
   dir="${dir%/}"
-  [ -z "$dir" ] && dir="."
+  # edge case: dir="/" becomes "" after stripping trailing slash — restore to "/" (root), not "."
+  [ -z "$dir" ] && dir="/"
   # BFS directory crawler in node.
   #
   # Walks `dir` and emits relative paths to stdout, filtered by `mode`:
