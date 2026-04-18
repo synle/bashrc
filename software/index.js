@@ -2626,7 +2626,8 @@ async function readJson(strings, ...values) {
   try {
     return parseJsonWithComments(content);
   } catch (e) {
-    log("ERROR readJson:", e.message);
+    const level = e.message.includes("empty input") ? "WARN" : "ERROR";
+    log(`${level} readJson:`, e.message);
     return {};
   }
 }
