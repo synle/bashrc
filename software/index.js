@@ -3715,10 +3715,19 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
 
   // Group consecutive entries that share the same non-null bundleType.
   // Because filterRepoScripts() sorts by bundle type, this produces one group per type.
+  // su.js entries are collected into a single group (not consecutive) to avoid multiple sudo prompts.
   const groups = [];
   let currentGroup = null;
+  let suGroup = null;
   for (const entry of entries) {
-    if (entry.bundleType && currentGroup && currentGroup.type === entry.bundleType) {
+    if (entry.bundleType === "su.js") {
+      if (!suGroup) {
+        suGroup = { type: "su.js", entries: [entry] };
+        groups.push(suGroup);
+      } else {
+        suGroup.entries.push(entry);
+      }
+    } else if (entry.bundleType && currentGroup && currentGroup.type === entry.bundleType) {
       currentGroup.entries.push(entry);
     } else {
       currentGroup = { type: entry.bundleType, entries: [entry] };
