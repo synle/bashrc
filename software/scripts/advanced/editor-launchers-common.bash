@@ -64,13 +64,17 @@ function run_editor() {
     dir=$(dirname "$unresolved_path")
   fi
 
+  local path_info="Path:          $unresolved_path"
+  if [[ "$unresolved_path" != "$resolved_path" ]] && [[ -n "$resolved_path" ]]; then
+    path_info+=$'\n'"Resolved Path: $resolved_path"
+  fi
+
   echo "
 ====================================
 \"$target_binary\" ${editor_args[@]}
 PWD:           $(pwd)
 Dir:           $dir
-Path:          $unresolved_path
-Resolved Path: $resolved_path
+$path_info
 ====================================
   "
 }
