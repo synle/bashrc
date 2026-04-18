@@ -145,7 +145,7 @@ function last_folder() {
 # append history to file after every command (but do NOT clear+reload with -c/-r,
 # so Up arrow navigates current tab's session history instead of showing commands
 # from other tabs. Ctrl+R / fuzzy_history search the shared file for cross-tab history)
-PROMPT_COMMAND="_track_folder; history -a${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+PROMPT_COMMAND="_track_folder; history -a; echo -ne '\033]0;'\"$(shorter_pwd_path)\"'\007'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
 ################################################################################
 # ---- Track Recent Files ----
