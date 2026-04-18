@@ -294,9 +294,13 @@ describe("dynamic token expansion (bash integration)", () => {
     for (const dir of ignoredDirs) {
       fs.mkdirSync(path.join(tmpDir, dir), { recursive: true });
     }
-    // directories with spaces in names
+    // paths with spaces in names
     fs.mkdirSync(path.join(tmpDir, "Display DJ.app"), { recursive: true });
     fs.mkdirSync(path.join(tmpDir, "My Documents"), { recursive: true });
+    fs.mkdirSync(path.join(tmpDir, "a  b"), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, "my file.txt"), "spaced");
+    fs.writeFileSync(path.join(tmpDir, "My Documents", "report.js"), "doc");
+    fs.writeFileSync(path.join(tmpDir, "Display DJ.app", "config.json"), "cfg");
     // .git at root would trigger git fast-path — create nested for filtering tests
     fs.mkdirSync(path.join(tmpDir, "sub", ".git", "hooks"), { recursive: true });
     fs.writeFileSync(path.join(tmpDir, "sub", ".git", "hooks", "pre-commit"), "hook");
@@ -619,6 +623,19 @@ describe("dynamic token expansion (bash integration)", () => {
       const results = runCompletionScript(script, { cwd: tmpDir });
       expect(results).toContain("Display DJ.app/");
     });
+
+    it("should handle prefix matching with spaces", () => {
+      const script = buildCompletionTestScript("|__nested_folders__", ["testcmd", "My"], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      expect(results).toContain("My Documents/");
+    });
+
+    it("should handle directories with multiple consecutive spaces", () => {
+      const script = buildCompletionTestScript("|__nested_folders__", ["testcmd", "a"], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      expect(results).toContain("a  b/");
+      expect(results).toContain("another/");
+    });
   });
 
   describe("__nested_files__", () => {
@@ -638,6 +655,19 @@ describe("dynamic token expansion (bash integration)", () => {
       expect(all).not.toContain("pre-commit");
       expect(all).not.toContain(".pyc");
     });
+
+    it("should handle files with spaces in names", () => {
+      const script = buildCompletionTestScript("|__nested_files__", ["testcmd", "my"], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      expect(results).toContain("my file.txt");
+    });
+
+    it("should handle files inside directories with spaces", () => {
+      const script = buildCompletionTestScript("|__nested_files__", ["testcmd", ""], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      const hasReport = results.some((r) => r.includes("My Documents/report.js"));
+      expect(hasReport, "should include My Documents/report.js").toBe(true);
+    });
   });
 
   describe("__nested_text_files__", () => {
@@ -649,6 +679,12 @@ describe("dynamic token expansion (bash integration)", () => {
       // files inside ignored dirs should not appear
       expect(all).not.toContain("node_modules");
       expect(all).not.toContain(".git");
+    });
+
+    it("should handle text files with spaces in names", () => {
+      const script = buildCompletionTestScript("|__nested_text_files__", ["testcmd", "my"], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      expect(results).toContain("my file.txt");
     });
   });
 
@@ -668,6 +704,18 @@ describe("dynamic token expansion (bash integration)", () => {
       expect(all).not.toContain("__pycache__");
       expect(all).not.toContain(".venv");
       expect(all).not.toContain("bower_components");
+    });
+
+    it("should handle paths with spaces in names", () => {
+      const script = buildCompletionTestScript("|__nested_paths__", ["testcmd", "Dis"], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      expect(results).toContain("Display DJ.app/");
+    });
+
+    it("should handle files and folders with spaces together", () => {
+      const script = buildCompletionTestScript("|__nested_paths__", ["testcmd", "my"], 1);
+      const results = runCompletionScript(script, { cwd: tmpDir });
+      expect(results).toContain("my file.txt");
     });
   });
 
