@@ -4015,7 +4015,8 @@ function printRunInfo() {
 
   // getting the ip address mapping
   try {
-    HOME_HOST_NAMES = await readJson`.build/ip-address.config.hostnamesFlattened`;
+    const hostnamesData = await readJson`.build/ip-address.config.hostnamesFlattened`;
+    HOME_HOST_NAMES = Array.isArray(hostnamesData) ? hostnamesData : [];
   } catch (err) {
     HOME_HOST_NAMES = [];
   }
