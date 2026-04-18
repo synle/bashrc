@@ -1,9 +1,10 @@
 # Shared spec-based autocomplete helpers: token expansion, COMPREPLY population, and utility functions.
 # convert newline-delimited stdin to a space-separated string for compgen -W
-# escapes spaces so filenames like "Display DJ.app" survive compgen -W word splitting
-function __to_opts() { sed 's/ /\\ /g' | tr '\n' ' '; }
+function __to_opts() { tr '\n' ' '; }
 # same as __to_opts but deduplicates and sorts first
-function __to_opts_sorted() { sort -u | sed 's/ /\\ /g' | tr '\n' ' '; }
+function __to_opts_sorted() { sort -u | tr '\n' ' '; }
+# same as __to_opts but escapes spaces for filesystem paths (e.g. "Display DJ.app")
+function __to_path_opts() { sed 's/ /\\ /g' | tr '\n' ' '; }
 # shared tab-completion handler — resolves spec data, expands dynamic tokens
 # (git branches, files, npm scripts, etc.), and populates COMPREPLY.
 # usage: __spec_complete "$spec_data" "$max_depth"
@@ -46,8 +47,8 @@ function __spec_complete() {
     opts="${opts//__git_branches__/} $branches $remote_branches"
   fi
   if [[ "$opts" == *"__git_files__"* ]]; then
-    local files=$(git diff --name-only 2> /dev/null | __to_opts)
-    local untracked=$(git ls-files --others --exclude-standard 2> /dev/null | __to_opts)
+    local files=$(git diff --name-only 2> /dev/null | __to_path_opts)
+    local untracked=$(git ls-files --others --exclude-standard 2> /dev/null | __to_path_opts)
     opts="${opts//__git_files__/} $files $untracked"
   fi
   if [[ "$opts" == *"__git_remotes__"* ]]; then
@@ -153,11 +154,11 @@ function __spec_complete() {
   if [[ "$opts" == *"__files__"* ]]; then
     local cur_dir="${cur%/*}/"
     [ "$cur_dir" = "$cur/" ] && cur_dir=""
-    local file_list=$(compgen -f -- "$cur" 2> /dev/null | command grep -v '/$' | __to_opts)
+    local file_list=$(compgen -f -- "$cur" 2> /dev/null | command grep -v '/$' | __to_path_opts)
     opts="${opts//__files__/} $file_list"
   fi
   if [[ "$opts" == *"__folders__"* ]]; then
-    local folder_list=$(compgen -d -- "$cur" 2> /dev/null | __to_opts)
+    local folder_list=$(compgen -d -- "$cur" 2> /dev/null | __to_path_opts)
     opts="${opts//__folders__/} $folder_list"
   fi
   # resolve base directory from cur (supports ~/path, ../path, /abs/path)
@@ -175,24 +176,24 @@ function __spec_complete() {
     local _nested_base="${_nested_dir:-.}"
     local _nested_filter="${cur#"$_nested_prefix"}"
     if [[ "$opts" == *"__nested_text_files__"* ]]; then
-      local nested_text_files=$(_fuzzy_list_all "$_nested_base" "text_files" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_opts)
+      local nested_text_files=$(_fuzzy_list_all "$_nested_base" "text_files" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_path_opts)
       opts="${opts//__nested_text_files__/} $nested_text_files"
     fi
     if [[ "$opts" == *"__nested_files__"* ]]; then
-      local nested_files=$(_fuzzy_list_all "$_nested_base" "files" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_opts)
+      local nested_files=$(_fuzzy_list_all "$_nested_base" "files" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_path_opts)
       opts="${opts//__nested_files__/} $nested_files"
     fi
     if [[ "$opts" == *"__nested_folders__"* ]]; then
-      local nested_folders=$(_fuzzy_list_all "$_nested_base" "folders" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_opts)
+      local nested_folders=$(_fuzzy_list_all "$_nested_base" "folders" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_path_opts)
       opts="${opts//__nested_folders__/} $nested_folders"
     fi
     if [[ "$opts" == *"__nested_paths__"* ]]; then
-      local nested_paths=$(_fuzzy_list_all "$_nested_base" "paths" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_opts)
+      local nested_paths=$(_fuzzy_list_all "$_nested_base" "paths" "$_max_depth" "" "$_nested_filter" | command sed "s|^|${_nested_prefix}|" | __to_path_opts)
       opts="${opts//__nested_paths__/} $nested_paths"
     fi
   fi
   if [[ "$opts" == *"__paths__"* ]]; then
-    local path_list=$(compgen -f -- "$cur" 2> /dev/null | __to_opts)
+    local path_list=$(compgen -f -- "$cur" 2> /dev/null | __to_path_opts)
     opts="${opts//__paths__/} $path_list"
   fi
 
