@@ -11,6 +11,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 ### Protected Content
 
 - **Do not modify anything in the `.build/` folder.** Contains generated artifacts — never manually edit. (Also enforced by PreToolUse hook.)
+- **Do not modify generated or owner-managed files in `software/metadata/`.** This includes `autocomplete-complete-spec/` (generated specs like `git`, `docker`), `hosts-*.consolidated.config`, and `hosts-blocked-ads.config` — never manually edit.
 - **Do not modify anything in the `assets/` folder directly.** Release asset backups (display-dj, sqlui-native, url-porter) are uploaded by the CI prep step or the repo owner's release workflow. Font files and other static assets are managed by the owner.
 - **Do not modify content inside `# BEGIN`/`# END` markers in generated files.** These blocks are managed by `build-include` and will be overwritten on the next `make format_build_include`. Edit the source file referenced in the marker instead.
 - **Do not modify `SOURCE_BEGIN`/`SOURCE_END` blocks in generated profile files.** These are runtime SOURCE includes — content is re-fetched from the referenced file on every run. Edit the source file instead. In repo source files, only the single-line `# SOURCE path` or `// SOURCE path` marker should appear.
