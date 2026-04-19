@@ -69,8 +69,7 @@ alias ls_newest_last="ls_newest -r"   # sort by modification time (oldest first)
 alias ls_biggest="ll -S"              # sort by file size (biggest first)
 alias ls_biggest_last="ls_biggest -r" # sort by file size (smallest first)
 alias lc="wc -l"                      # line count
-alias tf="tail -f"                    # follow file changes
-alias follow="tail -f"               # follow file changes
+alias tailf="tail -n 500 -f"             # show last 500 lines then follow
 alias tailn="tail -n"                 # show last N lines
 # prevent curl from using cached responses
 alias curl="curl \
