@@ -55,7 +55,14 @@ function run_editor() {
       code) app_name="Visual Studio Code" ;;
       zed) app_name="Zed" ;;
       esac
-      [[ -n "$app_name" ]] && osascript -e "tell application \"$app_name\" to activate" 2> /dev/null &
+      if [[ -n "$app_name" ]]; then
+        osascript \
+          -e "tell application \"$app_name\" to activate" \
+          -e "tell application \"System Events\" to tell process \"$app_name\" to set position of window 1 to {0, 0}" \
+          -e "tell application \"Finder\" to set {_, _, sw, sh} to bounds of window of desktop" \
+          -e "tell application \"System Events\" to tell process \"$app_name\" to set size of window 1 to {sw, sh}" \
+          2> /dev/null &
+      fi
     fi
   fi
 
