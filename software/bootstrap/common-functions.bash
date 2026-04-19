@@ -30,7 +30,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
