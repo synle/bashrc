@@ -127,9 +127,9 @@ function _detect_os() {
     fi
   done
 
-  # check OSTYPE
+  # check OSTYPE (contains match)
   for p in "${ostypes[@]}"; do
-    [[ "$OSTYPE" == $p ]] && return 0
+    [[ "$OSTYPE" == *"$p"* ]] && return 0
   done
 
   # check folders
@@ -155,7 +155,7 @@ function _detect_os() {
   return 1
 }
 
-is_os_mac=0 && _detect_os --ostype "darwin*" --folder /Applications && is_os_mac=1
+is_os_mac=0 && _detect_os --ostype "darwin" --folder /Applications && is_os_mac=1
 is_os_ubuntu=0 && _detect_os --release "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
 is_os_chromeos=0 && _detect_os --file /dev/.cros_milestone --proc "cros" --noproc "microsoft" && is_os_chromeos=1
 is_os_mingw64=0 && _detect_os --ostype "msys" --ostype "cygwin" --folder /mingw64 && is_os_mingw64=1
