@@ -80,30 +80,69 @@ export BASE_HOMEDIR_LINUX="$HOME"
 ################################################################################
 # ---- OS Detection ----
 ################################################################################
-# _detect_os_release <keywords_csv> [fallback_binary] - Returns 0 when /etc/os-release
-# contains any keyword in ID or ID_LIKE fields (contains match). Optional second arg
-# is a binary to check as a fallback (e.g. apt-get for any Debian-based distro).
-function _detect_os_release() {
-  local IFS=','
-  local pattern=""
-  for keyword in $1; do
-    keyword=$(echo "$keyword" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    [ -n "$keyword" ] && pattern="${pattern:+$pattern|}ID(_LIKE)?=.*$keyword"
+# _detect_os <keywords_csv> [--bin <binary>] [--ostype <pattern>] [--folder <path>] [--env <var>]
+# Returns 0 when the OS matches. Checks in order:
+#   1. /etc/os-release ID/ID_LIKE contains any keyword (if keywords given)
+#   2. OSTYPE glob match (if --ostype given)
+#   3. Folder exists (if --folder given, repeatable)
+#   4. Binary found in PATH (if --bin given)
+#   5. Env var is non-empty (if --env given)
+function _detect_os() {
+  local keywords="${1:-}"
+  shift || true
+  local bins=() ostypes=() folders=() envs=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+    --bin) bins+=("$2"); shift 2 ;;
+    --ostype) ostypes+=("$2"); shift 2 ;;
+    --folder) folders+=("$2"); shift 2 ;;
+    --env) envs+=("$2"); shift 2 ;;
+    *) shift ;;
+    esac
   done
-  command grep -Eiq "$pattern" /etc/os-release 2> /dev/null && return 0
-  [ -n "${2:-}" ] && type -P "$2" &> /dev/null && return 0
+
+  # check /etc/os-release keywords
+  if [ -n "$keywords" ]; then
+    local IFS=',' pattern=""
+    for keyword in $keywords; do
+      keyword=$(echo "$keyword" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      [ -n "$keyword" ] && pattern="${pattern:+$pattern|}ID(_LIKE)?=.*$keyword"
+    done
+    command grep -Eiq "$pattern" /etc/os-release 2> /dev/null && return 0
+  fi
+
+  # check OSTYPE
+  for p in "${ostypes[@]}"; do
+    [[ "$OSTYPE" == $p ]] && return 0
+  done
+
+  # check folders
+  for f in "${folders[@]}"; do
+    [ -d "$f" ] && return 0
+  done
+
+  # check binaries
+  for b in "${bins[@]}"; do
+    type -P "$b" &> /dev/null && return 0
+  done
+
+  # check env vars
+  for e in "${envs[@]}"; do
+    [ -n "${!e:-}" ] && return 0
+  done
+
   return 1
 }
 
-is_os_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && is_os_mac=1
-is_os_ubuntu=0 && _detect_os_release "ubuntu, debian, mint" "apt-get" && is_os_ubuntu=1
+is_os_mac=0 && _detect_os "" --ostype "darwin*" --folder /Applications && is_os_mac=1
+is_os_ubuntu=0 && _detect_os "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
 is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /proc/version 2> /dev/null && ! command grep -qi "microsoft" /proc/version 2> /dev/null; }; } && is_os_chromeos=1
-is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d /mingw64 ]; } && is_os_mingw64=1
-is_os_android_termux=0 && { [ -n "$TERMUX_VERSION" ] || [ -d /data/data/com.termux ]; } && is_os_android_termux=1
-is_os_arch_linux=0 && _detect_os_release "arch, steamos" "pacman" && is_os_arch_linux=1
-is_os_steamos=0 && _detect_os_release "steamos" && is_os_steamos=1
-is_os_redhat=0 && _detect_os_release "fedora, rhel, centos, rocky, alma" "dnf" && is_os_redhat=1
-is_os_windows=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && is_os_windows=1
+is_os_mingw64=0 && _detect_os "" --ostype "msys" --ostype "cygwin" --folder /mingw64 && is_os_mingw64=1
+is_os_android_termux=0 && _detect_os "" --env TERMUX_VERSION --folder /data/data/com.termux && is_os_android_termux=1
+is_os_arch_linux=0 && _detect_os "arch, steamos" --bin pacman && is_os_arch_linux=1
+is_os_steamos=0 && _detect_os "steamos" && is_os_steamos=1
+is_os_redhat=0 && _detect_os "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
+is_os_windows=0 && _detect_os "" --folder /mnt/c/Windows --folder /c/Windows && is_os_windows=1
 is_os_wsl=0 && { ((is_os_windows)) || command grep -qi microsoft /proc/version 2> /dev/null; } && is_os_wsl=1
 
 IS_CI=0 && [ -n "$CI" ] && IS_CI=1
