@@ -4,13 +4,21 @@
 # ---- Package Manager Lock ----
 
 # wait for package manager locks to be released before running install commands
-# polls every 10 seconds, times out after 300 seconds — then kills stale processes and recovers
+# first recovers any interrupted dpkg state, then polls every 10 seconds, times out after 300 seconds
 function _waitForAptLock() {
   local _lock_files="/var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock"
   local _label="apt"
   local _max_wait=300
   local _elapsed=0
   local _locked=1
+
+  # recover interrupted dpkg state (e.g. prior install was killed or crashed)
+  echo -n ">> Recovering dpkg state >> "
+  if sudo dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+    echo "Done"
+  else
+    echo "Error"
+  fi
 
   while ((_locked)) && [ "$_elapsed" -lt "$_max_wait" ]; do
     _locked=0
@@ -104,13 +112,21 @@ function _waitForPacmanLock() {
 }
 
 # wait for Termux pkg (apt-based) lock to be released before running install commands
-# polls every 10 seconds, times out after 300 seconds — then kills stale processes
+# first recovers any interrupted dpkg state, then polls every 10 seconds, times out after 300 seconds
 function _waitForPkgLock() {
   local _lock_files="/data/data/com.termux/files/usr/var/lib/dpkg/lock /data/data/com.termux/files/usr/var/lib/dpkg/lock-frontend"
   local _label="pkg"
   local _max_wait=300
   local _elapsed=0
   local _locked=1
+
+  # recover interrupted dpkg state (e.g. prior install was killed or crashed)
+  echo -n ">> Recovering dpkg state >> "
+  if dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+    echo "Done"
+  else
+    echo "Error"
+  fi
 
   while ((_locked)) && [ "$_elapsed" -lt "$_max_wait" ]; do
     _locked=0
