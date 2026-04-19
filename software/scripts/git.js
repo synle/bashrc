@@ -146,7 +146,9 @@ async function doWork() {
     },
   ]);
 
-  // write to main gitconfig
+  // write to main gitconfig (~/.gitconfig on Linux/macOS)
+  // includes delta pager config if delta is installed, otherwise falls back to less -R
+  // also adds a default commit template (~/.gitmessage)
   await backupConfigFile(configMain);
   await writeText(
     configMain,
@@ -173,7 +175,8 @@ async function doWork() {
   await backupConfigFile(configGitIgnoreGlobal);
   await writeText(configGitIgnoreGlobal, await _getGlobalGitIgnore());
 
-  // Windows Only - write to the main gitconfig for windows host
+  // write to Windows host gitconfig (e.g. /mnt/c/Users/<user>/.gitconfig)
+  // uses base config only — no delta, no commit template (Windows host uses its own pager/editor)
   if (is_os_windows) {
     const configWindows = path.join(getWindowUserBaseDir(), ".gitconfig");
 
