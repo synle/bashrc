@@ -13,8 +13,9 @@ function _waitForAptLock() {
   local _locked=1
 
   # recover interrupted dpkg state (e.g. prior install was killed or crashed)
-  echo -n ">> Recovering dpkg state >> "
-  if sudo dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  local _dpkg_log="$BASHRC_TEMP_DIR/dpkg-configure.log"
+  echo -n ">> Recovering dpkg state >> $_dpkg_log >> "
+  if sudo dpkg --configure -a < /dev/null &>> "$_dpkg_log"; then
     echo "Done"
   else
     echo "Error"
@@ -121,8 +122,9 @@ function _waitForPkgLock() {
   local _locked=1
 
   # recover interrupted dpkg state (e.g. prior install was killed or crashed)
-  echo -n ">> Recovering dpkg state >> "
-  if dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  local _dpkg_log="$BASHRC_TEMP_DIR/dpkg-configure.log"
+  echo -n ">> Recovering dpkg state >> $_dpkg_log >> "
+  if dpkg --configure -a < /dev/null &>> "$_dpkg_log"; then
     echo "Done"
   else
     echo "Error"
