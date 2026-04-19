@@ -339,10 +339,10 @@ safe_pmset lessbright 0     "Disable display dimming on battery"
 echo ">> Power: Set AC sleep and display timeouts to 0 (never)"
 sudo pmset -c sleep 0
 sudo pmset -c displaysleep 0
-# Battery: sleep and turn off display after 240 minutes (matches Windows laptop behavior)
-echo ">> Power: Set battery sleep and display timeouts to 240 min"
-sudo pmset -b sleep 240
-sudo pmset -b displaysleep 240
+# Battery: sleep and turn off display after 180 minutes (3 hours)
+echo ">> Power: Set battery sleep and display timeouts to 180 min"
+sudo pmset -b sleep 180
+sudo pmset -b displaysleep 180
 
 # ---- Network & Wake Triggers ----
 safe_pmset womp 0           "Disable wake for network access (better battery)"
