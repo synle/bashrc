@@ -1,6 +1,146 @@
 #!/usr/bin/env bash
 # SOURCE software/bootstrap/common-functions.bash
 
+# ---- Package Manager Lock ----
+
+# wait for package manager locks to be released before running install commands
+# polls every 10 seconds, times out after 300 seconds — then kills stale processes and recovers
+function _waitForAptLock() {
+  local _lock_files="/var/lib/dpkg/lock /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/cache/apt/archives/lock"
+  local _label="apt"
+  local _max_wait=300
+  local _elapsed=0
+  local _locked=1
+
+  while ((_locked)) && [ "$_elapsed" -lt "$_max_wait" ]; do
+    _locked=0
+    for _lf in $_lock_files; do
+      if [ -f "$_lf" ] && sudo fuser "$_lf" &> /dev/null; then
+        _locked=1
+        break
+      fi
+    done
+    if ((_locked)); then
+      if [ "$_elapsed" -eq 0 ]; then
+        echo -n ">> Waiting for $_label lock to be released"
+      fi
+      echo -n "."
+      sleep 10
+      _elapsed=$((_elapsed + 10))
+    fi
+  done
+
+  if ((_locked)); then
+    echo " Timeout (${_max_wait}s) — killing stale $_label processes"
+    sudo killall apt-get &> /dev/null
+    sudo killall dpkg &> /dev/null
+    sudo rm -f $_lock_files
+    sudo dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log
+  elif [ "$_elapsed" -gt 0 ]; then
+    echo " Released (${_elapsed}s)"
+  fi
+}
+
+# wait for dnf/yum lock to be released before running install commands
+# polls every 10 seconds, times out after 300 seconds — then kills stale processes
+function _waitForDnfLock() {
+  local _lock_files="/var/run/dnf.pid /var/run/yum.pid /var/cache/dnf/metadata_lock.pid"
+  local _label="dnf"
+  local _max_wait=300
+  local _elapsed=0
+  local _locked=1
+
+  while ((_locked)) && [ "$_elapsed" -lt "$_max_wait" ]; do
+    _locked=0
+    for _lf in $_lock_files; do
+      if [ -f "$_lf" ] && kill -0 "$(cat "$_lf" 2> /dev/null)" &> /dev/null; then
+        _locked=1
+        break
+      fi
+    done
+    if ((_locked)); then
+      if [ "$_elapsed" -eq 0 ]; then
+        echo -n ">> Waiting for $_label lock to be released"
+      fi
+      echo -n "."
+      sleep 10
+      _elapsed=$((_elapsed + 10))
+    fi
+  done
+
+  if ((_locked)); then
+    echo " Timeout (${_max_wait}s) — killing stale $_label processes"
+    sudo killall dnf &> /dev/null
+    sudo killall yum &> /dev/null
+    sudo rm -f $_lock_files
+  elif [ "$_elapsed" -gt 0 ]; then
+    echo " Released (${_elapsed}s)"
+  fi
+}
+
+# wait for pacman lock to be released before running install commands
+# polls every 10 seconds, times out after 300 seconds — then removes stale lock file
+function _waitForPacmanLock() {
+  local _lock_file="/var/lib/pacman/db.lck"
+  local _label="pacman"
+  local _max_wait=300
+  local _elapsed=0
+
+  while [ -f "$_lock_file" ] && [ "$_elapsed" -lt "$_max_wait" ]; do
+    if [ "$_elapsed" -eq 0 ]; then
+      echo -n ">> Waiting for $_label lock to be released"
+    fi
+    echo -n "."
+    sleep 10
+    _elapsed=$((_elapsed + 10))
+  done
+
+  if [ -f "$_lock_file" ]; then
+    echo " Timeout (${_max_wait}s) — removing stale $_label lock"
+    sudo rm -f "$_lock_file"
+  elif [ "$_elapsed" -gt 0 ]; then
+    echo " Released (${_elapsed}s)"
+  fi
+}
+
+# wait for Termux pkg (apt-based) lock to be released before running install commands
+# polls every 10 seconds, times out after 300 seconds — then kills stale processes
+function _waitForPkgLock() {
+  local _lock_files="/data/data/com.termux/files/usr/var/lib/dpkg/lock /data/data/com.termux/files/usr/var/lib/dpkg/lock-frontend"
+  local _label="pkg"
+  local _max_wait=300
+  local _elapsed=0
+  local _locked=1
+
+  while ((_locked)) && [ "$_elapsed" -lt "$_max_wait" ]; do
+    _locked=0
+    for _lf in $_lock_files; do
+      if [ -f "$_lf" ] && fuser "$_lf" &> /dev/null; then
+        _locked=1
+        break
+      fi
+    done
+    if ((_locked)); then
+      if [ "$_elapsed" -eq 0 ]; then
+        echo -n ">> Waiting for $_label lock to be released"
+      fi
+      echo -n "."
+      sleep 10
+      _elapsed=$((_elapsed + 10))
+    fi
+  done
+
+  if ((_locked)); then
+    echo " Timeout (${_max_wait}s) — killing stale $_label processes"
+    killall apt-get &> /dev/null
+    killall dpkg &> /dev/null
+    rm -f $_lock_files
+    dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log
+  elif [ "$_elapsed" -gt 0 ]; then
+    echo " Released (${_elapsed}s)"
+  fi
+}
+
 # ---- Install ----
 
 # install fnm (Fast Node Manager) and Node.js via curl — skips if fnm is already installed

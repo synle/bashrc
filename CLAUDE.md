@@ -147,6 +147,7 @@ Key concepts at a glance:
 | `software/bootstrap/common-env.sh`         | Shared constants (`LIMITED_SUPPORT_OSES`, `LIGHT_WEIGHT_SCRIPTS`), sourced by `run.sh` via BEGIN/END                                                                   |
 | `software/bootstrap/common-functions.bash` | Shared shell helpers (`npm_install_global`, `has_persistent_binary`, `curl_bash_install`, `is_force_refresh_stale`, etc.), sourced by `.sh` scripts via SOURCE markers |
 | `software/index.js`                        | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                                                                                 |
+| `software/scripts/_full-setup.common.linux.bash` | Shared Linux helpers (fnm/node install, lock wait functions, display-dj, power management), sourced by all Linux `_full-setup.sh` via SOURCE |
 | `software/scripts/*.js`                    | Cross-platform scripts                                                                                                                                                 |
 | `software/scripts/<os>/`                   | OS-specific scripts                                                                                                                                                    |
 | `software/common.js`                       | Core shared constants and `replaceBlock`. Inlined into index.js                                                                                                        |

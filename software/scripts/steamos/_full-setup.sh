@@ -108,6 +108,7 @@ function upgradeAndCleanPackages() {
 # ---- Install Packages ----
 ################################################################################
 echo ">> Begin setting up dependencies/steamos/deps.sh"
+_waitForPacmanLock
 
 # Steam Deck file system is immutable and will be removed after each update.
 # This command opens it up for write.
