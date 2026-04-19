@@ -149,7 +149,7 @@ function _detect_os() {
   return 1
 }
 
-is_os_mac=0 && _detect_os --name "darwin" --path "/Applications" && is_os_mac=1
+is_os_mac=0 && _detect_os --name "darwin" --path "/Applications" --bin "brew" && is_os_mac=1
 is_os_ubuntu=0 && _detect_os --name "ubuntu, debian, mint" --bin "apt-get" && is_os_ubuntu=1
 is_os_chromeos=0 && _detect_os --name "cros" --path "/dev/.cros_milestone" && is_os_chromeos=1
 is_os_mingw64=0 && _detect_os --name "msys, cygwin" --path "/mingw64" && is_os_mingw64=1
