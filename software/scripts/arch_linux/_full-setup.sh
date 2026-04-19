@@ -108,6 +108,7 @@ function upgradeAndCleanPackages() {
 # ---- Install Packages ----
 ################################################################################
 echo ">> Begin setting up dependencies/arch_linux/deps.sh"
+_waitForPacmanLock
 if is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
 
 echo '>> Installing packages with pacman'

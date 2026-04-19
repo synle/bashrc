@@ -121,6 +121,7 @@ safe_mkdir "$HOME/.termux"
 # ---- Install Packages ----
 ################################################################################
 echo ">> Begin setting up dependencies/android_termux/deps.sh"
+_waitForPkgLock
 if is_bash_syle_stale; then updatePackageIndex; else echo ">> Updating package index >> Skipped (not stale)"; fi
 
 echo '>> Installing packages with pkg'
