@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-19T17:37:02.540Z
+# Generated: 2026-04-19T18:48:16.372Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -4047,7 +4047,9 @@ zed() {
   run_editor "zed" "${_ZED_PATHS[@]}"
 }
 # END Editor Launchers - Zed
-
+# BEGIN Sy Make Component
+: # no-op
+# END Sy Make Component
 # BEGIN starship prompt
 if type -P starship &> /dev/null; then
   # init starship first so it sets up its own PROMPT_COMMAND
@@ -5698,6 +5700,48 @@ complete -o filenames -F __spec_complete_git git
 fi
 # END git Spec Autocomplete
 
+# BEGIN cargo Spec Autocomplete
+################################################################################
+# cargo (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_cargo() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+add|__paths__
+bench|--bench,--all-targets,--lib,--bins,--examples,--tests,--benches,--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--message-format,--no-run,--quiet,-q,--verbose,-v
+build|--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--lib,--bins,--examples,--tests,--benches,--all-targets,--message-format,--quiet,-q,--verbose,-v
+check|--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--lib,--bins,--examples,--tests,--benches,--all-targets,--message-format,--quiet,-q,--verbose,-v
+clean|--package,-p,--release,--profile,--target,--doc,--quiet,-q,--verbose,-v
+clippy|--fix,--allow-dirty,--allow-staged,--package,-p,--workspace,--all-targets,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+doc|--open,--package,-p,--workspace,--no-deps,--document-private-items,--jobs,-j,--release,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+fetch|--target,--quiet,-q,--verbose,-v
+fix|--package,-p,--workspace,--allow-dirty,--allow-staged,--broken-code,--edition,--edition-idioms,--jobs,-j,--release,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+fmt|--all,--check,--package,-p,--quiet,-q,--verbose,-v
+init|--lib,--bin,--edition,--vcs,--name,--registry,--quiet,-q,--verbose,-v
+install|--version,--git,--branch,--tag,--rev,--path,--list,--jobs,-j,--force,-f,--features,--all-features,--no-default-features,--root,--quiet,-q,--verbose,-v
+new|--lib,--bin,--edition,--vcs,--name,--registry,--quiet,-q,--verbose,-v
+publish|--dry-run,--token,--index,--registry,--allow-dirty,--no-verify,--jobs,-j,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+remove|--dev,--build,--package,-p,--quiet,-q,--verbose,-v
+run|--bin,--example,--package,-p,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--message-format,--quiet,-q,--verbose,-v,__cargo_targets__
+test|--test,--bench,--all-targets,--lib,--bins,--examples,--tests,--benches,--doc,--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--no-run,--no-fail-fast,--message-format,--quiet,-q,--verbose,-v
+tree|--invert,-i,--no-dedupe,--duplicates,-d,--package,-p,--workspace,--depth,--features,--all-features,--no-default-features,--target,--quiet,-q,--verbose,-v
+uninstall|--root,--quiet,-q,--verbose,-v
+update|--package,-p,--aggressive,--precise,--workspace,--dry-run,--quiet,-q,--verbose,-v
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_cargo cargo 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_cargo cargo
+fi
+# END cargo Spec Autocomplete
+
 # BEGIN n Spec Autocomplete
 ################################################################################
 # n (spec-based autocomplete)
@@ -6025,29 +6069,6 @@ else
 complete -o filenames -F __spec_complete_s s
 fi
 # END s Spec Autocomplete
-
-# BEGIN ssh Spec Autocomplete
-################################################################################
-# ssh (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_ssh() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|__ssh_hosts__,-i,-p,-l,-o,-F,-J,-N,-T,-v,-vv,-vvv,-L,-R,-D,-W,-A,-X,-Y,-C,-q,-f,-4,-6
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_ssh ssh 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_ssh ssh
-fi
-# END ssh Spec Autocomplete
 
 # BEGIN adb Spec Autocomplete
 ################################################################################
@@ -6507,6 +6528,18 @@ function renpm() {
 # ---- OS-specific Tweaks (registerPlatformTweaks) ----
 ################################################################################
 
+# BEGIN Arch Linux OS-specific Tweaks
+# Only Arch Linux alias
+
+# set brightness via ddc/ci (for external monitor)
+# more info here - https://moverest.xyz/blog/control-display-with-ddc-ci/
+alias set-brightness='sudo modprobe i2c-dev; sudo ddcutil setvcp 10'
+alias brightness='set-brightness'
+
+# override steamos prompt and properly use PS1 prompt
+PROMPT_COMMAND=""
+# END Arch Linux OS-specific Tweaks
+
 # BEGIN Ubuntu OS-specific Tweaks
 # update: OS package manager update/upgrade only
 alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove -y'
@@ -6515,57 +6548,7 @@ alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get 
 fi
 ################################################################################
 # ---- end advanced profile ----
-################################################################################a << '__SPEC_EOF__'
-|__gradle_tasks__
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_gradlew gradlew 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_gradlew gradlew
-fi
-# END gradlew Spec Autocomplete
-
-# BEGIN make Spec Autocomplete
-################################################################################
-# make (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_make() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|__makefile_targets__
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_make make 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_make make
-fi
-# END make Spec Autocomplete
-
-# BEGIN docker Spec Autocomplete
-################################################################################
-# docker (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_docker() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-attach|-d,--detach-keys,-n,--no-stdin,-s,--sig-proxy
-commit|-a,--author,-t,-c,--change,-m,--message,-p,--pause
-cp|-a,--archive,-f,--follow-link,-q,--quiet
-create|-a,--add-host,--annotation,--attach,-b,--blkio-weight,--blkio-weight-device,-c,--cap-add,--cap-drop,--cgroup-parent,--cgroupns,--cidfile,--cpu-period,--cpu-quota,--cpu-rt-period,--cpu-rt-runtime,--cpu-shares,--cpus,--cpuset-cpus,--cpuset-mems,-d,--device,--device-cgroup-rule,--device-read-bps,--device-read-iops,--device-write-bps,--device-write-iops,--disable-content-trust,--dns,--dns-option,--dns-search,--domainname,-e,--entrypoint,--env,--env-file,--expose,-g,--gpus,--group-add,-h,--health-cmd,--health-interval,--health-retries,--health-start-interval,--health-start-period,-r,--health-timeout,--help,--hostname,-i,--init,--interactive,--ip,--ipc,--isolation,-k,--kernel-memory,-l,--label,--label-file,--link,--link-local-ip,--log-driver,--log-opt,-m,--mac-address,--memory,--memory-reservation,--memory-swap,--memory-swappiness,--mount,-n,--name,--network,--network-alias,--no-healthcheck,-o,--oom-kill-disable,--oom-score-adj,-p,--pid,--pids-limit,--platform,--privileged,--publish,--publish-all,--pull,-q,--quiet,--read-only,--restart,--rm,--runtime,-s,--security-opt,--shm-size,--stop-signal,--stop-timeout,--storage-opt,--sysctl,-t,--tmpfs,--tty,-u,--ulimit,--user,--userns,--uts,-v,--volume,--volume-driver,--volumes-from,-w,--workdir
+################################################################################,--isolation,-k,--kernel-memory,-l,--label,--label-file,--link,--link-local-ip,--log-driver,--log-opt,-m,--mac-address,--memory,--memory-reservation,--memory-swap,--memory-swappiness,--mount,-n,--name,--network,--network-alias,--no-healthcheck,-o,--oom-kill-disable,--oom-score-adj,-p,--pid,--pids-limit,--platform,--privileged,--publish,--publish-all,--pull,-q,--quiet,--read-only,--restart,--rm,--runtime,-s,--security-opt,--shm-size,--stop-signal,--stop-timeout,--storage-opt,--sysctl,-t,--tmpfs,--tty,-u,--ulimit,--user,--userns,--uts,-v,--volume,--volume-driver,--volumes-from,-w,--workdir
 events|-f,--filter,--format,-s,--since,-u,--until
 export|-o,--output
 history|-f,--format,-h,--human,-n,--no-trunc,-p,--platform,-q,--quiet

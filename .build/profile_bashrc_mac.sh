@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-19T17:37:24.770Z
+# Generated: 2026-04-19T18:49:26.880Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -4060,7 +4060,9 @@ zed() {
   run_editor "zed" "${_ZED_PATHS[@]}"
 }
 # END Editor Launchers - Zed
-
+# BEGIN Sy Make Component
+: # no-op
+# END Sy Make Component
 # BEGIN starship prompt
 if type -P starship &> /dev/null; then
   # init starship first so it sets up its own PROMPT_COMMAND
