@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Profile partial — inlined into ~/.bash_syle via SOURCE marker, not run standalone.
 
 ################################################################################
 # ---- File Utilities ----

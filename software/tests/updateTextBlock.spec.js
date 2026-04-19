@@ -415,10 +415,10 @@ describe("_expandSourceMarkers", () => {
   });
 
   it("should extract path from SOURCE marker with label prefix", () => {
-    const input = `# ${TEXT_BLOCK_SOURCE_MARKER} Bash Keys - software/scripts/bash-keys-profile.bash`;
+    const input = `# ${TEXT_BLOCK_SOURCE_MARKER} Bash Keys - software/scripts/bash-keys.profile.bash`;
     const result = _expandSourceMarkers(input, "#");
-    expect(result.sourceFiles).toEqual(["software/scripts/bash-keys-profile.bash"]);
-    expect(result.content).toContain(`# ${TEXT_BLOCK_SOURCE_START_MARKER} software/scripts/bash-keys-profile.bash`);
+    expect(result.sourceFiles).toEqual(["software/scripts/bash-keys.profile.bash"]);
+    expect(result.content).toContain(`# ${TEXT_BLOCK_SOURCE_START_MARKER} software/scripts/bash-keys.profile.bash`);
   });
 
   it("should collect file paths from existing SOURCE_BEGIN markers", () => {

@@ -38,7 +38,7 @@ Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward   # up/dow
 Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
 
 # PATH reconstruction — desired order, merged with current PATH, existence-checked, deduped
-# (matches bash-path-candidate-profile.bash approach)
+# (matches bash-path-candidate.profile.bash approach)
 $_pathCandidates = @(
   # ---- system ----
   "C:\Program Files\Eclipse Adoptium\jdk-21.0.10.7-hotspot\bin",

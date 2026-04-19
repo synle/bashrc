@@ -225,7 +225,7 @@ describe("profile-core.sh PATH construction", () => {
         extraSetup,
         'export HOME="/tmp/path_test_home"',
         `export PATH="${initialPath}"`,
-        `source "${path.join(ROOT_DIR, "software/scripts/bash-path-candidate-profile.bash")}" 2>/dev/null`,
+        `source "${path.join(ROOT_DIR, "software/scripts/bash-path-candidate.profile.bash")}" 2>/dev/null`,
         `source "${path.join(ROOT_DIR, "software/bootstrap/profile-core.sh")}" 2>/dev/null`,
         'echo "$PATH"',
       ].join("\n"),

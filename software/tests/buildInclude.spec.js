@@ -885,7 +885,7 @@ describe("sourceMetadataHeader", () => {
   const path = require("path");
 
   it("should return metadata string with path, md5, and size", () => {
-    const testFile = path.resolve("software/scripts/bash-keys-profile.bash");
+    const testFile = path.resolve("software/scripts/bash-keys.profile.bash");
     const content = fs.readFileSync(testFile, "utf8");
     const result = sourceMetadataHeader(testFile, content);
 
