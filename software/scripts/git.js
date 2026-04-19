@@ -147,26 +147,23 @@ async function doWork() {
   ]);
 
   // write to main gitconfig (~/.gitconfig on Linux/macOS)
-  // includes delta pager config if delta is installed, otherwise falls back to less -R
+  // uses delta as pager if installed, otherwise falls back to less -R
+  // [delta] section is always included — harmless if delta is not installed, ready if added later
   // also adds a default commit template (~/.gitmessage)
   await backupConfigFile(configMain);
   await writeText(
     configMain,
     await _getGitConfig({
       email,
-      extraCoreConfigs: gitPager === "delta"
-        ? code`
-          pager = delta
+      extraCoreConfigs: code`
+        pager = ${gitPager}
 
-          [delta]
-          navigate = true
-          side-by-side = true
-          line-numbers = true
-          syntax-theme = Dracula
-        `
-        : code`
-          pager = less -R
-        `,
+        [delta]
+        navigate = true
+        side-by-side = true
+        line-numbers = true
+        syntax-theme = Dracula
+      `,
       addDefaultCommitTemplate: true,
     }),
   );
