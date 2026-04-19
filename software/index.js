@@ -369,6 +369,8 @@ const EDITOR_CONFIGS = {
   tabSize,
   /** Print/ruler column width in the editor @type {number} */
   maxLineSize: PRINT_WIDTH_BREAK_COUNT,
+  /** Terminal scrollback buffer size in lines @type {number} */
+  terminalScrollback: 200000,
   /** Max depth for nested autocomplete tokens and cleanup searches @type {number} */
   maxNestedDepth: 3,
   /** Junk files to delete during cleanup (macOS metadata, OS artifacts, patch rejects) @type {string[]} */

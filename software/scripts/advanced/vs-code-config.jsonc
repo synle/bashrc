@@ -98,6 +98,7 @@
   "typescript.suggestionActions.enabled": false, // Disable TS lightbulb suggestions. Values: true, false
 
   // --- Terminal & System ---
+  "terminal.integrated.scrollback": 200000, // EDITOR_CONFIGS.terminalScrollback
   "terminal.integrated.gpuAcceleration": "auto", // Let VS Code decide whether to use GPU for terminal rendering. Values: "auto", "on", "off"
   "security.workspace.trust.enabled": false, // Disable workspace trust prompts — trust all workspaces. Values: true, false
   "explorer.copyRelativePathSeparator": "/", // Always use forward slashes when copying relative paths. Values: "/", "\\", "auto"
