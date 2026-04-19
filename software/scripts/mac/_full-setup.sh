@@ -325,6 +325,7 @@ function safe_pmset() {
 
 safe_pmset hibernatemode 0 "Disable hibernation (faster sleep/wake)"
 safe_pmset standby 0 "Disable standby (instant wake)"
+safe_pmset womp 0 "Disable wake for network access (better battery)"
 unset _pmset_current
 
 ################################################################################
