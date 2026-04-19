@@ -2,6 +2,21 @@
 # software/bootstrap/profile-core.sh
 
 ################################################################################
+# ---- Debug Tracing ----
+# Enable verbose tracing when /tmp/debug exists and contains 1 or true.
+################################################################################
+if [ -f /tmp/debug ]; then
+  _debug_val=$(cat /tmp/debug 2> /dev/null)
+  case "$_debug_val" in
+  1 | true | TRUE | True)
+    set -x
+    trap 'echo "LAST LINE: $LINENO"' EXIT ERR
+    ;;
+  esac
+  unset _debug_val
+fi
+
+################################################################################
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN/END | Profile Generated Timestamp

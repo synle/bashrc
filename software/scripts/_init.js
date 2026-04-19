@@ -74,6 +74,8 @@ ${LINE_BREAK_HASH}
 
   const entryPointSourceFiles = [BASH_SYLE_COMMON_PATH, ...coreBashProfileFiles];
   const entryPointContent = trimSpacesOnBothEnd(`
+    # define safe_source for non-login shells that skip .bash_profile
+    function safe_source() { bash -n "$1" 2>/dev/null && . "$1" || echo "[Warning] source $1 failed" >&2; }
     ${entryPointSourceFiles.map((file) => 'safe_source "' + file + '"').join("\n")}
   `);
 
