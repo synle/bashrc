@@ -81,7 +81,7 @@ export BASE_HOMEDIR_LINUX="$HOME"
 # ---- OS Detection ----
 ################################################################################
 is_os_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && is_os_mac=1
-is_os_ubuntu=0 && command grep -Eiq "ID(_LIKE)?=.*(ubuntu|debian|mint)" /etc/os-release 2> /dev/null && is_os_ubuntu=1
+is_os_ubuntu=0 && { command grep -Eiq "ID(_LIKE)?=.*ubuntu|ID(_LIKE)?=.*debian|ID(_LIKE)?=.*mint" /etc/os-release 2> /dev/null || type -P apt-get &> /dev/null; } && is_os_ubuntu=1
 is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /proc/version 2> /dev/null && ! command grep -qi "microsoft" /proc/version 2> /dev/null; }; } && is_os_chromeos=1
 is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d /mingw64 ]; } && is_os_mingw64=1
 is_os_android_termux=0 && { [ -n "$TERMUX_VERSION" ] || [ -d /data/data/com.termux ]; } && is_os_android_termux=1
