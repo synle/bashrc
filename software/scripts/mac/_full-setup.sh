@@ -312,14 +312,25 @@ fi
 #   To revert to safe defaults: sudo pmset -a hibernatemode 3 && sudo pmset -a standby 1
 _pmset_current=$(pmset -g custom 2> /dev/null)
 
-# safe_pmset <key> <value> <description> - Only calls sudo pmset if the current value differs.
+# safe_pmset [-a|-b|-c] <key> <value> <description>
+# Only calls sudo pmset if the current value differs. Defaults to -a (all sources).
+# -a = all sources, -b = battery only, -c = charger/AC only.
 function safe_pmset() {
+  local flag="-a"
+  if [[ "$1" == -* ]]; then flag="$1"; shift; fi
   local key="$1" val="$2" desc="$3"
-  if echo "$_pmset_current" | grep -q " $key[[:space:]]*$val"; then
+  local section=""
+  if [ "$flag" = "-b" ]; then section="Battery Power"; fi
+  if [ "$flag" = "-c" ]; then section="AC Power"; fi
+  local check_output="$_pmset_current"
+  if [ -n "$section" ]; then
+    check_output=$(echo "$_pmset_current" | sed -n "/$section/,/^\S/p")
+  fi
+  if echo "$check_output" | grep -q " $key[[:space:]]*$val"; then
     echo ">> Power: $desc >> Skipped (already $val)"
   else
     echo ">> Power: $desc"
-    sudo pmset -a "$key" "$val"
+    sudo pmset "$flag" "$key" "$val"
   fi
 }
 
@@ -334,15 +345,13 @@ safe_pmset disksleep 0      "Disable disk sleep (prevents USB disk disconnects)"
 safe_pmset powernap 0       "Disable Power Nap (prevents periodic wakes)"
 
 # ---- Display & Sleep Timeouts ----
-safe_pmset lessbright 0     "Disable display dimming on battery"
+safe_pmset lessbright 0         "Disable display dimming on battery"
 # AC: never sleep or turn off display (matches Windows desktop behavior)
-echo ">> Power: Set AC sleep and display timeouts to 0 (never)"
-sudo pmset -c sleep 0
-sudo pmset -c displaysleep 0
-# Battery: sleep and turn off display after 180 minutes (3 hours)
-echo ">> Power: Set battery sleep and display timeouts to 180 min"
-sudo pmset -b sleep 180
-sudo pmset -b displaysleep 180
+safe_pmset -c sleep 0           "AC: disable sleep (never)"
+safe_pmset -c displaysleep 0    "AC: disable display sleep (never)"
+# Battery: sleep and turn off display after 180 minutes (3 hours, matches Windows laptop)
+safe_pmset -b sleep 180         "Battery: sleep after 180 min (3 hours)"
+safe_pmset -b displaysleep 180  "Battery: display off after 180 min (3 hours)"
 
 # ---- Network & Wake Triggers ----
 safe_pmset womp 0           "Disable wake for network access (better battery)"
