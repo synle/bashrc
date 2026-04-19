@@ -80,25 +80,24 @@ export BASE_HOMEDIR_LINUX="$HOME"
 ################################################################################
 # ---- OS Detection ----
 ################################################################################
-# _detect_os [--release <csv>] [--proc <keyword>] [--noproc <keyword>] [--bin <binary>]
-#            [--ostype <pattern>] [--folder <path>] [--env <var>] [--file <path>]
+# _detect_os [--name <csv>] [--proc <keyword>] [--noproc <keyword>] [--bin <binary>]
+#            [--folder <path>] [--env <var>] [--file <path>]
 # Returns 0 when the OS matches. All flags are repeatable. Checks in order:
-#   1. /etc/os-release ID/ID_LIKE contains any keyword (if --release given)
-#   2. /proc/version contains keyword (if --proc given); blocked if --noproc matches
-#   3. OSTYPE glob match (if --ostype given)
+#   1. /etc/os-release ID/ID_LIKE contains any keyword (if --name given)
+#   2. OSTYPE contains any keyword (if --name given)
+#   3. /proc/version contains keyword (if --proc given); blocked if --noproc matches
 #   4. Folder exists (if --folder given)
 #   5. File exists (if --file given)
 #   6. Binary found in PATH (if --bin given)
 #   7. Env var is non-empty (if --env given)
 function _detect_os() {
-  local keywords="" bins=() ostypes=() folders=() envs=() procs=() noprocs=() files=()
+  local names="" bins=() folders=() envs=() procs=() noprocs=() files=()
   while [ $# -gt 0 ]; do
     case "$1" in
-    --release) keywords="$2"; shift 2 ;;
+    --name) names="$2"; shift 2 ;;
     --proc) procs+=("$2"); shift 2 ;;
     --noproc) noprocs+=("$2"); shift 2 ;;
     --bin) bins+=("$2"); shift 2 ;;
-    --ostype) ostypes+=("$2"); shift 2 ;;
     --folder) folders+=("$2"); shift 2 ;;
     --file) files+=("$2"); shift 2 ;;
     --env) envs+=("$2"); shift 2 ;;
@@ -106,12 +105,15 @@ function _detect_os() {
     esac
   done
 
-  # check /etc/os-release keywords
-  if [ -n "$keywords" ]; then
+  # check --name keywords against /etc/os-release then OSTYPE (contains match)
+  if [ -n "$names" ]; then
     local IFS=',' pattern=""
-    for keyword in $keywords; do
+    for keyword in $names; do
       keyword=$(echo "$keyword" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-      [ -n "$keyword" ] && pattern="${pattern:+$pattern|}ID(_LIKE)?=.*$keyword"
+      if [ -n "$keyword" ]; then
+        pattern="${pattern:+$pattern|}ID(_LIKE)?=.*$keyword"
+        [[ "$OSTYPE" == *"$keyword"* ]] && return 0
+      fi
     done
     command grep -Eiq "$pattern" /etc/os-release 2> /dev/null && return 0
   fi
@@ -125,11 +127,6 @@ function _detect_os() {
       done
       ((blocked)) || return 0
     fi
-  done
-
-  # check OSTYPE (contains match)
-  for p in "${ostypes[@]}"; do
-    [[ "$OSTYPE" == *"$p"* ]] && return 0
   done
 
   # check folders
@@ -155,14 +152,14 @@ function _detect_os() {
   return 1
 }
 
-is_os_mac=0 && _detect_os --ostype "darwin" --folder /Applications && is_os_mac=1
-is_os_ubuntu=0 && _detect_os --release "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
+is_os_mac=0 && _detect_os --name "darwin" --folder /Applications && is_os_mac=1
+is_os_ubuntu=0 && _detect_os --name "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
 is_os_chromeos=0 && _detect_os --file /dev/.cros_milestone --proc "cros" --noproc "microsoft" && is_os_chromeos=1
-is_os_mingw64=0 && _detect_os --ostype "msys" --ostype "cygwin" --folder /mingw64 && is_os_mingw64=1
+is_os_mingw64=0 && _detect_os --name "msys, cygwin" --folder /mingw64 && is_os_mingw64=1
 is_os_android_termux=0 && _detect_os --env TERMUX_VERSION --folder /data/data/com.termux && is_os_android_termux=1
-is_os_arch_linux=0 && _detect_os --release "arch, steamos" --bin pacman && is_os_arch_linux=1
-is_os_steamos=0 && _detect_os --release "steamos" && is_os_steamos=1
-is_os_redhat=0 && _detect_os --release "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
+is_os_arch_linux=0 && _detect_os --name "arch, steamos" --bin pacman && is_os_arch_linux=1
+is_os_steamos=0 && _detect_os --name "steamos" && is_os_steamos=1
+is_os_redhat=0 && _detect_os --name "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
 is_os_windows=0 && _detect_os --folder /mnt/c/Windows --folder /c/Windows --proc "microsoft" && is_os_windows=1
 is_os_wsl=0 && ((is_os_windows)) && is_os_wsl=1
 
