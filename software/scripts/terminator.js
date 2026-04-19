@@ -68,7 +68,7 @@ async function doWork() {
       [[default]]
         icon_bell = False
         font = DejaVu Sans Mono Bold 11
-        scrollback_lines = 200000
+        scrollback_lines = ${EDITOR_CONFIGS.terminalScrollback}
         show_titlebar = False
         use_system_font = False
         bold_is_bright = True
