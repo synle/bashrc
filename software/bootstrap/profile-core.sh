@@ -4,13 +4,28 @@
 ################################################################################
 # ---- Debug Tracing ----
 # Enable verbose tracing when /tmp/debug exists and contains 1 or true.
+# Logs stacktrace to /tmp/debug.log on ERR and summary on EXIT.
 ################################################################################
 if [ -f /tmp/debug ]; then
   _debug_val=$(cat /tmp/debug 2> /dev/null)
   case "$_debug_val" in
   1 | true | TRUE | True)
     set -x
-    trap 'echo "LAST LINE: $LINENO"' EXIT ERR
+    function _debug_stacktrace() {
+      local exit_code=$?
+      local log="/tmp/debug.log"
+      {
+        echo "--- ${1:-ERROR} at $(date '+%Y-%m-%d %H:%M:%S') (exit code: $exit_code) ---"
+        local i
+        for ((i = 0; i < ${#FUNCNAME[@]}; i++)); do
+          echo "  [$i] ${FUNCNAME[$i]}() at ${BASH_SOURCE[$i]:-profile}:${BASH_LINENO[$i]}"
+        done
+        echo ""
+      } >> "$log"
+      echo "[debug] $1: exit=$exit_code at ${BASH_SOURCE[1]:-profile}:${BASH_LINENO[0]} in ${FUNCNAME[1]:-main} (see /tmp/debug.log)" >&2
+    }
+    trap '_debug_stacktrace ERR' ERR
+    trap '_debug_stacktrace EXIT' EXIT
     ;;
   esac
   unset _debug_val
