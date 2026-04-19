@@ -333,16 +333,16 @@ safe_pmset lowpowermode 0   "Disable Low Power Mode (prevents USB/CPU throttling
 safe_pmset disksleep 0      "Disable disk sleep (prevents USB disk disconnects)"
 safe_pmset powernap 0       "Disable Power Nap (prevents periodic wakes)"
 
-# ---- Display ----
+# ---- Display & Sleep Timeouts ----
 safe_pmset lessbright 0     "Disable display dimming on battery"
-# prevent sleep on AC power only (-c = charger, not -a which would also affect battery)
-if ! echo "$_pmset_current" | grep -q "AC Power" || ! pmset -g custom 2> /dev/null | sed -n '/AC Power/,/Battery Power/p' | grep -q " sleep[[:space:]]*0"; then
-  echo ">> Power: Prevent sleep on AC power"
-  sudo pmset -c sleep 0
-  sudo pmset -c displaysleep 0
-else
-  echo ">> Power: Prevent sleep on AC power >> Skipped (already 0)"
-fi
+# AC: never sleep or turn off display (matches Windows desktop behavior)
+echo ">> Power: Set AC sleep and display timeouts to 0 (never)"
+sudo pmset -c sleep 0
+sudo pmset -c displaysleep 0
+# Battery: sleep and turn off display after 240 minutes (matches Windows laptop behavior)
+echo ">> Power: Set battery sleep and display timeouts to 240 min"
+sudo pmset -b sleep 240
+sudo pmset -b displaysleep 240
 
 # ---- Network & Wake Triggers ----
 safe_pmset womp 0           "Disable wake for network access (better battery)"
