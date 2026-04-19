@@ -12,14 +12,31 @@
 
 ################################################################################
 # ---- Debug Tracing ----
-# Enable verbose tracing when /tmp/debug exists and contains 1 or true.
+# Enable:  echo 1 > /tmp/synle/bashrc/debug
+# Disable: rm /tmp/synle/bashrc/debug
+# Logs stacktrace to /tmp/synle/bashrc/debug.log on ERR and EXIT.
 ################################################################################
-if [ -f /tmp/debug ]; then
-  _debug_val=$(cat /tmp/debug 2> /dev/null)
+_BASHRC_DEBUG_DIR="/tmp/synle/bashrc"
+if [ -f "$_BASHRC_DEBUG_DIR/debug" ]; then
+  _debug_val=$(cat "$_BASHRC_DEBUG_DIR/debug" 2> /dev/null)
   case "$_debug_val" in
   1 | true | TRUE | True)
     set -x
-    trap 'echo "LAST LINE: $LINENO"' EXIT ERR
+    function _debug_stacktrace() {
+      local exit_code=$?
+      local log="$_BASHRC_DEBUG_DIR/debug.log"
+      {
+        echo "--- ${1:-ERROR} at $(date '+%Y-%m-%d %H:%M:%S') (exit code: $exit_code) ---"
+        local i
+        for ((i = 0; i < ${#FUNCNAME[@]}; i++)); do
+          echo "  [$i] ${FUNCNAME[$i]}() at ${BASH_SOURCE[$i]:-profile}:${BASH_LINENO[$i]}"
+        done
+        echo ""
+      } >> "$log"
+      echo "[debug] $1: exit=$exit_code at ${BASH_SOURCE[1]:-profile}:${BASH_LINENO[0]} in ${FUNCNAME[1]:-main} (see $log)" >&2
+    }
+    trap '_debug_stacktrace ERR' ERR
+    trap '_debug_stacktrace EXIT' EXIT
     ;;
   esac
   unset _debug_val
@@ -29,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-19T16:49:46.480Z
+# Generated: 2026-04-19T17:21:36.097Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -722,6 +739,8 @@ alias ls_newest_last="ls_newest -r"   # sort by modification time (oldest first)
 alias ls_biggest="ll -S"              # sort by file size (biggest first)
 alias ls_biggest_last="ls_biggest -r" # sort by file size (smallest first)
 alias lc="wc -l"                      # line count
+alias tailf="tail -n 500 -f"          # show last 500 lines then follow
+alias tailn="tail -n"                 # show last N lines
 # prevent curl from using cached responses
 alias curl="curl \
   -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' \
