@@ -3167,6 +3167,20 @@ function execBashSync(cmd, options) {
   }).trim();
 }
 
+/**
+ * Checks if a binary is available on the system. JS equivalent of bash `has_persistent_binary`.
+ * @param {string} name - The binary name to check (e.g. "delta", "rg", "fzf")
+ * @returns {boolean} True if the binary is found in PATH
+ */
+function hasBinary(name) {
+  try {
+    execBashSync(`type -P ${name}`);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
 //////////////////////////////////////////////////////
 // Console Colors & Output
 //////////////////////////////////////////////////////

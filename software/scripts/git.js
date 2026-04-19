@@ -130,13 +130,7 @@ async function doWork() {
   // figure out the name
   const oldConfig = await readText`${configMain}`;
   const email = _extractEmail(oldConfig);
-  let gitPager = "less -R";
-  try {
-    execBashSync("type -P delta");
-    gitPager = "delta";
-  } catch (err) {
-    // delta not installed — fall back to less -R
-  }
+  const gitPager = hasBinary("delta") ? "delta" : "less -R";
 
   log(`>>> Installing git Aliases and Configs for Main OS`, email, configMain);
 
