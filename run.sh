@@ -80,19 +80,18 @@ export BASE_HOMEDIR_LINUX="$HOME"
 ################################################################################
 # ---- OS Detection ----
 ################################################################################
-# _detect_os <keywords_csv> [--bin <binary>] [--ostype <pattern>] [--folder <path>] [--env <var>]
-# Returns 0 when the OS matches. Checks in order:
-#   1. /etc/os-release ID/ID_LIKE contains any keyword (if keywords given)
+# _detect_os [--release <keywords_csv>] [--bin <binary>] [--ostype <pattern>] [--folder <path>] [--env <var>]
+# Returns 0 when the OS matches. All flags are repeatable. Checks in order:
+#   1. /etc/os-release ID/ID_LIKE contains any keyword (if --release given)
 #   2. OSTYPE glob match (if --ostype given)
-#   3. Folder exists (if --folder given, repeatable)
+#   3. Folder exists (if --folder given)
 #   4. Binary found in PATH (if --bin given)
 #   5. Env var is non-empty (if --env given)
 function _detect_os() {
-  local keywords="${1:-}"
-  shift || true
-  local bins=() ostypes=() folders=() envs=()
+  local keywords="" bins=() ostypes=() folders=() envs=()
   while [ $# -gt 0 ]; do
     case "$1" in
+    --release) keywords="$2"; shift 2 ;;
     --bin) bins+=("$2"); shift 2 ;;
     --ostype) ostypes+=("$2"); shift 2 ;;
     --folder) folders+=("$2"); shift 2 ;;
@@ -134,15 +133,15 @@ function _detect_os() {
   return 1
 }
 
-is_os_mac=0 && _detect_os "" --ostype "darwin*" --folder /Applications && is_os_mac=1
-is_os_ubuntu=0 && _detect_os "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
+is_os_mac=0 && _detect_os --ostype "darwin*" --folder /Applications && is_os_mac=1
+is_os_ubuntu=0 && _detect_os --release "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
 is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /proc/version 2> /dev/null && ! command grep -qi "microsoft" /proc/version 2> /dev/null; }; } && is_os_chromeos=1
-is_os_mingw64=0 && _detect_os "" --ostype "msys" --ostype "cygwin" --folder /mingw64 && is_os_mingw64=1
-is_os_android_termux=0 && _detect_os "" --env TERMUX_VERSION --folder /data/data/com.termux && is_os_android_termux=1
-is_os_arch_linux=0 && _detect_os "arch, steamos" --bin pacman && is_os_arch_linux=1
-is_os_steamos=0 && _detect_os "steamos" && is_os_steamos=1
-is_os_redhat=0 && _detect_os "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
-is_os_windows=0 && _detect_os "" --folder /mnt/c/Windows --folder /c/Windows && is_os_windows=1
+is_os_mingw64=0 && _detect_os --ostype "msys" --ostype "cygwin" --folder /mingw64 && is_os_mingw64=1
+is_os_android_termux=0 && _detect_os --env TERMUX_VERSION --folder /data/data/com.termux && is_os_android_termux=1
+is_os_arch_linux=0 && _detect_os --release "arch, steamos" --bin pacman && is_os_arch_linux=1
+is_os_steamos=0 && _detect_os --release "steamos" && is_os_steamos=1
+is_os_redhat=0 && _detect_os --release "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
+is_os_windows=0 && _detect_os --folder /mnt/c/Windows --folder /c/Windows && is_os_windows=1
 is_os_wsl=0 && { ((is_os_windows)) || command grep -qi microsoft /proc/version 2> /dev/null; } && is_os_wsl=1
 
 IS_CI=0 && [ -n "$CI" ] && IS_CI=1
