@@ -80,21 +80,27 @@ export BASE_HOMEDIR_LINUX="$HOME"
 ################################################################################
 # ---- OS Detection ----
 ################################################################################
-# _detect_os [--release <keywords_csv>] [--bin <binary>] [--ostype <pattern>] [--folder <path>] [--env <var>]
+# _detect_os [--release <csv>] [--proc <keyword>] [--noproc <keyword>] [--bin <binary>]
+#            [--ostype <pattern>] [--folder <path>] [--env <var>] [--file <path>]
 # Returns 0 when the OS matches. All flags are repeatable. Checks in order:
 #   1. /etc/os-release ID/ID_LIKE contains any keyword (if --release given)
-#   2. OSTYPE glob match (if --ostype given)
-#   3. Folder exists (if --folder given)
-#   4. Binary found in PATH (if --bin given)
-#   5. Env var is non-empty (if --env given)
+#   2. /proc/version contains keyword (if --proc given); blocked if --noproc matches
+#   3. OSTYPE glob match (if --ostype given)
+#   4. Folder exists (if --folder given)
+#   5. File exists (if --file given)
+#   6. Binary found in PATH (if --bin given)
+#   7. Env var is non-empty (if --env given)
 function _detect_os() {
-  local keywords="" bins=() ostypes=() folders=() envs=()
+  local keywords="" bins=() ostypes=() folders=() envs=() procs=() noprocs=() files=()
   while [ $# -gt 0 ]; do
     case "$1" in
     --release) keywords="$2"; shift 2 ;;
+    --proc) procs+=("$2"); shift 2 ;;
+    --noproc) noprocs+=("$2"); shift 2 ;;
     --bin) bins+=("$2"); shift 2 ;;
     --ostype) ostypes+=("$2"); shift 2 ;;
     --folder) folders+=("$2"); shift 2 ;;
+    --file) files+=("$2"); shift 2 ;;
     --env) envs+=("$2"); shift 2 ;;
     *) shift ;;
     esac
@@ -110,6 +116,17 @@ function _detect_os() {
     command grep -Eiq "$pattern" /etc/os-release 2> /dev/null && return 0
   fi
 
+  # check /proc/version keywords (blocked by --noproc exclusions)
+  for keyword in "${procs[@]}"; do
+    if command grep -qi "$keyword" /proc/version 2> /dev/null; then
+      local blocked=0
+      for excluded in "${noprocs[@]}"; do
+        command grep -qi "$excluded" /proc/version 2> /dev/null && blocked=1 && break
+      done
+      ((blocked)) || return 0
+    fi
+  done
+
   # check OSTYPE
   for p in "${ostypes[@]}"; do
     [[ "$OSTYPE" == $p ]] && return 0
@@ -118,6 +135,11 @@ function _detect_os() {
   # check folders
   for f in "${folders[@]}"; do
     [ -d "$f" ] && return 0
+  done
+
+  # check files
+  for f in "${files[@]}"; do
+    [ -f "$f" ] && return 0
   done
 
   # check binaries
@@ -135,14 +157,14 @@ function _detect_os() {
 
 is_os_mac=0 && _detect_os --ostype "darwin*" --folder /Applications && is_os_mac=1
 is_os_ubuntu=0 && _detect_os --release "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
-is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /proc/version 2> /dev/null && ! command grep -qi "microsoft" /proc/version 2> /dev/null; }; } && is_os_chromeos=1
+is_os_chromeos=0 && _detect_os --file /dev/.cros_milestone --proc "cros" --noproc "microsoft" && is_os_chromeos=1
 is_os_mingw64=0 && _detect_os --ostype "msys" --ostype "cygwin" --folder /mingw64 && is_os_mingw64=1
 is_os_android_termux=0 && _detect_os --env TERMUX_VERSION --folder /data/data/com.termux && is_os_android_termux=1
 is_os_arch_linux=0 && _detect_os --release "arch, steamos" --bin pacman && is_os_arch_linux=1
 is_os_steamos=0 && _detect_os --release "steamos" && is_os_steamos=1
 is_os_redhat=0 && _detect_os --release "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
 is_os_windows=0 && _detect_os --folder /mnt/c/Windows --folder /c/Windows && is_os_windows=1
-is_os_wsl=0 && { ((is_os_windows)) || command grep -qi microsoft /proc/version 2> /dev/null; } && is_os_wsl=1
+is_os_wsl=0 && { ((is_os_windows)) || _detect_os --proc "microsoft"; } && is_os_wsl=1
 
 IS_CI=0 && [ -n "$CI" ] && IS_CI=1
 NO_COLOR="${NO_COLOR:-0}" && [ -n "$NO_COLOR" ] && [ "$NO_COLOR" != "0" ] && NO_COLOR=1 || NO_COLOR=0
