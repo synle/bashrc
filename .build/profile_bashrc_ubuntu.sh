@@ -29,7 +29,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-19T15:43:30.802Z
+# Generated: 2026-04-19T16:28:30.762Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -417,8 +417,8 @@ function history_restore() {
 # SOURCE_END software/scripts/bash-history-profile.bash
 # BEGIN fnm - fast node manager
 # hookup binary - add default node version to PATH
-export FNM_DIR="/github/home/.local/share/fnm"
-export PATH="/github/home/.local/share/fnm:$PATH"
+export FNM_DIR="/home/runner/.local/share/fnm"
+export PATH="/home/runner/.local/share/fnm:$PATH"
 export PATH="/bin:$PATH"
 
 # initialize fnm
@@ -860,7 +860,7 @@ function format_other_text_based_files() {
 # END format script
 
 # BEGIN temporal-cli
-export PATH="/github/home/.temporalio/bin:$PATH"
+export PATH="/home/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
 # software/scripts/bash-path-candidate-profile.bash | cab517092d24076edbbb75595cb43536 | 3.6 KB | 2026-04-19
@@ -1216,6 +1216,7 @@ alias ls_newest="ll -t"               # sort by modification time (newest first)
 alias ls_newest_last="ls_newest -r"   # sort by modification time (oldest first)
 alias ls_biggest="ll -S"              # sort by file size (biggest first)
 alias ls_biggest_last="ls_biggest -r" # sort by file size (smallest first)
+alias lc="wc -l"                      # line count
 # prevent curl from using cached responses
 alias curl="curl \
   -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' \
