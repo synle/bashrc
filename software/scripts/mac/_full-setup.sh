@@ -324,14 +324,17 @@ function safe_pmset() {
 }
 
 # ---- Sleep & Wake ----
-safe_pmset hibernatemode 0 "Disable hibernation (faster sleep/wake)"
-safe_pmset standby 0 "Disable standby (instant wake)"
-safe_pmset autopoweroff 0 "Disable auto power off (prevents USB dock disconnects)"
+safe_pmset hibernatemode 0  "Disable hibernation (faster sleep/wake)"
+safe_pmset standby 0        "Disable standby (instant wake)"
+safe_pmset autopoweroff 0   "Disable auto power off (prevents USB dock disconnects)"
 
 # ---- USB & Device Power ----
-safe_pmset lowpowermode 0 "Disable Low Power Mode (prevents USB/CPU throttling)"
+safe_pmset lowpowermode 0   "Disable Low Power Mode (prevents USB/CPU throttling)"
+safe_pmset disksleep 0      "Disable disk sleep (prevents USB disk disconnects)"
+safe_pmset powernap 0       "Disable Power Nap (prevents periodic wakes)"
 
-# ---- Display & AC Power ----
+# ---- Display ----
+safe_pmset lessbright 0     "Disable display dimming on battery"
 # prevent sleep on AC power only (-c = charger, not -a which would also affect battery)
 if ! echo "$_pmset_current" | grep -q "AC Power" || ! pmset -g custom 2> /dev/null | sed -n '/AC Power/,/Battery Power/p' | grep -q " sleep[[:space:]]*0"; then
   echo ">> Power: Prevent sleep on AC power"
@@ -342,9 +345,9 @@ else
 fi
 
 # ---- Network & Wake Triggers ----
-safe_pmset womp 0 "Disable wake for network access (better battery)"
-safe_pmset proximitywake 0 "Disable proximity wake (prevents spurious wakes)"
-safe_pmset tcpkeepalive 0 "Disable TCP keepalive during sleep (better battery)"
+safe_pmset womp 0           "Disable wake for network access (better battery)"
+safe_pmset proximitywake 0  "Disable proximity wake (prevents spurious wakes)"
+safe_pmset tcpkeepalive 0   "Disable TCP keepalive during sleep (better battery)"
 
 unset _pmset_current
 
