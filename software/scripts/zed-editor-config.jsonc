@@ -36,6 +36,11 @@
     "git_status": false, // Hide git status indicators on tabs. Values: true, false
   },
 
+  // --- Terminal ---
+  "terminal": {
+    "max_scroll_history_lines": 200000, // EDITOR_CONFIGS.terminalScrollback
+  },
+
   // --- Performance & Telemetry ---
   "telemetry": {
     "diagnostics": false, // Disable sending crash reports. Values: true, false

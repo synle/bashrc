@@ -83,7 +83,7 @@
         "Alpha Component": 1,
         "Green Component": 0,
       },
-      "Scrollback Lines": 1000,
+      "Scrollback Lines": 200000, // EDITOR_CONFIGS.terminalScrollback
       "Selection Color (Light)": {
         "Green Component": 0.8392156862745098, // {{light.selection_G}}
         "Red Component": 0.6784313725490196, // {{light.selection_R}}

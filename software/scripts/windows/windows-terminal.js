@@ -73,7 +73,7 @@ async function doWork() {
     fontWeight: EDITOR_CONFIGS.fontWeightKeyword,
     padding: "10, 8, 10, 8",
     bellStyle: "all",
-    historySize: 50000,
+    historySize: EDITOR_CONFIGS.terminalScrollback,
     scrollbarState: "visible",
     antialiasingMode: "cleartype",
     intenseTextStyle: "bright",
