@@ -976,11 +976,11 @@ if ($isDesktop) {
     powercfg /change standby-timeout-ac 0
     powercfg /change standby-timeout-dc 0
 } else {
-    Write-Host ">> Power: Laptop detected — using conservative timeouts"
-    powercfg /change monitor-timeout-ac 240
-    powercfg /change monitor-timeout-dc 240
-    powercfg /change standby-timeout-ac 240
-    powercfg /change standby-timeout-dc 240
+    Write-Host ">> Power: Laptop detected — using conservative timeouts (3 hours)"
+    powercfg /change monitor-timeout-ac 180
+    powercfg /change monitor-timeout-dc 180
+    powercfg /change standby-timeout-ac 180
+    powercfg /change standby-timeout-dc 180
 }
 
 Write-Host "Performance optimizations applied." -ForegroundColor Green
