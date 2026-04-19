@@ -1881,10 +1881,10 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Deferred Profile Blocks (heavy or late-loading) ----
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
-# SOURCE | software/scripts/bash-keys-profile.bash
-# SOURCE | software/scripts/bash-file-utils.bash
-# SOURCE | software/scripts/bash-fzf-profile.bash
-# SOURCE | software/scripts/advanced/editor-launchers-common.bash
+# SOURCE | software/scripts/bash-keys.profile.bash
+# SOURCE | software/scripts/bash-file-utils.profile.bash
+# SOURCE | software/scripts/bash-fzf.profile.bash
+# SOURCE | software/scripts/advanced/editor-launchers-common.profile.bash
 # BEGIN/END | Editor Launchers - Vim
 # BEGIN/END | Editor Launchers - Sublime Text
 # BEGIN/END | Editor Launchers - Sublime Merge
@@ -1898,7 +1898,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Spec-based Autocomplete (bash-autocomplete-complete-spec.js) ----
 ################################################################################
 # BEGIN/END | Spec Autocomplete
-# SOURCE | software/scripts/bash-command-wrappers-profile.bash
+# SOURCE | software/scripts/bash-command-wrappers.profile.bash
 
 ################################################################################
 # ---- OS-specific Tweaks (registerPlatformTweaks) ----

@@ -185,7 +185,7 @@ runs:
         artifact="${{ inputs.artifact-name }}"
 
         # Source the profile and path candidates to pick up PATH additions
-        safe_source software/scripts/bash-path-candidate-profile.bash
+        safe_source software/scripts/bash-path-candidate.profile.bash
         for profile in ~/.bash_syle "$HOME/.bash_syle"; do
           safe_source "$profile"
         done

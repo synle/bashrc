@@ -229,7 +229,7 @@ function buildCompletionTestScript(specContent, compWords, compCword, setupCode 
     .replace("{{MAX_NESTED_DEPTH}}", "3");
   return `#!/usr/bin/env bash
 set -uo pipefail
-source "${process.cwd()}/software/scripts/bash-fzf-profile.bash"
+source "${process.cwd()}/software/scripts/bash-fzf.profile.bash"
 ${setupCode}
 ${funcBody}
 COMP_WORDS=(${compWords.map((w) => `"${w}"`).join(" ")})
@@ -784,11 +784,11 @@ describe("dynamic token expansion (bash integration)", () => {
   });
 });
 
-// ---- bash-fzf-profile.bash direct tests ----
+// ---- bash-fzf.profile.bash direct tests ----
 
-describe("bash-fzf-profile.bash (direct)", () => {
+describe("bash-fzf.profile.bash (direct)", () => {
   /** @type {string} */
-  const fzfTemplatePath = path.resolve("software/scripts/bash-fzf-profile.bash");
+  const fzfTemplatePath = path.resolve("software/scripts/bash-fzf.profile.bash");
   /** @type {string} */
   let tmpDir;
 
@@ -837,7 +837,7 @@ describe("bash-fzf-profile.bash (direct)", () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  /** Runs a bash script that sources bash-fzf-profile.bash and returns stdout lines. */
+  /** Runs a bash script that sources bash-fzf.profile.bash and returns stdout lines. */
   function runFzfHelper(script) {
     const full = `#!/usr/bin/env bash\nsource "${fzfTemplatePath}"\n${script}`;
     return execSync("bash", { input: full, encoding: "utf-8", cwd: tmpDir, timeout: 10000 })
@@ -1083,15 +1083,15 @@ describe("bash-fzf-profile.bash (direct)", () => {
 
   describe("fzf history timestamp filtering", () => {
     it("should filter lines starting with # from bash_history in __fzf_history__", () => {
-      // The __fzf_history__ function in bash-keys-profile.bash uses grep -v '^#'
+      // The __fzf_history__ function in bash-keys.profile.bash uses grep -v '^#'
       // to strip bash HISTTIMEFORMAT timestamp lines (e.g. #1774747858)
-      const keysPath = path.resolve("software/scripts/bash-keys-profile.bash");
+      const keysPath = path.resolve("software/scripts/bash-keys.profile.bash");
       const content = fs.readFileSync(keysPath, "utf8");
       expect(content).toContain("command grep -v '^#'");
     });
 
     it("should filter lines starting with # from bash_history in fuzzy_history", () => {
-      const historyPath = path.resolve("software/scripts/bash-history-profile.bash");
+      const historyPath = path.resolve("software/scripts/bash-history.profile.bash");
       const content = fs.readFileSync(historyPath, "utf8");
       expect(content).toContain("command grep -v '^#'");
     });

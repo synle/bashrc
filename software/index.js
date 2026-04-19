@@ -394,7 +394,7 @@ const EDITOR_CONFIGS = {
    * - Sublime Text: file_exclude_patterns (hidden from sidebar and Goto Anything)
    * - VS Code: files.exclude + search.exclude (hidden from sidebar and search)
    * - Zed: file_scan_exclusions (hidden from file scan)
-   * - Shell: used by _fuzzy_list_all text_files mode (hardcoded fallback in bash-fzf-profile.bash)
+   * - Shell: used by _fuzzy_list_all text_files mode (hardcoded fallback in bash-fzf.profile.bash)
    * @type {string[]}
    */
   ignoredFiles: [
@@ -520,7 +520,7 @@ const EDITOR_CONFIGS = {
    * - Sublime Text: folder_exclude_patterns (hidden from sidebar and Goto Anything)
    * - VS Code: files.exclude + search.exclude + files.watcherExclude (hidden from sidebar, search, and file watcher)
    * - Zed: file_scan_exclusions (hidden from file scan)
-   * - Shell: used by _fuzzy_list_all folder filtering (hardcoded fallback in bash-fzf-profile.bash)
+   * - Shell: used by _fuzzy_list_all folder filtering (hardcoded fallback in bash-fzf.profile.bash)
    * @type {string[]}
    */
   ignoredFolders: [
