@@ -80,83 +80,72 @@ export BASE_HOMEDIR_LINUX="$HOME"
 ################################################################################
 # ---- OS Detection ----
 ################################################################################
-# _detect_os [--name <csv>] [--noproc <keyword>] [--bin <binary>]
-#            [--folder <path>] [--env <var>] [--file <path>]
-# Returns 0 when the OS matches. All flags are repeatable. Checks in order:
+# _detect_os [--name <csv>] [--bin <csv>] [--path <csv>] [--env <csv>]
+# Returns 0 when the OS matches. All flags accept CSV values. Checks in order:
 #   1. /etc/os-release ID/ID_LIKE contains any --name keyword
 #   2. OSTYPE contains any --name keyword
-#   3. /proc/version contains any --name keyword (blocked if --noproc matches)
-#   4. Folder exists (if --folder given)
-#   5. File exists (if --file given)
-#   6. Binary found in PATH (if --bin given)
-#   7. Env var is non-empty (if --env given)
+#   3. /proc/version contains any --name keyword
+#   4. Path exists (if --path given, file or folder)
+#   5. Binary found in PATH (if --bin given)
+#   6. Env var is non-empty (if --env given)
 function _detect_os() {
-  local names="" bins=() folders=() envs=() noprocs=() files=()
+  local names="" bins="" paths="" envs=""
   while [ $# -gt 0 ]; do
     case "$1" in
     --name) names="$2"; shift 2 ;;
-    --noproc) noprocs+=("$2"); shift 2 ;;
-    --bin) bins+=("$2"); shift 2 ;;
-    --folder) folders+=("$2"); shift 2 ;;
-    --file) files+=("$2"); shift 2 ;;
-    --env) envs+=("$2"); shift 2 ;;
+    --bin) bins="$2"; shift 2 ;;
+    --path) paths="$2"; shift 2 ;;
+    --env) envs="$2"; shift 2 ;;
     *) shift ;;
     esac
   done
 
+  local IFS=','
+
   # check --name keywords against /etc/os-release, OSTYPE, and /proc/version (contains match)
-  # --noproc exclusions block /proc/version matches (e.g. exclude "microsoft" for chromeos)
   if [ -n "$names" ]; then
-    local IFS=',' pattern=""
+    local pattern=""
     for keyword in $names; do
       keyword=$(echo "$keyword" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
       if [ -n "$keyword" ]; then
         pattern="${pattern:+$pattern|}ID(_LIKE)?=.*$keyword"
         [[ "$OSTYPE" == *"$keyword"* ]] && return 0
-        if command grep -qi "$keyword" /proc/version 2> /dev/null; then
-          local blocked=0
-          for excluded in "${noprocs[@]}"; do
-            command grep -qi "$excluded" /proc/version 2> /dev/null && blocked=1 && break
-          done
-          ((blocked)) || return 0
-        fi
+        command grep -qi "$keyword" /proc/version 2> /dev/null && return 0
       fi
     done
     command grep -Eiq "$pattern" /etc/os-release 2> /dev/null && return 0
   fi
 
-  # check folders
-  for f in "${folders[@]}"; do
-    [ -d "$f" ] && return 0
-  done
-
-  # check files
-  for f in "${files[@]}"; do
-    [ -f "$f" ] && return 0
+  # check paths (file or folder)
+  for p in $paths; do
+    p=$(echo "$p" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [ -n "$p" ] && [ -e "$p" ] && return 0
   done
 
   # check binaries
-  for b in "${bins[@]}"; do
-    type -P "$b" &> /dev/null && return 0
+  for b in $bins; do
+    b=$(echo "$b" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [ -n "$b" ] && type -P "$b" &> /dev/null && return 0
   done
 
   # check env vars
-  for e in "${envs[@]}"; do
-    [ -n "${!e:-}" ] && return 0
+  for e in $envs; do
+    e=$(echo "$e" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [ -n "$e" ] && [ -n "${!e:-}" ] && return 0
   done
 
   return 1
 }
 
-is_os_mac=0 && _detect_os --name "darwin" --folder /Applications && is_os_mac=1
-is_os_ubuntu=0 && _detect_os --name "ubuntu, debian, mint" --bin apt-get && is_os_ubuntu=1
-is_os_chromeos=0 && _detect_os --name "cros" --noproc "microsoft" --file /dev/.cros_milestone && is_os_chromeos=1
-is_os_mingw64=0 && _detect_os --name "msys, cygwin" --folder /mingw64 && is_os_mingw64=1
-is_os_android_termux=0 && _detect_os --env TERMUX_VERSION --folder /data/data/com.termux && is_os_android_termux=1
-is_os_arch_linux=0 && _detect_os --name "arch, steamos" --bin pacman && is_os_arch_linux=1
+is_os_mac=0 && _detect_os --name "darwin" --path "/Applications" && is_os_mac=1
+is_os_ubuntu=0 && _detect_os --name "ubuntu, debian, mint" --bin "apt-get" && is_os_ubuntu=1
+is_os_chromeos=0 && _detect_os --name "cros" --path "/dev/.cros_milestone" && is_os_chromeos=1
+is_os_mingw64=0 && _detect_os --name "msys, cygwin" --path "/mingw64" && is_os_mingw64=1
+is_os_android_termux=0 && _detect_os --env "TERMUX_VERSION" --path "/data/data/com.termux" && is_os_android_termux=1
+is_os_arch_linux=0 && _detect_os --name "arch, steamos" --bin "pacman" && is_os_arch_linux=1
 is_os_steamos=0 && _detect_os --name "steamos" && is_os_steamos=1
-is_os_redhat=0 && _detect_os --name "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
-is_os_windows=0 && _detect_os --name "microsoft" --folder /mnt/c/Windows --folder /c/Windows && is_os_windows=1
+is_os_redhat=0 && _detect_os --name "fedora, rhel, centos, rocky, alma" --bin "dnf" && is_os_redhat=1
+is_os_windows=0 && _detect_os --name "microsoft" --path "/mnt/c/Windows, /c/Windows" && is_os_windows=1
 is_os_wsl=0 && ((is_os_windows)) && is_os_wsl=1
 
 IS_CI=0 && [ -n "$CI" ] && IS_CI=1
