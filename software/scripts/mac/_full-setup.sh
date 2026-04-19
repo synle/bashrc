@@ -341,7 +341,8 @@ safe_pmset autopoweroff 0   "Disable auto power off (prevents USB dock disconnec
 
 # ---- USB & Device Power ----
 safe_pmset lowpowermode 0   "Disable Low Power Mode (prevents USB/CPU throttling)"
-safe_pmset disksleep 0      "Disable disk sleep (prevents USB disk disconnects)"
+safe_pmset -c disksleep 0   "AC: disable disk sleep (prevents USB disk disconnects)"
+safe_pmset -b disksleep 180 "Battery: disk sleep after 180 min (must be non-zero when sleep is non-zero)"
 safe_pmset powernap 0       "Disable Power Nap (prevents periodic wakes)"
 
 # ---- Display & Sleep Timeouts ----
