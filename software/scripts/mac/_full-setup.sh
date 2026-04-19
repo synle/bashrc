@@ -326,6 +326,16 @@ function safe_pmset() {
 safe_pmset hibernatemode 0 "Disable hibernation (faster sleep/wake)"
 safe_pmset standby 0 "Disable standby (instant wake)"
 safe_pmset womp 0 "Disable wake for network access (better battery)"
+
+# prevent sleep on AC power only (-c = charger, not -a which would also affect battery)
+if ! echo "$_pmset_current" | grep -q "AC Power" || ! pmset -g custom 2> /dev/null | sed -n '/AC Power/,/Battery Power/p' | grep -q " sleep[[:space:]]*0"; then
+  echo ">> Power: Prevent sleep on AC power"
+  sudo pmset -c sleep 0
+  sudo pmset -c displaysleep 0
+else
+  echo ">> Power: Prevent sleep on AC power >> Skipped (already 0)"
+fi
+
 unset _pmset_current
 
 ################################################################################
