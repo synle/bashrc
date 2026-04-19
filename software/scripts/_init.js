@@ -75,7 +75,7 @@ ${LINE_BREAK_HASH}
   const entryPointSourceFiles = [BASH_SYLE_COMMON_PATH, ...coreBashProfileFiles];
   const entryPointContent = trimSpacesOnBothEnd(`
     # define safe_source for non-login shells that skip .bash_profile
-    function safe_source() { bash -n "$1" 2>/dev/null && . "$1" || echo "[Warning] source $1 failed" >&2; }
+    function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
     ${entryPointSourceFiles.map((file) => 'safe_source "' + file + '"').join("\n")}
   `);
 
@@ -84,7 +84,7 @@ ${LINE_BREAK_HASH}
   let textContent = await readText`${bashProfilePath}`;
   const bashProfileContent = trimSpacesOnBothEnd(`
     # .bash_profile delegates to .bashrc for all shell init
-    function safe_source() { bash -n "$1" 2>/dev/null && . "$1" || echo "[Warning] source $1 failed" >&2; }
+    function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
     safe_source "${bashrcPath}"
   `);
   textContent = moveTextBlockToEnd(textContent, "Sy bash_syle entry point", bashProfileContent);
