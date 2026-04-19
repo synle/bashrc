@@ -163,8 +163,8 @@ is_os_android_termux=0 && _detect_os --env TERMUX_VERSION --folder /data/data/co
 is_os_arch_linux=0 && _detect_os --release "arch, steamos" --bin pacman && is_os_arch_linux=1
 is_os_steamos=0 && _detect_os --release "steamos" && is_os_steamos=1
 is_os_redhat=0 && _detect_os --release "fedora, rhel, centos, rocky, alma" --bin dnf && is_os_redhat=1
-is_os_windows=0 && _detect_os --folder /mnt/c/Windows --folder /c/Windows && is_os_windows=1
-is_os_wsl=0 && { ((is_os_windows)) || _detect_os --proc "microsoft"; } && is_os_wsl=1
+is_os_windows=0 && _detect_os --folder /mnt/c/Windows --folder /c/Windows --proc "microsoft" && is_os_windows=1
+is_os_wsl=0 && ((is_os_windows)) && is_os_wsl=1
 
 IS_CI=0 && [ -n "$CI" ] && IS_CI=1
 NO_COLOR="${NO_COLOR:-0}" && [ -n "$NO_COLOR" ] && [ "$NO_COLOR" != "0" ] && NO_COLOR=1 || NO_COLOR=0
