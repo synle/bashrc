@@ -156,7 +156,7 @@ is_os_mingw64=0 && _detect_os --name "msys, cygwin" --path "/mingw64" && is_os_m
 is_os_android_termux=0 && _detect_os --env "TERMUX_VERSION" --path "/data/data/com.termux" && is_os_android_termux=1
 is_os_arch_linux=0 && _detect_os --name "arch, steamos" --bin "pacman" && is_os_arch_linux=1
 is_os_steamos=0 && _detect_os --name "steamos" && is_os_steamos=1
-is_os_redhat=0 && _detect_os --name "fedora, rhel, centos, rocky, alma" --bin "dnf" && is_os_redhat=1
+is_os_redhat=0 && _detect_os --name "fedora, rhel, centos, rocky, alma" --bin "dnf, yum" && is_os_redhat=1
 is_os_windows=0 && _detect_os --name "microsoft" --path "/mnt/c/Windows, /c/Windows" && is_os_windows=1
 is_os_wsl=0 && ((is_os_windows)) && is_os_wsl=1
 
