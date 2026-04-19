@@ -320,7 +320,10 @@ _pmset_battery=""
 # -a = all sources (default), -b = battery only, -c = charger/AC only.
 function queue_pmset() {
   local flag="-a"
-  if [[ "$1" == -* ]]; then flag="$1"; shift; fi
+  if [[ "$1" == -* ]]; then
+    flag="$1"
+    shift
+  fi
   local key="$1" val="$2" desc="$3"
   local section=""
   if [ "$flag" = "-b" ]; then section="Battery Power"; fi
@@ -342,27 +345,27 @@ function queue_pmset() {
 }
 
 # ---- Sleep & Wake ----
-queue_pmset hibernatemode 0  "Disable hibernation (faster sleep/wake)"
-queue_pmset standby 0        "Disable standby (instant wake)"
-queue_pmset autopoweroff 0   "Disable auto power off (prevents USB dock disconnects)"
+queue_pmset hibernatemode 0 "Disable hibernation (faster sleep/wake)"
+queue_pmset standby 0 "Disable standby (instant wake)"
+queue_pmset autopoweroff 0 "Disable auto power off (prevents USB dock disconnects)"
 
 # ---- USB & Device Power ----
-queue_pmset lowpowermode 0   "Disable Low Power Mode (prevents USB/CPU throttling)"
-queue_pmset -c disksleep 0   "AC: disable disk sleep (prevents USB disk disconnects)"
+queue_pmset lowpowermode 0 "Disable Low Power Mode (prevents USB/CPU throttling)"
+queue_pmset -c disksleep 0 "AC: disable disk sleep (prevents USB disk disconnects)"
 queue_pmset -b disksleep 180 "Battery: disk sleep after 180 min (must be non-zero when sleep is non-zero)"
-queue_pmset powernap 0       "Disable Power Nap (prevents periodic wakes)"
+queue_pmset powernap 0 "Disable Power Nap (prevents periodic wakes)"
 
 # ---- Display & Sleep Timeouts ----
-queue_pmset lessbright 0         "Disable display dimming on battery"
-queue_pmset -c sleep 0           "AC: disable sleep (never)"
-queue_pmset -c displaysleep 0    "AC: disable display sleep (never)"
-queue_pmset -b sleep 180         "Battery: sleep after 180 min (3 hours)"
-queue_pmset -b displaysleep 180  "Battery: display off after 180 min (3 hours)"
+queue_pmset lessbright 0 "Disable display dimming on battery"
+queue_pmset -c sleep 0 "AC: disable sleep (never)"
+queue_pmset -c displaysleep 0 "AC: disable display sleep (never)"
+queue_pmset -b sleep 180 "Battery: sleep after 180 min (3 hours)"
+queue_pmset -b displaysleep 180 "Battery: display off after 180 min (3 hours)"
 
 # ---- Network & Wake Triggers ----
-queue_pmset womp 0           "Disable wake for network access (better battery)"
-queue_pmset proximitywake 0  "Disable proximity wake (prevents spurious wakes)"
-queue_pmset tcpkeepalive 0   "Disable TCP keepalive during sleep (better battery)"
+queue_pmset womp 0 "Disable wake for network access (better battery)"
+queue_pmset proximitywake 0 "Disable proximity wake (prevents spurious wakes)"
+queue_pmset tcpkeepalive 0 "Disable TCP keepalive during sleep (better battery)"
 
 # flush all queued pmset changes in up to 3 sudo calls (one per power source)
 if [ -n "$_pmset_all" ]; then
