@@ -29,266 +29,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-19T16:28:30.762Z
+# Generated: 2026-04-19T16:48:42.634Z
 # END Profile Generated Timestamp
 #
 ################################################################################
-# SOURCE_BEGIN software/scripts/bash-history-profile.bash
-# software/scripts/bash-history-profile.bash | db63d5f310b1c251545809c2f9e7ce96 | 4.5 KB | 2026-04-19
-# SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
-# Shared shell functions for run.sh and SH scripts (via SOURCE markers).
-# Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
-
-# safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
-#   source: URL (http/https), absolute path, or relative path
-#   dest:   optional local path to store the fetched content (useful for caching URL downloads)
-# URLs are downloaded via curl, files are used directly (or copied to dest if given).
-# Always validates with bash -n before sourcing.
-function safe_source() {
-  local src="$1"
-  local dest="${2:-}"
-  local target="$src"
-  case "$src" in
-  http://* | https://*)
-    target="${dest:-/tmp/bashrc_safe_source_$$.sh}"
-    curl -fsSL -o "$target" "$src" 2> /dev/null || {
-      echo "[Warning] safe_source download $src failed" >&2
-      return 1
-    }
-    ;;
-  *)
-    if [ ! -f "$src" ]; then
-      echo "[Warning] safe_source $src not found" >&2
-      return 1
-    fi
-    if [ -n "$dest" ]; then
-      cp "$src" "$dest" 2> /dev/null
-      target="$dest"
-    fi
-    ;;
-  esac
-  if ! bash -n "$target" 2> /dev/null; then
-    echo "[Warning] source $target failed (syntax error)" >&2
-    return 1
-  fi
-  . "$target"
-}
-
-# curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
-# suppressed. In verbose mode (set -x), stderr is kept visible for debugging.
-# Extra args are passed to the install script via bash -s -- <args>.
-function curl_bash_install() {
-  local url="$1"
-  shift
-  if [[ $- == *x* ]]; then
-    curl -fsSL "$url" | bash -s -- "$@" > /dev/null
-  else
-    curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
-  fi
-}
-
-# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
-#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
-# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-function npm_install_global() {
-  local pkg="$1"
-  local bin="${2:-${pkg##*/}}"
-
-  # install for current system
-  local _resolved
-  _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
-  else
-    echo -n ">> $pkg >> Installing with npm global >> "
-    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-
-  # install for Windows host via WSL
-  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
-    else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
-      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
-    fi
-  fi
-}
-
-# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
-# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
-# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
-# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
-# On success, prints the resolved path to stdout (capture with $()).
-function has_persistent_binary() {
-  local bin
-  bin=$(type -P "$1" 2> /dev/null) || return 1
-  [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
-}
-
-# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
-# Helps track which script/function is requesting elevated privileges.
-function sudo() {
-  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
-  command sudo "$@"
-}
-
-# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
-# fixes ownership to current user if owned by root.
-function safe_touch() {
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
-    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
-    else
-      echo ">> safe_touch >> $f >> Skipped"
-    fi
-  done
-}
-
-# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
-# current user for any resulting dir inside $HOME that is owned by root.
-function safe_mkdir() {
-  command mkdir -p "$@"
-  for f in "$@"; do
-    [[ "$f" == -* ]] && continue
-    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      echo ">> safe_mkdir >> $f >> OK"
-    fi
-  done
-}
-
-# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
-# and is not already owned by the target user. Defaults to $USER if no user given.
-# Pass -R as the first argument to chown recursively. Always pass one path per call.
-# Usage:
-#   safe_chown "$HOME/.bashrc"              # chown to $USER
-#   safe_chown -R "$HOME/.config"           # chown -R to $USER
-#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
-#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
-function safe_chown() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local target_user="$USER"
-  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
-    target_user="$1"
-    shift
-  fi
-  local target_uid
-  target_uid=$(id -u "$target_user")
-  local f="$1"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
-  else
-    sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
-  fi
-}
-
-# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
-# and permissions differ from the target mode. Always pass one path per call.
-# Pass -R as the first argument to chmod recursively.
-# Usage:
-#   safe_chmod 700 "$HOME/.ssh"
-#   safe_chmod 600 "$HOME/.ssh/id_rsa"
-function safe_chmod() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local mode="$1"
-  local f="$2"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-  else
-    chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
-  fi
-}
-
-# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
-# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
-# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
-function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
-}
-
-# is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
-# max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
-function is_path_stale() {
-  ((IS_REFRESH_MODE)) && return 0
-  local target="$1"
-  local max_age="${2:-1209600}"
-  if [ -e "$target" ]; then
-    local mtime
-    mtime=$(stat -c '%Y' "$target" 2> /dev/null || stat -f '%m' "$target" 2> /dev/null || echo 0)
-    [ $(($(date +%s) - mtime)) -gt "$max_age" ] && return 0
-    return 1
-  fi
-  return 0
-}
-
-# is_force_refresh_stale [path] - Returns 0 (true) only when IS_FORCE_REFRESH=1 AND the path
-# is stale. Defaults to BASH_SYLE_PATH when no path given.
-# Used by medium/heavy scripts to avoid unnecessary re-downloads when the install is still fresh.
-function is_force_refresh_stale() {
-  ! ((IS_FORCE_REFRESH)) && return 1
-  ((IS_REFRESH_MODE)) && return 0
-  local target="${1:-$BASH_SYLE_PATH}"
-  if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
-  return 1
-}
-
-# is_bash_syle_stale - Returns 0 (true) when ~/.bash_syle is older than 2 weeks or missing.
-# Used by dependency scripts to skip package index updates.
-function is_bash_syle_stale() {
-  is_path_stale "$BASH_SYLE_PATH"
-}
-
-# exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
-function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
-  local IFS=','
-  for os_flag in $LIMITED_SUPPORT_OSES; do
-    ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
-      exit 0
-    }
-  done
-}
-# SOURCE_END software/bootstrap/common-functions.bash
+# SOURCE_BEGIN software/scripts/bash-history.profile.bash
+# software/scripts/bash-history.profile.bash | 5c02a553720b2e0189bc6c838cab9f23 | 4.5 KB | 2026-04-19
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -414,11 +160,11 @@ function history_restore() {
     fi
   fi
 }
-# SOURCE_END software/scripts/bash-history-profile.bash
+# SOURCE_END software/scripts/bash-history.profile.bash
 # BEGIN fnm - fast node manager
 # hookup binary - add default node version to PATH
-export FNM_DIR="/home/runner/.local/share/fnm"
-export PATH="/home/runner/.local/share/fnm:$PATH"
+export FNM_DIR="/github/home/.local/share/fnm"
+export PATH="/github/home/.local/share/fnm:$PATH"
 export PATH="/bin:$PATH"
 
 # initialize fnm
@@ -860,264 +606,10 @@ function format_other_text_based_files() {
 # END format script
 
 # BEGIN temporal-cli
-export PATH="/home/runner/.temporalio/bin:$PATH"
+export PATH="/github/home/.temporalio/bin:$PATH"
 # END temporal-cli
-# SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
-# software/scripts/bash-path-candidate-profile.bash | cab517092d24076edbbb75595cb43536 | 3.6 KB | 2026-04-19
-# SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
-# Shared shell functions for run.sh and SH scripts (via SOURCE markers).
-# Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
-
-# safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
-#   source: URL (http/https), absolute path, or relative path
-#   dest:   optional local path to store the fetched content (useful for caching URL downloads)
-# URLs are downloaded via curl, files are used directly (or copied to dest if given).
-# Always validates with bash -n before sourcing.
-function safe_source() {
-  local src="$1"
-  local dest="${2:-}"
-  local target="$src"
-  case "$src" in
-  http://* | https://*)
-    target="${dest:-/tmp/bashrc_safe_source_$$.sh}"
-    curl -fsSL -o "$target" "$src" 2> /dev/null || {
-      echo "[Warning] safe_source download $src failed" >&2
-      return 1
-    }
-    ;;
-  *)
-    if [ ! -f "$src" ]; then
-      echo "[Warning] safe_source $src not found" >&2
-      return 1
-    fi
-    if [ -n "$dest" ]; then
-      cp "$src" "$dest" 2> /dev/null
-      target="$dest"
-    fi
-    ;;
-  esac
-  if ! bash -n "$target" 2> /dev/null; then
-    echo "[Warning] source $target failed (syntax error)" >&2
-    return 1
-  fi
-  . "$target"
-}
-
-# curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
-# suppressed. In verbose mode (set -x), stderr is kept visible for debugging.
-# Extra args are passed to the install script via bash -s -- <args>.
-function curl_bash_install() {
-  local url="$1"
-  shift
-  if [[ $- == *x* ]]; then
-    curl -fsSL "$url" | bash -s -- "$@" > /dev/null
-  else
-    curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
-  fi
-}
-
-# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
-#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
-# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-function npm_install_global() {
-  local pkg="$1"
-  local bin="${2:-${pkg##*/}}"
-
-  # install for current system
-  local _resolved
-  _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
-  else
-    echo -n ">> $pkg >> Installing with npm global >> "
-    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-
-  # install for Windows host via WSL
-  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
-    else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
-      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
-    fi
-  fi
-}
-
-# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
-# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
-# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
-# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
-# On success, prints the resolved path to stdout (capture with $()).
-function has_persistent_binary() {
-  local bin
-  bin=$(type -P "$1" 2> /dev/null) || return 1
-  [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
-}
-
-# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
-# Helps track which script/function is requesting elevated privileges.
-function sudo() {
-  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
-  command sudo "$@"
-}
-
-# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
-# fixes ownership to current user if owned by root.
-function safe_touch() {
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
-    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
-    else
-      echo ">> safe_touch >> $f >> Skipped"
-    fi
-  done
-}
-
-# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
-# current user for any resulting dir inside $HOME that is owned by root.
-function safe_mkdir() {
-  command mkdir -p "$@"
-  for f in "$@"; do
-    [[ "$f" == -* ]] && continue
-    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      echo ">> safe_mkdir >> $f >> OK"
-    fi
-  done
-}
-
-# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
-# and is not already owned by the target user. Defaults to $USER if no user given.
-# Pass -R as the first argument to chown recursively. Always pass one path per call.
-# Usage:
-#   safe_chown "$HOME/.bashrc"              # chown to $USER
-#   safe_chown -R "$HOME/.config"           # chown -R to $USER
-#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
-#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
-function safe_chown() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local target_user="$USER"
-  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
-    target_user="$1"
-    shift
-  fi
-  local target_uid
-  target_uid=$(id -u "$target_user")
-  local f="$1"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
-  else
-    sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
-  fi
-}
-
-# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
-# and permissions differ from the target mode. Always pass one path per call.
-# Pass -R as the first argument to chmod recursively.
-# Usage:
-#   safe_chmod 700 "$HOME/.ssh"
-#   safe_chmod 600 "$HOME/.ssh/id_rsa"
-function safe_chmod() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local mode="$1"
-  local f="$2"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-  else
-    chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
-  fi
-}
-
-# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
-# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
-# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
-function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
-}
-
-# is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
-# max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
-function is_path_stale() {
-  ((IS_REFRESH_MODE)) && return 0
-  local target="$1"
-  local max_age="${2:-1209600}"
-  if [ -e "$target" ]; then
-    local mtime
-    mtime=$(stat -c '%Y' "$target" 2> /dev/null || stat -f '%m' "$target" 2> /dev/null || echo 0)
-    [ $(($(date +%s) - mtime)) -gt "$max_age" ] && return 0
-    return 1
-  fi
-  return 0
-}
-
-# is_force_refresh_stale [path] - Returns 0 (true) only when IS_FORCE_REFRESH=1 AND the path
-# is stale. Defaults to BASH_SYLE_PATH when no path given.
-# Used by medium/heavy scripts to avoid unnecessary re-downloads when the install is still fresh.
-function is_force_refresh_stale() {
-  ! ((IS_FORCE_REFRESH)) && return 1
-  ((IS_REFRESH_MODE)) && return 0
-  local target="${1:-$BASH_SYLE_PATH}"
-  if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
-  return 1
-}
-
-# is_bash_syle_stale - Returns 0 (true) when ~/.bash_syle is older than 2 weeks or missing.
-# Used by dependency scripts to skip package index updates.
-function is_bash_syle_stale() {
-  is_path_stale "$BASH_SYLE_PATH"
-}
-
-# exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
-function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
-  local IFS=','
-  for os_flag in $LIMITED_SUPPORT_OSES; do
-    ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
-      exit 0
-    }
-  done
-}
-# SOURCE_END software/bootstrap/common-functions.bash
+# SOURCE_BEGIN software/scripts/bash-path-candidate.profile.bash
+# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-04-19
 ################################################################################
 # ---- PATH Setup ----
 #
@@ -1193,7 +685,7 @@ export PATH="$(
 )"
 
 unset path_candidates
-# SOURCE_END software/scripts/bash-path-candidate-profile.bash
+# SOURCE_END software/scripts/bash-path-candidate.profile.bash
 export EDITOR='vim'
 export BASH_PATH=~/.bash_syle
 export LINE_BREAK_COUNT=100
@@ -3121,262 +2613,8 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Deferred Profile Blocks (heavy or late-loading) ----
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
-# SOURCE_BEGIN software/scripts/bash-keys-profile.bash
-# software/scripts/bash-keys-profile.bash | 4d264cb10a8fe417119fcb6360720f84 | 4.8 KB | 2026-04-19
-# SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
-# Shared shell functions for run.sh and SH scripts (via SOURCE markers).
-# Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
-
-# safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
-#   source: URL (http/https), absolute path, or relative path
-#   dest:   optional local path to store the fetched content (useful for caching URL downloads)
-# URLs are downloaded via curl, files are used directly (or copied to dest if given).
-# Always validates with bash -n before sourcing.
-function safe_source() {
-  local src="$1"
-  local dest="${2:-}"
-  local target="$src"
-  case "$src" in
-  http://* | https://*)
-    target="${dest:-/tmp/bashrc_safe_source_$$.sh}"
-    curl -fsSL -o "$target" "$src" 2> /dev/null || {
-      echo "[Warning] safe_source download $src failed" >&2
-      return 1
-    }
-    ;;
-  *)
-    if [ ! -f "$src" ]; then
-      echo "[Warning] safe_source $src not found" >&2
-      return 1
-    fi
-    if [ -n "$dest" ]; then
-      cp "$src" "$dest" 2> /dev/null
-      target="$dest"
-    fi
-    ;;
-  esac
-  if ! bash -n "$target" 2> /dev/null; then
-    echo "[Warning] source $target failed (syntax error)" >&2
-    return 1
-  fi
-  . "$target"
-}
-
-# curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
-# suppressed. In verbose mode (set -x), stderr is kept visible for debugging.
-# Extra args are passed to the install script via bash -s -- <args>.
-function curl_bash_install() {
-  local url="$1"
-  shift
-  if [[ $- == *x* ]]; then
-    curl -fsSL "$url" | bash -s -- "$@" > /dev/null
-  else
-    curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
-  fi
-}
-
-# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
-#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
-# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-function npm_install_global() {
-  local pkg="$1"
-  local bin="${2:-${pkg##*/}}"
-
-  # install for current system
-  local _resolved
-  _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
-  else
-    echo -n ">> $pkg >> Installing with npm global >> "
-    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-
-  # install for Windows host via WSL
-  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
-    else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
-      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
-    fi
-  fi
-}
-
-# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
-# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
-# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
-# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
-# On success, prints the resolved path to stdout (capture with $()).
-function has_persistent_binary() {
-  local bin
-  bin=$(type -P "$1" 2> /dev/null) || return 1
-  [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
-}
-
-# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
-# Helps track which script/function is requesting elevated privileges.
-function sudo() {
-  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
-  command sudo "$@"
-}
-
-# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
-# fixes ownership to current user if owned by root.
-function safe_touch() {
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
-    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
-    else
-      echo ">> safe_touch >> $f >> Skipped"
-    fi
-  done
-}
-
-# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
-# current user for any resulting dir inside $HOME that is owned by root.
-function safe_mkdir() {
-  command mkdir -p "$@"
-  for f in "$@"; do
-    [[ "$f" == -* ]] && continue
-    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      echo ">> safe_mkdir >> $f >> OK"
-    fi
-  done
-}
-
-# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
-# and is not already owned by the target user. Defaults to $USER if no user given.
-# Pass -R as the first argument to chown recursively. Always pass one path per call.
-# Usage:
-#   safe_chown "$HOME/.bashrc"              # chown to $USER
-#   safe_chown -R "$HOME/.config"           # chown -R to $USER
-#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
-#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
-function safe_chown() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local target_user="$USER"
-  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
-    target_user="$1"
-    shift
-  fi
-  local target_uid
-  target_uid=$(id -u "$target_user")
-  local f="$1"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
-  else
-    sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
-  fi
-}
-
-# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
-# and permissions differ from the target mode. Always pass one path per call.
-# Pass -R as the first argument to chmod recursively.
-# Usage:
-#   safe_chmod 700 "$HOME/.ssh"
-#   safe_chmod 600 "$HOME/.ssh/id_rsa"
-function safe_chmod() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local mode="$1"
-  local f="$2"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-  else
-    chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
-  fi
-}
-
-# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
-# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
-# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
-function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
-}
-
-# is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
-# max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
-function is_path_stale() {
-  ((IS_REFRESH_MODE)) && return 0
-  local target="$1"
-  local max_age="${2:-1209600}"
-  if [ -e "$target" ]; then
-    local mtime
-    mtime=$(stat -c '%Y' "$target" 2> /dev/null || stat -f '%m' "$target" 2> /dev/null || echo 0)
-    [ $(($(date +%s) - mtime)) -gt "$max_age" ] && return 0
-    return 1
-  fi
-  return 0
-}
-
-# is_force_refresh_stale [path] - Returns 0 (true) only when IS_FORCE_REFRESH=1 AND the path
-# is stale. Defaults to BASH_SYLE_PATH when no path given.
-# Used by medium/heavy scripts to avoid unnecessary re-downloads when the install is still fresh.
-function is_force_refresh_stale() {
-  ! ((IS_FORCE_REFRESH)) && return 1
-  ((IS_REFRESH_MODE)) && return 0
-  local target="${1:-$BASH_SYLE_PATH}"
-  if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
-  return 1
-}
-
-# is_bash_syle_stale - Returns 0 (true) when ~/.bash_syle is older than 2 weeks or missing.
-# Used by dependency scripts to skip package index updates.
-function is_bash_syle_stale() {
-  is_path_stale "$BASH_SYLE_PATH"
-}
-
-# exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
-function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
-  local IFS=','
-  for os_flag in $LIMITED_SUPPORT_OSES; do
-    ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
-      exit 0
-    }
-  done
-}
-# SOURCE_END software/bootstrap/common-functions.bash
+# SOURCE_BEGIN software/scripts/bash-keys.profile.bash
+# software/scripts/bash-keys.profile.bash | 1e77294d250f662478b78dbb180dd6b0 | 4.7 KB | 2026-04-19
 ################################################################################
 # ---- Bash Readline Keybindings ----
 #
@@ -3474,263 +2712,9 @@ if [[ $- == *i* ]]; then
   fi
 
 fi # end interactive shell guard
-# SOURCE_END software/scripts/bash-keys-profile.bash
-# SOURCE_BEGIN software/scripts/bash-file-utils.bash
-# software/scripts/bash-file-utils.bash | fa10746865687f0f50e28ca337068be4 | 27.7 KB | 2026-04-19
-# SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
-# Shared shell functions for run.sh and SH scripts (via SOURCE markers).
-# Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
-
-# safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
-#   source: URL (http/https), absolute path, or relative path
-#   dest:   optional local path to store the fetched content (useful for caching URL downloads)
-# URLs are downloaded via curl, files are used directly (or copied to dest if given).
-# Always validates with bash -n before sourcing.
-function safe_source() {
-  local src="$1"
-  local dest="${2:-}"
-  local target="$src"
-  case "$src" in
-  http://* | https://*)
-    target="${dest:-/tmp/bashrc_safe_source_$$.sh}"
-    curl -fsSL -o "$target" "$src" 2> /dev/null || {
-      echo "[Warning] safe_source download $src failed" >&2
-      return 1
-    }
-    ;;
-  *)
-    if [ ! -f "$src" ]; then
-      echo "[Warning] safe_source $src not found" >&2
-      return 1
-    fi
-    if [ -n "$dest" ]; then
-      cp "$src" "$dest" 2> /dev/null
-      target="$dest"
-    fi
-    ;;
-  esac
-  if ! bash -n "$target" 2> /dev/null; then
-    echo "[Warning] source $target failed (syntax error)" >&2
-    return 1
-  fi
-  . "$target"
-}
-
-# curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
-# suppressed. In verbose mode (set -x), stderr is kept visible for debugging.
-# Extra args are passed to the install script via bash -s -- <args>.
-function curl_bash_install() {
-  local url="$1"
-  shift
-  if [[ $- == *x* ]]; then
-    curl -fsSL "$url" | bash -s -- "$@" > /dev/null
-  else
-    curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
-  fi
-}
-
-# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
-#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
-# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-function npm_install_global() {
-  local pkg="$1"
-  local bin="${2:-${pkg##*/}}"
-
-  # install for current system
-  local _resolved
-  _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
-  else
-    echo -n ">> $pkg >> Installing with npm global >> "
-    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-
-  # install for Windows host via WSL
-  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
-    else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
-      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
-    fi
-  fi
-}
-
-# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
-# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
-# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
-# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
-# On success, prints the resolved path to stdout (capture with $()).
-function has_persistent_binary() {
-  local bin
-  bin=$(type -P "$1" 2> /dev/null) || return 1
-  [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
-}
-
-# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
-# Helps track which script/function is requesting elevated privileges.
-function sudo() {
-  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
-  command sudo "$@"
-}
-
-# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
-# fixes ownership to current user if owned by root.
-function safe_touch() {
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
-    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
-    else
-      echo ">> safe_touch >> $f >> Skipped"
-    fi
-  done
-}
-
-# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
-# current user for any resulting dir inside $HOME that is owned by root.
-function safe_mkdir() {
-  command mkdir -p "$@"
-  for f in "$@"; do
-    [[ "$f" == -* ]] && continue
-    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      echo ">> safe_mkdir >> $f >> OK"
-    fi
-  done
-}
-
-# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
-# and is not already owned by the target user. Defaults to $USER if no user given.
-# Pass -R as the first argument to chown recursively. Always pass one path per call.
-# Usage:
-#   safe_chown "$HOME/.bashrc"              # chown to $USER
-#   safe_chown -R "$HOME/.config"           # chown -R to $USER
-#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
-#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
-function safe_chown() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local target_user="$USER"
-  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
-    target_user="$1"
-    shift
-  fi
-  local target_uid
-  target_uid=$(id -u "$target_user")
-  local f="$1"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
-  else
-    sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
-  fi
-}
-
-# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
-# and permissions differ from the target mode. Always pass one path per call.
-# Pass -R as the first argument to chmod recursively.
-# Usage:
-#   safe_chmod 700 "$HOME/.ssh"
-#   safe_chmod 600 "$HOME/.ssh/id_rsa"
-function safe_chmod() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local mode="$1"
-  local f="$2"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-  else
-    chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
-  fi
-}
-
-# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
-# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
-# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
-function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
-}
-
-# is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
-# max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
-function is_path_stale() {
-  ((IS_REFRESH_MODE)) && return 0
-  local target="$1"
-  local max_age="${2:-1209600}"
-  if [ -e "$target" ]; then
-    local mtime
-    mtime=$(stat -c '%Y' "$target" 2> /dev/null || stat -f '%m' "$target" 2> /dev/null || echo 0)
-    [ $(($(date +%s) - mtime)) -gt "$max_age" ] && return 0
-    return 1
-  fi
-  return 0
-}
-
-# is_force_refresh_stale [path] - Returns 0 (true) only when IS_FORCE_REFRESH=1 AND the path
-# is stale. Defaults to BASH_SYLE_PATH when no path given.
-# Used by medium/heavy scripts to avoid unnecessary re-downloads when the install is still fresh.
-function is_force_refresh_stale() {
-  ! ((IS_FORCE_REFRESH)) && return 1
-  ((IS_REFRESH_MODE)) && return 0
-  local target="${1:-$BASH_SYLE_PATH}"
-  if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
-  return 1
-}
-
-# is_bash_syle_stale - Returns 0 (true) when ~/.bash_syle is older than 2 weeks or missing.
-# Used by dependency scripts to skip package index updates.
-function is_bash_syle_stale() {
-  is_path_stale "$BASH_SYLE_PATH"
-}
-
-# exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
-function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
-  local IFS=','
-  for os_flag in $LIMITED_SUPPORT_OSES; do
-    ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
-      exit 0
-    }
-  done
-}
-# SOURCE_END software/bootstrap/common-functions.bash
+# SOURCE_END software/scripts/bash-keys.profile.bash
+# SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
+# software/scripts/bash-file-utils.profile.bash | ff2e41cc4aeb4b5c35da64f84577f533 | 27.7 KB | 2026-04-19
 ################################################################################
 # ---- File Utilities ----
 #
@@ -4440,263 +3424,9 @@ console.log('  Finished at ' + fmtNow());
 DEDUP_NODE
   } | DEDUP_PATH="$abs_target" DEDUP_RECURSIVE="$recursive" DEDUP_ACROSS="$across_folders" node
 }
-# SOURCE_END software/scripts/bash-file-utils.bash
-# SOURCE_BEGIN software/scripts/bash-fzf-profile.bash
-# software/scripts/bash-fzf-profile.bash | ad379548b48dd66abfcc160f294f5535 | 17.2 KB | 2026-04-19
-# SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
-# Shared shell functions for run.sh and SH scripts (via SOURCE markers).
-# Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
-
-# safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
-#   source: URL (http/https), absolute path, or relative path
-#   dest:   optional local path to store the fetched content (useful for caching URL downloads)
-# URLs are downloaded via curl, files are used directly (or copied to dest if given).
-# Always validates with bash -n before sourcing.
-function safe_source() {
-  local src="$1"
-  local dest="${2:-}"
-  local target="$src"
-  case "$src" in
-  http://* | https://*)
-    target="${dest:-/tmp/bashrc_safe_source_$$.sh}"
-    curl -fsSL -o "$target" "$src" 2> /dev/null || {
-      echo "[Warning] safe_source download $src failed" >&2
-      return 1
-    }
-    ;;
-  *)
-    if [ ! -f "$src" ]; then
-      echo "[Warning] safe_source $src not found" >&2
-      return 1
-    fi
-    if [ -n "$dest" ]; then
-      cp "$src" "$dest" 2> /dev/null
-      target="$dest"
-    fi
-    ;;
-  esac
-  if ! bash -n "$target" 2> /dev/null; then
-    echo "[Warning] source $target failed (syntax error)" >&2
-    return 1
-  fi
-  . "$target"
-}
-
-# curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
-# suppressed. In verbose mode (set -x), stderr is kept visible for debugging.
-# Extra args are passed to the install script via bash -s -- <args>.
-function curl_bash_install() {
-  local url="$1"
-  shift
-  if [[ $- == *x* ]]; then
-    curl -fsSL "$url" | bash -s -- "$@" > /dev/null
-  else
-    curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
-  fi
-}
-
-# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
-#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
-# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-function npm_install_global() {
-  local pkg="$1"
-  local bin="${2:-${pkg##*/}}"
-
-  # install for current system
-  local _resolved
-  _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
-  else
-    echo -n ">> $pkg >> Installing with npm global >> "
-    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-
-  # install for Windows host via WSL
-  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
-    else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
-      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
-    fi
-  fi
-}
-
-# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
-# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
-# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
-# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
-# On success, prints the resolved path to stdout (capture with $()).
-function has_persistent_binary() {
-  local bin
-  bin=$(type -P "$1" 2> /dev/null) || return 1
-  [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
-}
-
-# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
-# Helps track which script/function is requesting elevated privileges.
-function sudo() {
-  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
-  command sudo "$@"
-}
-
-# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
-# fixes ownership to current user if owned by root.
-function safe_touch() {
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
-    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
-    else
-      echo ">> safe_touch >> $f >> Skipped"
-    fi
-  done
-}
-
-# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
-# current user for any resulting dir inside $HOME that is owned by root.
-function safe_mkdir() {
-  command mkdir -p "$@"
-  for f in "$@"; do
-    [[ "$f" == -* ]] && continue
-    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      echo ">> safe_mkdir >> $f >> OK"
-    fi
-  done
-}
-
-# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
-# and is not already owned by the target user. Defaults to $USER if no user given.
-# Pass -R as the first argument to chown recursively. Always pass one path per call.
-# Usage:
-#   safe_chown "$HOME/.bashrc"              # chown to $USER
-#   safe_chown -R "$HOME/.config"           # chown -R to $USER
-#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
-#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
-function safe_chown() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local target_user="$USER"
-  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
-    target_user="$1"
-    shift
-  fi
-  local target_uid
-  target_uid=$(id -u "$target_user")
-  local f="$1"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
-  else
-    sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
-  fi
-}
-
-# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
-# and permissions differ from the target mode. Always pass one path per call.
-# Pass -R as the first argument to chmod recursively.
-# Usage:
-#   safe_chmod 700 "$HOME/.ssh"
-#   safe_chmod 600 "$HOME/.ssh/id_rsa"
-function safe_chmod() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local mode="$1"
-  local f="$2"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-  else
-    chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
-  fi
-}
-
-# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
-# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
-# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
-function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
-}
-
-# is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
-# max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
-function is_path_stale() {
-  ((IS_REFRESH_MODE)) && return 0
-  local target="$1"
-  local max_age="${2:-1209600}"
-  if [ -e "$target" ]; then
-    local mtime
-    mtime=$(stat -c '%Y' "$target" 2> /dev/null || stat -f '%m' "$target" 2> /dev/null || echo 0)
-    [ $(($(date +%s) - mtime)) -gt "$max_age" ] && return 0
-    return 1
-  fi
-  return 0
-}
-
-# is_force_refresh_stale [path] - Returns 0 (true) only when IS_FORCE_REFRESH=1 AND the path
-# is stale. Defaults to BASH_SYLE_PATH when no path given.
-# Used by medium/heavy scripts to avoid unnecessary re-downloads when the install is still fresh.
-function is_force_refresh_stale() {
-  ! ((IS_FORCE_REFRESH)) && return 1
-  ((IS_REFRESH_MODE)) && return 0
-  local target="${1:-$BASH_SYLE_PATH}"
-  if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
-  return 1
-}
-
-# is_bash_syle_stale - Returns 0 (true) when ~/.bash_syle is older than 2 weeks or missing.
-# Used by dependency scripts to skip package index updates.
-function is_bash_syle_stale() {
-  is_path_stale "$BASH_SYLE_PATH"
-}
-
-# exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
-function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
-  local IFS=','
-  for os_flag in $LIMITED_SUPPORT_OSES; do
-    ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
-      exit 0
-    }
-  done
-}
-# SOURCE_END software/bootstrap/common-functions.bash
+# SOURCE_END software/scripts/bash-file-utils.profile.bash
+# SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
+# software/scripts/bash-fzf.profile.bash | 1c8e03ef918aa866ea16901569d37113 | 17.1 KB | 2026-04-19
 # run: bash run.sh --files="fzf.js"
 ################################################################################
 # ---- FZF Fuzzy Finder Integration ----
@@ -5098,263 +3828,9 @@ function fuzzy_git_show() {
       --bind "ctrl-m:execute:(echo {} | grep -o '[a-f0-9]\{7\}' | head -1 | xargs -I % sh -c 'git show --color=always % | (bat --paging=always --style=plain 2>/dev/null || batcat --paging=always --style=plain 2>/dev/null || less -R)')" \
       --bind "f5:reload(git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always)"
 }
-# SOURCE_END software/scripts/bash-fzf-profile.bash
-# SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | c3e1c34d6d7a8bead9100205b5590d01 | 3.0 KB | 2026-04-19
-# SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
-# Shared shell functions for run.sh and SH scripts (via SOURCE markers).
-# Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
-
-# safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
-#   source: URL (http/https), absolute path, or relative path
-#   dest:   optional local path to store the fetched content (useful for caching URL downloads)
-# URLs are downloaded via curl, files are used directly (or copied to dest if given).
-# Always validates with bash -n before sourcing.
-function safe_source() {
-  local src="$1"
-  local dest="${2:-}"
-  local target="$src"
-  case "$src" in
-  http://* | https://*)
-    target="${dest:-/tmp/bashrc_safe_source_$$.sh}"
-    curl -fsSL -o "$target" "$src" 2> /dev/null || {
-      echo "[Warning] safe_source download $src failed" >&2
-      return 1
-    }
-    ;;
-  *)
-    if [ ! -f "$src" ]; then
-      echo "[Warning] safe_source $src not found" >&2
-      return 1
-    fi
-    if [ -n "$dest" ]; then
-      cp "$src" "$dest" 2> /dev/null
-      target="$dest"
-    fi
-    ;;
-  esac
-  if ! bash -n "$target" 2> /dev/null; then
-    echo "[Warning] source $target failed (syntax error)" >&2
-    return 1
-  fi
-  . "$target"
-}
-
-# curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
-# suppressed. In verbose mode (set -x), stderr is kept visible for debugging.
-# Extra args are passed to the install script via bash -s -- <args>.
-function curl_bash_install() {
-  local url="$1"
-  shift
-  if [[ $- == *x* ]]; then
-    curl -fsSL "$url" | bash -s -- "$@" > /dev/null
-  else
-    curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
-  fi
-}
-
-# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
-#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
-# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-function npm_install_global() {
-  local pkg="$1"
-  local bin="${2:-${pkg##*/}}"
-
-  # install for current system
-  local _resolved
-  _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
-  else
-    echo -n ">> $pkg >> Installing with npm global >> "
-    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-
-  # install for Windows host via WSL
-  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
-    else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
-      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
-    fi
-  fi
-}
-
-# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
-# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
-# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
-# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
-# On success, prints the resolved path to stdout (capture with $()).
-function has_persistent_binary() {
-  local bin
-  bin=$(type -P "$1" 2> /dev/null) || return 1
-  [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
-}
-
-# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
-# Helps track which script/function is requesting elevated privileges.
-function sudo() {
-  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
-  command sudo "$@"
-}
-
-# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
-# fixes ownership to current user if owned by root.
-function safe_touch() {
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
-    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
-    else
-      echo ">> safe_touch >> $f >> Skipped"
-    fi
-  done
-}
-
-# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
-# current user for any resulting dir inside $HOME that is owned by root.
-function safe_mkdir() {
-  command mkdir -p "$@"
-  for f in "$@"; do
-    [[ "$f" == -* ]] && continue
-    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      echo ">> safe_mkdir >> $f >> OK"
-    fi
-  done
-}
-
-# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
-# and is not already owned by the target user. Defaults to $USER if no user given.
-# Pass -R as the first argument to chown recursively. Always pass one path per call.
-# Usage:
-#   safe_chown "$HOME/.bashrc"              # chown to $USER
-#   safe_chown -R "$HOME/.config"           # chown -R to $USER
-#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
-#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
-function safe_chown() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local target_user="$USER"
-  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
-    target_user="$1"
-    shift
-  fi
-  local target_uid
-  target_uid=$(id -u "$target_user")
-  local f="$1"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
-  else
-    sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
-  fi
-}
-
-# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
-# and permissions differ from the target mode. Always pass one path per call.
-# Pass -R as the first argument to chmod recursively.
-# Usage:
-#   safe_chmod 700 "$HOME/.ssh"
-#   safe_chmod 600 "$HOME/.ssh/id_rsa"
-function safe_chmod() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local mode="$1"
-  local f="$2"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-  else
-    chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
-  fi
-}
-
-# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
-# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
-# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
-function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
-}
-
-# is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
-# max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
-function is_path_stale() {
-  ((IS_REFRESH_MODE)) && return 0
-  local target="$1"
-  local max_age="${2:-1209600}"
-  if [ -e "$target" ]; then
-    local mtime
-    mtime=$(stat -c '%Y' "$target" 2> /dev/null || stat -f '%m' "$target" 2> /dev/null || echo 0)
-    [ $(($(date +%s) - mtime)) -gt "$max_age" ] && return 0
-    return 1
-  fi
-  return 0
-}
-
-# is_force_refresh_stale [path] - Returns 0 (true) only when IS_FORCE_REFRESH=1 AND the path
-# is stale. Defaults to BASH_SYLE_PATH when no path given.
-# Used by medium/heavy scripts to avoid unnecessary re-downloads when the install is still fresh.
-function is_force_refresh_stale() {
-  ! ((IS_FORCE_REFRESH)) && return 1
-  ((IS_REFRESH_MODE)) && return 0
-  local target="${1:-$BASH_SYLE_PATH}"
-  if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
-  return 1
-}
-
-# is_bash_syle_stale - Returns 0 (true) when ~/.bash_syle is older than 2 weeks or missing.
-# Used by dependency scripts to skip package index updates.
-function is_bash_syle_stale() {
-  is_path_stale "$BASH_SYLE_PATH"
-}
-
-# exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
-function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
-  local IFS=','
-  for os_flag in $LIMITED_SUPPORT_OSES; do
-    ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
-      exit 0
-    }
-  done
-}
-# SOURCE_END software/bootstrap/common-functions.bash
+# SOURCE_END software/scripts/bash-fzf.profile.bash
+# SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
+# software/scripts/advanced/editor-launchers-common.profile.bash | 18570b49cee396de7b0ba0a10a2ab055 | 3.0 KB | 2026-04-19
 # Resolve editor binary from a list of candidate paths (delegates to find_path exec mode)
 function find_editor() {
   local editor_name="$1"
@@ -5452,7 +3928,7 @@ function run_editor_cli() {
 
   "$target_binary" "$@"
 }
-# SOURCE_END software/scripts/advanced/editor-launchers-common.bash
+# SOURCE_END software/scripts/advanced/editor-launchers-common.profile.bash
 # BEGIN Editor Launchers - Vim
 _VIM_PATHS=(
   /usr/bin/vim
@@ -7203,90 +5679,6 @@ complete -o filenames -F __spec_complete_git git
 fi
 # END git Spec Autocomplete
 
-# BEGIN brew Spec Autocomplete
-################################################################################
-# brew (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_brew() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-install|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--quiet,-q,--overwrite,--dry-run,--HEAD,--fetch-HEAD,--keep-tmp,--build-from-source,-s,--force-bottle,--include-test,--build-bottle,--bottle-arch,--ignore-dependencies,--only-dependencies,--cc,--appdir,--no-binaries,--language,--no-quarantine,--adopt,--require-sha,--audio-unit-plugin-dir,--vst-plugin-dir,--vst3-plugin-dir,--screen-saver-dir
-uninstall|--cask,--formula,--force,-f,--zap,--ignore-dependencies
-reinstall|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--no-quarantine,--adopt,--require-sha
-upgrade|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--dry-run,--greedy,--greedy-latest,--greedy-auto-updates,--no-quarantine,--fetch-HEAD
-update|--merge,--auto-update,--force,-f,--verbose,-v,--debug,-d,--quiet,-q
-search|--cask,--formula,--desc,--eval-all,--pull-request,--open,--closed
-info|--cask,--formula,--json,--installed,--eval-all,--all,--verbose,-v,--analytics,--days,--category
-list|--cask,--formula,--full-name,--versions,--multiple,--pinned,-1,-l,-r,-t
-services|list,start,stop,restart,run,cleanup,info
-services start|--all,--file
-services stop|--all
-services restart|--all
-tap|--force-auto-update,--custom-remote,--repair,--eval-all,--force
-untap|--force
-cleanup|--prune,--dry-run,-n,-s,--scrub
-doctor|--list-checks,--audit-debug,--verbose,-v,--debug,-d
-deps|--tree,--all,--installed,--eval-all,--for-each,--include-build,--include-optional,--include-test,--skip-recommended,--union,--cask,--formula,-n,-1
-uses|--installed,--eval-all,--include-build,--include-optional,--include-test,--skip-recommended,--cask,--formula,--recursive
-outdated|--cask,--formula,--json,--fetch-HEAD,--greedy,--greedy-latest,--greedy-auto-updates,--verbose,-v,--quiet,-q
-pin|--formula
-unpin|--formula
-link|--overwrite,--dry-run,-n,--force,-f,--HEAD
-unlink|--dry-run,-n
-autoremove|--dry-run,-n
-leaves|--installed-on-request,--installed-as-dependency
-log|--max-count,-n,--oneline,-1
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_brew brew 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_brew brew
-fi
-# END brew Spec Autocomplete
-
-# BEGIN bun Spec Autocomplete
-################################################################################
-# bun (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_bun() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-add|--dev,-d,--optional,--peer,--exact,-E,--global,-g,--verbose,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress
-build|--outdir,--outfile,--target,--format,--splitting,--minify,--sourcemap,--entry-naming,--chunk-naming,--asset-naming,--external,--loader,--define,--jsx-factory,--jsx-fragment,--tsconfig-override,--public-path,--root,--compile
-create|--force,-f,--no-install,--no-git,--open,--template,-t
-init|-y,--yes,--force,-f,--open
-install|--frozen-lockfile,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress,--verbose,--production,-p,--global,-g,--ignore-scripts,--trust
-link|--save,--no-save,--global,-g,--force,-f
-outdated|--global,-g
-pm|cache,ls,hash,hash-print,hash-string,migrate,trust,untrust,default-trusted
-remove|--global,-g,--save,--verbose,--no-save
-run|--watch,--hot,--smol,--if-present,--silent,--bun,--shell,--filter,--inspect,--inspect-brk,--inspect-wait,--env-file,--cwd,--config,-c,--preload,--print,--eval,-e,__npm_scripts__
-test|--watch,--bail,-b,--timeout,-t,--rerun-each,--only,--todo,--preload,--coverage,--update-snapshots,-u,--env-file,--cwd
-update|--global,-g,--force,-f,--latest,--save,--no-save,--dry-run,--verbose
-upgrade|--canary,--stable,--force,-f,--version
-x|--bun,--silent,--verbose,--install,--no-install,--trust,--packages,-p
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_bun bun 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_bun bun
-fi
-# END bun Spec Autocomplete
-
 # BEGIN cargo Spec Autocomplete
 ################################################################################
 # cargo (spec-based autocomplete)
@@ -7328,133 +5720,6 @@ else
 complete -o filenames -F __spec_complete_cargo cargo
 fi
 # END cargo Spec Autocomplete
-
-# BEGIN composer Spec Autocomplete
-################################################################################
-# composer (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_composer() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-archive|--format,--dir,--file,--quiet,-q,--verbose,-v,--no-interaction,-n
-check-platform-reqs|--lock,--no-dev,--quiet,-q,--verbose,-v
-clear-cache|--quiet,-q,--verbose,-v
-config|--global,-g,--editor,-e,--auth,-a,--unset,--list,-l,--absolute,--quiet,-q,--verbose,-v
-create-project|--stability,-s,--prefer-source,--prefer-dist,--repository,--dev,--no-dev,--no-scripts,--no-progress,--no-install,--keep-vcs,--quiet,-q,--verbose,-v
-depends|--recursive,-r,--tree,-t,--quiet,-q,--verbose,-v
-dump-autoload|--optimize,-o,--classmap-authoritative,-a,--apcu,--no-dev,--quiet,-q,--verbose,-v
-exec|--list,--quiet,-q,--verbose,-v
-fund|--format,--quiet,-q,--verbose,-v
-global|require,remove,update,install,show
-install|--prefer-source,--prefer-dist,--dry-run,--dev,--no-dev,--no-autoloader,--no-scripts,--no-progress,--optimize-autoloader,-o,--classmap-authoritative,-a,--apcu-autoloader,--ignore-platform-reqs,--quiet,-q,--verbose,-v
-outdated|--all,-a,--direct,-D,--strict,--minor-only,-m,--locked,--no-dev,--format,--quiet,-q,--verbose,-v
-prohibits|--recursive,-r,--tree,-t,--quiet,-q,--verbose,-v
-reinstall|--prefer-source,--prefer-dist,--no-autoloader,--no-scripts,--no-progress,--optimize-autoloader,-o,--quiet,-q,--verbose,-v
-remove|--dev,--dry-run,--no-progress,--no-update,--update-no-dev,--update-with-dependencies,--unused,--quiet,-q,--verbose,-v
-require|--dev,--dry-run,--prefer-source,--prefer-dist,--no-progress,--no-update,--update-no-dev,--update-with-dependencies,--sort-packages,--quiet,-q,--verbose,-v
-run-script|--timeout,--dev,--no-dev,--list,--quiet,-q,--verbose,-v,__composer_scripts__
-show|--all,-a,--installed,-i,--locked,--platform,-p,--self,-s,--tree,-t,--latest,-l,--outdated,-o,--direct,-D,--strict,--format,--no-dev,--quiet,-q,--verbose,-v
-status|--quiet,-q,--verbose,-v
-suggests|--by-package,--by-suggestion,--all,--list,--no-dev,--quiet,-q,--verbose,-v
-update|--with,--prefer-source,--prefer-dist,--dry-run,--dev,--no-dev,--lock,--no-autoloader,--no-scripts,--no-progress,--optimize-autoloader,-o,--root-reqs,--quiet,-q,--verbose,-v
-validate|--no-check-all,--no-check-lock,--no-check-publish,--with-dependencies,--strict,--quiet,-q,--verbose,-v
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_composer composer 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_composer composer
-fi
-# END composer Spec Autocomplete
-
-# BEGIN deno Spec Autocomplete
-################################################################################
-# deno (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_deno() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-bench|--watch,--no-clear-screen,--filter,--ignore,--json,--no-run,--config,-c,--no-config,--import-map,--no-lock,--lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write
-cache|--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-check|--all,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-clean
-compile|--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--output,-o,--target,--include
-completions|bash,zsh,fish,powershell
-coverage|--ignore,--include,--output,--lcov,--html,--detailed
-doc|--json,--html,--name,--category,--lint,--filter
-eval|--ext,-T,--print,-p,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-fmt|--check,--config,-c,--ext,--ignore,--no-config,--options-indent-width,--options-line-width,--options-prose-wrap,--options-single-quote,--options-use-tabs,--watch,--no-clear-screen,--unstable
-info|--json,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-init|--lib,--serve
-install|--global,-g,--name,-n,--root,--force,-f,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--entrypoint
-jupyter|--install,--kernel,--conn
-lint|--fix,--config,-c,--ignore,--json,--no-config,--rules,--rules-exclude,--rules-include,--rules-tags,--watch,--no-clear-screen,--compact
-lsp
-publish|--token,--config,-c,--no-config,--dry-run,--allow-slow-types,--allow-dirty,--no-provenance
-repl|--eval,--eval-file,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write
-run|--watch,--watch-exclude,--watch-hmr,--no-clear-screen,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write,--inspect,--inspect-brk,--inspect-wait,--frozen,--cached-only,--env-file
-serve|--port,--host,--watch,--watch-exclude,--watch-hmr,--no-clear-screen,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--parallel
-task|--config,-c,--cwd,--filter,--eval,--recursive
-test|--watch,--no-clear-screen,--doc,--fail-fast,--filter,--ignore,--jobs,-j,--junit-path,--no-run,--parallel,--reporter,--shuffle,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--coverage,--clean
-types|--unstable
-uninstall|--global,-g,--name,-n,--root
-upgrade|--canary,--dry-run,--force,-f,--output,--version,-V
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_deno deno 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_deno deno
-fi
-# END deno Spec Autocomplete
-
-# BEGIN fnm Spec Autocomplete
-################################################################################
-# fnm (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_fnm() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-install|--lts,--latest,--progress,--arch,--log-level
-use|--install-if-missing,--silent-if-current,--log-level
-list
-list-remote|--lts,--sort,--filter,--log-level
-ls
-ls-remote|--lts,--sort,--filter,--log-level
-default|--log-level
-alias|--log-level
-unalias|--log-level
-current|--log-level
-env|--shell,--use-on-cd,--log-level,--corepack-enabled,--resolve-engines,--version-file-strategy,--multi
-exec|--using,--using-file,--log-level
-uninstall|--log-level
-completions|--shell,--log-level
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_fnm fnm 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_fnm fnm
-fi
-# END fnm Spec Autocomplete
 
 # BEGIN n Spec Autocomplete
 ################################################################################
@@ -7665,47 +5930,6 @@ complete -o filenames -F __spec_complete_npx npx
 fi
 # END npx Spec Autocomplete
 
-# BEGIN uv Spec Autocomplete
-################################################################################
-# uv (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_uv() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-add|--dev,--optional,--group,--requirements,--editable,--raw-sources,--rev,--tag,--branch,--no-sync,--frozen,--locked,--extra,--all-extras,--no-extra,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-build|--sdist,--wheel,--out-dir,-o,--python,-p,--config-setting,-C,--no-build-isolation,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-cache|clean,dir,prune
-export|--format,--output-file,-o,--all-extras,--extra,--no-extra,--frozen,--locked,--no-dev,--no-emit-project,--no-emit-workspace,--quiet,-q,--verbose,-v
-help
-init|--app,--lib,--script,--package,--no-package,--name,--python,-p,--no-readme,--no-pin-python,--vcs,--build-backend,--author-from,--no-workspace,--quiet,-q,--verbose,-v
-lock|--frozen,--locked,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-pip|compile,install,list,show,freeze,check,uninstall,sync,tree
-publish|--token,-t,--username,-u,--password,-p,--publish-url,--trusted-publishing,--keyring-provider,--check-url,--quiet,-q,--verbose,-v
-python|find,install,list,pin,uninstall
-remove|--dev,--optional,--group,--no-sync,--frozen,--locked,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-run|--extra,--all-extras,--no-extra,--with,--with-editable,--with-requirements,--isolated,--no-project,--module,-m,--script,--python,-p,--frozen,--locked,--no-sync,--env-file,--no-env-file,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v,__python_scripts__
-self|update
-sync|--extra,--all-extras,--no-extra,--group,--all-groups,--no-group,--no-dev,--no-install-project,--no-install-workspace,--frozen,--locked,--inexact,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-tool|install,list,run,uninstall,update-shell,dir
-tree|--depth,-d,--prune,--package,--no-dedupe,--invert,--frozen,--locked,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-upgrade|--all
-venv|--python,-p,--prompt,--system-site-packages,--relocatable,--seed,--allow-existing,--exclude-newer,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-version|--output-format
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_uv uv 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_uv uv
-fi
-# END uv Spec Autocomplete
-
 # BEGIN y Spec Autocomplete
 ################################################################################
 # y (spec-based autocomplete)
@@ -7732,56 +5956,6 @@ else
 complete -o filenames -F __spec_complete_y y
 fi
 # END y Spec Autocomplete
-
-# BEGIN yarn Spec Autocomplete
-################################################################################
-# yarn (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_yarn() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|__npm_scripts__
-add|--dev,-D,--peer,-P,--optional,-O,--exact,-E,--tilde,-T
-remove|--all,-A
-install|--frozen-lockfile,--force,--production,--ignore-scripts,--check-files
-run|__npm_scripts__
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_yarn yarn 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_yarn yarn
-fi
-# END yarn Spec Autocomplete
-
-# BEGIN gradle Spec Autocomplete
-################################################################################
-# gradle (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_gradle() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|__gradle_tasks__
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_gradle gradle 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_gradle gradle
-fi
-# END gradle Spec Autocomplete
 
 # BEGIN gradlew Spec Autocomplete
 ################################################################################
@@ -7829,20 +6003,531 @@ complete -o filenames -F __spec_complete_make make
 fi
 # END make Spec Autocomplete
 
-# BEGIN docker Spec Autocomplete
+# BEGIN curl Spec Autocomplete
 ################################################################################
-# docker (spec-based autocomplete)
+# curl (spec-based autocomplete)
 ################################################################################
 # Per-command spec autocomplete wrapper template (partial — not a standalone script).
 # run: bash run.sh --files="bash-autocomplete-complete-spec.js"
 # thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_docker() {
+function __spec_complete_curl() {
 local spec_data
 read -r -d '' spec_data << '__SPEC_EOF__'
-attach|-d,--detach-keys,-n,--no-stdin,-s,--sig-proxy
-commit|-a,--author,-t,-c,--change,-m,--message,-p,--pause
-cp|-a,--archive,-f,--follow-link,-q,--quiet
-create|-a,--add-host,--annotation,--attach,-b,--blkio-weight,--blkio-weight-device,-c,--cap-add,--cap-drop,--cgroup-parent,--cgroupns,--cidfile,--cpu-period,--cpu-quota,--cpu-rt-period,--cpu-rt-runtime,--cpu-shares,--cpus,--cpuset-cpus,--cpuset-mems,-d,--device,--device-cgroup-rule,--device-read-bps,--device-read-iops,--device-write-bps,--device-write-iops,--disable-content-trust,--dns,--dns-option,--dns-search,--domainname,-e,--entrypoint,--env,--env-file,--expose,-g,--gpus,--group-add,-h,--health-cmd,--health-interval,--health-retries,--health-start-interval,--health-start-period,-r,--health-timeout,--help,--hostname,-i,--init,--interactive,--ip,--ipc,--isolation,-k,--kernel-memory,-l,--label,--label-file,--link,--link-local-ip,--log-driver,--log-opt,-m,--mac-address,--memory,--memory-reservation,--memory-swap,--memory-swappiness,--mount,-n,--name,--network,--network-alias,--no-healthcheck,-o,--oom-kill-disable,--oom-score-adj,-p,--pid,--pids-limit,--platform,--privileged,--publish,--publish-all,--pull,-q,--quiet,--read-only,--restart,--rm,--runtime,-s,--security-opt,--shm-size,--stop-signal,--stop-timeout,--storage-opt,--sysctl,-t,--tmpfs,--tty,-u,--ulimit,--user,--userns,--uts,-v,--volume,--volume-driver,--volumes-from,-w,--workdir
+|-o,--output,-O,--remote-name,-L,--location,-f,--fail,-s,--silent,-S,--show-error,-v,--verbose,-k,--insecure,-I,--head,-X,--request,-H,--header,-d,--data,--data-raw,--data-binary,--data-urlencode,-F,--form,-u,--user,-A,--user-agent,-e,--referer,-b,--cookie,-c,--cookie-jar,-x,--proxy,-m,--max-time,--connect-timeout,-r,--range,-C,--continue-at,-T,--upload-file,-w,--write-out,--compressed,--create-dirs,-D,--dump-header,-K,--config,-q,--disable,--dns-servers,--doh-url,--http1.0,--http1.1,--http2,--http3,--retry,--retry-delay,--retry-max-time,--tcp-fastopen,--tcp-nodelay,--tls-max,--tlsv1.2,--tlsv1.3,--tr-encoding,-4,--ipv4,-6,--ipv6,-#,--progress-bar,--stderr,--trace,--trace-ascii,--trace-time,-G,--get,-j,--junk-session-cookies,-J,--remote-header-name,-R,--remote-time,--raw,--no-keepalive,--no-sessionid,-n,--netrc,--netrc-file,--netrc-optional,-N,--no-buffer,--path-as-is,-Z,--parallel,--parallel-max,--parallel-immediate
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_curl curl 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_curl curl
+fi
+# END curl Spec Autocomplete
+
+# BEGIN s Spec Autocomplete
+################################################################################
+# s (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_s() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+|__ssh_hosts__,-i,-p,-l,-o,-F,-J,-N,-T,-v,-vv,-vvv,-L,-R,-D,-W,-A,-X,-Y,-C,-q,-f,-4,-6
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_s s 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_s s
+fi
+# END s Spec Autocomplete
+
+# BEGIN adb Spec Autocomplete
+################################################################################
+# adb (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_adb() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+connect
+devices|-l,--long
+disconnect
+forward|--list,--remove,--remove-all,--no-rebind
+install|-r,-t,-d,-g,-l,-s,--abi,--instant,--no-streaming,--streaming,--fastdeploy,--no-fastdeploy,--force-agent,--date-check-agent,--version-check-agent,--local-agent
+install-multi-package|-r,-t,-d,-g,-l,-s,--abi,--instant,--no-streaming,--streaming
+logcat|-v,-b,-c,-d,-e,-f,-g,-L,-r,-n,-s,-t,-T,-D,-S,--pid,--wrap,--clear,--dump,--format,--buffer,--regex
+pair
+pull|-a,-z,-Z
+push|-z,-Z,--sync
+reboot|bootloader,recovery,sideload,sideload-auto-reboot
+reconnect|device,offline
+remount|-R
+reverse|--list,--remove,--remove-all,--no-rebind
+root
+shell|-e,-n,-x,-T,-t
+sideload
+start-server
+kill-server
+tcpip
+track-devices|-l,--long
+uninstall|-k
+unroot
+usb
+wait-for-device
+wait-for-recovery
+wait-for-sideload
+wait-for-bootloader
+bugreport
+emu
+get-state
+get-serialno
+get-devpath
+jdwp
+disable-verity
+enable-verity
+keygen
+version
+mdns|check,services
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_adb adb 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_adb adb
+fi
+# END adb Spec Autocomplete
+
+# BEGIN journalctl Spec Autocomplete
+################################################################################
+# journalctl (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_journalctl() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+|-u,--unit,-t,--identifier,-p,--priority,-S,--since,-U,--until,-f,--follow,-n,--lines,-o,--output,-r,--reverse,-x,--catalog,-e,--pager-end,-a,--all,-q,--quiet,--no-pager,--no-tail,-b,--boot,-k,--dmesg,--list-boots,-g,--grep,--case-sensitive,-D,--directory,--file,--root,--image,--namespace,-F,--field,-N,--fields,--system,--user,-M,--machine,--header,--disk-usage,--vacuum-size,--vacuum-time,--vacuum-files,--verify,--sync,--flush,--rotate,--force,--cursor,--cursor-file,--after-cursor,--show-cursor
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_journalctl journalctl 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_journalctl journalctl
+fi
+# END journalctl Spec Autocomplete
+
+# BEGIN sqlite3 Spec Autocomplete
+################################################################################
+# sqlite3 (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_sqlite3() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+|--append,--ascii,--bail,--batch,--box,--cmd,--column,--csv,--deserialize,--echo,--header,--help,--html,--init,--interactive,--json,--line,--list,--lookaside,--markdown,--maxsize,--memtrace,--mmap,--newline,--nofollow,--noheader,--nonce,--nullvalue,--pagecache,--pagesize,--pcachetrace,--quote,--readonly,--safe,--separator,--stats,--table,--tabs,--unsafe-testing,--version,--vfs,--zip
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_sqlite3 sqlite3 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_sqlite3 sqlite3
+fi
+# END sqlite3 Spec Autocomplete
+
+# BEGIN systemctl Spec Autocomplete
+################################################################################
+# systemctl (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_systemctl() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+start|--no-block,--job-mode
+stop|--no-block,--job-mode
+restart|--no-block,--job-mode
+reload|--no-block,--job-mode
+enable|--now,--no-reload,--force,--runtime
+disable|--now,--no-reload,--runtime
+status|--no-pager,-l,--full,-n,--lines,-o,--output
+is-active
+is-enabled
+is-failed
+mask|--now,--runtime
+unmask|--runtime
+daemon-reload
+daemon-reexec
+list-units|--type,-t,--state,--no-pager,--all,-a,--full,-l,--plain,--no-legend
+list-unit-files|--type,-t,--state,--no-pager,--all,-a
+list-sockets|--no-pager,--all,-a,--full,-l,--show-types,--no-legend
+list-timers|--no-pager,--all,-a,--full,-l,--no-legend
+list-dependencies|--all,-a,--reverse,--after,--before,--no-pager,--plain
+show|--no-pager,-p,--property,--all,-a,--value
+cat
+edit|--force,--full,--runtime,--drop-in
+set-property|--runtime
+reset-failed
+isolate
+kill|-s,--signal,--kill-who
+log-level
+log-target
+reboot|--firmware-setup,--boot-loader-menu,--boot-loader-entry
+poweroff
+halt
+suspend
+hibernate
+rescue
+emergency
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_systemctl systemctl 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_systemctl systemctl
+fi
+# END systemctl Spec Autocomplete
+
+# BEGIN tldr Spec Autocomplete
+################################################################################
+# tldr (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_tldr() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+|__tldr_commands__,--list,-l,--random,-r,--render,-f,--update,-u,--clear-cache,--language,-L,--platform,-p,--seed,--color,--version,-v,--help,-h
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_tldr tldr 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_tldr tldr
+fi
+# END tldr Spec Autocomplete
+
+# BEGIN tmux Spec Autocomplete
+################################################################################
+# tmux (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_tmux() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+attach-session|-t,-d,-r,-x,-f,-E
+a|-t,-d,-r,-x,-f,-E
+attach|-t,-d,-r,-x,-f,-E
+bind-key|-T,-n,-r,-N
+break-pane|-d,-P,-F,-n,-s,-t
+capture-pane|-a,-e,-p,-q,-b,-E,-S,-t,-J,-P,-N
+choose-buffer|-t,-F,-f,-O,-r,-N,-Z
+choose-client|-t,-F,-f,-O,-r,-N,-Z
+choose-session|-t,-F,-f,-O,-r,-N,-Z
+choose-tree|-t,-F,-f,-O,-r,-s,-w,-N,-Z
+choose-window|-t,-F,-f,-O,-r,-N,-Z
+clock-mode|-t
+command-prompt|-t,-T,-1,-i,-k,-p,-I,-N
+confirm-before|-t,-p,-b,-y
+copy-mode|-t,-u,-H,-M,-e,-q
+delete-buffer|-b
+detach-client|-t,-s,-a,-P,-E
+display-menu|-t,-T,-x,-y,-c,-O
+display-message|-t,-c,-p,-I,-F,-v,-a,-l,-d
+display-panes|-t,-d,-b
+find-window|-t,-C,-i,-r,-T,-N,-Z
+has-session|-t
+if-shell|-b,-F,-t
+join-pane|-b,-d,-h,-v,-l,-p,-s,-t
+kill-pane|-a,-t
+kill-server
+kill-session|-a,-t,-C
+kill-window|-a,-t
+last-pane|-d,-e,-t,-Z
+last-window|-t
+link-window|-a,-d,-k,-s,-t
+list-buffers|-F,-f
+list-clients|-F,-f,-t
+list-commands|-F
+list-keys|-T,-N,-1,-a
+list-panes|-a,-F,-f,-s,-t
+list-sessions|-F,-f
+list-windows|-a,-F,-f,-t
+load-buffer|-b,-t,-w
+lock-client|-t
+lock-server
+lock-session|-t
+move-pane|-b,-d,-h,-v,-p,-l,-s,-t
+move-window|-a,-b,-d,-k,-r,-s,-t
+new-session|-A,-d,-D,-E,-f,-n,-P,-s,-t,-x,-y,-X,-Y,-c,-F,-e
+new|-A,-d,-D,-E,-f,-n,-P,-s,-t,-x,-y,-X,-Y,-c,-F,-e
+new-window|-a,-b,-d,-e,-k,-n,-P,-S,-t,-c,-F
+next-layout|-t
+next-window|-a,-t
+paste-buffer|-b,-d,-p,-r,-s,-t
+pipe-pane|-I,-O,-o,-t
+previous-layout|-t
+previous-window|-a,-t
+refresh-client|-t,-A,-B,-C,-c,-D,-f,-l,-L,-R,-S,-U
+rename-session|-t
+rename-window|-t
+resize-pane|-D,-L,-R,-U,-x,-y,-M,-m,-t,-Z
+resize-window|-a,-A,-D,-L,-R,-U,-x,-y,-t
+respawn-pane|-k,-c,-e,-t
+respawn-window|-k,-c,-e,-t
+rotate-window|-D,-U,-Z,-t
+run-shell|-b,-d,-t,-C,-c
+save-buffer|-a,-b
+select-layout|-E,-n,-o,-p,-t
+select-pane|-D,-d,-e,-L,-l,-M,-m,-R,-T,-t,-U,-Z
+select-window|-l,-n,-p,-t,-T
+send-keys|-H,-F,-l,-M,-R,-X,-N,-t
+send-prefix|-2,-t
+set-buffer|-a,-b,-n,-t,-w
+set-environment|-g,-h,-r,-t,-u,-F
+set-hook|-a,-g,-p,-R,-t,-u,-w
+set-option|-a,-F,-g,-o,-p,-q,-s,-t,-u,-U,-w
+set|-a,-F,-g,-o,-p,-q,-s,-t,-u,-U,-w
+set-window-option|-a,-F,-g,-o,-q,-t,-u
+setw|-a,-F,-g,-o,-q,-t,-u
+show-buffer|-b
+show-environment|-g,-h,-s,-t
+show-hooks|-g,-p,-t,-w
+show-messages|-J,-T,-t
+show-options|-A,-g,-H,-p,-q,-s,-t,-v,-w
+show-window-options|-g,-v,-t
+source-file|-F,-n,-q,-v
+split-window|-b,-d,-e,-f,-F,-h,-I,-l,-P,-p,-t,-v,-Z,-c
+start-server
+suspend-client|-t
+swap-pane|-d,-D,-s,-t,-U,-Z
+swap-window|-d,-s,-t
+switch-client|-c,-E,-l,-n,-p,-r,-t,-T,-Z
+unbind-key|-a,-n,-q,-T
+unlink-window|-k,-t
+wait-for|-L,-S,-U
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_tmux tmux 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_tmux tmux
+fi
+# END tmux Spec Autocomplete
+# END Spec Autocomplete
+# SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
+# software/scripts/bash-command-wrappers.profile.bash | f21c6dd3b10181a5738c9381ecfe7379 | 5.4 KB | 2026-04-19
+################################################################################
+# ---- Command Wrappers ----
+#
+# --- SQLite ---
+# sqlite        — Wrapper: prefers sqlite3, falls back to sqlite
+#
+# --- Python ---
+# activate_py   — Activate Python venv if not already active
+# python        — Lazy wrapper: activates venv on first use, then delegates
+# pip           — Smart wrapper: uses uv pip in uv venvs, pip3 fallback
+#
+# --- Node / NPM ---
+# activate_node — Activate node via fnm (default version) or system node
+# node          — Lazy wrapper: activates fnm on first use, then delegates
+# npm           — Smart wrapper: bare args run as "npm run <name>"
+# yarn          — Smart wrapper: falls back to npm if yarn unavailable
+# renpm         — Delete node_modules and reinstall (yarn/npm ci/npm install)
+#
+# Lazy-activation wrappers shadow the real binaries so the first invocation
+# triggers setup (e.g. activating a venv or fnm), then delegates to the
+# real command. Sourced AFTER spec-based autocomplete.
+################################################################################
+
+################################################################################
+# ---- SQLite ----
+################################################################################
+function sqlite() {
+  if type -P sqlite3 &> /dev/null; then
+    command sqlite3 "$@"
+  elif type -P sqlite &> /dev/null; then
+    command sqlite "$@"
+  else
+    echo "sqlite: not installed"
+  fi
+}
+
+################################################################################
+# ---- Python ----
+################################################################################
+function activate_py() {
+  type -P python &> /dev/null && return
+  if [[ -z "$VIRTUAL_ENV" ]]; then
+    local venv_candidates=(
+      "./.venv/bin/activate"
+      "./venv/bin/activate"
+      "$HOME/.venv/bin/activate"
+      "$HOME/venv/bin/activate"
+    )
+    local venv_activate
+    venv_activate=$(find_path "${venv_candidates[@]}" --file) && safe_source "$venv_activate"
+  fi
+}
+
+function python() {
+  if ! type -P python &> /dev/null; then
+    activate_py
+  fi
+  command python "$@"
+}
+
+function pip() {
+  activate_py
+  if [ -n "$VIRTUAL_ENV" ] && grep -q "^uv" "$VIRTUAL_ENV/pyvenv.cfg" 2> /dev/null && type -P uv &> /dev/null; then
+    command uv pip "$@"
+  elif type -P pip3 &> /dev/null; then
+    command pip3 "$@"
+  elif type -P pip &> /dev/null; then
+    command pip "$@"
+  else
+    echo "pip: not installed"
+  fi
+}
+alias pip3='pip'
+
+################################################################################
+# ---- Node / NPM ----
+################################################################################
+# activates node via fnm (Fast Node Manager) with its default version, or falls back to system node.
+# usage:
+#   activate_node        - use fnm's default node version (preferred)
+#   activate_node 1      - skip fnm, use system-installed node directly
+function activate_node() {
+  local use_system="${1-}"
+  if [ "$use_system" != "1" ] && [ "$use_system" != "true" ] && type -P fnm &> /dev/null; then
+    eval "$(fnm env)" 2> /dev/null
+    local default_version
+    default_version=$(fnm ls 2> /dev/null | grep -i "default" | grep -o "v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*")
+    if [ -n "$default_version" ]; then
+      echo "activate_node: fnm node $default_version ($(fnm exec --using="$default_version" type -P node 2> /dev/null))"
+      fnm use "$default_version" &> /dev/null
+    fi
+  else
+    local node_path
+    node_path=$(type -P node 2> /dev/null)
+    if [ -n "$node_path" ]; then
+      echo "activate_node: node found at $node_path"
+      if [ -L "$node_path" ]; then
+        echo "activate_node: symlink target $(readlink -f "$node_path")"
+      fi
+    fi
+  fi
+}
+
+# lazy wrapper: activates node on first use if not already available, then delegates to the real binary.
+function node() {
+  if ! type -P node &> /dev/null; then
+    activate_node
+  fi
+  command node "$@"
+}
+
+# checks if a script name exists in ./package.json (excludes built-in npm subcommands)
+function _has_pkg_script() {
+  case "$1" in
+  access | adduser | audit | bugs | cache | ci | completion | config | dedupe | deprecate | diff | dist-tag | docs | doctor | edit | exec | explain | explore | find-dupes | fund | get | help | hook | init | install | install-ci-test | install-test | link | ll | login | logout | ls | org | outdated | owner | pack | ping | pkg | prefix | profile | prune | publish | query | rebuild | repo | restart | root | run | sbom | search | set | shrinkwrap | star | stars | start | stop | team | test | token | uninstall | unpublish | unstar | update | version | view | whoami) return 1 ;;
+  esac
+  [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)" 2> /dev/null
+}
+
+# wraps npm so bare subcommand names run as `npm run <name>`
+function npm() {
+  if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
+    command npm run "$@"
+  else
+    command npm "$@"
+  fi
+}
+
+# wraps yarn so bare subcommand names run as `yarn run <name>`, falls back to npm
+function yarn() {
+  if type -P yarn &> /dev/null && command yarn --version &> /dev/null; then
+    if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
+      command yarn run "$@"
+    else
+      command yarn "$@"
+    fi
+  else
+    npm "$@"
+  fi
+}
+
+function renpm() {
+  rm -rf node_modules
+  if [ -f yarn.lock ]; then
+    yarn install
+  elif [ -f package-lock.json ]; then
+    npm ci
+  else
+    npm install
+  fi
+}
+# SOURCE_END software/scripts/bash-command-wrappers.profile.bash
+################################################################################
+# ---- OS-specific Tweaks (registerPlatformTweaks) ----
+################################################################################
+
+# BEGIN Arch Linux OS-specific Tweaks
+# Only Arch Linux alias
+
+# set brightness via ddc/ci (for external monitor)
+# more info here - https://moverest.xyz/blog/control-display-with-ddc-ci/
+alias set-brightness='sudo modprobe i2c-dev; sudo ddcutil setvcp 10'
+alias brightness='set-brightness'
+
+# override steamos prompt and properly use PS1 prompt
+PROMPT_COMMAND=""
+# END Arch Linux OS-specific Tweaks
+
+# BEGIN Ubuntu OS-specific Tweaks
+# update: OS package manager update/upgrade only
+alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove -y'
+# END Ubuntu OS-specific Tweaks
+
+fi
+################################################################################
+# ---- end advanced profile ----
+################################################################################,--isolation,-k,--kernel-memory,-l,--label,--label-file,--link,--link-local-ip,--log-driver,--log-opt,-m,--mac-address,--memory,--memory-reservation,--memory-swap,--memory-swappiness,--mount,-n,--name,--network,--network-alias,--no-healthcheck,-o,--oom-kill-disable,--oom-score-adj,-p,--pid,--pids-limit,--platform,--privileged,--publish,--publish-all,--pull,-q,--quiet,--read-only,--restart,--rm,--runtime,-s,--security-opt,--shm-size,--stop-signal,--stop-timeout,--storage-opt,--sysctl,-t,--tmpfs,--tty,-u,--ulimit,--user,--userns,--uts,-v,--volume,--volume-driver,--volumes-from,-w,--workdir
 events|-f,--filter,--format,-s,--since,-u,--until
 export|-o,--output
 history|-f,--format,-h,--human,-n,--no-trunc,-p,--platform,-q,--quiet
@@ -8369,262 +7054,8 @@ complete -o filenames -F __spec_complete_tmux tmux
 fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
-# SOURCE_BEGIN software/scripts/bash-command-wrappers-profile.bash
-# software/scripts/bash-command-wrappers-profile.bash | 9061525f580a3d776ca8d716e7d9bb60 | 5.5 KB | 2026-04-19
-# SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
-# Shared shell functions for run.sh and SH scripts (via SOURCE markers).
-# Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
-
-# safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
-#   source: URL (http/https), absolute path, or relative path
-#   dest:   optional local path to store the fetched content (useful for caching URL downloads)
-# URLs are downloaded via curl, files are used directly (or copied to dest if given).
-# Always validates with bash -n before sourcing.
-function safe_source() {
-  local src="$1"
-  local dest="${2:-}"
-  local target="$src"
-  case "$src" in
-  http://* | https://*)
-    target="${dest:-/tmp/bashrc_safe_source_$$.sh}"
-    curl -fsSL -o "$target" "$src" 2> /dev/null || {
-      echo "[Warning] safe_source download $src failed" >&2
-      return 1
-    }
-    ;;
-  *)
-    if [ ! -f "$src" ]; then
-      echo "[Warning] safe_source $src not found" >&2
-      return 1
-    fi
-    if [ -n "$dest" ]; then
-      cp "$src" "$dest" 2> /dev/null
-      target="$dest"
-    fi
-    ;;
-  esac
-  if ! bash -n "$target" 2> /dev/null; then
-    echo "[Warning] source $target failed (syntax error)" >&2
-    return 1
-  fi
-  . "$target"
-}
-
-# curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
-# suppressed. In verbose mode (set -x), stderr is kept visible for debugging.
-# Extra args are passed to the install script via bash -s -- <args>.
-function curl_bash_install() {
-  local url="$1"
-  shift
-  if [[ $- == *x* ]]; then
-    curl -fsSL "$url" | bash -s -- "$@" > /dev/null
-  else
-    curl -fsSL "$url" | bash -s -- "$@" &> /dev/null
-  fi
-}
-
-# npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
-#   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
-# via cmd.exe. Logs status (Skipped/Success/Error) for each target.
-function npm_install_global() {
-  local pkg="$1"
-  local bin="${2:-${pkg##*/}}"
-
-  # install for current system
-  local _resolved
-  _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
-    echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
-  else
-    echo -n ">> $pkg >> Installing with npm global >> "
-    if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-
-  # install for Windows host via WSL
-  if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
-      echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
-    else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
-      if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
-        echo "Success"
-      else
-        echo "Error"
-      fi
-    fi
-  fi
-}
-
-# has_persistent_binary <name> - Returns 0 (true) when the binary is found in PATH and is NOT
-# inside /tmp/. During run.sh, /tmp/synle/bashrc/node/bin is on PATH (bootstrap node fallback),
-# so binaries installed there by a prior run appear installed but are ephemeral. Use this for
-# install-skip checks; use plain `type -P` for dependency-available checks where /tmp is fine.
-# On success, prints the resolved path to stdout (capture with $()).
-function has_persistent_binary() {
-  local bin
-  bin=$(type -P "$1" 2> /dev/null) || return 1
-  [[ "$bin" == /tmp/* ]] && return 1
-  echo "$bin"
-}
-
-# sudo <args...> - Wrapper that logs the caller and command before executing sudo.
-# Helps track which script/function is requesting elevated privileges.
-function sudo() {
-  echo "[sudo] ${FUNCNAME[1]:-shell}: sudo $*" >&2
-  command sudo "$@"
-}
-
-# safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
-# avoid updating mtime (which would reset staleness checks). For files inside $HOME,
-# fixes ownership to current user if owned by root.
-function safe_touch() {
-  for f in "$@"; do
-    if [ ! -e "$f" ]; then
-      command touch "$f"
-      echo ">> safe_touch >> $f >> Created"
-    elif [[ "$f" == "$HOME"/* ]] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_touch >> $f >> Fixed ownership"
-    else
-      echo ">> safe_touch >> $f >> Skipped"
-    fi
-  done
-}
-
-# safe_mkdir <dir...> - Creates directories (-p by default), then fixes ownership to
-# current user for any resulting dir inside $HOME that is owned by root.
-function safe_mkdir() {
-  command mkdir -p "$@"
-  for f in "$@"; do
-    [[ "$f" == -* ]] && continue
-    if [[ "$f" == "$HOME"/* ]] && [ -d "$f" ] && [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" != "$(id -u)" ]; then
-      sudo chown "$USER" "$f"
-      echo ">> safe_mkdir >> $f >> Fixed ownership"
-    else
-      echo ">> safe_mkdir >> $f >> OK"
-    fi
-  done
-}
-
-# safe_chown [-R] [user] <path> - Runs sudo chown on a single path only if it exists
-# and is not already owned by the target user. Defaults to $USER if no user given.
-# Pass -R as the first argument to chown recursively. Always pass one path per call.
-# Usage:
-#   safe_chown "$HOME/.bashrc"              # chown to $USER
-#   safe_chown -R "$HOME/.config"           # chown -R to $USER
-#   safe_chown otheruser "$HOME/.bashrc"    # chown to otheruser
-#   safe_chown -R otheruser "$HOME/.config" # chown -R to otheruser
-function safe_chown() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local target_user="$USER"
-  if [ -n "$1" ] && [ ! -e "$1" ] && id "$1" &> /dev/null; then
-    target_user="$1"
-    shift
-  fi
-  local target_uid
-  target_uid=$(id -u "$target_user")
-  local f="$1"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%u' "$f" 2> /dev/null || stat -f '%u' "$f" 2> /dev/null)" = "$target_uid" ]; then
-    echo ">> safe_chown $flags $target_user >> $f >> Skipped (already correct)"
-  else
-    sudo chown $flags "$target_user" "$f"
-    echo ">> safe_chown $flags $target_user >> $f >> Done"
-  fi
-}
-
-# safe_chmod [-R] <mode> <path> - Runs chmod on a single path only if it exists
-# and permissions differ from the target mode. Always pass one path per call.
-# Pass -R as the first argument to chmod recursively.
-# Usage:
-#   safe_chmod 700 "$HOME/.ssh"
-#   safe_chmod 600 "$HOME/.ssh/id_rsa"
-function safe_chmod() {
-  local flags=""
-  if [ "$1" = "-R" ]; then
-    flags="-R"
-    shift
-  fi
-  local mode="$1"
-  local f="$2"
-  if [ ! -e "$f" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (not found)"
-  elif [ "$(stat -c '%a' "$f" 2> /dev/null || stat -f '%Lp' "$f" 2> /dev/null)" = "$mode" ]; then
-    echo ">> safe_chmod $flags $mode >> $f >> Skipped (already correct)"
-  else
-    chmod $flags "$mode" "$f"
-    echo ">> safe_chmod $flags $mode >> $f >> Done"
-  fi
-}
-
-# get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
-# Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
-# Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash
-function get_github_raw_url() {
-  echo "${BASH_PROFILE_CODE_REPO_RAW_URL}/${1}?raw=1"
-}
-
-# is_path_stale <path> [max_age_seconds] - Returns 0 (true) when the path is older than
-# max_age_seconds or missing. Defaults to 2 weeks (1209600s) when no max age given.
-function is_path_stale() {
-  ((IS_REFRESH_MODE)) && return 0
-  local target="$1"
-  local max_age="${2:-1209600}"
-  if [ -e "$target" ]; then
-    local mtime
-    mtime=$(stat -c '%Y' "$target" 2> /dev/null || stat -f '%m' "$target" 2> /dev/null || echo 0)
-    [ $(($(date +%s) - mtime)) -gt "$max_age" ] && return 0
-    return 1
-  fi
-  return 0
-}
-
-# is_force_refresh_stale [path] - Returns 0 (true) only when IS_FORCE_REFRESH=1 AND the path
-# is stale. Defaults to BASH_SYLE_PATH when no path given.
-# Used by medium/heavy scripts to avoid unnecessary re-downloads when the install is still fresh.
-function is_force_refresh_stale() {
-  ! ((IS_FORCE_REFRESH)) && return 1
-  ((IS_REFRESH_MODE)) && return 0
-  local target="${1:-$BASH_SYLE_PATH}"
-  if is_path_stale "$target"; then return 0; fi
-  echo ">> Force refresh skipped (not stale): $target"
-  return 1
-}
-
-# is_bash_syle_stale - Returns 0 (true) when ~/.bash_syle is older than 2 weeks or missing.
-# Used by dependency scripts to skip package index updates.
-function is_bash_syle_stale() {
-  is_path_stale "$BASH_SYLE_PATH"
-}
-
-# exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
-function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
-  local IFS=','
-  for os_flag in $LIMITED_SUPPORT_OSES; do
-    ((${os_flag:-0})) && {
-      echo ">>> Skipped : Not supported on $os_flag"
-      exit 0
-    }
-  done
-}
-# SOURCE_END software/bootstrap/common-functions.bash
+# SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
+# software/scripts/bash-command-wrappers.profile.bash | f21c6dd3b10181a5738c9381ecfe7379 | 5.4 KB | 2026-04-19
 ################################################################################
 # ---- Command Wrappers ----
 #
@@ -8776,7 +7207,7 @@ function renpm() {
     npm install
   fi
 }
-# SOURCE_END software/scripts/bash-command-wrappers-profile.bash
+# SOURCE_END software/scripts/bash-command-wrappers.profile.bash
 ################################################################################
 # ---- OS-specific Tweaks (registerPlatformTweaks) ----
 ################################################################################
