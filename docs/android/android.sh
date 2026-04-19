@@ -204,6 +204,7 @@ DEBLOAT_SAFE="
 # ---- Duplicate / Replaceable Apps ----
 com.samsung.android.calendar                # Samsung Calendar - lose Samsung calendar app; [Not Needed] if using Google Calendar
 com.samsung.android.calendar.sync          # Samsung Calendar Sync - lose Samsung Calendar cloud sync; [Not Needed] if using Google Calendar
+com.samsung.android.contacts               # Samsung Contacts - lose Samsung contacts app; [Not Needed] if using Google Contacts
 com.samsung.android.email.provider          # Samsung Email - lose Samsung email client; [Not Needed] if using Gmail
 com.samsung.android.messaging               # Samsung Messages - lose default SMS/MMS/RCS; [Not Needed] if using Google Messages
 com.samsung.android.service.livedrawing     # Live Drawing - lose animated handwritten messages in Samsung Messages; [Not Needed] if using Google Messages
@@ -238,6 +239,8 @@ com.google.android.videos                   # Google TV - lose Google TV/Play Mo
 com.google.android.feedback                 # Google Feedback - lose Send feedback bug report option inside Google apps
 com.google.android.apps.googleassistant     # Google Assistant - replaced by Gemini; lose legacy Hey Google voice commands
 com.google.android.printservice.recommendation # Google Print Service - lose wireless printer discovery and printing
+com.google.android.apps.tachyon             # Google Meet - lose Google Meet video calling app
+com.google.android.apps.dynamite           # Google Chat - lose Google Chat messaging app
 # ---- Junks > Facebook ----
 com.facebook.appmanager                     # Facebook App Manager - lose background Facebook app updates/installs
 com.facebook.appmanager.intel               # Facebook App Manager Intel - lose Facebook background telemetry
@@ -295,7 +298,6 @@ com.google.android.apps.wellbeing           # Google Digital Wellbeing - lose sc
 DEBLOAT_AGGRESSIVE="
 # ---- Aggressive > TO BE REVIEWED: Move to DEBLOAT_SAFE once verified safe ----
 com.samsung.android.visionintelligence      # Bixby Vision - lose camera-based search, translate, and shopping lens
-com.google.android.apps.tachyon             # Google Meet - lose Google Meet video calling app
 # ---- Aggressive > Samsung: System Services / Frameworks ----
 com.samsung.android.rubin.app               # Samsung Customization Service - lose personalized recommendations; [Not Needed] with third-party launchers
 com.samsung.android.mobileservice           # Samsung Experience Service - lose Samsung account sync; [Not Needed] if using Google account/Play Store
