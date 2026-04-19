@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SOURCE software/bootstrap/common-functions.bash
+# Profile partial — inlined into ~/.bash_syle via SOURCE marker, not run standalone.
 
 # Resolve editor binary from a list of candidate paths (delegates to find_path exec mode)
 function find_editor() {
