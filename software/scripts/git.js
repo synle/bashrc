@@ -130,6 +130,13 @@ async function doWork() {
   // figure out the name
   const oldConfig = await readText`${configMain}`;
   const email = _extractEmail(oldConfig);
+  let gitPager = "less -R";
+  try {
+    execBashSync("type -P delta");
+    gitPager = "delta";
+  } catch (err) {
+    // delta not installed — fall back to less -R
+  }
 
   log(`>>> Installing git Aliases and Configs for Main OS`, email, configMain);
 
@@ -151,15 +158,19 @@ async function doWork() {
     configMain,
     await _getGitConfig({
       email,
-      extraCoreConfigs: code`
-        pager = delta
+      extraCoreConfigs: gitPager === "delta"
+        ? code`
+          pager = delta
 
-        [delta]
-        navigate = true
-        side-by-side = true
-        line-numbers = true
-        syntax-theme = Dracula
-      `,
+          [delta]
+          navigate = true
+          side-by-side = true
+          line-numbers = true
+          syntax-theme = Dracula
+        `
+        : code`
+          pager = less -R
+        `,
       addDefaultCommitTemplate: true,
     }),
   );
