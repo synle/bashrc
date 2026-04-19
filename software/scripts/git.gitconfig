@@ -83,6 +83,15 @@ whitespace = red reverse
 auto = true
 strategy = incremental
 
+# ---- Optional: delta (git-delta pager) ----
+# These settings are only used when delta is installed and set as the pager.
+# Harmless if delta is not installed — git ignores unrecognized sections.
+[delta]
+navigate = true
+side-by-side = true
+line-numbers = true
+syntax-theme = Dracula
+
 [alias]
 # ---- Status & Staging ----
 s = "!git status -sb && echo '============' && git diff --stat -w" # Status + diff summary (ignore whitespace)
