@@ -29,7 +29,7 @@ function installAptPackage() {
     echo "Skipped"
   else
     local _t0=$SECONDS
-    if sudo apt-get install -y --fix-missing $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+    if sudo apt-get install -y --fix-missing -o Dpkg::Options::="--force-confold" $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
       echo "Success ($((SECONDS - _t0))s)"
     else
       echo "Error ($((SECONDS - _t0))s)"
@@ -106,7 +106,7 @@ function updatePackageIndex() {
 function upgradeAndCleanPackages() {
   echo ">> Upgrading and cleaning packages (background) >>"
   (
-    sudo apt-get upgrade -y < /dev/null
+    sudo apt-get upgrade -y -o Dpkg::Options::="--force-confold" < /dev/null
     sudo apt-get autoremove -y < /dev/null
     sudo apt-get autoclean -y < /dev/null
   ) > /dev/null 2>&1 &
