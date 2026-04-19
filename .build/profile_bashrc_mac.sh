@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-18]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-19]
 # 
 # Precompiled bash profile for mac
 # ################################################################################
@@ -14,14 +14,14 @@
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-18T23:40:03.268Z
+# Generated: 2026-04-19T00:07:37.005Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history-profile.bash
-# software/scripts/bash-history-profile.bash | aa9ebe5f993a76f967e0f2d0a7a56c01 | 4.5 KB | 2026-04-18
+# software/scripts/bash-history-profile.bash | fbfcc027969ad3268f14859227bd9850 | 4.5 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
+# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -857,9 +857,9 @@ done
 export PATH="/Users/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
-# software/scripts/bash-path-candidate-profile.bash | 7909f5dee1b62ecf48b0b7df599e251e | 3.6 KB | 2026-04-18
+# software/scripts/bash-path-candidate-profile.bash | 6567ec5d1152403d4664058225de1a99 | 3.6 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
+# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3111,9 +3111,9 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys-profile.bash
-# software/scripts/bash-keys-profile.bash | 2b84edec845b02a7dc3d09a220eec80d | 4.8 KB | 2026-04-18
+# software/scripts/bash-keys-profile.bash | 0616b622d5822637fe5a0b328350b8f9 | 4.8 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
+# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3461,9 +3461,9 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys-profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.bash
-# software/scripts/bash-file-utils.bash | 10c649d8f9d25c511725df9c1dab11fa | 27.7 KB | 2026-04-18
+# software/scripts/bash-file-utils.bash | 6a3ebc1bd5d70788263d7fa2c5179531 | 27.7 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
+# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4423,9 +4423,9 @@ DEDUP_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.bash
 # SOURCE_BEGIN software/scripts/bash-fzf-profile.bash
-# software/scripts/bash-fzf-profile.bash | 69d9d10444242fda6c971eb2924d201c | 17.2 KB | 2026-04-18
+# software/scripts/bash-fzf-profile.bash | ddae04bddb3cad5e17251213bc2545bc | 17.2 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
+# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5077,9 +5077,9 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf-profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | b1741cba94fd9fbe3edc35bbf2e1b285 | 2.6 KB | 2026-04-18
+# software/scripts/advanced/editor-launchers-common.bash | 5b291bb8efaca1dd316e3744aead63a4 | 3.0 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
+# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5382,7 +5382,14 @@ function run_editor() {
       code) app_name="Visual Studio Code" ;;
       zed) app_name="Zed" ;;
       esac
-      [[ -n "$app_name" ]] && osascript -e "tell application \"$app_name\" to activate" 2> /dev/null &
+      if [[ -n "$app_name" ]]; then
+        osascript \
+          -e "tell application \"$app_name\" to activate" \
+          -e "tell application \"System Events\" to tell process \"$app_name\" to set position of window 1 to {0, 0}" \
+          -e "tell application \"Finder\" to set {_, _, sw, sh} to bounds of window of desktop" \
+          -e "tell application \"System Events\" to tell process \"$app_name\" to set size of window 1 to {sw, sh}" \
+          2> /dev/null &
+      fi
     fi
   fi
 
@@ -8063,9 +8070,9 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers-profile.bash
-# software/scripts/bash-command-wrappers-profile.bash | 8ce1b90bc3323688786739e6b887a117 | 5.5 KB | 2026-04-18
+# software/scripts/bash-command-wrappers-profile.bash | 2dc4c028b62015a7da5d7d89f4061bd0 | 5.5 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-18
+# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
