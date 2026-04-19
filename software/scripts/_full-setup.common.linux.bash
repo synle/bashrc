@@ -15,7 +15,7 @@ function _waitForAptLock() {
   # recover interrupted dpkg state (e.g. prior install was killed or crashed)
   local _dpkg_log="$BASHRC_TEMP_DIR/dpkg-configure.log"
   echo -n ">> Recovering dpkg state >> $_dpkg_log >> "
-  if sudo dpkg --configure -a < /dev/null &>> "$_dpkg_log"; then
+  if sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null &>> "$_dpkg_log"; then
     echo "Done"
   else
     echo "Error"
@@ -44,7 +44,7 @@ function _waitForAptLock() {
     sudo killall apt-get &> /dev/null
     sudo killall dpkg &> /dev/null
     sudo rm -f $_lock_files
-    sudo dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log
+    sudo DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log
   elif [ "$_elapsed" -gt 0 ]; then
     echo " Released (${_elapsed}s)"
   fi
@@ -124,7 +124,7 @@ function _waitForPkgLock() {
   # recover interrupted dpkg state (e.g. prior install was killed or crashed)
   local _dpkg_log="$BASHRC_TEMP_DIR/dpkg-configure.log"
   echo -n ">> Recovering dpkg state >> $_dpkg_log >> "
-  if dpkg --configure -a < /dev/null &>> "$_dpkg_log"; then
+  if DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null &>> "$_dpkg_log"; then
     echo "Done"
   else
     echo "Error"
@@ -153,7 +153,7 @@ function _waitForPkgLock() {
     killall apt-get &> /dev/null
     killall dpkg &> /dev/null
     rm -f $_lock_files
-    dpkg --configure -a < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log
+    DEBIAN_FRONTEND=noninteractive dpkg --configure -a --force-confold < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log
   elif [ "$_elapsed" -gt 0 ]; then
     echo " Released (${_elapsed}s)"
   fi
