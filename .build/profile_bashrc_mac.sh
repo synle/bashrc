@@ -11,17 +11,32 @@
 # software/bootstrap/profile-core.sh
 
 ################################################################################
+# ---- Debug Tracing ----
+# Enable verbose tracing when /tmp/debug exists and contains 1 or true.
+################################################################################
+if [ -f /tmp/debug ]; then
+  _debug_val=$(cat /tmp/debug 2> /dev/null)
+  case "$_debug_val" in
+  1 | true | TRUE | True)
+    set -x
+    trap 'echo "LAST LINE: $LINENO"' EXIT ERR
+    ;;
+  esac
+  unset _debug_val
+fi
+
+################################################################################
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-19T00:07:37.005Z
+# Generated: 2026-04-19T15:44:23.466Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history-profile.bash
-# software/scripts/bash-history-profile.bash | fbfcc027969ad3268f14859227bd9850 | 4.5 KB | 2026-04-19
+# software/scripts/bash-history-profile.bash | db63d5f310b1c251545809c2f9e7ce96 | 4.5 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
+# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -53,7 +68,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
@@ -857,9 +876,9 @@ done
 export PATH="/Users/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate-profile.bash
-# software/scripts/bash-path-candidate-profile.bash | 6567ec5d1152403d4664058225de1a99 | 3.6 KB | 2026-04-19
+# software/scripts/bash-path-candidate-profile.bash | cab517092d24076edbbb75595cb43536 | 3.6 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
+# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -891,7 +910,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
@@ -3111,9 +3134,9 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys-profile.bash
-# software/scripts/bash-keys-profile.bash | 0616b622d5822637fe5a0b328350b8f9 | 4.8 KB | 2026-04-19
+# software/scripts/bash-keys-profile.bash | 4d264cb10a8fe417119fcb6360720f84 | 4.8 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
+# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3145,7 +3168,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
@@ -3461,9 +3488,9 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys-profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.bash
-# software/scripts/bash-file-utils.bash | 6a3ebc1bd5d70788263d7fa2c5179531 | 27.7 KB | 2026-04-19
+# software/scripts/bash-file-utils.bash | fa10746865687f0f50e28ca337068be4 | 27.7 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
+# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -3495,7 +3522,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
@@ -4423,9 +4454,9 @@ DEDUP_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.bash
 # SOURCE_BEGIN software/scripts/bash-fzf-profile.bash
-# software/scripts/bash-fzf-profile.bash | ddae04bddb3cad5e17251213bc2545bc | 17.2 KB | 2026-04-19
+# software/scripts/bash-fzf-profile.bash | ad379548b48dd66abfcc160f294f5535 | 17.2 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
+# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -4457,7 +4488,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
@@ -5077,9 +5112,9 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf-profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.bash
-# software/scripts/advanced/editor-launchers-common.bash | 5b291bb8efaca1dd316e3744aead63a4 | 3.0 KB | 2026-04-19
+# software/scripts/advanced/editor-launchers-common.bash | c3e1c34d6d7a8bead9100205b5590d01 | 3.0 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
+# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -5111,7 +5146,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
@@ -8070,9 +8109,9 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers-profile.bash
-# software/scripts/bash-command-wrappers-profile.bash | 2dc4c028b62015a7da5d7d89f4061bd0 | 5.5 KB | 2026-04-19
+# software/scripts/bash-command-wrappers-profile.bash | 9061525f580a3d776ca8d716e7d9bb60 | 5.5 KB | 2026-04-19
 # SOURCE_BEGIN software/bootstrap/common-functions.bash
-# software/bootstrap/common-functions.bash | d9ed8ad8376248729ca94dc654c98d87 | 8.9 KB | 2026-04-19
+# software/bootstrap/common-functions.bash | d4a1b8e61d54261d5590ec56e96a548c | 9.0 KB | 2026-04-19
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
@@ -8104,7 +8143,11 @@ function safe_source() {
     fi
     ;;
   esac
-  bash -n "$target" 2> /dev/null && . "$target" || echo "[Warning] source $target failed" >&2
+  if ! bash -n "$target" 2> /dev/null; then
+    echo "[Warning] source $target failed (syntax error)" >&2
+    return 1
+  fi
+  . "$target"
 }
 
 # curl_bash_install <url> [script args...] - Runs a curl|bash installer with output
