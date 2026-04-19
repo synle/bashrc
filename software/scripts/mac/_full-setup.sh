@@ -326,7 +326,9 @@ function safe_pmset() {
   if [ -n "$section" ]; then
     check_output=$(echo "$_pmset_current" | sed -n "/$section/,/^\S/p")
   fi
-  if echo "$check_output" | grep -q " $key[[:space:]]*$val"; then
+  if ! echo "$check_output" | grep -q " $key[[:space:]]"; then
+    echo ">> Power: $desc >> Skipped (key not supported)"
+  elif echo "$check_output" | grep -q " $key[[:space:]]*$val"; then
     echo ">> Power: $desc >> Skipped (already $val)"
   else
     echo ">> Power: $desc"
