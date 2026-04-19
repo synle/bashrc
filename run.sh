@@ -92,10 +92,22 @@ function _detect_os() {
   local names="" bins="" paths="" envs=""
   while [ $# -gt 0 ]; do
     case "$1" in
-    --name) names="$2"; shift 2 ;;
-    --bin) bins="$2"; shift 2 ;;
-    --path) paths="$2"; shift 2 ;;
-    --env) envs="$2"; shift 2 ;;
+    --name)
+      names="$2"
+      shift 2
+      ;;
+    --bin)
+      bins="$2"
+      shift 2
+      ;;
+    --path)
+      paths="$2"
+      shift 2
+      ;;
+    --env)
+      envs="$2"
+      shift 2
+      ;;
     *) shift ;;
     esac
   done
