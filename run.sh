@@ -80,14 +80,29 @@ export BASE_HOMEDIR_LINUX="$HOME"
 ################################################################################
 # ---- OS Detection ----
 ################################################################################
+# _detect_os_release <keywords_csv> [fallback_binary] - Returns 0 when /etc/os-release
+# contains any keyword in ID or ID_LIKE fields (contains match). Optional second arg
+# is a binary to check as a fallback (e.g. apt-get for any Debian-based distro).
+function _detect_os_release() {
+  local IFS=','
+  local pattern=""
+  for keyword in $1; do
+    keyword=$(echo "$keyword" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [ -n "$keyword" ] && pattern="${pattern:+$pattern|}ID(_LIKE)?=.*$keyword"
+  done
+  command grep -Eiq "$pattern" /etc/os-release 2> /dev/null && return 0
+  [ -n "${2:-}" ] && type -P "$2" &> /dev/null && return 0
+  return 1
+}
+
 is_os_mac=0 && { [[ "$OSTYPE" == "darwin"* ]] || [ -d /Applications ]; } && is_os_mac=1
-is_os_ubuntu=0 && { command grep -Eiq "ID(_LIKE)?=.*ubuntu|ID(_LIKE)?=.*debian|ID(_LIKE)?=.*mint" /etc/os-release 2> /dev/null || type -P apt-get &> /dev/null; } && is_os_ubuntu=1
+is_os_ubuntu=0 && _detect_os_release "ubuntu, debian, mint" "apt-get" && is_os_ubuntu=1
 is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /proc/version 2> /dev/null && ! command grep -qi "microsoft" /proc/version 2> /dev/null; }; } && is_os_chromeos=1
 is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d /mingw64 ]; } && is_os_mingw64=1
 is_os_android_termux=0 && { [ -n "$TERMUX_VERSION" ] || [ -d /data/data/com.termux ]; } && is_os_android_termux=1
-is_os_arch_linux=0 && command grep -Eiq "ID(_LIKE)?=.*(arch|steamos)" /etc/os-release 2> /dev/null && is_os_arch_linux=1
+is_os_arch_linux=0 && _detect_os_release "arch, steamos" "pacman" && is_os_arch_linux=1
 is_os_steamos=0 && command grep -qi "ID=steamos" /etc/os-release 2> /dev/null && is_os_steamos=1
-is_os_redhat=0 && command grep -Eiq "ID(_LIKE)?=.*(fedora|rhel|centos|rocky|alma)" /etc/os-release 2> /dev/null && is_os_redhat=1
+is_os_redhat=0 && _detect_os_release "fedora, rhel, centos, rocky, alma" "dnf" && is_os_redhat=1
 is_os_windows=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && is_os_windows=1
 is_os_wsl=0 && { ((is_os_windows)) || command grep -qi microsoft /proc/version 2> /dev/null; } && is_os_wsl=1
 
