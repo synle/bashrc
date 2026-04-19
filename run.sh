@@ -101,7 +101,7 @@ is_os_chromeos=0 && { [ -f /dev/.cros_milestone ] || { command grep -qi "cros" /
 is_os_mingw64=0 && { [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]] || [ -d /mingw64 ]; } && is_os_mingw64=1
 is_os_android_termux=0 && { [ -n "$TERMUX_VERSION" ] || [ -d /data/data/com.termux ]; } && is_os_android_termux=1
 is_os_arch_linux=0 && _detect_os_release "arch, steamos" "pacman" && is_os_arch_linux=1
-is_os_steamos=0 && command grep -qi "ID=steamos" /etc/os-release 2> /dev/null && is_os_steamos=1
+is_os_steamos=0 && _detect_os_release "steamos" && is_os_steamos=1
 is_os_redhat=0 && _detect_os_release "fedora, rhel, centos, rocky, alma" "dnf" && is_os_redhat=1
 is_os_windows=0 && { [ -d /mnt/c/Windows ] || [ -d /c/Windows ]; } && is_os_windows=1
 is_os_wsl=0 && { ((is_os_windows)) || command grep -qi microsoft /proc/version 2> /dev/null; } && is_os_wsl=1
