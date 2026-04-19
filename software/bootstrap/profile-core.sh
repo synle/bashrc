@@ -51,6 +51,7 @@ alias ls_newest="ll -t"               # sort by modification time (newest first)
 alias ls_newest_last="ls_newest -r"   # sort by modification time (oldest first)
 alias ls_biggest="ll -S"              # sort by file size (biggest first)
 alias ls_biggest_last="ls_biggest -r" # sort by file size (smallest first)
+alias lc="wc -l"                      # line count
 # prevent curl from using cached responses
 alias curl="curl \
   -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' \
