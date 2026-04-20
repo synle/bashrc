@@ -424,14 +424,26 @@ function _getBrowserAccelerators() {
 }
 
 /**
+ * Infers a display name from a Chromium profile path by extracting the browser folder name.
+ * Strips everything before the vendor folder and after /User Data/Default or /Default.
+ * e.g. "~/Library/.../BraveSoftware/Brave-Browser/Default" => "Brave-Browser"
+ * @param {string} profilePath - Path to the browser's profile directory.
+ * @returns {string} The inferred browser name.
+ */
+function _inferBrowserName(profilePath) {
+  return path.basename(profilePath.replace(/\/(User Data\/)?Default\/?$/, ""));
+}
+
+/**
  * Applies Chromium browser configuration to a profile path. Reads existing Preferences,
  * deep-merges settings and accelerator overrides, and writes back. Browser must be closed.
- * @param {string} browserName - Display name for logging (e.g. "Brave", "Chrome").
+ * Browser name is inferred from the profile path for logging.
  * @param {string} profilePath - Path to the browser's "Default" profile directory.
  * @param {object} configs - Browser-specific settings to deep-merge into Preferences.
  * @param {object} accelerators - Accelerator overrides to merge into brave.accelerators.
  */
-async function _applyBrowserConfig(browserName, profilePath, configs, accelerators) {
+async function _applyBrowserConfig(profilePath, configs, accelerators) {
+  const browserName = profilePath ? _inferBrowserName(profilePath) : "Unknown";
   if (!profilePath) {
     log(`>>> ${browserName}: profile not found, skipping`);
     return;
@@ -475,5 +487,5 @@ async function _applyBrowserConfig(browserName, profilePath, configs, accelerato
 async function doWork() {
   log(`>> Brave Browser Configurations / Settings:`);
 
-  await _applyBrowserConfig("Brave", _getBraveProfilePath(), _getBraveConfigs(), _getBrowserAccelerators());
+  await _applyBrowserConfig(_getBraveProfilePath(), _getBraveConfigs(), _getBrowserAccelerators());
 }
