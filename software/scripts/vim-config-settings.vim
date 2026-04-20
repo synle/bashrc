@@ -110,6 +110,16 @@ augroup CursorLineOnlyInActiveWindow
 augroup END
 
 """""""""""""""""""""""""""""""""""""""""""""""""
+" Keybindings — Read Mode (readline-style navigation for vim -R / less)
+"""""""""""""""""""""""""""""""""""""""""""""""""
+" Ctrl+A / Ctrl+E to jump to beginning / end of line (matches readline/bash)
+nnoremap <silent> <C-a> ^
+nnoremap <silent> <C-e> $
+" Ctrl+F / Ctrl+G to page forward / backward (matches less/readline)
+nnoremap <silent> <C-f> <C-f>
+nnoremap <silent> <C-g> <C-b>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
 " \\ or [ to toggle line numbers
@@ -152,8 +162,8 @@ nnoremap <silent> <C-Down> <c-w>j
 nnoremap <silent> <C-t> :Files<CR>
 nnoremap <silent> ,t :Files<CR>
 
-" Ctrl-f to search file contents with ripgrep
-nnoremap <silent> <C-f> :Rg<CR>
+" Ctrl-f / ,f to search file contents with ripgrep
+nnoremap <silent> ,f :Rg<CR>
 
 " ,b to list and switch between open buffers
 nnoremap <silent> ,b :Buffers<CR>
