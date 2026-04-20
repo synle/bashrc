@@ -315,20 +315,26 @@ function _getBraveConfigs() {
 }
 
 /**
- * Builds custom Brave Browser accelerator keymaps (Alt/AltGr overrides only).
- * Only includes entries with Alt or AltGr keybindings — Brave defaults handle the rest.
- * @returns {object} The accelerator overrides to merge into brave.accelerators.
+ * Returns Brave accelerator overrides shared across all platforms (macOS + Windows/Linux).
+ * @returns {object} Common accelerator overrides.
  */
-function _getBraveAccelerators() {
-  if (is_os_mac) return {
+function _getBraveAcceleratorsCommon() {
+  return {
     33007: ["F5"], // Hard reload (bypass cache)
     34030: ["F11"], // Fullscreen
   };
+}
+
+/**
+ * Returns Brave accelerator overrides for Windows/Linux only (Alt key remaps).
+ * @returns {object} Windows/Linux-specific accelerator overrides.
+ */
+function _getBraveAcceleratorsWindowsLinux() {
   return {
     33000: ["Alt+ArrowLeft", "AltGr+ArrowLeft"], // Back
     33001: ["Alt+ArrowRight", "AltGr+ArrowRight"], // Forward
-    33003: ["Alt+Home"], // Home
     33002: ["Alt+KeyR"], // Reload
+    33003: ["Alt+Home"], // Home
     33007: ["F5", "Alt+Shift+KeyR"], // Hard reload (bypass cache)
     34000: ["Alt+KeyN"], // New window
     34001: ["Alt+Shift+KeyN"], // New incognito window
@@ -375,6 +381,19 @@ function _getBraveAccelerators() {
     40013: ["Alt+Shift+Backspace"], // Clear browsing data
     40021: ["Alt+KeyE"], // Menu
   };
+}
+
+/**
+ * Builds custom Brave Browser accelerator keymaps by merging common + platform-specific overrides.
+ * Common keys apply to all platforms. Windows/Linux keys add Alt remaps. Platform-specific
+ * entries override common ones when the same ID appears in both (e.g. 33007 gets Alt+Shift+KeyR on Win/Linux).
+ * @returns {object} The merged accelerator overrides to apply to brave.accelerators.
+ */
+function _getBraveAccelerators() {
+  const common = _getBraveAcceleratorsCommon();
+  const platformSpecific = is_os_mac ? {} : _getBraveAcceleratorsWindowsLinux();
+  return Object.assign({}, common, platformSpecific);
+}
 }
 
 /**
