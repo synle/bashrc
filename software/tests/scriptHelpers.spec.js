@@ -23,13 +23,13 @@ function loadScript(filePath, globals = {}) {
   return sandbox;
 }
 
-// ---- brave-browser-config.js helpers ----
+// ---- chromium-browser-config.js helpers ----
 
-describe("_deepMerge (brave-browser-config.js)", () => {
+describe("_deepMerge (chromium-browser-config.js)", () => {
   /** Loads just the _deepMerge function. */
   function getDeepMerge() {
     // _deepMerge is a standalone pure function; extract it directly
-    const source = fs.readFileSync("software/scripts/brave-browser-config.js", "utf-8");
+    const source = fs.readFileSync("software/scripts/chromium-browser-config.js", "utf-8");
     const match = source.match(/function _deepMerge[\s\S]*?^}/m);
     const sandbox = {};
     vm.runInNewContext(match[0], sandbox);
@@ -74,6 +74,78 @@ describe("_deepMerge (brave-browser-config.js)", () => {
     const target = { a: 1 };
     const result = _deepMerge(target, { b: 2 });
     expect(result).toBe(target);
+  });
+});
+
+// ---- chromium-browser-config.js — _inferBrowserName ----
+
+describe("_inferBrowserName (chromium-browser-config.js)", () => {
+  /** Loads just the _inferBrowserName function. */
+  function getInferBrowserName() {
+    const source = fs.readFileSync("software/scripts/chromium-browser-config.js", "utf-8");
+    const match = source.match(/function _inferBrowserName[\s\S]*?^}/m);
+    const sandbox = { path: require("path") };
+    vm.runInNewContext(match[0], sandbox);
+    return sandbox._inferBrowserName;
+  }
+
+  const _inferBrowserName = getInferBrowserName();
+
+  it("should extract Brave-Browser from macOS path", () => {
+    expect(_inferBrowserName("/Users/syle/Library/Application Support/BraveSoftware/Brave-Browser/Default")).toBe("Brave-Browser");
+  });
+
+  it("should extract Chrome from Linux path", () => {
+    expect(_inferBrowserName("/home/syle/.config/google-chrome/Default")).toBe("google-chrome");
+  });
+
+  it("should extract Microsoft Edge from Windows path with User Data", () => {
+    expect(_inferBrowserName("/mnt/c/Users/syle/AppData/Local/Microsoft/Edge/User Data/Default")).toBe("Edge");
+  });
+
+  it("should extract Chrome from macOS path", () => {
+    expect(_inferBrowserName("/Users/syle/Library/Application Support/Google/Chrome/Default")).toBe("Chrome");
+  });
+
+  it("should handle trailing slash", () => {
+    expect(_inferBrowserName("/Users/syle/Library/Application Support/BraveSoftware/Brave-Browser/Default/")).toBe("Brave-Browser");
+  });
+});
+
+// ---- chromium-browser-config.js — _resolveBrowserOsKey ----
+
+describe("_resolveBrowserOsKey (chromium-browser-config.js)", () => {
+  /** Loads the _resolveBrowserOsKey function with a given is_os_mac flag. */
+  function getResolver(isMac) {
+    const source = fs.readFileSync("software/scripts/chromium-browser-config.js", "utf-8");
+    const match = source.match(/function _resolveBrowserOsKey[\s\S]*?^}/m);
+    const sandbox = { is_os_mac: isMac };
+    vm.runInNewContext(match[0], sandbox);
+    return sandbox._resolveBrowserOsKey;
+  }
+
+  it("should resolve OS_KEY to Command on macOS", () => {
+    const resolve = getResolver(true);
+    const result = resolve({ 34014: ["OS_KEY+KeyT"] });
+    expect(result[34014]).toEqual(["Command+KeyT"]);
+  });
+
+  it("should resolve OS_KEY to Alt on Windows/Linux", () => {
+    const resolve = getResolver(false);
+    const result = resolve({ 34014: ["OS_KEY+KeyT"] });
+    expect(result[34014]).toEqual(["Alt+KeyT"]);
+  });
+
+  it("should resolve multiple OS_KEY in one entry", () => {
+    const resolve = getResolver(false);
+    const result = resolve({ 33007: ["F5", "OS_KEY+Shift+KeyR"] });
+    expect(result[33007]).toEqual(["F5", "Alt+Shift+KeyR"]);
+  });
+
+  it("should leave entries without OS_KEY unchanged", () => {
+    const resolve = getResolver(true);
+    const result = resolve({ 34030: ["F11"] });
+    expect(result[34030]).toEqual(["F11"]);
   });
 });
 
