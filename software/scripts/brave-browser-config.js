@@ -385,7 +385,6 @@ function _getBraveAcceleratorsWindowsLinux() {
     34102: ["Alt+Shift+KeyX"], // Brave close all
     34103: ["Alt+Shift+KeyZ"], // Brave undo close
     39000: ["Alt+Shift+KeyT"], // Focus toolbar
-    39003: ["Alt"], // Menu bar
     39007: ["Alt+Shift+KeyA"], // Focus inactive popup
     40021: ["Alt+KeyE"], // Menu
   };
