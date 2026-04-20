@@ -74,9 +74,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ## Code Editors
 
-Columns: **VSC** = VS Code, **ST** = Sublime Text, **SM** = Sublime Merge, **Zed**, **Vim**.
-
-Zed keybinding source files are TBD — all `--` entries are gaps to fill when the files are created.
+**VSC** = VS Code, **ST** = Subl Text, **SM** = Subl Merge, **Zed**, **Vim**.
 
 ### Tabs & Windows
 
@@ -194,7 +192,7 @@ Zed keybinding source files are TBD — all `--` entries are gaps to fill when t
 
 ## Terminal Emulators
 
-Columns: **WT** = Windows Terminal (Windows), **Term** = Terminator (Linux), **tmux** (Linux/macOS), **iT2** = iTerm2 (macOS).
+**WT** = Win Terminal, **Term** = Terminator, **tmux**, **iT2** = iTerm2.
 
 ### Tabs & Windows
 
