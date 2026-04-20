@@ -472,12 +472,12 @@ function _getBrowserAcceleratorsWindowsLinux() {
 
 /**
  * Resolves OS_KEY placeholders in accelerator values to platform-specific modifier keys.
- * OS_KEY becomes Meta on macOS (Cmd key) and Alt on Windows/Linux.
+ * OS_KEY becomes Command on macOS and Alt on Windows/Linux.
  * @param {object} accelerators - Accelerator map with OS_KEY placeholders in values.
  * @returns {object} Accelerator map with OS_KEY resolved to the platform modifier.
  */
 function _resolveBrowserOsKey(accelerators) {
-  const osKey = is_os_mac ? "Meta" : "Alt";
+  const osKey = is_os_mac ? "Command" : "Alt";
   const resolved = {};
   for (const [id, keys] of Object.entries(accelerators)) {
     resolved[id] = keys.map((k) => k.replace(/OS_KEY/g, osKey));
