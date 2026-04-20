@@ -167,4 +167,5 @@
     "keys": "f2",
   },
   { "command": "selectAll", "keys": "alt+a" },
+  { "command": { "action": "newWindow" }, "keys": "alt+n" },
 ]
