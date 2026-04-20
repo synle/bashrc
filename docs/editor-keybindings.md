@@ -25,7 +25,7 @@ All repo source files under `software/scripts/` unless noted.
 
 The target keybindings this repo aims for. Each section below shows the convention followed by an implementation matrix. **Empty cells are gaps / TODOs.**
 
-Legend: **✅** = configured by this repo | **☑️** = native (works out of the box) | **❌** = not applicable / gap
+Legend: **✅** = configured by this repo | **☑️** = native (works out of the box) | **⚠️** = blocker (can't be fixed) | **❌** = not applicable / gap
 
 ---
 
@@ -50,8 +50,8 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+c`               | Copy                       |          ☑️          |         ✅         |
 | `OS_KEY+x`               | Cut                        |          ☑️          |         ✅         |
 | `OS_KEY+v`               | Paste                      |          ☑️          |         ✅         |
-| `OS_KEY+a`               | Select all                 |          ☑️          |                   |
-| `OS_KEY+z`               | Undo                       |          ☑️          |                   |
+| `OS_KEY+a`               | Select all                 |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
+| `OS_KEY+z`               | Undo                       |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
 | `OS_KEY+s`               | Save (download page)       |          ☑️          |         ✅         |
 | `OS_KEY+p`               | Print                      |          ☑️          |         ✅         |
 | `OS_KEY+f`               | Find                       |          ☑️          |         ✅         |
@@ -210,9 +210,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | -------------------- | --------------------------- | :----------: | :-----------: | :---------------: | :--------------: |
 | `OS_KEY+d`           | Split vertical (left/right) |      ✅       |       ✅       |         ✅         |        ✅         |
 | `OS_KEY+shift+d`     | Split horiz (top/bottom)    |      ✅       |       ✅       |         ✅         |        ✅         |
-| `OS_KEY+'`           | Split horiz (alt)           |      ✅       |       ❌       |         ✅         |        ✅         |
+| `OS_KEY+'`           | Split horiz (alt)           |      ✅       | ⚠️ (one key per action) |    ✅         |        ✅         |
 | `OS_KEY+arrow`       | Navigate panes              |      ✅       |       ✅       |         ✅         | ☑️ (scroll)      |
-| `OS_KEY+shift+arrow` | Resize panes                |      ✅       |       ✅       | ❌ (prefix+arrow)  |        ❌         |
+| `OS_KEY+shift+arrow` | Resize panes                |      ✅       |       ✅       | ⚠️ (prefix+arrow) |        ❌         |
 | `OS_KEY+\`           | Toggle UI / fullscreen pane |      ✅       | ✅ (scrollbar) |         ✅         |        ❌         |
 | `F11`                | Fullscreen                  |      ✅       |       ✅       |         ✅         |       ☑️         |
 
