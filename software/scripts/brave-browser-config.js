@@ -1,4 +1,6 @@
 /** Configures Brave Browser preferences and settings. */
+// brave://settings/system/shortcuts
+
 /**
  * Searches for the Brave Browser Preferences file path based on the current OS.
  * Supports macOS (native), Windows (WSL/MinGW), and Linux (flatpak).
@@ -415,7 +417,6 @@ function _getBraveAccelerators() {
   const common = _resolveBraveOsKey(_getBraveAcceleratorsCommon());
   const platformSpecific = is_os_mac ? _getBraveAcceleratorsMac() : _getBraveAcceleratorsWindowsLinux();
   return Object.assign({}, common, platformSpecific);
-}
 }
 
 /**
