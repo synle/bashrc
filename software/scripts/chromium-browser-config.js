@@ -442,7 +442,7 @@ function _getBrowserAcceleratorsCommon() {
     39001: ["OS_KEY+KeyL"], // Focus address bar
     39007: ["OS_KEY+Shift+KeyA"], // Focus inactive popup
     40000: ["OS_KEY+KeyO"], // Open file
-    40004: ["OS_KEY+Shift+KeyI"], // DevTools
+    40004: ["F12", "OS_KEY+Shift+KeyI"], // DevTools inspector
     40009: ["OS_KEY+Shift+KeyB"], // Bookmark bar toggle
     40010: ["OS_KEY+KeyH"], // History
     40012: ["OS_KEY+KeyJ", "OS_KEY+Shift+KeyJ"], // Downloads
