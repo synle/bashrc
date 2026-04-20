@@ -529,13 +529,9 @@ async function _applyBrowserConfig(profilePath) {
   const configs = _getBrowserConfigs();
   const mergedPrefs = _deepMerge(existingPrefs, configs);
 
-  // Merge browser accelerator keymaps (only non-default overrides)
+  // Replace all browser accelerator keymaps with ours (wipe existing, use only our definitions)
   if (!mergedPrefs.brave) mergedPrefs.brave = {};
-  if (!mergedPrefs.brave.accelerators) mergedPrefs.brave.accelerators = {};
-  const accelerators = _getBrowserAccelerators();
-  for (const key of Object.keys(accelerators)) {
-    mergedPrefs.brave.accelerators[key] = accelerators[key];
-  }
+  mergedPrefs.brave.accelerators = _getBrowserAccelerators();
 
   // Write back the merged preferences
   log(`>>> Writing merged ${browserName} preferences`);
