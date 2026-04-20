@@ -6,20 +6,20 @@
 
 All repo source files under `software/scripts/` unless noted.
 
-| App              | Repo source files                                                                       | On-disk keybinding path                                                |
-| ---------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Brave            | `brave-browser-config.js`                                                               | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux) |
-| VS Code          | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`             | `~/Library/.../Code/User/keybindings.json` (mac), `~/.config/Code/User/keybindings.json` (linux) |
-| Sublime Text     | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`   | `~/Library/.../Sublime Text/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-text/Packages/User/Default.sublime-keymap` (linux) |
+| App              | Repo source files                                                                       | On-disk keybinding path                                                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Brave            | `brave-browser-config.js`                                                               | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux)                                             |
+| VS Code          | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`             | `~/Library/.../Code/User/keybindings.json` (mac), `~/.config/Code/User/keybindings.json` (linux)                                                       |
+| Sublime Text     | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`   | `~/Library/.../Sublime Text/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-text/Packages/User/Default.sublime-keymap` (linux)   |
 | Sublime Merge    | `advanced/sublime-merge-keys.common.jsonc`, `advanced/sublime-merge-keys.windows.jsonc` | `~/Library/.../Sublime Merge/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-merge/Packages/User/Default.sublime-keymap` (linux) |
-| Zed              | `zed-editor-config.jsonc` (keybinding source files TBD)                                 | `~/.config/zed/keymap.json`                                            |
-| Claude Code      | `advanced/claude-keys.common.jsonc`, `advanced/claude-keys.windows.jsonc`               | `~/.claude/keybindings.json`                                           |
-| Vim              | `vim-config-settings.vim`                                                               | `~/.vimrc`                                                             |
-| Bash readline    | `bash-keys.profile.bash`                                                                | Sourced into `~/.bash_syle`                                            |
-| Windows Terminal | `windows/windows-terminal-keys.jsonc`                                                   | `%LOCALAPPDATA%/Packages/Microsoft.WindowsTerminal_.../LocalState/settings.json` |
-| Terminator       | `terminator.js`                                                                         | `~/.config/terminator/config`                                          |
-| tmux             | `advanced/tmux.config`                                                                  | `~/.tmux.conf`                                                         |
-| iTerm2           | `mac/iterm-profile.jsonc`                                                               | `~/Library/.../com.googlecode.iterm2/DynamicProfiles/`                 |
+| Zed              | `zed-editor-config.jsonc` (keybinding source files TBD)                                 | `~/.config/zed/keymap.json`                                                                                                                            |
+| Claude Code      | `advanced/claude-keys.common.jsonc`, `advanced/claude-keys.windows.jsonc`               | `~/.claude/keybindings.json`                                                                                                                           |
+| Vim              | `vim-config-settings.vim`                                                               | `~/.vimrc`                                                                                                                                             |
+| Bash readline    | `bash-keys.profile.bash`                                                                | Sourced into `~/.bash_syle`                                                                                                                            |
+| Windows Terminal | `windows/windows-terminal-keys.jsonc`                                                   | `%LOCALAPPDATA%/Packages/Microsoft.WindowsTerminal_.../LocalState/settings.json`                                                                       |
+| Terminator       | `terminator.js`                                                                         | `~/.config/terminator/config`                                                                                                                          |
+| tmux             | `advanced/tmux.config`                                                                  | `~/.tmux.conf`                                                                                                                                         |
+| iTerm2           | `mac/iterm-profile.jsonc`                                                               | `~/Library/.../com.googlecode.iterm2/DynamicProfiles/`                                                                                                 |
 
 ## Standard Convention
 
@@ -35,40 +35,40 @@ On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Lin
 
 Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
-| Key                      | Action               | macOS (all browsers) | Win/Linux (Brave) |
-| ------------------------ | -------------------- | :------------------: | :---------------: |
-| `OS_KEY+t`               | New tab              |          ✓           |         ✓         |
-| `OS_KEY+1-9`             | Tab by index         |          ✓           |         ✓         |
-| `OS_KEY+shift+[/]`       | Prev / next tab      |          ✓           |         ✓         |
-| `OS_KEY+w`               | Close tab            |          ✓           |         ✓         |
-| `OS_KEY+q`               | Quit                 |          ✓           |         ✓         |
-| `OS_KEY+n`               | New window           |          ✓           |         ✓         |
-| `OS_KEY+shift+n`         | New incognito window |          ✓           |         ✓         |
-| `OS_KEY+=`               | Zoom in              |          ✓           |         ✓         |
-| `OS_KEY+-`               | Zoom out             |          ✓           |         ✓         |
-| `OS_KEY+0`               | Reset zoom (100%)    |          ✓           |         ✓         |
-| `OS_KEY+c`               | Copy                 |          ✓           |         ✓         |
-| `OS_KEY+x`               | Cut                  |          ✓           |         ✓         |
-| `OS_KEY+v`               | Paste                |          ✓           |         ✓         |
-| `OS_KEY+a`               | Select all           |          ✓           |        --         |
-| `OS_KEY+z`               | Undo                 |          ✓           |        --         |
-| `OS_KEY+s`               | Save (download page) |          ✓           |        --         |
-| `OS_KEY+f`               | Find                 |          ✓           |         ✓         |
-| `OS_KEY+g`               | Find next            |          ✓           |         ✓         |
-| `OS_KEY+shift+g`         | Find prev            |          ✓           |         ✓         |
-| `OS_KEY+l`               | Focus address bar    |          ✓           |         ✓         |
-| `OS_KEY+r`               | Reload               |          ✓           |         ✓         |
-| `OS_KEY+o`               | Open file            |          ✓           |         ✓         |
-| `OS_KEY+h`               | History              |          ✓           |         ✓         |
-| `OS_KEY+d`               | Bookmark this page   |          ✓           |         ✓         |
-| `OS_KEY+shift+i`         | DevTools             |          ✓           |         ✓         |
-| `OS_KEY+shift+b`         | Bookmark bar toggle  |          ✓           |         ✓         |
-| `OS_KEY+left`            | Back                 |          ✓           |         ✓         |
-| `OS_KEY+right`           | Forward              |          ✓           |         ✓         |
-| `OS_KEY+shift+backspace` | Clear browsing data  |          ✓           |         ✓         |
-| `F5`                     | Hard reload (bypass cache) |    --          |         ✓         |
-| `F11`                    | Fullscreen           |          --          |         ✓         |
-| `F12`                    | DevTools inspector   |          --          |         ✓         |
+| Key                      | Action                     | macOS (all browsers) | Win/Linux (Brave) |
+| ------------------------ | -------------------------- | :------------------: | :---------------: |
+| `OS_KEY+t`               | New tab                    |          ✓           |         ✓         |
+| `OS_KEY+1-9`             | Tab by index               |          ✓           |         ✓         |
+| `OS_KEY+shift+[/]`       | Prev / next tab            |          ✓           |         ✓         |
+| `OS_KEY+w`               | Close tab                  |          ✓           |         ✓         |
+| `OS_KEY+q`               | Quit                       |          ✓           |         ✓         |
+| `OS_KEY+n`               | New window                 |          ✓           |         ✓         |
+| `OS_KEY+shift+n`         | New incognito window       |          ✓           |         ✓         |
+| `OS_KEY+=`               | Zoom in                    |          ✓           |         ✓         |
+| `OS_KEY+-`               | Zoom out                   |          ✓           |         ✓         |
+| `OS_KEY+0`               | Reset zoom (100%)          |          ✓           |         ✓         |
+| `OS_KEY+c`               | Copy                       |          ✓           |         ✓         |
+| `OS_KEY+x`               | Cut                        |          ✓           |         ✓         |
+| `OS_KEY+v`               | Paste                      |          ✓           |         ✓         |
+| `OS_KEY+a`               | Select all                 |          ✓           |        --         |
+| `OS_KEY+z`               | Undo                       |          ✓           |        --         |
+| `OS_KEY+s`               | Save (download page)       |          ✓           |        --         |
+| `OS_KEY+f`               | Find                       |          ✓           |         ✓         |
+| `OS_KEY+g`               | Find next                  |          ✓           |         ✓         |
+| `OS_KEY+shift+g`         | Find prev                  |          ✓           |         ✓         |
+| `OS_KEY+l`               | Focus address bar          |          ✓           |         ✓         |
+| `OS_KEY+r`               | Reload                     |          ✓           |         ✓         |
+| `OS_KEY+o`               | Open file                  |          ✓           |         ✓         |
+| `OS_KEY+h`               | History                    |          ✓           |         ✓         |
+| `OS_KEY+d`               | Bookmark this page         |          ✓           |         ✓         |
+| `OS_KEY+shift+i`         | DevTools                   |          ✓           |         ✓         |
+| `OS_KEY+shift+b`         | Bookmark bar toggle        |          ✓           |         ✓         |
+| `OS_KEY+left`            | Back                       |          ✓           |         ✓         |
+| `OS_KEY+right`           | Forward                    |          ✓           |         ✓         |
+| `OS_KEY+shift+backspace` | Clear browsing data        |          ✓           |         ✓         |
+| `F5`                     | Hard reload (bypass cache) |          --          |         ✓         |
+| `F11`                    | Fullscreen                 |          --          |         ✓         |
+| `F12`                    | DevTools inspector         |          --          |         ✓         |
 
 ---
 
