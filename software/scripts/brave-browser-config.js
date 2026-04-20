@@ -443,6 +443,7 @@ function _inferBrowserName(profilePath) {
  * @param {string} profilePath - Path to the browser's "Default" profile directory.
  */
 async function _applyBrowserConfig(profilePath) {
+  log(`>> Apply Browser Config`, profilePath);
   const browserName = profilePath ? _inferBrowserName(profilePath) : "Unknown";
   if (!profilePath) {
     log(`>>> ${browserName}: profile not found, skipping`);
