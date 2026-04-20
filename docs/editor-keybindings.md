@@ -251,26 +251,26 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 
 ### Common Shortcuts (matching editors)
 
-| Key              | Action            | Status |
-| ---------------- | ----------------- | :----: |
-| `alt+up/down`    | Page up/down      |   ✅   |
-| `alt+left/right` | Home / end        |   ✅   |
-| `alt+z`          | Undo              |   ✅   |
-| `alt+shift+z`    | Redo              |   ✅   |
-| `alt+y`          | Redo              |   ✅   |
-| `alt+s`          | Save              |   ✅   |
-| `alt+w`          | Close buffer      |   ✅   |
-| `alt+l`          | Select line       |   ✅   |
-| `alt+backspace`  | Delete to BOL     |   ✅   |
+| Key              | Action        | Status |
+| ---------------- | ------------- | :----: |
+| `alt+up/down`    | Page up/down  |   ✅   |
+| `alt+left/right` | Home / end    |   ✅   |
+| `alt+z`          | Undo          |   ✅   |
+| `alt+shift+z`    | Redo          |   ✅   |
+| `alt+y`          | Redo          |   ✅   |
+| `alt+s`          | Save          |   ✅   |
+| `alt+w`          | Close buffer  |   ✅   |
+| `alt+l`          | Select line   |   ✅   |
+| `alt+backspace`  | Delete to BOL |   ✅   |
 
 ### Read Mode (vim -R / less)
 
-| Key      | Action                | Status |
-| -------- | --------------------- | :----: |
-| `ctrl+a` | Beginning of line     |   ✅   |
-| `ctrl+e` | End of line           |   ✅   |
-| `ctrl+f` | Page forward (down)   |   ✅   |
-| `ctrl+g` | Page backward (up)    |   ✅   |
+| Key      | Action              | Status |
+| -------- | ------------------- | :----: |
+| `ctrl+a` | Beginning of line   |   ✅   |
+| `ctrl+e` | End of line         |   ✅   |
+| `ctrl+f` | Page forward (down) |   ✅   |
+| `ctrl+g` | Page backward (up)  |   ✅   |
 
 ### Splits & Navigation
 
