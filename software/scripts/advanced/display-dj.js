@@ -6,8 +6,7 @@ const DISPLAY_DJ_BUNDLE_ID = "com.synle.display-dj";
 
 /** Downloads the display-dj application binary for the current platform and generates helper scripts. */
 async function doWork() {
-  await downloadAndInstallBinary(DISPLAY_DJ_REPO, (v, isArm64) => {
-    const ver = v.replace(/^v/, "");
+  await downloadAndInstallBinary(DISPLAY_DJ_REPO, (ver, isArm64) => {
     return is_os_mac
       ? `Display.DJ_${ver}_${isArm64 ? "aarch64" : "x64"}.dmg`
       : is_os_windows
