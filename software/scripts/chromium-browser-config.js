@@ -555,8 +555,9 @@ async function _applyBrowserConfig(profilePath) {
 async function doWork() {
   const browserProfilePaths = [
     _getBraveProfilePath(),
-    _getChromeProfilePath(),
-    _getEdgeProfilePath(),
+    // TODO: Chrome and Edge support not yet tested — uncomment when ready
+    // _getChromeProfilePath(),
+    // _getEdgeProfilePath(),
   ];
 
   for (const profilePath of browserProfilePaths) {
