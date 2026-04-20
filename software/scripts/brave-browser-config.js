@@ -432,9 +432,16 @@ function _getBrowserAccelerators() {
  * @param {object} accelerators - Accelerator overrides to merge into brave.accelerators.
  */
 async function _applyBrowserConfig(browserName, profilePath, configs, accelerators) {
+  if (!profilePath) {
+    log(`>>> ${browserName}: profile not found, skipping`);
+    return;
+  }
   const prefsFile = path.join(profilePath, "Preferences");
+  if (!fs.existsSync(prefsFile)) {
+    log(`>>> ${browserName}: Preferences file not found at ${prefsFile}, skipping`);
+    return;
+  }
   log(`>>> ${browserName} profile path:`, profilePath);
-  exitIfPathNotFound(prefsFile);
 
   // Read existing preferences (preserve all user data like bookmarks, history, etc.)
   let existingPrefs = {};
@@ -468,8 +475,5 @@ async function _applyBrowserConfig(browserName, profilePath, configs, accelerato
 async function doWork() {
   log(`>> Brave Browser Configurations / Settings:`);
 
-  const profilePath = _getBraveProfilePath();
-  exitIfPathNotFound(profilePath, "Brave Browser profile not found, skipping");
-
-  await _applyBrowserConfig("Brave", profilePath, _getBraveConfigs(), _getBrowserAccelerators());
+  await _applyBrowserConfig("Brave", _getBraveProfilePath(), _getBraveConfigs(), _getBrowserAccelerators());
 }
