@@ -25,7 +25,7 @@ All repo source files under `software/scripts/` unless noted.
 
 The target keybindings this repo aims for. Each section below shows the convention followed by an implementation matrix. **Empty cells are gaps / TODOs.**
 
-Legend: **✓** = configured by this repo | **native** = app/OS default | **--** = not applicable
+Legend: **✓** = configured by this repo | **✓\*** = native (works out of the box) | **×** = not applicable / gap
 
 ---
 
@@ -35,40 +35,42 @@ On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Lin
 
 Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
-| Key                      | Action               | macOS (all browsers) | Win/Linux (Brave) |
-| ------------------------ | -------------------- | :------------------: | :---------------: |
-| `OS_KEY+t`               | New tab              |          ✓           |         ✓         |
-| `OS_KEY+1-9`             | Tab by index         |          ✓           |         ✓         |
-| `OS_KEY+shift+[/]`       | Prev / next tab      |          ✓           |         ✓         |
-| `OS_KEY+w`               | Close tab            |          ✓           |         ✓         |
-| `OS_KEY+q`               | Quit                 |          ✓           |         ✓         |
-| `OS_KEY+n`               | New window           |          ✓           |         ✓         |
-| `OS_KEY+shift+n`         | New incognito window |          ✓           |         ✓         |
-| `OS_KEY+=`               | Zoom in              |          ✓           |         ✓         |
-| `OS_KEY+-`               | Zoom out             |          ✓           |         ✓         |
-| `OS_KEY+0`               | Reset zoom (100%)    |          ✓           |         ✓         |
-| `OS_KEY+c`               | Copy                 |          ✓           |         ✓         |
-| `OS_KEY+x`               | Cut                  |          ✓           |         ✓         |
-| `OS_KEY+v`               | Paste                |          ✓           |         ✓         |
-| `OS_KEY+a`               | Select all           |          ✓           |        --         |
-| `OS_KEY+z`               | Undo                 |          ✓           |        --         |
-| `OS_KEY+s`               | Save (download page) |          ✓           |        --         |
-| `OS_KEY+f`               | Find                 |          ✓           |         ✓         |
-| `OS_KEY+g`               | Find next            |          ✓           |         ✓         |
-| `OS_KEY+shift+g`         | Find prev            |          ✓           |         ✓         |
-| `OS_KEY+l`               | Focus address bar    |          ✓           |         ✓         |
-| `OS_KEY+r`               | Reload               |          ✓           |         ✓         |
-| `OS_KEY+o`               | Open file            |          ✓           |         ✓         |
-| `OS_KEY+h`               | History              |          ✓           |         ✓         |
-| `OS_KEY+d`               | Bookmark this page   |          ✓           |         ✓         |
-| `OS_KEY+shift+i`         | DevTools             |          ✓           |         ✓         |
-| `OS_KEY+shift+b`         | Bookmark bar toggle  |          ✓           |         ✓         |
-| `OS_KEY+left`            | Back                 |          ✓           |         ✓         |
-| `OS_KEY+right`           | Forward              |          ✓           |         ✓         |
-| `OS_KEY+shift+backspace` | Clear browsing data  |          ✓           |         ✓         |
-| `F5`                     | Hard reload (bypass cache) |    --          |         ✓         |
-| `F11`                    | Fullscreen           |          --          |         ✓         |
-| `F12`                    | DevTools inspector   |          ✓           |         ✓         |
+| Key                      | Action                     | macOS (all browsers) | Win/Linux (Brave) |
+| ------------------------ | -------------------------- | :------------------: | :---------------: |
+| `OS_KEY+t`               | New tab                    |          ✓*          |         ✓         |
+| `OS_KEY+1-9`             | Tab by index               |          ✓*          |         ✓         |
+| `OS_KEY+shift+[/]`       | Prev / next tab            |          ✓*          |         ✓         |
+| `OS_KEY+w`               | Close tab                  |          ✓*          |         ✓         |
+| `OS_KEY+q`               | Quit                       |          ✓*          |         ✓         |
+| `OS_KEY+n`               | New window                 |          ✓*          |         ✓         |
+| `OS_KEY+shift+n`         | New incognito window       |          ✓*          |         ✓         |
+| `OS_KEY+=`               | Zoom in                    |          ✓*          |         ✓         |
+| `OS_KEY+-`               | Zoom out                   |          ✓*          |         ✓         |
+| `OS_KEY+0`               | Reset zoom (100%)          |          ✓*          |         ✓         |
+| `OS_KEY+c`               | Copy                       |          ✓*          |         ✓         |
+| `OS_KEY+x`               | Cut                        |          ✓*          |         ✓         |
+| `OS_KEY+v`               | Paste                      |          ✓*          |         ✓         |
+| `OS_KEY+a`               | Select all                 |          ✓*          |                   |
+| `OS_KEY+z`               | Undo                       |          ✓*          |                   |
+| `OS_KEY+s`               | Save (download page)       |          ✓*          |         ✓         |
+| `OS_KEY+p`               | Print                      |          ✓*          |         ✓         |
+| `OS_KEY+f`               | Find                       |          ✓*          |         ✓         |
+| `OS_KEY+g`               | Find next                  |          ✓*          |         ✓         |
+| `OS_KEY+shift+g`         | Find prev                  |          ✓*          |         ✓         |
+| `OS_KEY+l`               | Focus address bar          |          ✓*          |         ✓         |
+| `OS_KEY+r`               | Reload                     |          ✓*          |         ✓         |
+| `OS_KEY+shift+r`         | Hard reload                |          ✓*          |         ✓         |
+| `OS_KEY+o`               | Open file                  |          ✓*          |         ✓         |
+| `OS_KEY+h`               | History                    |          ✓*          |         ✓         |
+| `OS_KEY+d`               | Bookmark this page         |          ✓*          |         ✓         |
+| `OS_KEY+shift+i`         | DevTools                   |          ✓*          |         ✓         |
+| `OS_KEY+shift+b`         | Bookmark bar toggle        |          ✓*          |         ✓         |
+| `OS_KEY+left`            | Back                       |          ✓*          |         ✓         |
+| `OS_KEY+right`           | Forward                    |          ✓*          |         ✓         |
+| `OS_KEY+shift+backspace` | Clear browsing data        |          ✓*          |         ✓         |
+| `F5`                     | Hard reload (bypass cache) |          ×           |         ✓         |
+| `F11`                    | Fullscreen                 |          ×           |         ✓         |
+| `F12`                    | DevTools inspector         |          ✓*          |         ✓*        |
 
 ---
 
@@ -78,103 +80,103 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 | Key                | Action               | VS Code | Subl Text | Subl Merge | Zed |       Vim        |
 | ------------------ | -------------------- | :-----: | :-------: | :--------: | :-: | :--------------: |
-| `OS_KEY+t`         | New tab              | --  | --  | --  | --  |        --        |
-| `OS_KEY+n`         | New file             |  ✓  |  ✓  | --  | --  |        --        |
-| `OS_KEY+1-9`       | Tab by index         |  ✓  |  ✓  |  ✓  | --  |        --        |
-| `OS_KEY+shift+[/]` | Prev / next tab      |  ✓  |  ✓  |  ✓  | --  |        --        |
-| `OS_KEY+w`         | Close tab            |  ✓  |  ✓  |  ✓  | --  |        ✓         |
-| `OS_KEY+q`         | Quit                 |  ✓  |  ✓  |  ✓  | --  |        --        |
-| `OS_KEY+shift+n`   | New window           |  ✓  |  ✓  |  ✓  | --  |        --        |
-| `F2`               | Rename (symbol/file) |  ✓  | --  | --  | --  | ✓ (paste toggle) |
+| `OS_KEY+t`         | New tab              |    ×    |     ×     |     ×      |  ×  |        ×         |
+| `OS_KEY+n`         | New file             |    ✓    |     ✓     |     ×      |  ×  |        ×         |
+| `OS_KEY+1-9`       | Tab by index         |    ✓    |     ✓     |     ✓      |  ×  |        ×         |
+| `OS_KEY+shift+[/]` | Prev / next tab      |    ✓    |     ✓     |     ✓      |  ×  |        ×         |
+| `OS_KEY+w`         | Close tab            |    ✓    |     ✓     |     ✓      |  ×  |        ✓         |
+| `OS_KEY+q`         | Quit                 |    ✓    |     ✓     |     ✓      |  ×  |        ×         |
+| `OS_KEY+shift+n`   | New window           |    ✓    |     ✓     |     ✓      |  ×  |        ×         |
+| `F2`               | Rename (symbol/file) |    ✓    |     ×     |     ×      |  ×  | ✓ (paste toggle) |
 
 ### Zoom
 
 | Key              | Action             | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ---------------- | ------------------ | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+=`       | Font zoom in       |    ✓    |     ✓     |     ✓      | --  | --  |
-| `OS_KEY+-`       | Font zoom out      |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+0`       | Reset font zoom    |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+shift+=` | Workspace zoom in  |  ✓  | --  | --  | --  | --  |
-| `OS_KEY+shift+-` | Workspace zoom out |  ✓  | --  | --  | --  | --  |
+| `OS_KEY+=`       | Font zoom in       |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+-`       | Font zoom out      |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+0`       | Reset font zoom    |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+shift+=` | Workspace zoom in  |    ✓    |     ×     |     ×      |  ×  |  ×  |
+| `OS_KEY+shift+-` | Workspace zoom out |    ✓    |     ×     |     ×      |  ×  |  ×  |
 
 ### Text Editing
 
 | Key                | Action        | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ------------------ | ------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+c`         | Copy          |    ✓    |     ✓     |     ✓      | --  | --  |
-| `OS_KEY+x`         | Cut           |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+v`         | Paste         |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+a`         | Select all    |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+z`         | Undo          |  ✓  |  ✓  |  ✓  | --  |  ✓  |
-| `OS_KEY+y`         | Redo          |  ✓  |  ✓  |  ✓  | --  |  ✓  |
-| `OS_KEY+shift+z`   | Redo (alt)    |  ✓  |  ✓  |  ✓  | --  |  ✓  |
-| `OS_KEY+s`         | Save          |  ✓  |  ✓  | --  | --  |  ✓  |
-| `OS_KEY+shift+s`   | Save all      |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+l`         | Select line   |  ✓  | --  | --  | --  |  ✓  |
-| `OS_KEY+backspace` | Delete to BOL |  ✓  |  ✓  |  ✓  | --  |  ✓  |
+| `OS_KEY+c`         | Copy          |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+x`         | Cut           |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+v`         | Paste         |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+a`         | Select all    |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+z`         | Undo          |    ✓    |     ✓     |     ✓      |  ×  |  ✓  |
+| `OS_KEY+y`         | Redo          |    ✓    |     ✓     |     ✓      |  ×  |  ✓  |
+| `OS_KEY+shift+z`   | Redo (alt)    |    ✓    |     ✓     |     ✓      |  ×  |  ✓  |
+| `OS_KEY+s`         | Save          |    ✓    |     ✓     |     ×      |  ×  |  ✓  |
+| `OS_KEY+shift+s`   | Save all      |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+l`         | Select line   |    ✓    |     ×     |     ×      |  ×  |  ✓  |
+| `OS_KEY+backspace` | Delete to BOL |    ✓    |     ✓     |     ✓      |  ×  |  ✓  |
 
 ### Search
 
 | Key              | Action            | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ---------------- | ----------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+f`       | Find              |    ✓    |     ✓     |     ✓      | --  | --  |
-| `OS_KEY+shift+f` | Find in files     |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+h`       | Find and replace  |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+g`       | Find next         |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+shift+g` | Find prev         |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+d`       | Select next match |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+p`       | Quick open / file |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+shift+p` | Command palette   |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+;`       | Goto line         |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+r`       | Goto symbol       |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+enter`   | Goto definition   |  ✓  |  ✓  | --  | --  | --  |
-| `ctrl+m`         | Jump to bracket   |  ✓  |  ✓  | --  | --  | --  |
+| `OS_KEY+f`       | Find              |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+shift+f` | Find in files     |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+h`       | Find and replace  |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+g`       | Find next         |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+shift+g` | Find prev         |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+d`       | Select next match |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+p`       | Quick open / file |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+shift+p` | Command palette   |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `OS_KEY+;`       | Goto line         |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+r`       | Goto symbol       |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+enter`   | Goto definition   |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `ctrl+m`         | Jump to bracket   |    ✓    |     ✓     |     ×      |  ×  |  ×  |
 
 ### Navigation (cursor movement)
 
 | Key                  | Action           | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | -------------------- | ---------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+up`          | Page up          |    ✓    |     ✓     |     --     | --  |  ✓  |
-| `OS_KEY+down`        | Page down        |  ✓  |  ✓  | --  | --  |  ✓  |
-| `OS_KEY+left`        | Home (BOL)       |  ✓  |  ✓  | --  | --  |  ✓  |
-| `OS_KEY+right`       | End (EOL)        |  ✓  |  ✓  | --  | --  |  ✓  |
-| `OS_KEY+shift+up`    | Select page up   |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+shift+down`  | Select page down |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+shift+left`  | Select to BOL    |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+shift+right` | Select to EOL    |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+ctrl+up`     | Top of file      |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+ctrl+down`   | Bottom of file   |  ✓  |  ✓  | --  | --  | --  |
+| `OS_KEY+up`          | Page up          |    ✓    |     ✓     |     ×      |  ×  |  ✓  |
+| `OS_KEY+down`        | Page down        |    ✓    |     ✓     |     ×      |  ×  |  ✓  |
+| `OS_KEY+left`        | Home (BOL)       |    ✓    |     ✓     |     ×      |  ×  |  ✓  |
+| `OS_KEY+right`       | End (EOL)        |    ✓    |     ✓     |     ×      |  ×  |  ✓  |
+| `OS_KEY+shift+up`    | Select page up   |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+shift+down`  | Select page down |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+shift+left`  | Select to BOL    |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+shift+right` | Select to EOL    |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+ctrl+up`     | Top of file      |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+ctrl+down`   | Bottom of file   |    ✓    |     ✓     |     ×      |  ×  |  ×  |
 
 ### Code Editing
 
 | Key        | Action         | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ---------- | -------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+/` | Toggle comment |    ✓    |     ✓     |     --     | --  | --  |
-| `OS_KEY+[` | Outdent        |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+]` | Indent         |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+,` | Fold           |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+.` | Unfold         |  ✓  |  ✓  | --  | --  | --  |
+| `OS_KEY+/` | Toggle comment |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+[` | Outdent        |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+]` | Indent         |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+,` | Fold           |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+.` | Unfold         |    ✓    |     ✓     |     ×      |  ×  |  ×  |
 
 ### Editor UI
 
 | Key                   | Action               | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | --------------------- | -------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+\`            | Toggle sidebar       |    ✓    |     ✓     |     --     | --  | --  |
-| `OS_KEY+shift+\`      | Toggle activity bar  |  ✓  | --  | --  | --  | --  |
-| `ctrl+shift+OS_KEY+\` | Toggle right sidebar |  ✓  | --  | --  | --  | --  |
-| `` OS_KEY+` ``        | Toggle terminal      |  ✓  | --  | --  | --  | --  |
-| `F5`                  | Refresh / revert     |  ✓  |  ✓  |  ✓  | --  | --  |
-| `F11`                 | Fullscreen           |  ✓  |  ✓  | --  | --  | --  |
+| `OS_KEY+\`            | Toggle sidebar       |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+shift+\`      | Toggle activity bar  |    ✓    |     ×     |     ×      |  ×  |  ×  |
+| `ctrl+shift+OS_KEY+\` | Toggle right sidebar |    ✓    |     ×     |     ×      |  ×  |  ×  |
+| `` OS_KEY+` ``        | Toggle terminal      |    ✓    |     ×     |     ×      |  ×  |  ×  |
+| `F5`                  | Refresh / revert     |    ✓    |     ✓     |     ✓      |  ×  |  ×  |
+| `F11`                 | Fullscreen           |    ✓    |     ✓     |     ×      |  ×  |  ×  |
 
 ### Splits (editors)
 
 | Key              | Action                 | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ---------------- | ---------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `ctrl+d`         | Split vertical         |    ✓    |     ✓     |     --     | --  |  ✓  |
-| `ctrl+'`         | Split horizontal       |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+shift+d` | Split horizontal (alt) |  ✓  | --  | --  | --  | --  |
-| `ctrl+w`         | Single column / close  |  ✓  |  ✓  | --  | --  | --  |
-| `ctrl+arrow`     | Navigate splits        | --  | --  | --  | --  |  ✓  |
+| `ctrl+d`         | Split vertical         |    ✓    |     ✓     |     ×      |  ×  |  ✓  |
+| `ctrl+'`         | Split horizontal       |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `OS_KEY+shift+d` | Split horizontal (alt) |    ✓    |     ×     |     ×      |  ×  |  ×  |
+| `ctrl+w`         | Single column / close  |    ✓    |     ✓     |     ×      |  ×  |  ×  |
+| `ctrl+arrow`     | Navigate splits        |    ×    |     ×     |     ×      |  ×  |  ✓  |
 
 ### Debugging (VS Code only)
 
@@ -194,42 +196,42 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 | Key                | Action          | Win Terminal | Terminator | tmux | iTerm2 |
 | ------------------ | --------------- | :----------: | :--------: | :--: | :----: |
-| `OS_KEY+t`         | New tab         |  ✓  |  ✓   |  ✓   | native |
-| `OS_KEY+1-9`       | Tab by index    |  ✓  |  ✓   |  ✓   | native |
-| `OS_KEY+shift+[/]` | Prev / next tab |  ✓  |  ✓   |  ✓   | native |
-| `OS_KEY+w`         | Close pane      |  ✓  |  ✓   |  ✓   | native |
-| `OS_KEY+q`         | Close window    |  ✓  |  ✓   |  ✓   | native |
-| `OS_KEY+n`         | New window      |  ✓  |  ✓   |  ✓   | native |
-| `F2`               | Rename tab      |  ✓  |  ✓   |  ✓   |   --   |
+| `OS_KEY+t`         | New tab         |      ✓       |     ✓      |  ✓   |   ✓*   |
+| `OS_KEY+1-9`       | Tab by index    |      ✓       |     ✓      |  ✓   |   ✓*   |
+| `OS_KEY+shift+[/]` | Prev / next tab |      ✓       |     ✓      |  ✓   |   ✓*   |
+| `OS_KEY+w`         | Close pane      |      ✓       |     ✓      |  ✓   |   ✓*   |
+| `OS_KEY+q`         | Close window    |      ✓       |     ✓      |  ✓   |   ✓*   |
+| `OS_KEY+n`         | New window      |      ✓       |     ✓      |  ✓   |   ✓*   |
+| `F2`               | Rename tab      |      ✓       |     ✓      |  ✓   |   ×    |
 
 ### Splits & Panes
 
-| Key                  | Action                      | Win Terminal |  Terminator   |       tmux        |     iTerm2      |
-| -------------------- | --------------------------- | :----------: | :-----------: | :---------------: | :-------------: |
-| `OS_KEY+d`           | Split vertical (left/right) |  ✓  |       ✓       |         ✓         |        ✓        |
-| `OS_KEY+shift+d`     | Split horiz (top/bottom)    |  ✓  |       ✓       |         ✓         |        ✓        |
-| `OS_KEY+'`           | Split horiz (alt)           |  ✓  |      --       |         ✓         |        ✓        |
-| `OS_KEY+arrow`       | Navigate panes              |  ✓  |       ✓       |         ✓         | native (scroll) |
-| `OS_KEY+shift+arrow` | Resize panes                |  ✓  |       ✓       | -- (prefix+arrow) |       --        |
-| `OS_KEY+\`           | Toggle UI / fullscreen pane |  ✓  | ✓ (scrollbar) |         ✓         |       --        |
-| `F11`                | Fullscreen                  |  ✓  |       ✓       |         ✓         |     native      |
+| Key                  | Action                      | Win Terminal |  Terminator   |       tmux        |     iTerm2       |
+| -------------------- | --------------------------- | :----------: | :-----------: | :---------------: | :--------------: |
+| `OS_KEY+d`           | Split vertical (left/right) |      ✓       |       ✓       |         ✓         |        ✓         |
+| `OS_KEY+shift+d`     | Split horiz (top/bottom)    |      ✓       |       ✓       |         ✓         |        ✓         |
+| `OS_KEY+'`           | Split horiz (alt)           |      ✓       |       ×       |         ✓         |        ✓         |
+| `OS_KEY+arrow`       | Navigate panes              |      ✓       |       ✓       |         ✓         | ✓* (scroll)      |
+| `OS_KEY+shift+arrow` | Resize panes                |      ✓       |       ✓       | × (prefix+arrow)  |        ×         |
+| `OS_KEY+\`           | Toggle UI / fullscreen pane |      ✓       | ✓ (scrollbar) |         ✓         |        ×         |
+| `F11`                | Fullscreen                  |      ✓       |       ✓       |         ✓         |       ✓*         |
 
 ### Text & Search
 
 | Key        | Action     | Win Terminal | Terminator | tmux | iTerm2 |
 | ---------- | ---------- | :----------: | :--------: | :--: | :----: |
-| `OS_KEY+c` | Copy       |      ✓       |     ✓      |  --  | native |
-| `OS_KEY+v` | Paste      |  ✓  |  ✓   |  --  | native |
-| `OS_KEY+f` | Find       |  ✓  |  ✓   |  ✓   | native |
-| `OS_KEY+a` | Select all |  ✓  |  --  |  --  | native |
+| `OS_KEY+c` | Copy       |      ✓       |     ✓      |  ×   |   ✓*   |
+| `OS_KEY+v` | Paste      |      ✓       |     ✓      |  ×   |   ✓*   |
+| `OS_KEY+f` | Find       |      ✓       |     ✓      |  ✓   |   ✓*   |
+| `OS_KEY+a` | Select all |      ✓       |     ×      |  ×   |   ✓*   |
 
 ### Zoom
 
 | Key        | Action     | Win Terminal | Terminator | tmux | iTerm2 |
 | ---------- | ---------- | :----------: | :--------: | :--: | :----: |
-| `OS_KEY+=` | Zoom in    |      ✓       |     ✓      |  --  | native |
-| `OS_KEY+-` | Zoom out   |  ✓  |  ✓   |  --  | native |
-| `OS_KEY+0` | Reset zoom |  ✓  |  ✓   |  --  | native |
+| `OS_KEY+=` | Zoom in    |      ✓       |     ✓      |  ×   |   ✓*   |
+| `OS_KEY+-` | Zoom out   |      ✓       |     ✓      |  ×   |   ✓*   |
+| `OS_KEY+0` | Reset zoom |      ✓       |     ✓      |  ×   |   ✓*   |
 
 ### Terminal-specific Gaps
 
