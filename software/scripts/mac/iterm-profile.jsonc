@@ -581,6 +581,14 @@
           "Text": "AE40F61D-6B89-4F1D-95DC-D54169500FAE",
           "Escaping": 2,
         },
+        // Cmd+Shift+D: split horizontally with current profile (matches alt+shift+d on Windows/Linux)
+        "0x44-0x120000-0x2": {
+          "Version": 2,
+          "Apply Mode": 0,
+          "Action": 25,
+          "Text": "AE40F61D-6B89-4F1D-95DC-D54169500FAE",
+          "Escaping": 2,
+        },
         // Cmd+': split horizontally with current profile
         "0x27-0x100000-0x27": {
           "Version": 2,
