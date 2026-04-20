@@ -58,11 +58,12 @@ function _deepMerge(target, source) {
 }
 
 /**
- * Builds the Brave Browser settings object with all desired configurations.
+ * Builds the Chromium browser settings object with all desired configurations.
  * Each setting is documented with which Brave settings page/section it maps to.
- * @returns {object} The Brave Browser Preferences object to merge.
+ * Settings are Chromium-compatible and apply to Brave, Chrome, and Edge.
+ * @returns {object} The browser Preferences object to merge.
  */
-function _getBraveConfigs() {
+function _getBrowserConfigs() {
   return {
     // =========================================================================
     // brave.* — Brave-specific features
@@ -437,12 +438,11 @@ function _inferBrowserName(profilePath) {
 /**
  * Applies Chromium browser configuration to a profile path. Reads existing Preferences,
  * deep-merges settings and accelerator overrides, and writes back. Browser must be closed.
- * Browser name is inferred from the profile path for logging.
+ * Browser name is inferred from the profile path for logging. Configs and accelerators
+ * are built internally from _getBrowserConfigs() and _getBrowserAccelerators().
  * @param {string} profilePath - Path to the browser's "Default" profile directory.
- * @param {object} configs - Browser-specific settings to deep-merge into Preferences.
- * @param {object} accelerators - Accelerator overrides to merge into brave.accelerators.
  */
-async function _applyBrowserConfig(profilePath, configs, accelerators) {
+async function _applyBrowserConfig(profilePath) {
   const browserName = profilePath ? _inferBrowserName(profilePath) : "Unknown";
   if (!profilePath) {
     log(`>>> ${browserName}: profile not found, skipping`);
@@ -453,6 +453,7 @@ async function _applyBrowserConfig(profilePath, configs, accelerators) {
     log(`>>> ${browserName}: Preferences file not found at ${prefsFile}, skipping`);
     return;
   }
+  log(`>> ${browserName} Configurations / Settings:`);
   log(`>>> ${browserName} profile path:`, profilePath);
 
   // Read existing preferences (preserve all user data like bookmarks, history, etc.)
@@ -464,11 +465,13 @@ async function _applyBrowserConfig(profilePath, configs, accelerators) {
   }
 
   // Deep merge desired settings into existing preferences
+  const configs = _getBrowserConfigs();
   const mergedPrefs = _deepMerge(existingPrefs, configs);
 
   // Merge browser accelerator keymaps (only non-default overrides)
   if (!mergedPrefs.brave) mergedPrefs.brave = {};
   if (!mergedPrefs.brave.accelerators) mergedPrefs.brave.accelerators = {};
+  const accelerators = _getBrowserAccelerators();
   for (const key of Object.keys(accelerators)) {
     mergedPrefs.brave.accelerators[key] = accelerators[key];
   }
@@ -481,11 +484,15 @@ async function _applyBrowserConfig(profilePath, configs, accelerators) {
 }
 
 /**
- * Applies Brave Browser configuration by finding the profile path, building configs, and writing.
- * Runs on macOS, Windows, and Linux where Brave is installed. Brave must be closed before running.
+ * Applies browser configuration to all installed Chromium browsers.
+ * Loops through known browser profile paths and applies config to each found.
  */
 async function doWork() {
-  log(`>> Brave Browser Configurations / Settings:`);
+  const browserProfilePaths = [
+    _getBraveProfilePath(),
+  ];
 
-  await _applyBrowserConfig(_getBraveProfilePath(), _getBraveConfigs(), _getBrowserAccelerators());
+  for (const profilePath of browserProfilePaths) {
+    await _applyBrowserConfig(profilePath);
+  }
 }
