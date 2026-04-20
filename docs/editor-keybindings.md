@@ -27,33 +27,33 @@ Legend: **✓** = configured by this repo | **native** = app/OS default | **--**
 
 ---
 
-## Browsers (Brave, Chrome, Edge)
+## Browsers
 
-All standard shortcuts are native. No config in this repo. Listed for reference.
+All native. No config in this repo. Listed for reference. Browsers use **Ctrl** on Windows/Linux and **Cmd** on macOS (not Alt).
 
-| Key                | Action               | Status                             |
-| ------------------ | -------------------- | :--------------------------------: |
-| `OS_KEY+t`         | New tab              | native                             |
-| `OS_KEY+1-9`       | Tab by index         | native                             |
-| `OS_KEY+shift+[/]` | Prev / next tab      | native (ctrl+shift+tab / ctrl+tab) |
-| `OS_KEY+w`         | Close tab            | native                             |
-| `OS_KEY+q`         | Quit                 | native (cmd+q Mac, alt+f4 Win)     |
-| `OS_KEY+n`         | New window           | native                             |
-| `OS_KEY+shift+n`   | New incognito window | native                             |
-| `OS_KEY+=`         | Zoom in              | native                             |
-| `OS_KEY+-`         | Zoom out             | native                             |
-| `OS_KEY+0`         | Reset zoom (100%)    | native                             |
-| `OS_KEY+c`         | Copy                 | native                             |
-| `OS_KEY+x`         | Cut                  | native                             |
-| `OS_KEY+v`         | Paste                | native                             |
-| `OS_KEY+a`         | Select all           | native                             |
-| `OS_KEY+z`         | Undo                 | native                             |
-| `OS_KEY+y`         | Redo                 | native (ctrl+y Win, cmd+shift+z Mac)|
-| `OS_KEY+s`         | Save (download page) | native                             |
-| `OS_KEY+f`         | Find                 | native                             |
-| `OS_KEY+l`         | Focus address bar    | native                             |
-| `F5`               | Refresh              | native                             |
-| `F11`              | Fullscreen           | native                             |
+| Action               | Windows/Linux (Brave, Chrome, Edge) | macOS (Brave, Chrome, Edge) |
+| -------------------- | :---------------------------------: | :-------------------------: |
+| New tab              | `ctrl+t`                            | `cmd+t`                     |
+| Tab by index         | `ctrl+1-9`                          | `cmd+1-9`                   |
+| Prev / next tab      | `ctrl+shift+tab` / `ctrl+tab`       | `cmd+shift+[` / `cmd+shift+]` |
+| Close tab            | `ctrl+w`                            | `cmd+w`                     |
+| Quit                 | `alt+f4`                            | `cmd+q`                     |
+| New window           | `ctrl+n`                            | `cmd+n`                     |
+| New incognito window | `ctrl+shift+n`                      | `cmd+shift+n`               |
+| Zoom in              | `ctrl+=`                            | `cmd+=`                     |
+| Zoom out             | `ctrl+-`                            | `cmd+-`                     |
+| Reset zoom (100%)    | `ctrl+0`                            | `cmd+0`                     |
+| Copy                 | `ctrl+c`                            | `cmd+c`                     |
+| Cut                  | `ctrl+x`                            | `cmd+x`                     |
+| Paste                | `ctrl+v`                            | `cmd+v`                     |
+| Select all           | `ctrl+a`                            | `cmd+a`                     |
+| Undo                 | `ctrl+z`                            | `cmd+z`                     |
+| Redo                 | `ctrl+y`                            | `cmd+shift+z`               |
+| Save (download page) | `ctrl+s`                            | `cmd+s`                     |
+| Find                 | `ctrl+f`                            | `cmd+f`                     |
+| Focus address bar    | `ctrl+l`                            | `cmd+l`                     |
+| Refresh              | `F5`                                | `cmd+r` / `F5`              |
+| Fullscreen           | `F11`                               | `ctrl+cmd+f` / `F11`        |
 
 ---
 
