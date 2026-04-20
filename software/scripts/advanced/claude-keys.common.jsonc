@@ -2,15 +2,28 @@
 // OS_KEY = CMD (meta) key on macOS, ALT key on Windows/Linux.
 [
   {
+    "context": "Global",
+    "bindings": {
+      // toggle task list
+      "ctrl+t": "app:toggleTodos",
+    },
+  },
+  {
     "context": "Chat",
     "bindings": {
-      // newline insertion (shift+enter and ctrl+enter)
+      // newline insertion
       "shift+enter": "chat:newline",
       "ctrl+enter": "chat:newline",
       // undo (OS_KEY+z, matching cmd+z on Mac, alt+z on Windows/Linux)
       "OS_KEY+z": "chat:undo",
       // clear input (OS_KEY+l, matching cmd+l on Mac, alt+l on Windows/Linux)
       "OS_KEY+l": "chat:clearInput",
+      // open $EDITOR (vim)
+      "ctrl+g": "chat:externalEditor",
+      "ctrl+e": "chat:externalEditor",
+      "ctrl+x ctrl+e": "chat:externalEditor",
+      // paste image
+      "ctrl+v": "chat:pasteImage",
     },
   },
 ]
