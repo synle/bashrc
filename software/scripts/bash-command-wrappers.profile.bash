@@ -3,6 +3,10 @@
 ################################################################################
 # ---- Command Wrappers ----
 #
+# --- su ---
+# su            — Wrapper: no args opens root shell preserving $PATH (sudo -E bash),
+#                 with args falls back to regular su
+#
 # --- SQLite ---
 # sqlite        — Wrapper: prefers sqlite3, falls back to sqlite
 #
@@ -22,6 +26,24 @@
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
 # real command. Sourced AFTER spec-based autocomplete.
 ################################################################################
+
+################################################################################
+# ---- su ----
+################################################################################
+# su: root shell preserving PATH and env
+function su() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "su: root shell preserving \$PATH (sudo -E bash)"
+    echo "  su          open root shell with your env/PATH preserved"
+    echo "  su <args>   fall back to regular su with args"
+    return
+  fi
+  if [ $# -eq 0 ]; then
+    sudo -E bash
+  else
+    command su "$@"
+  fi
+}
 
 ################################################################################
 # ---- SQLite ----
