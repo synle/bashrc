@@ -356,7 +356,7 @@ function _getBraveAcceleratorsCommon() {
     40004: ["OS_KEY+Shift+KeyI"], // DevTools
     40009: ["OS_KEY+Shift+KeyB"], // Bookmark bar toggle
     40010: ["OS_KEY+KeyH"], // History
-    40012: ["OS_KEY+KeyJ"], // Downloads
+    40012: ["OS_KEY+KeyJ", "OS_KEY+Shift+KeyJ"], // Downloads
     40013: ["OS_KEY+Shift+Backspace"], // Clear browsing data
   };
 }
