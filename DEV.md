@@ -593,6 +593,45 @@ mockFsDirEntries["/dir"] = [{ name: "child", isDirectory: () => true, isFile: ()
 
 Mocks auto-reset in `beforeEach`.
 
+## Debugging Scripts in VS Code
+
+The repo includes a VS Code debug configuration for stepping through individual `software/scripts/*.js` files with breakpoints.
+
+### Setup
+
+1. Open the repo in VS Code.
+2. Open any script file under `software/scripts/` (e.g. `software/scripts/fonts.js`).
+3. Press **F5** (or Run > Start Debugging).
+
+The launch config (`.vscode/launch.json`) runs `software/.debug-runner.js` with the currently open file as the argument. It sets `NODE_OPTIONS=--max-old-space-size=4096` to avoid V8 heap limits on large scripts.
+
+### How It Works
+
+`.debug-runner.js` loads `software/index.js` as a library (stripping the IIFE entry point) into a `vm` context, then runs the target script in the same context with its **original filename** — this is what makes VS Code breakpoints work. Finally, it calls `doWork()` from the script, mimicking the normal pipeline.
+
+### Environment Variables
+
+The launch config pre-sets these env vars so scripts can run outside the normal `run.sh` pipeline:
+
+| Variable                         | Value                                       |
+| -------------------------------- | ------------------------------------------- |
+| `NODE_OPTIONS`                   | `--max-old-space-size=4096` (V8 heap limit) |
+| `IS_LOCAL_MODE`                  | `true`                                      |
+| `BASH_PROFILE_CODE_REPO_RAW_URL` | `https://github.com/synle/bashrc/blob/HEAD` |
+| `BASH_SYLE_PATH`                 | `$HOME/.bash_syle`                          |
+| `BASH_SYLE_COMMON_PATH`          | `$HOME/.bash_syle_common`                   |
+| `is_os_mac`                      | `1`                                         |
+| `TZ`                             | `UTC`                                       |
+
+Adjust `is_os_mac` to match your platform (e.g. `is_os_ubuntu=1` on Linux).
+
+### Tips
+
+- Only files under `software/scripts/` are accepted — `.debug-runner.js` rejects other paths.
+- Set breakpoints in both the script file and `software/index.js` utility functions.
+- The integrated terminal shows `[debug-runner]` log output — check there for errors.
+- If you hit V8 memory limits, increase `--max-old-space-size` in `.vscode/launch.json`.
+
 ## Where to Edit (Quick Reference)
 
 | Task                               | File(s)                                                                         |
