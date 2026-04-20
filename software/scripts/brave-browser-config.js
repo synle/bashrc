@@ -371,13 +371,13 @@ function _getBraveAcceleratorsMac() {
 
 /**
  * Returns Brave accelerator overrides for Windows/Linux only.
- * Includes AltGr variants, Alt+F4, and other Win/Linux-specific keys.
+ * Includes Alt+F4 and other Win/Linux-specific keys.
  * @returns {object} Windows/Linux-specific accelerator overrides.
  */
 function _getBraveAcceleratorsWindowsLinux() {
   return {
-    33000: ["Alt+ArrowLeft", "AltGr+ArrowLeft"], // Back
-    33001: ["Alt+ArrowRight", "AltGr+ArrowRight"], // Forward
+    33000: ["Alt+ArrowLeft"], // Back
+    33001: ["Alt+ArrowRight"], // Forward
     33003: ["Alt+Home"], // Home
     34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window
     34100: ["Alt+Shift+KeyC"], // Brave cleanup
@@ -385,7 +385,7 @@ function _getBraveAcceleratorsWindowsLinux() {
     34102: ["Alt+Shift+KeyX"], // Brave close all
     34103: ["Alt+Shift+KeyZ"], // Brave undo close
     39000: ["Alt+Shift+KeyT"], // Focus toolbar
-    39003: ["AltGr", "Alt"], // Menu bar
+    39003: ["Alt"], // Menu bar
     39007: ["Alt+Shift+KeyA"], // Focus inactive popup
     40021: ["Alt+KeyE"], // Menu
   };
