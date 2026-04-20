@@ -35,7 +35,7 @@ On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Lin
 
 Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
-| Key                      | Action                     | macOS (all browsers) | Win/Linux (Brave) |
+| Key                      | Action                     | All browsers (MacOS) | All browsers (Windows/Linux) |
 | ------------------------ | -------------------------- | :------------------: | :---------------: |
 | `OS_KEY+t`               | New tab                    |          ☑️          |         ✅         |
 | `OS_KEY+1-9`             | Tab by index               |          ☑️          |         ✅         |
@@ -194,7 +194,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Tabs & Windows
 
-| Key                | Action          | Win Terminal | Terminator | tmux | iTerm2 |
+| Key                | Action          | Windows Terminal | Terminator | tmux | iTerm2 |
 | ------------------ | --------------- | :----------: | :--------: | :--: | :----: |
 | `OS_KEY+t`         | New tab         |      ✅       |     ✅      |  ✅   |   ☑️   |
 | `OS_KEY+1-9`       | Tab by index    |      ✅       |     ✅      |  ✅   |   ☑️   |
@@ -206,7 +206,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Splits & Panes
 
-| Key                  | Action                      | Win Terminal |  Terminator   |       tmux        |     iTerm2       |
+| Key                  | Action                      | Windows Terminal |  Terminator   |       tmux        |     iTerm2       |
 | -------------------- | --------------------------- | :----------: | :-----------: | :---------------: | :--------------: |
 | `OS_KEY+d`           | Split vertical (left/right) |      ✅       |       ✅       |         ✅         |        ✅         |
 | `OS_KEY+shift+d`     | Split horiz (top/bottom)    |      ✅       |       ✅       |         ✅         |        ✅         |
@@ -218,7 +218,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Text & Search
 
-| Key        | Action     | Win Terminal | Terminator | tmux | iTerm2 |
+| Key        | Action     | Windows Terminal | Terminator | tmux | iTerm2 |
 | ---------- | ---------- | :----------: | :--------: | :--: | :----: |
 | `OS_KEY+c` | Copy       |      ✅       |     ✅      |  ❌   |   ☑️   |
 | `OS_KEY+v` | Paste      |      ✅       |     ✅      |  ❌   |   ☑️   |
@@ -227,7 +227,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Zoom
 
-| Key        | Action     | Win Terminal | Terminator | tmux | iTerm2 |
+| Key        | Action     | Windows Terminal | Terminator | tmux | iTerm2 |
 | ---------- | ---------- | :----------: | :--------: | :--: | :----: |
 | `OS_KEY+=` | Zoom in    |      ✅       |     ✅      |  ❌   |   ☑️   |
 | `OS_KEY+-` | Zoom out   |      ✅       |     ✅      |  ❌   |   ☑️   |
