@@ -129,49 +129,49 @@ Columns: **VSC** = VS Code, **ST** = Sublime Text, **SM** = Sublime Merge, **Vim
 
 ### Navigation (cursor movement)
 
-| Key                    | Action           | VSC | ST  | Vim |
-| ---------------------- | ---------------- | :-: | :-: | :-: |
-| `OS_KEY+up`            | Page up          | ✓   | ✓   | ✓   |
-| `OS_KEY+down`          | Page down        | ✓   | ✓   | ✓   |
-| `OS_KEY+left`          | Home (BOL)       | ✓   | ✓   | ✓   |
-| `OS_KEY+right`         | End (EOL)        | ✓   | ✓   | ✓   |
-| `OS_KEY+shift+up`      | Select page up   | ✓   | ✓   | --  |
-| `OS_KEY+shift+down`    | Select page down | ✓   | ✓   | --  |
-| `OS_KEY+shift+left`    | Select to BOL    | ✓   | ✓   | --  |
-| `OS_KEY+shift+right`   | Select to EOL    | ✓   | ✓   | --  |
-| `OS_KEY+ctrl+up`       | Top of file      | ✓   | ✓   | --  |
-| `OS_KEY+ctrl+down`     | Bottom of file   | ✓   | ✓   | --  |
+| Key                    | Action           | VSC | ST  | SM  | Vim | CC  |
+| ---------------------- | ---------------- | :-: | :-: | :-: | :-: | :-: |
+| `OS_KEY+up`            | Page up          | ✓   | ✓   | --  | ✓   | --  |
+| `OS_KEY+down`          | Page down        | ✓   | ✓   | --  | ✓   | --  |
+| `OS_KEY+left`          | Home (BOL)       | ✓   | ✓   | --  | ✓   | --  |
+| `OS_KEY+right`         | End (EOL)        | ✓   | ✓   | --  | ✓   | --  |
+| `OS_KEY+shift+up`      | Select page up   | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+shift+down`    | Select page down | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+shift+left`    | Select to BOL    | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+shift+right`   | Select to EOL    | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+ctrl+up`       | Top of file      | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+ctrl+down`     | Bottom of file   | ✓   | ✓   | --  | --  | --  |
 
 ### Code Editing
 
-| Key        | Action         | VSC | ST  | Vim |
-| ---------- | -------------- | :-: | :-: | :-: |
-| `OS_KEY+/` | Toggle comment | ✓   | ✓   | --  |
-| `OS_KEY+[` | Outdent        | ✓   | --  | --  |
-| `OS_KEY+]` | Indent         | ✓   | --  | --  |
-| `OS_KEY+,` | Fold           | ✓   | ✓   | --  |
-| `OS_KEY+.` | Unfold         | ✓   | ✓   | --  |
+| Key        | Action         | VSC | ST  | SM  | Vim | CC  |
+| ---------- | -------------- | :-: | :-: | :-: | :-: | :-: |
+| `OS_KEY+/` | Toggle comment | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+[` | Outdent        | ✓   | --  | --  | --  | --  |
+| `OS_KEY+]` | Indent         | ✓   | --  | --  | --  | --  |
+| `OS_KEY+,` | Fold           | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+.` | Unfold         | ✓   | ✓   | --  | --  | --  |
 
 ### Editor UI
 
-| Key                    | Action               | VSC | ST  |
-| ---------------------- | -------------------- | :-: | :-: |
-| `OS_KEY+\`             | Toggle sidebar       | ✓   | ✓   |
-| `OS_KEY+shift+\`       | Toggle activity bar  | ✓   | --  |
-| `ctrl+shift+OS_KEY+\`  | Toggle right sidebar | ✓   | --  |
-| `` OS_KEY+` ``         | Toggle terminal      | ✓   | --  |
-| `F5`                   | Refresh / revert     | ✓   | ✓   |
-| `F11`                  | Fullscreen           | ✓   | ✓   |
+| Key                    | Action               | VSC | ST  | SM  | Vim | CC  |
+| ---------------------- | -------------------- | :-: | :-: | :-: | :-: | :-: |
+| `OS_KEY+\`             | Toggle sidebar       | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+shift+\`       | Toggle activity bar  | ✓   | --  | --  | --  | --  |
+| `ctrl+shift+OS_KEY+\`  | Toggle right sidebar | ✓   | --  | --  | --  | --  |
+| `` OS_KEY+` ``         | Toggle terminal      | ✓   | --  | --  | --  | --  |
+| `F5`                   | Refresh / revert     | ✓   | ✓   | ✓   | --  | --  |
+| `F11`                  | Fullscreen           | ✓   | ✓   | --  | --  | --  |
 
 ### Splits (editors)
 
-| Key              | Action                 | VSC | ST  | Vim |
-| ---------------- | ---------------------- | :-: | :-: | :-: |
-| `ctrl+d`         | Split vertical         | ✓   | ✓   | ✓   |
-| `ctrl+'`         | Split horizontal       | ✓   | ✓   | --  |
-| `OS_KEY+shift+d` | Split horizontal (alt) | ✓   | --  | --  |
-| `ctrl+w`         | Single column / close  | ✓   | ✓   | --  |
-| `ctrl+arrow`     | Navigate splits        | --  | --  | ✓   |
+| Key              | Action                 | VSC | ST  | SM  | Vim | CC  |
+| ---------------- | ---------------------- | :-: | :-: | :-: | :-: | :-: |
+| `ctrl+d`         | Split vertical         | ✓   | ✓   | --  | ✓   | --  |
+| `ctrl+'`         | Split horizontal       | ✓   | ✓   | --  | --  | --  |
+| `OS_KEY+shift+d` | Split horizontal (alt) | ✓   | --  | --  | --  | --  |
+| `ctrl+w`         | Single column / close  | ✓   | ✓   | --  | --  | --  |
+| `ctrl+arrow`     | Navigate splits        | --  | --  | --  | ✓   | --  |
 
 ### Debugging (VS Code only)
 
