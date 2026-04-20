@@ -45,6 +45,15 @@
     "key": "alt+shift+n",
     "command": "new_window",
   },
+  // --- Tab Navigation ---
+  {
+    "key": "alt+shift+]",
+    "command": "next_tab",
+  },
+  {
+    "key": "alt+shift+[",
+    "command": "prev_tab",
+  },
   // --- Undo/Redo ---
   {
     "key": "alt+z",

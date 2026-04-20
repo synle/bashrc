@@ -325,6 +325,7 @@ function _getBraveAccelerators() {
     33000: ["Alt+ArrowLeft", "AltGr+ArrowLeft"], // Back
     33001: ["Alt+ArrowRight", "AltGr+ArrowRight"], // Forward
     33003: ["Alt+Home"], // Home
+    33007: ["Alt+Shift+KeyR"], // Hard reload (bypass cache)
     33009: ["Alt+KeyR"], // Reload
     34000: ["Alt+KeyN"], // New window
     34001: ["Alt+Shift+KeyN"], // New incognito window
@@ -346,6 +347,8 @@ function _getBraveAccelerators() {
     34101: ["Alt+Shift+KeyP"], // Brave private
     34102: ["Alt+Shift+KeyX"], // Brave close all
     34103: ["Alt+Shift+KeyZ"], // Brave undo close
+    35003: ["Alt+KeyP"], // Print
+    35004: ["Alt+KeyS"], // Save page
     35000: ["Alt+KeyD"], // Bookmark this page
     36000: ["Alt+KeyX"], // Cut
     36001: ["Alt+KeyC"], // Copy

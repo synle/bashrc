@@ -243,4 +243,13 @@
     },
   },
   { "key": "shift+alt+z", "command": "redo_or_repeat" },
+  // --- Indent / Outdent ---
+  {
+    "key": "alt+[",
+    "command": "unindent",
+  },
+  {
+    "key": "alt+]",
+    "command": "indent",
+  },
 ]
