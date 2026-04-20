@@ -315,90 +315,105 @@ function _getBraveConfigs() {
 }
 
 /**
- * Returns Brave accelerator overrides shared across all platforms (macOS + Windows/Linux).
- * @returns {object} Common accelerator overrides.
+ * Returns Brave accelerator overrides shared across all platforms.
+ * Uses OS_KEY placeholder — resolved to Meta (macOS) or Alt (Windows/Linux) by _getBraveAccelerators().
+ * @returns {object} Common accelerator overrides with OS_KEY placeholders.
  */
 function _getBraveAcceleratorsCommon() {
   return {
-    33007: ["F5"], // Hard reload (bypass cache)
+    33002: ["OS_KEY+KeyR"], // Reload
+    33007: ["F5", "OS_KEY+Shift+KeyR"], // Hard reload (bypass cache)
+    34000: ["OS_KEY+KeyN"], // New window
+    34001: ["OS_KEY+Shift+KeyN"], // New incognito window
+    34014: ["OS_KEY+KeyT"], // New tab
+    34015: ["OS_KEY+KeyW"], // Close tab
+    34016: ["OS_KEY+Shift+BracketRight"], // Next tab
+    34017: ["OS_KEY+Shift+BracketLeft"], // Previous tab
+    34018: ["OS_KEY+Digit1"], // Tab 1
+    34019: ["OS_KEY+Digit2"], // Tab 2
+    34020: ["OS_KEY+Digit3"], // Tab 3
+    34021: ["OS_KEY+Digit4"], // Tab 4
+    34022: ["OS_KEY+Digit5"], // Tab 5
+    34023: ["OS_KEY+Digit6"], // Tab 6
+    34024: ["OS_KEY+Digit7"], // Tab 7
+    34025: ["OS_KEY+Digit8"], // Tab 8
+    34026: ["OS_KEY+Digit9"], // Tab 9
     34030: ["F11"], // Fullscreen
-  };
-}
-
-/**
- * Returns Brave accelerator overrides for Windows/Linux only (Alt key remaps).
- * @returns {object} Windows/Linux-specific accelerator overrides.
- */
-function _getBraveAcceleratorsWindowsLinux() {
-  return {
-    33000: ["Alt+ArrowLeft", "AltGr+ArrowLeft"], // Back
-    33001: ["Alt+ArrowRight", "AltGr+ArrowRight"], // Forward
-    33002: ["Alt+KeyR"], // Reload
-    33003: ["Alt+Home"], // Home
-    33007: ["F5", "Alt+Shift+KeyR"], // Hard reload (bypass cache)
-    34000: ["Alt+KeyN"], // New window
-    34001: ["Alt+Shift+KeyN"], // New incognito window
-    34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window
-    34014: ["Alt+KeyT"], // New tab
-    34015: ["Alt+KeyW"], // Close tab
-    34016: ["Alt+Shift+BracketRight"], // Next tab
-    34017: ["Alt+Shift+BracketLeft"], // Previous tab
-    34018: ["Alt+Digit1"], // Tab 1
-    34019: ["Alt+Digit2"], // Tab 2
-    34020: ["Alt+Digit3"], // Tab 3
-    34021: ["Alt+Digit4"], // Tab 4
-    34022: ["Alt+Digit5"], // Tab 5
-    34023: ["Alt+Digit6"], // Tab 6
-    34024: ["Alt+Digit7"], // Tab 7
-    34025: ["Alt+Digit8"], // Tab 8
-    34026: ["Alt+Digit9"], // Tab 9
-    34030: ["F11"], // Fullscreen
-    34100: ["Alt+Shift+KeyC"], // Brave cleanup
-    34101: ["Alt+Shift+KeyP"], // Brave private
-    34102: ["Alt+Shift+KeyX"], // Brave close all
-    34103: ["Alt+Shift+KeyZ"], // Brave undo close
-    35003: ["Alt+KeyP"], // Print
-    35004: ["Alt+KeyS"], // Save page
-    35000: ["Alt+KeyD"], // Bookmark this page
-    36000: ["Alt+KeyX"], // Cut
-    36001: ["Alt+KeyC"], // Copy
-    36003: ["Alt+KeyV"], // Paste
-    37000: ["Alt+KeyF"], // Find
-    37001: ["Alt+KeyG"], // Find next
-    37002: ["Alt+Shift+KeyG"], // Find previous
-    38001: ["Alt+Equal"], // Zoom in
-    38002: ["Alt+Digit0"], // Reset zoom
-    38003: ["Alt+Minus"], // Zoom out
-    39000: ["Alt+Shift+KeyT"], // Focus toolbar
-    39001: ["Alt+KeyL"], // Focus address bar
-    39003: ["AltGr", "Alt"], // Menu bar
-    39007: ["Alt+Shift+KeyA"], // Focus inactive popup
-    40000: ["Alt+KeyO"], // Open file
-    40004: ["Alt+Shift+KeyI"], // DevTools
-    40009: ["Alt+Shift+KeyB"], // Bookmark bar toggle
-    40010: ["Alt+KeyH"], // History
-    40012: ["Alt+KeyJ"], // Downloads
-    40013: ["Alt+Shift+Backspace"], // Clear browsing data
-    40021: ["Alt+KeyE"], // Menu
+    35003: ["OS_KEY+KeyP"], // Print
+    35004: ["OS_KEY+KeyS"], // Save page
+    35000: ["OS_KEY+KeyD"], // Bookmark this page
+    36000: ["OS_KEY+KeyX"], // Cut
+    36001: ["OS_KEY+KeyC"], // Copy
+    36003: ["OS_KEY+KeyV"], // Paste
+    37000: ["OS_KEY+KeyF"], // Find
+    37001: ["OS_KEY+KeyG"], // Find next
+    37002: ["OS_KEY+Shift+KeyG"], // Find previous
+    38001: ["OS_KEY+Equal"], // Zoom in
+    38002: ["OS_KEY+Digit0"], // Reset zoom
+    38003: ["OS_KEY+Minus"], // Zoom out
+    39001: ["OS_KEY+KeyL"], // Focus address bar
+    40000: ["OS_KEY+KeyO"], // Open file
+    40004: ["OS_KEY+Shift+KeyI"], // DevTools
+    40009: ["OS_KEY+Shift+KeyB"], // Bookmark bar toggle
+    40010: ["OS_KEY+KeyH"], // History
+    40012: ["OS_KEY+KeyJ"], // Downloads
+    40013: ["OS_KEY+Shift+Backspace"], // Clear browsing data
   };
 }
 
 /**
  * Returns Brave accelerator overrides for macOS only.
- * @returns {object} macOS-specific accelerator overrides (empty — macOS uses native Cmd shortcuts).
+ * @returns {object} macOS-specific accelerator overrides.
  */
 function _getBraveAcceleratorsMac() {
   return {};
 }
 
 /**
+ * Returns Brave accelerator overrides for Windows/Linux only.
+ * Includes AltGr variants, Alt+F4, and other Win/Linux-specific keys.
+ * @returns {object} Windows/Linux-specific accelerator overrides.
+ */
+function _getBraveAcceleratorsWindowsLinux() {
+  return {
+    33000: ["Alt+ArrowLeft", "AltGr+ArrowLeft"], // Back
+    33001: ["Alt+ArrowRight", "AltGr+ArrowRight"], // Forward
+    33003: ["Alt+Home"], // Home
+    34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window
+    34100: ["Alt+Shift+KeyC"], // Brave cleanup
+    34101: ["Alt+Shift+KeyP"], // Brave private
+    34102: ["Alt+Shift+KeyX"], // Brave close all
+    34103: ["Alt+Shift+KeyZ"], // Brave undo close
+    39000: ["Alt+Shift+KeyT"], // Focus toolbar
+    39003: ["AltGr", "Alt"], // Menu bar
+    39007: ["Alt+Shift+KeyA"], // Focus inactive popup
+    40021: ["Alt+KeyE"], // Menu
+  };
+}
+
+/**
+ * Resolves OS_KEY placeholders in accelerator values to platform-specific modifier keys.
+ * OS_KEY becomes Meta on macOS (Cmd key) and Alt on Windows/Linux.
+ * @param {object} accelerators - Accelerator map with OS_KEY placeholders in values.
+ * @returns {object} Accelerator map with OS_KEY resolved to the platform modifier.
+ */
+function _resolveBraveOsKey(accelerators) {
+  const osKey = is_os_mac ? "Meta" : "Alt";
+  const resolved = {};
+  for (const [id, keys] of Object.entries(accelerators)) {
+    resolved[id] = keys.map((k) => k.replace(/OS_KEY/g, osKey));
+  }
+  return resolved;
+}
+
+/**
  * Builds custom Brave Browser accelerator keymaps by merging common + platform-specific overrides.
- * Common keys apply to all platforms. Platform-specific entries override common ones when
- * the same ID appears in both (e.g. 33007 gets Alt+Shift+KeyR on Win/Linux).
+ * Common keys use OS_KEY (resolved to Meta on macOS, Alt on Win/Linux). Platform-specific
+ * entries override common ones when the same ID appears in both.
  * @returns {object} The merged accelerator overrides to apply to brave.accelerators.
  */
 function _getBraveAccelerators() {
-  const common = _getBraveAcceleratorsCommon();
+  const common = _resolveBraveOsKey(_getBraveAcceleratorsCommon());
   const platformSpecific = is_os_mac ? _getBraveAcceleratorsMac() : _getBraveAcceleratorsWindowsLinux();
   return Object.assign({}, common, platformSpecific);
 }
