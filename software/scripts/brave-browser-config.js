@@ -384,14 +384,22 @@ function _getBraveAcceleratorsWindowsLinux() {
 }
 
 /**
+ * Returns Brave accelerator overrides for macOS only.
+ * @returns {object} macOS-specific accelerator overrides (empty — macOS uses native Cmd shortcuts).
+ */
+function _getBraveAcceleratorsMac() {
+  return {};
+}
+
+/**
  * Builds custom Brave Browser accelerator keymaps by merging common + platform-specific overrides.
- * Common keys apply to all platforms. Windows/Linux keys add Alt remaps. Platform-specific
- * entries override common ones when the same ID appears in both (e.g. 33007 gets Alt+Shift+KeyR on Win/Linux).
+ * Common keys apply to all platforms. Platform-specific entries override common ones when
+ * the same ID appears in both (e.g. 33007 gets Alt+Shift+KeyR on Win/Linux).
  * @returns {object} The merged accelerator overrides to apply to brave.accelerators.
  */
 function _getBraveAccelerators() {
   const common = _getBraveAcceleratorsCommon();
-  const platformSpecific = is_os_mac ? {} : _getBraveAcceleratorsWindowsLinux();
+  const platformSpecific = is_os_mac ? _getBraveAcceleratorsMac() : _getBraveAcceleratorsWindowsLinux();
   return Object.assign({}, common, platformSpecific);
 }
 }
