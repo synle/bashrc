@@ -1712,11 +1712,11 @@ A system with two types of background workers: **Temporal** for durable, long-ru
 
 **When to use which:**
 
-| Use Case | Tool | Why |
-|----------|------|-----|
-| Multi-step workflows, retries, saga patterns | Temporal | Built-in state management, timeouts, retries |
-| Simple async tasks (send email, resize image) | Celery | Lightweight, fast, easy to add to existing Python apps |
-| Cron-like scheduled jobs | Either | Temporal has native schedules, Celery has `beat` |
+| Use Case                                      | Tool     | Why                                                    |
+| --------------------------------------------- | -------- | ------------------------------------------------------ |
+| Multi-step workflows, retries, saga patterns  | Temporal | Built-in state management, timeouts, retries           |
+| Simple async tasks (send email, resize image) | Celery   | Lightweight, fast, easy to add to existing Python apps |
+| Cron-like scheduled jobs                      | Either   | Temporal has native schedules, Celery has `beat`       |
 
 ### Docker
 
