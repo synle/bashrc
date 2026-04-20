@@ -358,6 +358,16 @@ function _getBraveAcceleratorsCommon() {
     40010: ["OS_KEY+KeyH"], // History
     40012: ["OS_KEY+KeyJ", "OS_KEY+Shift+KeyJ"], // Downloads
     40013: ["OS_KEY+Shift+Backspace"], // Clear browsing data
+    33000: ["OS_KEY+ArrowLeft"], // Back
+    33001: ["OS_KEY+ArrowRight"], // Forward
+    33003: ["OS_KEY+Home"], // Home
+    34100: ["OS_KEY+Shift+KeyC"], // Brave cleanup
+    34101: ["OS_KEY+Shift+KeyP"], // Brave private
+    34102: ["OS_KEY+Shift+KeyX"], // Brave close all
+    34103: ["OS_KEY+Shift+KeyZ"], // Brave undo close
+    39000: ["OS_KEY+Shift+KeyT"], // Focus toolbar
+    39007: ["OS_KEY+Shift+KeyA"], // Focus inactive popup
+    40021: ["OS_KEY+KeyE"], // Browser menu (⋮ hamburger menu, top-right)
   };
 }
 
@@ -371,22 +381,12 @@ function _getBraveAcceleratorsMac() {
 
 /**
  * Returns Brave accelerator overrides for Windows/Linux only.
- * Includes Alt+F4 and other Win/Linux-specific keys.
+ * Includes Alt+F4 and other Win/Linux-specific keys with no macOS equivalent.
  * @returns {object} Windows/Linux-specific accelerator overrides.
  */
 function _getBraveAcceleratorsWindowsLinux() {
   return {
-    33000: ["Alt+ArrowLeft"], // Back
-    33001: ["Alt+ArrowRight"], // Forward
-    33003: ["Alt+Home"], // Home
-    34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window
-    34100: ["Alt+Shift+KeyC"], // Brave cleanup
-    34101: ["Alt+Shift+KeyP"], // Brave private
-    34102: ["Alt+Shift+KeyX"], // Brave close all
-    34103: ["Alt+Shift+KeyZ"], // Brave undo close
-    39000: ["Alt+Shift+KeyT"], // Focus toolbar
-    39007: ["Alt+Shift+KeyA"], // Focus inactive popup
-    40021: ["Alt+KeyE"], // Browser menu (⋮ hamburger menu, top-right)
+    34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window (Alt+F4 is Windows convention)
   };
 }
 
