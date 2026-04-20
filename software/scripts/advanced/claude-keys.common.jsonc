@@ -23,7 +23,7 @@
       "ctrl+e": "chat:externalEditor",
       "ctrl+x ctrl+e": "chat:externalEditor",
       // paste image
-      "ctrl+v": "chat:pasteImage",
+      "ctrl+v": "chat:imagePaste",
     },
   },
 ]
