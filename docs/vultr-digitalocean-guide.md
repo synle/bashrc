@@ -1404,19 +1404,19 @@ resource "digitalocean_record" "www" {
 
 ## Comparison
 
-| Feature | Vultr | DigitalOcean |
-|---------|-------|--------------|
-| Cheapest VM | $2.50/mo (512MB) | $4/mo (512MB) |
-| 1 vCPU / 1GB | $5/mo | $6/mo |
-| 2 vCPU / 4GB | $20/mo | $24/mo |
-| Managed Postgres | From $15/mo | From $15/mo |
-| Managed Redis | Not available | From $15/mo |
-| Managed K8s | Free control plane | Free control plane |
-| Load Balancer | $10/mo | $12/mo |
-| Datacenters | 32 locations | 15 locations |
-| Bare Metal | Yes | No |
-| Container Registry | Not available | Free tier (500MB) |
-| Terraform Provider | `vultr/vultr` | `digitalocean/digitalocean` |
+| Feature            | Vultr              | DigitalOcean                |
+| ------------------ | ------------------ | --------------------------- |
+| Cheapest VM        | $2.50/mo (512MB)   | $4/mo (512MB)               |
+| 1 vCPU / 1GB       | $5/mo              | $6/mo                       |
+| 2 vCPU / 4GB       | $20/mo             | $24/mo                      |
+| Managed Postgres   | From $15/mo        | From $15/mo                 |
+| Managed Redis      | Not available      | From $15/mo                 |
+| Managed K8s        | Free control plane | Free control plane          |
+| Load Balancer      | $10/mo             | $12/mo                      |
+| Datacenters        | 32 locations       | 15 locations                |
+| Bare Metal         | Yes                | No                          |
+| Container Registry | Not available      | Free tier (500MB)           |
+| Terraform Provider | `vultr/vultr`      | `digitalocean/digitalocean` |
 
 ---
 
