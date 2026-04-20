@@ -86,7 +86,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 If you modified `software/index.js` or `software/tools/build-include.js`, you **must** write or update unit tests in `software/tests/`.
 
 4. **Update CLAUDE.md** — When you make changes to `software/index.js`, `run.sh`, or `software/bootstrap/common-env.sh`, update the relevant sections of this file (Architecture, Key Files, etc.) to reflect the new flow, new functions, changed behavior, or new conventions. These are the core files — their documentation here must stay in sync with the code.
-5. **Update keybinding reference** — When you add, remove, or change any keybinding in any `*-keys*.jsonc`, `terminator.js`, `tmux.config`, `iterm-profile.jsonc`, `windows-terminal-keys.jsonc`, `vim-config-settings.vim`, `bash-keys.profile.bash`, `claude-keys*.jsonc`, or `brave-browser-config.js` file, update `docs/editor-keybindings.md` to reflect the change. This is the single source of truth for the consolidated keybinding reference.
+5. **Update keybinding reference** — When you add, remove, or change any keybinding in any file (keyboard shortcuts, accelerators, key mappings, readline bindings, terminal key configs, etc.), update `docs/editor-keybindings.md` to reflect the change. This includes all editors, terminals, browsers, and CLI tools. The keybinding doc is the single source of truth — if a binding changed in code, it must be updated in the matrix.
 
 ## Commands
 
