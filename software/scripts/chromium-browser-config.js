@@ -1,9 +1,11 @@
-/** Configures Brave Browser preferences and settings. */
+/** Configures Chromium-based browser preferences and keyboard shortcuts (Brave, Chrome, Edge). */
 // brave://settings/system/shortcuts
+// chrome://settings/system/shortcuts
+// edge://settings/system/shortcuts
 
 /**
  * Searches for the Brave Browser Preferences file path based on the current OS.
- * Supports macOS (native), Windows (WSL/MinGW), and Linux (flatpak).
+ * Supports macOS (native), Windows (WSL/MinGW), and Linux (flatpak/native).
  * @returns {string|null} Path to the Brave Browser "Default" profile directory, or null if not found.
  */
 function _getBraveProfilePath() {
@@ -27,6 +29,64 @@ function _getBraveProfilePath() {
 
   // Linux native: ~/.config/BraveSoftware/Brave-Browser/Default
   const linuxPath = path.join(home, ".config/BraveSoftware/Brave-Browser/Default");
+  if (fs.existsSync(linuxPath)) return linuxPath;
+
+  return null;
+}
+
+/**
+ * Searches for the Google Chrome Preferences file path based on the current OS.
+ * Supports macOS (native), Windows (WSL/MinGW), and Linux (flatpak/native).
+ * @returns {string|null} Path to the Chrome "Default" profile directory, or null if not found.
+ */
+function _getChromeProfilePath() {
+  const home = process.env.HOME || process.env.USERPROFILE;
+
+  // macOS: ~/Library/Application Support/Google/Chrome/Default
+  if (is_os_mac) {
+    const macPath = path.join(home, "Library/Application Support/Google/Chrome/Default");
+    if (fs.existsSync(macPath)) return macPath;
+  }
+
+  // Windows via WSL or MinGW: /mnt/c/Users/*/AppData/Local/Google/Chrome/User Data/Default
+  if (is_os_windows) {
+    const winPath = path.join(getWindowAppDataLocalUserPath(), "Google/Chrome/User Data/Default");
+    if (fs.existsSync(winPath)) return winPath;
+  }
+
+  // Linux flatpak: ~/.var/app/com.google.Chrome/config/google-chrome/Default
+  const flatpakPath = path.join(home, ".var/app/com.google.Chrome/config/google-chrome/Default");
+  if (fs.existsSync(flatpakPath)) return flatpakPath;
+
+  // Linux native: ~/.config/google-chrome/Default
+  const linuxPath = path.join(home, ".config/google-chrome/Default");
+  if (fs.existsSync(linuxPath)) return linuxPath;
+
+  return null;
+}
+
+/**
+ * Searches for the Microsoft Edge Preferences file path based on the current OS.
+ * Supports macOS (native), Windows (WSL/MinGW), and Linux (native).
+ * @returns {string|null} Path to the Edge "Default" profile directory, or null if not found.
+ */
+function _getEdgeProfilePath() {
+  const home = process.env.HOME || process.env.USERPROFILE;
+
+  // macOS: ~/Library/Application Support/Microsoft Edge/Default
+  if (is_os_mac) {
+    const macPath = path.join(home, "Library/Application Support/Microsoft Edge/Default");
+    if (fs.existsSync(macPath)) return macPath;
+  }
+
+  // Windows via WSL or MinGW: /mnt/c/Users/*/AppData/Local/Microsoft/Edge/User Data/Default
+  if (is_os_windows) {
+    const winPath = path.join(getWindowAppDataLocalUserPath(), "Microsoft/Edge/User Data/Default");
+    if (fs.existsSync(winPath)) return winPath;
+  }
+
+  // Linux native: ~/.config/microsoft-edge/Default
+  const linuxPath = path.join(home, ".config/microsoft-edge/Default");
   if (fs.existsSync(linuxPath)) return linuxPath;
 
   return null;
@@ -491,6 +551,8 @@ async function _applyBrowserConfig(profilePath) {
 async function doWork() {
   const browserProfilePaths = [
     _getBraveProfilePath(),
+    _getChromeProfilePath(),
+    _getEdgeProfilePath(),
   ];
 
   for (const profilePath of browserProfilePaths) {
