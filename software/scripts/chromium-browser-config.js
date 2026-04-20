@@ -366,17 +366,28 @@ function _getEdgeConfigs() {
 
 /**
  * Returns merged browser configs for the given browser name.
- * Combines shared Chromium settings with browser-specific overrides.
+ * Combines shared Chromium settings with browser-specific overrides, then applies
+ * accelerator keymaps. Accepts optional existingPrefs to deep-merge on top of.
  * @param {string} browserName - Inferred browser name (e.g. "Brave-Browser", "Chrome", "Microsoft Edge").
+ * @param {object} [existingPrefs={}] - Existing Preferences to merge our configs on top of.
  * @returns {object} Merged Preferences object for the browser.
  */
-function _getBrowserConfigs(browserName) {
+function _getBrowserConfigs(browserName, existingPrefs = {}) {
   const chromium = _getChromiumConfigs();
   const name = browserName.toLowerCase();
-  if (name.includes("brave")) return _deepMerge(chromium, _getBraveConfigs());
-  if (name.includes("chrome")) return _deepMerge(chromium, _getChromeConfigs());
-  if (name.includes("edge")) return _deepMerge(chromium, _getEdgeConfigs());
-  return chromium;
+  let browserSpecific = {};
+  if (name.includes("brave")) browserSpecific = _getBraveConfigs();
+  else if (name.includes("chrome")) browserSpecific = _getChromeConfigs();
+  else if (name.includes("edge")) browserSpecific = _getEdgeConfigs();
+
+  // Merge: existing → chromium common → browser-specific
+  const merged = _deepMerge(_deepMerge(existingPrefs, chromium), browserSpecific);
+
+  // Replace all browser accelerator keymaps (wipe existing, use only our definitions)
+  if (!merged.brave) merged.brave = {};
+  merged.brave.accelerators = _getBrowserAccelerators();
+
+  return merged;
 }
 
 //////////////////////////////////////////////////////
@@ -527,13 +538,8 @@ async function _applyBrowserConfig(profilePath) {
     log(`>>> Warning: Could not read existing ${browserName} Preferences, starting fresh`, e);
   }
 
-  // Deep merge desired settings into existing preferences
-  const configs = _getBrowserConfigs(browserName);
-  const mergedPrefs = _deepMerge(existingPrefs, configs);
-
-  // Replace all browser accelerator keymaps with ours (wipe existing, use only our definitions)
-  if (!mergedPrefs.brave) mergedPrefs.brave = {};
-  mergedPrefs.brave.accelerators = _getBrowserAccelerators();
+  // Merge: existing prefs → chromium common → browser-specific → accelerators
+  const mergedPrefs = _getBrowserConfigs(browserName, existingPrefs);
 
   // Write back the merged preferences
   log(`>>> Writing merged ${browserName} preferences`);
