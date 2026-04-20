@@ -325,8 +325,8 @@ function _getBraveAccelerators() {
     33000: ["Alt+ArrowLeft", "AltGr+ArrowLeft"], // Back
     33001: ["Alt+ArrowRight", "AltGr+ArrowRight"], // Forward
     33003: ["Alt+Home"], // Home
-    33007: ["Alt+Shift+KeyR"], // Hard reload (bypass cache)
-    33009: ["Alt+KeyR"], // Reload
+    33002: ["Alt+KeyR"], // Reload
+    33007: ["F5", "Alt+Shift+KeyR"], // Hard reload (bypass cache)
     34000: ["Alt+KeyN"], // New window
     34001: ["Alt+Shift+KeyN"], // New incognito window
     34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window
@@ -343,6 +343,7 @@ function _getBraveAccelerators() {
     34024: ["Alt+Digit7"], // Tab 7
     34025: ["Alt+Digit8"], // Tab 8
     34026: ["Alt+Digit9"], // Tab 9
+    34030: ["F11"], // Fullscreen
     34100: ["Alt+Shift+KeyC"], // Brave cleanup
     34101: ["Alt+Shift+KeyP"], // Brave private
     34102: ["Alt+Shift+KeyX"], // Brave close all
