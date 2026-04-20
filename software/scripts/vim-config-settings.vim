@@ -165,10 +165,13 @@ nnoremap <silent> ,r :History<CR>
 " <A-z> form — works in terminals that natively support Alt key
 nnoremap <silent> <A-z> u
 nnoremap <silent> <A-S-z> <C-r>
+nnoremap <silent> <A-y> <C-r>
 vnoremap <silent> <A-z> <Esc>u
 vnoremap <silent> <A-S-z> <Esc><C-r>
+vnoremap <silent> <A-y> <Esc><C-r>
 inoremap <silent> <A-z> <C-o>u
 inoremap <silent> <A-S-z> <C-o><C-r>
+inoremap <silent> <A-y> <C-o><C-r>
 " <Esc> form — works in terminals that send Alt as Esc+key sequence
 nnoremap <silent> <Esc>z u
 nnoremap <silent> <Esc>Z <C-r>
