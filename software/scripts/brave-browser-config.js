@@ -316,14 +316,21 @@ function _getBraveConfigs() {
   };
 }
 
+//////////////////////////////////////////////////////
+// Browser Accelerator Keymaps (shared Chromium logic)
+//////////////////////////////////////////////////////
+
 /**
- * Returns Brave accelerator overrides shared across all platforms.
- * Uses OS_KEY placeholder — resolved to Meta (macOS) or Alt (Windows/Linux) by _getBraveAccelerators().
+ * Returns browser accelerator overrides shared across all platforms.
+ * Uses OS_KEY placeholder — resolved to Meta (macOS) or Alt (Windows/Linux) by _getBrowserAccelerators().
  * @returns {object} Common accelerator overrides with OS_KEY placeholders.
  */
-function _getBraveAcceleratorsCommon() {
+function _getBrowserAcceleratorsCommon() {
   return {
+    33000: ["OS_KEY+ArrowLeft"], // Back
+    33001: ["OS_KEY+ArrowRight"], // Forward
     33002: ["OS_KEY+KeyR"], // Reload
+    33003: ["OS_KEY+Home"], // Home
     33007: ["F5", "OS_KEY+Shift+KeyR"], // Hard reload (bypass cache)
     34000: ["OS_KEY+KeyN"], // New window
     34001: ["OS_KEY+Shift+KeyN"], // New incognito window
@@ -341,9 +348,13 @@ function _getBraveAcceleratorsCommon() {
     34025: ["OS_KEY+Digit8"], // Tab 8
     34026: ["OS_KEY+Digit9"], // Tab 9
     34030: ["F11"], // Fullscreen
+    34100: ["OS_KEY+Shift+KeyC"], // Brave cleanup
+    34101: ["OS_KEY+Shift+KeyP"], // Brave private
+    34102: ["OS_KEY+Shift+KeyX"], // Brave close all
+    34103: ["OS_KEY+Shift+KeyZ"], // Brave undo close
+    35000: ["OS_KEY+KeyD"], // Bookmark this page
     35003: ["OS_KEY+KeyP"], // Print
     35004: ["OS_KEY+KeyS"], // Save page
-    35000: ["OS_KEY+KeyD"], // Bookmark this page
     36000: ["OS_KEY+KeyX"], // Cut
     36001: ["OS_KEY+KeyC"], // Copy
     36003: ["OS_KEY+KeyV"], // Paste
@@ -353,40 +364,33 @@ function _getBraveAcceleratorsCommon() {
     38001: ["OS_KEY+Equal"], // Zoom in
     38002: ["OS_KEY+Digit0"], // Reset zoom
     38003: ["OS_KEY+Minus"], // Zoom out
+    39000: ["OS_KEY+Shift+KeyT"], // Focus toolbar
     39001: ["OS_KEY+KeyL"], // Focus address bar
+    39007: ["OS_KEY+Shift+KeyA"], // Focus inactive popup
     40000: ["OS_KEY+KeyO"], // Open file
     40004: ["OS_KEY+Shift+KeyI"], // DevTools
     40009: ["OS_KEY+Shift+KeyB"], // Bookmark bar toggle
     40010: ["OS_KEY+KeyH"], // History
     40012: ["OS_KEY+KeyJ", "OS_KEY+Shift+KeyJ"], // Downloads
     40013: ["OS_KEY+Shift+Backspace"], // Clear browsing data
-    33000: ["OS_KEY+ArrowLeft"], // Back
-    33001: ["OS_KEY+ArrowRight"], // Forward
-    33003: ["OS_KEY+Home"], // Home
-    34100: ["OS_KEY+Shift+KeyC"], // Brave cleanup
-    34101: ["OS_KEY+Shift+KeyP"], // Brave private
-    34102: ["OS_KEY+Shift+KeyX"], // Brave close all
-    34103: ["OS_KEY+Shift+KeyZ"], // Brave undo close
-    39000: ["OS_KEY+Shift+KeyT"], // Focus toolbar
-    39007: ["OS_KEY+Shift+KeyA"], // Focus inactive popup
     40021: ["OS_KEY+KeyE"], // Browser menu (⋮ hamburger menu, top-right)
   };
 }
 
 /**
- * Returns Brave accelerator overrides for macOS only.
+ * Returns browser accelerator overrides for macOS only.
  * @returns {object} macOS-specific accelerator overrides.
  */
-function _getBraveAcceleratorsMac() {
+function _getBrowserAcceleratorsMac() {
   return {};
 }
 
 /**
- * Returns Brave accelerator overrides for Windows/Linux only.
+ * Returns browser accelerator overrides for Windows/Linux only.
  * Includes Alt+F4 and other Win/Linux-specific keys with no macOS equivalent.
  * @returns {object} Windows/Linux-specific accelerator overrides.
  */
-function _getBraveAcceleratorsWindowsLinux() {
+function _getBrowserAcceleratorsWindowsLinux() {
   return {
     34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window (Alt+F4 is Windows convention)
   };
@@ -398,7 +402,7 @@ function _getBraveAcceleratorsWindowsLinux() {
  * @param {object} accelerators - Accelerator map with OS_KEY placeholders in values.
  * @returns {object} Accelerator map with OS_KEY resolved to the platform modifier.
  */
-function _resolveBraveOsKey(accelerators) {
+function _resolveBrowserOsKey(accelerators) {
   const osKey = is_os_mac ? "Meta" : "Alt";
   const resolved = {};
   for (const [id, keys] of Object.entries(accelerators)) {
@@ -408,19 +412,57 @@ function _resolveBraveOsKey(accelerators) {
 }
 
 /**
- * Builds custom Brave Browser accelerator keymaps by merging common + platform-specific overrides.
+ * Builds browser accelerator keymaps by merging common + platform-specific overrides.
  * Common keys use OS_KEY (resolved to Meta on macOS, Alt on Win/Linux). Platform-specific
  * entries override common ones when the same ID appears in both.
- * @returns {object} The merged accelerator overrides to apply to brave.accelerators.
+ * @returns {object} The merged accelerator overrides to apply to browser preferences.
  */
-function _getBraveAccelerators() {
-  const common = _resolveBraveOsKey(_getBraveAcceleratorsCommon());
-  const platformSpecific = is_os_mac ? _getBraveAcceleratorsMac() : _getBraveAcceleratorsWindowsLinux();
+function _getBrowserAccelerators() {
+  const common = _resolveBrowserOsKey(_getBrowserAcceleratorsCommon());
+  const platformSpecific = is_os_mac ? _getBrowserAcceleratorsMac() : _getBrowserAcceleratorsWindowsLinux();
   return Object.assign({}, common, platformSpecific);
 }
 
 /**
- * Applies Brave Browser configuration by reading existing Preferences, deep-merging desired settings, and writing back.
+ * Applies Chromium browser configuration to a profile path. Reads existing Preferences,
+ * deep-merges settings and accelerator overrides, and writes back. Browser must be closed.
+ * @param {string} browserName - Display name for logging (e.g. "Brave", "Chrome").
+ * @param {string} profilePath - Path to the browser's "Default" profile directory.
+ * @param {object} configs - Browser-specific settings to deep-merge into Preferences.
+ * @param {object} accelerators - Accelerator overrides to merge into brave.accelerators.
+ */
+async function _applyBrowserConfig(browserName, profilePath, configs, accelerators) {
+  const prefsFile = path.join(profilePath, "Preferences");
+  log(`>>> ${browserName} profile path:`, profilePath);
+  exitIfPathNotFound(prefsFile);
+
+  // Read existing preferences (preserve all user data like bookmarks, history, etc.)
+  let existingPrefs = {};
+  try {
+    existingPrefs = await readJson`${prefsFile}`;
+  } catch (e) {
+    log(`>>> Warning: Could not read existing ${browserName} Preferences, starting fresh`, e);
+  }
+
+  // Deep merge desired settings into existing preferences
+  const mergedPrefs = _deepMerge(existingPrefs, configs);
+
+  // Merge browser accelerator keymaps (only non-default overrides)
+  if (!mergedPrefs.brave) mergedPrefs.brave = {};
+  if (!mergedPrefs.brave.accelerators) mergedPrefs.brave.accelerators = {};
+  for (const key of Object.keys(accelerators)) {
+    mergedPrefs.brave.accelerators[key] = accelerators[key];
+  }
+
+  // Write back the merged preferences
+  log(`>>> Writing merged ${browserName} preferences`);
+  await backupConfigFile(prefsFile);
+  await writeText(prefsFile, JSON.stringify(mergedPrefs, null, 2));
+  log(`>>> Done. Restart ${browserName} for changes to take effect.`);
+}
+
+/**
+ * Applies Brave Browser configuration by finding the profile path, building configs, and writing.
  * Runs on macOS, Windows, and Linux where Brave is installed. Brave must be closed before running.
  */
 async function doWork() {
@@ -429,33 +471,5 @@ async function doWork() {
   const profilePath = _getBraveProfilePath();
   exitIfPathNotFound(profilePath, "Brave Browser profile not found, skipping");
 
-  const prefsFile = path.join(profilePath, "Preferences");
-  log(">>> Profile path:", profilePath);
-  exitIfPathNotFound(prefsFile);
-
-  // Read existing preferences (preserve all user data like bookmarks, history, etc.)
-  let existingPrefs = {};
-  try {
-    existingPrefs = await readJson`${prefsFile}`;
-  } catch (e) {
-    log(">>> Warning: Could not read existing Preferences, starting fresh", e);
-  }
-
-  // Deep merge desired settings into existing preferences
-  const desiredSettings = _getBraveConfigs();
-  const mergedPrefs = _deepMerge(existingPrefs, desiredSettings);
-
-  // Merge browser accelerator keymaps (only non-default overrides)
-  if (!mergedPrefs.brave) mergedPrefs.brave = {};
-  if (!mergedPrefs.brave.accelerators) mergedPrefs.brave.accelerators = {};
-  const accelOverrides = _getBraveAccelerators();
-  for (const key of Object.keys(accelOverrides)) {
-    mergedPrefs.brave.accelerators[key] = accelOverrides[key];
-  }
-
-  // Write back the merged preferences
-  log(">>> Writing merged Brave Browser preferences");
-  await backupConfigFile(prefsFile);
-  await writeText(prefsFile, JSON.stringify(mergedPrefs, null, 2));
-  log(">>> Done. Restart Brave Browser for changes to take effect.");
+  await _applyBrowserConfig("Brave", profilePath, _getBraveConfigs(), _getBrowserAccelerators());
 }
