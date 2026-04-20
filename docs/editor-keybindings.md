@@ -29,33 +29,35 @@ Legend: **✓** = configured by this repo | **native** = app/OS default | **--**
 
 ## Browsers
 
-All native. No config in this repo. Note: browsers use **Ctrl** on Windows/Linux (not Alt like editors/terminals).
+On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Linux, Brave is configured to use **Alt** (matching the OS_KEY convention) via accelerator overrides in `brave-browser-config.js`. Chrome/Edge on Windows/Linux use native **Ctrl** shortcuts (no Alt overrides).
 
-Columns: **Brave**, **Chrome**, **Edge**.
-
-| Key                | Action               | Brave | Chrome | Edge |
-| ------------------ | -------------------- | :---: | :----: | :--: |
-| `OS_KEY+t`         | New tab              | ✓     | ✓      | ✓    |
-| `OS_KEY+1-9`       | Tab by index         | ✓     | ✓      | ✓    |
-| `OS_KEY+shift+[/]` | Prev / next tab      | ✓     | ✓      | ✓    |
-| `OS_KEY+w`         | Close tab            | ✓     | ✓      | ✓    |
-| `OS_KEY+q`         | Quit                 | ✓     | ✓      | ✓    |
-| `OS_KEY+n`         | New window           | ✓     | ✓      | ✓    |
-| `OS_KEY+shift+n`   | New incognito window | ✓     | ✓      | ✓    |
-| `OS_KEY+=`         | Zoom in              | ✓     | ✓      | ✓    |
-| `OS_KEY+-`         | Zoom out             | ✓     | ✓      | ✓    |
-| `OS_KEY+0`         | Reset zoom (100%)    | ✓     | ✓      | ✓    |
-| `OS_KEY+c`         | Copy                 | ✓     | ✓      | ✓    |
-| `OS_KEY+x`         | Cut                  | ✓     | ✓      | ✓    |
-| `OS_KEY+v`         | Paste                | ✓     | ✓      | ✓    |
-| `OS_KEY+a`         | Select all           | ✓     | ✓      | ✓    |
-| `OS_KEY+z`         | Undo                 | ✓     | ✓      | ✓    |
-| `OS_KEY+y`         | Redo                 | ✓     | ✓      | ✓    |
-| `OS_KEY+s`         | Save (download page) | ✓     | ✓      | ✓    |
-| `OS_KEY+f`         | Find                 | ✓     | ✓      | ✓    |
-| `OS_KEY+l`         | Focus address bar    | ✓     | ✓      | ✓    |
-| `F5`               | Refresh              | ✓     | ✓      | ✓    |
-| `F11`              | Fullscreen           | ✓     | ✓      | ✓    |
+| Key                | Action               | macOS (all browsers) | Win/Linux (Brave) |
+| ------------------ | -------------------- | :------------------: | :---------------: |
+| `OS_KEY+t`         | New tab              | native               | ✓                 |
+| `OS_KEY+1-9`       | Tab by index         | native               | ✓                 |
+| `OS_KEY+shift+[/]` | Prev / next tab      | native               | ✓                 |
+| `OS_KEY+w`         | Close tab            | native               | ✓                 |
+| `OS_KEY+q`         | Quit                 | native               | ✓ (alt+f4)        |
+| `OS_KEY+n`         | New window           | native               | ✓                 |
+| `OS_KEY+shift+n`   | New incognito window | native               | ✓                 |
+| `OS_KEY+=`         | Zoom in              | native               | ✓                 |
+| `OS_KEY+-`         | Zoom out             | native               | ✓                 |
+| `OS_KEY+0`         | Reset zoom (100%)    | native               | ✓                 |
+| `OS_KEY+c`         | Copy                 | native               | ✓                 |
+| `OS_KEY+x`         | Cut                  | native               | ✓                 |
+| `OS_KEY+v`         | Paste                | native               | ✓                 |
+| `OS_KEY+f`         | Find                 | native               | ✓                 |
+| `OS_KEY+g`         | Find next            | native               | ✓                 |
+| `OS_KEY+shift+g`   | Find prev            | native               | ✓                 |
+| `OS_KEY+l`         | Focus address bar    | native               | ✓                 |
+| `OS_KEY+r`         | Reload               | native               | ✓                 |
+| `OS_KEY+o`         | Open file            | native               | ✓                 |
+| `OS_KEY+h`         | History              | native               | ✓                 |
+| `OS_KEY+d`         | Bookmark this page   | native               | ✓                 |
+| `OS_KEY+shift+i`   | DevTools             | native               | ✓                 |
+| `OS_KEY+shift+b`   | Bookmark bar toggle  | native               | ✓                 |
+| `F5`               | Refresh              | native               | native            |
+| `F11`              | Fullscreen           | native               | native            |
 
 ---
 
