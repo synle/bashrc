@@ -8,7 +8,7 @@ All repo source files under `software/scripts/` unless noted.
 
 | App              | Repo source files                                                                       | On-disk keybinding path                                                |
 | ---------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Brave            | `brave-browser-config.js`                                                               | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux) |
+| Chromium browsers | `chromium-browser-config.js`                                                            | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux) |
 | VS Code          | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`             | `~/Library/.../Code/User/keybindings.json` (mac), `~/.config/Code/User/keybindings.json` (linux) |
 | Sublime Text     | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`   | `~/Library/.../Sublime Text/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-text/Packages/User/Default.sublime-keymap` (linux) |
 | Sublime Merge    | `advanced/sublime-merge-keys.common.jsonc`, `advanced/sublime-merge-keys.windows.jsonc` | `~/Library/.../Sublime Merge/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-merge/Packages/User/Default.sublime-keymap` (linux) |
@@ -31,7 +31,7 @@ Legend: **✅** = configured by this repo | **☑️** = native (works out of th
 
 ## Browsers
 
-On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Linux, Brave is configured to use **Alt** (matching the OS_KEY convention) via accelerator overrides in `brave-browser-config.js`. Chrome/Edge on Windows/Linux use native **Ctrl** shortcuts (no Alt overrides).
+On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Linux, Brave is configured to use **Alt** (matching the OS_KEY convention) via accelerator overrides in `chromium-browser-config.js`. Chrome/Edge on Windows/Linux use native **Ctrl** shortcuts (no Alt overrides).
 
 Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
