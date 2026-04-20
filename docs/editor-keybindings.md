@@ -74,12 +74,10 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ## Code Editors
 
-**VSC** = VS Code, **ST** = Subl Text, **SM** = Subl Merge, **Zed**, **Vim**.
-
 ### Tabs & Windows
 
-| Key                | Action               | VSC | ST  | SM  | Zed |       Vim        |
-| ------------------ | -------------------- | :-: | :-: | :-: | :-: | :--------------: |
+| Key                | Action               | VS Code | Subl Text | Subl Merge | Zed |       Vim        |
+| ------------------ | -------------------- | :-----: | :-------: | :--------: | :-: | :--------------: |
 | `OS_KEY+t`         | New tab              | --  | --  | --  | --  |        --        |
 | `OS_KEY+n`         | New file             |  ✓  |  ✓  | --  | --  |        --        |
 | `OS_KEY+1-9`       | Tab by index         |  ✓  |  ✓  |  ✓  | --  |        --        |
@@ -91,9 +89,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Zoom
 
-| Key              | Action             | VSC | ST  | SM  | Zed | Vim |
-| ---------------- | ------------------ | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+=`       | Font zoom in       |  ✓  |  ✓  |  ✓  | --  | --  |
+| Key              | Action             | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------------- | ------------------ | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+=`       | Font zoom in       |    ✓    |     ✓     |     ✓      | --  | --  |
 | `OS_KEY+-`       | Font zoom out      |  ✓  |  ✓  |  ✓  | --  | --  |
 | `OS_KEY+0`       | Reset font zoom    |  ✓  |  ✓  |  ✓  | --  | --  |
 | `OS_KEY+shift+=` | Workspace zoom in  |  ✓  | --  | --  | --  | --  |
@@ -101,9 +99,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Text Editing
 
-| Key                | Action        | VSC | ST  | SM  | Zed | Vim |
-| ------------------ | ------------- | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+c`         | Copy          |  ✓  |  ✓  |  ✓  | --  | --  |
+| Key                | Action        | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ------------------ | ------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+c`         | Copy          |    ✓    |     ✓     |     ✓      | --  | --  |
 | `OS_KEY+x`         | Cut           |  ✓  |  ✓  |  ✓  | --  | --  |
 | `OS_KEY+v`         | Paste         |  ✓  |  ✓  |  ✓  | --  | --  |
 | `OS_KEY+a`         | Select all    |  ✓  |  ✓  |  ✓  | --  | --  |
@@ -117,9 +115,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Search
 
-| Key              | Action            | VSC | ST  | SM  | Zed | Vim |
-| ---------------- | ----------------- | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+f`       | Find              |  ✓  |  ✓  |  ✓  | --  | --  |
+| Key              | Action            | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------------- | ----------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+f`       | Find              |    ✓    |     ✓     |     ✓      | --  | --  |
 | `OS_KEY+shift+f` | Find in files     |  ✓  |  ✓  | --  | --  | --  |
 | `OS_KEY+h`       | Find and replace  |  ✓  |  ✓  | --  | --  | --  |
 | `OS_KEY+g`       | Find next         |  ✓  |  ✓  | --  | --  | --  |
@@ -134,9 +132,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Navigation (cursor movement)
 
-| Key                  | Action           | VSC | ST  | SM  | Zed | Vim |
-| -------------------- | ---------------- | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+up`          | Page up          |  ✓  |  ✓  | --  | --  |  ✓  |
+| Key                  | Action           | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| -------------------- | ---------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+up`          | Page up          |    ✓    |     ✓     |     --     | --  |  ✓  |
 | `OS_KEY+down`        | Page down        |  ✓  |  ✓  | --  | --  |  ✓  |
 | `OS_KEY+left`        | Home (BOL)       |  ✓  |  ✓  | --  | --  |  ✓  |
 | `OS_KEY+right`       | End (EOL)        |  ✓  |  ✓  | --  | --  |  ✓  |
@@ -149,9 +147,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Code Editing
 
-| Key        | Action         | VSC | ST  | SM  | Zed | Vim |
-| ---------- | -------------- | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+/` | Toggle comment |  ✓  |  ✓  | --  | --  | --  |
+| Key        | Action         | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------- | -------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+/` | Toggle comment |    ✓    |     ✓     |     --     | --  | --  |
 | `OS_KEY+[` | Outdent        |  ✓  |  ✓  | --  | --  | --  |
 | `OS_KEY+]` | Indent         |  ✓  |  ✓  | --  | --  | --  |
 | `OS_KEY+,` | Fold           |  ✓  |  ✓  | --  | --  | --  |
@@ -159,9 +157,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Editor UI
 
-| Key                   | Action               | VSC | ST  | SM  | Zed | Vim |
-| --------------------- | -------------------- | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+\`            | Toggle sidebar       |  ✓  |  ✓  | --  | --  | --  |
+| Key                   | Action               | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| --------------------- | -------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+\`            | Toggle sidebar       |    ✓    |     ✓     |     --     | --  | --  |
 | `OS_KEY+shift+\`      | Toggle activity bar  |  ✓  | --  | --  | --  | --  |
 | `ctrl+shift+OS_KEY+\` | Toggle right sidebar |  ✓  | --  | --  | --  | --  |
 | `` OS_KEY+` ``        | Toggle terminal      |  ✓  | --  | --  | --  | --  |
@@ -170,9 +168,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Splits (editors)
 
-| Key              | Action                 | VSC | ST  | SM  | Zed | Vim |
-| ---------------- | ---------------------- | :-: | :-: | :-: | :-: | :-: |
-| `ctrl+d`         | Split vertical         |  ✓  |  ✓  | --  | --  |  ✓  |
+| Key              | Action                 | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------------- | ---------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `ctrl+d`         | Split vertical         |    ✓    |     ✓     |     --     | --  |  ✓  |
 | `ctrl+'`         | Split horizontal       |  ✓  |  ✓  | --  | --  | --  |
 | `OS_KEY+shift+d` | Split horizontal (alt) |  ✓  | --  | --  | --  | --  |
 | `ctrl+w`         | Single column / close  |  ✓  |  ✓  | --  | --  | --  |
@@ -192,12 +190,10 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ## Terminal Emulators
 
-**WT** = Win Terminal, **Term** = Terminator, **tmux**, **iT2** = iTerm2.
-
 ### Tabs & Windows
 
-| Key                | Action          | WT  | Term | tmux |  iT2   |
-| ------------------ | --------------- | :-: | :--: | :--: | :----: |
+| Key                | Action          | Win Terminal | Terminator | tmux | iTerm2 |
+| ------------------ | --------------- | :----------: | :--------: | :--: | :----: |
 | `OS_KEY+t`         | New tab         |  ✓  |  ✓   |  ✓   | native |
 | `OS_KEY+1-9`       | Tab by index    |  ✓  |  ✓   |  ✓   | native |
 | `OS_KEY+shift+[/]` | Prev / next tab |  ✓  |  ✓   |  ✓   | native |
@@ -208,8 +204,8 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Splits & Panes
 
-| Key                  | Action                      | WT  |     Term      |       tmux        |       iT2       |
-| -------------------- | --------------------------- | :-: | :-----------: | :---------------: | :-------------: |
+| Key                  | Action                      | Win Terminal |  Terminator   |       tmux        |     iTerm2      |
+| -------------------- | --------------------------- | :----------: | :-----------: | :---------------: | :-------------: |
 | `OS_KEY+d`           | Split vertical (left/right) |  ✓  |       ✓       |         ✓         |        ✓        |
 | `OS_KEY+shift+d`     | Split horiz (top/bottom)    |  ✓  |       ✓       |         ✓         |        ✓        |
 | `OS_KEY+'`           | Split horiz (alt)           |  ✓  |      --       |         ✓         |        ✓        |
@@ -220,18 +216,18 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Text & Search
 
-| Key        | Action     | WT  | Term | tmux |  iT2   |
-| ---------- | ---------- | :-: | :--: | :--: | :----: |
-| `OS_KEY+c` | Copy       |  ✓  |  ✓   |  --  | native |
+| Key        | Action     | Win Terminal | Terminator | tmux | iTerm2 |
+| ---------- | ---------- | :----------: | :--------: | :--: | :----: |
+| `OS_KEY+c` | Copy       |      ✓       |     ✓      |  --  | native |
 | `OS_KEY+v` | Paste      |  ✓  |  ✓   |  --  | native |
 | `OS_KEY+f` | Find       |  ✓  |  ✓   |  ✓   | native |
 | `OS_KEY+a` | Select all |  ✓  |  --  |  --  | native |
 
 ### Zoom
 
-| Key        | Action     | WT  | Term | tmux |  iT2   |
-| ---------- | ---------- | :-: | :--: | :--: | :----: |
-| `OS_KEY+=` | Zoom in    |  ✓  |  ✓   |  --  | native |
+| Key        | Action     | Win Terminal | Terminator | tmux | iTerm2 |
+| ---------- | ---------- | :----------: | :--------: | :--: | :----: |
+| `OS_KEY+=` | Zoom in    |      ✓       |     ✓      |  --  | native |
 | `OS_KEY+-` | Zoom out   |  ✓  |  ✓   |  --  | native |
 | `OS_KEY+0` | Reset zoom |  ✓  |  ✓   |  --  | native |
 
