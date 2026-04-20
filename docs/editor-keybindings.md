@@ -62,8 +62,9 @@ On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Lin
 | `OS_KEY+left`            | Back                 |          ✓           |         ✓         |
 | `OS_KEY+right`           | Forward              |          ✓           |         ✓         |
 | `OS_KEY+shift+backspace` | Clear browsing data  |          ✓           |         ✓         |
-| `F5`                     | Refresh              |          ✓           |         ✓         |
-| `F11`                    | Fullscreen           |          ✓           |         ✓         |
+| `F5`                     | Refresh              |          --          |         ✓         |
+| `F11`                    | Fullscreen           |          --          |         ✓         |
+| `F12`                    | DevTools inspector   |          --          |         ✓         |
 
 ---
 
