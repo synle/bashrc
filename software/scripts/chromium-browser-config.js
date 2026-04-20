@@ -118,109 +118,12 @@ function _deepMerge(target, source) {
 }
 
 /**
- * Builds the Chromium browser settings object with all desired configurations.
- * Each setting is documented with which Brave settings page/section it maps to.
- * Settings are Chromium-compatible and apply to Brave, Chrome, and Edge.
- * @returns {object} The browser Preferences object to merge.
+ * Returns Chromium settings shared across all browsers (Brave, Chrome, Edge).
+ * These are standard Chromium Preferences keys that work on any Chromium-based browser.
+ * @returns {object} Common Chromium Preferences to merge.
  */
-function _getBrowserConfigs() {
+function _getChromiumConfigs() {
   return {
-    // =========================================================================
-    // brave.* — Brave-specific features
-    // =========================================================================
-    brave: {
-      // -- brave://settings/newTab — New Tab Page --
-      new_tab_page: {
-        show_background_image: false, // New Tab Page > "Show background image" = OFF
-        show_clock: false, // New Tab Page > "Show clock" = OFF
-        show_rewards: false, // New Tab Page > "Show Brave Rewards" = OFF
-        show_stats: false, // New Tab Page > "Show stats" = OFF (tracker/ads/bandwidth counters)
-        show_together: false, // New Tab Page > "Show Brave Together" = OFF
-        hide_all_widgets: true, // New Tab Page > Hides all card widgets (Rewards, Together, etc.)
-        shows_options: 1, // New Tab Page > Dashboard display option (1 = simplified view)
-      },
-      always_show_bookmark_bar_on_ntp: false, // New Tab Page > Don't force bookmark bar on NTP
-
-      // -- brave://settings/rewards — Brave Rewards --
-      rewards: {
-        show_brave_rewards_button_in_location_bar: false, // Brave Rewards > "Show Brave Rewards icon in address bar" = OFF
-      },
-
-      // -- brave://settings/ — Brave Ads --
-      brave_ads: {
-        should_allow_ads_subdivision_targeting: false, // Ads > Don't allow subdivision ad targeting
-      },
-
-      // -- brave://settings/appearance — Appearance --
-      brave_vpn: {
-        show_button: false, // Appearance > "Show VPN button in toolbar" = OFF
-      },
-      show_side_panel_button: false, // Appearance > "Show side panel button" = OFF
-      location_bar_is_wide: true, // Appearance > "Use wide URL bar" = ON
-      branded_wallpaper_notification_dismissed: true, // Dismiss the sponsored wallpaper notification prompt
-      enable_window_closing_confirm: true, // Appearance > "Warn before closing window with multiple tabs" = ON
-
-      // -- brave://settings/socialBlocking — Social media blocking --
-      google_login_default: false, // Social media blocking > "Allow Google login buttons on third party sites" = OFF
-      fb_embed_default: false, // Social media blocking > "Allow Facebook logins and embedded posts" = OFF
-      twitter_embed_default: false, // Social media blocking > "Allow Twitter embedded tweets" = OFF
-
-      // -- brave://settings/web3 — Web3 / Wallet --
-      wallet: {
-        show_wallet_icon_on_toolbar: false, // Web3 > "Show Brave Wallet icon on toolbar" = OFF
-      },
-
-      // -- brave://settings/ — AI Chat --
-      ai_chat: {
-        autocomplete_provider_enabled: false, // AI Chat > "Show autocomplete suggestions in address bar" = OFF
-        context_menu_enabled: false, // AI Chat > "Show AI Chat in context menu" = OFF
-        show_toolbar_button: false, // AI Chat > "Show AI Chat button in toolbar" = OFF
-        storage_enabled: false, // AI Chat > "Store AI Chat history" = OFF
-        tab_organization_enabled: false, // AI Chat > "AI tab organization" = OFF
-      },
-
-      // -- brave://settings/ — IPFS --
-      ipfs: {
-        auto_redirect_to_configured_gateway: false, // IPFS > Don't auto-redirect IPFS links to gateway
-      },
-
-      // -- brave://settings/ — Brave News (Today) --
-      today: {
-        should_show_toolbar_button: false, // Brave News > "Show Brave News button in toolbar" = OFF
-      },
-
-      // -- brave://settings/ — Media Router (Chromecast) --
-      enable_media_router_on_restart: false, // Settings > "Enable Media Router (Chromecast)" = OFF
-
-      // -- brave://settings/ — Web Discovery --
-      web_discovery: {
-        enabled: false, // Privacy > "Web Discovery Project" = OFF (don't send anonymous usage data)
-      },
-
-      // -- brave://settings/ — Omnibox --
-      omnibox: {
-        commander_suggestions_enabled: false, // Omnibox > "Show commander suggestions" = OFF
-      },
-
-      // -- brave://settings/shields — Shields --
-      shields: {
-        advanced_view_enabled: true, // Shields > "Advanced View" = ON (show detailed shields panel)
-      },
-
-      // -- brave://settings/ — Sidebar --
-      sidebar: {
-        hidden_built_in_items: [7, 1, 2, 3, 4], // Sidebar > Hide built-in items (Wallet, Bookmarks, Reading List, History, AI Chat)
-        sidebar_show_option: 3, // Sidebar > "Show sidebar" = Never (3)
-      },
-    },
-
-    // =========================================================================
-    // tab groups — brave://settings (Tab group preferences)
-    // =========================================================================
-    "tabgroup.sync_enabled": false, // Tab Groups > "Sync tab groups across devices" = OFF
-    auto_open_synced_tab_groups: false, // Tab Groups > "Auto-open synced tab groups" = OFF
-    auto_pin_new_tab_groups: false, // Tab Groups > "Auto-pin new tab groups" = OFF
-
     // =========================================================================
     // browser — General browser settings
     // =========================================================================
@@ -234,14 +137,14 @@ function _getBrowserConfigs() {
     },
 
     // =========================================================================
-    // download — brave://settings/downloads
+    // download — Settings > Downloads
     // =========================================================================
     download: {
       prompt_for_download: false, // Downloads > "Ask where to save each file before downloading" = OFF
     },
 
     // =========================================================================
-    // enable_do_not_track — brave://settings/privacy
+    // enable_do_not_track — Settings > Privacy
     // =========================================================================
     enable_do_not_track: true, // Privacy > 'Send a "Do Not Track" request' = ON
 
@@ -253,13 +156,6 @@ function _getBrowserConfigs() {
     },
 
     // =========================================================================
-    // ntp — New Tab Page (Chromium-level settings)
-    // =========================================================================
-    ntp: {
-      shortcust_visible: false, // New Tab Page > "Show shortcuts" = OFF (note: Brave's actual key has this typo)
-    },
-
-    // =========================================================================
     // omnibox — Address bar settings
     // =========================================================================
     omnibox: {
@@ -267,21 +163,21 @@ function _getBrowserConfigs() {
     },
 
     // =========================================================================
-    // search — brave://settings/search
+    // search — Settings > Search
     // =========================================================================
     search: {
       suggest_enabled: false, // Search > "Show search suggestions" = OFF
     },
 
     // =========================================================================
-    // signin — Google / Browser sign-in
+    // signin — Browser sign-in
     // =========================================================================
     signin: {
-      allowed: false, // Settings > "Allow Brave sign-in" = OFF
+      allowed: false, // Settings > "Allow browser sign-in" = OFF
     },
 
     // =========================================================================
-    // privacy_sandbox — brave://settings/privacy (Privacy Sandbox / Ad topics)
+    // privacy_sandbox — Settings > Privacy (Privacy Sandbox / Ad topics)
     // =========================================================================
     privacy_sandbox: {
       first_party_sets_enabled: false, // Privacy > "First-Party Sets" = OFF
@@ -293,7 +189,7 @@ function _getBrowserConfigs() {
     },
 
     // =========================================================================
-    // profile — brave://settings/privacy (Cookie & content settings)
+    // profile — Settings > Privacy (Cookie & content settings)
     // =========================================================================
     profile: {
       cookie_controls_mode: 1, // Privacy > "Block third-party cookies" (1 = block in incognito)
@@ -303,42 +199,127 @@ function _getBrowserConfigs() {
     },
 
     // =========================================================================
-    // tracking_protection — brave://settings/privacy (Tracking protection)
+    // tracking_protection — Settings > Privacy (Tracking protection)
     // =========================================================================
     tracking_protection: {
       tracking_protection_3pcd_enabled: false, // Privacy > "Third-party cookie deprecation" tracking UI = OFF
     },
 
     // =========================================================================
-    // alternate_error_pages — brave://settings/privacy
+    // alternate_error_pages — Settings > Privacy
     // =========================================================================
     alternate_error_pages: {
       backup: false, // Privacy > "Use a web service to help resolve navigation errors" = OFF
     },
 
     // =========================================================================
-    // safebrowsing — brave://settings/privacy
+    // safebrowsing — Settings > Privacy
     // =========================================================================
     safebrowsing: {
-      enabled: false, // Privacy > "Safe Browsing" = OFF (disable Google Safe Browsing)
+      enabled: false, // Privacy > "Safe Browsing" = OFF (disable Safe Browsing)
     },
 
     // =========================================================================
-    // payments — brave://settings/payments
+    // payments — Settings > Payments
     // =========================================================================
     payments: {
       can_make_payment_enabled: false, // Privacy > "Allow sites to check if you have payment methods saved" = OFF
     },
 
     // =========================================================================
-    // credentials — brave://settings/passwords
+    // credentials — Settings > Passwords
     // =========================================================================
     credentials_enable_service: true, // Passwords > "Offer to save passwords" = ON
     credentials_enable_autosignin: true, // Passwords > "Auto sign-in" = ON
 
     // =========================================================================
-    // extensions — Extension keyboard shortcuts (brave://extensions/shortcuts)
+    // spellcheck — Settings > Languages
     // =========================================================================
+    spellcheck: {
+      dictionaries: ["en-US"], // Languages > Spell check language = English (US)
+    },
+
+    // =========================================================================
+    // intl — Settings > Languages
+    // =========================================================================
+    intl: {
+      selected_languages: "en-US,en", // Languages > Preferred languages = English (US), English
+    },
+  };
+}
+
+/**
+ * Returns Brave-specific settings (brave.* namespace, extensions, NTP).
+ * These only apply to Brave Browser — not Chrome or Edge.
+ * @returns {object} Brave-specific Preferences to merge.
+ */
+function _getBraveConfigs() {
+  return {
+    brave: {
+      // -- brave://settings/newTab — New Tab Page --
+      new_tab_page: {
+        show_background_image: false, // New Tab Page > "Show background image" = OFF
+        show_clock: false, // New Tab Page > "Show clock" = OFF
+        show_rewards: false, // New Tab Page > "Show Brave Rewards" = OFF
+        show_stats: false, // New Tab Page > "Show stats" = OFF (tracker/ads/bandwidth counters)
+        show_together: false, // New Tab Page > "Show Brave Together" = OFF
+        hide_all_widgets: true, // New Tab Page > Hides all card widgets (Rewards, Together, etc.)
+        shows_options: 1, // New Tab Page > Dashboard display option (1 = simplified view)
+      },
+      always_show_bookmark_bar_on_ntp: false, // New Tab Page > Don't force bookmark bar on NTP
+      rewards: {
+        show_brave_rewards_button_in_location_bar: false, // Brave Rewards > "Show Brave Rewards icon in address bar" = OFF
+      },
+      brave_ads: {
+        should_allow_ads_subdivision_targeting: false, // Ads > Don't allow subdivision ad targeting
+      },
+      brave_vpn: {
+        show_button: false, // Appearance > "Show VPN button in toolbar" = OFF
+      },
+      show_side_panel_button: false, // Appearance > "Show side panel button" = OFF
+      location_bar_is_wide: true, // Appearance > "Use wide URL bar" = ON
+      branded_wallpaper_notification_dismissed: true, // Dismiss the sponsored wallpaper notification prompt
+      enable_window_closing_confirm: true, // Appearance > "Warn before closing window with multiple tabs" = ON
+      google_login_default: false, // Social media blocking > "Allow Google login buttons on third party sites" = OFF
+      fb_embed_default: false, // Social media blocking > "Allow Facebook logins and embedded posts" = OFF
+      twitter_embed_default: false, // Social media blocking > "Allow Twitter embedded tweets" = OFF
+      wallet: {
+        show_wallet_icon_on_toolbar: false, // Web3 > "Show Brave Wallet icon on toolbar" = OFF
+      },
+      ai_chat: {
+        autocomplete_provider_enabled: false, // AI Chat > "Show autocomplete suggestions in address bar" = OFF
+        context_menu_enabled: false, // AI Chat > "Show AI Chat in context menu" = OFF
+        show_toolbar_button: false, // AI Chat > "Show AI Chat button in toolbar" = OFF
+        storage_enabled: false, // AI Chat > "Store AI Chat history" = OFF
+        tab_organization_enabled: false, // AI Chat > "AI tab organization" = OFF
+      },
+      ipfs: {
+        auto_redirect_to_configured_gateway: false, // IPFS > Don't auto-redirect IPFS links to gateway
+      },
+      today: {
+        should_show_toolbar_button: false, // Brave News > "Show Brave News button in toolbar" = OFF
+      },
+      enable_media_router_on_restart: false, // Settings > "Enable Media Router (Chromecast)" = OFF
+      web_discovery: {
+        enabled: false, // Privacy > "Web Discovery Project" = OFF (don't send anonymous usage data)
+      },
+      omnibox: {
+        commander_suggestions_enabled: false, // Omnibox > "Show commander suggestions" = OFF
+      },
+      shields: {
+        advanced_view_enabled: true, // Shields > "Advanced View" = ON (show detailed shields panel)
+      },
+      sidebar: {
+        hidden_built_in_items: [7, 1, 2, 3, 4], // Sidebar > Hide built-in items (Wallet, Bookmarks, Reading List, History, AI Chat)
+        sidebar_show_option: 3, // Sidebar > "Show sidebar" = Never (3)
+      },
+    },
+    "tabgroup.sync_enabled": false, // Tab Groups > "Sync tab groups across devices" = OFF
+    auto_open_synced_tab_groups: false, // Tab Groups > "Auto-open synced tab groups" = OFF
+    auto_pin_new_tab_groups: false, // Tab Groups > "Auto-pin new tab groups" = OFF
+    ntp: {
+      shortcust_visible: false, // New Tab Page > "Show shortcuts" = OFF (note: Brave's actual key has this typo)
+    },
     extensions: {
       commands: {
         // Streamkeys (hdhinadidafjejdhmfkjgnolgimiaplp) — media playback control
@@ -360,21 +341,42 @@ function _getBrowserConfigs() {
         "mac:Command+Shift+O": { command_name: "_execute_action", extension: "glnpjglilkicbckjpbgcfkogebgllemb", global: false },
       },
     },
+  };
+}
 
-    // =========================================================================
-    // spellcheck — brave://settings/languages
-    // =========================================================================
-    spellcheck: {
-      dictionaries: ["en-US"], // Languages > Spell check language = English (US)
-    },
-
-    // =========================================================================
-    // intl — brave://settings/languages
-    // =========================================================================
-    intl: {
-      selected_languages: "en-US,en", // Languages > Preferred languages = English (US), English
+/**
+ * Returns Chrome-specific settings. Minimal — most settings are in _getChromiumConfigs().
+ * @returns {object} Chrome-specific Preferences to merge.
+ */
+function _getChromeConfigs() {
+  return {
+    ntp: {
+      shortcust_visible: false, // New Tab Page > "Show shortcuts" = OFF
     },
   };
+}
+
+/**
+ * Returns Edge-specific settings. Minimal — most settings are in _getChromiumConfigs().
+ * @returns {object} Edge-specific Preferences to merge.
+ */
+function _getEdgeConfigs() {
+  return {};
+}
+
+/**
+ * Returns merged browser configs for the given browser name.
+ * Combines shared Chromium settings with browser-specific overrides.
+ * @param {string} browserName - Inferred browser name (e.g. "Brave-Browser", "Chrome", "Microsoft Edge").
+ * @returns {object} Merged Preferences object for the browser.
+ */
+function _getBrowserConfigs(browserName) {
+  const chromium = _getChromiumConfigs();
+  const name = browserName.toLowerCase();
+  if (name.includes("brave")) return _deepMerge(chromium, _getBraveConfigs());
+  if (name.includes("chrome")) return _deepMerge(chromium, _getChromeConfigs());
+  if (name.includes("edge")) return _deepMerge(chromium, _getEdgeConfigs());
+  return chromium;
 }
 
 //////////////////////////////////////////////////////
@@ -526,7 +528,7 @@ async function _applyBrowserConfig(profilePath) {
   }
 
   // Deep merge desired settings into existing preferences
-  const configs = _getBrowserConfigs();
+  const configs = _getBrowserConfigs(browserName);
   const mergedPrefs = _deepMerge(existingPrefs, configs);
 
   // Replace all browser accelerator keymaps with ours (wipe existing, use only our definitions)
