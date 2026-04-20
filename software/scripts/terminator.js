@@ -17,8 +17,10 @@ async function doWork() {
       cycle_prev = ""
       go_next = ""
       go_prev = ""
-      go_up = Page_Up
-      go_down = Page_Down
+      go_up = <Alt>Up
+      go_down = <Alt>Down
+      go_left = <Alt>Left
+      go_right = <Alt>Right
       rotate_cw = ""
       rotate_ccw = ""
       split_horiz = <Shift><Alt>d
