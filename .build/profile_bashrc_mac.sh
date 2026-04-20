@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-20T05:08:37.728Z
+# Generated: 2026-04-20T15:50:27.314Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -6607,9 +6607,13 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | f21c6dd3b10181a5738c9381ecfe7379 | 5.4 KB | 2026-04-20
+# software/scripts/bash-command-wrappers.profile.bash | 82633e443566a4b5391ae8468fe34473 | 6.1 KB | 2026-04-20
 ################################################################################
 # ---- Command Wrappers ----
+#
+# --- su ---
+# su            — Wrapper: no args opens root shell preserving $PATH (sudo -E bash),
+#                 with args falls back to regular su
 #
 # --- SQLite ---
 # sqlite        — Wrapper: prefers sqlite3, falls back to sqlite
@@ -6630,6 +6634,24 @@ fi
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
 # real command. Sourced AFTER spec-based autocomplete.
 ################################################################################
+
+################################################################################
+# ---- su ----
+################################################################################
+# su: root shell preserving PATH and env
+function su() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "su: root shell preserving \$PATH (sudo -E bash)"
+    echo "  su          open root shell with your env/PATH preserved"
+    echo "  su <args>   fall back to regular su with args"
+    return
+  fi
+  if [ $# -eq 0 ]; then
+    sudo -E bash
+  else
+    command su "$@"
+  fi
+}
 
 ################################################################################
 # ---- SQLite ----

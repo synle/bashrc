@@ -19,14 +19,14 @@ scoop install terraform
 
 ## Core Concepts
 
-| Concept | Description |
-|---------|-------------|
-| **Provider** | Plugin that talks to an API (AWS, Azure, Docker, etc.) |
-| **Resource** | A thing Terraform manages (VM, container, DNS record) |
-| **State** | Terraform's record of what it created (`terraform.tfstate`) |
-| **Plan** | Preview of what Terraform will change |
-| **Apply** | Execute the plan and make changes |
-| **Module** | Reusable group of resources |
+| Concept      | Description                                                 |
+| ------------ | ----------------------------------------------------------- |
+| **Provider** | Plugin that talks to an API (AWS, Azure, Docker, etc.)      |
+| **Resource** | A thing Terraform manages (VM, container, DNS record)       |
+| **State**    | Terraform's record of what it created (`terraform.tfstate`) |
+| **Plan**     | Preview of what Terraform will change                       |
+| **Apply**    | Execute the plan and make changes                           |
+| **Module**   | Reusable group of resources                                 |
 
 ## Core Commands
 
