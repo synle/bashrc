@@ -15,6 +15,26 @@
     "key": "alt+c",
     "command": "copy",
   },
+  {
+    "key": "alt+x",
+    "command": "cut",
+  },
+  {
+    "key": "alt+v",
+    "command": "paste",
+  },
+  {
+    "key": "alt+a",
+    "command": "select_all",
+  },
+  // --- Editing ---
+  {
+    "key": "alt+backspace",
+    "command": "chain",
+    "args": {
+      "commands": [["move_to", { "to": "bol", "extend": true }], ["left_delete"]],
+    },
+  },
   // --- Font Size ---
   {
     "key": "alt+=",

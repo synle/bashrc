@@ -4,20 +4,22 @@
 
 ## Source Files
 
-All files under `software/scripts/` unless noted.
+All repo source files under `software/scripts/` unless noted.
 
-| App              | Files                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| VS Code          | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`             |
-| Sublime Text     | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`   |
-| Sublime Merge    | `advanced/sublime-merge-keys.common.jsonc`, `advanced/sublime-merge-keys.windows.jsonc` |
-| Claude Code      | `advanced/claude-keys.common.jsonc`, `advanced/claude-keys.windows.jsonc`               |
-| Vim              | `vim-config-settings.vim`                                                               |
-| Bash readline    | `bash-keys.profile.bash`                                                                |
-| Windows Terminal | `windows/windows-terminal-keys.jsonc`                                                   |
-| Terminator       | `terminator.js`                                                                         |
-| tmux             | `advanced/tmux.config`                                                                  |
-| iTerm2           | `mac/iterm-profile.jsonc`                                                               |
+| App              | Repo source files                                                                       | On-disk keybinding path                                                |
+| ---------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Brave            | `brave-browser-config.js`                                                               | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux) |
+| VS Code          | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`             | `~/Library/.../Code/User/keybindings.json` (mac), `~/.config/Code/User/keybindings.json` (linux) |
+| Sublime Text     | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`   | `~/Library/.../Sublime Text/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-text/Packages/User/Default.sublime-keymap` (linux) |
+| Sublime Merge    | `advanced/sublime-merge-keys.common.jsonc`, `advanced/sublime-merge-keys.windows.jsonc` | `~/Library/.../Sublime Merge/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-merge/Packages/User/Default.sublime-keymap` (linux) |
+| Zed              | `zed-editor-config.jsonc` (keybinding source files TBD)                                 | `~/.config/zed/keymap.json`                                            |
+| Claude Code      | `advanced/claude-keys.common.jsonc`, `advanced/claude-keys.windows.jsonc`               | `~/.claude/keybindings.json`                                           |
+| Vim              | `vim-config-settings.vim`                                                               | `~/.vimrc`                                                             |
+| Bash readline    | `bash-keys.profile.bash`                                                                | Sourced into `~/.bash_syle`                                            |
+| Windows Terminal | `windows/windows-terminal-keys.jsonc`                                                   | `%LOCALAPPDATA%/Packages/Microsoft.WindowsTerminal_.../LocalState/settings.json` |
+| Terminator       | `terminator.js`                                                                         | `~/.config/terminator/config`                                          |
+| tmux             | `advanced/tmux.config`                                                                  | `~/.tmux.conf`                                                         |
+| iTerm2           | `mac/iterm-profile.jsonc`                                                               | `~/Library/.../com.googlecode.iterm2/DynamicProfiles/`                 |
 
 ## Standard Convention
 
@@ -104,16 +106,16 @@ Zed keybinding source files are TBD — all `--` entries are gaps to fill when t
 | Key                | Action        | VSC | ST  | SM  | Zed | Vim |
 | ------------------ | ------------- | :-: | :-: | :-: | :-: | :-: |
 | `OS_KEY+c`         | Copy          |  ✓  |  ✓  |  ✓  | --  | --  |
-| `OS_KEY+x`         | Cut           |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+v`         | Paste         |  ✓  |  ✓  | --  | --  | --  |
-| `OS_KEY+a`         | Select all    |  ✓  |  ✓  | --  | --  | --  |
+| `OS_KEY+x`         | Cut           |  ✓  |  ✓  |  ✓  | --  | --  |
+| `OS_KEY+v`         | Paste         |  ✓  |  ✓  |  ✓  | --  | --  |
+| `OS_KEY+a`         | Select all    |  ✓  |  ✓  |  ✓  | --  | --  |
 | `OS_KEY+z`         | Undo          |  ✓  |  ✓  |  ✓  | --  |  ✓  |
 | `OS_KEY+y`         | Redo          |  ✓  |  ✓  |  ✓  | --  |  ✓  |
 | `OS_KEY+shift+z`   | Redo (alt)    |  ✓  |  ✓  |  ✓  | --  |  ✓  |
 | `OS_KEY+s`         | Save          |  ✓  |  ✓  | --  | --  |  ✓  |
 | `OS_KEY+shift+s`   | Save all      |  ✓  |  ✓  | --  | --  | --  |
 | `OS_KEY+l`         | Select line   |  ✓  | --  | --  | --  |  ✓  |
-| `OS_KEY+backspace` | Delete to BOL |  ✓  |  ✓  | --  | --  |  ✓  |
+| `OS_KEY+backspace` | Delete to BOL |  ✓  |  ✓  |  ✓  | --  |  ✓  |
 
 ### Search
 
