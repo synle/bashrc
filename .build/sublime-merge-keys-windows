@@ -129,6 +129,44 @@
     ]
   },
   {
+    "command": "cut",
+    "keys": [
+      "alt+x"
+    ]
+  },
+  {
+    "command": "paste",
+    "keys": [
+      "alt+v"
+    ]
+  },
+  {
+    "command": "select_all",
+    "keys": [
+      "alt+a"
+    ]
+  },
+  {
+    "command": "chain",
+    "args": {
+      "commands": [
+        [
+          "move_to",
+          {
+            "to": "bol",
+            "extend": true
+          }
+        ],
+        [
+          "left_delete"
+        ]
+      ]
+    },
+    "keys": [
+      "alt+backspace"
+    ]
+  },
+  {
     "command": "increase_font_size",
     "keys": [
       "alt+="
@@ -168,6 +206,18 @@
     "command": "new_window",
     "keys": [
       "alt+shift+n"
+    ]
+  },
+  {
+    "command": "next_tab",
+    "keys": [
+      "alt+shift+]"
+    ]
+  },
+  {
+    "command": "prev_tab",
+    "keys": [
+      "alt+shift+["
     ]
   },
   {
