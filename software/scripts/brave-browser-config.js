@@ -320,7 +320,10 @@ function _getBraveConfigs() {
  * @returns {object} The accelerator overrides to merge into brave.accelerators.
  */
 function _getBraveAccelerators() {
-  if (is_os_mac) return {};
+  if (is_os_mac) return {
+    33007: ["F5"], // Hard reload (bypass cache)
+    34030: ["F11"], // Fullscreen
+  };
   return {
     33000: ["Alt+ArrowLeft", "AltGr+ArrowLeft"], // Back
     33001: ["Alt+ArrowRight", "AltGr+ArrowRight"], // Forward
