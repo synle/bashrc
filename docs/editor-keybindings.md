@@ -69,59 +69,59 @@ On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Lin
 
 ## Code Editors
 
-Columns: **VSC** = VS Code, **ST** = Sublime Text, **Vim**, **SM** = Sublime Merge, **CC** = Claude Code.
+Columns: **VSC** = VS Code, **ST** = Sublime Text, **SM** = Sublime Merge, **Vim**, **CC** = Claude Code.
 
 ### Tabs & Windows
 
-| Key                | Action               | VSC | ST  | Vim             | SM  | CC  |
-| ------------------ | -------------------- | :-: | :-: | :-------------: | :-: | :-: |
-| `OS_KEY+t`         | New tab              | --  | --  | --              | --  | --  |
-| `OS_KEY+n`         | New file             | ✓   | ✓   | --              | --  | --  |
-| `OS_KEY+1-9`       | Tab by index         | ✓   | ✓   | --              | ✓   | --  |
-| `OS_KEY+shift+[/]` | Prev / next tab      | ✓   | ✓   | --              | --  | --  |
-| `OS_KEY+w`         | Close tab            | ✓   | ✓   | ✓               | ✓   | --  |
-| `OS_KEY+q`         | Quit                 | ✓   | ✓   | --              | ✓   | --  |
-| `OS_KEY+shift+n`   | New window           | ✓   | ✓   | --              | ✓   | --  |
-| `F2`               | Rename (symbol/file) | ✓   | --  | ✓ (paste toggle)| --  | --  |
+| Key                | Action               | VSC | ST  | SM  | Vim             | CC  |
+| ------------------ | -------------------- | :-: | :-: | :-: | :-------------: | :-: |
+| `OS_KEY+t`         | New tab              | --  | --  | --  | --              | --  |
+| `OS_KEY+n`         | New file             | ✓   | ✓   | --  | --              | --  |
+| `OS_KEY+1-9`       | Tab by index         | ✓   | ✓   | ✓   | --              | --  |
+| `OS_KEY+shift+[/]` | Prev / next tab      | ✓   | ✓   | --  | --              | --  |
+| `OS_KEY+w`         | Close tab            | ✓   | ✓   | ✓   | ✓               | --  |
+| `OS_KEY+q`         | Quit                 | ✓   | ✓   | ✓   | --              | --  |
+| `OS_KEY+shift+n`   | New window           | ✓   | ✓   | ✓   | --              | --  |
+| `F2`               | Rename (symbol/file) | ✓   | --  | --  | ✓ (paste toggle)| --  |
 
 ### Zoom
 
-| Key              | Action             | VSC | ST  | Vim | SM  | CC  |
+| Key              | Action             | VSC | ST  | SM  | Vim | CC  |
 | ---------------- | ------------------ | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+=`       | Font zoom in       | ✓   | ✓   | --  | ✓   | --  |
-| `OS_KEY+-`       | Font zoom out      | ✓   | ✓   | --  | ✓   | --  |
-| `OS_KEY+0`       | Reset font zoom    | ✓   | ✓   | --  | ✓   | --  |
+| `OS_KEY+=`       | Font zoom in       | ✓   | ✓   | ✓   | --  | --  |
+| `OS_KEY+-`       | Font zoom out      | ✓   | ✓   | ✓   | --  | --  |
+| `OS_KEY+0`       | Reset font zoom    | ✓   | ✓   | ✓   | --  | --  |
 | `OS_KEY+shift+=` | Workspace zoom in  | ✓   | --  | --  | --  | --  |
 | `OS_KEY+shift+-` | Workspace zoom out | ✓   | --  | --  | --  | --  |
 
 ### Text Editing
 
-| Key                | Action        | VSC | ST  | Vim | SM  | CC             |
-| ------------------ | ------------- | :-: | :-: | :-: | :-: | :------------: |
-| `OS_KEY+c`         | Copy          | ✓   | ✓   | --  | ✓   | --             |
-| `OS_KEY+x`         | Cut           | ✓   | ✓   | --  | --  | --             |
-| `OS_KEY+v`         | Paste         | ✓   | ✓   | --  | --  | --             |
-| `OS_KEY+a`         | Select all    | ✓   | ✓   | --  | --  | --             |
-| `OS_KEY+z`         | Undo          | ✓   | ✓   | ✓   | ✓   | ✓              |
-| `OS_KEY+y`         | Redo          | ✓   | ✓   | --  | ✓   | --             |
-| `OS_KEY+shift+z`   | Redo (alt)    | ✓   | ✓   | ✓   | ✓   | --             |
-| `OS_KEY+s`         | Save          | ✓   | ✓   | ✓   | --  | --             |
-| `OS_KEY+shift+s`   | Save all      | ✓   | ✓   | --  | --  | --             |
-| `OS_KEY+l`         | Select line   | ✓   | --  | ✓   | --  | ✓ (clear input)|
-| `OS_KEY+backspace` | Delete to BOL | ✓   | ✓   | ✓   | --  | --             |
+| Key                | Action        | VSC | ST  | SM  | Vim | CC              |
+| ------------------ | ------------- | :-: | :-: | :-: | :-: | :-------------: |
+| `OS_KEY+c`         | Copy          | ✓   | ✓   | ✓   | --  | --              |
+| `OS_KEY+x`         | Cut           | ✓   | ✓   | --  | --  | --              |
+| `OS_KEY+v`         | Paste         | ✓   | ✓   | --  | --  | --              |
+| `OS_KEY+a`         | Select all    | ✓   | ✓   | --  | --  | --              |
+| `OS_KEY+z`         | Undo          | ✓   | ✓   | ✓   | ✓   | ✓               |
+| `OS_KEY+y`         | Redo          | ✓   | ✓   | ✓   | --  | --              |
+| `OS_KEY+shift+z`   | Redo (alt)    | ✓   | ✓   | ✓   | ✓   | --              |
+| `OS_KEY+s`         | Save          | ✓   | ✓   | --  | ✓   | --              |
+| `OS_KEY+shift+s`   | Save all      | ✓   | ✓   | --  | --  | --              |
+| `OS_KEY+l`         | Select line   | ✓   | --  | --  | ✓   | ✓ (clear input) |
+| `OS_KEY+backspace` | Delete to BOL | ✓   | ✓   | --  | ✓   | --              |
 
 ### Search
 
-| Key                | Action            | VSC | ST  | Vim | SM  | CC  |
+| Key                | Action            | VSC | ST  | SM  | Vim | CC  |
 | ------------------ | ----------------- | :-: | :-: | :-: | :-: | :-: |
-| `OS_KEY+f`         | Find              | ✓   | ✓   | --  | ✓   | --  |
+| `OS_KEY+f`         | Find              | ✓   | ✓   | ✓   | --  | --  |
 | `OS_KEY+shift+f`   | Find in files     | ✓   | ✓   | --  | --  | --  |
 | `OS_KEY+h`         | Find and replace  | ✓   | ✓   | --  | --  | --  |
 | `OS_KEY+g`         | Find next         | ✓   | ✓   | --  | --  | --  |
 | `OS_KEY+shift+g`   | Find prev         | ✓   | ✓   | --  | --  | --  |
 | `OS_KEY+d`         | Select next match | ✓   | ✓   | --  | --  | --  |
-| `OS_KEY+p`         | Quick open / file | ✓   | ✓   | --  | ✓   | --  |
-| `OS_KEY+shift+p`   | Command palette   | ✓   | ✓   | --  | ✓   | --  |
+| `OS_KEY+p`         | Quick open / file | ✓   | ✓   | ✓   | --  | --  |
+| `OS_KEY+shift+p`   | Command palette   | ✓   | ✓   | ✓   | --  | --  |
 | `OS_KEY+;`         | Goto line         | ✓   | ✓   | --  | --  | --  |
 | `OS_KEY+r`         | Goto symbol       | ✓   | ✓   | --  | --  | --  |
 | `OS_KEY+enter`     | Goto definition   | ✓   | ✓   | --  | --  | --  |
@@ -154,14 +154,14 @@ Columns: **VSC** = VS Code, **ST** = Sublime Text, **Vim**, **SM** = Sublime Mer
 
 ### Editor UI
 
-| Key                    | Action               | VSC    | ST     |
-| ---------------------- | -------------------- | :----: | :----: |
-| `OS_KEY+\`             | Toggle sidebar       | ✓      | ✓      |
-| `OS_KEY+shift+\`       | Toggle activity bar  | ✓      | --     |
-| `ctrl+shift+OS_KEY+\`  | Toggle right sidebar | ✓      | --     |
-| `` OS_KEY+` ``         | Toggle terminal      | ✓      | --     |
-| `F5`                   | Refresh / revert     | ✓      | ✓      |
-| `F11`                  | Fullscreen           | native | native |
+| Key                    | Action               | VSC | ST  |
+| ---------------------- | -------------------- | :-: | :-: |
+| `OS_KEY+\`             | Toggle sidebar       | ✓   | ✓   |
+| `OS_KEY+shift+\`       | Toggle activity bar  | ✓   | --  |
+| `ctrl+shift+OS_KEY+\`  | Toggle right sidebar | ✓   | --  |
+| `` OS_KEY+` ``         | Toggle terminal      | ✓   | --  |
+| `F5`                   | Refresh / revert     | ✓   | ✓   |
+| `F11`                  | Fullscreen           | ✓   | ✓   |
 
 ### Splits (editors)
 
