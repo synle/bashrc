@@ -21,9 +21,9 @@
         "ctrl+enter": "chat:newline",
         "meta+z": "chat:undo",
         "meta+l": "chat:clearInput",
-        "ctrl+g": "chat:externalEditor",
-        "ctrl+e": "chat:externalEditor",
-        "ctrl+x ctrl+e": "chat:externalEditor",
+        "ctrl+a": null,
+        "ctrl+e": null,
+        "ctrl+x": "chat:externalEditor",
         "ctrl+v": "chat:imagePaste"
       }
     }
