@@ -89,7 +89,7 @@ fi
 # ---- Printer Setup ----
 ################################################################################
 PRINTER_NAME="SyHousePrinter"
-PRINTER_IP=$(grep -i "printer" software/metadata/ip-address.config 2>/dev/null | grep "^[0-9]" | head -1 | cut -d: -f1 | tr -d ' ')
+PRINTER_IP=$(grep -i "printer" software/metadata/ip-address.config 2> /dev/null | grep "^[0-9]" | head -1 | cut -d: -f1 | tr -d ' ')
 
 if [ -n "$PRINTER_IP" ]; then
   echo ">> Setting up printer $PRINTER_NAME at $PRINTER_IP on Windows via PowerShell"

@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-21T02:51:53.278Z
+# Generated: 2026-04-21T03:08:34.223Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -6539,86 +6539,43 @@ alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get 
 fi
 ################################################################################
 # ---- end advanced profile ----
-################################################################################link target $(readlink -f "$node_path")"
-      fi
-    fi
-  fi
+########################################################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_make() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+|__makefile_targets__
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
 }
-
-# lazy wrapper: activates node on first use if not already available, then delegates to the real binary.
-function node() {
-  if ! type -P node &> /dev/null; then
-    activate_node
-  fi
-  command node "$@"
-}
-
-# checks if a script name exists in ./package.json (excludes built-in npm subcommands)
-function _has_pkg_script() {
-  case "$1" in
-  access | adduser | audit | bugs | cache | ci | completion | config | dedupe | deprecate | diff | dist-tag | docs | doctor | edit | exec | explain | explore | find-dupes | fund | get | help | hook | init | install | install-ci-test | install-test | link | ll | login | logout | ls | org | outdated | owner | pack | ping | pkg | prefix | profile | prune | publish | query | rebuild | repo | restart | root | run | sbom | search | set | shrinkwrap | star | stars | start | stop | team | test | token | uninstall | unpublish | unstar | update | version | view | whoami) return 1 ;;
-  esac
-  [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)" 2> /dev/null
-}
-
-# wraps npm so bare subcommand names run as `npm run <name>`
-function npm() {
-  if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
-    command npm run "$@"
-  else
-    command npm "$@"
-  fi
-}
-
-# wraps yarn so bare subcommand names run as `yarn run <name>`, falls back to npm
-function yarn() {
-  if type -P yarn &> /dev/null && command yarn --version &> /dev/null; then
-    if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
-      command yarn run "$@"
-    else
-      command yarn "$@"
-    fi
-  else
-    npm "$@"
-  fi
-}
-
-function renpm() {
-  rm -rf node_modules
-  if [ -f yarn.lock ]; then
-    yarn install
-  elif [ -f package-lock.json ]; then
-    npm ci
-  else
-    npm install
-  fi
-}
-# SOURCE_END software/scripts/bash-command-wrappers.profile.bash
-################################################################################
-# ---- OS-specific Tweaks (registerPlatformTweaks) ----
-################################################################################
-
-# BEGIN Arch Linux OS-specific Tweaks
-# Only Arch Linux alias
-
-# set brightness via ddc/ci (for external monitor)
-# more info here - https://moverest.xyz/blog/control-display-with-ddc-ci/
-alias set-brightness='sudo modprobe i2c-dev; sudo ddcutil setvcp 10'
-alias brightness='set-brightness'
-
-# override steamos prompt and properly use PS1 prompt
-PROMPT_COMMAND=""
-# END Arch Linux OS-specific Tweaks
-
-# BEGIN Ubuntu OS-specific Tweaks
-# update: OS package manager update/upgrade only
-alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove -y'
-# END Ubuntu OS-specific Tweaks
-
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_make make 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_make make
 fi
+# END make Spec Autocomplete
+
+# BEGIN docker Spec Autocomplete
 ################################################################################
-# ---- end advanced profile ----
-################################################################################,--quiet
+# docker (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_docker() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+attach|-d,--detach-keys,-n,--no-stdin,-s,--sig-proxy
+commit|-a,--author,-t,-c,--change,-m,--message,-p,--pause
+cp|-a,--archive,-f,--follow-link,-q,--quiet
+create|-a,--add-host,--annotation,--attach,-b,--blkio-weight,--blkio-weight-device,-c,--cap-add,--cap-drop,--cgroup-parent,--cgroupns,--cidfile,--cpu-period,--cpu-quota,--cpu-rt-period,--cpu-rt-runtime,--cpu-shares,--cpus,--cpuset-cpus,--cpuset-mems,-d,--device,--device-cgroup-rule,--device-read-bps,--device-read-iops,--device-write-bps,--device-write-iops,--disable-content-trust,--dns,--dns-option,--dns-search,--domainname,-e,--entrypoint,--env,--env-file,--expose,-g,--gpus,--group-add,-h,--health-cmd,--health-interval,--health-retries,--health-start-interval,--health-start-period,-r,--health-timeout,--help,--hostname,-i,--init,--interactive,--ip,--ipc,--isolation,-k,--kernel-memory,-l,--label,--label-file,--link,--link-local-ip,--log-driver,--log-opt,-m,--mac-address,--memory,--memory-reservation,--memory-swap,--memory-swappiness,--mount,-n,--name,--network,--network-alias,--no-healthcheck,-o,--oom-kill-disable,--oom-score-adj,-p,--pid,--pids-limit,--platform,--privileged,--publish,--publish-all,--pull,-q,--quiet,--read-only,--restart,--rm,--runtime,-s,--security-opt,--shm-size,--stop-signal,--stop-timeout,--storage-opt,--sysctl,-t,--tmpfs,--tty,-u,--ulimit,--user,--userns,--uts,-v,--volume,--volume-driver,--volumes-from,-w,--workdir
+events|-f,--filter,--format,-s,--since,-u,--until
+export|-o,--output
+history|-f,--format,-h,--human,-n,--no-trunc,-p,--platform,-q,--quiet
 import|-c,--change,-m,--message,-p,--platform
 inspect|-f,--format,-s,--size,-t,--type
 kill|-s,--signal
