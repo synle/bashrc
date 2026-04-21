@@ -1,11 +1,23 @@
-/** Sets up the home network printer at 192.168.1.11 with Generic PostScript driver (macOS and Windows). */
+/** Sets up the home network printer with Generic PostScript driver (macOS and Windows). Reads printer IP from ip-address.config. */
 async function doWork() {
   /** @type {string} */
-  const PRINTER_IP = "192.168.1.11";
+  const ipConfig = await readText`software/metadata/ip-address.config`;
+
+  /** @type {string|undefined} */
+  const printerLine = ipConfig.split("\n").find((line) => /printer/i.test(line) && /^\d/.test(line.trim()));
+  if (!printerLine) {
+    log(">> Skipped printer setup: no printer entry found in ip-address.config");
+    return;
+  }
+
+  /** @type {string} */
+  const PRINTER_IP = printerLine.split(/[\s:,|]/)[0].trim();
   /** @type {string} */
   const PRINTER_NAME = "SyHousePrinter";
   /** @type {string} */
   const PRINTER_DESCRIPTION = "Sy House Printer";
+
+  log(`>> Printer IP resolved from ip-address.config: ${PRINTER_IP}`);
 
   if (is_os_mac) {
     log(">> Setting up printer on macOS via CUPS");
