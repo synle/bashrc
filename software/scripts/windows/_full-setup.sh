@@ -8,6 +8,12 @@ echo ">> Begin setting up dependencies/windows/deps.sh"
 sudo -v
 
 ################################################################################
+# ---- PowerShell Remote Sign Permission ----
+################################################################################
+echo '>> Setting up PowerShell Remote Sign Permission'
+powershell.exe -command "Set-Executionpolicy RemoteSigned -Scope CurrentUser"
+
+################################################################################
 # ---- Drive Symlinks ----
 ################################################################################
 WSL_DRIVES="c d e f g h"
