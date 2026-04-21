@@ -157,10 +157,37 @@ async function _doSettingsWork(targetDir) {
   await writeJson(targetPath, merged);
 }
 
+////// Commands (Custom Slash Commands) //////
+
+/**
+ * Deploys custom slash command .md files from the repo to ~/.claude/commands/.
+ * Each .md file becomes a user-level /command-name available across all projects.
+ * @param {string} targetDir - Path to the ~/.claude directory.
+ */
+async function _doCommandsWork(targetDir) {
+  const commandsDir = path.join(targetDir, "commands");
+  const sourceDir = path.join(__dirname, "claude-commands");
+
+  log(">> Claude Code Commands:", commandsDir);
+
+  fs.mkdirSync(commandsDir, { recursive: true });
+
+  /** @type {string[]} List of .md command files in the source directory. */
+  const files = fs.readdirSync(sourceDir).filter((f) => f.endsWith(".md"));
+
+  for (const file of files) {
+    const src = path.join(sourceDir, file);
+    const dest = path.join(commandsDir, file);
+    await backupConfigFile(dest);
+    fs.writeFileSync(dest, fs.readFileSync(src, "utf-8"));
+    log("   Deployed:", file);
+  }
+}
+
 ////// Main Entry Point //////
 
 /**
- * Orchestrates all Claude Code setup: settings and keybindings.
+ * Orchestrates all Claude Code setup: settings, keybindings, and commands.
  */
 async function doWork() {
   const targetDir = path.join(BASE_HOMEDIR_LINUX, ".claude");
@@ -174,4 +201,5 @@ async function doWork() {
 
   await _doSettingsWork(targetDir);
   await _doKeysWork(targetDir);
+  await _doCommandsWork(targetDir);
 }
