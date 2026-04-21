@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-21T16:51:54.401Z
+# Generated: 2026-04-21T21:42:28.954Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -2733,7 +2733,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | ff2e41cc4aeb4b5c35da64f84577f533 | 27.7 KB | 2026-04-21
+# software/scripts/bash-file-utils.profile.bash | 28b843cee6ec09e4b2f6280666251a7e | 38.3 KB | 2026-04-21
 ################################################################################
 # ---- File Utilities ----
 #
@@ -2757,6 +2757,10 @@ fi # end interactive shell guard
 #
 # --- File Operations ---
 # dedup   — Scan for duplicates by MD5+size, move extras to _recycleBin.
+#
+# --- Text Pack/Unpack ---
+# pack_text   — Bundle text files into a packed file (default: .tar.gz)
+# unpack_text — Extract files from a packed text file or archive
 #
 # Node.js logic runs via inline heredocs. Bash wrappers handle arg
 # validation and defaults, then pipe shared helpers + function code into node.
@@ -3442,6 +3446,335 @@ console.log('Done in ' + fmtDuration(duration));
 console.log('  Finished at ' + fmtNow());
 DEDUP_NODE
   } | DEDUP_PATH="$abs_target" DEDUP_RECURSIVE="$recursive" DEDUP_ACROSS="$across_folders" node
+}
+
+################################################################################
+# ---- Text Pack/Unpack ----
+################################################################################
+# pack_text: bundle text files from a directory into a single packed file (default: .tar.gz)
+function pack_text() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "pack_text: bundle text files from a directory into a single packed file
+  Usage: pack_text [src_dir=.] [output_file] [--raw|--zip|--tar]
+  Modes:
+    --tar   compress output as .tar.gz (default)
+    --zip   compress output as .zip
+    --raw   no compression, plain text (stdout if no output_file)
+  Skips .git, node_modules, .build, and binary files.
+  Trims leading/trailing blank lines from each file.
+  Examples:
+    pack_text                              # pack cwd -> /tmp/<dirname>.pack.tar.gz
+    pack_text ~/project                    # pack project -> /tmp/project.pack.tar.gz
+    pack_text . output.tar.gz              # pack cwd -> output.tar.gz
+    pack_text . --raw                      # pack cwd -> stdout (plain text)
+    pack_text . output.txt --raw           # pack cwd -> output.txt (plain text)
+    pack_text . output.zip --zip           # pack cwd -> output.zip"
+    return
+  fi
+
+  local mode="tar"
+  local positional=()
+  for arg in "$@"; do
+    case "$arg" in
+    --raw | --plain) mode="raw" ;;
+    --zip) mode="zip" ;;
+    --tar) mode="tar" ;;
+    *) positional+=("$arg") ;;
+    esac
+  done
+
+  local src="${positional[0]:-.}"
+  local output="${positional[1]:-}"
+
+  if [ ! -d "$src" ]; then
+    echo "pack_text: directory not found: $src"
+    return 1
+  fi
+
+  local abs_src
+  abs_src=$(cd "$src" && command pwd)
+  local dir_name
+  dir_name=$(basename "$abs_src")
+
+  # Resolve output to absolute path if relative
+  if [ -n "$output" ] && [[ "$output" != /* ]]; then
+    output="$(command pwd)/$output"
+  fi
+
+  # Auto-generate output path if not specified (except raw mode -> stdout)
+  if [ -z "$output" ]; then
+    case "$mode" in
+    tar) output="/tmp/${dir_name}.pack.tar.gz" ;;
+    zip) output="/tmp/${dir_name}.pack.zip" ;;
+    esac
+  fi
+
+  # Step 1: Generate packed text content via node
+  local content_name="${dir_name}.pack.txt"
+  local tmp_packed="/tmp/${content_name}"
+  rm -f "$tmp_packed"
+
+  {
+    cat << 'PACK_TEXT_NODE'
+/** Walks directory and bundles text files with pack markers. */
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+const srcDir = fs.realpathSync(process.env.PACK_SRC);
+const outputFile = process.env.PACK_OUTPUT;
+
+/** Checks if a directory is inside a git work tree. */
+function isGitRepo(dir) {
+  try {
+    execSync('git rev-parse --is-inside-work-tree', { cwd: dir, stdio: 'pipe' });
+    return true;
+  } catch { return false; }
+}
+
+/** Returns tracked file paths (absolute) via git ls-files. */
+function gitFiles(dir) {
+  const out = execSync('git ls-files', { cwd: dir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+  return out.split('\n').filter(Boolean).map(f => path.join(dir, f)).sort();
+}
+
+/** Directories to skip during non-git walk. */
+const SKIP_DIRS = new Set([
+  '.build', '.cache', '.DS_Store', '.git', '.gradle', '.hg', '.idea',
+  '.mypy_cache', '.next', '.nuxt', '.parcel-cache', '.pytest_cache',
+  '.sass-cache', '.svn', '.tox', '.turbo', '.uv', '.venv', '.yarn',
+  '__pycache__', '_recycleBin', 'bower_components', 'build', 'coverage',
+  'cov', 'dist', 'htmlcov', 'node_modules', 'out', 'target', 'vendor',
+]);
+
+/** Directory name prefixes to skip during non-git walk. */
+const SKIP_DIR_PREFIXES = ['.ruff_'];
+
+/** Binary file extensions to skip (text-only packing). */
+const BINARY_EXTS = new Set([
+  '.png','.jpg','.jpeg','.gif','.bmp','.webp','.ico','.svg','.tiff',
+  '.mp4','.mkv','.avi','.mov','.wmv','.flv','.webm',
+  '.mp3','.wav','.flac','.aac','.ogg','.wma',
+  '.zip','.tar','.gz','.bz2','.xz','.7z','.rar','.dmg','.iso','.tgz',
+  '.pdf','.doc','.docx','.xls','.xlsx','.ppt','.pptx',
+  '.exe','.dll','.so','.dylib','.bin','.dat','.db','.sqlite',
+  '.woff','.woff2','.ttf','.eot','.otf',
+  '.class','.o','.pyc','.pyo','.wasm',
+  '.pack','.idx','.bitmap',
+]);
+
+/** Recursively collects text file paths, skipping ignored dirs and binary extensions. */
+function walk(dir) {
+  let files = [];
+  try {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      if (entry.isDirectory() && SKIP_DIR_PREFIXES.some(p => entry.name.startsWith(p))) continue;
+      const fp = path.join(dir, entry.name);
+      if (entry.isDirectory()) files = files.concat(walk(fp));
+      else if (entry.isFile() && !BINARY_EXTS.has(path.extname(fp).toLowerCase())) files.push(fp);
+    }
+  } catch {}
+  return files.sort();
+}
+
+/** Trims leading and trailing blank lines from content, preserving internal structure. */
+function trimBlankLines(str) {
+  const lines = str.split('\n');
+  while (lines.length && lines[0].trim() === '') lines.shift();
+  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+  return lines.join('\n');
+}
+
+/** Collect files: git repo uses tracked files, otherwise manual walk with skip list. */
+let files;
+if (isGitRepo(srcDir)) {
+  files = gitFiles(srcDir).filter(f => !BINARY_EXTS.has(path.extname(f).toLowerCase()));
+  console.error('pack_text: git repo detected, using tracked files');
+} else {
+  files = walk(srcDir);
+}
+
+let output = '';
+let count = 0;
+
+for (const file of files) {
+  const rel = path.relative(srcDir, file);
+  try {
+    const raw = fs.readFileSync(file, 'utf8');
+    const content = trimBlankLines(raw);
+    if (content.length === 0) continue;
+    output += '===== PACK_FILE_BEGIN: ' + rel + ' =====\n';
+    output += content + '\n';
+    output += '===== PACK_FILE_END: ' + rel + ' =====\n';
+    count++;
+  } catch {
+    console.error('  SKIP: ' + rel + ' (unreadable)');
+  }
+}
+
+if (count === 0) {
+  console.error('pack_text: no text files found in ' + srcDir);
+  process.exit(1);
+}
+
+fs.writeFileSync(outputFile, output);
+console.error('pack_text: packed ' + count + ' files from ' + srcDir);
+PACK_TEXT_NODE
+  } | PACK_SRC="$abs_src" PACK_OUTPUT="$tmp_packed" node
+
+  if [ ! -f "$tmp_packed" ]; then
+    echo "pack_text: failed to generate packed content"
+    return 1
+  fi
+
+  # Step 2: Compress or output based on mode
+  case "$mode" in
+  tar)
+    tar -czf "$output" -C /tmp "$content_name"
+    rm -f "$tmp_packed"
+    echo "pack_text: $output"
+    ;;
+  zip)
+    command zip -qj "$output" "$tmp_packed"
+    rm -f "$tmp_packed"
+    echo "pack_text: $output"
+    ;;
+  raw)
+    if [ -n "$output" ]; then
+      mv "$tmp_packed" "$output"
+      echo "pack_text: $output"
+    else
+      cat "$tmp_packed"
+      rm -f "$tmp_packed"
+    fi
+    ;;
+  esac
+}
+
+# unpack_text: extract files from a packed text file or archive into a directory
+function unpack_text() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "unpack_text: extract files from a packed text file into a directory
+  Usage: unpack_text <input_file> [dest_dir=.]
+  Supports .tar.gz, .tgz, .tar, .zip archives (extracts to temp dir first).
+  Plain text files with pack markers are processed directly.
+  Examples:
+    unpack_text packed.tar.gz                  # extract to current dir
+    unpack_text packed.zip ~/restore           # extract to ~/restore
+    unpack_text packed.txt ./output            # plain text, extract to ./output"
+    return
+  fi
+
+  local input="${1:?Usage: unpack_text <input_file> [dest_dir=.]}"
+  local dest="${2:-.}"
+
+  if [ ! -f "$input" ]; then
+    echo "unpack_text: file not found: $input"
+    return 1
+  fi
+
+  # Resolve input to absolute path
+  local abs_input
+  abs_input=$(cd "$(dirname "$input")" && echo "$(command pwd)/$(basename "$input")")
+
+  # Create dest if needed and resolve
+  mkdir -p "$dest"
+  local abs_dest
+  abs_dest=$(cd "$dest" && command pwd)
+
+  # Step 1: If archive, extract to temp dir and find the packed text file inside
+  local packed_file="$abs_input"
+  local tmp_extract=""
+
+  case "$abs_input" in
+  *.tar.gz | *.tgz | *.tar | *.zip)
+    tmp_extract="/tmp/_unpack_text_$(command date +%s)_$$"
+    mkdir -p "$tmp_extract"
+    ;;
+  esac
+
+  if [ -n "$tmp_extract" ]; then
+    case "$abs_input" in
+    *.tar.gz | *.tgz) tar -xzf "$abs_input" -C "$tmp_extract" ;;
+    *.tar) tar -xf "$abs_input" -C "$tmp_extract" ;;
+    *.zip) command unzip -qo "$abs_input" -d "$tmp_extract" ;;
+    esac
+
+    packed_file=$(command grep -rl "===== PACK_FILE_BEGIN:" "$tmp_extract" 2> /dev/null | head -1)
+    if [ -z "$packed_file" ]; then
+      echo "unpack_text: no packed text file found inside archive"
+      rm -rf "$tmp_extract"
+      return 1
+    fi
+    echo "unpack_text: extracted archive, found $(basename "$packed_file")"
+  fi
+
+  # Step 2: Parse packed text file and extract files via node
+  {
+    cat << 'UNPACK_TEXT_NODE'
+/** Parses packed text markers and extracts files to destination directory. */
+const fs = require('fs');
+const path = require('path');
+
+const inputFile = process.env.UNPACK_INPUT;
+const destDir = process.env.UNPACK_DEST;
+
+const BEGIN = '===== PACK_FILE_BEGIN: ';
+const END = '===== PACK_FILE_END: ';
+const SUFFIX = ' =====';
+
+const packed = fs.readFileSync(inputFile, 'utf8');
+let count = 0;
+let pos = 0;
+
+while (pos < packed.length) {
+  /** Find next BEGIN marker. */
+  const bIdx = packed.indexOf(BEGIN, pos);
+  if (bIdx === -1) break;
+
+  const bLineEnd = packed.indexOf('\n', bIdx);
+  if (bLineEnd === -1) break;
+
+  /** Extract relative file path from marker line. */
+  const markerLine = packed.slice(bIdx, bLineEnd);
+  const filePath = markerLine.slice(BEGIN.length, markerLine.length - SUFFIX.length);
+
+  const contentStart = bLineEnd + 1;
+  const endMarker = END + filePath + SUFFIX;
+
+  /** Find END marker (preceded by newline). */
+  const eIdx = packed.indexOf('\n' + endMarker, contentStart);
+  if (eIdx === -1) {
+    console.error('  WARN: no END marker for ' + filePath + ', skipping');
+    pos = contentStart;
+    continue;
+  }
+
+  /** Extract file content between markers (includes trailing newline). */
+  const fileContent = packed.slice(contentStart, eIdx + 1);
+  const destPath = path.join(destDir, filePath);
+
+  try {
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.writeFileSync(destPath, fileContent);
+    console.log('  EXTRACT: ' + filePath);
+    count++;
+  } catch (e) {
+    console.error('  FAIL: ' + filePath + ': ' + e.message);
+  }
+
+  pos = eIdx + 1 + endMarker.length + 1;
+}
+
+console.log('unpack_text: extracted ' + count + ' files to ' + destDir);
+UNPACK_TEXT_NODE
+  } | UNPACK_INPUT="$packed_file" UNPACK_DEST="$abs_dest" node
+
+  # Clean up temp extraction dir
+  if [ -n "$tmp_extract" ]; then
+    rm -rf "$tmp_extract"
+  fi
 }
 # SOURCE_END software/scripts/bash-file-utils.profile.bash
 # SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
@@ -5700,259 +6033,6 @@ complete -o filenames -F __spec_complete_git git
 fi
 # END git Spec Autocomplete
 
-# BEGIN brew Spec Autocomplete
-################################################################################
-# brew (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_brew() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-install|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--quiet,-q,--overwrite,--dry-run,--HEAD,--fetch-HEAD,--keep-tmp,--build-from-source,-s,--force-bottle,--include-test,--build-bottle,--bottle-arch,--ignore-dependencies,--only-dependencies,--cc,--appdir,--no-binaries,--language,--no-quarantine,--adopt,--require-sha,--audio-unit-plugin-dir,--vst-plugin-dir,--vst3-plugin-dir,--screen-saver-dir
-uninstall|--cask,--formula,--force,-f,--zap,--ignore-dependencies
-reinstall|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--no-quarantine,--adopt,--require-sha
-upgrade|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--dry-run,--greedy,--greedy-latest,--greedy-auto-updates,--no-quarantine,--fetch-HEAD
-update|--merge,--auto-update,--force,-f,--verbose,-v,--debug,-d,--quiet,-q
-search|--cask,--formula,--desc,--eval-all,--pull-request,--open,--closed
-info|--cask,--formula,--json,--installed,--eval-all,--all,--verbose,-v,--analytics,--days,--category
-list|--cask,--formula,--full-name,--versions,--multiple,--pinned,-1,-l,-r,-t
-services|list,start,stop,restart,run,cleanup,info
-services start|--all,--file
-services stop|--all
-services restart|--all
-tap|--force-auto-update,--custom-remote,--repair,--eval-all,--force
-untap|--force
-cleanup|--prune,--dry-run,-n,-s,--scrub
-doctor|--list-checks,--audit-debug,--verbose,-v,--debug,-d
-deps|--tree,--all,--installed,--eval-all,--for-each,--include-build,--include-optional,--include-test,--skip-recommended,--union,--cask,--formula,-n,-1
-uses|--installed,--eval-all,--include-build,--include-optional,--include-test,--skip-recommended,--cask,--formula,--recursive
-outdated|--cask,--formula,--json,--fetch-HEAD,--greedy,--greedy-latest,--greedy-auto-updates,--verbose,-v,--quiet,-q
-pin|--formula
-unpin|--formula
-link|--overwrite,--dry-run,-n,--force,-f,--HEAD
-unlink|--dry-run,-n
-autoremove|--dry-run,-n
-leaves|--installed-on-request,--installed-as-dependency
-log|--max-count,-n,--oneline,-1
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_brew brew 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_brew brew
-fi
-# END brew Spec Autocomplete
-
-# BEGIN bun Spec Autocomplete
-################################################################################
-# bun (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_bun() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-add|--dev,-d,--optional,--peer,--exact,-E,--global,-g,--verbose,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress
-build|--outdir,--outfile,--target,--format,--splitting,--minify,--sourcemap,--entry-naming,--chunk-naming,--asset-naming,--external,--loader,--define,--jsx-factory,--jsx-fragment,--tsconfig-override,--public-path,--root,--compile
-create|--force,-f,--no-install,--no-git,--open,--template,-t
-init|-y,--yes,--force,-f,--open
-install|--frozen-lockfile,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress,--verbose,--production,-p,--global,-g,--ignore-scripts,--trust
-link|--save,--no-save,--global,-g,--force,-f
-outdated|--global,-g
-pm|cache,ls,hash,hash-print,hash-string,migrate,trust,untrust,default-trusted
-remove|--global,-g,--save,--verbose,--no-save
-run|--watch,--hot,--smol,--if-present,--silent,--bun,--shell,--filter,--inspect,--inspect-brk,--inspect-wait,--env-file,--cwd,--config,-c,--preload,--print,--eval,-e,__npm_scripts__
-test|--watch,--bail,-b,--timeout,-t,--rerun-each,--only,--todo,--preload,--coverage,--update-snapshots,-u,--env-file,--cwd
-update|--global,-g,--force,-f,--latest,--save,--no-save,--dry-run,--verbose
-upgrade|--canary,--stable,--force,-f,--version
-x|--bun,--silent,--verbose,--install,--no-install,--trust,--packages,-p
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_bun bun 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_bun bun
-fi
-# END bun Spec Autocomplete
-
-# BEGIN cargo Spec Autocomplete
-################################################################################
-# cargo (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_cargo() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-add|__paths__
-bench|--bench,--all-targets,--lib,--bins,--examples,--tests,--benches,--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--message-format,--no-run,--quiet,-q,--verbose,-v
-build|--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--lib,--bins,--examples,--tests,--benches,--all-targets,--message-format,--quiet,-q,--verbose,-v
-check|--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--lib,--bins,--examples,--tests,--benches,--all-targets,--message-format,--quiet,-q,--verbose,-v
-clean|--package,-p,--release,--profile,--target,--doc,--quiet,-q,--verbose,-v
-clippy|--fix,--allow-dirty,--allow-staged,--package,-p,--workspace,--all-targets,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
-doc|--open,--package,-p,--workspace,--no-deps,--document-private-items,--jobs,-j,--release,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
-fetch|--target,--quiet,-q,--verbose,-v
-fix|--package,-p,--workspace,--allow-dirty,--allow-staged,--broken-code,--edition,--edition-idioms,--jobs,-j,--release,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
-fmt|--all,--check,--package,-p,--quiet,-q,--verbose,-v
-init|--lib,--bin,--edition,--vcs,--name,--registry,--quiet,-q,--verbose,-v
-install|--version,--git,--branch,--tag,--rev,--path,--list,--jobs,-j,--force,-f,--features,--all-features,--no-default-features,--root,--quiet,-q,--verbose,-v
-new|--lib,--bin,--edition,--vcs,--name,--registry,--quiet,-q,--verbose,-v
-publish|--dry-run,--token,--index,--registry,--allow-dirty,--no-verify,--jobs,-j,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
-remove|--dev,--build,--package,-p,--quiet,-q,--verbose,-v
-run|--bin,--example,--package,-p,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--message-format,--quiet,-q,--verbose,-v,__cargo_targets__
-test|--test,--bench,--all-targets,--lib,--bins,--examples,--tests,--benches,--doc,--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--no-run,--no-fail-fast,--message-format,--quiet,-q,--verbose,-v
-tree|--invert,-i,--no-dedupe,--duplicates,-d,--package,-p,--workspace,--depth,--features,--all-features,--no-default-features,--target,--quiet,-q,--verbose,-v
-uninstall|--root,--quiet,-q,--verbose,-v
-update|--package,-p,--aggressive,--precise,--workspace,--dry-run,--quiet,-q,--verbose,-v
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_cargo cargo 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_cargo cargo
-fi
-# END cargo Spec Autocomplete
-
-# BEGIN composer Spec Autocomplete
-################################################################################
-# composer (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_composer() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-archive|--format,--dir,--file,--quiet,-q,--verbose,-v,--no-interaction,-n
-check-platform-reqs|--lock,--no-dev,--quiet,-q,--verbose,-v
-clear-cache|--quiet,-q,--verbose,-v
-config|--global,-g,--editor,-e,--auth,-a,--unset,--list,-l,--absolute,--quiet,-q,--verbose,-v
-create-project|--stability,-s,--prefer-source,--prefer-dist,--repository,--dev,--no-dev,--no-scripts,--no-progress,--no-install,--keep-vcs,--quiet,-q,--verbose,-v
-depends|--recursive,-r,--tree,-t,--quiet,-q,--verbose,-v
-dump-autoload|--optimize,-o,--classmap-authoritative,-a,--apcu,--no-dev,--quiet,-q,--verbose,-v
-exec|--list,--quiet,-q,--verbose,-v
-fund|--format,--quiet,-q,--verbose,-v
-global|require,remove,update,install,show
-install|--prefer-source,--prefer-dist,--dry-run,--dev,--no-dev,--no-autoloader,--no-scripts,--no-progress,--optimize-autoloader,-o,--classmap-authoritative,-a,--apcu-autoloader,--ignore-platform-reqs,--quiet,-q,--verbose,-v
-outdated|--all,-a,--direct,-D,--strict,--minor-only,-m,--locked,--no-dev,--format,--quiet,-q,--verbose,-v
-prohibits|--recursive,-r,--tree,-t,--quiet,-q,--verbose,-v
-reinstall|--prefer-source,--prefer-dist,--no-autoloader,--no-scripts,--no-progress,--optimize-autoloader,-o,--quiet,-q,--verbose,-v
-remove|--dev,--dry-run,--no-progress,--no-update,--update-no-dev,--update-with-dependencies,--unused,--quiet,-q,--verbose,-v
-require|--dev,--dry-run,--prefer-source,--prefer-dist,--no-progress,--no-update,--update-no-dev,--update-with-dependencies,--sort-packages,--quiet,-q,--verbose,-v
-run-script|--timeout,--dev,--no-dev,--list,--quiet,-q,--verbose,-v,__composer_scripts__
-show|--all,-a,--installed,-i,--locked,--platform,-p,--self,-s,--tree,-t,--latest,-l,--outdated,-o,--direct,-D,--strict,--format,--no-dev,--quiet,-q,--verbose,-v
-status|--quiet,-q,--verbose,-v
-suggests|--by-package,--by-suggestion,--all,--list,--no-dev,--quiet,-q,--verbose,-v
-update|--with,--prefer-source,--prefer-dist,--dry-run,--dev,--no-dev,--lock,--no-autoloader,--no-scripts,--no-progress,--optimize-autoloader,-o,--root-reqs,--quiet,-q,--verbose,-v
-validate|--no-check-all,--no-check-lock,--no-check-publish,--with-dependencies,--strict,--quiet,-q,--verbose,-v
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_composer composer 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_composer composer
-fi
-# END composer Spec Autocomplete
-
-# BEGIN deno Spec Autocomplete
-################################################################################
-# deno (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_deno() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-bench|--watch,--no-clear-screen,--filter,--ignore,--json,--no-run,--config,-c,--no-config,--import-map,--no-lock,--lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write
-cache|--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-check|--all,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-clean
-compile|--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--output,-o,--target,--include
-completions|bash,zsh,fish,powershell
-coverage|--ignore,--include,--output,--lcov,--html,--detailed
-doc|--json,--html,--name,--category,--lint,--filter
-eval|--ext,-T,--print,-p,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-fmt|--check,--config,-c,--ext,--ignore,--no-config,--options-indent-width,--options-line-width,--options-prose-wrap,--options-single-quote,--options-use-tabs,--watch,--no-clear-screen,--unstable
-info|--json,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
-init|--lib,--serve
-install|--global,-g,--name,-n,--root,--force,-f,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--entrypoint
-jupyter|--install,--kernel,--conn
-lint|--fix,--config,-c,--ignore,--json,--no-config,--rules,--rules-exclude,--rules-include,--rules-tags,--watch,--no-clear-screen,--compact
-lsp
-publish|--token,--config,-c,--no-config,--dry-run,--allow-slow-types,--allow-dirty,--no-provenance
-repl|--eval,--eval-file,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write
-run|--watch,--watch-exclude,--watch-hmr,--no-clear-screen,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write,--inspect,--inspect-brk,--inspect-wait,--frozen,--cached-only,--env-file
-serve|--port,--host,--watch,--watch-exclude,--watch-hmr,--no-clear-screen,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--parallel
-task|--config,-c,--cwd,--filter,--eval,--recursive
-test|--watch,--no-clear-screen,--doc,--fail-fast,--filter,--ignore,--jobs,-j,--junit-path,--no-run,--parallel,--reporter,--shuffle,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--coverage,--clean
-types|--unstable
-uninstall|--global,-g,--name,-n,--root
-upgrade|--canary,--dry-run,--force,-f,--output,--version,-V
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_deno deno 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_deno deno
-fi
-# END deno Spec Autocomplete
-
-# BEGIN fnm Spec Autocomplete
-################################################################################
-# fnm (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_fnm() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-install|--lts,--latest,--progress,--arch,--log-level
-use|--install-if-missing,--silent-if-current,--log-level
-list
-list-remote|--lts,--sort,--filter,--log-level
-ls
-ls-remote|--lts,--sort,--filter,--log-level
-default|--log-level
-alias|--log-level
-unalias|--log-level
-current|--log-level
-env|--shell,--use-on-cd,--log-level,--corepack-enabled,--resolve-engines,--version-file-strategy,--multi
-exec|--using,--using-file,--log-level
-uninstall|--log-level
-completions|--shell,--log-level
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_fnm fnm 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_fnm fnm
-fi
-# END fnm Spec Autocomplete
-
 # BEGIN n Spec Autocomplete
 ################################################################################
 # n (spec-based autocomplete)
@@ -6162,47 +6242,6 @@ complete -o filenames -F __spec_complete_npx npx
 fi
 # END npx Spec Autocomplete
 
-# BEGIN uv Spec Autocomplete
-################################################################################
-# uv (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_uv() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-add|--dev,--optional,--group,--requirements,--editable,--raw-sources,--rev,--tag,--branch,--no-sync,--frozen,--locked,--extra,--all-extras,--no-extra,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-build|--sdist,--wheel,--out-dir,-o,--python,-p,--config-setting,-C,--no-build-isolation,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-cache|clean,dir,prune
-export|--format,--output-file,-o,--all-extras,--extra,--no-extra,--frozen,--locked,--no-dev,--no-emit-project,--no-emit-workspace,--quiet,-q,--verbose,-v
-help
-init|--app,--lib,--script,--package,--no-package,--name,--python,-p,--no-readme,--no-pin-python,--vcs,--build-backend,--author-from,--no-workspace,--quiet,-q,--verbose,-v
-lock|--frozen,--locked,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-pip|compile,install,list,show,freeze,check,uninstall,sync,tree
-publish|--token,-t,--username,-u,--password,-p,--publish-url,--trusted-publishing,--keyring-provider,--check-url,--quiet,-q,--verbose,-v
-python|find,install,list,pin,uninstall
-remove|--dev,--optional,--group,--no-sync,--frozen,--locked,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-run|--extra,--all-extras,--no-extra,--with,--with-editable,--with-requirements,--isolated,--no-project,--module,-m,--script,--python,-p,--frozen,--locked,--no-sync,--env-file,--no-env-file,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v,__python_scripts__
-self|update
-sync|--extra,--all-extras,--no-extra,--group,--all-groups,--no-group,--no-dev,--no-install-project,--no-install-workspace,--frozen,--locked,--inexact,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-tool|install,list,run,uninstall,update-shell,dir
-tree|--depth,-d,--prune,--package,--no-dedupe,--invert,--frozen,--locked,--python,-p,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-upgrade|--all
-venv|--python,-p,--prompt,--system-site-packages,--relocatable,--seed,--allow-existing,--exclude-newer,--config-file,--no-config,--cache-dir,--no-cache,--quiet,-q,--verbose,-v
-version|--output-format
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_uv uv 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_uv uv
-fi
-# END uv Spec Autocomplete
-
 # BEGIN y Spec Autocomplete
 ################################################################################
 # y (spec-based autocomplete)
@@ -6229,56 +6268,6 @@ else
 complete -o filenames -F __spec_complete_y y
 fi
 # END y Spec Autocomplete
-
-# BEGIN yarn Spec Autocomplete
-################################################################################
-# yarn (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_yarn() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|__npm_scripts__
-add|--dev,-D,--peer,-P,--optional,-O,--exact,-E,--tilde,-T
-remove|--all,-A
-install|--frozen-lockfile,--force,--production,--ignore-scripts,--check-files
-run|__npm_scripts__
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_yarn yarn 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_yarn yarn
-fi
-# END yarn Spec Autocomplete
-
-# BEGIN gradle Spec Autocomplete
-################################################################################
-# gradle (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_gradle() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|__gradle_tasks__
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_gradle gradle 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_gradle gradle
-fi
-# END gradle Spec Autocomplete
 
 # BEGIN gradlew Spec Autocomplete
 ################################################################################
@@ -6326,154 +6315,6 @@ complete -o filenames -F __spec_complete_make make
 fi
 # END make Spec Autocomplete
 
-# BEGIN docker Spec Autocomplete
-################################################################################
-# docker (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_docker() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-attach|-d,--detach-keys,-n,--no-stdin,-s,--sig-proxy
-commit|-a,--author,-t,-c,--change,-m,--message,-p,--pause
-cp|-a,--archive,-f,--follow-link,-q,--quiet
-create|-a,--add-host,--annotation,--attach,-b,--blkio-weight,--blkio-weight-device,-c,--cap-add,--cap-drop,--cgroup-parent,--cgroupns,--cidfile,--cpu-period,--cpu-quota,--cpu-rt-period,--cpu-rt-runtime,--cpu-shares,--cpus,--cpuset-cpus,--cpuset-mems,-d,--device,--device-cgroup-rule,--device-read-bps,--device-read-iops,--device-write-bps,--device-write-iops,--disable-content-trust,--dns,--dns-option,--dns-search,--domainname,-e,--entrypoint,--env,--env-file,--expose,-g,--gpus,--group-add,-h,--health-cmd,--health-interval,--health-retries,--health-start-interval,--health-start-period,-r,--health-timeout,--help,--hostname,-i,--init,--interactive,--ip,--ipc,--isolation,-k,--kernel-memory,-l,--label,--label-file,--link,--link-local-ip,--log-driver,--log-opt,-m,--mac-address,--memory,--memory-reservation,--memory-swap,--memory-swappiness,--mount,-n,--name,--network,--network-alias,--no-healthcheck,-o,--oom-kill-disable,--oom-score-adj,-p,--pid,--pids-limit,--platform,--privileged,--publish,--publish-all,--pull,-q,--quiet,--read-only,--restart,--rm,--runtime,-s,--security-opt,--shm-size,--stop-signal,--stop-timeout,--storage-opt,--sysctl,-t,--tmpfs,--tty,-u,--ulimit,--user,--userns,--uts,-v,--volume,--volume-driver,--volumes-from,-w,--workdir
-events|-f,--filter,--format,-s,--since,-u,--until
-export|-o,--output
-history|-f,--format,-h,--human,-n,--no-trunc,-p,--platform,-q,--quiet
-import|-c,--change,-m,--message,-p,--platform
-inspect|-f,--format,-s,--size,-t,--type
-kill|-s,--signal
-load|-i,--input,-p,--platform,-q,--quiet
-logs|-d,--details,-f,--follow,-s,--since,-n,--tail,-t,--timestamps,-u,--until
-restart|-s,--signal,-t,--timeout
-rmi|-f,--force,-n,--no-prune
-rm|-f,--force,-l,--link,-v,--volumes
-save|-o,--output,-p,--platform
-start|-a,--attach,-d,--detach-keys,-i,--interactive
-stats|-a,--all,-f,--format,-n,--no-stream,--no-trunc
-stop|-s,--signal,-t,--timeout
-update|-b,--blkio-weight,-c,--cpu-period,--cpu-quota,--cpu-rt-period,--cpu-rt-runtime,--cpu-shares,--cpus,--cpuset-cpus,--cpuset-mems,-m,--memory,--memory-reservation,--memory-swap,-p,--pids-limit,-r,--restart
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_docker docker 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_docker docker
-fi
-# END docker Spec Autocomplete
-
-# BEGIN docker-compose Spec Autocomplete
-################################################################################
-# docker-compose (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_docker-compose() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-up|-d,--detach,--build,--no-build,--no-start,--force-recreate,--no-recreate,--no-deps,--remove-orphans,-V,--renew-anon-volumes,--always-recreate-deps,--timeout,-t,--wait,--wait-timeout,--scale,--no-color,--quiet-pull,--pull,--abort-on-container-exit,--attach-dependencies,--no-attach,--no-log-prefix,--timestamps,--exit-code-from
-down|--rmi,--volumes,-v,--remove-orphans,--timeout,-t
-build|--no-cache,--pull,--push,--force-rm,--memory,-m,--build-arg,--progress,--no-rm,-q,--quiet,--ssh,--with-dependencies
-start
-stop|--timeout,-t
-restart|--timeout,-t,--no-deps
-pause
-unpause
-logs|-f,--follow,-t,--timestamps,--tail,-n,--since,--until,--no-color,--no-log-prefix,--index
-ps|-a,--all,-q,--quiet,--format,--filter,--status,--no-trunc,--orphans
-exec|-d,--detach,-e,--env,-i,--index,-T,--no-TTY,-u,--user,--privileged,-w,--workdir
-run|-d,--detach,-e,--env,-i,--interactive,-T,--no-TTY,-u,--user,--rm,-p,--publish,--name,--entrypoint,--service-ports,--use-aliases,-v,--volume,-w,--workdir,--no-deps,--build,--quiet-pull
-pull|-q,--quiet,--include-deps,--ignore-pull-failures,--ignore-buildable,--no-parallel,--policy
-push|--include-deps,--ignore-push-failures,-q,--quiet
-images|-q,--quiet,--format
-config|-q,--quiet,--services,--volumes,--profiles,--images,--format,--hash,--no-interpolate,--no-normalize,--no-path-resolution,--resolve-image-digests
-rm|-f,--force,-s,--stop,-v,--volumes,-a,--all
-create|--build,--force-recreate,--no-build,--no-recreate,--pull
-kill|-s,--signal,--remove-orphans
-port|--index,--protocol
-top
-events|--json
-cp|--index,-L,--follow-link,-a,--archive
-ls|-a,--all,-q,--quiet,--format,--filter
-watch|--no-up,--quiet,--prune
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_docker-compose docker-compose 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_docker-compose docker-compose
-fi
-# END docker-compose Spec Autocomplete
-
-# BEGIN kubectl Spec Autocomplete
-################################################################################
-# kubectl (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_kubectl() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-get|pods,pod,po,services,svc,deployments,deploy,nodes,node,namespaces,ns,configmaps,cm,secrets,ingress,ing,persistentvolumeclaims,pvc,persistentvolumes,pv,statefulsets,sts,daemonsets,ds,replicasets,rs,jobs,cronjobs,cj,events,ev,endpoints,ep,serviceaccounts,sa,roles,rolebindings,clusterroles,clusterrolebindings,networkpolicies,netpol,storageclasses,sc,all,-o,--output,-w,--watch,-A,--all-namespaces,-l,--selector,--field-selector,--show-labels,--sort-by,--no-headers,-n,--namespace
-describe|pods,pod,po,services,svc,deployments,deploy,nodes,node,namespaces,ns,configmaps,cm,secrets,ingress,ing,persistentvolumeclaims,pvc,statefulsets,sts,daemonsets,ds,replicasets,rs,jobs,cronjobs,cj,-n,--namespace,-l,--selector
-create|deployment,service,configmap,secret,namespace,job,cronjob,role,rolebinding,clusterrole,clusterrolebinding,serviceaccount,quota,ingress,priorityclass,-f,--filename,--dry-run,-o,--output,-n,--namespace
-apply|-f,--filename,-k,--kustomize,-R,--recursive,--dry-run,--force,--prune,-l,--selector,-n,--namespace,--server-side,--field-manager
-delete|pods,pod,po,services,svc,deployments,deploy,namespaces,ns,configmaps,cm,secrets,ingress,ing,persistentvolumeclaims,pvc,statefulsets,sts,daemonsets,ds,replicasets,rs,jobs,cronjobs,cj,-f,--filename,-l,--selector,--all,--force,--grace-period,--cascade,-n,--namespace,--now
-edit|pods,pod,po,services,svc,deployments,deploy,configmaps,cm,secrets,ingress,ing,statefulsets,sts,daemonsets,ds,-n,--namespace,-o,--output
-logs|-f,--follow,-p,--previous,-c,--container,--all-containers,--since,--since-time,--tail,--timestamps,-l,--selector,-n,--namespace,--max-log-requests,--prefix
-exec|-it,-c,--container,-n,--namespace,--stdin,-i,--tty,-t
-port-forward|--address,-n,--namespace
-run|--image,--port,--env,--labels,-l,--command,--restart,--rm,-it,--dry-run,-o,--output,-n,--namespace,--overrides
-expose|deployment,service,replicaset,pod,--port,--target-port,--protocol,--type,--name,-l,--selector,--external-ip,--dry-run,-o,--output,-n,--namespace
-scale|deployment,replicaset,statefulset,--replicas,--current-replicas,--resource-version,-n,--namespace
-rollout|status,history,undo,restart,pause,resume
-rollout status|deployment,statefulset,daemonset,-w,--watch,-n,--namespace
-rollout history|deployment,statefulset,daemonset,--revision,-n,--namespace
-rollout undo|deployment,statefulset,daemonset,--to-revision,-n,--namespace
-rollout restart|deployment,statefulset,daemonset,-n,--namespace
-set|image,resources,env,serviceaccount,selector,subject
-set image|deployment,statefulset,daemonset,-n,--namespace,--all
-top|nodes,node,pods,pod,--containers,--sort-by,-n,--namespace,-l,--selector,-A,--all-namespaces
-config|view,current-context,use-context,set-context,get-contexts,delete-context,set-cluster,get-clusters,delete-cluster,set-credentials,rename-context
-config view|--minify,--flatten,-o,--output,--raw
-config use-context|--namespace
-auth|can-i,whoami,reconcile
-label|pods,nodes,namespaces,deployments,services,--overwrite,--all,-n,--namespace,-l,--selector
-annotate|pods,nodes,namespaces,deployments,services,--overwrite,--all,-n,--namespace,-l,--selector
-taint|nodes,--overwrite,--all
-drain|--force,--grace-period,--ignore-daemonsets,--delete-emptydir-data,--timeout,-l,--selector,--dry-run
-debug|-it,--image,--copy-to,--container,-c,--target,--share-processes,-n,--namespace
-cp|-c,--container,-n,--namespace,--retries
-diff|-f,--filename,-k,--kustomize,-R,--recursive,-n,--namespace
-patch|pods,deployments,services,configmaps,nodes,--type,--patch,-p,-n,--namespace,--dry-run
-replace|-f,--filename,--force,--cascade,--grace-period,-n,--namespace
-wait|-f,--filename,--for,--timeout,-l,--selector,-n,--namespace,-A,--all-namespaces
-cluster-info|dump
-explain|--recursive,--api-version
-api-resources|--namespaced,--verbs,-o,--output,--api-group,--sort-by
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_kubectl kubectl 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_kubectl kubectl
-fi
-# END kubectl Spec Autocomplete
-
 # BEGIN curl Spec Autocomplete
 ################################################################################
 # curl (spec-based autocomplete)
@@ -6496,29 +6337,6 @@ else
 complete -o filenames -F __spec_complete_curl curl
 fi
 # END curl Spec Autocomplete
-
-# BEGIN rsync Spec Autocomplete
-################################################################################
-# rsync (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_rsync() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|-a,--archive,-v,--verbose,-z,--compress,-r,--recursive,-h,--human-readable,-P,--progress,--partial,-n,--dry-run,-e,--rsh,--delete,--delete-before,--delete-during,--delete-after,--delete-excluded,--exclude,--exclude-from,--include,--include-from,--filter,-f,-F,--files-from,-u,--update,-c,--checksum,-l,--links,-L,--copy-links,-H,--hard-links,-p,--perms,-t,--times,-g,--group,-o,--owner,-D,--devices,--specials,-S,--sparse,--preallocate,-W,--whole-file,-x,--one-file-system,-b,--backup,--backup-dir,--suffix,-q,--quiet,--no-motd,-I,--ignore-times,--size-only,--modify-window,-C,--cvs-exclude,--existing,--ignore-existing,--remove-source-files,--max-delete,--max-size,--min-size,--timeout,--contimeout,--list-only,--bwlimit,--info,--debug,--stats,--itemize-changes,-i,--log-file,--log-file-format,--compress-level,--skip-compress,--numeric-ids,--usermap,--groupmap,--chown,--rsync-path,--ssh-args,--temp-dir,-T,--compare-dest,--copy-dest,--link-dest,--chmod,-4,--ipv4,-6,--ipv6,--address,--port,--sockopts,--blocking-io,--outbuf,--8-bit-output,--mkpath,__paths__
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_rsync rsync 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_rsync rsync
-fi
-# END rsync Spec Autocomplete
 
 # BEGIN s Spec Autocomplete
 ################################################################################

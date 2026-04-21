@@ -303,11 +303,7 @@ describe("unpack_text", () => {
     runBash(`pack_text "${srcDir}" "${packedFile}" --raw`);
     fs.mkdirSync(destDir, { recursive: true });
     const tmpScript = `${TMP_DIR}_cwd_runner.sh`;
-    fs.writeFileSync(
-      tmpScript,
-      `#!/usr/bin/env bash\nsource "${PROFILE_BASH}"\ncd "${destDir}"\nunpack_text "${packedFile}"`,
-      "utf-8",
-    );
+    fs.writeFileSync(tmpScript, `#!/usr/bin/env bash\nsource "${PROFILE_BASH}"\ncd "${destDir}"\nunpack_text "${packedFile}"`, "utf-8");
     try {
       execSync(`bash "${tmpScript}" 2>/dev/null`, { encoding: "utf-8", timeout: 30000 });
     } finally {
@@ -346,12 +342,8 @@ describe("pack_text + unpack_text roundtrip", () => {
     runBash(`pack_text "${srcDir}" "${packedFile}" --raw`);
     runBash(`unpack_text "${packedFile}" "${destDir}"`);
 
-    expect(fs.readFileSync(path.join(destDir, "hello.txt"), "utf-8")).toBe(
-      fs.readFileSync(path.join(srcDir, "hello.txt"), "utf-8"),
-    );
-    expect(fs.readFileSync(path.join(destDir, "code.js"), "utf-8")).toBe(
-      fs.readFileSync(path.join(srcDir, "code.js"), "utf-8"),
-    );
+    expect(fs.readFileSync(path.join(destDir, "hello.txt"), "utf-8")).toBe(fs.readFileSync(path.join(srcDir, "hello.txt"), "utf-8"));
+    expect(fs.readFileSync(path.join(destDir, "code.js"), "utf-8")).toBe(fs.readFileSync(path.join(srcDir, "code.js"), "utf-8"));
     expect(fs.readFileSync(path.join(destDir, "sub", "nested.txt"), "utf-8")).toBe(
       fs.readFileSync(path.join(srcDir, "sub", "nested.txt"), "utf-8"),
     );
@@ -362,9 +354,7 @@ describe("pack_text + unpack_text roundtrip", () => {
     runBash(`pack_text "${srcDir}" "${packedFile}" --tar`);
     runBash(`unpack_text "${packedFile}" "${destDir}"`);
 
-    expect(fs.readFileSync(path.join(destDir, "hello.txt"), "utf-8")).toBe(
-      fs.readFileSync(path.join(srcDir, "hello.txt"), "utf-8"),
-    );
+    expect(fs.readFileSync(path.join(destDir, "hello.txt"), "utf-8")).toBe(fs.readFileSync(path.join(srcDir, "hello.txt"), "utf-8"));
     expect(fs.readFileSync(path.join(destDir, "sub", "nested.txt"), "utf-8")).toBe(
       fs.readFileSync(path.join(srcDir, "sub", "nested.txt"), "utf-8"),
     );
@@ -375,9 +365,7 @@ describe("pack_text + unpack_text roundtrip", () => {
     runBash(`pack_text "${srcDir}" "${packedFile}" --zip`);
     runBash(`unpack_text "${packedFile}" "${destDir}"`);
 
-    expect(fs.readFileSync(path.join(destDir, "hello.txt"), "utf-8")).toBe(
-      fs.readFileSync(path.join(srcDir, "hello.txt"), "utf-8"),
-    );
+    expect(fs.readFileSync(path.join(destDir, "hello.txt"), "utf-8")).toBe(fs.readFileSync(path.join(srcDir, "hello.txt"), "utf-8"));
   });
 
   it("should preserve internal blank lines through roundtrip", () => {
@@ -390,13 +378,11 @@ describe("pack_text + unpack_text roundtrip", () => {
   });
 
   it("should handle files with special characters in content", () => {
-    fs.writeFileSync(path.join(srcDir, "special.txt"), 'echo "hello $USER" && echo \'world\'\n');
+    fs.writeFileSync(path.join(srcDir, "special.txt"), "echo \"hello $USER\" && echo 'world'\n");
     const packedFile = path.join(outDir, "packed.txt");
     runBash(`pack_text "${srcDir}" "${packedFile}" --raw`);
     runBash(`unpack_text "${packedFile}" "${destDir}"`);
 
-    expect(fs.readFileSync(path.join(destDir, "special.txt"), "utf-8")).toBe(
-      'echo "hello $USER" && echo \'world\'\n',
-    );
+    expect(fs.readFileSync(path.join(destDir, "special.txt"), "utf-8")).toBe("echo \"hello $USER\" && echo 'world'\n");
   });
 });

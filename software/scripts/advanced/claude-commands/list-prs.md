@@ -13,7 +13,6 @@ List all my open pull requests across all repos.
 
 4. Present as a table with these columns:
    | PR | Repo | Title | Link | CI Status | Approvals | Ready to Merge? |
-
    - PR column: show PR number and branch name on separate lines (e.g. `#123` then `feature-branch` below it)
    - CI Status: passing, failing, or pending
    - Approvals: approved (count), changes requested, or pending review

@@ -742,10 +742,10 @@ function pack_text() {
   local positional=()
   for arg in "$@"; do
     case "$arg" in
-      --raw|--plain) mode="raw" ;;
-      --zip) mode="zip" ;;
-      --tar) mode="tar" ;;
-      *) positional+=("$arg") ;;
+    --raw | --plain) mode="raw" ;;
+    --zip) mode="zip" ;;
+    --tar) mode="tar" ;;
+    *) positional+=("$arg") ;;
     esac
   done
 
@@ -770,8 +770,8 @@ function pack_text() {
   # Auto-generate output path if not specified (except raw mode -> stdout)
   if [ -z "$output" ]; then
     case "$mode" in
-      tar) output="/tmp/${dir_name}.pack.tar.gz" ;;
-      zip) output="/tmp/${dir_name}.pack.zip" ;;
+    tar) output="/tmp/${dir_name}.pack.tar.gz" ;;
+    zip) output="/tmp/${dir_name}.pack.zip" ;;
     esac
   fi
 
@@ -896,25 +896,25 @@ PACK_TEXT_NODE
 
   # Step 2: Compress or output based on mode
   case "$mode" in
-    tar)
-      tar -czf "$output" -C /tmp "$content_name"
-      rm -f "$tmp_packed"
+  tar)
+    tar -czf "$output" -C /tmp "$content_name"
+    rm -f "$tmp_packed"
+    echo "pack_text: $output"
+    ;;
+  zip)
+    command zip -qj "$output" "$tmp_packed"
+    rm -f "$tmp_packed"
+    echo "pack_text: $output"
+    ;;
+  raw)
+    if [ -n "$output" ]; then
+      mv "$tmp_packed" "$output"
       echo "pack_text: $output"
-      ;;
-    zip)
-      command zip -qj "$output" "$tmp_packed"
+    else
+      cat "$tmp_packed"
       rm -f "$tmp_packed"
-      echo "pack_text: $output"
-      ;;
-    raw)
-      if [ -n "$output" ]; then
-        mv "$tmp_packed" "$output"
-        echo "pack_text: $output"
-      else
-        cat "$tmp_packed"
-        rm -f "$tmp_packed"
-      fi
-      ;;
+    fi
+    ;;
   esac
 }
 
@@ -954,20 +954,20 @@ function unpack_text() {
   local tmp_extract=""
 
   case "$abs_input" in
-    *.tar.gz|*.tgz|*.tar|*.zip)
-      tmp_extract="/tmp/_unpack_text_$(command date +%s)_$$"
-      mkdir -p "$tmp_extract"
-      ;;
+  *.tar.gz | *.tgz | *.tar | *.zip)
+    tmp_extract="/tmp/_unpack_text_$(command date +%s)_$$"
+    mkdir -p "$tmp_extract"
+    ;;
   esac
 
   if [ -n "$tmp_extract" ]; then
     case "$abs_input" in
-      *.tar.gz|*.tgz) tar -xzf "$abs_input" -C "$tmp_extract" ;;
-      *.tar) tar -xf "$abs_input" -C "$tmp_extract" ;;
-      *.zip) command unzip -qo "$abs_input" -d "$tmp_extract" ;;
+    *.tar.gz | *.tgz) tar -xzf "$abs_input" -C "$tmp_extract" ;;
+    *.tar) tar -xf "$abs_input" -C "$tmp_extract" ;;
+    *.zip) command unzip -qo "$abs_input" -d "$tmp_extract" ;;
     esac
 
-    packed_file=$(command grep -rl "===== PACK_FILE_BEGIN:" "$tmp_extract" 2>/dev/null | head -1)
+    packed_file=$(command grep -rl "===== PACK_FILE_BEGIN:" "$tmp_extract" 2> /dev/null | head -1)
     if [ -z "$packed_file" ]; then
       echo "unpack_text: no packed text file found inside archive"
       rm -rf "$tmp_extract"
