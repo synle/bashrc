@@ -24,6 +24,10 @@
 # --- File Operations ---
 # dedup   — Scan for duplicates by MD5+size, move extras to _recycleBin.
 #
+# --- Text Pack/Unpack ---
+# pack_text   — Bundle text files into a packed file (default: .tar.gz)
+# unpack_text — Extract files from a packed text file or archive
+#
 # Node.js logic runs via inline heredocs. Bash wrappers handle arg
 # validation and defaults, then pipe shared helpers + function code into node.
 ################################################################################
@@ -708,4 +712,333 @@ console.log('Done in ' + fmtDuration(duration));
 console.log('  Finished at ' + fmtNow());
 DEDUP_NODE
   } | DEDUP_PATH="$abs_target" DEDUP_RECURSIVE="$recursive" DEDUP_ACROSS="$across_folders" node
+}
+
+################################################################################
+# ---- Text Pack/Unpack ----
+################################################################################
+# pack_text: bundle text files from a directory into a single packed file (default: .tar.gz)
+function pack_text() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "pack_text: bundle text files from a directory into a single packed file
+  Usage: pack_text [src_dir=.] [output_file] [--raw|--zip|--tar]
+  Modes:
+    --tar   compress output as .tar.gz (default)
+    --zip   compress output as .zip
+    --raw   no compression, plain text (stdout if no output_file)
+  Skips .git, node_modules, .build, and binary files.
+  Trims leading/trailing blank lines from each file.
+  Examples:
+    pack_text                              # pack cwd -> /tmp/<dirname>.pack.tar.gz
+    pack_text ~/project                    # pack project -> /tmp/project.pack.tar.gz
+    pack_text . output.tar.gz              # pack cwd -> output.tar.gz
+    pack_text . --raw                      # pack cwd -> stdout (plain text)
+    pack_text . output.txt --raw           # pack cwd -> output.txt (plain text)
+    pack_text . output.zip --zip           # pack cwd -> output.zip"
+    return
+  fi
+
+  local mode="tar"
+  local positional=()
+  for arg in "$@"; do
+    case "$arg" in
+      --raw|--plain) mode="raw" ;;
+      --zip) mode="zip" ;;
+      --tar) mode="tar" ;;
+      *) positional+=("$arg") ;;
+    esac
+  done
+
+  local src="${positional[0]:-.}"
+  local output="${positional[1]:-}"
+
+  if [ ! -d "$src" ]; then
+    echo "pack_text: directory not found: $src"
+    return 1
+  fi
+
+  local abs_src
+  abs_src=$(cd "$src" && command pwd)
+  local dir_name
+  dir_name=$(basename "$abs_src")
+
+  # Resolve output to absolute path if relative
+  if [ -n "$output" ] && [[ "$output" != /* ]]; then
+    output="$(command pwd)/$output"
+  fi
+
+  # Auto-generate output path if not specified (except raw mode -> stdout)
+  if [ -z "$output" ]; then
+    case "$mode" in
+      tar) output="/tmp/${dir_name}.pack.tar.gz" ;;
+      zip) output="/tmp/${dir_name}.pack.zip" ;;
+    esac
+  fi
+
+  # Step 1: Generate packed text content via node
+  local content_name="${dir_name}.pack.txt"
+  local tmp_packed="/tmp/${content_name}"
+  rm -f "$tmp_packed"
+
+  {
+    cat << 'PACK_TEXT_NODE'
+/** Walks directory and bundles text files with pack markers. */
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
+
+const srcDir = fs.realpathSync(process.env.PACK_SRC);
+const outputFile = process.env.PACK_OUTPUT;
+
+/** Checks if a directory is inside a git work tree. */
+function isGitRepo(dir) {
+  try {
+    execSync('git rev-parse --is-inside-work-tree', { cwd: dir, stdio: 'pipe' });
+    return true;
+  } catch { return false; }
+}
+
+/** Returns tracked file paths (absolute) via git ls-files. */
+function gitFiles(dir) {
+  const out = execSync('git ls-files', { cwd: dir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+  return out.split('\n').filter(Boolean).map(f => path.join(dir, f)).sort();
+}
+
+/** Directories to skip during non-git walk. */
+const SKIP_DIRS = new Set([
+  '.build', '.cache', '.DS_Store', '.git', '.gradle', '.hg', '.idea',
+  '.mypy_cache', '.next', '.nuxt', '.parcel-cache', '.pytest_cache',
+  '.sass-cache', '.svn', '.tox', '.turbo', '.uv', '.venv', '.yarn',
+  '__pycache__', '_recycleBin', 'bower_components', 'build', 'coverage',
+  'cov', 'dist', 'htmlcov', 'node_modules', 'out', 'target', 'vendor',
+]);
+
+/** Directory name prefixes to skip during non-git walk. */
+const SKIP_DIR_PREFIXES = ['.ruff_'];
+
+/** Binary file extensions to skip (text-only packing). */
+const BINARY_EXTS = new Set([
+  '.png','.jpg','.jpeg','.gif','.bmp','.webp','.ico','.svg','.tiff',
+  '.mp4','.mkv','.avi','.mov','.wmv','.flv','.webm',
+  '.mp3','.wav','.flac','.aac','.ogg','.wma',
+  '.zip','.tar','.gz','.bz2','.xz','.7z','.rar','.dmg','.iso','.tgz',
+  '.pdf','.doc','.docx','.xls','.xlsx','.ppt','.pptx',
+  '.exe','.dll','.so','.dylib','.bin','.dat','.db','.sqlite',
+  '.woff','.woff2','.ttf','.eot','.otf',
+  '.class','.o','.pyc','.pyo','.wasm',
+  '.pack','.idx','.bitmap',
+]);
+
+/** Recursively collects text file paths, skipping ignored dirs and binary extensions. */
+function walk(dir) {
+  let files = [];
+  try {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      if (entry.isDirectory() && SKIP_DIR_PREFIXES.some(p => entry.name.startsWith(p))) continue;
+      const fp = path.join(dir, entry.name);
+      if (entry.isDirectory()) files = files.concat(walk(fp));
+      else if (entry.isFile() && !BINARY_EXTS.has(path.extname(fp).toLowerCase())) files.push(fp);
+    }
+  } catch {}
+  return files.sort();
+}
+
+/** Trims leading and trailing blank lines from content, preserving internal structure. */
+function trimBlankLines(str) {
+  const lines = str.split('\n');
+  while (lines.length && lines[0].trim() === '') lines.shift();
+  while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+  return lines.join('\n');
+}
+
+/** Collect files: git repo uses tracked files, otherwise manual walk with skip list. */
+let files;
+if (isGitRepo(srcDir)) {
+  files = gitFiles(srcDir).filter(f => !BINARY_EXTS.has(path.extname(f).toLowerCase()));
+  console.error('pack_text: git repo detected, using tracked files');
+} else {
+  files = walk(srcDir);
+}
+
+let output = '';
+let count = 0;
+
+for (const file of files) {
+  const rel = path.relative(srcDir, file);
+  try {
+    const raw = fs.readFileSync(file, 'utf8');
+    const content = trimBlankLines(raw);
+    if (content.length === 0) continue;
+    output += '===== PACK_FILE_BEGIN: ' + rel + ' =====\n';
+    output += content + '\n';
+    output += '===== PACK_FILE_END: ' + rel + ' =====\n';
+    count++;
+  } catch {
+    console.error('  SKIP: ' + rel + ' (unreadable)');
+  }
+}
+
+if (count === 0) {
+  console.error('pack_text: no text files found in ' + srcDir);
+  process.exit(1);
+}
+
+fs.writeFileSync(outputFile, output);
+console.error('pack_text: packed ' + count + ' files from ' + srcDir);
+PACK_TEXT_NODE
+  } | PACK_SRC="$abs_src" PACK_OUTPUT="$tmp_packed" node
+
+  if [ ! -f "$tmp_packed" ]; then
+    echo "pack_text: failed to generate packed content"
+    return 1
+  fi
+
+  # Step 2: Compress or output based on mode
+  case "$mode" in
+    tar)
+      tar -czf "$output" -C /tmp "$content_name"
+      rm -f "$tmp_packed"
+      echo "pack_text: $output"
+      ;;
+    zip)
+      command zip -qj "$output" "$tmp_packed"
+      rm -f "$tmp_packed"
+      echo "pack_text: $output"
+      ;;
+    raw)
+      if [ -n "$output" ]; then
+        mv "$tmp_packed" "$output"
+        echo "pack_text: $output"
+      else
+        cat "$tmp_packed"
+        rm -f "$tmp_packed"
+      fi
+      ;;
+  esac
+}
+
+# unpack_text: extract files from a packed text file or archive into a directory
+function unpack_text() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "unpack_text: extract files from a packed text file into a directory
+  Usage: unpack_text <input_file> [dest_dir=.]
+  Supports .tar.gz, .tgz, .tar, .zip archives (extracts to temp dir first).
+  Plain text files with pack markers are processed directly.
+  Examples:
+    unpack_text packed.tar.gz                  # extract to current dir
+    unpack_text packed.zip ~/restore           # extract to ~/restore
+    unpack_text packed.txt ./output            # plain text, extract to ./output"
+    return
+  fi
+
+  local input="${1:?Usage: unpack_text <input_file> [dest_dir=.]}"
+  local dest="${2:-.}"
+
+  if [ ! -f "$input" ]; then
+    echo "unpack_text: file not found: $input"
+    return 1
+  fi
+
+  # Resolve input to absolute path
+  local abs_input
+  abs_input=$(cd "$(dirname "$input")" && echo "$(command pwd)/$(basename "$input")")
+
+  # Create dest if needed and resolve
+  mkdir -p "$dest"
+  local abs_dest
+  abs_dest=$(cd "$dest" && command pwd)
+
+  # Step 1: If archive, extract to temp dir and find the packed text file inside
+  local packed_file="$abs_input"
+  local tmp_extract=""
+
+  case "$abs_input" in
+    *.tar.gz|*.tgz|*.tar|*.zip)
+      tmp_extract="/tmp/_unpack_text_$(command date +%s)_$$"
+      mkdir -p "$tmp_extract"
+      ;;
+  esac
+
+  if [ -n "$tmp_extract" ]; then
+    case "$abs_input" in
+      *.tar.gz|*.tgz) tar -xzf "$abs_input" -C "$tmp_extract" ;;
+      *.tar) tar -xf "$abs_input" -C "$tmp_extract" ;;
+      *.zip) command unzip -qo "$abs_input" -d "$tmp_extract" ;;
+    esac
+
+    packed_file=$(command grep -rl "===== PACK_FILE_BEGIN:" "$tmp_extract" 2>/dev/null | head -1)
+    if [ -z "$packed_file" ]; then
+      echo "unpack_text: no packed text file found inside archive"
+      rm -rf "$tmp_extract"
+      return 1
+    fi
+    echo "unpack_text: extracted archive, found $(basename "$packed_file")"
+  fi
+
+  # Step 2: Parse packed text file and extract files via node
+  {
+    cat << 'UNPACK_TEXT_NODE'
+/** Parses packed text markers and extracts files to destination directory. */
+const fs = require('fs');
+const path = require('path');
+
+const inputFile = process.env.UNPACK_INPUT;
+const destDir = process.env.UNPACK_DEST;
+
+const BEGIN = '===== PACK_FILE_BEGIN: ';
+const END = '===== PACK_FILE_END: ';
+const SUFFIX = ' =====';
+
+const packed = fs.readFileSync(inputFile, 'utf8');
+let count = 0;
+let pos = 0;
+
+while (pos < packed.length) {
+  /** Find next BEGIN marker. */
+  const bIdx = packed.indexOf(BEGIN, pos);
+  if (bIdx === -1) break;
+
+  const bLineEnd = packed.indexOf('\n', bIdx);
+  if (bLineEnd === -1) break;
+
+  /** Extract relative file path from marker line. */
+  const markerLine = packed.slice(bIdx, bLineEnd);
+  const filePath = markerLine.slice(BEGIN.length, markerLine.length - SUFFIX.length);
+
+  const contentStart = bLineEnd + 1;
+  const endMarker = END + filePath + SUFFIX;
+
+  /** Find END marker (preceded by newline). */
+  const eIdx = packed.indexOf('\n' + endMarker, contentStart);
+  if (eIdx === -1) {
+    console.error('  WARN: no END marker for ' + filePath + ', skipping');
+    pos = contentStart;
+    continue;
+  }
+
+  /** Extract file content between markers (includes trailing newline). */
+  const fileContent = packed.slice(contentStart, eIdx + 1);
+  const destPath = path.join(destDir, filePath);
+
+  try {
+    fs.mkdirSync(path.dirname(destPath), { recursive: true });
+    fs.writeFileSync(destPath, fileContent);
+    console.log('  EXTRACT: ' + filePath);
+    count++;
+  } catch (e) {
+    console.error('  FAIL: ' + filePath + ': ' + e.message);
+  }
+
+  pos = eIdx + 1 + endMarker.length + 1;
+}
+
+console.log('unpack_text: extracted ' + count + ' files to ' + destDir);
+UNPACK_TEXT_NODE
+  } | UNPACK_INPUT="$packed_file" UNPACK_DEST="$abs_dest" node
+
+  # Clean up temp extraction dir
+  if [ -n "$tmp_extract" ]; then
+    rm -rf "$tmp_extract"
+  fi
 }
