@@ -100,19 +100,19 @@ if [ -n "$PRINTER_IP" ]; then
     Add-PrinterPort -Name 'IP_$PRINTER_IP' -PrinterHostAddress '$PRINTER_IP'
 
     # try drivers in order of preference until one works
-    \\\$drivers = @('Microsoft PS Class Driver', 'Microsoft IPP Class Driver', 'Generic / Text Only')
-    \\\$added = \\\$false
-    foreach (\\\$driver in \\\$drivers) {
+    \$drivers = @('Microsoft PS Class Driver', 'Microsoft IPP Class Driver', 'Generic / Text Only')
+    \$added = \$false
+    foreach (\$driver in \$drivers) {
       try {
-        Add-Printer -Name '$PRINTER_NAME' -DriverName \\\$driver -PortName 'IP_$PRINTER_IP' -ErrorAction Stop
-        Write-Host \"Printer $PRINTER_NAME added at $PRINTER_IP (driver: \\\$driver)\"
-        \\\$added = \\\$true
+        Add-Printer -Name '$PRINTER_NAME' -DriverName \$driver -PortName 'IP_$PRINTER_IP' -ErrorAction Stop
+        Write-Host \"Printer $PRINTER_NAME added at $PRINTER_IP (driver: \$driver)\"
+        \$added = \$true
         break
       } catch {
-        Write-Host \"Driver '\\\$driver' not available, trying next...\"
+        Write-Host \"Driver '\$driver' not available, trying next...\"
       }
     }
-    if (-not \\\$added) { Write-Host 'ERROR: No compatible printer driver found' }
+    if (-not \$added) { Write-Host 'ERROR: No compatible printer driver found' }
   "
 else
   echo '>> Skipped printer setup: no printer entry found in ip-address.config'
