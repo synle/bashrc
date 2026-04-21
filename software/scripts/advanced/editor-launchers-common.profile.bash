@@ -55,12 +55,26 @@ function run_editor() {
       zed) app_name="Zed" ;;
       esac
       if [[ -n "$app_name" ]]; then
-        osascript \
-          -e "tell application \"$app_name\" to activate" \
-          -e "tell application \"System Events\" to tell process \"$app_name\" to set position of window 1 to {0, 0}" \
-          -e "tell application \"Finder\" to set {_, _, sw, sh} to bounds of window of desktop" \
-          -e "tell application \"System Events\" to tell process \"$app_name\" to set size of window 1 to {sw, sh}" \
-          2> /dev/null &
+        osascript << APPLESCRIPT 2> /dev/null &
+tell application "$app_name" to activate
+tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop
+tell application "System Events" to tell process "$app_name"
+  set position of window 1 to {0, 0}
+  set size of window 1 to {sw, sh}
+  set windowCount to count of windows
+  if windowCount > 1 then
+    set tileW to 300
+    set tileH to 200
+    set tileCols to sw div tileW
+    repeat with i from 2 to windowCount
+      set tileCol to ((i - 2) mod tileCols)
+      set tileRow to ((i - 2) div tileCols)
+      set position of window i to {tileCol * tileW, tileRow * tileH}
+      set size of window i to {tileW, tileH}
+    end repeat
+  end if
+end tell
+APPLESCRIPT
       fi
     fi
   fi
