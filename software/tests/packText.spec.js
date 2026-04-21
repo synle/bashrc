@@ -154,6 +154,68 @@ describe("pack_text", () => {
     const content = fs.readFileSync(outFile, "utf-8");
     expect(content).toContain("===== PACK_FILE_BEGIN:");
   });
+
+  it("should support --plain as alias for --raw", () => {
+    const output = runBash(`pack_text "${srcDir}" --plain`);
+    expect(output).toContain("===== PACK_FILE_BEGIN: hello.txt =====");
+    expect(output).toContain("===== PACK_FILE_END: hello.txt =====");
+  });
+
+  it("should auto-generate output path to /tmp for tar mode", () => {
+    const output = runBash(`pack_text "${srcDir}"`);
+    expect(output).toContain("pack_text:");
+    const outPath = output.replace("pack_text: ", "").trim();
+    expect(outPath).toMatch(/\.pack\.tar\.gz$/);
+    expect(fs.existsSync(outPath)).toBe(true);
+    fs.unlinkSync(outPath);
+  });
+
+  it("should auto-generate output path to /tmp for zip mode", () => {
+    const output = runBash(`pack_text "${srcDir}" --zip`);
+    const outPath = output.replace("pack_text: ", "").trim();
+    expect(outPath).toMatch(/\.pack\.zip$/);
+    expect(fs.existsSync(outPath)).toBe(true);
+    fs.unlinkSync(outPath);
+  });
+
+  it("should skip .ruff_ prefixed directories", () => {
+    fs.mkdirSync(path.join(srcDir, ".ruff_cache"), { recursive: true });
+    fs.writeFileSync(path.join(srcDir, ".ruff_cache", "data.json"), "{}");
+    const output = runBash(`pack_text "${srcDir}" --raw`);
+    expect(output).not.toContain(".ruff_cache");
+    expect(output).not.toContain("data.json");
+    expect(output).toContain("hello.txt");
+  });
+
+  it("should use git ls-files for git repos", () => {
+    const gitDir = path.join(TMP_DIR, "gitrepo");
+    fs.mkdirSync(gitDir, { recursive: true });
+    fs.writeFileSync(path.join(gitDir, "tracked.txt"), "tracked\n");
+    fs.writeFileSync(path.join(gitDir, "untracked.txt"), "untracked\n");
+    execSync(`git init && git add tracked.txt && git commit -m "init"`, {
+      cwd: gitDir,
+      stdio: "pipe",
+      env: { ...process.env, GIT_AUTHOR_NAME: "test", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "test", GIT_COMMITTER_EMAIL: "t@t" },
+    });
+    const output = runBash(`pack_text "${gitDir}" --raw`);
+    expect(output).toContain("===== PACK_FILE_BEGIN: tracked.txt =====");
+    expect(output).not.toContain("untracked.txt");
+  });
+
+  it("should skip binary extensions even in git mode", () => {
+    const gitDir = path.join(TMP_DIR, "gitrepo2");
+    fs.mkdirSync(gitDir, { recursive: true });
+    fs.writeFileSync(path.join(gitDir, "readme.txt"), "hello\n");
+    fs.writeFileSync(path.join(gitDir, "photo.png"), Buffer.from([0x89, 0x50]));
+    execSync(`git init && git add -A && git commit -m "init"`, {
+      cwd: gitDir,
+      stdio: "pipe",
+      env: { ...process.env, GIT_AUTHOR_NAME: "test", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "test", GIT_COMMITTER_EMAIL: "t@t" },
+    });
+    const output = runBash(`pack_text "${gitDir}" --raw`);
+    expect(output).toContain("readme.txt");
+    expect(output).not.toContain("photo.png");
+  });
 });
 
 describe("unpack_text", () => {
@@ -223,6 +285,45 @@ describe("unpack_text", () => {
     runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(fs.existsSync(path.join(destDir, "a", "b", "c", "deep.txt"))).toBe(true);
     expect(fs.readFileSync(path.join(destDir, "a", "b", "c", "deep.txt"), "utf-8")).toBe("deep\n");
+  });
+
+  it("should unpack from .tgz archive", () => {
+    const packedFile = path.join(outDir, "packed.tgz");
+    // create tar.gz then rename to .tgz
+    const tarFile = path.join(outDir, "packed.tar.gz");
+    runBash(`pack_text "${srcDir}" "${tarFile}" --tar`);
+    fs.renameSync(tarFile, packedFile);
+    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    expect(fs.existsSync(path.join(destDir, "hello.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(destDir, "sub", "nested.txt"))).toBe(true);
+  });
+
+  it("should default to current directory when no dest specified", () => {
+    const packedFile = path.join(outDir, "packed.txt");
+    runBash(`pack_text "${srcDir}" "${packedFile}" --raw`);
+    fs.mkdirSync(destDir, { recursive: true });
+    const tmpScript = `${TMP_DIR}_cwd_runner.sh`;
+    fs.writeFileSync(
+      tmpScript,
+      `#!/usr/bin/env bash\nsource "${PROFILE_BASH}"\ncd "${destDir}"\nunpack_text "${packedFile}"`,
+      "utf-8",
+    );
+    try {
+      execSync(`bash "${tmpScript}" 2>/dev/null`, { encoding: "utf-8", timeout: 30000 });
+    } finally {
+      try {
+        fs.unlinkSync(tmpScript);
+      } catch {}
+    }
+    expect(fs.existsSync(path.join(destDir, "hello.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(destDir, "sub", "nested.txt"))).toBe(true);
+  });
+
+  it("should fail when archive contains no packed text file", () => {
+    const fakeZip = path.join(outDir, "fake.zip");
+    fs.writeFileSync(path.join(outDir, "random.txt"), "no markers here");
+    execSync(`cd "${outDir}" && zip -q "${fakeZip}" random.txt`, { stdio: "pipe" });
+    expect(() => runBash(`unpack_text "${fakeZip}" "${destDir}"`)).toThrow();
   });
 });
 
