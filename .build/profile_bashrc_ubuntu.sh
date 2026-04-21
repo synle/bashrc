@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-21T22:02:36.684Z
+# Generated: 2026-04-21T22:20:54.015Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -4182,7 +4182,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | 18570b49cee396de7b0ba0a10a2ab055 | 3.0 KB | 2026-04-21
+# software/scripts/advanced/editor-launchers-common.profile.bash | 296fe0d34295046b8a5d2a43e69a2fb5 | 3.2 KB | 2026-04-21
 # Resolve editor binary from a list of candidate paths (delegates to find_path exec mode)
 function find_editor() {
   local editor_name="$1"
@@ -4238,12 +4238,26 @@ function run_editor() {
       zed) app_name="Zed" ;;
       esac
       if [[ -n "$app_name" ]]; then
-        osascript \
-          -e "tell application \"$app_name\" to activate" \
-          -e "tell application \"System Events\" to tell process \"$app_name\" to set position of window 1 to {0, 0}" \
-          -e "tell application \"Finder\" to set {_, _, sw, sh} to bounds of window of desktop" \
-          -e "tell application \"System Events\" to tell process \"$app_name\" to set size of window 1 to {sw, sh}" \
-          2> /dev/null &
+        osascript << APPLESCRIPT 2> /dev/null &
+tell application "$app_name" to activate
+tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop
+tell application "System Events" to tell process "$app_name"
+  set position of window 1 to {0, 0}
+  set size of window 1 to {sw, sh}
+  set windowCount to count of windows
+  if windowCount > 1 then
+    set tileW to 300
+    set tileH to 200
+    set tileCols to sw div tileW
+    repeat with i from 2 to windowCount
+      set tileCol to ((i - 2) mod tileCols)
+      set tileRow to ((i - 2) div tileCols)
+      set position of window i to {tileCol * tileW, tileRow * tileH}
+      set size of window i to {tileW, tileH}
+    end repeat
+  end if
+end tell
+APPLESCRIPT
       fi
     fi
   fi
