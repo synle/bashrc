@@ -2,7 +2,7 @@ List all my open pull requests across all repos.
 
 ## Steps
 
-1. Run `gh search prs --author=@me --state=open --json number,title,repository,isDraft,url` to find all open PRs.
+1. Run `gh search prs --author=@me --state=open --json number,title,repository,isDraft,url,headRefName` to find all open PRs.
 
 2. For each PR, fetch detailed status:
    - CI/build status: use `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` to determine passing/failing/pending
@@ -12,7 +12,9 @@ List all my open pull requests across all repos.
 3. Sort results: **ready PRs first** (no WIP/DNM prefix), then **WIP PRs** (title contains WIP or DO NOT MERGE).
 
 4. Present as a table with these columns:
-   | # | Repo | Title | Link | CI Status | Approvals | Ready to Merge? |
+   | PR | Repo | Title | Link | CI Status | Approvals | Ready to Merge? |
+
+   - PR column: show PR number and branch name on separate lines (e.g. `#123` then `feature-branch` below it)
    - CI Status: passing, failing, or pending
    - Approvals: approved (count), changes requested, or pending review
    - Ready to Merge: yes (all green + approved + mergeable) or no (with reason)
