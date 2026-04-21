@@ -299,7 +299,9 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `shift+enter`, `ctrl+enter`         | Newline      |                                |
 | `OS_KEY+z`                          | Undo         |                                |
 | `OS_KEY+l`                          | Clear input  |                                |
-| `ctrl+g`, `ctrl+e`, `ctrl+x ctrl+e` | Open $EDITOR | Opens vim                      |
+| `ctrl+a`                            | Home         | Unbound so readline works      |
+| `ctrl+e`                            | End          | Unbound so readline works      |
+| `ctrl+x`                            | Open $EDITOR | Opens vim                      |
 | `ctrl+v`                            | Paste image  | Mac only; removed on Win/Linux |
 
 ---

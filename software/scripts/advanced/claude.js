@@ -107,9 +107,20 @@ async function _doKeysWork(targetDir) {
     },
   ]);
 
-  // deploy to local system
+  // deploy to local system — merge with existing, our managed bindings always override
+  /** @type {object[]} Existing user keybinding context groups (empty if file missing or invalid). */
+  let existingBindings = [];
+  try {
+    const data = JSON.parse(fs.readFileSync(targetPath, "utf-8"));
+    if (data && Array.isArray(data.bindings)) existingBindings = data.bindings;
+  } catch (e) {}
+
+  const ourConfig = _getKeyConfig();
+  // existing first, then ours on top — Object.assign in _mergeContextGroups means later wins
+  ourConfig.bindings = _mergeContextGroups(existingBindings, ourConfig.bindings);
+
   await backupConfigFile(targetPath);
-  await writeJson(targetPath, _getKeyConfig());
+  await writeJson(targetPath, ourConfig);
 }
 
 ////// Settings //////

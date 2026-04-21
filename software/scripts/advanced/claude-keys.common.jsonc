@@ -18,10 +18,11 @@
       "OS_KEY+z": "chat:undo",
       // clear input (OS_KEY+l, matching cmd+l on Mac, alt+l on Windows/Linux)
       "OS_KEY+l": "chat:clearInput",
+      // unbind ctrl+a / ctrl+e so readline HOME / END work
+      "ctrl+a": null,
+      "ctrl+e": null,
       // open $EDITOR (vim)
-      "ctrl+g": "chat:externalEditor",
-      "ctrl+e": "chat:externalEditor",
-      "ctrl+x ctrl+e": "chat:externalEditor",
+      "ctrl+x": "chat:externalEditor",
       // paste image
       "ctrl+v": "chat:imagePaste",
     },
