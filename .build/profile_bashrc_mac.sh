@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-20]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-21]
 # 
 # Precompiled bash profile for mac
 # ################################################################################
@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-20T18:11:19.121Z
+# Generated: 2026-04-21T02:51:20.538Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | 5c02a553720b2e0189bc6c838cab9f23 | 4.5 KB | 2026-04-20
+# software/scripts/bash-history.profile.bash | 5c02a553720b2e0189bc6c838cab9f23 | 4.5 KB | 2026-04-21
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -639,7 +639,7 @@ done
 export PATH="/Users/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate.profile.bash
-# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-04-20
+# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-04-21
 ################################################################################
 # ---- PATH Setup ----
 #
@@ -2646,7 +2646,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys.profile.bash
-# software/scripts/bash-keys.profile.bash | 1e77294d250f662478b78dbb180dd6b0 | 4.7 KB | 2026-04-20
+# software/scripts/bash-keys.profile.bash | 1e77294d250f662478b78dbb180dd6b0 | 4.7 KB | 2026-04-21
 ################################################################################
 # ---- Bash Readline Keybindings ----
 #
@@ -2746,7 +2746,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | ff2e41cc4aeb4b5c35da64f84577f533 | 27.7 KB | 2026-04-20
+# software/scripts/bash-file-utils.profile.bash | ff2e41cc4aeb4b5c35da64f84577f533 | 27.7 KB | 2026-04-21
 ################################################################################
 # ---- File Utilities ----
 #
@@ -3458,7 +3458,7 @@ DEDUP_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.profile.bash
 # SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
-# software/scripts/bash-fzf.profile.bash | 1c8e03ef918aa866ea16901569d37113 | 17.1 KB | 2026-04-20
+# software/scripts/bash-fzf.profile.bash | 1c8e03ef918aa866ea16901569d37113 | 17.1 KB | 2026-04-21
 # run: bash run.sh --files="fzf.js"
 ################################################################################
 # ---- FZF Fuzzy Finder Integration ----
@@ -3862,7 +3862,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | 18570b49cee396de7b0ba0a10a2ab055 | 3.0 KB | 2026-04-20
+# software/scripts/advanced/editor-launchers-common.profile.bash | 18570b49cee396de7b0ba0a10a2ab055 | 3.0 KB | 2026-04-21
 # Resolve editor binary from a list of candidate paths (delegates to find_path exec mode)
 function find_editor() {
   local editor_name="$1"
@@ -6607,7 +6607,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 82633e443566a4b5391ae8468fe34473 | 6.1 KB | 2026-04-20
+# software/scripts/bash-command-wrappers.profile.bash | 82633e443566a4b5391ae8468fe34473 | 6.1 KB | 2026-04-21
 ################################################################################
 # ---- Command Wrappers ----
 #
