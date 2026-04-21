@@ -13,7 +13,6 @@ List all my open pull requests across all repos.
 
 4. Present as a table with these columns:
    | # | Repo | Title | Link | CI Status | Approvals | Ready to Merge? |
-   
    - CI Status: passing, failing, or pending
    - Approvals: approved (count), changes requested, or pending review
    - Ready to Merge: yes (all green + approved + mergeable) or no (with reason)
