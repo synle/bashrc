@@ -1,4 +1,5 @@
 /** Sets up the home network printer with Generic PostScript driver (macOS and Windows). Reads printer IP from ip-address.config. */
+// Usage: bash run.sh --files="printer-setup.standalone.js"
 async function doWork() {
   /** @type {string} */
   const ipConfig = await readText`software/metadata/ip-address.config`;
