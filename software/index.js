@@ -1817,6 +1817,40 @@ async function clearMacQuarantine(readmePath, appPath) {
 }
 
 /**
+ * Force-closes a running application before installing a new version.
+ * On Mac: tries graceful AppleScript quit for matching /Applications/*.app, then pkill fallback.
+ * On Windows (WSL): uses taskkill via cmd.exe.
+ * On Linux: uses pkill.
+ * @param {string} appLabel - The app label (e.g. "sqlui-native", "display-dj")
+ */
+async function _forceCloseApp(appLabel) {
+  if (IS_DRY_RUN) {
+    log(`>> [DryRun] Would force-close ${appLabel}`);
+    return;
+  }
+
+  /** @type {string} Regex-friendly pattern: dashes become dots to match both dashes and spaces. */
+  const pattern = appLabel.replace(/-/g, ".");
+
+  if (is_os_mac) {
+    try {
+      /** @type {string[]} Matching .app bundles in /Applications/. */
+      const apps = fs.readdirSync("/Applications/").filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
+      for (const app of apps) {
+        const name = app.replace(".app", "");
+        log(`>> Force-closing ${name}`);
+        await execBash(`osascript -e 'quit app "${name}"'`);
+        await execBash(`pkill -fi "${pattern}"`);
+      }
+    } catch (e) {}
+  } else if (is_os_windows) {
+    await execBash(`cmd.exe /C "taskkill /F /IM ${appLabel}*" 2>/dev/null`);
+  } else {
+    await execBash(`pkill -fi "${pattern}"`);
+  }
+}
+
+/**
  * Downloads and installs a binary from a GitHub release.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
@@ -1831,6 +1865,8 @@ async function downloadAndInstallBinary(repo, getFileName) {
   const url = `https://github.com/${repo}/releases/download/${version}/${fileName}`;
 
   log(`>> Installing ${appLabel} ${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
+
+  await _forceCloseApp(appLabel);
 
   await deleteFolder(targetPath);
   await mkdir(targetPath);
