@@ -137,6 +137,11 @@
     "command": { "action": "resizePane", "direction": "up" },
     "keys": "ctrl+alt+up",
   },
+  // unbind default alt+shift+arrow resize (moved to ctrl+alt+arrow above)
+  { "command": "unbound", "keys": "alt+shift+down" },
+  { "command": "unbound", "keys": "alt+shift+left" },
+  { "command": "unbound", "keys": "alt+shift+right" },
+  { "command": "unbound", "keys": "alt+shift+up" },
   {
     "command": { "action": "adjustFontSize", "delta": 1 },
     "keys": "alt+=",
