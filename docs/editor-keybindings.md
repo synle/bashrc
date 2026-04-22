@@ -206,15 +206,15 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Splits & Panes
 
-| Key                  | Action                      | Windows Terminal |       Terminator        |       tmux        |   iTerm2    |
-| -------------------- | --------------------------- | :--------------: | :---------------------: | :---------------: | :---------: |
-| `OS_KEY+d`           | Split vertical (left/right) |        ✅        |           ✅            |        ✅         |     ✅      |
-| `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |           ✅            |        ✅         |     ✅      |
-| `OS_KEY+'`           | Split horiz (alt)           |        ✅        | ⚠️ (one key per action) |        ✅         |     ✅      |
-| `OS_KEY+arrow`       | Navigate panes              |        ✅        |           ✅            |        ✅         | ☑️ (scroll) |
-| `ctrl+OS_KEY+arrow`  | Resize panes                |        ✅        |           ✅            | ⚠️ (prefix+arrow) |     ❌      |
-| `OS_KEY+\`           | Toggle UI / fullscreen pane |        ✅        |     ✅ (scrollbar)      |        ✅         |     ❌      |
-| `F11`                | Fullscreen                  |        ✅        |           ✅            |        ✅         |     ☑️      |
+| Key                 | Action                      | Windows Terminal |       Terminator        |       tmux        |   iTerm2    |
+| ------------------- | --------------------------- | :--------------: | :---------------------: | :---------------: | :---------: |
+| `OS_KEY+d`          | Split vertical (left/right) |        ✅        |           ✅            |        ✅         |     ✅      |
+| `OS_KEY+shift+d`    | Split horiz (top/bottom)    |        ✅        |           ✅            |        ✅         |     ✅      |
+| `OS_KEY+'`          | Split horiz (alt)           |        ✅        | ⚠️ (one key per action) |        ✅         |     ✅      |
+| `OS_KEY+arrow`      | Navigate panes              |        ✅        |           ✅            |        ✅         | ☑️ (scroll) |
+| `ctrl+OS_KEY+arrow` | Resize panes                |        ✅        |           ✅            | ⚠️ (prefix+arrow) |     ❌      |
+| `OS_KEY+\`          | Toggle UI / fullscreen pane |        ✅        |     ✅ (scrollbar)      |        ✅         |     ❌      |
+| `F11`               | Fullscreen                  |        ✅        |           ✅            |        ✅         |     ☑️      |
 
 ### Text & Search
 
