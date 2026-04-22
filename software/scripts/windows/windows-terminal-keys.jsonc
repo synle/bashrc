@@ -123,19 +123,19 @@
   { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
   {
     "command": { "action": "resizePane", "direction": "down" },
-    "keys": "alt+shift+down",
+    "keys": "ctrl+alt+down",
   },
   {
     "command": { "action": "resizePane", "direction": "left" },
-    "keys": "alt+shift+left",
+    "keys": "ctrl+alt+left",
   },
   {
     "command": { "action": "resizePane", "direction": "right" },
-    "keys": "alt+shift+right",
+    "keys": "ctrl+alt+right",
   },
   {
     "command": { "action": "resizePane", "direction": "up" },
-    "keys": "alt+shift+up",
+    "keys": "ctrl+alt+up",
   },
   {
     "command": { "action": "adjustFontSize", "delta": 1 },
