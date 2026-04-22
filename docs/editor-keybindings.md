@@ -212,7 +212,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |           ✅            |        ✅         |     ✅      |
 | `OS_KEY+'`           | Split horiz (alt)           |        ✅        | ⚠️ (one key per action) |        ✅         |     ✅      |
 | `OS_KEY+arrow`       | Navigate panes              |        ✅        |           ✅            |        ✅         | ☑️ (scroll) |
-| `OS_KEY+shift+arrow` | Resize panes                |        ✅        |           ✅            | ⚠️ (prefix+arrow) |     ❌      |
+| `ctrl+OS_KEY+arrow`  | Resize panes                |        ✅        |           ✅            | ⚠️ (prefix+arrow) |     ❌      |
 | `OS_KEY+\`           | Toggle UI / fullscreen pane |        ✅        |     ✅ (scrollbar)      |        ✅         |     ❌      |
 | `F11`                | Fullscreen                  |        ✅        |           ✅            |        ✅         |     ☑️      |
 
