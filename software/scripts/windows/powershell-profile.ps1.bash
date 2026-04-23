@@ -144,9 +144,7 @@ Set-Alias merge smerge
 
 # Claude aliases (matches bash profile-advanced.sh)
 function cl()  { claude --dangerously-skip-permissions $args }
-function cm()  { cl --model claude-opus-4-6[1m] $args }
-function cm1() { cm $args }
-function cm2() { cl --model opus $args }
+function cm()  { cl --model claude-opus-4-7[1m] $args }
 
 # clear - preserve scrollback buffer (match iTerm2 behavior)
 function Clear-Host { [System.Console]::Write("$([char]0x1B)[H$([char]0x1B)[2J") }
