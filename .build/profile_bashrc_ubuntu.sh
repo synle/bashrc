@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-23T02:54:52.631Z
+# Generated: 2026-04-23T03:46:56.091Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -6045,6 +6045,48 @@ complete -o filenames -F __spec_complete_git git
 fi
 # END git Spec Autocomplete
 
+# BEGIN cargo Spec Autocomplete
+################################################################################
+# cargo (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_cargo() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+add|__paths__
+bench|--bench,--all-targets,--lib,--bins,--examples,--tests,--benches,--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--message-format,--no-run,--quiet,-q,--verbose,-v
+build|--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--lib,--bins,--examples,--tests,--benches,--all-targets,--message-format,--quiet,-q,--verbose,-v
+check|--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--lib,--bins,--examples,--tests,--benches,--all-targets,--message-format,--quiet,-q,--verbose,-v
+clean|--package,-p,--release,--profile,--target,--doc,--quiet,-q,--verbose,-v
+clippy|--fix,--allow-dirty,--allow-staged,--package,-p,--workspace,--all-targets,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+doc|--open,--package,-p,--workspace,--no-deps,--document-private-items,--jobs,-j,--release,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+fetch|--target,--quiet,-q,--verbose,-v
+fix|--package,-p,--workspace,--allow-dirty,--allow-staged,--broken-code,--edition,--edition-idioms,--jobs,-j,--release,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+fmt|--all,--check,--package,-p,--quiet,-q,--verbose,-v
+init|--lib,--bin,--edition,--vcs,--name,--registry,--quiet,-q,--verbose,-v
+install|--version,--git,--branch,--tag,--rev,--path,--list,--jobs,-j,--force,-f,--features,--all-features,--no-default-features,--root,--quiet,-q,--verbose,-v
+new|--lib,--bin,--edition,--vcs,--name,--registry,--quiet,-q,--verbose,-v
+publish|--dry-run,--token,--index,--registry,--allow-dirty,--no-verify,--jobs,-j,--features,--all-features,--no-default-features,--quiet,-q,--verbose,-v
+remove|--dev,--build,--package,-p,--quiet,-q,--verbose,-v
+run|--bin,--example,--package,-p,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--message-format,--quiet,-q,--verbose,-v,__cargo_targets__
+test|--test,--bench,--all-targets,--lib,--bins,--examples,--tests,--benches,--doc,--package,-p,--workspace,--exclude,--jobs,-j,--release,--profile,--features,--all-features,--no-default-features,--target,--no-run,--no-fail-fast,--message-format,--quiet,-q,--verbose,-v
+tree|--invert,-i,--no-dedupe,--duplicates,-d,--package,-p,--workspace,--depth,--features,--all-features,--no-default-features,--target,--quiet,-q,--verbose,-v
+uninstall|--root,--quiet,-q,--verbose,-v
+update|--package,-p,--aggressive,--precise,--workspace,--dry-run,--quiet,-q,--verbose,-v
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_cargo cargo 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_cargo cargo
+fi
+# END cargo Spec Autocomplete
+
 # BEGIN n Spec Autocomplete
 ################################################################################
 # n (spec-based autocomplete)
@@ -6372,29 +6414,6 @@ else
 complete -o filenames -F __spec_complete_s s
 fi
 # END s Spec Autocomplete
-
-# BEGIN ssh Spec Autocomplete
-################################################################################
-# ssh (spec-based autocomplete)
-################################################################################
-# Per-command spec autocomplete wrapper template (partial — not a standalone script).
-# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
-# thin per-command wrapper — loads spec data and delegates to __spec_complete
-function __spec_complete_ssh() {
-local spec_data
-read -r -d '' spec_data << '__SPEC_EOF__'
-|__ssh_hosts__,-i,-p,-l,-o,-F,-J,-N,-T,-v,-vv,-vvv,-L,-R,-D,-W,-A,-X,-Y,-C,-q,-f,-4,-6
-__SPEC_EOF__
-__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
-}
-# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
-# bash 4.0+ supports -o nosort; older versions fall back to filenames only
-if complete -o nosort -o filenames -F __spec_complete_ssh ssh 2> /dev/null; then
-: # registered with nosort
-else
-complete -o filenames -F __spec_complete_ssh ssh
-fi
-# END ssh Spec Autocomplete
 
 # BEGIN adb Spec Autocomplete
 ################################################################################
@@ -6818,73 +6837,6 @@ function activate_node() {
       echo "activate_node: node found at $node_path"
       if [ -L "$node_path" ]; then
         echo "activate_node: symlink target $(readlink -f "$node_path")"
-      fi
-    fi
-  fi
-}
-
-# lazy wrapper: activates node on first use if not already available, then delegates to the real binary.
-function node() {
-  if ! type -P node &> /dev/null; then
-    activate_node
-  fi
-  command node "$@"
-}
-
-# checks if a script name exists in ./package.json (excludes built-in npm subcommands)
-function _has_pkg_script() {
-  case "$1" in
-  access | adduser | audit | bugs | cache | ci | completion | config | dedupe | deprecate | diff | dist-tag | docs | doctor | edit | exec | explain | explore | find-dupes | fund | get | help | hook | init | install | install-ci-test | install-test | link | ll | login | logout | ls | org | outdated | owner | pack | ping | pkg | prefix | profile | prune | publish | query | rebuild | repo | restart | root | run | sbom | search | set | shrinkwrap | star | stars | start | stop | team | test | token | uninstall | unpublish | unstar | update | version | view | whoami) return 1 ;;
-  esac
-  [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)" 2> /dev/null
-}
-
-# wraps npm so bare subcommand names run as `npm run <name>`
-function npm() {
-  if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
-    command npm run "$@"
-  else
-    command npm "$@"
-  fi
-}
-
-# wraps yarn so bare subcommand names run as `yarn run <name>`, falls back to npm
-function yarn() {
-  if type -P yarn &> /dev/null && command yarn --version &> /dev/null; then
-    if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
-      command yarn run "$@"
-    else
-      command yarn "$@"
-    fi
-  else
-    npm "$@"
-  fi
-}
-
-function renpm() {
-  rm -rf node_modules
-  if [ -f yarn.lock ]; then
-    yarn install
-  elif [ -f package-lock.json ]; then
-    npm ci
-  else
-    npm install
-  fi
-}
-# SOURCE_END software/scripts/bash-command-wrappers.profile.bash
-################################################################################
-# ---- OS-specific Tweaks (registerPlatformTweaks) ----
-################################################################################
-
-# BEGIN Ubuntu OS-specific Tweaks
-# update: OS package manager update/upgrade only
-alias update='sudo apt-get update -y && sudo apt-get upgrade -y && sudo apt-get autoclean && sudo apt-get clean && sudo apt-get autoremove -y'
-# END Ubuntu OS-specific Tweaks
-
-fi
-################################################################################
-# ---- end advanced profile ----
-################################################################################link target $(readlink -f "$node_path")"
       fi
     fi
   fi
