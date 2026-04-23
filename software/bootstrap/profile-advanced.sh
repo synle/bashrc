@@ -423,7 +423,7 @@ alias amend="git amend"
 
 # ---- Aliases: Claude ----
 alias cl="claude --dangerously-skip-permissions"
-alias cm='cl --model claude-opus-4-6[1m]'
+alias cm='cl --model claude-opus-4-7[1m]'
 alias cm1='cm'
 alias cm2='cl --model opus'
 

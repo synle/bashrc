@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-22]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-23]
 # 
 # Precompiled bash profile for mac
 # ################################################################################
@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-22T17:57:17.020Z
+# Generated: 2026-04-23T02:04:36.366Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | 5c02a553720b2e0189bc6c838cab9f23 | 4.5 KB | 2026-04-22
+# software/scripts/bash-history.profile.bash | 5c02a553720b2e0189bc6c838cab9f23 | 4.5 KB | 2026-04-19
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -180,8 +180,8 @@ function history_restore() {
 # SOURCE_END software/scripts/bash-history.profile.bash
 # BEGIN fnm - fast node manager
 # hookup binary - add default node version to PATH
-export FNM_DIR="/Users/runner/.local/share/fnm"
-export PATH="/Users/runner/.local/share/fnm:$PATH"
+export FNM_DIR="/Users/syle/.local/share/fnm"
+export PATH="/Users/syle/.local/share/fnm:$PATH"
 export PATH="/bin:$PATH"
 
 # initialize fnm
@@ -636,10 +636,10 @@ for brew_prefix in /opt/homebrew /usr/local; do
 done
 # END mac-system-setup
 # BEGIN temporal-cli
-export PATH="/Users/runner/.temporalio/bin:$PATH"
+export PATH="/Users/syle/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate.profile.bash
-# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-04-22
+# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-04-19
 ################################################################################
 # ---- PATH Setup ----
 #
@@ -1187,7 +1187,7 @@ alias amend="git amend"
 
 # ---- Aliases: Claude ----
 alias cl="claude --dangerously-skip-permissions"
-alias cm='cl --model claude-opus-4-6[1m]'
+alias cm='cl --model claude-opus-4-7[1m]'
 alias cm1='cm'
 alias cm2='cl --model opus'
 
@@ -2646,7 +2646,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys.profile.bash
-# software/scripts/bash-keys.profile.bash | 1e77294d250f662478b78dbb180dd6b0 | 4.7 KB | 2026-04-22
+# software/scripts/bash-keys.profile.bash | 1e77294d250f662478b78dbb180dd6b0 | 4.7 KB | 2026-04-19
 ################################################################################
 # ---- Bash Readline Keybindings ----
 #
@@ -2746,7 +2746,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 28b843cee6ec09e4b2f6280666251a7e | 38.3 KB | 2026-04-22
+# software/scripts/bash-file-utils.profile.bash | 28b843cee6ec09e4b2f6280666251a7e | 38.3 KB | 2026-04-21
 ################################################################################
 # ---- File Utilities ----
 #
@@ -3791,7 +3791,7 @@ UNPACK_TEXT_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.profile.bash
 # SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
-# software/scripts/bash-fzf.profile.bash | 1c8e03ef918aa866ea16901569d37113 | 17.1 KB | 2026-04-22
+# software/scripts/bash-fzf.profile.bash | 1c8e03ef918aa866ea16901569d37113 | 17.1 KB | 2026-04-19
 # run: bash run.sh --files="fzf.js"
 ################################################################################
 # ---- FZF Fuzzy Finder Integration ----
@@ -4195,7 +4195,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | 296fe0d34295046b8a5d2a43e69a2fb5 | 3.2 KB | 2026-04-22
+# software/scripts/advanced/editor-launchers-common.profile.bash | 296fe0d34295046b8a5d2a43e69a2fb5 | 3.2 KB | 2026-04-21
 # Resolve editor binary from a list of candidate paths (delegates to find_path exec mode)
 function find_editor() {
   local editor_name="$1"
@@ -4410,116 +4410,7 @@ zed() {
 # BEGIN Sy Make Component
 : # no-op
 # END Sy Make Component
-# BEGIN starship prompt
-if type -P starship &> /dev/null; then
-  # init starship first so it sets up its own PROMPT_COMMAND
-  eval "$(starship init bash --print-full-init)"
 
-  # plain time helper for starship env vars (no PS1 ANSI wrappers)
-  # get_time() uses \001/\002 escapes that only work inside PS1
-  function _starship_time() {
-    local tz="$1"
-    local time_str ampm
-    if [ "$tz" = "UTC" ]; then
-      time_str=$(command date -u +'%I:%M:%S')
-      ampm=$(command date -u +'%p')
-    elif [ -n "$tz" ]; then
-      time_str=$(TZ="$tz" command date +'%I:%M:%S')
-      ampm=$(TZ="$tz" command date +'%p')
-    else
-      time_str=$(command date +'%I:%M:%S')
-      ampm=$(command date +'%p')
-    fi
-    printf '%s%s' "$time_str" "$ampm"
-  }
-
-  # get active python path shortened and version for prompt display
-  # includes venv name prefix when a virtual environment is active
-  function _starship_python_info() {
-    local py_bin
-    py_bin="$(type -P python3 2>/dev/null || type -P python 2>/dev/null)" || return
-    [ -z "$py_bin" ] && return
-    local py_ver
-    py_ver="$("$py_bin" --version 2>&1)" || return
-    py_ver="${py_ver##* }"
-    local py_path
-    py_path="$(readlink -f "$py_bin" 2>/dev/null || echo "$py_bin")"
-    IFS='/' read -r -a parts <<< "$py_path"
-    local total=${#parts[@]}
-    local result=""
-    local i
-    for ((i=0; i<total; i++)); do
-      [ -z "${parts[i]}" ] && continue
-      if ((i < total - 3)); then
-        result+="/${parts[i]:0:1}"
-      else
-        result+="/${parts[i]}"
-      fi
-    done
-    local venv_prefix=""
-    if [ -n "$VIRTUAL_ENV" ]; then
-      venv_prefix="(${VIRTUAL_ENV##*/}) "
-    fi
-    printf '%s[%s:%s]' "$venv_prefix" "$result" "$py_ver"
-  }
-
-  # get active node path shortened and version for prompt display
-  function _starship_node_info() {
-    local node_bin
-    node_bin="$(type -P node 2>/dev/null)" || return
-    [ -z "$node_bin" ] && return
-    local node_ver
-    node_ver="$("$node_bin" --version 2>&1)" || return
-    node_ver="${node_ver#v}"
-    local node_path
-    node_path="$(readlink -f "$node_bin" 2>/dev/null || echo "$node_bin")"
-    IFS='/' read -r -a parts <<< "$node_path"
-    local total=${#parts[@]}
-    local result=""
-    local i
-    for ((i=0; i<total; i++)); do
-      [ -z "${parts[i]}" ] && continue
-      if ((i < total - 3)); then
-        result+="/${parts[i]:0:1}"
-      else
-        result+="/${parts[i]}"
-      fi
-    done
-    printf '[%s:%s]' "$result" "$node_ver"
-  }
-
-  # update starship env vars before each prompt render
-  # must be defined after starship init so it doesn't get overwritten
-  function _starship_preexec() {
-    export STARSHIP_LOCAL_TIME="$(_starship_time)"
-    export STARSHIP_UTC_TIME="$(_starship_time 'UTC')"
-    export STARSHIP_IP_ADDR="$(ifconfig2)"
-    export STARSHIP_SHORT_PWD="$(shorter_pwd_path)"
-    # disabled: python/node path:version info (uncomment to re-enable)
-    # local _py_info
-    # _py_info="$(_starship_python_info)"
-    # if [ -n "$_py_info" ]; then
-    #   export STARSHIP_PYTHON_INFO="$_py_info"
-    # else
-    #   unset STARSHIP_PYTHON_INFO
-    # fi
-    # local _node_info
-    # _node_info="$(_starship_node_info)"
-    # if [ -n "$_node_info" ]; then
-    #   export STARSHIP_NODE_INFO="$_node_info"
-    # else
-    #   unset STARSHIP_NODE_INFO
-    # fi
-  }
-  starship_precmd_user_func="_starship_preexec"
-
-  # bash version is static, set once
-  export STARSHIP_BASH_VER="$BASH_VERSINFO.$(echo "$BASH_VERSION" | cut -d. -f2)"
-
-  # run once immediately so the first prompt has values
-  _starship_preexec
-fi
-# END starship prompt
 # BEGIN zoxide init
 type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"
 # END zoxide init
@@ -5165,396 +5056,32 @@ fi
 function __spec_complete_g() {
 local spec_data
 read -r -d '' spec_data << '__SPEC_EOF__'
-aa|__git_files__,__git_add_flags__
-abort|push,pop,apply,drop,list,show,clear,--patch,-p,--include-untracked,-u,--keep-index,-k,--message,-m
 add|__git_files__,__git_add_flags__
-amendm|__git_commit_flags__
-amend|__git_commit_flags__
-ap|__git_files__,__git_add_flags__
-au|__git_files__,__git_add_flags__
-a|__git_files__,__git_add_flags__
-ba|__git_branches__,__git_branch_flags__
 bisect|start,bad,good,reset,skip,log,run
 branch|__git_branches__,__git_branch_flags__
-b|__git_branches__,__git_branch_flags__
 checkout|__git_branches__,__git_files__,--force,-f,-b,-B,--track,-t,--detach,--orphan,--ours,--theirs,--merge,-m,--patch,-p
 cherry-pick|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-cl0|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-cl1|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-clean-and-fetch|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
-cleanfd
 clean|--force,-f,-d,--dry-run,-n,--interactive,-i,-x,-X
-clone0|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-clone1|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
 clone|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-cm|__git_commit_flags__
-cob|__git_branches__,__git_files__
 commit|__git_commit_flags__
 config|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
-cop|__git_branches__,__git_files__
-co|__git_branches__,__git_files__
-cpc|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-cpn|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-cp|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-current|__git_branches__,__git_branch_flags__
-c|__git_commit_flags__
-d1
-del|__git_branches__,__git_branch_flags__
-dh1
-dhs|__git_files__,__git_diff_flags__
-dh|__git_files__,__git_diff_flags__
 diff|__git_files__,__git_diff_flags__
-ds1
-ds|__git_files__,__git_diff_flags__
-d|__git_files__,__git_diff_flags__
-fapr|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
-fap|__git_remotes__
 fetch|__git_remotes__,--all,--prune,-p,--tags,--no-tags,--force,-f,--depth,--shallow-since,--dry-run
-gone|__git_branches__,__git_branch_flags__
-hash|__git_branches__,__git_files__
 init|--bare,--template,--initial-branch,-b
-l
-lastd|__git_log_flags__
-last|__git_log_flags__
-ll
-lls
-logbaseline|__git_log_flags__
 log|__git_log_flags__
-ls
-mc|__git_branches__
 merge|__git_branches__,--abort,--continue,--no-ff,--ff-only,--squash,--no-commit,--strategy,-s,--no-verify
 mv|--force,-f,--dry-run,-n,--verbose,-v
-ours|__git_branches__,__git_files__
-our|__git_branches__,__git_files__
-patch
-patch-download
-patch-download1
-patch-download10
-patch-download100
-patch-download1000
-patch-download15
-patch-download150
-patch-download2
-patch-download20
-patch-download200
-patch-download25
-patch-download250
-patch-download3
-patch-download30
-patch-download300
-patch-download35
-patch-download350
-patch-download4
-patch-download40
-patch-download400
-patch-download45
-patch-download450
-patch-download5
-patch-download50
-patch-download500
-patch-download55
-patch-download550
-patch-download6
-patch-download60
-patch-download600
-patch-download65
-patch-download650
-patch-download7
-patch-download70
-patch-download700
-patch-download75
-patch-download750
-patch-download8
-patch-download80
-patch-download800
-patch-download85
-patch-download850
-patch-download9
-patch-download90
-patch-download900
-patch-download95
-patch-download950
-patch-downloadn
-patch-get
-patch-get1
-patch-get10
-patch-get100
-patch-get1000
-patch-get15
-patch-get150
-patch-get2
-patch-get20
-patch-get200
-patch-get25
-patch-get250
-patch-get3
-patch-get30
-patch-get300
-patch-get35
-patch-get350
-patch-get4
-patch-get40
-patch-get400
-patch-get45
-patch-get450
-patch-get5
-patch-get50
-patch-get500
-patch-get55
-patch-get550
-patch-get6
-patch-get60
-patch-get600
-patch-get65
-patch-get650
-patch-get7
-patch-get70
-patch-get700
-patch-get75
-patch-get750
-patch-get8
-patch-get80
-patch-get800
-patch-get85
-patch-get850
-patch-get9
-patch-get90
-patch-get900
-patch-get95
-patch-get950
-patch-getn
-patch-rename
-patch-view
-patch-view1
-patch-view10
-patch-view100
-patch-view1000
-patch-view15
-patch-view150
-patch-view2
-patch-view20
-patch-view200
-patch-view25
-patch-view250
-patch-view3
-patch-view30
-patch-view300
-patch-view35
-patch-view350
-patch-view4
-patch-view40
-patch-view400
-patch-view45
-patch-view450
-patch-view5
-patch-view50
-patch-view500
-patch-view55
-patch-view550
-patch-view6
-patch-view60
-patch-view600
-patch-view65
-patch-view650
-patch-view7
-patch-view70
-patch-view700
-patch-view75
-patch-view750
-patch-view8
-patch-view80
-patch-view800
-patch-view85
-patch-view850
-patch-view9
-patch-view90
-patch-view900
-patch-view95
-patch-view950
-patch-viewn
-pdel-branch|__git_remotes__,__git_branches__
-pdel-tag|__git_remotes__,__git_branches__
-pof|__git_remotes__,__git_branches__
-pop|push,pop,apply,drop,list,show,clear,--patch,-p,--include-untracked,-u,--keep-index,-k,--message,-m
-po|__git_remotes__,__git_branches__
 pull|__git_remotes__,__git_branches__,--rebase,-r,--no-rebase,--ff-only,--no-ff,--squash,--autostash,--no-autostash,--all,--prune
 push|__git_remotes__,__git_branches__,--force,-f,--force-with-lease,--set-upstream,-u,--delete,-d,--tags,--all,--prune,--dry-run,-n,--no-verify
-pu|__git_remotes__,__git_branches__
-p|__git_remotes__,__git_branches__
-r0-code|__git_branches__,__git_rebase_flags__
-r0-subl|__git_branches__,__git_rebase_flags__
-r0|__git_branches__,__git_rebase_flags__
-r1-code|__git_branches__,__git_rebase_flags__
-r1-subl|__git_branches__,__git_rebase_flags__
-r10-code|__git_branches__,__git_rebase_flags__
-r10-subl|__git_branches__,__git_rebase_flags__
-r100-code|__git_branches__,__git_rebase_flags__
-r100-subl|__git_branches__,__git_rebase_flags__
-r1000-code|__git_branches__,__git_rebase_flags__
-r1000-subl|__git_branches__,__git_rebase_flags__
-r1000|__git_branches__,__git_rebase_flags__
-r100|__git_branches__,__git_rebase_flags__
-r10|__git_branches__,__git_rebase_flags__
-r15-code|__git_branches__,__git_rebase_flags__
-r15-subl|__git_branches__,__git_rebase_flags__
-r150-code|__git_branches__,__git_rebase_flags__
-r150-subl|__git_branches__,__git_rebase_flags__
-r150|__git_branches__,__git_rebase_flags__
-r15|__git_branches__,__git_rebase_flags__
-r1|__git_branches__,__git_rebase_flags__
-r2-code|__git_branches__,__git_rebase_flags__
-r2-subl|__git_branches__,__git_rebase_flags__
-r20-code|__git_branches__,__git_rebase_flags__
-r20-subl|__git_branches__,__git_rebase_flags__
-r200-code|__git_branches__,__git_rebase_flags__
-r200-subl|__git_branches__,__git_rebase_flags__
-r200|__git_branches__,__git_rebase_flags__
-r20|__git_branches__,__git_rebase_flags__
-r25-code|__git_branches__,__git_rebase_flags__
-r25-subl|__git_branches__,__git_rebase_flags__
-r250-code|__git_branches__,__git_rebase_flags__
-r250-subl|__git_branches__,__git_rebase_flags__
-r250|__git_branches__,__git_rebase_flags__
-r25|__git_branches__,__git_rebase_flags__
-r2|__git_branches__,__git_rebase_flags__
-r3-code|__git_branches__,__git_rebase_flags__
-r3-subl|__git_branches__,__git_rebase_flags__
-r30-code|__git_branches__,__git_rebase_flags__
-r30-subl|__git_branches__,__git_rebase_flags__
-r300-code|__git_branches__,__git_rebase_flags__
-r300-subl|__git_branches__,__git_rebase_flags__
-r300|__git_branches__,__git_rebase_flags__
-r30|__git_branches__,__git_rebase_flags__
-r35-code|__git_branches__,__git_rebase_flags__
-r35-subl|__git_branches__,__git_rebase_flags__
-r350-code|__git_branches__,__git_rebase_flags__
-r350-subl|__git_branches__,__git_rebase_flags__
-r350|__git_branches__,__git_rebase_flags__
-r35|__git_branches__,__git_rebase_flags__
-r3|__git_branches__,__git_rebase_flags__
-r4-code|__git_branches__,__git_rebase_flags__
-r4-subl|__git_branches__,__git_rebase_flags__
-r40-code|__git_branches__,__git_rebase_flags__
-r40-subl|__git_branches__,__git_rebase_flags__
-r400-code|__git_branches__,__git_rebase_flags__
-r400-subl|__git_branches__,__git_rebase_flags__
-r400|__git_branches__,__git_rebase_flags__
-r40|__git_branches__,__git_rebase_flags__
-r45-code|__git_branches__,__git_rebase_flags__
-r45-subl|__git_branches__,__git_rebase_flags__
-r450-code|__git_branches__,__git_rebase_flags__
-r450-subl|__git_branches__,__git_rebase_flags__
-r450|__git_branches__,__git_rebase_flags__
-r45|__git_branches__,__git_rebase_flags__
-r4|__git_branches__,__git_rebase_flags__
-r5-code|__git_branches__,__git_rebase_flags__
-r5-subl|__git_branches__,__git_rebase_flags__
-r50-code|__git_branches__,__git_rebase_flags__
-r50-subl|__git_branches__,__git_rebase_flags__
-r500-code|__git_branches__,__git_rebase_flags__
-r500-subl|__git_branches__,__git_rebase_flags__
-r500|__git_branches__,__git_rebase_flags__
-r50|__git_branches__,__git_rebase_flags__
-r55-code|__git_branches__,__git_rebase_flags__
-r55-subl|__git_branches__,__git_rebase_flags__
-r550-code|__git_branches__,__git_rebase_flags__
-r550-subl|__git_branches__,__git_rebase_flags__
-r550|__git_branches__,__git_rebase_flags__
-r55|__git_branches__,__git_rebase_flags__
-r5|__git_branches__,__git_rebase_flags__
-r6-code|__git_branches__,__git_rebase_flags__
-r6-subl|__git_branches__,__git_rebase_flags__
-r60-code|__git_branches__,__git_rebase_flags__
-r60-subl|__git_branches__,__git_rebase_flags__
-r600-code|__git_branches__,__git_rebase_flags__
-r600-subl|__git_branches__,__git_rebase_flags__
-r600|__git_branches__,__git_rebase_flags__
-r60|__git_branches__,__git_rebase_flags__
-r65-code|__git_branches__,__git_rebase_flags__
-r65-subl|__git_branches__,__git_rebase_flags__
-r650-code|__git_branches__,__git_rebase_flags__
-r650-subl|__git_branches__,__git_rebase_flags__
-r650|__git_branches__,__git_rebase_flags__
-r65|__git_branches__,__git_rebase_flags__
-r6|__git_branches__,__git_rebase_flags__
-r7-code|__git_branches__,__git_rebase_flags__
-r7-subl|__git_branches__,__git_rebase_flags__
-r70-code|__git_branches__,__git_rebase_flags__
-r70-subl|__git_branches__,__git_rebase_flags__
-r700-code|__git_branches__,__git_rebase_flags__
-r700-subl|__git_branches__,__git_rebase_flags__
-r700|__git_branches__,__git_rebase_flags__
-r70|__git_branches__,__git_rebase_flags__
-r75-code|__git_branches__,__git_rebase_flags__
-r75-subl|__git_branches__,__git_rebase_flags__
-r750-code|__git_branches__,__git_rebase_flags__
-r750-subl|__git_branches__,__git_rebase_flags__
-r750|__git_branches__,__git_rebase_flags__
-r75|__git_branches__,__git_rebase_flags__
-r7|__git_branches__,__git_rebase_flags__
-r8-code|__git_branches__,__git_rebase_flags__
-r8-subl|__git_branches__,__git_rebase_flags__
-r80-code|__git_branches__,__git_rebase_flags__
-r80-subl|__git_branches__,__git_rebase_flags__
-r800-code|__git_branches__,__git_rebase_flags__
-r800-subl|__git_branches__,__git_rebase_flags__
-r800|__git_branches__,__git_rebase_flags__
-r80|__git_branches__,__git_rebase_flags__
-r85-code|__git_branches__,__git_rebase_flags__
-r85-subl|__git_branches__,__git_rebase_flags__
-r850-code|__git_branches__,__git_rebase_flags__
-r850-subl|__git_branches__,__git_rebase_flags__
-r850|__git_branches__,__git_rebase_flags__
-r85|__git_branches__,__git_rebase_flags__
-r8|__git_branches__,__git_rebase_flags__
-r9-code|__git_branches__,__git_rebase_flags__
-r9-subl|__git_branches__,__git_rebase_flags__
-r90-code|__git_branches__,__git_rebase_flags__
-r90-subl|__git_branches__,__git_rebase_flags__
-r900-code|__git_branches__,__git_rebase_flags__
-r900-subl|__git_branches__,__git_rebase_flags__
-r900|__git_branches__,__git_rebase_flags__
-r90|__git_branches__,__git_rebase_flags__
-r95-code|__git_branches__,__git_rebase_flags__
-r95-subl|__git_branches__,__git_rebase_flags__
-r950-code|__git_branches__,__git_rebase_flags__
-r950-subl|__git_branches__,__git_rebase_flags__
-r950|__git_branches__,__git_rebase_flags__
-r95|__git_branches__,__git_rebase_flags__
-r9|__git_branches__,__git_rebase_flags__
-rc|__git_branches__,__git_rebase_flags__
 rebase|__git_branches__,__git_rebase_flags__
 remote|__git_remotes__,add,remove,rename,get-url,set-url,show,prune,-v,--verbose
 reset|__git_files__,__git_head_refs__,--soft,--mixed,--hard,--merge,--keep
 restore|__git_files__,--staged,-S,--worktree,-W,--source,-s,--patch,-p
-ri-code|__git_branches__,__git_rebase_flags__
-ri-subl|__git_branches__,__git_rebase_flags__
-ri|__git_branches__,__git_rebase_flags__
 rm|--cached,-r,--force,-f,--dry-run,-n
-rn-code|__git_branches__,__git_rebase_flags__
-rn-subl|__git_branches__,__git_rebase_flags__
-rn|__git_branches__,__git_rebase_flags__
-root
-rvc|__git_branches__
-rv|__git_branches__
-r|__git_branches__,__git_rebase_flags__
-s
-search-logs|__git_log_flags__
-search-reflog
-show1
 show|__git_show_flags__
 stash|push,pop,apply,drop,list,show,clear,--patch,-p,--include-untracked,-u,--keep-index,-k,--message,-m
-stat
-stats
 switch|__git_branches__,--create,-c,--detach,-d,--force,-f,--guess,--no-guess,--track,-t
 tag|--list,-l,--delete,-d,--annotate,-a,--force,-f,--message,-m,--sign,-s,--verify,-v
-theirs|__git_branches__,__git_files__
-their|__git_branches__,__git_files__
-track|__git_branches__,__git_branch_flags__
-undo|__git_files__,__git_head_refs__
-unwip|__git_log_flags__
-where-is|__git_branches__,__git_branch_flags__
-wip|__git_files__,__git_add_flags__
 worktree|add,list,lock,move,prune,remove,unlock
 __SPEC_EOF__
 __spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
@@ -5657,396 +5184,32 @@ fi
 function __spec_complete_git() {
 local spec_data
 read -r -d '' spec_data << '__SPEC_EOF__'
-aa|__git_files__,__git_add_flags__
-abort|push,pop,apply,drop,list,show,clear,--patch,-p,--include-untracked,-u,--keep-index,-k,--message,-m
 add|__git_files__,__git_add_flags__
-amendm|__git_commit_flags__
-amend|__git_commit_flags__
-ap|__git_files__,__git_add_flags__
-au|__git_files__,__git_add_flags__
-a|__git_files__,__git_add_flags__
-ba|__git_branches__,__git_branch_flags__
 bisect|start,bad,good,reset,skip,log,run
 branch|__git_branches__,__git_branch_flags__
-b|__git_branches__,__git_branch_flags__
 checkout|__git_branches__,__git_files__,--force,-f,-b,-B,--track,-t,--detach,--orphan,--ours,--theirs,--merge,-m,--patch,-p
 cherry-pick|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-cl0|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-cl1|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-clean-and-fetch|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
-cleanfd
 clean|--force,-f,-d,--dry-run,-n,--interactive,-i,-x,-X
-clone0|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-clone1|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
 clone|--depth,--single-branch,--branch,-b,--bare,--mirror,--recursive,--shallow-submodules,--jobs,-j,--filter
-cm|__git_commit_flags__
-cob|__git_branches__,__git_files__
 commit|__git_commit_flags__
 config|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
-cop|__git_branches__,__git_files__
-co|__git_branches__,__git_files__
-cpc|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-cpn|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-cp|__git_branches__,--abort,--continue,--skip,--no-commit,-n,--edit,-e,--mainline,-m
-current|__git_branches__,__git_branch_flags__
-c|__git_commit_flags__
-d1
-del|__git_branches__,__git_branch_flags__
-dh1
-dhs|__git_files__,__git_diff_flags__
-dh|__git_files__,__git_diff_flags__
 diff|__git_files__,__git_diff_flags__
-ds1
-ds|__git_files__,__git_diff_flags__
-d|__git_files__,__git_diff_flags__
-fapr|--global,--local,--system,--list,-l,--get,--unset,--edit,-e
-fap|__git_remotes__
 fetch|__git_remotes__,--all,--prune,-p,--tags,--no-tags,--force,-f,--depth,--shallow-since,--dry-run
-gone|__git_branches__,__git_branch_flags__
-hash|__git_branches__,__git_files__
 init|--bare,--template,--initial-branch,-b
-l
-lastd|__git_log_flags__
-last|__git_log_flags__
-ll
-lls
-logbaseline|__git_log_flags__
 log|__git_log_flags__
-ls
-mc|__git_branches__
 merge|__git_branches__,--abort,--continue,--no-ff,--ff-only,--squash,--no-commit,--strategy,-s,--no-verify
 mv|--force,-f,--dry-run,-n,--verbose,-v
-ours|__git_branches__,__git_files__
-our|__git_branches__,__git_files__
-patch
-patch-download
-patch-download1
-patch-download10
-patch-download100
-patch-download1000
-patch-download15
-patch-download150
-patch-download2
-patch-download20
-patch-download200
-patch-download25
-patch-download250
-patch-download3
-patch-download30
-patch-download300
-patch-download35
-patch-download350
-patch-download4
-patch-download40
-patch-download400
-patch-download45
-patch-download450
-patch-download5
-patch-download50
-patch-download500
-patch-download55
-patch-download550
-patch-download6
-patch-download60
-patch-download600
-patch-download65
-patch-download650
-patch-download7
-patch-download70
-patch-download700
-patch-download75
-patch-download750
-patch-download8
-patch-download80
-patch-download800
-patch-download85
-patch-download850
-patch-download9
-patch-download90
-patch-download900
-patch-download95
-patch-download950
-patch-downloadn
-patch-get
-patch-get1
-patch-get10
-patch-get100
-patch-get1000
-patch-get15
-patch-get150
-patch-get2
-patch-get20
-patch-get200
-patch-get25
-patch-get250
-patch-get3
-patch-get30
-patch-get300
-patch-get35
-patch-get350
-patch-get4
-patch-get40
-patch-get400
-patch-get45
-patch-get450
-patch-get5
-patch-get50
-patch-get500
-patch-get55
-patch-get550
-patch-get6
-patch-get60
-patch-get600
-patch-get65
-patch-get650
-patch-get7
-patch-get70
-patch-get700
-patch-get75
-patch-get750
-patch-get8
-patch-get80
-patch-get800
-patch-get85
-patch-get850
-patch-get9
-patch-get90
-patch-get900
-patch-get95
-patch-get950
-patch-getn
-patch-rename
-patch-view
-patch-view1
-patch-view10
-patch-view100
-patch-view1000
-patch-view15
-patch-view150
-patch-view2
-patch-view20
-patch-view200
-patch-view25
-patch-view250
-patch-view3
-patch-view30
-patch-view300
-patch-view35
-patch-view350
-patch-view4
-patch-view40
-patch-view400
-patch-view45
-patch-view450
-patch-view5
-patch-view50
-patch-view500
-patch-view55
-patch-view550
-patch-view6
-patch-view60
-patch-view600
-patch-view65
-patch-view650
-patch-view7
-patch-view70
-patch-view700
-patch-view75
-patch-view750
-patch-view8
-patch-view80
-patch-view800
-patch-view85
-patch-view850
-patch-view9
-patch-view90
-patch-view900
-patch-view95
-patch-view950
-patch-viewn
-pdel-branch|__git_remotes__,__git_branches__
-pdel-tag|__git_remotes__,__git_branches__
-pof|__git_remotes__,__git_branches__
-pop|push,pop,apply,drop,list,show,clear,--patch,-p,--include-untracked,-u,--keep-index,-k,--message,-m
-po|__git_remotes__,__git_branches__
 pull|__git_remotes__,__git_branches__,--rebase,-r,--no-rebase,--ff-only,--no-ff,--squash,--autostash,--no-autostash,--all,--prune
 push|__git_remotes__,__git_branches__,--force,-f,--force-with-lease,--set-upstream,-u,--delete,-d,--tags,--all,--prune,--dry-run,-n,--no-verify
-pu|__git_remotes__,__git_branches__
-p|__git_remotes__,__git_branches__
-r0-code|__git_branches__,__git_rebase_flags__
-r0-subl|__git_branches__,__git_rebase_flags__
-r0|__git_branches__,__git_rebase_flags__
-r1-code|__git_branches__,__git_rebase_flags__
-r1-subl|__git_branches__,__git_rebase_flags__
-r10-code|__git_branches__,__git_rebase_flags__
-r10-subl|__git_branches__,__git_rebase_flags__
-r100-code|__git_branches__,__git_rebase_flags__
-r100-subl|__git_branches__,__git_rebase_flags__
-r1000-code|__git_branches__,__git_rebase_flags__
-r1000-subl|__git_branches__,__git_rebase_flags__
-r1000|__git_branches__,__git_rebase_flags__
-r100|__git_branches__,__git_rebase_flags__
-r10|__git_branches__,__git_rebase_flags__
-r15-code|__git_branches__,__git_rebase_flags__
-r15-subl|__git_branches__,__git_rebase_flags__
-r150-code|__git_branches__,__git_rebase_flags__
-r150-subl|__git_branches__,__git_rebase_flags__
-r150|__git_branches__,__git_rebase_flags__
-r15|__git_branches__,__git_rebase_flags__
-r1|__git_branches__,__git_rebase_flags__
-r2-code|__git_branches__,__git_rebase_flags__
-r2-subl|__git_branches__,__git_rebase_flags__
-r20-code|__git_branches__,__git_rebase_flags__
-r20-subl|__git_branches__,__git_rebase_flags__
-r200-code|__git_branches__,__git_rebase_flags__
-r200-subl|__git_branches__,__git_rebase_flags__
-r200|__git_branches__,__git_rebase_flags__
-r20|__git_branches__,__git_rebase_flags__
-r25-code|__git_branches__,__git_rebase_flags__
-r25-subl|__git_branches__,__git_rebase_flags__
-r250-code|__git_branches__,__git_rebase_flags__
-r250-subl|__git_branches__,__git_rebase_flags__
-r250|__git_branches__,__git_rebase_flags__
-r25|__git_branches__,__git_rebase_flags__
-r2|__git_branches__,__git_rebase_flags__
-r3-code|__git_branches__,__git_rebase_flags__
-r3-subl|__git_branches__,__git_rebase_flags__
-r30-code|__git_branches__,__git_rebase_flags__
-r30-subl|__git_branches__,__git_rebase_flags__
-r300-code|__git_branches__,__git_rebase_flags__
-r300-subl|__git_branches__,__git_rebase_flags__
-r300|__git_branches__,__git_rebase_flags__
-r30|__git_branches__,__git_rebase_flags__
-r35-code|__git_branches__,__git_rebase_flags__
-r35-subl|__git_branches__,__git_rebase_flags__
-r350-code|__git_branches__,__git_rebase_flags__
-r350-subl|__git_branches__,__git_rebase_flags__
-r350|__git_branches__,__git_rebase_flags__
-r35|__git_branches__,__git_rebase_flags__
-r3|__git_branches__,__git_rebase_flags__
-r4-code|__git_branches__,__git_rebase_flags__
-r4-subl|__git_branches__,__git_rebase_flags__
-r40-code|__git_branches__,__git_rebase_flags__
-r40-subl|__git_branches__,__git_rebase_flags__
-r400-code|__git_branches__,__git_rebase_flags__
-r400-subl|__git_branches__,__git_rebase_flags__
-r400|__git_branches__,__git_rebase_flags__
-r40|__git_branches__,__git_rebase_flags__
-r45-code|__git_branches__,__git_rebase_flags__
-r45-subl|__git_branches__,__git_rebase_flags__
-r450-code|__git_branches__,__git_rebase_flags__
-r450-subl|__git_branches__,__git_rebase_flags__
-r450|__git_branches__,__git_rebase_flags__
-r45|__git_branches__,__git_rebase_flags__
-r4|__git_branches__,__git_rebase_flags__
-r5-code|__git_branches__,__git_rebase_flags__
-r5-subl|__git_branches__,__git_rebase_flags__
-r50-code|__git_branches__,__git_rebase_flags__
-r50-subl|__git_branches__,__git_rebase_flags__
-r500-code|__git_branches__,__git_rebase_flags__
-r500-subl|__git_branches__,__git_rebase_flags__
-r500|__git_branches__,__git_rebase_flags__
-r50|__git_branches__,__git_rebase_flags__
-r55-code|__git_branches__,__git_rebase_flags__
-r55-subl|__git_branches__,__git_rebase_flags__
-r550-code|__git_branches__,__git_rebase_flags__
-r550-subl|__git_branches__,__git_rebase_flags__
-r550|__git_branches__,__git_rebase_flags__
-r55|__git_branches__,__git_rebase_flags__
-r5|__git_branches__,__git_rebase_flags__
-r6-code|__git_branches__,__git_rebase_flags__
-r6-subl|__git_branches__,__git_rebase_flags__
-r60-code|__git_branches__,__git_rebase_flags__
-r60-subl|__git_branches__,__git_rebase_flags__
-r600-code|__git_branches__,__git_rebase_flags__
-r600-subl|__git_branches__,__git_rebase_flags__
-r600|__git_branches__,__git_rebase_flags__
-r60|__git_branches__,__git_rebase_flags__
-r65-code|__git_branches__,__git_rebase_flags__
-r65-subl|__git_branches__,__git_rebase_flags__
-r650-code|__git_branches__,__git_rebase_flags__
-r650-subl|__git_branches__,__git_rebase_flags__
-r650|__git_branches__,__git_rebase_flags__
-r65|__git_branches__,__git_rebase_flags__
-r6|__git_branches__,__git_rebase_flags__
-r7-code|__git_branches__,__git_rebase_flags__
-r7-subl|__git_branches__,__git_rebase_flags__
-r70-code|__git_branches__,__git_rebase_flags__
-r70-subl|__git_branches__,__git_rebase_flags__
-r700-code|__git_branches__,__git_rebase_flags__
-r700-subl|__git_branches__,__git_rebase_flags__
-r700|__git_branches__,__git_rebase_flags__
-r70|__git_branches__,__git_rebase_flags__
-r75-code|__git_branches__,__git_rebase_flags__
-r75-subl|__git_branches__,__git_rebase_flags__
-r750-code|__git_branches__,__git_rebase_flags__
-r750-subl|__git_branches__,__git_rebase_flags__
-r750|__git_branches__,__git_rebase_flags__
-r75|__git_branches__,__git_rebase_flags__
-r7|__git_branches__,__git_rebase_flags__
-r8-code|__git_branches__,__git_rebase_flags__
-r8-subl|__git_branches__,__git_rebase_flags__
-r80-code|__git_branches__,__git_rebase_flags__
-r80-subl|__git_branches__,__git_rebase_flags__
-r800-code|__git_branches__,__git_rebase_flags__
-r800-subl|__git_branches__,__git_rebase_flags__
-r800|__git_branches__,__git_rebase_flags__
-r80|__git_branches__,__git_rebase_flags__
-r85-code|__git_branches__,__git_rebase_flags__
-r85-subl|__git_branches__,__git_rebase_flags__
-r850-code|__git_branches__,__git_rebase_flags__
-r850-subl|__git_branches__,__git_rebase_flags__
-r850|__git_branches__,__git_rebase_flags__
-r85|__git_branches__,__git_rebase_flags__
-r8|__git_branches__,__git_rebase_flags__
-r9-code|__git_branches__,__git_rebase_flags__
-r9-subl|__git_branches__,__git_rebase_flags__
-r90-code|__git_branches__,__git_rebase_flags__
-r90-subl|__git_branches__,__git_rebase_flags__
-r900-code|__git_branches__,__git_rebase_flags__
-r900-subl|__git_branches__,__git_rebase_flags__
-r900|__git_branches__,__git_rebase_flags__
-r90|__git_branches__,__git_rebase_flags__
-r95-code|__git_branches__,__git_rebase_flags__
-r95-subl|__git_branches__,__git_rebase_flags__
-r950-code|__git_branches__,__git_rebase_flags__
-r950-subl|__git_branches__,__git_rebase_flags__
-r950|__git_branches__,__git_rebase_flags__
-r95|__git_branches__,__git_rebase_flags__
-r9|__git_branches__,__git_rebase_flags__
-rc|__git_branches__,__git_rebase_flags__
 rebase|__git_branches__,__git_rebase_flags__
 remote|__git_remotes__,add,remove,rename,get-url,set-url,show,prune,-v,--verbose
 reset|__git_files__,__git_head_refs__,--soft,--mixed,--hard,--merge,--keep
 restore|__git_files__,--staged,-S,--worktree,-W,--source,-s,--patch,-p
-ri-code|__git_branches__,__git_rebase_flags__
-ri-subl|__git_branches__,__git_rebase_flags__
-ri|__git_branches__,__git_rebase_flags__
 rm|--cached,-r,--force,-f,--dry-run,-n
-rn-code|__git_branches__,__git_rebase_flags__
-rn-subl|__git_branches__,__git_rebase_flags__
-rn|__git_branches__,__git_rebase_flags__
-root
-rvc|__git_branches__
-rv|__git_branches__
-r|__git_branches__,__git_rebase_flags__
-s
-search-logs|__git_log_flags__
-search-reflog
-show1
 show|__git_show_flags__
 stash|push,pop,apply,drop,list,show,clear,--patch,-p,--include-untracked,-u,--keep-index,-k,--message,-m
-stat
-stats
 switch|__git_branches__,--create,-c,--detach,-d,--force,-f,--guess,--no-guess,--track,-t
 tag|--list,-l,--delete,-d,--annotate,-a,--force,-f,--message,-m,--sign,-s,--verify,-v
-theirs|__git_branches__,__git_files__
-their|__git_branches__,__git_files__
-track|__git_branches__,__git_branch_flags__
-undo|__git_files__,__git_head_refs__
-unwip|__git_log_flags__
-where-is|__git_branches__,__git_branch_flags__
-wip|__git_files__,__git_add_flags__
 worktree|add,list,lock,move,prune,remove,unlock
 __SPEC_EOF__
 __spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
@@ -6108,6 +5271,42 @@ complete -o filenames -F __spec_complete_brew brew
 fi
 # END brew Spec Autocomplete
 
+# BEGIN bun Spec Autocomplete
+################################################################################
+# bun (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_bun() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+add|--dev,-d,--optional,--peer,--exact,-E,--global,-g,--verbose,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress
+build|--outdir,--outfile,--target,--format,--splitting,--minify,--sourcemap,--entry-naming,--chunk-naming,--asset-naming,--external,--loader,--define,--jsx-factory,--jsx-fragment,--tsconfig-override,--public-path,--root,--compile
+create|--force,-f,--no-install,--no-git,--open,--template,-t
+init|-y,--yes,--force,-f,--open
+install|--frozen-lockfile,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress,--verbose,--production,-p,--global,-g,--ignore-scripts,--trust
+link|--save,--no-save,--global,-g,--force,-f
+outdated|--global,-g
+pm|cache,ls,hash,hash-print,hash-string,migrate,trust,untrust,default-trusted
+remove|--global,-g,--save,--verbose,--no-save
+run|--watch,--hot,--smol,--if-present,--silent,--bun,--shell,--filter,--inspect,--inspect-brk,--inspect-wait,--env-file,--cwd,--config,-c,--preload,--print,--eval,-e,__npm_scripts__
+test|--watch,--bail,-b,--timeout,-t,--rerun-each,--only,--todo,--preload,--coverage,--update-snapshots,-u,--env-file,--cwd
+update|--global,-g,--force,-f,--latest,--save,--no-save,--dry-run,--verbose
+upgrade|--canary,--stable,--force,-f,--version
+x|--bun,--silent,--verbose,--install,--no-install,--trust,--packages,-p
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_bun bun 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_bun bun
+fi
+# END bun Spec Autocomplete
+
 # BEGIN cargo Spec Autocomplete
 ################################################################################
 # cargo (spec-based autocomplete)
@@ -6149,6 +5348,53 @@ else
 complete -o filenames -F __spec_complete_cargo cargo
 fi
 # END cargo Spec Autocomplete
+
+# BEGIN deno Spec Autocomplete
+################################################################################
+# deno (spec-based autocomplete)
+################################################################################
+# Per-command spec autocomplete wrapper template (partial — not a standalone script).
+# run: bash run.sh --files="bash-autocomplete-complete-spec.js"
+# thin per-command wrapper — loads spec data and delegates to __spec_complete
+function __spec_complete_deno() {
+local spec_data
+read -r -d '' spec_data << '__SPEC_EOF__'
+bench|--watch,--no-clear-screen,--filter,--ignore,--json,--no-run,--config,-c,--no-config,--import-map,--no-lock,--lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write
+cache|--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
+check|--all,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
+clean
+compile|--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--output,-o,--target,--include
+completions|bash,zsh,fish,powershell
+coverage|--ignore,--include,--output,--lcov,--html,--detailed
+doc|--json,--html,--name,--category,--lint,--filter
+eval|--ext,-T,--print,-p,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
+fmt|--check,--config,-c,--ext,--ignore,--no-config,--options-indent-width,--options-line-width,--options-prose-wrap,--options-single-quote,--options-use-tabs,--watch,--no-clear-screen,--unstable
+info|--json,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r
+init|--lib,--serve
+install|--global,-g,--name,-n,--root,--force,-f,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--entrypoint
+jupyter|--install,--kernel,--conn
+lint|--fix,--config,-c,--ignore,--json,--no-config,--rules,--rules-exclude,--rules-include,--rules-tags,--watch,--no-clear-screen,--compact
+lsp
+publish|--token,--config,-c,--no-config,--dry-run,--allow-slow-types,--allow-dirty,--no-provenance
+repl|--eval,--eval-file,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write
+run|--watch,--watch-exclude,--watch-hmr,--no-clear-screen,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--unstable,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--deny-env,--deny-ffi,--deny-hrtime,--deny-net,--deny-read,--deny-run,--deny-sys,--deny-write,--inspect,--inspect-brk,--inspect-wait,--frozen,--cached-only,--env-file
+serve|--port,--host,--watch,--watch-exclude,--watch-hmr,--no-clear-screen,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--parallel
+task|--config,-c,--cwd,--filter,--eval,--recursive
+test|--watch,--no-clear-screen,--doc,--fail-fast,--filter,--ignore,--jobs,-j,--junit-path,--no-run,--parallel,--reporter,--shuffle,--config,-c,--no-config,--import-map,--lock,--no-lock,--no-npm,--no-remote,--node-modules-dir,--reload,-r,--allow-all,-A,--allow-env,--allow-ffi,--allow-hrtime,--allow-net,--allow-read,--allow-run,--allow-sys,--allow-write,--coverage,--clean
+types|--unstable
+uninstall|--global,-g,--name,-n,--root
+upgrade|--canary,--dry-run,--force,-f,--output,--version,-V
+__SPEC_EOF__
+__spec_complete "$spec_data" "${BASHRC_AUTOCOMPLETE_MAX_DEPTH:-3}"
+}
+# nosort: preserve custom order (non-options first, --flags last). filenames: enable LS_COLORS coloring for filesystem completions
+# bash 4.0+ supports -o nosort; older versions fall back to filenames only
+if complete -o nosort -o filenames -F __spec_complete_deno deno 2> /dev/null; then
+: # registered with nosort
+else
+complete -o filenames -F __spec_complete_deno deno
+fi
+# END deno Spec Autocomplete
 
 # BEGIN fnm Spec Autocomplete
 ################################################################################
@@ -6954,7 +6200,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 82633e443566a4b5391ae8468fe34473 | 6.1 KB | 2026-04-22
+# software/scripts/bash-command-wrappers.profile.bash | 82633e443566a4b5391ae8468fe34473 | 6.1 KB | 2026-04-20
 ################################################################################
 # ---- Command Wrappers ----
 #

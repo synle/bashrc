@@ -131,6 +131,8 @@ async function _doKeysWork(targetDir) {
  * @type {Record<string, any>}
  */
 const CLAUDE_MANAGED_SETTINGS = {
+  // default model for all claude code sessions. tradeoff: higher cost. risk: none
+  model: "claude-opus-4-7[1m]",
   // skip confirmation prompt before entering bypass permissions mode. tradeoff: no safety prompt. risk: medium
   skipDangerousModePermissionPrompt: true,
   // auto-delete session files older than 30 days. tradeoff: lose old history. risk: low
