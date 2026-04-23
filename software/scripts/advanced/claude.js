@@ -201,7 +201,7 @@ const CLAUDE_COMMANDS = {
 
     4. **If all checks pass:** Report success and stop.
 
-    5. **If checks are still pending:** Wait and re-check periodically until they complete.
+    5. **If checks are still pending:** Wait **60 seconds** between re-checks and poll until they complete.
 
     6. **If checks are failing:**
        a. Get the failing run IDs from statusCheckRollup.
@@ -231,12 +231,82 @@ const CLAUDE_COMMANDS = {
        c. Commit the fix and push.
        d. Wait for CI to re-run and verify it passes.
 
-    5. For PRs with pending checks, wait for them to complete and re-check.
+    5. For PRs with pending checks, wait **60 seconds** between re-checks and poll until they complete.
 
-    6. Report a final summary table of all PRs and their updated status:
-       | # | Repo | Title | CI Status | Action Taken |
+    6. **Periodic status snapshot:** At the end of every 60-second polling cycle, run \`/list-prs\` to render the current readiness table for all open PRs. This is the single source of truth for status output — do not hand-roll a separate table. Between snapshots, keep log lines terse (one line per action).
 
-    7. Repeat the cycle until all PRs have passing CI or the issues require human intervention (e.g., flaky infra, missing secrets, approval-gated checks). Report those clearly.
+    7. Repeat the cycle — fix, wait 60s, poll, render \`/list-prs\` — until all PRs have passing CI or the issues require human intervention (e.g., flaky infra, missing secrets, approval-gated checks). Report those clearly.
+
+    8. **Final report:** one last \`/list-prs\` render plus a short summary of fixes applied and any PRs that need human attention.
+  `,
+
+  "sync-babysit-pr.md": code`
+    Sync a pull request branch with its base (main/master) via merge, then babysit until CI passes.
+    Same input as \`/babysit-pr\` — this wraps it with a merge-prep step.
+
+    Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR.)
+
+    ## Steps
+
+    1. **Determine which PR to sync+babysit:**
+       - If \`$ARGUMENTS\` is provided (a PR URL like \`https://github.com/org/repo/pull/123\` or a PR number), use that.
+       - If \`$ARGUMENTS\` is empty, detect from the current working directory:
+         - \`git remote get-url origin\` to determine the repo.
+         - \`git branch --show-current\` to get the current branch.
+         - \`gh pr view --json number,title,url,headRefName,baseRefName\` to find the PR for the current branch.
+         - If no PR exists for the current branch, tell the user and stop.
+
+    2. **Check if the merge-prep can be skipped.** Fetch state:
+       \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviewDecision,mergeable,baseRefName,headRefName\`
+       - If **all CI checks are passing** AND \`reviewDecision\` is \`APPROVED\`: skip the merge step entirely. Tell the user "PR is already green + approved — skipping merge prep" and jump to step 5.
+
+    3. **Merge the base branch into the PR branch** (NEVER rebase — this must not rewrite history):
+       a. Check out the PR branch locally: \`gh pr checkout <number> --repo <owner/repo>\`.
+       b. Fetch the base: \`git fetch origin <baseRefName>\`.
+       c. Merge (regular merge commit — do NOT use \`--rebase\` and do NOT use \`--squash\`):
+          \`git merge origin/<baseRefName> --no-edit\`
+       d. If merge conflicts occur:
+          - Attempt straightforward resolution (obvious lockfile / generated-file conflicts, non-overlapping edits).
+          - If resolution is non-trivial, stop and ask the user for guidance. Never force a resolution you are not confident in.
+          - After resolving: \`git add <files>\` and \`git commit --no-edit\`.
+       e. Push the updated branch: \`git push\`.
+       f. Note: this creates a regular merge commit on the PR branch. The eventual PR-level merge into main must still be a **squash merge** per repo policy.
+
+    4. **Announce** the sync result to the user: which base branch was merged in, whether there were conflicts, and the new HEAD SHA.
+
+    5. **Delegate to \`/babysit-pr\`** with the same \`$ARGUMENTS\` — this runs the full babysit pipeline (CI monitoring, failure diagnosis, fixes, wait-until-green).
+  `,
+
+  "sync-babysit-prs.md": code`
+    Sync ALL my open PR branches with their base (main/master) via merge, then babysit until CI passes.
+    Same input as \`/babysit-prs\` — this wraps it with a per-PR merge-prep step.
+
+    ## Steps
+
+    1. Run \`gh search prs --author=@me --state=open --json number,title,repository,isDraft,url,headRefName,baseRefName\` to find all open PRs.
+
+    2. **Announce:** Tell the user how many open PRs were found and list them (repo, PR number, title).
+
+    3. **For each PR, run the merge-prep step:**
+       a. Fetch state: \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviewDecision,mergeable,baseRefName,headRefName\`.
+       b. **Skip merge prep if** all CI checks are passing AND \`reviewDecision\` is \`APPROVED\`. Log "skipped — already green + approved" and move to the next PR.
+       c. Otherwise, merge the base branch into the PR branch (NEVER rebase):
+          - \`gh pr checkout <number> --repo <owner/repo>\`
+          - \`git fetch origin <baseRefName>\`
+          - \`git merge origin/<baseRefName> --no-edit\` (regular merge commit — not \`--rebase\`, not \`--squash\`)
+          - Resolve conflicts if trivial; stop and ask the user if not.
+          - \`git push\`
+       d. Record the result (merged / skipped / conflict-blocked) for the final summary.
+
+    4. **Announce the sync summary** before handing off: which PRs were synced, which were skipped, which hit conflicts that need user input.
+
+    5. **Delegate to \`/babysit-prs\`** — this runs the full babysit-all pipeline (CI monitoring, per-PR failure diagnosis, fixes, wait-until-green, summary table).
+
+    ## Rules
+
+    - Never rebase to sync — always use \`git merge\` so the PR branch history is not rewritten.
+    - Never use \`--squash\` when merging main into the branch — that flattens base-branch commits into one and breaks the ancestry. The eventual PR-level merge into main is still a squash merge per repo policy, but that is a separate action.
+    - If a PR is already green + approved, do not touch it — skipping the merge avoids pointless CI re-runs.
   `,
 
   "create-pr.md": code`
