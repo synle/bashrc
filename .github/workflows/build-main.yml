@@ -311,9 +311,24 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
         with:
-          path: .build/
+          path: /tmp/build-artifacts/
           pattern: build-*
-          merge-multiple: true
+          # merge-multiple: false — each artifact lands in its own subdir (build-ubuntu, build-arch, ...)
+          # so same-named files from different OS builds don't race-overlay each other (see next step).
+
+      - name: Merge build artifacts into .build/
+        # `actions/download-artifact@v4` with `merge-multiple: true` has been observed to overwrite
+        # same-named files without truncating, leaving the longer file's tail appended to the shorter
+        # file's content — producing corrupt profiles. Copy explicitly instead: bash `cp -f` truncates
+        # on overwrite, so the last source in this deterministic order wins cleanly. Order matters
+        # only for same-named files; each OS's unique `profile_bashrc_<os>.sh` is not affected.
+        run: |
+          for artifact_dir in /tmp/build-artifacts/build-arch /tmp/build-artifacts/build-rhel /tmp/build-artifacts/build-debian /tmp/build-artifacts/build-ubuntu /tmp/build-artifacts/build-mac; do
+            [ -d "$artifact_dir" ] || continue
+            echo "Merging $artifact_dir -> .build/"
+            cp -rfT "$artifact_dir" .build/
+          done
+          ls -la .build/profile_bashrc_*.sh 2>/dev/null || true
 
       - name: Commit Changes
         uses: EndBug/add-and-commit@v9
