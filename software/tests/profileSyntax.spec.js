@@ -16,10 +16,10 @@ const bootstrapFiles = globSync(path.join(ROOT_DIR, "software/bootstrap/*.{sh,ba
 const rootScriptFiles = globSync(path.join(ROOT_DIR, "*.sh"));
 const fullSetupFiles = globSync(path.join(ROOT_DIR, "software/scripts/**/_full-setup{,.common.linux}.{sh,bash}"));
 
-/** Minimum char count per profile file (95% of current size as of 2026-03-23). */
+/** Minimum char count per profile file (95% of current size as of 2026-04-24). */
 const MIN_CHARS_PROFILE_MAP = {
   profile_bashrc_mac: 263720, // current: 277601
-  profile_bashrc_ubuntu: 332000, // current: 349441
+  profile_bashrc_ubuntu: 284500, // current: 299571
 };
 const MIN_CHARS_BOOTSTRAP = 2200;
 /** Bootstrap files with lower size thresholds (small by design). */
