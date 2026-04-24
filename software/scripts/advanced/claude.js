@@ -516,22 +516,8 @@ const CLAUDE_COMMANDS = {
 };
 
 /**
- * Slash command files previously deployed by earlier versions of this script but no longer part
- * of CLAUDE_COMMANDS. On every run we remove these from ~/.claude/commands/ so stale shadows
- * don't drift from the current source of truth.
- *
- * TODO: This is a temporary cleanup list — remove this array and the cleanup loop in
- * _doCommandsWork once every machine this repo is deployed to has been re-run at least once
- * (call it a few weeks after this lands). Keeping it forever causes a slow leak of names that
- * future devs can't trace back to a real entry.
- * @type {string[]}
- */
-const CLAUDE_COMMANDS_STALE = ["sync-babysit-pr.md", "sync-babysit-prs.md"];
-
-/**
  * Deploys inline slash command definitions from CLAUDE_COMMANDS to ~/.claude/commands/.
  * Each entry becomes a user-level /<name> command available across all projects.
- * Also removes stale files listed in CLAUDE_COMMANDS_STALE that were deployed by prior versions.
  * @param {string} targetDir - Path to the ~/.claude directory.
  */
 async function _doCommandsWork(targetDir) {
@@ -546,24 +532,6 @@ async function _doCommandsWork(targetDir) {
     await backupConfigFile(dest);
     fs.writeFileSync(dest, content + "\n");
     log("   Deployed:", file);
-  }
-
-  // TODO (temporary): remove stale command files from previous deploys. Delete this loop
-  // and CLAUDE_COMMANDS_STALE once all dev machines have re-run and are confirmed clean.
-  for (const file of CLAUDE_COMMANDS_STALE) {
-    const stale = path.join(commandsDir, file);
-    if (fs.existsSync(stale)) {
-      fs.rmSync(stale, { force: true });
-      log("   Removed stale:", file);
-    }
-    // also clean up the .bak_original / .bak_latest siblings if present
-    for (const suffix of [".bak_original", ".bak_latest"]) {
-      const bak = stale + suffix;
-      if (fs.existsSync(bak)) {
-        fs.rmSync(bak, { force: true });
-        log("   Removed stale backup:", file + suffix);
-      }
-    }
   }
 }
 
