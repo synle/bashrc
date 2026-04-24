@@ -467,7 +467,6 @@ jobs:
                 sed -i \
                   -e "s|$ci_home|~|g" \
                   -e 's|\.\(runner\|unknown\)_bookmark|.user_bookmark|g' \
-                  -e 's|\.\(runner\|unknown\)_make_component|.user_make_component|g' \
                   "$target"
               fi
 
