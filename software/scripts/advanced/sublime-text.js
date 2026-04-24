@@ -67,9 +67,13 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
 
 /**
  * Writes Sublime Text settings to prebuilt config files and applies them to the local Sublime Text installation.
+ * Build artifacts are queued onto `artifacts` and written in one batch at the end of `doWork()`
+ * because `writeBuildArtifact` throws `ScriptSkipError` in CI after its first call — bundling ensures
+ * every subsequent `_do*Work` step's artifacts actually reach `.build/`.
  * @param {string|null} targetPath - Path to the local Sublime Text config directory.
+ * @param {object[]} artifacts - Shared list to which prebuilt-config build artifacts are pushed.
  */
-async function _doConfigWork(targetPath) {
+async function _doConfigWork(targetPath, artifacts) {
   log(`>> Sublime Text Configurations / Settings:`);
 
   // load base hardcoded configs from JSONC
@@ -100,27 +104,25 @@ async function _doConfigWork(targetPath) {
     await writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_mac: is_os_mac }));
   }
 
-  // write to build file
-  if (IS_CI) {
-    const comments = "Preferences Settings";
-    log(`>>> For prebuilt configs`);
-    await writeBuildArtifact([
-      {
-        file: `${BUILD_DIR}/sublime-text-config`,
-        data: _getConfigs({ is_prebuilt_config: true, is_os_mac: false }),
-        isJson: true,
-        comments,
-        commentStyle: "json",
-      },
-      {
-        file: `${BUILD_DIR}/sublime-text-config-mac`,
-        data: _getConfigs({ is_prebuilt_config: true, is_os_mac: true }),
-        isJson: true,
-        comments,
-        commentStyle: "json",
-      },
-    ]);
-  }
+  // queue build artifacts (written in bulk at end of doWork)
+  const comments = "Preferences Settings";
+  log(`>>> For prebuilt configs`);
+  artifacts.push(
+    {
+      file: `${BUILD_DIR}/sublime-text-config`,
+      data: _getConfigs({ is_prebuilt_config: true, is_os_mac: false }),
+      isJson: true,
+      comments,
+      commentStyle: "json",
+    },
+    {
+      file: `${BUILD_DIR}/sublime-text-config-mac`,
+      data: _getConfigs({ is_prebuilt_config: true, is_os_mac: true }),
+      isJson: true,
+      comments,
+      commentStyle: "json",
+    },
+  );
 }
 
 ////// Mouse Bindings //////
@@ -173,16 +175,17 @@ function _formatMouseKey(mouseMaps, osKeyToUse) {
 /**
  * Writes prebuilt mouse map configs per platform and applies the config to the local Sublime Text installation.
  * @param {string|null} targetPath - Path to the local Sublime Text config directory.
+ * @param {object[]} artifacts - Shared list to which prebuilt mouse-map build artifacts are pushed.
  */
-async function _doMouseWork(targetPath) {
+async function _doMouseWork(targetPath, artifacts) {
   log(`>> Setting up Sublime Text MouseMaps`);
 
-  // write to build file
+  // queue build artifacts (written in bulk at end of doWork)
   log(`>>> For prebuilt configs`);
-  await writeBuildArtifact([
+  artifacts.push(
     { file: `${BUILD_DIR}/sublime-text-mouse`, data: _formatMouseKey(MOUSE_MAPS, MOUSE_WINDOWS_OS_KEY), isJson: true },
     { file: `${BUILD_DIR}/sublime-text-mouse-mac`, data: _formatMouseKey(MOUSE_MAPS, MOUSE_MAC_OSX_KEY), isJson: true },
-  ]);
+  );
 
   // for my own system
   if (targetPath) {
@@ -199,17 +202,18 @@ async function _doMouseWork(targetPath) {
 /**
  * Copies Sublime Text plugin files to both the prebuilt build directory and the local Sublime Text installation.
  * @param {string|null} targetPath - Path to the local Sublime Text config directory.
+ * @param {object[]} artifacts - Shared list to which prebuilt plugin build artifacts are pushed.
  */
-async function _doPluginsWork(targetPath) {
+async function _doPluginsWork(targetPath, artifacts) {
   log(`>> Sublime Text Plugins:`);
   const allPlugins = [`sublime-text-plugins-refresh-on-focus.py`];
 
-  // write to build file
+  // queue build artifacts (written in bulk at end of doWork)
   log(`>>> For prebuilt configs`);
   for (const pluginCodePath of allPlugins) {
     log(`>>>> ${pluginCodePath}`);
     const pluginContent = await readText`${path.join("software/scripts", pluginCodePath)}`;
-    await writeBuildArtifact({ file: `${BUILD_DIR}/${pluginCodePath}`, data: pluginContent });
+    artifacts.push({ file: `${BUILD_DIR}/${pluginCodePath}`, data: pluginContent });
   }
 
   // for my own system
@@ -259,17 +263,18 @@ function _getKeyConfigs(isOsMac) {
 /**
  * Loads keybinding configs, writes prebuilt configs per platform, and applies to the local Sublime Text installation.
  * @param {string|null} targetPath - Path to the local Sublime Text config directory.
+ * @param {object[]} artifacts - Shared list to which prebuilt keybinding build artifacts are pushed.
  */
-async function _doKeysWork(targetPath) {
+async function _doKeysWork(targetPath, artifacts) {
   COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/sublime-text-keys.common.jsonc`) || [];
   WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/sublime-text-keys.windows.jsonc`) || [];
   MAC_ONLY_KEY_BINDINGS = [];
 
   log(`>> Sublime Text Keybindings:`);
 
-  // write to build file
+  // queue build artifacts (written in bulk at end of doWork)
   const comments = "Preferences Key Bindings";
-  await writeBuildArtifact([
+  artifacts.push(
     {
       file: `${BUILD_DIR}/sublime-text-keys-windows`,
       data: _getKeyConfigs(false),
@@ -291,7 +296,7 @@ async function _doKeysWork(targetPath) {
       comments,
       commentStyle: "json",
     },
-  ]);
+  );
 
   // for my own system
   if (targetPath) {
@@ -346,8 +351,9 @@ function getPowershellLines() {
 
 /**
  * Generates the Sublime Text setup download script for bash and PowerShell environments.
+ * @param {object[]} artifacts - Shared list to which the setup-script build artifact is pushed.
  */
-async function _doSetupScriptWork() {
+async function _doSetupScriptWork(artifacts) {
   log(`>> Sublime Text Setup Script:`);
 
   const script = `
@@ -392,7 +398,7 @@ ${getPowershellLines()}
 }
 `;
 
-  await writeBuildArtifact([{ file: `${BUILD_DIR}/sublime-text-setup`, data: script }]);
+  artifacts.push({ file: `${BUILD_DIR}/sublime-text-setup`, data: script });
 }
 
 ////// Extensions //////
@@ -439,17 +445,16 @@ const toInstallExtensions = set`
 /**
  * Installs Sublime Text packages via Package Control and writes extension list to build file.
  * @param {string|null} targetPath - Path to the local Sublime Text config directory.
+ * @param {object[]} artifacts - Shared list to which the extensions build artifact is pushed.
  */
-async function _doExtWork(targetPath) {
+async function _doExtWork(targetPath, artifacts) {
   log(`>> Sublime Text Extensions:`);
 
-  // write to build file
-  await writeBuildArtifact([
-    {
-      file: `${BUILD_DIR}/sublime-text-ext`,
-      data: `# Use Preferences > Package Control > Package Control: Advanced Install Package. \n${toInstallExtensions.join(",")}`,
-    },
-  ]);
+  // queue build artifact (written in bulk at end of doWork)
+  artifacts.push({
+    file: `${BUILD_DIR}/sublime-text-ext`,
+    data: `# Use Preferences > Package Control > Package Control: Advanced Install Package. \n${toInstallExtensions.join(",")}`,
+  });
 
   // write Package Control settings to local Sublime Text installation
   if (targetPath) {
@@ -482,12 +487,19 @@ async function doWork() {
   let targetPath = await _getPathSublimeText();
   log(">>> Sublime Text path", targetPath);
 
-  await _doConfigWork(targetPath);
-  await _doMouseWork(targetPath);
-  await _doPluginsWork(targetPath);
-  await _doKeysWork(targetPath);
-  await _doExtWork(targetPath);
-  if (IS_CI) {
-    await _doSetupScriptWork();
+  // Collect all build artifacts into one list and flush in a single writeBuildArtifact call
+  // at the end — in CI, writeBuildArtifact throws ScriptSkipError after its first invocation,
+  // so calling it per sub-task would drop every artifact except the first.
+  const artifacts = [];
+
+  await _doConfigWork(targetPath, artifacts);
+  await _doMouseWork(targetPath, artifacts);
+  await _doPluginsWork(targetPath, artifacts);
+  await _doKeysWork(targetPath, artifacts);
+  await _doExtWork(targetPath, artifacts);
+  await _doSetupScriptWork(artifacts);
+
+  if (artifacts.length) {
+    await writeBuildArtifact(artifacts);
   }
 }
