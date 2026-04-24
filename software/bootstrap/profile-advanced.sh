@@ -1888,7 +1888,6 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # BEGIN/END | Editor Launchers - Sublime Merge
 # BEGIN/END | Editor Launchers - VS Code
 # BEGIN/END | Editor Launchers - Zed
-# BEGIN/END | Sy Make Component
 # BEGIN/END | starship prompt
 # BEGIN/END | zoxide init
 
