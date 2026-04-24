@@ -273,10 +273,6 @@ installBrewPackageInBackground --cask --app="Sublime Merge.app" sublime-merge
 installBrewPackageInBackground --cask --app="Visual Studio Code.app" visual-studio-code
 installBrewPackageInBackground --cask --app="Zed.app" zed
 
-# ---- display-dj dependencies (resolution switching) ----
-# TODO: remove displayplacer once display-dj handles resolution natively
-# installBrewPackageInBackground displayplacer
-
 # ---- GUI apps (reinstall in background) ----
 installBrewPackageInBackground --cask --force balenaetcher
 installBrewPackageInBackground --cask --force blender
