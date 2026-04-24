@@ -181,7 +181,7 @@ async function _doSettingsWork(targetDir) {
  */
 const CLAUDE_COMMANDS = {
   "babysit-pr.md": code`
-    Monitor a pull request, fix failing builds, and wait until CI passes.
+    Monitor a pull request, address review comments, run local checks, fix failing builds, and wait until CI passes.
 
     Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR.)
 
@@ -197,25 +197,48 @@ const CLAUDE_COMMANDS = {
 
     2. **Announce:** Tell the user which repo and PR you are babysitting (repo name, PR number, title, URL).
 
-    3. **Check CI status:** Run \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable\` to get current state.
+    3. **Early-exit check (step 0):** Fetch state:
+       \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable\`
+       - If **all CI checks are passing** AND \`reviewDecision\` is \`APPROVED\`: report "PR is already green + approved — nothing to do" and **stop**. Do not run any further steps.
 
-    4. **If all checks pass:** Report success and stop.
+    4. **Address reviewer comments:**
+       - Fetch review comments: \`gh api repos/<owner>/<repo>/pulls/<number>/comments\` and issue comments: \`gh api repos/<owner>/<repo>/issues/<number>/comments\`.
+       - **Human reviewer comments:** address every unresolved, substantive comment. Read the referenced code, apply the fix (or reply explaining why not), and commit.
+       - **Bot / automated comments** (CodeRabbit, Copilot, Dependabot, Sonar, etc.): ignore by default. Only address **trivial minor nitpicks** (typos, obvious lint one-liners) — skip anything requiring judgment or larger refactors.
+       - Skip comments already marked resolved / outdated / on stale SHAs.
 
-    5. **If checks are still pending:** Wait **60 seconds** between re-checks and poll until they complete.
+    5. **Run local checks before pushing any new commit:**
+       - Detect project type and run the appropriate commands. Examples:
+         - Node: \`npm test\` (or \`yarn test\` / \`pnpm test\`), \`npx tsc --noEmit\`, \`npx prettier --check .\`, \`npx eslint .\`
+         - Python: \`pytest\`, \`ruff check .\`, \`ruff format --check .\`, \`mypy .\`
+         - Rust: \`cargo test\`, \`cargo fmt --check\`, \`cargo clippy\`
+         - Go: \`go test ./...\`, \`gofmt -l .\`, \`go vet ./...\`
+         - Repo-specific: \`make validate\`, \`make test\`, or whatever \`README\`/\`CLAUDE.md\`/\`package.json\` scripts dictate.
+       - If any fail, **fix them before pushing**. Re-run until green locally.
+       - Commit and push the fixes.
 
-    6. **If checks are failing:**
-       a. Get the failing run IDs from statusCheckRollup.
-       b. Examine logs: \`gh run view <run-id> --repo <owner/repo> --log-failed\`.
-       c. Read the relevant code, diagnose the issue, and fix it.
-       d. Commit the fix and push.
-       e. Wait for CI to re-run.
-       f. Re-check status — repeat until passing or the issue requires human intervention.
+    6. **Monitor CI** — poll every **60 seconds**: \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable\`.
+       - If all checks pass: go back to **step 3** (early-exit will confirm green + approved, or loop for remaining comments).
+       - If checks are still pending: keep polling.
+       - If checks are failing:
+         a. Get failing run IDs from \`statusCheckRollup\`.
+         b. Examine logs: \`gh run view <run-id> --repo <owner/repo> --log-failed\`.
+         c. Read the relevant code, diagnose, and fix.
+         d. Commit and push.
+         e. **Go back to step 3** (re-run the full loop: early-exit → comments → local checks → CI monitor).
 
-    7. **Final report:** Summarize what happened — checks status, fixes applied, and whether the PR is now green.
+    7. **Final report:** Summarize what happened — comments addressed, local checks run, CI fixes applied, and whether the PR is now green + approved.
+
+    ## Rules
+
+    - The loop is: early-exit → reviewer comments → local checks → CI monitor → (on failure) back to early-exit.
+    - Never skip local checks before pushing — it wastes CI cycles.
+    - Never address non-trivial bot comments without user confirmation.
+    - Poll CI every 60s; do not spam \`gh\` calls.
   `,
 
   "babysit-prs.md": code`
-    Monitor ALL my open pull requests, fix failing builds, and wait until they pass.
+    Monitor ALL my open pull requests, address review comments, run local checks, fix failing builds, and wait until they pass.
 
     ## Steps
 
@@ -223,26 +246,45 @@ const CLAUDE_COMMANDS = {
 
     2. **Announce:** Tell the user how many open PRs were found and list them (repo, PR number, title).
 
-    3. For each PR, check CI status via \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup\`.
+    3. **For each PR, run the per-PR loop:**
+       a. **Early-exit check (step 0):** Fetch state via \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable\`.
+          - If **all CI checks are passing** AND \`reviewDecision\` is \`APPROVED\`: log "skipped — already green + approved" and move to the next PR. Do not process further.
+       b. **Address reviewer comments:**
+          - Fetch \`gh api repos/<owner>/<repo>/pulls/<number>/comments\` and \`gh api repos/<owner>/<repo>/issues/<number>/comments\`.
+          - Address every unresolved, substantive **human** reviewer comment — read the code, fix, commit.
+          - Ignore bot/automated comments (CodeRabbit, Copilot, Dependabot, Sonar, etc.) by default. Only address **trivial minor nitpicks** from bots (typos, obvious lint one-liners). Skip anything requiring judgment.
+          - Skip comments already resolved / outdated / on stale SHAs.
+       c. **Run local checks before pushing any new commit:**
+          - Checkout the PR branch: \`gh pr checkout <number> --repo <owner/repo>\`.
+          - Detect project type and run tests + format check + type check. Examples:
+            - Node: \`npm test\`, \`npx tsc --noEmit\`, \`npx prettier --check .\`, \`npx eslint .\`
+            - Python: \`pytest\`, \`ruff check .\`, \`ruff format --check .\`, \`mypy .\`
+            - Rust: \`cargo test\`, \`cargo fmt --check\`, \`cargo clippy\`
+            - Go: \`go test ./...\`, \`gofmt -l .\`, \`go vet ./...\`
+            - Repo-specific: \`make validate\`, \`make test\`, or whatever \`README\`/\`CLAUDE.md\`/\`package.json\` dictates.
+          - Fix any failures locally, re-run until green, then commit and push.
+       d. **Monitor CI** for this PR — poll every **60 seconds**. On failure:
+          - \`gh run view <run-id> --repo <owner/repo> --log-failed\`
+          - Read the code, diagnose, fix, commit, push.
+          - **Go back to step 3a** for this PR (early-exit → comments → local checks → CI).
 
-    4. Identify PRs with failing or errored checks. For each failing PR:
-       a. Examine the failing check details and logs (\`gh run view <run-id> --repo <owner/repo> --log-failed\`).
-       b. Checkout the branch, read the relevant code, and fix the issue.
-       c. Commit the fix and push.
-       d. Wait for CI to re-run and verify it passes.
+    4. **Periodic status snapshot:** At the end of every 60-second polling cycle (across all PRs), run \`/list-prs\` to render the current readiness table. This is the single source of truth for status output — do not hand-roll a separate table. Between snapshots, keep log lines terse (one line per action).
 
-    5. For PRs with pending checks, wait **60 seconds** between re-checks and poll until they complete.
+    5. Repeat — fix, wait 60s, poll, render \`/list-prs\` — until all PRs are green + approved or the issues require human intervention (flaky infra, missing secrets, approval-gated checks). Report those clearly.
 
-    6. **Periodic status snapshot:** At the end of every 60-second polling cycle, run \`/list-prs\` to render the current readiness table for all open PRs. This is the single source of truth for status output — do not hand-roll a separate table. Between snapshots, keep log lines terse (one line per action).
+    6. **Final report:** one last \`/list-prs\` render plus a short summary of comments addressed, local checks run, fixes applied, and any PRs that need human attention.
 
-    7. Repeat the cycle — fix, wait 60s, poll, render \`/list-prs\` — until all PRs have passing CI or the issues require human intervention (e.g., flaky infra, missing secrets, approval-gated checks). Report those clearly.
+    ## Rules
 
-    8. **Final report:** one last \`/list-prs\` render plus a short summary of fixes applied and any PRs that need human attention.
+    - Per-PR loop is: early-exit → reviewer comments → local checks → CI monitor → (on failure) back to early-exit.
+    - Never skip local checks before pushing — it wastes CI cycles.
+    - Never address non-trivial bot comments without user confirmation.
+    - Poll CI every 60s; do not spam \`gh\` calls.
   `,
 
   "sync-babysit-pr.md": code`
-    Sync a pull request branch with its base (main/master) via merge, then babysit until CI passes.
-    Same input as \`/babysit-pr\` — this wraps it with a merge-prep step.
+    Sync a pull request branch with its base (main/master) via merge, then babysit until CI passes and all review comments are addressed.
+    Same input as \`/babysit-pr\` — this wraps it with a merge-prep step (step 1).
 
     Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR.)
 
@@ -256,13 +298,13 @@ const CLAUDE_COMMANDS = {
          - \`gh pr view --json number,title,url,headRefName,baseRefName\` to find the PR for the current branch.
          - If no PR exists for the current branch, tell the user and stop.
 
-    2. **Check if the merge-prep can be skipped.** Fetch state:
+    2. **Early-exit check (step 0):** Fetch state:
        \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviewDecision,mergeable,baseRefName,headRefName\`
-       - If **all CI checks are passing** AND \`reviewDecision\` is \`APPROVED\`: skip the merge step entirely. Tell the user "PR is already green + approved — skipping merge prep" and jump to step 5.
+       - If **all CI checks are passing** AND \`reviewDecision\` is \`APPROVED\`: report "PR is already green + approved — nothing to do" and **stop**. Skip merge prep and skip babysit.
 
-    3. **Merge the base branch into the PR branch** (NEVER rebase — this must not rewrite history):
+    3. **Merge base into the PR branch (step 1 — sync)** — NEVER rebase, this must not rewrite history:
        a. Check out the PR branch locally: \`gh pr checkout <number> --repo <owner/repo>\`.
-       b. Fetch the base: \`git fetch origin <baseRefName>\`.
+       b. Fetch and pull the latest base: \`git fetch origin <baseRefName>\`.
        c. Merge (regular merge commit — do NOT use \`--rebase\` and do NOT use \`--squash\`):
           \`git merge origin/<baseRefName> --no-edit\`
        d. If merge conflicts occur:
@@ -272,14 +314,18 @@ const CLAUDE_COMMANDS = {
        e. Push the updated branch: \`git push\`.
        f. Note: this creates a regular merge commit on the PR branch. The eventual PR-level merge into main must still be a **squash merge** per repo policy.
 
-    4. **Announce** the sync result to the user: which base branch was merged in, whether there were conflicts, and the new HEAD SHA.
+    4. **Announce** the sync result: which base branch was merged in, whether there were conflicts, and the new HEAD SHA.
 
-    5. **Delegate to \`/babysit-pr\`** with the same \`$ARGUMENTS\` — this runs the full babysit pipeline (CI monitoring, failure diagnosis, fixes, wait-until-green).
+    5. **Delegate to \`/babysit-pr\`** with the same \`$ARGUMENTS\`. That command handles the full downstream loop:
+       - step 0: early-exit if green + approved,
+       - step 2: address reviewer comments (ignore non-trivial bot comments),
+       - step 3: run local tests + format + type checks, fix before pushing,
+       - step 4: monitor CI every 60s, on failure loop back to step 0.
   `,
 
   "sync-babysit-prs.md": code`
-    Sync ALL my open PR branches with their base (main/master) via merge, then babysit until CI passes.
-    Same input as \`/babysit-prs\` — this wraps it with a per-PR merge-prep step.
+    Sync ALL my open PR branches with their base (main/master) via merge, then babysit until CI passes and review comments are addressed.
+    Same input as \`/babysit-prs\` — this wraps it with a per-PR merge-prep step (step 1).
 
     ## Steps
 
@@ -288,19 +334,23 @@ const CLAUDE_COMMANDS = {
     2. **Announce:** Tell the user how many open PRs were found and list them (repo, PR number, title).
 
     3. **For each PR, run the merge-prep step:**
-       a. Fetch state: \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviewDecision,mergeable,baseRefName,headRefName\`.
-       b. **Skip merge prep if** all CI checks are passing AND \`reviewDecision\` is \`APPROVED\`. Log "skipped — already green + approved" and move to the next PR.
-       c. Otherwise, merge the base branch into the PR branch (NEVER rebase):
+       a. **Early-exit check (step 0):** \`gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviewDecision,mergeable,baseRefName,headRefName\`.
+          - If all CI checks are passing AND \`reviewDecision\` is \`APPROVED\`: log "skipped — already green + approved" and move to the next PR. Do not merge, do not babysit.
+       b. **Merge base into PR branch (step 1 — sync)** — NEVER rebase:
           - \`gh pr checkout <number> --repo <owner/repo>\`
-          - \`git fetch origin <baseRefName>\`
+          - \`git fetch origin <baseRefName>\` (pull latest base)
           - \`git merge origin/<baseRefName> --no-edit\` (regular merge commit — not \`--rebase\`, not \`--squash\`)
           - Resolve conflicts if trivial; stop and ask the user if not.
           - \`git push\`
-       d. Record the result (merged / skipped / conflict-blocked) for the final summary.
+       c. Record the result (merged / skipped / conflict-blocked) for the final summary.
 
     4. **Announce the sync summary** before handing off: which PRs were synced, which were skipped, which hit conflicts that need user input.
 
-    5. **Delegate to \`/babysit-prs\`** — this runs the full babysit-all pipeline (CI monitoring, per-PR failure diagnosis, fixes, wait-until-green, summary table).
+    5. **Delegate to \`/babysit-prs\`** — that command handles the full downstream loop for each PR:
+       - step 0: early-exit if green + approved,
+       - step 2: address reviewer comments (ignore non-trivial bot comments),
+       - step 3: run local tests + format + type checks, fix before pushing,
+       - step 4: monitor CI every 60s, on failure loop back to step 0.
 
     ## Rules
 
