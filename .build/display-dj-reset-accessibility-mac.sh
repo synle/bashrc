@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-23]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-24]
 # 
 # Reset macOS Accessibility permissions for Display DJ
 # ################################################################################

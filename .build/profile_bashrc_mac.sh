@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-23]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-04-24]
 # 
 # Precompiled bash profile for mac
 # ################################################################################
@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-04-23T03:55:33.163Z
+# Generated: 2026-04-24T03:50:13.374Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | 5c02a553720b2e0189bc6c838cab9f23 | 4.5 KB | 2026-04-23
+# software/scripts/bash-history.profile.bash | 5c02a553720b2e0189bc6c838cab9f23 | 4.5 KB | 2026-04-24
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -639,7 +639,7 @@ done
 export PATH="/Users/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate.profile.bash
-# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-04-23
+# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-04-24
 ################################################################################
 # ---- PATH Setup ----
 #
@@ -2644,7 +2644,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys.profile.bash
-# software/scripts/bash-keys.profile.bash | 1e77294d250f662478b78dbb180dd6b0 | 4.7 KB | 2026-04-23
+# software/scripts/bash-keys.profile.bash | 1e77294d250f662478b78dbb180dd6b0 | 4.7 KB | 2026-04-24
 ################################################################################
 # ---- Bash Readline Keybindings ----
 #
@@ -2744,7 +2744,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 28b843cee6ec09e4b2f6280666251a7e | 38.3 KB | 2026-04-23
+# software/scripts/bash-file-utils.profile.bash | 28b843cee6ec09e4b2f6280666251a7e | 38.3 KB | 2026-04-24
 ################################################################################
 # ---- File Utilities ----
 #
@@ -3789,7 +3789,7 @@ UNPACK_TEXT_NODE
 }
 # SOURCE_END software/scripts/bash-file-utils.profile.bash
 # SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
-# software/scripts/bash-fzf.profile.bash | 1c8e03ef918aa866ea16901569d37113 | 17.1 KB | 2026-04-23
+# software/scripts/bash-fzf.profile.bash | 1c8e03ef918aa866ea16901569d37113 | 17.1 KB | 2026-04-24
 # run: bash run.sh --files="fzf.js"
 ################################################################################
 # ---- FZF Fuzzy Finder Integration ----
@@ -4193,7 +4193,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | 296fe0d34295046b8a5d2a43e69a2fb5 | 3.2 KB | 2026-04-23
+# software/scripts/advanced/editor-launchers-common.profile.bash | 3b0e7ebf4ff4cd608c6df1a019556f75 | 4.3 KB | 2026-04-24
 # Resolve editor binary from a list of candidate paths (delegates to find_path exec mode)
 function find_editor() {
   local editor_name="$1"
@@ -4249,21 +4249,48 @@ function run_editor() {
       zed) app_name="Zed" ;;
       esac
       if [[ -n "$app_name" ]]; then
+        # Resolve visible frame (AppleScript coords: top-left origin) of the display containing the mouse cursor
+        local _disp _mx _my _mw _mh
+        _disp=$(
+          osascript -l JavaScript << 'JXA' 2> /dev/null
+ObjC.import('AppKit');
+const m = $.NSEvent.mouseLocation;
+const ss = $.NSScreen.screens;
+let t = ss.objectAtIndex(0);
+for (let i = 0; i < ss.count; i++) {
+  const s = ss.objectAtIndex(i), f = s.frame;
+  if (m.x >= f.origin.x && m.x < f.origin.x + f.size.width &&
+      m.y >= f.origin.y && m.y < f.origin.y + f.size.height) {
+    t = s;
+    break;
+  }
+}
+const vf = t.visibleFrame;
+const ph = ss.objectAtIndex(0).frame.size.height;
+[Math.round(vf.origin.x), Math.round(ph - (vf.origin.y + vf.size.height)), Math.round(vf.size.width), Math.round(vf.size.height)].join(' ');
+JXA
+        )
+        read -r _mx _my _mw _mh <<< "$_disp"
+        # Fallback to primary desktop bounds if JXA failed
+        if [[ -z "$_mw" || -z "$_mh" ]]; then
+          _mx=0
+          _my=0
+          read -r _mw _mh <<< "$(osascript -e 'tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop' -e 'return (sw as string) & " " & (sh as string)' 2> /dev/null)"
+        fi
         osascript << APPLESCRIPT 2> /dev/null &
 tell application "$app_name" to activate
-tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop
 tell application "System Events" to tell process "$app_name"
-  set position of window 1 to {0, 0}
-  set size of window 1 to {sw, sh}
+  set position of window 1 to {$_mx, $_my}
+  set size of window 1 to {$_mw, $_mh}
   set windowCount to count of windows
   if windowCount > 1 then
     set tileW to 300
     set tileH to 200
-    set tileCols to sw div tileW
+    set tileCols to $_mw div tileW
     repeat with i from 2 to windowCount
       set tileCol to ((i - 2) mod tileCols)
       set tileRow to ((i - 2) div tileCols)
-      set position of window i to {tileCol * tileW, tileRow * tileH}
+      set position of window i to {$_mx + (tileCol * tileW), $_my + (tileRow * tileH)}
       set size of window i to {tileW, tileH}
     end repeat
   end if
@@ -6952,7 +6979,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 82633e443566a4b5391ae8468fe34473 | 6.1 KB | 2026-04-23
+# software/scripts/bash-command-wrappers.profile.bash | 82633e443566a4b5391ae8468fe34473 | 6.1 KB | 2026-04-24
 ################################################################################
 # ---- Command Wrappers ----
 #
