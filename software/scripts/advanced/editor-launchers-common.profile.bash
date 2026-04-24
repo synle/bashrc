@@ -55,21 +55,47 @@ function run_editor() {
       zed) app_name="Zed" ;;
       esac
       if [[ -n "$app_name" ]]; then
+        # Resolve visible frame (AppleScript coords: top-left origin) of the display containing the mouse cursor
+        local _disp _mx _my _mw _mh
+        _disp=$(osascript -l JavaScript << 'JXA' 2> /dev/null
+ObjC.import('AppKit');
+const m = $.NSEvent.mouseLocation;
+const ss = $.NSScreen.screens;
+let t = ss.objectAtIndex(0);
+for (let i = 0; i < ss.count; i++) {
+  const s = ss.objectAtIndex(i), f = s.frame;
+  if (m.x >= f.origin.x && m.x < f.origin.x + f.size.width &&
+      m.y >= f.origin.y && m.y < f.origin.y + f.size.height) {
+    t = s;
+    break;
+  }
+}
+const vf = t.visibleFrame;
+const ph = ss.objectAtIndex(0).frame.size.height;
+[Math.round(vf.origin.x), Math.round(ph - (vf.origin.y + vf.size.height)), Math.round(vf.size.width), Math.round(vf.size.height)].join(' ');
+JXA
+)
+        read -r _mx _my _mw _mh <<< "$_disp"
+        # Fallback to primary desktop bounds if JXA failed
+        if [[ -z "$_mw" || -z "$_mh" ]]; then
+          _mx=0
+          _my=0
+          read -r _mw _mh <<< "$(osascript -e 'tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop' -e 'return (sw as string) & " " & (sh as string)' 2> /dev/null)"
+        fi
         osascript << APPLESCRIPT 2> /dev/null &
 tell application "$app_name" to activate
-tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop
 tell application "System Events" to tell process "$app_name"
-  set position of window 1 to {0, 0}
-  set size of window 1 to {sw, sh}
+  set position of window 1 to {$_mx, $_my}
+  set size of window 1 to {$_mw, $_mh}
   set windowCount to count of windows
   if windowCount > 1 then
     set tileW to 300
     set tileH to 200
-    set tileCols to sw div tileW
+    set tileCols to $_mw div tileW
     repeat with i from 2 to windowCount
       set tileCol to ((i - 2) mod tileCols)
       set tileRow to ((i - 2) div tileCols)
-      set position of window i to {tileCol * tileW, tileRow * tileH}
+      set position of window i to {$_mx + (tileCol * tileW), $_my + (tileRow * tileH)}
       set size of window i to {tileW, tileH}
     end repeat
   end if
