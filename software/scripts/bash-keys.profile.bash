@@ -26,7 +26,6 @@
 # Ctrl+P   — fuzzy cd to directory
 # Ctrl+B   — fuzzy favorite command picker
 # Ctrl+G   — fuzzy git log browser
-# Ctrl+N   — fuzzy make-component scaffold
 # Ctrl+X   — open command in $EDITOR
 #
 # All bindings guarded by interactive shell check ([[ $- == *i* ]]).
@@ -74,7 +73,6 @@ if [[ $- == *i* ]]; then
   bind '"\C-p": "fuzzy_cd\r"'               # Ctrl+P — fuzzy cd to directory
   bind '"\C-b": "fuzzy_favorite_command\r"' # Ctrl+B — fuzzy favorite command picker
   bind '"\C-g": "fuzzy_git_show\r"'         # Ctrl+G — fuzzy git log browser
-  bind '"\C-n": "fuzzy_make_component\r"'   # Ctrl+N — fuzzy make-component scaffold
 
   # ---- bind -x here (requires bash 5+) ----
   # bind -x executes a shell function directly instead of injecting keystrokes via
