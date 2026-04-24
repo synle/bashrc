@@ -19,9 +19,11 @@
   { "key": "f5", "command": "workbench.action.files.revert" },
   { "key": "OS_KEY+h", "command": "editor.action.startFindReplaceAction", "when": "editorFocus || editorIsOpen" },
   { "key": "OS_KEY+h", "command": "testing.toggleTestingPeekHistory", "when": "testing.isPeekVisible" },
+  // fold all / collapse all (replaces toggleSidebarVisibility — sidebar is still available via View menu)
   {
     "key": "OS_KEY+\\",
-    "command": "workbench.action.toggleSidebarVisibility",
+    "command": "editor.foldAll",
+    "when": "editorTextFocus",
   },
   {
     "key": "OS_KEY+shift+\\",

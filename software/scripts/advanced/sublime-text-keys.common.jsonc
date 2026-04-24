@@ -44,9 +44,10 @@
     "key": "OS_KEY+o",
     "command": "prompt_open_file",
   },
+  // fold all / collapse all (replaces toggle_side_bar — sidebar is still available via View menu)
   {
     "key": "OS_KEY+\\",
-    "command": "toggle_side_bar",
+    "command": "fold_all",
   },
   {
     "key": "OS_KEY+enter",

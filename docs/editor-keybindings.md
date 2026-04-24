@@ -156,12 +156,12 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+]` | Indent         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
 | `OS_KEY+,` | Fold           |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
 | `OS_KEY+.` | Unfold         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| `OS_KEY+\` | Fold all       |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
 
 ### Editor UI
 
 | Key                   | Action               | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | --------------------- | -------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+\`            | Toggle sidebar       |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
 | `OS_KEY+shift+\`      | Toggle activity bar  |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
 | `ctrl+shift+OS_KEY+\` | Toggle right sidebar |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
 | `` OS_KEY+` ``        | Toggle terminal      |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
