@@ -1601,6 +1601,24 @@ function App() {
     tick: 0,
   });
 
+  // Keyboard shortcut for toggling collapse-all on every code block:
+  // cmd+\ on macOS, alt+\ everywhere else. Mirrors the global-collapse button
+  // in the header so a single chord folds/unfolds the whole page.
+  useEffect(() => {
+    const isMac = /mac/i.test(navigator.platform);
+    const handleKeyDown = (e) => {
+      const isHotkey = e.key === "\\" && (isMac ? e.metaKey && !e.altKey && !e.ctrlKey : e.altKey && !e.metaKey && !e.ctrlKey);
+      if (!isHotkey) return;
+      e.preventDefault();
+      setCollapseSignal((prev) => ({
+        collapseAll: !prev.collapseAll,
+        tick: prev.tick + 1,
+      }));
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   if (!appData) {
     return null;
   }
