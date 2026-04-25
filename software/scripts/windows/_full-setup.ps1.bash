@@ -512,6 +512,8 @@ $wingetPackagesBackground = @(
     "Kubernetes.kubectl",
     "LLVM.LLVM",
     "Microsoft.VisualStudio.2022.BuildTools",
+    "Helm.Helm",
+    "Derailed.k9s",
     "Microsoft.DotNet.SDK.8",
     "Microsoft.DotNet.DesktopRuntime.6",
     "Microsoft.DotNet.DesktopRuntime.7",

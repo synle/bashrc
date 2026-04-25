@@ -231,6 +231,12 @@ installBrewPackageInBackground --cask powershell
 # ---- Local LLM ----
 installBrewPackageInBackground ollama
 
+# ---- Kubernetes ----
+installBrewPackageInBackground helm
+installBrewPackageInBackground k9s
+installBrewPackageInBackground kubectx # provides kubectx + kubens
+installBrewPackageInBackground stern
+
 # ---- HTTP / RPC clients ----
 installBrewPackageInBackground grpcurl # gRPC equivalent of curl
 installBrewPackageInBackground httpie  # human-friendly HTTP client (`http GET ...`)

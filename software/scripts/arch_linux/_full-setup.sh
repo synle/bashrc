@@ -151,6 +151,12 @@ installPacmanPackage github-cli
 installPacmanPackage git-filter-repo
 installPacmanPackage git-lfs
 
+# ---- Kubernetes ----
+installPacmanPackageInBackground helm
+installPacmanPackageInBackground k9s
+installPacmanPackageInBackground kubectx # provides kubectx + kubens
+installPacmanPackageInBackground stern
+
 # ---- HTTP / RPC clients ----
 installPacmanPackageInBackground grpcurl
 installPacmanPackageInBackground httpie
