@@ -22,21 +22,21 @@ describe("advanced/fuzzy-patterns.js doWork", () => {
     }
   });
 
-  it("should emit _FUZZY_IGNORED_FOLDERS_JSON containing valid JSON matching EDITOR_CONFIGS", async () => {
+  it("should emit _IGNORED_FOLDERS_JSON containing valid JSON matching EDITOR_CONFIGS", async () => {
     fileSystem[BASH_SYLE_PATH] = "";
     await runScript("software/scripts/advanced/fuzzy-patterns.js");
     const profile = fileSystem[BASH_SYLE_PATH];
-    const m = profile.match(/_FUZZY_IGNORED_FOLDERS_JSON='([^']*)'/);
-    expect(m, "_FUZZY_IGNORED_FOLDERS_JSON not found").not.toBeNull();
+    const m = profile.match(/_IGNORED_FOLDERS_JSON='([^']*)'/);
+    expect(m, "_IGNORED_FOLDERS_JSON not found").not.toBeNull();
     expect(JSON.parse(m[1])).toEqual(EDITOR_CONFIGS.ignoredFoldersRegex);
   });
 
-  it("should emit _FUZZY_IGNORED_FILES_JSON containing valid JSON matching EDITOR_CONFIGS", async () => {
+  it("should emit _IGNORED_FILES_JSON containing valid JSON matching EDITOR_CONFIGS", async () => {
     fileSystem[BASH_SYLE_PATH] = "";
     await runScript("software/scripts/advanced/fuzzy-patterns.js");
     const profile = fileSystem[BASH_SYLE_PATH];
-    const m = profile.match(/_FUZZY_IGNORED_FILES_JSON='([^']*)'/);
-    expect(m, "_FUZZY_IGNORED_FILES_JSON not found").not.toBeNull();
+    const m = profile.match(/_IGNORED_FILES_JSON='([^']*)'/);
+    expect(m, "_IGNORED_FILES_JSON not found").not.toBeNull();
     expect(JSON.parse(m[1])).toEqual(EDITOR_CONFIGS.ignoredFilesRegex);
   });
 

@@ -7,7 +7,8 @@ import path from "path";
 const FZF_PATH = path.resolve("software/scripts/bash-fzf.profile.bash");
 
 /**
- * Extracts the JSON value bound to a `_FUZZY_*_JSON='[...]'` assignment.
+ * Extracts the JSON value bound to a `_*_JSON='[...]'` assignment
+ * (handles both `_IGNORED_*_JSON` and `_FUZZY_TEXT_FILES_JSON`).
  * Tolerates either:
  *   - top-level literal: `VAR='...'`
  *   - guarded fallback (post-refactor): `[ -z "${VAR+x}" ] && VAR='...'`
@@ -46,15 +47,15 @@ describe("bash-fzf.profile.bash pattern contract", () => {
     expect(src.length).toBeGreaterThan(1000);
   });
 
-  // ---- _FUZZY_IGNORED_FOLDERS_JSON ----
+  // ---- _IGNORED_FOLDERS_JSON ----
 
-  describe("_FUZZY_IGNORED_FOLDERS_JSON", () => {
+  describe("_IGNORED_FOLDERS_JSON", () => {
     /** @type {string[]} */
     let folders;
 
     it("parses as a non-empty JSON array of strings", () => {
       src = fs.readFileSync(FZF_PATH, "utf-8");
-      folders = extractFuzzyJson(src, "_FUZZY_IGNORED_FOLDERS_JSON");
+      folders = extractFuzzyJson(src, "_IGNORED_FOLDERS_JSON");
       expect(Array.isArray(folders)).toBe(true);
       expect(folders.length).toBeGreaterThan(20);
       for (const p of folders) expect(typeof p).toBe("string");
@@ -62,7 +63,7 @@ describe("bash-fzf.profile.bash pattern contract", () => {
 
     it("each entry compiles as a valid JS regex", () => {
       src = fs.readFileSync(FZF_PATH, "utf-8");
-      folders = extractFuzzyJson(src, "_FUZZY_IGNORED_FOLDERS_JSON");
+      folders = extractFuzzyJson(src, "_IGNORED_FOLDERS_JSON");
       for (const p of folders) {
         expect(() => new RegExp(p), `failed to compile: ${p}`).not.toThrow();
       }
@@ -70,7 +71,7 @@ describe("bash-fzf.profile.bash pattern contract", () => {
 
     it("contains canonical folder ignores", () => {
       src = fs.readFileSync(FZF_PATH, "utf-8");
-      folders = extractFuzzyJson(src, "_FUZZY_IGNORED_FOLDERS_JSON");
+      folders = extractFuzzyJson(src, "_IGNORED_FOLDERS_JSON");
       // Sample a stable subset that must always be filtered.
       const required = ["\\.git/", "node_modules", "__pycache", "\\.next/", "\\.venv/", "/build/", "/dist/", "/coverage/"];
       for (const r of required) {
@@ -79,12 +80,12 @@ describe("bash-fzf.profile.bash pattern contract", () => {
     });
   });
 
-  // ---- _FUZZY_IGNORED_FILES_JSON ----
+  // ---- _IGNORED_FILES_JSON ----
 
-  describe("_FUZZY_IGNORED_FILES_JSON", () => {
+  describe("_IGNORED_FILES_JSON", () => {
     it("parses, compiles, and contains anchored binary-file ignores", () => {
       src = fs.readFileSync(FZF_PATH, "utf-8");
-      const files = extractFuzzyJson(src, "_FUZZY_IGNORED_FILES_JSON");
+      const files = extractFuzzyJson(src, "_IGNORED_FILES_JSON");
       expect(Array.isArray(files)).toBe(true);
       expect(files.length).toBeGreaterThan(10);
       for (const p of files) {

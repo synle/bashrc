@@ -2,12 +2,15 @@
 
 /**
  * Registers a profile block setting `_IGNORED_FOLDER_PATTERNS`,
- * `_FUZZY_IGNORED_FOLDERS_JSON`, `_FUZZY_IGNORED_FILES_JSON`, and
+ * `_IGNORED_FOLDERS_JSON`, `_IGNORED_FILES_JSON`, and
  * `_FUZZY_TEXT_FILES_JSON` from `EDITOR_CONFIGS.{ignoredFoldersRegex,
  * ignoredFilesRegex, textFilesRegex}`. The block sources before
  * `bash-fzf.profile.bash` so the variables are set when `filter_unwanted` and
  * `_fuzzy_list_all` are defined; bash-fzf retains hardcoded fallbacks for
- * standalone-source scenarios (tests, minimal shells).
+ * standalone-source scenarios (tests, minimal shells). The `_IGNORED_*_JSON`
+ * vars (no `FUZZY_` prefix) are general-purpose and consumed by other
+ * pipelines too (e.g. pack_text). Text-file allowlist stays under the
+ * `_FUZZY_` namespace because it is fuzzy-picker-specific.
  */
 async function doWork() {
   log(">> Fuzzy Filter Patterns:");
@@ -36,9 +39,11 @@ async function doWork() {
       _IGNORED_FOLDER_PATTERNS=(
       ${folderArrayBody}
       )
-      # JSON-encoded regex arrays — passed as process.argv to inline node BFS in _fuzzy_list_all
-      _FUZZY_IGNORED_FOLDERS_JSON='${foldersJson}'
-      _FUZZY_IGNORED_FILES_JSON='${filesJson}'
+      # JSON-encoded regex arrays — general-purpose (consumed by _fuzzy_list_all,
+      # pack_text, and any other pipeline that needs the centralized exclusions)
+      _IGNORED_FOLDERS_JSON='${foldersJson}'
+      _IGNORED_FILES_JSON='${filesJson}'
+      # Text-file allowlist — fuzzy-picker-specific (text_files mode in _fuzzy_list_all)
       _FUZZY_TEXT_FILES_JSON='${textJson}'
     `,
   );

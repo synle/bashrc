@@ -173,8 +173,8 @@ describe("constants", () => {
       expect(m, `${varName} not found in bash-fzf.profile.bash`).not.toBeNull();
       return JSON.parse(m[1]);
     };
-    expect(extract("_FUZZY_IGNORED_FOLDERS_JSON")).toEqual(EDITOR_CONFIGS.ignoredFoldersRegex);
-    expect(extract("_FUZZY_IGNORED_FILES_JSON")).toEqual(EDITOR_CONFIGS.ignoredFilesRegex);
+    expect(extract("_IGNORED_FOLDERS_JSON")).toEqual(EDITOR_CONFIGS.ignoredFoldersRegex);
+    expect(extract("_IGNORED_FILES_JSON")).toEqual(EDITOR_CONFIGS.ignoredFilesRegex);
     expect(extract("_FUZZY_TEXT_FILES_JSON")).toEqual(EDITOR_CONFIGS.textFilesRegex);
   });
 

@@ -101,17 +101,20 @@ function filter_unwanted() {
 # Lists all paths: dirs with trailing /, files without.
 # Used by fuzzy_edit and autocomplete nested tokens.
 ################################################################################
-# _FUZZY_*_JSON variables are bootstrapped from EDITOR_CONFIGS by
-# software/scripts/advanced/fuzzy-patterns.js (registered as the "Fuzzy Filter
-# Patterns" profile block sourced before this file). The hardcoded fallbacks
-# below cover minimal shell environments (e.g. tests sourcing this file
-# standalone) where the bootstrap hasn't run yet — they intentionally mirror
-# EDITOR_CONFIGS.{ignoredFoldersRegex,ignoredFilesRegex,textFilesRegex}.
+# _IGNORED_*_JSON / _FUZZY_TEXT_FILES_JSON variables are bootstrapped from
+# EDITOR_CONFIGS by software/scripts/advanced/fuzzy-patterns.js (registered as
+# the "Fuzzy Filter Patterns" profile block sourced before this file). The
+# hardcoded fallbacks below cover minimal shell environments (e.g. tests
+# sourcing this file standalone) where the bootstrap hasn't run yet — they
+# intentionally mirror EDITOR_CONFIGS.{ignoredFoldersRegex,ignoredFilesRegex,
+# textFilesRegex}. The _IGNORED_*_JSON pair is general-purpose (consumed by
+# pack_text and other pipelines too); _FUZZY_TEXT_FILES_JSON is fuzzy-picker
+# specific.
 # JSON pattern arrays — passed directly to node as process.argv (proper JS regex strings)
 # folder patterns — skip ignored dirs during traversal
-[ -z "${_FUZZY_IGNORED_FOLDERS_JSON+x}" ] && _FUZZY_IGNORED_FOLDERS_JSON='["\\.DS_Store","\\.pyc","\\.cache/","\\.git/","\\.gradle/","\\.hg/","\\.idea/","\\.mypy_cache/","\\.next/","\\.nuxt/","\\.parcel-cache/","\\.pytest_cache/","\\.ruff_","\\.sass-cache/","\\.svn/","\\.tox/","\\.turbo/","\\.uv/","\\.venv/","\\.yarn/","__pycache","bower_components","node_modules","/build/","/coverage/","/cov/","/dist/","/htmlcov/","/out/","/target/","/vendor/"]'
+[ -z "${_IGNORED_FOLDERS_JSON+x}" ] && _IGNORED_FOLDERS_JSON='["\\.DS_Store","\\.pyc","\\.cache/","\\.git/","\\.gradle/","\\.hg/","\\.idea/","\\.mypy_cache/","\\.next/","\\.nuxt/","\\.parcel-cache/","\\.pytest_cache/","\\.ruff_","\\.sass-cache/","\\.svn/","\\.tox/","\\.turbo/","\\.uv/","\\.venv/","\\.yarn/","__pycache","bower_components","node_modules","/build/","/coverage/","/cov/","/dist/","/htmlcov/","/out/","/target/","/vendor/"]'
 # ignored file patterns — exclude binary files, system junk, and non-text files
-[ -z "${_FUZZY_IGNORED_FILES_JSON+x}" ] && _FUZZY_IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlight-","\\.Trashes$","\\.fseventsd$","\\.com\\.apple\\.","\\.localized$","\\.a$","\\.class$","\\.dll$","\\.dylib$","\\.exe$","\\.lib$","\\.o$","\\.obj$","\\.pyc$","\\.pyo$","\\.so$","\\.wasm$"]'
+[ -z "${_IGNORED_FILES_JSON+x}" ] && _IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlight-","\\.Trashes$","\\.fseventsd$","\\.com\\.apple\\.","\\.localized$","\\.a$","\\.class$","\\.dll$","\\.dylib$","\\.exe$","\\.lib$","\\.o$","\\.obj$","\\.pyc$","\\.pyo$","\\.so$","\\.wasm$"]'
 # text file extension allowlist — used by text_files mode
 [ -z "${_FUZZY_TEXT_FILES_JSON+x}" ] && _FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
 
@@ -247,7 +250,7 @@ function _fuzzy_list_all() {
     }
     await Promise.all(gitPromises);
     })();
-  " "$dir" "$mode" "$max_depth" "$_FUZZY_IGNORED_FOLDERS_JSON" "$_FUZZY_IGNORED_FILES_JSON" "$_FUZZY_TEXT_FILES_JSON" "$max_timeout" "$filter"
+  " "$dir" "$mode" "$max_depth" "$_IGNORED_FOLDERS_JSON" "$_IGNORED_FILES_JSON" "$_FUZZY_TEXT_FILES_JSON" "$max_timeout" "$filter"
 }
 
 ################################################################################
