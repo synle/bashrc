@@ -33,7 +33,9 @@
 #                  In a git repo, starts from `git ls-files` plus untracked
 #                  extras (.env*, .bash*, .zsh*, .md, .xml, .src, .sh, .sql,
 #                  .db, .sqlite*, .yml/.yaml, .json, .toml, .ini, .conf, .cfg).
-#                  Always skips node_modules, .venv, __pycache__, .build, etc.
+#                  All paths flow through `filter_unwanted` so excluded folders
+#                  (node_modules, .venv, __pycache__, .build, etc.) are pulled
+#                  from the centralized EDITOR_CONFIGS.ignoredFoldersRegex set.
 # unpack_text    — Extract files from a pack (file path, archive, '-' stdin
 #                  marker, or piped stdin). Dispatches per-block on the
 #                  encoding token: gzip+base64 → decode + write bytes; no
@@ -758,6 +760,22 @@ DEDUP_NODE
 # unpack_text.
 ################################################################################
 
+# _filter_pack_extras: stdin->stdout pipe filter that keeps only paths whose
+# basename matches the pack_text "extras" set. These mirror the regex set
+# documented in pack_text help: .env*, .bash*, .zsh*, .md, .xml, .src, .sh,
+# .sql, .db, .sqlite*, .yml/.yaml, .json, .toml, .ini, .conf, .cfg. Used to
+# narrow `git ls-files --others --exclude-standard` (untracked/gitignored)
+# down to commonly-useful local files (.env.local, local rc files, sqlite
+# DBs, config snippets) without sweeping in random untracked junk.
+function _filter_pack_extras() {
+  command awk -F/ '
+    {
+      base = tolower($NF)
+      if (base ~ /^\.env($|\..+)|^\.bash|^\.zsh|\.(md|xml|src|sh|sql|db|ya?ml|json|toml|ini|conf|cfg)$|\.sqlite/) print
+    }
+  '
+}
+
 # pack_text: bundle every file in a directory as gzip+base64 blocks with file-mode
 # markers. Default --raw mode auto-saves to /tmp/<flat>.<ts>.pack.txt AND streams
 # the bundle to stdout (so `pack_text | unpack_text /tmp/copy` works without --raw).
@@ -783,9 +801,10 @@ function pack_text() {
     git repo  - git ls-files (tracked) + any untracked extras in the working
                 tree (.env*, .bash*, .zsh*, .md, .xml, .src, .sh, .sql, .db,
                 .sqlite*, .yml/.yaml, .json, .toml, .ini, .conf, .cfg).
-                node_modules, .venv, __pycache__, .build, .git, etc. are always
-                excluded.
-    non-git   - recursive walk skipping the same ignored dirs.
+    non-git   - recursive walk via find (node_modules / .git pruned for perf).
+    Both modes are then piped through filter_unwanted, which applies the
+    centralized EDITOR_CONFIGS.ignoredFoldersRegex set (node_modules, .venv,
+    __pycache__, .build, .next, .nuxt, /dist/, /build/, /coverage/, etc.).
   Encoding:
     Every file (text or binary) is gzip-compressed then base64-encoded so the
     bundle round-trips byte-exact regardless of file content. File mode bits
@@ -869,82 +888,54 @@ function pack_text() {
   local tmp_packed="/tmp/${content_name}"
   rm -f "$tmp_packed"
 
+  # Step 1: collect candidate file list in bash (relative paths, one per line).
+  # Git mode emits tracked files plus the extras subset of untracked/gitignored
+  # files (basename regex via _filter_pack_extras). Non-git mode walks via find,
+  # pruning node_modules/.git for perf — filter_unwanted catches everything else.
+  # The combined stream is piped through filter_unwanted to apply the central
+  # EDITOR_CONFIGS.ignoredFoldersRegex set so excludes stay in one place.
+  local file_list
+  file_list="/tmp/_pack_text_files_${$}_${RANDOM}"
+  rm -f "$file_list"
+  local is_git=0
+  local tracked_count=0 extras_count=0
+  if git -C "$abs_src" rev-parse --is-inside-work-tree &> /dev/null; then
+    is_git=1
+    local tracked_tmp extras_tmp
+    tracked_tmp="${file_list}.tracked"
+    extras_tmp="${file_list}.extras"
+    (cd "$abs_src" && git ls-files) | filter_unwanted > "$tracked_tmp"
+    # `git ls-files --others` (no --exclude-standard) lists ALL untracked
+    # files including gitignored ones — important so a gitignored .env or
+    # local .sqlite gets packed when its basename matches the extras set.
+    (cd "$abs_src" && git ls-files --others) | _filter_pack_extras | filter_unwanted > "$extras_tmp"
+    tracked_count=$(command wc -l < "$tracked_tmp" | command tr -d ' ')
+    extras_count=$(command wc -l < "$extras_tmp" | command tr -d ' ')
+    command cat "$tracked_tmp" "$extras_tmp" | command sort -u > "$file_list"
+    rm -f "$tracked_tmp" "$extras_tmp"
+    echo "pack_text: git repo — $tracked_count tracked + $extras_count extra (.env*/.bash*/.zsh*/.md/.xml/.src/.sh/.sql/.db/.sqlite*/.yml/.json/.toml/.ini/.conf/.cfg)" >&2
+  else
+    (cd "$abs_src" && command find . \( -name node_modules -o -name .git \) -prune -o -type f -print | command sed 's|^\./||') | filter_unwanted | command sort -u > "$file_list"
+  fi
+
+  if [ ! -s "$file_list" ]; then
+    echo "pack_text: no files found in $abs_src" >&2
+    rm -f "$file_list"
+    return 1
+  fi
+
+  # Step 2: node reads the pre-filtered list and encodes each file. Node does
+  # only the encoding; all file selection / exclusion lives in bash above.
   {
     cat << 'PACK_TEXT_NODE'
-/** Bundles every file in a directory as gzip+base64 blocks with file-mode markers. */
+/** Encodes each file in PACK_LIST as a [gzip+base64,mode=0NNN] block. */
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const { execSync } = require('child_process');
 
 const srcDir = fs.realpathSync(process.env.PACK_SRC);
+const listFile = process.env.PACK_LIST;
 const outputFile = process.env.PACK_OUTPUT;
-
-/** Checks if a directory is inside a git work tree. */
-function isGitRepo(dir) {
-  try {
-    execSync('git rev-parse --is-inside-work-tree', { cwd: dir, stdio: 'pipe' });
-    return true;
-  } catch { return false; }
-}
-
-/** Returns tracked file paths (absolute) via git ls-files. */
-function gitFiles(dir) {
-  const out = execSync('git ls-files', { cwd: dir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
-  return out.split('\n').filter(Boolean).map(f => path.join(dir, f)).sort();
-}
-
-/** Directories to skip during walk. Same list also dedupes extras in git mode. */
-const SKIP_DIRS = new Set([
-  '.build', '.cache', '.DS_Store', '.git', '.gradle', '.hg', '.idea',
-  '.mypy_cache', '.next', '.nuxt', '.parcel-cache', '.pytest_cache',
-  '.sass-cache', '.svn', '.tox', '.turbo', '.uv', '.venv', '.yarn',
-  '__pycache__', '_recycleBin', 'bower_components', 'build', 'coverage',
-  'cov', 'dist', 'htmlcov', 'node_modules', 'out', 'target', 'vendor',
-]);
-const SKIP_DIR_PREFIXES = ['.ruff_'];
-
-/** Recursively collect every regular file path, skipping the ignored dirs above.
- *  No content-type filtering — bulletproof mode encodes text and binary alike. */
-function walk(dir) {
-  let files = [];
-  try {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      if (entry.isDirectory() && SKIP_DIR_PREFIXES.some(p => entry.name.startsWith(p))) continue;
-      const fp = path.join(dir, entry.name);
-      if (entry.isDirectory()) files = files.concat(walk(fp));
-      else if (entry.isFile()) files.push(fp);
-    }
-  } catch {}
-  return files.sort();
-}
-
-/** Extra include patterns — applied on top of `git ls-files` to capture
- *  commonly-useful gitignored or generated files (e.g. .env.local, local
- *  shell rc files, sqlite databases, config snippets). Matched against the
- *  file basename (no directory component). */
-const EXTRA_INCLUDE_PATTERNS = [
-  /^\.env($|\..+)/i,    // .env, .env.local, .env.production, etc.
-  /^\.bash/i,           // .bash_syle, .bash_profile, .bashrc, .bash_history, etc.
-  /^\.zsh/i,            // .zshrc, .zshenv, .zprofile, .zsh_history, etc.
-  /\.md$/i,
-  /\.xml$/i,
-  /\.src$/i,
-  /\.sh$/i,             // shell scripts
-  /\.sql$/i,
-  /\.db$/i,             // generic sqlite db
-  /\.sqlite/i,          // .sqlite, .sqlite3, .sqlite-shm, .sqlite-wal, etc.
-  /\.ya?ml$/i,          // .yml, .yaml
-  /\.json$/i,
-  /\.toml$/i,           // pyproject.toml, Cargo.toml, ruff.toml, etc.
-  /\.ini$/i,
-  /\.conf$/i,
-  /\.cfg$/i,
-];
-function isExtraInclude(fp) {
-  return EXTRA_INCLUDE_PATTERNS.some(re => re.test(path.basename(fp)));
-}
 
 /** Encode a file's full bytes as gzip+base64, line-wrapped at 76 chars per
  *  line so the output is diff-friendly. The wrap is cosmetic — unpack_text
@@ -954,28 +945,16 @@ function encodeFileBody(buf) {
   return b64.replace(/(.{76})/g, '$1\n') + (b64.length % 76 === 0 ? '' : '\n');
 }
 
-/** Collect files: git repo uses tracked + extra-include untracked; otherwise manual walk. */
-let files;
-if (isGitRepo(srcDir)) {
-  const tracked = gitFiles(srcDir);
-  const trackedSet = new Set(tracked);
-  const extras = walk(srcDir).filter(f => !trackedSet.has(f) && isExtraInclude(f));
-  files = tracked.concat(extras).sort();
-  console.error('pack_text: git repo — ' + tracked.length + ' tracked + ' + extras.length + ' extra (.env*/.bash*/.zsh*/.md/.xml/.src/.sh/.sql/.db/.sqlite*/.yml/.json/.toml/.ini/.conf/.cfg)');
-} else {
-  files = walk(srcDir);
-}
-
-/** Build the pack output. Every file becomes a [gzip+base64,mode=0NNN] block
- *  using the shared PACK_BEGIN/PACK_END marker format. */
+const rels = fs.readFileSync(listFile, 'utf8').split('\n').filter(Boolean);
 let output = '';
 let count = 0;
-for (const file of files) {
-  const rel = path.relative(srcDir, file);
+for (const rel of rels) {
+  const file = path.join(srcDir, rel);
   try {
     const buf = fs.readFileSync(file);
     const stat = fs.statSync(file);
-    const mode = (stat.mode & 0o777).toString(8).padStart(4, '0');  // padStart already supplies the leading 0
+    if (!stat.isFile()) continue;
+    const mode = (stat.mode & 0o777).toString(8).padStart(4, '0');  // padStart supplies the leading 0
     output += '===== PACK_BEGIN: ' + rel + ' [gzip+base64,mode=' + mode + '] =====\n';
     output += encodeFileBody(buf);
     output += '===== PACK_END: ' + rel + ' =====\n';
@@ -993,7 +972,8 @@ if (count === 0) {
 fs.writeFileSync(outputFile, output);
 console.error('pack_text: packed ' + count + ' files from ' + srcDir);
 PACK_TEXT_NODE
-  } | PACK_SRC="$abs_src" PACK_OUTPUT="$tmp_packed" node
+  } | PACK_SRC="$abs_src" PACK_LIST="$file_list" PACK_OUTPUT="$tmp_packed" node
+  rm -f "$file_list"
 
   if [ ! -f "$tmp_packed" ]; then
     echo "pack_text: failed to generate packed content"

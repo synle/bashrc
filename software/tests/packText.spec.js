@@ -22,12 +22,15 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PROFILE_BASH = path.join(ROOT_DIR, "software/scripts/bash-file-utils.profile.bash");
+// pack_text now delegates folder filtering to filter_unwanted (defined in
+// bash-fzf.profile.bash), so tests must source both partials.
+const FZF_PROFILE_BASH = path.join(ROOT_DIR, "software/scripts/bash-fzf.profile.bash");
 const TMP_DIR = `/tmp/_pack_text_test_${process.pid}`;
 
 /** Runs a bash script that sources the profile and executes the given commands. */
 function runBash(script) {
   const tmpScript = `${TMP_DIR}_runner.sh`;
-  fs.writeFileSync(tmpScript, `#!/usr/bin/env bash\nsource "${PROFILE_BASH}"\n${script}`, "utf-8");
+  fs.writeFileSync(tmpScript, `#!/usr/bin/env bash\nsource "${FZF_PROFILE_BASH}"\nsource "${PROFILE_BASH}"\n${script}`, "utf-8");
   try {
     return execSync(`bash "${tmpScript}" 2>/dev/null`, { encoding: "utf-8", timeout: 30000 }).trim();
   } finally {
@@ -384,7 +387,7 @@ describe("unpack_text", () => {
     const tmpScript = `${TMP_DIR}_cwd_runner.sh`;
     fs.writeFileSync(
       tmpScript,
-      `#!/usr/bin/env bash\nsource "${PROFILE_BASH}"\ncd "${destDir}"\npack_text "${srcDir}" 2>/dev/null | unpack_text > /dev/null`,
+      `#!/usr/bin/env bash\nsource "${FZF_PROFILE_BASH}"\nsource "${PROFILE_BASH}"\ncd "${destDir}"\npack_text "${srcDir}" 2>/dev/null | unpack_text > /dev/null`,
       "utf-8",
     );
     try {
