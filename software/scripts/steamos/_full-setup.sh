@@ -151,9 +151,11 @@ installPacmanPackage git-filter-repo
 installPacmanPackage git-lfs
 
 # ---- Database clients ----
+# pgcli/mycli are AUR-only on Arch — install via uv if needed; skip from pacman set.
 installPacmanPackageInBackground mysql-clients
-installPacmanPackageInBackground sqlite
+installPacmanPackageInBackground postgresql-libs # provides psql client
 installPacmanPackageInBackground redis
+installPacmanPackageInBackground sqlite
 
 # ---- Multimedia ----
 installPacmanPackage ffmpeg

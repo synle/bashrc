@@ -232,9 +232,12 @@ installBrewPackageInBackground --cask powershell
 installBrewPackageInBackground ollama
 
 # ---- Database clients ----
+installBrewPackageInBackground libpq # provides psql + pg_dump (lighter than full postgresql)
+installBrewPackageInBackground mycli  # autocomplete + syntax-highlighted MySQL client
 installBrewPackageInBackground mysql-client
-installBrewPackageInBackground sqlite
+installBrewPackageInBackground pgcli  # autocomplete + syntax-highlighted Postgres client
 installBrewPackageInBackground redis
+installBrewPackageInBackground sqlite
 
 # ---- OS-specific ----
 installBrewPackageInBackground --force android-platform-tools

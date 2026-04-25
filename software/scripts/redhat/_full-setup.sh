@@ -175,9 +175,12 @@ fi
 installDnfPackage git-lfs
 
 # ---- Database clients ----
+installDnfPackageInBackground mycli # autocomplete + syntax-highlighted MySQL client
 installDnfPackageInBackground mysql
-installDnfPackageInBackground sqlite
+installDnfPackageInBackground pgcli # autocomplete + syntax-highlighted Postgres client
+installDnfPackageInBackground postgresql # provides psql client
 installDnfPackageInBackground redis
+installDnfPackageInBackground sqlite
 
 # ---- Multimedia ----
 installDnfPackage ffmpeg

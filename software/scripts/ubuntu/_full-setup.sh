@@ -167,9 +167,12 @@ installAptPackage git-filter-repo
 installAptPackage git-lfs
 
 # ---- Database clients ----
+installAptPackageInBackground mycli # autocomplete + syntax-highlighted MySQL client
 installAptPackageInBackground mysql-client
-installAptPackageInBackground sqlite3
+installAptPackageInBackground pgcli # autocomplete + syntax-highlighted Postgres client
+installAptPackageInBackground postgresql-client
 installAptPackageInBackground redis-tools
+installAptPackageInBackground sqlite3
 
 # ---- Multimedia ----
 installAptPackage ffmpeg
