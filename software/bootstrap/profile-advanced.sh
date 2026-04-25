@@ -213,20 +213,6 @@ export FIGNORE="$FIGNORE${file_string}"
 unset ignored_commands cmd_string ignored_files file_string
 
 ################################################################################
-# ---- Bat / Cat Setup ----
-# uses bat (mac/homebrew) or batcat (debian/ubuntu), falls back to cat
-################################################################################
-function batcat() {
-  if type -P bat &> /dev/null; then
-    command bat --paging=never --style=plain "$@"
-  elif type -P batcat &> /dev/null; then
-    command batcat --paging=never --style=plain "$@"
-  else
-    command cat "$@"
-  fi
-}
-
-################################################################################
 # ---- Shell Utilities ----
 ################################################################################
 # find all existing paths from a list of candidates (supports wildcards)
@@ -351,18 +337,18 @@ if type -P eza &> /dev/null; then
 fi
 
 # ---- find (fd wrapper) ----
-if type -P fd &> /dev/null; then
-  alias f='fd'
-elif type -P fdfind &> /dev/null; then
-  alias f='fdfind'
-  alias fd='fdfind'
-fi
+# `fd` is guaranteed on PATH by ensure_binary_alias (apt's fd-find installs as
+# fdfind; we symlink $HOME/.local/bin/fd). Other distros ship `fd` directly.
+type -P fd &> /dev/null && alias f='fd'
 
 # ---- Aliases: Editors / Tools ----
 alias bs="bash"
 alias vi="vim"
 alias v="vim"
-alias cat='batcat'
+# `bat` is guaranteed on PATH by ensure_binary_alias (apt installs as batcat;
+# we symlink $HOME/.local/bin/bat). Guard the alias so it self-disables on a
+# fresh box that hasn't run _full-setup yet.
+type -P bat &> /dev/null && alias cat='bat --paging=never --style=plain'
 alias c="command cat"
 # ---- Aliases: Git ----
 # git wrapper: invalidates branch cache on state-changing commands
