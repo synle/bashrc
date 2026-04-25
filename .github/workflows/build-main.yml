@@ -299,6 +299,7 @@ jobs:
       contents: write
       pages: write
       id-token: write
+      statuses: write # for mirroring this run as a commit status on the amended SHA
     steps:
       - uses: actions/checkout@v4
         # fetch-depth: 0 is REQUIRED here. Default (depth=1) gives a shallow clone
@@ -371,11 +372,14 @@ jobs:
           # this the amended HEAD shows no checks in the GitHub commit UI even
           # though the run succeeded. Status API works with the default GITHUB_TOKEN.
           run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          # Don't fail the job if status mirroring is denied — the push already
+          # succeeded; the missing check on the amended SHA is cosmetic.
           gh api "repos/${GITHUB_REPOSITORY}/statuses/${new_sha}" \
             -f state=success \
             -f context="build-main / publish" \
             -f description="Amended from ${GITHUB_SHA:0:7} (run #${GITHUB_RUN_NUMBER})" \
-            -f target_url="${run_url}"
+            -f target_url="${run_url}" \
+            || echo "::warning::Could not publish commit status on ${new_sha} (continuing)"
 
       - name: Create publish patch
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
