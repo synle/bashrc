@@ -15,6 +15,8 @@
 #   NETWORK BLOCKING
 #     - Hosts File Blocking
 #     - Firewall Blocking
+#   FILE SHARING
+#     - Smb Shares (expose data drives on LAN)
 #   SOFTWARE INSTALLATION (slow — runs last)
 #     - Winget Install & Upgrade
 #       - Essential packages (blocking)
@@ -282,6 +284,169 @@ foreach ($rule in $allowRules) {
 }
 
 Write-Host "Firewall rules applied." -ForegroundColor Green
+
+
+
+################################################################################
+# ---- Smb Shares (expose data drives on LAN) ----
+#
+# Iterates D .. W and exposes each existing drive root as an SMB share.
+# Skips X / Y / Z (reserved for mapped network / removable / virtual drives).
+#
+# --------------------------------------------------------------------------
+# STEP-BY-STEP — what runs and why
+# --------------------------------------------------------------------------
+#
+# Step 1. Enable the SMB2 protocol on the server
+#   Command:  Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force
+#   Why:      Windows ships with the SMB server service (LanmanServer)
+#             installed, but SMB2 may be disabled on hardened images.
+#             SMB1 is insecure and off by default — we explicitly turn SMB2
+#             ON so modern clients (Linux cifs, macOS, Windows 10+) can
+#             connect. -Force skips the confirmation prompt so this is safe
+#             to re-run non-interactively.
+#
+# Step 2. Open the Windows firewall for SMB
+#   Command:  Get-NetFirewallRule -DisplayGroup "File and Printer Sharing"
+#             | Enable-NetFirewallRule
+#   Why:      The firewall blocks inbound TCP/445 by default. Enabling the
+#             built-in "File and Printer Sharing" rule group opens the
+#             correct ports (137, 138, 139, 445) for the current network
+#             profiles. We enable the whole group rather than crafting a
+#             custom rule so Windows keeps it in sync on upgrades.
+#
+# Step 3. Build the list of drive letters to consider
+#   Command:  $smbDriveLetters = [char[]](68..87) | ForEach-Object { [string]$_ }
+#   Why:      ASCII 68 = 'D', 87 = 'W'. We deliberately skip A/B (floppy
+#             legacy), C (system — never share the OS drive blindly), and
+#             X/Y/Z (conventionally reserved for mapped network drives,
+#             removable media, or virtual mounts — sharing them would
+#             create loops or expose transient data).
+#
+# Step 4. Skip drives that do not exist
+#   Command:  if (-not (Test-Path $root)) { continue }
+#   Why:      Most machines only have a couple of data drives. We don't
+#             want to error on missing letters, and we don't want to create
+#             empty shares that point at nothing.
+#
+# Step 5. Remove any existing share with the same name
+#   Command:  Remove-SmbShare -Name $name -Force
+#   Why:      Makes the script idempotent. If a previous run created the
+#             share with a different ACL or description, we replace it
+#             cleanly instead of erroring with "share already exists".
+#
+# Step 6. Create the SMB share with a user-scoped ACL
+#   Command:  New-SmbShare -Name $name -Path $root
+#             -FullAccess "$env:USERNAME"
+#   Why:      This is the SHARE-LEVEL permission. Only the current user can
+#             mount the share — no Guest, no Everyone, no anonymous.
+#             Password-gated by Windows auth. The $_Sy_drive_ prefix keeps
+#             these shares easy to audit and clean up later.
+#
+# Step 7. Grant matching NTFS permissions on the drive root
+#   Command:  icacls $root /grant "${env:USERNAME}:(OI)(CI)M" /T
+#   Why:      Windows enforces the INTERSECTION of share ACL and NTFS ACL.
+#             Step 6 alone is not enough — if the NTFS ACL denies the user,
+#             the share is unusable. (OI)(CI)M = Object Inherit + Container
+#             Inherit + Modify rights, applied recursively (/T).
+#
+# Step 8. Print the resulting share table
+#   Command:  Get-SmbShare | Where-Object { $_.Name -like '_Sy_drive_*' }
+#   Why:      Confirmation for the operator running setup — shows what
+#             ended up exposed so you can sanity-check before walking away.
+#
+# --------------------------------------------------------------------------
+# SECURITY MODEL — password-gated, NOT open:
+# --------------------------------------------------------------------------
+#   - Share ACL grants FullAccess only to $env:USERNAME (current Windows user).
+#   - NTFS ACL grants Modify only to $env:USERNAME.
+#   - No Guest / Everyone / anonymous access is configured.
+#   - Everyone else hitting the share gets "Access Denied".
+#
+# TO CONNECT FROM ANOTHER MACHINE:
+#   user:     <your Windows username>
+#   password: <your Windows account password>
+#
+# CAVEATS:
+#   1. Your Windows account MUST have a password. Blank-password accounts are
+#      blocked from SMB auth by default (LimitBlankPasswordUse policy).
+#   2. If you sign in with a Microsoft account, use the actual account
+#      password — a Windows Hello PIN will NOT work for SMB.
+#   3. Linux/macOS clients usually authenticate with the short local username
+#      (e.g. "syle"). If auth fails, try "<hostname>\<user>" or
+#      "MicrosoftAccount\<email>".
+#   4. Network profile should be Private for clean discovery. SMB still works
+#      on Public, but the host won't appear in browse lists.
+#   5. Do NOT flip AllowInsecureGuestAuth or switch FullAccess to "Everyone"
+#      unless you explicitly want wide-open shares on a trusted LAN.
+################################################################################
+
+Write-Host "`n=== Configuring SMB Shares ===" -ForegroundColor Cyan
+
+# Enable SMB2 + allow File and Printer Sharing through firewall (idempotent)
+Set-SmbServerConfiguration -EnableSMB2Protocol $true -Force -Confirm:$false
+Get-NetFirewallRule -DisplayGroup "File and Printer Sharing" -ErrorAction SilentlyContinue |
+    Enable-NetFirewallRule | Out-Null
+
+# D .. W inclusive — skips X, Y, Z on purpose
+$smbDriveLetters = [char[]](68..87) | ForEach-Object { [string]$_ }
+
+foreach ($l in $smbDriveLetters) {
+    $root = "${l}:\"
+    if (-not (Test-Path $root)) { continue }
+
+    $name = "_Sy_drive_$l"
+
+    # Remove any existing share of the same name so re-runs are idempotent
+    if (Get-SmbShare -Name $name -ErrorAction SilentlyContinue) {
+        Remove-SmbShare -Name $name -Force -Confirm:$false
+    }
+
+    # Share ACL: only current user gets access (password-gated, not open to Everyone)
+    New-SmbShare -Name $name -Path $root `
+        -FullAccess "$env:USERNAME" `
+        -Description "Auto-shared $root by _full-setup" | Out-Null
+
+    # NTFS ACL: grant current user Modify on the drive root.
+    # Share ACL alone is NOT enough — Windows enforces the intersection of
+    # share permissions AND NTFS permissions, so both layers must allow the user.
+    icacls $root /grant "${env:USERNAME}:(OI)(CI)M" /T 2>$null | Out-Null
+
+    Write-Host "  Shared: \\$env:COMPUTERNAME\$name -> $root" -ForegroundColor Green
+}
+
+Write-Host "`nCurrent _Sy_drive_* shares:" -ForegroundColor Cyan
+Get-SmbShare | Where-Object { $_.Name -like '_Sy_drive_*' } |
+    Format-Table Name, Path, Description
+
+# --------------------------------------------------------------------------
+# Step 3 (CLIENT SIDE) — mount the share from Linux (Ubuntu)
+# --------------------------------------------------------------------------
+# TODO: TBD — not yet wired into the Ubuntu _full-setup.sh. Left here as a
+# reference / paste-in starting point. Replace <WIN_HOST>, <DRIVE_LETTER>,
+# and <WIN_USER> with the real values before running.
+#
+# Run on the Ubuntu client (NOT here on Windows):
+#
+#     # one-time deps
+#     # sudo apt-get install -y cifs-utils
+#     #
+#     # # credentials file (keeps password out of /etc/fstab + process list)
+#     # sudo install -m 600 /dev/null /etc/samba/creds-<WIN_HOST>
+#     # sudo tee /etc/samba/creds-<WIN_HOST> >/dev/null <<EOF
+#     # username=<WIN_USER>
+#     # password=<WIN_PASSWORD>
+#     # EOF
+#     #
+#     # # ad-hoc mount
+#     # sudo mkdir -p /mnt/<WIN_HOST>/<DRIVE_LETTER>
+#     # sudo mount -t cifs //<WIN_HOST>/_Sy_drive_<DRIVE_LETTER> \
+#     #     /mnt/<WIN_HOST>/<DRIVE_LETTER> \
+#     #     -o credentials=/etc/samba/creds-<WIN_HOST>,uid=$(id -u),gid=$(id -g),iocharset=utf8,vers=3.0
+#     #
+#     # # persistent mount via /etc/fstab (one line, no leading '#')
+#     # //<WIN_HOST>/_Sy_drive_<DRIVE_LETTER>  /mnt/<WIN_HOST>/<DRIVE_LETTER>  cifs  credentials=/etc/samba/creds-<WIN_HOST>,uid=1000,gid=1000,iocharset=utf8,vers=3.0,nofail,_netdev  0  0
+# --------------------------------------------------------------------------
 
 
 
