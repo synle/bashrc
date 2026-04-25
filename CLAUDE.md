@@ -37,6 +37,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 - **Prefer `curl -fsSL <url> | bash` installers over package managers (npm, pip, etc.) for CLI tools.** Official installer scripts are more reliable and up-to-date than package manager distributions. Only fall back to `npm_install_global` when no official installer exists.
 - **Use grep/regex syntax compatible with both `grep` and `rg`.** `grep` may be aliased to `rg`. Avoid `grep -E` (rg interprets `-E` as encoding). Use basic regex — e.g. `[0-9][0-9]*` instead of `[0-9]+`.
 - **Use `((var))` for boolean flag checks (no spaces).** All boolean flags (`is_os_*`, `IS_CI`, `IS_FORCE_REFRESH`, etc.) use `0`/`1` values. Check with `((IS_CI))` (truthy) or `! ((IS_CI))` (falsy). `IS_CI` is derived from `$CI` in `run.sh` — do not use `$CI` directly.
+- **`is_os_ubuntu` is the catch-all Debian-family flag and MUST stay last in `run.sh` detection order.** It is gated by `! ((is_os_mac || is_os_chromeos || is_os_mingw64 || is_os_android_termux || is_os_arch_linux || is_os_steamos || is_os_redhat))` so a containerized Linux runner sharing `/proc/version` with an Ubuntu host kernel cannot leak `is_os_ubuntu=1` onto Arch / RHEL / SteamOS. New OS flags belong above the ubuntu guard. `is_os_windows` / `is_os_wsl` stay below the guard because WSL Ubuntu legitimately sets ubuntu+windows together.
 - **Use `command <tool>` to bypass shell aliases/wrappers when running commands.**
 - **Use `has_persistent_binary` for binary detection in scripts, `type` for shell functions.** Do not use `which` or `command -v`. In `software/scripts/*.sh` files, always use `has_persistent_binary <name>` instead of `type -P` for checking if a binary is installed. It excludes `/tmp/` matches so the bootstrap node fallback directory (`/tmp/synle/bashrc/node/bin`) doesn't short-circuit real installs. On success it prints the resolved path to stdout. Use plain `type -P` only in `profile-*.sh`, `common-functions.bash`, `run.sh`, and `common-env.sh` (where `has_persistent_binary` may not yet be defined).
 - **Use `npm_install_global <pkg> [binary]` for npm global installs.** Handles skip-if-installed checks (via `has_persistent_binary`) and installs to `$HOME/.local` on the current system. On WSL, also installs to the Windows host via `cmd.exe`. The `binary` arg is the binary name to check (defaults to the last segment of `pkg`, e.g. `yarn` from `yarn`, `gemini-cli` from `@google/gemini-cli`). Pass an explicit binary name when it differs from the package (e.g. `npm_install_global @google/gemini-cli gemini`). Callers should not duplicate skip logic — just call `npm_install_global`.
@@ -87,7 +88,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 
 If you modified `software/index.js` or `software/tools/build-include.js`, you **must** write or update unit tests in `software/tests/`.
 
-4. **Update CLAUDE.md** — When you make changes to `software/index.js`, `run.sh`, or `software/bootstrap/common-env.sh`, update the relevant sections of this file (Architecture, Key Files, etc.) to reflect the new flow, new functions, changed behavior, or new conventions. These are the core files — their documentation here must stay in sync with the code.
+4. **Update CLAUDE.md** — When you make changes to `software/index.js`, `run.sh`, `software/bootstrap/common-env.sh`, or `.github/actions/ci-build/action.yml`, update the relevant sections of this file (Architecture, Key Files, CI/CD, etc.) to reflect the new flow, new functions, changed behavior, or new conventions. These are the core files — their documentation here must stay in sync with the code.
 5. **Update keybinding reference** — When you add, remove, or change any keybinding in any file (keyboard shortcuts, accelerators, key mappings, readline bindings, terminal key configs, etc.), update `docs/editor-keybindings.md` to reflect the change. This includes all editors, terminals, browsers, and CLI tools. The keybinding doc is the single source of truth — if a binding changed in code, it must be updated in the matrix.
 
 ## Commands
@@ -166,13 +167,20 @@ Test setup (`software/tests/setup.js`): loads index.js in VM sandbox. Access via
 
 When adding new `.sh` files, register them in `software/tests/profileSyntax.spec.js` for `bash -n` syntax checks.
 
+**OS-detection regression tests** (`software/tests/osDetection.spec.js`): hermetic harness that pulls the `_detect_os` block out of `run.sh` by line markers (no hardcoded line numbers — survives shifts) and replays it against fake `/etc/os-release`, fake `/proc/version`, an isolated sandbox `PATH` (with only the tools `_detect_os` actually needs symlinked in), and per-test path overrides. When you change `run.sh` OS flags or add a new OS, add a case here covering both the positive detection AND that no other Linux distro flag leaks.
+
 ## CI/CD
 
 GitHub Actions (`.github/workflows/build-main.yml`): push to master triggers Prep -> Build (parallel OS builds) -> Publish (GitHub Pages) -> Test. All CI steps use Makefile targets.
 
 **When adding or removing a CLI tool, update the `check_binary` calls in `.github/actions/ci-build/action.yml`.** Only non-GUI command-line binaries.
 
-The CI build action (`ci-build/action.yml`) generates a job summary with collapsible sections: Profile Syntax Check, Binary Verification, Download Asset Verification, Script Results (reads `run_timing.json` for per-script status/duration), and a Build Summary table.
+**Binary check tiers — `required` vs `warn`:**
+
+- `check_binary_required <name>` — fails the build if missing. Reserve for binaries we ship via package managers on EVERY platform. Specifically: must install foreground on mac (`installBrewPackage`, NOT `installBrewPackageInBackground`) because mac's background queue is skipped in CI (`((IS_CI)) && return`). Apt/dnf/pacman background installs DO complete (waited on by `_waitForBackgroundPackages`), so background is fine on Linux.
+- `check_binary_warn <name>` — surfaces a warning but never fails the build. Use for: tools that depend on `advanced/*.sh` GitHub-release binary fallbacks (network/release flakiness), AUR-only on Arch, or any tool installed via `installBrewPackageInBackground` on mac.
+
+The CI build action (`ci-build/action.yml`) generates a job summary with collapsible sections in this order: **OS Flags** (table of `is_os_*` values, active flags first — sourced from `~/.bash_syle_common`), Profile Syntax Check, Binary Verification, Download Asset Verification, Script Results (reads `run_timing.json` for per-script status/duration), and a Build Summary table. The binary check also echoes `Failed: <names>` and `Warned: <names>` to stdout for log-level diagnostics.
 
 ## GitHub Codespaces
 
