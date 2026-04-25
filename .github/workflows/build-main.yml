@@ -331,11 +331,25 @@ jobs:
           ls -la .build/profile_bashrc_*.sh 2>/dev/null || true
 
       - name: Commit Changes
-        uses: EndBug/add-and-commit@v9
-        with:
-          message: "CI / CD - Format code and build artifacts"
-          default_author: github_actions
-          pull: "--rebase --autostash"
+        # Amend HEAD with formatting + build artifacts and force-push, instead of stacking
+        # a fresh "CI / CD - ..." commit on every push. Keeps the original commit message
+        # intact and appends a CI marker so the trailer makes the amend visible in the log.
+        # `--force-with-lease` guards against losing a concurrent push (concurrency group
+        # already cancels in-progress runs, so this is belt-and-suspenders).
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to amend"
+            exit 0
+          fi
+          original_message=$(git log -1 --pretty=%B)
+          new_message="${original_message}
+
+          CI / CD - Format code and build artifacts"
+          git commit --amend -m "$new_message"
+          git push --force-with-lease
 
       - name: Create publish patch
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
