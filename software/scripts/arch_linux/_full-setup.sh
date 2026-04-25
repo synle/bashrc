@@ -151,6 +151,12 @@ installPacmanPackage github-cli
 installPacmanPackage git-filter-repo
 installPacmanPackage git-lfs
 
+# ---- Observability ----
+installPacmanPackageInBackground bottom # `btm` — fast cross-platform top
+installPacmanPackageInBackground btop   # animated resource monitor
+installPacmanPackageInBackground gping  # ping with a graph
+installPacmanPackageInBackground procs  # modern ps replacement
+
 # ---- Infrastructure-as-Code ----
 installPacmanPackageInBackground ansible
 installPacmanPackageInBackground terraform

@@ -166,6 +166,10 @@ installAptPackage gh
 installAptPackage git-filter-repo
 installAptPackage git-lfs
 
+# ---- Observability ----
+# procs/bottom/gping are not in apt main — install via binary in advanced/observability.sh.
+installAptPackageInBackground btop
+
 # ---- Infrastructure-as-Code ----
 # terraform/tflint are not in apt main — install via binary in advanced/iac-tools.sh.
 installAptPackageInBackground ansible

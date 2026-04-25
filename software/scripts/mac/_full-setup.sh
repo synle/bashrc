@@ -231,6 +231,12 @@ installBrewPackageInBackground --cask powershell
 # ---- Local LLM ----
 installBrewPackageInBackground ollama
 
+# ---- Observability ----
+installBrewPackageInBackground bottom # `btm` — fast cross-platform top
+installBrewPackageInBackground btop   # animated resource monitor
+installBrewPackageInBackground gping  # ping with a graph
+installBrewPackageInBackground procs  # modern ps replacement
+
 # ---- Infrastructure-as-Code ----
 installBrewPackageInBackground ansible
 installBrewPackageInBackground terraform

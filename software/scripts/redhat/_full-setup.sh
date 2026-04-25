@@ -174,6 +174,10 @@ if [ -x /usr/libexec/git-core/git-filter-repo ] && [ ! -e /usr/local/bin/git-fil
 fi
 installDnfPackage git-lfs
 
+# ---- Observability ----
+# procs/bottom/gping are not in dnf default repos — install via binary in advanced/observability.sh.
+installDnfPackageInBackground btop
+
 # ---- Infrastructure-as-Code ----
 # terraform/tflint are not in dnf default repos — install via binary in advanced/iac-tools.sh.
 installDnfPackageInBackground ansible
