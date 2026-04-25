@@ -45,31 +45,44 @@ alias fvim='fuzzy_edit vim'
 # Single source of truth — sourced into profile-advanced.sh and autocomplete tests.
 ################################################################################
 function filter_unwanted() {
-  # _IGNORED_FOLDER_PATTERNS is bootstrapped from EDITOR_CONFIGS.ignoredFoldersRegex
-  # by software/scripts/advanced/fuzzy-patterns.js. Fallback list below covers
-  # minimal shell environments (e.g. tests sourcing this file standalone) where
-  # the bootstrap hasn't run yet.
+  # _IGNORED_FOLDER_PATTERNS / _IGNORED_FILE_PATTERNS are bootstrapped from
+  # EDITOR_CONFIGS.{ignoredFoldersRegex,ignoredFilesRegex} by
+  # software/scripts/advanced/fuzzy-patterns.js. Both arrays feed into a
+  # single grep -v -E so callers (pack_text, cprepo, fuzzy_edit, autocomplete)
+  # share a single source of truth for both folder excludes
+  # (node_modules, .venv, .git/, etc.) and file-extension excludes
+  # (.swp, .exe, .pyc, etc.). Fallback list below covers minimal shell
+  # environments (e.g. tests sourcing this file standalone) where the
+  # bootstrap hasn't run yet.
   local patterns=()
   if declare -p _IGNORED_FOLDER_PATTERNS &> /dev/null; then
-    patterns=("${_IGNORED_FOLDER_PATTERNS[@]}")
+    patterns+=("${_IGNORED_FOLDER_PATTERNS[@]}")
+  fi
+  if declare -p _IGNORED_FILE_PATTERNS &> /dev/null; then
+    patterns+=("${_IGNORED_FILE_PATTERNS[@]}")
   fi
   if [ ${#patterns[@]} -eq 0 ]; then
     patterns=(
+      # folder regex
       '\.DS_Store'
-      '\.pyc'
+      '\.angular/'
       '\.cache/'
       '\.git/'
       '\.gradle/'
       '\.hg/'
       '\.idea/'
+      '\.ipynb_checkpoints/'
       '\.mypy_cache/'
       '\.next/'
       '\.nuxt/'
       '\.parcel-cache/'
+      '\.pyc'
       '\.pytest_cache/'
       '\.ruff_'
       '\.sass-cache/'
+      '\.svelte-kit/'
       '\.svn/'
+      '\.terraform/'
       '\.tox/'
       '\.turbo/'
       '\.uv/'
@@ -81,11 +94,36 @@ function filter_unwanted() {
       '/build/'
       '/coverage/'
       '/cov/'
+      '/DerivedData/'
       '/dist/'
       '/htmlcov/'
       '/out/'
+      '/Pods/'
       '/target/'
       '/vendor/'
+      # file regex (anchored to end of basename / line)
+      '\.DS_Store$'
+      'Thumbs\.db$'
+      'desktop\.ini$'
+      '\.Spotlight-'
+      '\.Trashes$'
+      '\.fseventsd$'
+      '\.com\.apple\.'
+      '\.localized$'
+      '\.a$'
+      '\.class$'
+      '\.dll$'
+      '\.dylib$'
+      '\.exe$'
+      '\.lib$'
+      '\.o$'
+      '\.obj$'
+      '\.pyc$'
+      '\.pyo$'
+      '\.so$'
+      '\.swo$'
+      '\.swp$'
+      '\.wasm$'
     )
   fi
   local joined
@@ -112,9 +150,9 @@ function filter_unwanted() {
 # specific.
 # JSON pattern arrays — passed directly to node as process.argv (proper JS regex strings)
 # folder patterns — skip ignored dirs during traversal
-[ -z "${_IGNORED_FOLDERS_JSON+x}" ] && _IGNORED_FOLDERS_JSON='["\\.DS_Store","\\.pyc","\\.cache/","\\.git/","\\.gradle/","\\.hg/","\\.idea/","\\.mypy_cache/","\\.next/","\\.nuxt/","\\.parcel-cache/","\\.pytest_cache/","\\.ruff_","\\.sass-cache/","\\.svn/","\\.tox/","\\.turbo/","\\.uv/","\\.venv/","\\.yarn/","__pycache","bower_components","node_modules","/build/","/coverage/","/cov/","/dist/","/htmlcov/","/out/","/target/","/vendor/"]'
+[ -z "${_IGNORED_FOLDERS_JSON+x}" ] && _IGNORED_FOLDERS_JSON='["\\.DS_Store","\\.angular/","\\.cache/","\\.git/","\\.gradle/","\\.hg/","\\.idea/","\\.ipynb_checkpoints/","\\.mypy_cache/","\\.next/","\\.nuxt/","\\.parcel-cache/","\\.pyc","\\.pytest_cache/","\\.ruff_","\\.sass-cache/","\\.svelte-kit/","\\.svn/","\\.terraform/","\\.tox/","\\.turbo/","\\.uv/","\\.venv/","\\.yarn/","__pycache","bower_components","node_modules","/build/","/coverage/","/cov/","/DerivedData/","/dist/","/htmlcov/","/out/","/Pods/","/target/","/vendor/"]'
 # ignored file patterns — exclude binary files, system junk, and non-text files
-[ -z "${_IGNORED_FILES_JSON+x}" ] && _IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlight-","\\.Trashes$","\\.fseventsd$","\\.com\\.apple\\.","\\.localized$","\\.a$","\\.class$","\\.dll$","\\.dylib$","\\.exe$","\\.lib$","\\.o$","\\.obj$","\\.pyc$","\\.pyo$","\\.so$","\\.wasm$"]'
+[ -z "${_IGNORED_FILES_JSON+x}" ] && _IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlight-","\\.Trashes$","\\.fseventsd$","\\.com\\.apple\\.","\\.localized$","\\.a$","\\.class$","\\.dll$","\\.dylib$","\\.exe$","\\.lib$","\\.o$","\\.obj$","\\.pyc$","\\.pyo$","\\.so$","\\.swo$","\\.swp$","\\.wasm$"]'
 # text file extension allowlist — used by text_files mode
 [ -z "${_FUZZY_TEXT_FILES_JSON+x}" ] && _FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
 

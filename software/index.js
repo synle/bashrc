@@ -589,20 +589,24 @@ const EDITOR_CONFIGS = {
    */
   ignoredFoldersRegex: [
     "\\.DS_Store",
-    "\\.pyc",
+    "\\.angular/", // Angular CLI cache
     "\\.cache/",
     "\\.git/",
     "\\.gradle/",
     "\\.hg/",
     "\\.idea/",
+    "\\.ipynb_checkpoints/", // Jupyter auto-save
     "\\.mypy_cache/",
     "\\.next/",
     "\\.nuxt/",
     "\\.parcel-cache/",
+    "\\.pyc",
     "\\.pytest_cache/",
     "\\.ruff_",
     "\\.sass-cache/",
+    "\\.svelte-kit/", // SvelteKit build
     "\\.svn/",
+    "\\.terraform/", // Terraform provider plugins / state
     "\\.tox/",
     "\\.turbo/",
     "\\.uv/",
@@ -614,9 +618,11 @@ const EDITOR_CONFIGS = {
     "/build/",
     "/coverage/",
     "/cov/",
+    "/DerivedData/", // Xcode build cache
     "/dist/",
     "/htmlcov/",
     "/out/",
+    "/Pods/", // iOS CocoaPods
     "/target/",
     "/vendor/",
   ],
@@ -647,6 +653,8 @@ const EDITOR_CONFIGS = {
     "\\.pyc$",
     "\\.pyo$",
     "\\.so$",
+    "\\.swo$", // vim swap file (companion to .swp)
+    "\\.swp$", // vim swap file
     "\\.wasm$",
   ],
   /**
