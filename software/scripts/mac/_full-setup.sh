@@ -228,6 +228,9 @@ installBrewPackageInBackground go
 installBrewPackageInBackground --cask dotnet-sdk
 installBrewPackageInBackground --cask powershell
 
+# ---- Local LLM ----
+installBrewPackageInBackground ollama
+
 # ---- Database clients ----
 installBrewPackageInBackground mysql-client
 installBrewPackageInBackground sqlite

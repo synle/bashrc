@@ -518,6 +518,9 @@ $wingetPackagesBackground = @(
     "Microsoft.DotNet.DesktopRuntime.8",
     "Microsoft.PowerShell",
 
+    # ---- Local LLM ----
+    "Ollama.Ollama",
+
     # ---- GUI Applications ----
     "Audacity.Audacity",
     "Bambulab.Bambustudio",
