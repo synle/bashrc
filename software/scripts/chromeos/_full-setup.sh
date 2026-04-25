@@ -212,5 +212,14 @@ fi
 ################################################################################
 _installBackgroundPackages
 _waitForBackgroundPackages
+
+################################################################################
+# ---- Binary Aliases ----
+# apt installs `bat` as /usr/bin/batcat and `fd-find` as /usr/bin/fdfind.
+# Create $HOME/.local/bin/{bat,fd} symlinks so the canonical names resolve.
+################################################################################
+ensure_binary_alias bat
+ensure_binary_alias fd
+
 _configureDisplayDjPermissions
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

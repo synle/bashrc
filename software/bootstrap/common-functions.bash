@@ -235,6 +235,51 @@ function is_bash_syle_stale() {
   is_path_stale "$BASH_SYLE_PATH"
 }
 
+# ensure_binary_alias <canonical_name> - On distros where the package manager installs
+# the binary under a non-canonical name (e.g. apt installs `bat` -> `/usr/bin/batcat`,
+# `fd-find` -> `/usr/bin/fdfind`), create a $HOME/.local/bin/<canonical> symlink so
+# the canonical name resolves on PATH. No-op when:
+#   - there is no override for the current OS
+#   - the canonical binary is already on PATH (already symlinked, or distro ships it directly)
+#   - the override binary itself is not installed (nothing to link to)
+# Refuses to overwrite a real file at the target path; replaces existing symlinks.
+# Override table is intentionally inline (no JSON / no jq dependency at install time).
+function ensure_binary_alias() {
+  local canonical="$1"
+  local installed=""
+
+  # ---- Override table ----
+  case "$canonical" in
+  bat) ((is_os_ubuntu || is_os_chromeos)) && installed="batcat" ;;
+  fd) ((is_os_ubuntu || is_os_chromeos)) && installed="fdfind" ;;
+  esac
+
+  # No override for this OS — done.
+  [ -z "$installed" ] && return 0
+
+  # Canonical already on PATH — done.
+  if type -P "$canonical" &> /dev/null; then
+    echo ">> ensure_binary_alias $canonical >> Skipped (already on PATH)"
+    return 0
+  fi
+
+  local target
+  target=$(type -P "$installed" 2> /dev/null) || true
+  if [ -z "$target" ]; then
+    echo ">> ensure_binary_alias $canonical >> Skipped (no $installed found)"
+    return 0
+  fi
+
+  safe_mkdir "$HOME/.local/bin" > /dev/null
+  local link="$HOME/.local/bin/$canonical"
+  if [ -e "$link" ] && [ ! -L "$link" ]; then
+    echo ">> ensure_binary_alias $canonical >> Skipped (real file at $link)"
+    return 0
+  fi
+  ln -sf "$target" "$link"
+  echo ">> ensure_binary_alias $canonical >> Linked $link -> $target"
+}
+
 # exit_if_limited_support_os - Exits the script if the current OS is a limited-support
 # platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
 function exit_if_limited_support_os() {
