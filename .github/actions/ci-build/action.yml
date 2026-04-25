@@ -503,7 +503,17 @@ runs:
         timed_out=0
         total=0
         total_duration=0
+        required_count=0
+        optional_count=0
         install_table=""
+
+        # Required-package classifier — matches package names that map to
+        # check_binary_required entries above. Anything else is treated as
+        # optional (warn-tier or not directly checked by binary verification),
+        # so it gets a :wrench: marker next to the package name in the table.
+        # Keep this list in sync with the check_binary_required block above
+        # (plus common package-name aliases like httpie -> http).
+        required_pkgs_re='^(git|git-filter-repo|curl|make|build-essential|node|nodejs|node-?js|npm|fzf|unzip|yarn|bun|deno|uv|kubectl|kubernetes-cli|@google/gemini-cli|gemini-cli|gemini|temporal|temporalio|httpie|http|ansible|btop)$'
 
         # Parse lines matching: >> <pkg> >> Installing with <manager> >> <result>
         while IFS= read -r line; do
@@ -543,7 +553,18 @@ runs:
               duration="Error"
             fi
 
-            install_table+="| $icon | \`$pkg\` | $manager | $duration |"$'\n'
+            # Required vs optional marker. Required = build-failing if missing
+            # (matches check_binary_required). Optional = warn-tier or unchecked.
+            pkg_lower="${pkg,,}"
+            if [[ "$pkg_lower" =~ $required_pkgs_re ]]; then
+              pkg_label="\`$pkg\`"
+              required_count=$((required_count + 1))
+            else
+              pkg_label="\`$pkg\` :wrench:"
+              optional_count=$((optional_count + 1))
+            fi
+
+            install_table+="| $icon | $pkg_label | $manager | $duration |"$'\n'
           fi
         done < "$log_file"
 
@@ -565,7 +586,9 @@ runs:
         echo "### Package Install Summary (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
         echo "" >> "$GITHUB_STEP_SUMMARY"
         echo "<details>" >> "$GITHUB_STEP_SUMMARY"
-        echo "<summary>Total: $total | Installed: $installed | Skipped: $skipped | Failed: $failed | Timed out: $timed_out | Duration: $fmt_duration</summary>" >> "$GITHUB_STEP_SUMMARY"
+        echo "<summary>Total: $total | Installed: $installed | Skipped: $skipped | Failed: $failed | Timed out: $timed_out | Required: $required_count | Optional: $optional_count | Duration: $fmt_duration</summary>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "_:wrench: marks optional packages — missing won't fail the build (warn-tier or unchecked)._" >> "$GITHUB_STEP_SUMMARY"
         echo "" >> "$GITHUB_STEP_SUMMARY"
         echo "| Result | Package | Manager | Duration |" >> "$GITHUB_STEP_SUMMARY"
         echo "|--------|---------|---------|----------|" >> "$GITHUB_STEP_SUMMARY"
@@ -574,7 +597,7 @@ runs:
         echo "</details>" >> "$GITHUB_STEP_SUMMARY"
         echo "" >> "$GITHUB_STEP_SUMMARY"
 
-        echo "Package install summary: $installed installed, $skipped skipped, $failed failed, $timed_out timed out ($fmt_duration)"
+        echo "Package install summary: $installed installed, $skipped skipped, $failed failed, $timed_out timed out, $required_count required, $optional_count optional ($fmt_duration)"
 
     - name: Job Summary
       id: summary
