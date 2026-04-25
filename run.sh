@@ -149,14 +149,27 @@ function _detect_os() {
   return 1
 }
 
+# Detect specific OSes first. is_os_ubuntu is the catch-all for Debian-family
+# detection — it checks last and only fires if no other Linux distro matched.
+# Why: GitHub Actions runners (and other containerized environments) share
+# /proc/version with the Ubuntu host kernel, which would otherwise cause
+# is_os_ubuntu=1 to leak onto Arch / RedHat / SteamOS / etc., running both
+# _full-setup.sh files (apt + pacman/dnf) on the same machine.
 is_os_mac=0 && _detect_os --name "darwin" --path "/Applications" --bin "brew" && is_os_mac=1
-is_os_ubuntu=0 && _detect_os --name "ubuntu, debian, mint" --bin "apt-get" && is_os_ubuntu=1
 is_os_chromeos=0 && _detect_os --name "cros" --path "/dev/.cros_milestone" && is_os_chromeos=1
 is_os_mingw64=0 && _detect_os --name "msys, cygwin" --path "/mingw64" && is_os_mingw64=1
 is_os_android_termux=0 && _detect_os --env "TERMUX_VERSION" --path "/data/data/com.termux" && is_os_android_termux=1
 is_os_arch_linux=0 && _detect_os --name "arch, steamos" --bin "pacman" && is_os_arch_linux=1
 is_os_steamos=0 && _detect_os --name "steamos" && is_os_steamos=1
 is_os_redhat=0 && _detect_os --name "fedora, rhel, centos, rocky, alma" --bin "dnf, yum" && is_os_redhat=1
+# is_os_ubuntu MUST come last among Linux distro flags so a host-kernel
+# /proc/version match can't override a real arch/redhat/etc. detection.
+is_os_ubuntu=0
+if ! ((is_os_mac || is_os_chromeos || is_os_mingw64 || is_os_android_termux || is_os_arch_linux || is_os_steamos || is_os_redhat)); then
+  _detect_os --name "ubuntu, debian, mint" --bin "apt-get" && is_os_ubuntu=1
+fi
+# is_os_windows / is_os_wsl are independent overlays — WSL Ubuntu legitimately
+# sets is_os_ubuntu=1 AND is_os_windows=1, so these check after the guard above.
 is_os_windows=0 && _detect_os --name "microsoft" --path "/mnt/c/Windows, /c/Windows" && is_os_windows=1
 is_os_wsl=0 && ((is_os_windows)) && is_os_wsl=1
 
