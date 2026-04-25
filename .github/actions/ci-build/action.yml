@@ -258,15 +258,18 @@ runs:
 
         # ---- Warn (optional, warning if missing) ----
         check_binary_warn pwsh "pwsh --version"
-        check_binary_warn starship
-        check_binary_warn ffmpeg "ffmpeg -version"
 
         # ---- Required: new feature tooling that ships on every package manager ----
-        # These three install foreground on every platform (apt/dnf/pacman/brew),
+        # These install foreground on every platform (apt/dnf/pacman/brew),
         # so the binary check can hold them to the required tier.
         check_binary_required http "http --version"      # httpie
         check_binary_required ansible "ansible --version"
         check_binary_required btop "btop --version"
+        # Promoted from warn -> required: starship, ffmpeg consistently passed
+        # on all 5 OS jobs (ubuntu/debian/arch/rhel/mac) — they install
+        # foreground on every package manager, so missing should fail.
+        check_binary_required starship
+        check_binary_required ffmpeg "ffmpeg -version"
 
         # ---- Warn: new feature tooling (track per-platform install coverage) ----
         # These either install in background on mac (skipped in CI) or rely on
@@ -298,11 +301,12 @@ runs:
         check_binary_warn procs "procs --version"
         check_binary_warn btm "btm --version"
         check_binary_warn gping "gping --version"
-        # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`
+        # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`.
+        # Promoted from warn -> required: passed on all 5 OS jobs in recent runs.
         if type -P magick &>/dev/null; then
-          check_binary_warn magick "magick -version"
+          check_binary_required magick "magick -version"
         else
-          check_binary_warn convert "convert -version"
+          check_binary_required convert "convert -version"
         fi
 
         # Write summary with collapsible details
