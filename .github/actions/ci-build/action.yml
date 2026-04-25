@@ -68,6 +68,49 @@ runs:
         retention-days: 14
         if-no-files-found: ignore
 
+    - name: OS flags
+      id: os-flags
+      if: always()
+      shell: bash
+      run: |
+        # Renders the is_os_* + IS_CI flag table that run.sh produced into
+        # ~/.bash_syle_common. Sorted: active flags (=1) first, then inactive (=0).
+        # Placed before the profile syntax check so a wrong-OS detection (e.g.
+        # ubuntu+arch both set) is obvious in the job summary at a glance.
+        common_path="$HOME/.bash_syle_common"
+        echo "### OS Flags (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        if [ ! -f "$common_path" ]; then
+          echo ":fast_forward: *flags file not found at \`$common_path\`*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        echo "| Result | Flag | Value |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|------|-------|" >> "$GITHUB_STEP_SUMMARY"
+
+        # Parse `export is_os_xxx=N` / `export IS_CI=N` lines from the common file.
+        # Bucket by value so active flags float to the top; sort each bucket by name.
+        active=""
+        inactive=""
+        while IFS= read -r line; do
+          if [[ "$line" =~ ^export[[:space:]]+(is_os_[a-z_]+|IS_CI)=([0-9]+) ]]; then
+            name="${BASH_REMATCH[1]}"
+            val="${BASH_REMATCH[2]}"
+            if [ "$val" = "1" ]; then
+              active+="$name|$val"$'\n'
+            else
+              inactive+="$name|$val"$'\n'
+            fi
+          fi
+        done < "$common_path"
+
+        # Emit active first, then inactive — each bucket alphabetised.
+        {
+          printf '%s' "$active" | sort | awk -F'|' 'NF==2 {printf "| :white_check_mark: | `%s` | %s |\n", $1, $2}'
+          printf '%s' "$inactive" | sort | awk -F'|' 'NF==2 {printf "| :white_circle: | `%s` | %s |\n", $1, $2}'
+        } >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
     - name: Profile syntax check
       id: profile-syntax
       if: always()
@@ -518,6 +561,7 @@ runs:
         echo "|--------|------|----------|" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.ci-build.outcome }}') | CI Build | $(format_duration $D_BUILD) |" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.package-install.outcome }}') | Package Install | |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.os-flags.outcome }}') | OS Flags | |" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.profile-syntax.outcome }}') | Profile Syntax | |" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.binary-check.outcome }}') | Binary Verification | ${{ steps.binary-check.outputs.summary }} |" >> $GITHUB_STEP_SUMMARY
         echo "| $(get_status_icon '${{ steps.download-check.outcome }}') | Download Asset Verification | |" >> $GITHUB_STEP_SUMMARY
