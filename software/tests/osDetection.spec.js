@@ -25,9 +25,28 @@ const ALL_FLAGS = [
 /** Per-test sandbox dir — holds fake os-release / proc-version / stub bins / fake paths. */
 let sandbox = "";
 
+/**
+ * Tools _detect_os calls internally (via `sed`, `grep`, etc.) — we need them in
+ * PATH for the function to work, but we can't include /usr/bin wholesale because
+ * that would leak apt-get / dnf / pacman into tests that don't opt in.
+ */
+const REQUIRED_TOOLS = ["sed", "grep", "awk", "tr", "cut", "head", "cat"];
+
 beforeEach(() => {
   sandbox = fs.mkdtempSync("/tmp/_os_detect_test_");
   fs.mkdirSync(path.join(sandbox, "bin"));
+  // Symlink required tools from the host into the sandbox bin. This lets the
+  // sandbox PATH stay hermetic (no /usr/bin) so package-manager binaries
+  // (apt-get/dnf/pacman) are only visible when a test explicitly adds them.
+  for (const tool of REQUIRED_TOOLS) {
+    for (const dir of ["/usr/bin", "/bin", "/usr/local/bin", "/opt/homebrew/bin"]) {
+      const src = path.join(dir, tool);
+      if (fs.existsSync(src)) {
+        fs.symlinkSync(src, path.join(sandbox, "bin", tool));
+        break;
+      }
+    }
+  }
 });
 
 afterEach(() => {
@@ -102,7 +121,10 @@ function detectFlags(opts = {}) {
     [
       "#!/usr/bin/env bash",
       // Hermetic PATH: only sandbox bin + minimal system bins (so `type` etc. work).
-      `export PATH="${path.join(sandbox, "bin")}:/usr/bin:/bin"`,
+      // Hermetic PATH: only sandbox bin (which has our required-tool symlinks
+      // plus any opt-in stub bins). NOT /usr/bin or /bin — those would leak
+      // host-installed apt-get/dnf/pacman into tests that didn't opt in.
+      `export PATH="${path.join(sandbox, "bin")}"`,
       `export OSTYPE="${opts.ostype ?? ""}"`,
       block,
       echoFlags,

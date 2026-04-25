@@ -88,12 +88,13 @@ runs:
         echo "| Result | Flag | Value |" >> "$GITHUB_STEP_SUMMARY"
         echo "|--------|------|-------|" >> "$GITHUB_STEP_SUMMARY"
 
-        # Parse `export is_os_xxx=N` / `export IS_CI=N` lines from the common file.
+        # Parse `export is_os_xxx=N` lines from the common file. IS_CI is
+        # intentionally excluded — it's always 1 in CI and adds no signal.
         # Bucket by value so active flags float to the top; sort each bucket by name.
         active=""
         inactive=""
         while IFS= read -r line; do
-          if [[ "$line" =~ ^export[[:space:]]+(is_os_[a-z_]+|IS_CI)=([0-9]+) ]]; then
+          if [[ "$line" =~ ^export[[:space:]]+(is_os_[a-z0-9_]+)=([0-9]+) ]]; then
             name="${BASH_REMATCH[1]}"
             val="${BASH_REMATCH[2]}"
             if [ "$val" = "1" ]; then
@@ -259,6 +260,40 @@ runs:
         check_binary_warn pwsh "pwsh --version"
         check_binary_warn starship
         check_binary_warn ffmpeg "ffmpeg -version"
+
+        # ---- Warn: new feature tooling (track per-platform install coverage) ----
+        # These ship via package managers on some platforms and binary fallbacks
+        # on others; failure surface is per-binary so we can see exactly which
+        # platform/binary missed.
+        # Local LLM
+        check_binary_warn ollama "ollama --version"
+        # Database clients
+        check_binary_warn psql "psql --version"
+        check_binary_warn pgcli "pgcli --version"
+        check_binary_warn mycli "mycli --version"
+        # HTTP / RPC clients
+        check_binary_warn http "http --version"
+        check_binary_warn xh "xh --version"
+        check_binary_warn grpcurl "grpcurl --version"
+        # Kubernetes
+        check_binary_warn helm "helm version --short"
+        check_binary_warn k9s "k9s version --short"
+        check_binary_warn stern "stern --version"
+        check_binary_warn kubectx "kubectx --help"
+        check_binary_warn kubens "kubens --help"
+        # Docker extras
+        check_binary_warn lazydocker "lazydocker --version"
+        check_binary_warn dive "dive --version"
+        check_binary_warn ctop "ctop -v"
+        # Infrastructure-as-Code
+        check_binary_warn terraform "terraform version"
+        check_binary_warn tflint "tflint --version"
+        check_binary_warn ansible "ansible --version"
+        # Observability
+        check_binary_warn btop "btop --version"
+        check_binary_warn procs "procs --version"
+        check_binary_warn btm "btm --version"
+        check_binary_warn gping "gping --version"
         # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`
         if type -P magick &>/dev/null; then
           check_binary_warn magick "magick -version"
