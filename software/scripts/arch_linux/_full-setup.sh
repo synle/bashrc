@@ -151,6 +151,11 @@ installPacmanPackage github-cli
 installPacmanPackage git-filter-repo
 installPacmanPackage git-lfs
 
+# ---- Docker extras ----
+installPacmanPackageInBackground ctop       # top-like UI for container metrics
+installPacmanPackageInBackground dive       # explore docker image layers
+installPacmanPackageInBackground lazydocker # TUI for docker + compose
+
 # ---- Kubernetes ----
 installPacmanPackageInBackground helm
 installPacmanPackageInBackground k9s

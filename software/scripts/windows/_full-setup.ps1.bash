@@ -514,6 +514,7 @@ $wingetPackagesBackground = @(
     "Microsoft.VisualStudio.2022.BuildTools",
     "Helm.Helm",
     "Derailed.k9s",
+    "JesseDuffield.lazydocker",
     "Microsoft.DotNet.SDK.8",
     "Microsoft.DotNet.DesktopRuntime.6",
     "Microsoft.DotNet.DesktopRuntime.7",

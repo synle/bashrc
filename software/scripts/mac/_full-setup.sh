@@ -231,6 +231,11 @@ installBrewPackageInBackground --cask powershell
 # ---- Local LLM ----
 installBrewPackageInBackground ollama
 
+# ---- Docker extras ----
+installBrewPackageInBackground ctop       # top-like UI for container metrics
+installBrewPackageInBackground dive       # explore docker image layers
+installBrewPackageInBackground lazydocker # TUI for docker + compose
+
 # ---- Kubernetes ----
 installBrewPackageInBackground helm
 installBrewPackageInBackground k9s
