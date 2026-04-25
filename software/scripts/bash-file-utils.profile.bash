@@ -31,8 +31,9 @@
 #                  Default mode is --raw (auto-saved to /tmp/<flat>.<ts>.pack.txt
 #                  and streamed to stdout). --zip / --tar wrap the same blob.
 #                  In a git repo, starts from `git ls-files` plus untracked
-#                  .env*/.md/.xml/.src extras. Always skips node_modules, .venv,
-#                  __pycache__, .build, etc.
+#                  extras (.env*, .bash*, .zsh*, .md, .xml, .src, .sh, .sql,
+#                  .db, .sqlite*, .yml/.yaml, .json, .toml, .ini, .conf, .cfg).
+#                  Always skips node_modules, .venv, __pycache__, .build, etc.
 # unpack_text    — Extract files from a pack (file path, archive, '-' stdin
 #                  marker, or piped stdin). Dispatches per-block on the
 #                  encoding token: gzip+base64 → decode + write bytes; no
@@ -779,9 +780,11 @@ function pack_text() {
     --tar             wraps the raw blob in a .tar.gz archive
                       auto-named /tmp/<flat>.<ts>.pack.tar.gz when output_file omitted
   File selection:
-    git repo  - git ls-files (tracked) + any untracked .env*/.md/.xml/.src files
-                in the working tree. node_modules, .venv, __pycache__, .build,
-                .git, etc. are always excluded.
+    git repo  - git ls-files (tracked) + any untracked extras in the working
+                tree (.env*, .bash*, .zsh*, .md, .xml, .src, .sh, .sql, .db,
+                .sqlite*, .yml/.yaml, .json, .toml, .ini, .conf, .cfg).
+                node_modules, .venv, __pycache__, .build, .git, etc. are always
+                excluded.
     non-git   - recursive walk skipping the same ignored dirs.
   Encoding:
     Every file (text or binary) is gzip-compressed then base64-encoded so the
@@ -918,12 +921,26 @@ function walk(dir) {
 }
 
 /** Extra include patterns — applied on top of `git ls-files` to capture
- *  commonly-useful gitignored or generated files (e.g. .env.local). */
+ *  commonly-useful gitignored or generated files (e.g. .env.local, local
+ *  shell rc files, sqlite databases, config snippets). Matched against the
+ *  file basename (no directory component). */
 const EXTRA_INCLUDE_PATTERNS = [
-  /^\.env($|\..+)/i,
+  /^\.env($|\..+)/i,    // .env, .env.local, .env.production, etc.
+  /^\.bash/i,           // .bash_syle, .bash_profile, .bashrc, .bash_history, etc.
+  /^\.zsh/i,            // .zshrc, .zshenv, .zprofile, .zsh_history, etc.
   /\.md$/i,
   /\.xml$/i,
   /\.src$/i,
+  /\.sh$/i,             // shell scripts
+  /\.sql$/i,
+  /\.db$/i,             // generic sqlite db
+  /\.sqlite/i,          // .sqlite, .sqlite3, .sqlite-shm, .sqlite-wal, etc.
+  /\.ya?ml$/i,          // .yml, .yaml
+  /\.json$/i,
+  /\.toml$/i,           // pyproject.toml, Cargo.toml, ruff.toml, etc.
+  /\.ini$/i,
+  /\.conf$/i,
+  /\.cfg$/i,
 ];
 function isExtraInclude(fp) {
   return EXTRA_INCLUDE_PATTERNS.some(re => re.test(path.basename(fp)));
@@ -944,7 +961,7 @@ if (isGitRepo(srcDir)) {
   const trackedSet = new Set(tracked);
   const extras = walk(srcDir).filter(f => !trackedSet.has(f) && isExtraInclude(f));
   files = tracked.concat(extras).sort();
-  console.error('pack_text: git repo — ' + tracked.length + ' tracked + ' + extras.length + ' extra (.env*/.md/.xml/.src)');
+  console.error('pack_text: git repo — ' + tracked.length + ' tracked + ' + extras.length + ' extra (.env*/.bash*/.zsh*/.md/.xml/.src/.sh/.sql/.db/.sqlite*/.yml/.json/.toml/.ini/.conf/.cfg)');
 } else {
   files = walk(srcDir);
 }

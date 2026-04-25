@@ -177,23 +177,59 @@ describe("pack_text format", () => {
     expect(output).not.toContain("PACK_BEGIN: untracked.txt");
   });
 
-  it("should pick up untracked .env / .md / .xml / .src files in git mode", () => {
+  it("should pick up untracked extras (.env / .bash* / .zsh* / .md / .xml / .src / .sh / .sql / .db / .sqlite* / .yml / .json / .toml / .ini / .conf / .cfg) in git mode", () => {
     const gitDir = path.join(TMP_DIR, "gitenv");
     fs.mkdirSync(gitDir, { recursive: true });
     fs.writeFileSync(path.join(gitDir, "tracked.js"), "code");
-    fs.writeFileSync(path.join(gitDir, ".gitignore"), ".env*\n");
+    fs.writeFileSync(path.join(gitDir, ".gitignore"), "*\n!tracked.js\n!.gitignore\n");
     execSync(`git init && git add . && git commit -m "init"`, {
       cwd: gitDir,
       stdio: "pipe",
       env: { ...process.env, GIT_AUTHOR_NAME: "test", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "test", GIT_COMMITTER_EMAIL: "t@t" },
     });
     fs.writeFileSync(path.join(gitDir, ".env"), "SECRET=abc");
+    fs.writeFileSync(path.join(gitDir, ".bash_syle"), "alias x=y");
+    fs.writeFileSync(path.join(gitDir, ".bash_profile"), "export FOO=1");
+    fs.writeFileSync(path.join(gitDir, ".bashrc"), "PS1='$ '");
+    fs.writeFileSync(path.join(gitDir, ".zshrc"), "PS1='%~ '");
+    fs.writeFileSync(path.join(gitDir, ".zshenv"), "export ZSH=1");
     fs.writeFileSync(path.join(gitDir, "notes.md"), "local notes");
     fs.writeFileSync(path.join(gitDir, "config.xml"), "<x/>");
+    fs.writeFileSync(path.join(gitDir, "build.src"), "src");
+    fs.writeFileSync(path.join(gitDir, "deploy.sh"), "#!/bin/sh\necho hi\n");
+    fs.writeFileSync(path.join(gitDir, "schema.sql"), "CREATE TABLE t (id INT);");
+    fs.writeFileSync(path.join(gitDir, "data.db"), "fakedb");
+    fs.writeFileSync(path.join(gitDir, "cache.sqlite"), "sqlite");
+    fs.writeFileSync(path.join(gitDir, "wal.sqlite-wal"), "wal");
+    fs.writeFileSync(path.join(gitDir, "config.yml"), "key: value\n");
+    fs.writeFileSync(path.join(gitDir, "config.yaml"), "key: value\n");
+    fs.writeFileSync(path.join(gitDir, "manifest.json"), "{}");
+    fs.writeFileSync(path.join(gitDir, "pyproject.toml"), "[tool]\n");
+    fs.writeFileSync(path.join(gitDir, "settings.ini"), "[main]\nkey=val\n");
+    fs.writeFileSync(path.join(gitDir, "nginx.conf"), "server { }\n");
+    fs.writeFileSync(path.join(gitDir, "setup.cfg"), "[metadata]\n");
     const output = runBash(`pack_text "${gitDir}" --raw`);
     expect(output).toContain("PACK_BEGIN: .env ");
+    expect(output).toContain("PACK_BEGIN: .bash_syle ");
+    expect(output).toContain("PACK_BEGIN: .bash_profile ");
+    expect(output).toContain("PACK_BEGIN: .bashrc ");
+    expect(output).toContain("PACK_BEGIN: .zshrc ");
+    expect(output).toContain("PACK_BEGIN: .zshenv ");
     expect(output).toContain("PACK_BEGIN: notes.md ");
     expect(output).toContain("PACK_BEGIN: config.xml ");
+    expect(output).toContain("PACK_BEGIN: build.src ");
+    expect(output).toContain("PACK_BEGIN: deploy.sh ");
+    expect(output).toContain("PACK_BEGIN: schema.sql ");
+    expect(output).toContain("PACK_BEGIN: data.db ");
+    expect(output).toContain("PACK_BEGIN: cache.sqlite ");
+    expect(output).toContain("PACK_BEGIN: wal.sqlite-wal ");
+    expect(output).toContain("PACK_BEGIN: config.yml ");
+    expect(output).toContain("PACK_BEGIN: config.yaml ");
+    expect(output).toContain("PACK_BEGIN: manifest.json ");
+    expect(output).toContain("PACK_BEGIN: pyproject.toml ");
+    expect(output).toContain("PACK_BEGIN: settings.ini ");
+    expect(output).toContain("PACK_BEGIN: nginx.conf ");
+    expect(output).toContain("PACK_BEGIN: setup.cfg ");
   });
 });
 
