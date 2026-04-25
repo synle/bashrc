@@ -232,13 +232,16 @@ installBrewPackageInBackground --cask powershell
 installBrewPackageInBackground ollama
 
 # ---- Observability ----
+# btop is foreground on every platform so CI can mark it as a required binary —
+# small (~5MB), apt/dnf/pacman/brew all carry it, no fallback installer needed.
+installBrewPackage btop               # animated resource monitor
 installBrewPackageInBackground bottom # `btm` — fast cross-platform top
-installBrewPackageInBackground btop   # animated resource monitor
 installBrewPackageInBackground gping  # ping with a graph
 installBrewPackageInBackground procs  # modern ps replacement
 
 # ---- Infrastructure-as-Code ----
-installBrewPackageInBackground ansible
+# ansible foreground for the same reason — universally packaged, required-tier.
+installBrewPackage ansible
 installBrewPackageInBackground terraform
 installBrewPackageInBackground tflint
 
@@ -254,8 +257,10 @@ installBrewPackageInBackground kubectx # provides kubectx + kubens
 installBrewPackageInBackground stern
 
 # ---- HTTP / RPC clients ----
+# httpie foreground — universally packaged, required-tier. xh+grpcurl stay
+# background (Linux installs xh/grpcurl via advanced/http-clients.sh fallback).
+installBrewPackage httpie              # human-friendly HTTP client (`http GET ...`)
 installBrewPackageInBackground grpcurl # gRPC equivalent of curl
-installBrewPackageInBackground httpie  # human-friendly HTTP client (`http GET ...`)
 installBrewPackageInBackground xh      # fast Rust httpie clone (compatible CLI)
 
 # ---- Database clients ----
