@@ -507,6 +507,15 @@ runs:
         optional_count=0
         install_table=""
 
+        # Machine-readable per-package summary so the cross-OS matrix step in
+        # build-main.yml can merge each OS's install results into a 360-view
+        # table. Format: <pkg>\t<manager>\t<status>\t<duration_seconds>\t<tier>
+        # status: success | error | skipped | timeout
+        # tier:   required | optional
+        mkdir -p /tmp/synle/bashrc
+        install_tsv="/tmp/synle/bashrc/install-summary.tsv"
+        : > "$install_tsv"
+
         # Required-package classifier — matches package names that map to
         # check_binary_required entries above. Anything else is treated as
         # optional (warn-tier or not directly checked by binary verification),
@@ -538,17 +547,21 @@ runs:
             # Determine status and icon
             if [[ "$result" == Skipped* ]]; then
               icon=":fast_forward:"
+              status_tag="skipped"
               skipped=$((skipped + 1))
             elif [[ "$result" == Success* ]]; then
               icon=":white_check_mark:"
+              status_tag="success"
               installed=$((installed + 1))
               if [ -n "$raw_duration" ]; then duration="${raw_duration}s"; fi
             elif [[ "$result" == *"timeout"* ]]; then
               icon=":pause_button:"
+              status_tag="timeout"
               timed_out=$((timed_out + 1))
               duration="Skipped (timeout)"
             else
               icon=":x:"
+              status_tag="error"
               failed=$((failed + 1))
               duration="Error"
             fi
@@ -558,13 +571,16 @@ runs:
             pkg_lower="${pkg,,}"
             if [[ "$pkg_lower" =~ $required_pkgs_re ]]; then
               pkg_label="\`$pkg\`"
+              tier_tag="required"
               required_count=$((required_count + 1))
             else
               pkg_label="\`$pkg\` :wrench:"
+              tier_tag="optional"
               optional_count=$((optional_count + 1))
             fi
 
             install_table+="| $icon | $pkg_label | $manager | $duration |"$'\n'
+            printf '%s\t%s\t%s\t%s\t%s\n' "$pkg" "$manager" "$status_tag" "${raw_duration:-0}" "$tier_tag" >> "$install_tsv"
           fi
         done < "$log_file"
 

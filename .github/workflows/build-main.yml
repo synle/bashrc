@@ -469,6 +469,14 @@ jobs:
           pattern: profile-debug-build-*
           merge-multiple: false
 
+      - name: Download per-OS install summaries
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/install-summaries
+          pattern: logs-build-*
+          merge-multiple: false
+
       - name: Copy profile debug snapshots into .build
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
         run: |
@@ -616,6 +624,83 @@ jobs:
           echo "| Arch Linux | $(format_verification '${{ needs.build-arch.outputs.binary-check-status }}' '${{ needs.build-arch.outputs.binary-check-summary }}' '${{ needs.build-arch.outputs.binary-check-failed-list }}' '${{ needs.build-arch.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-arch.outputs.download-check-status }}' '${{ needs.build-arch.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Debian | $(format_verification '${{ needs.build-debian.outputs.binary-check-status }}' '${{ needs.build-debian.outputs.binary-check-summary }}' '${{ needs.build-debian.outputs.binary-check-failed-list }}' '${{ needs.build-debian.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-debian.outputs.download-check-status }}' '${{ needs.build-debian.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
           echo "| macOS | $(format_verification '${{ needs.build-mac.outputs.binary-check-status }}' '${{ needs.build-mac.outputs.binary-check-summary }}' '${{ needs.build-mac.outputs.binary-check-failed-list }}' '${{ needs.build-mac.outputs.binary-check-warned-list }}') | $(format_download_verification '${{ needs.build-mac.outputs.download-check-status }}' '${{ needs.build-mac.outputs.download-check-summary }}') |" >> "$GITHUB_STEP_SUMMARY"
+
+          # 360-view package install matrix — pivots each per-OS install
+          # summary TSV (emitted by .github/actions/ci-build/action.yml) into
+          # one table where rows are packages and columns are OSes. Each cell
+          # shows status icon + duration so you can see at a glance which
+          # packages installed cleanly on which platforms. :wrench: next to
+          # the package name marks optional (warn-tier or unchecked) packages.
+          declare -A install_cell
+          declare -A install_optional
+          declare -A install_pkgs_seen
+          install_oses=(ubuntu rhel arch debian mac)
+          install_os_labels=("Ubuntu" "Fedora (RHEL)" "Arch Linux" "Debian" "macOS")
+          install_matrix_total=0
+
+          for install_os in "${install_oses[@]}"; do
+            install_tsv="/tmp/install-summaries/logs-build-${install_os}/install-summary.tsv"
+            if [ ! -f "$install_tsv" ]; then continue; fi
+            while IFS=$'\t' read -r ipkg imanager istatus iduration itier; do
+              [ -z "$ipkg" ] && continue
+              install_pkgs_seen["$ipkg"]=1
+              install_matrix_total=$((install_matrix_total + 1))
+              case "$istatus" in
+                success)  cell_icon=":white_check_mark:" ;;
+                skipped)  cell_icon=":fast_forward:" ;;
+                timeout)  cell_icon=":pause_button:" ;;
+                error)    cell_icon=":x:" ;;
+                *)        cell_icon=":grey_question:" ;;
+              esac
+              if [ "$istatus" = "success" ] && [ -n "$iduration" ] && [ "$iduration" != "0" ]; then
+                install_cell["$ipkg|$install_os"]="$cell_icon ${iduration}s"
+              else
+                install_cell["$ipkg|$install_os"]="$cell_icon"
+              fi
+              if [ "$itier" = "optional" ]; then
+                install_optional["$ipkg"]=1
+              fi
+            done < "$install_tsv"
+          done
+
+          if [ "$install_matrix_total" -gt 0 ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+            echo "<summary><h3>Package Install Matrix (${#install_pkgs_seen[@]} packages × ${#install_oses[@]} OSes)</h3></summary>" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "_:wrench: = optional (warn-tier or unchecked) · :white_check_mark: success · :fast_forward: skipped · :pause_button: timeout · :x: error · — not attempted_" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+
+            # Build header row
+            install_header="| Package |"
+            install_sep="|---|"
+            for install_label in "${install_os_labels[@]}"; do
+              install_header+=" $install_label |"
+              install_sep+="---|"
+            done
+            echo "$install_header" >> "$GITHUB_STEP_SUMMARY"
+            echo "$install_sep" >> "$GITHUB_STEP_SUMMARY"
+
+            # Sort package names case-insensitively for stable ordering.
+            sorted_install_pkgs=$(printf '%s\n' "${!install_pkgs_seen[@]}" | sort -f)
+            while IFS= read -r ipkg; do
+              [ -z "$ipkg" ] && continue
+              if [ "${install_optional[$ipkg]:-0}" = "1" ]; then
+                install_pkg_label="\`$ipkg\` :wrench:"
+              else
+                install_pkg_label="\`$ipkg\`"
+              fi
+              install_row="| $install_pkg_label |"
+              for install_os in "${install_oses[@]}"; do
+                install_row+=" ${install_cell[$ipkg|$install_os]:-—} |"
+              done
+              echo "$install_row" >> "$GITHUB_STEP_SUMMARY"
+            done <<< "$sorted_install_pkgs"
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Run Tests and Generate Summary
         env:
