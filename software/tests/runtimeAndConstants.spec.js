@@ -126,6 +126,58 @@ describe("constants", () => {
     expect(EDITOR_CONFIGS.tabSize).toBeGreaterThan(0);
   });
 
+  it("should have ignoredFoldersRegex as compilable regex strings with canonical entries", () => {
+    expect(Array.isArray(EDITOR_CONFIGS.ignoredFoldersRegex)).toBe(true);
+    expect(EDITOR_CONFIGS.ignoredFoldersRegex.length).toBeGreaterThan(20);
+    for (const p of EDITOR_CONFIGS.ignoredFoldersRegex) {
+      expect(typeof p).toBe("string");
+      expect(() => new RegExp(p), `failed to compile: ${p}`).not.toThrow();
+    }
+    for (const r of ["\\.git/", "node_modules", "__pycache", "\\.next/", "\\.venv/", "/build/", "/dist/"]) {
+      expect(EDITOR_CONFIGS.ignoredFoldersRegex, `missing required: ${r}`).toContain(r);
+    }
+  });
+
+  it("should have ignoredFilesRegex as compilable regex strings with canonical entries", () => {
+    expect(Array.isArray(EDITOR_CONFIGS.ignoredFilesRegex)).toBe(true);
+    expect(EDITOR_CONFIGS.ignoredFilesRegex.length).toBeGreaterThan(10);
+    for (const p of EDITOR_CONFIGS.ignoredFilesRegex) {
+      expect(typeof p).toBe("string");
+      expect(() => new RegExp(p), `failed to compile: ${p}`).not.toThrow();
+    }
+    for (const r of ["\\.DS_Store$", "Thumbs\\.db$", "\\.exe$", "\\.dll$", "\\.so$", "\\.pyc$"]) {
+      expect(EDITOR_CONFIGS.ignoredFilesRegex, `missing required: ${r}`).toContain(r);
+    }
+  });
+
+  it("should have textFilesRegex as compilable regex strings with canonical entries", () => {
+    expect(Array.isArray(EDITOR_CONFIGS.textFilesRegex)).toBe(true);
+    expect(EDITOR_CONFIGS.textFilesRegex.length).toBeGreaterThan(40);
+    for (const p of EDITOR_CONFIGS.textFilesRegex) {
+      expect(typeof p).toBe("string");
+      expect(() => new RegExp(p), `failed to compile: ${p}`).not.toThrow();
+    }
+    for (const r of ["\\.js$", "\\.ts$", "\\.py$", "\\.md$", "Makefile$", "Dockerfile$", "\\.gitignore$"]) {
+      expect(EDITOR_CONFIGS.textFilesRegex, `missing required: ${r}`).toContain(r);
+    }
+  });
+
+  it("EDITOR_CONFIGS regex sets must match the bash-fzf.profile.bash hardcoded fallbacks (drift detector)", () => {
+    // This catches silent drift: if someone changes EDITOR_CONFIGS regex but forgets to update the
+    // bash-fzf fallback (or vice versa), the live and standalone-source paths diverge. Keep them in sync.
+    const fs = require("fs");
+    const path = require("path");
+    const src = fs.readFileSync(path.resolve("software/scripts/bash-fzf.profile.bash"), "utf-8");
+    const extract = (varName) => {
+      const m = src.match(new RegExp(`&&\\s+${varName}='([^']*)'`));
+      expect(m, `${varName} not found in bash-fzf.profile.bash`).not.toBeNull();
+      return JSON.parse(m[1]);
+    };
+    expect(extract("_FUZZY_IGNORED_FOLDERS_JSON")).toEqual(EDITOR_CONFIGS.ignoredFoldersRegex);
+    expect(extract("_FUZZY_IGNORED_FILES_JSON")).toEqual(EDITOR_CONFIGS.ignoredFilesRegex);
+    expect(extract("_FUZZY_TEXT_FILES_JSON")).toEqual(EDITOR_CONFIGS.textFilesRegex);
+  });
+
   it("should have LIMITED_SUPPORT_OSES as an array", () => {
     expect(Array.isArray(LIMITED_SUPPORT_OSES)).toBe(true);
     expect(LIMITED_SUPPORT_OSES.length).toBeGreaterThan(0);

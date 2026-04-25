@@ -2024,6 +2024,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 ################################################################################
 # SOURCE | software/scripts/bash-keys.profile.bash
 # SOURCE | software/scripts/bash-file-utils.profile.bash
+# BEGIN/END | Fuzzy Filter Patterns
 # SOURCE | software/scripts/bash-fzf.profile.bash
 # SOURCE | software/scripts/advanced/editor-launchers-common.profile.bash
 # BEGIN/END | Editor Launchers - Vim

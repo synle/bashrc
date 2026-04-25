@@ -45,9 +45,10 @@ alias fvim='fuzzy_edit vim'
 # Single source of truth — sourced into profile-advanced.sh and autocomplete tests.
 ################################################################################
 function filter_unwanted() {
-  # _IGNORED_FOLDER_PATTERNS is bootstrapped from EDITOR_CONFIGS.ignoredFolders
-  # by software/scripts/editor-launchers.js. Fallback list below covers minimal
-  # shell environments where the bootstrap hasn't run yet.
+  # _IGNORED_FOLDER_PATTERNS is bootstrapped from EDITOR_CONFIGS.ignoredFoldersRegex
+  # by software/scripts/advanced/fuzzy-patterns.js. Fallback list below covers
+  # minimal shell environments (e.g. tests sourcing this file standalone) where
+  # the bootstrap hasn't run yet.
   local patterns=()
   if declare -p _IGNORED_FOLDER_PATTERNS &> /dev/null; then
     patterns=("${_IGNORED_FOLDER_PATTERNS[@]}")
@@ -100,16 +101,19 @@ function filter_unwanted() {
 # Lists all paths: dirs with trailing /, files without.
 # Used by fuzzy_edit and autocomplete nested tokens.
 ################################################################################
-# TODO: pass these patterns in from editor-launchers.js (derived from EDITOR_CONFIGS)
-#       instead of hardcoding here — keeps EDITOR_CONFIGS as single source of truth.
-
+# _FUZZY_*_JSON variables are bootstrapped from EDITOR_CONFIGS by
+# software/scripts/advanced/fuzzy-patterns.js (registered as the "Fuzzy Filter
+# Patterns" profile block sourced before this file). The hardcoded fallbacks
+# below cover minimal shell environments (e.g. tests sourcing this file
+# standalone) where the bootstrap hasn't run yet — they intentionally mirror
+# EDITOR_CONFIGS.{ignoredFoldersRegex,ignoredFilesRegex,textFilesRegex}.
 # JSON pattern arrays — passed directly to node as process.argv (proper JS regex strings)
 # folder patterns — skip ignored dirs during traversal
-_FUZZY_IGNORED_FOLDERS_JSON='["\\.DS_Store","\\.pyc","\\.cache/","\\.git/","\\.gradle/","\\.hg/","\\.idea/","\\.mypy_cache/","\\.next/","\\.nuxt/","\\.parcel-cache/","\\.pytest_cache/","\\.ruff_","\\.sass-cache/","\\.svn/","\\.tox/","\\.turbo/","\\.uv/","\\.venv/","\\.yarn/","__pycache","bower_components","node_modules","/build/","/coverage/","/cov/","/dist/","/htmlcov/","/out/","/target/","/vendor/"]'
+[ -z "${_FUZZY_IGNORED_FOLDERS_JSON+x}" ] && _FUZZY_IGNORED_FOLDERS_JSON='["\\.DS_Store","\\.pyc","\\.cache/","\\.git/","\\.gradle/","\\.hg/","\\.idea/","\\.mypy_cache/","\\.next/","\\.nuxt/","\\.parcel-cache/","\\.pytest_cache/","\\.ruff_","\\.sass-cache/","\\.svn/","\\.tox/","\\.turbo/","\\.uv/","\\.venv/","\\.yarn/","__pycache","bower_components","node_modules","/build/","/coverage/","/cov/","/dist/","/htmlcov/","/out/","/target/","/vendor/"]'
 # ignored file patterns — exclude binary files, system junk, and non-text files
-_FUZZY_IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlight-","\\.Trashes$","\\.fseventsd$","\\.com\\.apple\\.","\\.localized$","\\.a$","\\.class$","\\.dll$","\\.dylib$","\\.exe$","\\.lib$","\\.o$","\\.obj$","\\.pyc$","\\.pyo$","\\.so$","\\.wasm$"]'
+[ -z "${_FUZZY_IGNORED_FILES_JSON+x}" ] && _FUZZY_IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlight-","\\.Trashes$","\\.fseventsd$","\\.com\\.apple\\.","\\.localized$","\\.a$","\\.class$","\\.dll$","\\.dylib$","\\.exe$","\\.lib$","\\.o$","\\.obj$","\\.pyc$","\\.pyo$","\\.so$","\\.wasm$"]'
 # text file extension allowlist — used by text_files mode
-_FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
+[ -z "${_FUZZY_TEXT_FILES_JSON+x}" ] && _FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
 
 # usage: _fuzzy_list_all [dir] [mode] [max_depth] [timeout] [filter]
 #   dir       — directory to list (default: .)

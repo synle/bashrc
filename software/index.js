@@ -358,6 +358,9 @@ const fontWeightNumber = getRuntimeOption("FONT_WEIGHT_NUMBER", (v) => parseInte
  * @property {string[]} junkDirs - Directory names to delete during cleanup (macOS/OS artifact directories)
  * @property {string[]} ignoredFiles - Glob patterns for files hidden from the editor (e.g. '*.exe', '.DS_Store')
  * @property {string[]} ignoredFolders - Directory names excluded from the editor file tree (e.g. 'node_modules', '.git')
+ * @property {string[]} ignoredFoldersRegex - Regex patterns of folder paths to skip in shell file walking (used by bash-fzf)
+ * @property {string[]} ignoredFilesRegex - Regex patterns ($-anchored) for files to exclude from the fuzzy picker
+ * @property {string[]} textFilesRegex - Regex allowlist ($-anchored) for the fuzzy picker `text_files` mode
  */
 const EDITOR_CONFIGS = {
   fontSize,
@@ -572,6 +575,175 @@ const EDITOR_CONFIGS = {
     "vendor", // Go/PHP vendored dependencies
     "venv", // Python virtual environment (alternate name)
     "webpack-dist", // Webpack build output
+  ],
+  /**
+   * Regex patterns for folder paths to skip in shell file walking.
+   * Curated subset of `ignoredFolders` — smaller, perf-tuned regex used by the
+   * fuzzy file picker and the `filter_unwanted` pipe filter. Editor configs use
+   * the broader `ignoredFolders` glob list above.
+   * Used by:
+   * - bash-fzf `filter_unwanted` (joined with `|` for `grep -v -E`)
+   * - bash-fzf `_fuzzy_list_all` (passed as JSON to inline node BFS)
+   * Emitted into the live profile by `software/scripts/advanced/fuzzy-patterns.js`.
+   * @type {string[]}
+   */
+  ignoredFoldersRegex: [
+    "\\.DS_Store",
+    "\\.pyc",
+    "\\.cache/",
+    "\\.git/",
+    "\\.gradle/",
+    "\\.hg/",
+    "\\.idea/",
+    "\\.mypy_cache/",
+    "\\.next/",
+    "\\.nuxt/",
+    "\\.parcel-cache/",
+    "\\.pytest_cache/",
+    "\\.ruff_",
+    "\\.sass-cache/",
+    "\\.svn/",
+    "\\.tox/",
+    "\\.turbo/",
+    "\\.uv/",
+    "\\.venv/",
+    "\\.yarn/",
+    "__pycache",
+    "bower_components",
+    "node_modules",
+    "/build/",
+    "/coverage/",
+    "/cov/",
+    "/dist/",
+    "/htmlcov/",
+    "/out/",
+    "/target/",
+    "/vendor/",
+  ],
+  /**
+   * Regex patterns (anchored with `$` for filename suffixes) for files to exclude
+   * from the fuzzy file picker.
+   * Used by bash-fzf `_fuzzy_list_all` (paths/files modes).
+   * Emitted into the live profile by `software/scripts/advanced/fuzzy-patterns.js`.
+   * @type {string[]}
+   */
+  ignoredFilesRegex: [
+    "\\.DS_Store$",
+    "Thumbs\\.db$",
+    "desktop\\.ini$",
+    "\\.Spotlight-",
+    "\\.Trashes$",
+    "\\.fseventsd$",
+    "\\.com\\.apple\\.",
+    "\\.localized$",
+    "\\.a$",
+    "\\.class$",
+    "\\.dll$",
+    "\\.dylib$",
+    "\\.exe$",
+    "\\.lib$",
+    "\\.o$",
+    "\\.obj$",
+    "\\.pyc$",
+    "\\.pyo$",
+    "\\.so$",
+    "\\.wasm$",
+  ],
+  /**
+   * Regex allowlist (anchored with `$`) for the `text_files` mode of the fuzzy
+   * file picker. Files whose name does not match any of these patterns are
+   * filtered out. Covers extensions and well-known config filenames.
+   * Used by bash-fzf `_fuzzy_list_all` (text_files mode).
+   * Emitted into the live profile by `software/scripts/advanced/fuzzy-patterns.js`.
+   * @type {string[]}
+   */
+  textFilesRegex: [
+    "\\.bash$",
+    "\\.c$",
+    "\\.cfg$",
+    "\\.clj$",
+    "\\.cmake$",
+    "\\.coffee$",
+    "\\.conf$",
+    "\\.cpp$",
+    "\\.cs$",
+    "\\.css$",
+    "\\.csv$",
+    "\\.dart$",
+    "\\.diff$",
+    "\\.dockerfile$",
+    "\\.el$",
+    "\\.elm$",
+    "\\.env$",
+    "\\.erl$",
+    "\\.ex$",
+    "\\.fish$",
+    "\\.go$",
+    "\\.graphql$",
+    "\\.groovy$",
+    "\\.h$",
+    "\\.hpp$",
+    "\\.hs$",
+    "\\.html$",
+    "\\.ini$",
+    "\\.java$",
+    "\\.js$",
+    "\\.json$",
+    "\\.jsonc$",
+    "\\.jsx$",
+    "\\.kt$",
+    "\\.less$",
+    "\\.lisp$",
+    "\\.log$",
+    "\\.lua$",
+    "\\.m$",
+    "\\.md$",
+    "\\.mk$",
+    "\\.ml$",
+    "\\.nim$",
+    "\\.nix$",
+    "\\.php$",
+    "\\.pl$",
+    "\\.proto$",
+    "\\.ps1$",
+    "\\.py$",
+    "\\.r$",
+    "\\.rb$",
+    "\\.rs$",
+    "\\.rst$",
+    "\\.sass$",
+    "\\.scala$",
+    "\\.scss$",
+    "\\.sh$",
+    "\\.sql$",
+    "\\.svelte$",
+    "\\.swift$",
+    "\\.tcl$",
+    "\\.tex$",
+    "\\.tf$",
+    "\\.toml$",
+    "\\.ts$",
+    "\\.tsx$",
+    "\\.txt$",
+    "\\.v$",
+    "\\.vim$",
+    "\\.vue$",
+    "\\.xml$",
+    "\\.yaml$",
+    "\\.yml$",
+    "\\.zig$",
+    "\\.zsh$",
+    "Dockerfile$",
+    "Makefile$",
+    "Rakefile$",
+    "Gemfile$",
+    "Vagrantfile$",
+    "\\.gitignore$",
+    "\\.gitattributes$",
+    "\\.editorconfig$",
+    "\\.eslintrc$",
+    "\\.prettierrc$",
+    "\\.babelrc$",
   ],
 };
 
