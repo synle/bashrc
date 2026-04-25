@@ -344,12 +344,16 @@ jobs:
         # intact and appends a CI marker so the trailer makes the amend visible in the log.
         # `--force-with-lease` guards against losing a concurrent push (concurrency group
         # already cancels in-progress runs, so this is belt-and-suspenders).
+        id: commit-amend
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to amend"
+            echo "amended=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           original_message=$(git log -1 --pretty=%B)
@@ -358,6 +362,20 @@ jobs:
           CI / CD - Format code and build artifacts"
           git commit --amend -m "$new_message"
           git push --force-with-lease
+          new_sha=$(git rev-parse HEAD)
+          echo "amended=true" >> "$GITHUB_OUTPUT"
+          echo "new-sha=$new_sha" >> "$GITHUB_OUTPUT"
+
+          # Mirror this workflow run as a commit status on the amended SHA. The
+          # workflow run itself is bound to the ORIGINAL trigger SHA, so without
+          # this the amended HEAD shows no checks in the GitHub commit UI even
+          # though the run succeeded. Status API works with the default GITHUB_TOKEN.
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${new_sha}" \
+            -f state=success \
+            -f context="build-main / publish" \
+            -f description="Amended from ${GITHUB_SHA:0:7} (run #${GITHUB_RUN_NUMBER})" \
+            -f target_url="${run_url}"
 
       - name: Create publish patch
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
