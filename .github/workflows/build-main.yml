@@ -301,6 +301,14 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        # fetch-depth: 0 is REQUIRED here. Default (depth=1) gives a shallow clone
+        # where HEAD's parent isn't fetched locally; `git commit --amend` then treats
+        # HEAD as the initial commit and produces a PARENTLESS root commit. The
+        # subsequent `git push --force-with-lease` overwrites the branch with that
+        # orphan, wiping all prior history (including unrelated user commits).
+        # Reproduces with: `git clone --depth=1 ... && git commit --amend`.
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/ci-setup
 
       - uses: ./.github/actions/ci-apply-patches

@@ -260,9 +260,9 @@ installBrewPackageInBackground xh      # fast Rust httpie clone (compatible CLI)
 
 # ---- Database clients ----
 installBrewPackageInBackground libpq # provides psql + pg_dump (lighter than full postgresql)
-installBrewPackageInBackground mycli  # autocomplete + syntax-highlighted MySQL client
+installBrewPackageInBackground mycli # autocomplete + syntax-highlighted MySQL client
 installBrewPackageInBackground mysql-client
-installBrewPackageInBackground pgcli  # autocomplete + syntax-highlighted Postgres client
+installBrewPackageInBackground pgcli # autocomplete + syntax-highlighted Postgres client
 installBrewPackageInBackground redis
 installBrewPackageInBackground sqlite
 

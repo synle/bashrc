@@ -189,7 +189,7 @@ installDnfPackageInBackground httpie
 # ---- Database clients ----
 installDnfPackageInBackground mycli # autocomplete + syntax-highlighted MySQL client
 installDnfPackageInBackground mysql
-installDnfPackageInBackground pgcli # autocomplete + syntax-highlighted Postgres client
+installDnfPackageInBackground pgcli      # autocomplete + syntax-highlighted Postgres client
 installDnfPackageInBackground postgresql # provides psql client
 installDnfPackageInBackground redis
 installDnfPackageInBackground sqlite

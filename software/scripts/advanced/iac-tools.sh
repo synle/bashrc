@@ -19,12 +19,12 @@ fi
 
 _arch=$(uname -m)
 case "$_arch" in
-  x86_64 | amd64) _gh_arch="amd64" ;;
-  aarch64 | arm64) _gh_arch="arm64" ;;
-  *)
-    echo ">>> Skipped iac-tools: unsupported arch $_arch"
-    exit 0
-    ;;
+x86_64 | amd64) _gh_arch="amd64" ;;
+aarch64 | arm64) _gh_arch="arm64" ;;
+*)
+  echo ">>> Skipped iac-tools: unsupported arch $_arch"
+  exit 0
+  ;;
 esac
 
 # ---- terraform (https://www.terraform.io) ----

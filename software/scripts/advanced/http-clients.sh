@@ -20,12 +20,12 @@ fi
 # Resolve target architecture once for both downloads.
 _arch=$(uname -m)
 case "$_arch" in
-  x86_64 | amd64) _xh_arch="x86_64-unknown-linux-musl" _grpcurl_arch="x86_64" ;;
-  aarch64 | arm64) _xh_arch="aarch64-unknown-linux-musl" _grpcurl_arch="arm64" ;;
-  *)
-    echo ">>> Skipped http-clients: unsupported arch $_arch"
-    exit 0
-    ;;
+x86_64 | amd64) _xh_arch="x86_64-unknown-linux-musl" _grpcurl_arch="x86_64" ;;
+aarch64 | arm64) _xh_arch="aarch64-unknown-linux-musl" _grpcurl_arch="arm64" ;;
+*)
+  echo ">>> Skipped http-clients: unsupported arch $_arch"
+  exit 0
+  ;;
 esac
 
 # ---- xh (https://github.com/ducaale/xh) ----

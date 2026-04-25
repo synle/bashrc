@@ -19,12 +19,12 @@ fi
 
 _arch=$(uname -m)
 case "$_arch" in
-  x86_64 | amd64) _gh_arch="x86_64" _ctop_arch="amd64" ;;
-  aarch64 | arm64) _gh_arch="arm64" _ctop_arch="arm64" ;;
-  *)
-    echo ">>> Skipped docker-extras: unsupported arch $_arch"
-    exit 0
-    ;;
+x86_64 | amd64) _gh_arch="x86_64" _ctop_arch="amd64" ;;
+aarch64 | arm64) _gh_arch="arm64" _ctop_arch="arm64" ;;
+*)
+  echo ">>> Skipped docker-extras: unsupported arch $_arch"
+  exit 0
+  ;;
 esac
 
 # ---- lazydocker (https://github.com/jesseduffield/lazydocker) ----

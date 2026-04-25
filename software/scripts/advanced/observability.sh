@@ -19,12 +19,12 @@ fi
 
 _arch=$(uname -m)
 case "$_arch" in
-  x86_64 | amd64) _gh_arch="x86_64" _procs_arch="x86_64-linux" ;;
-  aarch64 | arm64) _gh_arch="aarch64" _procs_arch="aarch64-linux" ;;
-  *)
-    echo ">>> Skipped observability: unsupported arch $_arch"
-    exit 0
-    ;;
+x86_64 | amd64) _gh_arch="x86_64" _procs_arch="x86_64-linux" ;;
+aarch64 | arm64) _gh_arch="aarch64" _procs_arch="aarch64-linux" ;;
+*)
+  echo ">>> Skipped observability: unsupported arch $_arch"
+  exit 0
+  ;;
 esac
 
 # ---- procs (https://github.com/dalance/procs) ----
