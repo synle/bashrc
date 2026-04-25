@@ -231,6 +231,11 @@ installBrewPackageInBackground --cask powershell
 # ---- Local LLM ----
 installBrewPackageInBackground ollama
 
+# ---- Infrastructure-as-Code ----
+installBrewPackageInBackground ansible
+installBrewPackageInBackground terraform
+installBrewPackageInBackground tflint
+
 # ---- Docker extras ----
 installBrewPackageInBackground ctop       # top-like UI for container metrics
 installBrewPackageInBackground dive       # explore docker image layers

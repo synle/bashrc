@@ -166,6 +166,10 @@ installAptPackage gh
 installAptPackage git-filter-repo
 installAptPackage git-lfs
 
+# ---- Infrastructure-as-Code ----
+# terraform/tflint are not in apt main — install via binary in advanced/iac-tools.sh.
+installAptPackageInBackground ansible
+
 # ---- HTTP / RPC clients ----
 # xh and grpcurl are not in apt main — install via curl|tarball in advanced/http-clients.sh.
 installAptPackageInBackground httpie

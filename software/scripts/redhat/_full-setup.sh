@@ -174,6 +174,10 @@ if [ -x /usr/libexec/git-core/git-filter-repo ] && [ ! -e /usr/local/bin/git-fil
 fi
 installDnfPackage git-lfs
 
+# ---- Infrastructure-as-Code ----
+# terraform/tflint are not in dnf default repos — install via binary in advanced/iac-tools.sh.
+installDnfPackageInBackground ansible
+
 # ---- HTTP / RPC clients ----
 # xh and grpcurl are not in dnf default repos — install via curl|tarball in advanced/http-clients.sh.
 installDnfPackageInBackground httpie

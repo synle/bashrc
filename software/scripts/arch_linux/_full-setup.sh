@@ -151,6 +151,11 @@ installPacmanPackage github-cli
 installPacmanPackage git-filter-repo
 installPacmanPackage git-lfs
 
+# ---- Infrastructure-as-Code ----
+installPacmanPackageInBackground ansible
+installPacmanPackageInBackground terraform
+installPacmanPackageInBackground tflint
+
 # ---- Docker extras ----
 installPacmanPackageInBackground ctop       # top-like UI for container metrics
 installPacmanPackageInBackground dive       # explore docker image layers

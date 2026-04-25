@@ -512,6 +512,7 @@ $wingetPackagesBackground = @(
     "Kubernetes.kubectl",
     "LLVM.LLVM",
     "Microsoft.VisualStudio.2022.BuildTools",
+    "Hashicorp.Terraform",
     "Helm.Helm",
     "Derailed.k9s",
     "JesseDuffield.lazydocker",
