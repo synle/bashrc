@@ -402,6 +402,18 @@ clean_git_history:
 	echo "   3. Force-push tags:    git push --force-with-lease --tags"
 	echo "   4. Backup bundle:      $$backup  (restore with 'git clone <bundle> restored')"
 
+# Show which CI bot commits would be squashed into the prior human commit. Non-destructive.
+clean_squash_git_dryrun:
+	bash software/tools/squash-bot-commits.sh --dryrun
+
+# Squash CI bot commits ("github-actions[bot]") into the prior human commit via
+# git rebase fixup. Tree at HEAD is preserved byte-for-byte; only the commit
+# graph is compacted. DESTRUCTIVE — backs up to a ref + bundle and requires
+# explicit confirmation. After success, manually:
+#   git push --force-with-lease origin <branch>
+clean_squash_git:
+	bash software/tools/squash-bot-commits.sh
+
 ################################################################################
 # ---- Misc ----
 ################################################################################
