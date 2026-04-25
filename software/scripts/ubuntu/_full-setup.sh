@@ -166,6 +166,10 @@ installAptPackage gh
 installAptPackage git-filter-repo
 installAptPackage git-lfs
 
+# ---- HTTP / RPC clients ----
+# xh and grpcurl are not in apt main — install via curl|tarball in advanced/http-clients.sh.
+installAptPackageInBackground httpie
+
 # ---- Database clients ----
 installAptPackageInBackground mycli # autocomplete + syntax-highlighted MySQL client
 installAptPackageInBackground mysql-client

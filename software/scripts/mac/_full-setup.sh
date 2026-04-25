@@ -231,6 +231,11 @@ installBrewPackageInBackground --cask powershell
 # ---- Local LLM ----
 installBrewPackageInBackground ollama
 
+# ---- HTTP / RPC clients ----
+installBrewPackageInBackground grpcurl # gRPC equivalent of curl
+installBrewPackageInBackground httpie  # human-friendly HTTP client (`http GET ...`)
+installBrewPackageInBackground xh      # fast Rust httpie clone (compatible CLI)
+
 # ---- Database clients ----
 installBrewPackageInBackground libpq # provides psql + pg_dump (lighter than full postgresql)
 installBrewPackageInBackground mycli  # autocomplete + syntax-highlighted MySQL client

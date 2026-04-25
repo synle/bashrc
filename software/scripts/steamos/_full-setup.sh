@@ -150,6 +150,11 @@ installPacmanPackage gh
 installPacmanPackage git-filter-repo
 installPacmanPackage git-lfs
 
+# ---- HTTP / RPC clients ----
+installPacmanPackageInBackground grpcurl
+installPacmanPackageInBackground httpie
+installPacmanPackageInBackground xh
+
 # ---- Database clients ----
 # pgcli/mycli are AUR-only on Arch — install via uv if needed; skip from pacman set.
 installPacmanPackageInBackground mysql-clients
