@@ -53,7 +53,7 @@ setup_local_conditional:
 ################################################################################
 
 # Run all formatting steps
-format: format_build_include format_script_indexes format_jsdocs format_spec_cleanup format_shell format_prettier
+format: format_build_include format_ci_binaries format_script_indexes format_jsdocs format_spec_cleanup format_shell format_prettier
 
 # Format shell files with shfmt
 format_shell:
@@ -68,6 +68,10 @@ format_shell:
 # Process BEGIN/END block markers
 format_build_include:
 	node software/tools/build-include.js
+
+# Generate CI binary verification list from software/metadata/ci-binaries.json
+format_ci_binaries:
+	node software/tools/generate-ci-binary-list.js
 
 # Generate script list indexes
 format_script_indexes:
