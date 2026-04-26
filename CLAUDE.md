@@ -41,6 +41,7 @@ Personal bash profile and dotfiles management system (`synle/bashrc`). Automates
 - **Use `command <tool>` to bypass shell aliases/wrappers when running commands.**
 - **Use `has_persistent_binary` for binary detection in scripts, `type` for shell functions.** Do not use `which` or `command -v`. In `software/scripts/*.sh` files, always use `has_persistent_binary <name>` instead of `type -P` for checking if a binary is installed. It excludes `/tmp/` matches so the bootstrap node fallback directory (`/tmp/synle/bashrc/node/bin`) doesn't short-circuit real installs. On success it prints the resolved path to stdout. Use plain `type -P` only in `profile-*.sh`, `common-functions.bash`, `run.sh`, and `common-env.sh` (where `has_persistent_binary` may not yet be defined).
 - **Use `npm_install_global <pkg> [binary]` for npm global installs.** Handles skip-if-installed checks (via `has_persistent_binary`) and installs to `$HOME/.local` on the current system. On WSL, also installs to the Windows host via `cmd.exe`. The `binary` arg is the binary name to check (defaults to the last segment of `pkg`, e.g. `yarn` from `yarn`, `gemini-cli` from `@google/gemini-cli`). Pass an explicit binary name when it differs from the package (e.g. `npm_install_global @google/gemini-cli gemini`). Callers should not duplicate skip logic — just call `npm_install_global`.
+- **Use `ensure_binary_alias <canonical>` for package managers that install under a non-canonical binary name.** apt installs `bat` as `/usr/bin/batcat` and `fd-find` as `/usr/bin/fdfind`. The helper (in `common-functions.bash`) reads its OS override table, finds the installed binary, and creates a `$HOME/.local/bin/<canonical>` symlink so the canonical name resolves on PATH. No-op on OSes without an override, when the canonical binary is already present, or when the override binary is missing. To add a new override, extend the inline `case` in `ensure_binary_alias` and call it from the relevant Linux `_full-setup.sh`. Tests live in `software/tests/ensureBinaryAlias.spec.js` — pre-init all `is_os_*` flags to 0 in any new test (bash 5.2's `set -u` errors on unset names in arithmetic, masked locally by bash 5.3 / 3.2).
 - **Bash functions must use the `function` keyword.** `function foo() {` not `foo() {`. This is mandatory in every bash context — standalone scripts, `.profile.bash` partials, _and_ bash emitted from JS template literals (`code\`...\``). Old bash 3.2 builds (pre-Catalina macOS) sometimes fail to parse `name() { ... }`inside an`if ...; then ... fi`block, reporting`syntax error near unexpected token '('`. The keyword disambiguates the definition before the parser sees the `(`, which avoids the crash and also matches the rest of the codebase.
 - **Never put literal `(` or `)` in bash path/glob string literals — replace with `*`.** In array literals and glob patterns, write `"/mnt/c/Program*Files*86*/..."` instead of `"/mnt/c/Program*Files*(x86)/..."`. Even inside double quotes, old bash 3.2 parses `*(` / `+(` / `?(` / `@(` / `!(` as extglob pattern operators and fails with `syntax error near unexpected token '('`. A bare `*` glob matches the space-and-paren sequence on real filesystems (e.g., `Program*Files*86*` matches `Program Files (x86)`), so there is no functionality cost. Same applies to any Windows/WSL path with `(x86)`, `(x64)`, etc. Enforced by `software/tests/pathArrayValidation.spec.js`.
 - **Do not use `disown` in shell scripts.** Use `( ... ) &` instead.
@@ -102,6 +103,7 @@ make setup_prod            # Bootstrap setup from GitHub (prod)
 make validate              # Format code + run unit tests (automated by Stop hook)
 make format                # Run all formatting steps
 make format_build_include  # Process BEGIN/END block markers
+make format_ci_binaries    # Regenerate CI binary checks block in action.yml from ci-binaries.json
 make build                 # Build all default steps
 make build_webapp          # Build webapp for production
 make test_unit             # Run unit tests
@@ -145,19 +147,21 @@ Key concepts at a glance:
 
 ### Key Files
 
-| Path                                             | Purpose                                                                                                                                                                |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `run.sh`                                         | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                                                                                     |
-| `software/bootstrap/common-env.sh`               | Shared constants (`LIMITED_SUPPORT_OSES`, `LIGHT_WEIGHT_SCRIPTS`), sourced by `run.sh` via BEGIN/END                                                                   |
-| `software/bootstrap/common-functions.bash`       | Shared shell helpers (`npm_install_global`, `has_persistent_binary`, `curl_bash_install`, `is_force_refresh_stale`, etc.), sourced by `.sh` scripts via SOURCE markers |
-| `software/index.js`                              | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                                                                                 |
-| `software/scripts/_full-setup.common.linux.bash` | Shared Linux helpers (fnm/node install, lock wait functions, display-dj, power management), sourced by all Linux `_full-setup.sh` via SOURCE                           |
-| `software/scripts/*.js`                          | Cross-platform scripts                                                                                                                                                 |
-| `software/scripts/<os>/`                         | OS-specific scripts                                                                                                                                                    |
-| `software/common.js`                             | Core shared constants and `replaceBlock`. Inlined into index.js                                                                                                        |
-| `software/tools/build-include.js`                | BEGIN/END block substitution engine + inline marker processor                                                                                                          |
-| `software/metadata/autocomplete.common.js`       | Single source of truth for spec-based autocomplete mappings                                                                                                            |
-| `$BASHRC_TEMP_DIR/run_timing.json`               | Per-run timing data: start/end, per-script duration+status, results array (read by CI)                                                                                 |
+| Path                                             | Purpose                                                                                                                                                                                       |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run.sh`                                         | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                                                                                                            |
+| `software/bootstrap/common-env.sh`               | Shared constants (`LIMITED_SUPPORT_OSES`, `LIGHT_WEIGHT_SCRIPTS`), sourced by `run.sh` via BEGIN/END                                                                                          |
+| `software/bootstrap/common-functions.bash`       | Shared shell helpers (`npm_install_global`, `has_persistent_binary`, `curl_bash_install`, `is_force_refresh_stale`, `ensure_binary_alias`, etc.), sourced by `.sh` scripts via SOURCE markers |
+| `software/index.js`                              | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                                                                                                        |
+| `software/scripts/_full-setup.common.linux.bash` | Shared Linux helpers (fnm/node install, lock wait functions, display-dj, power management), sourced by all Linux `_full-setup.sh` via SOURCE                                                  |
+| `software/scripts/*.js`                          | Cross-platform scripts                                                                                                                                                                        |
+| `software/scripts/<os>/`                         | OS-specific scripts                                                                                                                                                                           |
+| `software/common.js`                             | Core shared constants and `replaceBlock`. Inlined into index.js                                                                                                                               |
+| `software/tools/build-include.js`                | BEGIN/END block substitution engine + inline marker processor                                                                                                                                 |
+| `software/tools/generate-ci-binary-list.js`      | Renders the BEGIN/END `ci-binary-checks` block in `action.yml` from `ci-binaries.json` (preserves YAML indent, dedicated tool because build-include doesn't)                                  |
+| `software/metadata/autocomplete.common.js`       | Single source of truth for spec-based autocomplete mappings                                                                                                                                   |
+| `software/metadata/ci-binaries.json`             | Single source of truth for CI binary verification (`required` + `warn` lists). Edited by hand; the YAML block in `action.yml` is auto-generated                                               |
+| `$BASHRC_TEMP_DIR/run_timing.json`               | Per-run timing data: start/end, per-script duration+status, results array (read by CI)                                                                                                        |
 
 ## Testing
 
@@ -173,7 +177,7 @@ When adding new `.sh` files, register them in `software/tests/profileSyntax.spec
 
 GitHub Actions (`.github/workflows/build-main.yml`): push to master triggers Prep -> Build (parallel OS builds) -> Publish (GitHub Pages) -> Test. All CI steps use Makefile targets.
 
-**When adding or removing a CLI tool, update the `check_binary` calls in `.github/actions/ci-build/action.yml`.** Only non-GUI command-line binaries.
+**When adding or removing a CLI tool, edit `software/metadata/ci-binaries.json`.** This is the single source of truth for the binary verification list. The `# BEGIN/END ci-binary-checks` block in `.github/actions/ci-build/action.yml` is auto-generated from it via `make format_ci_binaries` (which runs as part of `make format`). Do not hand-edit the BEGIN/END block. Only non-GUI command-line binaries belong in the manifest.
 
 **Binary check tiers — `required` vs `warn`:**
 
