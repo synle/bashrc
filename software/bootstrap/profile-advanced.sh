@@ -1144,6 +1144,12 @@ function open() {
   # (Finder on mac, Explorer on Windows/WSL). Bring it to the foreground and tile
   # via the same dispatcher run_editor / run_browser use. For files we skip —
   # the default-app handler is unknown (could be Preview, Sublime, anything).
+  #
+  # TODO: extend to native Linux file managers (Dolphin / Thunar / xdg-open).
+  # Dispatcher branch is by `type -P` above; mirror that here with the right
+  # app_name per tool ("Dolphin", "Thunar"). xdg-open is the tricky one — it
+  # routes to whatever the user's default file manager is, so we'd either
+  # query xdg-mime or accept the unknown and skip.
   if [ -d "$target" ]; then
     local app_name=""
     if ((is_os_mac)); then
