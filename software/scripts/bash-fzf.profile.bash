@@ -429,10 +429,12 @@ function fuzzy_edit() {
     DIR_PATH=$(dirname "$FULL_PATH")
   fi
 
+  # Wrap each path in double quotes so values with spaces (e.g. "gha workflow")
+  # render with clear delimiters and are safe to copy-paste into a shell.
   echo "===================================="
-  echo "PWD:           $(pwd)"
-  echo "Dir:           $DIR_PATH"
-  echo "Path:          $FULL_PATH"
+  echo "PWD:           \"$(pwd)\""
+  echo "Dir:           \"$DIR_PATH\""
+  echo "Path:          \"$FULL_PATH\""
   echo "===================================="
 
   if [ "$IS_DIR" = true ]; then
