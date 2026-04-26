@@ -29,6 +29,7 @@ async function doWork() {
       _BRAVE_PATHS=(
         ${_BRAVE_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_browser "brave" "_BRAVE_PATHS"
 
       function brave() {
         local browser_args
@@ -46,6 +47,7 @@ async function doWork() {
       _CHROME_PATHS=(
         ${_CHROME_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_browser "chrome" "_CHROME_PATHS"
 
       function chrome() {
         local browser_args
@@ -63,6 +65,7 @@ async function doWork() {
       _EDGE_PATHS=(
         ${_EDGE_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_browser "edge" "_EDGE_PATHS"
 
       function edge() {
         local browser_args
@@ -80,6 +83,7 @@ async function doWork() {
       _CHROMIUM_PATHS=(
         ${_CHROMIUM_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_browser "chromium" "_CHROMIUM_PATHS"
 
       function chromium() {
         local browser_args
@@ -97,6 +101,7 @@ async function doWork() {
       _VIVALDI_PATHS=(
         ${_VIVALDI_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_browser "vivaldi" "_VIVALDI_PATHS"
 
       function vivaldi() {
         local browser_args
@@ -114,6 +119,7 @@ async function doWork() {
       _OPERA_PATHS=(
         ${_OPERA_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_browser "opera" "_OPERA_PATHS"
 
       function opera() {
         local browser_args
@@ -131,6 +137,7 @@ async function doWork() {
       _ARC_PATHS=(
         ${_ARC_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_browser "arc" "_ARC_PATHS"
 
       function arc() {
         local browser_args

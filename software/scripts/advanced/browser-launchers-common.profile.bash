@@ -27,6 +27,45 @@ _BROWSER_COMMON_ARGS=(
   "--disable-features=Translate,InterestFeedContentSuggestions,OptimizationHints"
 )
 
+# Parallel-array registry populated by `_register_browser` calls in each
+# browser-launchers.js block. Used by `list_browsers` for binary-availability triage.
+_REGISTERED_BROWSERS=()
+_REGISTERED_BROWSERS_PATHS_VARS=()
+
+# Register a browser wrapper (name + paths-array variable name) for the
+# `list_browsers` triage helper. Each browser block in browser-launchers.js
+# self-registers via this so the listing stays inline with its component.
+function _register_browser() {
+  _REGISTERED_BROWSERS+=("$1")
+  _REGISTERED_BROWSERS_PATHS_VARS+=("$2")
+}
+
+# Print every registered browser wrapper and the resolved binary path, or
+# "(not found)" if none of its candidate paths exist. Useful for triaging
+# which browsers are actually available on the current system.
+function list_browsers() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "
+      list_browsers: print every browser wrapper and the binary it would launch (or '(not found)')
+        list_browsers         show resolved path for brave, chrome, edge, chromium, vivaldi, opera, arc
+    "
+    return 0
+  fi
+
+  local i name paths_var resolved
+  for ((i = 0; i < ${#_REGISTERED_BROWSERS[@]}; i++)); do
+    name="${_REGISTERED_BROWSERS[$i]}"
+    paths_var="${_REGISTERED_BROWSERS_PATHS_VARS[$i]}[@]"
+    echo "# $name"
+    if resolved=$(find_path "${!paths_var}" --exec 2> /dev/null) && [ -n "$resolved" ]; then
+      echo "\"$resolved\""
+    else
+      echo "(not found)"
+    fi
+    echo ""
+  done
+}
+
 # Resolve browser binary from a list of candidate paths (delegates to find_path exec mode)
 function find_browser() {
   local browser_name="$1"

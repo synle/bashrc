@@ -1,5 +1,44 @@
 #!/usr/bin/env bash
 
+# Parallel-array registry populated by `_register_editor` calls in each
+# editor-launchers.js block. Used by `list_editors` for binary-availability triage.
+_REGISTERED_EDITORS=()
+_REGISTERED_EDITORS_PATHS_VARS=()
+
+# Register an editor wrapper (name + paths-array variable name) for the
+# `list_editors` triage helper. Each editor block in editor-launchers.js
+# self-registers via this so the listing stays inline with its component.
+function _register_editor() {
+  _REGISTERED_EDITORS+=("$1")
+  _REGISTERED_EDITORS_PATHS_VARS+=("$2")
+}
+
+# Print every registered editor wrapper and the resolved binary path, or
+# "(not found)" if none of its candidate paths exist. Useful for triaging
+# which editors are actually available on the current system.
+function list_editors() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "
+      list_editors: print every editor wrapper and the binary it would launch (or '(not found)')
+        list_editors          show resolved path for subl, smerge, code, zed, vim, ...
+    "
+    return 0
+  fi
+
+  local i name paths_var resolved
+  for ((i = 0; i < ${#_REGISTERED_EDITORS[@]}; i++)); do
+    name="${_REGISTERED_EDITORS[$i]}"
+    paths_var="${_REGISTERED_EDITORS_PATHS_VARS[$i]}[@]"
+    echo "# $name"
+    if resolved=$(find_path "${!paths_var}" --exec 2> /dev/null) && [ -n "$resolved" ]; then
+      echo "\"$resolved\""
+    else
+      echo "(not found)"
+    fi
+    echo ""
+  done
+}
+
 # Resolve editor binary from a list of candidate paths (delegates to find_path exec mode)
 function find_editor() {
   local editor_name="$1"

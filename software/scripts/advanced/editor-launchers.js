@@ -31,6 +31,7 @@ async function doWork() {
         /usr/local/bin/vim
         /opt/homebrew/bin/vim
       )
+      _register_editor "vim" "_VIM_PATHS"
 
       function vim() {
         local editor_paths=("\${_VIM_PATHS[@]}")
@@ -46,6 +47,7 @@ async function doWork() {
       _SUBL_PATHS=(
         ${_SUBL_PATHS.map((p) => `"${p}"`).join("\n")}
       )
+      _register_editor "subl" "_SUBL_PATHS"
 
       function subl() {
         local editor_args
@@ -65,6 +67,7 @@ async function doWork() {
       _SMERGE_PATHS=(
         ${_SMERGE_PATHS.join("\n")}
       )
+      _register_editor "smerge" "_SMERGE_PATHS"
 
       function smerge() {
         local editor_args
@@ -82,6 +85,7 @@ async function doWork() {
       _CODE_PATHS=(
         ${_CODE_PATHS.join("\n")}
       )
+      _register_editor "code" "_CODE_PATHS"
 
       function code() {
         local editor_args
@@ -106,6 +110,7 @@ async function doWork() {
       _ZED_PATHS=(
         ${_ZED_PATHS.join("\n")}
       )
+      _register_editor "zed" "_ZED_PATHS"
 
       function zed() {
         local editor_args
