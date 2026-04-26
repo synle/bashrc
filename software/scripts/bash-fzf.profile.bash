@@ -420,8 +420,20 @@ function fuzzy_edit() {
   local FULL_PATH
   FULL_PATH=$(cd "$(git rev-parse --show-toplevel 2> /dev/null || echo ".")" && realpath "$OUT")
 
-  echo "pwd: $(pwd)"
-  echo "cd: $FULL_PATH"
+  # Dir = folder we'd cd into: selection itself when it's a folder, parent
+  # directory otherwise. Path = full path of the selection (file or folder).
+  local DIR_PATH
+  if [ "$IS_DIR" = true ]; then
+    DIR_PATH="$FULL_PATH"
+  else
+    DIR_PATH=$(dirname "$FULL_PATH")
+  fi
+
+  echo "===================================="
+  echo "PWD:           $(pwd)"
+  echo "Dir:           $DIR_PATH"
+  echo "Path:          $FULL_PATH"
+  echo "===================================="
 
   if [ "$IS_DIR" = true ]; then
     cd "$FULL_PATH"
