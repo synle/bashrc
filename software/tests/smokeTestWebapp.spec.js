@@ -111,9 +111,19 @@ describe("webapp smoke test", () => {
       const page = await browser.newPage();
       await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
       await page.waitForSelector('[data-testid="app-container"]', { timeout: 10000 });
-      // wait for dynamic content to load
-      await page.waitForNetworkIdle({ idleTime: 500, timeout: TIMEOUT });
-      await page.waitForSelector('[data-testid="code-block"]', { timeout: 10000 });
+      // Wait for the actual end-state (banner links rendered) instead of waitForNetworkIdle —
+      // the latter regressed in puppeteer-core 24.42 against this webapp's continual fetches.
+      await page.waitForFunction(
+        () => {
+          const blocks = document.querySelectorAll('[data-testid="code-block"]');
+          if (blocks.length === 0) return false;
+          const visibleLinks = [...document.querySelectorAll('[data-testid="code-block"] a[target="_blank"]')].filter(
+            (a) => a.offsetParent !== null,
+          );
+          return visibleLinks.length > 0;
+        },
+        { timeout: 30000 },
+      );
 
       // All banner links should have target="_blank" for new-tab behavior
       const allBlank = await page.$$eval('[data-testid="code-block"] a[target="_blank"]', (links) =>
@@ -123,7 +133,7 @@ describe("webapp smoke test", () => {
     } finally {
       await browser.close();
     }
-  }, 60000); // which can exceed the default 30s outer timeout on slow CI runners. // Larger timeout: phase 5 performs two network-idle waits (goto networkidle0 + waitForNetworkIdle),
+  }, 60000); // Larger timeout: phase 5 performs a goto networkidle0 + a waitForFunction (each up to 30s).
 
   it(
     "phase 6 - copy button triggers clipboard copy and shows alert modal",
@@ -357,15 +367,15 @@ describe("webapp smoke test", () => {
         await page.click(`button[data-nav-idx="${idx}"]`);
         // wait for code block wrappers to mount (fetches start in useEffect after mount)
         await page.waitForSelector('[data-testid="code-block"]', { timeout: 10000 });
-        // wait for all DynamicTextArea fetches triggered by mount to complete
-        await page.waitForNetworkIdle({ idleTime: 500, timeout: 30000 });
-        // wait for blocks to expand and render with fetched content
+        // Wait for the end-state (blocks expanded with fetched content) instead of waitForNetworkIdle —
+        // the latter regressed in puppeteer-core 24.42 against this webapp's continual fetches.
+        // Timeout covers the prior 30s idle-wait + 10s render budget.
         await page.waitForFunction(
           () => {
             const blocks = document.querySelectorAll('[data-testid="code-block"][data-collapsed="false"] .prism-code-block');
             return blocks.length > 0 && [...blocks].every((b) => b.textContent.trim() !== "");
           },
-          { timeout: 10000 },
+          { timeout: 40000 },
         );
 
         // verify every visible code block has content
