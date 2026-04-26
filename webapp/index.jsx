@@ -1682,8 +1682,8 @@ function App() {
               <code>git clone git@github.com:synle/bashrc.git</code>
               <code>git clone https://github.com/synle/bashrc.git</code>
               <code>
-                curl -fsSL https://github.com/synle/bashrc/archive/refs/heads/main.zip -o /tmp/bashrc.zip && unzip -q -o /tmp/bashrc.zip -d
-                /tmp && mv /tmp/bashrc-main bashrc
+                rm -rf bashrc && curl -fsSL https://github.com/synle/bashrc/archive/refs/heads/main.zip -o /tmp/bashrc.zip && unzip -q -o
+                /tmp/bashrc.zip -d /tmp && mv /tmp/bashrc-main bashrc
               </code>
             </div>
             <TopNavigationContainer />
