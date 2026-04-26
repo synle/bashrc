@@ -390,8 +390,7 @@ function fuzzy_cd() {
     --bind "f5:reload(_fuzzy_cd_list '$dir' | awk '!seen[\$0]++')")
   if [ -n "$OUT" ]; then
     if [ -d "$OUT" ]; then
-      echo "pwd: $(pwd)"
-      echo "cd: $OUT"
+      print_action_summary "$OUT"
       cd "$OUT"
     else
       echo "Path no longer exists: $OUT"
@@ -420,40 +419,24 @@ function fuzzy_edit() {
   local FULL_PATH
   FULL_PATH=$(cd "$(git rev-parse --show-toplevel 2> /dev/null || echo ".")" && realpath "$OUT")
 
-  # Dir = folder we'd cd into: selection itself when it's a folder, parent
-  # directory otherwise. Path = full path of the selection (file or folder).
-  local DIR_PATH
+  # Folder selections: just print PWD + cd. File selections: also print the editor line
+  # (mirrors what we're about to invoke). print_action_summary handles the format.
   if [ "$IS_DIR" = true ]; then
-    DIR_PATH="$FULL_PATH"
-  else
-    DIR_PATH=$(dirname "$FULL_PATH")
-  fi
-
-  # Print real, copy-paste-runnable commands instead of labeled fields:
-  #   PWD: <pwd>          (annotation only)
-  #   cd "<dir>"          (jump to selection's folder)
-  #   <editor> "<path>"   (matches what fuzzy_edit just ran — only for file selections)
-  # Double quotes keep paths with spaces (e.g. "gha workflow") shell-safe.
-  local EDIT_CMD
-  if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
-    EDIT_CMD="$VIEW_COMMAND"
-  else
-    EDIT_CMD="view_file"
-  fi
-  echo "===================================="
-  echo "PWD: \"$(pwd)\""
-  echo "cd \"$DIR_PATH\""
-  if [ "$IS_DIR" = false ]; then
-    echo "$EDIT_CMD \"$FULL_PATH\""
-  fi
-  echo "===================================="
-
-  if [ "$IS_DIR" = true ]; then
+    print_action_summary "$FULL_PATH"
     cd "$FULL_PATH"
-  elif [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
-    "$VIEW_COMMAND" "$OUT"
   else
-    view_file "$OUT"
+    local EDIT_CMD
+    if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
+      EDIT_CMD="$VIEW_COMMAND"
+    else
+      EDIT_CMD="view_file"
+    fi
+    print_action_summary "$FULL_PATH" "$EDIT_CMD"
+    if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
+      "$VIEW_COMMAND" "$OUT"
+    else
+      view_file "$OUT"
+    fi
   fi
 }
 

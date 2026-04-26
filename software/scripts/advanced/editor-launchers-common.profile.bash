@@ -20,28 +20,23 @@ function run_editor() {
   # track opened files for recent file history
   type _track_file &> /dev/null && _track_file "${editor_args[@]}"
 
-  # Prepare a new array for the converted paths
+  # Split editor_args into the first path-like arg (the display target) and the
+  # remaining flags. Convert any path-like arg through to_windows_path so the actual
+  # invocation works on WSL where the editor binary is the Windows-side process.
   local converted_args=()
-  local unresolved_path=""
-  local resolved_path=""
-
+  local first_path=""
+  local -a flag_args=()
   for arg in "${editor_args[@]}"; do
-    # Check if the argument is a path (starts with / or .)
     if [[ "$arg" == /* ]] || [[ "$arg" == .* ]]; then
-      unresolved_path=$(realpath "$arg")
-      if ((is_os_windows)); then
-        resolved_path=$(wslpath -m "$arg")
-      else
-        resolved_path="$unresolved_path"
-      fi
-      converted_args+=("$resolved_path")
+      [ -z "$first_path" ] && first_path=$(realpath "$arg")
+      converted_args+=("$(to_windows_path "$arg")")
     else
       converted_args+=("$arg")
+      flag_args+=("$arg")
     fi
   done
 
   if ((is_os_windows)); then
-    # Use the converted_args here
     (nohup "$target_binary" "${converted_args[@]}" > /dev/null 2>&1 &)
   else
     (nohup "$target_binary" "${editor_args[@]}" > /dev/null 2>&1 &)
@@ -60,24 +55,9 @@ function run_editor() {
     fi
   fi
 
-  local dir=""
-  if [[ -n "$unresolved_path" ]]; then
-    dir=$(dirname "$unresolved_path")
+  if [ -n "$first_path" ]; then
+    print_action_summary "$first_path" "$target_binary" "${flag_args[@]}"
   fi
-
-  local path_info="Path:          $unresolved_path"
-  if [[ "$unresolved_path" != "$resolved_path" ]] && [[ -n "$resolved_path" ]]; then
-    path_info+=$'\n'"Resolved Path: $resolved_path"
-  fi
-
-  echo "
-====================================
-\"$target_binary\" ${editor_args[@]}
-PWD:           $(pwd)
-Dir:           $dir
-$path_info
-====================================
-  "
 }
 
 # Run an editor command in the foreground (CLI mode, stdout preserved)
