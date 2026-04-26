@@ -429,12 +429,23 @@ function fuzzy_edit() {
     DIR_PATH=$(dirname "$FULL_PATH")
   fi
 
-  # Wrap each path in double quotes so values with spaces (e.g. "gha workflow")
-  # render with clear delimiters and are safe to copy-paste into a shell.
+  # Print real, copy-paste-runnable commands instead of labeled fields:
+  #   PWD: <pwd>          (annotation only)
+  #   cd "<dir>"          (jump to selection's folder)
+  #   <editor> "<path>"   (matches what fuzzy_edit just ran — only for file selections)
+  # Double quotes keep paths with spaces (e.g. "gha workflow") shell-safe.
+  local EDIT_CMD
+  if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
+    EDIT_CMD="$VIEW_COMMAND"
+  else
+    EDIT_CMD="view_file"
+  fi
   echo "===================================="
-  echo "PWD:           \"$(pwd)\""
-  echo "Dir:           \"$DIR_PATH\""
-  echo "Path:          \"$FULL_PATH\""
+  echo "PWD: \"$(pwd)\""
+  echo "cd \"$DIR_PATH\""
+  if [ "$IS_DIR" = false ]; then
+    echo "$EDIT_CMD \"$FULL_PATH\""
+  fi
   echo "===================================="
 
   if [ "$IS_DIR" = true ]; then
