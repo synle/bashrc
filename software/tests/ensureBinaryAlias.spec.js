@@ -8,6 +8,25 @@ import { fileURLToPath } from "url";
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const COMMON_FUNCTIONS = path.join(ROOT_DIR, "software/bootstrap/common-functions.bash");
 
+/**
+ * All is_os_* flags emitted by run.sh — must be pre-initialised to 0 in tests so
+ * `((is_os_*))` checks don't trip `set -u` (bash 5.x errors on unbound names in
+ * arithmetic context; bash 3.2 on mac silently treats them as 0). Mirrors
+ * ALL_OS_FLAGS in run.sh / common-env.sh.
+ */
+const ALL_OS_FLAGS = [
+  "is_os_mac",
+  "is_os_ubuntu",
+  "is_os_chromeos",
+  "is_os_mingw64",
+  "is_os_android_termux",
+  "is_os_arch_linux",
+  "is_os_steamos",
+  "is_os_redhat",
+  "is_os_windows",
+  "is_os_wsl",
+];
+
 let sandbox = "";
 
 /** Tools the helper (and `safe_mkdir`) shells out to. Symlinked into sandbox PATH for hermeticity. */
@@ -54,7 +73,10 @@ function stubBin(name) {
  */
 function run({ canonical, flags = {}, bins = [] }) {
   for (const b of bins) stubBin(b);
-  const flagAssignments = Object.entries(flags)
+  // Pre-init all is_os_* flags to 0, then apply per-test overrides — mirrors
+  // production, where common-env.sh exports every flag before any setup script runs.
+  const mergedFlags = Object.fromEntries([...ALL_OS_FLAGS.map((f) => [f, 0]), ...Object.entries(flags)]);
+  const flagAssignments = Object.entries(mergedFlags)
     .map(([k, v]) => `${k}=${v}`)
     .join(" ");
   const home = path.join(sandbox, "home");
