@@ -444,9 +444,7 @@ alias s="ssh"
 # ---- Utility Functions ----
 ################################################################################
 function pwd2() {
-  command pwd
-  echo "cd \"$(command pwd)\""
-  echo "$LINE_BREAK_HASH"
+  print_action_summary "."
 }
 
 # to_windows_path / print_action_summary live in profile-core.sh so they are
