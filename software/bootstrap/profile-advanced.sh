@@ -346,9 +346,32 @@ alias bs="bash"
 alias vi="vim"
 alias v="vim"
 # `bat` is guaranteed on PATH by ensure_binary_alias (apt installs as batcat;
-# we symlink $HOME/.local/bin/bat). Guard the alias so it self-disables on a
-# fresh box that hasn't run _full-setup yet.
-type -P bat &> /dev/null && alias cat='bat --paging=never --style=plain'
+# we symlink $HOME/.local/bin/bat). The cat wrapper prints an action summary
+# (PWD + cd + cat command) before showing the file content — only when stdout
+# is a terminal AND there is exactly one path arg. Skipped in pipes so we
+# don't pollute downstream commands. Falls back to `command cat` if bat is
+# missing (fresh box, no _full-setup run yet).
+function cat() {
+  local target=""
+  local -a flags=()
+  local path_count=0
+  for arg in "$@"; do
+    if [ -e "$arg" ]; then
+      target="$arg"
+      path_count=$((path_count + 1))
+    else
+      flags+=("$arg")
+    fi
+  done
+  if [ -t 1 ] && [ "$path_count" = "1" ]; then
+    print_action_summary "$target" cat "${flags[@]}"
+  fi
+  if type -P bat &> /dev/null; then
+    command bat --paging=never --style=plain "$@"
+  else
+    command cat "$@"
+  fi
+}
 alias c="command cat"
 # ---- Aliases: Git ----
 # git wrapper: invalidates branch cache on state-changing commands
@@ -426,75 +449,9 @@ function pwd2() {
   echo "$LINE_BREAK_HASH"
 }
 
-# to_windows_path <unix_path> - Convert a unix path to a Windows-style mixed-slash path
-# via `wslpath -m`. On non-WSL systems (or when wslpath is unavailable) echoes the input
-# unchanged, so callers can use it unconditionally — safe no-op off WSL.
-function to_windows_path() {
-  if type -P wslpath &> /dev/null; then
-    wslpath -m "$1" 2> /dev/null || echo "$1"
-  else
-    echo "$1"
-  fi
-}
-
-# print_action_summary <target_path> [<binary> [<extra_args>...]] - Render a copy-paste-
-# runnable summary block for an "act on a path" operation: PWD context, the cd you'd
-# run to reach the target's folder, and (optionally) the binary invocation that opens
-# the target. On WSL, appends a second `cd` line with the Windows-style path when it
-# differs from the unix path.
-#
-# Output:
-#   ====================================
-#   PWD: "<pwd>"
-#   cd "<dir>"                           # selection's folder (parent for files, self for folders)
-#   <binary> [extra_args] "<target>"     # only when binary is passed
-#   cd "<resolved_dir>"                  # only on WSL when the resolved path differs
-#   ====================================
-#
-# Used by fuzzy_edit, fuzzy_cd, run_editor — single source of truth for the format.
-function print_action_summary() {
-  local target="$1"
-  shift || return 1
-  local binary="${1:-}"
-  [ $# -gt 0 ] && shift
-  local -a extra_args=("$@")
-
-  # Resolve to absolute. Tolerate non-existent paths (realpath returning non-zero).
-  local target_abs
-  target_abs=$(realpath "$target" 2> /dev/null) || target_abs="$target"
-
-  # cd target = the folder. Parent for files, self for directories.
-  local dir
-  if [ -d "$target_abs" ]; then
-    dir="$target_abs"
-  else
-    dir=$(dirname "$target_abs")
-  fi
-
-  # WSL conversion. On non-WSL these equal the originals (to_windows_path is a no-op),
-  # so the trailing `cd "<resolved_dir>"` line never fires off-Windows.
-  local resolved_dir resolved_target
-  resolved_dir=$(to_windows_path "$dir")
-  resolved_target=$(to_windows_path "$target_abs")
-
-  # Binary line uses the WSL-resolved target on Windows so the printed command works
-  # when pasted into a Windows-side shell. Off-WSL the two are identical.
-  local binary_target="$target_abs"
-  [ "$resolved_target" != "$target_abs" ] && binary_target="$resolved_target"
-
-  echo "===================================="
-  echo "PWD: \"$(pwd)\""
-  echo "cd \"$dir\""
-  if [ -n "$binary" ]; then
-    if [ ${#extra_args[@]} -gt 0 ]; then
-      echo "$binary ${extra_args[*]} \"$binary_target\""
-    else
-      echo "$binary \"$binary_target\""
-    fi
-  fi
-  [ "$resolved_dir" != "$dir" ] && echo "cd \"$resolved_dir\""
-  echo "===================================="
-}
+# to_windows_path / print_action_summary live in profile-core.sh so they are
+# guaranteed available before any partial sourced via SOURCE markers tries to call
+# them (cat wrapper above, view_file in bash-fzf, run_editor in editor-launchers).
 
 ################################################################################
 # ---- Diff (file diff or git hash compare) ----

@@ -329,14 +329,11 @@ function fuzzy_recent_files() {
 ################################################################################
 # override view_file with editor
 function view_file() {
-  local editorCmd
-
   if [[ $# -eq 0 ]]; then
     return 1 # silent exit
   fi
-
-  editorCmd=subl
-  echo "$editorCmd $1"
+  local editorCmd=subl
+  print_action_summary "$1" "$editorCmd"
   $editorCmd "$1"
 }
 

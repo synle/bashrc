@@ -1,4 +1,4 @@
-/** Tests for print_action_summary + to_windows_path in profile-advanced.sh. */
+/** Tests for print_action_summary + to_windows_path in profile-core.sh. */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execSync } from "child_process";
 import fs from "fs";
@@ -6,20 +6,19 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const PROFILE_ADVANCED = path.join(ROOT_DIR, "software/bootstrap/profile-advanced.sh");
+const PROFILE_CORE = path.join(ROOT_DIR, "software/bootstrap/profile-core.sh");
 
 /**
- * profile-advanced.sh has top-level statements that fail without the full bashrc
- * environment. Extract just the two helpers we want to test by line markers so
- * the test stays hermetic.
+ * profile-core.sh has top-level statements (exports, debug-tracing setup) that
+ * fail without the full bashrc environment. Extract just the two helpers we
+ * want to test by line markers so the test stays hermetic.
  */
 const HELPER_SOURCE = (() => {
-  const text = fs.readFileSync(PROFILE_ADVANCED, "utf-8");
+  const text = fs.readFileSync(PROFILE_CORE, "utf-8");
   const lines = text.split("\n");
   const startMarker = lines.findIndex((l) => l.startsWith("function to_windows_path()"));
   const endMarker = lines.findIndex((l, i) => i > startMarker && l.startsWith("function print_action_summary()"));
-  if (startMarker === -1 || endMarker === -1)
-    throw new Error("could not locate to_windows_path / print_action_summary in profile-advanced.sh");
+  if (startMarker === -1 || endMarker === -1) throw new Error("could not locate to_windows_path / print_action_summary in profile-core.sh");
   // Walk forward to find the closing brace of print_action_summary (first `^}` after the function start).
   let close = endMarker + 1;
   while (close < lines.length && lines[close] !== "}") close++;

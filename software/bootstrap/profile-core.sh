@@ -52,6 +52,84 @@ export LINE_BREAK_COUNT=100
 export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
 
 ################################################################################
+# ---- Path / Action Helpers ----
+# Defined here in profile-core (not profile-advanced) so any partial sourced
+# later — bash-fzf's view_file, editor-launchers' run_editor, the cat wrapper,
+# etc. — can rely on these being defined when their function bodies execute.
+################################################################################
+
+# to_windows_path <unix_path> - Convert a unix path to a Windows-style mixed-slash path
+# via `wslpath -m`. On non-WSL systems (or when wslpath is unavailable) echoes the input
+# unchanged, so callers can use it unconditionally — safe no-op off WSL.
+function to_windows_path() {
+  if type -P wslpath &> /dev/null; then
+    wslpath -m "$1" 2> /dev/null || echo "$1"
+  else
+    echo "$1"
+  fi
+}
+
+# print_action_summary <target_path> [<binary> [<extra_args>...]] - Render a copy-paste-
+# runnable summary block for an "act on a path" operation: PWD context, the cd you'd
+# run to reach the target's folder, and (optionally) the binary invocation that opens
+# the target. On WSL, appends a second `cd` line with the Windows-style path when it
+# differs from the unix path.
+#
+# Output:
+#   ====================================
+#   PWD: "<pwd>"
+#   cd "<dir>"                           # selection's folder (parent for files, self for folders)
+#   <binary> [extra_args] "<target>"     # only when binary is passed
+#   cd "<resolved_dir>"                  # only on WSL when the resolved path differs
+#   ====================================
+#
+# Used by cat (wrapper), view_file, fuzzy_edit, fuzzy_cd, run_editor — single source
+# of truth for the format. Always prefer this over hand-rolling echo blocks.
+function print_action_summary() {
+  local target="$1"
+  shift || return 1
+  local binary="${1:-}"
+  [ $# -gt 0 ] && shift
+  local -a extra_args=("$@")
+
+  # Resolve to absolute. Tolerate non-existent paths (realpath returning non-zero).
+  local target_abs
+  target_abs=$(realpath "$target" 2> /dev/null) || target_abs="$target"
+
+  # cd target = the folder. Parent for files, self for directories.
+  local dir
+  if [ -d "$target_abs" ]; then
+    dir="$target_abs"
+  else
+    dir=$(dirname "$target_abs")
+  fi
+
+  # WSL conversion. On non-WSL these equal the originals (to_windows_path is a no-op),
+  # so the trailing `cd "<resolved_dir>"` line never fires off-Windows.
+  local resolved_dir resolved_target
+  resolved_dir=$(to_windows_path "$dir")
+  resolved_target=$(to_windows_path "$target_abs")
+
+  # Binary line uses the WSL-resolved target on Windows so the printed command works
+  # when pasted into a Windows-side shell. Off-WSL the two are identical.
+  local binary_target="$target_abs"
+  [ "$resolved_target" != "$target_abs" ] && binary_target="$resolved_target"
+
+  echo "===================================="
+  echo "PWD: \"$(pwd)\""
+  echo "cd \"$dir\""
+  if [ -n "$binary" ]; then
+    if [ ${#extra_args[@]} -gt 0 ]; then
+      echo "$binary ${extra_args[*]} \"$binary_target\""
+    else
+      echo "$binary \"$binary_target\""
+    fi
+  fi
+  [ "$resolved_dir" != "$dir" ] && echo "cd \"$resolved_dir\""
+  echo "===================================="
+}
+
+################################################################################
 # ---- Aliases: Coreutils Defaults ----
 ################################################################################
 alias cp='cp -p'                              # preserve timestamps and permissions
