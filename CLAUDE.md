@@ -168,6 +168,10 @@ Key concepts at a glance:
 
 Five suites: `make test_unit` (vitest, sandbox tests for index.js), `make test_profile` (bash -n syntax checks), `make test_smoke` (Puppeteer webapp tests), `make test_buildconfig` (inline snapshot shape tests), `make test_dryrun` (dry-run all JS scripts, no file writes). `make test_all` runs all.
 
+**VSCode debugging:** `.vscode/launch.json` provides launch configs for debugging
+the current script (via `software/.debug-runner.js`) and Vitest (run-all and
+debug-current-file). Open the Run and Debug panel and pick one.
+
 Test setup (`software/tests/setup.js`): loads index.js in VM sandbox. Access via `getIndexFunction(name)` / `getIndexConstant(name)`. `fileSystem` and `fetchResponses` objects for in-memory mocks, auto-reset in `beforeEach`.
 
 When adding new `.sh` files, register them in `software/tests/profileSyntax.spec.js` for `bash -n` syntax checks.
