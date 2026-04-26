@@ -1139,6 +1139,22 @@ function open() {
   else
     echo "No file manager found"
   fi
+
+  # When the target is a folder, the OS file manager is the predictable receiver
+  # (Finder on mac, Explorer on Windows/WSL). Bring it to the foreground and tile
+  # via the same dispatcher run_editor / run_browser use. For files we skip —
+  # the default-app handler is unknown (could be Preview, Sublime, anything).
+  if [ -d "$target" ]; then
+    local app_name=""
+    if ((is_os_mac)); then
+      app_name="Finder"
+    elif ((is_os_wsl)); then
+      app_name="Windows Explorer"
+    fi
+    if [[ -n "$app_name" ]]; then
+      (maximize_and_focus_window "$app_name" > /dev/null 2>&1 &)
+    fi
+  fi
 }
 
 ################################################################################
