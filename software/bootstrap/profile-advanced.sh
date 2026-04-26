@@ -1123,17 +1123,21 @@ function dexec_bash() {
 # ---- Open (cross-platform) ----
 ################################################################################
 function open() {
-  echo "open $@ | $(pwd)"
+  # Single optional arg — defaults to "." (current directory). Always prints the
+  # action summary so users see exactly what's being opened and where.
+  local target="${1:-.}"
+  print_action_summary "$target" open
+
   if ((is_os_mac)); then
-    command open "$@"
+    command open "$target"
   elif type -P explorer.exe &> /dev/null; then
-    explorer.exe "$@"
+    explorer.exe "$target"
   elif type -P dolphin &> /dev/null; then
-    dolphin "$@" 1>&- 2>&- &
+    dolphin "$target" 1>&- 2>&- &
   elif type -P thunar &> /dev/null; then
-    thunar "$@" 1>&- 2>&- &
+    thunar "$target" 1>&- 2>&- &
   elif type -P xdg-open &> /dev/null; then
-    xdg-open "$@" 1>&- 2>&- &
+    xdg-open "$target" 1>&- 2>&- &
   else
     echo "No file manager found"
   fi
