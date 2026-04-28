@@ -367,27 +367,25 @@ describe("webapp smoke test", () => {
         await page.click(`button[data-nav-idx="${idx}"]`);
         // wait for code block wrappers to mount (fetches start in useEffect after mount)
         await page.waitForSelector('[data-testid="code-block"]', { timeout: 10000 });
-        // Wait for the end-state (blocks expanded with fetched content) instead of waitForNetworkIdle —
-        // the latter regressed in puppeteer-core 24.42 against this webapp's continual fetches.
-        // Each block transitions: mount (collapsed=true) → useEffect flips to collapsed=false (empty .prism-code-block) → fetch resolves (filled).
-        // Blocks transition independently, so we must wait until NO block is still in the collapsed=true phase
-        // before asserting on filled content — otherwise an unmatched block can flip to empty between predicate and assertion.
-        // Timeout covers the prior 30s idle-wait + 10s render budget.
-        await page.waitForFunction(
-          () => {
-            const stillCollapsing = document.querySelectorAll('[data-testid="code-block"][data-collapsed="true"]');
-            const expanded = document.querySelectorAll('[data-testid="code-block"][data-collapsed="false"] .prism-code-block');
-            return stillCollapsing.length === 0 && expanded.length > 0 && [...expanded].every((b) => b.textContent.trim() !== "");
-          },
-          { timeout: 40000 },
-        );
-
-        // verify every visible code block has content
-        const emptyBlocks = await page.$$eval('[data-testid="code-block"][data-collapsed="false"] .prism-code-block', (blocks) =>
-          blocks
-            .filter((b) => b.textContent.trim() === "")
-            .map((b) => b.closest('[data-testid="code-block"]')?.querySelector(".codeBlockBanner")?.textContent || "unknown"),
-        );
+        // Poll the assertion until empty-block list is stable empty for two consecutive samples,
+        // or until the 40s budget is exhausted. waitForNetworkIdle regressed in puppeteer-core 24.42,
+        // and a one-shot waitForFunction is racy: each DynamicTextArea fetches independently in
+        // useEffect, blocks can transition empty → filled out of order, and re-renders briefly clear
+        // content. Retrying gives the page time to settle and avoids flaking when one fetch lags.
+        const queryEmpty = () =>
+          page.$$eval('[data-testid="code-block"][data-collapsed="false"] .prism-code-block', (blocks) =>
+            blocks
+              .filter((b) => b.textContent.trim() === "")
+              .map((b) => b.closest('[data-testid="code-block"]')?.querySelector(".codeBlockBanner")?.textContent || "unknown"),
+          );
+        const deadline = Date.now() + 40000;
+        let emptyBlocks = await queryEmpty();
+        let stableHits = emptyBlocks.length === 0 ? 1 : 0;
+        while (Date.now() < deadline && stableHits < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          emptyBlocks = await queryEmpty();
+          stableHits = emptyBlocks.length === 0 ? stableHits + 1 : 0;
+        }
         expect(emptyBlocks, `"${text}" tab has empty code blocks: ${emptyBlocks.join(", ")}`).toEqual([]);
       }
     } finally {
