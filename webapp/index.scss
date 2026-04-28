@@ -224,14 +224,23 @@ input {
 }
 
 .codeBlockWrapper {
+  // Unify the wrapper background with the page surface so code reads as
+  // part of its containing section instead of as a floating gray panel.
+  // The wrapper border still defines the boundary; the banner's
+  // border-bottom (from common.scss) still separates header from content.
+  // Mirrors the same override in synle/nav-generator's index.scss.
+  background: var(--colorBgMain);
+
   .codeBlockBanner {
     position: sticky;
     top: 3rem;
     z-index: var(--zIndexStickyHeader);
+    background: var(--colorBgMain);
   }
 
   .prism-code-block {
     font-size: var(--fontSize3);
+    background: var(--colorBgMain);
   }
 }
 
