@@ -12,6 +12,12 @@
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+
+  // Single source of truth for the sticky app-header's rendered height.
+  // The code-block banner uses the same value for its `top` offset so the
+  // two stickies meet exactly — preventing the gap that would otherwise
+  // let scrolled page content peek through between them.
+  --appHeaderHeight: 3rem;
 }
 
 // ============================================================================
@@ -130,7 +136,15 @@ input {
   top: 0;
   z-index: var(--zIndexStickyHeader);
   background: var(--colorBgMain);
-  padding: var(--spaceSize2) 0;
+  // Match the sideways padding of nav-generator's `.title` so the header
+  // text aligns with the rest of the page chrome instead of sitting
+  // flush against the `#root` edge.
+  padding: var(--spaceSize2);
+  // Pin the rendered height to the shared sticky-stack constant so the
+  // code-block banner's `top: var(--appHeaderHeight)` lands exactly at
+  // the bottom of this header, with no gap for content to peek through.
+  min-height: var(--appHeaderHeight);
+  box-sizing: border-box;
 
   h1 {
     margin: 0;
@@ -236,7 +250,11 @@ input {
 
   .codeBlockBanner {
     position: sticky;
-    top: 3rem;
+    // Stack directly under the sticky `.app-header` (which has
+    // `min-height: var(--appHeaderHeight)`) so the two sticky surfaces
+    // meet exactly. Hardcoding `3rem` here used to leave a few-pixel gap
+    // when the header's natural height landed slightly under 3rem.
+    top: var(--appHeaderHeight);
     z-index: var(--zIndexStickyHeader);
     background: var(--colorBgMain);
   }
