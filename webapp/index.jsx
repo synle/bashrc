@@ -630,7 +630,10 @@ function ActionButton(props) {
  * @returns {React.ReactElement} A read-only EnhancedTextArea with the fetched content.
  */
 function DynamicTextArea(props) {
-  let { path, url, height, collapsed = true } = props;
+  // Default to expanded so code blocks render their content immediately,
+  // matching synle/nav-generator's webapp behavior. Callers can opt back in
+  // to collapsed-on-load by passing `collapsed={true}`.
+  let { path, url, height, collapsed = false } = props;
   const [text, setText] = useState("");
   const [success, setSuccess] = useState(true);
 
@@ -1200,7 +1203,7 @@ function MacNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_mac" />
-      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/mac/README.md" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/gitconfig" />
@@ -1228,7 +1231,7 @@ function LinuxNotesDom({ osFlag }) {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_ubuntu" />
-      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/linux/README.md" />
       <DynamicTextArea path="/docs/linux/linux-mint-config.sh" />
       <DynamicTextArea path="/assets/fonts/install.sh" />
@@ -1255,7 +1258,7 @@ function LinuxNotesDom({ osFlag }) {
 function GenericLightWeightNotesDom() {
   return (
     <>
-      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <ScriptOutputSection
         script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
       />
@@ -1322,7 +1325,7 @@ function WindowsNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_windows" />
-      <DynamicTextArea path="/software/bootstrap/setup.sh" collapsed={false} />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
       <DynamicTextArea path="/docs/windows/README.md" />
       <DynamicTextArea path="/software/scripts/windows/_full-setup-bootstrap.ps1.bash" />
       <DynamicTextArea path="/software/scripts/windows/_full-setup.ps1.bash" />

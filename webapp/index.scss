@@ -44,9 +44,12 @@ body {
   overflow-x: hidden;
 }
 
+// Align outer page padding with synle/nav-generator's webapp so the two
+// apps read as a consistent set. nav-generator uses `body { padding:
+// spaceSize2 }` (0.5rem); we mirror that on `#root` here.
 #root {
-  margin-inline: var(--spaceSize4);
-  padding-bottom: var(--spaceSize4);
+  margin-inline: var(--spaceSize2);
+  padding-bottom: var(--spaceSize2);
 }
 
 // ============================================================================
