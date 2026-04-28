@@ -131,7 +131,6 @@ input {
   gap: var(--spaceSize4);
   justify-content: space-between;
   flex-wrap: wrap;
-  width: 100%;
   position: sticky;
   top: 0;
   z-index: var(--zIndexStickyHeader);
@@ -140,6 +139,9 @@ input {
   // text aligns with the rest of the page chrome instead of sitting
   // flush against the `#root` edge.
   padding: var(--spaceSize2);
+  // Mirror the padding as a side margin so the header reads as an inset
+  // bar inside `#root` rather than a full-bleed strip.
+  margin-inline: var(--spaceSize2);
   // Pin the rendered height to the shared sticky-stack constant so the
   // code-block banner's `top: var(--appHeaderHeight)` lands exactly at
   // the bottom of this header, with no gap for content to peek through.
