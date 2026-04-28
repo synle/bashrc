@@ -369,11 +369,15 @@ describe("webapp smoke test", () => {
         await page.waitForSelector('[data-testid="code-block"]', { timeout: 10000 });
         // Wait for the end-state (blocks expanded with fetched content) instead of waitForNetworkIdle —
         // the latter regressed in puppeteer-core 24.42 against this webapp's continual fetches.
+        // Each block transitions: mount (collapsed=true) → useEffect flips to collapsed=false (empty .prism-code-block) → fetch resolves (filled).
+        // Blocks transition independently, so we must wait until NO block is still in the collapsed=true phase
+        // before asserting on filled content — otherwise an unmatched block can flip to empty between predicate and assertion.
         // Timeout covers the prior 30s idle-wait + 10s render budget.
         await page.waitForFunction(
           () => {
-            const blocks = document.querySelectorAll('[data-testid="code-block"][data-collapsed="false"] .prism-code-block');
-            return blocks.length > 0 && [...blocks].every((b) => b.textContent.trim() !== "");
+            const stillCollapsing = document.querySelectorAll('[data-testid="code-block"][data-collapsed="true"]');
+            const expanded = document.querySelectorAll('[data-testid="code-block"][data-collapsed="false"] .prism-code-block');
+            return stillCollapsing.length === 0 && expanded.length > 0 && [...expanded].every((b) => b.textContent.trim() !== "");
           },
           { timeout: 40000 },
         );
