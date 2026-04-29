@@ -104,4 +104,16 @@ describe("exitIfLimitedSupportOs", () => {
     expect(() => exitIfLimitedSupportOs()).toThrow(ScriptSkipError);
     setSandboxGlobal("is_os_android_termux", false);
   });
+
+  it("should also throw on the other limited-support OS (mingw64)", () => {
+    setSandboxGlobal("is_os_mingw64", true);
+    expect(() => exitIfLimitedSupportOs()).toThrow(ScriptSkipError);
+    setSandboxGlobal("is_os_mingw64", false);
+  });
+
+  it("should not throw when no limited-support OS flag is set", () => {
+    setSandboxGlobal("is_os_android_termux", false);
+    setSandboxGlobal("is_os_mingw64", false);
+    expect(() => exitIfLimitedSupportOs()).not.toThrow();
+  });
 });

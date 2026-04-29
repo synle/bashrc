@@ -82,9 +82,9 @@ const getRuntimeOption = (optionKey, parseFunc = parseString) => {
 //////////////////////////////////////////////////////
 
 /**
- * Loads the presets map from the PRESETS_JSON env var (set by run.sh).
- * Each preset is a named bundle of files + optional modes that --preset=<name> expands into.
- * @returns {Record<string, { description?: string, files?: string[], modes?: Record<string, boolean> }>}
+ * Loads the presets map from the PRESETS_JSON env var (set by run.sh from software/metadata/presets.json).
+ * Each preset is a named file-list bundle that --preset=<name> expands into.
+ * @returns {Record<string, { description?: string, files?: string[] }>}
  */
 function loadPresets() {
   const raw = process.env.PRESETS_JSON || "{}";
@@ -4258,6 +4258,22 @@ function printRunInfo() {
   for (const line of lines) {
     log(line);
   }
+
+  // Detail each chosen preset (description + file list) so users see what's about to run.
+  if (_parsedArgs.presets.length > 0) {
+    const presetMap = loadPresets();
+    log(LINE_BREAK_HASH);
+    log(`>> Preset details (${_parsedArgs.presets.length}):`);
+    for (const name of _parsedArgs.presets) {
+      const preset = presetMap[name] || {};
+      const description = preset.description || "[no description]";
+      const presetFiles = Array.isArray(preset.files) ? preset.files : [];
+      log(`  - ${name}`);
+      log(`      description : ${description}`);
+      log(`      files (${presetFiles.length}) : ${presetFiles.length ? presetFiles.join(", ") : "[none]"}`);
+    }
+  }
+
   log(LINE_BREAK_HASH);
 }
 

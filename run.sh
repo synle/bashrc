@@ -15,8 +15,8 @@
 #   bash run.sh git.js vim.js                      # Multiple bare args
 #   bash run.sh --force-refresh                    # Force refresh node and reinstall
 #   bash run.sh -f                                 # Shorthand for --force-refresh
-#   bash run.sh --preset=lightweight               # Expand a named preset (file list + modes); see software/metadata/presets.json
-#   bash run.sh --preset=lightweight,editors       # Multiple presets compose (files union, modes OR'd)
+#   bash run.sh --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.json
+#   bash run.sh --preset=lightweight,editors       # Multiple presets compose (file lists union)
 #   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
 #   bash run.sh -D                                 # Shorthand for --debug
 #   bash run.sh --verbose                          # Enable verbose mode (set -x for bash tracing)

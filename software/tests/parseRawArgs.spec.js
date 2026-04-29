@@ -125,6 +125,35 @@ describe("parseRawArgs", () => {
     expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist"/);
   });
 
+  it("should treat empty --preset= value as a no-op", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset="]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual([]);
+    expect(result.files).toBe("");
+  });
+
+  it("should handle missing PRESETS_JSON env var by treating any preset as unknown", () => {
+    delete proc.env.PRESETS_JSON;
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=lightweight"]);
+    expect(() => parseRawArgs()).toThrow(/Unknown preset "lightweight"/);
+  });
+
+  it("should tolerate malformed PRESETS_JSON without crashing parse", () => {
+    proc.env.PRESETS_JSON = "{not valid json";
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=lightweight"]);
+    // malformed JSON falls back to {}; preset is then unknown
+    expect(() => parseRawArgs()).toThrow(/Unknown preset "lightweight"/);
+  });
+
+  it("should ignore presets when no --preset= flag is passed", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=git.js"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual([]);
+    expect(result.files).toBe("git.js");
+  });
+
   it("should parse --setup flag", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--setup"]);
     const result = parseRawArgs();
