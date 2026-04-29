@@ -13,12 +13,12 @@ describe("parseRawArgs", () => {
     delete proc.env.TEST_SCRIPT_FILES;
     delete proc.env.REFRESH_FILES;
     delete proc.env.IS_FORCE_REFRESH;
-    delete proc.env.IS_LIGHT_WEIGHT_MODE;
     delete proc.env.IS_SETUP;
     delete proc.env.IS_DEBUG;
     delete proc.env.IS_DRY_RUN;
     delete proc.env.IS_REMOVE_MODE;
     delete proc.env.NO_COLOR;
+    delete proc.env.PRESETS_JSON;
   });
 
   it("should return defaults when BASHRC_RAW_ARGS is empty", () => {
@@ -29,7 +29,7 @@ describe("parseRawArgs", () => {
     expect(result.debug).toBe(false);
     expect(result.dryrun).toBe(false);
     expect(result.remove).toBe(false);
-    expect(result.lightweight).toBe(false);
+    expect(result.presets).toEqual([]);
     expect(result.setup).toBe(false);
   });
 
@@ -80,11 +80,49 @@ describe("parseRawArgs", () => {
     expect(proc.env.REFRESH_FILES).toBe("fzf.js,fonts.js");
   });
 
-  it("should parse --lightweight flag", () => {
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--lightweight"]);
+  it("should expand --preset=lightweight into its file list", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      lightweight: { files: ["git.js", "vim.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=lightweight"]);
     const result = parseRawArgs();
-    expect(result.lightweight).toBe(true);
-    expect(proc.env.IS_LIGHT_WEIGHT_MODE).toBe("1");
+    expect(result.presets).toEqual(["lightweight"]);
+    expect(result.files).toBe("git.js,vim.js");
+    expect(proc.env.TEST_SCRIPT_FILES).toBe("git.js,vim.js");
+  });
+
+  it("should accept --presets= alias (plural)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      lightweight: { files: ["git.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--presets=lightweight"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["lightweight"]);
+    expect(result.files).toBe("git.js");
+  });
+
+  it("should compose multiple presets (files union)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      a: { files: ["a.js"] },
+      b: { files: ["b.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a,b"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["a", "b"]);
+    expect(result.files).toBe("a.js,b.js");
+  });
+
+  it("should compose --preset with explicit --files=", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=extra.js", "--preset=lightweight"]);
+    const result = parseRawArgs();
+    expect(result.files).toBe("extra.js,a.js");
+  });
+
+  it("should throw on unknown preset name", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=does-not-exist"]);
+    expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist"/);
   });
 
   it("should parse --setup flag", () => {

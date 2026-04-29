@@ -61,7 +61,7 @@ ${LINE_BREAK_HASH}
     log(">>>> Installed for advanced OS");
     bashSyleContent += contentProfileAdvanced.trim();
   } else {
-    log(">>>> Skipped : Lightweight mode or limited-support OS");
+    log(">>>> Skipped : Limited-support OS");
   }
 
   await writeText(BASH_SYLE_PATH, bashSyleContent);

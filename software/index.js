@@ -82,11 +82,26 @@ const getRuntimeOption = (optionKey, parseFunc = parseString) => {
 //////////////////////////////////////////////////////
 
 /**
+ * Loads the presets map from the PRESETS_JSON env var (set by run.sh).
+ * Each preset is a named bundle of files + optional modes that --preset=<name> expands into.
+ * @returns {Record<string, { description?: string, files?: string[], modes?: Record<string, boolean> }>}
+ */
+function loadPresets() {
+  const raw = process.env.PRESETS_JSON || "{}";
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Parses the raw CLI arguments passed from run.sh via the BASHRC_RAW_ARGS env var.
  * Sets process.env variables (TEST_SCRIPT_FILES, IS_FORCE_REFRESH, etc.)
  * so that subsequent getRuntimeOption() calls pick them up.
  * Must be called before any getRuntimeOption() reads of flag env vars.
- * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, lightweight: boolean, setup: boolean }}
+ * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean }}
  */
 function parseRawArgs() {
   const rawJson = process.env.BASHRC_RAW_ARGS || "[]";
@@ -100,11 +115,12 @@ function parseRawArgs() {
   let files = "";
   let refreshFiles = "";
   let forceRefresh = false;
-  let lightweight = false;
   let setup = false;
   let debug = false;
   let dryrun = false;
   let remove = false;
+  /** @type {string[]} Preset names requested via --preset= or --presets= (composable). */
+  const presets = [];
 
   for (const arg of args) {
     if (/^-?-files=/.test(arg)) {
@@ -119,8 +135,16 @@ function parseRawArgs() {
       forceRefresh = true;
     } else if (/^-?-(force-refresh|force|f)$/.test(arg)) {
       forceRefresh = true;
-    } else if (/^-?-lightweight$/.test(arg)) {
-      lightweight = true;
+    } else if (/^-?-presets?=/.test(arg)) {
+      const val = arg.replace(/^-?-presets?=/, "").trim();
+      if (val) {
+        for (const name of val
+          .split(/[,;\s]/)
+          .map((s) => s.trim())
+          .filter(Boolean)) {
+          presets.push(name);
+        }
+      }
     } else if (/^-?-(setup|is-setup)$/.test(arg)) {
       setup = true;
     } else if (/^-?-(debug|D)$/.test(arg)) {
@@ -136,19 +160,37 @@ function parseRawArgs() {
     }
   }
 
+  // Expand presets last so explicit --files= and presets compose.
+  // Files: union (preset files appended in order).
+  if (presets.length > 0) {
+    const presetMap = loadPresets();
+    const known = Object.keys(presetMap);
+    for (const name of presets) {
+      const preset = presetMap[name];
+      if (!preset) {
+        const list = known.length ? known.join(", ") : "(none defined)";
+        throw new Error(`Unknown preset "${name}". Available presets: ${list}`);
+      }
+      if (Array.isArray(preset.files)) {
+        for (const f of preset.files) {
+          if (f) files = files ? `${files},${f}` : f;
+        }
+      }
+    }
+  }
+
   if (files) process.env.TEST_SCRIPT_FILES = files;
   if (refreshFiles) process.env.REFRESH_FILES = refreshFiles;
   if (forceRefresh) process.env.IS_FORCE_REFRESH = "1";
-  if (lightweight) process.env.IS_LIGHT_WEIGHT_MODE = "1";
   if (setup) process.env.IS_SETUP = "1";
   if (debug) process.env.IS_DEBUG = "1";
   if (dryrun) process.env.IS_DRY_RUN = "1";
   if (remove) process.env.IS_REMOVE_MODE = "1";
 
-  return { files, forceRefresh, refreshFiles, debug, dryrun, remove, lightweight, setup };
+  return { files, forceRefresh, refreshFiles, debug, dryrun, remove, presets, setup };
 }
 
-/** @type {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, lightweight: boolean, setup: boolean }} */
+/** @type {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean }} */
 const _parsedArgs = parseRawArgs();
 
 //////////////////////////////////////////////////////
@@ -191,8 +233,6 @@ const SHOULD_PRINT_OS_FLAGS = getRuntimeOption("SHOULD_PRINT_OS_FLAGS", parseBoo
 const IS_FORCE_REFRESH = getRuntimeOption("IS_FORCE_REFRESH", parseBoolean);
 /** @type {boolean} When true, reads files from disk instead of fetching remotely. Auto-detected from CWD. */
 const IS_LOCAL_REPO = fs.existsSync("software/index.js");
-/** @type {boolean} When true, skips advanced/heavy features for a minimal install */
-const IS_LIGHTWEIGHT_PROFILE_ENABLED = getRuntimeOption("IS_LIGHT_WEIGHT_MODE", parseBoolean);
 /** @type {boolean} When true, runs setup mode (bootstrap dependencies + software scripts) */
 const IS_SETUP = getRuntimeOption("IS_SETUP", parseBoolean);
 /** @type {boolean} When true, keeps temp scripts and shows retry commands in progress output */
@@ -827,11 +867,9 @@ Object.keys(process.env)
  */
 const LIMITED_SUPPORT_OSES = (process.env.LIMITED_SUPPORT_OSES || "").split(",").filter(Boolean);
 
-/** @type {boolean} When true, the current OS supports advanced profile features and is not in lightweight mode */
+/** @type {boolean} When true, the current OS supports advanced profile features (any is_os_* flag set and not in LIMITED_SUPPORT_OSES). */
 const IS_ADVANCED_PROFILE_ENABLED =
-  !IS_LIGHTWEIGHT_PROFILE_ENABLED &&
-  Object.keys(process.env).some((k) => k.indexOf("is_os_") === 0 && global[k]) &&
-  LIMITED_SUPPORT_OSES.every((k) => !global[k]);
+  Object.keys(process.env).some((k) => k.indexOf("is_os_") === 0 && global[k]) && LIMITED_SUPPORT_OSES.every((k) => !global[k]);
 
 /** @type {string} WSL path to Windows Program Files (64-bit) */
 const BASE_PROGRAM_FILES_WINDOW = "/mnt/c/Program Files";
@@ -2413,13 +2451,10 @@ function exitIfUnsupportedOs(...osFlags) {
 }
 
 /**
- * Guard clause: exits if the current OS is a limited-support platform (LIMITED_SUPPORT_OSES)
- * or if IS_LIGHTWEIGHT_PROFILE_ENABLED is enabled.
+ * Guard clause: throws ScriptSkipError if the current OS is a limited-support platform (LIMITED_SUPPORT_OSES).
+ * Throwing propagates up to the script runner, which catches ScriptSkipError and stops the current script.
  */
 function exitIfLimitedSupportOs() {
-  if (IS_LIGHTWEIGHT_PROFILE_ENABLED) {
-    throw new ScriptSkipError("Lightweight mode");
-  }
   return exitIfUnsupportedOs(LIMITED_SUPPORT_OSES);
 }
 
@@ -3336,7 +3371,7 @@ async function getSoftwareScriptFiles() {
     softwareFiles = softwareFiles.filter((f) => !f.includes("_full-setup."));
   }
 
-  // advanced/ folder scripts are advanced-only: skip on limited-support OSes and lightweight mode
+  // advanced/ folder scripts are advanced-only: skip on limited-support OSes
   if (!IS_ADVANCED_PROFILE_ENABLED) {
     softwareFiles = softwareFiles.filter((f) => !f.includes("/advanced/"));
   }
@@ -4208,7 +4243,7 @@ function printRunInfo() {
     `debug               = ${_parsedArgs.debug}`,
     `dryrun              = ${_parsedArgs.dryrun}`,
     `remove              = ${_parsedArgs.remove}`,
-    `lightweight         = ${_parsedArgs.lightweight}`,
+    `presets             = ${_parsedArgs.presets.length ? _parsedArgs.presets.join(",") : "[none]"}`,
     `setup               = ${_parsedArgs.setup}`,
     `os_flags            = ${activeOsFlags || "[none]"}`,
   ];

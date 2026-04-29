@@ -281,12 +281,8 @@ function ensure_binary_alias() {
 }
 
 # exit_if_limited_support_os - Exits the script if the current OS is a limited-support
-# platform (LIMITED_SUPPORT_OSES) or if IS_LIGHT_WEIGHT_MODE is enabled.
+# platform (any flag listed in LIMITED_SUPPORT_OSES is set).
 function exit_if_limited_support_os() {
-  ((IS_LIGHT_WEIGHT_MODE)) && {
-    echo ">>> Skipped : Lightweight mode"
-    exit 0
-  }
   local IFS=','
   for os_flag in $LIMITED_SUPPORT_OSES; do
     ((${os_flag:-0})) && {

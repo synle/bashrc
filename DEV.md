@@ -158,7 +158,7 @@ export BASHRC_RAW_ARGS=$(printf '%s\n' "$@" | jq -R . | jq -s .)
 --setup               -> IS_SETUP="1"
 --dryrun              -> IS_DRYRUN="1"
 --remove              -> IS_REMOVE="1"
---lightweight         -> IS_LIGHTWEIGHT="1"
+--preset=<name>       -> expands to TEST_SCRIPT_FILES from software/metadata/presets.json
 bare args             -> treated as file names
 ```
 
@@ -480,7 +480,7 @@ Scripts named `*.standalone.js` are excluded from full runs, setup runs, and dry
 Use these at the top of scripts to skip on unsupported platforms:
 
 ```javascript
-exitIfLimitedSupportOs(); // Skip on android_termux, mingw64, and lightweight mode
+exitIfLimitedSupportOs(); // Skip on android_termux, mingw64
 exitIfUnsupportedOs(); // Skip with custom message
 exitIfNotTargetOs(); // Skip if not running on the target OS folder
 exitIfNotSudo(); // Skip if not running as sudo (.su.js scripts)

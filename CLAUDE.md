@@ -127,7 +127,7 @@ bash run.sh --debug                  # Keep temp files, show retry commands
 bash run.sh --force-refresh          # Force reinstall (heavy items only if stale >2 weeks)
 bash run.sh --refresh="fzf.js,fonts.js" # Force refresh specific scripts
 bash run.sh --verbose                # Enable bash tracing (set -x)
-bash run.sh --lightweight            # Lightweight install mode
+bash run.sh --preset=lightweight     # Run a named preset (file list + modes); see software/metadata/presets.json
 bash run.sh --dryrun                 # Show what would change without writing
 bash run.sh --remove --files="fzf.js" # Remove a script's config (runs undoWork)
 ```
@@ -151,7 +151,8 @@ Key concepts at a glance:
 | Path                                             | Purpose                                                                                                                                                                                       |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `run.sh`                                         | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                                                                                                            |
-| `software/bootstrap/common-env.sh`               | Shared constants (`LIMITED_SUPPORT_OSES`, `LIGHT_WEIGHT_SCRIPTS`), sourced by `run.sh` via BEGIN/END                                                                                          |
+| `software/bootstrap/common-env.sh`               | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`), sourced by `run.sh` via BEGIN/END                                                                                                  |
+| `software/metadata/presets.json`                 | Named install presets (`--preset=<name>`); each entry maps to a list of files + optional modes (e.g. lightweight). Read by `run.sh` into `PRESETS_JSON`, expanded by `parseRawArgs`           |
 | `software/bootstrap/common-functions.bash`       | Shared shell helpers (`npm_install_global`, `has_persistent_binary`, `curl_bash_install`, `is_force_refresh_stale`, `ensure_binary_alias`, etc.), sourced by `.sh` scripts via SOURCE markers |
 | `software/index.js`                              | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                                                                                                        |
 | `software/scripts/_full-setup.common.linux.bash` | Shared Linux helpers (fnm/node install, lock wait functions, display-dj, power management), sourced by all Linux `_full-setup.sh` via SOURCE                                                  |

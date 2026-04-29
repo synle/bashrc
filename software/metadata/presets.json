@@ -1,0 +1,6 @@
+{
+  "lightweight": {
+    "description": "Minimal config-only setup: git, vim, inputrc, profile content. Only the listed files run — no advanced/heavy installs.",
+    "files": ["git.js", "vim-configurations.js", "vim-vundle.sh", "bash-inputrc.js", "bash-syle-content.js"]
+  }
+}

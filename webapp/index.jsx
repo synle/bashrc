@@ -159,9 +159,6 @@ function getGitHubRawUrl(filePath) {
 const BASH_PROFILE_CODE_REPO_VIEW_URL = `${REPO_URL}/blob/${REPO_BRANCH_NAME}`;
 /** @type {string} Base URL for editing files on GitHub (edit view). */
 const BASH_PROFILE_CODE_REPO_EDIT_URL = `${REPO_URL}/edit/${REPO_BRANCH_NAME}`;
-/** @type {string} Comma-separated list of script filenames used for lightweight profile setup. Injected by Vite at build time. */
-const LIGHT_WEIGHT_SCRIPTS = window.LIGHT_WEIGHT_SCRIPTS;
-
 /** @type {string} The OS flag key matching the current browser's detected platform. */
 const currentSystemFlag = /mac/i.test(navigator.platform)
   ? "is_os_mac"
@@ -1259,9 +1256,7 @@ function GenericLightWeightNotesDom() {
   return (
     <>
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
-      <ScriptOutputSection
-        script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
-      />
+      <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`} />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
       <DynamicTextArea path="/.build/inputrc" />
@@ -1511,9 +1506,7 @@ function App() {
           {
             text: "Setup Lightweight Profile",
             renderBody: () => (
-              <ScriptOutputSection
-                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --lightweight --files="${LIGHT_WEIGHT_SCRIPTS}"`}
-              />
+              <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`} />
             ),
           },
           {

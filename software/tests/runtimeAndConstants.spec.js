@@ -31,7 +31,6 @@ const DEFAULT_FONT_SIZE = getIndexConstant("DEFAULT_FONT_SIZE");
 const NODE_JS_VERSION = getIndexConstant("NODE_JS_VERSION");
 const PRINT_WIDTH_BREAK_COUNT = getIndexConstant("PRINT_WIDTH_BREAK_COUNT");
 const IS_FORCE_REFRESH = getIndexConstant("IS_FORCE_REFRESH");
-const IS_LIGHTWEIGHT_PROFILE_ENABLED = getIndexConstant("IS_LIGHTWEIGHT_PROFILE_ENABLED");
 const IS_DEBUG = getIndexConstant("IS_DEBUG");
 const IS_SETUP = getIndexConstant("IS_SETUP");
 const IS_DRY_RUN = getIndexConstant("IS_DRY_RUN");
@@ -250,10 +249,6 @@ describe("additional constants", () => {
 
   it("should have IS_FORCE_REFRESH as a boolean", () => {
     expect(typeof IS_FORCE_REFRESH).toBe("boolean");
-  });
-
-  it("should have IS_LIGHTWEIGHT_PROFILE_ENABLED as a boolean", () => {
-    expect(typeof IS_LIGHTWEIGHT_PROFILE_ENABLED).toBe("boolean");
   });
 
   it("should have IS_DEBUG as a boolean", () => {

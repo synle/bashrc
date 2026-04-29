@@ -15,7 +15,8 @@
 #   bash run.sh git.js vim.js                      # Multiple bare args
 #   bash run.sh --force-refresh                    # Force refresh node and reinstall
 #   bash run.sh -f                                 # Shorthand for --force-refresh
-#   bash run.sh --lightweight                      # Export IS_LIGHT_WEIGHT_MODE=1 for lightweight installs
+#   bash run.sh --preset=lightweight               # Expand a named preset (file list + modes); see software/metadata/presets.json
+#   bash run.sh --preset=lightweight,editors       # Multiple presets compose (files union, modes OR'd)
 #   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
 #   bash run.sh -D                                 # Shorthand for --debug
 #   bash run.sh --verbose                          # Enable verbose mode (set -x for bash tracing)
@@ -23,7 +24,7 @@
 #   bash run.sh --dryrun                           # Show what would change without writing files
 #   bash run.sh --remove --files="fzf.js"          # Remove a script's config (runs undoWork)
 #
-# Single dash also works: -files=..., -force-refresh, -f, -lightweight, -debug, -D, -verbose, -V, -dryrun, -remove
+# Single dash also works: -files=..., -force-refresh, -f, -preset=..., -debug, -D, -verbose, -V, -dryrun, -remove
 ################################################################################
 
 ################################################################################
@@ -39,7 +40,7 @@
 # ---- Repo & Path Constants ----
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 7e56376aa79dbd783c979a11ce593a31 | 763 B
+# software/bootstrap/common-env.sh | 03ee76ffb66acfcdc85ffd519e3704b9 | 653 B
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -47,7 +48,6 @@ export REPO_BRANCH_NAME="main"
 export BASH_SYLE_PATH="$HOME/.bash_syle"
 export BASH_SYLE_COMMON_PATH="$HOME/.bash_syle_common"
 export BASH_PROFILE_CODE_REPO_RAW_URL="https://github.com/$REPO_PATH_IDENTIFIER/blob/HEAD" # https://github.com/synle/bashrc/blob/HEAD
-export LIGHT_WEIGHT_SCRIPTS="git.js,vim-configurations.js,vim-vundle.sh,bash-inputrc.js,bash-syle-content.js"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
 # END software/bootstrap/common-env.sh
@@ -345,11 +345,24 @@ for arg in "$@"; do
 done
 
 ################################################################################
+# ---- Load PRESETS_JSON (named --preset bundles) ----
+# Source of truth: software/metadata/presets.json. parseRawArgs() in index.js
+# expands --preset=<name> into files+modes by reading PRESETS_JSON. Read locally
+# when running from a checkout, otherwise fetched from the repo at runtime.
+################################################################################
+if [ -f "software/metadata/presets.json" ]; then
+  PRESETS_JSON=$(cat software/metadata/presets.json)
+else
+  PRESETS_JSON=$(curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/metadata/presets.json?raw=1" 2> /dev/null || echo "{}")
+fi
+export PRESETS_JSON
+
+################################################################################
 # ---- Encode $@ as JSON for node arg parsing (parseRawArgs in index.js) ----
 # BASHRC_RAW_ARGS is a JSON array of all CLI arguments passed to run.sh
 # (e.g. '["--files=git.js","--force-refresh"]'). Exported so that
 # parseRawArgs() in software/index.js can parse flags like --files,
-# --force-refresh, --dryrun, --remove, --lightweight, --setup, etc.
+# --force-refresh, --dryrun, --remove, --preset, --setup, etc.
 ################################################################################
 BASHRC_RAW_ARGS='['
 _sep=""

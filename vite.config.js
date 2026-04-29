@@ -30,7 +30,7 @@ const updateServiceWorker = () => ({
   },
 });
 
-const requiredEnvKeys = ["REPO_PATH_IDENTIFIER", "REPO_BRANCH_NAME", "LIGHT_WEIGHT_SCRIPTS"];
+const requiredEnvKeys = ["REPO_PATH_IDENTIFIER", "REPO_BRANCH_NAME"];
 const requiredEnvs = {};
 for (const envKey of requiredEnvKeys) {
   process.env[envKey] = (process.env[envKey] || "").trim();
