@@ -138,6 +138,21 @@ defaults write com.apple.ImageCapture disableHotPlug -bool true              # S
 ulimit -n 65536                                                              # Raises the max open file descriptors from 256 to 65536 (prevents Electron apps from running out of fds)
 
 ################################################################################
+# ---- Microsoft AutoUpdate (MAU) ----
+################################################################################
+# Disable Microsoft Office's auto-update daemon and nag dialogs. MAU runs a
+# launchd agent that wakes periodically to check Office updates — kills battery
+# life, spawns dialogs, and shows red Dock badges. These keep Office installed
+# and updateable on demand (open MAU manually) but stop all background activity.
+echo '>> Disabling Microsoft AutoUpdate background activity'
+launchctl bootout "gui/$(id -u)/com.microsoft.update.agent" 2> /dev/null || true # Stops the currently-running MAU launch agent (no-op if not loaded)
+launchctl disable "gui/$(id -u)/com.microsoft.update.agent" 2> /dev/null || true # Prevents the MAU agent from auto-loading on next login
+defaults write com.microsoft.autoupdate2 HowToCheck -string "Manual"             # Switches MAU from Automatic to Manual — no scheduled checks, only manual "Check for Updates"
+defaults write com.microsoft.autoupdate2 DisableInsiderCheckbox -bool true       # Hides the Insider/beta channel toggle in the MAU UI to prevent accidental opt-in
+defaults write com.microsoft.autoupdate2 StartDaemonOnAppLaunch -bool false      # Stops Office apps from spawning the MAU daemon every time you open Word/Excel/PowerPoint
+defaults write com.microsoft.autoupdate2 SendAllTelemetryEnabled -bool false     # Opts out of MAU telemetry/diagnostic uploads
+
+################################################################################
 # ---- Restart Affected Services ----
 ################################################################################
 echo '>> Restarting affected services'
