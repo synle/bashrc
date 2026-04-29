@@ -22,5 +22,9 @@
   "terminal": {
     "description": "Bash and shell tooling: readline (inputrc), fzf, autocomplete complete-spec.",
     "files": ["bash-inputrc.js", "fzf.js", "advanced/bash-autocomplete-complete-spec.js"]
+  },
+  "prompt": {
+    "description": "Shell prompt + navigation: Starship prompt install/config and zoxide (smarter cd).",
+    "files": ["advanced/starship.sh", "advanced/starship-config.js", "zoxide.js"]
   }
 }

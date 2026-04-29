@@ -44,7 +44,7 @@ fi
 # BEGIN/END | format script
 # BEGIN/END | mac-system-setup
 # BEGIN/END | temporal-cli
-# SOURCE | software/scripts/bash-path-candidate.profile.bash
+# SOURCE | PATH dedupe + prune | software/scripts/bash-path-candidate.profile.bash
 
 export EDITOR='vim'
 export BASH_PATH=~/.bash_syle
