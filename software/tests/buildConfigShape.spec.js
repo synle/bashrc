@@ -47,19 +47,18 @@ const MIN_FILE_SIZES = {
   "vs-code-color-light": 8000,
   "vs-code-config": 35300,
   "vs-code-config-mac": 35400,
-  "zed-editor-color-dark": 7100,
-  "zed-editor-color-light": 7100,
-  "zed-editor-config": 4500,
-  "zed-editor-config-mac": 4500,
+  "zed-color-dark": 7100,
+  "zed-color-light": 7100,
+  "zed-config": 4500,
   "sublime-text-keys-linux": 8200,
   "sublime-text-keys-mac": 4000,
   "sublime-text-keys-windows": 8200,
   "sublime-text-mouse": 500,
   "sublime-text-mouse-mac": 500,
   "vs-code-keys-combined": 17700,
-  "zed-editor-keys": 2700,
-  "zed-editor-keys-linux": 5600,
-  "zed-editor-keys-windows": 5600,
+  "zed-keys": 2700,
+  "zed-keys-linux": 5600,
+  "zed-keys-windows": 5600,
   "ip-address.config.hostnamesFlattened": 1800,
 };
 
@@ -522,12 +521,12 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("zed-editor-color-dark", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-editor-color-dark"))) {
-      console.warn("  [WARNING] .build/zed-editor-color-dark not found — skipping (not generated in this environment)");
+  it("zed-color-dark", () => {
+    if (!fs.existsSync(path.resolve(".build", "zed-color-dark"))) {
+      console.warn("  [WARNING] .build/zed-color-dark not found — skipping (not generated in this environment)");
       return;
     }
-    expect(readBuildConfigKeys("zed-editor-color-dark")).toMatchInlineSnapshot(`
+    expect(readBuildConfigKeys("zed-color-dark")).toMatchInlineSnapshot(`
       [
         "$schema",
         "author",
@@ -537,12 +536,12 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("zed-editor-color-light", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-editor-color-light"))) {
-      console.warn("  [WARNING] .build/zed-editor-color-light not found — skipping (not generated in this environment)");
+  it("zed-color-light", () => {
+    if (!fs.existsSync(path.resolve(".build", "zed-color-light"))) {
+      console.warn("  [WARNING] .build/zed-color-light not found — skipping (not generated in this environment)");
       return;
     }
-    expect(readBuildConfigKeys("zed-editor-color-light")).toMatchInlineSnapshot(`
+    expect(readBuildConfigKeys("zed-color-light")).toMatchInlineSnapshot(`
       [
         "$schema",
         "author",
@@ -552,58 +551,12 @@ describe("build config shape - objects", () => {
     `);
   });
 
-  it("zed-editor-config", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-editor-config"))) {
-      console.warn("  [WARNING] .build/zed-editor-config not found — skipping (not generated in this environment)");
+  it("zed-config", () => {
+    if (!fs.existsSync(path.resolve(".build", "zed-config"))) {
+      console.warn("  [WARNING] .build/zed-config not found — skipping (not generated in this environment)");
       return;
     }
-    expect(readBuildConfigKeys("zed-editor-config")).toMatchInlineSnapshot(`
-      [
-        "auto_indent_on_paste",
-        "auto_install_extensions",
-        "auto_update",
-        "buffer_font_family",
-        "buffer_font_size",
-        "buffer_font_weight",
-        "colorize_brackets",
-        "cursor_blink",
-        "ensure_final_newline_on_save",
-        "file_scan_exclusions",
-        "format_on_save",
-        "git",
-        "gutter",
-        "hard_tabs",
-        "icon_theme",
-        "indent_guides",
-        "languages",
-        "linked_edits",
-        "minimap",
-        "multi_cursor_modifier",
-        "preferred_line_length",
-        "remove_trailing_whitespace_on_save",
-        "scrollbar",
-        "search",
-        "session",
-        "show_whitespaces",
-        "soft_wrap",
-        "tab_size",
-        "tabs",
-        "telemetry",
-        "terminal",
-        "theme",
-        "toolbar",
-        "ui_font_size",
-        "vim_mode",
-      ]
-    `);
-  });
-
-  it("zed-editor-config-mac", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-editor-config-mac"))) {
-      console.warn("  [WARNING] .build/zed-editor-config-mac not found — skipping (not generated in this environment)");
-      return;
-    }
-    expect(readBuildConfigKeys("zed-editor-config-mac")).toMatchInlineSnapshot(`
+    expect(readBuildConfigKeys("zed-config")).toMatchInlineSnapshot(`
       [
         "auto_indent_on_paste",
         "auto_install_extensions",
@@ -775,12 +728,12 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("zed-editor-keys", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-editor-keys"))) {
-      console.warn("  [WARNING] .build/zed-editor-keys not found — skipping (not generated in this environment)");
+  it("zed-keys", () => {
+    if (!fs.existsSync(path.resolve(".build", "zed-keys"))) {
+      console.warn("  [WARNING] .build/zed-keys not found — skipping (not generated in this environment)");
       return;
     }
-    const shape = readBuildArrayShape("zed-editor-keys");
+    const shape = readBuildArrayShape("zed-keys");
     expect(shape.length).toMatchInlineSnapshot("2");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
@@ -790,12 +743,12 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("zed-editor-keys-linux", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-editor-keys-linux"))) {
-      console.warn("  [WARNING] .build/zed-editor-keys-linux not found — skipping (not generated in this environment)");
+  it("zed-keys-linux", () => {
+    if (!fs.existsSync(path.resolve(".build", "zed-keys-linux"))) {
+      console.warn("  [WARNING] .build/zed-keys-linux not found — skipping (not generated in this environment)");
       return;
     }
-    const shape = readBuildArrayShape("zed-editor-keys-linux");
+    const shape = readBuildArrayShape("zed-keys-linux");
     expect(shape.length).toMatchInlineSnapshot("2");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
@@ -805,12 +758,12 @@ describe("build config shape - arrays", () => {
     `);
   });
 
-  it("zed-editor-keys-windows", () => {
-    if (!fs.existsSync(path.resolve(".build", "zed-editor-keys-windows"))) {
-      console.warn("  [WARNING] .build/zed-editor-keys-windows not found — skipping (not generated in this environment)");
+  it("zed-keys-windows", () => {
+    if (!fs.existsSync(path.resolve(".build", "zed-keys-windows"))) {
+      console.warn("  [WARNING] .build/zed-keys-windows not found — skipping (not generated in this environment)");
       return;
     }
-    const shape = readBuildArrayShape("zed-editor-keys-windows");
+    const shape = readBuildArrayShape("zed-keys-windows");
     expect(shape.length).toMatchInlineSnapshot("2");
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
