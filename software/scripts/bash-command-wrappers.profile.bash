@@ -22,6 +22,11 @@
 # yarn          — Smart wrapper: falls back to npm if yarn unavailable
 # renpm         — Delete node_modules and reinstall (yarn/npm ci/npm install)
 #
+# --- Language package upgrades ---
+# update_lang   — Upgrade global packages from each language pkg manager on PATH
+#                 (rustup, cargo-update, npm, pnpm, yarn, bun, deno, uv, pip).
+#                 Companion to the `update` alias which only handles OS pkg managers.
+#
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
 # real command. Sourced AFTER spec-based autocomplete.
@@ -172,4 +177,81 @@ function renpm() {
   else
     npm install
   fi
+}
+
+################################################################################
+# ---- Language package upgrades ----
+################################################################################
+# update_lang: upgrade globally-installed packages from each language pkg manager
+function update_lang() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "update_lang: upgrade globally-installed language packages
+  Skips any tool not on PATH. Companion to the OS-level \`update\` alias.
+  Covers: rustup, cargo-update, npm, pnpm, yarn (v1), bun, deno, uv, pip (--user)."
+    return 0
+  fi
+
+  echo ">>> Upgrading global language packages"
+
+  # rust toolchain (rustc/cargo themselves)
+  if type -P rustup &> /dev/null; then
+    echo ">> rustup update"
+    rustup update
+  fi
+
+  # cargo install-update (requires `cargo install cargo-update` first; skipped if absent)
+  if type -P cargo &> /dev/null && cargo install --list 2> /dev/null | grep -q '^cargo-update '; then
+    echo ">> cargo install-update -a"
+    cargo install-update -a
+  fi
+
+  # npm globals
+  if type -P npm &> /dev/null; then
+    echo ">> npm update -g"
+    npm update -g
+  fi
+
+  # pnpm globals
+  if type -P pnpm &> /dev/null; then
+    echo ">> pnpm update -g"
+    pnpm update -g
+  fi
+
+  # yarn v1 globals (yarn berry/v2+ has no `global upgrade`)
+  if type -P yarn &> /dev/null && yarn --version 2> /dev/null | grep -q '^1\.'; then
+    echo ">> yarn global upgrade"
+    yarn global upgrade
+  fi
+
+  # bun runtime + globals
+  if type -P bun &> /dev/null; then
+    echo ">> bun upgrade"
+    bun upgrade
+  fi
+
+  # deno runtime
+  if type -P deno &> /dev/null; then
+    echo ">> deno upgrade"
+    deno upgrade
+  fi
+
+  # uv tool installs
+  if type -P uv &> /dev/null; then
+    echo ">> uv tool upgrade --all"
+    uv tool upgrade --all
+  fi
+
+  # pip --user packages (skip system site-packages)
+  if type -P pip &> /dev/null; then
+    echo ">> pip user packages"
+    local outdated
+    outdated=$(pip list --outdated --user 2> /dev/null | awk 'NR>2 {print $1}')
+    if [ -n "$outdated" ]; then
+      echo "$outdated" | xargs pip install --user --upgrade
+    else
+      echo "   (nothing to upgrade)"
+    fi
+  fi
+
+  echo ">>> update_lang done"
 }
