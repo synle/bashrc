@@ -162,15 +162,40 @@ function parseRawArgs() {
 
   // Expand presets last so explicit --files= and presets compose.
   // Files: union (preset files appended in order).
+  // Name resolution: exact match wins. If no exact match, try case-insensitive
+  // substring match — exactly one hit auto-resolves; zero hits or 2+ hits error.
   if (presets.length > 0) {
     const presetMap = loadPresets();
     const known = Object.keys(presetMap);
-    for (const name of presets) {
-      const preset = presetMap[name];
+    for (let i = 0; i < presets.length; i++) {
+      const name = presets[i];
+      let resolvedName = name;
+      let preset = presetMap[name];
+
+      // Fuzzy fallback: case-insensitive substring match across known preset names.
+      if (!preset) {
+        const needle = name.toLowerCase();
+        const matches = known.filter((k) => k.toLowerCase().includes(needle));
+        if (matches.length === 1) {
+          resolvedName = matches[0];
+          preset = presetMap[resolvedName];
+        } else if (matches.length > 1) {
+          const suggestions = matches.map((m) => `  bash run.sh --preset=${m}`).join("\n");
+          throw new Error(
+            `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` + `Pick one and re-run:\n${suggestions}`,
+          );
+        }
+      }
+
       if (!preset) {
         const list = known.length ? known.join(", ") : "(none defined)";
         throw new Error(`Unknown preset "${name}". Available presets: ${list}`);
       }
+
+      // Replace the user's input with the canonical name so debug output / printRunInfo
+      // reflect what actually ran.
+      presets[i] = resolvedName;
+
       if (Array.isArray(preset.files)) {
         for (const f of preset.files) {
           if (f) files = files ? `${files},${f}` : f;
@@ -3208,10 +3233,9 @@ function filterRepoScripts(files) {
     .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)));
 
   // this is a list of files to run last
-  // NOTE: update ssh causes the change in host file,
-  // therefore it needs to be done last
+  // NOTE: vs-code-ext.sh installs extensions in the background and is the slowest
+  // step on a clean run, so it goes at the very end to keep earlier feedback fast.
   const lastFiles = convertTextToList(`
-    software/scripts/bash-syle-content.js
     software/scripts/advanced/vs-code-ext.sh
   `);
 
@@ -3662,15 +3686,35 @@ function _getBundleRunnerType(file) {
 function _resolveScriptFile(file, originalFile, allRepoFiles) {
   const inputBase = path.basename(file);
   const inputFolder = path.dirname(file);
-  const foundMatchedPath =
-    // exact path match
-    allRepoFiles.find((f) => f === file) ||
-    // exact basename match (sans extension) — e.g. "git" matches "git.js"
-    allRepoFiles.find((f) => path.basename(f, path.extname(f)).toLowerCase() === inputBase.toLowerCase() && f.startsWith(inputFolder)) ||
-    // partial regex match on basename only — e.g. "vim" matches "vim-config.js"
-    allRepoFiles.find((f) => new RegExp(inputBase, "i").test(path.basename(f)) && f.startsWith(inputFolder));
-  const fileExists = !!foundMatchedPath;
 
+  // Tier 1: exact path match (paths are unique, so .find is safe)
+  let foundMatchedPath = allRepoFiles.find((f) => f === file);
+
+  // Tier 2: exact basename match sans extension — e.g. "git" matches "git.js"
+  if (!foundMatchedPath) {
+    foundMatchedPath = allRepoFiles.find(
+      (f) => path.basename(f, path.extname(f)).toLowerCase() === inputBase.toLowerCase() && f.startsWith(inputFolder),
+    );
+  }
+
+  // Tier 3: partial regex match on basename — e.g. "vim" matches "vim-config.js".
+  // Collect ALL matches: 1 → use it, 2+ → ambiguous (return a copy-pasteable suggestion list).
+  if (!foundMatchedPath) {
+    const partial = allRepoFiles.filter((f) => new RegExp(inputBase, "i").test(path.basename(f)) && f.startsWith(inputFolder));
+    if (partial.length === 1) {
+      foundMatchedPath = partial[0];
+    } else if (partial.length > 1) {
+      const suggestions = partial.map((p) => `  bash run.sh --files=${p.replace(/^software\/scripts\//, "")}`).join("\n");
+      return {
+        resolvedFile: file,
+        fileExists: false,
+        description: `Ambiguous "${originalFile}" — matched ${partial.length}: ${partial.join(", ")}. Pick one and re-run:\n${suggestions}`,
+        fileMatchState: "ambiguous",
+      };
+    }
+  }
+
+  const fileExists = !!foundMatchedPath;
   let description = "";
   let fileMatchState;
   if (fileExists) {
@@ -3981,6 +4025,25 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
     const bundleType = isExcludedFromBundle ? null : _getBundleRunnerType(resolvedFile);
     return { file: resolvedFile, originalFile, isRefreshTarget, index: i, bundleType, resolved };
   });
+
+  // Surface ambiguous matches up-front. Without this, an input like `--files=vim` would
+  // route to the bundle dispatcher first, fail on missing extension, and the helpful
+  // suggestion list buried in resolved.description would never reach the user.
+  const ambiguous = entries.filter((e) => e.resolved.fileMatchState === "ambiguous");
+  for (const entry of ambiguous) {
+    echo(`>>`, colorOrange(entry.originalFile), colorRed(`is ambiguous`));
+    log(entry.resolved.description);
+    scriptProcessingResults.push({
+      file: entry.originalFile,
+      path: entry.file,
+      script: "",
+      tempFileCommand: "",
+      status: "error",
+      fileMatchState: entry.resolved.fileMatchState,
+      description: entry.resolved.description,
+      bundleLabel: undefined,
+    });
+  }
 
   // Group consecutive entries that share the same non-null bundleType.
   // Because filterRepoScripts() sorts by bundle type, this produces one group per type.

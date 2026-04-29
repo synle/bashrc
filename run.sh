@@ -17,6 +17,7 @@
 #   bash run.sh -f                                 # Shorthand for --force-refresh
 #   bash run.sh --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.json
 #   bash run.sh --preset=lightweight,editors       # Multiple presets compose (file lists union)
+#   bash run.sh --preset=editor                    # Partial match (case-insensitive substring); 1 hit auto-resolves, 2+ hits errors with suggestions
 #   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
 #   bash run.sh -D                                 # Shorthand for --debug
 #   bash run.sh --verbose                          # Enable verbose mode (set -x for bash tracing)

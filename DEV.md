@@ -158,7 +158,7 @@ export BASHRC_RAW_ARGS=$(printf '%s\n' "$@" | jq -R . | jq -s .)
 --setup               -> IS_SETUP="1"
 --dryrun              -> IS_DRYRUN="1"
 --remove              -> IS_REMOVE="1"
---preset=<name>       -> expands to TEST_SCRIPT_FILES from software/metadata/presets.json
+--preset=<name>       -> expands to TEST_SCRIPT_FILES from software/metadata/presets.json (composable, case-insensitive partial match supported)
 bare args             -> treated as file names
 ```
 

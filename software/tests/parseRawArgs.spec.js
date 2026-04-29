@@ -125,6 +125,47 @@ describe("parseRawArgs", () => {
     expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist"/);
   });
 
+  it("should auto-resolve a partial preset name with exactly one match", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      editors: { files: ["a.js"] },
+      browsers: { files: ["b.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editor"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["editors"]);
+    expect(result.files).toBe("a.js");
+  });
+
+  it("should auto-resolve a case-insensitive partial match", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({ Lightweight: { files: ["a.js"] } });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=LIGHT"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["Lightweight"]);
+  });
+
+  it("should throw with a copy-paste suggestion list when partial match is ambiguous", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      editors: { files: ["a.js"] },
+      "editor-pro": { files: ["b.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editor"]);
+    expect(() => parseRawArgs()).toThrow(/ambiguous — matched 2: editors, editor-pro/);
+    expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editors/);
+    expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editor-pro/);
+  });
+
+  it("should prefer exact match over partial when both exist", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      // "edit" is an exact match; "editors" would also be a partial match.
+      edit: { files: ["exact.js"] },
+      editors: { files: ["partial.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=edit"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["edit"]);
+    expect(result.files).toBe("exact.js");
+  });
+
   it("should treat empty --preset= value as a no-op", () => {
     proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset="]);

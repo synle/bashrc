@@ -51,19 +51,12 @@ describe("filterRepoScripts", () => {
     expect(result.indexOf("software/scripts/mac/dock.js")).toBeLessThan(result.indexOf("software/scripts/vim.js"));
   });
 
-  it("should push lastFiles (bash-syle-content.js, vs-code-ext.sh) to end", () => {
-    const result = filterRepoScripts([
-      "software/scripts/bash-syle-content.js",
-      "software/scripts/git.js",
-      "software/scripts/advanced/vs-code-ext.sh",
-      "software/scripts/vim.js",
-    ]);
-    const lastIdx1 = result.indexOf("software/scripts/bash-syle-content.js");
-    const lastIdx2 = result.indexOf("software/scripts/advanced/vs-code-ext.sh");
+  it("should push lastFiles (vs-code-ext.sh) to end", () => {
+    const result = filterRepoScripts(["software/scripts/git.js", "software/scripts/advanced/vs-code-ext.sh", "software/scripts/vim.js"]);
+    const lastIdx = result.indexOf("software/scripts/advanced/vs-code-ext.sh");
     const gitIdx = result.indexOf("software/scripts/git.js");
 
-    expect(lastIdx1).toBeGreaterThan(gitIdx);
-    expect(lastIdx2).toBeGreaterThan(gitIdx);
+    expect(lastIdx).toBeGreaterThan(gitIdx);
   });
 
   it("should handle null input", () => {

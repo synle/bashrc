@@ -91,6 +91,26 @@ describe("_resolveScriptFile", () => {
     expect(result.fileMatchState).toBe("expanded_match");
     expect(result.description).toContain("Expanded");
   });
+
+  it("should return ambiguous error with copy-paste suggestions when partial match has 2+ hits", () => {
+    const allFiles = ["software/scripts/vim-config.js", "software/scripts/vim-vundle.sh"];
+    // bare "vim" gets prefixed to "software/scripts/vim" by the caller; basename "vim"
+    // matches both via the partial-regex tier.
+    const result = _resolveScriptFile("software/scripts/vim", "vim", allFiles);
+    expect(result.fileExists).toBe(false);
+    expect(result.fileMatchState).toBe("ambiguous");
+    expect(result.description).toContain("Ambiguous");
+    expect(result.description).toContain("matched 2");
+    expect(result.description).toContain("bash run.sh --files=vim-config.js");
+    expect(result.description).toContain("bash run.sh --files=vim-vundle.sh");
+  });
+
+  it("should still resolve when partial match yields exactly one hit", () => {
+    const allFiles = ["software/scripts/vim-config.js", "software/scripts/git.js"];
+    const result = _resolveScriptFile("software/scripts/vim", "vim", allFiles);
+    expect(result.fileExists).toBe(true);
+    expect(result.resolvedFile).toBe("software/scripts/vim-config.js");
+  });
 });
 
 // ---- _filterByOsFolders ----
