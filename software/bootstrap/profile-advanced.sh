@@ -2091,6 +2091,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 ################################################################################
 # BEGIN/END | Android Termux OS-specific Tweaks
 # BEGIN/END | Arch Linux OS-specific Tweaks
+# BEGIN/END | ChromeOS OS-specific Tweaks
 # BEGIN/END | Mac OS-specific Tweaks
 # BEGIN/END | MinGW64 OS-specific Tweaks
 # BEGIN/END | RedHat OS-specific Tweaks

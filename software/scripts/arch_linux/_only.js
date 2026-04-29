@@ -5,6 +5,9 @@ async function doWork() {
     code`
       # Only Arch Linux alias
 
+      # update: OS package manager update/upgrade only
+      alias update='sudo pacman -Syu --noconfirm && sudo pacman -Sc --noconfirm'
+
       # set brightness via ddc/ci (for external monitor)
       # more info here - https://moverest.xyz/blog/control-display-with-ddc-ci/
       alias set-brightness='sudo modprobe i2c-dev; sudo ddcutil setvcp 10'
