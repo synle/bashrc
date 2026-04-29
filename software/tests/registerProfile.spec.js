@@ -311,9 +311,9 @@ describe("registerWithPowershellProfile", () => {
     expect(result).toContain("content-b");
   });
 
-  it("should update an existing block in place", async () => {
-    fileSystem[POWERSHELL_SYLE_PATH] = PS_TEMPLATE;
-    registerWithPowershellProfile("adb", "Set-Alias adb old-path");
+  it("should update an existing in-file block in place across runs", async () => {
+    // Simulate a prior run having already written the block to disk.
+    fileSystem[POWERSHELL_SYLE_PATH] = `# header\n\n# BEGIN adb\nSet-Alias adb old-path\n# END adb\n\n# footer`;
     registerWithPowershellProfile("adb", "Set-Alias adb new-path");
     await flushProfileBlocks();
     const result = fileSystem[POWERSHELL_SYLE_PATH];
@@ -321,6 +321,12 @@ describe("registerWithPowershellProfile", () => {
     expect(result).not.toContain("Set-Alias adb old-path");
     const beginCount = (result.match(/# BEGIN adb/g) || []).length;
     expect(beginCount).toBe(1);
+  });
+
+  it("should throw if the same key is registered twice within a single flush window", () => {
+    fileSystem[POWERSHELL_SYLE_PATH] = PS_TEMPLATE;
+    registerWithPowershellProfile("adb", "Set-Alias adb old-path");
+    expect(() => registerWithPowershellProfile("adb", "Set-Alias adb new-path")).toThrow(/Duplicate profile block key/);
   });
 
   it("should not add code folding braces to powershell profile", async () => {

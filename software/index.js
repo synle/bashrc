@@ -2267,6 +2267,14 @@ function registerProfileBlock({ profilePath, configKey, content, isPrepend = fal
   if (!_profileBlockBuffer.has(profilePath)) {
     _profileBlockBuffer.set(profilePath, new Map());
   }
+  // Guard: silent overwrites have caused real data loss (e.g. mac/_only.js calling
+  // registerPlatformTweaks("Mac", ...) twice — the second call clobbered the alias block).
+  // Force callers to use a distinct sub-key (e.g. "Foo - bar") for additional blocks.
+  if (_profileBlockBuffer.get(profilePath).has(configKey)) {
+    throw new Error(
+      `Duplicate profile block key "${configKey}" for ${profilePath} — use a distinct sub-key like "${configKey} - <subname>" instead`,
+    );
+  }
   _profileBlockBuffer.get(profilePath).set(configKey, { content: wrappedContent, isPrepend, isRemove: false });
 }
 
@@ -2376,11 +2384,15 @@ function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
 
 /**
  * Registers a platform-specific tweaks file with BASH_SYLE_PATH and writes the tweaks content.
- * @param {string} platformName - Display name (e.g. "Only Mac")
+ * Pass `subKey` when a platform needs more than one block (e.g. base aliases + iTerm2 integration).
+ * Without `subKey` the configKey is `"<platformName> OS-specific Tweaks"`; with it, `"<platformName> OS-specific Tweaks - <subKey>"`.
+ * @param {string} platformName - Display name (e.g. "Mac", "Ubuntu")
  * @param {string} content - The tweaks content to append to the profile
+ * @param {string} [subKey] - Optional sub-key to distinguish multiple blocks for the same platform
  */
-function registerPlatformTweaks(platformName, content) {
-  registerProfileBlock({ profilePath: BASH_SYLE_PATH, configKey: `${platformName} OS-specific Tweaks`, content });
+function registerPlatformTweaks(platformName, content, subKey) {
+  const configKey = subKey ? `${platformName} OS-specific Tweaks - ${subKey}` : `${platformName} OS-specific Tweaks`;
+  registerProfileBlock({ profilePath: BASH_SYLE_PATH, configKey, content });
 }
 
 /**

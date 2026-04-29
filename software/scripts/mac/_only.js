@@ -60,11 +60,13 @@ async function doWork() {
   );
 
   // iTerm2 shell integration (added by iTerm2 > Install Shell Integration)
+  // Use a sub-key so this block does not clobber the base "Mac OS-specific Tweaks" alias block.
   await registerPlatformTweaks(
     "Mac",
     code`
     # iTerm2 shell integration
     [ -f "\${HOME}/.iterm2_shell_integration.bash" ] && . "\${HOME}/.iterm2_shell_integration.bash"
   `,
+    "iTerm2",
   );
 }
