@@ -525,6 +525,9 @@ $wingetPackagesBackground = @(
     # ---- Local LLM ----
     "Ollama.Ollama",
 
+    # ---- Cloud CLIs ----
+    "Microsoft.AzureCLI",
+
     # ---- GUI Applications ----
     "Audacity.Audacity",
     "Bambulab.Bambustudio",

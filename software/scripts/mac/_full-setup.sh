@@ -256,6 +256,9 @@ installBrewPackageInBackground k9s
 installBrewPackageInBackground kubectx # provides kubectx + kubens
 installBrewPackageInBackground stern
 
+# ---- Cloud CLIs ----
+installBrewPackageInBackground azure-cli # `az` — Microsoft Azure CLI
+
 # ---- HTTP / RPC clients ----
 # httpie foreground — universally packaged, required-tier. xh+grpcurl stay
 # background (Linux installs xh/grpcurl via advanced/http-clients.sh fallback).

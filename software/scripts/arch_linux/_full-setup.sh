@@ -173,6 +173,9 @@ installPacmanPackageInBackground k9s
 installPacmanPackageInBackground kubectx # provides kubectx + kubens
 installPacmanPackageInBackground stern
 
+# ---- Cloud CLIs ----
+installPacmanPackageInBackground azure-cli # `az` — Microsoft Azure CLI
+
 # ---- HTTP / RPC clients ----
 installPacmanPackageInBackground grpcurl
 installPacmanPackageInBackground httpie
