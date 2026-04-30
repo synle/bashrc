@@ -23,6 +23,7 @@
 # Ctrl+R   — fzf history search (places command on prompt)
 # Ctrl+T   — fuzzy edit with vim
 # Ctrl+Y   — fuzzy edit (default editor)
+# Ctrl+O   — fuzzy recent files (default editor)
 # Ctrl+P   — fuzzy cd to directory
 # Ctrl+B   — fuzzy favorite command picker
 # Ctrl+G   — fuzzy git log browser
@@ -70,6 +71,7 @@ if [[ $- == *i* ]]; then
   bind '"\C-x": edit-and-execute-command'   # Ctrl+X — open command in $EDITOR
   bind '"\C-t": "fuzzy_edit vim\r"'         # Ctrl+T — fuzzy edit with vim
   bind '"\C-y": "fuzzy_edit\r"'             # Ctrl+Y — fuzzy edit (default editor)
+  bind '"\C-o": "fuzzy_recent_files\r"'     # Ctrl+O — fuzzy recent files (default editor)
   bind '"\C-p": "fuzzy_cd\r"'               # Ctrl+P — fuzzy cd to directory
   bind '"\C-b": "fuzzy_favorite_command\r"' # Ctrl+B — fuzzy favorite command picker
   bind '"\C-g": "fuzzy_git_show\r"'         # Ctrl+G — fuzzy git log browser

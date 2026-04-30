@@ -320,6 +320,7 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `ctrl+r`               | Fzf history search          |  ✅   |        ✅         |
 | `ctrl+t`               | Fuzzy edit (vim)            |  ✅   |        ✅         |
 | `ctrl+y`               | Fuzzy edit (default editor) |  ✅   |        ✅         |
+| `ctrl+o`               | Fuzzy recent files          |  ✅   |        ✅         |
 | `ctrl+p`               | Fuzzy cd                    |  ✅   |        ✅         |
 | `ctrl+b`               | Favorite command picker     |  ✅   |        ✅         |
 | `ctrl+g`               | Git log browser             |  ✅   |        ✅         |
