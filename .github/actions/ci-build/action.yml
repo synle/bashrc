@@ -282,6 +282,7 @@ runs:
         check_binary_warn gping "gping --version"
         check_binary_warn aws "aws --version"
         check_binary_warn az "az --version"
+        check_binary_warn gcloud "gcloud --version"
         # END ci-binary-checks
         # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`.
         # Promoted from warn -> required: passed on all 5 OS jobs in recent runs.

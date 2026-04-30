@@ -173,8 +173,9 @@ installPacmanPackageInBackground kubectx # provides kubectx + kubens
 installPacmanPackageInBackground stern
 
 # ---- Cloud CLIs ----
-installPacmanPackageInBackground aws-cli-v2 # `aws` — AWS CLI v2
-installPacmanPackageInBackground azure-cli  # `az` — Microsoft Azure CLI
+installPacmanPackageInBackground aws-cli-v2       # `aws` — AWS CLI v2
+installPacmanPackageInBackground azure-cli        # `az` — Microsoft Azure CLI
+installPacmanPackageInBackground google-cloud-cli # `gcloud` — Google Cloud CLI
 
 # ---- HTTP / RPC clients ----
 installPacmanPackageInBackground grpcurl

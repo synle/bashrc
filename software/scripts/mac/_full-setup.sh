@@ -257,8 +257,9 @@ installBrewPackageInBackground kubectx # provides kubectx + kubens
 installBrewPackageInBackground stern
 
 # ---- Cloud CLIs ----
-installBrewPackageInBackground awscli    # `aws` — AWS CLI v2
-installBrewPackageInBackground azure-cli # `az` — Microsoft Azure CLI
+installBrewPackageInBackground awscli                  # `aws` — AWS CLI v2
+installBrewPackageInBackground azure-cli               # `az` — Microsoft Azure CLI
+installBrewPackageInBackground --cask google-cloud-sdk # `gcloud` — Google Cloud CLI
 
 # ---- HTTP / RPC clients ----
 # httpie foreground — universally packaged, required-tier. xh+grpcurl stay

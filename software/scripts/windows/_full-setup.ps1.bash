@@ -527,6 +527,7 @@ $wingetPackagesBackground = @(
 
     # ---- Cloud CLIs ----
     "Amazon.AWSCLI",
+    "Google.CloudSDK",
     "Microsoft.AzureCLI",
 
     # ---- GUI Applications ----
