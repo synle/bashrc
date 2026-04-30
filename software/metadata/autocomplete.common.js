@@ -150,6 +150,7 @@ const SPEC_COMMANDS = [
   { command: "docker-compose", specFile: "software/metadata/autocomplete-complete-spec/docker-compose" },
   { command: "kubectl", specFile: "software/metadata/autocomplete-complete-spec/kubectl" },
   // ---- Cloud CLIs ----
+  { command: "aws", specFile: "software/metadata/autocomplete-complete-spec/aws" },
   { command: "az", specFile: "software/metadata/autocomplete-complete-spec/az" },
   // ---- Network and remote ----
   { command: "curl", specFile: "software/metadata/autocomplete-complete-spec/curl" },
