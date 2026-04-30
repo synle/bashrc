@@ -257,6 +257,7 @@ installBrewPackageInBackground kubectx # provides kubectx + kubens
 installBrewPackageInBackground stern
 
 # ---- Cloud CLIs ----
+installBrewPackageInBackground awscli    # `aws` — AWS CLI v2
 installBrewPackageInBackground azure-cli # `az` — Microsoft Azure CLI
 
 # ---- HTTP / RPC clients ----

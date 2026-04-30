@@ -526,6 +526,7 @@ $wingetPackagesBackground = @(
     "Ollama.Ollama",
 
     # ---- Cloud CLIs ----
+    "Amazon.AWSCLI",
     "Microsoft.AzureCLI",
 
     # ---- GUI Applications ----

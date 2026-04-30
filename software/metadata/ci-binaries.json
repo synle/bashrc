@@ -43,6 +43,7 @@
     { "name": "procs", "version_cmd": "procs --version" },
     { "name": "btm", "version_cmd": "btm --version" },
     { "name": "gping", "version_cmd": "gping --version" },
+    { "name": "aws", "version_cmd": "aws --version" },
     { "name": "az", "version_cmd": "az --version" }
   ]
 }
