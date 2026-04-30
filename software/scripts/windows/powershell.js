@@ -154,6 +154,7 @@ const SPEC_COMMANDS = [
   // ---- Cloud CLIs ----
   { command: "aws", specFile: "software/metadata/autocomplete-complete-spec/aws" },
   { command: "az", specFile: "software/metadata/autocomplete-complete-spec/az" },
+  { command: "gcloud", specFile: "software/metadata/autocomplete-complete-spec/gcloud" },
   // ---- Network and remote ----
   { command: "curl", specFile: "software/metadata/autocomplete-complete-spec/curl" },
   { command: "rsync", specFile: "software/metadata/autocomplete-complete-spec/rsync" },
