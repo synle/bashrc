@@ -385,7 +385,7 @@ function fuzzy_favorite_command() {
   local cmd
   cmd=$(command cat "$BOOKMARK_PATH" 2> /dev/null | sort -u | fzf --prompt="bookmark> " \
     --header="(Ctrl+B) - bookmarked commands" \
-    --preview='cmd={};word=$(echo "$cmd" | awk "{print \$1}"); type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"' \
+    --preview='source "$BASH_PATH" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"' \
     --preview-window=down:50%:wrap \
     --bind 'f5:reload(command cat "$BOOKMARK_PATH" 2>/dev/null | sort -u)')
 
