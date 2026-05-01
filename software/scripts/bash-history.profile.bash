@@ -32,12 +32,18 @@ function _backup_history() {
 }
 _backup_history
 
-# interactive fuzzy history search using fzf — requires fzf, falls back to Ctrl+R
+# interactive fuzzy history search using fzf. Dual-mode based on call context:
+#   - From Ctrl+R (bind -x sets READLINE_LINE in env): place selection on the
+#     readline prompt for the user to edit before pressing Enter — matches the
+#     standard Ctrl+R behavior, safer for destructive commands.
+#   - From the prompt or a script (READLINE_LINE unset): eval the selection
+#     immediately. Useful for `fuzzy_history docker` style "find-and-run" calls.
 function fuzzy_history() {
   if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "fuzzy_history: interactive fzf search over bash history"
     echo "  fuzzy_history [query]    search with optional initial query"
     echo "  fuzzy_history help       show this help"
+    echo "  (also bound to Ctrl+R — that variant places selection on prompt instead of running it)"
     return
   fi
   if ! type -P fzf &> /dev/null; then
@@ -45,16 +51,31 @@ function fuzzy_history() {
     return 1
   fi
 
+  local from_bind=0
+  [[ -v READLINE_LINE ]] && from_bind=1
+
+  local header
+  if ((from_bind)); then
+    header="(Ctrl+R) - fzf history search; selection placed on prompt for edit"
+  else
+    header="fuzzy_history - fzf history search; selection runs on Enter"
+  fi
+
   local selected
   selected=$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.bash_history | command grep -v '^#' | awk '!seen[$0]++' | fzf \
-    --no-sort --tac --layout=reverse --height=100% --query="$1" \
+    --no-sort --tac --layout=reverse --height=100% --query="${1:-}" \
     --prompt="history> " \
-    --header="fuzzy_history - fzf search over bash history; selection runs on Enter")
+    --header="$header")
 
   if [ -n "$selected" ]; then
-    echo "$selected"
-    history -s "$selected"
-    eval "$selected"
+    if ((from_bind)); then
+      READLINE_LINE="$selected"
+      READLINE_POINT=${#selected}
+    else
+      echo "$selected"
+      history -s "$selected"
+      eval "$selected"
+    fi
   fi
 }
 

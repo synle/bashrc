@@ -88,22 +88,10 @@ if [[ $- == *i* ]]; then
   # readline macros. The function sets READLINE_LINE / READLINE_POINT to place the
   # result on the prompt — more reliable than the old macro approach.
 
-  # Ctrl+R — fzf history search (places selected command on prompt)
-  # reads from ~/.bash_history file directly so it searches commands from all tabs
-  # (since we no longer reload shared history into memory with history -c/-r)
-  if type -P fzf &> /dev/null; then
-    function __fzf_history__() {
-      local selected
-      selected=$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.bash_history | command grep -v '^#' | $(type -P tac &> /dev/null && echo tac || echo 'tail -r') | awk 'NF && !seen[$0]++' | fzf \
-        --height=100% --reverse --tac +s \
-        --prompt="history> " \
-        --header="(Ctrl+R) - fzf history search; selection placed on prompt for edit")
-      if [ -n "$selected" ]; then
-        READLINE_LINE="$selected"
-        READLINE_POINT=${#selected}
-      fi
-    }
-    bind -x '"\C-r": __fzf_history__'
-  fi
+  # Ctrl+R — fzf history search (places selected command on prompt for edit).
+  # Delegates to fuzzy_history (defined in bash-history.profile.bash). bind -x sets
+  # READLINE_LINE in the function env, which fuzzy_history detects and switches to
+  # "place on prompt" mode instead of its default "eval immediately" behavior.
+  type -P fzf &> /dev/null && bind -x '"\C-r": fuzzy_history'
 
 fi # end interactive shell guard
