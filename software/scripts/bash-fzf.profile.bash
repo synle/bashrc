@@ -23,7 +23,19 @@
 # _fuzzy_list_all directory crawler (Node.js BFS with git fast path).
 ################################################################################
 export FZF_COMPLETION_TRIGGER='*'
+# Single source of truth for fzf defaults. All flags here apply to every fzf
+# invocation (functions, command-line, completion) without relying on alias
+# expansion — which is fragile inside function bodies sourced from a profile.
+# --ansi is required for colored input (e.g. git log --color=always); harmless
+# on plain text. --no-sort + --tiebreak=index preserve input order so picker
+# functions can rely on the order they emit. --layout=reverse puts input at
+# top. --cycle wraps list navigation.
 export FZF_DEFAULT_OPTS="
+  --ansi
+  --no-sort
+  --cycle
+  --layout=reverse
+  --tiebreak=index
   --info-command='_fzf_info_line'
   --bind 'shift-left:preview-page-up'
   --bind 'shift-right:preview-page-down'
@@ -38,7 +50,6 @@ export FZF_DEFAULT_OPTS="
 
 # ---- Aliases: Git (fzf) ----
 alias glog='fuzzy_git_show'
-alias fzf='fzf --ansi --no-sort --cycle --layout=reverse --tiebreak=index'
 alias fvim='fuzzy_edit vim'
 
 ################################################################################
