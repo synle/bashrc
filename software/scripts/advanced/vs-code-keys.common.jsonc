@@ -24,8 +24,11 @@
     "command": "workbench.action.toggleSidebarVisibility",
   },
   {
+    // toggle the right (auxiliary) sidebar — matches Zed's ToggleRightDock.
+    // Repurposed from VS Code's default toggleActivityBarVisibility, which we
+    // never used and which conflicted with this binding.
     "key": "OS_KEY+shift+\\",
-    "command": "workbench.action.toggleActivityBarVisibility",
+    "command": "workbench.action.toggleAuxiliaryBar",
   },
   {
     "key": "OS_KEY+;",
