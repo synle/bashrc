@@ -23,21 +23,19 @@ shopt -s globstar 2> /dev/null # enable recursive globbing with ** (e.g. ls **/*
 shopt -s dirspell 2> /dev/null # auto-correct directory typos during tab completion
 
 ignored_history=(
-  "ls"
-  "ll"
-  "l"
-  "cd"
+  # Length-based filters: bare commands of 1-3 chars are nearly always navigation
+  # or noise (ls/ll/cd/.. / vi/cat/git/etc. with no args). The patterns are
+  # anchored to the FULL command line, so 'vim a.txt' (12 chars) and any other
+  # command-with-args is unaffected — only standalone short commands are dropped.
+  "?"
+  "??"
+  "???"
   "cd *"
-  ".."
   "cd ."
   "cd ..*"
-  "pwd"
   "exit"
   "clear"
-  "br"
   "history"
-  "cl"
-  "cm"
   "git add*"
   "git commit*"
   "git amend*"
