@@ -315,7 +315,8 @@ function fuzzy_recent_files() {
   local VIEW_COMMAND="${1:-}"
   local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="recent files> " \
     --header="(Ctrl+Y) - recently opened files" \
-    --preview='batcat --paging=never --style=plain --color=always {} 2>/dev/null || command cat {} 2>/dev/null' --preview-window=right:60%)
+    --preview='batcat --paging=never --style=plain --color=always {} 2>/dev/null || command cat {} 2>/dev/null' \
+    --preview-window=down:50%:wrap)
   if [ -n "$OUT" ] && [ -f "$OUT" ]; then
     if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
       echo "$VIEW_COMMAND \"$OUT\""
@@ -366,7 +367,7 @@ function fuzzy_favorite_command() {
   cmd=$(command cat "$BOOKMARK_PATH" 2> /dev/null | sort -u | fzf --prompt="bookmark> " \
     --header="(Ctrl+B) - bookmarked commands" \
     --preview='cmd={};word=$(echo "$cmd" | awk "{print \$1}"); type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"' \
-    --preview-window=right:40% \
+    --preview-window=down:50%:wrap \
     --bind 'f5:reload(command cat "$BOOKMARK_PATH" 2>/dev/null | sort -u)')
 
   if [ -n "$cmd" ]; then
@@ -394,7 +395,8 @@ function fuzzy_cd() {
     --delimiter=$'\t' --with-nth=1,2 --nth=2 \
     --prompt="cd> " \
     --header="(Ctrl+P) - cd; ★ recent folders, plain = subfolders under ${abs_dir}" \
-    --preview='ls -Cp --color=always {2} 2>/dev/null' --preview-window=right:40% \
+    --preview='ls -Cp --color=always {2} 2>/dev/null' \
+    --preview-window=down:50%:wrap \
     --bind "f5:reload(_fuzzy_cd_list '$dir' | awk -F'\t' '!seen[\$2]++')")
   if [ -n "$OUT" ]; then
     OUT="${OUT##*$'\t'}"
@@ -415,6 +417,8 @@ function fuzzy_edit() {
   abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
   local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
     --header="(Ctrl+T) - edit files under ${abs_dir}" \
+    --preview='[ -d {} ] && ls -Cp --color=always {} 2>/dev/null || (batcat --paging=never --style=plain --color=always {} 2>/dev/null || command cat {} 2>/dev/null)' \
+    --preview-window=down:50%:wrap \
     --bind "f5:reload(_fuzzy_list_all '$dir' 'paths' '' 10)")
 
   if [ -z "$OUT" ]; then
@@ -455,8 +459,9 @@ function fuzzy_edit() {
 # Ctrl+G — interactive git log browser with commit preview
 function fuzzy_git_show() {
   git log --pretty=format:'%Cred%h%Creset %s %C(bold blue)%an%Creset %Cgreen(%ar)%Creset' --abbrev-commit --color=always \
-    | fzf --prompt="Commits> " \
-      --preview-window=right:60% \
+    | fzf --prompt="commits> " \
+      --header="(Ctrl+G) - git log; Enter shows full commit in pager, F5 reloads" \
+      --preview-window=down:50%:wrap \
       --preview='hash=$(echo {} | grep -o "[a-f0-9]\{7\}" | head -1);
       git log --color=always --format="%C(yellow)%H%n%C(cyan)Author: %an <%ae>%n%C(green)Date:   %ad%n%n%C(bold white)%s%C(reset)%n%n%b" -1 $hash;
       echo "$LINE_BREAK_HASH";
