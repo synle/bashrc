@@ -153,7 +153,10 @@ function last_folder() {
 # append history to file after every command (but do NOT clear+reload with -c/-r,
 # so Up arrow navigates current tab's session history instead of showing commands
 # from other tabs. Ctrl+R / fuzzy_history search the shared file for cross-tab history)
-PROMPT_COMMAND="_track_folder; history -a; echo -ne '\033]0;'\"\$(shorter_pwd_path)\"'\007'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+# Also force the terminal cursor back to a steady (non-blinking) block via
+# DECSCUSR `\e[2 q` on every prompt — defends against shell integrations,
+# plugins, or stray escape sequences that flip the cursor to a bar/beam.
+PROMPT_COMMAND="_track_folder; history -a; echo -ne '\033]0;'\"\$(shorter_pwd_path)\"'\007\033[2 q'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
 ################################################################################
 # ---- Track Recent Files ----
