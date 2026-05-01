@@ -37,9 +37,9 @@ _BAT_PREVIEW='bat --paging=never --style=plain --color=always {} 2>/dev/null || 
 # command into the variable. Forces `--language=bash` since `type` output is
 # always bash code regardless of the surrounding shell.
 if type -P bat &> /dev/null; then
-  _BAT_PREVIEW_BASH_STDIN='bat --paging=never --style=plain --color=always --language=bash'
+  _BAT_PREVIEW_BASH_STDIN='bat --paging=never --style=plain --color=always --language=bash --theme=ansi'
 elif type -P batcat &> /dev/null; then
-  _BAT_PREVIEW_BASH_STDIN='batcat --paging=never --style=plain --color=always --language=bash'
+  _BAT_PREVIEW_BASH_STDIN='batcat --paging=never --style=plain --color=always --language=bash --theme=ansi'
 else
   _BAT_PREVIEW_BASH_STDIN='command cat'
 fi
