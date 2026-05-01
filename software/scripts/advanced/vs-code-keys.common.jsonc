@@ -157,6 +157,13 @@
     "key": "OS_KEY+shift+`",
     "command": "workbench.view.debug",
   },
+  // Toggle terminal panel — same chord across mac/linux/windows. ctrl+` is the
+  // VS Code default everywhere, but lock it in explicitly so a future default
+  // change can't silently break it. Mirrors Zed's `ctrl-`` -> terminal_panel::Toggle.
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.terminal.toggleTerminal",
+  },
   // for zooming of font and workspace
   {
     "key": "OS_KEY+shift+=",
