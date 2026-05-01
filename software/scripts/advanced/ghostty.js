@@ -76,10 +76,12 @@ async function _buildConfigContent(isOsMac) {
     theme = light:GitHub Light High Contrast,dark:GitHub Dark High Contrast
 
     # ---- Shell integration ----
-    # Auto-detect bash/zsh/fish; turn on cursor-shape changes per shell mode,
-    # sudo askpass integration, and dynamic window title from the shell.
+    # Auto-detect bash/zsh/fish; enable sudo askpass integration and dynamic
+    # window title from the shell. Cursor-shape control is intentionally
+    # OMITTED so the shell can't override our \`cursor-style = block\` to a
+    # bar/beam in insert mode.
     shell-integration = detect
-    shell-integration-features = cursor,sudo,title
+    shell-integration-features = sudo,title
     # New tabs/splits/windows open in the same cwd as the active pane.
     working-directory = inherit
 
