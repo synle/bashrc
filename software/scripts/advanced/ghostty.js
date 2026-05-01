@@ -97,7 +97,7 @@ async function _buildConfigContent(isOsMac) {
     # ---- Splits (focus visibility) ----
     # Aggressive dimming on unfocused splits so the active pane is obvious in
     # both light and dark modes. Default is ~0.7; lower = more contrast.
-    unfocused-split-opacity = 0.55
+    unfocused-split-opacity = 0.4
 
     # ---- Cursor ----
     cursor-style = block
