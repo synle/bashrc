@@ -2,6 +2,8 @@
 // OS_KEY = COMMAND key on macOS, ALT key on Windows/Linux.
 [
   { "keys": ["OS_KEY+shift+;"], "command": "alignment" },
+  // toggle soft wrap (matches VS Code/Zed)
+  { "key": "ctrl+shift+OS_KEY+\\", "command": "toggle_setting", "args": { "setting": "word_wrap" } },
   {
     "key": "f5",
     "command": "chain",

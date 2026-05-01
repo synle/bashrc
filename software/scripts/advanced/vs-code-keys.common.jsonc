@@ -184,9 +184,9 @@
     "key": "ctrl+w",
     "command": "workbench.action.editorLayoutSingle",
   },
-  // toggle right sidebar
+  // toggle soft wrap (matches Zed/Sublime — repurposed from default toggleAuxiliaryBar)
   {
     "key": "shift+ctrl+OS_KEY+\\",
-    "command": "workbench.action.toggleAuxiliaryBar",
+    "command": "editor.action.toggleWordWrap",
   },
 ]

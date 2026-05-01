@@ -1,0 +1,10 @@
+// Zed user keymap. OS_KEY = `cmd` on macOS, `alt` on Windows/Linux.
+// Zed keymap separator is `-` (per CLAUDE.md). Resolved by zed.js.
+[
+  {
+    "bindings": {
+      // toggle soft wrap (matches VS Code/Sublime)
+      "ctrl-shift-OS_KEY-\\": "editor::ToggleSoftWrap",
+    },
+  },
+]

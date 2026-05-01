@@ -164,7 +164,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | --------------------- | -------------------- | :-----: | :-------: | :--------: | :-: | :-: |
 | `OS_KEY+\`            | Toggle sidebar       |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
 | `OS_KEY+shift+\`      | Toggle activity bar  |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
-| `ctrl+shift+OS_KEY+\` | Toggle right sidebar |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
+| `ctrl+shift+OS_KEY+\` | Toggle soft wrap     |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 | `` OS_KEY+` ``        | Toggle terminal      |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
 | `F5`                  | Refresh / revert     |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
 | `F11`                 | Fullscreen           |   ✅    |    ✅     |     ❌     | ❌  | ❌  |

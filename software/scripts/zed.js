@@ -77,7 +77,28 @@ async function _readZedSources() {
   const baseConfig = (await readJson`software/scripts/zed-config.jsonc`) || {};
   const darkTheme = (await readJson`software/scripts/zed-color-dark.jsonc`) || {};
   const lightTheme = (await readJson`software/scripts/zed-color-light.jsonc`) || {};
-  return { baseConfig, darkTheme, lightTheme };
+  const keymap = (await readJson`software/scripts/zed-keys.common.jsonc`) || [];
+  return { baseConfig, darkTheme, lightTheme, keymap };
+}
+
+/**
+ * Substitutes the `OS_KEY` placeholder in every binding key string. Zed uses `cmd` on macOS and
+ * `alt` on Windows/Linux (matches the EDITOR_MAC_OS_KEYS mapping in editor.common.js).
+ * Zed keymap entries are nested under `bindings`, separator is `-` (not `+`).
+ * @param {object[]} keymap - Parsed `zed-keys.common.jsonc`.
+ * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
+ * @returns {object[]} Resolved keymap ready to write to `keymap.json`.
+ */
+function _getZedKeymap(keymap, isOsMac) {
+  const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
+  const osKey = isMac ? "cmd" : "alt";
+  return keymap.map((entry) => {
+    const out = { ...entry };
+    if (entry.bindings && typeof entry.bindings === "object") {
+      out.bindings = Object.fromEntries(Object.entries(entry.bindings).map(([k, v]) => [k.replace(/OS_KEY/g, osKey), v]));
+    }
+    return out;
+  });
 }
 
 /**
@@ -89,7 +110,7 @@ async function doWork() {
   const targetPath = await _getPathZed();
   log(">>> Zed config path:", targetPath || "[not found]");
 
-  const { baseConfig, darkTheme, lightTheme } = await _readZedSources();
+  const { baseConfig, darkTheme, lightTheme, keymap } = await _readZedSources();
 
   // --- Local system: write directly to the Zed config dir if Zed is installed ---
   if (targetPath) {
@@ -106,6 +127,10 @@ async function doWork() {
     const lightThemePath = path.join(targetPath, "themes", ZED_LIGHT_THEME_FILE);
     await backupConfigFile(lightThemePath);
     await writeJson(lightThemePath, lightTheme);
+
+    const keymapPath = path.join(targetPath, "keymap.json");
+    await backupConfigFile(keymapPath);
+    await writeJson(keymapPath, _getZedKeymap(keymap));
   }
 
   // --- Prebuilt artifacts (used by setup scripts and the webapp) ---
@@ -130,6 +155,20 @@ async function doWork() {
       data: lightTheme,
       isJson: true,
       comments: "Zed light theme (drop into ~/.config/zed/themes/)",
+      commentStyle: "json",
+    },
+    {
+      file: `${BUILD_DIR}/zed-keys-mac`,
+      data: _getZedKeymap(keymap, true),
+      isJson: true,
+      comments: "Zed keymap.json (macOS)",
+      commentStyle: "json",
+    },
+    {
+      file: `${BUILD_DIR}/zed-keys-linux`,
+      data: _getZedKeymap(keymap, false),
+      isJson: true,
+      comments: "Zed keymap.json (Linux/Windows)",
       commentStyle: "json",
     },
   ]);
