@@ -7,11 +7,23 @@
 
 ################################################################################
 # ---- History ----
+#
+# HISTCONTROL is intentionally NOT 'ignoreboth' (= ignorespace + ignoredups).
+# 'ignoredups' silently drops a command when it's identical to the immediately
+# previous in-history entry. In test/iteration workflows where the user reruns
+# the same command minutes apart with nothing else between them in this shell
+# (typing into a chat/IDE in between counts as nothing for bash), the rerun
+# gets eaten — never appears in `history`, never written to ~/.bash_history,
+# never visible in fuzzy_history (Ctrl+R). We use 'erasedups' instead: every
+# run gets added; older identical entries are then erased, leaving exactly
+# one entry at the most-recent run position. That's what Ctrl+R users expect.
+# 'ignorespace' is kept so a leading space still suppresses sensitive commands.
+# See docs/bash-common-knowledge.md → "Bash History" for the full write-up.
 ################################################################################
 export HISTSIZE=80000
 export HISTFILESIZE=80000
 export HISTTIMEFORMAT="[%F %T] "
-export HISTCONTROL=ignorespace:erasedups      # leading-space suppresses save; erasedups removes older dupes when a new entry is added (so consecutive reruns of the same command — common in test/iteration workflows — bubble to the top instead of being silently dropped by ignoredups)
+export HISTCONTROL=ignorespace:erasedups
 shopt -s histappend 2> /dev/null              # append instead of overwrite history file
 shopt -s cmdhist 2> /dev/null                 # save multi-line commands as one entry
 shopt -s cdspell 2> /dev/null                 # auto-correct minor typos in cd directory names
@@ -23,17 +35,16 @@ shopt -s globstar 2> /dev/null # enable recursive globbing with ** (e.g. ls **/*
 shopt -s dirspell 2> /dev/null # auto-correct directory typos during tab completion
 
 ignored_history=(
-  # Length-based filters: bare commands of 1-3 chars are nearly always navigation
-  # or noise (ls/ll/cd/.. / vi/cat/git/etc. with no args). The patterns are
-  # anchored to the FULL command line, so 'vim a.txt' (12 chars) and any other
+  # Length-based filters: bare commands of 1-4 chars are nearly always navigation
+  # or noise (ls/ll/cd/.. / vi/cat/git/exit/make/etc. with no args). The patterns
+  # are anchored to the FULL command line, so 'vim a.txt' (12 chars) and any
   # command-with-args is unaffected — only standalone short commands are dropped.
+  # See docs/bash-common-knowledge.md → "Bash History" for the full mechanics
+  # and the reasoning behind these filters.
   "?"
   "??"
   "???"
-  "cd *"
-  "cd ."
-  "cd ..*"
-  "exit"
+  "????"
   "clear"
   "history"
   "git add*"
@@ -56,7 +67,6 @@ ignored_history=(
   "npm test"
   "n install*"
   "n i*"
-  "n ci"
   "n run *"
   "n start"
   "n test"

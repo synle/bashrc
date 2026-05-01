@@ -18,6 +18,7 @@ A reference guide covering essential bash concepts — file descriptors, redirec
 - [Pattern Matching & Regex](#pattern-matching--regex)
 - [Traps & Signal Handling](#traps--signal-handling)
 - [Shell Options](#shell-options)
+- [Bash History](#bash-history)
 - [Useful Idioms from This Repo](#useful-idioms-from-this-repo)
 
 ---
@@ -1024,6 +1025,106 @@ shopt -s nullglob nocaseglob
 # ... do glob operations ...
 shopt -u nullglob nocaseglob
 ```
+
+---
+
+## Bash History
+
+How `~/.bash_history` actually gets populated — and the gotchas that make commands silently disappear.
+
+### The lifecycle of a command
+
+```
+1. user types `foo args` and hits Enter
+2. bash decides if it should be saved (HISTCONTROL + HISTIGNORE checks)
+3. if saved → added to in-memory history
+4. command executes
+5. PROMPT_COMMAND runs (we have `history -a` → appends in-memory entries to file)
+6. new prompt drawn
+```
+
+If step 2 says "skip", the command **never enters in-memory history**, so nothing in steps 3-5 sees it. It's gone — not just hidden, gone. Even though you typed it and saw it execute.
+
+### `HISTCONTROL` — what each option does
+
+```bash
+HISTCONTROL=ignorespace:ignoredups:erasedups
+```
+
+| Option        | Behavior                                                                                                                                                                             |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ignorespace` | Skip if line starts with a space (or tab). Useful for sensitive commands: `<space>export AWS_SECRET_ACCESS_KEY=...` doesn't get saved.                                               |
+| `ignoredups`  | Skip if line is byte-identical to the **immediately previous** in-history entry. Designed for `ls`-mashing in a single session.                                                      |
+| `ignoreboth`  | Shorthand for `ignorespace:ignoredups`.                                                                                                                                              |
+| `erasedups`   | When a new entry IS added, scan in-memory history and remove **all** older byte-identical entries. Net result: each unique command exists exactly once, at its most-recent position. |
+
+### The `ignoredups` trap
+
+`ignoredups` looks innocuous, but breaks badly when you rerun the same command after typing into a different window/app (chat, IDE, browser) — because nothing happened in _this_ shell between the two runs.
+
+Concrete repro:
+
+```
+17:22:51   bash run.sh ~refresh-source.standalone.js   ← saved
+… (12 minutes of typing into a chat window — no shell activity) …
+18:08:12   bash run.sh ~refresh-source.standalone.js   ← saved (different from previous in-history)
+… (12 more minutes typing into a chat) …
+18:20:12   bash run.sh ~refresh-source.standalone.js   ← DROPPED by ignoredups
+                                                          (immediately previous in-history is identical)
+18:20:54   history | grep refresh                      ← saved
+```
+
+When you `Ctrl+R` for `refresh`, you see the 18:08:12 entry — not your most recent 18:20:12 invocation. You just ran the command but it doesn't appear at the top. Confusing.
+
+### `erasedups` is strictly better
+
+`erasedups` achieves the same dedup goal — exactly one entry per unique command — but does it _retroactively_ instead of _prospectively_. Every run gets added; older copies are removed. The newest run always wins.
+
+This repo uses:
+
+```bash
+HISTCONTROL=ignorespace:erasedups
+```
+
+— `ignorespace` for sensitive-command opt-out, `erasedups` for clean dedup, and **no** `ignoredups` so consecutive reruns are always recorded at their actual time.
+
+### `HISTIGNORE` — pattern-based filtering
+
+`HISTIGNORE` is a colon-separated list of shell-glob patterns. If a typed command **fully matches** any pattern, it's skipped (same effect as `ignoredups` matching, just rule-based).
+
+Patterns are anchored to the entire command line — not substring, not prefix. `cat` matches only the bare command `cat`, not `cat file.txt`. To match a prefix, you need `cat*` (which matches `cat`, `cat file.txt`, `cat /etc/hosts`).
+
+The wildcard `?` matches **exactly one character**, so:
+
+| Pattern | Matches                                                           |
+| ------- | ----------------------------------------------------------------- |
+| `?`     | all 1-char commands (e.g. `l`)                                    |
+| `??`    | all 2-char commands (e.g. `ls`, `ll`, `cd`, `vi`, `df`)           |
+| `???`   | all 3-char commands (e.g. `pwd`, `vim`, `cat`, `awk`)             |
+| `????`  | all 4-char commands (e.g. `exit`, `make`, `npm`)                  |
+| `cd *`  | all `cd <something>` commands (5+ chars: `cd .`, `cd /tmp`, etc.) |
+| `*`     | everything (don't use this)                                       |
+
+### Why pattern-based length filters work safely
+
+Because the match is anchored to the FULL line, `vim a.txt` (12 chars) is **not** matched by `???` (3 chars). The instant you add an arg, the line is too long for any short-fixed-length pattern. You only lose history for the bare standalone form of those commands.
+
+### Don't double-write to file
+
+Two pieces of config keep the on-disk file consistent across multiple shells:
+
+```bash
+shopt -s histappend            # append on shell exit (don't overwrite)
+PROMPT_COMMAND="...; history -a; ..."   # append after every command
+```
+
+Without `histappend`, each shell's exit overwrites the file with only its own history — you lose entries from other concurrent shells. `history -a` writes incrementally so other shells can read fresh entries without waiting for exit.
+
+### Reading from another shell's writes
+
+`fuzzy_history` reads `~/.bash_history` directly (not in-memory `history`), so it sees commands written by **any** shell tab. If you've been running things in another tab and they don't appear in this tab's `history` output, they're still in the file — and Ctrl+R / fuzzy_history will find them.
+
+The reverse: don't expect `history -c; history -r` (clear + reload) to give you a "merged" view, because it'd dump this shell's in-memory entries first.
 
 ---
 
