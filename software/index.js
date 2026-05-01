@@ -4266,9 +4266,15 @@ async function _doWorkTestFiles() {
   }
 
   const allRepoFiles = await getAllRepoSoftwareFiles();
-  const softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
+  let softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
     .filter((s) => !!s);
+
+  // ---- OS folder guard ----
+  // Apply the same OS-folder filter that getSoftwareScriptFiles() uses for full runs.
+  // Without this, explicit --files= or preset-expanded entries like windows/windows-terminal.js
+  // would run on macOS and crash. Each filtered entry is logged so the user can see why.
+  softwareFiles = _filterFilesByOsGuard(softwareFiles);
 
   // Auto-append ~refresh-source.standalone.js to refresh SOURCE blocks in the profile
   // (full runs handle this via ~cleanup.js, but --files runs need it explicitly)
@@ -4279,6 +4285,32 @@ async function _doWorkTestFiles() {
 
   echo(`> _doWorkTestFiles => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `);
   await _runScripts(softwareFiles, allRepoFiles, "Test Files");
+}
+
+/**
+ * OS-folder guard for --files/--preset entries. Filters out scripts that live in an
+ * OS subfolder (e.g. `windows/`, `mac/`, `wsl/`) which doesn't match the current platform,
+ * and logs each filtered entry so the user can see why it was skipped. Mirrors the
+ * `_filterByOsFolders` behavior used by getSoftwareScriptFiles() for full runs, but
+ * accepts user-supplied paths that may or may not include the `software/scripts/` prefix.
+ * @param {string[]} files - Caller-supplied script paths (e.g. `windows/windows-terminal.js`)
+ * @returns {string[]} Files that pass the OS guard for the current platform
+ */
+function _filterFilesByOsGuard(files) {
+  // Build a list of disallowed leading segments (e.g. ["windows/", "mac/"]) for
+  // OS folders whose `is_os_*` flag is NOT set on the current platform.
+  const disallowed = OS_SCRIPT_PATHS.filter(([valid]) => !valid).map(([, scriptPath]) => `${scriptPath.replace("software/scripts/", "")}/`);
+
+  return files.filter((file) => {
+    const norm = file.replace(/^software\/scripts\//, "");
+    const hit = disallowed.find((osDir) => norm.startsWith(osDir));
+    if (hit) {
+      const osName = hit.replace(/\/$/, "");
+      log(`>> Skipped [OS guard]: ${file} — current OS is not '${osName}'`);
+      return false;
+    }
+    return true;
+  });
 }
 
 //////////////////////////////////////////////////////
