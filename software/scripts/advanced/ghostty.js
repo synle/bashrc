@@ -58,8 +58,7 @@ async function _buildConfigContent(isOsMac) {
         quit-after-last-window-closed = true
         keybind = global:cmd+grave_accent=toggle_quick_terminal
         quick-terminal-position = top
-        # Instant open (0 = no slide-in animation).
-        quick-terminal-animation-duration = 0
+        quick-terminal-animation-duration = 0.1
         quick-terminal-screen = mouse
       `
     : "";
@@ -111,14 +110,7 @@ async function _buildConfigContent(isOsMac) {
 
     # ---- Cursor ----
     cursor-style = block
-    cursor-style-blink = false
-
-    # ---- Animation: disable everything we can ----
-    # Skip the cell-dimensions overlay when resizing the window — rarely useful
-    # and just visual noise.
-    resize-overlay = never
-    # No-op when not using custom shaders, but explicit is good.
-    custom-shader-animation = false
+    cursor-style-blink = true
     ${macOnlyBlock}
 
     # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
