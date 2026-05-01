@@ -11,7 +11,7 @@
 export HISTSIZE=80000
 export HISTFILESIZE=80000
 export HISTTIMEFORMAT="[%F %T] "
-export HISTCONTROL=ignoreboth:erasedups       # avoid duplicate entries, commands starting with space, and erase older dupes
+export HISTCONTROL=ignorespace:erasedups      # leading-space suppresses save; erasedups removes older dupes when a new entry is added (so consecutive reruns of the same command — common in test/iteration workflows — bubble to the top instead of being silently dropped by ignoredups)
 shopt -s histappend 2> /dev/null              # append instead of overwrite history file
 shopt -s cmdhist 2> /dev/null                 # save multi-line commands as one entry
 shopt -s cdspell 2> /dev/null                 # auto-correct minor typos in cd directory names
