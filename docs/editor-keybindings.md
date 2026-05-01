@@ -160,7 +160,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 | Key                   | Action              | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | --------------------- | ------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+\`            | Toggle sidebar      |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| `OS_KEY+\`            | Toggle sidebar      |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 | `OS_KEY+shift+\`      | Toggle activity bar |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
 | `ctrl+shift+OS_KEY+\` | Toggle soft wrap    |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 | `` OS_KEY+` ``        | Toggle terminal     |   ✅    |    ❌     |     ❌     | ❌  | ❌  |

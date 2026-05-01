@@ -3,6 +3,9 @@
 [
   {
     "bindings": {
+      // toggle the left dock (project panel / file tree) — matches Sublime's
+      // `toggle_side_bar` and VS Code's `workbench.action.toggleSidebarVisibility`
+      "OS_KEY-\\": "workspace::ToggleLeftDock",
       // toggle soft wrap (matches VS Code/Sublime)
       "ctrl-shift-OS_KEY-\\": "editor::ToggleSoftWrap",
     },
