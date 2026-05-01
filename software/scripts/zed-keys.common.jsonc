@@ -6,8 +6,12 @@
       // toggle the left dock (project panel / file tree) — matches Sublime's
       // `toggle_side_bar` and VS Code's `workbench.action.toggleSidebarVisibility`
       "OS_KEY-\\": "workspace::ToggleLeftDock",
-      // toggle the right dock — matches VS Code's `toggleAuxiliaryBar`
-      "shift-OS_KEY-\\": "workspace::ToggleRightDock",
+      // toggle the right dock — matches VS Code's `toggleAuxiliaryBar`.
+      // We bind `OS_KEY-|` (NOT `shift-OS_KEY-\`) because Zed normalises a
+      // shift+\ keypress to the resulting glyph "|", and the default
+      // `cmd-|` -> `editor::MoveToEnclosingBracket` would otherwise win and
+      // jump to the matching bracket instead.
+      "OS_KEY-|": "workspace::ToggleRightDock",
       // toggle soft wrap (matches VS Code/Sublime)
       "ctrl-shift-OS_KEY-\\": "editor::ToggleSoftWrap",
     },
