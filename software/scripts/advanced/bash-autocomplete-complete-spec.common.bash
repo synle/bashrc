@@ -203,7 +203,9 @@ function __spec_complete() {
     eval expanded_cur="$cur" 2> /dev/null
   fi
 
-  mapfile -t COMPREPLY < <(compgen -W "$opts" -- "$expanded_cur")
+  # Portable equivalent of `mapfile -t COMPREPLY` for bash 3.2 compat (mapfile is bash 4+).
+  COMPREPLY=()
+  while IFS= read -r line; do COMPREPLY+=("$line"); done < <(compgen -W "$opts" -- "$expanded_cur")
 
   # restore tilde prefix in results so readline inserts ~/... not /Users/...
   if [[ "$cur" == \~* && "$expanded_cur" != "$cur" ]]; then
