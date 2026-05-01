@@ -127,7 +127,7 @@ function formatEditorKeybindings(keybindings, osKeyToUse) {
  */
 function _getVSCodePaths() {
   const res = [];
-  const home = process.env.HOME || process.env.USERPROFILE;
+  const home = BASE_HOMEDIR_LINUX;
 
   // 1. Initialize search roots with standard OS locations
   const searchRoots = [
@@ -137,10 +137,18 @@ function _getVSCodePaths() {
     path.join(home, ".var/app/com.visualstudio.code/config"), // Linux Flatpak
   ];
 
-  // 2. Account for WSL Windows mount
-  const windowsRoamingPath = getWindowAppDataRoamingUserPath();
-  if (windowsRoamingPath && fs.existsSync(windowsRoamingPath)) {
-    searchRoots.push(windowsRoamingPath);
+  // 2. Account for WSL Windows mount (gated on is_os_windows — getWindowAppDataRoamingUserPath
+  // calls path.join on getWindowUserBaseDir() which is undefined on non-WSL hosts and would
+  // throw "path argument must be of type string" before the fs.existsSync guard is reached).
+  if (is_os_windows) {
+    try {
+      const windowsRoamingPath = getWindowAppDataRoamingUserPath();
+      if (windowsRoamingPath && fs.existsSync(windowsRoamingPath)) {
+        searchRoots.push(windowsRoamingPath);
+      }
+    } catch (e) {
+      // No Windows host reachable from WSL — skip silently.
+    }
   }
 
   // 3. Execution logic using findPath
