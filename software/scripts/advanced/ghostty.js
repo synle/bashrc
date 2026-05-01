@@ -86,7 +86,7 @@ async function _buildConfigContent(isOsMac) {
     # ---- Window / Behavior ----
     scrollback-limit = ${scrollback}
     mouse-hide-while-typing = true
-    copy-on-select = true
+    copy-on-select = false
     confirm-close-surface = false
     window-padding-x = 6
     window-padding-y = 6
@@ -97,7 +97,7 @@ async function _buildConfigContent(isOsMac) {
     # ---- Splits (focus visibility) ----
     # Aggressive dimming on unfocused splits so the active pane is obvious in
     # both light and dark modes. Default is ~0.7; lower = more contrast.
-    unfocused-split-opacity = 0.4
+    unfocused-split-opacity = 0.65
     # Mid-tone gray fill so unfocused panes are visibly tinted in BOTH modes:
     # in light mode the gray darkens them, in dark mode it lightens them.
     # (Ghostty has no light:/dark: variant for this setting, so we need a
