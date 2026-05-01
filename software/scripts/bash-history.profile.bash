@@ -51,8 +51,11 @@ function fuzzy_history() {
     return 1
   fi
 
+  # Detect bind -x context: bash sets READLINE_LINE in the function env when invoked
+  # via "bind -x". Use "${var+x}" (set-but-empty-safe) instead of "[[ -v ]]" which
+  # requires bash 4.2+ — macOS still ships /bin/bash 3.2.
   local from_bind=0
-  [[ -v READLINE_LINE ]] && from_bind=1
+  [ -n "${READLINE_LINE+x}" ] && from_bind=1
 
   local header
   if ((from_bind)); then
