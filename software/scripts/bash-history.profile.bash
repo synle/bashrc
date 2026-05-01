@@ -49,7 +49,7 @@ function fuzzy_history() {
   selected=$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.bash_history | command grep -v '^#' | awk '!seen[$0]++' | fzf \
     --no-sort --tac --layout=reverse --height=100% --query="$1" \
     --prompt="history> " \
-    --header="fuzzy_history — fzf search over bash history; selection runs on Enter")
+    --header="fuzzy_history - fzf search over bash history; selection runs on Enter")
 
   if [ -n "$selected" ]; then
     echo "$selected"

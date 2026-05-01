@@ -314,7 +314,7 @@ function _fzf_info_line() {
 function fuzzy_recent_files() {
   local VIEW_COMMAND="${1:-}"
   local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="recent files> " \
-    --header="fuzzy_recent_files (Ctrl+Y) — recently opened files" \
+    --header="(Ctrl+Y) - recently opened files" \
     --preview='batcat --paging=never --style=plain --color=always {} 2>/dev/null || command cat {} 2>/dev/null' --preview-window=right:60%)
   if [ -n "$OUT" ] && [ -f "$OUT" ]; then
     if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
@@ -364,7 +364,7 @@ function add_bookmark_dir() {
 function fuzzy_favorite_command() {
   local cmd
   cmd=$(command cat "$BOOKMARK_PATH" 2> /dev/null | sort -u | fzf --prompt="bookmark> " \
-    --header="fuzzy_favorite_command (Ctrl+B) — bookmarked commands" \
+    --header="(Ctrl+B) - bookmarked commands" \
     --preview='cmd={};word=$(echo "$cmd" | awk "{print \$1}"); type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"' \
     --preview-window=right:40% \
     --bind 'f5:reload(command cat "$BOOKMARK_PATH" 2>/dev/null | sort -u)')
@@ -393,7 +393,7 @@ function fuzzy_cd() {
   local OUT=$(_fuzzy_cd_list "$dir" | awk -F'\t' '!seen[$2]++' | fzf +m \
     --delimiter=$'\t' --with-nth=1,2 --nth=2 \
     --prompt="cd> " \
-    --header="fuzzy_cd (Ctrl+P) — ★ recent folders, plain = under ${abs_dir}" \
+    --header="(Ctrl+P) - cd; ★ recent folders, plain = subfolders under ${abs_dir}" \
     --preview='ls -Cp --color=always {2} 2>/dev/null' --preview-window=right:40% \
     --bind "f5:reload(_fuzzy_cd_list '$dir' | awk -F'\t' '!seen[\$2]++')")
   if [ -n "$OUT" ]; then
@@ -414,7 +414,7 @@ function fuzzy_edit() {
   local abs_dir
   abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
   local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
-    --header="fuzzy_edit (Ctrl+T) — files under ${abs_dir}" \
+    --header="(Ctrl+T) - edit files under ${abs_dir}" \
     --bind "f5:reload(_fuzzy_list_all '$dir' 'paths' '' 10)")
 
   if [ -z "$OUT" ]; then

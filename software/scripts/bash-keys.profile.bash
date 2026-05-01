@@ -97,7 +97,7 @@ if [[ $- == *i* ]]; then
       selected=$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.bash_history | command grep -v '^#' | $(type -P tac &> /dev/null && echo tac || echo 'tail -r') | awk 'NF && !seen[$0]++' | fzf \
         --height=100% --reverse --tac +s \
         --prompt="history> " \
-        --header="__fzf_history__ (Ctrl+R) — fzf history search; selection placed on prompt for edit")
+        --header="(Ctrl+R) - fzf history search; selection placed on prompt for edit")
       if [ -n "$selected" ]; then
         READLINE_LINE="$selected"
         READLINE_POINT=${#selected}
