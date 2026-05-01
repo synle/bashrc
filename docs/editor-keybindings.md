@@ -20,6 +20,30 @@ All repo source files under `software/scripts/` unless noted.
 | tmux              | `advanced/tmux.config`                                                                  | `~/.tmux.conf`                                                                                                                                         |
 | Ghostty           | `advanced/ghostty-keys.common.jsonc`                                                    | `~/.config/ghostty/config` (mac + linux)                                                                                                               |
 
+## Editor-Specific Gotchas
+
+### Zed normalises shifted glyph keys before keymap dispatch
+
+Zed resolves a chord to the **shifted glyph** of the key, not to `shift-<unshifted>`. So a binding written as `shift-cmd-\` is never matched — Zed sees the keypress as `cmd-|` (because `shift+\` produces `|` on a US keyboard) and falls through to whatever default is bound to `cmd-|`. This bit us twice on the `\` family before we figured it out.
+
+**Rule of thumb when binding a shifted-symbol chord in `software/scripts/zed-keys.common.jsonc`:** write the resulting glyph, not the base key + shift modifier. Same physical chord on the user's keyboard, but the keymap actually wins.
+
+| Physical chord on US keyboard | ❌ Won't match in Zed | ✅ Matches in Zed |
+| ----------------------------- | --------------------- | ----------------- |
+| `cmd+shift+\`                 | `shift-cmd-\`         | `cmd-\|`          |
+| `cmd+shift+ctrl+\`            | `ctrl-shift-cmd-\`    | `ctrl-cmd-\|`     |
+| `cmd+shift+/`                 | `shift-cmd-/`         | `cmd-?`           |
+| `cmd+shift+1`                 | `shift-cmd-1`         | `cmd-!`           |
+| `cmd+shift+,`                 | `shift-cmd-,`         | `cmd-<`           |
+| `cmd+shift+.`                 | `shift-cmd-,`         | `cmd->`           |
+| `cmd+shift+;`                 | `shift-cmd-;`         | `cmd-:`           |
+
+This only applies to **shifted-symbol** chords. Plain letters (e.g. `cmd+shift+s`) work fine with `shift-cmd-s` because `shift+s` doesn't change the resolved key on US layouts. VS Code, Sublime, and Claude Code do not have this normalisation — only Zed.
+
+If a Zed binding silently does nothing or fires a Zed default instead of your action, the first thing to check is whether the chord includes shift over a non-letter key.
+
+---
+
 ## Standard Convention
 
 The target keybindings this repo aims for. Each section below shows the convention followed by an implementation matrix. **Empty cells are gaps / TODOs.**
