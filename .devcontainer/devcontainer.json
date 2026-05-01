@@ -24,11 +24,11 @@
         "wmaurer.change-case",
         "nicoespeon.abracadabra",
         "formulahendry.code-runner",
+        "dakara.transformer",
         "redhat.vscode-yaml",
         "wholroyd.jinja",
         "clinyong.vscode-css-modules",
-        "andrejunges.handlebars",
-        "dakara.transformer"
+        "andrejunges.handlebars"
       ]
     }
   }
