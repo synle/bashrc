@@ -111,8 +111,9 @@ async function _buildConfigContent(isOsMac) {
     split-divider-color = #0969da
 
     # ---- Cursor ----
+    # Steady (non-blinking) block — no animation, easier on the eyes.
     cursor-style = block
-    cursor-style-blink = true
+    cursor-style-blink = false
     ${macOnlyBlock}
 
     # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
