@@ -28,9 +28,10 @@
 #                 Companion to the `update` alias which only handles OS pkg managers.
 #
 # --- Git ---
-# blame         — git blame alternative: per-line "<line> | <date> | <author> |
-#                 <short sha> | <commit summary>" for each input file, with a
-#                 file-name header before each.
+# blame         — git blame alternative: per-line "<line>  #// <date> <sha>
+#                 <author>: <summary>" for each input file, with a file-name
+#                 header before each. The "#//" prefix doubles as a shell ("#")
+#                 and C-family ("//") line-comment so the row stays paste-safe.
 #
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
@@ -264,13 +265,14 @@ function update_lang() {
 ################################################################################
 # ---- Git ----
 ################################################################################
-# blame: git blame alternative — print per-line "<line> | <date> | <author> | <short sha> | <commit summary>"
+# blame: git blame alternative — print per-line "<line>  #// <date> <sha> <author>: <summary>"; the "#//" prefix is both a shell and C-family line-comment so the row is paste-safe in either context
 function blame() {
   if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
   Output: prints '==== <file> ====' header, then one row per line as
-          <line content> | <YYYY-MM-DD> | <author> | <short sha> | <commit summary>"
+          <line content>  #// <YYYY-MM-DD> <short sha> <author>: <commit summary>
+          The '#//' prefix is both a shell and C-family line-comment so the row is paste-safe in either context."
     return
   fi
 
@@ -325,7 +327,7 @@ function blame() {
           close(cmd)
           date_cache[sha] = date
         }
-        printf "%s | %s | %s | %s | %s\n", line, date, author, sha, summary
+        printf "%s  #// %s %s %s: %s\n", line, date, sha, author, summary
         header = 0
       }
     '
