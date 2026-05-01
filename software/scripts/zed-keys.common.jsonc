@@ -3,17 +3,22 @@
 [
   {
     "bindings": {
+      // NOTE on `\` vs `|` in this keymap:
+      // Zed normalises a `shift+\` keypress to the resulting glyph "|" before
+      // dispatching, so any user binding written as `shift-OS_KEY-\` is never
+      // matched and the corresponding default (e.g.
+      // `cmd-|` -> `editor::MoveToEnclosingBracket`) wins instead. To override
+      // shifted-backslash chords, write them with `|` directly.
+      // The PHYSICAL chord is unchanged — on a US keyboard `cmd+shift+\` and
+      // `cmd+|` are the same keypress.
+
       // toggle the left dock (project panel / file tree) — matches Sublime's
       // `toggle_side_bar` and VS Code's `workbench.action.toggleSidebarVisibility`
       "OS_KEY-\\": "workspace::ToggleLeftDock",
-      // toggle the right dock — matches VS Code's `toggleAuxiliaryBar`.
-      // We bind `OS_KEY-|` (NOT `shift-OS_KEY-\`) because Zed normalises a
-      // shift+\ keypress to the resulting glyph "|", and the default
-      // `cmd-|` -> `editor::MoveToEnclosingBracket` would otherwise win and
-      // jump to the matching bracket instead.
+      // toggle the right dock — matches VS Code's `toggleAuxiliaryBar`
       "OS_KEY-|": "workspace::ToggleRightDock",
-      // toggle soft wrap (matches VS Code/Sublime)
-      "ctrl-shift-OS_KEY-\\": "editor::ToggleSoftWrap",
+      // toggle soft wrap — matches VS Code/Sublime's `ctrl+shift+OS_KEY+\`
+      "ctrl-OS_KEY-|": "editor::ToggleSoftWrap",
     },
   },
 ]
