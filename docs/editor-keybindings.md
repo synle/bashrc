@@ -212,7 +212,8 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+'`          | Split horiz (alt)           |        ✅        |        ✅         |     ✅     |
 | `OS_KEY+arrow`      | Navigate panes              |        ✅        |        ✅         |     ✅     |
 | `ctrl+OS_KEY+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+arrow) | ✅ (shift) |
-| `OS_KEY+\`          | Toggle UI / fullscreen pane |        ✅        |        ✅         | ✅ (zoom)  |
+| `OS_KEY+\`          | Toggle UI (tab bar)         |        ✅        |        ❌         |     ✅     |
+| `OS_KEY+shift+\`    | Toggle split zoom           |        ❌        |        ✅         |     ✅     |
 | `F11`               | Fullscreen                  |        ✅        |        ✅         |     ✅     |
 
 ### Text & Search

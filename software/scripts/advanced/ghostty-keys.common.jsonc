@@ -36,7 +36,7 @@
   { "key": "OS_KEY+shift+down", "action": "resize_split:down,10" },
   { "key": "OS_KEY+shift+left", "action": "resize_split:left,10" },
   { "key": "OS_KEY+shift+right", "action": "resize_split:right,10" },
-  { "key": "OS_KEY+\\", "action": "toggle_split_zoom" },
+  { "key": "OS_KEY+shift+\\", "action": "toggle_split_zoom" },
 
   // ---- Font Zoom ----
   { "key": "OS_KEY+equal", "action": "increase_font_size:1" },
@@ -50,4 +50,8 @@
 
   // ---- View ----
   { "key": "f11", "action": "toggle_fullscreen" },
+  // OS_KEY+\ toggles the title bar / tab bar (matches Windows Terminal's
+  // "show/hide tab bar" gesture). With macos-titlebar-style=tabs the tabs live
+  // in the title bar, so this hides both together.
+  { "key": "OS_KEY+\\", "action": "toggle_window_decorations" },
 ]

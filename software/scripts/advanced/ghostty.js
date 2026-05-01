@@ -44,6 +44,25 @@ async function _buildConfigContent(isOsMac) {
   const scrollback = EDITOR_CONFIGS.terminalScrollback;
   const bindings = await _getKeyBindings(isOsMac);
 
+  // macOS-only block: option-as-alt is required for readline word-jumps, the
+  // tabs-in-titlebar style matches modern Mac apps, and a cmd+grave quick
+  // terminal gives a Quake-style drop-down. Skipped on Linux where most of
+  // these settings either don't apply or use a different keybind.
+  const macOnlyBlock = isOsMac
+    ? code`
+
+        # ---- macOS-specific ----
+        macos-option-as-alt = true
+        macos-titlebar-style = tabs
+        macos-non-native-fullscreen = visible-menu
+        quit-after-last-window-closed = true
+        keybind = global:cmd+grave_accent=toggle_quick_terminal
+        quick-terminal-position = top
+        quick-terminal-animation-duration = 0.1
+        quick-terminal-screen = mouse
+      `
+    : "";
+
   return code`
     # ---- Typography ----
     font-family = ${fontFamily}
@@ -56,6 +75,14 @@ async function _buildConfigContent(isOsMac) {
     # GitHub's high-contrast pair: maximum readability in either mode.
     theme = light:GitHub Light High Contrast,dark:GitHub Dark High Contrast
 
+    # ---- Shell integration ----
+    # Auto-detect bash/zsh/fish; turn on cursor-shape changes per shell mode,
+    # sudo askpass integration, and dynamic window title from the shell.
+    shell-integration = detect
+    shell-integration-features = cursor,sudo,title
+    # New tabs/splits/windows open in the same cwd as the active pane.
+    working-directory = inherit
+
     # ---- Window / Behavior ----
     scrollback-limit = ${scrollback}
     mouse-hide-while-typing = true
@@ -63,7 +90,23 @@ async function _buildConfigContent(isOsMac) {
     confirm-close-surface = false
     window-padding-x = 6
     window-padding-y = 6
+    # Even padding on both sides of a split, regardless of split orientation.
+    window-padding-balance = true
     window-save-state = always
+    audible-bell = false
+
+    # ---- Splits (focus visibility) ----
+    # Aggressive dimming on unfocused splits so the active pane is obvious in
+    # both light and dark modes. Default is ~0.7; lower = more contrast.
+    unfocused-split-opacity = 0.55
+
+    # ---- Cursor ----
+    cursor-style = block
+    cursor-style-blink = true
+    # Bold text uses the bold weight (already set above) — don't ALSO flip to
+    # the bright ANSI palette, that double-emphasizes everything.
+    bold-is-bright = false
+    ${macOnlyBlock}
 
     # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
     ${_renderKeybindLines(bindings)}
