@@ -27,6 +27,11 @@
 #                 (rustup, cargo-update, npm, pnpm, yarn, bun, deno, uv, pip).
 #                 Companion to the `update` alias which only handles OS pkg managers.
 #
+# --- Git ---
+# blame         — git blame alternative: per-line "<line> | <date> | <author> |
+#                 <short sha> | <commit summary>" for each input file, with a
+#                 file-name header before each.
+#
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
 # real command. Sourced AFTER spec-based autocomplete.
@@ -254,4 +259,75 @@ function update_lang() {
   fi
 
   echo ">>> update_lang done"
+}
+
+################################################################################
+# ---- Git ----
+################################################################################
+# blame: git blame alternative — print per-line "<line> | <date> | <author> | <short sha> | <commit summary>"
+function blame() {
+  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "blame: git blame alternative — per-line history for each input file
+  Usage: blame <file> [<file> ...]
+  Output: prints '==== <file> ====' header, then one row per line as
+          <line content> | <YYYY-MM-DD> | <author> | <short sha> | <commit summary>"
+    return
+  fi
+
+  if ! type -P git &> /dev/null; then
+    echo "blame: git is not installed" >&2
+    return 1
+  fi
+
+  local file dir
+  for file in "$@"; do
+    if [ ! -f "$file" ]; then
+      echo "blame: not a file: $file" >&2
+      continue
+    fi
+    dir=$(dirname -- "$file")
+    if ! git -C "$dir" rev-parse --git-dir &> /dev/null; then
+      echo "blame: $file is not in a git repo" >&2
+      continue
+    fi
+    echo "==== $file ===="
+    git blame --line-porcelain -- "$file" 2> /dev/null | command awk '
+      # SHA header line: "<40+ hex sha> <orig-line> <final-line> [num-lines]" — only first token of a per-line block
+      /^[0-9a-f]{40,} / && header == 0 {
+        sha = substr($1, 1, 7)
+        header = 1
+        next
+      }
+      # author <name> (note: author-mail / author-time / author-tz have a hyphen, so they will not match)
+      /^author / {
+        sub(/^author /, "")
+        author = $0
+        next
+      }
+      /^author-time / {
+        atime = $2
+        next
+      }
+      /^summary / {
+        sub(/^summary /, "")
+        summary = $0
+        next
+      }
+      # the actual source line is prefixed by a single TAB
+      /^\t/ {
+        line = substr($0, 2)
+        # cache date per sha — BSD (date -r) and GNU (date -d @) both covered by the || fallback
+        if (sha in date_cache) {
+          date = date_cache[sha]
+        } else {
+          cmd = "date -r " atime " +%Y-%m-%d 2>/dev/null || date -d @" atime " +%Y-%m-%d"
+          cmd | getline date
+          close(cmd)
+          date_cache[sha] = date
+        }
+        printf "%s | %s | %s | %s | %s\n", line, date, author, sha, summary
+        header = 0
+      }
+    '
+  done
 }
