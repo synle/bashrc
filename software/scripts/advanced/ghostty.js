@@ -48,9 +48,13 @@ async function _buildConfigContent(isOsMac) {
     # ---- Typography ----
     font-family = ${fontFamily}
     font-size = ${fontSize}
+    # Render the regular face in bold by default — matches the user's "heavy" look.
+    font-style = bold
+    font-style-italic = bold italic
 
-    # ---- Theme (Dracula — matches Terminator) ----
-    theme = Dracula
+    # ---- Theme (auto-switch with OS appearance, high-contrast both ways) ----
+    # GitHub's high-contrast pair: maximum readability in either mode.
+    theme = light:GitHub Light High Contrast,dark:GitHub Dark High Contrast
 
     # ---- Window / Behavior ----
     scrollback-limit = ${scrollback}
