@@ -76,10 +76,13 @@ if [[ $- == *i* ]]; then
   # Ctrl+L — kill input line first, then clear the screen. Readline can't chain native
   # commands in one bind, so use bind -x with a function. Order: discard first so the
   # prompt redraws empty after clear (no flash of typed text on a freshly-cleared screen).
+  # Use ANSI escapes directly instead of the `clear` binary so this works in minimal
+  # environments (devcontainers, busybox, mingw64) where /usr/bin/clear isn't installed.
+  # \033[H = cursor home, \033[2J = clear visible screen, \033[3J = clear scrollback.
   function _clear_and_discard_line() {
     READLINE_LINE=""
     READLINE_POINT=0
-    command clear
+    printf '\033[H\033[2J\033[3J'
   }
   bind -x '"\C-l": _clear_and_discard_line'
 

@@ -138,6 +138,8 @@ bash run.sh --dryrun                 # Show what would change without writing
 bash run.sh --remove --files="fzf.js" # Remove a script's config (runs undoWork)
 ```
 
+**When sharing a `bash run.sh` command with the user, offer both forms when applicable:** the dedicated `--files=<script>` target (when one specific script is clearly the right scope) AND a matching `--preset=<name>` invocation (when the change belongs to a preset bundle). Example: after editing `bash-keys.profile.bash`, suggest both `bash run.sh --files=bash-keys` and `bash run.sh --preset=terminal` so the user can pick the narrower or broader refresh. If only one form makes sense (e.g. the script isn't in any preset, or the change spans a whole preset), share just that one.
+
 ## Architecture
 
 For the full architecture guide (execution pipeline, data flow diagrams, layer breakdown, script system, adding new scripts, etc.), see **[DEV.md](DEV.md)**.
