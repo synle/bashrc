@@ -19,11 +19,10 @@
 #
 # --- Shortcuts ---
 # Ctrl+A/E — beginning/end of line
-# Ctrl+L   — clear screen
+# Ctrl+L   — clear screen AND kill input line (unix-line-discard + clear)
 # Ctrl+R   — fzf history search (places command on prompt)
-# Ctrl+T   — fuzzy edit with vim
-# Ctrl+Y   — fuzzy edit (default editor)
-# Ctrl+O   — fuzzy recent files (default editor)
+# Ctrl+T   — fuzzy edit (default editor) — pick file under cwd, open with default editor
+# Ctrl+Y   — fuzzy recent files (default editor)
 # Ctrl+P   — fuzzy cd to directory
 # Ctrl+B   — fuzzy favorite command picker
 # Ctrl+G   — fuzzy git log browser
@@ -67,14 +66,22 @@ if [[ $- == *i* ]]; then
   # Shortcuts
   bind '"\C-a": beginning-of-line'          # Ctrl+A — jump to beginning of line
   bind '"\C-e": end-of-line'                # Ctrl+E — jump to end of line
-  bind '"\C-l": clear-screen'               # Ctrl+L — clear screen
   bind '"\C-x": edit-and-execute-command'   # Ctrl+X — open command in $EDITOR
-  bind '"\C-t": "fuzzy_edit vim\r"'         # Ctrl+T — fuzzy edit with vim
-  bind '"\C-y": "fuzzy_edit\r"'             # Ctrl+Y — fuzzy edit (default editor)
-  bind '"\C-o": "fuzzy_recent_files\r"'     # Ctrl+O — fuzzy recent files (default editor)
+  bind '"\C-t": "fuzzy_edit\r"'             # Ctrl+T — fuzzy edit (default editor)
+  bind '"\C-y": "fuzzy_recent_files\r"'     # Ctrl+Y — fuzzy recent files (default editor)
   bind '"\C-p": "fuzzy_cd\r"'               # Ctrl+P — fuzzy cd to directory
   bind '"\C-b": "fuzzy_favorite_command\r"' # Ctrl+B — fuzzy favorite command picker
   bind '"\C-g": "fuzzy_git_show\r"'         # Ctrl+G — fuzzy git log browser
+
+  # Ctrl+L — kill input line first, then clear the screen. Readline can't chain native
+  # commands in one bind, so use bind -x with a function. Order: discard first so the
+  # prompt redraws empty after clear (no flash of typed text on a freshly-cleared screen).
+  function _clear_and_discard_line() {
+    READLINE_LINE=""
+    READLINE_POINT=0
+    command clear
+  }
+  bind -x '"\C-l": _clear_and_discard_line'
 
   # ---- bind -x here (requires bash 5+) ----
   # bind -x executes a shell function directly instead of injecting keystrokes via

@@ -136,7 +136,7 @@ function watch() {
 # _cp_node_helpers: prints shared Node.js helper functions to stdout for piping to node.
 # Used by cpsync, cpfiles, and dedup. Each pipes this + its own logic into a single node process.
 function _cp_node_helpers() {
-  cat << '_HELPERS_EOF'
+  command cat << '_HELPERS_EOF'
 /** Shared helpers for cp utility functions. */
 const fs = require('fs');
 const path = require('path');
@@ -256,7 +256,7 @@ function cpsync() {
   fi
   {
     _cp_node_helpers
-    cat << 'CPSYNC_NODE'
+    command cat << 'CPSYNC_NODE'
 /** Smart file/dir copy with progress, ETA, and skip-if-unchanged logic. */
 const src = process.env.CPSYNC_SRC;
 const dest = process.env.CPSYNC_DEST;
@@ -578,7 +578,7 @@ function cpfiles() {
   local file_list="/tmp/_cpfiles_list_$$"
   {
     _cp_node_helpers
-    cat << 'CPFILES_NODE'
+    command cat << 'CPFILES_NODE'
 const absSrc = fs.realpathSync(process.env.CPFILES_SRC);
 const pattern = process.env.CPFILES_PATTERN;
 
@@ -652,7 +652,7 @@ function dedup() {
   abs_target=$(cd "$target" && command pwd)
   {
     _cp_node_helpers
-    cat << 'DEDUP_NODE'
+    command cat << 'DEDUP_NODE'
 /** Moves duplicate files to a recycle bin, keeping the newest original. */
 const targetDir = process.env.DEDUP_PATH;
 const recursive = isTruthy(process.env.DEDUP_RECURSIVE);
@@ -927,7 +927,7 @@ function pack_text() {
   # Step 2: node reads the pre-filtered list and encodes each file. Node does
   # only the encoding; all file selection / exclusion lives in bash above.
   {
-    cat << 'PACK_TEXT_NODE'
+    command cat << 'PACK_TEXT_NODE'
 /** Encodes each file in PACK_LIST as a [gzip+base64,mode=0NNN] block. */
 const fs = require('fs');
 const path = require('path');
@@ -1002,7 +1002,7 @@ PACK_TEXT_NODE
       # outside any pack block.
       command cat "$output"
     else
-      cat "$tmp_packed"
+      command cat "$tmp_packed"
       rm -f "$tmp_packed"
     fi
     ;;
@@ -1075,22 +1075,22 @@ function unpack_text() {
   local input="" dest="." stdin_tmp=""
   if [ "${1:-}" = "-" ]; then
     stdin_tmp="/tmp/_unpack_text_stdin_${$}_${RANDOM}"
-    cat > "$stdin_tmp"
+    command cat > "$stdin_tmp"
     input="$stdin_tmp"
     dest="${2:-.}"
   elif [ $# -eq 0 ] && [ ! -t 0 ]; then
     stdin_tmp="/tmp/_unpack_text_stdin_${$}_${RANDOM}"
-    cat > "$stdin_tmp"
+    command cat > "$stdin_tmp"
     input="$stdin_tmp"
     dest="."
   elif [ -z "${1:-}" ] && [ ! -t 0 ]; then
     stdin_tmp="/tmp/_unpack_text_stdin_${$}_${RANDOM}"
-    cat > "$stdin_tmp"
+    command cat > "$stdin_tmp"
     input="$stdin_tmp"
     dest="${2:-.}"
   elif [ $# -ge 1 ] && [ ! -t 0 ] && [ ! -f "$1" ]; then
     stdin_tmp="/tmp/_unpack_text_stdin_${$}_${RANDOM}"
-    cat > "$stdin_tmp"
+    command cat > "$stdin_tmp"
     input="$stdin_tmp"
     dest="${1:-.}"
   else
@@ -1149,7 +1149,7 @@ function unpack_text() {
   # UNPACK_MODE. Parser, status-noise filter, and per-block decoder are inlined
   # here so this is the only Node.js source for the unpack/view side.
   {
-    cat << 'UNPACK_TEXT_NODE'
+    command cat << 'UNPACK_TEXT_NODE'
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');

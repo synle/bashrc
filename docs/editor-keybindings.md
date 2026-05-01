@@ -318,12 +318,11 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `ctrl+right`           | Word forward                |  ✅   | ✅ (option+right) |
 | `up` / `down`          | History search (prefix)     |  ✅   |        ✅         |
 | `ctrl+r`               | Fzf history search          |  ✅   |        ✅         |
-| `ctrl+t`               | Fuzzy edit (vim)            |  ✅   |        ✅         |
-| `ctrl+y`               | Fuzzy edit (default editor) |  ✅   |        ✅         |
-| `ctrl+o`               | Fuzzy recent files          |  ✅   |        ✅         |
+| `ctrl+t`               | Fuzzy edit (default editor) |  ✅   |        ✅         |
+| `ctrl+y`               | Fuzzy recent files          |  ✅   |        ✅         |
 | `ctrl+p`               | Fuzzy cd                    |  ✅   |        ✅         |
 | `ctrl+b`               | Favorite command picker     |  ✅   |        ✅         |
 | `ctrl+g`               | Git log browser             |  ✅   |        ✅         |
 | `ctrl+n`               | Make-component scaffold     |  ✅   |        ✅         |
 | `ctrl+x`               | Open in $EDITOR             |  ✅   |        ✅         |
-| `ctrl+l`               | Clear screen                |  ✅   |        ✅         |
+| `ctrl+l`               | Clear screen + kill input   |  ✅   |        ✅         |

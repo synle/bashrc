@@ -9,7 +9,7 @@
 ################################################################################
 _BASHRC_DEBUG_DIR="/tmp/synle/bashrc"
 if [ -f "$_BASHRC_DEBUG_DIR/debug" ]; then
-  _debug_val=$(cat "$_BASHRC_DEBUG_DIR/debug" 2> /dev/null)
+  _debug_val=$(command cat "$_BASHRC_DEBUG_DIR/debug" 2> /dev/null)
   case "$_debug_val" in
   1 | true | TRUE | True)
     set -x
@@ -54,8 +54,8 @@ export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
 ################################################################################
 # ---- Path / Action Helpers ----
 # Defined here in profile-core (not profile-advanced) so any partial sourced
-# later — bash-fzf's view_file, editor-launchers' run_editor, the cat wrapper,
-# etc. — can rely on these being defined when their function bodies execute.
+# later — bash-fzf's view_file, editor-launchers' run_editor, etc. — can
+# rely on these being defined when their function bodies execute.
 ################################################################################
 
 # to_windows_path <unix_path> - Convert a unix path to a Windows-style mixed-slash path
@@ -83,7 +83,7 @@ function to_windows_path() {
 #   cd "<resolved_dir>"                  # only on WSL when the resolved path differs
 #   ====================================
 #
-# Used by cat (wrapper), view_file, fuzzy_edit, fuzzy_cd, run_editor — single source
+# Used by view_file, fuzzy_edit, fuzzy_cd, run_editor — single source
 # of truth for the format. Always prefer this over hand-rolling echo blocks.
 function print_action_summary() {
   local target="$1"

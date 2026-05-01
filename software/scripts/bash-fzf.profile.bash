@@ -31,6 +31,8 @@ export FZF_DEFAULT_OPTS="
   --bind 'ctrl-right:preview-page-down'
   --bind 'ctrl-up:preview-up'
   --bind 'ctrl-down:preview-down'
+  --bind 'ctrl-f:page-down'
+  --bind 'ctrl-b:page-up'
   --bind 'ctrl-\\:toggle-preview'
 "
 
@@ -311,7 +313,8 @@ function _fzf_info_line() {
 # fzf picker for recently opened files — opens selected file with view_file or optional editor arg
 function fuzzy_recent_files() {
   local VIEW_COMMAND="${1:-}"
-  local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="Recent Files> " \
+  local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="recent files> " \
+    --header="fuzzy_recent_files (Ctrl+Y) — recently opened files" \
     --preview='batcat --paging=never --style=plain --color=always {} 2>/dev/null || command cat {} 2>/dev/null' --preview-window=right:60%)
   if [ -n "$OUT" ] && [ -f "$OUT" ]; then
     if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
@@ -347,7 +350,7 @@ function add_bookmark() {
   local content
   content=$({
     echo "$1"
-    cat "$BOOKMARK_PATH" 2> /dev/null
+    command cat "$BOOKMARK_PATH" 2> /dev/null
   } | sort -u)
   echo "$content" > "$BOOKMARK_PATH"
 }
@@ -360,10 +363,11 @@ function add_bookmark_dir() {
 # Ctrl+B — fuzzy favorite command picker
 function fuzzy_favorite_command() {
   local cmd
-  cmd=$(cat "$BOOKMARK_PATH" 2> /dev/null | sort -u | fzf --prompt="Bookmarks> " \
+  cmd=$(command cat "$BOOKMARK_PATH" 2> /dev/null | sort -u | fzf --prompt="bookmark> " \
+    --header="fuzzy_favorite_command (Ctrl+B) — bookmarked commands" \
     --preview='cmd={};word=$(echo "$cmd" | awk "{print \$1}"); type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"' \
     --preview-window=right:40% \
-    --bind 'f5:reload(cat "$BOOKMARK_PATH" 2>/dev/null | sort -u)')
+    --bind 'f5:reload(command cat "$BOOKMARK_PATH" 2>/dev/null | sort -u)')
 
   if [ -n "$cmd" ]; then
     echo "### Command Selected from Bookmarks ###"
@@ -374,18 +378,26 @@ function fuzzy_favorite_command() {
 }
 
 # ---- File related Fzf Helper Functions ----
-# Ctrl+P — fzf cd picker (recent paths on top, then folders)
+# Ctrl+P — fzf cd picker (PWD subfolders first, then recent folders marked with ★)
+# Each line is "<marker>\t<path>"; fzf shows both columns but searches only the path
+# (--nth=2). Selection extracts the path via "${OUT##*$'\t'}".
 function _fuzzy_cd_list() {
   local dir="${1:-.}"
-  _recent_paths 2> /dev/null
-  _fuzzy_list_all "$dir" "folders" "" 10
+  _fuzzy_list_all "$dir" "folders" "" 10 | awk '{print "  \t" $0}'
+  _recent_folders 2> /dev/null | awk '{print "★ \t" $0}'
 }
 function fuzzy_cd() {
   local dir="${1:-.}"
-  local OUT=$(_fuzzy_cd_list "$dir" | awk '!seen[$0]++' | fzf +m --prompt="Paths> " \
-    --preview='ls -Cp --color=always {} 2>/dev/null' --preview-window=right:40% \
-    --bind "f5:reload(_fuzzy_cd_list '$dir' | awk '!seen[\$0]++')")
+  local abs_dir
+  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
+  local OUT=$(_fuzzy_cd_list "$dir" | awk -F'\t' '!seen[$2]++' | fzf +m \
+    --delimiter=$'\t' --with-nth=1,2 --nth=2 \
+    --prompt="cd> " \
+    --header="fuzzy_cd (Ctrl+P) — ★ recent folders, plain = under ${abs_dir}" \
+    --preview='ls -Cp --color=always {2} 2>/dev/null' --preview-window=right:40% \
+    --bind "f5:reload(_fuzzy_cd_list '$dir' | awk -F'\t' '!seen[\$2]++')")
   if [ -n "$OUT" ]; then
+    OUT="${OUT##*$'\t'}"
     if [ -d "$OUT" ]; then
       print_action_summary "$OUT"
       cd "$OUT"
@@ -399,7 +411,10 @@ function fuzzy_cd() {
 function fuzzy_edit() {
   local VIEW_COMMAND="$1"
   local dir="${2:-.}"
-  local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="Files> " \
+  local abs_dir
+  abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
+  local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
+    --header="fuzzy_edit (Ctrl+T) — files under ${abs_dir}" \
     --bind "f5:reload(_fuzzy_list_all '$dir' 'paths' '' 10)")
 
   if [ -z "$OUT" ]; then

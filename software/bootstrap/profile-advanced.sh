@@ -97,7 +97,7 @@ function _prune_recents() {
 # usage: echo "entry" | _prepend_recents <file> <max>
 function _prepend_recents() {
   local file="$1" max="$2" tmp="$1.tmp"
-  cat - "$file" 2> /dev/null | awk '!seen[$0]++' | head -n "$max" > "$tmp"
+  command cat - "$file" 2> /dev/null | awk '!seen[$0]++' | head -n "$max" > "$tmp"
   mv "$tmp" "$file"
 }
 
@@ -120,7 +120,7 @@ _RECENT_FOLDERS_MAX=100
 # reads the folders file, removes entries that no longer exist, and outputs the cleaned list
 function _recent_folders() {
   _prune_recents "$_RECENT_FOLDERS_FILE" -d
-  cat "$_RECENT_FOLDERS_FILE"
+  command cat "$_RECENT_FOLDERS_FILE"
 }
 
 # prepends the current directory to the folders file (deduped, capped at _RECENT_FOLDERS_MAX)
@@ -166,7 +166,7 @@ _RECENT_FILES_MAX=100
 # reads the files list, removes entries that no longer exist, and outputs the cleaned list
 function _recent_files() {
   _prune_recents "$_RECENT_FILES_FILE" -f
-  cat "$_RECENT_FILES_FILE"
+  command cat "$_RECENT_FILES_FILE"
 }
 
 # prepends the given file path(s) to the recent files list (deduped, capped at _RECENT_FILES_MAX)
@@ -345,33 +345,6 @@ type -P fd &> /dev/null && alias f='fd'
 alias bs="bash"
 alias vi="vim"
 alias v="vim"
-# `bat` is guaranteed on PATH by ensure_binary_alias (apt installs as batcat;
-# we symlink $HOME/.local/bin/bat). The cat wrapper prints an action summary
-# (PWD + cd + cat command) before showing the file content — only when stdout
-# is a terminal AND there is exactly one path arg. Skipped in pipes so we
-# don't pollute downstream commands. Falls back to `command cat` if bat is
-# missing (fresh box, no _full-setup run yet).
-function cat() {
-  local target=""
-  local -a flags=()
-  local path_count=0
-  for arg in "$@"; do
-    if [ -e "$arg" ]; then
-      target="$arg"
-      path_count=$((path_count + 1))
-    else
-      flags+=("$arg")
-    fi
-  done
-  if [ -t 1 ] && [ "$path_count" = "1" ]; then
-    print_action_summary "$target" cat "${flags[@]}"
-  fi
-  if type -P bat &> /dev/null; then
-    command bat --paging=never --style=plain "$@"
-  else
-    command cat "$@"
-  fi
-}
 alias c="command cat"
 # ---- Aliases: Git ----
 # git wrapper: invalidates branch cache on state-changing commands
@@ -449,7 +422,7 @@ function pwd2() {
 
 # to_windows_path / print_action_summary live in profile-core.sh so they are
 # guaranteed available before any partial sourced via SOURCE markers tries to call
-# them (cat wrapper above, view_file in bash-fzf, run_editor in editor-launchers).
+# them (view_file in bash-fzf, run_editor in editor-launchers).
 
 ################################################################################
 # ---- Diff (file diff or git hash compare) ----
@@ -830,7 +803,7 @@ function rainbow_print() {
     colors=("${rainbow_colors[@]}")
   fi
 
-  local input="${1:-$(cat -)}"
+  local input="${1:-$(command cat -)}"
   local color_count=${#colors[@]}
 
   for ((i = 0; i < ${#input}; i++)); do
@@ -1345,7 +1318,7 @@ function _clipboard_save() {
   if [ -n "$_COPY_CMD" ]; then
     tee "$clip_file" | eval "$_COPY_CMD"
   else
-    cat > "$clip_file"
+    command cat > "$clip_file"
   fi
   ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | tail -n +$((_CLIPBOARD_MAX + 1)) | while read -r f; do
     rm -f "$_CLIPBOARD_DIR/$f"
@@ -1368,7 +1341,7 @@ function copy() {
   else
     for arg in "$@"; do
       if [ -f "$arg" ]; then
-        cat "$arg"
+        command cat "$arg"
       else
         echo "$arg"
       fi
@@ -1384,7 +1357,7 @@ function paste() {
     else
       local latest
       latest=$(ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -1)
-      [ -n "$latest" ] && cat "$_CLIPBOARD_DIR/$latest"
+      [ -n "$latest" ] && command cat "$_CLIPBOARD_DIR/$latest"
     fi
   elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "
@@ -1398,7 +1371,7 @@ function paste() {
   elif [ "$1" = "list" ]; then
     ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -n "$_CLIPBOARD_MAX"
   elif [ -f "$_CLIPBOARD_DIR/$1" ]; then
-    cat "$_CLIPBOARD_DIR/$1"
+    command cat "$_CLIPBOARD_DIR/$1"
   else
     command paste "$@"
   fi
@@ -2049,7 +2022,7 @@ function _bashrc_update_check() {
 function _bashrc_update_check_show() {
   local msg_file="/tmp/.bashrc_update_check_msg"
   if [ -f "$msg_file" ]; then
-    cat "$msg_file"
+    command cat "$msg_file"
     rm -f "$msg_file"
   fi
 }
