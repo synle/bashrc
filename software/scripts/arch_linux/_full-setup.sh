@@ -211,8 +211,10 @@ if ! ((is_os_windows)) && { [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; }; t
   installPacmanPackageInBackground libreoffice-fresh
   installPacmanPackageInBackground nautilus
   installPacmanPackageInBackground remmina
-  installPacmanPackageInBackground terminator
   installPacmanPackageInBackground ghostty
+
+  # TODO: remove me — terminator uninstall (we migrated to ghostty); drop this block once every host has rolled through.
+  sudo pacman -Rns --noconfirm terminator < /dev/null &>> "$BASHRC_TEMP_DIR/fullsetup.log" || true
   installPacmanPackageInBackground vlc
 
   # ---- display-dj dependencies (DDC monitor control) ----

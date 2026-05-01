@@ -426,14 +426,14 @@ xming - <https://sourceforge.net/projects/xming/>
 ```bash
 dbus-uuidgen > /tmp/machine-id && sudo mv /tmp/machine-id /etc/machine-id
 
-sudo apt-get install terminator dbus-x11
+sudo apt-get install ghostty dbus-x11
 
-DISPLAY=:0 terminator &
+DISPLAY=:0 ghostty &
 
-args = "-c" & " -l " & """DISPLAY=:0 terminator"""
+args = "-c" & " -l " & """DISPLAY=:0 ghostty"""
 WScript.CreateObject("Shell.Application").ShellExecute "bash", args, "", "open", 0
 
-C:\Windows\System32\wscript.exe %HOMEPATH%\startTerminator.vbs
+C:\Windows\System32\wscript.exe %HOMEPATH%\startGhostty.vbs
 %USERPROFILE%
 ```
 

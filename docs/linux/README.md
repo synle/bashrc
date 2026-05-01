@@ -219,7 +219,7 @@ Keyboard Shortcuts
   "xfce4-popup-whiskermenu" => Super + Alt
 
   # open terminal
-  "terminator" => Super R
+  "ghostty" => Super R
 
 Windows Manager
   Keyboard
@@ -300,7 +300,7 @@ rmdir /S ubuntu
 
 ```bash
 sudo apt-get update -y
-sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv terminator remmina grub2-theme-mint-2k brightnessctl ddcutil simplescreenrecorder fonts-cantarell fonts-firacode imagemagick
+sudo apt-get install -y git vim vlc sublime-text python3-pip bat python3-venv ghostty remmina grub2-theme-mint-2k brightnessctl ddcutil simplescreenrecorder fonts-cantarell fonts-firacode imagemagick
 
 # Windows-like dock taskbar
 # https://github.com/nsz32/docklike-plugin

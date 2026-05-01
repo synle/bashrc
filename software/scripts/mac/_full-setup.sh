@@ -311,8 +311,12 @@ if type -P fnm &> /dev/null || [ -x "$FNM_DIR/fnm" ]; then
 fi
 
 # ---- GUI apps (only if a display server is available) ----
-installBrewPackageInBackground --cask --app="iTerm.app" iterm2
 installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
+
+# TODO: remove me — iTerm2 uninstall (we migrated to ghostty); drop this block once every host has rolled through.
+brew uninstall --cask --force iterm2 < /dev/null &>> "$BASHRC_TEMP_DIR/fullsetup.log" || true
+rm -f "$HOME/.iterm2_shell_integration.bash"
+defaults delete com.googlecode.iterm2 > /dev/null 2>&1 || true
 installBrewPackageInBackground --cask --app="Sublime Text.app" sublime-text
 installBrewPackageInBackground --cask --app="Sublime Merge.app" sublime-merge
 installBrewPackageInBackground --cask --app="Visual Studio Code.app" visual-studio-code
@@ -440,14 +444,13 @@ if is_force_refresh_stale && [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
 fi
 
 ################################################################################
-# ---- iTerm / Terminal Setup ----
+# ---- Terminal Setup (TouchID for sudo — works across every terminal incl. Ghostty) ----
 ################################################################################
 if [ -f /etc/pam.d/sudo_local.template ] && ! grep -q '^auth' /etc/pam.d/sudo_local 2> /dev/null; then
-  echo '>> iTerm TouchID sudo'
+  echo '>> TouchID sudo'
   sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local
   sudo sed -i '' 's/^#auth/auth/' /etc/pam.d/sudo_local
 fi
-defaults write com.googlecode.iterm2 CustomToolTip -string "No"
 
 ################################################################################
 # ---- Background Install and Upgrade ----

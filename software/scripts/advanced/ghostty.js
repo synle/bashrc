@@ -1,4 +1,4 @@
-/** Ghostty terminal config: writes ~/.config/ghostty/config with base settings + keybindings driven by ghostty-keys.common.jsonc. Mirrors iTerm/Terminator key conventions across macOS and Linux via the shared OS_KEY pattern (cmd on mac, alt on linux). */
+/** Ghostty terminal config: writes ~/.config/ghostty/config with base settings + keybindings driven by ghostty-keys.common.jsonc. The single terminal emulator config across macOS and Linux, using the shared OS_KEY pattern (cmd on mac, alt on linux). Skipped on Windows / mingw64 / Android Termux — Ghostty is unavailable there. */
 // SOURCE software/scripts/advanced/editor.common.js
 
 /**

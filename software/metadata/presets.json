@@ -4,7 +4,7 @@
     "files": ["git.js", "vim-config.js", "vim-vundle.sh", "bash-inputrc.js"]
   },
   "editor-and-emulators": {
-    "description": "Configure all editors (Vim, Sublime Text, Sublime Merge, VS Code, Zed + shell launchers) and terminal emulator apps (Ghostty, iTerm, Terminator, Windows Terminal). OS-specific scripts self-skip on the wrong platform.",
+    "description": "Configure all editors (Vim, Sublime Text, Sublime Merge, VS Code, Zed + shell launchers) and terminal emulator apps (Ghostty on mac/linux, Windows Terminal on Windows). OS-specific scripts self-skip on the wrong platform.",
     "files": [
       "vim-config.js",
       "vim-vundle.sh",
@@ -15,8 +15,6 @@
       "advanced/vs-code-ext.sh",
       "advanced/editor-launchers.js",
       "advanced/ghostty.js",
-      "mac/iterm.js",
-      "terminator.js",
       "windows/windows-terminal.js"
     ]
   },

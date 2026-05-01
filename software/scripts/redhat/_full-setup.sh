@@ -215,8 +215,11 @@ if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
   installDnfPackageInBackground libreoffice
   installDnfPackageInBackground nautilus
   installDnfPackageInBackground remmina
-  installDnfPackageInBackground terminator
+  installDnfPackageInBackground ghostty
   installDnfPackageInBackground vlc
+
+  # TODO: remove me — terminator uninstall (we migrated to ghostty); drop this block once every host has rolled through.
+  sudo dnf remove -y terminator < /dev/null &>> "$BASHRC_TEMP_DIR/fullsetup.log" || true
 
   # ---- display-dj dependencies (DDC monitor control) ----
   installDnfPackageInBackground ddcutil
