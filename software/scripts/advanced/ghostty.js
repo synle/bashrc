@@ -98,6 +98,12 @@ async function _buildConfigContent(isOsMac) {
     # Aggressive dimming on unfocused splits so the active pane is obvious in
     # both light and dark modes. Default is ~0.7; lower = more contrast.
     unfocused-split-opacity = 0.4
+    # Pre-multiply the unfocused fill with black so unfocused panes look truly
+    # "off", not just transparent. Works well with both light and dark themes.
+    unfocused-split-fill = #000000
+    # Vibrant divider line between splits — uses GitHub's high-contrast blue
+    # accent so the boundary between focused and unfocused panes is obvious.
+    split-divider-color = #0969da
 
     # ---- Cursor ----
     cursor-style = block
