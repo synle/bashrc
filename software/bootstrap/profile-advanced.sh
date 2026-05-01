@@ -150,6 +150,14 @@ function last_folder() {
   fi
 }
 
+# Ghostty's bash shell-integration script (loaded before this profile) appends
+# `\[\e[5 q\]` (blinking bar) to PS1 inside its __ghostty_precmd hook whenever
+# `$GHOSTTY_SHELL_FEATURES` contains the literal string "cursor". Even if
+# `shell-integration-features` is updated in ~/.config/ghostty/config to drop
+# "cursor", existing shells already have the old env var. Strip it here so the
+# precmd hook's cursor branch becomes a no-op and our block-cursor sticks.
+[ -n "${GHOSTTY_SHELL_FEATURES:-}" ] && export GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES//cursor/}"
+
 # append history to file after every command (but do NOT clear+reload with -c/-r,
 # so Up arrow navigates current tab's session history instead of showing commands
 # from other tabs. Ctrl+R / fuzzy_history search the shared file for cross-tab history)
