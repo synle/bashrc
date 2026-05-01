@@ -49,12 +49,41 @@ function find_editor() {
   return 1
 }
 
+# If "-" appears in the passed args (e.g. `cmd | subl -`), slurp stdin into a temp
+# file and replace each "-" with that path. Result is written to the global
+# `_STDIN_RESOLVED_ARGS` array (callers reassign their own argv from it).
+# GUI editors are launched via `nohup ... &` which closes stdin, so a literal
+# `-` would never deliver piped content; this normalizes the input to a file path.
+function _resolve_stdin_arg() {
+  local editor_name="$1"
+  shift
+  _STDIN_RESOLVED_ARGS=()
+  local stdin_file=""
+  local arg
+  for arg in "$@"; do
+    if [[ "$arg" == "-" ]]; then
+      if [ -z "$stdin_file" ]; then
+        stdin_file=$(mktemp "${TMPDIR:-/tmp}/${editor_name}-stdin.XXXXXX") || return 1
+        command cat > "$stdin_file"
+      fi
+      _STDIN_RESOLVED_ARGS+=("$stdin_file")
+    else
+      _STDIN_RESOLVED_ARGS+=("$arg")
+    fi
+  done
+}
+
 # Launch an editor in the background (GUI mode)
 function run_editor() {
   local editor_name="$1"
   shift
   local target_binary
   target_binary=$(find_editor "$editor_name" "$@") || return 1
+
+  # Substitute any literal "-" arg with a temp file populated from stdin so piped
+  # input survives the nohup-backgrounded launch below.
+  _resolve_stdin_arg "$editor_name" "${editor_args[@]}"
+  editor_args=("${_STDIN_RESOLVED_ARGS[@]}")
 
   # track opened files for recent file history
   type _track_file &> /dev/null && _track_file "${editor_args[@]}"
@@ -105,6 +134,13 @@ function run_editor_cli() {
   shift
   local target_binary
   target_binary=$(find_editor "$editor_name" "${editor_paths[@]}") || return 1
+
+  # Substitute any literal "-" arg with a temp file populated from stdin (e.g.
+  # `cmd | vim -`). vim natively reads "-" foreground, but normalizing to a
+  # real path keeps behavior consistent across editors and gives the buffer a
+  # saveable path.
+  _resolve_stdin_arg "$editor_name" "$@"
+  set -- "${_STDIN_RESOLVED_ARGS[@]}"
 
   # track opened files for recent file history
   type _track_file &> /dev/null && _track_file "$@"
