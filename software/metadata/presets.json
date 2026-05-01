@@ -11,6 +11,7 @@
       "zed.js",
       "advanced/sublime-text.js",
       "advanced/sublime-merge.js",
+      "advanced/vs-code.js",
       "advanced/vs-code-ext.sh",
       "advanced/editor-launchers.js"
     ]
