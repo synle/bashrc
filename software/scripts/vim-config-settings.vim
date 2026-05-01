@@ -122,12 +122,16 @@ nnoremap <silent> <C-g> <C-b>
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Toggle
 """""""""""""""""""""""""""""""""""""""""""""""""
-" \\ or [ to toggle line numbers
-nnoremap \\ :set nonumber!<CR>
+" [ to toggle line numbers
 nnoremap [ :set nonumber!<CR>
 
 " ] to toggle whitespace visualization
 nnoremap ] :set list!<CR>
+
+" } (shift+]) to toggle soft wrap — matches VS Code/Sublime/Zed's
+" ctrl+shift+OS_KEY+\ chord conceptually (one-key wrap toggle).
+" Overrides vim's default `}` (jump to next paragraph end).
+nnoremap } :set wrap!<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Keybindings — Splits

@@ -305,6 +305,16 @@ Vim uses its own conventions. `alt+key` for common shortcuts, `,key` for leader 
 | `ctrl+x`, `ctrl+q`, `,w`, `,x` | Close split      |
 | `ctrl+arrow`                   | Navigate splits  |
 
+### Toggles (normal mode)
+
+Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these single-key toggles fire in normal mode. They override vim's default `[`/`]`/`}` prefix motions.
+
+| Key | Action                         |
+| --- | ------------------------------ |
+| `[` | Toggle line numbers            |
+| `]` | Toggle whitespace markers      |
+| `}` | Toggle soft wrap (`set wrap!`) |
+
 ### FZF / Search
 
 | Key            | Action            |
