@@ -93,7 +93,6 @@ async function _buildConfigContent(isOsMac) {
     # Even padding on both sides of a split, regardless of split orientation.
     window-padding-balance = true
     window-save-state = always
-    audible-bell = false
 
     # ---- Splits (focus visibility) ----
     # Aggressive dimming on unfocused splits so the active pane is obvious in
@@ -103,9 +102,6 @@ async function _buildConfigContent(isOsMac) {
     # ---- Cursor ----
     cursor-style = block
     cursor-style-blink = true
-    # Bold text uses the bold weight (already set above) — don't ALSO flip to
-    # the bright ANSI palette, that double-emphasizes everything.
-    bold-is-bright = false
     ${macOnlyBlock}
 
     # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
