@@ -20,6 +20,7 @@ All repo source files under `software/scripts/` unless noted.
 | Terminator        | `terminator.js`                                                                         | `~/.config/terminator/config`                                                                                                                          |
 | tmux              | `advanced/tmux.config`                                                                  | `~/.tmux.conf`                                                                                                                                         |
 | iTerm2            | `mac/iterm-profile.jsonc`                                                               | `~/Library/.../com.googlecode.iterm2/DynamicProfiles/`                                                                                                 |
+| Ghostty           | `advanced/ghostty-keys.common.jsonc`                                                    | `~/.config/ghostty/config` (mac + linux)                                                                                                               |
 
 ## Standard Convention
 
@@ -194,44 +195,44 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Tabs & Windows
 
-| Key                | Action          | Windows Terminal | Terminator | tmux | iTerm2 |
-| ------------------ | --------------- | :--------------: | :--------: | :--: | :----: |
-| `OS_KEY+t`         | New tab         |        ✅        |     ✅     |  ✅  |   ☑️   |
-| `OS_KEY+1-9`       | Tab by index    |        ✅        |     ✅     |  ✅  |   ☑️   |
-| `OS_KEY+shift+[/]` | Prev / next tab |        ✅        |     ✅     |  ✅  |   ☑️   |
-| `OS_KEY+w`         | Close pane      |        ✅        |     ✅     |  ✅  |   ☑️   |
-| `OS_KEY+q`         | Close window    |        ✅        |     ✅     |  ✅  |   ☑️   |
-| `OS_KEY+n`         | New window      |        ✅        |     ✅     |  ✅  |   ☑️   |
-| `F2`               | Rename tab      |        ✅        |     ✅     |  ✅  |   ❌   |
+| Key                | Action          | Windows Terminal | Terminator | tmux | iTerm2 | Ghostty |
+| ------------------ | --------------- | :--------------: | :--------: | :--: | :----: | :-----: |
+| `OS_KEY+t`         | New tab         |        ✅        |     ✅     |  ✅  |   ☑️   |   ✅    |
+| `OS_KEY+1-9`       | Tab by index    |        ✅        |     ✅     |  ✅  |   ☑️   |   ✅    |
+| `OS_KEY+shift+[/]` | Prev / next tab |        ✅        |     ✅     |  ✅  |   ☑️   |   ✅    |
+| `OS_KEY+w`         | Close pane      |        ✅        |     ✅     |  ✅  |   ☑️   |   ✅    |
+| `OS_KEY+q`         | Close window    |        ✅        |     ✅     |  ✅  |   ☑️   |   ✅    |
+| `OS_KEY+n`         | New window      |        ✅        |     ✅     |  ✅  |   ☑️   |   ✅    |
+| `F2`               | Rename tab      |        ✅        |     ✅     |  ✅  |   ❌   |   ❌    |
 
 ### Splits & Panes
 
-| Key                 | Action                      | Windows Terminal |       Terminator        |       tmux        |   iTerm2    |
-| ------------------- | --------------------------- | :--------------: | :---------------------: | :---------------: | :---------: |
-| `OS_KEY+d`          | Split vertical (left/right) |        ✅        |           ✅            |        ✅         |     ✅      |
-| `OS_KEY+shift+d`    | Split horiz (top/bottom)    |        ✅        |           ✅            |        ✅         |     ✅      |
-| `OS_KEY+'`          | Split horiz (alt)           |        ✅        | ⚠️ (one key per action) |        ✅         |     ✅      |
-| `OS_KEY+arrow`      | Navigate panes              |        ✅        |           ✅            |        ✅         | ☑️ (scroll) |
-| `ctrl+OS_KEY+arrow` | Resize panes                |        ✅        |           ✅            | ⚠️ (prefix+arrow) |     ❌      |
-| `OS_KEY+\`          | Toggle UI / fullscreen pane |        ✅        |     ✅ (scrollbar)      |        ✅         |     ❌      |
-| `F11`               | Fullscreen                  |        ✅        |           ✅            |        ✅         |     ☑️      |
+| Key                 | Action                      | Windows Terminal |       Terminator        |       tmux        |   iTerm2    |  Ghostty   |
+| ------------------- | --------------------------- | :--------------: | :---------------------: | :---------------: | :---------: | :--------: |
+| `OS_KEY+d`          | Split vertical (left/right) |        ✅        |           ✅            |        ✅         |     ✅      |     ✅     |
+| `OS_KEY+shift+d`    | Split horiz (top/bottom)    |        ✅        |           ✅            |        ✅         |     ✅      |     ✅     |
+| `OS_KEY+'`          | Split horiz (alt)           |        ✅        | ⚠️ (one key per action) |        ✅         |     ✅      |     ✅     |
+| `OS_KEY+arrow`      | Navigate panes              |        ✅        |           ✅            |        ✅         | ☑️ (scroll) |     ✅     |
+| `ctrl+OS_KEY+arrow` | Resize panes                |        ✅        |           ✅            | ⚠️ (prefix+arrow) |     ❌      | ✅ (shift) |
+| `OS_KEY+\`          | Toggle UI / fullscreen pane |        ✅        |     ✅ (scrollbar)      |        ✅         |     ❌      | ✅ (zoom)  |
+| `F11`               | Fullscreen                  |        ✅        |           ✅            |        ✅         |     ☑️      |     ✅     |
 
 ### Text & Search
 
-| Key        | Action     | Windows Terminal | Terminator | tmux | iTerm2 |
-| ---------- | ---------- | :--------------: | :--------: | :--: | :----: |
-| `OS_KEY+c` | Copy       |        ✅        |     ✅     |  ❌  |   ☑️   |
-| `OS_KEY+v` | Paste      |        ✅        |     ✅     |  ❌  |   ☑️   |
-| `OS_KEY+f` | Find       |        ✅        |     ✅     |  ✅  |   ☑️   |
-| `OS_KEY+a` | Select all |        ✅        |     ❌     |  ❌  |   ☑️   |
+| Key        | Action     | Windows Terminal | Terminator | tmux | iTerm2 | Ghostty |
+| ---------- | ---------- | :--------------: | :--------: | :--: | :----: | :-----: |
+| `OS_KEY+c` | Copy       |        ✅        |     ✅     |  ❌  |   ☑️   |   ✅    |
+| `OS_KEY+v` | Paste      |        ✅        |     ✅     |  ❌  |   ☑️   |   ✅    |
+| `OS_KEY+f` | Find       |        ✅        |     ✅     |  ✅  |   ☑️   |   ❌    |
+| `OS_KEY+a` | Select all |        ✅        |     ❌     |  ❌  |   ☑️   |   ✅    |
 
 ### Zoom
 
-| Key        | Action     | Windows Terminal | Terminator | tmux | iTerm2 |
-| ---------- | ---------- | :--------------: | :--------: | :--: | :----: |
-| `OS_KEY+=` | Zoom in    |        ✅        |     ✅     |  ❌  |   ☑️   |
-| `OS_KEY+-` | Zoom out   |        ✅        |     ✅     |  ❌  |   ☑️   |
-| `OS_KEY+0` | Reset zoom |        ✅        |     ✅     |  ❌  |   ☑️   |
+| Key        | Action     | Windows Terminal | Terminator | tmux | iTerm2 | Ghostty |
+| ---------- | ---------- | :--------------: | :--------: | :--: | :----: | :-----: |
+| `OS_KEY+=` | Zoom in    |        ✅        |     ✅     |  ❌  |   ☑️   |   ✅    |
+| `OS_KEY+-` | Zoom out   |        ✅        |     ✅     |  ❌  |   ☑️   |   ✅    |
+| `OS_KEY+0` | Reset zoom |        ✅        |     ✅     |  ❌  |   ☑️   |   ✅    |
 
 ### Terminal-specific Gaps
 
@@ -242,6 +243,8 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | tmux copy/paste                      | Uses its own copy mode; `OS_KEY+c/v` not mapped                   |
 | tmux zoom                            | Not applicable; controlled by the outer terminal emulator         |
 | iTerm2 pane focus via `OS_KEY+arrow` | `cmd+arrow` scrolls the buffer; pane nav uses different mechanism |
+| Ghostty `OS_KEY+f` find              | Ghostty has no in-terminal search; left unbound                   |
+| Ghostty resize uses `OS_KEY+shift`   | Mirrors Terminator (no `ctrl+OS_KEY+arrow` chord on Ghostty)      |
 
 ---
 

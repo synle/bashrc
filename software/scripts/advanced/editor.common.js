@@ -86,12 +86,12 @@ const _CODE_PATHS = [
 /** @type {string} OS modifier key for Windows/Linux keybindings (alt for modern mode) */
 const EDITOR_WINDOWS_OS_KEY = "alt";
 /** @type {Record<string, string>} Mac OS modifier keys by editor source */
-const EDITOR_MAC_OS_KEYS = { sublime: "super", zed: "cmd" };
+const EDITOR_MAC_OS_KEYS = { sublime: "super", zed: "cmd", ghostty: "cmd" };
 
 /**
  * Returns the OS-specific modifier key for the given editor source.
  * Windows/Linux always returns "alt". macOS returns "super" (Sublime) or "cmd" (Zed).
- * @param {string} source - The editor source ("sublime" or "zed").
+ * @param {string} source - The editor source ("sublime", "zed", or "ghostty").
  * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
  * @returns {string} The resolved OS modifier key.
  */

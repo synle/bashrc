@@ -312,6 +312,7 @@ fi
 
 # ---- GUI apps (only if a display server is available) ----
 installBrewPackageInBackground --cask --app="iTerm.app" iterm2
+installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
 installBrewPackageInBackground --cask --app="Sublime Text.app" sublime-text
 installBrewPackageInBackground --cask --app="Sublime Merge.app" sublime-merge
 installBrewPackageInBackground --cask --app="Visual Studio Code.app" visual-studio-code

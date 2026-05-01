@@ -212,6 +212,7 @@ if ! ((is_os_windows)) && { [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; }; t
   installPacmanPackageInBackground nautilus
   installPacmanPackageInBackground remmina
   installPacmanPackageInBackground terminator
+  installPacmanPackageInBackground ghostty
   installPacmanPackageInBackground vlc
 
   # ---- display-dj dependencies (DDC monitor control) ----

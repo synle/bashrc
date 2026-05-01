@@ -1,0 +1,53 @@
+// Ghostty keybindings shared across macOS and Linux.
+// OS_KEY = `cmd` on macOS, `alt` on Linux. Substituted at build time by ghostty.js
+// via formatEditorKeybindings(). Each entry maps to a single Ghostty
+// `keybind = <trigger>=<action>` config line.
+//
+// Convention: see docs/editor-keybindings.md → "Terminal Emulators".
+[
+  // ---- Tabs ----
+  { "key": "OS_KEY+t", "action": "new_tab" },
+  { "key": "OS_KEY+1", "action": "goto_tab:1" },
+  { "key": "OS_KEY+2", "action": "goto_tab:2" },
+  { "key": "OS_KEY+3", "action": "goto_tab:3" },
+  { "key": "OS_KEY+4", "action": "goto_tab:4" },
+  { "key": "OS_KEY+5", "action": "goto_tab:5" },
+  { "key": "OS_KEY+6", "action": "goto_tab:6" },
+  { "key": "OS_KEY+7", "action": "goto_tab:7" },
+  { "key": "OS_KEY+8", "action": "goto_tab:8" },
+  { "key": "OS_KEY+9", "action": "goto_tab:9" },
+  { "key": "OS_KEY+shift+]", "action": "next_tab" },
+  { "key": "OS_KEY+shift+[", "action": "previous_tab" },
+  { "key": "OS_KEY+w", "action": "close_surface" },
+
+  // ---- Window ----
+  { "key": "OS_KEY+n", "action": "new_window" },
+  { "key": "OS_KEY+q", "action": "quit" },
+
+  // ---- Splits ----
+  { "key": "OS_KEY+d", "action": "new_split:right" },
+  { "key": "OS_KEY+shift+d", "action": "new_split:down" },
+  { "key": "OS_KEY+'", "action": "new_split:down" },
+  { "key": "OS_KEY+up", "action": "goto_split:up" },
+  { "key": "OS_KEY+down", "action": "goto_split:down" },
+  { "key": "OS_KEY+left", "action": "goto_split:left" },
+  { "key": "OS_KEY+right", "action": "goto_split:right" },
+  { "key": "OS_KEY+shift+up", "action": "resize_split:up,10" },
+  { "key": "OS_KEY+shift+down", "action": "resize_split:down,10" },
+  { "key": "OS_KEY+shift+left", "action": "resize_split:left,10" },
+  { "key": "OS_KEY+shift+right", "action": "resize_split:right,10" },
+  { "key": "OS_KEY+\\", "action": "toggle_split_zoom" },
+
+  // ---- Font Zoom ----
+  { "key": "OS_KEY+equal", "action": "increase_font_size:1" },
+  { "key": "OS_KEY+minus", "action": "decrease_font_size:1" },
+  { "key": "OS_KEY+0", "action": "reset_font_size" },
+
+  // ---- Edit ----
+  { "key": "OS_KEY+c", "action": "copy_to_clipboard" },
+  { "key": "OS_KEY+v", "action": "paste_from_clipboard" },
+  { "key": "OS_KEY+a", "action": "select_all" },
+
+  // ---- View ----
+  { "key": "f11", "action": "toggle_fullscreen" },
+]
