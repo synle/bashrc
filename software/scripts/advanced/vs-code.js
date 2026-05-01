@@ -112,6 +112,8 @@ function _getSettings(baseConfig, darkColors, lightColors, { is_prebuilt_config 
 /**
  * Returns the merged VS Code keybinding array for the given OS, with `OS_KEY` placeholders
  * resolved to the OS-specific modifier (cmd on macOS, alt on Windows/Linux).
+ * VS Code's keybindings.json schema uses a singular string `key` field, NOT the `keys` array
+ * that `formatEditorKeybindings` writes for Sublime/Zed — so we re-flatten back to `key` here.
  * @param {object[]} commonKeyBindings - Parsed `vs-code-keys.common.jsonc`.
  * @param {object[]} windowsKeyBindings - Parsed `vs-code-keys.windows.jsonc`.
  * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
@@ -119,11 +121,19 @@ function _getSettings(baseConfig, darkColors, lightColors, { is_prebuilt_config 
  */
 function _getKeyConfigs(commonKeyBindings, windowsKeyBindings, isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
-  // VS Code uses `cmd` on macOS, `alt` on Windows/Linux. Reuse the shared mapping.
+  // VS Code uses `cmd` on macOS, `alt` on Windows/Linux.
   const osKey = isMac ? "cmd" : EDITOR_WINDOWS_OS_KEY;
-  return isMac
-    ? formatEditorKeybindings(commonKeyBindings, osKey)
-    : formatEditorKeybindings([...commonKeyBindings, ...windowsKeyBindings], osKey);
+  const merged = isMac ? commonKeyBindings : [...commonKeyBindings, ...windowsKeyBindings];
+
+  // Substitute OS_KEY directly on the singular `key` string — don't go through
+  // formatEditorKeybindings (which collapses key→keys for Sublime/Zed).
+  return clone(merged).map((kb) => {
+    const out = { ...kb };
+    if (typeof out.key === "string") {
+      out.key = out.key.replace(/OS_KEY/g, osKey);
+    }
+    return out;
+  });
 }
 
 ////// Extensions Installer Script //////
