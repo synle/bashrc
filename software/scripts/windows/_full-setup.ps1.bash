@@ -26,6 +26,37 @@
 #     - AI CLI Tools (opencode)
 ################################################################################
 
+################################################################################
+# ---- Config ----
+#
+# $forceInstall — controls how the winget install loop further down behaves:
+#
+#   $false (DEFAULT) — skip-if-installed:
+#     Pre-cached `winget list` output is grepped for each package ID. If the
+#     package is already installed, the install is skipped entirely (no winget
+#     spawn). If not, a normal `winget install` runs. Fast and idempotent —
+#     this is the normal full-setup behavior.
+#
+#   $true — force reinstall:
+#     The skip pre-check is bypassed and every package goes through
+#     `winget install --force --uninstall-previous`, which:
+#       --force                tells winget to ignore its own "already
+#                              installed" / hash-mismatch / applicability
+#                              checks and run the installer anyway.
+#       --uninstall-previous   removes the existing version first, so you
+#                              get a clean install instead of an in-place
+#                              repair (drop this flag for an overlay install,
+#                              e.g. just switching install scope).
+#
+#     Useful when a previous install is broken / partially registered, when
+#     winget's "installed" detection is stale (manual installs, Store apps,
+#     side-by-side versions), or when you want to re-pull the latest installer
+#     for everything in one shot. Slow — every package reinstalls.
+################################################################################
+
+# Flip to $true to force-reinstall every winget package on the next run.
+$forceInstall = $false
+
 # Disable progress bars to speed up Invoke-WebRequest
 $ProgressPreference = 'SilentlyContinue'
 
@@ -653,9 +684,16 @@ $wingetPackages = @(
     "WinFSP.SSHFS"
 )
 
+# See $forceInstall config at the top of this file. When $true, every package
+# is reinstalled via `--force --uninstall-previous`. When $false, we skip
+# packages that already show up in the cached `winget list` output and
+# install the rest normally.
 Write-Host "`n--- Installing winget packages (foreground, sequential) ---" -ForegroundColor Cyan
 foreach ($pkg in $wingetPackages) {
-    if ($installedPackages -match [regex]::Escape($pkg)) {
+    if ($forceInstall) {
+        Write-Host "  Force installing: $pkg" -ForegroundColor Magenta
+        winget install --id $pkg -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous 2>$null
+    } elseif ($installedPackages -match [regex]::Escape($pkg)) {
         Write-Host "  Skipped: $pkg (already installed)" -ForegroundColor Yellow
     } else {
         Write-Host "  Installing: $pkg"
