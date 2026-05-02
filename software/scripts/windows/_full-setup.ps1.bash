@@ -571,10 +571,12 @@ $installedPackages = winget list 2>$null | Out-String
 # silent failures are common. One-at-a-time foreground installs are slower
 # but reliable, and that trade is worth it for an unattended setup script.
 $wingetPackages = @(
-    # ---- Core: browser, terminal, fonts, editors ----
+    # ---- Core: browser, terminal, editors ----
+    # Fira Code is installed by software/scripts/fonts.js (drops the TTFs into
+    # the per-OS font folder), so we deliberately skip the winget package here
+    # to avoid double-installing the same font.
     "Brave.Brave",
     "Microsoft.WindowsTerminal",
-    "Mozilla.FiraCode",
     "Microsoft.VisualStudioCode",
     "SublimeHQ.SublimeText.4",
     "SublimeHQ.SublimeMerge",
