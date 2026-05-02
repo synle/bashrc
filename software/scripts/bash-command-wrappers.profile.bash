@@ -28,10 +28,13 @@
 #                 Companion to the `update` alias which only handles OS pkg managers.
 #
 # --- Git ---
-# blame         — git blame alternative: per-line "<line>  #// <date> <sha>
+# blame         — git blame alternative: per-line "<line>  <cmt> <date> <sha>
 #                 <author>: <summary>" for each input file, with a file-name
-#                 header before each. The "#//" prefix doubles as a shell ("#")
-#                 and C-family ("//") line-comment so the row stays paste-safe.
+#                 header before each. <cmt> is "//" for C-family extensions
+#                 (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/
+#                 m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and "#"
+#                 otherwise — keeps each row paste-safe as a comment in the
+#                 host language.
 #
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
@@ -265,14 +268,14 @@ function update_lang() {
 ################################################################################
 # ---- Git ----
 ################################################################################
-# blame: git blame alternative — print per-line "<line>  #// <date> <sha> <author>: <summary>"; the "#//" prefix is both a shell and C-family line-comment so the row is paste-safe in either context
+# blame: git blame alternative — print per-line "<line>  <cmt> <date> <sha> <author>: <summary>"; <cmt> is "//" for C-family extensions and "#" otherwise so the row is paste-safe as a comment in the host language
 function blame() {
   if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
   Output: prints '==== <file> ====' header, then one row per line as
-          <line content>  #// <YYYY-MM-DD> <short sha> <author>: <commit summary>
-          The '#//' prefix is both a shell and C-family line-comment so the row is paste-safe in either context."
+          <line content>  <cmt> <YYYY-MM-DD> <short sha> <author>: <commit summary>
+          <cmt> is '//' for C-family extensions (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and '#' otherwise."
     return
   fi
 
@@ -281,7 +284,7 @@ function blame() {
     return 1
   fi
 
-  local file dir
+  local file dir base ext cmt
   for file in "$@"; do
     if [ ! -f "$file" ]; then
       echo "blame: not a file: $file" >&2
@@ -292,8 +295,21 @@ function blame() {
       echo "blame: $file is not in a git repo" >&2
       continue
     fi
+    # pick the comment marker by file extension: "//" for C-family, "#" otherwise.
+    # extension is taken from the basename's last "."; files without a "." fall through to "#".
+    base=${file##*/}
+    ext=${base##*.}
+    [ "$ext" = "$base" ] && ext=""
+    # lowercase via tr (bash 3.2 has no ${var,,})
+    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    case "$ext" in
+      js|jsx|mjs|cjs|ts|tsx|c|cc|cpp|cxx|h|hpp|hh|hxx|java|cs|go|rs|swift|kt|kts|scala|m|mm|dart|php|proto|gradle|groovy|sass|scss|less)
+        cmt="//" ;;
+      *)
+        cmt="#" ;;
+    esac
     echo "==== $file ===="
-    git blame --line-porcelain -- "$file" 2> /dev/null | command awk '
+    git blame --line-porcelain -- "$file" 2> /dev/null | command awk -v cmt="$cmt" '
       # SHA header line: "<40+ hex sha> <orig-line> <final-line> [num-lines]" — only first token of a per-line block
       /^[0-9a-f]{40,} / && header == 0 {
         sha = substr($1, 1, 7)
@@ -327,7 +343,7 @@ function blame() {
           close(cmd)
           date_cache[sha] = date
         }
-        printf "%s  #// %s %s %s: %s\n", line, date, sha, author, summary
+        printf "%s  %s %s %s %s: %s\n", line, cmt, date, sha, author, summary
         header = 0
       }
     '
