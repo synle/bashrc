@@ -17,6 +17,11 @@
 #   - winget output is UTF-16 in some Windows locales — we normalize via
 #     iconv so the substring match in bash works reliably.
 
+# Many winget targets are machine-scope MSIs / services / drivers, so the
+# WSL session needs to be elevated for those installers to succeed without
+# stalling on a UAC prompt bash can't answer.
+exit_if_not_sudo
+
 # Skip on non-Windows hosts. winget.exe only exists on Windows / WSL.
 if ! ((is_os_windows)); then
   echo ">>> Skipped winget-install: not a Windows / WSL host"
