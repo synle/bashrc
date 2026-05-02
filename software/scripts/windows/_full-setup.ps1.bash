@@ -98,6 +98,7 @@ $pathCandidates = @(
     "$env:SystemRoot\System32\Wbem"                               # wmi / wbem
     "$env:SystemRoot\System32\WindowsPowerShell\v1.0"             # powershell
     "$env:UserProfile\AppData\Local\Microsoft\WindowsApps"        # windows apps (profile)
+    "$env:UserProfile\.local\bin"                                 # user-local bins (claude, npm globals, etc.)
 )
 
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
