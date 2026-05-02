@@ -65,7 +65,7 @@ async function doWork() {
     "Editor Launchers - Sublime Merge",
     code`
       _SMERGE_PATHS=(
-        ${_SMERGE_PATHS.join("\n")}
+        ${_SMERGE_PATHS.map((p) => `"${p}"`).join("\n")}
       )
       _register_editor "smerge" "_SMERGE_PATHS"
 
@@ -83,7 +83,7 @@ async function doWork() {
     "Editor Launchers - VS Code",
     code`
       _CODE_PATHS=(
-        ${_CODE_PATHS.join("\n")}
+        ${_CODE_PATHS.map((p) => `"${p}"`).join("\n")}
       )
       _register_editor "code" "_CODE_PATHS"
 
@@ -108,7 +108,7 @@ async function doWork() {
     "Editor Launchers - Zed",
     code`
       _ZED_PATHS=(
-        ${_ZED_PATHS.join("\n")}
+        ${_ZED_PATHS.map((p) => `"${p}"`).join("\n")}
       )
       _register_editor "zed" "_ZED_PATHS"
 
