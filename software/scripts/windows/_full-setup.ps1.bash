@@ -471,6 +471,28 @@ Get-SmbShare | Where-Object { $_.Name -like '_Sy_drive_*' } |
 #       deterministic frame times / latency. (Optional — flag is a no-op on
 #       SKUs that don't expose auto-boost; the 2>$null swallows that warning.)
 #
+#   - powercfg /setacvalueindex SCHEME_CURRENT SUB_PCIEXPRESS ASPM 0
+#   - powercfg /setdcvalueindex SCHEME_CURRENT SUB_PCIEXPRESS ASPM 0
+#   - powercfg /setactive SCHEME_CURRENT
+#       Turns OFF PCIe Link State Power Management (ASPM) on both AC (plugged
+#       in) and DC (battery) for the currently active Windows power plan, then
+#       re-applies the plan so the change takes effect.
+#
+#       ASPM lets the PCIe link drop into low-power L0s/L1 states when idle to
+#       save power. The wake-up cost is small (microseconds) but real, and on
+#       a high-bandwidth GPU like the 5090 the link bouncing in/out of those
+#       states under bursty workloads (game frames, ML inference, decoder
+#       work) shows up as latency jitter, microstutter, and the occasional
+#       stall. Forcing ASPM=0 keeps the link permanently at L0, trading a few
+#       watts of idle PCIe power for steady-state latency / throughput.
+#
+#       Values: 0 = Off, 1 = Moderate power savings, 2 = Maximum savings.
+#
+#       This is the scripted equivalent of the GUI sequence:
+#         Win+R -> powercfg.cpl -> Change plan settings -> Change advanced
+#         power settings -> PCI Express -> Link State Power Management ->
+#         set both "On battery" and "Plugged in" to Off -> Apply.
+#
 #   - All other GPUs: block is skipped entirely (no-op on laptops, AMD, older
 #     NVIDIA cards, headless boxes, etc.).
 ################################################################################
@@ -487,6 +509,12 @@ if ($gpuName -match "RTX\s*5090") {
     } else {
         Write-Host "  nvidia-smi not on PATH — skipping" -ForegroundColor Yellow
     }
+
+    # PCIe Link State Power Management = OFF on the active power plan (AC + DC)
+    powercfg /setacvalueindex SCHEME_CURRENT SUB_PCIEXPRESS ASPM 0 | Out-Null   # Plugged in: ASPM off
+    powercfg /setdcvalueindex SCHEME_CURRENT SUB_PCIEXPRESS ASPM 0 | Out-Null   # On battery:  ASPM off
+    powercfg /setactive SCHEME_CURRENT | Out-Null                               # Re-apply so the change takes effect
+    Write-Host "  PCIe ASPM: OFF (AC + DC) on active power plan" -ForegroundColor Green
 }
 
 
