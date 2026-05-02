@@ -88,6 +88,10 @@
   "terminal.integrated.scrollback": 200000,
   "terminal.integrated.gpuAcceleration": "auto",
   "security.workspace.trust.enabled": false,
+  "security.workspace.trust.startupPrompt": "never",
+  "security.workspace.trust.banner": "never",
+  "security.workspace.trust.untrustedFiles": "open",
+  "security.workspace.trust.emptyWindow": false,
   "explorer.copyRelativePathSeparator": "/",
   "remote.SSH.remotePlatform": {
     "127.0.0.1": "linux"

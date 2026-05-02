@@ -107,17 +107,6 @@ function sudo() {
   command sudo "$@"
 }
 
-# exit_if_not_sudo - Guard clause: exits the current script with code 0 (skip,
-# not failure) if not running as root. Bash analog of the JS exitIfNotSudo()
-# in software/index.js used by .su.js scripts. Call as the first line of a
-# script that requires root privileges.
-function exit_if_not_sudo() {
-  if [ "$(id -u)" -ne 0 ]; then
-    echo ">>> Skipped ${BASH_SOURCE[1]##*/}: must run as root (use sudo)" >&2
-    exit 0
-  fi
-}
-
 # safe_touch <file...> - Creates the file only if it does not exist. Skips existing files to
 # avoid updating mtime (which would reset staleness checks). For files inside $HOME,
 # fixes ownership to current user if owned by root.
