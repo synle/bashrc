@@ -10,6 +10,12 @@
 # --- SQLite ---
 # sqlite        — Wrapper: prefers sqlite3, falls back to sqlite
 #
+# --- bat ---
+# bat           — Wrapper: chains bat -> batcat -> cat so callers can always
+#                 use the canonical `bat` name. Pins --theme=ansi so highlighting
+#                 uses the terminal's 16-color ANSI palette (legible on any
+#                 background, especially inside fzf preview panes).
+#
 # --- Python ---
 # activate_py   — Activate Python venv if not already active
 # python        — Lazy wrapper: activates venv on first use, then delegates
@@ -71,6 +77,28 @@ function sqlite() {
     echo "sqlite: not installed"
   fi
 }
+
+################################################################################
+# ---- bat ----
+################################################################################
+# bat: canonical entry point for syntax-highlighted file/stdin viewing. Chains
+# bat -> batcat -> cat so callers (interactive shells, fzf previews, scripts)
+# can always invoke `bat` regardless of which binary is actually installed.
+# Pins --theme=ansi for the bat/batcat path so highlighting uses the terminal's
+# 16-color ANSI palette (legible on any background, especially inside fzf
+# preview panes); user-supplied --theme=... still wins because bat applies the
+# last occurrence of repeated flags. Exported so fzf preview subshells (which
+# don't source ~/.bashrc) inherit the wrapper too.
+function bat() {
+  if type -P bat &> /dev/null; then
+    command bat --theme=ansi "$@"
+  elif type -P batcat &> /dev/null; then
+    command batcat --theme=ansi "$@"
+  else
+    command cat "$@"
+  fi
+}
+export -f bat
 
 ################################################################################
 # ---- Python ----
@@ -303,10 +331,12 @@ function blame() {
     # lowercase via tr (bash 3.2 has no ${var,,})
     ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
     case "$ext" in
-      js|jsx|mjs|cjs|ts|tsx|c|cc|cpp|cxx|h|hpp|hh|hxx|java|cs|go|rs|swift|kt|kts|scala|m|mm|dart|php|proto|gradle|groovy|sass|scss|less)
-        cmt="//" ;;
-      *)
-        cmt="#" ;;
+    js | jsx | mjs | cjs | ts | tsx | c | cc | cpp | cxx | h | hpp | hh | hxx | java | cs | go | rs | swift | kt | kts | scala | m | mm | dart | php | proto | gradle | groovy | sass | scss | less)
+      cmt="//"
+      ;;
+    *)
+      cmt="#"
+      ;;
     esac
     echo "==== $file ===="
     git blame --line-porcelain -- "$file" 2> /dev/null | command awk -v cmt="$cmt" '
