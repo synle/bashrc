@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-02T14:25:34.218Z
+# Generated: 2026-05-02T15:14:31.644Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -5106,13 +5106,13 @@ function subl() {
 # END Editor Launchers - Sublime Text
 # BEGIN Editor Launchers - Sublime Merge
 _SMERGE_PATHS=(
-  /Applications/Sublime*Merge.app/Contents/SharedSupport/bin/smerge
-/mnt/c/Program*Files/Sublime*Merge*/smerge.exe
-/mnt/c/Program*Files/Sublime*Merge*/sublime_merge.exe
-/mnt/c/Users/*/AppData/Local/Programs/Sublime*Merge/smerge.exe
-/opt/sublime_merge/smerge
-/usr/bin/smerge
-/usr/local/bin/smerge
+  "/Applications/Sublime*Merge.app/Contents/SharedSupport/bin/smerge"
+"/mnt/c/Program*Files/Sublime*Merge*/smerge.exe"
+"/mnt/c/Program*Files/Sublime*Merge*/sublime_merge.exe"
+"/mnt/c/Users/*/AppData/Local/Programs/Sublime*Merge/smerge.exe"
+"/opt/sublime_merge/smerge"
+"/usr/bin/smerge"
+"/usr/local/bin/smerge"
 )
 _register_editor "smerge" "_SMERGE_PATHS"
 
@@ -5125,16 +5125,16 @@ function smerge() {
 # END Editor Launchers - Sublime Merge
 # BEGIN Editor Launchers - VS Code
 _CODE_PATHS=(
-  /Applications/Visual*Studio*Code.app/Contents/Resources/app/bin/code
-/Applications/Visual*Studio*Code*Insiders.app/Contents/Resources/app/bin/code
-/opt/homebrew/bin/code
-/usr/local/bin/code
-/mnt/c/Users/*/AppData/Local/Programs/Microsoft*Code/Code.exe
-/mnt/c/Users/*/AppData/Local/Programs/Microsoft*Code*Insiders/Code*.exe
-/mnt/c/Program*Files/Microsoft*VS*Code/Code.exe
-/usr/bin/code
-/usr/local/bin/code
-/snap/bin/code
+  "/Applications/Visual*Studio*Code.app/Contents/Resources/app/bin/code"
+"/Applications/Visual*Studio*Code*Insiders.app/Contents/Resources/app/bin/code"
+"/opt/homebrew/bin/code"
+"/usr/local/bin/code"
+"/mnt/c/Users/*/AppData/Local/Programs/Microsoft*Code/Code.exe"
+"/mnt/c/Users/*/AppData/Local/Programs/Microsoft*Code*Insiders/Code*.exe"
+"/mnt/c/Program*Files/Microsoft*VS*Code/Code.exe"
+"/usr/bin/code"
+"/usr/local/bin/code"
+"/snap/bin/code"
 )
 _register_editor "code" "_CODE_PATHS"
 
@@ -5154,15 +5154,15 @@ function code_list_extensions() {
 # END Editor Launchers - VS Code
 # BEGIN Editor Launchers - Zed
 _ZED_PATHS=(
-  /Applications/Zed.app/Contents/MacOS/cli
-/usr/local/bin/zed
-/opt/homebrew/bin/zed
-/mnt/c/Program*Files/Zed*/zed.exe
-/mnt/c/Users/*/AppData/Local/Programs/Zed*/zed.exe
-/mnt/c/Users/*/AppData/Local/Zed*/zed.exe
-/usr/bin/zed
-/usr/local/bin/zed
-~/.local/bin/zed
+  "/Applications/Zed.app/Contents/MacOS/cli"
+"/usr/local/bin/zed"
+"/opt/homebrew/bin/zed"
+"/mnt/c/Program*Files/[Zz]ed*/[Zz]ed.exe"
+"/mnt/c/Users/*/AppData/Local/Programs/[Zz]ed*/[Zz]ed.exe"
+"/mnt/c/Users/*/AppData/Local/[Zz]ed*/[Zz]ed.exe"
+"/usr/bin/zed"
+"/usr/local/bin/zed"
+"~/.local/bin/zed"
 )
 _register_editor "zed" "_ZED_PATHS"
 

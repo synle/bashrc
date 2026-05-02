@@ -44,6 +44,15 @@
     "close_position": "right",
     "git_status": false
   },
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "agent": {
+    "dock": "right"
+  },
   "terminal": {
     "max_scroll_history_lines": 200000
   },

@@ -10,7 +10,8 @@
       "cmd-\\": "workspace::ToggleLeftDock",
       "cmd-|": "workspace::ToggleRightDock",
       "ctrl-cmd-|": "editor::ToggleSoftWrap",
-      "ctrl-`": "terminal_panel::Toggle"
+      "ctrl-`": "terminal_panel::Toggle",
+      "f5": "workspace::ReloadActiveItem"
     }
   }
 ]
