@@ -15,7 +15,7 @@
       "advanced/vs-code-ext.sh",
       "advanced/editor-launchers.js",
       "advanced/ghostty.js",
-      "windows/windows-terminal.js"
+      "windows-terminal.js"
     ]
   },
   "browsers": {
