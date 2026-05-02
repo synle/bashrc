@@ -221,6 +221,7 @@ input {
   .form-label {
     flex-shrink: 0;
     margin: 0;
+    padding: 0;
     min-width: 120px;
   }
 
@@ -275,6 +276,7 @@ input {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spaceSize3);
+  padding: var(--spaceSize1) var(--spaceSize2);
 
   @include tablet {
     gap: var(--gridGapWidth);
