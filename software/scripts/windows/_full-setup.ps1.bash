@@ -455,6 +455,24 @@ Get-SmbShare | Where-Object { $_.Name -like '_Sy_drive_*' } |
 ################################################################################
 # ---- NVIDIA RTX 5090 Desktop — Driver Tuning ----
 # Only runs when an RTX 5090 is detected (desktop dGPU box).
+#
+# What each command does:
+#   - nvidia-smi -pm 1
+#       Enables persistence mode: keeps the NVIDIA kernel driver loaded even
+#       when no CUDA/GPU process is active. Avoids the multi-second driver
+#       re-init lag on each new process and lets clock/power settings stick
+#       across runs instead of resetting to defaults between launches.
+#
+#   - nvidia-smi --auto-boost-default=0
+#       Disables auto boost: stops the GPU from opportunistically jumping into
+#       higher boost clocks based on thermal/power headroom. The card honors
+#       the configured power management mode ("Prefer max performance" set in
+#       NVIDIA Control Panel) instead of bouncing clocks, which gives more
+#       deterministic frame times / latency. (Optional — flag is a no-op on
+#       SKUs that don't expose auto-boost; the 2>$null swallows that warning.)
+#
+#   - All other GPUs: block is skipped entirely (no-op on laptops, AMD, older
+#     NVIDIA cards, headless boxes, etc.).
 ################################################################################
 
 $gpuName = (Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue |
