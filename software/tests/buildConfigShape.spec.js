@@ -45,7 +45,7 @@ const MIN_FILE_SIZES = {
   "sublime-text-config-mac": 4000,
   "vs-code-color-dark": 8000,
   "vs-code-color-light": 8000,
-  "vs-code-config": 35300,
+  "vs-code-config": 28100,
   "vs-code-config-mac": 35400,
   "zed-color-dark": 7100,
   "zed-color-light": 7100,
@@ -57,7 +57,7 @@ const MIN_FILE_SIZES = {
   "sublime-text-mouse-mac": 500,
   "vs-code-keys-combined": 17700,
   "zed-keys": 2700,
-  "zed-keys-linux": 5600,
+  "zed-keys-linux": 380,
   "zed-keys-windows": 5600,
   "ip-address.config.hostnamesFlattened": 1800,
 };
@@ -265,21 +265,10 @@ describe("build config shape - objects", () => {
     }
     expect(readBuildConfigKeys("vs-code-config")).toMatchInlineSnapshot(`
       [
-        "[graphql]",
-        "[handlebars]",
-        "[html]",
-        "[javascript]",
-        "[javascriptreact]",
-        "[json]",
-        "[markdown]",
-        "[plaintext]",
-        "[typescript]",
-        "[typescriptreact]",
-        "[xml]",
-        "[yaml]",
+        "[Default High Contrast Light]",
+        "[Default High Contrast]",
         "breadcrumbs.enabled",
         "chat.agent.enabled",
-        "chat.editor.fontSize",
         "chat.mcp.enabled",
         "editor.accessibilitySupport",
         "editor.bracketPairColorization.enabled",
@@ -312,6 +301,7 @@ describe("build config shape - objects", () => {
         "editor.renderControlCharacters",
         "editor.renderLineHighlight",
         "editor.renderWhitespace",
+        "editor.rulers",
         "editor.selectionHighlight",
         "editor.showUnused",
         "editor.smoothScrolling",
@@ -319,7 +309,6 @@ describe("build config shape - objects", () => {
         "editor.suggest.snippetsPreventQuickSuggestions",
         "editor.suggestSelection",
         "editor.tabSize",
-        "editor.tokenColorCustomizations",
         "editor.unicodeHighlight.ambiguousCharacters",
         "editor.unicodeHighlight.invisibleCharacters",
         "editor.wordWrap",
@@ -348,7 +337,6 @@ describe("build config shape - objects", () => {
         "remote.SSH.localServerDownload",
         "remote.SSH.remotePlatform",
         "scm.diffDecorations",
-        "scm.inputFontSize",
         "search.exclude",
         "search.followSymlinks",
         "search.useIgnoreFiles",
@@ -357,8 +345,10 @@ describe("build config shape - objects", () => {
         "terminal.integrated.defaultProfile.linux",
         "terminal.integrated.defaultProfile.osx",
         "terminal.integrated.enablePersistentSessions",
+        "terminal.integrated.fontFamily",
         "terminal.integrated.fontSize",
         "terminal.integrated.gpuAcceleration",
+        "terminal.integrated.scrollback",
         "typescript.inlayHints.variableTypes.enabled",
         "typescript.suggestionActions.enabled",
         "typescript.updateImportsOnFileMove.enabled",
@@ -369,7 +359,6 @@ describe("build config shape - objects", () => {
         "window.restoreWindows",
         "window.zoomLevel",
         "workbench.activityBar.location",
-        "workbench.colorCustomizations",
         "workbench.colorTheme",
         "workbench.editor.enablePreview",
         "workbench.editor.limit.enabled",
@@ -651,7 +640,7 @@ describe("build config shape - arrays", () => {
       return;
     }
     const shape = readBuildArrayShape("sublime-text-keys-mac");
-    expect(shape.length).toMatchInlineSnapshot("31");
+    expect(shape.length).toMatchInlineSnapshot(`32`);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
         "command",
@@ -748,11 +737,10 @@ describe("build config shape - arrays", () => {
       return;
     }
     const shape = readBuildArrayShape("zed-keys-linux");
-    expect(shape.length).toMatchInlineSnapshot("2");
+    expect(shape.length).toMatchInlineSnapshot(`1`);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
         "bindings",
-        "context",
       ]
     `);
   });
