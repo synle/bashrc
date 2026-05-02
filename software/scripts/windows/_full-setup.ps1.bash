@@ -90,8 +90,10 @@ $pathCandidates = @(
     "$env:JAVA_HOME\bin"                                          # java jdk
     "$env:LocalAppData\Microsoft\WindowsApps"                     # windows apps (user)
     "${env:ProgramFiles(x86)}\NVIDIA Corporation\PhysX\Common"    # nvidia physx
-    "$env:ProgramFiles\Microsoft VS Code"                         # vs code
-    "$env:ProgramFiles\Microsoft VS Code\bin"                     # vs code cli
+    "$env:ProgramFiles\Microsoft VS Code"                         # vs code (system-wide install)
+    "$env:ProgramFiles\Microsoft VS Code\bin"                     # vs code cli (system-wide install)
+    "$env:LocalAppData\Programs\Microsoft VS Code"                # vs code (per-user install — winget Microsoft.VisualStudioCode default)
+    "$env:LocalAppData\Programs\Microsoft VS Code\bin"            # vs code cli (per-user install)
     "$env:ProgramFiles\Sublime Text"                              # sublime text
     "$env:SystemRoot"                                             # windows root
     "$env:SystemRoot\System32"                                    # system32
