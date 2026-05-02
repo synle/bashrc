@@ -76,10 +76,12 @@ _installed_packages=$(winget.exe list < /dev/null 2> /dev/null | iconv -f UTF-16
 
 # Mirror of $wingetPackages in _full-setup.ps1.bash — keep in sync.
 winget_packages=(
-  # ---- Core: browser, terminal, fonts, editors ----
+  # ---- Core: browser, terminal, editors ----
+  # Fira Code is installed by software/scripts/fonts.js (drops the TTFs into
+  # the per-OS font folder), so we deliberately skip the winget package here
+  # to avoid double-installing the same font.
   "Brave.Brave"
   "Microsoft.WindowsTerminal"
-  "Mozilla.FiraCode"
   "Microsoft.VisualStudioCode"
   "SublimeHQ.SublimeText.4"
   "SublimeHQ.SublimeMerge"
