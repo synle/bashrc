@@ -100,7 +100,11 @@
   // --- Terminal & System ---
   "terminal.integrated.scrollback": 200000, // EDITOR_CONFIGS.terminalScrollback
   "terminal.integrated.gpuAcceleration": "auto", // Let VS Code decide whether to use GPU for terminal rendering. Values: "auto", "on", "off"
-  "security.workspace.trust.enabled": false, // Disable workspace trust prompts — trust all workspaces. Values: true, false
+  "security.workspace.trust.enabled": false, // Master kill-switch for workspace trust / restricted mode. Values: true, false
+  "security.workspace.trust.startupPrompt": "never", // Never show the trust prompt when opening a folder. Values: "always", "once", "never"
+  "security.workspace.trust.banner": "never", // Never show the "Restricted Mode" banner across the top of the window. Values: "always", "untilDismissed", "never"
+  "security.workspace.trust.untrustedFiles": "open", // Auto-open files from outside any trusted folder without prompting. Values: "prompt", "open", "newWindow"
+  "security.workspace.trust.emptyWindow": false, // Don't require trust for empty windows (e.g. opening a single file with no folder). Values: true, false
   "explorer.copyRelativePathSeparator": "/", // Always use forward slashes when copying relative paths. Values: "/", "\\", "auto"
   "remote.SSH.remotePlatform": { "127.0.0.1": "linux" }, // Default remote platform for localhost SSH. Values: per-host "linux", "macOS", "windows"
   "remote.SSH.localServerDownload": "auto", // Auto-download VS Code server to remote hosts. Values: "auto", "always", "off"
