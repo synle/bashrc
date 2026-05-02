@@ -340,7 +340,11 @@ describe("build config shape - objects", () => {
         "search.exclude",
         "search.followSymlinks",
         "search.useIgnoreFiles",
+        "security.workspace.trust.banner",
+        "security.workspace.trust.emptyWindow",
         "security.workspace.trust.enabled",
+        "security.workspace.trust.startupPrompt",
+        "security.workspace.trust.untrustedFiles",
         "telemetry.telemetryLevel",
         "terminal.integrated.defaultProfile.linux",
         "terminal.integrated.defaultProfile.osx",
@@ -547,6 +551,7 @@ describe("build config shape - objects", () => {
     }
     expect(readBuildConfigKeys("zed-config")).toMatchInlineSnapshot(`
       [
+        "agent",
         "auto_indent_on_paste",
         "auto_install_extensions",
         "auto_update",
@@ -566,7 +571,9 @@ describe("build config shape - objects", () => {
         "linked_edits",
         "minimap",
         "multi_cursor_modifier",
+        "outline_panel",
         "preferred_line_length",
+        "project_panel",
         "remove_trailing_whitespace_on_save",
         "scrollbar",
         "search",
