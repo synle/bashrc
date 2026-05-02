@@ -18,7 +18,7 @@ Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS`
    - `software/scripts/steamos/_full-setup.sh` -> `installPacmanPackage <name>`
    - `software/scripts/chromeos/_full-setup.sh` -> `installAptPackage <name>`
    - `software/scripts/windows/_full-setup.sh` -> add `_installWingetPackage "<winget.Id>"` (essential, blocking) or `_installWingetPackageInBackground "<winget.Id>"` (non-essential) call. Look up the correct winget ID with `winget search <name>`.
-   - `software/scripts/windows/_full-setup.ps1.bash` -> add winget ID to `$wingetPackagesBackground` (non-essential, heavy packages only) under the matching `# ---- Category ----` comment.
+   - `software/scripts/windows/_full-setup.ps1.bash` -> add winget ID to `$wingetPackages` under the matching `# ---- Category ----` comment. (Single foreground install list — no separate background list; winget's background jobs are unreliable.)
    - Place the new line alphabetically within the existing package group under the appropriate `# ---- Category ----` sub-section header.
    - Check if the package name differs per distro (e.g. `fd` vs `fd-find`, winget: `sharkdp.fd`) and use the correct name for each.
    - **All platforms must stay in sync.** If a tool has a winget equivalent, it must be added to Windows too.

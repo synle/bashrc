@@ -20,9 +20,7 @@
 #   GPU TUNING
 #     - NVIDIA RTX 5090 Desktop — Driver Tuning
 #   SOFTWARE INSTALLATION (slow — runs last)
-#     - Winget Install & Upgrade
-#       - Essential packages (blocking)
-#       - Background packages (parallel)
+#     - Winget Install & Upgrade (single foreground list — winget background jobs are unreliable)
 #     - Install Media Extensions (Microsoft Store)
 #     - Brave Browser Shortcut Flags
 #     - AI CLI Tools (opencode)
@@ -539,28 +537,30 @@ winget source update --disable-interactivity 2>$null | Out-Null
 # Cache all installed packages once upfront — avoids spawning winget list per package (~1-2s each)
 $installedPackages = winget list 2>$null | Out-String
 
-# ---- Essential packages (installed first, blocking) ----
-$wingetPackagesEssential = @(
-    "7zip.7zip",
+# NOTE: Everything is installed in the FOREGROUND, sequentially. We used to
+# split this into "essential" (foreground) + "background" (Start-Job) lists,
+# but winget is funky in background jobs — UAC prompts get suppressed, the
+# package store frequently reports "in use" when two installs race, and
+# silent failures are common. One-at-a-time foreground installs are slower
+# but reliable, and that trade is worth it for an unattended setup script.
+$wingetPackages = @(
+    # ---- Core: browser, terminal, fonts, editors ----
     "Brave.Brave",
-    "Git.Git",
-    "GitHub.cli",
-    "Git.LFS",
-    "NewRen.git-filter-repo",
-    "Microsoft.VisualStudioCode",
+    "Microsoft.WindowsTerminal",
     "Mozilla.FiraCode",
-    "OpenJS.NodeJS",
-    "Python.Python.3",
-    "Starship.Starship",
-    "SublimeHQ.SublimeMerge",
+    "Microsoft.VisualStudioCode",
     "SublimeHQ.SublimeText.4",
+    "SublimeHQ.SublimeMerge",
     "ZedIndustries.Zed",
-    "Microsoft.WindowsTerminal"
-)
 
-# ---- Non-essential packages (installed in background after essentials) ----
-$wingetPackagesBackground = @(
+    # ---- Git ----
+    "Git.Git",
+    "Git.LFS",
+    "GitHub.cli",
+    "NewRen.git-filter-repo",
+
     # ---- CLI Utilities (cross-platform parity with Unix _full-setup.sh) ----
+    "7zip.7zip",
     "BurntSushi.ripgrep.MSVC",
     "junegunn.fzf",
     "jqlang.jq",
@@ -574,8 +574,11 @@ $wingetPackagesBackground = @(
     "astral-sh.uv",
     "Cloudflare.cloudflared",
     "Google.PlatformTools",
+    "Starship.Starship",
 
     # ---- Dev Tools & Runtimes ----
+    "OpenJS.NodeJS",
+    "Python.Python.3",
     "Rustlang.Rustup",
     "GoLang.Go",
     "DenoLand.Deno",
@@ -650,8 +653,8 @@ $wingetPackagesBackground = @(
     "WinFSP.SSHFS"
 )
 
-Write-Host "`n--- Installing essential packages ---" -ForegroundColor Cyan
-foreach ($pkg in $wingetPackagesEssential) {
+Write-Host "`n--- Installing winget packages (foreground, sequential) ---" -ForegroundColor Cyan
+foreach ($pkg in $wingetPackages) {
     if ($installedPackages -match [regex]::Escape($pkg)) {
         Write-Host "  Skipped: $pkg (already installed)" -ForegroundColor Yellow
     } else {
@@ -659,19 +662,6 @@ foreach ($pkg in $wingetPackagesEssential) {
         winget install --id $pkg -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent 2>$null
     }
 }
-
-Write-Host "`n--- Installing background packages ---" -ForegroundColor Cyan
-$backgroundJob = Start-Job -ScriptBlock {
-    param($packages, $installed)
-    foreach ($pkg in $packages) {
-        if ($installed -match [regex]::Escape($pkg)) {
-            Write-Host "  Skipped: $pkg (already installed)" -ForegroundColor Yellow
-        } else {
-            Write-Host "  Installing: $pkg"
-            winget install --id $pkg -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent 2>$null
-        }
-    }
-} -ArgumentList $wingetPackagesBackground, $installedPackages
 
 Write-Host "`nUpgrading all winget packages..." -ForegroundColor Cyan
 winget upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity
@@ -766,15 +756,6 @@ if (Get-Command opencode -ErrorAction SilentlyContinue) {
     }
 }
 
-
-
-# Wait for background winget installs to finish
-if ($backgroundJob) {
-    Write-Host "`nWaiting for background package installs to finish..." -ForegroundColor Cyan
-    $backgroundJob | Wait-Job | Receive-Job
-    $backgroundJob | Remove-Job
-    Write-Host "Background package installs complete." -ForegroundColor Green
-}
 
 
 Write-Host "`nTo enable Windows Store on LTSC, run the following manually:" -ForegroundColor Yellow
