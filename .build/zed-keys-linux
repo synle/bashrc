@@ -1,0 +1,16 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-02]
+// 
+// Zed keymap.json (Linux/Windows)
+// ################################################################################
+
+
+[
+  {
+    "bindings": {
+      "alt-\\": "workspace::ToggleLeftDock",
+      "alt-|": "workspace::ToggleRightDock",
+      "ctrl-alt-|": "editor::ToggleSoftWrap",
+      "ctrl-`": "terminal_panel::Toggle"
+    }
+  }
+]

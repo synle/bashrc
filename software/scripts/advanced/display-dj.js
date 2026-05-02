@@ -4,7 +4,14 @@ const DISPLAY_DJ_REPO = "synle/display-dj";
 /** @type {string} macOS bundle identifier for display-dj. */
 const DISPLAY_DJ_BUNDLE_ID = "com.synle.display-dj";
 
-/** Downloads the display-dj application binary for the current platform and generates helper scripts. */
+/**
+ * Downloads the display-dj application binary for the current platform and, on macOS,
+ * resets the app's Accessibility permission grant at the end of every install run.
+ * Forcing a re-grant fixes the common "permission shows granted in System Settings
+ * but display-dj still can't read input events" stuck state that tends to surface
+ * after a version upgrade. The user re-grants access in
+ * System Settings > Privacy & Security > Accessibility after this runs.
+ */
 async function doWork() {
   await downloadAndInstallBinary(DISPLAY_DJ_REPO, (ver, isArm64) => {
     return is_os_mac
@@ -15,26 +22,12 @@ async function doWork() {
   });
 
   if (is_os_mac) {
-    await _doResetAccessibilityScript();
+    if (IS_DRY_RUN) {
+      log(`>> [DryRun] Would reset macOS Accessibility for ${DISPLAY_DJ_BUNDLE_ID}`);
+    } else {
+      log(`>> Resetting macOS Accessibility for ${DISPLAY_DJ_BUNDLE_ID}`);
+      log(">>   Re-grant access in: System Settings > Privacy & Security > Accessibility");
+      await execBash(`tccutil reset Accessibility ${DISPLAY_DJ_BUNDLE_ID}`);
+    }
   }
-}
-
-/** Generates a macOS script to reset accessibility permissions for display-dj. */
-async function _doResetAccessibilityScript() {
-  const scriptContent = trimLeftSpaces(`
-    #!/usr/bin/env bash
-    # Resets macOS accessibility permissions for Display DJ.
-    # After running, re-grant accessibility access in System Settings > Privacy & Security > Accessibility.
-
-    tccutil reset Accessibility ${DISPLAY_DJ_BUNDLE_ID}
-    echo "Accessibility permissions reset for ${DISPLAY_DJ_BUNDLE_ID}"
-    echo "Re-grant access in: System Settings > Privacy & Security > Accessibility"
-  `);
-
-  await writeBuildArtifact({
-    file: `${BUILD_DIR}/display-dj-reset-accessibility-mac.sh`,
-    data: scriptContent,
-    comments: "Reset macOS Accessibility permissions for Display DJ",
-    commentStyle: "bash",
-  });
 }
