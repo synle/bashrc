@@ -25,6 +25,7 @@
 #       - Background packages (parallel)
 #     - Install Media Extensions (Microsoft Store)
 #     - Brave Browser Shortcut Flags
+#     - AI CLI Tools (opencode)
 ################################################################################
 
 # Disable progress bars to speed up Invoke-WebRequest
@@ -99,6 +100,7 @@ $pathCandidates = @(
     "$env:SystemRoot\System32\WindowsPowerShell\v1.0"             # powershell
     "$env:UserProfile\AppData\Local\Microsoft\WindowsApps"        # windows apps (profile)
     "$env:UserProfile\.local\bin"                                 # user-local bins (claude, npm globals, etc.)
+    "$env:UserProfile\.opencode\bin"                              # opencode (curl|iex installer drops here)
 )
 
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -734,6 +736,31 @@ foreach ($searchPath in $braveShortcutPaths) {
                 Write-Host "  Updated: $($_.FullName)" -ForegroundColor Green
             }
         }
+    }
+}
+
+
+
+################################################################################
+# ---- AI CLI Tools (opencode) ----
+# Tools that publish their own PowerShell installer scripts. Each one drops a
+# binary into $env:UserProfile\.opencode\bin (or similar) — already covered by
+# the user PATH stitched up earlier in this script.
+################################################################################
+
+Write-Host "`n=== Installing AI CLI Tools ===" -ForegroundColor Cyan
+
+# opencode — terminal-based AI coding agent (https://opencode.ai)
+# Installer drops opencode.exe into %USERPROFILE%\.opencode\bin
+if (Get-Command opencode -ErrorAction SilentlyContinue) {
+    Write-Host "  Skipped: opencode (already installed)" -ForegroundColor Yellow
+} else {
+    Write-Host "  Installing: opencode"
+    try {
+        Invoke-RestMethod -Uri "https://opencode.ai/install.ps1" -UseBasicParsing | Invoke-Expression
+        Write-Host "  Installed: opencode" -ForegroundColor Green
+    } catch {
+        Write-Host "  Failed to install opencode: $_" -ForegroundColor Red
     }
 }
 
