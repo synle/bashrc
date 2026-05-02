@@ -22,28 +22,6 @@
 # Configures FZF defaults, aliases (glog, fvim), and provides the
 # _fuzzy_list_all directory crawler (Node.js BFS with git fast path).
 ################################################################################
-# Shared fzf preview command for file paths. fzf expands `{}` to the selected
-# entry at runtime; bash expands `$_BAT_PREVIEW` at fzf invocation time, so the
-# subshell receives the full resolved string (no need to export anything).
-# Fallback chain: `bat` (mac/Homebrew, and Linux after `ensure_binary_alias bat`
-# creates the symlink) -> `batcat` (raw apt name, in case the alias isn't yet
-# in PATH) -> `command cat` (no syntax highlighting, last resort).
-_BAT_PREVIEW='bat --paging=never --style=plain --color=always {} 2>/dev/null || batcat --paging=never --style=plain --color=always {} 2>/dev/null || command cat {} 2>/dev/null'
-
-# Stdin variant of the above for previews that synthesize bash code on the fly
-# (e.g. `type <function>` for bookmarks) instead of reading a file. The `{} ||`
-# fallback chain doesn't work for stdin because the first tool to run consumes
-# the pipe, so pre-detect the available tool at profile-load time and bake one
-# command into the variable. Forces `--language=bash` since `type` output is
-# always bash code regardless of the surrounding shell.
-if type -P bat &> /dev/null; then
-  _BAT_PREVIEW_BASH_STDIN='bat --paging=never --style=plain --color=always --language=bash --theme=ansi'
-elif type -P batcat &> /dev/null; then
-  _BAT_PREVIEW_BASH_STDIN='batcat --paging=never --style=plain --color=always --language=bash --theme=ansi'
-else
-  _BAT_PREVIEW_BASH_STDIN='command cat'
-fi
-
 export FZF_COMPLETION_TRIGGER='*'
 # Single source of truth for fzf defaults. All flags here apply to every fzf
 # invocation (functions, command-line, completion) without relying on alias
@@ -348,7 +326,7 @@ function fuzzy_recent_files() {
   local VIEW_COMMAND="${1:-}"
   local OUT=$(echo "$(_recent_files)" | fzf +m --prompt="recent files> " \
     --header="(Ctrl+Y) - recently opened files" \
-    --preview="$_BAT_PREVIEW" \
+    --preview="bat --paging=never --style=plain --color=always {}" \
     --preview-window=down:50%:wrap)
   if [ -n "$OUT" ] && [ -f "$OUT" ]; then
     if [ -n "$VIEW_COMMAND" ] && type -P "$VIEW_COMMAND" &> /dev/null; then
@@ -399,7 +377,7 @@ function fuzzy_favorite_command() {
   local cmd
   cmd=$(command cat "$BOOKMARK_PATH" 2> /dev/null | sort -u | fzf --prompt="bookmark> " \
     --header="(Ctrl+B) - bookmarked commands" \
-    --preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | '"$_BAT_PREVIEW_BASH_STDIN" \
+    --preview='source "$HOME/.bashrc" &>/dev/null; cmd={};word=$(echo "$cmd" | awk "{print \$1}"); { type "$word" 2>&1; echo ""; echo "---"; echo "$cmd"; } | bat --paging=never --style=plain --color=always --language=bash' \
     --preview-window=down:50%:wrap \
     --bind 'f5:reload(command cat "$BOOKMARK_PATH" 2>/dev/null | sort -u)')
 
@@ -450,7 +428,7 @@ function fuzzy_edit() {
   abs_dir=$(cd "$dir" 2> /dev/null && command pwd || echo "$dir")
   local OUT=$(_fuzzy_list_all "$dir" "paths" "" 10 | fzf --prompt="edit> " \
     --header="(Ctrl+T) - edit files under ${abs_dir}" \
-    --preview="[ -d {} ] && ls -Cp --color=always {} 2>/dev/null || ($_BAT_PREVIEW)" \
+    --preview="[ -d {} ] && ls -Cp --color=always {} 2>/dev/null || (bat --paging=never --style=plain --color=always {})" \
     --preview-window=down:50%:wrap \
     --bind "f5:reload(_fuzzy_list_all '$dir' 'paths' '' 10)")
 
