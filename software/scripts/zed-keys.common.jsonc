@@ -24,6 +24,12 @@
       // future default change can't silently break it. Mirrors VS Code's
       // `ctrl+`` -> workbench.action.terminal.toggleTerminal.
       "ctrl-`": "terminal_panel::Toggle",
+      // F5 — revert/reload the active file from disk. Matches VS Code's
+      // `workbench.action.files.revert` and Sublime's chained `revert` +
+      // `refresh_folder_list`. Zed's project panel auto-watches the
+      // filesystem (no manual refresh action exists in `project_panel::*`),
+      // so reverting the buffer is enough — the tree updates on its own.
+      "f5": "workspace::ReloadActiveItem",
     },
   },
 ]

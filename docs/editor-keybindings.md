@@ -188,7 +188,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+shift+\`      | Toggle right dock |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
 | `ctrl+shift+OS_KEY+\` | Toggle soft wrap  |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 | `` ctrl+` ``          | Toggle terminal   |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `F5`                  | Refresh / revert  |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
+| `F5`                  | Refresh / revert  |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
 | `F11`                 | Fullscreen        |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
 
 ### Splits (editors)
