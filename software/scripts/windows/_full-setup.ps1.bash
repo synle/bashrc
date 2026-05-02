@@ -17,6 +17,8 @@
 #     - Firewall Blocking
 #   FILE SHARING
 #     - Smb Shares (expose data drives on LAN)
+#   GPU TUNING
+#     - NVIDIA RTX 5090 Desktop — Driver Tuning
 #   SOFTWARE INSTALLATION (slow — runs last)
 #     - Winget Install & Upgrade
 #       - Essential packages (blocking)
@@ -447,6 +449,27 @@ Get-SmbShare | Where-Object { $_.Name -like '_Sy_drive_*' } |
 #     # # persistent mount via /etc/fstab (one line, no leading '#')
 #     # //<WIN_HOST>/_Sy_drive_<DRIVE_LETTER>  /mnt/<WIN_HOST>/<DRIVE_LETTER>  cifs  credentials=/etc/samba/creds-<WIN_HOST>,uid=1000,gid=1000,iocharset=utf8,vers=3.0,nofail,_netdev  0  0
 # --------------------------------------------------------------------------
+
+
+
+################################################################################
+# ---- NVIDIA RTX 5090 Desktop — Driver Tuning ----
+# Only runs when an RTX 5090 is detected (desktop dGPU box).
+################################################################################
+
+$gpuName = (Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty Name) -join " "
+if ($gpuName -match "RTX\s*5090") {
+    Write-Host "`n=== NVIDIA RTX 5090 — Driver Tuning ===" -ForegroundColor Cyan
+
+    if (Get-Command nvidia-smi -ErrorAction SilentlyContinue) {
+        nvidia-smi -pm 1 | Out-Null                    # Enable persistence mode
+        nvidia-smi --auto-boost-default=0 2>$null | Out-Null   # Disable auto boost (optional)
+        Write-Host "  nvidia-smi: persistence ON, auto-boost OFF" -ForegroundColor Green
+    } else {
+        Write-Host "  nvidia-smi not on PATH — skipping" -ForegroundColor Yellow
+    }
+}
 
 
 
