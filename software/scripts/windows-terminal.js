@@ -5,8 +5,21 @@
  * Writes a prebuilt `.build/windows-terminal` artifact (used by the webapp/setup
  * scripts) and, when running on Windows, merges those values into the live
  * `LocalState/settings.json` for the installed Windows Terminal package.
+ *
+ * Lives at the top of `software/scripts/` (not under `windows/`) because the
+ * prebuilt artifact must be emitted on Linux/Mac CI runners too — otherwise the
+ * webapp's `DynamicTextArea` for `/.build/windows-terminal` 404s on the
+ * published site. The `windows/` OS-folder filter would drop this script before
+ * it ever ran on those runners.
  */
 async function doWork() {
+  // Skip on non-Windows local dev machines: nothing to install, and we don't
+  // want to spam local developers with an artifact-only run. CI runners always
+  // emit the artifact; Windows hosts always run end-to-end.
+  if (!IS_CI && !is_os_windows) {
+    return;
+  }
+
   log(">> Setting up Microsoft Windows Terminal");
 
   // ----------------------------------------------------------
@@ -88,7 +101,7 @@ async function doWork() {
   // ----------------------------------------------------------
   // Keybindings (loaded from external jsonc file)
   // ----------------------------------------------------------
-  const keybindings = (await readJson`software/scripts/windows/windows-terminal-keys.jsonc`) || [];
+  const keybindings = (await readJson`software/scripts/windows-terminal-keys.jsonc`) || [];
 
   // ----------------------------------------------------------
   // Script-contributed settings (merged on top of the user's existing
