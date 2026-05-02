@@ -529,7 +529,6 @@ function diff() {
 # ---- Git Helpers ----
 ################################################################################
 alias clean='_clean_reset_head_to_main_branch' # hard reset current branch to origin default branch
-alias empty='_commit_empty_trigger_deploy'
 
 # list source repo names for a GitHub user (default: synle)
 function repos() {
@@ -705,7 +704,7 @@ function _clean_reset_head_to_main_branch() {
 }
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment
-function _commit_empty_trigger_deploy() {
+function commit_empty_trigger_deploy() {
   local temp_branch_name="empty-commit-$(command date +%s)"
   git checkout -b "$temp_branch_name" > /dev/null 2>&1
   git commit --allow-empty -m "Trigger deployment - EMPTY PR" > /dev/null 2>&1
