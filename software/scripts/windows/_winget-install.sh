@@ -61,14 +61,18 @@ FORCE_INSTALL=0
 
 echo ">>> Installing winget packages (foreground, sequential)"
 
-# Refresh winget source index so installs resolve latest versions
-winget.exe source update --disable-interactivity > /dev/null 2>&1 || true
+# Refresh winget source index so installs resolve latest versions.
+# `< /dev/null` is mandatory: this script is bundled into a `bash <<'EOF'`
+# heredoc by _emitBundledShScripts, and winget.exe (via WSL interop) will
+# happily read from the heredoc's stdin, swallowing the rest of the script
+# and causing bash to exit silently after the first echo.
+winget.exe source update --disable-interactivity < /dev/null > /dev/null 2>&1 || true
 
 # Cache all installed packages once upfront — avoids spawning winget.exe list
 # per package (~1-2s each). winget output is UTF-16 in some locales; iconv
 # the bytes to UTF-8 so bash substring matching works. The `|| true` keeps
 # the script alive if iconv guesses the wrong source encoding.
-_installed_packages=$(winget.exe list 2> /dev/null | iconv -f UTF-16LE -t UTF-8 2> /dev/null || winget.exe list 2> /dev/null)
+_installed_packages=$(winget.exe list < /dev/null 2> /dev/null | iconv -f UTF-16LE -t UTF-8 2> /dev/null || winget.exe list < /dev/null 2> /dev/null)
 
 # Mirror of $wingetPackages in _full-setup.ps1.bash — keep in sync.
 winget_packages=(
@@ -191,11 +195,11 @@ for pkg in "${winget_packages[@]}"; do
     echo "  Skipped: $pkg (already installed)"
   else
     echo "  Installing: $pkg"
-    winget.exe install --id "$pkg" -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous > /dev/null 2>&1 || true
+    winget.exe install --id "$pkg" -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous < /dev/null > /dev/null 2>&1 || true
   fi
 done
 
 echo ">>> Upgrading all winget packages"
-winget.exe upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity > /dev/null 2>&1 || true
+winget.exe upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity < /dev/null > /dev/null 2>&1 || true
 
 echo ">>> winget-install complete"
