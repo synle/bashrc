@@ -18,10 +18,13 @@ const _ZED_PATHS = [
   "/usr/local/bin/zed",
   "/opt/homebrew/bin/zed",
 
-  // Windows (WSL paths)
-  "/mnt/c/Program*Files/Zed*/zed.exe",
-  "/mnt/c/Users/*/AppData/Local/Programs/Zed*/zed.exe",
-  "/mnt/c/Users/*/AppData/Local/Zed*/zed.exe",
+  // Windows (WSL paths) — winget/MSI installs ship the binary as "Zed.exe"
+  // (capital Z). Bash globs are case-sensitive even on DrvFs (matching happens
+  // in bash, not in the kernel), so use a [Zz] character class to tolerate any
+  // installer variant.
+  "/mnt/c/Program*Files/[Zz]ed*/[Zz]ed.exe",
+  "/mnt/c/Users/*/AppData/Local/Programs/[Zz]ed*/[Zz]ed.exe",
+  "/mnt/c/Users/*/AppData/Local/[Zz]ed*/[Zz]ed.exe",
 
   // Linux
   "/usr/bin/zed",
