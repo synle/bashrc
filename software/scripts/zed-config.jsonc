@@ -36,6 +36,12 @@
     "git_status": false, // Hide git status indicators on tabs. Values: true, false
   },
 
+  // --- Dock positions (override Zed defaults: project_panel="right", agent="left") ---
+  // Match VS Code / Sublime convention: file tree on the LEFT, agent/AI on the RIGHT.
+  "project_panel": { "dock": "left" }, // File tree dock side. Values: "left", "right"
+  "outline_panel": { "dock": "left" }, // Symbol outline dock side — pair with the file tree. Values: "left", "right"
+  "agent": { "dock": "right" }, // Agent / AI panel dock side. Values: "left", "right", "bottom"
+
   // --- Terminal ---
   "terminal": {
     "max_scroll_history_lines": 200000, // EDITOR_CONFIGS.terminalScrollback
