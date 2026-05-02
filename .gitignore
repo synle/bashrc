@@ -43,6 +43,8 @@ yarn-error.log*
 *.LICENSE.txt
 *.patch
 *.rej
+*.bak_original
+*.bak_latest
 public/vs
 upload
 
