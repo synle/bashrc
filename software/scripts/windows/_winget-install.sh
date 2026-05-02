@@ -201,7 +201,16 @@ for pkg in "${winget_packages[@]}"; do
   fi
 done
 
-echo ">>> Upgrading all winget packages"
-winget.exe upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity < /dev/null > /dev/null 2>&1 || true
+# Gate `winget upgrade --all` on the same 2-week bash_syle staleness check
+# that medium/heavy scripts use. Running it on every `bash run.sh` invocation
+# is slow and rarely productive. is_bash_syle_stale returns 0 only when
+# ~/.bash_syle is older than 2 weeks (or missing), or when IS_REFRESH_MODE=1
+# (set when the user targets this script via --refresh=_winget-install).
+if is_bash_syle_stale; then
+  echo ">>> Upgrading all winget packages (bash_syle is stale)"
+  winget.exe upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity < /dev/null > /dev/null 2>&1 || true
+else
+  echo ">>> Skipped: winget upgrade --all (bash_syle is fresh; run with --refresh=_winget-install to override)"
+fi
 
 echo ">>> winget-install complete"
