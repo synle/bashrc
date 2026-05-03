@@ -172,16 +172,12 @@ winget_packages=(
   "WinFSP.SSHFS"
 )
 
-# Gate the install loop AND `winget upgrade --all` on bash_syle staleness:
-#   - bash_syle is stale (first-time setup or 2+ weeks idle) -> run the full
-#     install loop. Skip the trailing `winget upgrade --all` because the
-#     install loop above just pulled --force --uninstall-previous for every
-#     package, so a follow-up bulk upgrade is pure noise (and slow).
-#   - bash_syle is fresh (recent setup) -> SKIP the install loop entirely
-#     (the user is iterating on this repo, not doing a clean install) and
-#     instead PROMPT for `winget upgrade --all` as the lighter alternative,
-#     default N.
-#   - non-interactive (no /dev/tty, e.g. CI) -> prompt_yes_no returns 1, SKIP.
+# Gate the install loop on bash_syle staleness:
+#   - stale (first-time setup or 2+ weeks idle) -> run the full install loop.
+#   - fresh (recent setup) -> skip the install loop and just LIST pending
+#     upgrades via `winget upgrade` (no `--all` — bulk upgrade is too slow to
+#     run on every iteration; the list is informational, the user can pick
+#     and run `winget.exe upgrade --id <pkg>` manually).
 if is_bash_syle_stale; then
   echo ">>> Installing winget packages (foreground, sequential)"
 
@@ -211,13 +207,9 @@ if is_bash_syle_stale; then
       winget.exe install --id "$pkg" -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous < /dev/null > /dev/null 2>&1 || true
     fi
   done
-
-  echo ">>> Skipped: winget upgrade --all (bash_syle is stale; install loop above already pulled latest)"
-elif prompt_yes_no ">>> bash_syle is fresh. Run 'winget upgrade --all' now? This is slow."; then
-  echo ">>> Upgrading all winget packages"
-  winget.exe upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity < /dev/null > /dev/null 2>&1 || true
 else
-  echo ">>> Skipped winget-install: bash_syle is fresh (declined or non-interactive)"
+  echo ">>> Listing available winget upgrades (bash_syle is fresh; informational only)"
+  winget.exe upgrade --include-unknown --source winget --accept-source-agreements --disable-interactivity < /dev/null || true
 fi
 
 echo ">>> winget-install complete"
