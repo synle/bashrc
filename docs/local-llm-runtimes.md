@@ -21,11 +21,11 @@ Switch to:
 
 ## What each one actually is
 
-| Runtime | What it is | Backend | Default model format |
-| --- | --- | --- | --- |
-| **Ollama** | UX layer + daemon over llama.cpp | llama.cpp (C++/CUDA/Metal/ROCm) | GGUF |
-| **llama.cpp** | The inference engine itself; ships `llama-server` binary | C++/CUDA/Metal/ROCm | GGUF |
-| **vLLM** | High-throughput batched serving engine, Python | CUDA (ROCm beta) | Hugging Face safetensors (also AWQ/GPTQ/FP8) |
+| Runtime       | What it is                                               | Backend                         | Default model format                         |
+| ------------- | -------------------------------------------------------- | ------------------------------- | -------------------------------------------- |
+| **Ollama**    | UX layer + daemon over llama.cpp                         | llama.cpp (C++/CUDA/Metal/ROCm) | GGUF                                         |
+| **llama.cpp** | The inference engine itself; ships `llama-server` binary | C++/CUDA/Metal/ROCm             | GGUF                                         |
+| **vLLM**      | High-throughput batched serving engine, Python           | CUDA (ROCm beta)                | Hugging Face safetensors (also AWQ/GPTQ/FP8) |
 
 Ollama is not a competitor to llama.cpp — it _is_ llama.cpp with a registry
 (`ollama pull qwen3:7b`), a REST API, model lifecycle management, and a
@@ -41,15 +41,15 @@ serializes.
 
 ## Decision matrix
 
-| Concern | Best fit | Why |
-| --- | --- | --- |
-| Single user, opencode + Ctrl+R style use | Ollama | Best UX, lowest setup cost, runs anywhere |
-| Want CPU-only or small GPU (< 8 GB VRAM) | Ollama or llama.cpp | GGUF Q4/Q5 quants run anywhere; vLLM is heavy |
-| 5+ concurrent agents hitting same model | vLLM | PagedAttention batching scales linearly; llama.cpp serializes |
-| Need a brand-new model not yet on Ollama library | vLLM (short term) | HF lands first; GGUF conversions follow within days/weeks |
-| Want zero daemon, single binary serving | llama-server | One process you start, no background service |
-| Apple Silicon (Metal) | Ollama or llama.cpp | First-class Metal support; vLLM is CUDA-first |
-| Production multi-tenant API | vLLM | Designed for it; Ollama and llama-server are not tuned for QPS |
+| Concern                                          | Best fit            | Why                                                            |
+| ------------------------------------------------ | ------------------- | -------------------------------------------------------------- |
+| Single user, opencode + Ctrl+R style use         | Ollama              | Best UX, lowest setup cost, runs anywhere                      |
+| Want CPU-only or small GPU (< 8 GB VRAM)         | Ollama or llama.cpp | GGUF Q4/Q5 quants run anywhere; vLLM is heavy                  |
+| 5+ concurrent agents hitting same model          | vLLM                | PagedAttention batching scales linearly; llama.cpp serializes  |
+| Need a brand-new model not yet on Ollama library | vLLM (short term)   | HF lands first; GGUF conversions follow within days/weeks      |
+| Want zero daemon, single binary serving          | llama-server        | One process you start, no background service                   |
+| Apple Silicon (Metal)                            | Ollama or llama.cpp | First-class Metal support; vLLM is CUDA-first                  |
+| Production multi-tenant API                      | vLLM                | Designed for it; Ollama and llama-server are not tuned for QPS |
 
 ## Performance notes (single user)
 
@@ -144,8 +144,7 @@ correct regardless of which engine you happen to be running.
 ## Best coding models per hardware
 
 Recommendations are anchored to the **Qwen2.5-Coder** family (7B / 14B / 32B
-Instruct), which held the top open-weights coding benchmark slot as of early
-2025. Cross-check current LiveCodeBench / EvalPlus / Aider leaderboards before
+Instruct), which held the top open-weights coding benchmark slot as of early 2025. Cross-check current LiveCodeBench / EvalPlus / Aider leaderboards before
 committing — the open-source coding race moves fast and a newer family may have
 displaced it by the time you read this.
 
@@ -156,36 +155,38 @@ jump to Q5_K_M when you can afford ~20% more VRAM.
 
 ### RTX 5090 (32 GB)
 
-- **Daily driver**: `Qwen2.5-Coder-32B-Instruct` at `Q5_K_M` (~22 GB).
+- **Daily driver**: `Qwen2.5-Coder-32B-Instruct` at `Q5_K_M` (~22 GB) — `ollama pull qwen2.5-coder:32b-instruct-q5_K_M`.
   Comfortably fits 16k context with KV cache. This is essentially the largest
   open coder model that runs at full quality on a single consumer GPU.
-- **Speed-first**: `Qwen2.5-Coder-14B-Instruct` at `Q8_0` (~16 GB). Near-32B
-  quality on many tasks, ~2x throughput. Good when you want responsive
-  multi-turn editing.
+- **Speed-first**: `Qwen2.5-Coder-14B-Instruct` at `Q8_0` (~16 GB) — `ollama pull qwen2.5-coder:14b-instruct-q8_0`.
+  Near-32B quality on many tasks, ~2x throughput. Good when you want
+  responsive multi-turn editing.
 - **Skip**: 70B Q4 (~40 GB) — overflows VRAM, partial offload kills the
   reason you bought a 5090.
 
 ### RTX 3090 (24 GB)
 
-- **Daily driver**: `Qwen2.5-Coder-32B-Instruct` at `Q4_K_M` (~19 GB) with 8k
-  context. The 3090 is the canonical "32B coder at home" card.
+- **Daily driver**: `Qwen2.5-Coder-32B-Instruct` at `Q4_K_M` (~19 GB) — `ollama pull qwen2.5-coder:32b`.
+  With 8k context. The 3090 is the canonical "32B coder at home" card.
 - **Bigger context**: drop to `Qwen2.5-Coder-14B-Instruct` at `Q5_K_M`
-  (~10 GB) and you can run 32k+ context comfortably.
-- **Stretch**: 32B `Q5_K_M` (~22 GB) fits but only with short context (4k or
-  less) — usually not worth it.
+  (~10 GB) — `ollama pull qwen2.5-coder:14b-instruct-q5_K_M`. You can run 32k+
+  context comfortably.
+- **Stretch**: 32B `Q5_K_M` (~22 GB) — `ollama pull qwen2.5-coder:32b-instruct-q5_K_M`.
+  Fits but only with short context (4k or less) — usually not worth it.
 
 ### RTX 3070 Ti Laptop (8 GB)
 
-- **Daily driver**: `Qwen2.5-Coder-7B-Instruct` at `Q4_K_M` (~4.5 GB).
+- **Daily driver**: `Qwen2.5-Coder-7B-Instruct` at `Q4_K_M` (~4.5 GB) — `ollama pull qwen2.5-coder:7b`.
   Leaves room for 8k-16k context. Fast enough for inline completion-style
   use.
-- **Stretch**: 14B `Q4_K_M` (~9 GB) requires partial CPU offload — runs but
-  drops to 10-15 tok/s on a laptop. Probably not worth the wait for
-  interactive use.
+- **Stretch**: 14B `Q4_K_M` (~9 GB) — `ollama pull qwen2.5-coder:14b`.
+  Requires partial CPU offload — runs but drops to 10-15 tok/s on a laptop.
+  Probably not worth the wait for interactive use.
 - **Alternative**: `DeepSeek-Coder-V2-Lite-Instruct` (16B MoE, 2.4B active)
-  at `Q4_K_M` (~10 GB) — the MoE structure means active params are tiny so
-  inference is fast even partially offloaded. Sometimes a better real-world
-  fit on a constrained laptop than dense 7B.
+  at `Q4_K_M` (~10 GB) — `ollama pull deepseek-coder-v2:16b`. The MoE
+  structure means active params are tiny so inference is fast even partially
+  offloaded. Sometimes a better real-world fit on a constrained laptop than
+  dense 7B.
 - **Note**: laptop GPUs thermal-throttle hard. Size the model for **sustained**
   performance, not peak — a 7B that runs cool wins over a 14B that downclocks
   after 60 seconds.
@@ -196,14 +197,15 @@ Apple unified memory means GPU-accessible RAM is ~21 GB by default (75% of
 total). Override with `sudo sysctl iogpu.wired_limit_mb=24576` to push to
 24 GB if you need it.
 
-- **Daily driver**: `Qwen2.5-Coder-14B-Instruct` at `Q5_K_M` (~10 GB). The
-  sweet spot on M1 Pro — fast enough to feel responsive, smart enough for
+- **Daily driver**: `Qwen2.5-Coder-14B-Instruct` at `Q5_K_M` (~10 GB) — `ollama pull qwen2.5-coder:14b-instruct-q5_K_M`.
+  The sweet spot on M1 Pro — fast enough to feel responsive, smart enough for
   real coding tasks.
-- **Stretch**: `Qwen2.5-Coder-32B-Instruct` at `Q4_K_M` (~19 GB). Fits, but
-  M1 Pro's ~200 GB/s memory bandwidth is roughly a quarter of a 3090's, so
-  expect 8-15 tok/s. Usable for batch tasks, sluggish for interactive.
-- **Speed-first**: `Qwen2.5-Coder-7B-Instruct` at `Q8_0` (~8 GB). Fast and
-  roomy, leaves the system actually usable for the rest of your work.
+- **Stretch**: `Qwen2.5-Coder-32B-Instruct` at `Q4_K_M` (~19 GB) — `ollama pull qwen2.5-coder:32b`.
+  Fits, but M1 Pro's ~200 GB/s memory bandwidth is roughly a quarter of a
+  3090's, so expect 8-15 tok/s. Usable for batch tasks, sluggish for
+  interactive.
+- **Speed-first**: `Qwen2.5-Coder-7B-Instruct` at `Q8_0` (~8 GB) — `ollama pull qwen2.5-coder:7b-instruct-q8_0`.
+  Fast and roomy, leaves the system actually usable for the rest of your work.
 - **Skip**: 70B at any quant — bandwidth-starved, you will be miserable.
 
 ### Quick reference table — Jan 2025 picks vs current 2026 picks
@@ -218,12 +220,12 @@ tag in backticks. Tags marked with `?` are pattern-guessed from Ollama's
 naming conventions and were not in my training data — verify on
 <https://ollama.com/library> before pulling.
 
-| Hardware | Role | 2026 pick | Jan 2025 pick | Setup tip |
-| --- | --- | --- | --- | --- |
-| RTX 5090 (32 GB) | Daily driver / coding | Qwen 3.6 35B-A3B (MoE) — `qwen3.6:latest` | Qwen2.5-Coder-32B Q5_K_M — `qwen2.5-coder:32b-instruct-q5_K_M` | MoE means 35B VRAM, ~3B-speed inference (>100 tok/s) |
-| RTX 3090 (24 GB) | Logic / reasoning | Qwen 3.5 27B — `qwen3.5:27b` ? | Qwen2.5-Coder-32B Q4_K_M — `qwen2.5-coder:32b` | Use EXL2 format + ExLlamaV2 server for max speed |
-| RTX 3070 Ti Laptop (8 GB) | Quick edits / travel | Nemotron 3 Nano — `nemotron3:nano` ? | Qwen2.5-Coder-7B Q4_K_M — `qwen2.5-coder:7b` | Stick to 4-bit or 3-bit quants |
-| M1 Pro 32 GB MBP | Research / long docs | DeepSeek R1 (32B) — `deepseek-r1:32b` | Qwen2.5-Coder-14B Q5_K_M — `qwen2.5-coder:14b-instruct-q5_K_M` | Use **MLX framework** (not just Ollama) for ~2x speed |
+| Hardware                  | Role                  | 2026 pick                                 | Jan 2025 pick                                                  | Setup tip                                             |
+| ------------------------- | --------------------- | ----------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------- |
+| RTX 5090 (32 GB)          | Daily driver / coding | Qwen 3.6 35B-A3B (MoE) — `qwen3.6:latest` | Qwen2.5-Coder-32B Q5_K_M — `qwen2.5-coder:32b-instruct-q5_K_M` | MoE means 35B VRAM, ~3B-speed inference (>100 tok/s)  |
+| RTX 3090 (24 GB)          | Logic / reasoning     | Qwen 3.5 27B — `qwen3.5:27b` ?            | Qwen2.5-Coder-32B Q4_K_M — `qwen2.5-coder:32b`                 | Use EXL2 format + ExLlamaV2 server for max speed      |
+| RTX 3070 Ti Laptop (8 GB) | Quick edits / travel  | Nemotron 3 Nano — `nemotron3:nano` ?      | Qwen2.5-Coder-7B Q4_K_M — `qwen2.5-coder:7b`                   | Stick to 4-bit or 3-bit quants                        |
+| M1 Pro 32 GB MBP          | Research / long docs  | DeepSeek R1 (32B) — `deepseek-r1:32b`     | Qwen2.5-Coder-14B Q5_K_M — `qwen2.5-coder:14b-instruct-q5_K_M` | Use **MLX framework** (not just Ollama) for ~2x speed |
 
 #### What "MoE" / "35B-A3B" means
 
