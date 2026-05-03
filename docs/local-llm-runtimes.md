@@ -213,12 +213,17 @@ from a more recent agent reply and reflects what was current as of mid-2026 at
 the time this doc was written. Cross-reference both, prefer the newer one
 unless you find an even more recent leaderboard:
 
+Each model cell shows the human-readable name followed by the `ollama pull`
+tag in backticks. Tags marked with `?` are pattern-guessed from Ollama's
+naming conventions and were not in my training data — verify on
+<https://ollama.com/library> before pulling.
+
 | Hardware | Role | 2026 pick | Jan 2025 pick | Setup tip |
 | --- | --- | --- | --- | --- |
-| RTX 5090 (32 GB) | Daily driver / coding | Qwen 3.6 35B-A3B (MoE) | Qwen2.5-Coder-32B Q5_K_M | MoE means 35B VRAM, ~3B-speed inference (>100 tok/s) |
-| RTX 3090 (24 GB) | Logic / reasoning | Qwen 3.5 27B | Qwen2.5-Coder-32B Q4_K_M | Use EXL2 format + ExLlamaV2 server for max speed |
-| RTX 3070 Ti Laptop (8 GB) | Quick edits / travel | Nemotron 3 Nano | Qwen2.5-Coder-7B Q4_K_M | Stick to 4-bit or 3-bit quants |
-| M1 Pro 32 GB MBP | Research / long docs | DeepSeek R1 (32B) | Qwen2.5-Coder-14B Q5_K_M | Use **MLX framework** (not just Ollama) for ~2x speed |
+| RTX 5090 (32 GB) | Daily driver / coding | Qwen 3.6 35B-A3B (MoE) — `qwen3.6:latest` | Qwen2.5-Coder-32B Q5_K_M — `qwen2.5-coder:32b-instruct-q5_K_M` | MoE means 35B VRAM, ~3B-speed inference (>100 tok/s) |
+| RTX 3090 (24 GB) | Logic / reasoning | Qwen 3.5 27B — `qwen3.5:27b` ? | Qwen2.5-Coder-32B Q4_K_M — `qwen2.5-coder:32b` | Use EXL2 format + ExLlamaV2 server for max speed |
+| RTX 3070 Ti Laptop (8 GB) | Quick edits / travel | Nemotron 3 Nano — `nemotron3:nano` ? | Qwen2.5-Coder-7B Q4_K_M — `qwen2.5-coder:7b` | Stick to 4-bit or 3-bit quants |
+| M1 Pro 32 GB MBP | Research / long docs | DeepSeek R1 (32B) — `deepseek-r1:32b` | Qwen2.5-Coder-14B Q5_K_M — `qwen2.5-coder:14b-instruct-q5_K_M` | Use **MLX framework** (not just Ollama) for ~2x speed |
 
 #### What "MoE" / "35B-A3B" means
 
@@ -266,13 +271,24 @@ Both are still **single-user, single-request** runtimes — neither replaces vLL
 for concurrent batched serving. They are local-dev speed boosts, not
 production tooling.
 
-#### Pulling the 2026 picks via Ollama
+#### Pulling the picks via Ollama
 
 ```bash
-ollama pull qwen3.6:latest         # 35B-A3B MoE (5090 daily driver)
-ollama pull qwen3.5:27b            # Qwen 3.5 27B dense (3090)
-ollama pull nemotron3:nano         # Nemotron 3 Nano (laptop)
+# 2026 picks
+ollama pull qwen3.6:latest         # 35B-A3B MoE (5090 daily driver) — confirmed
+ollama pull qwen3.5:27b            # Qwen 3.5 27B dense (3090) — verify tag
+ollama pull nemotron3:nano         # Nemotron 3 Nano (laptop) — verify tag
 ollama pull deepseek-r1:32b        # DeepSeek R1 32B (Mac fallback if not using MLX)
+
+# Jan 2025 picks (Qwen2.5-Coder family — defaults are Q4_K_M)
+ollama pull qwen2.5-coder:32b      # 32B Q4_K_M
+ollama pull qwen2.5-coder:14b      # 14B Q4_K_M
+ollama pull qwen2.5-coder:7b       # 7B Q4_K_M
+
+# Specific quant overrides (any size, any quant — pattern: <size>-instruct-q<N>_K_M):
+ollama pull qwen2.5-coder:32b-instruct-q5_K_M
+ollama pull qwen2.5-coder:14b-instruct-q5_K_M
+ollama pull qwen2.5-coder:7b-instruct-q8_0
 ```
 
 For Mac users on MLX instead:
