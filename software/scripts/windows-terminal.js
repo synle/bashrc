@@ -83,7 +83,7 @@ async function doWork() {
     cursorShape: "vintage",
     cursorHeight: 50,
     fontFace: EDITOR_CONFIGS.fontFamily,
-    fontSize: Math.min(EDITOR_CONFIGS.fontSize, 14),
+    fontSize: Math.min(EDITOR_CONFIGS.fontSize, 12),
     fontWeight: EDITOR_CONFIGS.fontWeightKeyword,
     padding: "10, 8, 10, 8",
     bellStyle: "all",

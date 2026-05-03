@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-03T01:56:58.439Z
+# Generated: 2026-05-03T03:51:42.367Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -756,15 +756,17 @@ function to_windows_path() {
 # print_action_summary <target_path> [<binary> [<extra_args>...]] - Render a copy-paste-
 # runnable summary block for an "act on a path" operation: PWD context, the cd you'd
 # run to reach the target's folder, and (optionally) the binary invocation that opens
-# the target. On WSL, appends a second `cd` line with the Windows-style path when it
-# differs from the unix path.
+# the target. On WSL, mirrors each unix line with a Windows-style follow-up — the
+# unix command is always printed first so the user can paste it into the current
+# shell, and the resolved line only appears as a second hop when it differs.
 #
 # Output:
 #   ====================================
 #   PWD: "<pwd>"
-#   cd "<dir>"                           # selection's folder (parent for files, self for folders)
-#   <binary> [extra_args] "<target>"     # only when binary is passed
-#   cd "<resolved_dir>"                  # only on WSL when the resolved path differs
+#   cd "<dir>"                              # unix folder (parent for files, self for folders)
+#   cd "<resolved_dir>"                     # only on WSL when the resolved path differs
+#   <binary> [extra_args] "<target>"        # only when binary is passed; unix path
+#   <binary> [extra_args] "<resolved_tgt>"  # only on WSL when the resolved path differs
 #   ====================================
 #
 # Used by view_file, fuzzy_edit, fuzzy_cd, run_editor — single source
@@ -789,27 +791,21 @@ function print_action_summary() {
   fi
 
   # WSL conversion. On non-WSL these equal the originals (to_windows_path is a no-op),
-  # so the trailing `cd "<resolved_dir>"` line never fires off-Windows.
+  # so the resolved mirror lines never fire off-Windows.
   local resolved_dir resolved_target
   resolved_dir=$(to_windows_path "$dir")
   resolved_target=$(to_windows_path "$target_abs")
 
-  # Binary line uses the WSL-resolved target on Windows so the printed command works
-  # when pasted into a Windows-side shell. Off-WSL the two are identical.
-  local binary_target="$target_abs"
-  [ "$resolved_target" != "$target_abs" ] && binary_target="$resolved_target"
-
   echo "===================================="
   echo "PWD: \"$(pwd)\""
   echo "cd \"$dir\""
-  if [ -n "$binary" ]; then
-    if [ ${#extra_args[@]} -gt 0 ]; then
-      echo "$binary ${extra_args[*]} \"$binary_target\""
-    else
-      echo "$binary \"$binary_target\""
-    fi
-  fi
   [ "$resolved_dir" != "$dir" ] && echo "cd \"$resolved_dir\""
+  if [ -n "$binary" ]; then
+    local prefix="$binary"
+    [ ${#extra_args[@]} -gt 0 ] && prefix="$binary ${extra_args[*]}"
+    echo "$prefix \"$target_abs\""
+    [ "$resolved_target" != "$target_abs" ] && echo "$prefix \"$resolved_target\""
+  fi
   echo "===================================="
 }
 
@@ -8639,7 +8635,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 8d7ee9145ca60cd79ac5a0e1650975b7 | 13.6 KB | 2026-05-03
+# software/scripts/bash-command-wrappers.profile.bash | 8465a8af52773d7130f1404cad3e10e2 | 15.5 KB | 2026-05-03
 ################################################################################
 # ---- Command Wrappers ----
 #
@@ -8675,8 +8671,13 @@ fi
 #
 # --- Git ---
 # blame         — git blame alternative: per-line "<line>  <cmt> <date> <sha>
-#                 <author>: <summary>" for each input file, with a file-name
-#                 header before each. <cmt> is "//" for C-family extensions
+#                 <author>: <summary>" for each input file. Always emits a
+#                 real interpreter shebang as line 1 when the extension maps
+#                 to a known interpreter (e.g. "#!/usr/bin/env bash" for
+#                 sh/bash, "#!/usr/bin/env node" for js/jsx/mjs/cjs, plus py,
+#                 rb, pl, lua, php, zsh, fish) so `blame ... | bat` detects
+#                 the language from stdin; followed by a "<cmt> file: <file>"
+#                 comment-style header before the body. <cmt> is "//" for C-family extensions
 #                 (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/
 #                 m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and "#"
 #                 otherwise — keeps each row paste-safe as a comment in the
@@ -8941,7 +8942,7 @@ function blame() {
   if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
-  Output: prints '==== <file> ====' header, then one row per line as
+  Output: prints a real interpreter shebang as line 1 when the extension maps to a known interpreter (e.g. '#!/usr/bin/env bash' for sh/bash, '#!/usr/bin/env node' for js/jsx/mjs/cjs, plus py/rb/pl/lua/php/zsh/fish — skipped for extensions with no shebang-launchable interpreter like go/rs/java/ts/c/cpp), then a '<cmt> file: <file>' comment-style header, then one row per line as
           <line content>  <cmt> <YYYY-MM-DD> <short sha> <author>: <commit summary>
           <cmt> is '//' for C-family extensions (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and '#' otherwise."
     return
@@ -8952,7 +8953,7 @@ function blame() {
     return 1
   fi
 
-  local file dir base ext cmt
+  local file dir base ext cmt shebang
   for file in "$@"; do
     if [ ! -f "$file" ]; then
       echo "blame: not a file: $file" >&2
@@ -8978,7 +8979,29 @@ function blame() {
       cmt="#"
       ;;
     esac
-    echo "==== $file ===="
+    # always emit a real interpreter shebang as line 1 (when we have a mapping for the
+    # extension) so `blame ... | bat` can detect the language. bat's first-line shebang
+    # match only fires on the very first stdin line and only for real interpreter names
+    # (bash/node/python/ruby/...), so we cannot put the "<cmt> file:" header above it
+    # nor rely on the file's own shebang (it lands deeper in the blame body, not line 1).
+    # The original shebang still shows in the body as a regular blame row — that is
+    # intentional, not duplication. Extensions with no good interpreter mapping
+    # (Go/Rust/Java/TS/C/C++/etc.) print no synthetic shebang — pipe through
+    # `bat -l <lang>` if you want highlighting for those.
+    case "$ext" in
+    sh | bash) shebang="#!/usr/bin/env bash" ;;
+    zsh) shebang="#!/usr/bin/env zsh" ;;
+    fish) shebang="#!/usr/bin/env fish" ;;
+    py) shebang="#!/usr/bin/env python" ;;
+    js | mjs | cjs | jsx) shebang="#!/usr/bin/env node" ;;
+    rb) shebang="#!/usr/bin/env ruby" ;;
+    pl) shebang="#!/usr/bin/env perl" ;;
+    lua) shebang="#!/usr/bin/env lua" ;;
+    php) shebang="#!/usr/bin/env php" ;;
+    *) shebang="" ;;
+    esac
+    [ -n "$shebang" ] && echo "$shebang"
+    echo "$cmt file: $file"
     git blame --line-porcelain -- "$file" 2> /dev/null | command awk -v cmt="$cmt" '
       # SHA header line: "<40+ hex sha> <orig-line> <final-line> [num-lines]" — only first token of a per-line block
       /^[0-9a-f]{40,} / && header == 0 {
