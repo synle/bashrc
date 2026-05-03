@@ -383,7 +383,9 @@ function curl() {
         curl <url> [flags...]    standard curl; auto-formats JSON when applicable
         Falls back to plain \`command curl\` when:
           - jq is not installed
-          - any output-redirect flag is present (-o, -O, -i, -I, -D, -T, -w, --output-dir)
+          - stdout is not a TTY (i.e. piped or redirected — preserves streaming)
+          - any output-redirect / download flag is present
+            (-o, -O, -J, --remote-name-all, -i, -I, -D, -T, -w, --output-dir)
           - the response is not JSON
     "
     return 0
@@ -395,11 +397,19 @@ function curl() {
     return
   }
 
+  # stdout is not a TTY (caller is piping or redirecting) → don't intercept.
+  # Preserves streaming for `curl URL | tar xz`, `curl URL | bash`, `curl URL > file`, etc.
+  [ -t 1 ] || {
+    command curl "$@"
+    return
+  }
+
   # Caller manages output → don't intercept.
   local arg
   for arg in "$@"; do
     case "$arg" in
-    -o | --output | -O | --remote-name | \
+    -o | --output | -O | --remote-name | --remote-name-all | \
+      -J | --remote-header-name | \
       -i | --include | -I | --head | \
       -D | --dump-header | -T | --upload-file | \
       -w | --write-out | --output-dir)
@@ -418,8 +428,10 @@ function curl() {
 
   command curl "$@" -D "$tmpdir/headers" -o "$tmpdir/body" || return
 
+  # Use `tail -1` so the FINAL response's Content-Type wins after redirects
+  # (-D dumps every hop's headers; the first hop is usually text/html for 30x).
   local content_type
-  content_type=$(grep -i '^content-type:' "$tmpdir/headers" | head -1 | tr -d '\r' | sed 's/.*://' | tr '[:upper:]' '[:lower:]')
+  content_type=$(grep -i '^content-type:' "$tmpdir/headers" | tail -1 | tr -d '\r' | sed 's/.*://' | tr '[:upper:]' '[:lower:]')
 
   if [[ "$content_type" == *json* ]] && jq -e . "$tmpdir/body" &> /dev/null; then
     jq . "$tmpdir/body"

@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-03T21:36:53.089Z
+# Generated: 2026-05-03T22:06:32.580Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | a8bb360c3073efecf19041e595640afc | 5.6 KB | 2026-05-03
+# software/scripts/bash-history.profile.bash | 3912375ce591526c534b86ee9d8af84f | 8.4 KB | 2026-05-03
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -66,8 +66,52 @@ fi
 HISTORY_BACKUP_DIR="$HOME/.bash_history_backups"
 HISTORY_BACKUP_MAX=7
 
+# rewrites a history file in place. Filter pipeline:
+#   1. trim leading/trailing whitespace
+#   2. strip leading wrapper prefixes (`br;`, `clear;` — user-defined no-op
+#      wrappers that don't change the meaningful command). Looped so chains
+#      like `br; clear; foo` collapse to `foo` before dedupe sees them, which
+#      lets `foo` and `clear; foo` count as the same entry.
+#   3. drop empty lines (post-trim — blank lines from pasted blocks)
+#   4. drop `#`-prefixed lines (HISTTIMEFORMAT timestamp markers — tradeoff is
+#      losing `history`'s timestamp display for old entries)
+#   5. drop any line starting with `"` (JSON / PowerShell / config paste
+#      fragments — `"model": "..."`, `"$edgeBase\Main" = @{...}`, etc. Legit
+#      bash starting with `"` is rare in interactive history — usually you'd
+#      type `$VAR arg` not `"$VAR" arg` — so the simpler blanket rule beats
+#      narrower patterns)
+#   6. drop lines ending in bare `{` (JS/TS/Go/Java block-opener paste — `try {`,
+#      `function foo() {`, `if (x) {`. Real bash multi-line defs get joined by
+#      `cmdhist` into a single entry, so a stored entry ending in `{` is paste
+#      residue. Catches what `bash -n` misses since `{` in arg position parses fine)
+#   7. drop lines starting with `}` (closing-brace paste residue: `}`, `});`,
+#      `} catch`, `} else {`. Mostly redundant with `bash -n` but cheaper and
+#      defends against future parser quirks)
+#   8. dedupe
+#   9. drop anything that fails `bash -n` (unbalanced quotes, dangling pipes,
+#      half-pasted commands)
+# Atomic via tmp + mv. Used by both _backup_history (clean before snapshot) and
+# fuzzy_history (clean before fzf).
+# usage: _clean_history_file [path]   (default: ~/.bash_history)
+function _clean_history_file() {
+  local file="${1:-$HOME/.bash_history}"
+  [ -f "$file" ] || return 0
+  local tmp="$file.tmp.$$"
+  sed 's/^[[:space:]]*//;s/[[:space:]]*$//' "$file" \
+    | sed -E -e ':loop' -e 's/^(br|clear)[[:space:]]*;[[:space:]]*//' -e 't loop' \
+    | command grep -v '^$' \
+    | command grep -v '^#' \
+    | command grep -v '^"' \
+    | command grep -v '\{$' \
+    | command grep -v '^}' \
+    | awk '!seen[$0]++' \
+    | while IFS= read -r line; do bash -n <<< "$line" 2> /dev/null && printf '%s\n' "$line"; done \
+      > "$tmp" && mv "$tmp" "$file"
+}
+
 # backs up ~/.bash_history daily (rotated, keeps HISTORY_BACKUP_MAX copies)
-# runs automatically on shell startup
+# runs automatically on shell startup. Cleans the live file first so the backup
+# is the cleaned snapshot, not the raw stream.
 function _backup_history() {
   local today
   today=$(command date +%Y-%m-%d)
@@ -75,6 +119,8 @@ function _backup_history() {
 
   # skip if already backed up today
   [ -f "$backup_file" ] && return
+
+  _clean_history_file "$HOME/.bash_history"
 
   mkdir -p "$HISTORY_BACKUP_DIR"
   cp "$HOME/.bash_history" "$backup_file" 2> /dev/null
@@ -116,11 +162,18 @@ function fuzzy_history() {
     header="fuzzy_history - fzf history search; selection runs on Enter"
   fi
 
+  # Clean the live history file first (dedupe + bash -n), then fzf reads the cleaned
+  # content. Mutating ~/.bash_history here means subsequent Ctrl+R calls are fast
+  # (no-op on already-clean entries) and `history` reflects the cleaned dataset.
+  _clean_history_file "$HOME/.bash_history"
+
   local selected
-  selected=$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' ~/.bash_history | command grep -v '^#' | awk '!seen[$0]++' | fzf \
+  selected=$(command cat "$HOME/.bash_history" | fzf \
     --no-sort --tac --layout=reverse --height=100% --query="${1:-}" \
     --prompt="history> " \
-    --header="$header")
+    --header="$header" \
+    --preview='echo {} | bat --paging=never --style=plain --color=always --language=bash' \
+    --preview-window=down:25%:wrap)
 
   if [ -n "$selected" ]; then
     if ((from_bind)); then
@@ -1248,7 +1301,9 @@ function curl() {
         curl <url> [flags...]    standard curl; auto-formats JSON when applicable
         Falls back to plain \`command curl\` when:
           - jq is not installed
-          - any output-redirect flag is present (-o, -O, -i, -I, -D, -T, -w, --output-dir)
+          - stdout is not a TTY (i.e. piped or redirected — preserves streaming)
+          - any output-redirect / download flag is present
+            (-o, -O, -J, --remote-name-all, -i, -I, -D, -T, -w, --output-dir)
           - the response is not JSON
     "
     return 0
@@ -1260,11 +1315,19 @@ function curl() {
     return
   }
 
+  # stdout is not a TTY (caller is piping or redirecting) → don't intercept.
+  # Preserves streaming for `curl URL | tar xz`, `curl URL | bash`, `curl URL > file`, etc.
+  [ -t 1 ] || {
+    command curl "$@"
+    return
+  }
+
   # Caller manages output → don't intercept.
   local arg
   for arg in "$@"; do
     case "$arg" in
-    -o | --output | -O | --remote-name | \
+    -o | --output | -O | --remote-name | --remote-name-all | \
+      -J | --remote-header-name | \
       -i | --include | -I | --head | \
       -D | --dump-header | -T | --upload-file | \
       -w | --write-out | --output-dir)
@@ -1283,8 +1346,10 @@ function curl() {
 
   command curl "$@" -D "$tmpdir/headers" -o "$tmpdir/body" || return
 
+  # Use `tail -1` so the FINAL response's Content-Type wins after redirects
+  # (-D dumps every hop's headers; the first hop is usually text/html for 30x).
   local content_type
-  content_type=$(grep -i '^content-type:' "$tmpdir/headers" | head -1 | tr -d '\r' | sed 's/.*://' | tr '[:upper:]' '[:lower:]')
+  content_type=$(grep -i '^content-type:' "$tmpdir/headers" | tail -1 | tr -d '\r' | sed 's/.*://' | tr '[:upper:]' '[:lower:]')
 
   if [[ "$content_type" == *json* ]] && jq -e . "$tmpdir/body" &> /dev/null; then
     jq . "$tmpdir/body"
