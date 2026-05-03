@@ -332,6 +332,46 @@ function is_truthy() {
   case "${1,,}" in 1 | true | y | yes) return 0 ;; *) return 1 ;; esac
 }
 
+# prompts the user with a yes/no question (default no)
+# Mirror of the same function in software/bootstrap/common-functions.bash —
+# keep in sync. Profile partials cannot SOURCE common-functions.bash because
+# the profile is loaded on every interactive shell startup and we want to
+# keep it lean, so the function is duplicated here.
+function prompt_yes_no() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "
+      prompt_yes_no: prompt the user with a yes/no question
+        Usage: prompt_yes_no <prompt> [default]
+        default: 'Y' or 'N' (case-insensitive); defaults to 'N'.
+        Returns 0 on yes; 1 on no / empty / no-tty.
+        Example: prompt_yes_no 'Continue?' && do_thing
+        Example: prompt_yes_no 'Skip step?' Y && skip_step
+    "
+    return 0
+  fi
+  local prompt="$1"
+  local default="${2:-N}"
+  local hint="[y/N]"
+  case "$default" in [Yy]*) hint="[Y/n]" ;; esac
+
+  # Probe /dev/tty by actually opening it. `[ -r /dev/tty ]` lies — the
+  # device node always exists, but open() returns ENXIO when the process has
+  # no controlling terminal (CI, daemons, piped shells).
+  (: < /dev/tty) 2> /dev/null || return 1
+
+  local reply=""
+  read -rp "$prompt $hint " reply < /dev/tty
+  reply="$(echo "$reply" | tr '[:lower:]' '[:upper:]' | xargs)"
+
+  if [ -z "$reply" ]; then
+    case "$default" in [Yy]*) return 0 ;; esac
+    return 1
+  fi
+
+  case "$reply" in Y | YES) return 0 ;; esac
+  return 1
+}
+
 ################################################################################
 # ---- Aliases: Navigation ----
 ################################################################################
@@ -631,10 +671,7 @@ function purge() {
     return 1
   fi
 
-  local confirm
-  read -rp "Purge '$file_path' from entire git history? [y/N] " confirm
-  confirm="$(echo "$confirm" | tr '[:lower:]' '[:upper:]' | xargs)"
-  if [ "$confirm" != "Y" ] && [ "$confirm" != "YES" ]; then
+  if ! prompt_yes_no "Purge '$file_path' from entire git history?"; then
     echo ">> Aborted."
     return 1
   fi
@@ -1529,10 +1566,7 @@ function kill_ports() {
     echo ""
   fi
 
-  local confirm
-  read -rp "Proceed with killing processes on these ports? [y/N] " confirm
-  confirm="$(echo "$confirm" | tr '[:lower:]' '[:upper:]' | xargs)"
-  if [ "$confirm" != "Y" ] && [ "$confirm" != "YES" ]; then
+  if ! prompt_yes_no "Proceed with killing processes on these ports?"; then
     echo ">> Aborted."
     return 1
   fi
