@@ -203,8 +203,9 @@ describe("print_action_summary", () => {
         "====================================",
         `PWD: "${path.join(sandbox, "home")}"`,
         `cd "${rp(dir)}"`,
-        `vim "C:/proj/f.txt"`, // binary line uses resolved (Windows-style) target
-        `cd "C:/proj"`, // trailing resolved cd
+        `cd "C:/proj"`, // resolved cd is the second hop, immediately after the unix cd
+        `vim "${rp(file)}"`, // binary line is the unix path first…
+        `vim "C:/proj/f.txt"`, // …then mirrored with the resolved (Windows-style) target
         "====================================",
         "",
       ].join("\n"),
