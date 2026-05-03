@@ -14,7 +14,9 @@
 HISTORY_BACKUP_DIR="$HOME/.bash_history_backups"
 HISTORY_BACKUP_MAX=7
 
-# rewrites a history file in place. Filter pipeline:
+# rewrites a history file in place. Two passes:
+#
+# Quick pass (default — used by fuzzy_history on every Ctrl+R, must stay fast):
 #   1. trim leading/trailing whitespace
 #   2. strip leading wrapper prefixes (`br;`, `clear;` — user-defined no-op
 #      wrappers that don't change the meaningful command). Looped so chains
@@ -28,6 +30,11 @@ HISTORY_BACKUP_MAX=7
 #      bash starting with `"` is rare in interactive history — usually you'd
 #      type `$VAR arg` not `"$VAR" arg` — so the simpler blanket rule beats
 #      narrower patterns)
+#   5b. drop any line starting with `$` (PowerShell variable assignments and
+#       references — `$var = "..."`, `$var.Method()`, etc. `bash -n` accepts
+#       `$var = ...` because spaced `=` makes it three args, not assignment.
+#       Legit bash starting with `$` like `$EDITOR file` is rare interactively
+#       — same tradeoff as the `^"` rule)
 #   6. drop lines ending in bare `{` (JS/TS/Go/Java block-opener paste — `try {`,
 #      `function foo() {`, `if (x) {`. Real bash multi-line defs get joined by
 #      `cmdhist` into a single entry, so a stored entry ending in `{` is paste
@@ -35,14 +42,37 @@ HISTORY_BACKUP_MAX=7
 #   7. drop lines starting with `}` (closing-brace paste residue: `}`, `});`,
 #      `} catch`, `} else {`. Mostly redundant with `bash -n` but cheaper and
 #      defends against future parser quirks)
+#   7b. drop PowerShell verb-noun cmdlets — `Set-ItemProperty`, `Get-ChildItem`,
+#       `New-Object`, etc. Pattern is `<Capital><lowercase>+-<Capital>`, which
+#       virtually never matches a real bash command. `bash -n` accepts these
+#       because the cmdlet name is a syntactically valid command word.
+#   7c. drop JS-keyword-then-brace lines: `try { ... }`, `catch { ... }`,
+#       `finally { ... }`. `try`/`catch`/`finally` aren't bash reserved words,
+#       so `try { foo }` parses as a simple command with literal brace args
+#       (caught nothing in earlier `\{$` and bash -n filters when the closing
+#       `}` is on the same line).
+#   7d. drop hex-byte literal lines: `0x80, 0x99, 0x19, ...`. C/Go/Python
+#       byte-array paste residue. `0x80,` is a syntactically valid bash command
+#       word (digits, letters, comma all legal in token position).
 #   8. dedupe
+#
+# Strict pass (`--strict` — used by _backup_history once a day):
 #   9. drop anything that fails `bash -n` (unbalanced quotes, dangling pipes,
-#      half-pasted commands)
-# Atomic via tmp + mv. Used by both _backup_history (clean before snapshot) and
-# fuzzy_history (clean before fzf).
-# usage: _clean_history_file [path]   (default: ~/.bash_history)
+#      half-pasted commands). Forks bash once per unique line; only worth it
+#      on the daily backup, not on every Ctrl+R.
+#
+# Atomic via tmp + mv.
+# usage: _clean_history_file [path] [--strict]   (path default: ~/.bash_history)
 function _clean_history_file() {
-  local file="${1:-$HOME/.bash_history}"
+  local file="$HOME/.bash_history"
+  local strict=0
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+    --strict) strict=1 ;;
+    *) file="$arg" ;;
+    esac
+  done
   [ -f "$file" ] || return 0
   local tmp="$file.tmp.$$"
   sed 's/^[[:space:]]*//;s/[[:space:]]*$//' "$file" \
@@ -50,11 +80,22 @@ function _clean_history_file() {
     | command grep -v '^$' \
     | command grep -v '^#' \
     | command grep -v '^"' \
+    | command grep -v '^\$' \
     | command grep -v '\{$' \
     | command grep -v '^}' \
+    | command grep -v '^[A-Z][a-z][a-z]*-[A-Z]' \
+    | command grep -v '^try[[:space:]]*{' \
+    | command grep -v '^catch[[:space:]]*{' \
+    | command grep -v '^finally[[:space:]]*{' \
+    | command grep -v '^0x[0-9A-Fa-f]' \
     | awk '!seen[$0]++' \
-    | while IFS= read -r line; do bash -n <<< "$line" 2> /dev/null && printf '%s\n' "$line"; done \
-      > "$tmp" && mv "$tmp" "$file"
+    | {
+      if ((strict)); then
+        while IFS= read -r line; do bash -n <<< "$line" 2> /dev/null && printf '%s\n' "$line"; done
+      else
+        command cat
+      fi
+    } > "$tmp" && mv "$tmp" "$file"
 }
 
 # backs up ~/.bash_history daily (rotated, keeps HISTORY_BACKUP_MAX copies)
@@ -68,7 +109,7 @@ function _backup_history() {
   # skip if already backed up today
   [ -f "$backup_file" ] && return
 
-  _clean_history_file "$HOME/.bash_history"
+  _clean_history_file "$HOME/.bash_history" --strict
 
   mkdir -p "$HISTORY_BACKUP_DIR"
   cp "$HOME/.bash_history" "$backup_file" 2> /dev/null
@@ -121,7 +162,7 @@ function fuzzy_history() {
     --prompt="history> " \
     --header="$header" \
     --preview='echo {} | bat --paging=never --style=plain --color=always --language=bash' \
-    --preview-window=down:25%:wrap)
+    --preview-window=down:20%:wrap)
 
   if [ -n "$selected" ]; then
     if ((from_bind)); then
