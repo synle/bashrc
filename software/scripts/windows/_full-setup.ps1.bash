@@ -697,8 +697,8 @@ foreach ($pkg in $wingetPackages) {
     }
 }
 
-Write-Host "`nUpgrading all winget packages..." -ForegroundColor Cyan
-winget upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity
+Write-Host "`nListing available winget upgrades (informational only — run 'winget upgrade --id <pkg>' to upgrade)..." -ForegroundColor Cyan
+winget upgrade --include-unknown --source winget --accept-source-agreements --disable-interactivity
 
 
 
