@@ -23,7 +23,7 @@
 #     - Winget Install & Upgrade (single foreground list — winget background jobs are unreliable)
 #     - Install Media Extensions (Microsoft Store)
 #     - Brave Browser Shortcut Flags
-#     - AI CLI Tools (opencode)
+#     - AI CLI Tools (npm-based)
 ################################################################################
 
 ################################################################################
@@ -126,8 +126,8 @@ $pathCandidates = @(
     "$env:SystemRoot\System32\Wbem"                               # wmi / wbem
     "$env:SystemRoot\System32\WindowsPowerShell\v1.0"             # powershell
     "$env:UserProfile\AppData\Local\Microsoft\WindowsApps"        # windows apps (profile)
-    "$env:UserProfile\.local\bin"                                 # user-local bins (claude, npm globals, etc.)
-    "$env:UserProfile\.opencode\bin"                              # opencode (curl|iex installer drops here)
+    "$env:UserProfile\.local\bin"                                 # user-local bins (claude, etc.)
+    "$env:AppData\npm"                                            # npm global installs (default prefix on Windows)
 )
 
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -768,25 +768,42 @@ foreach ($searchPath in $braveShortcutPaths) {
 
 
 ################################################################################
-# ---- AI CLI Tools (opencode) ----
-# Tools that publish their own PowerShell installer scripts. Each one drops a
-# binary into $env:UserProfile\.opencode\bin (or similar) — already covered by
-# the user PATH stitched up earlier in this script.
+# ---- AI CLI Tools (npm-based) ----
+# Cross-platform AI CLIs distributed as npm packages. Installs land in
+# %AppData%\npm — already covered by the user PATH stitched up earlier in this
+# script. Mirrors the bash side, where these are installed via
+# `npm_install_global` from software/scripts/advanced/*.sh.
 ################################################################################
 
 Write-Host "`n=== Installing AI CLI Tools ===" -ForegroundColor Cyan
 
-# opencode — terminal-based AI coding agent (https://opencode.ai)
-# Installer drops opencode.exe into %USERPROFILE%\.opencode\bin
-if (Get-Command opencode -ErrorAction SilentlyContinue) {
-    Write-Host "  Skipped: opencode (already installed)" -ForegroundColor Yellow
+# Refresh PATH from machine + user env so npm (just installed via winget) resolves.
+$env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
+
+# Keep this list aligned with the npm_install_global calls in
+# software/scripts/advanced/*.sh (gemini.sh, opencode.sh, ...).
+$npmAiPackages = @(
+    @{ pkg = "opencode-ai";        bin = "opencode" },  # terminal-based AI coding agent (https://opencode.ai)
+    @{ pkg = "@google/gemini-cli"; bin = "gemini"   }   # Google's AI CLI (https://github.com/google-gemini/gemini-cli)
+)
+
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Write-Host "  Skipped: npm not found on PATH (install Node.js first)" -ForegroundColor Yellow
 } else {
-    Write-Host "  Installing: opencode"
-    try {
-        Invoke-RestMethod -Uri "https://opencode.ai/install.ps1" -UseBasicParsing | Invoke-Expression
-        Write-Host "  Installed: opencode" -ForegroundColor Green
-    } catch {
-        Write-Host "  Failed to install opencode: $_" -ForegroundColor Red
+    foreach ($entry in $npmAiPackages) {
+        $pkg = $entry.pkg
+        $bin = $entry.bin
+        if (Get-Command $bin -ErrorAction SilentlyContinue) {
+            Write-Host "  Skipped: $pkg (already installed)" -ForegroundColor Yellow
+        } else {
+            Write-Host "  Installing: $pkg"
+            try {
+                npm install -g $pkg
+                Write-Host "  Installed: $pkg" -ForegroundColor Green
+            } catch {
+                Write-Host "  Failed to install $pkg`: $_" -ForegroundColor Red
+            }
+        }
     }
 }
 
