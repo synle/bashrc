@@ -1,8 +1,9 @@
 /** Tests for platform-specific path utilities and text block internals. */
-import { describe, it, expect } from "vitest";
-import { getIndexFunction, getIndexConstant, mockFsExistence } from "./setup.js";
+import { describe, it, expect, beforeEach } from "vitest";
+import { getIndexFunction, getIndexConstant, mockFsExistence, setSandboxGlobal, setMockExecSyncReturn } from "./setup.js";
 
 const toWindowsPath = getIndexFunction("toWindowsPath");
+const getWindowsHostIp = getIndexFunction("getWindowsHostIp");
 const getCustomTweaksPath = getIndexFunction("getCustomTweaksPath");
 const getEtcHostsPath = getIndexFunction("getEtcHostsPath");
 const getOsxApplicationSupportCodeUserPath = getIndexFunction("getOsxApplicationSupportCodeUserPath");
@@ -38,6 +39,41 @@ describe("toWindowsPath", () => {
 
   it("should handle deep nested paths", () => {
     expect(toWindowsPath("/mnt/c/Program Files/App/bin/tool.exe")).toBe("C:\\Program Files\\App\\bin\\tool.exe");
+  });
+});
+
+// ---- getWindowsHostIp ----
+
+describe("getWindowsHostIp", () => {
+  // Reset is_os_wsl + cache between tests since the sandbox persists state.
+  beforeEach(() => {
+    setSandboxGlobal("_windowsHostIp", undefined);
+    setSandboxGlobal("is_os_wsl", false);
+  });
+
+  it("should return undefined outside WSL", () => {
+    setSandboxGlobal("is_os_wsl", false);
+    expect(getWindowsHostIp()).toBeUndefined();
+  });
+
+  it("should extract the IPv4 gateway from `ip route` output", () => {
+    setSandboxGlobal("is_os_wsl", true);
+    setMockExecSyncReturn("172.20.32.1");
+    expect(getWindowsHostIp()).toBe("172.20.32.1");
+  });
+
+  it("should cache the result across calls", () => {
+    setSandboxGlobal("is_os_wsl", true);
+    setMockExecSyncReturn("10.0.0.1");
+    expect(getWindowsHostIp()).toBe("10.0.0.1");
+    setMockExecSyncReturn("9.9.9.9"); // would change if not cached
+    expect(getWindowsHostIp()).toBe("10.0.0.1");
+  });
+
+  it("should return undefined when no IPv4 is found", () => {
+    setSandboxGlobal("is_os_wsl", true);
+    setMockExecSyncReturn(""); // both lookups empty
+    expect(getWindowsHostIp()).toBeUndefined();
   });
 });
 
