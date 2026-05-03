@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # SOURCE software/bootstrap/common-functions.bash
 
-# Install winget packages from WSL bash (mirrors the install loop in
-# software/scripts/windows/_full-setup.ps1.bash). Calls winget.exe through
-# WSL interop, applying the same skip-if-installed / force-reinstall logic.
+# Install winget packages from WSL bash. Canonical source of truth for the
+# Windows-side package list — calls winget.exe through WSL interop, applying
+# skip-if-installed / force-reinstall logic.
 #
 # Use case: install / refresh the Windows-side package set without leaving
-# bash. Identical package list to the PS1 file — keep both in sync when
-# adding or removing entries.
+# bash. _full-setup.ps1.bash no longer carries a duplicate package list; it
+# only handles WSL bootstrap, firewall, GPU tuning, and msstore-only items
+# (media extensions). Run this script from WSL after the PS1 finishes:
+#   bash run.sh --files=_winget-install.sh
 #
 # Caveats:
 #   - Many packages need admin (machine-scope MSIs, services, drivers). UAC
@@ -59,7 +61,7 @@ fi
 # Flip to 1 to force-reinstall every winget package on the next run.
 FORCE_INSTALL=0
 
-# Mirror of $wingetPackages in _full-setup.ps1.bash — keep in sync.
+# Canonical Windows package list — single source of truth.
 winget_packages=(
   # ---- Core: browser, terminal, editors ----
   # Fira Code is installed by software/scripts/fonts.js (drops the TTFs into
