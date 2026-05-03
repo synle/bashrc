@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-02]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-03]
 # 
 # Precompiled bash profile for arch_linux
 # ################################################################################
@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-02T23:06:35.332Z
+# Generated: 2026-05-03T01:54:42.904Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | a8bb360c3073efecf19041e595640afc | 5.6 KB | 2026-05-02
+# software/scripts/bash-history.profile.bash | a8bb360c3073efecf19041e595640afc | 5.6 KB | 2026-05-03
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -653,7 +653,7 @@ function format_other_text_based_files() {
 export PATH="/github/home/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate.profile.bash
-# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-05-02
+# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-05-03
 ################################################################################
 # ---- PATH Setup ----
 #
@@ -1188,6 +1188,46 @@ function is_truthy() {
   case "${1,,}" in 1 | true | y | yes) return 0 ;; *) return 1 ;; esac
 }
 
+# prompts the user with a yes/no question (default no)
+# Mirror of the same function in software/bootstrap/common-functions.bash —
+# keep in sync. Profile partials cannot SOURCE common-functions.bash because
+# the profile is loaded on every interactive shell startup and we want to
+# keep it lean, so the function is duplicated here.
+function prompt_yes_no() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "
+      prompt_yes_no: prompt the user with a yes/no question
+        Usage: prompt_yes_no <prompt> [default]
+        default: 'Y' or 'N' (case-insensitive); defaults to 'N'.
+        Returns 0 on yes; 1 on no / empty / no-tty.
+        Example: prompt_yes_no 'Continue?' && do_thing
+        Example: prompt_yes_no 'Skip step?' Y && skip_step
+    "
+    return 0
+  fi
+  local prompt="$1"
+  local default="${2:-N}"
+  local hint="[y/N]"
+  case "$default" in [Yy]*) hint="[Y/n]" ;; esac
+
+  # Probe /dev/tty by actually opening it. `[ -r /dev/tty ]` lies — the
+  # device node always exists, but open() returns ENXIO when the process has
+  # no controlling terminal (CI, daemons, piped shells).
+  (: < /dev/tty) 2> /dev/null || return 1
+
+  local reply=""
+  read -rp "$prompt $hint " reply < /dev/tty
+  reply="$(echo "$reply" | tr '[:lower:]' '[:upper:]' | xargs)"
+
+  if [ -z "$reply" ]; then
+    case "$default" in [Yy]*) return 0 ;; esac
+    return 1
+  fi
+
+  case "$reply" in Y | YES) return 0 ;; esac
+  return 1
+}
+
 ################################################################################
 # ---- Aliases: Navigation ----
 ################################################################################
@@ -1487,10 +1527,7 @@ function purge() {
     return 1
   fi
 
-  local confirm
-  read -rp "Purge '$file_path' from entire git history? [y/N] " confirm
-  confirm="$(echo "$confirm" | tr '[:lower:]' '[:upper:]' | xargs)"
-  if [ "$confirm" != "Y" ] && [ "$confirm" != "YES" ]; then
+  if ! prompt_yes_no "Purge '$file_path' from entire git history?"; then
     echo ">> Aborted."
     return 1
   fi
@@ -2385,10 +2422,7 @@ function kill_ports() {
     echo ""
   fi
 
-  local confirm
-  read -rp "Proceed with killing processes on these ports? [y/N] " confirm
-  confirm="$(echo "$confirm" | tr '[:lower:]' '[:upper:]' | xargs)"
-  if [ "$confirm" != "Y" ] && [ "$confirm" != "YES" ]; then
+  if ! prompt_yes_no "Proceed with killing processes on these ports?"; then
     echo ">> Aborted."
     return 1
   fi
@@ -2907,7 +2941,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys.profile.bash
-# software/scripts/bash-keys.profile.bash | bdde9ac5a3beed047d7042c235c46bad | 5.0 KB | 2026-05-02
+# software/scripts/bash-keys.profile.bash | bdde9ac5a3beed047d7042c235c46bad | 5.0 KB | 2026-05-03
 ################################################################################
 # ---- Bash Readline Keybindings ----
 #
@@ -3008,7 +3042,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 3beb40d496085c28378ff65bdc0ab5a7 | 54.2 KB | 2026-05-02
+# software/scripts/bash-file-utils.profile.bash | 3beb40d496085c28378ff65bdc0ab5a7 | 54.2 KB | 2026-05-03
 ################################################################################
 # ---- File Utilities ----
 #
@@ -4435,7 +4469,7 @@ _IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlig
 _FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
 # END Fuzzy Filter Patterns
 # SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
-# software/scripts/bash-fzf.profile.bash | 46ed46baad340d9259753240a051df2a | 20.8 KB | 2026-05-02
+# software/scripts/bash-fzf.profile.bash | 46ed46baad340d9259753240a051df2a | 20.8 KB | 2026-05-03
 # run: bash run.sh --files="fzf.js"
 ################################################################################
 # ---- FZF Fuzzy Finder Integration ----
@@ -4920,7 +4954,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | f828b17d6ccd87ba7bb170e26aeca6e4 | 5.1 KB | 2026-05-02
+# software/scripts/advanced/editor-launchers-common.profile.bash | f828b17d6ccd87ba7bb170e26aeca6e4 | 5.1 KB | 2026-05-03
 # Parallel-array registry populated by `_register_editor` calls in each
 # editor-launchers.js block. Used by `list_editors` for binary-availability triage.
 _REGISTERED_EDITORS=()
@@ -5174,7 +5208,7 @@ function zed() {
 }
 # END Editor Launchers - Zed
 # SOURCE_BEGIN software/scripts/advanced/browser-launchers-common.profile.bash
-# software/scripts/advanced/browser-launchers-common.profile.bash | f2af603cfc35cb9472452ff2d673c559 | 5.9 KB | 2026-05-02
+# software/scripts/advanced/browser-launchers-common.profile.bash | f2af603cfc35cb9472452ff2d673c559 | 5.9 KB | 2026-05-03
 # Common Chromium flags applied by run_browser on every launch.
 # Kept to safe, non-destructive tweaks (no sync/security changes).
 #
@@ -8017,7 +8051,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 8d7ee9145ca60cd79ac5a0e1650975b7 | 13.6 KB | 2026-05-02
+# software/scripts/bash-command-wrappers.profile.bash | 8d7ee9145ca60cd79ac5a0e1650975b7 | 13.6 KB | 2026-05-03
 ################################################################################
 # ---- Command Wrappers ----
 #

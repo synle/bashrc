@@ -201,16 +201,23 @@ for pkg in "${winget_packages[@]}"; do
   fi
 done
 
-# Gate `winget upgrade --all` on the same 2-week bash_syle staleness check
-# that medium/heavy scripts use. Running it on every `bash run.sh` invocation
-# is slow and rarely productive. is_bash_syle_stale returns 0 only when
-# ~/.bash_syle is older than 2 weeks (or missing), or when IS_REFRESH_MODE=1
-# (set when the user targets this script via --refresh=_winget-install).
+# `winget upgrade --all` is genuinely slow (minutes for a full package set),
+# so we are conservative about when to run it:
+#   - bash_syle is stale (first-time setup or 2+ weeks idle) -> SKIP. The
+#     install loop above just pulled the latest of every package, so a
+#     follow-up bulk upgrade is pure noise.
+#   - bash_syle is fresh (recent setup) -> PROMPT the user, default N.
+#     A fresh bash_syle means the user is iterating on this repo, not doing
+#     a clean install, so they probably do not want to wait several minutes
+#     for an unattended upgrade. Make them opt in.
+#   - non-interactive (no /dev/tty, e.g. CI) -> prompt_yes_no returns 1, SKIP.
 if is_bash_syle_stale; then
-  echo ">>> Upgrading all winget packages (bash_syle is stale)"
+  echo ">>> Skipped: winget upgrade --all (bash_syle is stale; install loop above already pulled latest)"
+elif prompt_yes_no ">>> bash_syle is fresh. Run 'winget upgrade --all' now? This is slow."; then
+  echo ">>> Upgrading all winget packages"
   winget.exe upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity < /dev/null > /dev/null 2>&1 || true
 else
-  echo ">>> Skipped: winget upgrade --all (bash_syle is fresh; run with --refresh=_winget-install to override)"
+  echo ">>> Skipped: winget upgrade --all (declined or non-interactive)"
 fi
 
 echo ">>> winget-install complete"

@@ -235,6 +235,47 @@ function is_bash_syle_stale() {
   is_path_stale "$BASH_SYLE_PATH"
 }
 
+# prompt_yes_no <prompt> [default] - Asks the user a yes/no question.
+# `default` is "Y" or "N" (case-insensitive); defaults to "N".
+# Returns 0 on yes; 1 on no, empty input, or no /dev/tty available.
+# Reads from /dev/tty so it works inside `bash <<'EOF'` heredocs and other
+# piped contexts where stdin is already consumed.
+# Mirror of the same function in profile-advanced.sh — keep in sync.
+function prompt_yes_no() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "
+      prompt_yes_no: prompt the user with a yes/no question
+        Usage: prompt_yes_no <prompt> [default]
+        default: 'Y' or 'N' (case-insensitive); defaults to 'N'.
+        Returns 0 on yes; 1 on no / empty / no-tty.
+        Example: prompt_yes_no 'Continue?' && do_thing
+        Example: prompt_yes_no 'Skip step?' Y && skip_step
+    "
+    return 0
+  fi
+  local prompt="$1"
+  local default="${2:-N}"
+  local hint="[y/N]"
+  case "$default" in [Yy]*) hint="[Y/n]" ;; esac
+
+  # Probe /dev/tty by actually opening it. `[ -r /dev/tty ]` lies — the
+  # device node always exists, but open() returns ENXIO when the process has
+  # no controlling terminal (CI, daemons, piped shells).
+  (: < /dev/tty) 2> /dev/null || return 1
+
+  local reply=""
+  read -rp "$prompt $hint " reply < /dev/tty
+  reply="$(echo "$reply" | tr '[:lower:]' '[:upper:]' | xargs)"
+
+  if [ -z "$reply" ]; then
+    case "$default" in [Yy]*) return 0 ;; esac
+    return 1
+  fi
+
+  case "$reply" in Y | YES) return 0 ;; esac
+  return 1
+}
+
 # ensure_binary_alias <canonical_name> - On distros where the package manager installs
 # the binary under a non-canonical name (e.g. apt installs `bat` -> `/usr/bin/batcat`,
 # `fd-find` -> `/usr/bin/fdfind`), create a $HOME/.local/bin/<canonical> symlink so
