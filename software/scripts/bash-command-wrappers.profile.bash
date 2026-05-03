@@ -35,8 +35,13 @@
 #
 # --- Git ---
 # blame         — git blame alternative: per-line "<line>  <cmt> <date> <sha>
-#                 <author>: <summary>" for each input file, with a file-name
-#                 header before each. <cmt> is "//" for C-family extensions
+#                 <author>: <summary>" for each input file. Always emits a
+#                 real interpreter shebang as line 1 when the extension maps
+#                 to a known interpreter (e.g. "#!/usr/bin/env bash" for
+#                 sh/bash, "#!/usr/bin/env node" for js/jsx/mjs/cjs, plus py,
+#                 rb, pl, lua, php, zsh, fish) so `blame ... | bat` detects
+#                 the language from stdin; followed by a "<cmt> file: <file>"
+#                 comment-style header before the body. <cmt> is "//" for C-family extensions
 #                 (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/
 #                 m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and "#"
 #                 otherwise — keeps each row paste-safe as a comment in the
@@ -301,7 +306,7 @@ function blame() {
   if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
-  Output: prints '==== <file> ====' header, then one row per line as
+  Output: prints a real interpreter shebang as line 1 when the extension maps to a known interpreter (e.g. '#!/usr/bin/env bash' for sh/bash, '#!/usr/bin/env node' for js/jsx/mjs/cjs, plus py/rb/pl/lua/php/zsh/fish — skipped for extensions with no shebang-launchable interpreter like go/rs/java/ts/c/cpp), then a '<cmt> file: <file>' comment-style header, then one row per line as
           <line content>  <cmt> <YYYY-MM-DD> <short sha> <author>: <commit summary>
           <cmt> is '//' for C-family extensions (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and '#' otherwise."
     return
@@ -312,7 +317,7 @@ function blame() {
     return 1
   fi
 
-  local file dir base ext cmt
+  local file dir base ext cmt shebang
   for file in "$@"; do
     if [ ! -f "$file" ]; then
       echo "blame: not a file: $file" >&2
@@ -338,7 +343,29 @@ function blame() {
       cmt="#"
       ;;
     esac
-    echo "==== $file ===="
+    # always emit a real interpreter shebang as line 1 (when we have a mapping for the
+    # extension) so `blame ... | bat` can detect the language. bat's first-line shebang
+    # match only fires on the very first stdin line and only for real interpreter names
+    # (bash/node/python/ruby/...), so we cannot put the "<cmt> file:" header above it
+    # nor rely on the file's own shebang (it lands deeper in the blame body, not line 1).
+    # The original shebang still shows in the body as a regular blame row — that is
+    # intentional, not duplication. Extensions with no good interpreter mapping
+    # (Go/Rust/Java/TS/C/C++/etc.) print no synthetic shebang — pipe through
+    # `bat -l <lang>` if you want highlighting for those.
+    case "$ext" in
+    sh | bash) shebang="#!/usr/bin/env bash" ;;
+    zsh) shebang="#!/usr/bin/env zsh" ;;
+    fish) shebang="#!/usr/bin/env fish" ;;
+    py) shebang="#!/usr/bin/env python" ;;
+    js | mjs | cjs | jsx) shebang="#!/usr/bin/env node" ;;
+    rb) shebang="#!/usr/bin/env ruby" ;;
+    pl) shebang="#!/usr/bin/env perl" ;;
+    lua) shebang="#!/usr/bin/env lua" ;;
+    php) shebang="#!/usr/bin/env php" ;;
+    *) shebang="" ;;
+    esac
+    [ -n "$shebang" ] && echo "$shebang"
+    echo "$cmt file: $file"
     git blame --line-porcelain -- "$file" 2> /dev/null | command awk -v cmt="$cmt" '
       # SHA header line: "<40+ hex sha> <orig-line> <final-line> [num-lines]" — only first token of a per-line block
       /^[0-9a-f]{40,} / && header == 0 {
