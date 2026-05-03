@@ -385,7 +385,7 @@ function blame() {
           close(cmd)
           date_cache[sha] = date
         }
-        printf "%s  %s %s %s %s: %s\n", line, cmt, date, sha, author, summary
+        printf "%s      %s %s %s %s: %s\n", line, cmt, date, sha, author, summary
         header = 0
       }
     '
