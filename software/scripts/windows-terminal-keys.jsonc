@@ -121,27 +121,24 @@
     "keys": "alt+right",
   },
   { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
+  // Resize panes — alt+shift+arrow (= OS_KEY+shift+arrow). Matches Ghostty's
+  // cmd+shift+arrow so the chord is identical across platforms (modulo OS_KEY).
   {
     "command": { "action": "resizePane", "direction": "down" },
-    "keys": "ctrl+alt+down",
+    "keys": "alt+shift+down",
   },
   {
     "command": { "action": "resizePane", "direction": "left" },
-    "keys": "ctrl+alt+left",
+    "keys": "alt+shift+left",
   },
   {
     "command": { "action": "resizePane", "direction": "right" },
-    "keys": "ctrl+alt+right",
+    "keys": "alt+shift+right",
   },
   {
     "command": { "action": "resizePane", "direction": "up" },
-    "keys": "ctrl+alt+up",
+    "keys": "alt+shift+up",
   },
-  // unbind default alt+shift+arrow resize (moved to ctrl+alt+arrow above)
-  { "command": "unbound", "keys": "alt+shift+down" },
-  { "command": "unbound", "keys": "alt+shift+left" },
-  { "command": "unbound", "keys": "alt+shift+right" },
-  { "command": "unbound", "keys": "alt+shift+up" },
   {
     "command": { "action": "adjustFontSize", "delta": 1 },
     "keys": "alt+=",
