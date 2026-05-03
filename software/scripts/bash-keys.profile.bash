@@ -78,11 +78,13 @@ if [[ $- == *i* ]]; then
   # prompt redraws empty after clear (no flash of typed text on a freshly-cleared screen).
   # Use ANSI escapes directly instead of the `clear` binary so this works in minimal
   # environments (devcontainers, busybox, mingw64) where /usr/bin/clear isn't installed.
-  # \033[H = cursor home, \033[2J = clear visible screen, \033[3J = clear scrollback.
+  # \033[H = cursor home, \033[2J = clear visible screen. Intentionally omits \033[3J
+  # so the terminal's scrollback buffer is preserved (matches `clear` / `br` behavior) —
+  # users can still scroll up to see previous output after Ctrl+L.
   function _clear_and_discard_line() {
     READLINE_LINE=""
     READLINE_POINT=0
-    printf '\033[H\033[2J\033[3J'
+    printf '\033[H\033[2J'
   }
   bind -x '"\C-l": _clear_and_discard_line'
 
