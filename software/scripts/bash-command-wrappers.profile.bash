@@ -36,17 +36,19 @@
 # --- Git ---
 # blame         — git blame alternative: per-line "<line>  <cmt> <date> <sha>
 #                 <author>: <summary>" for each input file, with a
-#                 "<cmt> file: <file>" comment-style header on top.
+#                 "<cmt> file: <abs-path>" comment-style header on top
+#                 (absolute path of the input, resolved via realpath).
 #                 <cmt> is "//" for C-family extensions
 #                 (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/
 #                 m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and "#"
 #                 otherwise — keeps each row paste-safe as a comment in the
 #                 host language.
 # blame_view    — runs `blame` and opens it in the editor: writes the blame
-#                 output to /tmp/<YYYYMMDD-HHMMSS>-<basename> (extension
-#                 preserved so the editor picks the right syntax from the
-#                 filename), then opens the temp file with subl (the default
-#                 editor).
+#                 output to /tmp/<YYYYMMDD-HHMMSS>-<flattened-abs-path>
+#                 (input's absolute path with "/" and "\" flattened to "_",
+#                 e.g. "home_syle_git_bashrc_run.sh", extension preserved so
+#                 the editor picks the right syntax), then opens the temp
+#                 file with subl (the default editor).
 #
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
@@ -307,10 +309,10 @@ function blame() {
   if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
-  Output: prints a '<cmt> file: <file>' comment-style header, then one row per line as
+  Output: prints a '<cmt> file: <abs-path>' comment-style header (absolute path of the input), then one row per line as
           <line content>  <cmt> <YYYY-MM-DD> <short sha> <author>: <commit summary>
           <cmt> is '//' for C-family extensions (js/ts/jsx/tsx/c/cc/cpp/h/hpp/java/cs/go/rs/swift/kt/scala/m/mm/dart/php/proto/gradle/groovy/sass/scss/less) and '#' otherwise.
-  See also: blame_view — runs blame, writes to /tmp/<timestamp>-<basename>, and opens with subl."
+  See also: blame_view — runs blame, writes to /tmp/<timestamp>-<flattened-abs-path>, and opens with subl."
     return
   fi
 
@@ -319,7 +321,7 @@ function blame() {
     return 1
   fi
 
-  local file dir base ext cmt
+  local file dir base ext cmt abs
   for file in "$@"; do
     if [ ! -f "$file" ]; then
       echo "blame: not a file: $file" >&2
@@ -330,6 +332,9 @@ function blame() {
       echo "blame: $file is not in a git repo" >&2
       continue
     fi
+    # resolve to an absolute path so the header always shows where the file lives,
+    # regardless of the cwd the user ran blame from. fall back to "$file" if realpath fails.
+    abs=$(realpath -- "$file" 2> /dev/null) || abs="$file"
     # pick the comment marker by file extension: "//" for C-family, "#" otherwise.
     # extension is taken from the basename's last "."; files without a "." fall through to "#".
     base=${file##*/}
@@ -345,7 +350,7 @@ function blame() {
       cmt="#"
       ;;
     esac
-    echo "$cmt file: $file"
+    echo "$cmt file: $abs"
     git blame --line-porcelain -- "$file" 2> /dev/null | command awk -v cmt="$cmt" '
       # SHA header line: "<40+ hex sha> <orig-line> <final-line> [num-lines]" — only first token of a per-line block
       /^[0-9a-f]{40,} / && header == 0 {
@@ -393,14 +398,17 @@ function blame_view() {
     echo "blame_view: run blame and open it in the editor
   Usage: blame_view <file> [<file> ...]
   Behavior: for each input file, runs 'blame <file>' and writes the output to
-            /tmp/<YYYYMMDD-HHMMSS>-<basename> (the original extension is preserved
-            so the editor picks the right syntax from the filename), then opens
-            the temp file with subl (the default editor). Prints the temp-file
-            path before opening."
+            /tmp/<YYYYMMDD-HHMMSS>-<flattened-abs-path>, where the flattened
+            path is the input's absolute path with leading '/' stripped and
+            remaining '/' or '\\' replaced by '_' (so the temp filename encodes
+            where the original came from, e.g. 'home_syle_git_bashrc_run.sh').
+            The original extension stays at the end so the editor picks the
+            right syntax. Then opens the temp file with subl (the default
+            editor). Prints the temp-file path before opening."
     return
   fi
 
-  local file base ts out outs
+  local file abs flat ts out outs
   ts=$(date +%Y%m%d-%H%M%S)
   outs=()
   for file in "$@"; do
@@ -408,8 +416,16 @@ function blame_view() {
       echo "blame_view: not a file: $file" >&2
       continue
     fi
-    base=${file##*/}
-    out="/tmp/${ts}-${base}"
+    # resolve to an absolute path, then flatten so the temp filename encodes the
+    # original location: "/home/syle/git/bashrc/run.sh" -> "home_syle_git_bashrc_run.sh".
+    # strip the leading "/" first to avoid a leading "_"; replace both "/" and "\"
+    # so WSL/Windows paths flatten too. extension stays at the end so the editor
+    # picks the right syntax from the filename.
+    abs=$(realpath -- "$file" 2> /dev/null) || abs="$file"
+    flat=${abs#/}
+    flat=${flat//\//_}
+    flat=${flat//\\/_}
+    out="/tmp/${ts}-${flat}"
     blame "$file" > "$out"
     echo "blame_view: wrote $out"
     outs+=("$out")
