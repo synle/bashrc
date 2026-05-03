@@ -1947,55 +1947,6 @@ function toWindowsPath(wslPath) {
   return wslPath.replace(/\/mnt\/([a-z])/i, (_, d) => `${d.toUpperCase()}:`).replace(/\//g, "\\");
 }
 
-/** @type {string|undefined} Cached result for getWindowsHostIp ("" = negative cache) */
-let _windowsHostIp;
-
-/**
- * Returns the IP address of the Windows host as seen from inside WSL2.
- *
- * Used to connect WSL-side tools to services bound to the Windows host's
- * network interface — e.g. hitting an Ollama server running on Windows from
- * `opencode` / `curl` inside WSL:
- *
- *   curl http://<getWindowsHostIp()>:11434/api/tags
- *
- * Resolution order (first hit wins):
- *   1. Default-route gateway from `ip route show default` — the Windows host
- *      on WSL2's NAT bridge.
- *   2. First `nameserver` entry in `/etc/resolv.conf` — fallback when the
- *      route lookup is unavailable.
- *
- * Returns `undefined` outside WSL or if neither lookup yields an IPv4
- * address. Result is cached for the lifetime of the process.
- *
- * Note: with WSL2 mirrored networking (`[wsl2] networkingMode=mirrored` in
- * `.wslconfig`), `localhost` already reaches Windows from WSL, so this
- * helper is mainly needed in the default NAT mode.
- *
- * @returns {string|undefined} IPv4 address of the Windows host, or undefined.
- */
-function getWindowsHostIp() {
-  if (_windowsHostIp !== undefined) return _windowsHostIp || undefined;
-  if (!global.is_os_wsl) {
-    _windowsHostIp = "";
-    return undefined;
-  }
-  const tryCmd = (cmd) => {
-    try {
-      const out = execBashSync(cmd);
-      const match = out.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/);
-      return match ? match[0] : "";
-    } catch {
-      return "";
-    }
-  };
-  const ip =
-    tryCmd("ip route show default 2>/dev/null | awk '/^default/ {print $3; exit}'") ||
-    tryCmd("awk '/^nameserver / {print $2; exit}' /etc/resolv.conf 2>/dev/null");
-  _windowsHostIp = ip;
-  return ip || undefined;
-}
-
 /**
  * Returns the Windows AppData\Roaming directory path under WSL for the current user.
  * @returns {string} The path to {WindowsUserHome}/AppData/Roaming

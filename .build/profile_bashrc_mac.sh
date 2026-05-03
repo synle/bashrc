@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-03T04:09:25.751Z
+# Generated: 2026-05-03T16:13:00.859Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -1740,7 +1740,7 @@ function br() {
   local clear_flag=${2:-"clear"}
   local reverse_flag=${3:-"normal"}
 
-  [[ "$clear_flag" != "no-clear" ]] && /usr/bin/clear
+  [[ "$clear_flag" != "no-clear" ]] && clear
 
   local colors=("${rainbow_colors[@]}")
 
