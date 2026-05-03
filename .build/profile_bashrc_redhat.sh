@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-03T16:12:19.710Z
+# Generated: 2026-05-03T16:33:33.726Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -1225,6 +1225,62 @@ function prompt_yes_no() {
 }
 
 ################################################################################
+# ---- HTTP / Networking Utilities ----
+################################################################################
+# curl drop-in: pretty-prints JSON responses via jq when available
+function curl() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "
+      curl: drop-in curl wrapper that pretty-prints JSON responses via jq
+        curl <url> [flags...]    standard curl; auto-formats JSON when applicable
+        Falls back to plain \`command curl\` when:
+          - jq is not installed
+          - any output-redirect flag is present (-o, -O, -i, -I, -D, -T, -w, --output-dir)
+          - the response is not JSON
+    "
+    return 0
+  fi
+
+  # No jq installed → straight pass-through.
+  type -P jq &> /dev/null || {
+    command curl "$@"
+    return
+  }
+
+  # Caller manages output → don't intercept.
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+    -o | --output | -O | --remote-name | \
+      -i | --include | -I | --head | \
+      -D | --dump-header | -T | --upload-file | \
+      -w | --write-out | --output-dir)
+      command curl "$@"
+      return
+      ;;
+    esac
+  done
+
+  local tmpdir
+  tmpdir=$(mktemp -d) || {
+    command curl "$@"
+    return
+  }
+  trap 'rm -rf "$tmpdir"' RETURN
+
+  command curl "$@" -D "$tmpdir/headers" -o "$tmpdir/body" || return
+
+  local content_type
+  content_type=$(grep -i '^content-type:' "$tmpdir/headers" | head -1 | tr -d '\r' | sed 's/.*://' | tr '[:upper:]' '[:lower:]')
+
+  if [[ "$content_type" == *json* ]] && jq -e . "$tmpdir/body" &> /dev/null; then
+    jq . "$tmpdir/body"
+  else
+    command cat "$tmpdir/body"
+  fi
+}
+
+################################################################################
 # ---- Aliases: Navigation ----
 ################################################################################
 alias ..="cd .."
@@ -1727,7 +1783,7 @@ function br() {
   local clear_flag=${2:-"clear"}
   local reverse_flag=${3:-"normal"}
 
-  [[ "$clear_flag" != "no-clear" ]] && clear
+  [[ "$clear_flag" != "no-clear" ]] && printf "\033[H\033[2J"
 
   local colors=("${rainbow_colors[@]}")
 
