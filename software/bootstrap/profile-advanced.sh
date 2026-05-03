@@ -875,7 +875,7 @@ function br() {
   local clear_flag=${2:-"clear"}
   local reverse_flag=${3:-"normal"}
 
-  [[ "$clear_flag" != "no-clear" ]] && /usr/bin/clear
+  [[ "$clear_flag" != "no-clear" ]] && clear
 
   local colors=("${rainbow_colors[@]}")
 
