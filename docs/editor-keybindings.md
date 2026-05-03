@@ -229,16 +229,16 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Splits & Panes
 
-| Key                 | Action                      | Windows Terminal |       tmux        |  Ghostty   |
-| ------------------- | --------------------------- | :--------------: | :---------------: | :--------: |
-| `OS_KEY+d`          | Split vertical (left/right) |        ✅        |        ✅         |     ✅     |
-| `OS_KEY+shift+d`    | Split horiz (top/bottom)    |        ✅        |        ✅         |     ✅     |
-| `OS_KEY+'`          | Split horiz (alt)           |        ✅        |        ✅         |     ✅     |
-| `OS_KEY+arrow`      | Navigate panes              |        ✅        |        ✅         |     ✅     |
-| `ctrl+OS_KEY+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+arrow) | ✅ (shift) |
-| `OS_KEY+\`          | Toggle UI (tab bar)         |        ✅        |        ❌         |     ✅     |
-| `OS_KEY+shift+\`    | Toggle split zoom           |        ❌        |        ✅         |     ✅     |
-| `F11`               | Fullscreen                  |        ✅        |        ✅         |     ✅     |
+| Key                  | Action                      | Windows Terminal |       tmux        | Ghostty |
+| -------------------- | --------------------------- | :--------------: | :---------------: | :-----: |
+| `OS_KEY+d`           | Split vertical (left/right) |        ✅        |        ✅         |   ✅    |
+| `OS_KEY+shift+d`     | Split horiz (top/bottom)    |        ✅        |        ✅         |   ✅    |
+| `OS_KEY+'`           | Split horiz (alt)           |        ✅        |        ✅         |   ✅    |
+| `OS_KEY+arrow`       | Navigate panes              |        ✅        |        ✅         |   ✅    |
+| `OS_KEY+shift+arrow` | Resize panes                |        ✅        | ⚠️ (prefix+arrow) |   ✅    |
+| `OS_KEY+\`           | Toggle UI (tab bar)         |        ✅        |        ❌         |   ✅    |
+| `OS_KEY+shift+\`     | Toggle split zoom           |        ❌        |        ✅         |   ✅    |
+| `F11`                | Fullscreen                  |        ✅        |        ✅         |   ✅    |
 
 ### Text & Search
 
@@ -259,13 +259,12 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Terminal-specific Gaps
 
-| Gap                                | Reason                                                       |
-| ---------------------------------- | ------------------------------------------------------------ |
-| tmux `OS_KEY+shift+arrow` resize   | Doesn't work reliably; uses `prefix+arrow` instead           |
-| tmux copy/paste                    | Uses its own copy mode; `OS_KEY+c/v` not mapped              |
-| tmux zoom                          | Not applicable; controlled by the outer terminal emulator    |
-| Ghostty `OS_KEY+f` find            | Ghostty has no in-terminal search; left unbound              |
-| Ghostty resize uses `OS_KEY+shift` | No `ctrl+OS_KEY+arrow` chord on Ghostty; shift modifier used |
+| Gap                              | Reason                                                    |
+| -------------------------------- | --------------------------------------------------------- |
+| tmux `OS_KEY+shift+arrow` resize | Doesn't work reliably; uses `prefix+arrow` instead        |
+| tmux copy/paste                  | Uses its own copy mode; `OS_KEY+c/v` not mapped           |
+| tmux zoom                        | Not applicable; controlled by the outer terminal emulator |
+| Ghostty `OS_KEY+f` find          | Ghostty has no in-terminal search; left unbound           |
 
 ---
 
