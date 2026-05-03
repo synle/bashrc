@@ -1,38 +1,60 @@
 /** Configures opencode to use a local Ollama provider, with models discovered from /api/tags. */
 
-/** @type {string} Fallback Ollama host when not running in WSL (or when the WSL gateway lookup fails). */
-const OPENCODE_OLLAMA_DEFAULT_HOST = "192.168.1.1";
+/** @type {string} Last-resort host when no candidate responds at `/api/tags`. */
+const OPENCODE_OLLAMA_DEFAULT_HOST = "localhost";
 /** @type {number} Default Ollama HTTP port (upstream default). */
 const OPENCODE_OLLAMA_PORT = 11434;
 /** @type {string[]} Fallback model names used when `/api/tags` returns no models (Ollama unreachable, empty install, etc.). */
 const OPENCODE_OLLAMA_FALLBACK_MODELS = ["qwen3.6:latest"];
 
 /**
- * Resolves the host running Ollama as seen from this machine.
- * - WSL → Windows host IP from `getWindowsHostIp()`.
- * - Anything else (incl. WSL with no detectable gateway) → OPENCODE_OLLAMA_DEFAULT_HOST.
- * @returns {string} Hostname or IPv4 address of the Ollama server.
+ * Builds the ordered list of host candidates to probe for a reachable Ollama daemon.
+ * `localhost` is tried first because it covers the most common cases:
+ *   - Native Linux / Mac with Ollama on the same machine.
+ *   - WSL2 with mirrored networking (Windows ports reachable via localhost).
+ *   - Ollama running inside WSL itself.
+ * The WSL→Windows gateway IP is added next for traditional (non-mirrored) WSL2 setups.
+ * @returns {string[]} Candidate hosts, in probe order.
  */
-function _getOpencodeOllamaHost() {
+function _getOpencodeOllamaHostCandidates() {
+  const candidates = ["localhost"];
   if (is_os_wsl) {
     const winHost = getWindowsHostIp();
-    if (winHost) return winHost;
+    if (winHost && !candidates.includes(winHost)) candidates.push(winHost);
   }
-  return OPENCODE_OLLAMA_DEFAULT_HOST;
+  return candidates;
 }
 
 /**
- * Fetches the installed model names from Ollama's `/api/tags`.
- * Returns an empty array on fetch failure or empty list.
- * @param {string} host - Ollama host.
- * @returns {Promise<string[]>} Model names (e.g. ["qwen3.6:latest"]).
+ * Probes Ollama's `/api/tags` at `host` and returns the discovered model names.
+ * Returns null if the host is unreachable or returns no JSON model list.
+ * @param {string} host - Ollama host to probe.
+ * @returns {Promise<string[] | null>} Model names on success, null on failure.
  */
-async function _fetchOpencodeOllamaModels(host) {
+async function _probeOpencodeOllamaModels(host) {
   const url = `http://${host}:${OPENCODE_OLLAMA_PORT}/api/tags`;
-  log(`>> opencode: getting models from ${url} (curl ${url})`);
-  const json = await readJson`${url}`;
-  const tags = Array.isArray(json && json.models) ? json.models : [];
-  return tags.map((m) => m && m.name).filter((n) => typeof n === "string" && n);
+  log(`>> opencode: probing ${url}`);
+  try {
+    const json = await readJson`${url}`;
+    const tags = Array.isArray(json && json.models) ? json.models : [];
+    return tags.map((m) => m && m.name).filter((n) => typeof n === "string" && n);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Iterates candidate hosts and returns the first one that answers `/api/tags`.
+ * Falls back to OPENCODE_OLLAMA_DEFAULT_HOST with an empty model list if every
+ * candidate fails (caller will then write the OPENCODE_OLLAMA_FALLBACK_MODELS list).
+ * @returns {Promise<{host: string, modelNames: string[]}>} Resolved host + discovered models.
+ */
+async function _resolveOpencodeOllamaHost() {
+  for (const host of _getOpencodeOllamaHostCandidates()) {
+    const modelNames = await _probeOpencodeOllamaModels(host);
+    if (modelNames !== null) return { host, modelNames };
+  }
+  return { host: OPENCODE_OLLAMA_DEFAULT_HOST, modelNames: [] };
 }
 
 /**
@@ -43,14 +65,15 @@ async function _fetchOpencodeOllamaModels(host) {
  * @returns {object} The full opencode.json content.
  */
 function _buildOpencodeConfig(host, modelNames) {
+  const baseURL = `http://${host}:${OPENCODE_OLLAMA_PORT}/v1`;
   return {
     $schema: "https://opencode.ai/config.json",
     provider: {
       ollama: {
         npm: "@ai-sdk/openai-compatible",
-        name: "Ollama (Windows)",
+        name: `Ollama (local - ${baseURL})`,
         options: {
-          baseURL: `http://${host}:${OPENCODE_OLLAMA_PORT}/v1`,
+          baseURL,
         },
         models: Object.fromEntries(modelNames.map((n) => [n, {}])),
       },
@@ -68,10 +91,9 @@ async function doWork() {
     return;
   }
 
-  const host = _getOpencodeOllamaHost();
+  let { host, modelNames } = await _resolveOpencodeOllamaHost();
   log(">> opencode: using Ollama host", host);
 
-  let modelNames = await _fetchOpencodeOllamaModels(host);
   if (modelNames.length === 0) {
     log(`WARN opencode: no models reachable at http://${host}:${OPENCODE_OLLAMA_PORT}/api/tags — falling back to ${OPENCODE_OLLAMA_FALLBACK_MODELS.join(", ")}`);
     modelNames = OPENCODE_OLLAMA_FALLBACK_MODELS;
