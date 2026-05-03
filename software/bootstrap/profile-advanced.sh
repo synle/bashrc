@@ -875,7 +875,7 @@ function br() {
   local clear_flag=${2:-"clear"}
   local reverse_flag=${3:-"normal"}
 
-  [[ "$clear_flag" != "no-clear" ]] && clear
+  [[ "$clear_flag" != "no-clear" ]] && printf "\033[H\033[2J"
 
   local colors=("${rainbow_colors[@]}")
 
