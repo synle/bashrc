@@ -23,8 +23,9 @@ HISTORY_BACKUP_MAX=7
 #      like `br; clear; foo` collapse to `foo` before dedupe sees them, which
 #      lets `foo` and `clear; foo` count as the same entry.
 #   3. drop empty lines (post-trim — blank lines from pasted blocks)
-#   4. drop `#`-prefixed lines (HISTTIMEFORMAT timestamp markers — tradeoff is
-#      losing `history`'s timestamp display for old entries)
+#   4. drop bash HISTTIMEFORMAT timestamp markers — `#<unix_seconds>` lines
+#      written by bash itself. Pattern is narrow (`^#[0-9]+$`) so user-typed
+#      `# note` lines and `# TODO ...` reminders survive.
 #   5. drop any line starting with `"` (JSON / PowerShell / config paste
 #      fragments — `"model": "..."`, `"$edgeBase\Main" = @{...}`, etc. Legit
 #      bash starting with `"` is rare in interactive history — usually you'd
@@ -78,7 +79,7 @@ function _clean_history_file() {
   sed 's/^[[:space:]]*//;s/[[:space:]]*$//' "$file" \
     | sed -E -e ':loop' -e 's/^(br|clear)[[:space:]]*;[[:space:]]*//' -e 't loop' \
     | command grep -v '^$' \
-    | command grep -v '^#' \
+    | command grep -v '^#[0-9][0-9]*$' \
     | command grep -v '^"' \
     | command grep -v '^\$' \
     | command grep -v '\{$' \
