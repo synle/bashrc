@@ -59,21 +59,6 @@ fi
 # Flip to 1 to force-reinstall every winget package on the next run.
 FORCE_INSTALL=0
 
-echo ">>> Installing winget packages (foreground, sequential)"
-
-# Refresh winget source index so installs resolve latest versions.
-# `< /dev/null` is mandatory: this script is bundled into a `bash <<'EOF'`
-# heredoc by _emitBundledShScripts, and winget.exe (via WSL interop) will
-# happily read from the heredoc's stdin, swallowing the rest of the script
-# and causing bash to exit silently after the first echo.
-winget.exe source update --disable-interactivity < /dev/null > /dev/null 2>&1 || true
-
-# Cache all installed packages once upfront — avoids spawning winget.exe list
-# per package (~1-2s each). winget output is UTF-16 in some locales; iconv
-# the bytes to UTF-8 so bash substring matching works. The `|| true` keeps
-# the script alive if iconv guesses the wrong source encoding.
-_installed_packages=$(winget.exe list < /dev/null 2> /dev/null | iconv -f UTF-16LE -t UTF-8 2> /dev/null || winget.exe list < /dev/null 2> /dev/null)
-
 # Mirror of $wingetPackages in _full-setup.ps1.bash — keep in sync.
 winget_packages=(
   # ---- Core: browser, terminal, editors ----
@@ -187,37 +172,52 @@ winget_packages=(
   "WinFSP.SSHFS"
 )
 
-# Install loop. See FORCE_INSTALL config above.
-#   - skip when:    not forcing AND package already in $_installed_packages
-#   - install when: forcing OR package missing
-# Every install uses --force --uninstall-previous so the install path is the
-# same in both modes — the only difference is whether we skip or not.
-for pkg in "${winget_packages[@]}"; do
-  if ! ((FORCE_INSTALL)) && echo "$_installed_packages" | grep -qF "$pkg"; then
-    echo "  Skipped: $pkg (already installed)"
-  else
-    echo "  Installing: $pkg"
-    winget.exe install --id "$pkg" -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous < /dev/null > /dev/null 2>&1 || true
-  fi
-done
-
-# `winget upgrade --all` is genuinely slow (minutes for a full package set),
-# so we are conservative about when to run it:
-#   - bash_syle is stale (first-time setup or 2+ weeks idle) -> SKIP. The
-#     install loop above just pulled the latest of every package, so a
-#     follow-up bulk upgrade is pure noise.
-#   - bash_syle is fresh (recent setup) -> PROMPT the user, default N.
-#     A fresh bash_syle means the user is iterating on this repo, not doing
-#     a clean install, so they probably do not want to wait several minutes
-#     for an unattended upgrade. Make them opt in.
+# Gate the install loop AND `winget upgrade --all` on bash_syle staleness:
+#   - bash_syle is stale (first-time setup or 2+ weeks idle) -> run the full
+#     install loop. Skip the trailing `winget upgrade --all` because the
+#     install loop above just pulled --force --uninstall-previous for every
+#     package, so a follow-up bulk upgrade is pure noise (and slow).
+#   - bash_syle is fresh (recent setup) -> SKIP the install loop entirely
+#     (the user is iterating on this repo, not doing a clean install) and
+#     instead PROMPT for `winget upgrade --all` as the lighter alternative,
+#     default N.
 #   - non-interactive (no /dev/tty, e.g. CI) -> prompt_yes_no returns 1, SKIP.
 if is_bash_syle_stale; then
+  echo ">>> Installing winget packages (foreground, sequential)"
+
+  # Refresh winget source index so installs resolve latest versions.
+  # `< /dev/null` is mandatory: this script is bundled into a `bash <<'EOF'`
+  # heredoc by _emitBundledShScripts, and winget.exe (via WSL interop) will
+  # happily read from the heredoc's stdin, swallowing the rest of the script
+  # and causing bash to exit silently after the first echo.
+  winget.exe source update --disable-interactivity < /dev/null > /dev/null 2>&1 || true
+
+  # Cache all installed packages once upfront — avoids spawning winget.exe list
+  # per package (~1-2s each). winget output is UTF-16 in some locales; iconv
+  # the bytes to UTF-8 so bash substring matching works. The `|| true` keeps
+  # the script alive if iconv guesses the wrong source encoding.
+  _installed_packages=$(winget.exe list < /dev/null 2> /dev/null | iconv -f UTF-16LE -t UTF-8 2> /dev/null || winget.exe list < /dev/null 2> /dev/null)
+
+  # Install loop. See FORCE_INSTALL config above.
+  #   - skip when:    not forcing AND package already in $_installed_packages
+  #   - install when: forcing OR package missing
+  # Every install uses --force --uninstall-previous so the install path is the
+  # same in both modes — the only difference is whether we skip or not.
+  for pkg in "${winget_packages[@]}"; do
+    if ! ((FORCE_INSTALL)) && echo "$_installed_packages" | grep -qF "$pkg"; then
+      echo "  Skipped: $pkg (already installed)"
+    else
+      echo "  Installing: $pkg"
+      winget.exe install --id "$pkg" -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous < /dev/null > /dev/null 2>&1 || true
+    fi
+  done
+
   echo ">>> Skipped: winget upgrade --all (bash_syle is stale; install loop above already pulled latest)"
 elif prompt_yes_no ">>> bash_syle is fresh. Run 'winget upgrade --all' now? This is slow."; then
   echo ">>> Upgrading all winget packages"
   winget.exe upgrade --all --include-unknown --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity < /dev/null > /dev/null 2>&1 || true
 else
-  echo ">>> Skipped: winget upgrade --all (declined or non-interactive)"
+  echo ">>> Skipped winget-install: bash_syle is fresh (declined or non-interactive)"
 fi
 
 echo ">>> winget-install complete"
