@@ -10,22 +10,21 @@ Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS`
 
 ### 1. Determine install method (priority order)
 
-1. **OS package manager** (preferred) -- add `installXxxPackage <name>` to each platform's `_full-setup.sh` AND the Windows `_full-setup.ps1.bash`:
+1. **OS package manager** (preferred) -- add `installXxxPackage <name>` to each platform's `_full-setup.sh` AND the Windows winget list:
    - `software/scripts/mac/_full-setup.sh` -> `installBrewPackage <name>`
    - `software/scripts/ubuntu/_full-setup.sh` -> `installAptPackage <name>`
    - `software/scripts/redhat/_full-setup.sh` -> `installDnfPackage <name>`
    - `software/scripts/arch_linux/_full-setup.sh` -> `installPacmanPackage <name>`
    - `software/scripts/steamos/_full-setup.sh` -> `installPacmanPackage <name>`
    - `software/scripts/chromeos/_full-setup.sh` -> `installAptPackage <name>`
-   - `software/scripts/windows/_full-setup.sh` -> add `_installWingetPackage "<winget.Id>"` (essential, blocking) or `_installWingetPackageInBackground "<winget.Id>"` (non-essential) call. Look up the correct winget ID with `winget search <name>`.
-   - `software/scripts/windows/_full-setup.ps1.bash` -> add winget ID to `$wingetPackages` under the matching `# ---- Category ----` comment. (Single foreground install list — no separate background list; winget's background jobs are unreliable.)
+   - `software/scripts/windows/_winget-install.sh` -> add the winget ID to the `winget_packages=( ... )` array under the matching `# ---- Category ----` comment. Look up the correct winget ID with `winget search <name>`. (Single canonical list — `_full-setup.ps1.bash` no longer carries a duplicate; it only handles WSL bootstrap and msstore-only items.)
    - Place the new line alphabetically within the existing package group under the appropriate `# ---- Category ----` sub-section header.
    - Check if the package name differs per distro (e.g. `fd` vs `fd-find`, winget: `sharkdp.fd`) and use the correct name for each.
    - **All platforms must stay in sync.** If a tool has a winget equivalent, it must be added to Windows too.
 
 2. **curl/bash installer** (fallback) -- create a `.sh` script in `software/scripts/advanced/` following the pattern in `uv.sh` or `starship.sh`. Use `curl -fsSL <url> | bash`. Install any documented required dependencies first.
 
-3. **Windows-only tools** -- if the tool only has a Windows binary (no Unix equivalent), create `software/scripts/windows/<name>-windows.js` using `downloadWindowsApp()` or add to `_installWingetPackageInBackground` in `software/scripts/windows/_full-setup.sh`.
+3. **Windows-only tools** -- if the tool only has a Windows binary (no Unix equivalent), create `software/scripts/windows/<name>-windows.js` using `downloadWindowsApp()` or add the winget ID to `winget_packages` in `software/scripts/windows/_winget-install.sh`.
 
 ### 2. Handle binary name mismatches
 

@@ -4,7 +4,7 @@
 # install ollama - run large language models locally (https://ollama.com)
 # Linux: official curl|sh installer (sets up systemd unit and pulls binary).
 # macOS: handled by `installBrewPackageInBackground ollama` in mac/_full-setup.sh.
-# Windows host: handled by `Ollama.Ollama` in windows/_full-setup.ps1.bash.
+# Windows host: handled by `Ollama.Ollama` in windows/_winget-install.sh.
 
 # Skip in CI — install requires sudo + systemd, and pulling a daemon binary into a
 # throwaway runner has no value (no GPU, no follow-on inference).

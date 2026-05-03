@@ -20,38 +20,14 @@
 #   GPU TUNING
 #     - NVIDIA RTX 5090 Desktop — Driver Tuning
 #   SOFTWARE INSTALLATION (slow — runs last)
-#     - Winget Install & Upgrade (single foreground list — winget background jobs are unreliable)
 #     - Install Media Extensions (Microsoft Store)
 #     - Brave Browser Shortcut Flags
 #     - AI CLI Tools (npm-based)
+#
+# Winget package installs (Brave, VS Code, Git, Terminal, etc.) are handled
+# from WSL by software/scripts/windows/_winget-install.sh — run from inside
+# WSL via `bash run.sh --files=_winget-install.sh` after this script finishes.
 ################################################################################
-
-################################################################################
-# ---- Config ----
-#
-# $forceInstall — controls the winget install loop further down:
-#
-#   $false (DEFAULT) — skip packages that already show up in the cached
-#     `winget list` output, install everything else with
-#     `--force --uninstall-previous`. Fast and idempotent — normal full-setup
-#     behavior.
-#
-#   $true — bypass the skip check and reinstall EVERY package via
-#     `--force --uninstall-previous`. Slow, but useful when a prior install is
-#     broken / partially registered, when winget's "installed" detection is
-#     stale (manual installs, Store apps, side-by-side versions), or when you
-#     want to re-pull the latest installer for everything in one shot.
-#
-# What the install flags do:
-#   --force                ignore winget's own "already installed",
-#                          hash-mismatch, and applicability checks.
-#   --uninstall-previous   remove the existing version before installing,
-#                          so you get a clean install rather than an
-#                          in-place repair.
-################################################################################
-
-# Flip to $true to force-reinstall every winget package on the next run.
-$forceInstall = $false
 
 # Disable progress bars to speed up Invoke-WebRequest
 $ProgressPreference = 'SilentlyContinue'
@@ -550,164 +526,21 @@ if ($gpuName -match "RTX\s*5090") {
 
 
 ################################################################################
-# ---- Winget Install & Upgrade ----
-# NOTE: Winget installs are slow (~1-2s per package check + download time).
-# Keep this section last so faster steps (hosts, firewall, PATH) finish first.
-################################################################################
-
-Write-Host "`n=== Installing Winget Packages ===" -ForegroundColor Cyan
-
-# Refresh winget source index so installs resolve latest versions
-Write-Host "Updating winget source index..."
-winget source update --disable-interactivity 2>$null | Out-Null
-
-# Cache all installed packages once upfront — avoids spawning winget list per package (~1-2s each)
-$installedPackages = winget list 2>$null | Out-String
-
-# NOTE: Everything is installed in the FOREGROUND, sequentially. We used to
-# split this into "essential" (foreground) + "background" (Start-Job) lists,
-# but winget is funky in background jobs — UAC prompts get suppressed, the
-# package store frequently reports "in use" when two installs race, and
-# silent failures are common. One-at-a-time foreground installs are slower
-# but reliable, and that trade is worth it for an unattended setup script.
-$wingetPackages = @(
-    # ---- Core: browser, terminal, editors ----
-    # Fira Code is installed by software/scripts/fonts.js (drops the TTFs into
-    # the per-OS font folder), so we deliberately skip the winget package here
-    # to avoid double-installing the same font.
-    "Brave.Brave",
-    "Microsoft.WindowsTerminal",
-    "Microsoft.VisualStudioCode",
-    "SublimeHQ.SublimeText.4",
-    "SublimeHQ.SublimeMerge",
-    "ZedIndustries.Zed",
-
-    # ---- Git ----
-    "Git.Git",
-    "Git.LFS",
-    "GitHub.cli",
-    "NewRen.git-filter-repo",
-
-    # ---- CLI Utilities (cross-platform parity with Unix _full-setup.sh) ----
-    "7zip.7zip",
-    "BurntSushi.ripgrep.MSVC",
-    "junegunn.fzf",
-    "jqlang.jq",
-    "MikeFarah.yq",
-    "sharkdp.bat",
-    "sharkdp.fd",
-    "dandavison.delta",
-    "ajeetdsouza.zoxide",
-    "eza-community.eza",
-    "dbrgn.tealdeer",
-    "astral-sh.uv",
-    "Cloudflare.cloudflared",
-    "Google.PlatformTools",
-    "Starship.Starship",
-
-    # ---- Dev Tools & Runtimes ----
-    "OpenJS.NodeJS",
-    "Python.Python.3",
-    "Rustlang.Rustup",
-    "GoLang.Go",
-    "DenoLand.Deno",
-    "Oven-sh.Bun",
-    "Gradle.Gradle",
-    "EclipseAdoptium.Temurin.21.JDK",
-    "Kitware.CMake",
-    "Kubernetes.kubectl",
-    "LLVM.LLVM",
-    "Microsoft.VisualStudio.2022.BuildTools",
-    "Hashicorp.Terraform",
-    "Helm.Helm",
-    "Derailed.k9s",
-    "JesseDuffield.lazydocker",
-    "Microsoft.DotNet.SDK.8",
-    "Microsoft.DotNet.DesktopRuntime.6",
-    "Microsoft.DotNet.DesktopRuntime.7",
-    "Microsoft.DotNet.DesktopRuntime.8",
-    "Microsoft.PowerShell",
-
-    # ---- Local LLM ----
-    "Ollama.Ollama",
-
-    # ---- Cloud CLIs ----
-    "Amazon.AWSCLI",
-    "Google.CloudSDK",
-    "Microsoft.AzureCLI",
-
-    # ---- GUI Applications ----
-    "Audacity.Audacity",
-    "Bambulab.Bambustudio",
-    "BlenderFoundation.Blender",
-    "CodeSector.TeraCopy",
-    "Discord.Discord",
-    "Docker.DockerDesktop",
-    "dotPDN.PaintDotNet",
-    "Postman.Postman",
-    "Greenshot.Greenshot",
-    "HandBrake.HandBrake",
-    "Inkscape.Inkscape",
-    "KDE.Krita",
-    "PuTTY.PuTTY",
-    "Rufus.Rufus",
-    "Ultimaker.Cura",
-    "Valve.Steam",
-    "VideoLAN.VLC",
-    "WinMerge.WinMerge",
-    "WinSCP.WinSCP",
-    "Zoom.Zoom",
-
-    # ---- Multimedia ----
-    "Gyan.FFmpeg",
-    "ImageMagick.ImageMagick.Q16-HDRI",
-
-    # ---- Windows-Specific Runtimes & Drivers ----
-    "Microsoft.VCRedist.2005.x86",
-    "Microsoft.VCRedist.2005.x64",
-    "Microsoft.VCRedist.2008.x86",
-    "Microsoft.VCRedist.2008.x64",
-    "Microsoft.VCRedist.2010.x86",
-    "Microsoft.VCRedist.2010.x64",
-    "Microsoft.VCRedist.2012.x86",
-    "Microsoft.VCRedist.2012.x64",
-    "Microsoft.VCRedist.2013.x86",
-    "Microsoft.VCRedist.2013.x64",
-    "Microsoft.VCRedist.2015+.x86",
-    "Microsoft.VCRedist.2015+.x64",
-    "Microsoft.DirectX",
-    "Microsoft.XNARedist",
-    "OpenAL.OpenAL",
-    "WinFSP.WinFSP",
-    "WinFSP.SSHFS"
-)
-
-# See $forceInstall config at the top of this file.
-#   - skip when:    not forcing AND package already installed
-#   - install when: forcing OR package missing
-# Every install uses --force --uninstall-previous so the install path is
-# the same in both modes — the only difference is whether we skip or not.
-Write-Host "`n--- Installing winget packages (foreground, sequential) ---" -ForegroundColor Cyan
-foreach ($pkg in $wingetPackages) {
-    if (-not $forceInstall -and ($installedPackages -match [regex]::Escape($pkg))) {
-        Write-Host "  Skipped: $pkg (already installed)" -ForegroundColor Yellow
-    } else {
-        Write-Host "  Installing: $pkg"
-        winget install --id $pkg -e --source winget --accept-source-agreements --accept-package-agreements --disable-interactivity --silent --force --uninstall-previous 2>$null
-    }
-}
-
-Write-Host "`nListing available winget upgrades (informational only — run 'winget upgrade --id <pkg>' to upgrade)..." -ForegroundColor Cyan
-winget upgrade --include-unknown --source winget --accept-source-agreements --disable-interactivity
-
-
-
-
-################################################################################
 # ---- Install Media Extensions (Microsoft Store) ----
+# NOTE: Regular winget package installs (Brave, VS Code, Git, etc.) are handled
+# from WSL by software/scripts/windows/_winget-install.sh. This section only
+# covers `--source msstore` packages, which the bash script doesn't install.
 ################################################################################
 
 Write-Host "`n=== Installing Media Extensions ===" -ForegroundColor Cyan
+
+# Refresh winget source index so installs resolve latest versions.
+Write-Host "Updating winget source index..."
+winget source update --disable-interactivity 2>$null | Out-Null
+
+# Cache all installed packages once upfront — avoids spawning winget list per
+# extension (~1-2s each). `winget list` includes msstore-source entries.
+$installedPackages = winget list 2>$null | Out-String
 
 $mediaExtensions = @(
     @{ Name = "Raw Image Extension";                          Id = "9NCTDW2W1BH8" },
