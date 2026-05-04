@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-04T21:46:48.516Z
+# Generated: 2026-05-04T22:00:38.140Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -2226,10 +2226,14 @@ function open() {
 ################################################################################
 function maximize_and_focus_window() {
   local app_name="$1"
+  # Optional 2nd arg: macOS System Events process name. Defaults to app_name.
+  # Pass explicitly when bundle display name != executable name (e.g. VS Code:
+  # bundle "Visual Studio Code" / process "Code").
+  local process_name="${2:-$app_name}"
   [[ -z "$app_name" ]] && return 0
 
   if ((is_os_mac)); then
-    _mac_activate_and_tile "$app_name" 2> /dev/null
+    _mac_activate_and_tile "$app_name" "$process_name" 2> /dev/null
   elif ((is_os_wsl)); then
     _wsl_activate_and_maximize "$app_name" 2> /dev/null
   elif [[ -n "$WAYLAND_DISPLAY" ]]; then
@@ -2298,6 +2302,10 @@ function _wsl_activate_and_maximize() {
 # 300x200 grid from the top-left so they are easy to reach.
 function _mac_activate_and_tile() {
   local app_name="$1"
+  # System Events uses the *process* (executable) name, not the bundle display
+  # name. Fall back to app_name when the caller does not provide one. e.g. VS
+  # Code: bundle "Visual Studio Code" / process "Code".
+  local process_name="${2:-$app_name}"
   [[ -z "$app_name" ]] && return 0
 
   # Resolve visible frame (AppleScript coords: top-left origin) of the display containing the mouse cursor
@@ -2330,7 +2338,7 @@ JXA
   fi
   osascript << APPLESCRIPT 2> /dev/null
 tell application "$app_name" to activate
-tell application "System Events" to tell process "$app_name"
+tell application "System Events" to tell process "$process_name"
   set position of window 1 to {$_mx, $_my}
   set size of window 1 to {$_mw, $_mh}
   set windowCount to count of windows
@@ -5115,7 +5123,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | f828b17d6ccd87ba7bb170e26aeca6e4 | 5.1 KB | 2026-05-04
+# software/scripts/advanced/editor-launchers-common.profile.bash | 50a4eaabbc9f9c8964d1cb931fb44fad | 5.6 KB | 2026-05-04
 # Parallel-array registry populated by `_register_editor` calls in each
 # editor-launchers.js block. Used by `list_editors` for binary-availability triage.
 _REGISTERED_EDITORS=()
@@ -5226,15 +5234,23 @@ function run_editor() {
     (nohup "$target_binary" "${editor_args[@]}" > /dev/null 2>&1 &)
     # bring the editor window to the foreground on macOS (async, never blocks the shell)
     if ((is_os_mac)); then
-      local app_name=""
+      # app_name = bundle display name (used by `tell application X to activate`)
+      # process_name = executable name shown in System Events (used by `tell process X`).
+      # These differ for VS Code: bundle is "Visual Studio Code" but the running process is "Code",
+      # so System Events errors with -1728 unless we pass the process name explicitly. Sublime
+      # Text and Zed happen to match (or AppleScript resolves them), so process_name is optional.
+      local app_name="" process_name=""
       case "$editor_name" in
       subl) app_name="Sublime Text" ;;
       smerge) app_name="Sublime Merge" ;;
-      code) app_name="Visual Studio Code" ;;
+      code)
+        app_name="Visual Studio Code"
+        process_name="Code"
+        ;;
       zed) app_name="Zed" ;;
       esac
       if [[ -n "$app_name" ]]; then
-        (maximize_and_focus_window "$app_name" > /dev/null 2>&1 &)
+        (maximize_and_focus_window "$app_name" "$process_name" > /dev/null 2>&1 &)
       fi
     fi
   fi
