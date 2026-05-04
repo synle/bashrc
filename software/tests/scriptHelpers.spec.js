@@ -130,22 +130,29 @@ describe("_resolveBrowserOsKey (browser-config.js)", () => {
     expect(result[34014]).toEqual(["Command+KeyT"]);
   });
 
-  it("should resolve OS_KEY to Alt on Windows/Linux", () => {
+  it("should resolve OS_KEY to BOTH Control and Alt on Windows/Linux (Ctrl preserved as Brave default + Alt addition)", () => {
     const resolve = getResolver(false);
     const result = resolve({ 34014: ["OS_KEY+KeyT"] });
-    expect(result[34014]).toEqual(["Alt+KeyT"]);
+    expect(result[34014]).toEqual(["Control+KeyT", "Alt+KeyT"]);
   });
 
-  it("should resolve multiple OS_KEY in one entry", () => {
+  it("should expand each OS_KEY occurrence to Control and Alt while preserving non-OS_KEY entries", () => {
     const resolve = getResolver(false);
     const result = resolve({ 33007: ["F5", "OS_KEY+Shift+KeyR"] });
-    expect(result[33007]).toEqual(["F5", "Alt+Shift+KeyR"]);
+    expect(result[33007]).toEqual(["F5", "Control+Shift+KeyR", "Alt+Shift+KeyR"]);
   });
 
   it("should leave entries without OS_KEY unchanged", () => {
     const resolve = getResolver(true);
     const result = resolve({ 34030: ["F11"] });
     expect(result[34030]).toEqual(["F11"]);
+  });
+
+  it("should preserve empty arrays so explicitly-cleared bindings stay cleared", () => {
+    const resolve = getResolver(false);
+    const result = resolve({ 33002: [], 34100: [] });
+    expect(result[33002]).toEqual([]);
+    expect(result[34100]).toEqual([]);
   });
 });
 
