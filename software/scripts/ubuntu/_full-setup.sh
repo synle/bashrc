@@ -152,6 +152,10 @@ installAptPackage unzip
 installAptPackage gnupg
 installAptPackage software-properties-common
 installAptPackage build-essential
+
+# ---- AppImage runtime ----
+# Ubuntu 22.04+ dropped libfuse2 by default; AppImages need it to mount and run.
+installAptPackage libfuse2
 installAptPackageInBackground android-tools-adb
 installAptPackageInBackground gradle
 installAptPackageInBackground rustc
