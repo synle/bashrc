@@ -428,11 +428,17 @@ function _getBrowserConfigs(browserName, existingPrefs = {}) {
  */
 function _getBrowserAcceleratorsCommon() {
   return {
+    // Note: Cut/Copy/Paste (36000/36001/36003) are intentionally NOT in this map.
+    // Brave handles them at the textfield level (omnibox, form inputs). Binding them
+    // through brave.accelerators collides with the textfield's own clipboard handlers
+    // and crashes the renderer when invoked in the address bar.
+    // Empty arrays (`[]`) below are intentional — they explicitly UNBIND a Brave default
+    // so the user's choice of clear-no-binding survives across runs.
     33000: ["OS_KEY+ArrowLeft"], // Back
     33001: ["OS_KEY+ArrowRight"], // Forward
-    33002: ["OS_KEY+KeyR"], // Reload
+    33002: [], // Reload — cleared (Ctrl+R is repurposed onto Hard reload below)
     33003: ["OS_KEY+Home"], // Home
-    33007: ["F5", "OS_KEY+Shift+KeyR"], // Hard reload (bypass cache)
+    33007: ["F5", "OS_KEY+KeyR", "OS_KEY+Shift+KeyR"], // Reload + hard reload (bypass cache)
     34000: ["OS_KEY+KeyN"], // New window
     34001: ["OS_KEY+Shift+KeyN"], // New incognito window
     34014: ["OS_KEY+KeyT"], // New tab
@@ -448,33 +454,35 @@ function _getBrowserAcceleratorsCommon() {
     34024: ["OS_KEY+Digit7"], // Tab 7
     34025: ["OS_KEY+Digit8"], // Tab 8
     34026: ["OS_KEY+Digit9"], // Tab 9
-    34030: ["F11"], // Fullscreen
-    34100: ["OS_KEY+Shift+KeyC"], // Brave cleanup
-    34101: ["OS_KEY+Shift+KeyP"], // Brave private
-    34102: ["OS_KEY+Shift+KeyX"], // Brave close all
-    34103: ["OS_KEY+Shift+KeyZ"], // Brave undo close
+    34030: ["Alt+Enter"], // Fullscreen — was F11; F11 reused on DevTools below
+    34035: [], // Brave-internal command — cleared
+    34060: ["OS_KEY+KeyL"], // Focus address bar (modern command ID)
+    34100: [], // Brave cleanup — cleared
+    34101: [], // Brave private — cleared
+    34102: [], // Brave close all — cleared
+    34103: [], // Brave undo close — cleared
     35000: ["OS_KEY+KeyD"], // Bookmark this page
-    35003: ["OS_KEY+KeyP"], // Print
+    35003: [], // Print (legacy command ID) — cleared; modern ID 35007 holds the binding
     35004: ["OS_KEY+KeyS"], // Save page
-    36000: ["OS_KEY+KeyX"], // Cut
-    36001: ["OS_KEY+KeyC"], // Copy
-    36003: ["OS_KEY+KeyV"], // Paste
+    35007: ["OS_KEY+KeyP"], // Print (modern command ID)
     37000: ["OS_KEY+KeyF"], // Find
     37001: ["OS_KEY+KeyG"], // Find next
     37002: ["OS_KEY+Shift+KeyG"], // Find previous
     38001: ["OS_KEY+Equal"], // Zoom in
     38002: ["OS_KEY+Digit0"], // Reset zoom
     38003: ["OS_KEY+Minus"], // Zoom out
-    39000: ["OS_KEY+Shift+KeyT"], // Focus toolbar
-    39001: ["OS_KEY+KeyL"], // Focus address bar
-    39007: ["OS_KEY+Shift+KeyA"], // Focus inactive popup
+    39000: [], // Focus toolbar — cleared
+    39001: ["F2"], // Focus address bar (legacy ID, repurposed to F2)
+    39003: [], // Focus next pane — cleared
+    39007: [], // Focus inactive popup — cleared
     40000: ["OS_KEY+KeyO"], // Open file
-    40004: ["F12", "OS_KEY+Shift+KeyI"], // DevTools inspector
+    40004: ["F11", "OS_KEY+Shift+KeyI"], // DevTools inspector — F11 replaces default F12
     40009: ["OS_KEY+Shift+KeyB"], // Bookmark bar toggle
     40010: ["OS_KEY+KeyH"], // History
     40012: ["OS_KEY+KeyJ", "OS_KEY+Shift+KeyJ"], // Downloads
-    40013: ["OS_KEY+Shift+Backspace"], // Clear browsing data
-    40021: ["OS_KEY+KeyE"], // Browser menu (⋮ hamburger menu, top-right)
+    40013: ["OS_KEY+Shift+Backspace", "OS_KEY+Shift+Delete"], // Clear browsing data
+    40021: [], // Browser menu (⋮ hamburger) — cleared
+    52500: ["OS_KEY+Shift+KeyT"], // Reopen closed tab
   };
 }
 
@@ -489,25 +497,38 @@ function _getBrowserAcceleratorsMac() {
 /**
  * Returns browser accelerator overrides for Windows/Linux only.
  * Includes Alt+F4 and other Win/Linux-specific keys with no macOS equivalent.
+ * Keeps the legacy Brave default (Control+Shift+W) alongside our Alt additions
+ * so users who rely on the Ctrl-based shortcut don't lose it.
  * @returns {object} Windows/Linux-specific accelerator overrides.
  */
 function _getBrowserAcceleratorsWindowsLinux() {
   return {
-    34012: ["Alt+F4", "Alt+Shift+KeyW"], // Close window (Alt+F4 is Windows convention)
+    34012: ["Alt+F4", "Control+Shift+KeyW", "Alt+Shift+KeyW"], // Close window (Alt+F4 is Windows convention)
   };
 }
 
 /**
  * Resolves OS_KEY placeholders in accelerator values to platform-specific modifier keys.
- * OS_KEY becomes Command on macOS and Alt on Windows/Linux.
+ * On macOS, OS_KEY -> Command (matches Brave's native defaults). On Windows/Linux, OS_KEY
+ * expands to BOTH Control AND Alt — Control preserves Brave's built-in defaults
+ * (Ctrl+T, Ctrl+W, Ctrl+R, etc.) while Alt is our additive convention from OS_KEY.
+ * Each entry in the returned map therefore lists every modifier variant for the same chord.
  * @param {object} accelerators - Accelerator map with OS_KEY placeholders in values.
- * @returns {object} Accelerator map with OS_KEY resolved to the platform modifier.
+ * @returns {object} Accelerator map with OS_KEY expanded to the platform modifier(s).
  */
 function _resolveBrowserOsKey(accelerators) {
-  const osKey = is_os_mac ? "Command" : "Alt";
+  const osKeys = is_os_mac ? ["Command"] : ["Control", "Alt"];
   const resolved = {};
   for (const [id, keys] of Object.entries(accelerators)) {
-    resolved[id] = keys.map((k) => k.replace(/OS_KEY/g, osKey));
+    const expanded = [];
+    for (const k of keys) {
+      if (k.includes("OS_KEY")) {
+        for (const osKey of osKeys) expanded.push(k.replace(/OS_KEY/g, osKey));
+      } else {
+        expanded.push(k);
+      }
+    }
+    resolved[id] = expanded;
   }
   return resolved;
 }
