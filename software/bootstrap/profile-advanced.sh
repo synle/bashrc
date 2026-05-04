@@ -1279,10 +1279,14 @@ function open() {
 ################################################################################
 function maximize_and_focus_window() {
   local app_name="$1"
+  # Optional 2nd arg: macOS System Events process name. Defaults to app_name.
+  # Pass explicitly when bundle display name != executable name (e.g. VS Code:
+  # bundle "Visual Studio Code" / process "Code").
+  local process_name="${2:-$app_name}"
   [[ -z "$app_name" ]] && return 0
 
   if ((is_os_mac)); then
-    _mac_activate_and_tile "$app_name" 2> /dev/null
+    _mac_activate_and_tile "$app_name" "$process_name" 2> /dev/null
   elif ((is_os_wsl)); then
     _wsl_activate_and_maximize "$app_name" 2> /dev/null
   elif [[ -n "$WAYLAND_DISPLAY" ]]; then
@@ -1351,6 +1355,10 @@ function _wsl_activate_and_maximize() {
 # 300x200 grid from the top-left so they are easy to reach.
 function _mac_activate_and_tile() {
   local app_name="$1"
+  # System Events uses the *process* (executable) name, not the bundle display
+  # name. Fall back to app_name when the caller does not provide one. e.g. VS
+  # Code: bundle "Visual Studio Code" / process "Code".
+  local process_name="${2:-$app_name}"
   [[ -z "$app_name" ]] && return 0
 
   # Resolve visible frame (AppleScript coords: top-left origin) of the display containing the mouse cursor
@@ -1383,7 +1391,7 @@ JXA
   fi
   osascript << APPLESCRIPT 2> /dev/null
 tell application "$app_name" to activate
-tell application "System Events" to tell process "$app_name"
+tell application "System Events" to tell process "$process_name"
   set position of window 1 to {$_mx, $_my}
   set size of window 1 to {$_mw, $_mh}
   set windowCount to count of windows
