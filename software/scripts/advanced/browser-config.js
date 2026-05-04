@@ -439,9 +439,9 @@ function _getBrowserAcceleratorsCommon() {
     // so the user's choice of clear-no-binding survives across runs.
     33000: ["OS_KEY+ArrowLeft"], // Back
     33001: ["OS_KEY+ArrowRight"], // Forward
-    33002: [], // Reload — cleared (Ctrl+R is repurposed onto Hard reload below)
+    33002: [], // Plain reload — cleared; everything goes through Hard refresh below
     33003: ["OS_KEY+Home"], // Home
-    33007: ["F5", "OS_KEY+KeyR", "OS_KEY+Shift+KeyR"], // Reload + hard reload (bypass cache)
+    33007: ["F5", "OS_KEY+KeyR", "OS_KEY+Shift+KeyR"], // Hard refresh — F5, Ctrl/Alt+R, Ctrl/Alt+Shift+R
     34000: ["OS_KEY+KeyN"], // New window
     34001: ["OS_KEY+Shift+KeyN"], // New incognito window
     34014: ["OS_KEY+KeyT"], // New tab
