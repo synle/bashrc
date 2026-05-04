@@ -40,7 +40,11 @@
   // Match VS Code / Sublime convention: file tree on the LEFT, agent/AI on the RIGHT.
   "project_panel": { "dock": "left" }, // File tree dock side. Values: "left", "right"
   "outline_panel": { "dock": "left" }, // Symbol outline dock side — pair with the file tree. Values: "left", "right"
-  "agent": { "dock": "right" }, // Agent / AI panel dock side. Values: "left", "right", "bottom"
+  "agent": {
+    "dock": "right", // Agent / AI panel dock side. Values: "left", "right", "bottom"
+    "tool_permissions": { "default": "allow" }, // Auto-approve agent tool actions without prompting (Zed v0.224.0+ analog of VS Code's claudeCode.allowDangerouslySkipPermissions). Values: "confirm", "allow", "deny"
+    "always_allow_tool_actions": true, // Legacy fallback for Zed <v0.224.0 — same effect as tool_permissions.default="allow". Values: true, false
+  },
 
   // --- Terminal ---
   "terminal": {
