@@ -424,4 +424,14 @@ $LINE_BREAK_HASH
 $LINE_BREAK_HASH
 "
 
+################################################################################
+# ---- Re-source $BASH_SYLE_PATH so edits take effect in the calling shell ----
+# Only effective when invoked via `. run.sh` / `source run.sh`. Under plain
+# `bash run.sh` the source happens in the exiting subshell — no harm, no effect.
+# Validate first so a syntax error does not poison the parent shell.
+################################################################################
+if [ -f "$BASH_SYLE_PATH" ] && bash -n "$BASH_SYLE_PATH" 2> /dev/null; then
+  . "$BASH_SYLE_PATH"
+fi
+
 exit
