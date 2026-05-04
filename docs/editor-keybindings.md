@@ -60,44 +60,42 @@ Cut / Copy / Paste are intentionally **not** registered through `brave.accelerat
 
 Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
-| Key                             | Action                                    | All browsers (MacOS) |         All browsers (Windows/Linux)          |
-| ------------------------------- | ----------------------------------------- | :------------------: | :-------------------------------------------: |
-| `OS_KEY+t`                      | New tab                                   |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+t`                | Reopen closed tab                         |          ☑️          |                      ✅                       |
-| `OS_KEY+1-9`                    | Tab by index                              |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+[/]`              | Prev / next tab                           |          ☑️          |                      ✅                       |
-| `OS_KEY+w`                      | Close tab                                 |          ☑️          |                      ✅                       |
-| `OS_KEY+q`                      | Quit                                      |          ☑️          |                      ✅                       |
-| `OS_KEY+n`                      | New window                                |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+n`                | New incognito window                      |          ☑️          |                      ✅                       |
-| `OS_KEY+=`                      | Zoom in                                   |          ☑️          |                      ✅                       |
-| `OS_KEY+-`                      | Zoom out                                  |          ☑️          |                      ✅                       |
-| `OS_KEY+0`                      | Reset zoom (100%)                         |          ☑️          |                      ✅                       |
-| `OS_KEY+c`                      | Copy (Cmd on mac, Ctrl native on Win/Linux) |          ☑️          |          ☑️ (textfield-level)                 |
-| `OS_KEY+x`                      | Cut (Cmd on mac, Ctrl native on Win/Linux)  |          ☑️          |          ☑️ (textfield-level)                 |
-| `OS_KEY+v`                      | Paste (Cmd on mac, Ctrl native on Win/Linux)|          ☑️          |          ☑️ (textfield-level)                 |
-| `OS_KEY+a`                      | Select all                                |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
-| `OS_KEY+z`                      | Undo                                      |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
-| `OS_KEY+s`                      | Save (download page)                      |          ☑️          |                      ✅                       |
-| `OS_KEY+p`                      | Print                                     |          ☑️          |                      ✅                       |
-| `OS_KEY+f`                      | Find                                      |          ☑️          |                      ✅                       |
-| `OS_KEY+g`                      | Find next                                 |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+g`                | Find prev                                 |          ☑️          |                      ✅                       |
-| `OS_KEY+l`                      | Focus address bar                         |          ☑️          |                      ✅                       |
-| `F2`                            | Focus address bar (alt)                   |          ❌          |                      ✅                       |
-| `OS_KEY+r`                      | Reload (mapped to hard reload, see below) |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+r`                | Hard reload                               |          ☑️          |                      ✅                       |
-| `OS_KEY+o`                      | Open file                                 |          ☑️          |                      ✅                       |
-| `OS_KEY+h`                      | History                                   |          ☑️          |                      ✅                       |
-| `OS_KEY+d`                      | Bookmark this page                        |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+i`                | DevTools                                  |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+b`                | Bookmark bar toggle                       |          ☑️          |                      ✅                       |
-| `OS_KEY+left`                   | Back                                      |          ☑️          |                      ✅                       |
-| `OS_KEY+right`                  | Forward                                   |          ☑️          |                      ✅                       |
-| `OS_KEY+shift+backspace/delete` | Clear browsing data                       |          ☑️          |                      ✅                       |
-| `F5`                            | Reload + hard reload                      |          ✅          |                      ✅                       |
-| `Alt+Enter`                     | Fullscreen (was F11)                      |          ❌          |                      ✅                       |
-| `F11`                           | DevTools inspector (was F12)              |          ❌          |                      ✅                       |
+| Key                                  | Action                                                  | All browsers (MacOS) |         All browsers (Windows/Linux)          |
+| ------------------------------------ | ------------------------------------------------------- | :------------------: | :-------------------------------------------: |
+| `OS_KEY+t`                           | New tab                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+t`                     | Reopen closed tab                                       |          ☑️          |                      ✅                       |
+| `OS_KEY+1-9`                         | Tab by index                                            |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+[/]`                   | Prev / next tab                                         |          ☑️          |                      ✅                       |
+| `OS_KEY+w`                           | Close tab                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+q`                           | Quit                                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+n`                           | New window                                              |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+n`                     | New incognito window                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+=`                           | Zoom in                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+-`                           | Zoom out                                                |          ☑️          |                      ✅                       |
+| `OS_KEY+0`                           | Reset zoom (100%)                                       |          ☑️          |                      ✅                       |
+| `OS_KEY+c`                           | Copy (Cmd on mac, Ctrl native on Win/Linux)             |          ☑️          |             ☑️ (textfield-level)              |
+| `OS_KEY+x`                           | Cut (Cmd on mac, Ctrl native on Win/Linux)              |          ☑️          |             ☑️ (textfield-level)              |
+| `OS_KEY+v`                           | Paste (Cmd on mac, Ctrl native on Win/Linux)            |          ☑️          |             ☑️ (textfield-level)              |
+| `OS_KEY+a`                           | Select all                                              |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
+| `OS_KEY+z`                           | Undo                                                    |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
+| `OS_KEY+s`                           | Save (download page)                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+p`                           | Print                                                   |          ☑️          |                      ✅                       |
+| `OS_KEY+f`                           | Find                                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+g`                           | Find next                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+g`                     | Find prev                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+l`                           | Focus address bar                                       |          ☑️          |                      ✅                       |
+| `F2`                                 | Focus address bar (alt)                                 |          ❌          |                      ✅                       |
+| `OS_KEY+r` / `OS_KEY+shift+r` / `F5` | Hard refresh (all chords mapped to bypass-cache reload) |          ☑️          |                      ✅                       |
+| `OS_KEY+o`                           | Open file                                               |          ☑️          |                      ✅                       |
+| `OS_KEY+h`                           | History                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+d`                           | Bookmark this page                                      |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+i`                     | DevTools                                                |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+b`                     | Bookmark bar toggle                                     |          ☑️          |                      ✅                       |
+| `OS_KEY+left`                        | Back                                                    |          ☑️          |                      ✅                       |
+| `OS_KEY+right`                       | Forward                                                 |          ☑️          |                      ✅                       |
+| `OS_KEY+shift+backspace/delete`      | Clear browsing data                                     |          ☑️          |                      ✅                       |
+| `Alt+Enter`                          | Fullscreen (was F11)                                    |          ❌          |                      ✅                       |
+| `F11`                                | DevTools inspector (was F12)                            |          ❌          |                      ✅                       |
 
 ---
 
