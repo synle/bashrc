@@ -428,12 +428,13 @@ function _getBrowserConfigs(browserName, existingPrefs = {}) {
  */
 function _getBrowserAcceleratorsCommon() {
   return {
-    // Note: Cut/Copy/Paste (36000/36001/36003) are bound to Alt-only chords here.
-    // Ctrl+X/C/V is intentionally NOT registered through brave.accelerators —
-    // Brave's textfield handler claims Ctrl natively in the omnibox, and double-binding
-    // (Ctrl AND Alt on the same clipboard ID) crashes the renderer. Alt-only is safe
-    // because Alt+X/C/V doesn't conflict with the textfield handler, and skipping the
-    // map entirely loses Alt+X/C/V (Brave's default has Ctrl-only).
+    // Note: Cut/Copy/Paste (36000/36001/36003) are intentionally NOT in this map.
+    // Ctrl+X/C/V is handled natively by Brave's textfield clipboard handler in the
+    // omnibox and form inputs — that's the universal convention. Alt+X/C/V is
+    // non-standard across apps and registering it through brave.accelerators alongside
+    // Ctrl crashed the renderer (double-binding the same clipboard ID conflicted with
+    // the textfield's own Ctrl handler). Skipping the IDs entirely lets Brave fall
+    // back to its built-in Ctrl-only defaults — clean and standard.
     // Empty arrays (`[]`) below are intentional — they explicitly UNBIND a Brave default
     // so the user's choice of clear-no-binding survives across runs.
     33000: ["OS_KEY+ArrowLeft"], // Back
@@ -467,9 +468,6 @@ function _getBrowserAcceleratorsCommon() {
     35003: [], // Print (legacy command ID) — cleared; modern ID 35007 holds the binding
     35004: ["OS_KEY+KeyS"], // Save page
     35007: ["OS_KEY+KeyP"], // Print (modern command ID)
-    36000: ["Alt+KeyX"], // Cut (Alt-only; Ctrl+X handled by textfield natively)
-    36001: ["Alt+KeyC"], // Copy (Alt-only; Ctrl+C handled by textfield natively)
-    36003: ["Alt+KeyV"], // Paste (Alt-only; Ctrl+V handled by textfield natively)
     37000: ["OS_KEY+KeyF"], // Find
     37001: ["OS_KEY+KeyG"], // Find next
     37002: ["OS_KEY+Shift+KeyG"], // Find previous

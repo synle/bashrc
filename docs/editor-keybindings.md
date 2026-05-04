@@ -56,7 +56,7 @@ Legend: **✅** = configured by this repo | **☑️** = native (works out of th
 
 On macOS, all browsers use **Cmd** natively — no config needed. On Windows/Linux, Brave is configured to accept **both Ctrl AND Alt** for every accelerator — Ctrl keeps Brave's built-in defaults working (Ctrl+T, Ctrl+W, Ctrl+R, etc.) and Alt is layered on as an addition matching the OS_KEY convention. Chrome/Edge on Windows/Linux use native **Ctrl** shortcuts (no overrides).
 
-Cut / Copy / Paste are bound **Alt-only** through `brave.accelerators` (e.g. `Alt+X`, `Alt+C`, `Alt+V`). `Ctrl+X/C/V` are handled natively by Brave's textfield clipboard handler and intentionally **not** registered as accelerators — double-binding the same clipboard ID to both Ctrl and Alt collides with the textfield handler and crashes the renderer in the omnibox.
+Cut / Copy / Paste are intentionally **not** registered through `brave.accelerators`. Brave's textfield-level clipboard handler covers `Ctrl+X/C/V` natively (the universal convention), and binding `Alt+X/C/V` is non-standard. Skipping these IDs lets Brave fall back to its built-in Ctrl-only defaults; bonus: it avoids the omnibox-renderer crash that came from double-binding the same clipboard ID to both Ctrl and Alt.
 
 Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
@@ -76,9 +76,6 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+c`                      | Copy (Cmd on mac, Ctrl native on Win/Linux) |          ☑️          |          ☑️ (textfield-level)                 |
 | `OS_KEY+x`                      | Cut (Cmd on mac, Ctrl native on Win/Linux)  |          ☑️          |          ☑️ (textfield-level)                 |
 | `OS_KEY+v`                      | Paste (Cmd on mac, Ctrl native on Win/Linux)|          ☑️          |          ☑️ (textfield-level)                 |
-| `Alt+c` (Win/Linux only)        | Copy (accelerator)                          |          ❌          |                      ✅                       |
-| `Alt+x` (Win/Linux only)        | Cut (accelerator)                           |          ❌          |                      ✅                       |
-| `Alt+v` (Win/Linux only)        | Paste (accelerator)                         |          ❌          |                      ✅                       |
 | `OS_KEY+a`                      | Select all                                |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
 | `OS_KEY+z`                      | Undo                                      |          ☑️          | ⚠️ (content-level, not a browser accelerator) |
 | `OS_KEY+s`                      | Save (download page)                      |          ☑️          |                      ✅                       |
