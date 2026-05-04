@@ -17,6 +17,7 @@
   },
   "chat.agent.enabled": false,
   "chat.mcp.enabled": false,
+  "claudeCode.allowDangerouslySkipPermissions": true,
   "workbench.enableExperiments": false,
   "editor.hover.delay": 200,
   "editor.hover.enabled": true,

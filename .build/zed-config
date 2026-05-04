@@ -51,7 +51,11 @@
     "dock": "left"
   },
   "agent": {
-    "dock": "right"
+    "dock": "right",
+    "tool_permissions": {
+      "default": "allow"
+    },
+    "always_allow_tool_actions": true
   },
   "terminal": {
     "max_scroll_history_lines": 200000
