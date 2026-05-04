@@ -110,15 +110,23 @@ function run_editor() {
     (nohup "$target_binary" "${editor_args[@]}" > /dev/null 2>&1 &)
     # bring the editor window to the foreground on macOS (async, never blocks the shell)
     if ((is_os_mac)); then
-      local app_name=""
+      # app_name = bundle display name (used by `tell application X to activate`)
+      # process_name = executable name shown in System Events (used by `tell process X`).
+      # These differ for VS Code: bundle is "Visual Studio Code" but the running process is "Code",
+      # so System Events errors with -1728 unless we pass the process name explicitly. Sublime
+      # Text and Zed happen to match (or AppleScript resolves them), so process_name is optional.
+      local app_name="" process_name=""
       case "$editor_name" in
       subl) app_name="Sublime Text" ;;
       smerge) app_name="Sublime Merge" ;;
-      code) app_name="Visual Studio Code" ;;
+      code)
+        app_name="Visual Studio Code"
+        process_name="Code"
+        ;;
       zed) app_name="Zed" ;;
       esac
       if [[ -n "$app_name" ]]; then
-        (maximize_and_focus_window "$app_name" > /dev/null 2>&1 &)
+        (maximize_and_focus_window "$app_name" "$process_name" > /dev/null 2>&1 &)
       fi
     fi
   fi
