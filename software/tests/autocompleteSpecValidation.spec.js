@@ -1085,11 +1085,12 @@ describe("bash-fzf.profile.bash (direct)", () => {
     it("should filter lines starting with # from bash_history in fuzzy_history", () => {
       // fuzzy_history (in bash-history.profile.bash) is the single source of truth for
       // history fzf search — used both by direct invocation and by the Ctrl+R bind in
-      // bash-keys.profile.bash. It uses grep -v '^#' to strip bash HISTTIMEFORMAT
-      // timestamp lines (e.g. #1774747858).
+      // bash-keys.profile.bash. It uses grep -v '^#[0-9][0-9]*$' to strip bash
+      // HISTTIMEFORMAT timestamp lines (e.g. #1774747858) while preserving user-typed
+      // `# note` lines.
       const historyPath = path.resolve("software/scripts/bash-history.profile.bash");
       const content = fs.readFileSync(historyPath, "utf8");
-      expect(content).toContain("command grep -v '^#'");
+      expect(content).toContain("command grep -v '^#[0-9][0-9]*$'");
     });
   });
 });
