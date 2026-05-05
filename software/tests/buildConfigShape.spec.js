@@ -270,6 +270,7 @@ describe("build config shape - objects", () => {
         "breadcrumbs.enabled",
         "chat.agent.enabled",
         "chat.mcp.enabled",
+        "claudeCode.allowDangerouslySkipPermissions",
         "editor.accessibilitySupport",
         "editor.bracketPairColorization.enabled",
         "editor.codeActionsOnSave",
