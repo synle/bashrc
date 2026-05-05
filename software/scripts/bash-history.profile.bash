@@ -50,7 +50,7 @@ HISTORY_BACKUP_MAX=7
 #   7c. drop JS-keyword-then-brace lines: `try { ... }`, `catch { ... }`,
 #       `finally { ... }`. `try`/`catch`/`finally` aren't bash reserved words,
 #       so `try { foo }` parses as a simple command with literal brace args
-#       (caught nothing in earlier `\{$` and bash -n filters when the closing
+#       (caught nothing in earlier `[{]$` and bash -n filters when the closing
 #       `}` is on the same line).
 #   7d. drop hex-byte literal lines: `0x80, 0x99, 0x19, ...`. C/Go/Python
 #       byte-array paste residue. `0x80,` is a syntactically valid bash command
@@ -82,7 +82,7 @@ function _clean_history_file() {
     | command grep -v '^#[0-9][0-9]*$' \
     | command grep -v '^"' \
     | command grep -v '^\$' \
-    | command grep -v '\{$' \
+    | command grep -v '[{]$' \
     | command grep -v '^}' \
     | command grep -v '^[A-Z][a-z][a-z]*-[A-Z]' \
     | command grep -v '^try[[:space:]]*{' \

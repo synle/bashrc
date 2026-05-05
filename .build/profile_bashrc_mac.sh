@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-05T04:39:12.731Z
+# Generated: 2026-05-05T19:40:50.026Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | 31973b1edb4520a601d7839d574aff91 | 10.3 KB | 2026-05-05
+# software/scripts/bash-history.profile.bash | 12ac7912398a3b82ac0ea31ed8cbed84 | 10.3 KB | 2026-05-05
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -102,7 +102,7 @@ HISTORY_BACKUP_MAX=7
 #   7c. drop JS-keyword-then-brace lines: `try { ... }`, `catch { ... }`,
 #       `finally { ... }`. `try`/`catch`/`finally` aren't bash reserved words,
 #       so `try { foo }` parses as a simple command with literal brace args
-#       (caught nothing in earlier `\{$` and bash -n filters when the closing
+#       (caught nothing in earlier `[{]$` and bash -n filters when the closing
 #       `}` is on the same line).
 #   7d. drop hex-byte literal lines: `0x80, 0x99, 0x19, ...`. C/Go/Python
 #       byte-array paste residue. `0x80,` is a syntactically valid bash command
@@ -134,7 +134,7 @@ function _clean_history_file() {
     | command grep -v '^#[0-9][0-9]*$' \
     | command grep -v '^"' \
     | command grep -v '^\$' \
-    | command grep -v '\{$' \
+    | command grep -v '[{]$' \
     | command grep -v '^}' \
     | command grep -v '^[A-Z][a-z][a-z]*-[A-Z]' \
     | command grep -v '^try[[:space:]]*{' \
