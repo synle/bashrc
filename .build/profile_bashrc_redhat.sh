@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-06T16:05:31.897Z
+# Generated: 2026-05-06T16:33:59.665Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -3211,7 +3211,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 06ebdf1076452900464abcf6eced3b17 | 59.7 KB | 2026-05-06
+# software/scripts/bash-file-utils.profile.bash | 7c9979cc3f612c842644b02fc8087dd5 | 65.3 KB | 2026-05-06
 ################################################################################
 # ---- File Utilities ----
 #
@@ -3988,6 +3988,18 @@ function _filter_pack_extras() {
   '
 }
 
+# _pack_filename_sanitize: stdin -> stdout pipe filter that makes a string
+# filesystem-safe for use as a filename segment. Three steps, in order:
+#   1. Every non-alphanumeric character (incl. dots, dashes, spaces) -> '_'
+#   2. Runs of '__+' collapsed to a single '_'
+#   3. Leading and trailing whitespace and '_' trimmed
+# Used for the auto-generated filename's stem AND (with a pre-step lowercasing)
+# for the host segment. Case is preserved here — callers that want lowercase
+# pipe through `tr '[:upper:]' '[:lower:]'` first.
+function _pack_filename_sanitize() {
+  command sed 's/[^a-zA-Z0-9]/_/g; s/__*/_/g; s/^[ _]*//; s/[ _]*$//'
+}
+
 # pack_text: bundle every file in a directory as gzip+base64 blocks with file-mode
 # markers. Default --raw mode auto-saves to /tmp/<flat>.<ts>.pack.txt AND streams
 # the bundle to stdout (so `pack_text | unpack_text /tmp/copy` works without --raw).
@@ -3995,23 +4007,33 @@ function _filter_pack_extras() {
 function pack_text() {
   if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "pack_text: bundle a directory (or a single file) into a self-contained pack
-  Usage: pack_text [src=.] [output_file] [--raw|--zip|--tar]
+  Usage: pack_text [src=.] [output_file] [--raw|--zip|--tar] [--encode=<algo>] [--encode-level=N]
          src may be a directory (default behavior) OR a single file path
          (including hidden dotfiles) — in single-file mode the file is packed
          verbatim with no ignore filtering.
-  Default mode: --raw  (gzip+base64 per file, written to /tmp/<flat>.<ts>.pack.txt and streamed to stdout)
-  Modes:
-    --raw   [default] every file becomes a [gzip+base64,mode=0NNN] block between
+  Default mode: --raw with --encode=brotli (level 6)
+                Output: /tmp/<host>.<flat>.<ts>.pack.txt (and streamed to stdout)
+  Modes (outer container — orthogonal to --encode):
+    --raw   [default] every file becomes a [<encoding>+base64,mode=0NNN] block between
                       ===== PACK_BEGIN: <path> ===== / ===== PACK_END: <path> =====
-                      auto-named /tmp/<flat>.<ts>.pack.txt when no output_file
+                      auto-named /tmp/<host>.<flat>.<ts>.pack.txt when no output_file
                       AND no explicit --raw flag. With explicit --raw and no
                       output_file, writes to stdout only (legacy pipe shortcut).
                       The saved file is always also cat'd to stdout, so
                       'pack_text | unpack_text /tmp/copy' works as a pipe.
     --zip             wraps the raw blob in a .zip archive
-                      auto-named /tmp/<flat>.<ts>.pack.zip when output_file omitted
+                      auto-named /tmp/<host>.<flat>.<ts>.pack.zip when output_file omitted
     --tar             wraps the raw blob in a .tar.gz archive
-                      auto-named /tmp/<flat>.<ts>.pack.tar.gz when output_file omitted
+                      auto-named /tmp/<host>.<flat>.<ts>.pack.tar.gz when output_file omitted
+  Encoding (inner per-block compression — orthogonal to --raw/--zip/--tar):
+    --encode=<algo>          gzip | brotli (default: brotli — better ratio for text/configs)
+    --encode-level=N         compression level / quality. Range depends on encoding:
+                                gzip:   0-9   (default 6 = Z_DEFAULT_COMPRESSION)
+                                brotli: 0-11  (default 6 = balanced)
+                             Out-of-range or non-integer values error out.
+                             unpack_text / view_pack_text auto-detect the encoding
+                             from the per-block PACK_BEGIN token, so a single
+                             pack may legally mix gzip and brotli blocks.
   File selection (directory mode):
     git repo  - git ls-files (tracked) + any untracked extras in the working
                 tree (.env*, .bash*, .zsh*, .md, .xml, .src, .sh, .sql, .db,
@@ -4023,37 +4045,50 @@ function pack_text() {
   File selection (single-file mode):
     The named file is packed unconditionally — ignore filters are bypassed
     so explicitly-named files (including hidden dotfiles) always pack.
-  Encoding:
-    Every file (text or binary) is gzip-compressed then base64-encoded so the
-    bundle round-trips byte-exact regardless of file content. File mode bits
-    (0o777, the chmod permissions) are recorded and restored by unpack_text.
+  Encoding details:
+    Every file (text or binary) is compressed (gzip or brotli) then base64-encoded
+    so the bundle round-trips byte-exact regardless of file content. File mode
+    bits (0o777, the chmod permissions) are recorded and restored by unpack_text.
   Provenance:
-    Auto-generated output filenames embed a sanitized hostname before the final
-    extension: <stem>.pack.<host>.txt / .zip / .tar.gz. The host is sourced
+    Auto-generated output filenames lead with a sanitized hostname so $(ls)
+    groups backups by machine: <host>.<stem>.pack.txt / .zip / .tar.gz where
+    <stem> = <flat-source-path>.<timestamp>. The host is sourced
     from \$HOSTNAME (fallback: hostname -s, then hostname). Sanitization:
     lowercase, every non-alphanum -> '_', repeated '_' collapsed to one,
     edges trimmed. A single META_DATA banner is emitted at the top of every
-    pack: '===== META_DATA: host=<raw> packed_utc=<iso> source=<abs> file_count=<N> ====='
+    pack: '===== META_DATA: host=<raw> packed_utc=<iso> source=<abs> file_count=<N> encoding=<algo> ====='
     unpack_text strips it as noise; view_pack_text preserves it.
     Explicit output_file arguments are NOT renamed.
   Examples:
-    pack_text                              # packs cwd -> /tmp/<flat>.<ts>.pack.txt (also stdout)
-    pack_text ~/project                    # packs project -> /tmp/<flat>.<ts>.pack.txt
-    pack_text ~/.bashrc                    # single hidden file -> /tmp/<flat>.<ts>.pack.txt
-    pack_text . output.txt                 # raw, explicit output
-    pack_text | unpack_text /tmp/copy      # full pipe: pack -> unpack
-    pack_text | view_pack_text             # human-readable view (text decoded inline)
-    pack_text . --raw                      # explicit --raw, stdout only
-    pack_text . --zip                      # -> /tmp/<flat>.<ts>.pack.zip
-    pack_text . --tar                      # -> /tmp/<flat>.<ts>.pack.tar.gz"
+    pack_text                                       # cwd, brotli (default) -> /tmp/<host>.<flat>.<ts>.pack.txt
+    pack_text ~/project                             # project, brotli -> /tmp/<host>.<flat>.<ts>.pack.txt
+    pack_text ~/.bashrc                             # single hidden file
+    pack_text . output.txt                          # explicit output
+    pack_text . --encode=gzip                       # gzip blocks (e.g. broader-compat backups)
+    pack_text . --encode=brotli --encode-level=11   # brotli max compression (slow)
+    pack_text . --encode=gzip   --encode-level=9    # gzip   max compression
+    pack_text . --encode=brotli --tar               # brotli blocks inside .tar.gz outer
+    pack_text | unpack_text /tmp/copy               # full pipe: pack -> unpack
+    pack_text | view_pack_text                      # human-readable view (text decoded inline)
+    pack_text . --raw                               # explicit --raw, stdout only
+    pack_text . --zip                               # -> /tmp/<host>.<flat>.<ts>.pack.zip
+    pack_text . --tar                               # -> /tmp/<host>.<flat>.<ts>.pack.tar.gz"
     return
   fi
 
   # Default packaging mode. mode_explicit tracks whether a flag was passed so we
   # can preserve the legacy "--raw with no output_file -> stdout only" shortcut
   # while bare default-raw still writes a file (no accidental terminal spam).
+  #
+  # `mode` controls the OUTER container (raw text / zip / tar.gz).
+  # `pack_encoding` controls the INNER per-block compression (gzip / brotli).
+  # The two are orthogonal — every combination is valid (e.g. brotli blocks
+  # inside a .tar.gz outer). brotli is the default since this tool is mainly
+  # used for text-heavy config backups, where brotli's ratio wins clearly.
   local mode="raw"
   local mode_explicit=0
+  local pack_encoding="brotli"
+  local pack_encode_level="" # empty -> use per-encoding default (gzip 6, brotli 6)
   local positional=()
   for arg in "$@"; do
     case "$arg" in
@@ -4069,9 +4104,45 @@ function pack_text() {
       mode="tar"
       mode_explicit=1
       ;;
+    --encode=*)
+      pack_encoding="${arg#--encode=}"
+      ;;
+    --encode-level=*)
+      pack_encode_level="${arg#--encode-level=}"
+      ;;
     *) positional+=("$arg") ;;
     esac
   done
+
+  # Validate --encode= up-front. Only gzip / brotli supported today; reject
+  # everything else with a clear list so typos surface fast.
+  case "$pack_encoding" in
+  gzip | brotli) ;;
+  *)
+    echo "pack_text: unknown encoding: $pack_encoding (allowed: gzip, brotli)" >&2
+    return 1
+    ;;
+  esac
+
+  # Validate --encode-level= against the active encoding's range.
+  #   gzip:   0-9  (zlib levels; 6 is Z_DEFAULT_COMPRESSION)
+  #   brotli: 0-11 (brotli quality; 6 is our balance default)
+  # Empty string means "use the per-encoding default" — handled in node.
+  if [ -n "$pack_encode_level" ]; then
+    if ! [[ "$pack_encode_level" =~ ^[0-9]+$ ]]; then
+      echo "pack_text: --encode-level must be an integer (got: $pack_encode_level)" >&2
+      return 1
+    fi
+    local _max_level
+    case "$pack_encoding" in
+    gzip) _max_level=9 ;;
+    brotli) _max_level=11 ;;
+    esac
+    if [ "$pack_encode_level" -gt "$_max_level" ]; then
+      echo "pack_text: --encode-level=$pack_encode_level invalid for $pack_encoding (allowed: 0-$_max_level)" >&2
+      return 1
+    fi
+  fi
 
   local src="${positional[0]:-.}"
   local output="${positional[1]:-}"
@@ -4111,27 +4182,30 @@ function pack_text() {
   else
     flat_path="${abs_src#/}"
   fi
-  flat_path="${flat_path//\//_}"
-  flat_path="${flat_path//\\/_}"
   [ -z "$flat_path" ] && flat_path="root"
   local pack_ts
   pack_ts=$(command date +%Y_%m_%d_%H_%M_%S)
-  local auto_stem="${flat_path}.${pack_ts}"
+  # Stem = "<flat-source-path>.<timestamp>" run through _pack_filename_sanitize
+  # so dots / slashes / dashes / spaces all become '_' and runs collapse. Case
+  # is preserved (a path component "MyProject" stays "MyProject"). End result:
+  # filesystem-safe single segment with no '.' or '/' boundaries.
+  local auto_stem
+  auto_stem=$(printf '%s.%s' "$flat_path" "$pack_ts" | _pack_filename_sanitize)
+  [ -z "$auto_stem" ] && auto_stem="root_${pack_ts}"
 
   # Hostname detection — prefer $HOSTNAME (bash builtin, set on macOS / Linux /
   # WSL / Termux without a syscall), fall back to `hostname -s` then `hostname`,
   # then "unknown". Two forms are kept:
   #   pack_host_raw       — readable form for the META_DATA banner ("MyMac.local")
-  #   pack_host_sanitized — filename-safe ("mymac_local"): lowercase, every
-  #                          non-alphanum -> '_', runs of '_' collapsed, edges
-  #                          stripped. Per the spec: replace non-alphanumeric
-  #                          with '_', then collapse '__+' -> '_'.
+  #   pack_host_sanitized — filename-safe ("mymac_local"): same _pack_filename_sanitize
+  #                         pipeline as the stem, with an extra lowercase pre-step
+  #                         since hostnames are conventionally case-insensitive.
   local pack_host_raw="${HOSTNAME:-}"
   [ -z "$pack_host_raw" ] && pack_host_raw=$(command hostname -s 2> /dev/null || true)
   [ -z "$pack_host_raw" ] && pack_host_raw=$(command hostname 2> /dev/null || true)
   [ -z "$pack_host_raw" ] && pack_host_raw="unknown"
   local pack_host_sanitized
-  pack_host_sanitized=$(printf '%s' "$pack_host_raw" | command tr '[:upper:]' '[:lower:]' | command sed 's/[^a-z0-9]/_/g; s/__*/_/g; s/^_//; s/_*$//')
+  pack_host_sanitized=$(printf '%s' "$pack_host_raw" | command tr '[:upper:]' '[:lower:]' | _pack_filename_sanitize)
   [ -z "$pack_host_sanitized" ] && pack_host_sanitized="unknown"
 
   if [ -n "$output" ] && [[ "$output" != /* ]]; then
@@ -4143,14 +4217,14 @@ function pack_text() {
   #   raw       -> auto-file ONLY when --raw was not passed explicitly. Explicit
   #                --raw without output_file keeps the legacy stdout-only
   #                behavior so `pack_text ... --raw | unpack_text` still works.
-  # Sanitized hostname is inserted just before the final extension per the
-  # naming spec: <stem>.pack.<host>.txt (and matching forms for .zip / .tar.gz).
-  # Explicit output_file paths are NOT mutated — only auto-generated ones.
+  # Naming layout: <host>.<stem>.pack.<ext> — host first so `ls /tmp/*.pack.*`
+  # groups all backups by machine, with stem (path + timestamp) ending in
+  # ".pack.<ext>". Explicit output_file paths are NOT mutated.
   if [ -z "$output" ]; then
     case "$mode" in
-    tar) output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.tar.gz" ;;
-    zip) output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.zip" ;;
-    raw) ((mode_explicit)) || output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.txt" ;;
+    tar) output="/tmp/${pack_host_sanitized}.${auto_stem}.pack.tar.gz" ;;
+    zip) output="/tmp/${pack_host_sanitized}.${auto_stem}.pack.zip" ;;
+    raw) ((mode_explicit)) || output="/tmp/${pack_host_sanitized}.${auto_stem}.pack.txt" ;;
     esac
   fi
 
@@ -4204,7 +4278,7 @@ function pack_text() {
   # only the encoding; all file selection / exclusion lives in bash above.
   {
     command cat << 'PACK_TEXT_NODE'
-/** Encodes each file in PACK_LIST as a [gzip+base64,mode=0NNN] block. */
+/** Encodes each file in PACK_LIST as a [<encoding>+base64,mode=0NNN] block. */
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -4213,12 +4287,36 @@ const srcDir = fs.realpathSync(process.env.PACK_SRC);
 const listFile = process.env.PACK_LIST;
 const outputFile = process.env.PACK_OUTPUT;
 const metaHost = process.env.PACK_META_HOST || 'unknown';
+const encoding = process.env.PACK_ENCODING || 'brotli';
+// Per-encoding defaults: 6 is Z_DEFAULT_COMPRESSION for gzip, and brotli's
+// "balanced" quality (a good speed/ratio knee — q11 is ~10x slower for ~3% gain).
+const DEFAULT_LEVEL = { gzip: 6, brotli: 6 };
+const encodeLevel = process.env.PACK_ENCODE_LEVEL
+  ? parseInt(process.env.PACK_ENCODE_LEVEL, 10)
+  : DEFAULT_LEVEL[encoding];
 
-/** Encode a file's full bytes as gzip+base64, line-wrapped at 76 chars per
- *  line so the output is diff-friendly. The wrap is cosmetic — unpack_text
- *  strips all whitespace before decoding. */
+// Brotli was added in Node 11.7. If the user explicitly opts into it on an
+// older runtime we fail fast with an actionable error rather than silently
+// falling back — surprise-fallback would mask the version skew.
+if (encoding === 'brotli' && typeof zlib.brotliCompressSync !== 'function') {
+  console.error('pack_text: brotli requires Node >= 11.7; pass --encode=gzip');
+  process.exit(1);
+}
+
+/** Compress a buffer using the active encoding + level. The compressed bytes
+ *  are then base64-encoded line-wrapped at 76 chars (diff-friendly; whitespace
+ *  is stripped at decode time). The emitted token in PACK_BEGIN tells the
+ *  unpacker which decompressor to use, so per-block dispatch works even when
+ *  a pack mixes encodings (e.g. legacy gzip blocks alongside fresh brotli). */
+function compress(buf) {
+  if (encoding === 'gzip') return zlib.gzipSync(buf, { level: encodeLevel });
+  return zlib.brotliCompressSync(buf, {
+    params: { [zlib.constants.BROTLI_PARAM_QUALITY]: encodeLevel },
+  });
+}
+
 function encodeFileBody(buf) {
-  const b64 = zlib.gzipSync(buf).toString('base64');
+  const b64 = compress(buf).toString('base64');
   return b64.replace(/(.{76})/g, '$1\n') + (b64.length % 76 === 0 ? '' : '\n');
 }
 
@@ -4232,7 +4330,7 @@ for (const rel of rels) {
     const stat = fs.statSync(file);
     if (!stat.isFile()) continue;
     const mode = (stat.mode & 0o777).toString(8).padStart(4, '0');  // padStart supplies the leading 0
-    output += '===== PACK_BEGIN: ' + rel + ' [gzip+base64,mode=' + mode + '] =====\n';
+    output += '===== PACK_BEGIN: ' + rel + ' [' + encoding + '+base64,mode=' + mode + '] =====\n';
     output += encodeFileBody(buf);
     output += '===== PACK_END: ' + rel + ' =====\n';
     count++;
@@ -4255,12 +4353,13 @@ const metaLine = '===== META_DATA: host=' + metaHost
   + ' packed_utc=' + metaUtc
   + ' source=' + srcDir
   + ' file_count=' + count
+  + ' encoding=' + encoding
   + ' =====\n';
 
 fs.writeFileSync(outputFile, metaLine + output);
 console.error('pack_text: packed ' + count + ' files from ' + srcDir);
 PACK_TEXT_NODE
-  } | PACK_SRC="$abs_src" PACK_LIST="$file_list" PACK_OUTPUT="$tmp_packed" PACK_META_HOST="$pack_host_raw" node
+  } | PACK_SRC="$abs_src" PACK_LIST="$file_list" PACK_OUTPUT="$tmp_packed" PACK_META_HOST="$pack_host_raw" PACK_ENCODING="$pack_encoding" PACK_ENCODE_LEVEL="$pack_encode_level" node
   rm -f "$file_list"
 
   if [ ! -f "$tmp_packed" ]; then
@@ -4552,10 +4651,18 @@ function* parseBlocks(packed) {
   }
 }
 
-/** Decode a block's body to a Buffer based on its encoding token. */
+/** Decode a block's body to a Buffer based on its encoding token. Per-block
+ *  dispatch means a single pack can legally mix encodings — e.g. an old gzip
+ *  pack appended to a fresh brotli pack still extracts cleanly. */
 function decodeBlock(block) {
   if (block.encoding === 'gzip+base64') {
     return zlib.gunzipSync(Buffer.from(block.body.replace(/\s/g, ''), 'base64'));
+  }
+  if (block.encoding === 'brotli+base64') {
+    if (typeof zlib.brotliDecompressSync !== 'function') {
+      throw new Error('brotli requires Node >= 11.7');
+    }
+    return zlib.brotliDecompressSync(Buffer.from(block.body.replace(/\s/g, ''), 'base64'));
   }
   // No encoding token → raw text. Strip the trailing newline emitted between
   // the body and the END marker so round-trip is byte-exact for raw blocks.

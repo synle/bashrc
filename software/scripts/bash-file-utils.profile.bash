@@ -776,6 +776,18 @@ function _filter_pack_extras() {
   '
 }
 
+# _pack_filename_sanitize: stdin -> stdout pipe filter that makes a string
+# filesystem-safe for use as a filename segment. Three steps, in order:
+#   1. Every non-alphanumeric character (incl. dots, dashes, spaces) -> '_'
+#   2. Runs of '__+' collapsed to a single '_'
+#   3. Leading and trailing whitespace and '_' trimmed
+# Used for the auto-generated filename's stem AND (with a pre-step lowercasing)
+# for the host segment. Case is preserved here — callers that want lowercase
+# pipe through `tr '[:upper:]' '[:lower:]'` first.
+function _pack_filename_sanitize() {
+  command sed 's/[^a-zA-Z0-9]/_/g; s/__*/_/g; s/^[ _]*//; s/[ _]*$//'
+}
+
 # pack_text: bundle every file in a directory as gzip+base64 blocks with file-mode
 # markers. Default --raw mode auto-saves to /tmp/<flat>.<ts>.pack.txt AND streams
 # the bundle to stdout (so `pack_text | unpack_text /tmp/copy` works without --raw).
@@ -826,7 +838,7 @@ function pack_text() {
     so the bundle round-trips byte-exact regardless of file content. File mode
     bits (0o777, the chmod permissions) are recorded and restored by unpack_text.
   Provenance:
-    Auto-generated output filenames lead with a sanitized hostname so `ls`
+    Auto-generated output filenames lead with a sanitized hostname so $(ls)
     groups backups by machine: <host>.<stem>.pack.txt / .zip / .tar.gz where
     <stem> = <flat-source-path>.<timestamp>. The host is sourced
     from \$HOSTNAME (fallback: hostname -s, then hostname). Sanitization:
@@ -864,7 +876,7 @@ function pack_text() {
   local mode="raw"
   local mode_explicit=0
   local pack_encoding="brotli"
-  local pack_encode_level=""  # empty -> use per-encoding default (gzip 6, brotli 6)
+  local pack_encode_level="" # empty -> use per-encoding default (gzip 6, brotli 6)
   local positional=()
   for arg in "$@"; do
     case "$arg" in
@@ -958,27 +970,30 @@ function pack_text() {
   else
     flat_path="${abs_src#/}"
   fi
-  flat_path="${flat_path//\//_}"
-  flat_path="${flat_path//\\/_}"
   [ -z "$flat_path" ] && flat_path="root"
   local pack_ts
   pack_ts=$(command date +%Y_%m_%d_%H_%M_%S)
-  local auto_stem="${flat_path}.${pack_ts}"
+  # Stem = "<flat-source-path>.<timestamp>" run through _pack_filename_sanitize
+  # so dots / slashes / dashes / spaces all become '_' and runs collapse. Case
+  # is preserved (a path component "MyProject" stays "MyProject"). End result:
+  # filesystem-safe single segment with no '.' or '/' boundaries.
+  local auto_stem
+  auto_stem=$(printf '%s.%s' "$flat_path" "$pack_ts" | _pack_filename_sanitize)
+  [ -z "$auto_stem" ] && auto_stem="root_${pack_ts}"
 
   # Hostname detection — prefer $HOSTNAME (bash builtin, set on macOS / Linux /
   # WSL / Termux without a syscall), fall back to `hostname -s` then `hostname`,
   # then "unknown". Two forms are kept:
   #   pack_host_raw       — readable form for the META_DATA banner ("MyMac.local")
-  #   pack_host_sanitized — filename-safe ("mymac_local"): lowercase, every
-  #                          non-alphanum -> '_', runs of '_' collapsed, edges
-  #                          stripped. Per the spec: replace non-alphanumeric
-  #                          with '_', then collapse '__+' -> '_'.
+  #   pack_host_sanitized — filename-safe ("mymac_local"): same _pack_filename_sanitize
+  #                         pipeline as the stem, with an extra lowercase pre-step
+  #                         since hostnames are conventionally case-insensitive.
   local pack_host_raw="${HOSTNAME:-}"
   [ -z "$pack_host_raw" ] && pack_host_raw=$(command hostname -s 2> /dev/null || true)
   [ -z "$pack_host_raw" ] && pack_host_raw=$(command hostname 2> /dev/null || true)
   [ -z "$pack_host_raw" ] && pack_host_raw="unknown"
   local pack_host_sanitized
-  pack_host_sanitized=$(printf '%s' "$pack_host_raw" | command tr '[:upper:]' '[:lower:]' | command sed 's/[^a-z0-9]/_/g; s/__*/_/g; s/^_//; s/_*$//')
+  pack_host_sanitized=$(printf '%s' "$pack_host_raw" | command tr '[:upper:]' '[:lower:]' | _pack_filename_sanitize)
   [ -z "$pack_host_sanitized" ] && pack_host_sanitized="unknown"
 
   if [ -n "$output" ] && [[ "$output" != /* ]]; then
