@@ -105,33 +105,35 @@ describe("pack_text format", () => {
     expect(output).toMatch(/PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=0644\]/);
   });
 
-  it("should auto-name to /tmp/<host>.<flat>.<ts>.pack.txt for bare raw call", () => {
+  it("should auto-name to /tmp/<host>.<stem>.pack.txt for bare raw call", () => {
     const output = runBash(`pack_text "${srcDir}"`);
     expect(output).toContain("pack_text:");
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     expect(lines.length).toBeGreaterThan(0);
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    // Layout: /tmp/<host>.<flat>.<ts>.pack.txt — host first so backups group
-    // by machine in `ls`. host is [a-z0-9_]+; ends with literal ".pack.txt".
-    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\..+\.pack\.txt$/);
+    // Layout: /tmp/<host>.<stem>.pack.txt — host first so backups group by
+    // machine. Both segments are filename-safe: host is lowercase [a-z0-9_]+,
+    // stem is case-preserving [a-zA-Z0-9_]+. The ONLY dots in the basename are
+    // the segment separators (host.stem.pack.txt = exactly 3 dots).
+    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\.[a-zA-Z0-9_]+\.pack\.txt$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .tar.gz with --tar (host-first naming)", () => {
+  it("should auto-generate .tar.gz with --tar (host-first naming, sanitized segments)", () => {
     const output = runBash(`pack_text "${srcDir}" --tar`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\..+\.pack\.tar\.gz$/);
+    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\.[a-zA-Z0-9_]+\.pack\.tar\.gz$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .zip with --zip (host-first naming)", () => {
+  it("should auto-generate .zip with --zip (host-first naming, sanitized segments)", () => {
     const output = runBash(`pack_text "${srcDir}" --zip`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\..+\.pack\.zip$/);
+    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\.[a-zA-Z0-9_]+\.pack\.zip$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
@@ -519,21 +521,25 @@ describe("META_DATA banner + hostname-in-filename", () => {
     expect(declared).toBeGreaterThan(0);
   });
 
-  it("should lead auto-generated filenames with the sanitized hostname", () => {
+  it("should lead auto-generated filenames with sanitized host AND sanitized stem", () => {
     const output = runBash(`pack_text "${srcDir}"`);
     const outPath = output
       .split("\n")
       .filter((l) => l.startsWith("pack_text: /tmp/"))[0]
       .replace("pack_text: ", "")
       .trim();
-    // Filename layout: /tmp/<host>.<stem>.pack.txt — host is the first
-    // component of the basename, sanitized to [a-z0-9_]+ with no leading /
-    // trailing / double underscores.
+    // Layout: /tmp/<host>.<stem>.pack.txt
+    //   host: lowercase [a-z0-9_]+, no double-underscores, no leading/trailing _
+    //   stem: case-preserving [a-zA-Z0-9_]+, same shape rules
     const base = path.basename(outPath);
-    const m = base.match(/^([a-z0-9_]+)\.(.+)\.pack\.txt$/);
+    const m = base.match(/^([a-z0-9_]+)\.([a-zA-Z0-9_]+)\.pack\.txt$/);
     expect(m).toBeTruthy();
-    const hostSegment = m[1];
+    const [, hostSegment, stemSegment] = m;
+    // Both segments: no double underscores, no leading/trailing _.
     expect(hostSegment).toMatch(/^[a-z0-9]+(?:_[a-z0-9]+)*$/);
+    expect(stemSegment).toMatch(/^[a-zA-Z0-9]+(?:_[a-zA-Z0-9]+)*$/);
+    // Stem must include the timestamp digits (YYYY_MM_DD_HH_MM_SS pattern).
+    expect(stemSegment).toMatch(/_\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}$/);
     fs.unlinkSync(outPath);
   });
 
