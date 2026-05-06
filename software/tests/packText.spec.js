@@ -77,20 +77,23 @@ describe("pack_text format", () => {
     expect(output).toContain("--raw");
     expect(output).toContain("--zip");
     expect(output).toContain("--tar");
-    expect(output).toContain("gzip+base64");
+    expect(output).toContain("--encode=");
+    expect(output).toContain("--encode-level=");
   });
 
-  it("should emit PACK_BEGIN/PACK_END markers with [gzip+base64,mode=0NNN]", () => {
+  it("should emit PACK_BEGIN/PACK_END markers with [<encoding>+base64,mode=0NNN]", () => {
+    // Encoding-agnostic — the default encoding may change. Tests targeting a
+    // specific encoding pass --encode=gzip or --encode=brotli explicitly.
     const output = runBash(`pack_text "${srcDir}" --raw`);
-    expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[gzip\+base64,mode=\d{4}\] =====/);
+    expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
     expect(output).toContain("===== PACK_END: hello.txt =====");
-    expect(output).toMatch(/===== PACK_BEGIN: code\.js \[gzip\+base64,mode=\d{4}\] =====/);
-    expect(output).toMatch(/===== PACK_BEGIN: sub\/nested\.txt \[gzip\+base64,mode=\d{4}\] =====/);
+    expect(output).toMatch(/===== PACK_BEGIN: code\.js \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
+    expect(output).toMatch(/===== PACK_BEGIN: sub\/nested\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
   });
 
   it("should include binary files (no extension filtering)", () => {
     const output = runBash(`pack_text "${srcDir}" --raw`);
-    expect(output).toContain("PACK_BEGIN: binary.bin [gzip+base64,mode=");
+    expect(output).toMatch(/PACK_BEGIN: binary\.bin \[(?:gzip|brotli)\+base64,mode=/);
   });
 
   it("should record actual file mode in the marker", () => {
@@ -98,8 +101,8 @@ describe("pack_text format", () => {
     fs.chmodSync(path.join(srcDir, "exec.sh"), 0o755);
     fs.chmodSync(path.join(srcDir, "hello.txt"), 0o644);
     const output = runBash(`pack_text "${srcDir}" --raw`);
-    expect(output).toMatch(/PACK_BEGIN: exec\.sh \[gzip\+base64,mode=0755\]/);
-    expect(output).toMatch(/PACK_BEGIN: hello\.txt \[gzip\+base64,mode=0644\]/);
+    expect(output).toMatch(/PACK_BEGIN: exec\.sh \[(?:gzip|brotli)\+base64,mode=0755\]/);
+    expect(output).toMatch(/PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=0644\]/);
   });
 
   it("should auto-name to /tmp/<flat>.<ts>.pack.<host>.txt for bare raw call", () => {
@@ -135,7 +138,7 @@ describe("pack_text format", () => {
 
   it("should support --plain as alias for --raw", () => {
     const output = runBash(`pack_text "${srcDir}" --plain`);
-    expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[gzip\+base64/);
+    expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64/);
   });
 
   it("should accept flags in any argument position", () => {
@@ -441,11 +444,13 @@ describe("view_pack_text", () => {
     expect(view).toContain("function foo()");
   });
 
-  it("should keep binary blocks as [gzip+base64,mode=0NNN]", () => {
+  it("should keep binary blocks as [<encoding>+base64,mode=0NNN]", () => {
     const packedFile = path.join(TMP_DIR, "packed.txt");
     runBash(`pack_text "${srcDir}" "${packedFile}"`);
     const view = runBash(`view_pack_text "${packedFile}"`);
-    expect(view).toMatch(/===== PACK_BEGIN: binary\.bin \[gzip\+base64,mode=\d{4}\] =====/);
+    // Binary blocks (NUL byte detected) pass through unchanged in view mode —
+    // they keep whatever encoding token the original pack used.
+    expect(view).toMatch(/===== PACK_BEGIN: binary\.bin \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
   });
 
   it("output is itself a valid pack — feed back into unpack_text", () => {
@@ -576,5 +581,139 @@ describe("META_DATA banner + hostname-in-filename", () => {
     const dest = path.join(TMP_DIR, "legacy_out");
     runBash(`unpack_text "${legacy}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "legacy.txt"), "utf-8")).toBe(body);
+  });
+});
+
+/** Encoding selection — pack_text supports gzip and brotli per-block compression
+ * via --encode=<algo> + --encode-level=N. Default is brotli (better ratio for
+ * text-heavy config backups). unpack_text / view_pack_text auto-detect the
+ * encoding from the per-block PACK_BEGIN token, so a pack may legally mix
+ * encodings. Tests below verify defaults, explicit selection, validation,
+ * round-trip for both, mixed packs, and the level knob. */
+describe("encoding selection (gzip / brotli) and --encode-level", () => {
+  const srcDir = path.join(TMP_DIR, "src");
+
+  beforeEach(() => {
+    createTestFiles(srcDir);
+  });
+
+  afterEach(() => {
+    fs.rmSync(TMP_DIR, { recursive: true, force: true });
+  });
+
+  it("default encoding is brotli (META_DATA + every PACK_BEGIN token)", () => {
+    const out = path.join(TMP_DIR, "default.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const packed = fs.readFileSync(out, "utf-8");
+    expect(packed).toMatch(/encoding=brotli/);
+    // Every PACK_BEGIN block should use brotli.
+    const tokens = [...packed.matchAll(/PACK_BEGIN: \S+ \[(\S+?)\+base64,mode=/g)].map((m) => m[1]);
+    expect(tokens.length).toBeGreaterThan(0);
+    expect(new Set(tokens)).toEqual(new Set(["brotli"]));
+  });
+
+  it("--encode=gzip emits gzip+base64 tokens and encoding=gzip in META_DATA", () => {
+    const out = path.join(TMP_DIR, "gz.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw --encode=gzip 2>/dev/null`);
+    const packed = fs.readFileSync(out, "utf-8");
+    expect(packed).toMatch(/encoding=gzip/);
+    const tokens = [...packed.matchAll(/PACK_BEGIN: \S+ \[(\S+?)\+base64,mode=/g)].map((m) => m[1]);
+    expect(new Set(tokens)).toEqual(new Set(["gzip"]));
+  });
+
+  it("--encode=brotli (explicit) emits brotli+base64 tokens", () => {
+    const out = path.join(TMP_DIR, "br.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw --encode=brotli 2>/dev/null`);
+    const packed = fs.readFileSync(out, "utf-8");
+    const tokens = [...packed.matchAll(/PACK_BEGIN: \S+ \[(\S+?)\+base64,mode=/g)].map((m) => m[1]);
+    expect(new Set(tokens)).toEqual(new Set(["brotli"]));
+  });
+
+  it("gzip round-trip is byte-exact for text + binary", () => {
+    const packed = path.join(TMP_DIR, "gz.pack.txt");
+    const dest = path.join(TMP_DIR, "gz_out");
+    runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=gzip 2>/dev/null && unpack_text "${packed}" "${dest}"`);
+    expect(sha(path.join(dest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
+    expect(sha(path.join(dest, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
+    expect(sha(path.join(dest, "code.js"))).toBe(sha(path.join(srcDir, "code.js")));
+  });
+
+  it("brotli round-trip is byte-exact for text + binary", () => {
+    const packed = path.join(TMP_DIR, "br.pack.txt");
+    const dest = path.join(TMP_DIR, "br_out");
+    runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=brotli 2>/dev/null && unpack_text "${packed}" "${dest}"`);
+    expect(sha(path.join(dest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
+    expect(sha(path.join(dest, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
+    expect(sha(path.join(dest, "code.js"))).toBe(sha(path.join(srcDir, "code.js")));
+  });
+
+  it("mixed-encoding pack (one gzip block + one brotli block) extracts both", () => {
+    // Hand-craft a pack that interleaves gzip and brotli blocks. unpack_text
+    // dispatches per-block via the encoding token, so this MUST work.
+    const zlibLib = require("zlib");
+    const gzipBody = "Plain gzip block body\n";
+    const brotliBody = "Plain brotli block body\n";
+    const gz = zlibLib.gzipSync(Buffer.from(gzipBody)).toString("base64");
+    const br = zlibLib.brotliCompressSync(Buffer.from(brotliBody)).toString("base64");
+    const wrap = (b64) => b64.replace(/(.{76})/g, "$1\n") + (b64.length % 76 === 0 ? "" : "\n");
+    const mixed = path.join(TMP_DIR, "mixed.pack.txt");
+    fs.writeFileSync(
+      mixed,
+      "===== PACK_BEGIN: gz.txt [gzip+base64,mode=0644] =====\n" +
+        wrap(gz) +
+        "===== PACK_END: gz.txt =====\n" +
+        "===== PACK_BEGIN: br.txt [brotli+base64,mode=0644] =====\n" +
+        wrap(br) +
+        "===== PACK_END: br.txt =====\n",
+    );
+    const dest = path.join(TMP_DIR, "mixed_out");
+    runBash(`unpack_text "${mixed}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "gz.txt"), "utf-8")).toBe(gzipBody);
+    expect(fs.readFileSync(path.join(dest, "br.txt"), "utf-8")).toBe(brotliBody);
+  });
+
+  it("view_pack_text decodes brotli text blocks inline (same as gzip)", () => {
+    const packed = path.join(TMP_DIR, "br.pack.txt");
+    runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=brotli 2>/dev/null`);
+    const view = runBash(`view_pack_text "${packed}"`);
+    // Text content decoded inline -> "Hello World" should appear as-is, NOT
+    // as base64.
+    expect(view).toContain("Hello World");
+    expect(view).toContain("function foo()");
+    // Text blocks lose the encoding token in view mode (raw text re-emit).
+    expect(view).toMatch(/===== PACK_BEGIN: hello\.txt \[mode=\d{4}\] =====\nHello World/);
+  });
+
+  it("--encode=foo errors with a clear allowed-list message", () => {
+    expect(() => runBash(`pack_text "${srcDir}" --encode=foo`)).toThrow();
+  });
+
+  it("--encode-level=99 errors when out of range for gzip (max 9)", () => {
+    expect(() => runBash(`pack_text "${srcDir}" --encode=gzip --encode-level=99`)).toThrow();
+  });
+
+  it("--encode-level=99 errors when out of range for brotli (max 11)", () => {
+    expect(() => runBash(`pack_text "${srcDir}" --encode=brotli --encode-level=99`)).toThrow();
+  });
+
+  it("--encode-level=abc errors with non-integer message", () => {
+    expect(() => runBash(`pack_text "${srcDir}" --encode-level=abc`)).toThrow();
+  });
+
+  it("brotli max-quality (11) produces measurably smaller output than min (0) on compressible text", () => {
+    // Fill srcDir with a known-compressible blob — repeated text. Quality 11
+    // SHOULD beat quality 0 by a comfortable margin; this is a smoke test that
+    // --encode-level is actually being plumbed through to the compressor.
+    const big = "x".repeat(100) + "\n" + "lorem ipsum ".repeat(500) + "\n";
+    fs.writeFileSync(path.join(srcDir, "big.txt"), big);
+    const minOut = path.join(TMP_DIR, "min.pack.txt");
+    const maxOut = path.join(TMP_DIR, "max.pack.txt");
+    runBash(`pack_text "${srcDir}" "${minOut}" --raw --encode=brotli --encode-level=0 2>/dev/null`);
+    runBash(`pack_text "${srcDir}" "${maxOut}" --raw --encode=brotli --encode-level=11 2>/dev/null`);
+    const minSize = fs.statSync(minOut).size;
+    const maxSize = fs.statSync(maxOut).size;
+    // Higher quality => smaller output. Allow a generous margin since other
+    // pack overhead (META_DATA, markers, base64 wrapping) is constant.
+    expect(maxSize).toBeLessThan(minSize);
   });
 });
