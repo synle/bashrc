@@ -105,33 +105,33 @@ describe("pack_text format", () => {
     expect(output).toMatch(/PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=0644\]/);
   });
 
-  it("should auto-name to /tmp/<flat>.<ts>.pack.<host>.txt for bare raw call", () => {
+  it("should auto-name to /tmp/<host>.<flat>.<ts>.pack.txt for bare raw call", () => {
     const output = runBash(`pack_text "${srcDir}"`);
     expect(output).toContain("pack_text:");
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     expect(lines.length).toBeGreaterThan(0);
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    // Sanitized hostname is inserted before the final extension:
-    // <stem>.pack.<sanitized_host>.txt where sanitized_host is [a-z0-9_]+.
-    expect(outPath).toMatch(/\.pack\.[a-z0-9_]+\.txt$/);
+    // Layout: /tmp/<host>.<flat>.<ts>.pack.txt — host first so backups group
+    // by machine in `ls`. host is [a-z0-9_]+; ends with literal ".pack.txt".
+    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\..+\.pack\.txt$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .tar.gz with --tar (hostname segment included)", () => {
+  it("should auto-generate .tar.gz with --tar (host-first naming)", () => {
     const output = runBash(`pack_text "${srcDir}" --tar`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    expect(outPath).toMatch(/\.pack\.[a-z0-9_]+\.tar\.gz$/);
+    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\..+\.pack\.tar\.gz$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .zip with --zip (hostname segment included)", () => {
+  it("should auto-generate .zip with --zip (host-first naming)", () => {
     const output = runBash(`pack_text "${srcDir}" --zip`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    expect(outPath).toMatch(/\.pack\.[a-z0-9_]+\.zip$/);
+    expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\..+\.pack\.zip$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
@@ -519,18 +519,21 @@ describe("META_DATA banner + hostname-in-filename", () => {
     expect(declared).toBeGreaterThan(0);
   });
 
-  it("should embed sanitized hostname before the final extension (auto-generated filenames only)", () => {
+  it("should lead auto-generated filenames with the sanitized hostname", () => {
     const output = runBash(`pack_text "${srcDir}"`);
     const outPath = output
       .split("\n")
       .filter((l) => l.startsWith("pack_text: /tmp/"))[0]
       .replace("pack_text: ", "")
       .trim();
-    // Filename: ...pack.<sanitized>.txt — sanitized = lowercase [a-z0-9_]+.
-    const m = outPath.match(/\.pack\.([a-z0-9_]+)\.txt$/);
+    // Filename layout: /tmp/<host>.<stem>.pack.txt — host is the first
+    // component of the basename, sanitized to [a-z0-9_]+ with no leading /
+    // trailing / double underscores.
+    const base = path.basename(outPath);
+    const m = base.match(/^([a-z0-9_]+)\.(.+)\.pack\.txt$/);
     expect(m).toBeTruthy();
-    const segment = m[1];
-    expect(segment).toMatch(/^[a-z0-9]+(?:_[a-z0-9]+)*$/); // no leading/trailing/double _
+    const hostSegment = m[1];
+    expect(hostSegment).toMatch(/^[a-z0-9]+(?:_[a-z0-9]+)*$/);
     fs.unlinkSync(outPath);
   });
 
