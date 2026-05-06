@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-06T16:56:27.023Z
+# Generated: 2026-05-06T17:22:37.737Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -3211,7 +3211,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 262fb2c97a2e9294bf546192d6cb857b | 70.8 KB | 2026-05-06
+# software/scripts/bash-file-utils.profile.bash | 3affd00263be55108301db70de6d0aaa | 74.5 KB | 2026-05-06
 ################################################################################
 # ---- File Utilities ----
 #
@@ -4034,6 +4034,12 @@ function pack_text() {
                              unpack_text / view_pack_text auto-detect the encoding
                              from the per-block PACK_BEGIN token, so a single
                              pack may legally mix gzip and brotli blocks.
+  Logging:
+    --verbose, -v            Per-file PACK lines (raw->encoded byte counts) and
+                             scan/walk markers showing which strategy was used
+                             (git ls-files vs find walk) and which path is being
+                             traversed. Quiet by default — only the summary line
+                             is printed.
   File selection (directory mode):
     git repo  - git ls-files (tracked) + any untracked extras in the working
                 tree (.env*, .bash*, .zsh*, .md, .xml, .src, .sh, .sql, .db,
@@ -4074,6 +4080,7 @@ function pack_text() {
     pack_text . --encode=brotli --encode-level=11   # brotli max compression (slow)
     pack_text . --encode=gzip   --encode-level=9    # gzip   max compression
     pack_text . --encode=brotli --tar               # brotli blocks inside .tar.gz outer
+    pack_text ~/project --verbose                   # show per-file PACK lines + scan info
     pack_text | unpack_text /tmp/copy               # full pipe: pack -> unpack
     pack_text | view_pack_text                      # human-readable view (text decoded inline)
     pack_text . --raw                               # explicit --raw, stdout only
@@ -4095,6 +4102,7 @@ function pack_text() {
   local mode_explicit=0
   local pack_encoding="brotli"
   local pack_encode_level="" # empty -> use per-encoding default (gzip 6, brotli 6)
+  local pack_verbose=0       # --verbose / -v -> per-file PACK lines + scan info
   local positional=()
   for arg in "$@"; do
     case "$arg" in
@@ -4115,6 +4123,9 @@ function pack_text() {
       ;;
     --encode-level=*)
       pack_encode_level="${arg#--encode-level=}"
+      ;;
+    --verbose | -v)
+      pack_verbose=1
       ;;
     *) positional+=("$arg") ;;
     esac
@@ -4249,6 +4260,7 @@ function pack_text() {
   rm -f "$file_list"
   local is_git=0
   local tracked_count=0 extras_count=0
+  ((pack_verbose)) && echo "pack_text: scanning $abs_src" >&2
   if ((single_file)); then
     # Single-file mode: skip git scan and find walk entirely. The basename
     # is written verbatim — no filter_unwanted, so explicitly-named files
@@ -4257,6 +4269,7 @@ function pack_text() {
     echo "pack_text: single file — $abs_src/$single_file_basename" >&2
   elif git -C "$abs_src" rev-parse --is-inside-work-tree &> /dev/null; then
     is_git=1
+    ((pack_verbose)) && echo "pack_text: git repo detected — using git ls-files" >&2
     local tracked_tmp extras_tmp
     tracked_tmp="${file_list}.tracked"
     extras_tmp="${file_list}.extras"
@@ -4271,7 +4284,13 @@ function pack_text() {
     rm -f "$tracked_tmp" "$extras_tmp"
     echo "pack_text: git repo — $tracked_count tracked + $extras_count extra (.env*/.bash*/.zsh*/.md/.xml/.src/.sh/.sql/.db/.sqlite*/.yml/.json/.toml/.ini/.conf/.cfg)" >&2
   else
+    ((pack_verbose)) && echo "pack_text: non-git tree — walking $abs_src via find (node_modules / .git pruned)" >&2
     (cd "$abs_src" && command find . \( -name node_modules -o -name .git \) -prune -o -type f -print | command sed 's|^\./||') | filter_unwanted | command sort -u > "$file_list"
+  fi
+  if ((pack_verbose)); then
+    local _candidate_count
+    _candidate_count=$(command wc -l < "$file_list" | command tr -d ' ')
+    echo "pack_text: $_candidate_count file(s) selected; encoding with $pack_encoding..." >&2
   fi
 
   if [ ! -s "$file_list" ]; then
@@ -4335,38 +4354,57 @@ function fmtIsoUtc(d) {
   return d.toISOString().replace(/\.\d+Z$/, 'Z');
 }
 
+const verbose = process.env.PACK_VERBOSE === '1';
 const rels = fs.readFileSync(listFile, 'utf8').split('\n').filter(Boolean);
-let output = '';
+
+// STREAMING WRITE — blocks go directly to a temp file via fs.writeSync as we
+// encode them. We never accumulate the full pack as a single in-memory string,
+// which used to crash with "RangeError: Invalid string length" on V8 once the
+// cumulative output crossed the ~512 MB string limit (e.g. trees with many
+// large text files). Per-file string size is still bounded by encodeFileBody
+// for that one file — that limit only kicks in for individual files >~256 MB
+// (binary, after gzip+base64 inflation), which is a separate concern.
+const tmpBlocks = outputFile + '.blocks.tmp';
+const fdTmp = fs.openSync(tmpBlocks, 'w');
 let count = 0;
-for (const rel of rels) {
-  const file = path.join(srcDir, rel);
-  try {
-    const buf = fs.readFileSync(file);
-    const stat = fs.statSync(file);
-    if (!stat.isFile()) continue;
-    const mode = (stat.mode & 0o777).toString(8).padStart(4, '0');  // padStart supplies the leading 0
-    // Timestamps appended to the bracket: mtime always (every fs supports it),
-    // btime only when the OS reports a real value (Linux ext4/btrfs do, older
-    // Linux fs and some networked mounts return epoch 0 — fmtIsoUtc skips those).
-    // unpack_text restores mtime via fs.utimesSync; btime is informational only
-    // (no portable syscall to set it on Linux), but is preserved through
-    // view_pack_text so the original creation time stays visible.
-    const mtimeStr = fmtIsoUtc(stat.mtime);
-    const btimeStr = fmtIsoUtc(stat.birthtime);
-    const parts = [encoding + '+base64', 'mode=' + mode];
-    if (mtimeStr) parts.push('mtime=' + mtimeStr);
-    if (btimeStr) parts.push('btime=' + btimeStr);
-    output += '===== PACK_BEGIN: ' + rel + ' [' + parts.join(',') + '] =====\n';
-    output += encodeFileBody(buf);
-    output += '===== PACK_END: ' + rel + ' =====\n';
-    count++;
-  } catch (e) {
-    console.error('  SKIP: ' + rel + ' (' + (e.message || 'unreadable') + ')');
+try {
+  for (const rel of rels) {
+    const file = path.join(srcDir, rel);
+    try {
+      const buf = fs.readFileSync(file);
+      const stat = fs.statSync(file);
+      if (!stat.isFile()) continue;
+      const mode = (stat.mode & 0o777).toString(8).padStart(4, '0');  // padStart supplies the leading 0
+      // Timestamps appended to the bracket: mtime always (every fs supports it),
+      // btime only when the OS reports a real value (Linux ext4/btrfs do, older
+      // Linux fs and some networked mounts return epoch 0 — fmtIsoUtc skips those).
+      // unpack_text restores mtime via fs.utimesSync; btime is informational only
+      // (no portable syscall to set it on Linux), but is preserved through
+      // view_pack_text so the original creation time stays visible.
+      const mtimeStr = fmtIsoUtc(stat.mtime);
+      const btimeStr = fmtIsoUtc(stat.birthtime);
+      const parts = [encoding + '+base64', 'mode=' + mode];
+      if (mtimeStr) parts.push('mtime=' + mtimeStr);
+      if (btimeStr) parts.push('btime=' + btimeStr);
+      const encoded = encodeFileBody(buf);
+      fs.writeSync(fdTmp, '===== PACK_BEGIN: ' + rel + ' [' + parts.join(',') + '] =====\n');
+      fs.writeSync(fdTmp, encoded);
+      fs.writeSync(fdTmp, '===== PACK_END: ' + rel + ' =====\n');
+      count++;
+      if (verbose) {
+        console.error('  PACK: ' + rel + ' (' + buf.length + ' B raw -> ' + encoded.length + ' B encoded)');
+      }
+    } catch (e) {
+      console.error('  SKIP: ' + rel + ' (' + (e.message || 'unreadable') + ')');
+    }
   }
+} finally {
+  fs.closeSync(fdTmp);
 }
 
 if (count === 0) {
   console.error('pack_text: no files found in ' + srcDir);
+  try { fs.unlinkSync(tmpBlocks); } catch {}
   process.exit(1);
 }
 
@@ -4382,10 +4420,27 @@ const metaLine = '===== META_DATA: host=' + metaHost
   + ' encoding=' + encoding
   + ' =====\n';
 
-fs.writeFileSync(outputFile, metaLine + output);
+// Final assembly: write META_DATA, then chunked-copy the temp blocks file
+// into the output. 64 KB chunk size keeps memory flat regardless of pack
+// size. fs.openSync + writeSync stays synchronous so the bash caller sees
+// the final file when this script exits.
+const fdOut = fs.openSync(outputFile, 'w');
+const fdTmpRead = fs.openSync(tmpBlocks, 'r');
+try {
+  fs.writeSync(fdOut, metaLine);
+  const chunk = Buffer.allocUnsafe(64 * 1024);
+  let n;
+  while ((n = fs.readSync(fdTmpRead, chunk, 0, chunk.length, null)) > 0) {
+    fs.writeSync(fdOut, chunk, 0, n);
+  }
+} finally {
+  fs.closeSync(fdTmpRead);
+  fs.closeSync(fdOut);
+  try { fs.unlinkSync(tmpBlocks); } catch {}
+}
 console.error('pack_text: packed ' + count + ' files from ' + srcDir);
 PACK_TEXT_NODE
-  } | PACK_SRC="$abs_src" PACK_LIST="$file_list" PACK_OUTPUT="$tmp_packed" PACK_META_HOST="$pack_host_raw" PACK_ENCODING="$pack_encoding" PACK_ENCODE_LEVEL="$pack_encode_level" node
+  } | PACK_SRC="$abs_src" PACK_LIST="$file_list" PACK_OUTPUT="$tmp_packed" PACK_META_HOST="$pack_host_raw" PACK_ENCODING="$pack_encoding" PACK_ENCODE_LEVEL="$pack_encode_level" PACK_VERBOSE="$pack_verbose" node
   rm -f "$file_list"
 
   if [ ! -f "$tmp_packed" ]; then
@@ -4429,7 +4484,7 @@ PACK_TEXT_NODE
 function unpack_text() {
   if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "unpack_text: parse a bulletproof pack and extract files (or re-emit as text view)
-  Usage: unpack_text [input_file|-] [dest_dir=.]
+  Usage: unpack_text [input_file|-] [dest_dir=.] [--verbose]
          unpack_text --view [input_file|-]               # re-emit, no disk writes
          <some command> | unpack_text [dest_dir=.]
   Modes:
@@ -4438,6 +4493,10 @@ function unpack_text() {
                         Output is itself a valid pack (text blocks have no encoding token,
                         binary blocks keep [gzip+base64,mode=0NNN]).
                         view_pack_text is just an alias for 'unpack_text --view'.
+  Logging:
+    --verbose, -v     — Per-file EXTRACT lines showing 'EXTRACT: <path> (<bytes> -> <full_dest_path>)'
+                        for every file written. Quiet by default — only the final
+                        'extracted N files to <dest>' summary is printed.
   Input sources (first match wins):
     1. explicit file path (\$1 is an existing file)     — archives auto-detected
     2. explicit stdin marker (\$1 == '-')                — reads pack text from stdin
@@ -4464,16 +4523,19 @@ function unpack_text() {
     pack_text ~/project | unpack_text /tmp/copy # round-trip via pipe
     unpack_text --view packed.txt               # human-readable view to stdout
     pack_text ~/project | unpack_text --view    # build + view in one go
-    unpack_text - ./output                      # explicit stdin marker"
+    unpack_text - ./output                      # explicit stdin marker
+    unpack_text packed.txt ./out --verbose      # per-file EXTRACT lines + byte counts"
     return
   fi
 
-  # Detect --view (or --to-text) flag and strip from positional args.
+  # Detect --view / --to-text and --verbose / -v flags; strip from positional args.
   local view_mode=0
+  local unpack_verbose=0
   local positional=()
   for arg in "$@"; do
     case "$arg" in
     --view | --to-text) view_mode=1 ;;
+    --verbose | -v) unpack_verbose=1 ;;
     *) positional+=("$arg") ;;
     esac
   done
@@ -4570,6 +4632,7 @@ const zlib = require('zlib');
 const inputFile = process.env.UNPACK_INPUT;
 const destDir = process.env.UNPACK_DEST;
 const viewMode = process.env.UNPACK_MODE === 'view';
+const verbose = process.env.UNPACK_VERBOSE === '1';
 
 /** Pack marker grammar:
  *    ===== PACK_BEGIN: <relative/path> [<key=val>,...] =====
@@ -4803,7 +4866,8 @@ if (viewMode) {
     const destPath = path.join(destDir, block.path);
     try {
       fs.mkdirSync(path.dirname(destPath), { recursive: true });
-      fs.writeFileSync(destPath, decodeBlock(block));
+      const decoded = decodeBlock(block);
+      fs.writeFileSync(destPath, decoded);
       if (block.mode != null) {
         try { fs.chmodSync(destPath, block.mode); } catch {}
       }
@@ -4818,16 +4882,23 @@ if (viewMode) {
       if (block.mtime) {
         try { fs.utimesSync(destPath, block.mtime, block.mtime); } catch {}
       }
-      console.log('  EXTRACT: ' + block.path);
+      // Per-file EXTRACT lines are verbose-only. Default mode prints just the
+      // summary at the end (mirrors pack_text's quiet-by-default behavior).
+      // Verbose form includes raw byte count so users can spot oversized
+      // restores quickly. FAIL lines below stay always-on — errors must be
+      // visible regardless of verbose level.
+      if (verbose) {
+        console.error('  EXTRACT: ' + block.path + ' (' + decoded.length + ' B -> ' + destPath + ')');
+      }
       count++;
     } catch (e) {
       console.error('  FAIL: ' + block.path + ': ' + e.message);
     }
   }
-  console.log('unpack_text: extracted ' + count + ' files to ' + destDir);
+  console.error('unpack_text: extracted ' + count + ' files to ' + destDir);
 }
 UNPACK_TEXT_NODE
-  } | UNPACK_INPUT="$input" UNPACK_DEST="$abs_dest" UNPACK_MODE="$( ((view_mode)) && echo view || echo extract)" node
+  } | UNPACK_INPUT="$input" UNPACK_DEST="$abs_dest" UNPACK_MODE="$( ((view_mode)) && echo view || echo extract)" UNPACK_VERBOSE="$unpack_verbose" node
 
   # Cleanup tmp files.
   if [ -n "$tmp_extract" ]; then

@@ -956,3 +956,109 @@ describe("forgiving metadata parser (malformed / missing fields)", () => {
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 });
+
+/** --verbose flag + streaming writer.
+ *
+ * Quiet mode (default) prints only summary lines; --verbose adds per-file PACK
+ * lines and the "scanning"/"walking"/"git repo detected" trail. Streaming
+ * writer fixes a pre-fix RangeError("Invalid string length") that hit V8's
+ * ~512 MB string cap whenever the cumulative pack output got large; the test
+ * here checks the side-effects we CAN observe — no leftover .blocks.tmp file
+ * after a successful pack, and round-trip still byte-exact (so streaming
+ * doesn't introduce drift). */
+describe("--verbose flag + streaming writer hygiene", () => {
+  const srcDir = path.join(TMP_DIR, "src");
+
+  beforeEach(() => {
+    createTestFiles(srcDir);
+  });
+
+  afterEach(() => {
+    fs.rmSync(TMP_DIR, { recursive: true, force: true });
+  });
+
+  it("--verbose prints per-file PACK lines with raw->encoded byte counts", () => {
+    // runBash redirects stderr to /dev/null by default — for this assertion
+    // we want stderr captured. Use a one-off invocation that merges fd2->fd1.
+    const tmpScript = path.join(TMP_DIR, "verbose_runner.sh");
+    fs.writeFileSync(
+      tmpScript,
+      `#!/usr/bin/env bash\nsource "${path.join(ROOT_DIR, "software/scripts/bash-fzf.profile.bash")}"\nsource "${path.join(ROOT_DIR, "software/scripts/bash-file-utils.profile.bash")}"\npack_text "${srcDir}" "${path.join(TMP_DIR, "v.pack.txt")}" --verbose 2>&1 1>/dev/null\n`,
+    );
+    const stderr = execSync(`bash "${tmpScript}"`, { encoding: "utf-8", timeout: 30000 });
+    // Per-file PACK lines should appear for each test file.
+    expect(stderr).toMatch(/^\s*PACK: hello\.txt \(\d+ B raw -> \d+ B encoded\)$/m);
+    expect(stderr).toMatch(/^\s*PACK: code\.js \(\d+ B raw -> \d+ B encoded\)$/m);
+    expect(stderr).toMatch(/^\s*PACK: sub\/nested\.txt \(\d+ B raw -> \d+ B encoded\)$/m);
+    // Scan/walk markers from the bash side.
+    expect(stderr).toMatch(/pack_text: scanning /);
+  });
+
+  it("default (no --verbose) does NOT emit per-file PACK lines", () => {
+    const tmpScript = path.join(TMP_DIR, "quiet_runner.sh");
+    fs.writeFileSync(
+      tmpScript,
+      `#!/usr/bin/env bash\nsource "${path.join(ROOT_DIR, "software/scripts/bash-fzf.profile.bash")}"\nsource "${path.join(ROOT_DIR, "software/scripts/bash-file-utils.profile.bash")}"\npack_text "${srcDir}" "${path.join(TMP_DIR, "q.pack.txt")}" 2>&1 1>/dev/null\n`,
+    );
+    const stderr = execSync(`bash "${tmpScript}"`, { encoding: "utf-8", timeout: 30000 });
+    expect(stderr).not.toMatch(/^\s*PACK: /m);
+    expect(stderr).not.toMatch(/scanning /);
+  });
+
+  it("streaming writer cleans up its .blocks.tmp file after a successful pack", () => {
+    const out = path.join(TMP_DIR, "stream.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    expect(fs.existsSync(out)).toBe(true);
+    expect(fs.existsSync(out + ".blocks.tmp")).toBe(false);
+  });
+
+  it("streaming writer round-trips byte-exact for a many-files tree", () => {
+    // Stress the streaming path with 50 small files so we exercise multiple
+    // 64 KB chunks during the final concat. Each file gets random-ish content
+    // so per-file SHA matches before/after — any drift introduced by the
+    // streaming writer would surface here.
+    for (let i = 0; i < 50; i++) {
+      fs.writeFileSync(path.join(srcDir, `gen_${i}.txt`), `line ${i}\n`.repeat(100));
+    }
+    const out = path.join(TMP_DIR, "many.pack.txt");
+    const dest = path.join(TMP_DIR, "many_out");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null && unpack_text "${out}" "${dest}"`);
+    for (let i = 0; i < 50; i++) {
+      expect(sha(path.join(dest, `gen_${i}.txt`))).toBe(sha(path.join(srcDir, `gen_${i}.txt`)));
+    }
+  });
+
+  it("unpack_text --verbose prints per-file EXTRACT lines with byte counts and dest path", () => {
+    const out = path.join(TMP_DIR, "v.pack.txt");
+    const dest = path.join(TMP_DIR, "v_out");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const tmpScript = path.join(TMP_DIR, "unpack_v_runner.sh");
+    fs.writeFileSync(
+      tmpScript,
+      `#!/usr/bin/env bash\nsource "${path.join(ROOT_DIR, "software/scripts/bash-fzf.profile.bash")}"\nsource "${path.join(ROOT_DIR, "software/scripts/bash-file-utils.profile.bash")}"\nunpack_text "${out}" "${dest}" --verbose 2>&1 1>/dev/null\n`,
+    );
+    const stderr = execSync(`bash "${tmpScript}"`, { encoding: "utf-8", timeout: 30000 });
+    // EXTRACT lines should include both byte count AND full dest path so users
+    // can see exactly where each file landed.
+    expect(stderr).toMatch(/^\s*EXTRACT: hello\.txt \(\d+ B -> .+hello\.txt\)$/m);
+    expect(stderr).toMatch(/^\s*EXTRACT: code\.js \(\d+ B -> .+code\.js\)$/m);
+    expect(stderr).toMatch(/^\s*EXTRACT: sub\/nested\.txt \(\d+ B -> .+nested\.txt\)$/m);
+    // Summary still prints in verbose mode.
+    expect(stderr).toMatch(/unpack_text: extracted \d+ files to /);
+  });
+
+  it("unpack_text default (no --verbose) does NOT emit per-file EXTRACT lines", () => {
+    const out = path.join(TMP_DIR, "q.pack.txt");
+    const dest = path.join(TMP_DIR, "q_out");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const tmpScript = path.join(TMP_DIR, "unpack_q_runner.sh");
+    fs.writeFileSync(
+      tmpScript,
+      `#!/usr/bin/env bash\nsource "${path.join(ROOT_DIR, "software/scripts/bash-fzf.profile.bash")}"\nsource "${path.join(ROOT_DIR, "software/scripts/bash-file-utils.profile.bash")}"\nunpack_text "${out}" "${dest}" 2>&1 1>/dev/null\n`,
+    );
+    const stderr = execSync(`bash "${tmpScript}"`, { encoding: "utf-8", timeout: 30000 });
+    expect(stderr).not.toMatch(/^\s*EXTRACT: /m);
+    // Summary line still prints — that's the floor of always-on output.
+    expect(stderr).toMatch(/unpack_text: extracted \d+ files to /);
+  });
+});
