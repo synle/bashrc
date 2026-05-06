@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-06T16:33:59.665Z
+# Generated: 2026-05-06T16:56:27.023Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -3211,7 +3211,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 7c9979cc3f612c842644b02fc8087dd5 | 65.3 KB | 2026-05-06
+# software/scripts/bash-file-utils.profile.bash | 262fb2c97a2e9294bf546192d6cb857b | 70.8 KB | 2026-05-06
 ################################################################################
 # ---- File Utilities ----
 #
@@ -4049,6 +4049,12 @@ function pack_text() {
     Every file (text or binary) is compressed (gzip or brotli) then base64-encoded
     so the bundle round-trips byte-exact regardless of file content. File mode
     bits (0o777, the chmod permissions) are recorded and restored by unpack_text.
+  Timestamps:
+    PACK_BEGIN bracket carries mtime= (last modification, ISO-8601 UTC) and
+    btime= (creation / birthtime, when the OS exposes one). unpack_text restores
+    mtime via utimesSync. btime is informational only — Linux has no syscall
+    to set it, so we record but do not restore. Missing mtime (legacy packs)
+    -> file gets the current time at extract.
   Provenance:
     Auto-generated output filenames lead with a sanitized hostname so $(ls)
     groups backups by machine: <host>.<stem>.pack.txt / .zip / .tar.gz where
@@ -4320,6 +4326,15 @@ function encodeFileBody(buf) {
   return b64.replace(/(.{76})/g, '$1\n') + (b64.length % 76 === 0 ? '' : '\n');
 }
 
+/** Format a Date as ISO-8601 UTC with seconds precision (drops sub-second
+ *  fractions for readability — file mtimes from most filesystems are integer
+ *  seconds anyway). Returns '' when the date is missing or epoch zero (which
+ *  Node returns on platforms where birthtime isn't natively supported). */
+function fmtIsoUtc(d) {
+  if (!d || d.getTime() === 0) return '';
+  return d.toISOString().replace(/\.\d+Z$/, 'Z');
+}
+
 const rels = fs.readFileSync(listFile, 'utf8').split('\n').filter(Boolean);
 let output = '';
 let count = 0;
@@ -4330,7 +4345,18 @@ for (const rel of rels) {
     const stat = fs.statSync(file);
     if (!stat.isFile()) continue;
     const mode = (stat.mode & 0o777).toString(8).padStart(4, '0');  // padStart supplies the leading 0
-    output += '===== PACK_BEGIN: ' + rel + ' [' + encoding + '+base64,mode=' + mode + '] =====\n';
+    // Timestamps appended to the bracket: mtime always (every fs supports it),
+    // btime only when the OS reports a real value (Linux ext4/btrfs do, older
+    // Linux fs and some networked mounts return epoch 0 — fmtIsoUtc skips those).
+    // unpack_text restores mtime via fs.utimesSync; btime is informational only
+    // (no portable syscall to set it on Linux), but is preserved through
+    // view_pack_text so the original creation time stays visible.
+    const mtimeStr = fmtIsoUtc(stat.mtime);
+    const btimeStr = fmtIsoUtc(stat.birthtime);
+    const parts = [encoding + '+base64', 'mode=' + mode];
+    if (mtimeStr) parts.push('mtime=' + mtimeStr);
+    if (btimeStr) parts.push('btime=' + btimeStr);
+    output += '===== PACK_BEGIN: ' + rel + ' [' + parts.join(',') + '] =====\n';
     output += encodeFileBody(buf);
     output += '===== PACK_END: ' + rel + ' =====\n';
     count++;
@@ -4562,15 +4588,33 @@ const STATUS_LINE = /^(?:pack_text|unpack_text|view_pack_text):/;
  *  View mode preserves it (see captureMetaLine) so provenance stays visible. */
 const META_DATA_LINE = /^===== META_DATA: .* =====$/;
 
-/** Parse the metadata bracket on a BEGIN line into { path, encoding, mode }.
+/** Parse the metadata bracket on a BEGIN line into
+ *  { path, encoding, mode, mtime, btime }.
  *  Encoding is the only "bare" token (no '='); everything else is key=val.
- *  mode is parsed as octal. */
+ *  - mode  : octal int   (existing — file permissions)
+ *  - mtime : Date | null (ISO-8601 — last modification time, restored on extract)
+ *  - btime : Date | null (ISO-8601 — creation time / birthtime; informational
+ *                         only since no portable syscall to set it on Linux,
+ *                         but preserved through view_pack_text re-emission)
+ *
+ *  PARSING IS DELIBERATELY FORGIVING — every field is optional and every
+ *  field is independently validated. A malformed value for one key never
+ *  blocks parsing of the others, never poisons the meta object, and never
+ *  prevents extraction of the file. Specifically:
+ *    - missing bracket entirely        -> all fields stay null, raw-text decode
+ *    - missing key                     -> field stays null
+ *    - unknown key                     -> silently ignored (forward compat)
+ *    - bad mode value (e.g. 'abc')     -> NaN rejected, mode stays null
+ *    - bad mtime/btime (e.g. 'foo')    -> Date is NaN, field stays null
+ *    - empty value (key= )             -> rejected, field stays null
+ *  All "stays null" outcomes mean the corresponding restore step is simply
+ *  skipped at extract time — no chmodSync(NaN), no utimesSync(InvalidDate). */
 function parseBeginMarker(line) {
   if (!line.startsWith(BEGIN_PREFIX) || !line.endsWith(SUFFIX)) return null;
   const inner = line.slice(BEGIN_PREFIX.length, line.length - SUFFIX.length);
   const m = inner.match(/^(.*?)(?:\s+\[([^\]]*)\])?$/);
   if (!m) return null;
-  const meta = { path: m[1], encoding: null, mode: null };
+  const meta = { path: m[1], encoding: null, mode: null, mtime: null, btime: null };
   if (m[2]) {
     for (const part of m[2].split(',')) {
       const eq = part.indexOf('=');
@@ -4579,7 +4623,18 @@ function parseBeginMarker(line) {
       } else {
         const k = part.slice(0, eq).trim();
         const v = part.slice(eq + 1).trim();
-        if (k === 'mode') meta.mode = parseInt(v, 8);
+        if (!v) continue;  // empty value -> skip; never assign garbage
+        if (k === 'mode') {
+          const n = parseInt(v, 8);
+          // parseInt returns NaN for non-numeric strings. Without this guard
+          // we'd later call fs.chmodSync(path, NaN), which throws — survivable
+          // via try/catch but noisy. Skipping here keeps the log clean.
+          if (!isNaN(n) && n >= 0) meta.mode = n;
+        } else if (k === 'mtime' || k === 'btime') {
+          const d = new Date(v);
+          // Reject NaN dates — corrupt timestamp shouldn't poison the extract.
+          if (!isNaN(d.getTime())) meta[k] = d;
+        }
       }
     }
   }
@@ -4653,7 +4708,19 @@ function* parseBlocks(packed) {
 
 /** Decode a block's body to a Buffer based on its encoding token. Per-block
  *  dispatch means a single pack can legally mix encodings — e.g. an old gzip
- *  pack appended to a fresh brotli pack still extracts cleanly. */
+ *  pack appended to a fresh brotli pack still extracts cleanly.
+ *
+ *  Three paths, in priority order:
+ *    1. Known encoding token  -> decompress with the matching codec.
+ *    2. NO encoding token     -> raw text path. Used by view_pack_text when
+ *                                re-emitting decoded text blocks (the bracket
+ *                                contains only [mode=...,mtime=...] with no
+ *                                bare encoding token), so this is a legitimate
+ *                                input shape, not an error.
+ *    3. Unknown encoding token -> throw. The extract loop catches and emits
+ *                                 'FAIL: <path>: unknown encoding ...' for
+ *                                 that one file but continues with the rest.
+ *                                 Better than silently writing corrupted data. */
 function decodeBlock(block) {
   if (block.encoding === 'gzip+base64') {
     return zlib.gunzipSync(Buffer.from(block.body.replace(/\s/g, ''), 'base64'));
@@ -4664,10 +4731,16 @@ function decodeBlock(block) {
     }
     return zlib.brotliDecompressSync(Buffer.from(block.body.replace(/\s/g, ''), 'base64'));
   }
-  // No encoding token → raw text. Strip the trailing newline emitted between
-  // the body and the END marker so round-trip is byte-exact for raw blocks.
-  const text = block.body.endsWith('\n') ? block.body.slice(0, -1) : block.body;
-  return Buffer.from(text, 'utf8');
+  if (block.encoding === null) {
+    // No encoding token — raw text. Strip the trailing newline emitted between
+    // the body and the END marker so round-trip is byte-exact for raw blocks.
+    const text = block.body.endsWith('\n') ? block.body.slice(0, -1) : block.body;
+    return Buffer.from(text, 'utf8');
+  }
+  // Unknown encoding token — fail this one block loudly with an actionable
+  // message instead of silently writing the un-decoded bytes (which would
+  // produce a corrupt file with no warning). Caught by the extract loop.
+  throw new Error('unknown encoding token: ' + block.encoding);
 }
 
 /** Heuristic: a buffer is "text" if no NUL byte in the first 8 KB. */
@@ -4675,11 +4748,15 @@ function looksLikeText(buf) {
   return !buf.subarray(0, 8000).includes(0x00);
 }
 
-/** Build the [<encoding>,mode=0NNN] bracket suffix for re-emitted blocks. */
+/** Build the [<encoding>,mode=0NNN,mtime=...,btime=...] bracket suffix for
+ *  re-emitted blocks (view mode). Timestamps are preserved when present so
+ *  view output stays re-feedable AND keeps the provenance visible. */
 function fmtMeta(meta) {
   const parts = [];
   if (meta.encoding) parts.push(meta.encoding);
   if (meta.mode != null) parts.push('mode=' + meta.mode.toString(8).padStart(4, '0'));
+  if (meta.mtime) parts.push('mtime=' + meta.mtime.toISOString().replace(/\.\d+Z$/, 'Z'));
+  if (meta.btime) parts.push('btime=' + meta.btime.toISOString().replace(/\.\d+Z$/, 'Z'));
   return parts.length ? ' [' + parts.join(',') + ']' : '';
 }
 
@@ -4707,8 +4784,9 @@ if (viewMode) {
       // Always emit a separator newline between content and END marker. The
       // unpack-side decoder for raw blocks strips the trailing '\n' from the
       // body, so this guarantees byte-exact round-trip whether or not the
-      // original file ended with a newline.
-      process.stdout.write(BEGIN_PREFIX + block.path + fmtMeta({ encoding: null, mode: block.mode }) + SUFFIX + '\n');
+      // original file ended with a newline. mtime/btime are carried through
+      // so the view stays re-feedable into unpack_text with full fidelity.
+      process.stdout.write(BEGIN_PREFIX + block.path + fmtMeta({ encoding: null, mode: block.mode, mtime: block.mtime, btime: block.btime }) + SUFFIX + '\n');
       process.stdout.write(decoded.toString('utf8'));
       process.stdout.write('\n');
       process.stdout.write(END_PREFIX + block.path + SUFFIX + '\n');
@@ -4728,6 +4806,17 @@ if (viewMode) {
       fs.writeFileSync(destPath, decodeBlock(block));
       if (block.mode != null) {
         try { fs.chmodSync(destPath, block.mode); } catch {}
+      }
+      // Restore mtime via utimesSync. atime is set to mtime as well — preserving
+      // the original atime is meaningless (every read changes it) and using
+      // mtime gives the most coherent "this file looks frozen at <time>" view.
+      // btime is intentionally NOT restored: no portable syscall on Linux to
+      // set birthtime, and shelling out per-file (SetFile on macOS) would slow
+      // unpack to a crawl. The btime value remains visible via view_pack_text.
+      // Missing mtime in marker (legacy packs / future formats) -> skip silently
+      // and let the OS use the current time, matching the user-stated default.
+      if (block.mtime) {
+        try { fs.utimesSync(destPath, block.mtime, block.mtime); } catch {}
       }
       console.log('  EXTRACT: ' + block.path);
       count++;
