@@ -819,9 +819,7 @@ describe("mtime / btime preservation", () => {
     const corrupt = path.join(TMP_DIR, "corrupt_ts.pack.txt");
     fs.writeFileSync(
       corrupt,
-      "===== PACK_BEGIN: corrupt.txt [gzip+base64,mode=0644,mtime=not-a-date] =====\n" +
-        wrapped +
-        "===== PACK_END: corrupt.txt =====\n",
+      "===== PACK_BEGIN: corrupt.txt [gzip+base64,mode=0644,mtime=not-a-date] =====\n" + wrapped + "===== PACK_END: corrupt.txt =====\n",
     );
     const dest = path.join(TMP_DIR, "corrupt_ts_out");
     runBash(`unpack_text "${corrupt}" "${dest}"`);
@@ -864,10 +862,7 @@ describe("forgiving metadata parser (malformed / missing fields)", () => {
     // have a trailing newline. Test expectation honors that.
     const pack = path.join(TMP_DIR, "no_bracket.pack.txt");
     const body = "Plain text body, no bracket";
-    fs.writeFileSync(
-      pack,
-      `===== PACK_BEGIN: plain.txt =====\n${body}\n===== PACK_END: plain.txt =====\n`,
-    );
+    fs.writeFileSync(pack, `===== PACK_BEGIN: plain.txt =====\n${body}\n===== PACK_END: plain.txt =====\n`);
     const dest = path.join(TMP_DIR, "out");
     runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "plain.txt"), "utf-8")).toBe(body);
