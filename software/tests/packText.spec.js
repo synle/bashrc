@@ -81,14 +81,15 @@ describe("pack_text format", () => {
     expect(output).toContain("--encode-level=");
   });
 
-  it("should emit PACK_BEGIN/PACK_END markers with [<encoding>+base64,mode=0NNN]", () => {
-    // Encoding-agnostic — the default encoding may change. Tests targeting a
-    // specific encoding pass --encode=gzip or --encode=brotli explicitly.
+  it("should emit PACK_BEGIN/PACK_END markers with [<encoding>+base64,mode=0NNN,...]", () => {
+    // Encoding-agnostic — the default encoding may change. Bracket may carry
+    // extra k=v pairs after mode (mtime/btime/etc.); tests use the closing
+    // ' =====' anchor instead of '\]' to stay future-proof.
     const output = runBash(`pack_text "${srcDir}" --raw`);
-    expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
+    expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
     expect(output).toContain("===== PACK_END: hello.txt =====");
-    expect(output).toMatch(/===== PACK_BEGIN: code\.js \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
-    expect(output).toMatch(/===== PACK_BEGIN: sub\/nested\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
+    expect(output).toMatch(/===== PACK_BEGIN: code\.js \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
+    expect(output).toMatch(/===== PACK_BEGIN: sub\/nested\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
   });
 
   it("should include binary files (no extension filtering)", () => {
@@ -101,8 +102,8 @@ describe("pack_text format", () => {
     fs.chmodSync(path.join(srcDir, "exec.sh"), 0o755);
     fs.chmodSync(path.join(srcDir, "hello.txt"), 0o644);
     const output = runBash(`pack_text "${srcDir}" --raw`);
-    expect(output).toMatch(/PACK_BEGIN: exec\.sh \[(?:gzip|brotli)\+base64,mode=0755\]/);
-    expect(output).toMatch(/PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=0644\]/);
+    expect(output).toMatch(/PACK_BEGIN: exec\.sh \[(?:gzip|brotli)\+base64,mode=0755[,\]]/);
+    expect(output).toMatch(/PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=0644[,\]]/);
   });
 
   it("should auto-name to /tmp/<host>.<stem>.pack.txt for bare raw call", () => {
@@ -442,7 +443,8 @@ describe("view_pack_text", () => {
     // decoder strips one trailing '\n' from raw blocks, so an extra separator
     // '\n' guarantees byte-exact round-trip whether or not the file ended
     // with a newline.
-    expect(view).toMatch(/===== PACK_BEGIN: hello\.txt \[mode=\d{4}\] =====\nHello World\n+===== PACK_END: hello\.txt =====/);
+    // Bracket may include trailing k=v pairs (mtime/btime); allow them.
+    expect(view).toMatch(/===== PACK_BEGIN: hello\.txt \[mode=\d{4}[^\]]*\] =====\nHello World\n+===== PACK_END: hello\.txt =====/);
     expect(view).toContain("function foo()");
   });
 
@@ -452,7 +454,8 @@ describe("view_pack_text", () => {
     const view = runBash(`view_pack_text "${packedFile}"`);
     // Binary blocks (NUL byte detected) pass through unchanged in view mode —
     // they keep whatever encoding token the original pack used.
-    expect(view).toMatch(/===== PACK_BEGIN: binary\.bin \[(?:gzip|brotli)\+base64,mode=\d{4}\] =====/);
+    // Bracket may include trailing k=v pairs (mtime/btime); allow them.
+    expect(view).toMatch(/===== PACK_BEGIN: binary\.bin \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
   });
 
   it("output is itself a valid pack — feed back into unpack_text", () => {
@@ -690,7 +693,7 @@ describe("encoding selection (gzip / brotli) and --encode-level", () => {
     expect(view).toContain("Hello World");
     expect(view).toContain("function foo()");
     // Text blocks lose the encoding token in view mode (raw text re-emit).
-    expect(view).toMatch(/===== PACK_BEGIN: hello\.txt \[mode=\d{4}\] =====\nHello World/);
+    expect(view).toMatch(/===== PACK_BEGIN: hello\.txt \[mode=\d{4}[^\]]*\] =====\nHello World/);
   });
 
   it("--encode=foo errors with a clear allowed-list message", () => {
@@ -724,5 +727,104 @@ describe("encoding selection (gzip / brotli) and --encode-level", () => {
     // Higher quality => smaller output. Allow a generous margin since other
     // pack overhead (META_DATA, markers, base64 wrapping) is constant.
     expect(maxSize).toBeLessThan(minSize);
+  });
+});
+
+/** Timestamp preservation — pack_text records each file's mtime (modification
+ * time) and btime (creation time / birthtime) in the PACK_BEGIN bracket as
+ * ISO-8601 UTC. unpack_text restores mtime via fs.utimesSync; btime is
+ * informational only (no portable Linux syscall to set birthtime). Missing
+ * keys (legacy packs) -> file gets the current time at extract, by design. */
+describe("mtime / btime preservation", () => {
+  const srcDir = path.join(TMP_DIR, "src");
+
+  beforeEach(() => {
+    createTestFiles(srcDir);
+  });
+
+  afterEach(() => {
+    fs.rmSync(TMP_DIR, { recursive: true, force: true });
+  });
+
+  it("PACK_BEGIN bracket records mtime= as ISO-8601 UTC", () => {
+    // Set a known mtime (one year before "now") and verify the marker carries it.
+    const knownMtime = new Date("2025-01-15T12:34:56Z");
+    fs.utimesSync(path.join(srcDir, "hello.txt"), knownMtime, knownMtime);
+    const out = path.join(TMP_DIR, "ts.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const packed = fs.readFileSync(out, "utf-8");
+    expect(packed).toMatch(/PACK_BEGIN: hello\.txt \[[^\]]*mtime=2025-01-15T12:34:56Z/);
+  });
+
+  it("PACK_BEGIN bracket records btime= when the OS reports one (skipped on platforms without)", () => {
+    const out = path.join(TMP_DIR, "bt.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const packed = fs.readFileSync(out, "utf-8");
+    // macOS / Btrfs / ext4 expose birthtime; if we ever run on a fs that
+    // doesn't, the marker simply omits btime= (graceful, not an error).
+    const supportsBtime = fs.statSync(path.join(srcDir, "hello.txt")).birthtimeMs > 0;
+    if (supportsBtime) {
+      expect(packed).toMatch(/PACK_BEGIN: hello\.txt \[[^\]]*btime=\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/);
+    }
+  });
+
+  it("unpack_text restores mtime from the marker (round-trip within 1s precision)", () => {
+    const knownMtime = new Date("2025-01-15T12:34:56Z");
+    fs.utimesSync(path.join(srcDir, "hello.txt"), knownMtime, knownMtime);
+    const packed = path.join(TMP_DIR, "rt.pack.txt");
+    const dest = path.join(TMP_DIR, "rt_out");
+    runBash(`pack_text "${srcDir}" "${packed}" --raw 2>/dev/null && unpack_text "${packed}" "${dest}"`);
+    const restoredMtime = fs.statSync(path.join(dest, "hello.txt")).mtime.getTime();
+    // Allow 1-second slack — most filesystems store mtime at second granularity.
+    expect(Math.abs(restoredMtime - knownMtime.getTime())).toBeLessThan(1000);
+  });
+
+  it("missing mtime in marker (legacy pack) falls back to current time without erroring", () => {
+    // Hand-craft a pack with NO mtime/btime keys — must still extract cleanly
+    // and the resulting file gets a fresh mtime (>= test start).
+    const zlibLib = require("zlib");
+    const body = "Legacy file without timestamp metadata\n";
+    const b64 = zlibLib.gzipSync(Buffer.from(body)).toString("base64");
+    const wrapped = b64.replace(/(.{76})/g, "$1\n") + (b64.length % 76 === 0 ? "" : "\n");
+    const legacy = path.join(TMP_DIR, "legacy_ts.pack.txt");
+    fs.writeFileSync(
+      legacy,
+      "===== PACK_BEGIN: legacy.txt [gzip+base64,mode=0644] =====\n" + wrapped + "===== PACK_END: legacy.txt =====\n",
+    );
+    const dest = path.join(TMP_DIR, "legacy_ts_out");
+    const before = Date.now();
+    runBash(`unpack_text "${legacy}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "legacy.txt"), "utf-8")).toBe(body);
+    const restoredMtime = fs.statSync(path.join(dest, "legacy.txt")).mtime.getTime();
+    // Generous lower bound — mtime should be >= the test start (allowing fs
+    // truncation to second granularity which can drop below `before` by <1s).
+    expect(restoredMtime).toBeGreaterThanOrEqual(before - 1000);
+  });
+
+  it("view_pack_text preserves mtime/btime in re-emitted brackets", () => {
+    const knownMtime = new Date("2025-01-15T12:34:56Z");
+    fs.utimesSync(path.join(srcDir, "hello.txt"), knownMtime, knownMtime);
+    const packed = path.join(TMP_DIR, "view_ts.pack.txt");
+    runBash(`pack_text "${srcDir}" "${packed}" --raw 2>/dev/null`);
+    const view = runBash(`view_pack_text "${packed}"`);
+    // Text block in view mode loses the encoding token but should keep mtime.
+    expect(view).toMatch(/PACK_BEGIN: hello\.txt \[[^\]]*mtime=2025-01-15T12:34:56Z/);
+  });
+
+  it("garbage mtime in marker is silently skipped (no crash, file gets current time)", () => {
+    const zlibLib = require("zlib");
+    const body = "Body for corrupt-mtime test\n";
+    const b64 = zlibLib.gzipSync(Buffer.from(body)).toString("base64");
+    const wrapped = b64.replace(/(.{76})/g, "$1\n") + (b64.length % 76 === 0 ? "" : "\n");
+    const corrupt = path.join(TMP_DIR, "corrupt_ts.pack.txt");
+    fs.writeFileSync(
+      corrupt,
+      "===== PACK_BEGIN: corrupt.txt [gzip+base64,mode=0644,mtime=not-a-date] =====\n" +
+        wrapped +
+        "===== PACK_END: corrupt.txt =====\n",
+    );
+    const dest = path.join(TMP_DIR, "corrupt_ts_out");
+    runBash(`unpack_text "${corrupt}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "corrupt.txt"), "utf-8")).toBe(body);
   });
 });
