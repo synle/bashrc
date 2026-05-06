@@ -102,31 +102,33 @@ describe("pack_text format", () => {
     expect(output).toMatch(/PACK_BEGIN: hello\.txt \[gzip\+base64,mode=0644\]/);
   });
 
-  it("should auto-name to /tmp/<flat>.<ts>.pack.txt for bare raw call", () => {
+  it("should auto-name to /tmp/<flat>.<ts>.pack.<host>.txt for bare raw call", () => {
     const output = runBash(`pack_text "${srcDir}"`);
     expect(output).toContain("pack_text:");
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     expect(lines.length).toBeGreaterThan(0);
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    expect(outPath).toMatch(/\.pack\.txt$/);
+    // Sanitized hostname is inserted before the final extension:
+    // <stem>.pack.<sanitized_host>.txt where sanitized_host is [a-z0-9_]+.
+    expect(outPath).toMatch(/\.pack\.[a-z0-9_]+\.txt$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .tar.gz with --tar", () => {
+  it("should auto-generate .tar.gz with --tar (hostname segment included)", () => {
     const output = runBash(`pack_text "${srcDir}" --tar`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    expect(outPath).toMatch(/\.pack\.tar\.gz$/);
+    expect(outPath).toMatch(/\.pack\.[a-z0-9_]+\.tar\.gz$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .zip with --zip", () => {
+  it("should auto-generate .zip with --zip (hostname segment included)", () => {
     const output = runBash(`pack_text "${srcDir}" --zip`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
-    expect(outPath).toMatch(/\.pack\.zip$/);
+    expect(outPath).toMatch(/\.pack\.[a-z0-9_]+\.zip$/);
     expect(fs.existsSync(outPath)).toBe(true);
     fs.unlinkSync(outPath);
   });
@@ -466,5 +468,113 @@ describe("view_pack_text", () => {
     runBash(`pack_text "${srcDir}" 2>/dev/null | view_pack_text > "${path.join(TMP_DIR, "view.out")}"`);
     const view = fs.readFileSync(path.join(TMP_DIR, "view.out"), "utf-8");
     expect(view).toContain("PACK_BEGIN: hello.txt [mode=");
+  });
+});
+
+/** META_DATA banner + hostname-in-filename are pack_text provenance features:
+ * the auto-generated output filename embeds a sanitized hostname before the
+ * final extension, and a single META_DATA line is emitted at the top of the
+ * stream carrying host / packed_utc / source / file_count. unpack_text strips
+ * the banner as noise; view_pack_text preserves it (so view output is still a
+ * valid, re-feedable pack with provenance intact). */
+describe("META_DATA banner + hostname-in-filename", () => {
+  const srcDir = path.join(TMP_DIR, "src");
+
+  beforeEach(() => {
+    createTestFiles(srcDir);
+  });
+
+  afterEach(() => {
+    fs.rmSync(TMP_DIR, { recursive: true, force: true });
+  });
+
+  it("should emit a single META_DATA line at the top of the pack with host/packed_utc/source/file_count", () => {
+    const out = path.join(TMP_DIR, "meta.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const packed = fs.readFileSync(out, "utf-8");
+    const lines = packed.split("\n");
+    // META_DATA must be the very first line, before any PACK_BEGIN.
+    expect(lines[0]).toMatch(/^===== META_DATA: .* =====$/);
+    expect(lines[0]).toMatch(/host=\S+/);
+    expect(lines[0]).toMatch(/packed_utc=\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/);
+    expect(lines[0]).toMatch(/source=\S+/);
+    expect(lines[0]).toMatch(/file_count=\d+/);
+    // Exactly one META_DATA line — never duplicated per file.
+    const metaCount = packed.match(/===== META_DATA: /g)?.length ?? 0;
+    expect(metaCount).toBe(1);
+  });
+
+  it("should record file_count matching the actual number of PACK_BEGIN blocks", () => {
+    const out = path.join(TMP_DIR, "count.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const packed = fs.readFileSync(out, "utf-8");
+    const declared = parseInt(packed.match(/file_count=(\d+)/)[1], 10);
+    const actual = (packed.match(/===== PACK_BEGIN: /g) || []).length;
+    expect(declared).toBe(actual);
+    expect(declared).toBeGreaterThan(0);
+  });
+
+  it("should embed sanitized hostname before the final extension (auto-generated filenames only)", () => {
+    const output = runBash(`pack_text "${srcDir}"`);
+    const outPath = output
+      .split("\n")
+      .filter((l) => l.startsWith("pack_text: /tmp/"))[0]
+      .replace("pack_text: ", "")
+      .trim();
+    // Filename: ...pack.<sanitized>.txt — sanitized = lowercase [a-z0-9_]+.
+    const m = outPath.match(/\.pack\.([a-z0-9_]+)\.txt$/);
+    expect(m).toBeTruthy();
+    const segment = m[1];
+    expect(segment).toMatch(/^[a-z0-9]+(?:_[a-z0-9]+)*$/); // no leading/trailing/double _
+    fs.unlinkSync(outPath);
+  });
+
+  it("should NOT mutate explicit output paths (only auto-generated ones get the host segment)", () => {
+    const explicit = path.join(TMP_DIR, "my-explicit-name.pack.txt");
+    runBash(`pack_text "${srcDir}" "${explicit}" --raw 2>/dev/null`);
+    expect(fs.existsSync(explicit)).toBe(true); // exact path honored
+  });
+
+  it("unpack_text should silently strip META_DATA outside blocks (extract mode)", () => {
+    const out = path.join(TMP_DIR, "extract.pack.txt");
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null && unpack_text "${out}" "${dest}"`);
+    // Extracted files must match originals byte-for-byte; META_DATA must NOT
+    // leak into any extracted file. Sanity-check by sha-ing one round-trip.
+    expect(sha(path.join(dest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
+    // No file should contain a META_DATA line.
+    for (const f of ["hello.txt", "code.js", path.join("sub", "nested.txt")]) {
+      const content = fs.readFileSync(path.join(dest, f), "utf-8");
+      expect(content).not.toMatch(/===== META_DATA:/);
+    }
+  });
+
+  it("view_pack_text should preserve META_DATA at the top of view output (and remain re-feedable)", () => {
+    const out = path.join(TMP_DIR, "view.pack.txt");
+    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const viewed = runBash(`view_pack_text "${out}"`);
+    const firstLine = viewed.split("\n")[0];
+    expect(firstLine).toMatch(/^===== META_DATA: .* =====$/);
+    // View output must still be re-feedable into unpack_text.
+    const refeedDest = path.join(TMP_DIR, "refed");
+    const viewFile = path.join(TMP_DIR, "view.out");
+    fs.writeFileSync(viewFile, viewed + "\n");
+    runBash(`unpack_text "${viewFile}" "${refeedDest}"`);
+    expect(sha(path.join(refeedDest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
+  });
+
+  it("should still extract older packs that have NO META_DATA line (backward compatibility)", () => {
+    // Hand-craft a pack without META_DATA — single-block, raw text.
+    const legacy = path.join(TMP_DIR, "legacy.pack.txt");
+    const body = "Hello legacy world\n";
+    const b64 = require("zlib").gzipSync(Buffer.from(body)).toString("base64");
+    const wrapped = b64.replace(/(.{76})/g, "$1\n") + (b64.length % 76 === 0 ? "" : "\n");
+    fs.writeFileSync(
+      legacy,
+      "===== PACK_BEGIN: legacy.txt [gzip+base64,mode=0644] =====\n" + wrapped + "===== PACK_END: legacy.txt =====\n",
+    );
+    const dest = path.join(TMP_DIR, "legacy_out");
+    runBash(`unpack_text "${legacy}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "legacy.txt"), "utf-8")).toBe(body);
   });
 });

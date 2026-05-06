@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-05]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-06]
 # 
 # Precompiled bash profile for arch_linux
 # ################################################################################
@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-05T19:37:10.960Z
+# Generated: 2026-05-06T16:03:50.791Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | 12ac7912398a3b82ac0ea31ed8cbed84 | 10.3 KB | 2026-05-05
+# software/scripts/bash-history.profile.bash | 12ac7912398a3b82ac0ea31ed8cbed84 | 10.3 KB | 2026-05-06
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -748,7 +748,7 @@ function format_other_text_based_files() {
 export PATH="/github/home/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate.profile.bash
-# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-05-05
+# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-05-06
 ################################################################################
 # ---- PATH Setup ----
 #
@@ -3108,7 +3108,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys.profile.bash
-# software/scripts/bash-keys.profile.bash | 513a36d868164a899075f718508233bb | 5.2 KB | 2026-05-05
+# software/scripts/bash-keys.profile.bash | 513a36d868164a899075f718508233bb | 5.2 KB | 2026-05-06
 ################################################################################
 # ---- Bash Readline Keybindings ----
 #
@@ -3211,7 +3211,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 3beb40d496085c28378ff65bdc0ab5a7 | 54.2 KB | 2026-05-05
+# software/scripts/bash-file-utils.profile.bash | 06ebdf1076452900464abcf6eced3b17 | 59.7 KB | 2026-05-06
 ################################################################################
 # ---- File Utilities ----
 #
@@ -3994,8 +3994,11 @@ function _filter_pack_extras() {
 # --zip and --tar wrap the same raw blob in compressed archives.
 function pack_text() {
   if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
-    echo "pack_text: bundle every file in a directory into a self-contained pack
-  Usage: pack_text [src_dir=.] [output_file] [--raw|--zip|--tar]
+    echo "pack_text: bundle a directory (or a single file) into a self-contained pack
+  Usage: pack_text [src=.] [output_file] [--raw|--zip|--tar]
+         src may be a directory (default behavior) OR a single file path
+         (including hidden dotfiles) — in single-file mode the file is packed
+         verbatim with no ignore filtering.
   Default mode: --raw  (gzip+base64 per file, written to /tmp/<flat>.<ts>.pack.txt and streamed to stdout)
   Modes:
     --raw   [default] every file becomes a [gzip+base64,mode=0NNN] block between
@@ -4009,7 +4012,7 @@ function pack_text() {
                       auto-named /tmp/<flat>.<ts>.pack.zip when output_file omitted
     --tar             wraps the raw blob in a .tar.gz archive
                       auto-named /tmp/<flat>.<ts>.pack.tar.gz when output_file omitted
-  File selection:
+  File selection (directory mode):
     git repo  - git ls-files (tracked) + any untracked extras in the working
                 tree (.env*, .bash*, .zsh*, .md, .xml, .src, .sh, .sql, .db,
                 .sqlite*, .yml/.yaml, .json, .toml, .ini, .conf, .cfg).
@@ -4017,13 +4020,26 @@ function pack_text() {
     Both modes are then piped through filter_unwanted, which applies the
     centralized EDITOR_CONFIGS.ignoredFoldersRegex set (node_modules, .venv,
     __pycache__, .build, .next, .nuxt, /dist/, /build/, /coverage/, etc.).
+  File selection (single-file mode):
+    The named file is packed unconditionally — ignore filters are bypassed
+    so explicitly-named files (including hidden dotfiles) always pack.
   Encoding:
     Every file (text or binary) is gzip-compressed then base64-encoded so the
     bundle round-trips byte-exact regardless of file content. File mode bits
     (0o777, the chmod permissions) are recorded and restored by unpack_text.
+  Provenance:
+    Auto-generated output filenames embed a sanitized hostname before the final
+    extension: <stem>.pack.<host>.txt / .zip / .tar.gz. The host is sourced
+    from \$HOSTNAME (fallback: hostname -s, then hostname). Sanitization:
+    lowercase, every non-alphanum -> '_', repeated '_' collapsed to one,
+    edges trimmed. A single META_DATA banner is emitted at the top of every
+    pack: '===== META_DATA: host=<raw> packed_utc=<iso> source=<abs> file_count=<N> ====='
+    unpack_text strips it as noise; view_pack_text preserves it.
+    Explicit output_file arguments are NOT renamed.
   Examples:
     pack_text                              # packs cwd -> /tmp/<flat>.<ts>.pack.txt (also stdout)
     pack_text ~/project                    # packs project -> /tmp/<flat>.<ts>.pack.txt
+    pack_text ~/.bashrc                    # single hidden file -> /tmp/<flat>.<ts>.pack.txt
     pack_text . output.txt                 # raw, explicit output
     pack_text | unpack_text /tmp/copy      # full pipe: pack -> unpack
     pack_text | view_pack_text             # human-readable view (text decoded inline)
@@ -4060,24 +4076,63 @@ function pack_text() {
   local src="${positional[0]:-.}"
   local output="${positional[1]:-}"
 
-  if [ ! -d "$src" ]; then
-    echo "pack_text: directory not found: $src"
+  # Single-file mode: when src is a regular file (e.g. a hidden dotfile), pack
+  # just that file with no ignore filtering — the user named it explicitly so
+  # any .git / node_modules / EDITOR_CONFIGS exclusions should NOT apply. The
+  # directory-mode filters (filter_unwanted, _filter_pack_extras) still run
+  # for the normal directory case below.
+  local single_file=0
+  local single_file_basename=""
+  if [ -f "$src" ]; then
+    single_file=1
+  elif [ ! -d "$src" ]; then
+    echo "pack_text: path not found: $src" >&2
     return 1
   fi
 
   local abs_src
-  abs_src=$(cd "$src" && command pwd)
+  if ((single_file)); then
+    local src_dir src_base
+    src_dir=$(command dirname "$src")
+    src_base=$(command basename "$src")
+    abs_src=$(cd "$src_dir" && command pwd)
+    single_file_basename="$src_base"
+  else
+    abs_src=$(cd "$src" && command pwd)
+  fi
   # Build a flattened, unique output stem from the source path: strip leading
   # '/', swap path separators with '_', append YYYY_MM_DD_HH_MM_SS so two
   # consecutive packs of the same project never overwrite each other.
   # Example: /Users/syle/git/bashrc -> Users_syle_git_bashrc.2026_04_24_22_45_30
-  local flat_path="${abs_src#/}"
+  # In single-file mode, include the basename so the stem identifies the file.
+  local flat_path
+  if ((single_file)); then
+    flat_path="${abs_src#/}/${single_file_basename}"
+  else
+    flat_path="${abs_src#/}"
+  fi
   flat_path="${flat_path//\//_}"
   flat_path="${flat_path//\\/_}"
   [ -z "$flat_path" ] && flat_path="root"
   local pack_ts
   pack_ts=$(command date +%Y_%m_%d_%H_%M_%S)
   local auto_stem="${flat_path}.${pack_ts}"
+
+  # Hostname detection — prefer $HOSTNAME (bash builtin, set on macOS / Linux /
+  # WSL / Termux without a syscall), fall back to `hostname -s` then `hostname`,
+  # then "unknown". Two forms are kept:
+  #   pack_host_raw       — readable form for the META_DATA banner ("MyMac.local")
+  #   pack_host_sanitized — filename-safe ("mymac_local"): lowercase, every
+  #                          non-alphanum -> '_', runs of '_' collapsed, edges
+  #                          stripped. Per the spec: replace non-alphanumeric
+  #                          with '_', then collapse '__+' -> '_'.
+  local pack_host_raw="${HOSTNAME:-}"
+  [ -z "$pack_host_raw" ] && pack_host_raw=$(command hostname -s 2> /dev/null || true)
+  [ -z "$pack_host_raw" ] && pack_host_raw=$(command hostname 2> /dev/null || true)
+  [ -z "$pack_host_raw" ] && pack_host_raw="unknown"
+  local pack_host_sanitized
+  pack_host_sanitized=$(printf '%s' "$pack_host_raw" | command tr '[:upper:]' '[:lower:]' | command sed 's/[^a-z0-9]/_/g; s/__*/_/g; s/^_//; s/_*$//')
+  [ -z "$pack_host_sanitized" ] && pack_host_sanitized="unknown"
 
   if [ -n "$output" ] && [[ "$output" != /* ]]; then
     output="$(command pwd)/$output"
@@ -4088,11 +4143,14 @@ function pack_text() {
   #   raw       -> auto-file ONLY when --raw was not passed explicitly. Explicit
   #                --raw without output_file keeps the legacy stdout-only
   #                behavior so `pack_text ... --raw | unpack_text` still works.
+  # Sanitized hostname is inserted just before the final extension per the
+  # naming spec: <stem>.pack.<host>.txt (and matching forms for .zip / .tar.gz).
+  # Explicit output_file paths are NOT mutated — only auto-generated ones.
   if [ -z "$output" ]; then
     case "$mode" in
-    tar) output="/tmp/${auto_stem}.pack.tar.gz" ;;
-    zip) output="/tmp/${auto_stem}.pack.zip" ;;
-    raw) ((mode_explicit)) || output="/tmp/${auto_stem}.pack.txt" ;;
+    tar) output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.tar.gz" ;;
+    zip) output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.zip" ;;
+    raw) ((mode_explicit)) || output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.txt" ;;
     esac
   fi
 
@@ -4111,7 +4169,13 @@ function pack_text() {
   rm -f "$file_list"
   local is_git=0
   local tracked_count=0 extras_count=0
-  if git -C "$abs_src" rev-parse --is-inside-work-tree &> /dev/null; then
+  if ((single_file)); then
+    # Single-file mode: skip git scan and find walk entirely. The basename
+    # is written verbatim — no filter_unwanted, so explicitly-named files
+    # (e.g. hidden dotfiles like .env) always pack regardless of ignore patterns.
+    printf '%s\n' "$single_file_basename" > "$file_list"
+    echo "pack_text: single file — $abs_src/$single_file_basename" >&2
+  elif git -C "$abs_src" rev-parse --is-inside-work-tree &> /dev/null; then
     is_git=1
     local tracked_tmp extras_tmp
     tracked_tmp="${file_list}.tracked"
@@ -4148,6 +4212,7 @@ const zlib = require('zlib');
 const srcDir = fs.realpathSync(process.env.PACK_SRC);
 const listFile = process.env.PACK_LIST;
 const outputFile = process.env.PACK_OUTPUT;
+const metaHost = process.env.PACK_META_HOST || 'unknown';
 
 /** Encode a file's full bytes as gzip+base64, line-wrapped at 76 chars per
  *  line so the output is diff-friendly. The wrap is cosmetic — unpack_text
@@ -4181,10 +4246,21 @@ if (count === 0) {
   process.exit(1);
 }
 
-fs.writeFileSync(outputFile, output);
+/** META_DATA banner — single line at the very top of the pack stream. unpack_text
+ *  strips it as noise (extended STATUS_LINE filter); view_pack_text preserves it
+ *  inline so the provenance stays visible in human-readable view output. UTC
+ *  timestamp keeps backups directly comparable across machines/timezones. */
+const metaUtc = new Date().toISOString().replace(/\.\d+Z$/, 'Z');  // strip ms for readability
+const metaLine = '===== META_DATA: host=' + metaHost
+  + ' packed_utc=' + metaUtc
+  + ' source=' + srcDir
+  + ' file_count=' + count
+  + ' =====\n';
+
+fs.writeFileSync(outputFile, metaLine + output);
 console.error('pack_text: packed ' + count + ' files from ' + srcDir);
 PACK_TEXT_NODE
-  } | PACK_SRC="$abs_src" PACK_LIST="$file_list" PACK_OUTPUT="$tmp_packed" node
+  } | PACK_SRC="$abs_src" PACK_LIST="$file_list" PACK_OUTPUT="$tmp_packed" PACK_META_HOST="$pack_host_raw" node
   rm -f "$file_list"
 
   if [ ! -f "$tmp_packed" ]; then
@@ -4382,6 +4458,11 @@ const SUFFIX = ' =====';
  *  stream (e.g. `pack_text 2>&1 | unpack_text`); filtered before parsing. */
 const STATUS_LINE = /^(?:pack_text|unpack_text|view_pack_text):/;
 
+/** META_DATA banner emitted by pack_text at the top of the stream. Extract mode
+ *  treats it as noise (file selection happens entirely via PACK_BEGIN markers).
+ *  View mode preserves it (see captureMetaLine) so provenance stays visible. */
+const META_DATA_LINE = /^===== META_DATA: .* =====$/;
+
 /** Parse the metadata bracket on a BEGIN line into { path, encoding, mode }.
  *  Encoding is the only "bare" token (no '='); everything else is key=val.
  *  mode is parsed as octal. */
@@ -4430,9 +4511,22 @@ function stripStatusNoise(raw) {
       continue;
     }
     if (!inBlock && STATUS_LINE.test(line)) continue;
+    if (!inBlock && META_DATA_LINE.test(line)) continue;
     out.push(line);
   }
   return out.join('\n');
+}
+
+/** Scan the raw stream for the first META_DATA line and return it (or null).
+ *  Used by view mode to re-emit the banner at the top of the view output so
+ *  provenance stays visible AND view output is re-feedable into unpack_text. */
+function captureMetaLine(raw) {
+  const lines = raw.split('\n');
+  for (const line of lines) {
+    if (line.startsWith(BEGIN_PREFIX)) break;  // metadata only valid before any PACK_BEGIN
+    if (META_DATA_LINE.test(line)) return line;
+  }
+  return null;
 }
 
 /** Generator yielding each block as { path, encoding, mode, body }. */
@@ -4482,11 +4576,16 @@ function fmtMeta(meta) {
   return parts.length ? ' [' + parts.join(',') + ']' : '';
 }
 
-const packed = stripStatusNoise(fs.readFileSync(inputFile, 'utf8'));
+const rawInput = fs.readFileSync(inputFile, 'utf8');
+const metaLine = captureMetaLine(rawInput);  // null if pack predates META_DATA support
+const packed = stripStatusNoise(rawInput);
 
 if (viewMode) {
   // VIEW mode — re-emit the pack with text blocks decoded inline. Binary blocks
-  // (decoded buffer has a NUL byte in first 8 KB) pass through unchanged.
+  // (decoded buffer has a NUL byte in first 8 KB) pass through unchanged. The
+  // META_DATA banner (if present) is re-emitted at the top so the view output
+  // keeps its provenance AND remains a valid pack re-feedable into unpack_text.
+  if (metaLine) process.stdout.write(metaLine + '\n');
   for (const block of parseBlocks(packed)) {
     let decoded;
     try { decoded = decodeBlock(block); }
@@ -4638,7 +4737,7 @@ _IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlig
 _FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
 # END Fuzzy Filter Patterns
 # SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
-# software/scripts/bash-fzf.profile.bash | 46ed46baad340d9259753240a051df2a | 20.8 KB | 2026-05-05
+# software/scripts/bash-fzf.profile.bash | 46ed46baad340d9259753240a051df2a | 20.8 KB | 2026-05-06
 # run: bash run.sh --files="fzf.js"
 ################################################################################
 # ---- FZF Fuzzy Finder Integration ----
@@ -5123,7 +5222,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | 50a4eaabbc9f9c8964d1cb931fb44fad | 5.6 KB | 2026-05-05
+# software/scripts/advanced/editor-launchers-common.profile.bash | 50a4eaabbc9f9c8964d1cb931fb44fad | 5.6 KB | 2026-05-06
 # Parallel-array registry populated by `_register_editor` calls in each
 # editor-launchers.js block. Used by `list_editors` for binary-availability triage.
 _REGISTERED_EDITORS=()
@@ -5385,7 +5484,7 @@ function zed() {
 }
 # END Editor Launchers - Zed
 # SOURCE_BEGIN software/scripts/advanced/browser-launchers-common.profile.bash
-# software/scripts/advanced/browser-launchers-common.profile.bash | f2af603cfc35cb9472452ff2d673c559 | 5.9 KB | 2026-05-05
+# software/scripts/advanced/browser-launchers-common.profile.bash | f2af603cfc35cb9472452ff2d673c559 | 5.9 KB | 2026-05-06
 # Common Chromium flags applied by run_browser on every launch.
 # Kept to safe, non-destructive tweaks (no sync/security changes).
 #
@@ -8228,7 +8327,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 754feaac1355283f65803d42a364e326 | 16.3 KB | 2026-05-05
+# software/scripts/bash-command-wrappers.profile.bash | 754feaac1355283f65803d42a364e326 | 16.3 KB | 2026-05-06
 ################################################################################
 # ---- Command Wrappers ----
 #
