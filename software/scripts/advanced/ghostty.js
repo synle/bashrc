@@ -76,12 +76,17 @@ async function _buildConfigContent(isOsMac) {
     theme = light:GitHub Light High Contrast,dark:GitHub Dark High Contrast
 
     # ---- Shell integration ----
-    # Auto-detect bash/zsh/fish; enable sudo askpass integration and dynamic
-    # window title from the shell. Cursor-shape control is intentionally
-    # OMITTED so the shell can't override our \`cursor-style = block\` to a
-    # bar/beam in insert mode.
+    # Auto-detect bash/zsh/fish; enable sudo askpass integration only.
+    # Cursor-shape control is intentionally OMITTED so the shell can't
+    # override our \`cursor-style = block\` to a bar/beam in insert mode.
+    # The 'title' feature is also OMITTED: with it on, Ghostty's auto-
+    # injected shell integration overrides the PROMPT_COMMAND-driven OSC 0
+    # title (set in software/bootstrap/profile-advanced.sh), and the tab
+    # title ends up showing the last-run command name (e.g. "clean",
+    # "open .") instead of the current pwd. With it off, the user's
+    # PROMPT_COMMAND wins and tabs show \`shorter_pwd_path\` (e.g. "~/g/bashrc").
     shell-integration = detect
-    shell-integration-features = sudo,title
+    shell-integration-features = sudo
     # New tabs/splits/windows open in the same cwd as the active pane.
     working-directory = inherit
 
