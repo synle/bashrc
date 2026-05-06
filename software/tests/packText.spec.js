@@ -828,3 +828,136 @@ describe("mtime / btime preservation", () => {
     expect(fs.readFileSync(path.join(dest, "corrupt.txt"), "utf-8")).toBe(body);
   });
 });
+
+/** Forgiving parser — every field in the PACK_BEGIN bracket is optional, and a
+ * malformed value in one slot must not block extraction of the file (or any
+ * other file in the same pack). Tests below cover every per-field failure
+ * mode we can think of: missing keys, garbage values, empty values, missing
+ * brackets, unknown keys, and one mixed pack where a single bad block lives
+ * alongside healthy blocks. */
+describe("forgiving metadata parser (malformed / missing fields)", () => {
+  const zlibLib = require("zlib");
+
+  /** Build a minimal raw pack containing one PACK_BEGIN/PACK_END pair with the
+   * exact bracket text supplied — used to exercise specific malformed shapes. */
+  function buildPack(packPath, fileName, bracket, bodyText) {
+    const b64 = zlibLib.gzipSync(Buffer.from(bodyText)).toString("base64");
+    const wrapped = b64.replace(/(.{76})/g, "$1\n") + (b64.length % 76 === 0 ? "" : "\n");
+    fs.writeFileSync(
+      packPath,
+      `===== PACK_BEGIN: ${fileName}${bracket ? " " + bracket : ""} =====\n${wrapped}===== PACK_END: ${fileName} =====\n`,
+    );
+  }
+
+  beforeEach(() => {
+    fs.mkdirSync(TMP_DIR, { recursive: true });
+  });
+
+  afterEach(() => {
+    fs.rmSync(TMP_DIR, { recursive: true, force: true });
+  });
+
+  it("missing bracket entirely -> file extracts as raw text (no crash)", () => {
+    // No bracket -> encoding/mode/mtime all null, raw-text decode path used.
+    // Note: raw-text decoder strips the single '\n' between body and END
+    // marker so round-trip is byte-exact for files that may or may not
+    // have a trailing newline. Test expectation honors that.
+    const pack = path.join(TMP_DIR, "no_bracket.pack.txt");
+    const body = "Plain text body, no bracket";
+    fs.writeFileSync(
+      pack,
+      `===== PACK_BEGIN: plain.txt =====\n${body}\n===== PACK_END: plain.txt =====\n`,
+    );
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "plain.txt"), "utf-8")).toBe(body);
+  });
+
+  it("bad mode value (e.g. 'mode=abc') -> file extracts, mode just not chmod'd", () => {
+    const pack = path.join(TMP_DIR, "bad_mode.pack.txt");
+    const body = "Body for bad-mode test\n";
+    buildPack(pack, "f.txt", "[gzip+base64,mode=abc]", body);
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    // File must still be extracted with correct content.
+    expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
+  });
+
+  it("missing mode -> file extracts (mode falls back to fs default)", () => {
+    const pack = path.join(TMP_DIR, "no_mode.pack.txt");
+    const body = "Body without mode\n";
+    buildPack(pack, "f.txt", "[gzip+base64]", body);
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
+  });
+
+  it("empty mode value (mode= with nothing) -> file extracts, no crash", () => {
+    const pack = path.join(TMP_DIR, "empty_mode.pack.txt");
+    const body = "Body with empty mode\n";
+    buildPack(pack, "f.txt", "[gzip+base64,mode=]", body);
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
+  });
+
+  it("unknown keys in bracket are silently ignored (forward compat)", () => {
+    const pack = path.join(TMP_DIR, "unknown_keys.pack.txt");
+    const body = "Body with future keys\n";
+    buildPack(pack, "f.txt", "[gzip+base64,mode=0644,future_key=x,owner=alice,perm_v2=rw]", body);
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
+  });
+
+  it("ALL optional fields missing (encoding only) -> works", () => {
+    const pack = path.join(TMP_DIR, "encoding_only.pack.txt");
+    const body = "Body, encoding token only\n";
+    buildPack(pack, "f.txt", "[gzip+base64]", body);
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
+  });
+
+  it("unknown encoding token (e.g. 'lzma+base64') -> that block fails, others continue", () => {
+    // Mixed pack: first block uses unknown encoding (corrupt or future), second
+    // is a normal gzip block. The first must fail with a clear error, the
+    // SECOND must extract normally — no early termination.
+    const pack = path.join(TMP_DIR, "unknown_enc.pack.txt");
+    const okBody = "Healthy block survives\n";
+    const okB64 = zlibLib.gzipSync(Buffer.from(okBody)).toString("base64");
+    const okWrapped = okB64.replace(/(.{76})/g, "$1\n") + (okB64.length % 76 === 0 ? "" : "\n");
+    fs.writeFileSync(
+      pack,
+      "===== PACK_BEGIN: bad.txt [lzma+base64,mode=0644] =====\n" +
+        "garbage_payload\n" +
+        "===== PACK_END: bad.txt =====\n" +
+        "===== PACK_BEGIN: ok.txt [gzip+base64,mode=0644] =====\n" +
+        okWrapped +
+        "===== PACK_END: ok.txt =====\n",
+    );
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    // Healthy block extracted; corrupt block silently skipped (or with stderr).
+    expect(fs.readFileSync(path.join(dest, "ok.txt"), "utf-8")).toBe(okBody);
+    expect(fs.existsSync(path.join(dest, "bad.txt"))).toBe(false);
+  });
+
+  it("garbage bracket value 'mode=-999' (negative) -> rejected, file still extracts", () => {
+    const pack = path.join(TMP_DIR, "neg_mode.pack.txt");
+    const body = "Body with negative mode\n";
+    buildPack(pack, "f.txt", "[gzip+base64,mode=-999]", body);
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
+  });
+
+  it("everything malformed except encoding -> file still extracts", () => {
+    const pack = path.join(TMP_DIR, "all_bad.pack.txt");
+    const body = "Body with only encoding intact\n";
+    buildPack(pack, "f.txt", "[gzip+base64,mode=garbage,mtime=nope,btime=also_nope,extra=ignored]", body);
+    const dest = path.join(TMP_DIR, "out");
+    runBash(`unpack_text "${pack}" "${dest}"`);
+    expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
+  });
+});

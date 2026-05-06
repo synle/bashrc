@@ -1384,8 +1384,19 @@ const META_DATA_LINE = /^===== META_DATA: .* =====$/;
  *  - btime : Date | null (ISO-8601 — creation time / birthtime; informational
  *                         only since no portable syscall to set it on Linux,
  *                         but preserved through view_pack_text re-emission)
- *  Unknown keys are silently ignored — older packs without mtime/btime, or
- *  newer packs with future keys, both stay forward/backward compatible. */
+ *
+ *  PARSING IS DELIBERATELY FORGIVING — every field is optional and every
+ *  field is independently validated. A malformed value for one key never
+ *  blocks parsing of the others, never poisons the meta object, and never
+ *  prevents extraction of the file. Specifically:
+ *    - missing bracket entirely        -> all fields stay null, raw-text decode
+ *    - missing key                     -> field stays null
+ *    - unknown key                     -> silently ignored (forward compat)
+ *    - bad mode value (e.g. 'abc')     -> NaN rejected, mode stays null
+ *    - bad mtime/btime (e.g. 'foo')    -> Date is NaN, field stays null
+ *    - empty value (key= )             -> rejected, field stays null
+ *  All "stays null" outcomes mean the corresponding restore step is simply
+ *  skipped at extract time — no chmodSync(NaN), no utimesSync(InvalidDate). */
 function parseBeginMarker(line) {
   if (!line.startsWith(BEGIN_PREFIX) || !line.endsWith(SUFFIX)) return null;
   const inner = line.slice(BEGIN_PREFIX.length, line.length - SUFFIX.length);
@@ -1400,8 +1411,14 @@ function parseBeginMarker(line) {
       } else {
         const k = part.slice(0, eq).trim();
         const v = part.slice(eq + 1).trim();
-        if (k === 'mode') meta.mode = parseInt(v, 8);
-        else if (k === 'mtime' || k === 'btime') {
+        if (!v) continue;  // empty value -> skip; never assign garbage
+        if (k === 'mode') {
+          const n = parseInt(v, 8);
+          // parseInt returns NaN for non-numeric strings. Without this guard
+          // we'd later call fs.chmodSync(path, NaN), which throws — survivable
+          // via try/catch but noisy. Skipping here keeps the log clean.
+          if (!isNaN(n) && n >= 0) meta.mode = n;
+        } else if (k === 'mtime' || k === 'btime') {
           const d = new Date(v);
           // Reject NaN dates — corrupt timestamp shouldn't poison the extract.
           if (!isNaN(d.getTime())) meta[k] = d;
@@ -1479,7 +1496,19 @@ function* parseBlocks(packed) {
 
 /** Decode a block's body to a Buffer based on its encoding token. Per-block
  *  dispatch means a single pack can legally mix encodings — e.g. an old gzip
- *  pack appended to a fresh brotli pack still extracts cleanly. */
+ *  pack appended to a fresh brotli pack still extracts cleanly.
+ *
+ *  Three paths, in priority order:
+ *    1. Known encoding token  -> decompress with the matching codec.
+ *    2. NO encoding token     -> raw text path. Used by view_pack_text when
+ *                                re-emitting decoded text blocks (the bracket
+ *                                contains only [mode=...,mtime=...] with no
+ *                                bare encoding token), so this is a legitimate
+ *                                input shape, not an error.
+ *    3. Unknown encoding token -> throw. The extract loop catches and emits
+ *                                 'FAIL: <path>: unknown encoding ...' for
+ *                                 that one file but continues with the rest.
+ *                                 Better than silently writing corrupted data. */
 function decodeBlock(block) {
   if (block.encoding === 'gzip+base64') {
     return zlib.gunzipSync(Buffer.from(block.body.replace(/\s/g, ''), 'base64'));
@@ -1490,10 +1519,16 @@ function decodeBlock(block) {
     }
     return zlib.brotliDecompressSync(Buffer.from(block.body.replace(/\s/g, ''), 'base64'));
   }
-  // No encoding token → raw text. Strip the trailing newline emitted between
-  // the body and the END marker so round-trip is byte-exact for raw blocks.
-  const text = block.body.endsWith('\n') ? block.body.slice(0, -1) : block.body;
-  return Buffer.from(text, 'utf8');
+  if (block.encoding === null) {
+    // No encoding token — raw text. Strip the trailing newline emitted between
+    // the body and the END marker so round-trip is byte-exact for raw blocks.
+    const text = block.body.endsWith('\n') ? block.body.slice(0, -1) : block.body;
+    return Buffer.from(text, 'utf8');
+  }
+  // Unknown encoding token — fail this one block loudly with an actionable
+  // message instead of silently writing the un-decoded bytes (which would
+  // produce a corrupt file with no warning). Caught by the extract loop.
+  throw new Error('unknown encoding token: ' + block.encoding);
 }
 
 /** Heuristic: a buffer is "text" if no NUL byte in the first 8 KB. */
