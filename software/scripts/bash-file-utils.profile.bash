@@ -788,19 +788,19 @@ function pack_text() {
          (including hidden dotfiles) — in single-file mode the file is packed
          verbatim with no ignore filtering.
   Default mode: --raw with --encode=brotli (level 6)
-                Output: /tmp/<flat>.<ts>.pack.<host>.txt (and streamed to stdout)
+                Output: /tmp/<host>.<flat>.<ts>.pack.txt (and streamed to stdout)
   Modes (outer container — orthogonal to --encode):
     --raw   [default] every file becomes a [<encoding>+base64,mode=0NNN] block between
                       ===== PACK_BEGIN: <path> ===== / ===== PACK_END: <path> =====
-                      auto-named /tmp/<flat>.<ts>.pack.<host>.txt when no output_file
+                      auto-named /tmp/<host>.<flat>.<ts>.pack.txt when no output_file
                       AND no explicit --raw flag. With explicit --raw and no
                       output_file, writes to stdout only (legacy pipe shortcut).
                       The saved file is always also cat'd to stdout, so
                       'pack_text | unpack_text /tmp/copy' works as a pipe.
     --zip             wraps the raw blob in a .zip archive
-                      auto-named /tmp/<flat>.<ts>.pack.<host>.zip when output_file omitted
+                      auto-named /tmp/<host>.<flat>.<ts>.pack.zip when output_file omitted
     --tar             wraps the raw blob in a .tar.gz archive
-                      auto-named /tmp/<flat>.<ts>.pack.<host>.tar.gz when output_file omitted
+                      auto-named /tmp/<host>.<flat>.<ts>.pack.tar.gz when output_file omitted
   Encoding (inner per-block compression — orthogonal to --raw/--zip/--tar):
     --encode=<algo>          gzip | brotli (default: brotli — better ratio for text/configs)
     --encode-level=N         compression level / quality. Range depends on encoding:
@@ -826,8 +826,9 @@ function pack_text() {
     so the bundle round-trips byte-exact regardless of file content. File mode
     bits (0o777, the chmod permissions) are recorded and restored by unpack_text.
   Provenance:
-    Auto-generated output filenames embed a sanitized hostname before the final
-    extension: <stem>.pack.<host>.txt / .zip / .tar.gz. The host is sourced
+    Auto-generated output filenames lead with a sanitized hostname so `ls`
+    groups backups by machine: <host>.<stem>.pack.txt / .zip / .tar.gz where
+    <stem> = <flat-source-path>.<timestamp>. The host is sourced
     from \$HOSTNAME (fallback: hostname -s, then hostname). Sanitization:
     lowercase, every non-alphanum -> '_', repeated '_' collapsed to one,
     edges trimmed. A single META_DATA banner is emitted at the top of every
@@ -835,8 +836,8 @@ function pack_text() {
     unpack_text strips it as noise; view_pack_text preserves it.
     Explicit output_file arguments are NOT renamed.
   Examples:
-    pack_text                                       # cwd, brotli (default) -> /tmp/<flat>.<ts>.pack.<host>.txt
-    pack_text ~/project                             # project, brotli -> /tmp/<flat>.<ts>.pack.<host>.txt
+    pack_text                                       # cwd, brotli (default) -> /tmp/<host>.<flat>.<ts>.pack.txt
+    pack_text ~/project                             # project, brotli -> /tmp/<host>.<flat>.<ts>.pack.txt
     pack_text ~/.bashrc                             # single hidden file
     pack_text . output.txt                          # explicit output
     pack_text . --encode=gzip                       # gzip blocks (e.g. broader-compat backups)
@@ -846,8 +847,8 @@ function pack_text() {
     pack_text | unpack_text /tmp/copy               # full pipe: pack -> unpack
     pack_text | view_pack_text                      # human-readable view (text decoded inline)
     pack_text . --raw                               # explicit --raw, stdout only
-    pack_text . --zip                               # -> /tmp/<flat>.<ts>.pack.<host>.zip
-    pack_text . --tar                               # -> /tmp/<flat>.<ts>.pack.<host>.tar.gz"
+    pack_text . --zip                               # -> /tmp/<host>.<flat>.<ts>.pack.zip
+    pack_text . --tar                               # -> /tmp/<host>.<flat>.<ts>.pack.tar.gz"
     return
   fi
 
@@ -989,14 +990,14 @@ function pack_text() {
   #   raw       -> auto-file ONLY when --raw was not passed explicitly. Explicit
   #                --raw without output_file keeps the legacy stdout-only
   #                behavior so `pack_text ... --raw | unpack_text` still works.
-  # Sanitized hostname is inserted just before the final extension per the
-  # naming spec: <stem>.pack.<host>.txt (and matching forms for .zip / .tar.gz).
-  # Explicit output_file paths are NOT mutated — only auto-generated ones.
+  # Naming layout: <host>.<stem>.pack.<ext> — host first so `ls /tmp/*.pack.*`
+  # groups all backups by machine, with stem (path + timestamp) ending in
+  # ".pack.<ext>". Explicit output_file paths are NOT mutated.
   if [ -z "$output" ]; then
     case "$mode" in
-    tar) output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.tar.gz" ;;
-    zip) output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.zip" ;;
-    raw) ((mode_explicit)) || output="/tmp/${auto_stem}.pack.${pack_host_sanitized}.txt" ;;
+    tar) output="/tmp/${pack_host_sanitized}.${auto_stem}.pack.tar.gz" ;;
+    zip) output="/tmp/${pack_host_sanitized}.${auto_stem}.pack.zip" ;;
+    raw) ((mode_explicit)) || output="/tmp/${pack_host_sanitized}.${auto_stem}.pack.txt" ;;
     esac
   fi
 
