@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-06]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-07]
 // 
 // VS Code settings.json (drop into <Code>/User/)
 // ################################################################################
@@ -37,7 +37,7 @@
   "editor.matchBrackets": "never",
   "editor.renderLineHighlight": "none",
   "workbench.editor.enablePreview": false,
-  "workbench.startupEditor": "none",
+  "workbench.startupEditor": "terminal",
   "workbench.activityBar.location": "top",
   "window.zoomLevel": 0.5,
   "workbench.tree.renderIndentGuides": "none",
@@ -88,6 +88,7 @@
   "typescript.suggestionActions.enabled": false,
   "terminal.integrated.scrollback": 200000,
   "terminal.integrated.gpuAcceleration": "auto",
+  "terminal.integrated.defaultLocation": "editor",
   "security.workspace.trust.enabled": false,
   "security.workspace.trust.startupPrompt": "never",
   "security.workspace.trust.banner": "never",
