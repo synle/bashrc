@@ -36,7 +36,7 @@
   "editor.matchBrackets": "never", // Don't highlight matching bracket pairs. Values: "always", "near", "never"
   "editor.renderLineHighlight": "none", // Don't highlight the current line — saves GPU draw time. Values: "none", "gutter", "line", "all"
   "workbench.editor.enablePreview": false, // Always open files in a full tab, not a preview tab. Values: true, false
-  "workbench.startupEditor": "none", // Show nothing on startup — no welcome tab or recent files. Values: "none", "welcomePage", "readme", "newUntitledFile", "welcomePageInEmptyWorkbench", "terminal"
+  "workbench.startupEditor": "terminal", // Open a terminal as the default startup tab in the editor area. Values: "none", "welcomePage", "readme", "newUntitledFile", "welcomePageInEmptyWorkbench", "terminal"
   "workbench.activityBar.location": "top", // Move activity bar to top for more horizontal space. Values: "default", "top", "bottom", "hidden"
   "window.zoomLevel": 0.5, // Slight zoom-in for readability. Values: number (-5 to 9)
   "workbench.tree.renderIndentGuides": "none", // Hide indent guides in sidebar trees. Values: "none", "onHover", "always"
