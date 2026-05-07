@@ -1389,9 +1389,24 @@ JXA
     _my=0
     read -r _mw _mh <<< "$(osascript -e 'tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop' -e 'return (sw as string) & " " & (sh as string)' 2> /dev/null)"
   fi
+  # `activate` is non-blocking — Electron apps (VS Code) take a beat to spawn their
+  # first window, so we poll up to ~10s for window 1 of the process to exist before
+  # tiling. Without this, a cold `code .` no-ops because window 1 does not exist yet.
   osascript << APPLESCRIPT 2> /dev/null
 tell application "$app_name" to activate
+tell application "System Events"
+  set deadline to (current date) + 10
+  repeat while (current date) < deadline
+    if exists process "$process_name" then
+      tell process "$process_name"
+        if (count of windows) > 0 then exit repeat
+      end tell
+    end if
+    delay 0.2
+  end repeat
+end tell
 tell application "System Events" to tell process "$process_name"
+  if (count of windows) is 0 then return
   set position of window 1 to {$_mx, $_my}
   set size of window 1 to {$_mw, $_mh}
   set windowCount to count of windows
