@@ -214,6 +214,10 @@
     "command": "workbench.action.terminal.toggleTerminal"
   },
   {
+    "key": "cmd+t",
+    "command": "workbench.action.createTerminalEditor"
+  },
+  {
     "key": "cmd+shift+=",
     "command": "workbench.action.zoomIn"
   },

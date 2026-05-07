@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-07T20:08:25.059Z
+# Generated: 2026-05-07T20:29:10.830Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -2373,16 +2373,23 @@ APPLESCRIPT
 }
 
 ################################################################################
-# ---- Unwrap (heuristic line-rejoin) ----
+# ---- Unwrap (paragraph-block line-rejoin) ----
 # Rejoins terminal-wrapped paragraphs from stdin so copy/paste preserves
 # logical lines instead of the visual wrap. Cross-platform — Claude Code,
 # `less`, `man`, etc. all emit hard `\n`s at the terminal width on every OS,
 # so this lives at the top level (not gated by is_os_*).
 #
-# Heuristic preserves: blank lines, fenced code blocks (``` ... ```),
-# bullet/numbered lists, markdown headings, blockquotes (>),
-# table rows (|), and indented code (>=4 spaces / tab). Everything else
-# is treated as wrapped prose and joined with a single space.
+# Detection is shape-based: text is split into blocks separated by blank
+# lines. A block is treated as "wrapped" only when ALL of these hold:
+#   - all lines except the last are within HEAD_TOLERANCE chars of each other
+#     (terminal wrap is uniform-width by definition)
+#   - the widest "head" line is at least MIN_HEAD_WIDTH (filters short bullet
+#     lists and labels — wrapped prose is always near terminal width)
+#   - the last line is at least LAST_GAP chars shorter than the head
+#     (wrapped paragraphs always end with a partial line)
+# Everything else is preserved as-is — so unevenly-shaped lists, code,
+# tables, ASCII art, and short paragraphs all keep their original line
+# breaks. ``` fenced blocks are always preserved verbatim.
 #
 # Falls back to passthrough (`cat`) when node is unavailable, so callers
 # (notably `copy()`) keep working on minimal systems.
@@ -2394,7 +2401,7 @@ function unwrap() {
         echo \$'foo\\nbar' | unwrap     rejoin a single paragraph
         pbpaste | unwrap | pbcopy      fix the clipboard in place
         u                              short alias for unwrap
-      Preserves blank lines, code fences, lists, headings, tables, blockquotes.
+      Joins only when a block looks uniformly wrapped; preserves everything else.
     "
     return 0
   fi
@@ -2406,20 +2413,48 @@ function unwrap() {
     command cat << 'JS_EOF'
 const text = require('fs').readFileSync(0, 'utf8');
 const FENCE = '\x60\x60\x60';
-const STRUCT_RE = /^(\s*([-*+]|\d+[.)])\s|#{1,6}\s|>\s?|\||\s{4,}|\t)/;
+const HEAD_TOLERANCE = 5;   // head-line widths must agree within this many chars
+const MIN_HEAD_WIDTH = 50;  // ignore short blocks (bullet lists, labels)
+const LAST_GAP = 10;        // last line must be this much shorter than the head
+
 const lines = text.split('\n');
 const out = [];
-let buf = '';
+let block = [];
 let inFence = false;
-const flush = () => { if (buf !== '') { out.push(buf); buf = ''; } };
+
+const flushBlock = () => {
+  if (block.length === 0) return;
+  if (block.length < 2) { out.push(block[0]); block = []; return; }
+  const lens = block.map((l) => l.length);
+  const headLens = lens.slice(0, -1);
+  const lastLen = lens[lens.length - 1];
+  const headMax = Math.max.apply(null, headLens);
+  const headMin = Math.min.apply(null, headLens);
+  const isWrapped =
+    headMax - headMin <= HEAD_TOLERANCE &&
+    headMax >= MIN_HEAD_WIDTH &&
+    headMax - lastLen >= LAST_GAP;
+  if (isWrapped) {
+    out.push(block.map((l) => l.trim()).join(' '));
+  } else {
+    for (const l of block) out.push(l);
+  }
+  block = [];
+};
+
 for (const line of lines) {
-  if (line.trim().slice(0, 3) === FENCE) { flush(); out.push(line); inFence = !inFence; continue; }
-  if (inFence) { flush(); out.push(line); continue; }
-  if (line.trim() === '') { flush(); out.push(''); continue; }
-  if (STRUCT_RE.test(line)) { flush(); buf = line; continue; }
-  buf = buf === '' ? line : buf + ' ' + line.trim();
+  const trimmed = line.trim();
+  if (trimmed.slice(0, 3) === FENCE) {
+    flushBlock();
+    out.push(line);
+    inFence = !inFence;
+    continue;
+  }
+  if (inFence) { out.push(line); continue; }
+  if (trimmed === '') { flushBlock(); out.push(''); continue; }
+  block.push(line);
 }
-flush();
+flushBlock();
 let result = out.join('\n');
 if (text.endsWith('\n') && !result.endsWith('\n')) result += '\n';
 process.stdout.write(result);
@@ -2483,12 +2518,12 @@ function _clipboard_save() {
 function copy() {
   if [ $# -eq 0 ]; then
     # No args + stdin is a TTY (no pipe) → rewrap the existing clipboard in
-    # place. `paste` already unwraps, so this is literally `paste | copy` —
-    # pull clipboard through the unwrap filter and write it back. The recursive
-    # `copy` call hits the pipe branch (stdin not a TTY) and bottoms out at
-    # _clipboard_save, so there is no infinite loop.
+    # place. `paste` is raw by default, so we pass --unwrap explicitly to pull
+    # the clipboard through the unwrap filter, then pipe to copy which writes
+    # it back. The recursive `copy` call hits the pipe branch (stdin not a
+    # TTY) and bottoms out at _clipboard_save — no infinite loop.
     if [ -t 0 ]; then
-      paste | copy
+      paste --unwrap | copy
     else
       _clipboard_save
     fi
@@ -2514,31 +2549,33 @@ function copy() {
 }
 
 # paste: print clipboard, recall from history, or forward to real paste(1)
-# All clipboard/history reads go through unwrap so callers (and the user's
-# eyes) never see terminal-wrapped text. unwrap is idempotent on
-# already-unwrapped input, so this is safe even when copy() unwrapped on save.
+# Default is RAW — clipboard contents are returned verbatim. Pass --unwrap
+# (or pipe through `unwrap` manually) to rejoin terminal-wrapped paragraphs.
 function paste() {
   if [ $# -eq 0 ]; then
     if [ -n "$_PASTE_CMD" ]; then
-      eval "$_PASTE_CMD" | unwrap
+      eval "$_PASTE_CMD"
     else
       local latest
       latest=$(ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -1)
-      [ -n "$latest" ] && command cat "$_CLIPBOARD_DIR/$latest" | unwrap
+      [ -n "$latest" ] && command cat "$_CLIPBOARD_DIR/$latest"
     fi
+  elif [ "$1" = "--unwrap" ]; then
+    paste | unwrap
   elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "
       paste: print clipboard, recall from history, or forward to paste(1)
-        paste                  print clipboard contents (unwrapped) to stdout
+        paste                  print clipboard contents (raw) to stdout
+        paste --unwrap         print clipboard rejoined via unwrap
         paste list             show clipboard history entries
-        paste <entry>          recall a specific entry from history (unwrapped)
+        paste <entry>          recall a specific entry from history (raw)
         paste help             show this help
-        paste file1 file2      forward to /usr/bin/paste (merge lines, no unwrap)
+        paste file1 file2      forward to /usr/bin/paste (merge lines)
     "
   elif [ "$1" = "list" ]; then
     ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -n "$_CLIPBOARD_MAX"
   elif [ -f "$_CLIPBOARD_DIR/$1" ]; then
-    command cat "$_CLIPBOARD_DIR/$1" | unwrap
+    command cat "$_CLIPBOARD_DIR/$1"
   else
     command paste "$@"
   fi

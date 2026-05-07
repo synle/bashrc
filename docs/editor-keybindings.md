@@ -103,16 +103,16 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Tabs & Windows
 
-| Key                | Action               | VS Code | Subl Text | Subl Merge | Zed |        Vim        |
-| ------------------ | -------------------- | :-----: | :-------: | :--------: | :-: | :---------------: |
-| `OS_KEY+t`         | New tab              |   ❌    |    ❌     |     ❌     | ❌  |        ❌         |
-| `OS_KEY+n`         | New file             |   ✅    |    ✅     |     ❌     | ❌  |        ❌         |
-| `OS_KEY+1-9`       | Tab by index         |   ✅    |    ✅     |     ✅     | ❌  |        ❌         |
-| `OS_KEY+shift+[/]` | Prev / next tab      |   ✅    |    ✅     |     ✅     | ❌  |        ❌         |
-| `OS_KEY+w`         | Close tab            |   ✅    |    ✅     |     ✅     | ❌  |        ✅         |
-| `OS_KEY+q`         | Quit                 |   ✅    |    ✅     |     ✅     | ❌  |        ❌         |
-| `OS_KEY+shift+n`   | New window           |   ✅    |    ✅     |     ✅     | ❌  |        ❌         |
-| `F2`               | Rename (symbol/file) |   ✅    |    ❌     |     ❌     | ❌  | ✅ (paste toggle) |
+| Key                | Action               |  VS Code  | Subl Text | Subl Merge | Zed |        Vim        |
+| ------------------ | -------------------- | :-------: | :-------: | :--------: | :-: | :---------------: |
+| `OS_KEY+t`         | New tab              | ✅ (term) |    ❌     |     ❌     | ❌  |        ❌         |
+| `OS_KEY+n`         | New file             |    ✅     |    ✅     |     ❌     | ❌  |        ❌         |
+| `OS_KEY+1-9`       | Tab by index         |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
+| `OS_KEY+shift+[/]` | Prev / next tab      |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
+| `OS_KEY+w`         | Close tab            |    ✅     |    ✅     |     ✅     | ❌  |        ✅         |
+| `OS_KEY+q`         | Quit                 |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
+| `OS_KEY+shift+n`   | New window           |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
+| `F2`               | Rename (symbol/file) |    ✅     |    ❌     |     ❌     | ❌  | ✅ (paste toggle) |
 
 ### Zoom
 
