@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-07T19:47:46.007Z
+# Generated: 2026-05-07T20:10:15.840Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -2349,9 +2349,24 @@ JXA
     _my=0
     read -r _mw _mh <<< "$(osascript -e 'tell application "Finder" to set {_, _, sw, sh} to bounds of window of desktop' -e 'return (sw as string) & " " & (sh as string)' 2> /dev/null)"
   fi
+  # `activate` is non-blocking — Electron apps (VS Code) take a beat to spawn their
+  # first window, so we poll up to ~10s for window 1 of the process to exist before
+  # tiling. Without this, a cold `code .` no-ops because window 1 does not exist yet.
   osascript << APPLESCRIPT 2> /dev/null
 tell application "$app_name" to activate
+tell application "System Events"
+  set deadline to (current date) + 10
+  repeat while (current date) < deadline
+    if exists process "$process_name" then
+      tell process "$process_name"
+        if (count of windows) > 0 then exit repeat
+      end tell
+    end if
+    delay 0.2
+  end repeat
+end tell
 tell application "System Events" to tell process "$process_name"
+  if (count of windows) is 0 then return
   set position of window 1 to {$_mx, $_my}
   set size of window 1 to {$_mw, $_mh}
   set windowCount to count of windows
@@ -2371,6 +2386,62 @@ APPLESCRIPT
 }
 
 ################################################################################
+# ---- Unwrap (heuristic line-rejoin) ----
+# Rejoins terminal-wrapped paragraphs from stdin so copy/paste preserves
+# logical lines instead of the visual wrap. Cross-platform — Claude Code,
+# `less`, `man`, etc. all emit hard `\n`s at the terminal width on every OS,
+# so this lives at the top level (not gated by is_os_*).
+#
+# Heuristic preserves: blank lines, fenced code blocks (``` ... ```),
+# bullet/numbered lists, markdown headings, blockquotes (>),
+# table rows (|), and indented code (>=4 spaces / tab). Everything else
+# is treated as wrapped prose and joined with a single space.
+#
+# Falls back to passthrough (`cat`) when node is unavailable, so callers
+# (notably `copy()`) keep working on minimal systems.
+################################################################################
+function unwrap() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "
+      unwrap: rejoin terminal-wrapped paragraphs from stdin
+        echo \$'foo\\nbar' | unwrap     rejoin a single paragraph
+        pbpaste | unwrap | pbcopy      fix the clipboard in place
+        u                              short alias for unwrap
+      Preserves blank lines, code fences, lists, headings, tables, blockquotes.
+    "
+    return 0
+  fi
+  if ! type -P node &> /dev/null; then
+    command cat
+    return 0
+  fi
+  node -e "$(
+    command cat << 'JS_EOF'
+const text = require('fs').readFileSync(0, 'utf8');
+const FENCE = '\x60\x60\x60';
+const STRUCT_RE = /^(\s*([-*+]|\d+[.)])\s|#{1,6}\s|>\s?|\||\s{4,}|\t)/;
+const lines = text.split('\n');
+const out = [];
+let buf = '';
+let inFence = false;
+const flush = () => { if (buf !== '') { out.push(buf); buf = ''; } };
+for (const line of lines) {
+  if (line.trim().slice(0, 3) === FENCE) { flush(); out.push(line); inFence = !inFence; continue; }
+  if (inFence) { flush(); out.push(line); continue; }
+  if (line.trim() === '') { flush(); out.push(''); continue; }
+  if (STRUCT_RE.test(line)) { flush(); buf = line; continue; }
+  buf = buf === '' ? line : buf + ' ' + line.trim();
+}
+flush();
+let result = out.join('\n');
+if (text.endsWith('\n') && !result.endsWith('\n')) result += '\n';
+process.stdout.write(result);
+JS_EOF
+  )"
+}
+alias u=unwrap
+
+################################################################################
 # ---- Clipboard (copy / paste) ----
 # universal clipboard with graceful fallbacks:
 #   mac: native pbcopy/pbpaste
@@ -2379,6 +2450,8 @@ APPLESCRIPT
 #   x11: xclip -selection clipboard
 #   fallback: folder-only (no native clipboard)
 # all copies are saved to ~/.bash_syle_copies/ (last 10 entries)
+# input is piped through unwrap() first so the clipboard never holds
+# terminal-wrapped paragraphs.
 ################################################################################
 _CLIPBOARD_DIR=~/.bash_syle_copies
 _CLIPBOARD_MAX=10
@@ -2406,10 +2479,13 @@ fi
 function _clipboard_save() {
   local clip_file="$_CLIPBOARD_DIR/$(date +%Y-%m-%d_%H-%M-%S)"
   [ -f "$clip_file" ] && clip_file="${clip_file}_${RANDOM}"
+  # unwrap rejoins terminal-wrapped paragraphs before anything reaches the
+  # OS clipboard or the history file — the user's intent is to copy logical
+  # lines, not the visual wrap that happened to fit the terminal width.
   if [ -n "$_COPY_CMD" ]; then
-    tee "$clip_file" | eval "$_COPY_CMD"
+    unwrap | tee "$clip_file" | eval "$_COPY_CMD"
   else
-    command cat > "$clip_file"
+    unwrap > "$clip_file"
   fi
   ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | tail -n +$((_CLIPBOARD_MAX + 1)) | while read -r f; do
     rm -f "$_CLIPBOARD_DIR/$f"
@@ -2419,10 +2495,20 @@ function _clipboard_save() {
 # copy: stdin or files/strings into clipboard + history
 function copy() {
   if [ $# -eq 0 ]; then
-    _clipboard_save
+    # No args + stdin is a TTY (no pipe) → rewrap the existing clipboard in
+    # place. `paste` already unwraps, so this is literally `paste | copy` —
+    # pull clipboard through the unwrap filter and write it back. The recursive
+    # `copy` call hits the pipe branch (stdin not a TTY) and bottoms out at
+    # _clipboard_save, so there is no infinite loop.
+    if [ -t 0 ]; then
+      paste | copy
+    else
+      _clipboard_save
+    fi
   elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "
       copy: stdin or files/strings into clipboard + history
+        copy                   rewrap the existing clipboard in place (no pipe, no args)
         echo foo | copy        pipe stdin into clipboard
         copy file.txt          copy file contents into clipboard
         copy a.txt b.txt       copy multiple files (concatenated) into clipboard
@@ -2441,28 +2527,31 @@ function copy() {
 }
 
 # paste: print clipboard, recall from history, or forward to real paste(1)
+# All clipboard/history reads go through unwrap so callers (and the user's
+# eyes) never see terminal-wrapped text. unwrap is idempotent on
+# already-unwrapped input, so this is safe even when copy() unwrapped on save.
 function paste() {
   if [ $# -eq 0 ]; then
     if [ -n "$_PASTE_CMD" ]; then
-      eval "$_PASTE_CMD"
+      eval "$_PASTE_CMD" | unwrap
     else
       local latest
       latest=$(ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -1)
-      [ -n "$latest" ] && command cat "$_CLIPBOARD_DIR/$latest"
+      [ -n "$latest" ] && command cat "$_CLIPBOARD_DIR/$latest" | unwrap
     fi
   elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
     echo "
       paste: print clipboard, recall from history, or forward to paste(1)
-        paste                  print clipboard contents to stdout
+        paste                  print clipboard contents (unwrapped) to stdout
         paste list             show clipboard history entries
-        paste <entry>          recall a specific entry from history
+        paste <entry>          recall a specific entry from history (unwrapped)
         paste help             show this help
-        paste file1 file2      forward to /usr/bin/paste (merge lines)
+        paste file1 file2      forward to /usr/bin/paste (merge lines, no unwrap)
     "
   elif [ "$1" = "list" ]; then
     ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | head -n "$_CLIPBOARD_MAX"
   elif [ -f "$_CLIPBOARD_DIR/$1" ]; then
-    command cat "$_CLIPBOARD_DIR/$1"
+    command cat "$_CLIPBOARD_DIR/$1" | unwrap
   else
     command paste "$@"
   fi
