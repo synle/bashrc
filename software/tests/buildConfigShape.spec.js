@@ -347,6 +347,7 @@ describe("build config shape - objects", () => {
         "security.workspace.trust.startupPrompt",
         "security.workspace.trust.untrustedFiles",
         "telemetry.telemetryLevel",
+        "terminal.integrated.defaultLocation",
         "terminal.integrated.defaultProfile.linux",
         "terminal.integrated.defaultProfile.osx",
         "terminal.integrated.enablePersistentSessions",
