@@ -101,6 +101,7 @@
   // --- Terminal & System ---
   "terminal.integrated.scrollback": 200000, // EDITOR_CONFIGS.terminalScrollback
   "terminal.integrated.gpuAcceleration": "auto", // Let VS Code decide whether to use GPU for terminal rendering. Values: "auto", "on", "off"
+  "terminal.integrated.defaultLocation": "editor", // Open new terminals as editor tabs (not in the bottom panel). Values: "editor", "view"
   "security.workspace.trust.enabled": false, // Master kill-switch for workspace trust / restricted mode. Values: true, false
   "security.workspace.trust.startupPrompt": "never", // Never show the trust prompt when opening a folder. Values: "always", "once", "never"
   "security.workspace.trust.banner": "never", // Never show the "Restricted Mode" banner across the top of the window. Values: "always", "untilDismissed", "never"
