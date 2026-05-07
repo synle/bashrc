@@ -164,6 +164,15 @@
     "key": "ctrl+`",
     "command": "workbench.action.terminal.toggleTerminal",
   },
+  // Open a new terminal as an editor tab. Repurposes OS_KEY+t away from the
+  // default `workbench.action.showAllSymbols` ("# go to symbol in workspace"
+  // quickpick), which is rarely useful and shadows the obvious "new tab" muscle
+  // memory from browsers / terminal emulators. createTerminalEditor always opens
+  // in the editor area regardless of `terminal.integrated.defaultLocation`.
+  {
+    "key": "OS_KEY+t",
+    "command": "workbench.action.createTerminalEditor",
+  },
   // for zooming of font and workspace
   {
     "key": "OS_KEY+shift+=",
