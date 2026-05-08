@@ -1,6 +1,7 @@
 /** Tests for shared helpers in *.common.js files (autocomplete.common.js, editor.common.js). */
 import { describe, it, expect } from "vitest";
 import fs from "fs";
+import path from "path";
 import vm from "vm";
 import { getIndexFunction } from "./setup.js";
 
@@ -199,5 +200,101 @@ describe("editor color scheme constants", () => {
     expect(editor._SUBL_PATHS.length).toBeGreaterThan(0);
     expect(editor._SMERGE_PATHS.length).toBeGreaterThan(0);
     expect(editor._CODE_PATHS.length).toBeGreaterThan(0);
+  });
+});
+
+// ---- _getVSCodePaths ----
+
+/**
+ * Loads editor.common.js with a real `findPath` implementation backed by
+ * mocked directory entries, so regex matching is exercised end-to-end.
+ * Returns the sandbox plus a helper to seed `<dir>` -> entry-name mappings.
+ * @param {Record<string, string[]>} dirs - Map of directory path -> list of entry names (all treated as folders).
+ * @param {object} [overrides] - Sandbox overrides forwarded to loadEditorCommon.
+ * @returns {object} Sandbox with editor.common.js loaded.
+ */
+function loadEditorCommonWithDirs(dirs, overrides = {}) {
+  // Treat both the parent dirs and every child entry as existing (folders).
+  const existing = new Set(Object.keys(dirs));
+  for (const [parent, names] of Object.entries(dirs)) {
+    for (const name of names) {
+      existing.add(path.posix.join(parent, name));
+    }
+  }
+  const mockFs = {
+    existsSync: (p) => existing.has(p),
+    readdirSync: (p, opts) => {
+      const names = dirs[p] || [];
+      // Mimic `withFileTypes: true` — every entry is a folder for these tests.
+      if (opts && opts.withFileTypes) {
+        return names.map((name) => ({ name, isDirectory: () => true, isFile: () => false }));
+      }
+      return names;
+    },
+  };
+  // Real findPath uses fs.readdirSync with withFileTypes; replicate the matcher logic.
+  const realFindPath = (srcDir, targetMatch, options = {}) => {
+    const { type = "any" } = options;
+    const matcher = typeof targetMatch === "string" ? (n) => n === targetMatch : (n) => n.match(targetMatch);
+    let entries;
+    try {
+      entries = mockFs.readdirSync(srcDir, { withFileTypes: true });
+    } catch {
+      return null;
+    }
+    for (const entry of entries) {
+      if (matcher(entry.name)) {
+        if (type === "any" || (type === "folder" && entry.isDirectory()) || (type === "file" && entry.isFile())) {
+          return path.posix.join(srcDir, entry.name);
+        }
+      }
+    }
+    return null;
+  };
+  return loadEditorCommon({
+    fs: mockFs,
+    path: path.posix,
+    findPath: realFindPath,
+    ...overrides,
+  });
+}
+
+describe("_getVSCodePaths", () => {
+  it("should not match opencode/ when scanning ~/.config (regression for /Code/i substring match)", () => {
+    // Prior bug: /Code/i substring-matched the unrelated `opencode` directory created by
+    // the opencode CLI, causing VS Code setup to write settings.json into ~/.config/opencode/User
+    // and crash the script. The fix anchors the regex to /^Code( - Insiders)?$/i.
+    const editor = loadEditorCommonWithDirs({
+      "/mock/home/.config": ["opencode", "starship.toml", "Greenshot"],
+    });
+    expect(editor._getVSCodePaths()).toEqual([]);
+  });
+
+  it("should find Code in ~/.config (Linux)", () => {
+    const editor = loadEditorCommonWithDirs({
+      "/mock/home/.config": ["Code", "opencode"],
+    });
+    expect(editor._getVSCodePaths()).toEqual(["/mock/home/.config/Code"]);
+  });
+
+  it("should find Code - Insiders in ~/.config (Linux Insiders build)", () => {
+    const editor = loadEditorCommonWithDirs({
+      "/mock/home/.config": ["Code - Insiders", "opencode"],
+    });
+    expect(editor._getVSCodePaths()).toEqual(["/mock/home/.config/Code - Insiders"]);
+  });
+
+  it("should find Code in macOS Library/Application Support", () => {
+    const editor = loadEditorCommonWithDirs({
+      "/mock/home/Library/Application Support": ["Code", "Sublime Text", "opencode"],
+    });
+    expect(editor._getVSCodePaths()).toEqual(["/mock/home/Library/Application Support/Code"]);
+  });
+
+  it("should not match VSCodium or other Code-suffixed/prefixed folders", () => {
+    const editor = loadEditorCommonWithDirs({
+      "/mock/home/.config": ["VSCodium", "QRCode", "opencode", "code-server"],
+    });
+    expect(editor._getVSCodePaths()).toEqual([]);
   });
 });
