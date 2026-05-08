@@ -347,6 +347,7 @@ describe("build config shape - objects", () => {
         "security.workspace.trust.startupPrompt",
         "security.workspace.trust.untrustedFiles",
         "telemetry.telemetryLevel",
+        "terminal.integrated.commandsToSkipShell",
         "terminal.integrated.defaultLocation",
         "terminal.integrated.defaultProfile.linux",
         "terminal.integrated.defaultProfile.osx",
@@ -564,22 +565,27 @@ describe("build config shape - objects", () => {
         "cursor_blink",
         "ensure_final_newline_on_save",
         "file_scan_exclusions",
+        "format_on_paste",
         "format_on_save",
         "git",
         "gutter",
         "hard_tabs",
         "icon_theme",
         "indent_guides",
+        "inline_completions",
         "linked_edits",
+        "max_tabs",
         "minimap",
         "multi_cursor_modifier",
         "outline_panel",
         "preferred_line_length",
         "project_panel",
         "remove_trailing_whitespace_on_save",
+        "restore_on_startup",
         "scrollbar",
         "search",
         "session",
+        "show_completions_on_input",
         "show_whitespaces",
         "soft_wrap",
         "tab_size",
@@ -746,7 +752,7 @@ describe("build config shape - arrays", () => {
       return;
     }
     const shape = readBuildArrayShape("zed-keys-linux");
-    expect(shape.length).toMatchInlineSnapshot(`1`);
+    expect(shape.length).toMatchInlineSnapshot(`3`);
     expect(shape.firstElementKeys).toMatchInlineSnapshot(`
       [
         "bindings",
