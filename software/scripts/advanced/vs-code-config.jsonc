@@ -120,6 +120,7 @@
   // (does not replace) VS Code's built-in defaults. Values: array of command IDs.
   "terminal.integrated.commandsToSkipShell": [
     "workbench.action.createTerminalEditor", // OS_KEY+t — open a new terminal in an editor tab
+    "workbench.action.closeActiveEditor", // OS_KEY+w — close the active editor (incl. terminal-as-editor tab)
   ],
 
   // --- Theming ---
