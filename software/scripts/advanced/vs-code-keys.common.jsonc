@@ -173,6 +173,25 @@
     "key": "OS_KEY+t",
     "command": "workbench.action.createTerminalEditor",
   },
+  // Insert a literal newline in the terminal command buffer without executing.
+  // Sends Ctrl+V (\u0016 = quoted-insert) + LF (\n), which readline / zsh
+  // interpret as "insert the next byte literally" + LF. Matches the
+  // Slack/Discord-style "shift+enter inserts a newline" feel for multi-line
+  // shell commands. Plain \n would hit accept-line and execute the command.
+  {
+    "key": "ctrl+enter",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0016\n" },
+    "when": "terminalFocus",
+  },
+  // Find within the terminal output. OS_KEY+f is bound globally to
+  // `actions.find` (editor find), so the `terminalFocus` `when` clause
+  // overrides it only when the terminal has focus.
+  {
+    "key": "OS_KEY+f",
+    "command": "workbench.action.terminal.focusFind",
+    "when": "terminalFocus",
+  },
   // for zooming of font and workspace
   {
     "key": "OS_KEY+shift+=",

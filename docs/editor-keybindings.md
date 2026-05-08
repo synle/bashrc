@@ -213,6 +213,17 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+shift+2`     | Search panel   |
 | `` OS_KEY+shift+` `` | Debug panel    |
 
+### Integrated Terminal (VS Code only)
+
+Bindings that fire only when the integrated terminal has focus (`when: "terminalFocus"`).
+
+| Key          | Action                                                      |
+| ------------ | ----------------------------------------------------------- |
+| `OS_KEY+t`   | New terminal as editor tab                                  |
+| `OS_KEY+f`   | Find in terminal output                                     |
+| `ctrl+enter` | Insert a literal newline in the buffer (multi-line command) |
+| `` ctrl+` `` | Toggle terminal panel (also works outside terminal focus)   |
+
 ---
 
 ## Terminal Emulators
