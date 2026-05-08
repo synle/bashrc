@@ -82,9 +82,13 @@ async function _readZedSources() {
 }
 
 /**
- * Substitutes the `OS_KEY` placeholder in every binding key string. Zed uses `cmd` on macOS and
- * `alt` on Windows/Linux (matches the EDITOR_MAC_OS_KEYS mapping in editor.common.js).
- * Zed keymap entries are nested under `bindings`, separator is `-` (not `+`).
+ * Substitutes the `OS_KEY` placeholder in every binding key string and auto-appends a
+ * `context: "Terminal"` entry mirroring every OS-modifier binding so those chords fire
+ * from terminal focus too. Zed's terminal pane consumes `alt-` / `cmd-` chords as Meta
+ * and forwards them to the shell — analogous to VS Code's commandsToSkipShell behavior.
+ * Only bindings from no-context entries are mirrored (those are the workspace-global
+ * bindings the user expects everywhere); entries already scoped to a context are left
+ * alone. Generic so new OS_KEY+X bindings work in terminal focus by default.
  * @param {object[]} keymap - Parsed `zed-keys.common.jsonc`.
  * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
  * @returns {object[]} Resolved keymap ready to write to `keymap.json`.
@@ -92,13 +96,43 @@ async function _readZedSources() {
 function _getZedKeymap(keymap, isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
   const osKey = isMac ? "cmd" : "alt";
-  return keymap.map((entry) => {
+
+  // Step 1: substitute OS_KEY in every binding chord.
+  const resolved = keymap.map((entry) => {
     const out = { ...entry };
     if (entry.bindings && typeof entry.bindings === "object") {
       out.bindings = Object.fromEntries(Object.entries(entry.bindings).map(([k, v]) => [k.replace(/OS_KEY/g, osKey), v]));
     }
     return out;
   });
+
+  // Step 2: collect every OS-modifier binding from no-context entries and mirror them
+  // into a Terminal-context entry. Match the modifier as a whole token (start of chord
+  // or after a `-`) so `cmd-x` and `ctrl-alt-x` match but `command-x` doesn't. Skip any
+  // chord already explicitly bound in a user-defined Terminal-context entry — the user's
+  // binding takes precedence (e.g., `cmd-c` -> `terminal::Copy` in Terminal vs the
+  // `editor::Copy` workspace default).
+  const osModifierRegex = new RegExp(`(?:^|-)${osKey}-`);
+  const explicitTerminalChords = new Set();
+  for (const entry of resolved) {
+    if (entry.context === "Terminal") {
+      Object.keys(entry.bindings || {}).forEach((c) => explicitTerminalChords.add(c));
+    }
+  }
+  const terminalBindings = {};
+  for (const entry of resolved) {
+    if (entry.context) continue;
+    for (const [chord, action] of Object.entries(entry.bindings || {})) {
+      if (osModifierRegex.test(chord) && !explicitTerminalChords.has(chord)) {
+        terminalBindings[chord] = action;
+      }
+    }
+  }
+  if (Object.keys(terminalBindings).length > 0) {
+    resolved.push({ context: "Terminal", bindings: terminalBindings });
+  }
+
+  return resolved;
 }
 
 /**
