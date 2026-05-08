@@ -48,6 +48,17 @@
       // tab navigation — matches VS Code nextEditor/previousEditor + Sublime next_view/prev_view
       "OS_KEY-shift-]": "pane::ActivateNextItem",
       "OS_KEY-shift-[": "pane::ActivatePrevItem",
+      // jump directly to tab by index — matches VS Code `workbench.action.openEditorAtIndex{N}`
+      // (OS_KEY+1..9). Zed uses the tuple form `[action, arg]` for parameterised actions.
+      "OS_KEY-1": ["pane::ActivateItem", 0],
+      "OS_KEY-2": ["pane::ActivateItem", 1],
+      "OS_KEY-3": ["pane::ActivateItem", 2],
+      "OS_KEY-4": ["pane::ActivateItem", 3],
+      "OS_KEY-5": ["pane::ActivateItem", 4],
+      "OS_KEY-6": ["pane::ActivateItem", 5],
+      "OS_KEY-7": ["pane::ActivateItem", 6],
+      "OS_KEY-8": ["pane::ActivateItem", 7],
+      "OS_KEY-9": ["pane::ActivateItem", 8],
       // close active tab — matches VS Code `workbench.action.closeActiveEditor`
       "OS_KEY-w": "pane::CloseActiveItem",
       // open file picker (quick open) — matches VS Code `workbench.action.quickOpen`
