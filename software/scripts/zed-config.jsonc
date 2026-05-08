@@ -13,7 +13,10 @@
   "ensure_final_newline_on_save": true, // Always end files with a newline on save. Values: true, false
   "remove_trailing_whitespace_on_save": true, // Strip trailing whitespace on save. Values: true, false
   "format_on_save": "on", // Auto-format code on save. Values: "on", "off"
+  "format_on_paste": true, // Auto-format code on paste — mirrors VS Code's editor.formatOnPaste. Values: true, false
   "vim_mode": false, // Enable vim keybindings. Values: true, false
+  "inline_completions": { "disabled_globs": ["**/*"] }, // Disable inline AI completions (Zed's analog of VS Code's editor.lightbulb.enabled=off and copilot disable). Values: array of glob patterns where completions are disabled
+  "show_completions_on_input": true, // Auto-trigger completions on typing. Values: true, false
 
   // --- Search ---
   "search": { "include_ignored": false }, // Don't search gitignored files. Values: true, false
@@ -35,6 +38,8 @@
     "close_position": "right", // Position of the tab close button. Values: "left", "right"
     "git_status": false, // Hide git status indicators on tabs. Values: true, false
   },
+  "max_tabs": 10, // Cap concurrent tabs per pane — mirrors VS Code's workbench.editor.limit.value=10. Values: integer
+  "restore_on_startup": "none", // Don't restore the previous session — mirrors VS Code's files.hotExit=off. Values: "last_workspace", "last_session", "none"
 
   // --- Dock positions (override Zed defaults: project_panel="right", agent="left") ---
   // Match VS Code / Sublime convention: file tree on the LEFT, agent/AI on the RIGHT.
@@ -49,6 +54,8 @@
   // --- Terminal ---
   "terminal": {
     "max_scroll_history_lines": 200000, // EDITOR_CONFIGS.terminalScrollback
+    "shell": { "program": "bash" }, // Default to bash — mirrors VS Code's terminal.integrated.defaultProfile.{linux,osx}=bash. Values: { program } or { with_arguments } or "system"
+    "option_as_meta": false, // Send alt-key chords to Zed's keymap instead of the shell as Meta — pairs with the OS_KEY+X auto-mirror in zed.js so chords like alt+\ fire from terminal focus. Values: true, false
   },
 
   // --- Performance & Telemetry ---

@@ -128,20 +128,20 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Text Editing
 
-| Key                | Action                      | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| ------------------ | --------------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+c`         | Copy                        |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+x`         | Cut                         |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+v`         | Paste                       |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+a`         | Select all                  |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
-| `OS_KEY+z`         | Undo                        |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
-| `OS_KEY+y`         | Redo                        |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
-| `OS_KEY+shift+z`   | Redo (alt)                  |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
-| `OS_KEY+s`         | Save                        |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `OS_KEY+shift+s`   | Save all                    |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+l`         | Select line                 |   ✅    |    ❌     |     ❌     | ❌  | ✅  |
-| `OS_KEY+shift+l`   | Multi-cursor line ends      |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `OS_KEY+backspace` | Delete to BOL               |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
+| Key                | Action                 | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ------------------ | ---------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+c`         | Copy                   |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+x`         | Cut                    |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+v`         | Paste                  |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+a`         | Select all             |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+z`         | Undo                   |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
+| `OS_KEY+y`         | Redo                   |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
+| `OS_KEY+shift+z`   | Redo (alt)             |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
+| `OS_KEY+s`         | Save                   |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+shift+s`   | Save all               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+l`         | Select line            |   ✅    |    ❌     |     ❌     | ❌  | ✅  |
+| `OS_KEY+shift+l`   | Multi-cursor line ends |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+backspace` | Delete to BOL          |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
 
 ### Search
 
@@ -166,20 +166,20 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Navigation (cursor movement)
 
-| Key                        | Action                  | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| -------------------------- | ----------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+up`                | Page up                 |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `OS_KEY+down`              | Page down               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `OS_KEY+left`              | Home (BOL)              |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `OS_KEY+right`             | End (EOL)               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
-| `OS_KEY+shift+up`          | Select page up          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+shift+down`        | Select page down        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+shift+left`        | Select to BOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+shift+right`       | Select to EOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+ctrl+up`           | Top of file             |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+ctrl+down`         | Bottom of file          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+ctrl+shift+up`     | Top of file (select)    |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `OS_KEY+ctrl+shift+down`   | Bottom of file (select) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| Key                      | Action                  | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ------------------------ | ----------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+up`              | Page up                 |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+down`            | Page down               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+left`            | Home (BOL)              |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+right`           | End (EOL)               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+shift+up`        | Select page up          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+down`      | Select page down        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+left`      | Select to BOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+right`     | Select to EOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+up`         | Top of file             |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+down`       | Bottom of file          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+shift+up`   | Top of file (select)    |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+shift+down` | Bottom of file (select) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
 
 ### Code Editing
 
