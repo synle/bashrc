@@ -103,84 +103,93 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Tabs & Windows
 
-| Key                | Action               |  VS Code  | Subl Text | Subl Merge | Zed |        Vim        |
-| ------------------ | -------------------- | :-------: | :-------: | :--------: | :-: | :---------------: |
-| `OS_KEY+t`         | New tab              | ✅ (term) |    ❌     |     ❌     | ❌  |        ❌         |
-| `OS_KEY+n`         | New file             |    ✅     |    ✅     |     ❌     | ❌  |        ❌         |
-| `OS_KEY+1-9`       | Tab by index         |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
-| `OS_KEY+shift+[/]` | Prev / next tab      |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
-| `OS_KEY+w`         | Close tab            |    ✅     |    ✅     |     ✅     | ❌  |        ✅         |
-| `OS_KEY+q`         | Quit                 |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
-| `OS_KEY+shift+n`   | New window           |    ✅     |    ✅     |     ✅     | ❌  |        ❌         |
-| `F2`               | Rename (symbol/file) |    ✅     |    ❌     |     ❌     | ❌  | ✅ (paste toggle) |
+| Key                | Action               |  VS Code  | Subl Text | Subl Merge |    Zed    |        Vim        |
+| ------------------ | -------------------- | :-------: | :-------: | :--------: | :-------: | :---------------: |
+| `OS_KEY+t`         | New tab              | ✅ (term) |    ❌     |     ❌     | ✅ (term) |        ❌         |
+| `OS_KEY+n`         | New file             |    ✅     |    ✅     |     ❌     |    ✅     |        ❌         |
+| `OS_KEY+o`         | Open file/folder     |    ❌     |    ❌     |     ❌     |    ✅     |        ❌         |
+| `OS_KEY+ctrl+p`    | Recent projects      |    ✅     |    ✅     |     ❌     |    ✅     |        ❌         |
+| `OS_KEY+1-9`       | Tab by index         |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `OS_KEY+shift+[/]` | Prev / next tab      |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `OS_KEY+w`         | Close tab            |    ✅     |    ✅     |     ✅     |    ✅     |        ✅         |
+| `OS_KEY+q`         | Quit                 |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `OS_KEY+shift+n`   | New window           |    ✅     |    ✅     |     ✅     |    ✅     |        ❌         |
+| `F2`               | Rename (symbol/file) |    ✅     |    ❌     |     ❌     |    ✅     | ✅ (paste toggle) |
 
 ### Zoom
 
 | Key              | Action             | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ---------------- | ------------------ | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+=`       | Font zoom in       |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+-`       | Font zoom out      |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+0`       | Reset font zoom    |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+shift+=` | Workspace zoom in  |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
-| `OS_KEY+shift+-` | Workspace zoom out |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
+| `OS_KEY+=`       | Font zoom in       |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+-`       | Font zoom out      |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+0`       | Reset font zoom    |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+shift+=` | Workspace zoom in  |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+-` | Workspace zoom out |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
 
 ### Text Editing
 
-| Key                | Action        | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| ------------------ | ------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+c`         | Copy          |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+x`         | Cut           |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+v`         | Paste         |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+a`         | Select all    |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+z`         | Undo          |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
-| `OS_KEY+y`         | Redo          |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
-| `OS_KEY+shift+z`   | Redo (alt)    |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
-| `OS_KEY+s`         | Save          |   ✅    |    ✅     |     ❌     | ❌  | ✅  |
-| `OS_KEY+shift+s`   | Save all      |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+l`         | Select line   |   ✅    |    ❌     |     ❌     | ❌  | ✅  |
-| `OS_KEY+backspace` | Delete to BOL |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
+| Key                | Action                      | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ------------------ | --------------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+c`         | Copy                        |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+x`         | Cut                         |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+v`         | Paste                       |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+a`         | Select all                  |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+z`         | Undo                        |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
+| `OS_KEY+y`         | Redo                        |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
+| `OS_KEY+shift+z`   | Redo (alt)                  |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
+| `OS_KEY+s`         | Save                        |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+shift+s`   | Save all                    |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+l`         | Select line                 |   ✅    |    ❌     |     ❌     | ❌  | ✅  |
+| `OS_KEY+shift+l`   | Multi-cursor line ends      |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+backspace` | Delete to BOL               |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
 
 ### Search
 
-| Key              | Action            | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| ---------------- | ----------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+f`       | Find              |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+shift+f` | Find in files     |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+h`       | Find and replace  |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+g`       | Find next         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+shift+g` | Find prev         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+d`       | Select next match |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+p`       | Quick open / file |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+shift+p` | Command palette   |   ✅    |    ✅     |     ✅     | ❌  | ❌  |
-| `OS_KEY+;`       | Goto line         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+r`       | Goto symbol       |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+enter`   | Goto definition   |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `ctrl+m`         | Jump to bracket   |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| Key              | Action                  | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| ---------------- | ----------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+f`       | Find                    |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+shift+f` | Find in files           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+h`       | Find and replace        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+h` | Replace in files        |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+g`       | Find next               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+g` | Find prev               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+d`       | Select next match       |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+g`  | Select all matches      |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+p`       | Quick open / file       |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+shift+p` | Command palette         |   ✅    |    ✅     |     ✅     | ✅  | ❌  |
+| `OS_KEY+;`       | Goto line               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+r`       | Goto symbol             |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+'` | Goto symbol (workspace) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+enter`   | Goto definition         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `shift+enter`    | Find references         |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `ctrl+m`         | Jump to bracket         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
 
 ### Navigation (cursor movement)
 
-| Key                  | Action           | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| -------------------- | ---------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+up`          | Page up          |   ✅    |    ✅     |     ❌     | ❌  | ✅  |
-| `OS_KEY+down`        | Page down        |   ✅    |    ✅     |     ❌     | ❌  | ✅  |
-| `OS_KEY+left`        | Home (BOL)       |   ✅    |    ✅     |     ❌     | ❌  | ✅  |
-| `OS_KEY+right`       | End (EOL)        |   ✅    |    ✅     |     ❌     | ❌  | ✅  |
-| `OS_KEY+shift+up`    | Select page up   |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+shift+down`  | Select page down |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+shift+left`  | Select to BOL    |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+shift+right` | Select to EOL    |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+ctrl+up`     | Top of file      |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+ctrl+down`   | Bottom of file   |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| Key                        | Action                  | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| -------------------------- | ----------------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+up`                | Page up                 |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+down`              | Page down               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+left`              | Home (BOL)              |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+right`             | End (EOL)               |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `OS_KEY+shift+up`          | Select page up          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+down`        | Select page down        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+left`        | Select to BOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+right`       | Select to EOL           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+up`           | Top of file             |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+down`         | Bottom of file          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+shift+up`     | Top of file (select)    |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `OS_KEY+ctrl+shift+down`   | Bottom of file (select) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
 
 ### Code Editing
 
 | Key        | Action         | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ---------- | -------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+/` | Toggle comment |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+[` | Outdent        |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+]` | Indent         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+,` | Fold           |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+.` | Unfold         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| `OS_KEY+/` | Toggle comment |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+[` | Outdent        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+]` | Indent         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+,` | Fold           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+.` | Unfold         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 
 ### Editor UI
 
