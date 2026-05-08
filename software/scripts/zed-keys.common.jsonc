@@ -1,5 +1,13 @@
 // Zed user keymap. OS_KEY = `cmd` on macOS, `alt` on Windows/Linux.
 // Zed keymap separator is `-` (per CLAUDE.md). Resolved by zed.js.
+// zed.js also auto-appends a `context: "Terminal"` entry mirroring every
+// OS-modifier binding from this no-context entry, so OS_KEY+X chords fire
+// from terminal focus too — the terminal pane otherwise consumes alt-/cmd-
+// chords as Meta and forwards them to the shell. Add new bindings here
+// (no-context block) and they get the terminal-mirror treatment for free.
+// Bindings are mirrored from vs-code-keys.common.jsonc + vs-code-keys.windows.jsonc
+// (per-action equivalents in the Zed `editor::*` / `workspace::*` / `pane::*` /
+// `zed::*` action namespaces) so muscle memory stays consistent across editors.
 [
   {
     "bindings": {
@@ -12,6 +20,7 @@
       // The PHYSICAL chord is unchanged — on a US keyboard `cmd+shift+\` and
       // `cmd+|` are the same keypress.
 
+      // ---- Sidebar / panels ----
       // toggle the left dock (project panel / file tree) — matches Sublime's
       // `toggle_side_bar` and VS Code's `workbench.action.toggleSidebarVisibility`
       "OS_KEY-\\": "workspace::ToggleLeftDock",
@@ -30,6 +39,99 @@
       // filesystem (no manual refresh action exists in `project_panel::*`),
       // so reverting the buffer is enough — the tree updates on its own.
       "f5": "workspace::ReloadActiveItem",
+
+      // ---- Tabs / panes / windows ----
+      // new file tab — matches VS Code `workbench.action.files.newUntitledFile` / Sublime `new_file`
+      "OS_KEY-n": "workspace::NewFile",
+      // new window — matches VS Code `workbench.action.newWindow`
+      "OS_KEY-shift-n": "workspace::NewWindow",
+      // tab navigation — matches VS Code nextEditor/previousEditor + Sublime next_view/prev_view
+      "OS_KEY-shift-]": "pane::ActivateNextItem",
+      "OS_KEY-shift-[": "pane::ActivatePrevItem",
+      // close active tab — matches VS Code `workbench.action.closeActiveEditor`
+      "OS_KEY-w": "pane::CloseActiveItem",
+      // open file picker (quick open) — matches VS Code `workbench.action.quickOpen`
+      "OS_KEY-p": "file_finder::Toggle",
+      // command palette — matches VS Code `workbench.action.showCommands`
+      "OS_KEY-shift-p": "command_palette::Toggle",
+
+      // ---- File operations ----
+      // save / save all — matches VS Code `workbench.action.files.save{,All}`
+      "OS_KEY-s": "workspace::Save",
+      "OS_KEY-shift-s": "workspace::SaveAll",
+
+      // ---- Editing ----
+      // select all — matches VS Code `editor.action.selectAll`
+      "OS_KEY-a": "editor::SelectAll",
+      // copy / paste / cut. Auto-mirrored to Terminal context by zed.js, but the
+      // explicit Terminal-context block below overrides copy/paste with terminal::*
+      // because editor::* actions are no-ops in the terminal pane.
+      "OS_KEY-c": "editor::Copy",
+      "OS_KEY-v": "editor::Paste",
+      "OS_KEY-x": "editor::Cut",
+      // undo / redo — matches VS Code alt+z, alt+shift+z, alt+y
+      "OS_KEY-z": "editor::Undo",
+      "OS_KEY-shift-z": "editor::Redo",
+      "OS_KEY-y": "editor::Redo",
+      // toggle line comment — matches VS Code `editor.action.commentLine`
+      "OS_KEY-/": "editor::ToggleComments",
+      // indent / outdent — matches VS Code `editor.action.{indent,outdent}Lines`
+      "OS_KEY-]": "editor::Indent",
+      "OS_KEY-[": "editor::Outdent",
+      // add selection to next find match — matches VS Code `editor.action.addSelectionToNextFindMatch`
+      "OS_KEY-d": "editor::SelectNext",
+
+      // ---- Find / search ----
+      // find in buffer — matches VS Code `actions.find`
+      "OS_KEY-f": "buffer_search::Deploy",
+      // find next / previous (after deploy) — matches VS Code's move-selection-to-next/prev-find-match
+      "OS_KEY-g": "search::SelectNextMatch",
+      "OS_KEY-shift-g": "search::SelectPrevMatch",
+      // replace in buffer — matches VS Code `editor.action.startFindReplaceAction`
+      "OS_KEY-h": "buffer_search::DeployReplace",
+      // find / replace across project — matches VS Code findInFiles / replaceInFiles
+      "OS_KEY-shift-f": "workspace::NewSearch",
+      "OS_KEY-shift-h": "workspace::NewSearch",
+
+      // ---- Navigation ----
+      // go to line — matches VS Code `workbench.action.gotoLine`
+      "OS_KEY-;": "go_to_line::Toggle",
+      // go to symbol in file — matches VS Code `workbench.action.gotoSymbol`
+      "OS_KEY-r": "outline::Toggle",
+      // go to symbol across project — matches VS Code `workbench.action.showAllSymbols`
+      "OS_KEY-shift-'": "project_symbols::Toggle",
+      // go to definition — matches VS Code `editor.action.revealDefinition`
+      "OS_KEY-enter": "editor::GoToDefinition",
+      // find references — matches VS Code `editor.action.goToReferences`
+      "shift-enter": "editor::FindAllReferences",
+
+      // ---- Folding ----
+      // fold / unfold — matches VS Code `editor.{fold,unfold}`
+      "OS_KEY-,": "editor::Fold",
+      "OS_KEY-.": "editor::UnfoldLines",
+
+      // ---- Zoom ----
+      // buffer (editor) font zoom — matches VS Code `editor.action.fontZoom{In,Out,Reset}`
+      "OS_KEY-=": "zed::IncreaseBufferFontSize",
+      "OS_KEY--": "zed::DecreaseBufferFontSize",
+      "OS_KEY-0": "zed::ResetBufferFontSize",
+      // UI font zoom — matches VS Code `workbench.action.zoom{In,Out}`
+      "OS_KEY-shift-=": "zed::IncreaseUiFontSize",
+      "OS_KEY-shift--": "zed::DecreaseUiFontSize",
+
+      // ---- Rename (F2 across all editors) ----
+      "f2": "editor::Rename",
+    },
+  },
+  {
+    // Terminal-focus overrides: copy/paste must use terminal::* actions because
+    // editor::Copy / editor::Paste are no-ops in the terminal pane. The auto-mirror
+    // in zed.js detects an explicit Terminal-context binding for a chord and skips
+    // mirroring the editor::* version on top of it.
+    "context": "Terminal",
+    "bindings": {
+      "OS_KEY-c": "terminal::Copy",
+      "OS_KEY-v": "terminal::Paste",
     },
   },
 ]
