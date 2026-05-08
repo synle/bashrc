@@ -61,10 +61,19 @@
       "OS_KEY-9": ["pane::ActivateItem", 8],
       // close active tab — matches VS Code `workbench.action.closeActiveEditor`
       "OS_KEY-w": "pane::CloseActiveItem",
+      // close window / quit — matches VS Code `workbench.action.closeWindow` (alt+q)
+      "OS_KEY-q": "zed::Quit",
       // open file picker (quick open) — matches VS Code `workbench.action.quickOpen`
       "OS_KEY-p": "file_finder::Toggle",
       // command palette — matches VS Code `workbench.action.showCommands`
       "OS_KEY-shift-p": "command_palette::Toggle",
+      // open file/folder dialog — matches VS Code `workbench.action.files.openFile` (alt+o)
+      "OS_KEY-o": "workspace::Open",
+      // open recent project/workspace — matches VS Code `workbench.action.openWorkspace`
+      // (OS_KEY+ctrl+p). Zed exposes the recent-projects picker via the recent_projects module.
+      "OS_KEY-ctrl-p": "projects::OpenRecent",
+      // open new terminal in editor area — matches VS Code `createTerminalEditor` (alt+t)
+      "OS_KEY-t": "workspace::NewCenterTerminal",
 
       // ---- File operations ----
       // save / save all — matches VS Code `workbench.action.files.save{,All}`
@@ -91,6 +100,9 @@
       "OS_KEY-[": "editor::Outdent",
       // add selection to next find match — matches VS Code `editor.action.addSelectionToNextFindMatch`
       "OS_KEY-d": "editor::SelectNext",
+      // select all occurrences of the highlighted word — matches VS Code
+      // `editor.action.selectHighlights` (OS_KEY+ctrl+g).
+      "OS_KEY-ctrl-g": "editor::SelectAllMatches",
 
       // ---- Find / search ----
       // find in buffer — matches VS Code `actions.find`
