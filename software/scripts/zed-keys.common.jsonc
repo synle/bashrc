@@ -105,6 +105,34 @@
       // find references — matches VS Code `editor.action.goToReferences`
       "shift-enter": "editor::FindAllReferences",
 
+      // ---- Cursor movement (mirrors VS Code's Windows alt+arrow set) ----
+      // page up / down — matches VS Code `cursorPage{Up,Down}` (alt+up / alt+down)
+      "OS_KEY-up": "editor::MovePageUp",
+      "OS_KEY-down": "editor::MovePageDown",
+      // page up / down with selection — matches VS Code `cursorPage{Up,Down}Select`
+      "OS_KEY-shift-up": "editor::SelectPageUp",
+      "OS_KEY-shift-down": "editor::SelectPageDown",
+      // line home / end — matches VS Code `cursor{Home,End}` (alt+left / alt+right)
+      "OS_KEY-left": "editor::MoveToBeginningOfLine",
+      "OS_KEY-right": "editor::MoveToEndOfLine",
+      // line home / end with selection — matches VS Code `cursor{Home,End}Select`
+      "OS_KEY-shift-left": "editor::SelectToBeginningOfLine",
+      "OS_KEY-shift-right": "editor::SelectToEndOfLine",
+      // file top / bottom — matches VS Code `cursor{Top,Bottom}` (alt+ctrl+up/down/left/right)
+      "OS_KEY-ctrl-up": "editor::MoveToBeginning",
+      "OS_KEY-ctrl-left": "editor::MoveToBeginning",
+      "OS_KEY-ctrl-down": "editor::MoveToEnd",
+      "OS_KEY-ctrl-right": "editor::MoveToEnd",
+      // file top / bottom with selection — matches VS Code `cursor{Top,Bottom}Select`
+      "OS_KEY-ctrl-shift-up": "editor::SelectToBeginning",
+      "OS_KEY-ctrl-shift-left": "editor::SelectToBeginning",
+      "OS_KEY-ctrl-shift-down": "editor::SelectToEnd",
+      "OS_KEY-ctrl-shift-right": "editor::SelectToEnd",
+      // multi-cursor at end of every selected line — matches VS Code's
+      // `editor.action.insertCursorAtEndOfEachLineSelected` (OS_KEY+shift+l).
+      // Zed calls this `editor::SplitSelectionIntoLines`.
+      "OS_KEY-shift-l": "editor::SplitSelectionIntoLines",
+
       // ---- Folding ----
       // fold / unfold — matches VS Code `editor.{fold,unfold}`
       "OS_KEY-,": "editor::Fold",
