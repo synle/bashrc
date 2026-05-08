@@ -159,7 +159,9 @@ function _getVSCodePaths() {
     if (!root || !fs.existsSync(root)) return;
 
     try {
-      const foundAppPath = findPath(root, /Code/i, { type: "folder" });
+      // Anchor to VS Code's actual directory names ("Code", "Code - Insiders").
+      // A bare /Code/i would substring-match unrelated folders like "opencode".
+      const foundAppPath = findPath(root, /^Code( - Insiders)?$/i, { type: "folder" });
 
       if (foundAppPath && fs.existsSync(foundAppPath)) {
         const absolutePath = path.resolve(foundAppPath);
