@@ -114,6 +114,13 @@
   "terminal.integrated.enablePersistentSessions": false, // Don't restore terminal sessions on restart. Values: true, false
   "terminal.integrated.defaultProfile.linux": "bash", // Use bash as default terminal shell on Linux. Values: any installed shell name
   "terminal.integrated.defaultProfile.osx": "bash", // Use bash as default terminal shell on macOS. Values: any installed shell name
+  // Bypass the shell for chords that should always trigger VS Code commands, even when the terminal
+  // has focus. Without this, the terminal swallows alt+t / cmd+t and sends it to the shell as an
+  // escape sequence instead of running `workbench.action.createTerminalEditor`. The list extends
+  // (does not replace) VS Code's built-in defaults. Values: array of command IDs.
+  "terminal.integrated.commandsToSkipShell": [
+    "workbench.action.createTerminalEditor", // OS_KEY+t — open a new terminal in an editor tab
+  ],
 
   // --- Theming ---
   "window.autoDetectColorScheme": true, // Follow the OS light/dark mode preference. Values: true, false
