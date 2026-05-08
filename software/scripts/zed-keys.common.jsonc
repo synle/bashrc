@@ -155,6 +155,23 @@
       // `editor.action.insertCursorAtEndOfEachLineSelected` (OS_KEY+shift+l).
       // Zed calls this `editor::SplitSelectionIntoLines`.
       "OS_KEY-shift-l": "editor::SplitSelectionIntoLines",
+      // expand selection to the whole line — matches VS Code's `expandLineSelection` (OS_KEY+l)
+      "OS_KEY-l": "editor::SelectLine",
+      // delete from cursor to beginning of line — matches VS Code's `deleteAllLeft` (OS_KEY+backspace)
+      "OS_KEY-backspace": "editor::DeleteToBeginningOfLine",
+      // jump to matching bracket — matches VS Code/Sublime `editor.action.jumpToBracket` (ctrl+m)
+      "ctrl-m": "editor::GoToEnclosingBracket",
+
+      // ---- Editor splits / pane layout ----
+      // split the current pane to the right / down — matches VS Code's `splitEditor` /
+      // `splitEditorDown` (ctrl+d / ctrl+'). Zed actions: pane::SplitRight / pane::SplitDown.
+      "ctrl-d": "pane::SplitRight",
+      "ctrl-'": "pane::SplitDown",
+      // alt chord for split-down — matches VS Code's alt+shift+d
+      "OS_KEY-shift-d": "pane::SplitDown",
+      // close the active pane (collapses splits back to single column) — matches VS Code
+      // `editorLayoutSingle` (ctrl+w). Zed: pane::CloseAllItems.
+      "ctrl-w": "pane::CloseAllItems",
 
       // ---- Folding ----
       // fold / unfold — matches VS Code `editor.{fold,unfold}`

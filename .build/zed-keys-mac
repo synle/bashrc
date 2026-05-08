@@ -11,7 +11,222 @@
       "cmd-|": "workspace::ToggleRightDock",
       "ctrl-cmd-|": "editor::ToggleSoftWrap",
       "ctrl-`": "terminal_panel::Toggle",
-      "f5": "workspace::ReloadActiveItem"
+      "f5": "workspace::ReloadActiveItem",
+      "cmd-n": "workspace::NewFile",
+      "cmd-shift-n": "workspace::NewWindow",
+      "cmd-shift-]": "pane::ActivateNextItem",
+      "cmd-shift-[": "pane::ActivatePrevItem",
+      "cmd-1": [
+        "pane::ActivateItem",
+        0
+      ],
+      "cmd-2": [
+        "pane::ActivateItem",
+        1
+      ],
+      "cmd-3": [
+        "pane::ActivateItem",
+        2
+      ],
+      "cmd-4": [
+        "pane::ActivateItem",
+        3
+      ],
+      "cmd-5": [
+        "pane::ActivateItem",
+        4
+      ],
+      "cmd-6": [
+        "pane::ActivateItem",
+        5
+      ],
+      "cmd-7": [
+        "pane::ActivateItem",
+        6
+      ],
+      "cmd-8": [
+        "pane::ActivateItem",
+        7
+      ],
+      "cmd-9": [
+        "pane::ActivateItem",
+        8
+      ],
+      "cmd-w": "pane::CloseActiveItem",
+      "cmd-q": "zed::Quit",
+      "cmd-p": "file_finder::Toggle",
+      "cmd-shift-p": "command_palette::Toggle",
+      "cmd-o": "workspace::Open",
+      "cmd-ctrl-p": "projects::OpenRecent",
+      "cmd-t": "workspace::NewCenterTerminal",
+      "cmd-s": "workspace::Save",
+      "cmd-shift-s": "workspace::SaveAll",
+      "cmd-a": "editor::SelectAll",
+      "cmd-c": "editor::Copy",
+      "cmd-v": "editor::Paste",
+      "cmd-x": "editor::Cut",
+      "cmd-z": "editor::Undo",
+      "cmd-shift-z": "editor::Redo",
+      "cmd-y": "editor::Redo",
+      "cmd-/": "editor::ToggleComments",
+      "cmd-]": "editor::Indent",
+      "cmd-[": "editor::Outdent",
+      "cmd-d": "editor::SelectNext",
+      "cmd-ctrl-g": "editor::SelectAllMatches",
+      "cmd-f": "buffer_search::Deploy",
+      "cmd-g": "search::SelectNextMatch",
+      "cmd-shift-g": "search::SelectPrevMatch",
+      "cmd-h": "buffer_search::DeployReplace",
+      "cmd-shift-f": "workspace::NewSearch",
+      "cmd-shift-h": "workspace::NewSearch",
+      "cmd-;": "go_to_line::Toggle",
+      "cmd-r": "outline::Toggle",
+      "cmd-shift-'": "project_symbols::Toggle",
+      "cmd-enter": "editor::GoToDefinition",
+      "shift-enter": "editor::FindAllReferences",
+      "cmd-up": "editor::MovePageUp",
+      "cmd-down": "editor::MovePageDown",
+      "cmd-shift-up": "editor::SelectPageUp",
+      "cmd-shift-down": "editor::SelectPageDown",
+      "cmd-left": "editor::MoveToBeginningOfLine",
+      "cmd-right": "editor::MoveToEndOfLine",
+      "cmd-shift-left": "editor::SelectToBeginningOfLine",
+      "cmd-shift-right": "editor::SelectToEndOfLine",
+      "cmd-ctrl-up": "editor::MoveToBeginning",
+      "cmd-ctrl-left": "editor::MoveToBeginning",
+      "cmd-ctrl-down": "editor::MoveToEnd",
+      "cmd-ctrl-right": "editor::MoveToEnd",
+      "cmd-ctrl-shift-up": "editor::SelectToBeginning",
+      "cmd-ctrl-shift-left": "editor::SelectToBeginning",
+      "cmd-ctrl-shift-down": "editor::SelectToEnd",
+      "cmd-ctrl-shift-right": "editor::SelectToEnd",
+      "cmd-shift-l": "editor::SplitSelectionIntoLines",
+      "cmd-l": "editor::SelectLine",
+      "cmd-backspace": "editor::DeleteToBeginningOfLine",
+      "ctrl-m": "editor::GoToEnclosingBracket",
+      "ctrl-d": "pane::SplitRight",
+      "ctrl-'": "pane::SplitDown",
+      "cmd-shift-d": "pane::SplitDown",
+      "ctrl-w": "pane::CloseAllItems",
+      "cmd-,": "editor::Fold",
+      "cmd-.": "editor::UnfoldLines",
+      "cmd-=": "zed::IncreaseBufferFontSize",
+      "cmd--": "zed::DecreaseBufferFontSize",
+      "cmd-0": "zed::ResetBufferFontSize",
+      "cmd-shift-=": "zed::IncreaseUiFontSize",
+      "cmd-shift--": "zed::DecreaseUiFontSize",
+      "f2": "editor::Rename"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "cmd-c": "terminal::Copy",
+      "cmd-v": "terminal::Paste"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "cmd-\\": "workspace::ToggleLeftDock",
+      "cmd-|": "workspace::ToggleRightDock",
+      "ctrl-cmd-|": "editor::ToggleSoftWrap",
+      "cmd-n": "workspace::NewFile",
+      "cmd-shift-n": "workspace::NewWindow",
+      "cmd-shift-]": "pane::ActivateNextItem",
+      "cmd-shift-[": "pane::ActivatePrevItem",
+      "cmd-1": [
+        "pane::ActivateItem",
+        0
+      ],
+      "cmd-2": [
+        "pane::ActivateItem",
+        1
+      ],
+      "cmd-3": [
+        "pane::ActivateItem",
+        2
+      ],
+      "cmd-4": [
+        "pane::ActivateItem",
+        3
+      ],
+      "cmd-5": [
+        "pane::ActivateItem",
+        4
+      ],
+      "cmd-6": [
+        "pane::ActivateItem",
+        5
+      ],
+      "cmd-7": [
+        "pane::ActivateItem",
+        6
+      ],
+      "cmd-8": [
+        "pane::ActivateItem",
+        7
+      ],
+      "cmd-9": [
+        "pane::ActivateItem",
+        8
+      ],
+      "cmd-w": "pane::CloseActiveItem",
+      "cmd-q": "zed::Quit",
+      "cmd-p": "file_finder::Toggle",
+      "cmd-shift-p": "command_palette::Toggle",
+      "cmd-o": "workspace::Open",
+      "cmd-ctrl-p": "projects::OpenRecent",
+      "cmd-t": "workspace::NewCenterTerminal",
+      "cmd-s": "workspace::Save",
+      "cmd-shift-s": "workspace::SaveAll",
+      "cmd-a": "editor::SelectAll",
+      "cmd-x": "editor::Cut",
+      "cmd-z": "editor::Undo",
+      "cmd-shift-z": "editor::Redo",
+      "cmd-y": "editor::Redo",
+      "cmd-/": "editor::ToggleComments",
+      "cmd-]": "editor::Indent",
+      "cmd-[": "editor::Outdent",
+      "cmd-d": "editor::SelectNext",
+      "cmd-ctrl-g": "editor::SelectAllMatches",
+      "cmd-f": "buffer_search::Deploy",
+      "cmd-g": "search::SelectNextMatch",
+      "cmd-shift-g": "search::SelectPrevMatch",
+      "cmd-h": "buffer_search::DeployReplace",
+      "cmd-shift-f": "workspace::NewSearch",
+      "cmd-shift-h": "workspace::NewSearch",
+      "cmd-;": "go_to_line::Toggle",
+      "cmd-r": "outline::Toggle",
+      "cmd-shift-'": "project_symbols::Toggle",
+      "cmd-enter": "editor::GoToDefinition",
+      "cmd-up": "editor::MovePageUp",
+      "cmd-down": "editor::MovePageDown",
+      "cmd-shift-up": "editor::SelectPageUp",
+      "cmd-shift-down": "editor::SelectPageDown",
+      "cmd-left": "editor::MoveToBeginningOfLine",
+      "cmd-right": "editor::MoveToEndOfLine",
+      "cmd-shift-left": "editor::SelectToBeginningOfLine",
+      "cmd-shift-right": "editor::SelectToEndOfLine",
+      "cmd-ctrl-up": "editor::MoveToBeginning",
+      "cmd-ctrl-left": "editor::MoveToBeginning",
+      "cmd-ctrl-down": "editor::MoveToEnd",
+      "cmd-ctrl-right": "editor::MoveToEnd",
+      "cmd-ctrl-shift-up": "editor::SelectToBeginning",
+      "cmd-ctrl-shift-left": "editor::SelectToBeginning",
+      "cmd-ctrl-shift-down": "editor::SelectToEnd",
+      "cmd-ctrl-shift-right": "editor::SelectToEnd",
+      "cmd-shift-l": "editor::SplitSelectionIntoLines",
+      "cmd-l": "editor::SelectLine",
+      "cmd-backspace": "editor::DeleteToBeginningOfLine",
+      "cmd-shift-d": "pane::SplitDown",
+      "cmd-,": "editor::Fold",
+      "cmd-.": "editor::UnfoldLines",
+      "cmd-=": "zed::IncreaseBufferFontSize",
+      "cmd--": "zed::DecreaseBufferFontSize",
+      "cmd-0": "zed::ResetBufferFontSize",
+      "cmd-shift-=": "zed::IncreaseUiFontSize",
+      "cmd-shift--": "zed::DecreaseUiFontSize"
     }
   }
 ]

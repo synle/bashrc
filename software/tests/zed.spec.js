@@ -88,7 +88,7 @@ describe("_getZedKeymap > terminal-context mirroring", () => {
             "OS_KEY-\\": "workspace::ToggleLeftDock",
             "OS_KEY-|": "workspace::ToggleRightDock",
             "ctrl-`": "terminal_panel::Toggle",
-            "f5": "workspace::ReloadActiveItem",
+            f5: "workspace::ReloadActiveItem",
           },
         },
       ],
@@ -127,7 +127,7 @@ describe("_getZedKeymap > terminal-context mirroring", () => {
   it("should NOT mirror bindings without the OS modifier", () => {
     const zed = loadZed();
     const result = zed._getZedKeymap(
-      [{ bindings: { "ctrl-`": "terminal_panel::Toggle", "f5": "workspace::ReloadActiveItem", "ctrl-shift-p": "command_palette::Toggle" } }],
+      [{ bindings: { "ctrl-`": "terminal_panel::Toggle", f5: "workspace::ReloadActiveItem", "ctrl-shift-p": "command_palette::Toggle" } }],
       false,
     );
     // No OS-modifier bindings — no Terminal entry should be appended.
@@ -161,7 +161,7 @@ describe("_getZedKeymap > terminal-context mirroring", () => {
 
   it("should not append a Terminal entry when the input has no OS-modifier bindings", () => {
     const zed = loadZed();
-    const result = zed._getZedKeymap([{ bindings: { "f5": "workspace::ReloadActiveItem" } }], false);
+    const result = zed._getZedKeymap([{ bindings: { f5: "workspace::ReloadActiveItem" } }], false);
     expect(result).toHaveLength(1);
     expect(result[0].context).toBeUndefined();
   });
