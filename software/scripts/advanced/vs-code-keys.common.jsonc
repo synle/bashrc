@@ -173,15 +173,17 @@
     "key": "OS_KEY+t",
     "command": "workbench.action.createTerminalEditor",
   },
-  // Insert a literal newline in the terminal command buffer without executing.
-  // Sends Ctrl+V (\u0016 = quoted-insert) + LF (\n), which readline / zsh
-  // interpret as "insert the next byte literally" + LF. Matches the
-  // Slack/Discord-style "shift+enter inserts a newline" feel for multi-line
-  // shell commands. Plain \n would hit accept-line and execute the command.
+  // Insert a newline in the terminal prompt without submitting. Sends ESC + CR
+  // (\u001b\r) — the canonical "alt+enter" / "option+enter" sequence that TUI
+  // apps using Ink / blessed / raw stdin (Claude Code, Cursor agents, etc.)
+  // recognize as "newline in prompt". Tradeoff: this does NOT insert a literal
+  // newline in bare readline shells (bash/zsh) because readline does not bind
+  // meta+CR by default. For multi-line shell commands, use `\<enter>` or
+  // ctrl+v ctrl+j manually. Optimised for Claude Code, the dominant use case.
   {
     "key": "ctrl+enter",
     "command": "workbench.action.terminal.sendSequence",
-    "args": { "text": "\u0016\n" },
+    "args": { "text": "\u001b\r" },
     "when": "terminalFocus",
   },
   // Find within the terminal output. OS_KEY+f is bound globally to

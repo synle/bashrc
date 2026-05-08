@@ -217,12 +217,12 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 Bindings that fire only when the integrated terminal has focus (`when: "terminalFocus"`).
 
-| Key          | Action                                                      |
-| ------------ | ----------------------------------------------------------- |
-| `OS_KEY+t`   | New terminal as editor tab                                  |
-| `OS_KEY+f`   | Find in terminal output                                     |
-| `ctrl+enter` | Insert a literal newline in the buffer (multi-line command) |
-| `` ctrl+` `` | Toggle terminal panel (also works outside terminal focus)   |
+| Key          | Action                                                            |
+| ------------ | ----------------------------------------------------------------- |
+| `OS_KEY+t`   | New terminal as editor tab                                        |
+| `OS_KEY+f`   | Find in terminal output                                           |
+| `ctrl+enter` | Insert a newline in TUI prompts (Claude Code etc.) — sends ESC+CR |
+| `` ctrl+` `` | Toggle terminal panel (also works outside terminal focus)         |
 
 ---
 
