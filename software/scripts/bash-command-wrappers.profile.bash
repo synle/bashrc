@@ -59,6 +59,13 @@
 #                 With two args, the second arg is the output path. The date
 #                 prefix sorts renders chronologically in /tmp; the 6-char
 #                 mktemp suffix keeps same-day runs unique. Aliased as `md`.
+# html          — reverse of marked: HTML -> Markdown via `pandoc -f html -t
+#                 gfm-raw_html` (GitHub-flavored markdown, drops raw HTML
+#                 fragments that have no markdown equivalent). Same arg shape
+#                 as marked but prefix is `html-` and extension is `.md`.
+#                 Requires pandoc on PATH (brew install pandoc / apt install
+#                 pandoc). Round trip is lossy — list markers, link styles,
+#                 and any markdown-incompatible HTML get normalized.
 #
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
@@ -527,3 +534,85 @@ function marked() {
   echo "marked: wrote $output"
 }
 alias md=marked
+
+# html: reverse of marked — convert HTML to Markdown via pandoc.
+# Behavior mirrors marked() exactly:
+#   - No args + piped stdin     → render the pipe content
+#   - No args + interactive TTY → render the system clipboard (via paste())
+#   - One arg                   → render the input file
+#   - Two args                  → render the first arg, write to the second
+# Output paths (<rand> = YYYY-MM-DD-<6-char mktemp>):
+#   - No-arg / pipe / clipboard → /tmp/html-<rand>-clipboard.md
+#   - One arg                   → /tmp/html-<rand>-<basename>.md
+#   - Two args                  → second arg verbatim
+# Requires pandoc — there is no equally-good pure-npx HTML→MD tool, and pandoc
+# is the gold standard for this direction. We use `gfm-raw_html` so any HTML
+# that has no markdown equivalent is dropped instead of leaking into the
+# output as inline tags.
+function html() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "html: convert HTML to Markdown using \`pandoc -f html -t gfm-raw_html\`
+  Usage:
+    html                          render piped stdin or clipboard → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md
+    cat foo.html | html           render piped stdin → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md
+    html input.html               render input.html → /tmp/html-<YYYY-MM-DD>-<rand>-input.html.md
+    html input.html output.md     render input.html → output.md
+  Notes:
+    - Requires pandoc on PATH (brew install pandoc / apt install pandoc).
+    - Reverse of \`marked\`; round trip is lossy — list/link styles get normalized.
+    - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp."
+    return
+  fi
+
+  if ! type -P pandoc &> /dev/null; then
+    echo "html: pandoc is required (brew install pandoc / apt install pandoc / dnf install pandoc)" >&2
+    return 1
+  fi
+
+  local input output rand input_is_temp=0
+  # date prefix (YYYY-MM-DD) + 6-char mktemp random suffix so renders sort
+  # chronologically in /tmp and remain unique within the same day.
+  rand="$(date +%Y-%m-%d)-$(mktemp -u "/tmp/html-XXXXXX" | sed 's|^/tmp/html-||')"
+
+  if [ $# -eq 0 ]; then
+    # No args — pipe content if stdin is not a TTY, else fall back to clipboard.
+    input=$(mktemp "/tmp/html-input-XXXXXX") || return 1
+    input_is_temp=1
+    if [ -t 0 ]; then
+      # interactive: pull from clipboard via the universal paste() wrapper
+      paste > "$input"
+    else
+      # piped: capture stdin
+      command cat - > "$input"
+    fi
+    if [ ! -s "$input" ]; then
+      echo "html: no input (clipboard/stdin was empty)" >&2
+      rm -f "$input"
+      return 1
+    fi
+    output="/tmp/html-${rand}-clipboard.md"
+  elif [ $# -eq 1 ]; then
+    input="$1"
+    if [ ! -f "$input" ]; then
+      echo "html: not a file: $input" >&2
+      return 1
+    fi
+    output="/tmp/html-${rand}-$(basename -- "$input").md"
+  else
+    input="$1"
+    output="$2"
+    if [ ! -f "$input" ]; then
+      echo "html: not a file: $input" >&2
+      return 1
+    fi
+  fi
+
+  pandoc -f html -t gfm-raw_html -o "$output" "$input"
+  local rc=$?
+  ((input_is_temp)) && rm -f "$input"
+  if [ "$rc" -ne 0 ]; then
+    echo "html: pandoc exited with $rc" >&2
+    return "$rc"
+  fi
+  echo "html: wrote $output"
+}

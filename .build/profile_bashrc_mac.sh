@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-08T06:55:25.361Z
+# Generated: 2026-05-08T17:33:38.408Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -8897,7 +8897,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 754feaac1355283f65803d42a364e326 | 16.3 KB | 2026-05-08
+# software/scripts/bash-command-wrappers.profile.bash | 9cc0c22ba885a644f9ef7285f7678170 | 23.9 KB | 2026-05-08
 ################################################################################
 # ---- Command Wrappers ----
 #
@@ -8947,6 +8947,23 @@ fi
 #                 e.g. "home_syle_git_bashrc_run.sh", extension preserved so
 #                 the editor picks the right syntax), then opens the temp
 #                 file with subl (the default editor).
+#
+# --- Markdown ---
+# marked        — render markdown -> HTML via `npx -y marked@latest` (auto-yes,
+#                 stdin closed). With no args, reads piped stdin or falls back
+#                 to the clipboard (via paste()), writing to
+#                 /tmp/marked-<YYYY-MM-DD>-XXXXXX-clipboard.html. With one arg,
+#                 writes to /tmp/marked-<YYYY-MM-DD>-XXXXXX-<basename>.html.
+#                 With two args, the second arg is the output path. The date
+#                 prefix sorts renders chronologically in /tmp; the 6-char
+#                 mktemp suffix keeps same-day runs unique. Aliased as `md`.
+# html          — reverse of marked: HTML -> Markdown via `pandoc -f html -t
+#                 gfm-raw_html` (GitHub-flavored markdown, drops raw HTML
+#                 fragments that have no markdown equivalent). Same arg shape
+#                 as marked but prefix is `html-` and extension is `.md`.
+#                 Requires pandoc on PATH (brew install pandoc / apt install
+#                 pandoc). Round trip is lossy — list markers, link styles,
+#                 and any markdown-incompatible HTML get normalized.
 #
 # Lazy-activation wrappers shadow the real binaries so the first invocation
 # triggers setup (e.g. activating a venv or fnm), then delegates to the
@@ -9331,6 +9348,171 @@ function blame_view() {
   if [ "${#outs[@]}" -gt 0 ]; then
     subl "${outs[@]}"
   fi
+}
+
+################################################################################
+# ---- Markdown ----
+################################################################################
+# marked: render markdown to HTML via `npx -y marked@latest`.
+# Behavior:
+#   - No args + piped stdin     → render the pipe content
+#   - No args + interactive TTY → render the system clipboard (via paste())
+#   - One arg                   → render the input file
+#   - Two args                  → render the first arg, write to the second
+# Output paths (<rand> = YYYY-MM-DD-<6-char mktemp>):
+#   - No-arg / pipe / clipboard → /tmp/marked-<rand>-clipboard.html
+#   - One arg                   → /tmp/marked-<rand>-<basename>.html
+#   - Two args                  → second arg verbatim
+# Notes:
+#   - Uses `npx -y` so the install prompt is auto-confirmed, and `< /dev/null`
+#     so marked never blocks reading from a tty.
+#   - The random suffix comes from `mktemp -u` so the path is unique per run
+#     and avoids clobbering older renders in /tmp.
+function marked() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "marked: render markdown to HTML using \`npx -y marked@latest\`
+  Usage:
+    marked                        render piped stdin or clipboard → /tmp/marked-<YYYY-MM-DD>-<rand>-clipboard.html
+    cat foo.md | marked           render piped stdin → /tmp/marked-<YYYY-MM-DD>-<rand>-clipboard.html
+    marked input.md               render input.md → /tmp/marked-<YYYY-MM-DD>-<rand>-input.md.html
+    marked input.md output.html   render input.md → output.html
+  Aliases: md
+  Notes:
+    - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp.
+    - npx is invoked with -y so the install prompt is auto-confirmed.
+    - Stdin is closed via </dev/null so marked never tries to read from a tty."
+    return
+  fi
+
+  local input output rand input_is_temp=0
+  # date prefix (YYYY-MM-DD) + 6-char mktemp random suffix so renders sort
+  # chronologically in /tmp and remain unique within the same day.
+  rand="$(date +%Y-%m-%d)-$(mktemp -u "/tmp/marked-XXXXXX" | sed 's|^/tmp/marked-||')"
+
+  if [ $# -eq 0 ]; then
+    # No args — pipe content if stdin is not a TTY, else fall back to clipboard.
+    input=$(mktemp "/tmp/marked-input-XXXXXX") || return 1
+    input_is_temp=1
+    if [ -t 0 ]; then
+      # interactive: pull from clipboard via the universal paste() wrapper
+      paste > "$input"
+    else
+      # piped: capture stdin
+      command cat - > "$input"
+    fi
+    if [ ! -s "$input" ]; then
+      echo "marked: no input (clipboard/stdin was empty)" >&2
+      rm -f "$input"
+      return 1
+    fi
+    output="/tmp/marked-${rand}-clipboard.html"
+  elif [ $# -eq 1 ]; then
+    input="$1"
+    if [ ! -f "$input" ]; then
+      echo "marked: not a file: $input" >&2
+      return 1
+    fi
+    output="/tmp/marked-${rand}-$(basename -- "$input").html"
+  else
+    input="$1"
+    output="$2"
+    if [ ! -f "$input" ]; then
+      echo "marked: not a file: $input" >&2
+      return 1
+    fi
+  fi
+
+  npx -y marked@latest -i "$input" -o "$output" < /dev/null
+  local rc=$?
+  ((input_is_temp)) && rm -f "$input"
+  if [ "$rc" -ne 0 ]; then
+    echo "marked: npx exited with $rc" >&2
+    return "$rc"
+  fi
+  echo "marked: wrote $output"
+}
+alias md=marked
+
+# html: reverse of marked — convert HTML to Markdown via pandoc.
+# Behavior mirrors marked() exactly:
+#   - No args + piped stdin     → render the pipe content
+#   - No args + interactive TTY → render the system clipboard (via paste())
+#   - One arg                   → render the input file
+#   - Two args                  → render the first arg, write to the second
+# Output paths (<rand> = YYYY-MM-DD-<6-char mktemp>):
+#   - No-arg / pipe / clipboard → /tmp/html-<rand>-clipboard.md
+#   - One arg                   → /tmp/html-<rand>-<basename>.md
+#   - Two args                  → second arg verbatim
+# Requires pandoc — there is no equally-good pure-npx HTML→MD tool, and pandoc
+# is the gold standard for this direction. We use `gfm-raw_html` so any HTML
+# that has no markdown equivalent is dropped instead of leaking into the
+# output as inline tags.
+function html() {
+  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    echo "html: convert HTML to Markdown using \`pandoc -f html -t gfm-raw_html\`
+  Usage:
+    html                          render piped stdin or clipboard → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md
+    cat foo.html | html           render piped stdin → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md
+    html input.html               render input.html → /tmp/html-<YYYY-MM-DD>-<rand>-input.html.md
+    html input.html output.md     render input.html → output.md
+  Notes:
+    - Requires pandoc on PATH (brew install pandoc / apt install pandoc).
+    - Reverse of \`marked\`; round trip is lossy — list/link styles get normalized.
+    - <rand> is the 6-char suffix from mktemp; the date prefix sorts renders chronologically in /tmp."
+    return
+  fi
+
+  if ! type -P pandoc &> /dev/null; then
+    echo "html: pandoc is required (brew install pandoc / apt install pandoc / dnf install pandoc)" >&2
+    return 1
+  fi
+
+  local input output rand input_is_temp=0
+  # date prefix (YYYY-MM-DD) + 6-char mktemp random suffix so renders sort
+  # chronologically in /tmp and remain unique within the same day.
+  rand="$(date +%Y-%m-%d)-$(mktemp -u "/tmp/html-XXXXXX" | sed 's|^/tmp/html-||')"
+
+  if [ $# -eq 0 ]; then
+    # No args — pipe content if stdin is not a TTY, else fall back to clipboard.
+    input=$(mktemp "/tmp/html-input-XXXXXX") || return 1
+    input_is_temp=1
+    if [ -t 0 ]; then
+      # interactive: pull from clipboard via the universal paste() wrapper
+      paste > "$input"
+    else
+      # piped: capture stdin
+      command cat - > "$input"
+    fi
+    if [ ! -s "$input" ]; then
+      echo "html: no input (clipboard/stdin was empty)" >&2
+      rm -f "$input"
+      return 1
+    fi
+    output="/tmp/html-${rand}-clipboard.md"
+  elif [ $# -eq 1 ]; then
+    input="$1"
+    if [ ! -f "$input" ]; then
+      echo "html: not a file: $input" >&2
+      return 1
+    fi
+    output="/tmp/html-${rand}-$(basename -- "$input").md"
+  else
+    input="$1"
+    output="$2"
+    if [ ! -f "$input" ]; then
+      echo "html: not a file: $input" >&2
+      return 1
+    fi
+  fi
+
+  pandoc -f html -t gfm-raw_html -o "$output" "$input"
+  local rc=$?
+  ((input_is_temp)) && rm -f "$input"
+  if [ "$rc" -ne 0 ]; then
+    echo "html: pandoc exited with $rc" >&2
+    return "$rc"
+  fi
+  echo "html: wrote $output"
 }
 # SOURCE_END software/scripts/bash-command-wrappers.profile.bash
 ################################################################################
