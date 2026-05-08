@@ -169,9 +169,8 @@
   // quickpick), which is rarely useful and shadows the obvious "new tab" muscle
   // memory from browsers / terminal emulators. createTerminalEditor always opens
   // in the editor area regardless of `terminal.integrated.defaultLocation`.
-  // Pairs with `terminal.integrated.commandsToSkipShell` in vs-code-config.jsonc
-  // so this fires even when the terminal has focus (otherwise the shell eats
-  // alt+t / cmd+t before VS Code sees it).
+  // Fires from terminal focus too — vs-code.js auto-adds every OS_KEY+X command
+  // to terminal.integrated.commandsToSkipShell so the shell doesn't swallow it.
   {
     "key": "OS_KEY+t",
     "command": "workbench.action.createTerminalEditor",

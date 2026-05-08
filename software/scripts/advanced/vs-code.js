@@ -63,18 +63,45 @@ function _getVSCodeUserPaths() {
 ////// Settings //////
 
 /**
+ * Derives the `terminal.integrated.commandsToSkipShell` list from the resolved keybindings.
+ * VS Code's terminal forwards keypresses to the shell by default — alt+X / cmd+X chords get
+ * eaten as meta sequences (bash readline, etc.) before VS Code can fire the bound command.
+ * Adding the command IDs to this list bypasses the shell so those bindings fire from terminal
+ * focus too. We include every binding whose first chord starts with `alt+` or `cmd+` (i.e.,
+ * uses the OS modifier) — `when` clauses still apply, so this is safe for editor-only
+ * bindings. Generic so new OS_KEY+X bindings "just work" without hand-maintaining a skip list.
+ * @param {object[]} keybindings - Resolved keybinding array (post OS_KEY substitution).
+ * @returns {string[]} Sorted, deduped command IDs.
+ */
+function _getCommandsToSkipShell(keybindings) {
+  const cmds = new Set();
+  for (const kb of keybindings) {
+    if (typeof kb.key !== "string" || !kb.command) continue;
+    // Take the first chord (chords are space-separated, e.g. "ctrl+k ctrl+s").
+    const firstChord = kb.key.split(/\s+/)[0];
+    if (/^(alt|cmd)\+/i.test(firstChord)) {
+      cmds.add(kb.command);
+    }
+  }
+  return Array.from(cmds).sort();
+}
+
+/**
  * Builds the merged VS Code settings object: starts from `vs-code-config.jsonc`, layers
  * EDITOR_CONFIGS-driven editor/font/terminal/ignored-files settings, overlays the dark
  * and light high-contrast color schemes inside `[Theme Name]` scopes so each theme keeps
- * its own customizations, and pins the dark/light theme names.
+ * its own customizations, pins the dark/light theme names, and auto-populates
+ * `terminal.integrated.commandsToSkipShell` from `keybindings` so OS_KEY+X bindings fire
+ * from terminal focus.
  * @param {object} baseConfig - Parsed `vs-code-config.jsonc`.
  * @param {object} darkColors - Parsed `vs-code-color-dark.jsonc` (workbench.colorCustomizations + editor.tokenColorCustomizations).
  * @param {object} lightColors - Parsed `vs-code-color-light.jsonc`.
+ * @param {object[]} keybindings - Resolved keybinding array used to auto-derive the skip-shell list.
  * @param {object} options - Build options.
  * @param {boolean} [options.is_prebuilt_config] - When true, use safe fallback fonts/sizes for shipped artifacts.
  * @returns {object} The fully resolved settings.json content.
  */
-function _getSettings(baseConfig, darkColors, lightColors, { is_prebuilt_config = false } = {}) {
+function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_prebuilt_config = false } = {}) {
   const fontFamily = is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily;
   const fontSize = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
@@ -115,6 +142,9 @@ function _getSettings(baseConfig, darkColors, lightColors, { is_prebuilt_config 
     "files.exclude": Object.fromEntries(EDITOR_CONFIGS.ignoredFiles.concat(EDITOR_CONFIGS.ignoredFolders).map((p) => [p, true])),
     "search.exclude": Object.fromEntries(EDITOR_CONFIGS.ignoredFiles.concat(EDITOR_CONFIGS.ignoredFolders).map((p) => [p, true])),
     "files.watcherExclude": Object.fromEntries(EDITOR_CONFIGS.ignoredFolders.map((p) => [p, true])),
+
+    // --- Auto-derived: every OS_KEY+X binding bypasses the shell so it fires from terminal focus too ---
+    "terminal.integrated.commandsToSkipShell": _getCommandsToSkipShell(keybindings),
   };
 }
 
@@ -237,24 +267,31 @@ async function doWork() {
   const windowsKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.windows.jsonc`) || [];
 
   // --- Local system: write settings + keybindings into each detected install ---
+  const localKeybindings = _getKeyConfigs(commonKeyBindings, windowsKeyBindings);
   for (const userPath of userPaths) {
     log(">>> Deploying to local VS Code install:", userPath);
 
     const settingsPath = path.join(userPath, "settings.json");
     await backupConfigFile(settingsPath);
-    await writeJson(settingsPath, _getSettings(baseConfig, darkColors, lightColors, { is_prebuilt_config: false }));
+    await writeJson(settingsPath, _getSettings(baseConfig, darkColors, lightColors, localKeybindings, { is_prebuilt_config: false }));
 
     const keybindingsPath = path.join(userPath, "keybindings.json");
     await backupConfigFile(keybindingsPath);
-    await writeJson(keybindingsPath, _getKeyConfigs(commonKeyBindings, windowsKeyBindings));
+    await writeJson(keybindingsPath, localKeybindings);
   }
 
   // --- Devcontainer extensions list (single source of truth) ---
   await _updateDevcontainerExtensions();
 
   // --- Prebuilt build artifacts (used by setup scripts and the webapp) ---
+  // Use the union of mac + windows/linux keybindings so the prebuilt skip-shell list covers
+  // every OS the artifact might land on (extra entries are harmless on the wrong OS).
   log(">>> Writing prebuilt VS Code build artifacts");
-  const settingsArtifact = _getSettings(baseConfig, darkColors, lightColors, { is_prebuilt_config: true });
+  const prebuiltKeybindings = [
+    ..._getKeyConfigs(commonKeyBindings, windowsKeyBindings, false),
+    ..._getKeyConfigs(commonKeyBindings, windowsKeyBindings, true),
+  ];
+  const settingsArtifact = _getSettings(baseConfig, darkColors, lightColors, prebuiltKeybindings, { is_prebuilt_config: true });
   await writeBuildArtifact([
     {
       file: `${BUILD_DIR}/vs-code-config`,
