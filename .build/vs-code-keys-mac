@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-07]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-08]
 // 
 // VS Code keybindings.json (macOS)
 // ################################################################################
@@ -216,6 +216,19 @@
   {
     "key": "cmd+t",
     "command": "workbench.action.createTerminalEditor"
+  },
+  {
+    "key": "ctrl+enter",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": {
+      "text": "\u001b\r"
+    },
+    "when": "terminalFocus"
+  },
+  {
+    "key": "cmd+f",
+    "command": "workbench.action.terminal.focusFind",
+    "when": "terminalFocus"
   },
   {
     "key": "cmd+shift+=",
