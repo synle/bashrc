@@ -25,12 +25,21 @@ const PROFILE_BASH = path.join(ROOT_DIR, "software/scripts/bash-file-utils.profi
 // pack_text now delegates folder filtering to filter_unwanted (defined in
 // bash-fzf.profile.bash), so tests must source both partials.
 const FZF_PROFILE_BASH = path.join(ROOT_DIR, "software/scripts/bash-fzf.profile.bash");
+// is_help_arg is defined in common-functions.bash (and mirrored in profile-core.sh)
+// — bash-file-utils functions delegate to it for --help recognition, so the test
+// runner must have it in scope. common-functions.bash is pure function definitions
+// with no top-level side effects, safe to source unconditionally.
+const COMMON_FUNCTIONS_BASH = path.join(ROOT_DIR, "software/bootstrap/common-functions.bash");
 const TMP_DIR = `/tmp/_pack_text_test_${process.pid}`;
 
 /** Runs a bash script that sources the profile and executes the given commands. */
 function runBash(script) {
   const tmpScript = `${TMP_DIR}_runner.sh`;
-  fs.writeFileSync(tmpScript, `#!/usr/bin/env bash\nsource "${FZF_PROFILE_BASH}"\nsource "${PROFILE_BASH}"\n${script}`, "utf-8");
+  fs.writeFileSync(
+    tmpScript,
+    `#!/usr/bin/env bash\nsource "${COMMON_FUNCTIONS_BASH}"\nsource "${FZF_PROFILE_BASH}"\nsource "${PROFILE_BASH}"\n${script}`,
+    "utf-8",
+  );
   try {
     return execSync(`bash "${tmpScript}" 2>/dev/null`, { encoding: "utf-8", timeout: 30000 }).trim();
   } finally {

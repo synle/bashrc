@@ -127,7 +127,7 @@ _backup_history
 #   - From the prompt or a script (READLINE_LINE unset): eval the selection
 #     immediately. Useful for `fuzzy_history docker` style "find-and-run" calls.
 function fuzzy_history() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "fuzzy_history: interactive fzf search over bash history"
     echo "  fuzzy_history [query]    search with optional initial query"
     echo "  fuzzy_history help       show this help"
@@ -179,7 +179,7 @@ function fuzzy_history() {
 
 # lists all available history backups with date and line count
 function history_list_backups() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "history_list_backups: list all available history backups"
     echo "  history_list_backups help  show this help"
     return
@@ -203,7 +203,7 @@ function history_list_backups() {
 
 # restores ~/.bash_history from a backup
 function history_restore() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "history_restore: restore ~/.bash_history from a backup"
     echo "  history_restore              restore latest (only if history is empty)"
     echo "  history_restore YYYY-MM-DD   restore specific date (overwrites)"

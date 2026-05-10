@@ -17,7 +17,7 @@ function _register_editor() {
 # "(not found)" if none of its candidate paths exist. Useful for triaging
 # which editors are actually available on the current system.
 function list_editors() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       list_editors: print every editor wrapper and the binary it would launch (or '(not found)')
         list_editors          show resolved path for subl, smerge, code, zed, vim, ...

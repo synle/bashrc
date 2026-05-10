@@ -77,7 +77,7 @@
 ################################################################################
 # su: root shell preserving PATH and env
 function su() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "su: root shell preserving \$PATH (sudo -E bash)"
     echo "  su          open root shell with your env/PATH preserved"
     echo "  su <args>   fall back to regular su with args"
@@ -246,7 +246,7 @@ function renpm() {
 ################################################################################
 # update_lang: upgrade globally-installed packages from each language pkg manager
 function update_lang() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "update_lang: upgrade globally-installed language packages
   Skips any tool not on PATH. Companion to the OS-level \`update\` alias.
   Covers: rustup, cargo-update, npm, pnpm, yarn (v1), bun, deno, uv, pip (--user)."
@@ -323,7 +323,7 @@ function update_lang() {
 ################################################################################
 # blame: git blame alternative — print per-line "<line>  <cmt> <date> <sha> <author>: <summary>"; <cmt> is "//" for C-family extensions and "#" otherwise so the row is paste-safe as a comment in the host language
 function blame() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
   Output: prints a '<cmt> file: <abs-path>' comment-style header (absolute path of the input), then one row per line as
@@ -411,7 +411,7 @@ function blame() {
 
 # blame_view: run blame on each file, write the output to /tmp/<timestamp>-<basename> (extension preserved so the editor picks the right syntax from the filename), then open with subl (the default editor)
 function blame_view() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "blame_view: run blame and open it in the editor
   Usage: blame_view <file> [<file> ...]
   Behavior: for each input file, runs 'blame <file>' and writes the output to
@@ -471,7 +471,7 @@ function blame_view() {
 #   - The random suffix comes from `mktemp -u` so the path is unique per run
 #     and avoids clobbering older renders in /tmp.
 function marked() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "marked: render markdown to HTML using \`npx -y marked@latest\`
   Usage:
     marked                        render piped stdin or clipboard → /tmp/marked-<YYYY-MM-DD>-<rand>-clipboard.html
@@ -550,7 +550,7 @@ alias md=marked
 # that has no markdown equivalent is dropped instead of leaking into the
 # output as inline tags.
 function html() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "html: convert HTML to Markdown using \`pandoc -f html -t gfm-raw_html\`
   Usage:
     html                          render piped stdin or clipboard → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md

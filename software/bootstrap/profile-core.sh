@@ -52,6 +52,33 @@ export LINE_BREAK_COUNT=100
 export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
 
 ################################################################################
+# ---- Help-Trigger Helper ----
+# Single source of truth for the "is this arg a --help request?" check used by
+# every user-facing function across the profile. Defined in profile-core (not
+# profile-advanced) so any partial sourced later can rely on it. Keep this
+# function body byte-identical with the copy in common-functions.bash — the
+# pair must accept the same trigger set.
+################################################################################
+
+# is_help_arg <arg> - returns 0 (success) if arg is a recognized --help trigger
+# Recognizes (case-insensitive):
+#   help, --help, -help, /help    full word, every common prefix style
+#   -h                            short
+#   ?, -?, /?                     DOS / PowerShell short
+# `tr` (not bash 4's ${var,,}) is used so this stays parseable on bash 3.2 —
+# safe_source rejects any partial that fails `bash -n` on macOS's /bin/bash.
+# Single-quote `?` patterns in the case so glob expansion does not match them
+# against any single character.
+function is_help_arg() {
+  local arg
+  arg=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
+  case "$arg" in
+  help | --help | -help | /help | -h | '?' | '-?' | '/?') return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
+################################################################################
 # ---- Path / Action Helpers ----
 # Defined here in profile-core (not profile-advanced) so any partial sourced
 # later — bash-fzf's view_file, editor-launchers' run_editor, etc. — can
