@@ -225,6 +225,36 @@ fi
 # a standalone Node binary to /tmp/synle/bashrc/node/.
 function install_bootstrap_node() {
   local node_tmp="/tmp/synle/bashrc/node"
+  local fnm_default_bin="$FNM_DIR/aliases/default/bin"
+
+  # Reset stale /usr/local/bin/{node,npm,npx,...} symlinks left by a previous
+  # run's standalone-node fallback (target /tmp/synle/bashrc/node/bin/*). They
+  # survive across runs and shadow fnm-managed node — `which node` resolves to
+  # /usr/local/bin/node -> /tmp/... (often deleted) instead of fnm's default.
+  # If fnm has a default node installed, repoint the symlink at the stable
+  # $FNM_DIR/aliases/default/bin/<name> path (tracks the current fnm default
+  # automatically). Otherwise just remove the dangling /tmp link.
+  if [ -d /usr/local/bin ]; then
+    local _link _target _name
+    for _link in /usr/local/bin/*; do
+      [ -L "$_link" ] || continue
+      _target=$(readlink "$_link" 2> /dev/null)
+      case "$_target" in
+      "$node_tmp"/*)
+        _name=$(basename "$_link")
+        if [ -x "$fnm_default_bin/$_name" ]; then
+          sudo ln -sf "$fnm_default_bin/$_name" "$_link" 2> /dev/null \
+            || ln -sf "$fnm_default_bin/$_name" "$_link" 2> /dev/null \
+            || true
+        else
+          sudo rm -f "$_link" 2> /dev/null || rm -f "$_link" 2> /dev/null || true
+        fi
+        ;;
+      esac
+    done
+    unset _link _target _name
+  fi
+
   export PATH="$PATH:$node_tmp/bin"
 
   # Use existing node if already available
