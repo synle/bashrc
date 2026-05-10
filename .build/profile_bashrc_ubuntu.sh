@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-08]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-10]
 # 
 # Precompiled bash profile for ubuntu
 # ################################################################################
@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-08T17:36:18.733Z
+# Generated: 2026-05-10T05:10:02.103Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | 12ac7912398a3b82ac0ea31ed8cbed84 | 10.3 KB | 2026-05-08
+# software/scripts/bash-history.profile.bash | 12ac7912398a3b82ac0ea31ed8cbed84 | 10.3 KB | 2026-05-10
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -748,7 +748,7 @@ function format_other_text_based_files() {
 export PATH="/home/runner/.temporalio/bin:$PATH"
 # END temporal-cli
 # SOURCE_BEGIN software/scripts/bash-path-candidate.profile.bash
-# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-05-08
+# software/scripts/bash-path-candidate.profile.bash | fa0d46adc25ecab07c6a151e92d4bb92 | 3.5 KB | 2026-05-10
 ################################################################################
 # ---- PATH Setup ----
 #
@@ -3234,7 +3234,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-keys.profile.bash
-# software/scripts/bash-keys.profile.bash | 513a36d868164a899075f718508233bb | 5.2 KB | 2026-05-08
+# software/scripts/bash-keys.profile.bash | 513a36d868164a899075f718508233bb | 5.2 KB | 2026-05-10
 ################################################################################
 # ---- Bash Readline Keybindings ----
 #
@@ -3337,7 +3337,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 3affd00263be55108301db70de6d0aaa | 74.5 KB | 2026-05-08
+# software/scripts/bash-file-utils.profile.bash | 3affd00263be55108301db70de6d0aaa | 74.5 KB | 2026-05-10
 ################################################################################
 # ---- File Utilities ----
 #
@@ -5130,7 +5130,7 @@ _IGNORED_FILES_JSON='["\\.DS_Store$","Thumbs\\.db$","desktop\\.ini$","\\.Spotlig
 _FUZZY_TEXT_FILES_JSON='["\\.bash$","\\.c$","\\.cfg$","\\.clj$","\\.cmake$","\\.coffee$","\\.conf$","\\.cpp$","\\.cs$","\\.css$","\\.csv$","\\.dart$","\\.diff$","\\.dockerfile$","\\.el$","\\.elm$","\\.env$","\\.erl$","\\.ex$","\\.fish$","\\.go$","\\.graphql$","\\.groovy$","\\.h$","\\.hpp$","\\.hs$","\\.html$","\\.ini$","\\.java$","\\.js$","\\.json$","\\.jsonc$","\\.jsx$","\\.kt$","\\.less$","\\.lisp$","\\.log$","\\.lua$","\\.m$","\\.md$","\\.mk$","\\.ml$","\\.nim$","\\.nix$","\\.php$","\\.pl$","\\.proto$","\\.ps1$","\\.py$","\\.r$","\\.rb$","\\.rs$","\\.rst$","\\.sass$","\\.scala$","\\.scss$","\\.sh$","\\.sql$","\\.svelte$","\\.swift$","\\.tcl$","\\.tex$","\\.tf$","\\.toml$","\\.ts$","\\.tsx$","\\.txt$","\\.v$","\\.vim$","\\.vue$","\\.xml$","\\.yaml$","\\.yml$","\\.zig$","\\.zsh$","Dockerfile$","Makefile$","Rakefile$","Gemfile$","Vagrantfile$","\\.gitignore$","\\.gitattributes$","\\.editorconfig$","\\.eslintrc$","\\.prettierrc$","\\.babelrc$"]'
 # END Fuzzy Filter Patterns
 # SOURCE_BEGIN software/scripts/bash-fzf.profile.bash
-# software/scripts/bash-fzf.profile.bash | 46ed46baad340d9259753240a051df2a | 20.8 KB | 2026-05-08
+# software/scripts/bash-fzf.profile.bash | 46ed46baad340d9259753240a051df2a | 20.8 KB | 2026-05-10
 # run: bash run.sh --files="fzf.js"
 ################################################################################
 # ---- FZF Fuzzy Finder Integration ----
@@ -5615,7 +5615,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | 50a4eaabbc9f9c8964d1cb931fb44fad | 5.6 KB | 2026-05-08
+# software/scripts/advanced/editor-launchers-common.profile.bash | 50a4eaabbc9f9c8964d1cb931fb44fad | 5.6 KB | 2026-05-10
 # Parallel-array registry populated by `_register_editor` calls in each
 # editor-launchers.js block. Used by `list_editors` for binary-availability triage.
 _REGISTERED_EDITORS=()
@@ -5877,7 +5877,7 @@ function zed() {
 }
 # END Editor Launchers - Zed
 # SOURCE_BEGIN software/scripts/advanced/browser-launchers-common.profile.bash
-# software/scripts/advanced/browser-launchers-common.profile.bash | f2af603cfc35cb9472452ff2d673c559 | 5.9 KB | 2026-05-08
+# software/scripts/advanced/browser-launchers-common.profile.bash | f2af603cfc35cb9472452ff2d673c559 | 5.9 KB | 2026-05-10
 # Common Chromium flags applied by run_browser on every launch.
 # Kept to safe, non-destructive tweaks (no sync/security changes).
 #
@@ -9308,7 +9308,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 9cc0c22ba885a644f9ef7285f7678170 | 23.9 KB | 2026-05-08
+# software/scripts/bash-command-wrappers.profile.bash | 9cc0c22ba885a644f9ef7285f7678170 | 23.9 KB | 2026-05-10
 ################################################################################
 # ---- Command Wrappers ----
 #

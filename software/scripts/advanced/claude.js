@@ -170,6 +170,45 @@ async function _doSettingsWork(targetDir) {
   await writeJson(targetPath, merged);
 }
 
+////// Instructions (User-Level CLAUDE.md) //////
+
+/**
+ * Marker key used to wrap the managed engineering principles block inside ~/.claude/CLAUDE.md.
+ * Anything outside the BEGIN/END markers is preserved as user-owned content.
+ * @type {string}
+ */
+const CLAUDE_INSTRUCTIONS_MARKER = "managed-rules";
+
+/**
+ * Deploys stack-agnostic engineering principles into ~/.claude/CLAUDE.md between BEGIN/END markers.
+ * The markdown source uses backticks for inline code; readText returns the file content verbatim
+ * (only the path argument is a template literal), and the content flows into replaceBlock as a
+ * plain string — no re-templating, so backticks are safe here.
+ * Existing user content outside the marker block is preserved.
+ * @param {string} targetDir - Path to the ~/.claude directory.
+ */
+async function _doInstructionsWork(targetDir) {
+  const targetPath = path.join(targetDir, "CLAUDE.md");
+
+  log(">> Claude Code Instructions:", targetPath);
+
+  /** @type {string} The markdown source for the managed engineering principles block. */
+  const sourceContent = (await readText`software/scripts/advanced/claude-instructions.md`).trim();
+
+  /** @type {string} Existing CLAUDE.md content (empty if file is missing). */
+  let existing = "";
+  try {
+    existing = fs.readFileSync(targetPath, "utf-8");
+  } catch (e) {}
+
+  // Upsert the managed block between <!-- BEGIN managed-rules --> / <!-- END managed-rules -->.
+  // insertMode: "append" creates the block when CLAUDE.md is brand new or the markers are missing.
+  const merged = replaceBlock(existing, CLAUDE_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+
+  await backupConfigFile(targetPath);
+  await writeText(targetPath, merged);
+}
+
 ////// Commands (Custom Slash Commands) //////
 
 /**
@@ -589,4 +628,5 @@ async function doWork() {
   await _doSettingsWork(targetDir);
   await _doKeysWork(targetDir);
   await _doCommandsWork(targetDir);
+  await _doInstructionsWork(targetDir);
 }
