@@ -2095,21 +2095,36 @@ async function _forceCloseApp(appLabel) {
 
 /**
  * Downloads and installs a binary from a GitHub release.
+ *
+ * Storage strategy by platform:
+ * - Mac: the asset is a .dmg that gets mounted and the .app copied into
+ *   /Applications/. The .dmg itself is dead weight after install — route the
+ *   download through BASHRC_TEMP_DIR (cleaned with the rest of the run) so we
+ *   don't leave a forever-stale duplicate in ~/_extra/<app>/. Older runs did
+ *   keep the .dmg under ~/_extra/<app>/, so reap any such legacy folder up
+ *   front for a one-time cleanup.
+ * - Linux/Windows: the asset (AppImage / setup.exe) is itself the run target,
+ *   so it stays in ~/_extra/<app>/.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
  */
 async function downloadAndInstallBinary(repo, getFileName) {
   const appLabel = repo.split("/")[1];
   const version = await fetchGitHubReleaseVersion(repo);
-  const targetPath = await getCustomTweaksPath(appLabel);
   const isArm64 = os.arch() === "arm64";
   const ver = version.replace(/^v/, "");
   const fileName = getFileName(ver, isArm64);
   const url = `https://github.com/${repo}/releases/download/${version}/${fileName}`;
 
+  const legacyExtraPath = await getCustomTweaksPath(appLabel);
+  const targetPath = is_os_mac ? path.join(BASHRC_TEMP_DIR, appLabel) : legacyExtraPath;
+
   log(`>> Installing ${appLabel} ${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
 
   await _forceCloseApp(appLabel);
+
+  // Reap legacy ~/_extra/<app>/ leftovers from runs that staged the .dmg there.
+  if (is_os_mac && targetPath !== legacyExtraPath) await deleteFolder(legacyExtraPath);
 
   await deleteFolder(targetPath);
   await mkdir(targetPath);
