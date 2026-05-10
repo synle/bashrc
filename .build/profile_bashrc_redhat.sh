@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-10T23:14:33.624Z
+# Generated: 2026-05-10T23:51:23.309Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -1759,26 +1759,49 @@ function rebase_origin_main_branch() {
 
 # Resets the local default branch HEAD to match origin (fetches and force-resets)
 function _clean_reset_head_to_main_branch() {
+  local total_steps=8
+  local current_step=0
+
+  function _log_step() {
+    current_step=$((current_step + 1))
+    local remaining=$((total_steps - current_step))
+    local percent=$((current_step * 100 / total_steps))
+    echo "[Step $current_step/$total_steps - ${percent}% done, $remaining left] $1"
+  }
+
+  _log_step "Aborting any in-progress git operation..."
   git abort
+
+  _log_step "Cleaning working tree and fetching latest from origin..."
   git clean-and-fetch
 
+  _log_step "Resolving default branch..."
   local default_branch
   default_branch=$(_get_default_branch) || return 1
+  echo "  -> default branch: $default_branch"
 
   local current_branch
   current_branch=$(git branch --show-current)
+  echo "  -> current branch: $current_branch"
 
   # Back up current branch to a temp branch
   local temp_branch="temp/$(command date +%Y%m%d-%H%M%S)"
+  _log_step "Backing up current branch to temp branch: $temp_branch ..."
   git checkout -b "$temp_branch" > /dev/null 2>&1
 
-  # Checkout default branch and rebase onto origin
+  _log_step "Deleting local '$default_branch' (will be re-fetched from origin)..."
   git del "$default_branch" > /dev/null 2>&1
+
+  _log_step "Checking out '$default_branch'..."
   git checkout "$default_branch" > /dev/null 2>&1
+
+  _log_step "Rebasing '$default_branch' onto 'origin/$default_branch'..."
   git rebase "origin/$default_branch" > /dev/null 2>&1
+
+  _log_step "Cleaning up temp backup branch: $temp_branch ..."
   git del "$temp_branch" > /dev/null 2>&1
 
-  echo "# ---- Reset to origin/$default_branch ----"
+  echo "# ---- Reset to origin/$default_branch (100% done) ----"
   git lastd
 }
 
