@@ -159,8 +159,10 @@
       "OS_KEY-l": "editor::SelectLine",
       // delete from cursor to beginning of line — matches VS Code's `deleteAllLeft` (OS_KEY+backspace)
       "OS_KEY-backspace": "editor::DeleteToBeginningOfLine",
-      // jump to matching bracket — matches VS Code/Sublime `editor.action.jumpToBracket` (ctrl+m)
-      "ctrl-m": "editor::GoToEnclosingBracket",
+      // jump to matching bracket — matches VS Code/Sublime `editor.action.jumpToBracket` (ctrl+m).
+      // Zed's action is named `MoveToEnclosingBracket` (NOT `GoToEnclosingBracket`) — verified
+      // against the Zed binary's bundled keymap, which ships `ctrl-m` as a JetBrains-compat default.
+      "ctrl-m": "editor::MoveToEnclosingBracket",
 
       // ---- Editor splits / pane layout ----
       // split the current pane to the right / down — matches VS Code's `splitEditor` /
