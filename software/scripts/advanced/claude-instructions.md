@@ -5,7 +5,7 @@ Stack-agnostic rules. Apply across every language, framework, and codebase.
 ## Source Control & PRs
 
 1. Branch from a fresh default. Pull right before branching. Task-scoped name. Never branch off a feature branch.
-2. Squash on merge — one PR, one commit.
+2. Squash on merge — one PR, one commit. **Applies to manual merges AND automerge.** Always `gh pr merge --squash` (or `gh pr merge --squash --auto` to enable automerge). Never merge commits, never rebase merges. If a repo's default automerge mode is anything other than squash, switch the call to explicit `--squash` or fix the repo setting.
 3. Sync with `git merge origin/<default>`. Never rebase or force-push shared branches.
 4. Each PR is a standalone, mergeable unit. Bundle tightly-coupled changes (API + schema + models). Never stack PRs.
 
