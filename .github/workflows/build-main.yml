@@ -735,6 +735,7 @@ jobs:
           run_test_suite "Profile Syntax" "ci_test_profile"
           run_test_suite "Smoke Tests" "ci_test_smoke"
           run_test_suite "Build Config Shape" "ci_test_buildconfig"
+          run_test_suite "Coverage" "ci_test_coverage"
 
           {
             echo "## Test Results"
@@ -748,6 +749,80 @@ jobs:
             echo "::error::One or more test suites failed"
             exit 1
           fi
+
+      # Render a "## Coverage" section in the job summary by reading
+      # coverage/coverage-summary.json (produced by ci_test_coverage above).
+      # The thresholds mirror vitest.config.js — keep them in sync if you change
+      # the gate. We never fail the build here; the gate failure (if any) already
+      # bubbled up from `ci_test_coverage` and was captured in Test Results.
+      - name: Coverage Summary
+        if: always()
+        env:
+          THRESHOLD_LINES: 42
+          THRESHOLD_STATEMENTS: 44
+          THRESHOLD_BRANCHES: 42
+          THRESHOLD_FUNCTIONS: 52
+        run: |
+          set -euo pipefail
+          summary_file="coverage/coverage-summary.json"
+          {
+            echo ""
+            echo "## Coverage"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ ! -f "$summary_file" ]; then
+            echo "> Coverage report not generated (\`ci_test_coverage\` did not produce \`$summary_file\`)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Render the totals table.
+          node --input-type=module -e "
+          import fs from 'fs';
+          const j = JSON.parse(fs.readFileSync('$summary_file', 'utf-8'));
+          const t = j.total;
+          const T = {
+            lines: Number(process.env.THRESHOLD_LINES),
+            statements: Number(process.env.THRESHOLD_STATEMENTS),
+            branches: Number(process.env.THRESHOLD_BRANCHES),
+            functions: Number(process.env.THRESHOLD_FUNCTIONS),
+          };
+          const rows = ['lines', 'statements', 'branches', 'functions'].map((m) => {
+            const pct = t[m].pct;
+            const thr = T[m];
+            const status = pct >= thr ? ':white_check_mark: pass' : ':x: fail';
+            return \`| \${m} | \${pct.toFixed(2)}% (\${t[m].covered}/\${t[m].total}) | \${thr}% | \${status} |\`;
+          }).join('\n');
+          const md = [
+            '| Metric | Coverage | Threshold | Status |',
+            '|--------|----------|-----------|--------|',
+            rows,
+            '',
+            '<details><summary>Per-file coverage (top 20 by line %)</summary>',
+            '',
+            '| File | Lines | Statements | Branches | Functions |',
+            '|------|-------|------------|----------|-----------|',
+          ];
+          const files = Object.entries(j)
+            .filter(([k]) => k !== 'total')
+            .map(([file, d]) => ({ file, l: d.lines.pct, s: d.statements.pct, b: d.branches.pct, f: d.functions.pct }))
+            .sort((a, b) => b.l - a.l)
+            .slice(0, 20);
+          for (const f of files) {
+            const rel = f.file.replace(process.cwd() + '/', '');
+            md.push(\`| \\\`\${rel}\\\` | \${f.l.toFixed(1)}% | \${f.s.toFixed(1)}% | \${f.b.toFixed(1)}% | \${f.f.toFixed(1)}% |\`);
+          }
+          md.push('', '</details>', '');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md.join('\n') + '\n');
+          "
+
+      # Make the full HTML coverage report downloadable from the run page.
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Tag successful build
         if: github.event_name == 'push'
