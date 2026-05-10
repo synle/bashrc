@@ -236,7 +236,7 @@ unset ignored_commands cmd_string ignored_files file_string
 ################################################################################
 # find all existing paths from a list of candidates (supports wildcards)
 function find_path_list() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       find_path_list: find all existing paths from a list of candidates
         find_path_list path1 path2 ...                any existing paths (default)
@@ -288,7 +288,7 @@ function find_path_list() {
 
 # find first existing path from a list of candidates (delegates to find_path_list)
 function find_path() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       find_path: find first existing path from a list of candidates
         find_path path1 path2 ...                any existing path (default)
@@ -319,7 +319,7 @@ function find_existing() {
 
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       is_truthy: check if a value is truthy (1, true, y, yes — case-insensitive)
         is_truthy 1           returns 0 (success)
@@ -338,7 +338,7 @@ function is_truthy() {
 # the profile is loaded on every interactive shell startup and we want to
 # keep it lean, so the function is duplicated here.
 function prompt_yes_no() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       prompt_yes_no: prompt the user with a yes/no question
         Usage: prompt_yes_no <prompt> [default]
@@ -377,7 +377,7 @@ function prompt_yes_no() {
 ################################################################################
 # curl drop-in: pretty-prints JSON responses via jq when available
 function curl() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       curl: drop-in curl wrapper that pretty-prints JSON responses via jq
         curl <url> [flags...]    standard curl; auto-formats JSON when applicable
@@ -556,7 +556,7 @@ function pwd2() {
 ################################################################################
 # smart diff for files or git commits
 function diff() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       diff: smart diff for files or git commits
         diff file1 file2       side-by-side diff (VS Code if available)
@@ -640,7 +640,7 @@ alias clean='_clean_reset_head_to_main_branch' # hard reset current branch to or
 
 # list source repo names for a GitHub user (default: synle)
 function repos() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "repos: list source repo names for a GitHub user
   Usage: repos [owner]
   Examples:
@@ -656,7 +656,7 @@ function repos() {
 
 # Opens the GitHub repo page for the current git remote in the browser
 function repo() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "repo: open the GitHub repo page for the current git remote
   Usage: repo
   Examples:
@@ -678,7 +678,7 @@ function repo() {
 
 # Opens the PR for the current branch in the browser (alternative: gh pr view --web)
 function pr() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "pr: open the pull request for the current branch
   Usage: pr
   Examples:
@@ -731,7 +731,7 @@ function purge() {
   fi
 
   local file_path="$1"
-  if [ -z "$file_path" ] || [[ "$file_path" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$file_path" ] || is_help_arg "$file_path"; then
     echo "
       purge: remove a file or directory from entire git history
         Usage: purge [-r] <path-to-file-or-dir>
@@ -825,7 +825,7 @@ function gogit() {
 
 # clone a repo by URL or owner/repo shorthand, tries SSH then falls back to HTTPS
 function clone() {
-  if [ -z "${1:-}" ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "${1:-}" ] || is_help_arg "${1:-}"; then
     echo "clone: clone a repo by URL or owner/repo shorthand
   Usage: clone <url-or-owner/repo>
   Examples:
@@ -1448,7 +1448,7 @@ APPLESCRIPT
 # (notably `copy()`) keep working on minimal systems.
 ################################################################################
 function unwrap() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       unwrap: rejoin terminal-wrapped paragraphs from stdin
         echo \$'foo\\nbar' | unwrap     rejoin a single paragraph
@@ -1580,7 +1580,7 @@ function copy() {
     else
       _clipboard_save
     fi
-  elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  elif is_help_arg "$1"; then
     echo "
       copy: stdin or files/strings into clipboard + history
         copy                   rewrap the existing clipboard in place (no pipe, no args)
@@ -1615,7 +1615,7 @@ function paste() {
     fi
   elif [ "$1" = "--unwrap" ]; then
     paste | unwrap
-  elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  elif is_help_arg "$1"; then
     echo "
       paste: print clipboard, recall from history, or forward to paste(1)
         paste                  print clipboard contents (raw) to stdout
@@ -1674,7 +1674,7 @@ function _expand_port_args() {
 
 # list_ports: list processes listening on the given ports
 function list_ports() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "list_ports: list processes listening on the given TCP ports
   Usage: list_ports <port|range> [port|range ...]
   Examples:
@@ -1705,7 +1705,7 @@ function list_ports() {
 
 # kill_port: kill the process listening on a single port
 function kill_port() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "kill_port: kill the process listening on a single TCP port
   Usage: kill_port <port>"
     return 0
@@ -1732,7 +1732,7 @@ function kill_port() {
 
 # kill_ports: kill processes listening on the given TCP ports
 function kill_ports() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "kill_ports: kill processes listening on the given TCP ports
   Usage: kill_ports <port|range> [port|range ...]
   Examples:
@@ -1782,7 +1782,7 @@ function kill_ports() {
 # portcheck: check if a TCP port is in use
 function portcheck() {
   local port="$1"
-  if [ -z "$port" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$port" ] || is_help_arg "$1"; then
     echo "portcheck: check if a TCP port is in use
   Usage: portcheck <port>"
     return 1
@@ -1798,7 +1798,7 @@ function portcheck() {
 # tunnel: expose a local server via Cloudflare Tunnel (cloudflared)
 if type -P cloudflared &> /dev/null; then
   function tunnel() {
-    if [ $# -eq 0 ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    if [ $# -eq 0 ] || is_help_arg "$1"; then
       echo "
         tunnel: expose a local server via Cloudflare Tunnel
           Usage: tunnel [port|url]
@@ -1825,7 +1825,7 @@ function retry() {
   local count="$1"
   shift
 
-  if [ -z "$count" ] || [ -z "$1" ] || [[ "$count" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$count" ] || [ -z "$1" ] || is_help_arg "$count"; then
     echo "
       retry: retry a command up to N times
         Usage: retry <count> <command...>
@@ -1851,7 +1851,7 @@ function retry() {
 # ---- Benchmark ----
 ################################################################################
 function benchmark() {
-  if [ -z "$1" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$1" ] || is_help_arg "$1"; then
     echo "
       benchmark: measure how long a command takes
         Usage: benchmark <command...>
@@ -1901,7 +1901,7 @@ function _dropbox_folder() {
 
 # dropbox: open the dropbox folder
 function dropbox() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "dropbox: open the dropbox folder
   Usage: dropbox"
     return 0
@@ -2014,7 +2014,7 @@ function _patch_view_copy() {
 
 # patch_cleanup: archive loose .patch files, keep only the N newest in archived_patch
 function patch_cleanup() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "patch_cleanup: move loose .patch files into archived_patch and keep only the newest N
   Usage: patch_cleanup [keep=3]
   Examples:
@@ -2069,7 +2069,7 @@ alias patch="patch2"
 ################################################################################
 # open notes file
 function note() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       note: open a shared notes file from Dropbox
         note               open _note.txt
@@ -2118,7 +2118,7 @@ function _screenshot_local_folder() {
 
 # screenshot_backup: copy local screenshots to the shared network folder via cpsync
 function screenshot_backup() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "screenshot_backup: copy local screenshots to the shared network folder
   Uses cpsync to skip unchanged files.
   Usage: screenshot_backup"
@@ -2176,7 +2176,7 @@ alias screenshot_open='screenshot_open_local'
 ################################################################################
 # sync: run backup, screenshot backup, and patch cleanup
 function sync() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "sync: run backup, screenshot backup, and patch cleanup
   Usage: sync"
     return 0

@@ -44,7 +44,7 @@ function _register_browser() {
 # "(not found)" if none of its candidate paths exist. Useful for triaging
 # which browsers are actually available on the current system.
 function list_browsers() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       list_browsers: print every browser wrapper and the binary it would launch (or '(not found)')
         list_browsers         show resolved path for brave, chrome, edge, chromium, vivaldi, opera, arc

@@ -2,6 +2,18 @@
 # Shared shell functions for run.sh and SH scripts (via SOURCE markers).
 # Source of truth — inlined into run.sh via BEGIN/END, included in .sh scripts at runtime.
 
+# is_help_arg <arg> - returns 0 (success) if arg is a recognized --help trigger
+# Recognizes (case-insensitive): help, --help, -help, /help, -h, ?, -?, /?
+# Mirror of the same function in profile-core.sh — keep the body byte-identical.
+function is_help_arg() {
+  local arg
+  arg=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
+  case "$arg" in
+  help | --help | -help | /help | -h | '?' | '-?' | '/?') return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
 # safe_source <source> [dest] - Fetches and sources a bash script with syntax validation.
 #   source: URL (http/https), absolute path, or relative path
 #   dest:   optional local path to store the fetched content (useful for caching URL downloads)
@@ -242,7 +254,7 @@ function is_bash_syle_stale() {
 # piped contexts where stdin is already consumed.
 # Mirror of the same function in profile-advanced.sh — keep in sync.
 function prompt_yes_no() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       prompt_yes_no: prompt the user with a yes/no question
         Usage: prompt_yes_no <prompt> [default]

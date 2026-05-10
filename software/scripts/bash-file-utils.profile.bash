@@ -58,7 +58,7 @@ function download() {
   local url="$1"
   local dest="${2:-.}"
 
-  if [ -z "$url" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$url" ] || is_help_arg "$1"; then
     echo "download: download a file from a URL via curl
   Usage: download <url> [dest_path_or_dir]"
     return 1
@@ -90,7 +90,7 @@ function tree() {
 
 # cp2: copy a single file with progress bar via pv (supports file->file)
 function cp2() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cp2: copy with progress bar via pv
   Usage: cp2 <src> <dest>"
     return
@@ -108,7 +108,7 @@ function watch() {
   local cmd="$3"
   local chsum1="" chsum2=""
 
-  if [ -z "$cmd" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$cmd" ] || is_help_arg "$1"; then
     echo "watch: run a command when files change
   Usage: watch <dir> <filter> <command>
   Example: watch src '*.js' 'npm test'"
@@ -231,7 +231,7 @@ _HELPERS_EOF
 # cpsync: smart copy file->folder or folder->folder (recursive), with progress, ETA,
 # skip-if-unchanged (by size for binary, size+wordcount+age for text), cross-device safe
 function cpsync() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpsync: smart file/dir copy with progress, ETA, and skip-if-unchanged
   Usage: cpsync <src> <dest> [lookback_days=7] [max_size_gb=1]
   Modes:
@@ -374,7 +374,7 @@ CPSYNC_NODE
 
 # _cp_zip_to_dest: zip files and copy the .zip to dest via cpsync, then clean up all tmp files
 function _cp_zip_to_dest() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "_cp_zip_to_dest: zip files and copy .zip to dest via cpsync
   Usage: _cp_zip_to_dest <folder_or_file_list> <dest> [zip_name] [max_size_gb=1] [should_add_time_stamp=false]
   Folder mode:    _cp_zip_to_dest ~/Documents /backup
@@ -468,7 +468,7 @@ function _cp_zip_to_dest() {
 ################################################################################
 # cpstamp: copy a file with a timestamp suffix (e.g. file.txt.2026_04_13_19_15), delegates to cpsync
 function cpstamp() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpstamp: copy a file with a timestamp suffix appended
   Usage: cpstamp <src_file> <dest_dir>
   Output: dest_dir/filename.2026_03_24_17_30"
@@ -493,7 +493,7 @@ function cpstamp() {
 #   and pass it to _cp_zip_to_dest (only tracked files are zipped).
 # Non-git folders: pass the folder to _cp_zip_to_dest (zips everything recursively).
 function cprepo() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cprepo: zip a git repo (tracked files) or folder and copy .zip to dest
   Usage: cprepo <src_dir> <dest_dir> [max_size_gb=1] [should_add_time_stamp=false]
   For git repos: syncs to default branch, zips only tracked files.
@@ -551,7 +551,7 @@ function cprepo() {
 # Node does the glob matching and writes matching file paths (absolute, one per line)
 # to a temp file. _cp_zip_to_dest zips those files and copies to dest.
 function cpfiles() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpfiles: zip files matching a glob pattern and copy .zip to dest
   Usage: cpfiles <src_dir> <dest_dir> <pattern> [should_add_time_stamp=false]
   pattern  glob (e.g., \".env*\", \"*.log\", \"*.conf\")
@@ -609,7 +609,7 @@ CPFILES_NODE
 
 # cpenv: shorthand for cpfiles — zip all .env* files and copy .zip to dest
 function cpenv() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpenv: zip all .env* files and copy .zip to dest (timestamp on by default)
   Usage: cpenv <src_dir> <dest_dir> [should_add_time_stamp=true]
   Shorthand for: cpfiles <src> <dest> \".env*\" [should_add_time_stamp]"
@@ -620,7 +620,7 @@ function cpenv() {
 
 # cpdb: shorthand for cpfiles — zip all *.sqlite* files and copy .zip to dest
 function cpdb() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpdb: zip all *.sqlite* files and copy .zip to dest (timestamp on by default)
   Usage: cpdb <src_dir> <dest_dir> [should_add_time_stamp=true]
   Shorthand for: cpfiles <src> <dest> \"*.sqlite*\" [should_add_time_stamp]"
@@ -634,7 +634,7 @@ function cpdb() {
 ################################################################################
 # dedup: scan a folder for duplicates (by MD5 hash + file size), move extras to _recycleBin keeping newest
 function dedup() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "dedup: move duplicate files to _recycleBin, keeping the newest"
     echo "  dedup <path> [recursive=false] [across_folders=false]"
     echo "  recursive       if true/1, scan subdirectories recursively"
@@ -793,7 +793,7 @@ function _pack_filename_sanitize() {
 # the bundle to stdout (so `pack_text | unpack_text /tmp/copy` works without --raw).
 # --zip and --tar wrap the same raw blob in compressed archives.
 function pack_text() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "pack_text: bundle a directory (or a single file) into a self-contained pack
   Usage: pack_text [src=.] [output_file] [--raw|--zip|--tar] [--encode=<algo>] [--encode-level=N]
          src may be a directory (default behavior) OR a single file path
@@ -1270,7 +1270,7 @@ PACK_TEXT_NODE
 # Input may be a file path, an explicit '-' stdin marker, or piped stdin.
 # .tar.gz/.tgz/.tar/.zip archives are auto-extracted to a temp dir first.
 function unpack_text() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "unpack_text: parse a bulletproof pack and extract files (or re-emit as text view)
   Usage: unpack_text [input_file|-] [dest_dir=.] [--verbose]
          unpack_text --view [input_file|-]               # re-emit, no disk writes
@@ -1702,7 +1702,7 @@ UNPACK_TEXT_NODE
 # valid pack — re-feedable into unpack_text. Useful for grep/diff/edit on a
 # bundle without unpacking files to disk.
 function view_pack_text() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "view_pack_text: alias for 'unpack_text --view' — re-emit a pack with text decoded inline
   Usage: view_pack_text [input_file|-]
          <some command> | view_pack_text
