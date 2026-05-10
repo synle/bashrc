@@ -152,6 +152,14 @@ build_update_hosts:
 test_unit:
 	npm test
 
+# Run unit tests with istanbul coverage. Outputs ./coverage (HTML + JSON summary +
+# coverage-final.json) and prints a text + text-summary table. Gates against the
+# baseline thresholds defined in vitest.config.js — CI uses this to fail the
+# build if coverage regresses, and the job summary step reads coverage-summary.json
+# to render the Coverage section.
+test_coverage:
+	npm test -- --coverage
+
 # Run profile syntax tests
 test_profile:
 	npm run test:profile
@@ -252,6 +260,11 @@ ci_test_smoke_local:
 # Run build config shape tests (CI, dot reporter)
 ci_test_buildconfig:
 	npm run test:buildconfig -- --reporter=dot
+
+# Run unit tests with coverage (CI, dot reporter). Same gate as `make test_coverage`
+# but quieter — feeds `coverage/coverage-summary.json` into the CI job summary step.
+ci_test_coverage:
+	npm test -- --coverage --reporter=dot
 
 # Run all CI test suites
 ci_test: ci_test_unit ci_test_profile ci_test_smoke ci_test_buildconfig
