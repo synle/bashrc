@@ -46,12 +46,12 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-10T15:08:40.196Z
+# Generated: 2026-05-10T17:03:34.346Z
 # END Profile Generated Timestamp
 #
 ################################################################################
 # SOURCE_BEGIN software/scripts/bash-history.profile.bash
-# software/scripts/bash-history.profile.bash | 12ac7912398a3b82ac0ea31ed8cbed84 | 10.3 KB | 2026-05-10
+# software/scripts/bash-history.profile.bash | bd7778a6e0fadd5ed1b9d29f8363ebea | 10.2 KB | 2026-05-10
 ################################################################################
 # ---- Bash History Backup & Search ----
 #
@@ -179,7 +179,7 @@ _backup_history
 #   - From the prompt or a script (READLINE_LINE unset): eval the selection
 #     immediately. Useful for `fuzzy_history docker` style "find-and-run" calls.
 function fuzzy_history() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "fuzzy_history: interactive fzf search over bash history"
     echo "  fuzzy_history [query]    search with optional initial query"
     echo "  fuzzy_history help       show this help"
@@ -231,7 +231,7 @@ function fuzzy_history() {
 
 # lists all available history backups with date and line count
 function history_list_backups() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "history_list_backups: list all available history backups"
     echo "  history_list_backups help  show this help"
     return
@@ -255,7 +255,7 @@ function history_list_backups() {
 
 # restores ~/.bash_history from a backup
 function history_restore() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "history_restore: restore ~/.bash_history from a backup"
     echo "  history_restore              restore latest (only if history is empty)"
     echo "  history_restore YYYY-MM-DD   restore specific date (overwrites)"
@@ -831,6 +831,33 @@ export LINE_BREAK_COUNT=100
 export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
 
 ################################################################################
+# ---- Help-Trigger Helper ----
+# Single source of truth for the "is this arg a --help request?" check used by
+# every user-facing function across the profile. Defined in profile-core (not
+# profile-advanced) so any partial sourced later can rely on it. Keep this
+# function body byte-identical with the copy in common-functions.bash — the
+# pair must accept the same trigger set.
+################################################################################
+
+# is_help_arg <arg> - returns 0 (success) if arg is a recognized --help trigger
+# Recognizes (case-insensitive):
+#   help, --help, -help, /help    full word, every common prefix style
+#   -h                            short
+#   ?, -?, /?                     DOS / PowerShell short
+# `tr` (not bash 4's ${var,,}) is used so this stays parseable on bash 3.2 —
+# safe_source rejects any partial that fails `bash -n` on macOS's /bin/bash.
+# Single-quote `?` patterns in the case so glob expansion does not match them
+# against any single character.
+function is_help_arg() {
+  local arg
+  arg=$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')
+  case "$arg" in
+  help | --help | -help | /help | -h | '?' | '-?' | '/?') return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
+################################################################################
 # ---- Path / Action Helpers ----
 # Defined here in profile-core (not profile-advanced) so any partial sourced
 # later — bash-fzf's view_file, editor-launchers' run_editor, etc. — can
@@ -1183,7 +1210,7 @@ unset ignored_commands cmd_string ignored_files file_string
 ################################################################################
 # find all existing paths from a list of candidates (supports wildcards)
 function find_path_list() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       find_path_list: find all existing paths from a list of candidates
         find_path_list path1 path2 ...                any existing paths (default)
@@ -1235,7 +1262,7 @@ function find_path_list() {
 
 # find first existing path from a list of candidates (delegates to find_path_list)
 function find_path() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       find_path: find first existing path from a list of candidates
         find_path path1 path2 ...                any existing path (default)
@@ -1266,7 +1293,7 @@ function find_existing() {
 
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       is_truthy: check if a value is truthy (1, true, y, yes — case-insensitive)
         is_truthy 1           returns 0 (success)
@@ -1285,7 +1312,7 @@ function is_truthy() {
 # the profile is loaded on every interactive shell startup and we want to
 # keep it lean, so the function is duplicated here.
 function prompt_yes_no() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       prompt_yes_no: prompt the user with a yes/no question
         Usage: prompt_yes_no <prompt> [default]
@@ -1324,7 +1351,7 @@ function prompt_yes_no() {
 ################################################################################
 # curl drop-in: pretty-prints JSON responses via jq when available
 function curl() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       curl: drop-in curl wrapper that pretty-prints JSON responses via jq
         curl <url> [flags...]    standard curl; auto-formats JSON when applicable
@@ -1503,7 +1530,7 @@ function pwd2() {
 ################################################################################
 # smart diff for files or git commits
 function diff() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       diff: smart diff for files or git commits
         diff file1 file2       side-by-side diff (VS Code if available)
@@ -1587,7 +1614,7 @@ alias clean='_clean_reset_head_to_main_branch' # hard reset current branch to or
 
 # list source repo names for a GitHub user (default: synle)
 function repos() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "repos: list source repo names for a GitHub user
   Usage: repos [owner]
   Examples:
@@ -1603,7 +1630,7 @@ function repos() {
 
 # Opens the GitHub repo page for the current git remote in the browser
 function repo() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "repo: open the GitHub repo page for the current git remote
   Usage: repo
   Examples:
@@ -1625,7 +1652,7 @@ function repo() {
 
 # Opens the PR for the current branch in the browser (alternative: gh pr view --web)
 function pr() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "pr: open the pull request for the current branch
   Usage: pr
   Examples:
@@ -1678,7 +1705,7 @@ function purge() {
   fi
 
   local file_path="$1"
-  if [ -z "$file_path" ] || [[ "$file_path" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$file_path" ] || is_help_arg "$file_path"; then
     echo "
       purge: remove a file or directory from entire git history
         Usage: purge [-r] <path-to-file-or-dir>
@@ -1772,7 +1799,7 @@ function gogit() {
 
 # clone a repo by URL or owner/repo shorthand, tries SSH then falls back to HTTPS
 function clone() {
-  if [ -z "${1:-}" ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "${1:-}" ] || is_help_arg "${1:-}"; then
     echo "clone: clone a repo by URL or owner/repo shorthand
   Usage: clone <url-or-owner/repo>
   Examples:
@@ -2395,7 +2422,7 @@ APPLESCRIPT
 # (notably `copy()`) keep working on minimal systems.
 ################################################################################
 function unwrap() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       unwrap: rejoin terminal-wrapped paragraphs from stdin
         echo \$'foo\\nbar' | unwrap     rejoin a single paragraph
@@ -2527,7 +2554,7 @@ function copy() {
     else
       _clipboard_save
     fi
-  elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  elif is_help_arg "$1"; then
     echo "
       copy: stdin or files/strings into clipboard + history
         copy                   rewrap the existing clipboard in place (no pipe, no args)
@@ -2562,7 +2589,7 @@ function paste() {
     fi
   elif [ "$1" = "--unwrap" ]; then
     paste | unwrap
-  elif [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  elif is_help_arg "$1"; then
     echo "
       paste: print clipboard, recall from history, or forward to paste(1)
         paste                  print clipboard contents (raw) to stdout
@@ -2621,7 +2648,7 @@ function _expand_port_args() {
 
 # list_ports: list processes listening on the given ports
 function list_ports() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "list_ports: list processes listening on the given TCP ports
   Usage: list_ports <port|range> [port|range ...]
   Examples:
@@ -2652,7 +2679,7 @@ function list_ports() {
 
 # kill_port: kill the process listening on a single port
 function kill_port() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "kill_port: kill the process listening on a single TCP port
   Usage: kill_port <port>"
     return 0
@@ -2679,7 +2706,7 @@ function kill_port() {
 
 # kill_ports: kill processes listening on the given TCP ports
 function kill_ports() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "kill_ports: kill processes listening on the given TCP ports
   Usage: kill_ports <port|range> [port|range ...]
   Examples:
@@ -2729,7 +2756,7 @@ function kill_ports() {
 # portcheck: check if a TCP port is in use
 function portcheck() {
   local port="$1"
-  if [ -z "$port" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$port" ] || is_help_arg "$1"; then
     echo "portcheck: check if a TCP port is in use
   Usage: portcheck <port>"
     return 1
@@ -2745,7 +2772,7 @@ function portcheck() {
 # tunnel: expose a local server via Cloudflare Tunnel (cloudflared)
 if type -P cloudflared &> /dev/null; then
   function tunnel() {
-    if [ $# -eq 0 ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+    if [ $# -eq 0 ] || is_help_arg "$1"; then
       echo "
         tunnel: expose a local server via Cloudflare Tunnel
           Usage: tunnel [port|url]
@@ -2772,7 +2799,7 @@ function retry() {
   local count="$1"
   shift
 
-  if [ -z "$count" ] || [ -z "$1" ] || [[ "$count" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$count" ] || [ -z "$1" ] || is_help_arg "$count"; then
     echo "
       retry: retry a command up to N times
         Usage: retry <count> <command...>
@@ -2798,7 +2825,7 @@ function retry() {
 # ---- Benchmark ----
 ################################################################################
 function benchmark() {
-  if [ -z "$1" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$1" ] || is_help_arg "$1"; then
     echo "
       benchmark: measure how long a command takes
         Usage: benchmark <command...>
@@ -2848,7 +2875,7 @@ function _dropbox_folder() {
 
 # dropbox: open the dropbox folder
 function dropbox() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "dropbox: open the dropbox folder
   Usage: dropbox"
     return 0
@@ -2961,7 +2988,7 @@ function _patch_view_copy() {
 
 # patch_cleanup: archive loose .patch files, keep only the N newest in archived_patch
 function patch_cleanup() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "patch_cleanup: move loose .patch files into archived_patch and keep only the newest N
   Usage: patch_cleanup [keep=3]
   Examples:
@@ -3016,7 +3043,7 @@ alias patch="patch2"
 ################################################################################
 # open notes file
 function note() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       note: open a shared notes file from Dropbox
         note               open _note.txt
@@ -3065,7 +3092,7 @@ function _screenshot_local_folder() {
 
 # screenshot_backup: copy local screenshots to the shared network folder via cpsync
 function screenshot_backup() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "screenshot_backup: copy local screenshots to the shared network folder
   Uses cpsync to skip unchanged files.
   Usage: screenshot_backup"
@@ -3123,7 +3150,7 @@ alias screenshot_open='screenshot_open_local'
 ################################################################################
 # sync: run backup, screenshot backup, and patch cleanup
 function sync() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "sync: run backup, screenshot backup, and patch cleanup
   Usage: sync"
     return 0
@@ -3337,7 +3364,7 @@ if [[ $- == *i* ]]; then
 fi # end interactive shell guard
 # SOURCE_END software/scripts/bash-keys.profile.bash
 # SOURCE_BEGIN software/scripts/bash-file-utils.profile.bash
-# software/scripts/bash-file-utils.profile.bash | 3affd00263be55108301db70de6d0aaa | 74.5 KB | 2026-05-10
+# software/scripts/bash-file-utils.profile.bash | 220f3db358dacc8ad2c20f0ce7c8c3e5 | 74.2 KB | 2026-05-10
 ################################################################################
 # ---- File Utilities ----
 #
@@ -3396,7 +3423,7 @@ function download() {
   local url="$1"
   local dest="${2:-.}"
 
-  if [ -z "$url" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$url" ] || is_help_arg "$1"; then
     echo "download: download a file from a URL via curl
   Usage: download <url> [dest_path_or_dir]"
     return 1
@@ -3428,7 +3455,7 @@ function tree() {
 
 # cp2: copy a single file with progress bar via pv (supports file->file)
 function cp2() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cp2: copy with progress bar via pv
   Usage: cp2 <src> <dest>"
     return
@@ -3446,7 +3473,7 @@ function watch() {
   local cmd="$3"
   local chsum1="" chsum2=""
 
-  if [ -z "$cmd" ] || [[ "$1" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ -z "$cmd" ] || is_help_arg "$1"; then
     echo "watch: run a command when files change
   Usage: watch <dir> <filter> <command>
   Example: watch src '*.js' 'npm test'"
@@ -3569,7 +3596,7 @@ _HELPERS_EOF
 # cpsync: smart copy file->folder or folder->folder (recursive), with progress, ETA,
 # skip-if-unchanged (by size for binary, size+wordcount+age for text), cross-device safe
 function cpsync() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpsync: smart file/dir copy with progress, ETA, and skip-if-unchanged
   Usage: cpsync <src> <dest> [lookback_days=7] [max_size_gb=1]
   Modes:
@@ -3712,7 +3739,7 @@ CPSYNC_NODE
 
 # _cp_zip_to_dest: zip files and copy the .zip to dest via cpsync, then clean up all tmp files
 function _cp_zip_to_dest() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "_cp_zip_to_dest: zip files and copy .zip to dest via cpsync
   Usage: _cp_zip_to_dest <folder_or_file_list> <dest> [zip_name] [max_size_gb=1] [should_add_time_stamp=false]
   Folder mode:    _cp_zip_to_dest ~/Documents /backup
@@ -3806,7 +3833,7 @@ function _cp_zip_to_dest() {
 ################################################################################
 # cpstamp: copy a file with a timestamp suffix (e.g. file.txt.2026_04_13_19_15), delegates to cpsync
 function cpstamp() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpstamp: copy a file with a timestamp suffix appended
   Usage: cpstamp <src_file> <dest_dir>
   Output: dest_dir/filename.2026_03_24_17_30"
@@ -3831,7 +3858,7 @@ function cpstamp() {
 #   and pass it to _cp_zip_to_dest (only tracked files are zipped).
 # Non-git folders: pass the folder to _cp_zip_to_dest (zips everything recursively).
 function cprepo() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cprepo: zip a git repo (tracked files) or folder and copy .zip to dest
   Usage: cprepo <src_dir> <dest_dir> [max_size_gb=1] [should_add_time_stamp=false]
   For git repos: syncs to default branch, zips only tracked files.
@@ -3889,7 +3916,7 @@ function cprepo() {
 # Node does the glob matching and writes matching file paths (absolute, one per line)
 # to a temp file. _cp_zip_to_dest zips those files and copies to dest.
 function cpfiles() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpfiles: zip files matching a glob pattern and copy .zip to dest
   Usage: cpfiles <src_dir> <dest_dir> <pattern> [should_add_time_stamp=false]
   pattern  glob (e.g., \".env*\", \"*.log\", \"*.conf\")
@@ -3947,7 +3974,7 @@ CPFILES_NODE
 
 # cpenv: shorthand for cpfiles — zip all .env* files and copy .zip to dest
 function cpenv() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpenv: zip all .env* files and copy .zip to dest (timestamp on by default)
   Usage: cpenv <src_dir> <dest_dir> [should_add_time_stamp=true]
   Shorthand for: cpfiles <src> <dest> \".env*\" [should_add_time_stamp]"
@@ -3958,7 +3985,7 @@ function cpenv() {
 
 # cpdb: shorthand for cpfiles — zip all *.sqlite* files and copy .zip to dest
 function cpdb() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "cpdb: zip all *.sqlite* files and copy .zip to dest (timestamp on by default)
   Usage: cpdb <src_dir> <dest_dir> [should_add_time_stamp=true]
   Shorthand for: cpfiles <src> <dest> \"*.sqlite*\" [should_add_time_stamp]"
@@ -3972,7 +3999,7 @@ function cpdb() {
 ################################################################################
 # dedup: scan a folder for duplicates (by MD5 hash + file size), move extras to _recycleBin keeping newest
 function dedup() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "dedup: move duplicate files to _recycleBin, keeping the newest"
     echo "  dedup <path> [recursive=false] [across_folders=false]"
     echo "  recursive       if true/1, scan subdirectories recursively"
@@ -4131,7 +4158,7 @@ function _pack_filename_sanitize() {
 # the bundle to stdout (so `pack_text | unpack_text /tmp/copy` works without --raw).
 # --zip and --tar wrap the same raw blob in compressed archives.
 function pack_text() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "pack_text: bundle a directory (or a single file) into a self-contained pack
   Usage: pack_text [src=.] [output_file] [--raw|--zip|--tar] [--encode=<algo>] [--encode-level=N]
          src may be a directory (default behavior) OR a single file path
@@ -4608,7 +4635,7 @@ PACK_TEXT_NODE
 # Input may be a file path, an explicit '-' stdin marker, or piped stdin.
 # .tar.gz/.tgz/.tar/.zip archives are auto-extracted to a temp dir first.
 function unpack_text() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "unpack_text: parse a bulletproof pack and extract files (or re-emit as text view)
   Usage: unpack_text [input_file|-] [dest_dir=.] [--verbose]
          unpack_text --view [input_file|-]               # re-emit, no disk writes
@@ -5040,7 +5067,7 @@ UNPACK_TEXT_NODE
 # valid pack — re-feedable into unpack_text. Useful for grep/diff/edit on a
 # bundle without unpacking files to disk.
 function view_pack_text() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "view_pack_text: alias for 'unpack_text --view' — re-emit a pack with text decoded inline
   Usage: view_pack_text [input_file|-]
          <some command> | view_pack_text
@@ -5615,7 +5642,7 @@ function fuzzy_git_show() {
 }
 # SOURCE_END software/scripts/bash-fzf.profile.bash
 # SOURCE_BEGIN software/scripts/advanced/editor-launchers-common.profile.bash
-# software/scripts/advanced/editor-launchers-common.profile.bash | 50a4eaabbc9f9c8964d1cb931fb44fad | 5.6 KB | 2026-05-10
+# software/scripts/advanced/editor-launchers-common.profile.bash | 5cac2d6a7ddd2c843ee0ed6996efde70 | 5.6 KB | 2026-05-10
 # Parallel-array registry populated by `_register_editor` calls in each
 # editor-launchers.js block. Used by `list_editors` for binary-availability triage.
 _REGISTERED_EDITORS=()
@@ -5633,7 +5660,7 @@ function _register_editor() {
 # "(not found)" if none of its candidate paths exist. Useful for triaging
 # which editors are actually available on the current system.
 function list_editors() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       list_editors: print every editor wrapper and the binary it would launch (or '(not found)')
         list_editors          show resolved path for subl, smerge, code, zed, vim, ...
@@ -5877,7 +5904,7 @@ function zed() {
 }
 # END Editor Launchers - Zed
 # SOURCE_BEGIN software/scripts/advanced/browser-launchers-common.profile.bash
-# software/scripts/advanced/browser-launchers-common.profile.bash | f2af603cfc35cb9472452ff2d673c559 | 5.9 KB | 2026-05-10
+# software/scripts/advanced/browser-launchers-common.profile.bash | 8b5e81f1e38a65b965828d9054d15f31 | 5.8 KB | 2026-05-10
 # Common Chromium flags applied by run_browser on every launch.
 # Kept to safe, non-destructive tweaks (no sync/security changes).
 #
@@ -5922,7 +5949,7 @@ function _register_browser() {
 # "(not found)" if none of its candidate paths exist. Useful for triaging
 # which browsers are actually available on the current system.
 function list_browsers() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "
       list_browsers: print every browser wrapper and the binary it would launch (or '(not found)')
         list_browsers         show resolved path for brave, chrome, edge, chromium, vivaldi, opera, arc
@@ -9308,7 +9335,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 9cc0c22ba885a644f9ef7285f7678170 | 23.9 KB | 2026-05-10
+# software/scripts/bash-command-wrappers.profile.bash | 88c3ee78a126c916a370bc65122a1b10 | 23.8 KB | 2026-05-10
 ################################################################################
 # ---- Command Wrappers ----
 #
@@ -9386,7 +9413,7 @@ fi
 ################################################################################
 # su: root shell preserving PATH and env
 function su() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "su: root shell preserving \$PATH (sudo -E bash)"
     echo "  su          open root shell with your env/PATH preserved"
     echo "  su <args>   fall back to regular su with args"
@@ -9555,7 +9582,7 @@ function renpm() {
 ################################################################################
 # update_lang: upgrade globally-installed packages from each language pkg manager
 function update_lang() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "update_lang: upgrade globally-installed language packages
   Skips any tool not on PATH. Companion to the OS-level \`update\` alias.
   Covers: rustup, cargo-update, npm, pnpm, yarn (v1), bun, deno, uv, pip (--user)."
@@ -9632,7 +9659,7 @@ function update_lang() {
 ################################################################################
 # blame: git blame alternative — print per-line "<line>  <cmt> <date> <sha> <author>: <summary>"; <cmt> is "//" for C-family extensions and "#" otherwise so the row is paste-safe as a comment in the host language
 function blame() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "blame: git blame alternative — per-line history for each input file
   Usage: blame <file> [<file> ...]
   Output: prints a '<cmt> file: <abs-path>' comment-style header (absolute path of the input), then one row per line as
@@ -9720,7 +9747,7 @@ function blame() {
 
 # blame_view: run blame on each file, write the output to /tmp/<timestamp>-<basename> (extension preserved so the editor picks the right syntax from the filename), then open with subl (the default editor)
 function blame_view() {
-  if [ $# -eq 0 ] || [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if [ $# -eq 0 ] || is_help_arg "${1:-}"; then
     echo "blame_view: run blame and open it in the editor
   Usage: blame_view <file> [<file> ...]
   Behavior: for each input file, runs 'blame <file>' and writes the output to
@@ -9780,7 +9807,7 @@ function blame_view() {
 #   - The random suffix comes from `mktemp -u` so the path is unique per run
 #     and avoids clobbering older renders in /tmp.
 function marked() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "marked: render markdown to HTML using \`npx -y marked@latest\`
   Usage:
     marked                        render piped stdin or clipboard → /tmp/marked-<YYYY-MM-DD>-<rand>-clipboard.html
@@ -9859,7 +9886,7 @@ alias md=marked
 # that has no markdown equivalent is dropped instead of leaking into the
 # output as inline tags.
 function html() {
-  if [[ "${1:-}" =~ ^(help|--help|-h|-\?|/\?)$ ]]; then
+  if is_help_arg "${1:-}"; then
     echo "html: convert HTML to Markdown using \`pandoc -f html -t gfm-raw_html\`
   Usage:
     html                          render piped stdin or clipboard → /tmp/html-<YYYY-MM-DD>-<rand>-clipboard.md
