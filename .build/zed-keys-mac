@@ -103,7 +103,7 @@
       "cmd-shift-l": "editor::SplitSelectionIntoLines",
       "cmd-l": "editor::SelectLine",
       "cmd-backspace": "editor::DeleteToBeginningOfLine",
-      "ctrl-m": "editor::GoToEnclosingBracket",
+      "ctrl-m": "editor::MoveToEnclosingBracket",
       "ctrl-d": "pane::SplitRight",
       "ctrl-'": "pane::SplitDown",
       "cmd-shift-d": "pane::SplitDown",
