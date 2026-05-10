@@ -162,7 +162,7 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+shift+'` | Goto symbol (workspace) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
 | `OS_KEY+enter`   | Goto definition         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 | `shift+enter`    | Find references         |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `ctrl+m`         | Jump to bracket         |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| `ctrl+m`         | Jump to bracket         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 
 ### Navigation (cursor movement)
 
