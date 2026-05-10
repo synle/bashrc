@@ -86,3 +86,12 @@ Drop the matching rule for the current request only when the user says any of:
 - "skip babysit" → open the PR and stop.
 - "WIP only" / "don't push" → no push, no PR.
 - "single-shot" / "no worktree" → work in the main checkout.
+
+## Secrets & Sensitive Data
+
+Never leak secrets, credentials, or environment config to any tracked file or external surface. These rules apply to every output channel — logs, CI job summaries, PR comments, workflow artifacts, coverage reports, error messages, debug dumps, generated docs, anywhere.
+
+40. **No secret values, ever, anywhere.** No raw env vars, API tokens, passwords, OAuth keys, signing keys, private hostnames, internal URLs, customer IDs, or PII in any output the user, the public, or other repo collaborators can read. Specifically: never `echo`/`printenv`/`env`/`set | grep` into `$GITHUB_STEP_SUMMARY`, never reference `${{ secrets.* }}` in summary/comment templates, never `console.log(process.env)`, never `JSON.stringify(req)` for objects that include auth headers.
+41. **Coverage and artifact scope is source + metrics only.** Coverage `include:` should list source globs explicitly — never `**/*` or `.`. `exclude:` must cover `.env*`, `**/secret*`, `**/credential*`, `**/*.pem`, `**/*.key`, `**/*.p12`, `assets/binaries/**`, `secrets/**`, and any fixture path containing literal-looking tokens. Artifact uploads (`actions/upload-artifact`) must specify an explicit `path:` (e.g. `coverage/`) — never `.` or the whole workspace.
+42. **CI summaries and PR comments carry metrics + filenames only.** Numbers, percentages, paths, status labels — yes. File contents, env dumps, build-time-generated config, response bodies from authenticated calls — no. Before adding any new step that writes to `$GITHUB_STEP_SUMMARY`, posts a `gh pr comment`, or uploads an artifact, audit exactly what it can read: if a prior step generated config files containing credentials, scope the new step to exclude those paths.
+43. **No catch-all artifact uploads.** When a CI step generates output you want to publish, scope the upload to the exact subdirectory you need. Never upload the whole workspace "just in case" — that's how `.env`, `~/.aws/credentials`, and node_modules with embedded keys leak into public artifacts.
