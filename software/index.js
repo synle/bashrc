@@ -3163,15 +3163,36 @@ async function fetchGitHubReleaseVersion(repoId) {
 }
 
 /**
- * Downloads a release asset with fallback to the local assets/ backup.
- * The backup directory is derived from the repo identifier (repo name),
- * matching the same derivation used by ci-download-release-binaries.sh.
+ * Repo identifier for the rolling release that hosts cached fallback binaries.
+ * The release is updated by software/tools/ci-download-release-binaries.sh on every CI prep.
+ */
+const BINARY_CACHE_REPO = "synle/bashrc";
+
+/** Rolling tag for the cached-binary release on BINARY_CACHE_REPO. */
+const BINARY_CACHE_TAG = "binary-cache";
+
+/**
+ * Builds the cached-asset download URL for a given upstream app + filename.
+ * Assets in the binary-cache release are namespaced as <app>__<file> so multiple
+ * upstream repos can co-exist in one flat release. Must match the naming used
+ * by ci-download-release-binaries.sh.
+ * @param {string} appName - Upstream app name (e.g. "sqlui-native")
+ * @param {string} fileName - The original asset filename (extension preserved)
+ * @returns {string} Full download URL on the binary-cache release
+ */
+function getBinaryCacheUrl(appName, fileName) {
+  return `https://github.com/${BINARY_CACHE_REPO}/releases/download/${BINARY_CACHE_TAG}/${appName}__${fileName}`;
+}
+
+/**
+ * Downloads a release asset with fallback to the binary-cache release on synle/bashrc.
+ * The cache is populated on every CI prep run by ci-download-release-binaries.sh.
  *
  * Flow:
  * 1. Download the file from the upstream GitHub release URL.
  * 2. If the file exists and is non-empty → success, return true.
- * 3. If that failed, look for assets/<repo>/<same filename> as a local fallback.
- * 4. If the fallback file exists and is non-empty → copy it to destination, return true.
+ * 3. If that failed, download from the binary-cache release fallback URL.
+ * 4. If the fallback download succeeds and is non-empty → return true.
  * 5. If no fallback either → log and return false.
  *
  * @param {string} repoId - Repository identifier ("owner/repo" or "owner/repo/version")
@@ -3189,17 +3210,20 @@ async function downloadAssetWithFallback(repoId, url, destination) {
   const isValid = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
   if (isValid) return true;
 
-  // Step 3-4: upstream failed — try local fallback from assets/binaries/<repo>/
-  const fallbackFile = path.join(path.resolve("assets/binaries"), appName, path.basename(destination));
-  if (fs.existsSync(fallbackFile) && (fs.statSync(fallbackFile).size || 0) > 0) {
-    log(`>> Download of ${appName} failed, restoring from assets/binaries/ backup:`, fallbackFile);
-    await mkdir(path.dirname(destination));
-    copyFile(fallbackFile, destination);
-    return true;
-  }
+  // Step 3-4: upstream failed — try the binary-cache release on synle/bashrc.
+  // Extension is preserved (.zip / .tar.gz / .dmg / .exe / .AppImage), so callers
+  // that extract or mount the destination keep working unchanged.
+  const fallbackUrl = getBinaryCacheUrl(appName, path.basename(destination));
+  log(`>> Download of ${appName} failed, trying binary-cache fallback:`, fallbackUrl);
+  await mkdir(path.dirname(destination));
+  // deleteFile so downloadAsset doesn't short-circuit on the empty/partial file from step 1
+  await deleteFile(destination);
+  await downloadAsset(fallbackUrl, destination);
+  const fallbackOk = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
+  if (fallbackOk) return true;
 
   // Step 5: no fallback available
-  log(`>> Download of ${appName} failed, no backup available in assets/binaries/${appName}/`);
+  log(`>> Download of ${appName} failed, no backup available in binary-cache release for ${appName}/`);
   return false;
 }
 

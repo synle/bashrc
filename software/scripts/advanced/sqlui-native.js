@@ -70,7 +70,7 @@ async function _installSqluiPortal() {
   // sqlui-portal.js, sqlui-portal-assets.json, and package.json. Strip that
   // wrapper so the files land directly under payloadDir. tar preserves the
   // executable bit on the launcher, but re-chmod defensively in case the
-  // assets/binaries/ fallback ever loses it (cp -p / git can drop modes).
+  // binary-cache fallback ever loses it (e.g. via repacking).
   await execBash(`tar -xzf "${tarPath}" --strip-components=1 -C "${payloadDir}"`);
   await execBash(`chmod +x "${realLauncher}"`);
 

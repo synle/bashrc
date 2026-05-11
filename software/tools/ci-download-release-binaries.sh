@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
 {
   ################################################################################
-  # ---- ci-download-release-binaries.sh - Download latest release binaries ----
+  # ---- ci-download-release-binaries.sh - Refresh the binary-cache release ----
   #
-  # Downloads latest release assets from GitHub for configured repos.
-  # The assets/binaries/<app>/ directories are committed via the CI prep patch,
-  # making them available as fallbacks for downloadAssetWithFallback() at runtime.
+  # Downloads the latest release assets from each configured upstream repo and
+  # mirrors them to a single rolling release on synle/bashrc (tag: binary-cache),
+  # so downloadAssetWithFallback() in software/index.js has a stable URL to fall
+  # back to when the upstream is unreachable.
   #
-  # Flow per repo:
+  # The cache is flat (one release, all apps) — assets are namespaced as
+  # "<app>__<filename>" so multiple upstreams co-exist without collision.
+  # This naming MUST stay in sync with getBinaryCacheUrl() in software/index.js.
+  #
+  # Flow per upstream repo:
   # 1. Fetch release metadata (version + asset list) from the GitHub API.
   # 2. Derive app name from the API URL path (e.g. url-porter, sqlui-native).
   # 3. Extract all assets with names, sizes, and download URLs.
   # 4. Skip any asset over the size threshold (50 MB) using the API-reported size.
   # 5. Download all eligible assets to a temp directory, validate each is non-empty.
-  # 6. All-or-nothing: if any download fails or is 0 bytes, skip the entire app:
-  #    - Existing backup in assets/binaries/<app>/ → keep it (don't overwrite with bad data).
-  #    - No existing backup → still OK (net new, nothing to protect).
-  # 7. If all valid → copy everything to assets/binaries/<app>/ and write version.json.
+  # 6. All-or-nothing: if any download fails or is 0 bytes, skip the entire app
+  #    (existing release assets for this app are preserved on failure).
+  # 7. If all valid → delete existing "<app>__*" assets on the binary-cache
+  #    release, then upload the fresh ones (each as "<app>__<filename>"),
+  #    plus a "<app>__version.json" for diagnostics.
   # 8. Print a ::group:: summary with per-app file counts and sizes.
+  #
+  # Requires: GITHUB_TOKEN with contents:write on the cache repo. Run under
+  # `gh auth status` in CI (the workflow's default GITHUB_TOKEN is sufficient).
   #
   # Usage:
   #   bash software/tools/ci-download-release-binaries.sh
@@ -26,15 +35,19 @@
 
   set -euo pipefail
 
-  ASSETS_DIR="assets/binaries"
+  CACHE_REPO="synle/bashrc"
+  CACHE_TAG="binary-cache"
+  CACHE_TITLE="Binary cache (fallback for downloadAssetWithFallback)"
   TEMP_DIR="${TMPDIR:-/tmp}/ci-release-binaries-$$"
-  MAX_FILE_SIZE=$((50 * 1024 * 1024))
+  # GitHub Releases accept assets up to 2 GB. 300 MB is generous for our
+  # current upstreams (Tauri AppImages, Electron .dmg, etc.) and was bumped
+  # from the old 50 MB cap once we stopped shipping these as a prep-patch
+  # artifact and started mirroring them to a release directly.
+  MAX_FILE_SIZE=$((300 * 1024 * 1024))
 
   trap 'rm -rf "$TEMP_DIR"' EXIT
 
   mkdir -p "$TEMP_DIR"
-  # Ensure the backup root exists before per-app subfolders are written into it
-  mkdir -p "$ASSETS_DIR"
 
   # Report accumulator: lines of "app_name|file_name|file_size" for final summary
   REPORT_FILE="$TEMP_DIR/_report.txt"
@@ -98,8 +111,119 @@
     return 0
   }
 
+  # Ensures the rolling cache release exists on $CACHE_REPO. Creates it on first
+  # use (prerelease, not "Latest"). Idempotent — subsequent calls are a no-op.
+  function ensure_cache_release() {
+    if gh release view "$CACHE_TAG" --repo "$CACHE_REPO" > /dev/null 2>&1; then
+      return 0
+    fi
+    echo ">> Creating $CACHE_REPO release $CACHE_TAG (first-time setup)"
+    gh release create "$CACHE_TAG" \
+      --repo "$CACHE_REPO" \
+      --title "$CACHE_TITLE" \
+      --notes "Rolling fallback cache for downloadAssetWithFallback(). Auto-refreshed by software/tools/ci-download-release-binaries.sh on every CI prep run. Not for human consumption." \
+      --prerelease
+  }
+
+  # Lists current "<app>__*" asset names on the cache release.
+  # Returns one asset name per line (or empty output on no matches / first run).
+  function list_cache_assets_for_app() {
+    local app_name="$1"
+    gh release view "$CACHE_TAG" --repo "$CACHE_REPO" \
+      --json assets --jq ".assets[].name | select(startswith(\"${app_name}__\"))" 2>/dev/null || true
+  }
+
+  # Fetches the existing size (in bytes) of a single cached asset by name on the
+  # cache release. Echoes a byte count or empty string when the asset is absent.
+  function get_existing_cache_asset_size() {
+    local asset_name="$1"
+    gh release view "$CACHE_TAG" --repo "$CACHE_REPO" \
+      --json assets --jq ".assets[] | select(.name == \"${asset_name}\") | .size" 2>/dev/null || true
+  }
+
+  # Minimum acceptable size for a freshly-downloaded asset before it can be
+  # uploaded as a fallback. Catches obviously-bad responses (HTML error pages
+  # returning 200, truncated transfers, etc.) that pass the non-zero check.
+  MIN_ASSET_SIZE_BYTES=1024
+
+  # Uploads a single file to the cache release as "<app>__<basename>", but only
+  # after sanity-checking the local file size and, if an existing same-named
+  # asset is already on the release, refusing to clobber a known-good asset
+  # with one that's suspiciously smaller. This guards against replacing a
+  # working fallback with a corrupt upstream response on a future run.
+  #
+  # Returns 0 on success (uploaded), 2 on safe-skip (refused clobber for
+  # sanity reasons), and 1 on hard failure (gh upload errored out).
+  function safe_upload_cache_asset() {
+    local app_name="$1"
+    local src_file="$2"
+    local fname
+    fname=$(basename "$src_file")
+    local namespaced="${app_name}__${fname}"
+    local new_size
+    new_size=$(wc -c < "$src_file" | tr -d ' ')
+
+    # Guard 1: file must be at least MIN_ASSET_SIZE_BYTES. version.json is
+    # ~120 bytes and is exempt — its content is metadata-only and validated
+    # separately by callers that read it.
+    if [ "$fname" != "version.json" ] && [ "$new_size" -lt "$MIN_ASSET_SIZE_BYTES" ]; then
+      echo "  [SKIP-UPLOAD] $namespaced — local file is $(format_size "$new_size"), below minimum $(format_size "$MIN_ASSET_SIZE_BYTES") (refusing to clobber)"
+      return 2
+    fi
+
+    # Guard 2: if a same-named asset already exists on the release, refuse to
+    # overwrite it with one substantially smaller. 50% size drop is the
+    # threshold — large enough to allow legitimate shrinks (compression
+    # improvements, debug-symbol stripping) but small enough to catch a
+    # truncated download or an HTML error page replacing a real binary.
+    local existing_size
+    existing_size=$(get_existing_cache_asset_size "$namespaced")
+    if [ -n "$existing_size" ] && [ "$existing_size" -gt 0 ]; then
+      local half_existing=$((existing_size / 2))
+      if [ "$new_size" -lt "$half_existing" ]; then
+        echo "  [SKIP-UPLOAD] $namespaced — new size $(format_size "$new_size") is <50% of existing $(format_size "$existing_size") (refusing to clobber known-good asset)"
+        return 2
+      fi
+    fi
+
+    # Stage under the namespaced filename and upload with --clobber. Clobber is
+    # required because (a) gh release upload errors on existing same-named
+    # assets without it and (b) it's the only way to atomically replace an
+    # unversioned filename (e.g. sqlui-portal.tar.gz, version.json).
+    local staged="$TEMP_DIR/_upload/$namespaced"
+    mkdir -p "$(dirname "$staged")"
+    cp -f "$src_file" "$staged"
+    if ! gh release upload "$CACHE_TAG" "$staged" --repo "$CACHE_REPO" --clobber > /dev/null; then
+      echo "  [FAIL-UPLOAD] $namespaced"
+      return 1
+    fi
+    return 0
+  }
+
+  # Deletes any "<app>__*" asset on the cache release whose name is NOT in the
+  # whitespace-separated keep-list. Called AFTER a successful upload batch so
+  # an upload failure mid-batch never strands the user with an empty cache.
+  function purge_stale_cache_assets_except() {
+    local app_name="$1"
+    local keep_list="$2"
+    local existing
+    existing=$(list_cache_assets_for_app "$app_name")
+    if [ -z "$existing" ]; then
+      return 0
+    fi
+    while IFS= read -r aname; do
+      [ -z "$aname" ] && continue
+      # Keep if the asset name appears as a whole word in the keep-list.
+      if echo " $keep_list " | grep -q " $aname "; then
+        continue
+      fi
+      gh release delete-asset "$CACHE_TAG" "$aname" --repo "$CACHE_REPO" --yes > /dev/null 2>&1 || true
+      echo "  [PURGE] $aname"
+    done <<< "$existing"
+  }
+
   # Processes a single GitHub release: fetch metadata, download eligible assets,
-  # validate, and copy to assets/<app>/ if all pass. See file header for full flow.
+  # validate, and mirror to the cache release if all pass. See file header for full flow.
   # Usage: backup_release_assets <repo_id>  (e.g. "synle/url-porter" or "synle/url-porter/v1.2.0")
   function backup_release_assets() {
     local repo_id="$1"
@@ -148,7 +272,6 @@ for a in data.get('assets', []):
     fi
 
     local app_temp="$TEMP_DIR/$app_name"
-    local app_assets="$ASSETS_DIR/$app_name"
     local total_count=0
     local download_count=0
     local skip_count=0
@@ -181,39 +304,57 @@ for a in data.get('assets', []):
       return
     fi
 
-    # Step 6: all-or-nothing — if any download failed, skip the entire app
+    # Step 6: all-or-nothing — if any download failed, preserve prior cache for this app
     if [ "$all_valid" -eq 0 ]; then
-      if [ -f "$app_assets/version.json" ]; then
-        # Existing backup present — preserve it, don't overwrite with bad data
-        echo "  [SKIP] Keeping existing backup for $app_name — one or more new artifacts invalid"
-      else
-        # Net new — no existing backup to protect, skip is acceptable
-        echo "  [SKIP] No existing backup for $app_name — skipping (net new, acceptable)"
-      fi
+      echo "  [SKIP] Keeping existing cache entries for $app_name — one or more new artifacts invalid"
       return
     fi
 
-    # Step 7: all valid — copy to assets/<app>/ and write version.json
-    mkdir -p "$app_assets"
+    # Step 7: all downloads valid — upload them with per-file safety checks,
+    # then purge any stale "<app>__*" assets that aren't part of this batch.
+    # Purge happens LAST so an upload failure mid-batch never empties the cache.
+    local keep_list=""
+    local upload_fail_count=0
+    local upload_skip_count=0
+
     for f in "$app_temp"/*; do
       [ -f "$f" ] || continue
-      local bname
+      local bname bsize rc
       bname=$(basename "$f")
-      local bsize
       bsize=$(wc -c < "$f" | tr -d ' ')
-      cp -f "$f" "$app_assets/$bname"
-      echo "$app_name|$bname|$bsize" >> "$REPORT_FILE"
+      rc=0
+      # `|| rc=$?` is required: under `set -e` a bare non-zero return from
+      # safe_upload_cache_asset would exit the script before we can inspect rc.
+      safe_upload_cache_asset "$app_name" "$f" || rc=$?
+      case "$rc" in
+        0) keep_list+="${app_name}__${bname} "; echo "$app_name|$bname|$bsize" >> "$REPORT_FILE" ;;
+        2) upload_skip_count=$((upload_skip_count + 1)); keep_list+="${app_name}__${bname} " ;;  # safe-skip: keep existing
+        *) upload_fail_count=$((upload_fail_count + 1)) ;;
+      esac
     done
 
-    cat > "$app_assets/version.json" <<VEOF
+    # Write + upload version.json LAST so a partial upload doesn't leave a
+    # version.json that points to artifacts we haven't actually mirrored yet.
+    local version_file="$app_temp/version.json"
+    cat > "$version_file" <<VEOF
 {
   "appName": "$app_name",
   "version": "$version",
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 VEOF
-    echo "$app_name|version.json|$(wc -c < "$app_assets/version.json" | tr -d ' ')" >> "$REPORT_FILE"
-    echo "  [OK] Backed up $app_name $version to $app_assets/ ($download_count downloaded, $skip_count skipped)"
+    if [ "$upload_fail_count" -eq 0 ]; then
+      local vrc=0
+      safe_upload_cache_asset "$app_name" "$version_file" || vrc=$?
+      if [ "$vrc" -eq 0 ]; then
+        keep_list+="${app_name}__version.json "
+        echo "$app_name|version.json|$(wc -c < "$version_file" | tr -d ' ')" >> "$REPORT_FILE"
+      fi
+      purge_stale_cache_assets_except "$app_name" "$keep_list"
+      echo "  [OK] Mirrored $app_name $version to $CACHE_REPO release $CACHE_TAG ($download_count downloaded, $upload_skip_count safe-skipped, $skip_count over-size)"
+    else
+      echo "  [PARTIAL] $upload_fail_count upload(s) failed for $app_name — leaving existing cache intact (no purge, no version.json update)"
+    fi
   }
 
   ##############################################################################
@@ -226,6 +367,10 @@ VEOF
     "synle/skiff-files"
   )
 
+  # Make sure the cache release exists before the first upload; this is a no-op
+  # on every run after the very first.
+  ensure_cache_release
+
   for repo_id in "${RELEASE_REPOS[@]}"; do
     backup_release_assets "$repo_id"
   done
@@ -234,12 +379,12 @@ VEOF
   # ---- Step 8: Summary ----
   ##############################################################################
   echo ""
-  echo "::group::Release binary backup summary"
+  echo "::group::Release binary cache mirror summary"
 
   # Prints the final summary report grouped by app.
   function print_report() {
     if [ ! -s "$REPORT_FILE" ]; then
-      echo "No assets backed up."
+      echo "No assets mirrored."
       return
     fi
     local prev_app=""
@@ -266,5 +411,5 @@ VEOF
 
   echo "::endgroup::"
   echo ""
-  echo "Release binary backup complete."
+  echo "Release binary cache mirror complete. Cache: https://github.com/$CACHE_REPO/releases/tag/$CACHE_TAG"
 }

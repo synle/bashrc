@@ -48,6 +48,10 @@ yarn-error.log*
 public/vs
 upload
 
+# Release-asset fallback cache lives in the binary-cache release on synle/bashrc,
+# not in the repo. Block accidental local re-introduction.
+assets/binaries/
+
 
 .pnp.cjs
 .pnp.loader.mjs
