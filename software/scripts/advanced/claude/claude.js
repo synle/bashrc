@@ -249,25 +249,56 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
 };
 
 /**
- * Destination filenames in ~/.claude/commands/ that were once deployed by
- * an earlier version of CLAUDE_COMMAND_DEPLOY_MAP but have since been
- * removed or renamed. _doCommandsWork() unlinks each of these from
- * ~/.claude/commands/ on every run so stale slash commands don't linger
- * after a rename.
+ * Marker that every Sy-managed slash command body starts with. Used by
+ * _doCommandsWork() to identify our own previously-deployed commands in
+ * ~/.claude/commands/ and wipe them before redeploying the current set.
  *
- * TODO(sy-prefix-rename): prefix all of our custom slash commands with
- * `sy-` (e.g. `/sy-create-pr`, `/sy-release`, `/sy-babysit-pr`) to
- * disambiguate them from built-in / third-party skills and to make it
- * obvious in the skill picker which ones are Sy's. When that rename
- * lands, move every current unprefixed entry from CLAUDE_COMMAND_DEPLOY_MAP
- * into this list (e.g. `"create-pr.md"`, `"release.md"`, …) so the old
- * orphan files get cleaned up from ~/.claude/commands/ on the next run.
+ * Anchored to the start of the file so unrelated commands (or markdown
+ * that merely mentions "Sy Skill -" inside a code block) cannot trip
+ * the cleanup pass.
+ *
+ * @type {string}
+ */
+const SY_SKILL_MARKER = "Sy Skill -";
+
+/**
+ * Every destination filename we have ever deployed under ~/.claude/commands/.
+ * _doCommandsWork() unconditionally unlinks each of these before writing the
+ * current set, so renames and removals are automatic — no orphan files linger
+ * across deploys.
+ *
+ * Combined with the SY_SKILL_MARKER content scan, this gives belt-and-suspenders
+ * cleanup: the marker scan catches anything we deploy in the future without
+ * needing the list to be updated, and this explicit list catches files that
+ * predate the marker (e.g. pre-`Sy Skill -` prefix deployments) or any name
+ * that has since been retired.
+ *
+ * When adding a new slash command to CLAUDE_COMMAND_DEPLOY_MAP, also add its
+ * destination filename here. When renaming or removing one, leave its old
+ * destination filename here permanently so dev machines still pick up the
+ * cleanup on the next run.
  *
  * @type {string[]} destination filenames including the `.md` suffix
  */
-const CLAUDE_COMMAND_REMOVED_NAMES = [
-  // (none yet — populate when the /sy- rename happens, or whenever a
-  // command is dropped from CLAUDE_COMMAND_DEPLOY_MAP)
+const CLAUDE_COMMAND_KNOWN_NAMES = [
+  // Currently deployed (must match the keys of CLAUDE_COMMAND_DEPLOY_MAP):
+  "babysit-pr.md",
+  "babysit-prs.md",
+  "create-pr.md",
+  "draft-pr.md",
+  "list-prs.md",
+  "slack-prs.md",
+  "sync-and-groom-repo.md",
+  "sync-and-groom-repos.md",
+  "release.md",
+  "release-stable.md",
+  "release-official.md",
+  "release-main.md",
+  "release-master.md",
+  "release-beta.md",
+  // Historically retired (left in place permanently so legacy files get cleaned up):
+  "sync-babysit-pr.md", // merged into /babysit-pr in 119cc9d (Apr 2026)
+  "sync-babysit-prs.md", // merged into /babysit-prs in 119cc9d (Apr 2026)
 ];
 
 /**
@@ -286,15 +317,39 @@ async function _doCommandsWork(targetDir) {
 
   fs.mkdirSync(commandsDir, { recursive: true });
 
-  // Clean up orphaned slash commands from prior renames before deploying.
-  // Each removed name corresponds to a destination filename we used to write
-  // but no longer do — left in place, it would still appear in the user's
-  // slash-command picker with stale content.
-  for (const removedFile of CLAUDE_COMMAND_REMOVED_NAMES) {
-    const stalePath = path.join(commandsDir, removedFile);
+  // Wipe every previously-deployed Sy skill before redeploying the current
+  // set, so renames are automatic and no orphan lingers when a command is
+  // dropped from CLAUDE_COMMAND_DEPLOY_MAP. Two passes, both safe to run
+  // unconditionally on every deploy:
+  //
+  //   1. Known-name pass: unlink each filename in CLAUDE_COMMAND_KNOWN_NAMES.
+  //      Catches files that predate the SY_SKILL_MARKER content prefix
+  //      (e.g. older deployments) and serves as an auditable, explicit
+  //      record of every name we've ever deployed.
+  //
+  //   2. Marker pass: scan the directory for any remaining .md whose first
+  //      line begins with SY_SKILL_MARKER. Catches future commands a dev
+  //      machine may have deployed under a name we have since dropped from
+  //      CLAUDE_COMMAND_KNOWN_NAMES, without anyone having to remember to
+  //      add it to the list.
+  //
+  // User-authored slash commands without the marker AND not in the known
+  // list are left untouched.
+  for (const knownFile of CLAUDE_COMMAND_KNOWN_NAMES) {
+    const stalePath = path.join(commandsDir, knownFile);
     if (fs.existsSync(stalePath)) {
       fs.unlinkSync(stalePath);
-      log("   Removed stale:", removedFile);
+      log("   Removed prior Sy skill (known-name):", knownFile);
+    }
+  }
+  for (const entry of fs.readdirSync(commandsDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
+    const filePath = path.join(commandsDir, entry.name);
+    /** @type {string} First line of the file, used only to check for SY_SKILL_MARKER. */
+    const firstLine = fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
+    if (firstLine.startsWith(SY_SKILL_MARKER)) {
+      fs.unlinkSync(filePath);
+      log("   Removed prior Sy skill (marker):", entry.name);
     }
   }
 
