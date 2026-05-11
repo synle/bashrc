@@ -38,7 +38,7 @@ jobs:
           echo "PREP_T0=$(date +%s)" >> "$GITHUB_ENV"
           echo "start-time=$(date +%s)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/ci-setup
 
       - name: Install shfmt
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload prep patch
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: prep-patch
           path: /tmp/ci-patches/prep-patch/
@@ -82,7 +82,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload webapp dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: webapp-dist
           path: dist/
@@ -144,7 +144,7 @@ jobs:
       download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
       download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/ci-setup
       - uses: ./.github/actions/ci-apply-patches
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
@@ -176,7 +176,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: dnf install -y git curl sudo findutils make
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/ci-setup
       - uses: ./.github/actions/ci-apply-patches
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
@@ -209,7 +209,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: pacman -Sy --noconfirm git curl sudo make unzip
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/ci-setup
       - uses: ./.github/actions/ci-apply-patches
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
@@ -242,7 +242,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: apt-get update -y && apt-get install -y git curl sudo make
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/ci-setup
       - uses: ./.github/actions/ci-apply-patches
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
@@ -271,7 +271,7 @@ jobs:
       download-check-summary: ${{ steps.ci-build.outputs.download-check-summary }}
       download-check-status: ${{ steps.ci-build.outputs.download-check-status }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install GNU Make
         run: |
           brew install make unzip bash
@@ -301,7 +301,7 @@ jobs:
       id-token: write
       statuses: write # for mirroring this run as a commit status on the amended SHA
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         # fetch-depth: 0 is REQUIRED here. Default (depth=1) gives a shallow clone
         # where HEAD's parent isn't fetched locally; `git commit --amend` then treats
         # HEAD as the initial commit and produces a PARENTLESS root commit. The
@@ -318,7 +318,7 @@ jobs:
           patches: prep-patch
 
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: /tmp/build-artifacts/
           pattern: build-*
@@ -326,7 +326,7 @@ jobs:
           # so same-named files from different OS builds don't race-overlay each other (see next step).
 
       - name: Merge build artifacts into .build/
-        # `actions/download-artifact@v4` with `merge-multiple: true` has been observed to overwrite
+        # `actions/download-artifact@v8` with `merge-multiple: true` has been observed to overwrite
         # same-named files without truncating, leaving the longer file's tail appended to the shorter
         # file's content — producing corrupt profiles. Copy explicitly instead: bash `cp -f` truncates
         # on overwrite, so the last source in this deterministic order wins cleanly. Order matters
@@ -390,7 +390,7 @@ jobs:
 
       - name: Upload publish patch
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'clean_rebuild') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: publish-patch
           path: /tmp/ci-patches/publish-patch/
@@ -399,7 +399,7 @@ jobs:
 
       - name: Download webapp dist
         if: github.event_name == 'push'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: webapp-dist
           path: dist/
@@ -449,7 +449,7 @@ jobs:
     if: ${{ needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
       - uses: ./.github/actions/ci-setup
@@ -463,7 +463,7 @@ jobs:
 
       - name: Download profile debug artifacts
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: /tmp/profile-debug
           pattern: profile-debug-build-*
@@ -471,7 +471,7 @@ jobs:
 
       - name: Download per-OS install summaries
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: /tmp/install-summaries
           pattern: logs-build-*
@@ -817,7 +817,7 @@ jobs:
       # Make the full HTML coverage report downloadable from the run page.
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: coverage/
