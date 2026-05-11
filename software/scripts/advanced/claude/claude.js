@@ -262,43 +262,36 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
 const SY_SKILL_MARKER = "Sy Skill -";
 
 /**
- * Every destination filename we have ever deployed under ~/.claude/commands/.
- * _doCommandsWork() unconditionally unlinks each of these before writing the
- * current set, so renames and removals are automatic — no orphan files linger
- * across deploys.
+ * Slash-command filenames that we used to deploy but no longer do, and which
+ * may not carry SY_SKILL_MARKER on disk (e.g. they predate the marker
+ * convention, or the marker was edited away by hand).
  *
- * Combined with the SY_SKILL_MARKER content scan, this gives belt-and-suspenders
- * cleanup: the marker scan catches anything we deploy in the future without
- * needing the list to be updated, and this explicit list catches files that
- * predate the marker (e.g. pre-`Sy Skill -` prefix deployments) or any name
- * that has since been retired.
+ * Cleanup of *current* deploy targets is handled implicitly: the deploy loop
+ * overwrites them, so nothing extra is needed. Cleanup of *future* renames is
+ * handled by the SY_SKILL_MARKER content scan in _doCommandsWork().
  *
- * When adding a new slash command to CLAUDE_COMMAND_DEPLOY_MAP, also add its
- * destination filename here. When renaming or removing one, leave its old
- * destination filename here permanently so dev machines still pick up the
- * cleanup on the next run.
+ * MAINTENANCE RULE: **Whenever a slash command is renamed or deleted, its old
+ * destination filename MUST be added here.** That's how dev machines that
+ * still have the old file on disk get it cleaned up on their next deploy.
+ * Forgetting to add it leaves an orphan command in `~/.claude/commands/` that
+ * shows up in the slash-command picker with stale content.
+ *
+ * Entries stay here long enough for every dev machine to have re-run at
+ * least once after the rename. Each entry tracks WHEN it was retired so a
+ * future maintainer can prune entries that are now safe to drop (rule of
+ * thumb: ~3+ months after the retirement commit, AND all known dev machines
+ * have re-run). Removing an entry too early orphans files; leaving it too
+ * long is harmless but clutters this list — so periodically clean it up.
  *
  * @type {string[]} destination filenames including the `.md` suffix
  */
-const CLAUDE_COMMAND_KNOWN_NAMES = [
-  // Currently deployed (must match the keys of CLAUDE_COMMAND_DEPLOY_MAP):
-  "babysit-pr.md",
-  "babysit-prs.md",
-  "create-pr.md",
-  "draft-pr.md",
-  "list-prs.md",
-  "slack-prs.md",
-  "sync-and-groom-repo.md",
-  "sync-and-groom-repos.md",
-  "release.md",
-  "release-stable.md",
-  "release-official.md",
-  "release-main.md",
-  "release-master.md",
-  "release-beta.md",
-  // Historically retired (left in place permanently so legacy files get cleaned up):
-  "sync-babysit-pr.md", // merged into /babysit-pr in 119cc9d (Apr 2026)
-  "sync-babysit-prs.md", // merged into /babysit-prs in 119cc9d (Apr 2026)
+const CLAUDE_COMMAND_RETIRED_NAMES = [
+  // TODO(retired-cleanup): drop these once we're confident every dev machine
+  // has re-run `bash run.sh --files=claude.js` at least once after the merge
+  // commit (rule of thumb: 3+ months after the date below). Removing too
+  // early orphans files; periodically prune so this list stays signal-only.
+  "sync-babysit-pr.md", // merged into /babysit-pr in 119cc9d (2026-04-24)
+  "sync-babysit-prs.md", // merged into /babysit-prs in 119cc9d (2026-04-24)
 ];
 
 /**
@@ -317,39 +310,37 @@ async function _doCommandsWork(targetDir) {
 
   fs.mkdirSync(commandsDir, { recursive: true });
 
-  // Wipe every previously-deployed Sy skill before redeploying the current
-  // set, so renames are automatic and no orphan lingers when a command is
-  // dropped from CLAUDE_COMMAND_DEPLOY_MAP. Two passes, both safe to run
-  // unconditionally on every deploy:
+  // Diff the on-disk commands directory against the current deploy map and
+  // drop any Sy-managed orphans. Files that are currently in
+  // CLAUDE_COMMAND_DEPLOY_MAP are skipped — the deploy loop below will
+  // overwrite them, so deleting + rewriting would be wasted IO.
   //
-  //   1. Known-name pass: unlink each filename in CLAUDE_COMMAND_KNOWN_NAMES.
-  //      Catches files that predate the SY_SKILL_MARKER content prefix
-  //      (e.g. older deployments) and serves as an auditable, explicit
-  //      record of every name we've ever deployed.
+  // An on-disk file is treated as a Sy orphan (and unlinked) when:
+  //   (a) its name is in CLAUDE_COMMAND_RETIRED_NAMES — explicit retirements
+  //       we know about, including legacy files that predate SY_SKILL_MARKER, OR
+  //   (b) its first line starts with SY_SKILL_MARKER — covers any rename we
+  //       perform in the future without anyone needing to update a list.
   //
-  //   2. Marker pass: scan the directory for any remaining .md whose first
-  //      line begins with SY_SKILL_MARKER. Catches future commands a dev
-  //      machine may have deployed under a name we have since dropped from
-  //      CLAUDE_COMMAND_KNOWN_NAMES, without anyone having to remember to
-  //      add it to the list.
-  //
-  // User-authored slash commands without the marker AND not in the known
+  // User-authored slash commands without the marker AND not in the retired
   // list are left untouched.
-  for (const knownFile of CLAUDE_COMMAND_KNOWN_NAMES) {
-    const stalePath = path.join(commandsDir, knownFile);
-    if (fs.existsSync(stalePath)) {
-      fs.unlinkSync(stalePath);
-      log("   Removed prior Sy skill (known-name):", knownFile);
+  /** @type {Set<string>} Filenames the deploy loop will (re)write — skip cleanup for these. */
+  const deployTargets = new Set(Object.keys(CLAUDE_COMMAND_DEPLOY_MAP));
+  for (const filePath of findPathList(commandsDir, /\.md$/, { type: "file" })) {
+    /** @type {string} Just the basename (e.g. "create-pr.md") of the on-disk file. */
+    const fileName = path.basename(filePath);
+    if (deployTargets.has(fileName)) continue;
+    /** @type {string} Reason label printed in the log line — only set when we decide to unlink. */
+    let reason = "";
+    if (CLAUDE_COMMAND_RETIRED_NAMES.includes(fileName)) {
+      reason = "retired";
+    } else {
+      /** @type {string} First line of the file, used only to check for SY_SKILL_MARKER. */
+      const firstLine = fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
+      if (firstLine.startsWith(SY_SKILL_MARKER)) reason = "marker";
     }
-  }
-  for (const entry of fs.readdirSync(commandsDir, { withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
-    const filePath = path.join(commandsDir, entry.name);
-    /** @type {string} First line of the file, used only to check for SY_SKILL_MARKER. */
-    const firstLine = fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
-    if (firstLine.startsWith(SY_SKILL_MARKER)) {
+    if (reason) {
       fs.unlinkSync(filePath);
-      log("   Removed prior Sy skill (marker):", entry.name);
+      log(`   Removed prior Sy skill (${reason}):`, fileName);
     }
   }
 
