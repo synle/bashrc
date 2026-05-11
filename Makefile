@@ -231,7 +231,7 @@ build_hosts: build_update_hosts
 # CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, and download release binaries
 ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun ci_download_release_binaries
 
-# Download latest release binaries (url-porter, sqlui-native, display-dj) into assets/binaries/
+# Download latest release binaries (url-porter, sqlui-native, sqlui-portal, display-dj, skiff-files) into assets/binaries/
 ci_download_release_binaries:
 	bash software/tools/ci-download-release-binaries.sh
 

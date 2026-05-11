@@ -222,6 +222,7 @@ VEOF
   RELEASE_REPOS=(
     "synle/url-porter"
     "synle/sqlui-native"
+    "synle/sqlui-portal"
     "synle/display-dj"
     "synle/skiff-files"
   )
