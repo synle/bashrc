@@ -249,6 +249,28 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
 };
 
 /**
+ * Destination filenames in ~/.claude/commands/ that were once deployed by
+ * an earlier version of CLAUDE_COMMAND_DEPLOY_MAP but have since been
+ * removed or renamed. _doCommandsWork() unlinks each of these from
+ * ~/.claude/commands/ on every run so stale slash commands don't linger
+ * after a rename.
+ *
+ * TODO(sy-prefix-rename): prefix all of our custom slash commands with
+ * `sy-` (e.g. `/sy-create-pr`, `/sy-release`, `/sy-babysit-pr`) to
+ * disambiguate them from built-in / third-party skills and to make it
+ * obvious in the skill picker which ones are Sy's. When that rename
+ * lands, move every current unprefixed entry from CLAUDE_COMMAND_DEPLOY_MAP
+ * into this list (e.g. `"create-pr.md"`, `"release.md"`, …) so the old
+ * orphan files get cleaned up from ~/.claude/commands/ on the next run.
+ *
+ * @type {string[]} destination filenames including the `.md` suffix
+ */
+const CLAUDE_COMMAND_REMOVED_NAMES = [
+  // (none yet — populate when the /sy- rename happens, or whenever a
+  // command is dropped from CLAUDE_COMMAND_DEPLOY_MAP)
+];
+
+/**
  * Deploys slash command definitions to ~/.claude/commands/. Each entry in
  * CLAUDE_COMMAND_DEPLOY_MAP becomes a /<name> user-level command available
  * across all projects. Source files live under
@@ -263,6 +285,18 @@ async function _doCommandsWork(targetDir) {
   log(">> Claude Code Commands:", commandsDir);
 
   fs.mkdirSync(commandsDir, { recursive: true });
+
+  // Clean up orphaned slash commands from prior renames before deploying.
+  // Each removed name corresponds to a destination filename we used to write
+  // but no longer do — left in place, it would still appear in the user's
+  // slash-command picker with stale content.
+  for (const removedFile of CLAUDE_COMMAND_REMOVED_NAMES) {
+    const stalePath = path.join(commandsDir, removedFile);
+    if (fs.existsSync(stalePath)) {
+      fs.unlinkSync(stalePath);
+      log("   Removed stale:", removedFile);
+    }
+  }
 
   /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
   const sourceCache = {};
