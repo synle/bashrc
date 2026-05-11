@@ -14,6 +14,7 @@ async function doWork() {
     alias sqluinative='open "/Applications/sqlui-native.app" --args --disable-smooth-scrolling'
     alias sql="sqluinative"
     alias displaydj='open "/Applications/Display DJ.app"'
+    alias skiff='open "/Applications/Skiff Files.app"'
 
     # make: use GNU Make (gmake) for .ONESHELL support (macOS ships Make 3.81)
     if type -P gmake &> /dev/null; then alias make='gmake'; fi
@@ -26,6 +27,7 @@ async function doWork() {
       _xattr_app_list=(
         "/Applications/sqlui-native.app"
         "/Applications/Display DJ.app"
+        "/Applications/Skiff Files.app"
       )
       _xattr_app=""
       for _xattr_app in "\${_xattr_app_list[@]}"; do
