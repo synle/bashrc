@@ -16,6 +16,10 @@ async function doWork() {
     alias displaydj='open "/Applications/Display DJ.app"'
     alias skiff='open "/Applications/Skiff Files.app"'
 
+    # accessibility: jump straight to System Settings > Privacy & Security > Accessibility
+    # (where you grant input-event permission to apps like Display DJ, Ghostty, etc.)
+    alias accessibility='open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"'
+
     # make: use GNU Make (gmake) for .ONESHELL support (macOS ships Make 3.81)
     if type -P gmake &> /dev/null; then alias make='gmake'; fi
 
