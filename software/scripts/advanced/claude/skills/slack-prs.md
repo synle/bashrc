@@ -1,4 +1,4 @@
-Sy Skill - Draft a short Slack message asking the team to review open pull requests, grouped by readiness.
+[Sy] Draft a short Slack message asking the team to review open pull requests, grouped by readiness.
 
 Argument: $ARGUMENTS (optional — the PR author to filter by: a GitHub username, a full name, or empty.)
 

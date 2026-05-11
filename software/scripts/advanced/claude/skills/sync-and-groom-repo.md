@@ -1,4 +1,4 @@
-Sy Skill - Sync a single git repo with its remote and groom it: fetch + prune, drop dead branches and worktrees, fast-forward the default branch, and merge the default branch into every other local branch (resolving conflicts as we go) so nothing is left stale.
+[Sy] Sync a single git repo with its remote and groom it: fetch + prune, drop dead branches and worktrees, fast-forward the default branch, and merge the default branch into every other local branch (resolving conflicts as we go) so nothing is left stale.
 
 Argument: $ARGUMENTS (optional — a path to a git repo. If empty, use the current working directory.)
 

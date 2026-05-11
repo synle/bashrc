@@ -1,21 +1,21 @@
-Sy Skill - Trigger a release. Defaults to OFFICIAL from the default branch; routes to BETA only on explicit signal (invocation name, `beta` keyword, validated SHA, or non-default branch).
+[Sy] Trigger a release. Defaults to OFFICIAL from the default branch; routes to BETA only on explicit signal (invocation name, `beta` keyword, validated SHA, or non-default branch).
 
 ## Aliases
 
 All of these slash-command names route to this same skill body:
 
-- `/release` — official by default
-- `/release-stable` — official
-- `/release-official` — official
-- `/release-main` — official
-- `/release-master` — official
-- `/release-beta` — beta (invocation name forces beta intent)
+- `/sy-release` — official by default
+- `/sy-release-stable` — official
+- `/sy-release-official` — official
+- `/sy-release-main` — official
+- `/sy-release-master` — official
+- `/sy-release-beta` — beta (invocation name forces beta intent)
 
 Free-form phrasing such as "release", "release from main", "ship a release", "cut a release", "release official", "release stable", "release prod" — all map to the OFFICIAL path. Only an explicit "beta" keyword, a validated SHA, or a non-default branch name routes to BETA.
 
 ## Inputs
 
-- `invocation_name` — the slash command the user typed (e.g. `/release`, `/release-beta`).
+- `invocation_name` — the slash command the user typed (e.g. `/sy-release`, `/sy-release-beta`).
 - `$ARGUMENTS` — optional free-form text after the command (may contain a SHA, a branch name, or keywords).
 
 ## Decision tree
@@ -38,7 +38,7 @@ ref_sha      = null
 source_label = null         # human-readable, used in confirmation prompt
 ```
 
-If `invocation_name == "/release-beta"`: set `intent = "beta"`.
+If `invocation_name == "/sy-release-beta"`: set `intent = "beta"`.
 
 For each whitespace-separated token in `$ARGUMENTS` (in left-to-right order):
 
@@ -69,7 +69,7 @@ If any succeed:
 
 - Let `resolved_branch = <token>` and `ref_sha = <SHA from the first successful lookup>`.
 - If `resolved_branch == default_branch`:
-  - **Do not** route to beta. `/release main` and `/release master` are official, no SHA pinning. (`intent` stays as previously set — `"official"` unless `/release-beta` or `beta` keyword forced beta earlier.)
+  - **Do not** route to beta. `/sy-release main` and `/sy-release master` are official, no SHA pinning. (`intent` stays as previously set — `"official"` unless `/sy-release-beta` or `beta` keyword forced beta earlier.)
 - Else:
   - `intent = "beta"`.
 - `source_label = "branch <resolved_branch> @ <short_sha>"`.
@@ -82,7 +82,7 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
 
 #### If `intent == "beta"`:
 
-1. If `ref_sha == null` (e.g. `/release-beta` with no args): **prompt the user** — "Which SHA or branch should the beta build from?" — and re-run Step 2 with their response. Never auto-pin to `HEAD` of the default branch.
+1. If `ref_sha == null` (e.g. `/sy-release-beta` with no args): **prompt the user** — "Which SHA or branch should the beta build from?" — and re-run Step 2 with their response. Never auto-pin to `HEAD` of the default branch.
 2. List workflows: `gh workflow list --repo <owner/repo>`.
 3. **Select** the beta workflow — name contains `release-beta`, `release beta`, `beta`, `prerelease`, `pre-release`, `canary`, or `nightly`.
 4. **Reject** any workflow whose name is the official/stable one (`release-official`, `release official`, `official-release`, `publish`, or bare `release` with no modifier). If the only matches are official, stop and report `"no beta release workflow found — aborting"`.
@@ -105,7 +105,7 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
       - Workflow accepts a `tag` input → **always** pass `--field tag=v<version>` on dispatch, regardless of whether the sentinel matched.
       - Sentinel matched **and** workflow has no `tag` input → **ABORT** with: `"Workflow falls back to github.ref_name with no tag input — a branch dispatch will create a bogus tag (e.g. vmain). Either (a) push a v* tag and let tag-trigger handle it, (b) add a 'tag' input to the workflow, or (c) re-run after the workflow is fixed."`
       - Neither sentinel nor `tag` input → safe to dispatch with `--ref <default_branch>` and no `--field`.
-   6. If the version cannot be read (no version files, or all malformed) and a `tag` input exists, **ABORT** with: `"Cannot derive version for --field tag=...; pass it explicitly as /release-official tag=vX.Y.Z or fix the version source files."`
+   6. If the version cannot be read (no version files, or all malformed) and a `tag` input exists, **ABORT** with: `"Cannot derive version for --field tag=...; pass it explicitly as /sy-release-official tag=vX.Y.Z or fix the version source files."`
 6. Confirm: `"About to trigger OFFICIAL release '<workflow name>' on '<default_branch>' in <owner/repo><, tag=v<version>>. This is NOT a beta. Proceed? (yes/no)"`. Include the `tag=` clause only if a tag was derived. If no: stop.
 7. Trigger:
    - With derived tag: `gh workflow run <workflow-id> --repo <owner/repo> --ref <default_branch> --field tag=v<version>`.
@@ -126,19 +126,19 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
 
 | Invocation                        | Routes to                      | Why                             |
 | --------------------------------- | ------------------------------ | ------------------------------- |
-| `/release`                        | official, default branch       | no args, no beta signal         |
-| `/release-stable`                 | official, default branch       | alias                           |
-| `/release main`                   | official, default branch       | `main` = default branch         |
-| `/release master`                 | official, default branch       | `master` = default branch       |
-| `/release prod` / `/release ship` | official, default branch       | keyword tokens                  |
-| `/release-beta`                   | beta, prompts for SHA          | invocation forces beta          |
-| `/release beta`                   | beta, prompts for SHA          | keyword forces beta             |
-| `/release abc1234`                | beta, full SHA                 | SHA validated + expanded        |
-| `/release deadbee`                | **ABORT** if not a real SHA    | validation catches typos        |
-| `/release feature/foo`            | beta, SHA of `feature/foo` tip | branch resolved                 |
-| `/release nonexistent-branch`     | **ABORT**                      | neither SHA nor branch          |
-| `/release-official abc1234`       | beta, full SHA                 | SHA wins — contradiction signal |
-| `/release frobnicate`             | **ABORT**                      | unrecognized arg                |
+| `/sy-release`                        | official, default branch       | no args, no beta signal         |
+| `/sy-release-stable`                 | official, default branch       | alias                           |
+| `/sy-release main`                   | official, default branch       | `main` = default branch         |
+| `/sy-release master`                 | official, default branch       | `master` = default branch       |
+| `/sy-release prod` / `/sy-release ship` | official, default branch       | keyword tokens                  |
+| `/sy-release-beta`                   | beta, prompts for SHA          | invocation forces beta          |
+| `/sy-release beta`                   | beta, prompts for SHA          | keyword forces beta             |
+| `/sy-release abc1234`                | beta, full SHA                 | SHA validated + expanded        |
+| `/sy-release deadbee`                | **ABORT** if not a real SHA    | validation catches typos        |
+| `/sy-release feature/foo`            | beta, SHA of `feature/foo` tip | branch resolved                 |
+| `/sy-release nonexistent-branch`     | **ABORT**                      | neither SHA nor branch          |
+| `/sy-release-official abc1234`       | beta, full SHA                 | SHA wins — contradiction signal |
+| `/sy-release frobnicate`             | **ABORT**                      | unrecognized arg                |
 
 ## Safety rules
 

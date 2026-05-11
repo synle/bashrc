@@ -1,4 +1,4 @@
-Sy Skill - Run `/sync-and-groom-repo` on EVERY git repo in the current folder. This command is a fan-out wrapper — it discovers repos and delegates the full per-repo cleanup loop (fetch, prune, drop dead branches/worktrees, sync default, merge default into every other branch) to `/sync-and-groom-repo` for each one.
+[Sy] Run `/sy-sync-and-groom-repo` on EVERY git repo in the current folder. This command is a fan-out wrapper — it discovers repos and delegates the full per-repo cleanup loop (fetch, prune, drop dead branches/worktrees, sync default, merge default into every other branch) to `/sy-sync-and-groom-repo` for each one.
 
 ## Steps
 
@@ -17,7 +17,7 @@ Sy Skill - Run `/sync-and-groom-repo` on EVERY git repo in the current folder. T
 
 2. **Announce:** Tell the user how many repos were found and list them (basename + branch + dirty/clean indicator). Use `git -C <path> branch --show-current` and `git -C <path> status --porcelain` for the per-repo summary line.
 
-3. **For each repo, delegate to `/sync-and-groom-repo <absolute-repo-path>`.** That command owns the full per-repo behavior:
+3. **For each repo, delegate to `/sy-sync-and-groom-repo <absolute-repo-path>`.** That command owns the full per-repo behavior:
    - resolve target + announce
    - auto-stash (only if dirty)
    - detect default branch
@@ -29,7 +29,7 @@ Sy Skill - Run `/sync-and-groom-repo` on EVERY git repo in the current folder. T
    - visit each additional worktree and apply the same merge
    - gc --auto, return to default branch, pop stash, final report.
 
-   Do NOT duplicate any of that logic here — if the per-repo flow needs to change, edit `/sync-and-groom-repo`.
+   Do NOT duplicate any of that logic here — if the per-repo flow needs to change, edit `/sy-sync-and-groom-repo`.
 
 4. **Run sequentially, not in parallel.** Each delegation may need to resolve merge conflicts that require human judgment; running them concurrently would interleave prompts and make the conflict-resolution context impossible to follow. One repo at a time.
 
@@ -39,8 +39,8 @@ Sy Skill - Run `/sync-and-groom-repo` on EVERY git repo in the current folder. T
 
 ## Rules
 
-- This command is a dispatcher. The per-repo loop lives in `/sync-and-groom-repo` — do not re-implement it here.
+- This command is a dispatcher. The per-repo loop lives in `/sy-sync-and-groom-repo` — do not re-implement it here.
 - **One level of discovery only.** Never recurse into subdirectories of discovered repos. Submodules and nested checkouts stay alone.
 - **Sequential execution.** Conflict resolution is human-in-the-loop; parallel runs would scramble the prompts.
 - **Continue on per-repo failure.** A stuck repo doesn't stop the rest of the fan-out — collect outcomes, report at the end.
-- Do not auto-set upstreams, do not force-push, do not delete worktree directories. All those constraints come from `/sync-and-groom-repo` and are inherited by this wrapper.
+- Do not auto-set upstreams, do not force-push, do not delete worktree directories. All those constraints come from `/sy-sync-and-groom-repo` and are inherited by this wrapper.

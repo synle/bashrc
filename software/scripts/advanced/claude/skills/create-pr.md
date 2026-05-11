@@ -1,4 +1,4 @@
-Sy Skill - Create a pull request for the current branch.
+[Sy] Create a pull request for the current branch.
 
 ## Steps
 
@@ -13,7 +13,7 @@ Sy Skill - Create a pull request for the current branch.
 7. Return the PR URL.
 8. Ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
-- If yes: run `/babysit-pr` with the new PR URL.
+- If yes: run `/sy-babysit-pr` with the new PR URL.
 - If no: stop.
 
 ## Rules

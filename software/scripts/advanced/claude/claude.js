@@ -217,58 +217,73 @@ async function _doInstructionsWork(targetDir) {
  * Each key is the destination filename in ~/.claude/commands/ (becomes a
  * /<name> command). Each value is the source filename (without .md) under
  * software/scripts/advanced/claude/skills/. Multiple keys may point at the
- * same source — that's how /release-main, /release-master, /release-stable,
- * /release-official, /release-beta, and bare /release are all aliased to the
- * single unified `release` source. The skill body itself does the routing
- * (official vs beta) based on invocation name + arguments.
+ * same source — that's how /sy-release-main, /sy-release-master,
+ * /sy-release-stable, /sy-release-official, /sy-release-beta, and bare
+ * /sy-release are all aliased to the single unified `release` source. The
+ * skill body itself does the routing (official vs beta) based on invocation
+ * name + arguments.
+ *
+ * Naming convention: every destination filename is prefixed with `sy-` so all
+ * Sy-managed slash commands cluster under `/sy-*` and never collide with
+ * user-authored or plugin-shipped commands. Source filenames stay bare
+ * (`babysit-pr.md`, `release.md`, etc.) — the `sy-` prefix is purely a
+ * deploy-time decoration so editing skill content doesn't require typing the
+ * prefix every time.
  *
  * Editing a command: edit the .md file under
  *   software/scripts/advanced/claude/skills/<name>.md
- * Adding a command: drop a new .md file there + add a deploy-map entry.
+ * Adding a command: drop a new .md file there + add a `sy-<name>.md` deploy
+ *   entry whose value is the bare source name.
  * Aliasing: add a deploy-map entry whose value points at an existing source.
  *
  * @type {Record<string, string>}
  */
 const CLAUDE_COMMAND_DEPLOY_MAP = {
-  "babysit-pr.md": "babysit-pr",
-  "babysit-prs.md": "babysit-prs",
-  "sync-and-groom-repo.md": "sync-and-groom-repo",
-  "sync-and-groom-repos.md": "sync-and-groom-repos",
-  "create-pr.md": "create-pr",
-  "draft-pr.md": "draft-pr",
-  "list-prs.md": "list-prs",
-  "slack-prs.md": "slack-prs",
+  "sy-babysit-pr.md": "babysit-pr",
+  "sy-babysit-prs.md": "babysit-prs",
+  "sy-sync-and-groom-repo.md": "sync-and-groom-repo",
+  "sy-sync-and-groom-repos.md": "sync-and-groom-repos",
+  "sy-create-pr.md": "create-pr",
+  "sy-draft-pr.md": "draft-pr",
+  "sy-list-prs.md": "list-prs",
+  "sy-slack-prs.md": "slack-prs",
   // All release aliases route to the single unified `release` skill — the
   // body checks invocation name + $ARGUMENTS to decide official vs beta.
-  "release.md": "release",
-  "release-stable.md": "release", // alias of release (official intent)
-  "release-official.md": "release", // alias of release (official intent)
-  "release-main.md": "release", // alias of release (official intent)
-  "release-master.md": "release", // alias of release (official intent)
-  "release-beta.md": "release", // alias of release (beta intent — invocation name forces beta)
+  "sy-release.md": "release",
+  "sy-release-stable.md": "release", // alias of release (official intent)
+  "sy-release-official.md": "release", // alias of release (official intent)
+  "sy-release-main.md": "release", // alias of release (official intent)
+  "sy-release-master.md": "release", // alias of release (official intent)
+  "sy-release-beta.md": "release", // alias of release (beta intent — invocation name forces beta)
 };
 
 /**
- * Marker that every Sy-managed slash command body starts with. Used by
+ * Markers that a Sy-managed slash command body may start with. Used by
  * _doCommandsWork() to identify our own previously-deployed commands in
  * ~/.claude/commands/ and wipe them before redeploying the current set.
  *
- * Anchored to the start of the file so unrelated commands (or markdown
- * that merely mentions "Sy Skill -" inside a code block) cannot trip
- * the cleanup pass.
+ * Each marker is anchored to the start of the file so unrelated commands
+ * (or markdown that merely mentions `[Sy]` inside a code block) cannot
+ * trip the cleanup pass. Trailing spaces are deliberate — `[Sy]` alone
+ * would risk matching user-authored files that happen to start with a
+ * bracketed tag, and `Sy Skill -` is the legacy prefix kept here so any
+ * dev machine that still has pre-`[Sy] `-rename files on disk gets them
+ * cleaned up automatically on the next deploy. Add new markers here when
+ * the prefix convention changes; remove old ones only after every dev
+ * machine has re-run at least once past the prior convention.
  *
- * @type {string}
+ * @type {string[]}
  */
-const SY_SKILL_MARKER = "Sy Skill -";
+const SY_SKILL_MARKERS = ["[Sy] ", "Sy Skill - "];
 
 /**
  * Slash-command filenames that we used to deploy but no longer do, and which
- * may not carry SY_SKILL_MARKER on disk (e.g. they predate the marker
- * convention, or the marker was edited away by hand).
+ * may not carry any SY_SKILL_MARKERS prefix on disk (e.g. they predate every
+ * marker convention, or the marker was edited away by hand).
  *
  * Cleanup of *current* deploy targets is handled implicitly: the deploy loop
  * overwrites them, so nothing extra is needed. Cleanup of *future* renames is
- * handled by the SY_SKILL_MARKER content scan in _doCommandsWork().
+ * handled by the SY_SKILL_MARKERS content scan in _doCommandsWork().
  *
  * MAINTENANCE RULE: **Whenever a slash command is renamed or deleted, its old
  * destination filename MUST be added here.** That's how dev machines that
@@ -290,8 +305,27 @@ const CLAUDE_COMMAND_RETIRED_NAMES = [
   // has re-run `bash run.sh --files=claude.js` at least once after the merge
   // commit (rule of thumb: 3+ months after the date below). Removing too
   // early orphans files; periodically prune so this list stays signal-only.
-  "sync-babysit-pr.md", // merged into /babysit-pr in 119cc9d (2026-04-24)
-  "sync-babysit-prs.md", // merged into /babysit-prs in 119cc9d (2026-04-24)
+  "sync-babysit-pr.md", // merged into /sy-babysit-pr in 119cc9d (2026-04-24)
+  "sync-babysit-prs.md", // merged into /sy-babysit-prs in 119cc9d (2026-04-24)
+  // 2026-05-11: every Sy-managed command was renamed to a `sy-` prefix
+  // (e.g. /babysit-pr -> /sy-babysit-pr) so they cluster in the `/` menu and
+  // never collide with user-authored or plugin-shipped commands. The OLD
+  // non-prefixed filenames below are retired — re-running claude.js on any
+  // dev machine that still has these on disk will unlink them.
+  "babysit-pr.md", // renamed to sy-babysit-pr.md (2026-05-11)
+  "babysit-prs.md", // renamed to sy-babysit-prs.md (2026-05-11)
+  "create-pr.md", // renamed to sy-create-pr.md (2026-05-11)
+  "draft-pr.md", // renamed to sy-draft-pr.md (2026-05-11)
+  "list-prs.md", // renamed to sy-list-prs.md (2026-05-11)
+  "slack-prs.md", // renamed to sy-slack-prs.md (2026-05-11)
+  "sync-and-groom-repo.md", // renamed to sy-sync-and-groom-repo.md (2026-05-11)
+  "sync-and-groom-repos.md", // renamed to sy-sync-and-groom-repos.md (2026-05-11)
+  "release.md", // renamed to sy-release.md (2026-05-11)
+  "release-stable.md", // renamed to sy-release-stable.md (2026-05-11)
+  "release-official.md", // renamed to sy-release-official.md (2026-05-11)
+  "release-main.md", // renamed to sy-release-main.md (2026-05-11)
+  "release-master.md", // renamed to sy-release-master.md (2026-05-11)
+  "release-beta.md", // renamed to sy-release-beta.md (2026-05-11)
 ];
 
 /**
@@ -317,12 +351,13 @@ async function _doCommandsWork(targetDir) {
   //
   // An on-disk file is treated as a Sy orphan (and unlinked) when:
   //   (a) its name is in CLAUDE_COMMAND_RETIRED_NAMES — explicit retirements
-  //       we know about, including legacy files that predate SY_SKILL_MARKER, OR
-  //   (b) its first line starts with SY_SKILL_MARKER — covers any rename we
-  //       perform in the future without anyone needing to update a list.
+  //       we know about, including legacy files that predate every marker, OR
+  //   (b) its first line starts with any SY_SKILL_MARKERS entry — covers any
+  //       rename we perform in the future without anyone needing to update a
+  //       list, AND catches legacy `Sy Skill - ` prefixed files left over
+  //       from before the `[Sy] ` rename.
   //
-  // User-authored slash commands without the marker AND not in the retired
-  // list are left untouched.
+  // User-authored slash commands that match neither path are left untouched.
   /** @type {Set<string>} Filenames the deploy loop will (re)write — skip cleanup for these. */
   const deployTargets = new Set(Object.keys(CLAUDE_COMMAND_DEPLOY_MAP));
   for (const filePath of findPathList(commandsDir, /\.md$/, { type: "file" })) {
@@ -334,9 +369,9 @@ async function _doCommandsWork(targetDir) {
     if (CLAUDE_COMMAND_RETIRED_NAMES.includes(fileName)) {
       reason = "retired";
     } else {
-      /** @type {string} First line of the file, used only to check for SY_SKILL_MARKER. */
+      /** @type {string} First line of the file, checked against every SY_SKILL_MARKERS entry. */
       const firstLine = fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
-      if (firstLine.startsWith(SY_SKILL_MARKER)) reason = "marker";
+      if (SY_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
     }
     if (reason) {
       fs.unlinkSync(filePath);

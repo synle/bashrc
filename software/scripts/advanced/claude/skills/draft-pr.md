@@ -1,4 +1,4 @@
-Sy Skill - Create a WIP pull request for the current branch. Not a GitHub draft — a regular PR with a WIP title prefix so CI runs.
+[Sy] Create a WIP pull request for the current branch. Not a GitHub draft — a regular PR with a WIP title prefix so CI runs.
 
 ## Steps
 
@@ -13,7 +13,7 @@ Sy Skill - Create a WIP pull request for the current branch. Not a GitHub draft 
 7. Return the PR URL.
 8. Ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
-- If yes: run `/babysit-pr` with the new PR URL.
+- If yes: run `/sy-babysit-pr` with the new PR URL.
 - If no: stop.
 
 ## Rules

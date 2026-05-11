@@ -1,4 +1,4 @@
-Sy Skill - Sync a pull request branch with its base (main/master), address review comments, run local checks, fix failing builds, and wait until CI passes.
+[Sy] Sync a pull request branch with its base (main/master), address review comments, run local checks, fix failing builds, and wait until CI passes.
 
 Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR.)
 

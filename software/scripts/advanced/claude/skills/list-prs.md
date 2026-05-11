@@ -1,4 +1,4 @@
-Sy Skill - List open pull requests across all repos, grouped by readiness. Defaults to `short` format (just full links).
+[Sy] List open pull requests across all repos, grouped by readiness. Defaults to `short` format (just full links).
 
 ## Inputs
 
@@ -9,13 +9,13 @@ Sy Skill - List open pull requests across all repos, grouped by readiness. Defau
 
 Examples:
 
-- `/list-prs` → short format, current user (default)
-- `/list-prs short` → short format, current user
-- `/list-prs long` → long format, current user
-- `/list-prs table` → table format, current user
-- `/list-prs alice` → short format, author `alice`
-- `/list-prs long alice` → long format, author `alice`
-- `/list-prs alice table` → table format, author `alice`
+- `/sy-list-prs` → short format, current user (default)
+- `/sy-list-prs short` → short format, current user
+- `/sy-list-prs long` → long format, current user
+- `/sy-list-prs table` → table format, current user
+- `/sy-list-prs alice` → short format, author `alice`
+- `/sy-list-prs long alice` → long format, author `alice`
+- `/sy-list-prs alice table` → table format, author `alice`
 
 ## Parsing $ARGUMENTS
 
