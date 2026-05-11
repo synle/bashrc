@@ -1,21 +1,21 @@
 /** Installs both flavors of sqlui: the desktop sqlui-native app and the Node-based sqlui-portal CLI. */
 
-/** @type {string} GitHub repo identifier for the sqlui-native desktop app. */
+/** @type {string} GitHub repo identifier for sqlui-native releases. Hosts both the desktop app and the sqlui-portal CLI tarball. */
 const SQLUI_NATIVE_REPO = "synle/sqlui-native";
-
-/** @type {string} GitHub repo identifier for sqlui-portal releases (dedicated repo, split out from sqlui-native). */
-const SQLUI_PORTAL_REPO = "synle/sqlui-portal";
 
 /** @type {string} Canonical CLI name for the sqlui-portal launcher. */
 const SQLUI_PORTAL_BIN = "sqlui-portal";
+
+/** @type {string} Unversioned tarball filename shipped in the sqlui-native release (e.g. v3.1.5). */
+const SQLUI_PORTAL_TARBALL = "sqlui-portal.tar.gz";
 
 /**
  * Installs both flavors of sqlui:
  *   1. sqlui-native — desktop app (.dmg / .exe / .AppImage), handled by
  *      downloadAndInstallBinary which routes the Mac .dmg through
  *      BASHRC_TEMP_DIR (no longer parked in ~/_extra/sqlui-native/).
- *   2. sqlui-portal — Node-based CLI tarball from the dedicated
- *      synle/sqlui-portal release feed, extracted to
+ *   2. sqlui-portal — Node-based CLI tarball shipped alongside the desktop
+ *      app in the same synle/sqlui-native release, extracted to
  *      ~/.local/share/sqlui-portal/ with an exec-wrapper at
  *      ~/.local/bin/sqlui-portal.
  */
@@ -32,9 +32,9 @@ async function doWork() {
 }
 
 /**
- * Downloads sqlui-portal-<ver>.tar.gz from the dedicated synle/sqlui-portal
- * release feed, extracts it into ~/.local/share/sqlui-portal/, and writes a
- * tiny bash exec-wrapper at ~/.local/bin/sqlui-portal.
+ * Downloads sqlui-portal.tar.gz (unversioned filename) from the synle/sqlui-native
+ * release feed, extracts it into ~/.local/share/sqlui-portal/, and writes a tiny
+ * bash exec-wrapper at ~/.local/bin/sqlui-portal.
  *
  * The wrapper is required (not a symlink) because the upstream launcher locates
  * its sibling files (sqlui-portal.js, the 22 MB sqlui-portal-assets.json) via
@@ -45,13 +45,11 @@ async function doWork() {
  * /usr/local/bin/ cleanup we did in run.sh's bootstrap-node reset.
  */
 async function _installSqluiPortal() {
-  const version = await fetchGitHubReleaseVersion(SQLUI_PORTAL_REPO);
-  const ver = version.replace(/^v/, "");
-  const fileName = `${SQLUI_PORTAL_BIN}-${ver}.tar.gz`;
-  const url = `https://github.com/${SQLUI_PORTAL_REPO}/releases/download/${version}/${fileName}`;
+  const version = await fetchGitHubReleaseVersion(SQLUI_NATIVE_REPO);
+  const url = `https://github.com/${SQLUI_NATIVE_REPO}/releases/download/${version}/${SQLUI_PORTAL_TARBALL}`;
 
   const stageDir = path.join(BASHRC_TEMP_DIR, SQLUI_PORTAL_BIN);
-  const tarPath = path.join(stageDir, fileName);
+  const tarPath = path.join(stageDir, SQLUI_PORTAL_TARBALL);
   const payloadDir = path.join(BASE_HOMEDIR_LINUX, ".local", "share", SQLUI_PORTAL_BIN);
   const binDir = path.join(BASE_HOMEDIR_LINUX, ".local", "bin");
   const binWrapper = path.join(binDir, SQLUI_PORTAL_BIN);
@@ -65,7 +63,7 @@ async function _installSqluiPortal() {
   await mkdir(payloadDir);
   await mkdir(binDir);
 
-  const ok = await downloadAssetWithFallback(SQLUI_PORTAL_REPO, url, tarPath);
+  const ok = await downloadAssetWithFallback(SQLUI_NATIVE_REPO, url, tarPath);
   if (!ok) return;
 
   // Tarball ships with a top-level portal/ folder containing sqlui-portal,
