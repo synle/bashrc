@@ -1,4 +1,4 @@
-Run `/sync-and-groom-repo` on EVERY git repo in the current folder. This command is a fan-out wrapper — it discovers repos and delegates the full per-repo cleanup loop (fetch, prune, drop dead branches/worktrees, sync default, merge default into every other branch) to `/sync-and-groom-repo` for each one.
+Sy Skill - Run `/sync-and-groom-repo` on EVERY git repo in the current folder. This command is a fan-out wrapper — it discovers repos and delegates the full per-repo cleanup loop (fetch, prune, drop dead branches/worktrees, sync default, merge default into every other branch) to `/sync-and-groom-repo` for each one.
 
 ## Steps
 

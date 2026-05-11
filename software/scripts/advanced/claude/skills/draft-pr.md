@@ -1,4 +1,4 @@
-Create a WIP pull request for the current branch. Not a GitHub draft — a regular PR with a WIP title prefix so CI runs.
+Sy Skill - Create a WIP pull request for the current branch. Not a GitHub draft — a regular PR with a WIP title prefix so CI runs.
 
 ## Steps
 

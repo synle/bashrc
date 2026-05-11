@@ -85,8 +85,8 @@ async function _doKeysWork(targetDir) {
 
   log(">> Claude Code Keybindings:", targetPath);
 
-  CLAUDE_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-keys.common.jsonc`) || [];
-  CLAUDE_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude-keys.windows.jsonc`) || [];
+  CLAUDE_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude/claude-keys.common.jsonc`) || [];
+  CLAUDE_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/claude/claude-keys.windows.jsonc`) || [];
 
   // write to build file (one per platform)
   const comments = "Claude Code Keybindings";
@@ -193,7 +193,7 @@ async function _doInstructionsWork(targetDir) {
   log(">> Claude Code Instructions:", targetPath);
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (await readText`software/scripts/advanced/claude-instructions.md`).trim();
+  const sourceContent = (await readText`software/scripts/advanced/claude/claude-instructions.md`).trim();
 
   /** @type {string} Existing CLAUDE.md content (empty if file is missing). */
   let existing = "";
@@ -216,12 +216,14 @@ async function _doInstructionsWork(targetDir) {
  *
  * Each key is the destination filename in ~/.claude/commands/ (becomes a
  * /<name> command). Each value is the source filename (without .md) under
- * software/scripts/advanced/claude-commands/. Multiple keys may point at the
- * same source — that's how /release-main and /release-master are aliased to
- * /release-official without duplicating the body.
+ * software/scripts/advanced/claude/skills/. Multiple keys may point at the
+ * same source — that's how /release-main, /release-master, /release-stable,
+ * /release-official, /release-beta, and bare /release are all aliased to the
+ * single unified `release` source. The skill body itself does the routing
+ * (official vs beta) based on invocation name + arguments.
  *
  * Editing a command: edit the .md file under
- *   software/scripts/advanced/claude-commands/<name>.md
+ *   software/scripts/advanced/claude/skills/<name>.md
  * Adding a command: drop a new .md file there + add a deploy-map entry.
  * Aliasing: add a deploy-map entry whose value points at an existing source.
  *
@@ -236,17 +238,21 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
   "draft-pr.md": "draft-pr",
   "list-prs.md": "list-prs",
   "slack-prs.md": "slack-prs",
-  "release-beta.md": "release-beta",
-  "release-official.md": "release-official",
-  "release-main.md": "release-official", // alias of release-official
-  "release-master.md": "release-official", // alias of release-official
+  // All release aliases route to the single unified `release` skill — the
+  // body checks invocation name + $ARGUMENTS to decide official vs beta.
+  "release.md": "release",
+  "release-stable.md": "release", // alias of release (official intent)
+  "release-official.md": "release", // alias of release (official intent)
+  "release-main.md": "release", // alias of release (official intent)
+  "release-master.md": "release", // alias of release (official intent)
+  "release-beta.md": "release", // alias of release (beta intent — invocation name forces beta)
 };
 
 /**
  * Deploys slash command definitions to ~/.claude/commands/. Each entry in
  * CLAUDE_COMMAND_DEPLOY_MAP becomes a /<name> user-level command available
  * across all projects. Source files live under
- * software/scripts/advanced/claude-commands/ and are read verbatim via
+ * software/scripts/advanced/claude/skills/ and are read verbatim via
  * readText (same pattern as claude-instructions.md). Aliased sources are read
  * once and cached so identical destinations stay byte-exact.
  * @param {string} targetDir - Path to the ~/.claude directory.
@@ -263,7 +269,7 @@ async function _doCommandsWork(targetDir) {
 
   for (const [destFile, sourceName] of Object.entries(CLAUDE_COMMAND_DEPLOY_MAP)) {
     if (!(sourceName in sourceCache)) {
-      sourceCache[sourceName] = (await readText`software/scripts/advanced/claude-commands/${sourceName}.md`).trimEnd();
+      sourceCache[sourceName] = (await readText`software/scripts/advanced/claude/skills/${sourceName}.md`).trimEnd();
     }
     const dest = path.join(commandsDir, destFile);
     await backupConfigFile(dest);

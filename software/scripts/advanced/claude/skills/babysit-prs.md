@@ -1,4 +1,4 @@
-Run `/babysit-pr` on EVERY open PR. This command is a fan-out wrapper — it finds all your open PRs and delegates the full per-PR loop (sync, comments, local checks, CI monitor) to `/babysit-pr` for each one.
+Sy Skill - Run `/babysit-pr` on EVERY open PR. This command is a fan-out wrapper — it finds all your open PRs and delegates the full per-PR loop (sync, comments, local checks, CI monitor) to `/babysit-pr` for each one.
 
 ## Steps
 
