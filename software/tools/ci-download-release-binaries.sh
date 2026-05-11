@@ -223,6 +223,7 @@ VEOF
     "synle/url-porter"
     "synle/sqlui-native"
     "synle/display-dj"
+    "synle/skiff-files"
   )
 
   for repo_id in "${RELEASE_REPOS[@]}"; do
