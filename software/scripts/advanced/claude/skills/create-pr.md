@@ -21,3 +21,4 @@
 - **Squash merge only.** Every PR is merged with `gh pr merge --squash` (or `gh pr merge --squash --auto` for automerge). Never use `--merge` (regular merge commit) or `--rebase`. One PR = one commit on the default branch.
 - **If automerge is requested**, enable it with `--squash --auto`. Do not enable automerge in any other mode.
 - If `gh` reports the repo's allowed merge methods don't include squash, stop and surface the misconfiguration — do not fall back to a merge commit.
+- **Post-merge release is automatic** (global rule 47). When the babysit flow runs against this PR (or the user runs `/sy-babysit-pr` later), it will invoke `/sy-release` immediately after the PR transitions to `MERGED`. Repos without a release workflow no-op cleanly. No separate user action needed.
