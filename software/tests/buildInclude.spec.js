@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-
+// Default ESM import (not `require()`) so vitest's istanbul provider sees the file
+// through Vite's transform pipeline and instruments it for coverage.
+import buildIncludeModule from "../tools/build-include.js";
 const {
   getCommentStyle,
   stripShebang,
@@ -20,7 +22,7 @@ const {
   CODE_FENCE_LANGUAGES,
   INLINE_MARKER_REGEX,
   SCSS_INLINE_MARKER_REGEX,
-} = require("../tools/build-include.js");
+} = buildIncludeModule;
 
 // ---- tests ----
 
@@ -880,7 +882,7 @@ describe("SCSS_INLINE_MARKER_REGEX", () => {
 // ---- sourceMetadataHeader tests ----
 
 describe("sourceMetadataHeader", () => {
-  const { sourceMetadataHeader } = require("../tools/build-include.js");
+  const { sourceMetadataHeader } = buildIncludeModule;
   const fs = require("fs");
   const path = require("path");
 
