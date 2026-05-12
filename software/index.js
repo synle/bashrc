@@ -3172,16 +3172,36 @@ const BINARY_CACHE_REPO = "synle/bashrc";
 const BINARY_CACHE_TAG = "binary-cache";
 
 /**
+ * Strips an embedded semver-shaped version (e.g. "_7.0.5_", "_0.2.268_") out
+ * of an upstream filename. Used so the cached fallback always has a stable
+ * name regardless of upstream version bumps. Pattern matched: a digit-only
+ * segment delimited by underscores with at least one ".N" group (covers X.Y,
+ * X.Y.Z, X.Y.Z.W). Files without a version stretch are returned unchanged
+ * (e.g. url-porter.zip, sqlui-portal.tar.gz).
+ *
+ * MUST stay in sync with strip_version_from_filename() in
+ * software/tools/ci-download-release-binaries.sh.
+ * @param {string} fileName - Upstream asset filename
+ * @returns {string} Filename with the embedded version segment removed
+ */
+function stripVersionFromFilename(fileName) {
+  return fileName.replace(/_\d+(\.\d+)+_/g, "_");
+}
+
+/**
  * Builds the cached-asset download URL for a given upstream app + filename.
- * Assets in the binary-cache release are namespaced as <app>__<file> so multiple
- * upstream repos can co-exist in one flat release. Must match the naming used
- * by ci-download-release-binaries.sh.
+ * Assets in the binary-cache release are named "<app>__<stripped-filename>"
+ * where the upstream version is stripped from the filename so the cache name
+ * stays stable across upstream version bumps. Multiple apps co-exist in one
+ * flat release via the "<app>__" prefix.
+ *
+ * Must match the naming used by ci-download-release-binaries.sh.
  * @param {string} appName - Upstream app name (e.g. "sqlui-native")
  * @param {string} fileName - The original asset filename (extension preserved)
  * @returns {string} Full download URL on the binary-cache release
  */
 function getBinaryCacheUrl(appName, fileName) {
-  return `https://github.com/${BINARY_CACHE_REPO}/releases/download/${BINARY_CACHE_TAG}/${appName}__${fileName}`;
+  return `https://github.com/${BINARY_CACHE_REPO}/releases/download/${BINARY_CACHE_TAG}/${appName}__${stripVersionFromFilename(fileName)}`;
 }
 
 /**
