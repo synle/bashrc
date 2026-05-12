@@ -793,7 +793,7 @@ function rebase_origin_main_branch() {
 
 # Resets the local default branch HEAD to match origin (fetches and force-resets)
 function _clean_reset_head_to_main_branch() {
-  local total_steps=8
+  local total_steps=9
   local current_step=0
 
   function _log_step() {
@@ -834,6 +834,9 @@ function _clean_reset_head_to_main_branch() {
 
   _log_step "Cleaning up temp backup branch: $temp_branch ..."
   git del "$temp_branch" > /dev/null 2>&1
+
+  _log_step "Deleting stale local branches whose upstream is gone (squash-merged PRs)..."
+  git clean-stale-branches
 
   echo "# ---- Reset to origin/$default_branch (100% done) ----"
   git lastd

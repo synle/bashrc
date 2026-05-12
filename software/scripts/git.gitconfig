@@ -206,6 +206,7 @@ clean-and-fetch = "!git config remote.origin.fetch '+refs/heads/*:refs/remotes/o
 last = "!git log -1 --format='%h %an: %s' HEAD | sed 's/  */ /g'" # Print last commit summary
 lastd = "!git last && git dhs" # Last commit summary + file change stats
 cleanfd = "!git abort; git gc --prune=now --aggressive" # Abort all, clean untracked files, and aggressively garbage-collect
+clean-stale-branches = "!d=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@'); s=$(git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads | awk -v def=\"$d\" '$2==\"[gone]\" && $1!=def {print $1}'); if [ -z \"$s\" ]; then echo '  -> none found'; else echo \"$s\" | while IFS= read -r b; do echo \"  -> deleting '$b'\"; git branch -D \"$b\" >/dev/null 2>&1; done; fi" # Delete local branches whose upstream remote-tracking branch is gone (squash-merged PRs)
 
 # ---- Numbered Aliases (generated) ----
 # BEGIN/END - GIT_NUMBERED_ALIASES
