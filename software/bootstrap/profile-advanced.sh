@@ -2335,6 +2335,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 ################################################################################
 # BEGIN/END | Spec Autocomplete
 # SOURCE | software/scripts/bash-command-wrappers.profile.bash
+# SOURCE | software/scripts/docker-shares.profile.bash
 
 ################################################################################
 # ---- OS-specific Tweaks (registerPlatformTweaks) ----
