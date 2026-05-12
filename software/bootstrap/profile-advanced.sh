@@ -531,7 +531,15 @@ alias pop="git stash pop"
 alias amend="git amend"
 
 # ---- Aliases: Claude ----
-alias cl="claude --dangerously-skip-permissions"
+# cl: wrapper around `claude` that enables allow/dangerous skip permissions, auto permission mode, and max effort. Use `cl resume` or `cl r` to open the resume picker.
+function cl() {
+  if [ "${1:-}" = "resume" ] || [ "${1:-}" = "r" ]; then
+    shift
+    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode auto --effort max --resume "$@"
+  else
+    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode auto --effort max "$@"
+  fi
+}
 alias cm='cl --model claude-opus-4-7[1m]'
 
 # ---- Aliases: Gemini ----
