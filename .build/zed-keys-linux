@@ -1,0 +1,232 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-12]
+// 
+// Zed keymap.json (Linux/Windows)
+// ################################################################################
+
+
+[
+  {
+    "bindings": {
+      "alt-\\": "workspace::ToggleLeftDock",
+      "alt-|": "workspace::ToggleRightDock",
+      "ctrl-alt-|": "editor::ToggleSoftWrap",
+      "ctrl-`": "terminal_panel::Toggle",
+      "f5": "workspace::ReloadActiveItem",
+      "alt-n": "workspace::NewFile",
+      "alt-shift-n": "workspace::NewWindow",
+      "alt-shift-]": "pane::ActivateNextItem",
+      "alt-shift-[": "pane::ActivatePrevItem",
+      "alt-1": [
+        "pane::ActivateItem",
+        0
+      ],
+      "alt-2": [
+        "pane::ActivateItem",
+        1
+      ],
+      "alt-3": [
+        "pane::ActivateItem",
+        2
+      ],
+      "alt-4": [
+        "pane::ActivateItem",
+        3
+      ],
+      "alt-5": [
+        "pane::ActivateItem",
+        4
+      ],
+      "alt-6": [
+        "pane::ActivateItem",
+        5
+      ],
+      "alt-7": [
+        "pane::ActivateItem",
+        6
+      ],
+      "alt-8": [
+        "pane::ActivateItem",
+        7
+      ],
+      "alt-9": [
+        "pane::ActivateItem",
+        8
+      ],
+      "alt-w": "pane::CloseActiveItem",
+      "alt-q": "zed::Quit",
+      "alt-p": "file_finder::Toggle",
+      "alt-shift-p": "command_palette::Toggle",
+      "alt-o": "workspace::Open",
+      "alt-ctrl-p": "projects::OpenRecent",
+      "alt-t": "workspace::NewCenterTerminal",
+      "alt-s": "workspace::Save",
+      "alt-shift-s": "workspace::SaveAll",
+      "alt-a": "editor::SelectAll",
+      "alt-c": "editor::Copy",
+      "alt-v": "editor::Paste",
+      "alt-x": "editor::Cut",
+      "alt-z": "editor::Undo",
+      "alt-shift-z": "editor::Redo",
+      "alt-y": "editor::Redo",
+      "alt-/": "editor::ToggleComments",
+      "alt-]": "editor::Indent",
+      "alt-[": "editor::Outdent",
+      "alt-d": "editor::SelectNext",
+      "alt-ctrl-g": "editor::SelectAllMatches",
+      "alt-f": "buffer_search::Deploy",
+      "alt-g": "search::SelectNextMatch",
+      "alt-shift-g": "search::SelectPrevMatch",
+      "alt-h": "buffer_search::DeployReplace",
+      "alt-shift-f": "workspace::NewSearch",
+      "alt-shift-h": "workspace::NewSearch",
+      "alt-;": "go_to_line::Toggle",
+      "alt-r": "outline::Toggle",
+      "alt-shift-'": "project_symbols::Toggle",
+      "alt-enter": "editor::GoToDefinition",
+      "shift-enter": "editor::FindAllReferences",
+      "alt-up": "editor::MovePageUp",
+      "alt-down": "editor::MovePageDown",
+      "alt-shift-up": "editor::SelectPageUp",
+      "alt-shift-down": "editor::SelectPageDown",
+      "alt-left": "editor::MoveToBeginningOfLine",
+      "alt-right": "editor::MoveToEndOfLine",
+      "alt-shift-left": "editor::SelectToBeginningOfLine",
+      "alt-shift-right": "editor::SelectToEndOfLine",
+      "alt-ctrl-up": "editor::MoveToBeginning",
+      "alt-ctrl-left": "editor::MoveToBeginning",
+      "alt-ctrl-down": "editor::MoveToEnd",
+      "alt-ctrl-right": "editor::MoveToEnd",
+      "alt-ctrl-shift-up": "editor::SelectToBeginning",
+      "alt-ctrl-shift-left": "editor::SelectToBeginning",
+      "alt-ctrl-shift-down": "editor::SelectToEnd",
+      "alt-ctrl-shift-right": "editor::SelectToEnd",
+      "alt-shift-l": "editor::SplitSelectionIntoLines",
+      "alt-l": "editor::SelectLine",
+      "alt-backspace": "editor::DeleteToBeginningOfLine",
+      "ctrl-m": "editor::MoveToEnclosingBracket",
+      "ctrl-d": "pane::SplitRight",
+      "ctrl-'": "pane::SplitDown",
+      "alt-shift-d": "pane::SplitDown",
+      "ctrl-w": "pane::CloseAllItems",
+      "alt-,": "editor::Fold",
+      "alt-.": "editor::UnfoldLines",
+      "alt-=": "zed::IncreaseBufferFontSize",
+      "alt--": "zed::DecreaseBufferFontSize",
+      "alt-0": "zed::ResetBufferFontSize",
+      "alt-shift-=": "zed::IncreaseUiFontSize",
+      "alt-shift--": "zed::DecreaseUiFontSize",
+      "f2": "editor::Rename"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "alt-c": "terminal::Copy",
+      "alt-v": "terminal::Paste"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "alt-\\": "workspace::ToggleLeftDock",
+      "alt-|": "workspace::ToggleRightDock",
+      "ctrl-alt-|": "editor::ToggleSoftWrap",
+      "alt-n": "workspace::NewFile",
+      "alt-shift-n": "workspace::NewWindow",
+      "alt-shift-]": "pane::ActivateNextItem",
+      "alt-shift-[": "pane::ActivatePrevItem",
+      "alt-1": [
+        "pane::ActivateItem",
+        0
+      ],
+      "alt-2": [
+        "pane::ActivateItem",
+        1
+      ],
+      "alt-3": [
+        "pane::ActivateItem",
+        2
+      ],
+      "alt-4": [
+        "pane::ActivateItem",
+        3
+      ],
+      "alt-5": [
+        "pane::ActivateItem",
+        4
+      ],
+      "alt-6": [
+        "pane::ActivateItem",
+        5
+      ],
+      "alt-7": [
+        "pane::ActivateItem",
+        6
+      ],
+      "alt-8": [
+        "pane::ActivateItem",
+        7
+      ],
+      "alt-9": [
+        "pane::ActivateItem",
+        8
+      ],
+      "alt-w": "pane::CloseActiveItem",
+      "alt-q": "zed::Quit",
+      "alt-p": "file_finder::Toggle",
+      "alt-shift-p": "command_palette::Toggle",
+      "alt-o": "workspace::Open",
+      "alt-ctrl-p": "projects::OpenRecent",
+      "alt-t": "workspace::NewCenterTerminal",
+      "alt-s": "workspace::Save",
+      "alt-shift-s": "workspace::SaveAll",
+      "alt-a": "editor::SelectAll",
+      "alt-x": "editor::Cut",
+      "alt-z": "editor::Undo",
+      "alt-shift-z": "editor::Redo",
+      "alt-y": "editor::Redo",
+      "alt-/": "editor::ToggleComments",
+      "alt-]": "editor::Indent",
+      "alt-[": "editor::Outdent",
+      "alt-d": "editor::SelectNext",
+      "alt-ctrl-g": "editor::SelectAllMatches",
+      "alt-f": "buffer_search::Deploy",
+      "alt-g": "search::SelectNextMatch",
+      "alt-shift-g": "search::SelectPrevMatch",
+      "alt-h": "buffer_search::DeployReplace",
+      "alt-shift-f": "workspace::NewSearch",
+      "alt-shift-h": "workspace::NewSearch",
+      "alt-;": "go_to_line::Toggle",
+      "alt-r": "outline::Toggle",
+      "alt-shift-'": "project_symbols::Toggle",
+      "alt-enter": "editor::GoToDefinition",
+      "alt-up": "editor::MovePageUp",
+      "alt-down": "editor::MovePageDown",
+      "alt-shift-up": "editor::SelectPageUp",
+      "alt-shift-down": "editor::SelectPageDown",
+      "alt-left": "editor::MoveToBeginningOfLine",
+      "alt-right": "editor::MoveToEndOfLine",
+      "alt-shift-left": "editor::SelectToBeginningOfLine",
+      "alt-shift-right": "editor::SelectToEndOfLine",
+      "alt-ctrl-up": "editor::MoveToBeginning",
+      "alt-ctrl-left": "editor::MoveToBeginning",
+      "alt-ctrl-down": "editor::MoveToEnd",
+      "alt-ctrl-right": "editor::MoveToEnd",
+      "alt-ctrl-shift-up": "editor::SelectToBeginning",
+      "alt-ctrl-shift-left": "editor::SelectToBeginning",
+      "alt-ctrl-shift-down": "editor::SelectToEnd",
+      "alt-ctrl-shift-right": "editor::SelectToEnd",
+      "alt-shift-l": "editor::SplitSelectionIntoLines",
+      "alt-l": "editor::SelectLine",
+      "alt-backspace": "editor::DeleteToBeginningOfLine",
+      "alt-shift-d": "pane::SplitDown",
+      "alt-,": "editor::Fold",
+      "alt-.": "editor::UnfoldLines",
+      "alt-=": "zed::IncreaseBufferFontSize",
+      "alt--": "zed::DecreaseBufferFontSize",
+      "alt-0": "zed::ResetBufferFontSize",
+      "alt-shift-=": "zed::IncreaseUiFontSize",
+      "alt-shift--": "zed::DecreaseUiFontSize"
+    }
+  }
+]

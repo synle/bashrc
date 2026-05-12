@@ -1,0 +1,31 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-12]
+// 
+// Claude Code Keybindings
+// ################################################################################
+
+
+{
+  "$schema": "https://www.schemastore.org/claude-code-keybindings.json",
+  "$docs": "https://code.claude.com/docs/en/keybindings",
+  "bindings": [
+    {
+      "context": "Global",
+      "bindings": {
+        "ctrl+t": "app:toggleTodos"
+      }
+    },
+    {
+      "context": "Chat",
+      "bindings": {
+        "shift+enter": "chat:newline",
+        "ctrl+enter": "chat:newline",
+        "meta+z": "chat:undo",
+        "meta+l": "chat:clearInput",
+        "ctrl+a": null,
+        "ctrl+e": null,
+        "ctrl+x": "chat:externalEditor",
+        "ctrl+v": "chat:imagePaste"
+      }
+    }
+  ]
+}

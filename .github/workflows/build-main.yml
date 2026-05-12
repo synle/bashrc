@@ -50,6 +50,11 @@ jobs:
 
       - name: CI Prep
         id: ci-prep
+        env:
+          # Required by ci-download-release-binaries.sh — gh release upload/view
+          # against synle/bashrc's binary-cache rolling release. Job already has
+          # `contents: write` so github.token is sufficient.
+          GH_TOKEN: ${{ github.token }}
         run: make ci_prep
 
       - name: Record time after ci-prep

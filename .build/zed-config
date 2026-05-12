@@ -1,0 +1,250 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-12]
+// 
+// Zed settings.json
+// ################################################################################
+
+
+{
+  "session": {
+    "trust_all_worktrees": true
+  },
+  "hard_tabs": false,
+  "soft_wrap": "editor_width",
+  "auto_indent_on_paste": true,
+  "linked_edits": true,
+  "multi_cursor_modifier": "cmd_or_ctrl",
+  "colorize_brackets": true,
+  "show_whitespaces": "all",
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
+  "format_on_save": "on",
+  "format_on_paste": true,
+  "vim_mode": false,
+  "inline_completions": {
+    "disabled_globs": [
+      "**/*"
+    ]
+  },
+  "show_completions_on_input": true,
+  "search": {
+    "include_ignored": false
+  },
+  "cursor_blink": false,
+  "minimap": {
+    "show": "never"
+  },
+  "scrollbar": {
+    "show": "auto"
+  },
+  "gutter": {
+    "line_numbers": true,
+    "folds": false
+  },
+  "indent_guides": {
+    "enabled": false
+  },
+  "toolbar": {
+    "breadcrumbs": false,
+    "quick_actions": false
+  },
+  "tabs": {
+    "close_position": "right",
+    "git_status": false
+  },
+  "max_tabs": 10,
+  "restore_on_startup": "none",
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "agent": {
+    "dock": "right",
+    "tool_permissions": {
+      "default": "allow"
+    },
+    "always_allow_tool_actions": true
+  },
+  "terminal": {
+    "max_scroll_history_lines": 200000,
+    "shell": {
+      "program": "bash"
+    },
+    "option_as_meta": false
+  },
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "auto_update": false,
+  "git": {
+    "enabled": true,
+    "autoFetch": true,
+    "git_gutter": "hide"
+  },
+  "auto_install_extensions": {
+    "material-icon-theme": true
+  },
+  "icon_theme": "Material Icon Theme",
+  "buffer_font_family": "Courier New",
+  "buffer_font_size": 16,
+  "buffer_font_weight": 700,
+  "ui_font_size": 16,
+  "tab_size": 2,
+  "preferred_line_length": 140,
+  "theme": {
+    "mode": "system",
+    "light": "Sy Light",
+    "dark": "Sy Dark"
+  },
+  "file_scan_exclusions": [
+    ".angular",
+    ".astro",
+    ".bundle",
+    ".cache",
+    ".docusaurus",
+    ".ebextensions",
+    ".eggs",
+    ".generated",
+    ".git",
+    ".gradle",
+    ".hg",
+    ".hypothesis",
+    ".idea",
+    ".mypy_cache",
+    ".next",
+    ".nox",
+    ".nuxt",
+    ".nx",
+    ".parcel-cache",
+    ".pnpm-store",
+    ".pytest_cache",
+    ".ruff_*",
+    ".ruff_cache",
+    ".sass-cache",
+    ".serverless",
+    ".svelte-kit",
+    ".svn",
+    ".terraform",
+    ".tox",
+    ".turbo",
+    ".uv",
+    ".venv",
+    ".yarn",
+    "__pycache*",
+    "__pycache__",
+    "__pypackages__",
+    "bower_components",
+    "build",
+    "coverage",
+    "CVS",
+    "dist",
+    "htmlcov",
+    "node_modules",
+    "target",
+    "tmp",
+    "vendor",
+    "venv",
+    "webpack-dist",
+    "._*",
+    ".AppleDouble",
+    ".DS_Store",
+    ".LSOverride",
+    ".Spotlight-*",
+    ".Trashes",
+    "Desktop.ini",
+    "ehthumbs.db",
+    "Thumbs.db",
+    "*.code-search",
+    "*.Identifier",
+    "*.sublime-workspace",
+    "*.suo",
+    "*.swp",
+    ".eslintcache",
+    "*.stylelintcache",
+    "*.tsbuildinfo",
+    "*.js.map",
+    "*.map",
+    "*.min.js",
+    "bun.lockb",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "*.orig",
+    "*.rej",
+    "*.pid",
+    "*.pid.lock",
+    "*.egg",
+    "*.egg-info",
+    "*.py[cod]",
+    "*.pyc",
+    "*.pyo",
+    "*.seed",
+    "*.7z",
+    "*.a",
+    "*.aac",
+    "*.apk",
+    "*.avi",
+    "*.bmp",
+    "*.bz2",
+    "*.class",
+    "*.db",
+    "*.dds",
+    "*.deb",
+    "*.dll",
+    "*.dmg",
+    "*.doc",
+    "*.docx",
+    "*.dylib",
+    "*.eot",
+    "*.exe",
+    "*.flac",
+    "*.flv",
+    "*.gif",
+    "*.gz",
+    "*.heic",
+    "*.ico",
+    "*.idb",
+    "*.jar",
+    "*.jpeg",
+    "*.jpg",
+    "*.lib",
+    "*.mkv",
+    "*.mov",
+    "*.mp3",
+    "*.mp4",
+    "*.msi",
+    "*.ncb",
+    "*.o",
+    "*.obj",
+    "*.ogg",
+    "*.pdb",
+    "*.pdf",
+    "*.png",
+    "*.ppt",
+    "*.pptx",
+    "*.psd",
+    "*.rar",
+    "*.rpm",
+    "*.sdf",
+    "*.so",
+    "*.sqlite",
+    "*.svg",
+    "*.swf",
+    "*.tar",
+    "*.tga",
+    "*.tiff",
+    "*.ttf",
+    "*.wasm",
+    "*.wav",
+    "*.webp",
+    "*.wmv",
+    "*.woff",
+    "*.woff2",
+    "*.xls",
+    "*.xlsx",
+    "*.xz",
+    "*.zip"
+  ]
+}

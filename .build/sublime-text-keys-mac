@@ -1,0 +1,330 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-12]
+// 
+// Preferences Key Bindings
+// ################################################################################
+
+
+[
+  {
+    "keys": [
+      "super+shift+;"
+    ],
+    "command": "alignment"
+  },
+  {
+    "command": "toggle_setting",
+    "args": {
+      "setting": "word_wrap"
+    },
+    "keys": [
+      "ctrl+shift+super+\\"
+    ]
+  },
+  {
+    "command": "chain",
+    "args": {
+      "commands": [
+        [
+          "revert"
+        ],
+        [
+          "refresh_folder_list"
+        ]
+      ]
+    },
+    "keys": [
+      "f5"
+    ]
+  },
+  {
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": "@"
+    },
+    "keys": [
+      "super+r"
+    ]
+  },
+  {
+    "command": "show_overlay",
+    "args": {
+      "overlay": "goto",
+      "text": ":"
+    },
+    "keys": [
+      "super+;"
+    ]
+  },
+  {
+    "command": "fold",
+    "keys": [
+      "super+,"
+    ]
+  },
+  {
+    "command": "unfold",
+    "keys": [
+      "super+."
+    ]
+  },
+  {
+    "command": "move_to",
+    "args": {
+      "to": "brackets"
+    },
+    "keys": [
+      "ctrl+m"
+    ]
+  },
+  {
+    "command": "prompt_open_file",
+    "keys": [
+      "super+o"
+    ]
+  },
+  {
+    "command": "toggle_side_bar",
+    "keys": [
+      "super+\\"
+    ]
+  },
+  {
+    "command": "goto_definition",
+    "keys": [
+      "super+enter"
+    ]
+  },
+  {
+    "command": "quick_goto_variable",
+    "keys": [
+      "shift+enter"
+    ]
+  },
+  {
+    "command": "new_file",
+    "keys": [
+      "super+n"
+    ]
+  },
+  {
+    "command": "find_all_under",
+    "keys": [
+      "super+ctrl+g"
+    ]
+  },
+  {
+    "command": "find_prev",
+    "keys": [
+      "super+shift+g"
+    ]
+  },
+  {
+    "command": "find_next",
+    "keys": [
+      "super+g"
+    ]
+  },
+  {
+    "keys": [
+      "super+h"
+    ],
+    "command": "show_panel",
+    "args": {
+      "panel": "replace",
+      "reverse": false
+    }
+  },
+  {
+    "command": "show_panel",
+    "args": {
+      "panel": "find",
+      "reverse": false
+    },
+    "keys": [
+      "super+f"
+    ]
+  },
+  {
+    "command": "show_panel",
+    "args": {
+      "panel": "find_in_files"
+    },
+    "keys": [
+      "super+shift+f"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 0
+    },
+    "keys": [
+      "super+1"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 1
+    },
+    "keys": [
+      "super+2"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 2
+    },
+    "keys": [
+      "super+3"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 3
+    },
+    "keys": [
+      "super+4"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 4
+    },
+    "keys": [
+      "super+5"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 5
+    },
+    "keys": [
+      "super+6"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 6
+    },
+    "keys": [
+      "super+7"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 7
+    },
+    "keys": [
+      "super+8"
+    ]
+  },
+  {
+    "command": "select_by_index",
+    "args": {
+      "index": 8
+    },
+    "keys": [
+      "super+9"
+    ]
+  },
+  {
+    "command": "reset_font_size",
+    "keys": [
+      "super+0"
+    ]
+  },
+  {
+    "command": "set_layout",
+    "args": {
+      "cols": [
+        0,
+        0.5,
+        1
+      ],
+      "rows": [
+        0,
+        1
+      ],
+      "cells": [
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          1,
+          0,
+          2,
+          1
+        ]
+      ]
+    },
+    "keys": [
+      "ctrl+d"
+    ]
+  },
+  {
+    "command": "set_layout",
+    "args": {
+      "cols": [
+        0,
+        1
+      ],
+      "rows": [
+        0,
+        0.5,
+        1
+      ],
+      "cells": [
+        [
+          0,
+          0,
+          1,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          2
+        ]
+      ]
+    },
+    "keys": [
+      "ctrl+'"
+    ]
+  },
+  {
+    "command": "set_layout",
+    "args": {
+      "cols": [
+        0,
+        1
+      ],
+      "rows": [
+        0,
+        1
+      ],
+      "cells": [
+        [
+          0,
+          0,
+          1,
+          1
+        ]
+      ]
+    },
+    "keys": [
+      "ctrl+w"
+    ]
+  }
+]
