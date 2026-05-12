@@ -46,7 +46,7 @@ fi
 # ---- Pre-core Profile Blocks (registerWithBashSyleProfile) ----
 #
 # BEGIN Profile Generated Timestamp
-# Generated: 2026-05-12T02:47:40.123Z
+# Generated: 2026-05-12T03:57:25.912Z
 # END Profile Generated Timestamp
 #
 ################################################################################
@@ -8947,7 +8947,7 @@ fi
 # END tmux Spec Autocomplete
 # END Spec Autocomplete
 # SOURCE_BEGIN software/scripts/bash-command-wrappers.profile.bash
-# software/scripts/bash-command-wrappers.profile.bash | 88c3ee78a126c916a370bc65122a1b10 | 23.8 KB | 2026-05-12
+# software/scripts/bash-command-wrappers.profile.bash | d6770e541c265447b6294c71a52c7330 | 24.4 KB | 2026-05-12
 ################################################################################
 # ---- Command Wrappers ----
 #
@@ -9156,13 +9156,28 @@ function _has_pkg_script() {
   [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)" 2> /dev/null
 }
 
-# wraps npm so bare subcommand names run as `npm run <name>`
+# wraps npm so bare subcommand names run as `npm run <name>`, and `npm install`
+# (and its `i` alias) auto-gets four speed/quality-of-life flags unless already
+# passed: --no-fund (skip funding spam), --prefer-offline (reuse ~/.npm cache),
+# --no-audit (skip the post-install registry audit, biggest single win),
+# --no-update-notifier (skip the npm-self-update check, ~100-500ms).
 function npm() {
   if [ -n "${1-}" ] && [[ "${1-}" != -* ]] && _has_pkg_script "$1"; then
     command npm run "$@"
-  else
-    command npm "$@"
+    return
   fi
+  if [ "${1-}" = "install" ] || [ "${1-}" = "i" ]; then
+    local args=("$@") flag
+    for flag in --no-fund --prefer-offline --no-audit --no-update-notifier; do
+      case " $* " in
+      *" $flag "*) ;;
+      *) args+=("$flag") ;;
+      esac
+    done
+    command npm "${args[@]}"
+    return
+  fi
+  command npm "$@"
 }
 
 # wraps yarn so bare subcommand names run as `yarn run <name>`, falls back to npm

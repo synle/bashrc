@@ -1,4 +1,19 @@
-/** Shared constants and helpers for editor configuration scripts (Sublime Text, VS Code, Zed). Run: `bash run.sh --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"` */
+/**
+ * Shared constants and helpers for editor configuration scripts (Sublime Text,
+ * VS Code, Zed). Run: `bash run.sh --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"`
+ *
+ * Editor visual/format settings (tab size, line-wrap column, font, etc.) come
+ * from `EDITOR_CONFIGS` in software/index.js — the single source of truth.
+ * Notably:
+ *   - `EDITOR_CONFIGS.tabSize`     ← driven by TAB_SIZE constant in index.js,
+ *                                    also referenced by Makefile (`shfmt -i`)
+ *                                    and package.json `format` (--tab-width).
+ *   - `EDITOR_CONFIGS.maxLineSize` ← driven by PRINT_WIDTH_BREAK_COUNT in
+ *                                    index.js, matched by `--print-width` in
+ *                                    package.json `format`.
+ * All editor scripts consume these via `EDITOR_CONFIGS.<key>` — do not
+ * hard-code the values here.
+ */
 /** Color theme constants */
 const SUBLIME_DARK_COLOR_SCHEME = "Monokai.sublime-color-scheme";
 const SUBLIME_LIGHT_COLOR_SCHEME = "Breakers.sublime-color-scheme";

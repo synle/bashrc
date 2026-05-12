@@ -22,7 +22,7 @@ const BASH_SYLE_PATH = getIndexConstant("BASH_SYLE_PATH");
 const IS_LOCAL_REPO = getIndexConstant("IS_LOCAL_REPO");
 const fontFamily = getIndexConstant("fontFamily");
 const fontSize = getIndexConstant("fontSize");
-const tabSize = getIndexConstant("tabSize");
+const TAB_SIZE = getIndexConstant("TAB_SIZE");
 const EDITOR_CONFIGS = getIndexConstant("EDITOR_CONFIGS");
 const LIMITED_SUPPORT_OSES = getIndexConstant("LIMITED_SUPPORT_OSES");
 const POWERSHELL_SYLE_PATH = getIndexConstant("POWERSHELL_SYLE_PATH");
@@ -115,7 +115,7 @@ describe("constants", () => {
   it("should have editor defaults", () => {
     expect(fontFamily).toBeTruthy();
     expect(fontSize).toBeGreaterThan(0);
-    expect(tabSize).toBeGreaterThan(0);
+    expect(TAB_SIZE).toBeGreaterThan(0);
   });
 
   it("should have EDITOR_CONFIGS with expected properties", () => {

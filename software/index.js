@@ -330,7 +330,14 @@ const TEMP_SCRIPT_PREFIX = BASHRC_TEMP_DIR ? `${BASHRC_TEMP_DIR}/sw_` : "/tmp/ba
 const DOWNLOAD_ASSET_METADATA_PATH = `${TEMP_SCRIPT_PREFIX}download_asset_metadata.log`;
 /** @type {number} Console line break width for separator lines (default 80) */
 const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 80));
-/** @type {number} Code print width for formatting (default 140) */
+/**
+ * @type {number} Code print width for formatting (default 140).
+ * KEEP IN SYNC with `--print-width 140` in the `format` script in package.json
+ * — that value sets Prettier's wrap point, this one drives editor rulers and
+ * the wordWrapColumn in vs-code.js / sublime-text.js, so when one changes the
+ * other must too (otherwise Prettier-formatted files won't line up with the
+ * editor ruler). Override at runtime via the PRINT_WIDTH_BREAK_COUNT env var.
+ */
 const PRINT_WIDTH_BREAK_COUNT = getRuntimeOption("PRINT_WIDTH_BREAK_COUNT", (v) => parseInteger(v, 140));
 
 /**
@@ -400,8 +407,18 @@ function getCachedValue(key) {
 const DEFAULT_FONT_SIZE = 16;
 /** @type {number} Editor font size (min 10, default 16). Override with FONT_SIZE env var */
 const fontSize = getRuntimeOption("FONT_SIZE", (v) => parseInteger(v, DEFAULT_FONT_SIZE));
-/** @type {number} Editor tab/indentation size (min 2, default 2). Override with TAB_SIZE env var */
-const tabSize = getRuntimeOption("TAB_SIZE", (v) => parseInteger(v, 2));
+/**
+ * @type {number} Editor tab / indentation size (default 2). Single source of
+ * truth for indent width across the codebase. KEEP IN SYNC with:
+ *   - `shfmt -i 2` in Makefile (shell-script formatter indent)
+ *   - `--tab-width 2` (or the TAB_SIZE env var) in the `format` script in
+ *     package.json (Prettier's indent — its default is also 2, but we set it
+ *     explicitly so changing one value here propagates everywhere).
+ *   - `EDITOR_CONFIGS.tabSize` below — consumed by vs-code.js, sublime-text.js,
+ *     sublime-merge.js, zed.js (sets `editor.tabSize` / `tab_size`).
+ * Override at runtime via the TAB_SIZE env var.
+ */
+const TAB_SIZE = getRuntimeOption("TAB_SIZE", (v) => parseInteger(v, 2));
 /** @type {string} Editor font family (default 'Fira Code'). Override with FONT_FAMILY env var */
 const fontFamily = getRuntimeOption("FONT_FAMILY") || "Fira Code";
 /** @type {string} Editor font weight keyword (default 'bold'). Override with FONT_WEIGHT_KEYWORD env var */
@@ -434,8 +451,11 @@ const EDITOR_CONFIGS = {
   fontWeightNumber,
   fontSizeDefaultFallback: DEFAULT_FONT_SIZE,
   fontFamilyDefaultFallback: "Courier New",
-  tabSize,
-  /** Print/ruler column width in the editor @type {number} */
+  /** Editor tab/indent size — see the TAB_SIZE constant above for the canonical
+   *  cross-reference list (Makefile shfmt, Prettier, all editor scripts). */
+  tabSize: TAB_SIZE,
+  /** Print/ruler column width in the editor — see PRINT_WIDTH_BREAK_COUNT
+   *  above for the canonical cross-reference list. */
   maxLineSize: PRINT_WIDTH_BREAK_COUNT,
   /** Terminal scrollback buffer size in lines @type {number} */
   terminalScrollback: 200000,
