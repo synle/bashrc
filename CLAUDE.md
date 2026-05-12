@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal bash profile and dotfiles management system (`synle/bashrc`). Automates setup of shell configuration, editor settings, fonts, Git config, and OS-specific tweaks across macOS, Ubuntu/Debian, WSL, Android Termux, Arch Linux/Steam Deck, and ChromeOS.
 
+## Reference Docs
+
+**Read these two first when picking up unfamiliar work:**
+
+- **[DEV.md](DEV.md)** — Dev setup + deep architecture guide. How the system executes, what each layer does, the data-flow diagrams, where to add new scripts. The "how it works" doc.
+- **Architecture notes** — Important files, paths, and notes worth knowing. In this repo that's the **Architecture → Key Files** table further down (see [§ Architecture](#architecture)). Other repos may carry this as a standalone `ARCHITECTURE.md` at the root — when present, read it before touching unfamiliar code.
+
+CLAUDE.md is the rules-and-conventions doc; DEV.md and the architecture notes are the map of the codebase. Consult the map before applying the rules.
+
 ## Rules
 
 ### Protected Content

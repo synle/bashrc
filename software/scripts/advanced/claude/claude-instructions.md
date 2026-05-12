@@ -55,6 +55,10 @@ Stack-agnostic rules. Apply across every language, framework, and codebase.
 31. For ordering contracts, assert call order, not just that both calls happened.
 32. Test the symmetric path when changing one of a pair — create↔update, attach↔detach, lock↔unlock, success↔failure.
 
+## Codebase Onboarding
+
+48. **Read DEV.md and the architecture doc before starting non-trivial work in a repo.** Two canonical map docs sit alongside CLAUDE.md: `DEV.md` (dev setup + how the system executes — layer breakdown, data flow, where to add new code) and an architecture doc (important files, paths, and notes worth knowing — either a standalone `ARCHITECTURE.md` at the repo root, or an "Architecture" / "Key Files" section embedded inside `CLAUDE.md`). CLAUDE.md captures the rules; DEV.md + the architecture doc are the map. Applying rules without the map produces locally-correct but architecturally-wrong changes. Locate and skim both at the start of any unfamiliar task. If a repo is missing either, flag it as a gap worth filling rather than guessing structure from `ls`.
+
 ## Change Execution Workflow
 
 How any "work on a change" request should be executed. Follow exactly unless overridden in the same message.
@@ -105,4 +109,4 @@ Never leak secrets, credentials, or environment config to any tracked file or ex
 
 ## Repo Identification
 
-46. **The local folder name is not the repo — always resolve the remote.** Sy sometimes works on repos under a folder name that doesn't match the GitHub `owner/repo` (example: `~/git/file-explorer` is actually `synle/skiff-files`; a previous incident, 2026-05-10, sent fix/babysit agents to the wrong remote because they assumed folder = repo). Before any `gh` call, sub-agent spawn, PR action, or remote-aware reasoning: run `git remote get-url origin` (or `gh repo view --json nameWithOwner`) and use that as the authoritative `owner/repo`. Never derive the repo from `basename "$(pwd)"`, `$PWD`, or the directory name. When delegating to sub-agents, pass the resolved `owner/repo` explicitly so they don't re-infer from the folder.
+46. **The local folder name is not the repo — always resolve the remote.** Local folder names sometimes diverge from the GitHub `owner/repo` (example: `~/git/file-explorer` is actually `synle/skiff-files`; a previous incident, 2026-05-10, sent fix/babysit agents to the wrong remote because they assumed folder = repo). Before any `gh` call, sub-agent spawn, PR action, or remote-aware reasoning: run `git remote get-url origin` (or `gh repo view --json nameWithOwner`) and use that as the authoritative `owner/repo`. Never derive the repo from `basename "$(pwd)"`, `$PWD`, or the directory name. When delegating to sub-agents, pass the resolved `owner/repo` explicitly so they don't re-infer from the folder.
