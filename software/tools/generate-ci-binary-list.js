@@ -81,6 +81,7 @@ function substitute(yaml, body) {
  * @param {object} [opts]
  * @param {boolean} [opts.check=false] - If true, exit 1 when changes are needed.
  */
+/* istanbul ignore next -- CLI entry: exercised by `make format_ci_binaries`. */
 function main(opts = {}) {
   const data = JSON.parse(fs.readFileSync(JSON_PATH, "utf-8"));
   const yaml = fs.readFileSync(YAML_PATH, "utf-8");
@@ -98,6 +99,7 @@ function main(opts = {}) {
   console.log(`>> ${path.basename(YAML_PATH)} (block: ${KEY}) — updated`);
 }
 
+/* istanbul ignore next -- CLI/module dual-export branching, not unit-testable. */
 if (require.main === module) {
   main({ check: process.argv.includes("--check") });
 } else {

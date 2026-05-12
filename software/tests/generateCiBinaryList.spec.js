@@ -3,11 +3,12 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createRequire } from "module";
+// Default ESM import (not `require()`) so vitest's istanbul provider sees the file
+// through Vite's transform pipeline and instruments it for coverage.
+import generateCiBinaryListModule from "../tools/generate-ci-binary-list.js";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const requireCjs = createRequire(import.meta.url);
-const { renderBody, substitute, toLines } = requireCjs(path.join(ROOT_DIR, "software/tools/generate-ci-binary-list.js"));
+const { renderBody, substitute, toLines } = generateCiBinaryListModule;
 
 const JSON_PATH = path.join(ROOT_DIR, "software/metadata/ci-binaries.json");
 const YAML_PATH = path.join(ROOT_DIR, ".github/actions/ci-build/action.yml");

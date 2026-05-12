@@ -406,6 +406,8 @@ function cleanSCSSInlineMarkers(content) {
 
 // Only export when required as a module (e.g. by tests).
 // Skip when run directly as CLI (node software/tools/build-include.js).
+/* istanbul ignore else -- CLI branch: exercised by `make format_build_include`,
+   not by unit tests. All testable logic lives in the exported helpers above. */
 if (typeof module !== "undefined" && require.main !== module) {
   module.exports = {
     TEXT_BLOCK_START_MARKER,
@@ -431,7 +433,12 @@ if (typeof module !== "undefined" && require.main !== module) {
     cleanSCSSInlineMarkers,
     sourceMetadataHeader,
   };
-} else if (require.main === module) {
+}
+
+/* istanbul ignore next -- CLI entry: exercised by `make format_build_include`,
+   not by unit tests. All testable logic lives in the exported helpers above. */
+(function runCliIfMain() {
+  if (require.main !== module) return;
   // ---- CLI entry point ----
   const { execSync } = require("child_process");
 
@@ -584,4 +591,4 @@ if (typeof module !== "undefined" && require.main !== module) {
   }
 
   console.log(`>> ${modeName}: ${totalUpdated} file(s) updated`);
-}
+})();
