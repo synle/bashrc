@@ -141,16 +141,46 @@
       --json assets --jq ".assets[] | select(.name == \"${asset_name}\") | .size" 2>/dev/null || true
   }
 
+  # Returns the currently-cached version for an app by reading the top-level
+  # "<app>__version.json" pointer on the cache release. Echoes the version
+  # string or empty if no pointer exists yet (first run for this app).
+  function get_cached_version() {
+    local app_name="$1"
+    curl -fsSL "https://github.com/${CACHE_REPO}/releases/download/${CACHE_TAG}/${app_name}__version.json" 2>/dev/null \
+      | python3 -c "import sys,json; print(json.load(sys.stdin).get('version',''))" 2>/dev/null || true
+  }
+
   # Minimum acceptable size for a freshly-downloaded asset before it can be
   # uploaded as a fallback. Catches obviously-bad responses (HTML error pages
   # returning 200, truncated transfers, etc.) that pass the non-zero check.
   MIN_ASSET_SIZE_BYTES=1024
 
-  # Uploads a single file to the cache release as "<app>__<basename>", but only
-  # after sanity-checking the local file size and, if an existing same-named
-  # asset is already on the release, refusing to clobber a known-good asset
-  # with one that's suspiciously smaller. This guards against replacing a
-  # working fallback with a corrupt upstream response on a future run.
+  # Strips an embedded semver-shaped version (e.g. "_7.0.5_", "_0.2.268_") out
+  # of an upstream filename so the cached asset always has a stable name
+  # regardless of upstream version bumps. Pattern matched: a digit-only segment
+  # delimited by underscores with at least one ".N" group (covers X.Y, X.Y.Z,
+  # X.Y.Z.W). Files without a version stretch are returned unchanged
+  # (e.g. url-porter.zip, sqlui-portal.tar.gz).
+  #
+  # Examples:
+  #   Display.DJ_7.0.5_x64.dmg          → Display.DJ_x64.dmg
+  #   sqlui-native_3.1.6_amd64.AppImage → sqlui-native_amd64.AppImage
+  #   Skiff.Files_0.2.268_aarch64.dmg   → Skiff.Files_aarch64.dmg
+  #   url-porter.zip                    → url-porter.zip          (unchanged)
+  #
+  # This MUST stay in sync with stripVersionFromFilename() in software/index.js
+  # so the runtime fallback URL matches what we upload.
+  function strip_version_from_filename() {
+    echo "$1" | sed -E 's/_[0-9]+(\.[0-9]+)+_/_/g'
+  }
+
+  # Uploads a single file to the cache release as "<app>__<stripped-basename>".
+  # Always overwrites via --clobber, since the stripped name is stable across
+  # upstream version bumps and a new version is a legitimate full replacement.
+  #
+  # Guards: refuses to overwrite an existing same-named asset with one that's
+  # <50% the size (catches truncated downloads / HTML error pages), and refuses
+  # any local file <1 KB (version.json exempt — it's intentionally tiny).
   #
   # Returns 0 on success (uploaded), 2 on safe-skip (refused clobber for
   # sanity reasons), and 1 on hard failure (gh upload errored out).
@@ -159,7 +189,9 @@
     local src_file="$2"
     local fname
     fname=$(basename "$src_file")
-    local namespaced="${app_name}__${fname}"
+    local stripped namespaced
+    stripped=$(strip_version_from_filename "$fname")
+    namespaced="${app_name}__${stripped}"
     local new_size
     new_size=$(wc -c < "$src_file" | tr -d ' ')
 
@@ -186,10 +218,7 @@
       fi
     fi
 
-    # Stage under the namespaced filename and upload with --clobber. Clobber is
-    # required because (a) gh release upload errors on existing same-named
-    # assets without it and (b) it's the only way to atomically replace an
-    # unversioned filename (e.g. sqlui-portal.tar.gz, version.json).
+    # Stage under the namespaced filename and upload with --clobber.
     local staged="$TEMP_DIR/_upload/$namespaced"
     mkdir -p "$(dirname "$staged")"
     cp -f "$src_file" "$staged"
@@ -201,8 +230,9 @@
   }
 
   # Deletes any "<app>__*" asset on the cache release whose name is NOT in the
-  # whitespace-separated keep-list. Called AFTER a successful upload batch so
-  # an upload failure mid-batch never strands the user with an empty cache.
+  # whitespace-separated keep-list. Catches leftover renames between versions
+  # (e.g. when an upstream removes/renames a flavor). Called AFTER successful
+  # uploads so a mid-batch failure never empties the cache.
   function purge_stale_cache_assets_except() {
     local app_name="$1"
     local keep_list="$2"
@@ -250,6 +280,20 @@
     if [ -z "$version" ] || [ -z "$app_name" ]; then
       echo ""
       echo ">> Could not parse release from: $api_url"
+      return
+    fi
+
+    # Skip-if-unchanged: compare the upstream version against the cached
+    # "<app>__version.json" pointer. If they match, the cache is already up
+    # to date and we save both the download and upload bandwidth.
+    # version.json is uploaded LAST in the mirror flow below, so if a previous
+    # run failed mid-batch, the pointer still reflects the prior version and
+    # this check correctly returns "mismatch" → triggers a full retry.
+    local existing_version
+    existing_version=$(get_cached_version "$app_name")
+    if [ -n "$existing_version" ] && [ "$existing_version" = "$version" ]; then
+      echo ""
+      echo ">> $app_name $version: already cached (matches version.json pointer), skipping"
       return
     fi
 
@@ -319,16 +363,17 @@ for a in data.get('assets', []):
 
     for f in "$app_temp"/*; do
       [ -f "$f" ] || continue
-      local bname bsize rc
+      local bname stripped_bname bsize rc
       bname=$(basename "$f")
+      stripped_bname=$(strip_version_from_filename "$bname")
       bsize=$(wc -c < "$f" | tr -d ' ')
       rc=0
       # `|| rc=$?` is required: under `set -e` a bare non-zero return from
       # safe_upload_cache_asset would exit the script before we can inspect rc.
       safe_upload_cache_asset "$app_name" "$f" || rc=$?
       case "$rc" in
-        0) keep_list+="${app_name}__${bname} "; echo "$app_name|$bname|$bsize" >> "$REPORT_FILE" ;;
-        2) upload_skip_count=$((upload_skip_count + 1)); keep_list+="${app_name}__${bname} " ;;  # safe-skip: keep existing
+        0) keep_list+="${app_name}__${stripped_bname} "; echo "$app_name|$stripped_bname|$bsize" >> "$REPORT_FILE" ;;
+        2) upload_skip_count=$((upload_skip_count + 1)); keep_list+="${app_name}__${stripped_bname} " ;;  # safe-skip: keep existing
         *) upload_fail_count=$((upload_fail_count + 1)) ;;
       esac
     done
