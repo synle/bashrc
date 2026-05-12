@@ -5,7 +5,7 @@
     "dev": "vite",
     "prebuild": "npm run format",
     "build": "vite build",
-    "format": "npx --yes prettier --write --cache --ignore-unknown --no-error-on-unmatched-pattern --print-width 140 .",
+    "format": "PRINT_WIDTH_BREAK_COUNT=140 && TAB_SIZE=2 && npx --yes prettier --write --cache --ignore-unknown --no-error-on-unmatched-pattern --print-width $PRINT_WIDTH_BREAK_COUNT --tab-width $TAB_SIZE .",
     "setup:hosts": "curl -s https://github.com/synle/bashrc/blob/HEAD/run.sh?raw=1 | bash -s -- --files=\"software/scripts/etc-hosts.su.js\"",
     "test": "vitest run --config vitest.config.js",
     "test:smoke": "vitest run --config vitest.smoke.config.js",

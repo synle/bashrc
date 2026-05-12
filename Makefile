@@ -12,6 +12,14 @@ export NO_COLOR := 0
 # default make `make` => point to `make setup`
 .DEFAULT_GOAL := setup
 
+# Editor / formatter indent size. Single source of truth in JS is the
+# TAB_SIZE constant in software/index.js. KEEP IN SYNC with:
+#   - TAB_SIZE in software/index.js (drives EDITOR_CONFIGS.tabSize → vs-code,
+#     sublime, zed via editor.tabSize / tab_size)
+#   - the `format` script in package.json (Prettier --tab-width / TAB_SIZE env)
+# Used below in `shfmt -i $(TAB_SIZE)` so changing one value flows everywhere.
+TAB_SIZE := 2
+
 # Shared preamble that sources common environment variables (use: $(_BUILD_ENV) && cmd)
 _BUILD_ENV = source software/bootstrap/common-env.sh
 
@@ -61,7 +69,7 @@ format_shell:
 	  echo 'shfmt not found. Skipping shell formatting.'
 	  exit 0
 	fi
-	shfmt -w -i 2 -bn -sr \
+	shfmt -w -i $(TAB_SIZE) -bn -sr \
 	  $$(find software/bootstrap software/scripts \( -name '*.sh' -o -name '*.bash' \) ! -name '*.ps1.bash') \
 	  ./*.sh
 
