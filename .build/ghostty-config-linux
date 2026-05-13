@@ -1,0 +1,96 @@
+# ~/.config/ghostty/config (Linux variant — OS_KEY = alt)
+
+# ---- Typography ----
+font-family = Fira Code
+font-size = 16
+# Render the regular face in bold by default — matches the user's "heavy" look.
+font-style = bold
+font-style-italic = bold italic
+
+# ---- Theme (auto-switch with OS appearance, high-contrast both ways) ----
+# GitHub's high-contrast pair: maximum readability in either mode.
+theme = light:GitHub Light High Contrast,dark:GitHub Dark High Contrast
+
+# ---- Shell integration ----
+# Auto-detect bash/zsh/fish; enable sudo askpass integration only.
+# Cursor-shape control is intentionally OMITTED so the shell can't
+# override our `cursor-style = block` to a bar/beam in insert mode.
+# The 'title' feature is also OMITTED: with it on, Ghostty's auto-
+# injected shell integration overrides the PROMPT_COMMAND-driven OSC 0
+# title (set in software/bootstrap/profile-advanced.sh), and the tab
+# title ends up showing the last-run command name (e.g. "clean",
+# "open .") instead of the current pwd. With it off, the user's
+# PROMPT_COMMAND wins and tabs show `shorter_pwd_path` (e.g. "~/g/bashrc").
+shell-integration = detect
+shell-integration-features = sudo
+# New tabs/splits/windows open in the same cwd as the active pane.
+working-directory = inherit
+
+# ---- Window / Behavior ----
+scrollback-limit = 200000
+mouse-hide-while-typing = true
+copy-on-select = false
+confirm-close-surface = false
+window-padding-x = 6
+window-padding-y = 6
+# Even padding on both sides of a split, regardless of split orientation.
+window-padding-balance = true
+window-save-state = always
+
+# ---- Splits (focus visibility) ----
+# Aggressive dimming on unfocused splits so the active pane is obvious in
+# both light and dark modes. Default is ~0.7; lower = more contrast.
+unfocused-split-opacity = 0.65
+# Mid-tone gray fill so unfocused panes are visibly tinted in BOTH modes:
+# in light mode the gray darkens them, in dark mode it lightens them.
+# (Ghostty has no light:/dark: variant for this setting, so we need a
+# color that contrasts against both backgrounds — pure black would be a
+# no-op against a near-black dark theme.)
+unfocused-split-fill = #808080
+# Vibrant divider line between splits — uses GitHub's high-contrast blue
+# accent so the boundary between focused and unfocused panes is obvious.
+split-divider-color = #0969da
+
+# ---- Cursor ----
+# Steady (non-blinking) block — no animation, easier on the eyes.
+cursor-style = block
+cursor-style-blink = false
+
+
+# ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
+keybind = alt+t=new_tab
+keybind = alt+1=goto_tab:1
+keybind = alt+2=goto_tab:2
+keybind = alt+3=goto_tab:3
+keybind = alt+4=goto_tab:4
+keybind = alt+5=goto_tab:5
+keybind = alt+6=goto_tab:6
+keybind = alt+7=goto_tab:7
+keybind = alt+8=goto_tab:8
+keybind = alt+9=goto_tab:9
+keybind = alt+shift+]=next_tab
+keybind = alt+shift+[=previous_tab
+keybind = alt+w=close_surface
+keybind = f2=prompt_tab_title
+keybind = alt+n=new_window
+keybind = alt+q=quit
+keybind = alt+d=new_split:right
+keybind = alt+shift+d=new_split:down
+keybind = alt+'=new_split:down
+keybind = alt+up=goto_split:up
+keybind = alt+down=goto_split:down
+keybind = alt+left=goto_split:left
+keybind = alt+right=goto_split:right
+keybind = alt+shift+up=resize_split:up,10
+keybind = alt+shift+down=resize_split:down,10
+keybind = alt+shift+left=resize_split:left,10
+keybind = alt+shift+right=resize_split:right,10
+keybind = alt+shift+\=toggle_split_zoom
+keybind = alt+equal=increase_font_size:1
+keybind = alt+minus=decrease_font_size:1
+keybind = alt+0=reset_font_size
+keybind = alt+c=copy_to_clipboard
+keybind = alt+v=paste_from_clipboard
+keybind = alt+a=select_all
+keybind = f11=toggle_fullscreen
+keybind = alt+\=toggle_window_decorations
