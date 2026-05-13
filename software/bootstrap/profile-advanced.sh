@@ -531,13 +531,14 @@ alias pop="git stash pop"
 alias amend="git amend"
 
 # ---- Aliases: Claude ----
-# cl: wrapper around `claude` that enables allow/dangerous skip permissions, picks `auto` permission mode on claude >= 2.1.100 (falls back to `bypassPermissions` on older builds where `auto` is unsupported), and max effort. Use `cl resume` or `cl r` to open the resume picker.
+# cl: wrapper around `claude` that enables allow/dangerous skip permissions, appends `--permission-mode auto` on claude >= 2.1.100 (omits it entirely on older builds where `auto` is unsupported — the dangerously-skip-permissions flag already covers bypass), and max effort. Use `cl resume` or `cl r` to open the resume picker.
 function cl() {
-  # `--permission-mode auto` was added around claude 2.1.100; older builds only accept bypassPermissions.
-  # Cache the resolved mode in the shell to avoid re-spawning `claude --version` on every call.
+  # `--permission-mode auto` was added around claude 2.1.100; older builds reject it,
+  # so on those we drop the flag entirely. Cache the decision in the shell so we don't
+  # re-spawn `claude --version` on every call ("on" = include the flag, "off" = drop it).
   if [ -z "${_CL_PERMISSION_MODE:-}" ]; then
     local _cl_ver _cl_maj _cl_min _cl_patch
-    _CL_PERMISSION_MODE="bypassPermissions"
+    _CL_PERMISSION_MODE="off"
     _cl_ver="$(command claude --version 2>/dev/null | awk '{print $1}')"
     if [ -n "$_cl_ver" ]; then
       IFS='.' read -r _cl_maj _cl_min _cl_patch <<< "$_cl_ver"
@@ -546,16 +547,19 @@ function cl() {
       if [ "$_cl_maj" -gt 2 ] \
          || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -gt 1 ]; } \
          || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -eq 1 ] && [ "$_cl_patch" -ge 100 ]; }; then
-        _CL_PERMISSION_MODE="auto"
+        _CL_PERMISSION_MODE="on"
       fi
     fi
   fi
+  local -a _cl_cmd
+  _cl_cmd=(claude --allow-dangerously-skip-permissions --dangerously-skip-permissions)
+  [ "$_CL_PERMISSION_MODE" = "on" ] && _cl_cmd+=(--permission-mode auto)
+  _cl_cmd+=(--effort max)
   if [ "${1:-}" = "resume" ] || [ "${1:-}" = "r" ]; then
     shift
-    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode "$_CL_PERMISSION_MODE" --effort max --resume "$@"
-  else
-    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode "$_CL_PERMISSION_MODE" --effort max "$@"
+    _cl_cmd+=(--resume)
   fi
+  "${_cl_cmd[@]}" "$@"
 }
 alias cm='cl --model claude-opus-4-7[1m]'
 
