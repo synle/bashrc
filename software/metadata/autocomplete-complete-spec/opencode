@@ -1,0 +1,55 @@
+acp
+agent
+agent create
+agent list
+attach
+auth
+auth list
+auth login
+auth logout
+completion
+db
+db migrate
+db path
+debug
+debug agent
+debug config
+debug file
+debug info
+debug lsp
+debug paths
+debug rg
+debug scrap
+debug skill
+debug snapshot
+debug startup
+debug wait
+export
+github
+github install
+github run
+import
+mcp
+mcp add
+mcp auth
+mcp debug
+mcp list
+mcp logout
+models
+plug
+plugin
+pr
+providers
+providers list
+providers login
+providers logout
+run
+serve
+session
+session delete
+session list
+stats
+uninstall
+upgrade
+web
+|--agent,-c,--continue,--cors,--fork,-h,--help,--hostname,--log-level,--mdns,--mdns-domain,-m,--model,--port,--print-logs,--prompt,--pure,-s,--session,-v,--version

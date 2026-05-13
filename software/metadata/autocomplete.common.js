@@ -158,6 +158,11 @@ const SPEC_COMMANDS = [
   { command: "rsync", specFile: "software/metadata/autocomplete-complete-spec/rsync" },
   { command: "s", specCommand: "ssh" },
   { command: "ssh", specFile: "software/metadata/autocomplete-complete-spec/ssh" },
+  // ---- AI / agentic tools ----
+  { command: "claude", specFile: "software/metadata/autocomplete-complete-spec/claude" },
+  { command: "cl", specCommand: "claude" },
+  { command: "cm", specCommand: "claude" },
+  { command: "opencode", specFile: "software/metadata/autocomplete-complete-spec/opencode" },
   // ---- System and services ----
   { command: "adb", specFile: "software/metadata/autocomplete-complete-spec/adb" },
   { command: "journalctl", specFile: "software/metadata/autocomplete-complete-spec/journalctl", os: "mac,linux" },
