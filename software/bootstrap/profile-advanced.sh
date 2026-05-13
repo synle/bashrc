@@ -531,14 +531,19 @@ alias pop="git stash pop"
 alias amend="git amend"
 
 # ---- Aliases: Claude ----
-# cl: wrapper around `claude` that enables allow/dangerous skip permissions, appends `--permission-mode auto` on claude >= 2.1.100 (omits it entirely on older builds where `auto` is unsupported — the dangerously-skip-permissions flag already covers bypass), and max effort. Use `cl resume` or `cl r` to open the resume picker.
-function cl() {
+# claude: wrapper around the `claude` binary that no-ops with a message when claude is not installed; otherwise enables allow/dangerous skip permissions, appends `--permission-mode auto` on claude >= 2.1.100 (drops the flag on older builds where `auto` is unsupported — `--dangerously-skip-permissions` already covers bypass), and max effort. Use `claude resume` or `claude r` to open the resume picker.
+function claude() {
+  # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
+  if ! type -P claude >/dev/null 2>&1; then
+    echo "claude is not installed" >&2
+    return 1
+  fi
   # `--permission-mode auto` was added around claude 2.1.100; older builds reject it,
   # so on those we drop the flag entirely. Cache the decision in the shell so we don't
   # re-spawn `claude --version` on every call ("on" = include the flag, "off" = drop it).
-  if [ -z "${_CL_PERMISSION_MODE:-}" ]; then
+  if [ -z "${_CLAUDE_PERMISSION_MODE:-}" ]; then
     local _cl_ver _cl_maj _cl_min _cl_patch
-    _CL_PERMISSION_MODE="off"
+    _CLAUDE_PERMISSION_MODE="off"
     _cl_ver="$(command claude --version 2>/dev/null | awk '{print $1}')"
     if [ -n "$_cl_ver" ]; then
       IFS='.' read -r _cl_maj _cl_min _cl_patch <<< "$_cl_ver"
@@ -547,13 +552,14 @@ function cl() {
       if [ "$_cl_maj" -gt 2 ] \
          || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -gt 1 ]; } \
          || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -eq 1 ] && [ "$_cl_patch" -ge 100 ]; }; then
-        _CL_PERMISSION_MODE="on"
+        _CLAUDE_PERMISSION_MODE="on"
       fi
     fi
   fi
+  # `command claude` bypasses this function so the call hits the real binary, not us.
   local -a _cl_cmd
-  _cl_cmd=(claude --allow-dangerously-skip-permissions --dangerously-skip-permissions)
-  [ "$_CL_PERMISSION_MODE" = "on" ] && _cl_cmd+=(--permission-mode auto)
+  _cl_cmd=(command claude --allow-dangerously-skip-permissions --dangerously-skip-permissions)
+  [ "$_CLAUDE_PERMISSION_MODE" = "on" ] && _cl_cmd+=(--permission-mode auto)
   _cl_cmd+=(--effort max)
   if [ "${1:-}" = "resume" ] || [ "${1:-}" = "r" ]; then
     shift
@@ -561,7 +567,8 @@ function cl() {
   fi
   "${_cl_cmd[@]}" "$@"
 }
-alias cm='cl --model claude-opus-4-7[1m]'
+alias cl='claude'
+alias cm='claude --model claude-opus-4-7[1m]'
 
 # ---- Aliases: Gemini ----
 alias gem="gemini"
