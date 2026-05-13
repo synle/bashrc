@@ -161,3 +161,36 @@ describe("_getSettings -> terminal.integrated.commandsToSkipShell", () => {
     expect(config).not.toMatch(/"terminal\.integrated\.commandsToSkipShell"\s*:/);
   });
 });
+
+// ---- _getSettings: per-OS editor.multiCursorModifier (controls terminal link-click modifier) ----
+
+describe("_getSettings -> editor.multiCursorModifier (per-OS)", () => {
+  it("should set 'alt' on macOS so Cmd+click opens terminal links", () => {
+    const vs = loadVsCode({ is_os_mac: true });
+    const settings = vs._getSettings({}, {}, {}, []);
+    expect(settings["editor.multiCursorModifier"]).toBe("alt");
+  });
+
+  it("should set 'ctrlCmd' on Windows/Linux so Alt+click opens terminal links", () => {
+    const vs = loadVsCode({ is_os_mac: false });
+    const settings = vs._getSettings({}, {}, {}, []);
+    expect(settings["editor.multiCursorModifier"]).toBe("ctrlCmd");
+  });
+
+  it("should honor the explicit isOsMac override regardless of the global flag", () => {
+    const vs = loadVsCode({ is_os_mac: true });
+    // Prebuilt artifact case: pinned to Linux even when built on a Mac.
+    const linuxSettings = vs._getSettings({}, {}, {}, [], { isOsMac: false });
+    expect(linuxSettings["editor.multiCursorModifier"]).toBe("ctrlCmd");
+
+    const vs2 = loadVsCode({ is_os_mac: false });
+    const macSettings = vs2._getSettings({}, {}, {}, [], { isOsMac: true });
+    expect(macSettings["editor.multiCursorModifier"]).toBe("alt");
+  });
+
+  it("should override any value present in baseConfig (so vs-code-config.jsonc default never leaks the wrong OS)", () => {
+    const vs = loadVsCode({ is_os_mac: true });
+    const settings = vs._getSettings({ "editor.multiCursorModifier": "ctrlCmd" }, {}, {}, []);
+    expect(settings["editor.multiCursorModifier"]).toBe("alt");
+  });
+});

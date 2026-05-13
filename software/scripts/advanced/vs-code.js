@@ -99,14 +99,20 @@ function _getCommandsToSkipShell(keybindings) {
  * @param {object[]} keybindings - Resolved keybinding array used to auto-derive the skip-shell list.
  * @param {object} options - Build options.
  * @param {boolean} [options.is_prebuilt_config] - When true, use safe fallback fonts/sizes for shipped artifacts.
+ * @param {boolean} [options.isOsMac] - When true, override `editor.multiCursorModifier` to `"alt"` so Cmd+click opens terminal links on macOS. Defaults to the global `is_os_mac` flag.
  * @returns {object} The fully resolved settings.json content.
  */
-function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_prebuilt_config = false } = {}) {
+function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_prebuilt_config = false, isOsMac } = {}) {
   const fontFamily = is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily;
   const fontSize = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
+  // VS Code ties the terminal link-click modifier to the inverse of editor.multiCursorModifier.
+  // Mac: "alt" → Cmd+click opens terminal links. Win/Linux: "ctrlCmd" → Alt+click opens terminal links.
+  const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
+  const multiCursorModifier = isMac ? "alt" : "ctrlCmd";
 
   return {
     ...baseConfig,
+    "editor.multiCursorModifier": multiCursorModifier,
 
     // --- Typography ---
     "editor.fontFamily": fontFamily,
@@ -291,7 +297,12 @@ async function doWork() {
     ..._getKeyConfigs(commonKeyBindings, windowsKeyBindings, false),
     ..._getKeyConfigs(commonKeyBindings, windowsKeyBindings, true),
   ];
-  const settingsArtifact = _getSettings(baseConfig, darkColors, lightColors, prebuiltKeybindings, { is_prebuilt_config: true });
+  // Prebuilt artifact targets Linux (codespaces, devcontainer) — pin isOsMac=false so the
+  // built-on-Mac case doesn't leak "alt" into the Linux settings file.
+  const settingsArtifact = _getSettings(baseConfig, darkColors, lightColors, prebuiltKeybindings, {
+    is_prebuilt_config: true,
+    isOsMac: false,
+  });
   await writeBuildArtifact([
     {
       file: `${BUILD_DIR}/vs-code-config`,
