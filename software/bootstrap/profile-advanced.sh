@@ -531,13 +531,30 @@ alias pop="git stash pop"
 alias amend="git amend"
 
 # ---- Aliases: Claude ----
-# cl: wrapper around `claude` that enables allow/dangerous skip permissions, auto permission mode, and max effort. Use `cl resume` or `cl r` to open the resume picker.
+# cl: wrapper around `claude` that enables allow/dangerous skip permissions, picks `auto` permission mode on claude >= 2.1.100 (falls back to `bypassPermissions` on older builds where `auto` is unsupported), and max effort. Use `cl resume` or `cl r` to open the resume picker.
 function cl() {
+  # `--permission-mode auto` was added around claude 2.1.100; older builds only accept bypassPermissions.
+  # Cache the resolved mode in the shell to avoid re-spawning `claude --version` on every call.
+  if [ -z "${_CL_PERMISSION_MODE:-}" ]; then
+    local _cl_ver _cl_maj _cl_min _cl_patch
+    _CL_PERMISSION_MODE="bypassPermissions"
+    _cl_ver="$(command claude --version 2>/dev/null | awk '{print $1}')"
+    if [ -n "$_cl_ver" ]; then
+      IFS='.' read -r _cl_maj _cl_min _cl_patch <<< "$_cl_ver"
+      _cl_patch="${_cl_patch%%[!0-9]*}"
+      _cl_maj="${_cl_maj:-0}"; _cl_min="${_cl_min:-0}"; _cl_patch="${_cl_patch:-0}"
+      if [ "$_cl_maj" -gt 2 ] \
+         || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -gt 1 ]; } \
+         || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -eq 1 ] && [ "$_cl_patch" -ge 100 ]; }; then
+        _CL_PERMISSION_MODE="auto"
+      fi
+    fi
+  fi
   if [ "${1:-}" = "resume" ] || [ "${1:-}" = "r" ]; then
     shift
-    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode auto --effort max --resume "$@"
+    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode "$_CL_PERMISSION_MODE" --effort max --resume "$@"
   else
-    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode auto --effort max "$@"
+    claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --permission-mode "$_CL_PERMISSION_MODE" --effort max "$@"
   fi
 }
 alias cm='cl --model claude-opus-4-7[1m]'
