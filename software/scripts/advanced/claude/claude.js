@@ -216,12 +216,8 @@ async function _doInstructionsWork(targetDir) {
  *
  * Each key is the destination filename in ~/.claude/commands/ (becomes a
  * /<name> command). Each value is the source filename (without .md) under
- * software/scripts/advanced/claude/skills/. Multiple keys may point at the
- * same source — that's how /sy-release-main, /sy-release-master,
- * /sy-release-stable, /sy-release-official, /sy-release-beta, and bare
- * /sy-release are all aliased to the single unified `release` source. The
- * skill body itself does the routing (official vs beta) based on invocation
- * name + arguments.
+ * software/scripts/advanced/claude/commands/. Multiple keys may point at the
+ * same source so aliases stay byte-exact across destinations.
  *
  * Naming convention: every destination filename is prefixed with `sy-` so all
  * Sy-managed slash commands cluster under `/sy-*` and never collide with
@@ -231,7 +227,7 @@ async function _doInstructionsWork(targetDir) {
  * prefix every time.
  *
  * Editing a command: edit the .md file under
- *   software/scripts/advanced/claude/skills/<name>.md
+ *   software/scripts/advanced/claude/commands/<name>.md
  * Adding a command: drop a new .md file there + add a `sy-<name>.md` deploy
  *   entry whose value is the bare source name.
  * Aliasing: add a deploy-map entry whose value points at an existing source.
@@ -247,14 +243,11 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
   "sy-draft-pr.md": "draft-pr",
   "sy-list-prs.md": "list-prs",
   "sy-slack-prs.md": "slack-prs",
-  // All release aliases route to the single unified `release` skill — the
-  // body checks invocation name + $ARGUMENTS to decide official vs beta.
+  // Single release entry-point. The skill body checks $ARGUMENTS to decide
+  // official vs beta — no per-channel alias files anymore (the old
+  // /sy-release-{main,master,stable,official,beta} aliases were retired
+  // 2026-05-13; see CLAUDE_COMMAND_RETIRED_NAMES below).
   "sy-release.md": "release",
-  "sy-release-stable.md": "release", // alias of release (official intent)
-  "sy-release-official.md": "release", // alias of release (official intent)
-  "sy-release-main.md": "release", // alias of release (official intent)
-  "sy-release-master.md": "release", // alias of release (official intent)
-  "sy-release-beta.md": "release", // alias of release (beta intent — invocation name forces beta)
 };
 
 /**
@@ -326,13 +319,23 @@ const CLAUDE_COMMAND_RETIRED_NAMES = [
   "release-main.md", // renamed to sy-release-main.md (2026-05-11)
   "release-master.md", // renamed to sy-release-master.md (2026-05-11)
   "release-beta.md", // renamed to sy-release-beta.md (2026-05-11)
+  // 2026-05-13: collapsed every release variant down to a single
+  // /sy-release entry-point. The skill body still chooses official vs
+  // beta from $ARGUMENTS — the per-channel aliases were just noise in
+  // the slash-command picker. Retire the old destination filenames so
+  // dev machines that still have them on disk clean up on next deploy.
+  "sy-release-stable.md", // collapsed into sy-release.md (2026-05-13)
+  "sy-release-official.md", // collapsed into sy-release.md (2026-05-13)
+  "sy-release-main.md", // collapsed into sy-release.md (2026-05-13)
+  "sy-release-master.md", // collapsed into sy-release.md (2026-05-13)
+  "sy-release-beta.md", // collapsed into sy-release.md (2026-05-13)
 ];
 
 /**
  * Deploys slash command definitions to ~/.claude/commands/. Each entry in
  * CLAUDE_COMMAND_DEPLOY_MAP becomes a /<name> user-level command available
  * across all projects. Source files live under
- * software/scripts/advanced/claude/skills/ and are read verbatim via
+ * software/scripts/advanced/claude/commands/ and are read verbatim via
  * readText (same pattern as claude-instructions.md). Aliased sources are read
  * once and cached so identical destinations stay byte-exact.
  * @param {string} targetDir - Path to the ~/.claude directory.
@@ -384,7 +387,7 @@ async function _doCommandsWork(targetDir) {
 
   for (const [destFile, sourceName] of Object.entries(CLAUDE_COMMAND_DEPLOY_MAP)) {
     if (!(sourceName in sourceCache)) {
-      sourceCache[sourceName] = (await readText`software/scripts/advanced/claude/skills/${sourceName}.md`).trimEnd();
+      sourceCache[sourceName] = (await readText`software/scripts/advanced/claude/commands/${sourceName}.md`).trimEnd();
     }
     const dest = path.join(commandsDir, destFile);
     await backupConfigFile(dest);
