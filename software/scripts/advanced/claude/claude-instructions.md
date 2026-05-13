@@ -64,10 +64,14 @@ Stack-agnostic rules. Apply across every language, framework, and codebase.
 
 How any "work on a change" request should be executed. Follow exactly unless overridden in the same message.
 
-TL;DR: worktree-isolated, master-fresh, fan-out in parallel, in the background, tests-first PRs, babysit every PR to green — pull master before every babysit fix.
+TL;DR: worktree-isolated, master-fresh at every gate (pre-work, pre-PR, pre-iteration), fan-out in parallel, in the background, tests-first PRs, babysit every PR to green.
 
 33. Always use a git worktree. Each unit of work runs in its own isolated worktree (e.g. spawn sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work — sub-agents must not trample each other or the working tree.
-34. Always start from latest master. Inside the worktree (or before spawning), run `git checkout master && git pull` first, then cut the branch. Stale base causes merge pain, alembic drift, and redundant re-implementation.
+34. **Always sync with latest default branch at three mandatory gates.** Run `git fetch origin && git merge origin/<default>` and resolve any conflicts at each of these checkpoints — stale base = merge pain, redundant re-implementation, and CI failures against code already fixed upstream:
+    - **Gate 1 — Before work starts.** In the main checkout or worktree, and before spawning any sub-agent: `git checkout <default> && git pull`, then cut the branch. Sub-agents inherit this — they must not start coding on a stale base.
+    - **Gate 2 — Right before opening the PR.** Re-sync the feature branch with `origin/<default>` immediately before `gh pr create`. The diff must be against current HEAD, not whatever was tip-of-tree when you started.
+    - **Gate 3 — Before every iteration.** Every time you address a review comment, fix a CI failure, rebuild after feedback, or push any follow-up commit: `git fetch origin && git merge origin/<default>` first. Patch the current state of the branch, not yesterday's. (This is the same rule the babysit loop in rule 39 already enforces — it applies to manual iterations too.)
+    Skipping any gate is a regression. If the merge surfaces conflicts, resolve them before continuing — never push past a conflicted state, and never `--strategy=ours` away upstream changes you haven't read.
 35. Always parallelize within a single session. When several independent changes come in one request, fan them all out simultaneously — one message, multiple sub-agent tool calls. Do not serialize independent work.
 36. Always run them in the background. Sub-agents should run with `run_in_background: true` so the main thread isn't blocked.
 37. For phased work, parallelize within a phase; serialize between phases. If Phase 2 genuinely depends on Phase 1, fan out all Phase 1 work in parallel/background, wait for that phase to complete, then fan out all Phase 2 work in parallel/background. Never serialize within a phase.
