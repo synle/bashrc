@@ -73,7 +73,7 @@
   "editor.fontLigatures": true, // Enable font ligatures (e.g. => becomes arrow in supported fonts). Values: true, false
   "editor.formatOnPaste": true, // Auto-format code when pasting. Values: true, false
   "editor.linkedEditing": true, // Rename matching HTML tags automatically when editing one. Values: true, false
-  "editor.multiCursorModifier": "ctrlCmd", // Use Cmd/Ctrl+click for multi-cursor instead of Alt+click. Values: "ctrlCmd", "alt"
+  "editor.multiCursorModifier": "alt", // Alt+click for multi-cursor so Cmd/Ctrl+click opens terminal links (terminal link modifier is the inverse of this). Values: "ctrlCmd", "alt"
   "editor.snippetSuggestions": "top", // Show snippet suggestions at the top of the autocomplete list. Values: "top", "bottom", "inline", "none"
   "editor.suggestSelection": "first", // Always pre-select the first autocomplete suggestion. Values: "first", "recentlyUsed", "recentlyUsedByPrefix"
   "editor.wordWrap": "wordWrapColumn", // Wrap lines at a specific column. Values: "off", "on", "wordWrapColumn", "bounded"
