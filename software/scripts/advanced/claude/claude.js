@@ -344,6 +344,11 @@ async function _doCommandsWork(targetDir) {
   const commandsDir = path.join(targetDir, "commands");
 
   log(">> Claude Code Commands:", commandsDir);
+  // Hint for users who want to start from a clean slate (e.g. after
+  // renaming or retiring a batch of commands). We never run this
+  // ourselves — selective unlinking happens further down via the
+  // CLAUDE_COMMAND_RETIRED_NAMES + SY_SKILL_MARKERS cleanup pass.
+  log("   To wipe all deployed commands, run: rm -f ~/.claude/commands/*");
 
   fs.mkdirSync(commandsDir, { recursive: true });
 

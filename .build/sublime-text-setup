@@ -1,0 +1,52 @@
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-13]
+
+
+################################################################################
+# for Linux using bash
+################################################################################
+REPO_BUILD="https://github.com/synle/bashrc/blob/HEAD/.build"
+
+# Resolve potential paths with wildcards
+W_PATH=$(ls -d {/mnt/c,/c}/Users/*/AppData/Roaming/Sublime*Text*/Packages/User 2>/dev/null | head -n 1)
+L_PATH=$(ls -d $HOME/.config/sublime-text*/Packages/User 2>/dev/null | head -n 1)
+M_PATH=$(ls -d "$HOME/Library/Application Support/Sublime Text"*/Packages/User 2>/dev/null | head -n 1)
+
+if [ -n "$W_PATH" ] && [ -d "$W_PATH" ]; then
+    echo "Installing for Windows/WSL ($W_PATH)..."
+    TARGET_PATH="$W_PATH"
+    curl -fsSL "$REPO_BUILD/sublime-text-config?raw=1" -o "$TARGET_PATH/Preferences.sublime-settings"
+    curl -fsSL "$REPO_BUILD/sublime-text-keys-windows?raw=1" -o "$TARGET_PATH/Default.sublime-keymap"
+    curl -fsSL "$REPO_BUILD/sublime-text-mouse?raw=1" -o "$TARGET_PATH/Default.sublime-mousemap"
+    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py?raw=1" -o "$TARGET_PATH/sublime-text-plugins-refresh-on-focus.py"
+elif [ -n "$L_PATH" ] && [ -d "$L_PATH" ]; then
+    echo "Installing for Linux ($L_PATH)..."
+    TARGET_PATH="$L_PATH"
+    curl -fsSL "$REPO_BUILD/sublime-text-config?raw=1" -o "$TARGET_PATH/Preferences.sublime-settings"
+    curl -fsSL "$REPO_BUILD/sublime-text-keys-linux?raw=1" -o "$TARGET_PATH/Default.sublime-keymap"
+    curl -fsSL "$REPO_BUILD/sublime-text-mouse?raw=1" -o "$TARGET_PATH/Default.sublime-mousemap"
+    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py?raw=1" -o "$TARGET_PATH/sublime-text-plugins-refresh-on-focus.py"
+elif [ -n "$M_PATH" ] && [ -d "$M_PATH" ]; then
+    echo "Installing for Mac ($M_PATH)..."
+    TARGET_PATH="$M_PATH"
+    curl -fsSL "$REPO_BUILD/sublime-text-config-mac?raw=1" -o "$TARGET_PATH/Preferences.sublime-settings"
+    curl -fsSL "$REPO_BUILD/sublime-text-keys-mac?raw=1" -o "$TARGET_PATH/Default (OSX).sublime-keymap"
+    curl -fsSL "$REPO_BUILD/sublime-text-mouse-mac?raw=1" -o "$TARGET_PATH/Default.sublime-mousemap"
+    curl -fsSL "$REPO_BUILD/sublime-text-plugins-refresh-on-focus.py?raw=1" -o "$TARGET_PATH/sublime-text-plugins-refresh-on-focus.py"
+else
+    echo "Sublime Text User directory not found. Skipping installation."
+fi
+
+
+################################################################################
+# for Windows using powershell
+################################################################################
+# for windows with powershell, last effort (final fallback)
+$RepoBuild = "https://github.com/synle/bashrc/blob/HEAD/.build"
+$W_Path = "$env:AppData/Sublime Text/Packages/User"
+if (Test-Path $W_Path) {
+    Write-Host "Installing for Windows with PowerShell..."
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-config?raw=1" -OutFile "$W_Path/Preferences.sublime-settings" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-keys-windows?raw=1" -OutFile "$W_Path/Default.sublime-keymap" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-mouse?raw=1" -OutFile "$W_Path/Default.sublime-mousemap" -UseBasicParsing
+    Invoke-WebRequest -Uri "$RepoBuild/sublime-text-plugins-refresh-on-focus.py?raw=1" -OutFile "$W_Path/sublime-text-plugins-refresh-on-focus.py" -UseBasicParsing
+}
