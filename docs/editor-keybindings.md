@@ -247,7 +247,7 @@ Bindings that fire only when the integrated terminal has focus (`when: "terminal
 | `OS_KEY+w`         | Close pane      |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+q`         | Close window    |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+n`         | New window      |        ✅        |  ✅  |   ✅    |
-| `F2`               | Rename tab      |        ✅        |  ✅  |   ❌    |
+| `F2`               | Rename tab      |        ✅        |  ✅  |   ✅    |
 
 ### Splits & Panes
 

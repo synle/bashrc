@@ -19,6 +19,9 @@
   { "key": "OS_KEY+shift+]", "action": "next_tab" },
   { "key": "OS_KEY+shift+[", "action": "previous_tab" },
   { "key": "OS_KEY+w", "action": "close_surface" },
+  // F2 prompts for a new title for the current tab (matches the common
+  // editor/terminal convention where F2 = rename).
+  { "key": "f2", "action": "prompt_tab_title" },
 
   // ---- Window ----
   { "key": "OS_KEY+n", "action": "new_window" },
