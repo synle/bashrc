@@ -12,8 +12,10 @@ const SQLUI_PORTAL_TARBALL = "sqlui-portal.tar.gz";
 /**
  * Installs both flavors of sqlui:
  *   1. sqlui-native — desktop app (.dmg / .exe / .AppImage), handled by
- *      downloadAndInstallBinary which routes the Mac .dmg through
- *      BASHRC_TEMP_DIR (no longer parked in ~/_extra/sqlui-native/).
+ *      downloadAndInstallBinary. Mac routes the .dmg through BASHRC_TEMP_DIR;
+ *      Windows stages the .exe in ~/_extra/sqlui-native/ for NSIS, runs the
+ *      silent install, and cleans up the folder once NSIS exits — neither
+ *      leaves a copy behind.
  *   2. sqlui-portal — Node-based CLI tarball shipped alongside the desktop
  *      app in the same synle/sqlui-native release, extracted to
  *      ~/.local/share/sqlui-portal/ with an exec-wrapper at

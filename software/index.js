@@ -2080,6 +2080,47 @@ async function clearMacQuarantine(readmePath, appPath) {
 }
 
 /**
+ * Silent-installs an NSIS setup.exe on Windows (WSL). Mirrors installMacDmg's role:
+ * turns the staged installer into an installed app so the .exe is throwaway.
+ *
+ * Both Tauri (display-dj, skiff-files) and Electron (sqlui-native) ship NSIS
+ * one-click installers that accept `/S` for headless install. Our bundle configs
+ * install per-user to %LOCALAPPDATA%\Programs\<app>\ — no UAC prompt.
+ *
+ * Implementation notes:
+ * - The .exe MUST live on a real Windows drive (e.g. `<winhome>/_extra/<app>/`).
+ *   NSIS installers silently refuse to extract from `\\wsl.localhost\...` UNC paths.
+ * - We exec the .exe directly via WSL binfmt interop — NOT through `cmd.exe /C`.
+ *   `cmd.exe` has its own `/S` switch (quote-handling) and will eat the trailing
+ *   `/S` before forwarding it to the .exe, so the installer launches in interactive
+ *   mode and stalls headlessly. Direct exec passes `/S` through to the .exe cleanly.
+ * - Backgrounded with `( ... ) &` for two reasons: (1) NSIS install of a ~300 MB
+ *   Electron bundle can exceed execBash's 30 s timeout cap on slow disks /
+ *   AV-throttled machines; (2) we don't need the exit code — the user notices via
+ *   the Start Menu shortcut, and the next bashrc run will re-attempt if it failed.
+ * - The subshell runs `; rm -rf` (not `&&`) after the install so the staging folder
+ *   is cleaned up even if NSIS exits non-zero — honors the "no leftover in `_extra/`"
+ *   contract.
+ * @param {string} exePath - WSL path to the .exe (must be a real Windows drive, e.g. /mnt/c/...)
+ * @param {string} appLabel - The app label (used for log lines only)
+ * @param {string} cleanupFolder - The staging folder to `rm -rf` after the silent install finishes
+ */
+async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
+  if (!is_os_windows) return;
+  if (IS_DRY_RUN) {
+    log(`>> [DryRun] Would silent-install ${exePath} and clean up ${cleanupFolder}`);
+    return;
+  }
+  log(`>> Silent-installing ${appLabel} (background) from`, exePath);
+  log(`>>   Will clean up ${cleanupFolder} once install completes`);
+  // curl drops the .exe with 0644 (no +x); WSL bash refuses to exec without +x
+  // even though the binfmt interop only needs the file to launch the Windows binary.
+  // chmod first so the direct exec succeeds.
+  await execBash(`chmod +x "${exePath}"`);
+  await execBash(`( "${exePath}" /S > /dev/null 2>&1 ; rm -rf "${cleanupFolder}" ) &`);
+}
+
+/**
  * Force-closes a running application before installing a new version.
  * On Mac: tries graceful AppleScript quit for matching /Applications/*.app, then pkill fallback.
  * On Windows (WSL): uses taskkill via cmd.exe.
@@ -2117,14 +2158,14 @@ async function _forceCloseApp(appLabel) {
  * Downloads and installs a binary from a GitHub release.
  *
  * Storage strategy by platform:
- * - Mac: the asset is a .dmg that gets mounted and the .app copied into
- *   /Applications/. The .dmg itself is dead weight after install — route the
- *   download through BASHRC_TEMP_DIR (cleaned with the rest of the run) so we
- *   don't leave a forever-stale duplicate in ~/_extra/<app>/. Older runs did
- *   keep the .dmg under ~/_extra/<app>/, so reap any such legacy folder up
- *   front for a one-time cleanup.
- * - Linux/Windows: the asset (AppImage / setup.exe) is itself the run target,
- *   so it stays in ~/_extra/<app>/.
+ * - Mac: .dmg routed through BASHRC_TEMP_DIR (lives under /tmp until reboot),
+ *   mounted and copied to /Applications/. The .dmg is throwaway.
+ * - Windows: .exe MUST live on a real Windows drive — NSIS refuses to extract
+ *   from `\\wsl.localhost\...` UNC paths. We stage in `~/_extra/<app>/` (the
+ *   Windows-side `<winhome>/_extra/<app>/`), run the silent install, and a
+ *   backgrounded subshell `rm -rf`s the staging folder once NSIS exits — so
+ *   nothing lingers in `_extra/` after the run.
+ * - Linux: the AppImage IS the run target, so it stays in ~/_extra/<app>/.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
  */
@@ -2137,13 +2178,16 @@ async function downloadAndInstallBinary(repo, getFileName) {
   const url = `https://github.com/${repo}/releases/download/${version}/${fileName}`;
 
   const legacyExtraPath = await getCustomTweaksPath(appLabel);
+  // Mac throws away the .dmg via BASHRC_TEMP_DIR. Windows MUST stage on a real
+  // drive for NSIS, so we re-use ~/_extra/<app>/ and clean it up after install.
+  // Linux AppImages are the run target — they stay in ~/_extra/<app>/.
   const targetPath = is_os_mac ? path.join(BASHRC_TEMP_DIR, appLabel) : legacyExtraPath;
 
-  log(`>> Installing ${appLabel} ${version} for ${is_os_mac ? "Mac" : "NonMac"} to:`, targetPath);
+  log(`>> Installing ${appLabel} ${version} to:`, targetPath);
 
   await _forceCloseApp(appLabel);
 
-  // Reap legacy ~/_extra/<app>/ leftovers from runs that staged the .dmg there.
+  // Reap any legacy ~/_extra/<app>/ leftover from a prior Mac run that parked the .dmg there.
   if (is_os_mac && targetPath !== legacyExtraPath) await deleteFolder(legacyExtraPath);
 
   await deleteFolder(targetPath);
@@ -2155,6 +2199,7 @@ async function downloadAndInstallBinary(repo, getFileName) {
   if (ok) {
     log(`>> ${appLabel} ${version} downloaded:`, destination);
     await installMacDmg(destination);
+    await installWindowsSetupExe(destination, appLabel, targetPath);
   }
 }
 
