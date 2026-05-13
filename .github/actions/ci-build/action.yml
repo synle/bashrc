@@ -59,6 +59,93 @@ runs:
         retention-days: 14
         if-no-files-found: ignore
 
+    # Locate the per-OS profile_bashrc_<os>.sh produced by ~cleanup.js so the
+    # next two steps (artifact upload + release upload) can reference a single
+    # known path. Each build job emits exactly one such file. Sets outputs
+    # `path` and `name` (empty when no profile was produced — both downstream
+    # steps gate on `path != ''`).
+    - name: Locate profile_bashrc artifact
+      id: locate-profile
+      if: always()
+      shell: bash
+      run: |
+        profile_file=$(ls .build/profile_bashrc_*.sh 2>/dev/null | head -1)
+        if [ -z "$profile_file" ] || [ ! -f "$profile_file" ]; then
+          echo "No profile_bashrc_*.sh produced; skipping profile artifact + release upload"
+          echo "path=" >> "$GITHUB_OUTPUT"
+          echo "name=" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        echo "path=$profile_file" >> "$GITHUB_OUTPUT"
+        echo "name=$(basename "$profile_file")" >> "$GITHUB_OUTPUT"
+        echo "Located profile: $profile_file"
+
+    # Upload the profile as its own artifact, separate from the .build/ bundle
+    # above. The publish job downloads ONLY these `profile-*` artifacts and
+    # unpacks them into dist/ so the deployed Pages site serves them
+    # same-origin (the webapp's PreCompiledProfileDom fetches via relative
+    # URL, no CORS). actions/upload-artifact@v7 zips internally for transport;
+    # actions/download-artifact@v8 auto-extracts, so consumers see a plain .sh.
+    - name: Upload profile artifact
+      if: always() && steps.locate-profile.outputs.path != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: profile-${{ inputs.artifact-name }}
+        path: ${{ steps.locate-profile.outputs.path }}
+        retention-days: 14
+        if-no-files-found: ignore
+
+    # Mirror the profile to the binary-cache rolling release on synle/bashrc
+    # as "bashrc-profile__profile_bashrc_<os>.sh" (matches the <app>__<file>
+    # naming convention used by ci-download-release-binaries.sh). Gated to
+    # push events on the default branch — PRs and workflow_dispatch in
+    # test_only mode must not clobber the cache. Failures are warnings, not
+    # build-breakers: the artifact upload above already covers the publish
+    # job's needs; the release mirror is for external consumers and fallback.
+    - name: Upload profile to binary-cache release
+      if: >-
+        always()
+        && steps.locate-profile.outputs.path != ''
+        && github.event_name == 'push'
+        && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PROFILE_PATH: ${{ steps.locate-profile.outputs.path }}
+        PROFILE_NAME: ${{ steps.locate-profile.outputs.name }}
+      run: |
+        set +e
+        CACHE_REPO="synle/bashrc"
+        CACHE_TAG="binary-cache"
+        ASSET_NAME="bashrc-profile__${PROFILE_NAME}"
+        MIN_BYTES=1024
+
+        new_size=$(wc -c < "$PROFILE_PATH" | tr -d ' ')
+        if [ "$new_size" -lt "$MIN_BYTES" ]; then
+          echo "::warning::Refusing to upload $ASSET_NAME — local file is $new_size bytes (<${MIN_BYTES})"
+          exit 0
+        fi
+
+        # Sanity-guard against truncated uploads: if the existing cached asset
+        # is >2x the size of what we're about to upload, refuse the clobber.
+        existing_size=$(gh release view "$CACHE_TAG" --repo "$CACHE_REPO" --json assets \
+          --jq ".assets[] | select(.name == \"$ASSET_NAME\") | .size" 2>/dev/null || true)
+        if [ -n "$existing_size" ] && [ "$existing_size" -gt 0 ]; then
+          half=$((existing_size / 2))
+          if [ "$new_size" -lt "$half" ]; then
+            echo "::warning::Refusing to upload $ASSET_NAME — new size $new_size <50% of existing $existing_size"
+            exit 0
+          fi
+        fi
+
+        staged=$(mktemp -d)/"$ASSET_NAME"
+        cp -f "$PROFILE_PATH" "$staged"
+        if ! gh release upload "$CACHE_TAG" "$staged" --repo "$CACHE_REPO" --clobber > /dev/null; then
+          echo "::warning::Failed to upload $ASSET_NAME to ${CACHE_REPO}/releases/${CACHE_TAG}"
+          exit 0
+        fi
+        echo "Uploaded $ASSET_NAME ($new_size bytes) to ${CACHE_REPO}/releases/${CACHE_TAG}"
+
     - name: Upload Logs
       if: always()
       uses: actions/upload-artifact@v7

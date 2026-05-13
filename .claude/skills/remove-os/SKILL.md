@@ -70,6 +70,6 @@ Run `make validate` after all changes. Confirm all tests pass.
 
 ## Notes
 
-- `.build/profile_bashrc_<name>.sh` files are generated artifacts -- they will stop being generated once the OS is removed. Do not manually delete them; the next CI run won't produce them.
+- `.build/profile_bashrc_<name>.sh` files are generated artifacts (gitignored) -- they will stop being generated once the OS is removed. The corresponding `bashrc-profile__profile_bashrc_<name>.sh` asset on the `binary-cache` release on `synle/bashrc` will go stale; delete it manually via `gh release delete-asset binary-cache bashrc-profile__profile_bashrc_<name>.sh --repo synle/bashrc --yes` if you want a clean cache.
 - `software/metadata/script-list.config` is auto-generated -- it will drop the OS scripts on the next `make format_script_indexes`.
 - If other OSes depend on this one (e.g. `steamos` depends on `arch_linux` detection), update those detection rules accordingly.

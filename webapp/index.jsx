@@ -1166,7 +1166,19 @@ const PRE_COMPILED_PROFILE_MAP = {
 
 /**
  * Renders a pre-compiled bash profile for the given OS flag, if available.
- * Fetches the profile from .build/profile_bashrc_<osKey>.sh via DynamicTextArea.
+ *
+ * The profile is fetched same-origin from `./profile_bashrc_<osKey>.sh` —
+ * the publish job (see `.github/workflows/build-main.yml`) copies the per-OS
+ * profile_bashrc_<os>.sh files produced by each build job into `dist/` before
+ * the GitHub Pages deploy, so the deployed site serves them next to
+ * `index.html`. The files are NOT checked into the repo; the source of truth
+ * is the binary-cache release on synle/bashrc (asset name
+ * `bashrc-profile__profile_bashrc_<os>.sh`).
+ *
+ * Locally (vite dev server) the file is absent unless a previous
+ * `make setup_local_full` left one in `.build/`. DynamicTextArea handles the
+ * 404 gracefully — it just renders an empty error state.
+ *
  * @param {Object} props
  * @param {string} props.osFlag - The OS flag (e.g., 'is_os_mac', 'is_os_ubuntu').
  * @returns {React.ReactElement|null} A DynamicTextArea with the profile content, or null if unavailable.
@@ -1174,7 +1186,7 @@ const PRE_COMPILED_PROFILE_MAP = {
 function PreCompiledProfileDom({ osFlag }) {
   const osKey = PRE_COMPILED_PROFILE_MAP[osFlag];
   if (!osKey) return null;
-  return <DynamicTextArea path={`/.build/profile_bashrc_${osKey}.sh`} />;
+  return <DynamicTextArea url={`./profile_bashrc_${osKey}.sh`} />;
 }
 
 /**

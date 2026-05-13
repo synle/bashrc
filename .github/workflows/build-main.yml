@@ -140,6 +140,10 @@ jobs:
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # contents: write — ci-build/action.yml mirrors the produced
+    # profile_bashrc_<os>.sh to the binary-cache release on synle/bashrc.
+    permissions:
+      contents: write
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -170,6 +174,9 @@ jobs:
     runs-on: ubuntu-latest
     container: fedora:latest
     timeout-minutes: 20
+    # contents: write — ci-build/action.yml mirrors profile_bashrc_<os>.sh to the binary-cache release.
+    permissions:
+      contents: write
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -203,6 +210,9 @@ jobs:
     container: archlinux:latest
     continue-on-error: true
     timeout-minutes: 20
+    # contents: write — ci-build/action.yml mirrors profile_bashrc_<os>.sh to the binary-cache release.
+    permissions:
+      contents: write
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -236,6 +246,9 @@ jobs:
     container: debian:latest
     continue-on-error: true
     timeout-minutes: 20
+    # contents: write — ci-build/action.yml mirrors profile_bashrc_<os>.sh to the binary-cache release.
+    permissions:
+      contents: write
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -267,6 +280,9 @@ jobs:
       }}
     runs-on: macos-latest
     timeout-minutes: 20
+    # contents: write — ci-build/action.yml mirrors profile_bashrc_<os>.sh to the binary-cache release.
+    permissions:
+      contents: write
     outputs:
       duration: ${{ steps.ci-build.outputs.duration }}
       binary-check-summary: ${{ steps.ci-build.outputs.binary-check-summary }}
@@ -335,14 +351,22 @@ jobs:
         # same-named files without truncating, leaving the longer file's tail appended to the shorter
         # file's content — producing corrupt profiles. Copy explicitly instead: bash `cp -f` truncates
         # on overwrite, so the last source in this deterministic order wins cleanly. Order matters
-        # only for same-named files; each OS's unique `profile_bashrc_<os>.sh` is not affected.
+        # only for same-named files.
+        #
+        # profile_bashrc_*.sh is intentionally EXCLUDED — those files live on the binary-cache release
+        # and are picked up via the `profile-*` artifacts in the next step (and copied into dist/),
+        # not committed back into the repo. Filtering them here keeps them out of `git add -A` below.
         run: |
           for artifact_dir in /tmp/build-artifacts/build-arch /tmp/build-artifacts/build-rhel /tmp/build-artifacts/build-debian /tmp/build-artifacts/build-ubuntu /tmp/build-artifacts/build-mac; do
             [ -d "$artifact_dir" ] || continue
-            echo "Merging $artifact_dir -> .build/"
-            cp -rfT "$artifact_dir" .build/
+            echo "Merging $artifact_dir -> .build/ (excluding profile_bashrc_*.sh)"
+            # Stage to a scratch copy, drop the profile files, then merge.
+            scratch=$(mktemp -d)
+            cp -rT "$artifact_dir" "$scratch"
+            find "$scratch" -maxdepth 1 -name 'profile_bashrc_*.sh' -delete
+            cp -rfT "$scratch" .build/
+            rm -rf "$scratch"
           done
-          ls -la .build/profile_bashrc_*.sh 2>/dev/null || true
 
       - name: Commit Changes
         # Amend HEAD with formatting + build artifacts and force-push, instead of stacking
@@ -409,6 +433,46 @@ jobs:
           name: webapp-dist
           path: dist/
 
+      # Pull the per-OS profile_bashrc_<os>.sh artifacts produced by each build
+      # job (ci-build/action.yml -> "Upload profile artifact") and copy them
+      # flat into dist/ so the deployed Pages site serves them same-origin.
+      # The webapp's PreCompiledProfileDom fetches `./profile_bashrc_<os>.sh`
+      # relative to its own origin, which only works when the file lives next
+      # to index.html in dist/.
+      #
+      # Order matters for same-named files (build-debian and build-ubuntu both
+      # produce profile_bashrc_ubuntu.sh) — copy debian first, ubuntu last so
+      # ubuntu wins, matching the historical .build/ merge order above.
+      - name: Download profile artifacts into dist/
+        if: github.event_name == 'push'
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          path: /tmp/profile-artifacts/
+          pattern: profile-build-*
+          # No merge-multiple — each artifact lands in its own subdir so we
+          # can apply explicit ordering for the debian/ubuntu duplicate.
+
+      - name: Copy profile artifacts into dist/
+        if: github.event_name == 'push'
+        continue-on-error: true
+        run: |
+          if [ ! -d /tmp/profile-artifacts ]; then
+            echo "No /tmp/profile-artifacts — webapp preview will fall back to 404 for this run"
+            exit 0
+          fi
+          for artifact_dir in /tmp/profile-artifacts/profile-build-arch /tmp/profile-artifacts/profile-build-rhel /tmp/profile-artifacts/profile-build-debian /tmp/profile-artifacts/profile-build-ubuntu /tmp/profile-artifacts/profile-build-mac; do
+            [ -d "$artifact_dir" ] || continue
+            for f in "$artifact_dir"/profile_bashrc_*.sh; do
+              [ -f "$f" ] || continue
+              cp -f "$f" "dist/$(basename "$f")"
+              echo "Copied $(basename "$f") -> dist/"
+            done
+          done
+          echo ""
+          echo "Profiles in dist/:"
+          ls -la dist/profile_bashrc_*.sh 2>/dev/null || echo "  (none)"
+
       - name: Upload Pages artifact
         if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
@@ -473,6 +537,46 @@ jobs:
           path: /tmp/profile-debug
           pattern: profile-debug-build-*
           merge-multiple: false
+
+      # profile_bashrc_<os>.sh is no longer committed to .build/ — the test
+      # suite (profileSyntax.spec.js) globs `.build/profile_bashrc_*.sh` so we
+      # rehydrate the directory from the per-OS `profile-build-*` artifacts
+      # produced by each build job. Order matters for the debian/ubuntu
+      # duplicate; we copy debian first and ubuntu last so ubuntu wins
+      # (matches the publish job's dist/ copy order).
+      #
+      # `continue-on-error: true` here — and the test soft-skip on empty
+      # — covers the bootstrap first run after migrating away from
+      # checked-in profiles, when no artifacts exist yet. A real build-phase
+      # failure surfaces in the build-* job, not here.
+      - name: Download per-OS profile artifacts
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          path: /tmp/profile-artifacts/
+          pattern: profile-build-*
+
+      - name: Copy per-OS profile artifacts into .build/
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
+        continue-on-error: true
+        run: |
+          mkdir -p .build
+          if [ ! -d /tmp/profile-artifacts ]; then
+            echo "No /tmp/profile-artifacts directory — skipping profile rehydration"
+            exit 0
+          fi
+          for artifact_dir in /tmp/profile-artifacts/profile-build-arch /tmp/profile-artifacts/profile-build-rhel /tmp/profile-artifacts/profile-build-debian /tmp/profile-artifacts/profile-build-ubuntu /tmp/profile-artifacts/profile-build-mac; do
+            [ -d "$artifact_dir" ] || continue
+            for f in "$artifact_dir"/profile_bashrc_*.sh; do
+              [ -f "$f" ] || continue
+              cp -f "$f" ".build/$(basename "$f")"
+              echo "Copied $(basename "$f") -> .build/"
+            done
+          done
+          echo ""
+          echo "Profiles in .build/:"
+          ls -la .build/profile_bashrc_*.sh 2>/dev/null || echo "  (none — test_profile will soft-skip the profile-specific suites)"
 
       - name: Download per-OS install summaries
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.run_mode == 'test_only') }}
