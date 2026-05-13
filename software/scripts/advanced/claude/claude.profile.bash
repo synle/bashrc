@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+################################################################################
+# ---- Aliases: Claude ----
+#
+# Wrapper around the `claude` binary. No-ops with a message when claude is not
+# installed; otherwise enables allow/dangerous skip permissions, and on
+# claude >= 2.1.100 appends `--permission-mode auto` + `--effort max` (on older
+# builds the flag `auto` is unsupported so we drop --permission-mode, and
+# `max`/`xhigh` are missing from --effort so we use `high`).
+#
+# Use `claude resume` or `claude r` to open the resume picker.
+# Echoes the resolved command (printf %q quoted) to stderr before invoking so
+# the user can see exactly which flags are passed through to the binary.
+################################################################################
+
+# claude: wrapper around the `claude` binary; echoes resolved invocation to stderr before running
+function claude() {
+  # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
+  if ! type -P claude > /dev/null 2>&1; then
+    echo "claude is not installed" >&2
+    return 1
+  fi
+  # Both `--permission-mode auto` and `--effort max`/`xhigh` landed around claude 2.1.100;
+  # older builds reject them ("auto" rejected by --permission-mode, "max" by --effort).
+  # Cache the decision in the shell so we don't re-spawn `claude --version` on every call
+  # ("on" = new flags supported, "off" = use the older low/medium/high effort set).
+  if [ -z "${_CLAUDE_PERMISSION_MODE:-}" ]; then
+    local _cl_ver _cl_maj _cl_min _cl_patch
+    _CLAUDE_PERMISSION_MODE="off"
+    _cl_ver="$(command claude --version 2> /dev/null | awk '{print $1}')"
+    if [ -n "$_cl_ver" ]; then
+      IFS='.' read -r _cl_maj _cl_min _cl_patch <<< "$_cl_ver"
+      _cl_patch="${_cl_patch%%[!0-9]*}"
+      _cl_maj="${_cl_maj:-0}"
+      _cl_min="${_cl_min:-0}"
+      _cl_patch="${_cl_patch:-0}"
+      if [ "$_cl_maj" -gt 2 ] \
+        || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -gt 1 ]; } \
+        || { [ "$_cl_maj" -eq 2 ] && [ "$_cl_min" -eq 1 ] && [ "$_cl_patch" -ge 100 ]; }; then
+        _CLAUDE_PERMISSION_MODE="on"
+      fi
+    fi
+  fi
+  # `command claude` bypasses this function so the call hits the real binary, not us.
+  local -a _cl_cmd
+  _cl_cmd=(command claude --allow-dangerously-skip-permissions --dangerously-skip-permissions)
+  if [ "$_CLAUDE_PERMISSION_MODE" = "on" ]; then
+    _cl_cmd+=(--permission-mode auto --effort max)
+  else
+    _cl_cmd+=(--effort high)
+  fi
+  if [ "${1:-}" = "resume" ] || [ "${1:-}" = "r" ]; then
+    shift
+    _cl_cmd+=(--resume)
+  fi
+  # Echo the resolved invocation to stderr so the user can see all flags being
+  # passed through. printf %q safely quotes each argument; `command` is dropped
+  # from the display since it's a shell builtin marker, not a flag.
+  {
+    printf '+ claude'
+    printf ' %q' "${_cl_cmd[@]:2}" "$@"
+    printf '\n'
+  } >&2
+  "${_cl_cmd[@]}" "$@"
+}
+alias cl='claude'
+alias cm='claude --model claude-opus-4-7[1m]'
