@@ -531,16 +531,17 @@ alias pop="git stash pop"
 alias amend="git amend"
 
 # ---- Aliases: Claude ----
-# claude: wrapper around the `claude` binary that no-ops with a message when claude is not installed; otherwise enables allow/dangerous skip permissions, appends `--permission-mode auto` on claude >= 2.1.100 (drops the flag on older builds where `auto` is unsupported — `--dangerously-skip-permissions` already covers bypass), and max effort. Use `claude resume` or `claude r` to open the resume picker.
+# claude: wrapper around the `claude` binary that no-ops with a message when claude is not installed; otherwise enables allow/dangerous skip permissions, and on claude >= 2.1.100 appends `--permission-mode auto` + `--effort max` (on older builds the flag `auto` is unsupported so we drop --permission-mode, and `max`/`xhigh` are missing from --effort so we use `high`). Use `claude resume` or `claude r` to open the resume picker.
 function claude() {
   # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
   if ! type -P claude >/dev/null 2>&1; then
     echo "claude is not installed" >&2
     return 1
   fi
-  # `--permission-mode auto` was added around claude 2.1.100; older builds reject it,
-  # so on those we drop the flag entirely. Cache the decision in the shell so we don't
-  # re-spawn `claude --version` on every call ("on" = include the flag, "off" = drop it).
+  # Both `--permission-mode auto` and `--effort max`/`xhigh` landed around claude 2.1.100;
+  # older builds reject them ("auto" rejected by --permission-mode, "max" by --effort).
+  # Cache the decision in the shell so we don't re-spawn `claude --version` on every call
+  # ("on" = new flags supported, "off" = use the older low/medium/high effort set).
   if [ -z "${_CLAUDE_PERMISSION_MODE:-}" ]; then
     local _cl_ver _cl_maj _cl_min _cl_patch
     _CLAUDE_PERMISSION_MODE="off"
@@ -559,8 +560,11 @@ function claude() {
   # `command claude` bypasses this function so the call hits the real binary, not us.
   local -a _cl_cmd
   _cl_cmd=(command claude --allow-dangerously-skip-permissions --dangerously-skip-permissions)
-  [ "$_CLAUDE_PERMISSION_MODE" = "on" ] && _cl_cmd+=(--permission-mode auto)
-  _cl_cmd+=(--effort max)
+  if [ "$_CLAUDE_PERMISSION_MODE" = "on" ]; then
+    _cl_cmd+=(--permission-mode auto --effort max)
+  else
+    _cl_cmd+=(--effort high)
+  fi
   if [ "${1:-}" = "resume" ] || [ "${1:-}" = "r" ]; then
     shift
     _cl_cmd+=(--resume)
