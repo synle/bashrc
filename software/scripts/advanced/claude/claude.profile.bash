@@ -4,14 +4,16 @@
 # ---- Aliases: Claude ----
 #
 # Wrapper around the `claude` binary. No-ops with a message when claude is not
-# installed; otherwise enables allow/dangerous skip permissions, and on
-# claude >= 2.1.100 appends `--permission-mode auto` + `--effort max` (on older
-# builds the flag `auto` is unsupported so we drop --permission-mode, and
-# `max`/`xhigh` are missing from --effort so we use `high`).
+# installed; otherwise enables allow/dangerous skip permissions, then picks the
+# strongest mode/effort the installed version supports:
+#   claude >= 2.1.100 -> --permission-mode auto             --effort max
+#   older builds      -> --permission-mode bypassPermissions --effort high
+# (`auto` and `max`/`xhigh` only exist on >= 2.1.100; older builds accept
+# `bypassPermissions` + `high` instead.)
 #
 # Use `claude resume` or `claude r` to open the resume picker.
-# Echoes the resolved command (printf %q quoted) to stderr before invoking so
-# the user can see exactly which flags are passed through to the binary.
+# Echoes the resolved command to stderr before invoking so the user can see
+# exactly which flags are passed through to the binary.
 ################################################################################
 
 # claude: wrapper around the `claude` binary; echoes resolved invocation to stderr before running
@@ -48,20 +50,15 @@ function claude() {
   if [ "$_CLAUDE_PERMISSION_MODE" = "on" ]; then
     _cl_cmd+=(--permission-mode auto --effort max)
   else
-    _cl_cmd+=(--effort high)
+    _cl_cmd+=(--permission-mode bypassPermissions --effort high)
   fi
   if [ "${1:-}" = "resume" ] || [ "${1:-}" = "r" ]; then
     shift
     _cl_cmd+=(--resume)
   fi
   # Echo the resolved invocation to stderr so the user can see all flags being
-  # passed through. printf %q safely quotes each argument; `command` is dropped
-  # from the display since it's a shell builtin marker, not a flag.
-  {
-    printf '+ claude'
-    printf ' %q' "${_cl_cmd[@]:2}" "$@"
-    printf '\n'
-  } >&2
+  # passed through (stderr keeps it out of `claude --print ... | jq` pipelines).
+  echo "${_cl_cmd[@]}" "$@" >&2
   "${_cl_cmd[@]}" "$@"
 }
 alias cl='claude'
