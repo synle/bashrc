@@ -176,15 +176,20 @@ installDnfPackage git-lfs
 
 # ---- Observability ----
 # procs/bottom/gping are not in dnf default repos — install via binary in advanced/observability.sh.
-installDnfPackageInBackground btop
+# btop is `required` per ci-binaries.json — install foreground so binary verification
+# in CI doesn't race the 5-minute _waitForBackgroundPackages cap (see ubuntu/_full-setup.sh
+# for the 2026-05-14 incident notes).
+installDnfPackage btop
 
 # ---- Infrastructure-as-Code ----
 # terraform/tflint are not in dnf default repos — install via binary in advanced/iac-tools.sh.
-installDnfPackageInBackground ansible
+# ansible is `required` per ci-binaries.json — keep foreground.
+installDnfPackage ansible
 
 # ---- HTTP / RPC clients ----
 # xh and grpcurl are not in dnf default repos — install via curl|tarball in advanced/http-clients.sh.
-installDnfPackageInBackground httpie
+# httpie provides the `http` binary which is `required` per ci-binaries.json — keep foreground.
+installDnfPackage httpie
 
 # ---- Database clients ----
 installDnfPackageInBackground mycli # autocomplete + syntax-highlighted MySQL client

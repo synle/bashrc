@@ -153,12 +153,16 @@ installPacmanPackage git-lfs
 
 # ---- Observability ----
 installPacmanPackageInBackground bottom # `btm` — fast cross-platform top
-installPacmanPackageInBackground btop   # animated resource monitor
-installPacmanPackageInBackground gping  # ping with a graph
-installPacmanPackageInBackground procs  # modern ps replacement
+# btop is `required` per ci-binaries.json — install foreground so binary verification
+# in CI doesn't race the 5-minute _waitForBackgroundPackages cap (see ubuntu/_full-setup.sh
+# for the 2026-05-14 incident notes).
+installPacmanPackage btop              # animated resource monitor
+installPacmanPackageInBackground gping # ping with a graph
+installPacmanPackageInBackground procs # modern ps replacement
 
 # ---- Infrastructure-as-Code ----
-installPacmanPackageInBackground ansible
+# ansible is `required` per ci-binaries.json — keep foreground.
+installPacmanPackage ansible
 installPacmanPackageInBackground terraform
 installPacmanPackageInBackground tflint
 
@@ -180,7 +184,8 @@ installPacmanPackageInBackground google-cloud-cli # `gcloud` — Google Cloud CL
 
 # ---- HTTP / RPC clients ----
 installPacmanPackageInBackground grpcurl
-installPacmanPackageInBackground httpie
+# httpie provides the `http` binary which is `required` per ci-binaries.json — keep foreground.
+installPacmanPackage httpie
 installPacmanPackageInBackground xh
 
 # ---- Database clients ----
@@ -190,8 +195,11 @@ installPacmanPackageInBackground postgresql-libs # provides psql client
 installPacmanPackageInBackground redis
 installPacmanPackageInBackground sqlite
 
-# ---- Multimedia (background: heavy transitive deps, wait syncs before build) ----
-installPacmanPackageInBackground ffmpeg
+# ---- Multimedia ----
+# ffmpeg is `required` per ci-binaries.json — install foreground so binary verification
+# in CI doesn't race the 5-minute _waitForBackgroundPackages cap. Yes it pulls heavy
+# transitive deps, but reliability > install-time parallelism.
+installPacmanPackage ffmpeg
 installPacmanPackageInBackground imagemagick
 
 # ---- OS-specific ----

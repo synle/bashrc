@@ -172,15 +172,21 @@ installAptPackage git-lfs
 
 # ---- Observability ----
 # procs/bottom/gping are not in apt main — install via binary in advanced/observability.sh.
-installAptPackageInBackground btop
+# btop is `required` per ci-binaries.json — install foreground so binary verification
+# in CI doesn't race the 5-minute background queue cap (incident 2026-05-14: 19-package
+# background batch including dotnet-sdk-8.0 blew past _waitForBackgroundPackages's 300s
+# wait, leaving btop unbuilt → "Binary verification failed: 2/44 binaries missing").
+installAptPackage btop
 
 # ---- Infrastructure-as-Code ----
 # terraform/tflint are not in apt main — install via binary in advanced/iac-tools.sh.
-installAptPackageInBackground ansible
+# ansible is `required` per ci-binaries.json — keep foreground (same reasoning as btop).
+installAptPackage ansible
 
 # ---- HTTP / RPC clients ----
 # xh and grpcurl are not in apt main — install via curl|tarball in advanced/http-clients.sh.
-installAptPackageInBackground httpie
+# httpie provides the `http` binary which is `required` per ci-binaries.json — keep foreground.
+installAptPackage httpie
 
 # ---- Database clients ----
 installAptPackageInBackground mycli # autocomplete + syntax-highlighted MySQL client
