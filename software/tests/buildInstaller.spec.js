@@ -21,6 +21,7 @@ const {
   FILES_TO_BUNDLE,
   buildTarball,
   countTarballEntries,
+  getVersionString,
 } = buildInstallerModule;
 
 describe("wrapBase64", () => {
@@ -39,6 +40,7 @@ describe("wrapBase64", () => {
 
 describe("buildHeader", () => {
   const header = buildHeader({
+    version: "v0.20260514.0930.abc1234",
     sha: "abc1234",
     fileCount: 42,
     payloadBytes: 12345,
@@ -52,6 +54,23 @@ describe("buildHeader", () => {
     expect(header).toContain("abc1234");
     expect(header).toContain("12345");
     expect(header).toContain("42 files");
+  });
+
+  it("embeds the version string in both the banner and an env-style assignment", () => {
+    // The version appears in the human-readable banner comment AND as a shell
+    // variable assignment that the runtime echo uses. Both surfaces must match.
+    expect(header).toContain("# Version: v0.20260514.0930.abc1234");
+    expect(header).toContain(
+      'BASHRC_INSTALLER_BUILD_VERSION="v0.20260514.0930.abc1234"',
+    );
+  });
+
+  it("emits a runtime version line to stderr unless BASHRC_INSTALLER_QUIET is set", () => {
+    expect(header).toMatch(
+      /echo ">> install-bashrc\.sh \$BASHRC_INSTALLER_BUILD_VERSION/,
+    );
+    expect(header).toContain("BASHRC_INSTALLER_QUIET");
+    expect(header).toMatch(/>&2/);
   });
 
   it("contains the PAYLOAD_MARKER on its own line, exactly once", () => {
@@ -146,6 +165,34 @@ describe("tarball round-trip", () => {
   });
 });
 
+describe("getVersionString", () => {
+  it("honors BASHRC_INSTALLER_VERSION env override (lets CI pin the version)", () => {
+    const orig = process.env.BASHRC_INSTALLER_VERSION;
+    try {
+      process.env.BASHRC_INSTALLER_VERSION = "v9.99.test.deadbee";
+      expect(getVersionString()).toBe("v9.99.test.deadbee");
+    } finally {
+      if (orig === undefined) delete process.env.BASHRC_INSTALLER_VERSION;
+      else process.env.BASHRC_INSTALLER_VERSION = orig;
+    }
+  });
+
+  it("matches v0.YYYYMMDD.HHMM.<short_sha> format when no env override", () => {
+    const orig = process.env.BASHRC_INSTALLER_VERSION;
+    try {
+      delete process.env.BASHRC_INSTALLER_VERSION;
+      // Format: v0.20260514.0930.eebf417 — date is 8 digits, time is 4, sha
+      // is the short-sha output of git (typically 7 hex but can be longer in
+      // ambiguous repos; allow 7-12). Allow "unknown" for non-git fallback.
+      expect(getVersionString()).toMatch(
+        /^v0\.\d{8}\.\d{4}\.([0-9a-f]{7,12}|unknown)$/,
+      );
+    } finally {
+      if (orig !== undefined) process.env.BASHRC_INSTALLER_VERSION = orig;
+    }
+  });
+});
+
 describe("end-to-end: installer extracts and runs run.sh --help", () => {
   it("produces an extracted repo with run.sh + software/index.js", () => {
     // Build a small installer to disk and execute it with a no-op flag.
@@ -153,6 +200,7 @@ describe("end-to-end: installer extracts and runs run.sh --help", () => {
     // (--dryrun) so run.sh exits quickly without doing real work.
     const tarball = buildTarball();
     const header = buildHeader({
+      version: "v0.20260514.0000.testtag",
       sha: "test",
       fileCount: countTarballEntries(tarball),
       payloadBytes: tarball.length,

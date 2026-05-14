@@ -31,6 +31,7 @@ jobs:
       ci-prep-duration: ${{ steps.prep-summary.outputs.ci-prep-duration }}
       total-duration: ${{ steps.prep-summary.outputs.total-duration }}
       job-start-time: ${{ steps.prep-start.outputs.start-time }}
+      installer-version: ${{ steps.installer-version.outputs.version }}
     steps:
       - name: Record start time
         id: prep-start
@@ -44,6 +45,21 @@ jobs:
       - name: Install shfmt
         run: sudo apt-get install -y shfmt
 
+      # Compute the installer version string ONCE and reuse everywhere downstream:
+      # - build-installer.js embeds it in the .build/install-bashrc.sh banner (via
+      #   BASHRC_INSTALLER_VERSION env) so the runtime echo + sidecar version file
+      #   carry it.
+      # - The "Tag successful build" step in the test job consumes it as the
+      #   git tag name so banner and tag are byte-identical.
+      # Format: v0.YYYYMMDD.HHMM.<short_sha>   e.g. v0.20260514.0930.eebf417
+      - name: Compute installer version
+        id: installer-version
+        run: |
+          short_sha=$(echo "${{ github.sha }}" | cut -c1-7)
+          version="v0.$(date -u +'%Y%m%d.%H%M').${short_sha}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Installer version: ${version}"
+
       - name: Record time before ci-prep
         if: always()
         run: echo "PREP_T1=$(date +%s)" >> "$GITHUB_ENV"
@@ -55,6 +71,9 @@ jobs:
           # against synle/bashrc's binary-cache rolling release. Job already has
           # `contents: write` so github.token is sufficient.
           GH_TOKEN: ${{ github.token }}
+          # Pinned version string consumed by software/tools/build-installer.js
+          # (computed once above so banner + git tag match byte-for-byte).
+          BASHRC_INSTALLER_VERSION: ${{ steps.installer-version.outputs.version }}
         run: make ci_prep
 
       - name: Record time after ci-prep
@@ -1002,9 +1021,19 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      # Tag the green commit with the SAME version string that's embedded in
+      # the bundled .build/install-bashrc.sh banner (computed once in the prep
+      # job, propagated via job outputs). End-users running the installer can
+      # echo $BASHRC_INSTALLER_BUILD_VERSION and find the exact tag in this repo.
+      # Format: v0.YYYYMMDD.HHMM.<short_sha>   e.g. v0.20260514.0930.eebf417
       - name: Tag successful build
         if: github.event_name == 'push'
         run: |
-          TAG="v0.$(date -u +'%Y%m%d').${{ github.run_number }}"
+          TAG="${{ needs.prep.outputs.installer-version }}"
+          if [ -z "$TAG" ]; then
+            echo "::error::prep.outputs.installer-version was empty — refusing to tag"
+            exit 1
+          fi
           git tag "$TAG"
           git push origin "$TAG"
+          echo "Tagged $(git rev-parse HEAD) as $TAG"
