@@ -144,6 +144,15 @@ build_backup_xfce:
 build_webapp:
 	$(_BUILD_ENV) && npm run build
 
+# Build the self-extracting single-file installer (.build/install-bashrc.sh).
+# Bundles run.sh + software/{index.js,common.js,bootstrap,scripts,metadata}
+# into one bash script with a base64-encoded tarball payload. CI mirrors
+# the output to the binary-cache rolling release as
+# bashrc-installer__install-bashrc.sh — end users can curl|bash a single URL
+# with zero raw.githubusercontent.com fetches at runtime.
+build_installer:
+	node software/tools/build-installer.js
+
 # Copy build artifacts to dist
 build_postbuild:
 	@cp .build/font-preview.html dist/font-preview.html 2>/dev/null || true
@@ -236,8 +245,8 @@ build_hosts: build_update_hosts
 # ---- CI ----
 ################################################################################
 
-# CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, and download release binaries
-ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun ci_download_release_binaries
+# CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, build installer, and download release binaries
+ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun build_installer ci_download_release_binaries
 
 # Mirror latest release binaries (url-porter, sqlui-native, display-dj, skiff-files)
 # into the binary-cache rolling release on synle/bashrc. No local files are written —

@@ -77,6 +77,34 @@ GitHub Actions with 5 parallel OS builds (Ubuntu, RHEL, Arch, Debian, macOS), au
 
 ## Installation
 
+### Option A — single-file installer (recommended)
+
+A self-extracting bash script that bundles `run.sh` + the entire `software/` tree as a base64 payload. **One HTTP request, zero `raw.githubusercontent.com` fetches at runtime** — works on locked-down networks, behind corporate proxies, and survives GitHub API rate limits. CI re-publishes it on every push to `main`.
+
+```bash
+# Full setup (installs dependencies + writes profile)
+curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
+
+# Profile refresh only (no dependency install)
+curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash
+
+# Save locally then re-run with any run.sh flags
+curl -fsSLO https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh
+bash bashrc-installer__install-bashrc.sh --files=git.js
+bash bashrc-installer__install-bashrc.sh --preset=lightweight
+BASHRC_INSTALLER_KEEP=1 bash bashrc-installer__install-bashrc.sh --dryrun   # keep the extracted dir for inspection
+```
+
+The installer extracts to `$TMPDIR/synle-bashrc-installer-$$/` (override with `BASHRC_INSTALLER_DIR=...`), `exec`s `run.sh` against that copy, and cleans up on exit. Every `run.sh` flag works — `--setup`, `--files=`, `--preset=`, `--dryrun`, `--debug`, etc.
+
+Build it locally:
+
+```bash
+make build_installer   # writes .build/install-bashrc.sh (~1 MB)
+```
+
+### Option B — stream from GitHub (legacy)
+
 <!-- BEGIN software/bootstrap/setup.sh -->
 
 ```bash

@@ -33,3 +33,17 @@ Build the webapp:
 ```bash
 npm run build
 ```
+
+Build the self-extracting single-file installer:
+
+```bash
+make build_installer   # -> .build/install-bashrc.sh
+```
+
+Output is a single bash script (~1 MB) containing `run.sh` + `software/{index.js,common.js,bootstrap,scripts,metadata}` as a base64'd gzipped tarball after a sentinel marker. At runtime it extracts to a per-PID tmp dir (override with `BASHRC_INSTALLER_DIR`; preserve with `BASHRC_INSTALLER_KEEP=1`) and `exec`s `bash run.sh "$@"` — every `run.sh` flag (`--setup`, `--files=`, `--preset=`, `--dryrun`, ...) is forwarded. CI mirrors it to the `binary-cache` rolling release on `synle/bashrc` as `bashrc-installer__install-bashrc.sh`, so end-users can install with one HTTP request:
+
+```bash
+curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
+```
+
+See `software/tools/build-installer.js`.
