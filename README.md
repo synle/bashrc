@@ -81,21 +81,45 @@ GitHub Actions with 5 parallel OS builds (Ubuntu, RHEL, Arch, Debian, macOS), au
 
 A self-extracting bash script that bundles `run.sh` + the entire `software/` tree as a base64 payload. **One HTTP request, zero `raw.githubusercontent.com` fetches at runtime** — works on locked-down networks, behind corporate proxies, and survives GitHub API rate limits. CI re-publishes it on every push to `main`.
 
+**Recommended — download then run (avoids stray `curl: (56)` pipe-close noise):**
+
 ```bash
 # Full setup (installs dependencies + writes profile)
-curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --setup
+```
 
+Every `run.sh` flag works — swap `--setup` for any of these:
+
+```bash
 # Profile refresh only (no dependency install)
-curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp"
 
-# Save locally then re-run with any run.sh flags
+# One specific script
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --files=git.js
+
+# A preset
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --preset=lightweight
+
+# Dry-run (preview without writing)
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --dryrun --setup
+```
+
+Or save the installer once and reuse it:
+
+```bash
 curl -fsSLO https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh
+bash bashrc-installer__install-bashrc.sh --setup
 bash bashrc-installer__install-bashrc.sh --files=git.js
-bash bashrc-installer__install-bashrc.sh --preset=lightweight
 BASHRC_INSTALLER_KEEP=1 bash bashrc-installer__install-bashrc.sh --dryrun   # keep the extracted dir for inspection
 ```
 
-The installer extracts to `$TMPDIR/synle-bashrc-installer-$$/` (override with `BASHRC_INSTALLER_DIR=...`), `exec`s `run.sh` against that copy, and cleans up on exit. Every `run.sh` flag works — `--setup`, `--files=`, `--preset=`, `--dryrun`, `--debug`, etc.
+**Also works (but emits a harmless `curl: (56)` after success — curl complaining about its closed pipe, not a real error):**
+
+```bash
+curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh | bash -s -- --setup
+```
+
+The installer extracts to `$TMPDIR/synle-bashrc-installer-$$/` (override with `BASHRC_INSTALLER_DIR=...`), `exec`s `run.sh` against that copy, and cleans up on exit.
 
 Build it locally:
 

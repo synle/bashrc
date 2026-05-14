@@ -112,18 +112,18 @@ If all three lookups fail: **ABORT** with `"Not a valid SHA or branch in this re
 
 ## Examples
 
-| Invocation                              | Routes to                      | Why                             |
-| --------------------------------------- | ------------------------------ | ------------------------------- |
-| `/sy-release`                           | official, default branch       | no args, no beta signal         |
-| `/sy-release main`                      | official, default branch       | `main` = default branch         |
-| `/sy-release master`                    | official, default branch       | `master` = default branch       |
-| `/sy-release prod` / `/sy-release ship` | official, default branch       | keyword tokens                  |
-| `/sy-release beta`                      | beta, prompts for SHA          | keyword forces beta             |
-| `/sy-release abc1234`                   | beta, full SHA                 | SHA validated + expanded        |
-| `/sy-release deadbee`                   | **ABORT** if not a real SHA    | validation catches typos        |
-| `/sy-release feature/foo`               | beta, SHA of `feature/foo` tip | branch resolved                 |
-| `/sy-release nonexistent-branch`        | **ABORT**                      | neither SHA nor branch          |
-| `/sy-release frobnicate`                | **ABORT**                      | unrecognized arg                |
+| Invocation                              | Routes to                      | Why                       |
+| --------------------------------------- | ------------------------------ | ------------------------- |
+| `/sy-release`                           | official, default branch       | no args, no beta signal   |
+| `/sy-release main`                      | official, default branch       | `main` = default branch   |
+| `/sy-release master`                    | official, default branch       | `master` = default branch |
+| `/sy-release prod` / `/sy-release ship` | official, default branch       | keyword tokens            |
+| `/sy-release beta`                      | beta, prompts for SHA          | keyword forces beta       |
+| `/sy-release abc1234`                   | beta, full SHA                 | SHA validated + expanded  |
+| `/sy-release deadbee`                   | **ABORT** if not a real SHA    | validation catches typos  |
+| `/sy-release feature/foo`               | beta, SHA of `feature/foo` tip | branch resolved           |
+| `/sy-release nonexistent-branch`        | **ABORT**                      | neither SHA nor branch    |
+| `/sy-release frobnicate`                | **ABORT**                      | unrecognized arg          |
 
 ## Safety rules
 
