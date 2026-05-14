@@ -3291,6 +3291,14 @@ async function downloadAssetWithFallback(repoId, url, destination) {
   // Step 1: attempt upstream download
   await downloadAsset(url, destination);
 
+  // Dry-run short-circuit: downloadAsset only logs "Would download ..." and
+  // never writes the destination, so the post-download existence check below
+  // would always look "failed" and falsely trigger the binary-cache fallback
+  // (and then a misleading "no backup available" log). For dry-run purposes
+  // we trust that the upstream URL would have produced the file and return
+  // success immediately. Real-run validation is unchanged.
+  if (IS_DRY_RUN) return true;
+
   // Step 2: validate — if file exists and non-empty, success
   const isValid = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
   if (isValid) return true;
