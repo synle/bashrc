@@ -111,10 +111,21 @@
     return 0
   }
 
-  # Ensures the rolling cache release exists on $CACHE_REPO. Creates it on first
-  # use (prerelease, not "Latest"). Idempotent — subsequent calls are a no-op.
+  # Ensures the rolling cache release exists on $CACHE_REPO and is published.
+  # Creates it on first use (prerelease, not "Latest"). Self-heals if the release
+  # exists but is in draft state — draft assets are private (404 to anonymous
+  # curl), which defeats the entire downloadAssetWithFallback() / installer
+  # one-liner story. Idempotent: subsequent calls are a no-op on a healthy release.
   function ensure_cache_release() {
     if gh release view "$CACHE_TAG" --repo "$CACHE_REPO" > /dev/null 2>&1; then
+      local is_draft
+      is_draft=$(gh release view "$CACHE_TAG" --repo "$CACHE_REPO" --json isDraft --jq .isDraft 2> /dev/null || echo "false")
+      if [ "$is_draft" = "true" ]; then
+        echo ">> $CACHE_REPO release $CACHE_TAG is in draft state — publishing for anonymous access"
+        if ! gh release edit "$CACHE_TAG" --repo "$CACHE_REPO" --draft=false > /dev/null 2>&1; then
+          echo "::warning::Failed to publish draft release $CACHE_TAG — assets will remain private (404 to anonymous curl)"
+        fi
+      fi
       return 0
     fi
     echo ">> Creating $CACHE_REPO release $CACHE_TAG (first-time setup)"
