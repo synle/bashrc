@@ -9,31 +9,16 @@ import { fileURLToPath } from "url";
 // transform pipeline and instruments it for coverage.
 import buildInstallerModule from "../tools/build-installer.js";
 
-const ROOT_DIR = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../..",
-);
-const {
-  buildHeader,
-  wrapBase64,
-  assembleInstaller,
-  PAYLOAD_MARKER,
-  FILES_TO_BUNDLE,
-  buildTarball,
-  countTarballEntries,
-  getVersionString,
-} = buildInstallerModule;
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const { buildHeader, wrapBase64, assembleInstaller, PAYLOAD_MARKER, FILES_TO_BUNDLE, buildTarball, countTarballEntries, getVersionString } =
+  buildInstallerModule;
 
 describe("wrapBase64", () => {
   it("wraps at 76 chars per line", () => {
     const input = "a".repeat(200);
     const wrapped = wrapBase64(input);
     const lines = wrapped.split("\n");
-    expect(
-      lines.every((line, i) =>
-        i < lines.length - 1 ? line.length === 76 : line.length <= 76,
-      ),
-    ).toBe(true);
+    expect(lines.every((line, i) => (i < lines.length - 1 ? line.length === 76 : line.length <= 76))).toBe(true);
     expect(lines.join("")).toBe(input);
   });
 });
@@ -60,23 +45,17 @@ describe("buildHeader", () => {
     // The version appears in the human-readable banner comment AND as a shell
     // variable assignment that the runtime echo uses. Both surfaces must match.
     expect(header).toContain("# Version: v0.20260514.0930.abc1234");
-    expect(header).toContain(
-      'BASHRC_INSTALLER_BUILD_VERSION="v0.20260514.0930.abc1234"',
-    );
+    expect(header).toContain('BASHRC_INSTALLER_BUILD_VERSION="v0.20260514.0930.abc1234"');
   });
 
   it("emits a runtime version line to stderr unless BASHRC_INSTALLER_QUIET is set", () => {
-    expect(header).toMatch(
-      /echo ">> install-bashrc\.sh \$BASHRC_INSTALLER_BUILD_VERSION/,
-    );
+    expect(header).toMatch(/echo ">> install-bashrc\.sh \$BASHRC_INSTALLER_BUILD_VERSION/);
     expect(header).toContain("BASHRC_INSTALLER_QUIET");
     expect(header).toMatch(/>&2/);
   });
 
   it("contains the PAYLOAD_MARKER on its own line, exactly once", () => {
-    const matches = header
-      .split("\n")
-      .filter((line) => line === PAYLOAD_MARKER);
+    const matches = header.split("\n").filter((line) => line === PAYLOAD_MARKER);
     expect(matches).toHaveLength(1);
   });
 
@@ -99,9 +78,7 @@ describe("buildHeader", () => {
   });
 
   it("points BASHRC_INSTALLER_URL at the binary-cache release asset", () => {
-    expect(header).toContain(
-      "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh",
-    );
+    expect(header).toContain("https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh");
   });
 });
 
@@ -184,9 +161,7 @@ describe("getVersionString", () => {
       // Format: v0.20260514.0930.eebf417 — date is 8 digits, time is 4, sha
       // is the short-sha output of git (typically 7 hex but can be longer in
       // ambiguous repos; allow 7-12). Allow "unknown" for non-git fallback.
-      expect(getVersionString()).toMatch(
-        /^v0\.\d{8}\.\d{4}\.([0-9a-f]{7,12}|unknown)$/,
-      );
+      expect(getVersionString()).toMatch(/^v0\.\d{8}\.\d{4}\.([0-9a-f]{7,12}|unknown)$/);
     } finally {
       if (orig !== undefined) process.env.BASHRC_INSTALLER_VERSION = orig;
     }
@@ -205,14 +180,9 @@ describe("end-to-end: installer extracts and runs run.sh --help", () => {
       fileCount: countTarballEntries(tarball),
       payloadBytes: tarball.length,
     });
-    const installerText = assembleInstaller(
-      header,
-      wrapBase64(tarball.toString("base64")),
-    );
+    const installerText = assembleInstaller(header, wrapBase64(tarball.toString("base64")));
 
-    const tmpDir = fs.mkdtempSync(
-      path.join(os.tmpdir(), "bashrc-installer-spec-"),
-    );
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "bashrc-installer-spec-"));
     const installerPath = path.join(tmpDir, "install-bashrc.sh");
     const extractDir = path.join(tmpDir, "extract");
     fs.writeFileSync(installerPath, installerText);
@@ -235,17 +205,9 @@ describe("end-to-end: installer extracts and runs run.sh --help", () => {
       expect(res.status, res.stderr).toBe(0);
 
       expect(fs.existsSync(path.join(extractDir, "run.sh"))).toBe(true);
-      expect(fs.existsSync(path.join(extractDir, "software/index.js"))).toBe(
-        true,
-      );
-      expect(fs.existsSync(path.join(extractDir, "software/common.js"))).toBe(
-        true,
-      );
-      expect(
-        fs.existsSync(
-          path.join(extractDir, "software/bootstrap/common-env.sh"),
-        ),
-      ).toBe(true);
+      expect(fs.existsSync(path.join(extractDir, "software/index.js"))).toBe(true);
+      expect(fs.existsSync(path.join(extractDir, "software/common.js"))).toBe(true);
+      expect(fs.existsSync(path.join(extractDir, "software/bootstrap/common-env.sh"))).toBe(true);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }

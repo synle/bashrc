@@ -593,16 +593,7 @@ jobs:
 
   # ---- Phase 4: Unit tests and smoke test ----
   test:
-    needs:
-      [
-        prep,
-        build-ubuntu,
-        build-rhel,
-        build-arch,
-        build-debian,
-        build-mac,
-        publish,
-      ]
+    needs: [prep, build-ubuntu, build-rhel, build-arch, build-debian, build-mac, publish]
     if: ${{ needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
     steps:

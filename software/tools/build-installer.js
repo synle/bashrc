@@ -55,12 +55,7 @@ const FILES_TO_BUNDLE = [
  * generated build output that might be lying around when developers run
  * `make build_installer` locally.
  */
-const TAR_EXCLUDES = [
-  "*.spec.js",
-  "__snapshots__",
-  ".DS_Store",
-  "node_modules",
-];
+const TAR_EXCLUDES = ["*.spec.js", "__snapshots__", ".DS_Store", "node_modules"];
 
 /**
  * Sentinel that separates the bash header from the base64 payload. Must appear
@@ -97,14 +92,7 @@ function getGitSha() {
  * @throws {Error} when tar exits non-zero or isn't on PATH.
  */
 function buildTarball() {
-  const args = [
-    "-czf",
-    "-",
-    "-C",
-    REPO_ROOT,
-    ...TAR_EXCLUDES.flatMap((pattern) => ["--exclude", pattern]),
-    ...FILES_TO_BUNDLE,
-  ];
+  const args = ["-czf", "-", "-C", REPO_ROOT, ...TAR_EXCLUDES.flatMap((pattern) => ["--exclude", pattern]), ...FILES_TO_BUNDLE];
   const res = spawnSync("tar", args, {
     maxBuffer: 256 * 1024 * 1024,
     encoding: "buffer",
@@ -113,9 +101,7 @@ function buildTarball() {
     throw new Error(`tar invocation failed: ${res.error.message}`);
   }
   if (res.status !== 0) {
-    throw new Error(
-      `tar exited with status ${res.status}: ${res.stderr.toString()}`,
-    );
+    throw new Error(`tar exited with status ${res.status}: ${res.stderr.toString()}`);
   }
   return res.stdout;
 }
@@ -133,13 +119,11 @@ function countTarballEntries(tarball) {
     encoding: "utf8",
   });
   if (res.status !== 0) return 0;
-  return res.stdout.split("\n").filter((line) => line && !line.endsWith("/"))
-    .length;
+  return res.stdout.split("\n").filter((line) => line && !line.endsWith("/")).length;
 }
 
 /** Canonical URL for the installer asset published to the binary-cache rolling release. */
-const INSTALLER_URL =
-  "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh";
+const INSTALLER_URL = "https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh";
 
 /**
  * Compute a deterministic version string for the installer banner. Format:
@@ -336,10 +320,7 @@ function main() {
   // ensure the git tag matches the installer banner byte-for-byte. Also handy
   // for developers running `make build_installer` locally who want to know
   // what version their .build/install-bashrc.sh advertises.
-  fs.writeFileSync(
-    path.join(OUTPUT_DIR, "install-bashrc.version"),
-    version + "\n",
-  );
+  fs.writeFileSync(path.join(OUTPUT_DIR, "install-bashrc.version"), version + "\n");
 
   const finalSize = fs.statSync(OUTPUT_PATH).size;
   console.log(

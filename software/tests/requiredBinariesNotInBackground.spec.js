@@ -4,10 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const ROOT_DIR = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../..",
-);
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 /**
  * Linux distro _full-setup.sh scripts that queue installs. Each is scanned for
@@ -39,12 +36,7 @@ const REQUIRED_PACKAGE_ALIASES = {
  * @returns {Set<string>} package names (lowercased) that are required-tier.
  */
 function getRequiredPackageNames() {
-  const data = JSON.parse(
-    fs.readFileSync(
-      path.join(ROOT_DIR, "software/metadata/ci-binaries.json"),
-      "utf-8",
-    ),
-  );
+  const data = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, "software/metadata/ci-binaries.json"), "utf-8"));
   const names = new Set();
   for (const entry of data.required) {
     const binaryName = typeof entry === "string" ? entry : entry.name;
