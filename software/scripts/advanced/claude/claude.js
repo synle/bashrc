@@ -242,6 +242,8 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
   "sy-create-pr.md": "create-pr",
   "sy-draft-pr.md": "draft-pr",
   "sy-list-prs.md": "list-prs",
+  "sy-review-pr.md": "review-pr",
+  "sy-review-prs.md": "review-prs",
   "sy-slack-prs.md": "slack-prs",
   // Single release entry-point. The skill body checks $ARGUMENTS to decide
   // official vs beta — no per-channel alias files anymore (the old

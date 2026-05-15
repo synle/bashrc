@@ -112,6 +112,21 @@ Never leak secrets, credentials, or environment config to any tracked file or ex
 
 46. **Every PR merge auto-triggers `/sy-release` (when the repo has a release workflow).** As soon as a PR transitions to `MERGED` on the default branch — manual squash-merge or automerge landing — invoke `/sy-release` against `<owner/repo>`. The skill defaults to OFFICIAL from the default branch (rule 44) and gracefully aborts with `"no official release workflow found — aborting"` on repos without one, so this is safe to apply uniformly: dotfiles / infra-only repos no-op, app repos (Tauri, Electron, npm packages, Docker images) get a release dispatched. **For automerge PRs (`gh pr merge --squash --auto`) specifically**: the babysit loop must NOT stop at "green + approved" — keep polling `gh pr view --json state,mergedAt` and invoke `/sy-release` only after observing `state == "MERGED"`. Treat this as the default contract: every PR landing into the default branch flows through `/sy-release`. The user-confirmation prompt inside `/sy-release` (rule 44) remains the human-in-the-loop step; the agent only queues the release intent.
 
+## Code Review
+
+48. **Stay consistent across follow-up reviews — never flip-flop on your own prior positions.** Your earlier reviews on a PR are the baseline for every subsequent review on that same PR.
+
+    **Why:** Flip-flopping (suggesting Option 1 in one review, then Option 2 in the next; downgrading APPROVE → COMMENT with no new reason; raising concern X in one pass and contradictory concern Y in the next on the same code) destroys reviewer trust and forces the author to redo work that was already accepted. It is one of the fastest ways to lose credibility on a team.
+
+    **How to apply — every time you post a review, line comment, or PR comment on a PR you have previously touched:**
+    1. **Read your own prior reviews and comments first.** Filter `gh api repos/<owner>/<repo>/pulls/<number>/comments` + `.../issues/<number>/comments` + `gh pr view <n> --json reviews` by your own `gh api user --jq .login`. Skim everything you said before.
+    2. **Honor every prior recommendation.** If you suggested "go with approach A over approach B" and the author picked A, do NOT now ask them to switch to B. If the author addressed concern X you raised, do NOT raise contradictory concern Y on the same code.
+    3. **Only revise a prior position when you have a concrete new reason** — new info has surfaced, a related PR landed, a security advisory dropped, or the author explicitly asked you to reconsider. When you do reverse, **call it out explicitly** in the new comment: `"Updating my earlier suggestion (#<comment-id>) — <new reason>"`. Never silently contradict yourself.
+    4. **If your earlier comment was vague and the author picked a reasonable interpretation, accept it.** Don't relitigate just because a different reading was possible.
+    5. **Verdict consistency.** If you APPROVED earlier and the new commits are still acceptable, re-APPROVE. Don't downgrade to COMMENT without naming the specific new concern. Same for the other direction — don't quietly upgrade COMMENT → APPROVE without acknowledging that you previously had concerns.
+
+    **Scope:** Applies to your own past reviews only. You don't have to honor a different reviewer's positions when they conflict with yours — but call out the disagreement explicitly so the author isn't whipsawed between reviewers. Applies to every review channel: `/sy-review-pr`, ad-hoc reviews, line comments during babysit, even informal "what do you think?" responses on a PR.
+
 ## Repo Identification
 
 46. **The local folder name is not the repo — always resolve the remote.** Local folder names sometimes diverge from the GitHub `owner/repo` (example: `~/git/file-explorer` is actually `synle/skiff-files`; a previous incident, 2026-05-10, sent fix/babysit agents to the wrong remote because they assumed folder = repo). Before any `gh` call, sub-agent spawn, PR action, or remote-aware reasoning: run `git remote get-url origin` (or `gh repo view --json nameWithOwner`) and use that as the authoritative `owner/repo`. Never derive the repo from `basename "$(pwd)"`, `$PWD`, or the directory name. When delegating to sub-agents, pass the resolved `owner/repo` explicitly so they don't re-infer from the folder.
@@ -123,7 +138,6 @@ Never leak secrets, credentials, or environment config to any tracked file or ex
     **Why:** Claude Code loads every `CLAUDE.md` into the system prompt on every turn. Files over ~40k chars degrade performance, slow first-token latency, and crowd out room for actual task context. A bloated CLAUDE.md hurts every future session in that repo.
 
     **Trigger — apply this rule whenever ANY of the following happens:**
-
     - You used `Edit`, `Write`, or any other tool that wrote bytes to a file named `CLAUDE.md`.
     - You edited a file that generates a `CLAUDE.md` (e.g. `software/scripts/advanced/claude/claude-instructions.md` in `synle/bashrc` regenerates `~/.claude/CLAUDE.md`). In that case, check the generated file's size after regeneration.
     - You added a new rule, section, example, or paragraph to a `CLAUDE.md` — even a one-line addition. Small adds accumulate.
@@ -132,7 +146,6 @@ Never leak secrets, credentials, or environment config to any tracked file or ex
     Do NOT skip the check just because your edit looked small or because the file looked "fine before." Always measure after the change.
 
     **How to apply — run after every edit (no exceptions, no asking the user first):**
-
     1. **Check the size.** Run `wc -c < <path>` on the file you just edited (or, for generator sources, on the generated `CLAUDE.md`). If ≤ 40,000 chars, you're done — report the size in your final message and stop.
     2. **If over 40,000 chars, trim in this order until under the limit:**
        - **Merge duplicates.** Two rules covering the same ground → combine into one.
