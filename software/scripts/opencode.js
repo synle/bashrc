@@ -48,8 +48,91 @@ function _buildOpencodeConfig(modelNames) {
 }
 
 /**
- * Writes ~/.config/opencode/opencode.json wired to a local Ollama instance.
- * Skips when opencode is not installed.
+ * Mirrors every file under ~/.claude/commands/ into ~/.config/opencode/commands/ as
+ * symlinks so OpenCode (which does NOT fall through to ~/.claude/commands/ the way it
+ * falls through to ~/.claude/CLAUDE.md for rules) picks up the same `/sy-*` slash
+ * commands Claude Code uses. The cleanup pattern mirrors claude.js — wipe previously-
+ * deployed entries before re-deploying — but since every entry we deploy here is a
+ * symlink, "unlink the previous symlink-into-~/.claude/commands" replaces "delete the
+ * file contents". No backup is made: the source of truth lives in ~/.claude/commands/
+ * (itself rebuilt from software/scripts/advanced/claude/commands/ by claude.js), and
+ * symlinks are trivially reproducible. Non-symlink entries already in the opencode
+ * commands dir (user-authored, foreign) are left alone — we only touch links we own.
+ *
+ * No-op when ~/.claude/commands/ does not exist (e.g. claude.js hasn't run yet on
+ * this machine).
+ */
+async function _syncOpencodeCommandSymlinks() {
+  const claudeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".claude", "commands");
+  const opencodeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "commands");
+
+  if (!fs.existsSync(claudeCommandsDir)) {
+    log(">> Skipped opencode commands: ~/.claude/commands not found (run claude.js first)");
+    return;
+  }
+
+  log(">> Opencode Commands (symlinking from Claude):", opencodeCommandsDir);
+  await mkdir(opencodeCommandsDir);
+
+  // Cleanup pass — unlink every symlink in the opencode commands dir whose target
+  // points into ~/.claude/commands/. These are previously-deployed entries of ours;
+  // wiping them before re-deploying matches claude.js's behavior and ensures renames
+  // / retirements on the Claude side propagate cleanly. Anything that's NOT one of
+  // our symlinks (regular files, symlinks to other locations) is left alone.
+  for (const entry of fs.readdirSync(opencodeCommandsDir)) {
+    const fullPath = path.join(opencodeCommandsDir, entry);
+    let stat;
+    try {
+      stat = fs.lstatSync(fullPath);
+    } catch {
+      continue;
+    }
+    if (!stat.isSymbolicLink()) continue;
+    let target;
+    try {
+      target = fs.readlinkSync(fullPath);
+    } catch {
+      continue;
+    }
+    const resolved = path.isAbsolute(target) ? target : path.resolve(path.dirname(fullPath), target);
+    if (resolved === claudeCommandsDir || resolved.startsWith(claudeCommandsDir + path.sep)) {
+      fs.unlinkSync(fullPath);
+    }
+  }
+
+  // Deploy pass — one symlink per *.md file under ~/.claude/commands/.
+  // Skip names that already exist after the cleanup pass: those are foreign (user-
+  // authored or symlinked to something we don't manage), and clobbering them would
+  // be surprising.
+  let linkedCount = 0;
+  let skippedForeign = 0;
+  for (const entry of fs.readdirSync(claudeCommandsDir)) {
+    if (!entry.endsWith(".md")) continue;
+    const sourcePath = path.join(claudeCommandsDir, entry);
+    const destPath = path.join(opencodeCommandsDir, entry);
+    let destExists = true;
+    try {
+      fs.lstatSync(destPath);
+    } catch {
+      destExists = false;
+    }
+    if (destExists) {
+      skippedForeign++;
+      continue;
+    }
+    fs.symlinkSync(sourcePath, destPath);
+    linkedCount++;
+  }
+  log(
+    `>> opencode: symlinked ${linkedCount} command(s) from ~/.claude/commands/` +
+      (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
+  );
+}
+
+/**
+ * Writes ~/.config/opencode/opencode.json wired to a local Ollama instance, then
+ * mirrors all Claude Code slash commands into the opencode commands dir as symlinks.
+ * Skips entirely when opencode is not installed.
  */
 async function doWork() {
   if (!(await isBinaryFound("opencode"))) {
@@ -72,4 +155,6 @@ async function doWork() {
   await backupConfigFile(targetPath);
   await writeJson(targetPath, _buildOpencodeConfig(modelNames));
   log(">> opencode config written:", targetPath);
+
+  await _syncOpencodeCommandSymlinks();
 }
