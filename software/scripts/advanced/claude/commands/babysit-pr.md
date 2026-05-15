@@ -22,8 +22,11 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 4. **Step 1 — Early-exit check.** Fetch state:
    `gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable,state,autoMergeRequest,baseRefName,headRefName`
    - If `state == "MERGED"`: skip ahead to **Step 9 — Post-merge release trigger**. Nothing else to babysit.
-   - If **all CI checks are passing** AND `reviewDecision` is `APPROVED` AND `autoMergeRequest` is `null` (no automerge enabled): report "PR is already green + approved — nothing to do" and **stop**. Skip all remaining steps.
-   - If **all CI checks are passing** AND `reviewDecision` is `APPROVED` AND `autoMergeRequest` is NOT `null` (automerge enabled): keep polling `gh pr view --json state` every 30s until `state == "MERGED"`, then jump to **Step 9 — Post-merge release trigger**. Do not stop at green+approved — automerge will land within seconds and the release trigger must fire.
+   - **Merge-conflict override — check `mergeable` BEFORE either early-exit branch below.** A PR with conflicts against its base branch is NEVER "done", even when CI is green and reviewers have approved. Automerge will not land a conflicting PR either — it will sit forever.
+     - If `mergeable == "CONFLICTING"` (or any non-`MERGEABLE`, non-`UNKNOWN` value indicating a base-branch conflict): **do NOT early-exit, do NOT just wait for automerge.** Report `"PR is green + approved BUT conflicts with <baseRefName> — falling through to Step 2 to resolve"` and continue to **Step 2**. Step 2 will perform the actual merge + conflict resolution; the rest of the loop (tests, local checks, CI monitor) handles the rebuild.
+     - If `mergeable == "UNKNOWN"`: GitHub is still computing mergeability. Wait 5s and re-fetch. Only proceed past this check after it resolves to `MERGEABLE` or `CONFLICTING`. Never treat `UNKNOWN` as `MERGEABLE`.
+   - If **all CI checks are passing** AND `reviewDecision` is `APPROVED` AND `mergeable == "MERGEABLE"` AND `autoMergeRequest` is `null` (no automerge enabled): report "PR is already green + approved — nothing to do" and **stop**. Skip all remaining steps.
+   - If **all CI checks are passing** AND `reviewDecision` is `APPROVED` AND `mergeable == "MERGEABLE"` AND `autoMergeRequest` is NOT `null` (automerge enabled): keep polling `gh pr view --json state,mergeable` every 30s until `state == "MERGED"`, then jump to **Step 9 — Post-merge release trigger**. Do not stop at green+approved — automerge will land within seconds and the release trigger must fire. If `mergeable` flips to `CONFLICTING` mid-wait (the base branch advanced under us), break out of the poll loop and fall through to **Step 2** to resolve the new conflict.
 
 5. **Step 2 — Merge base into the PR branch AND RESOLVE CONFLICTS** (NEVER rebase, must not rewrite history).
    **The whole point of this step is to surface and fix merge conflicts before CI does.** If `git merge` reports conflicts, you MUST resolve them — do not skip, do not abort, do not leave the branch in a conflicted state.
@@ -107,7 +110,6 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 ## Rules
 
 - **Step 0 (skip if CI is running) is the very first check — before everything.** If CI is in progress / pending / queued, stop immediately and take no action. Never merge, comment, or push while a build is still running.
-- **Always sync with the base branch (step 2) BEFORE addressing comments or fixing anything.** Get the latest from `master`/`main` first so subsequent fixes apply on top of up-to-date code.
 - The loop is: step 0 skip-if-running → step 1 early-exit (or wait-for-automerge-merge) → step 2 merge base → step 3 human comments → step 4 trivial bot comments → step 5 add/update tests → step 6 pre-emptive CI fix → step 7 local checks → step 8 CI monitor → (on failure) back to step 0. On `state == "MERGED"`: jump directly to step 9 post-merge release.
 - **Automerge PRs never exit at green + approved.** Always poll until `state == "MERGED"` and then trigger `/sy-release` (global rule 47). The agent owns the merge→release handoff; do not punt to the user.
 - Never rebase to sync — always use `git merge` so history is not rewritten. Never use `--squash` when merging main into the branch.

@@ -115,3 +115,35 @@ Never leak secrets, credentials, or environment config to any tracked file or ex
 ## Repo Identification
 
 46. **The local folder name is not the repo — always resolve the remote.** Local folder names sometimes diverge from the GitHub `owner/repo` (example: `~/git/file-explorer` is actually `synle/skiff-files`; a previous incident, 2026-05-10, sent fix/babysit agents to the wrong remote because they assumed folder = repo). Before any `gh` call, sub-agent spawn, PR action, or remote-aware reasoning: run `git remote get-url origin` (or `gh repo view --json nameWithOwner`) and use that as the authoritative `owner/repo`. Never derive the repo from `basename "$(pwd)"`, `$PWD`, or the directory name. When delegating to sub-agents, pass the resolved `owner/repo` explicitly so they don't re-infer from the folder.
+
+## CLAUDE.md Size Limit
+
+47. **Keep every `CLAUDE.md` under 40,000 characters. Every time you write to, edit, append to, or otherwise modify a `CLAUDE.md` file — INCLUDING when the change is made indirectly by editing a generator source like `claude-instructions.md` — check its size as the final step of that change and trim if over the limit.**
+
+    **Why:** Claude Code loads every `CLAUDE.md` into the system prompt on every turn. Files over ~40k chars degrade performance, slow first-token latency, and crowd out room for actual task context. A bloated CLAUDE.md hurts every future session in that repo.
+
+    **Trigger — apply this rule whenever ANY of the following happens:**
+
+    - You used `Edit`, `Write`, or any other tool that wrote bytes to a file named `CLAUDE.md`.
+    - You edited a file that generates a `CLAUDE.md` (e.g. `software/scripts/advanced/claude/claude-instructions.md` in `synle/bashrc` regenerates `~/.claude/CLAUDE.md`). In that case, check the generated file's size after regeneration.
+    - You added a new rule, section, example, or paragraph to a `CLAUDE.md` — even a one-line addition. Small adds accumulate.
+    - The user asks you to update, append to, or expand a `CLAUDE.md`. Run the size check before reporting the task done.
+
+    Do NOT skip the check just because your edit looked small or because the file looked "fine before." Always measure after the change.
+
+    **How to apply — run after every edit (no exceptions, no asking the user first):**
+
+    1. **Check the size.** Run `wc -c < <path>` on the file you just edited (or, for generator sources, on the generated `CLAUDE.md`). If ≤ 40,000 chars, you're done — report the size in your final message and stop.
+    2. **If over 40,000 chars, trim in this order until under the limit:**
+       - **Merge duplicates.** Two rules covering the same ground → combine into one.
+       - **Cut stale incident dates and one-off war stories** that are older than 6 months and no longer change behavior. Keep the rule, drop the historical narrative.
+       - **Collapse verbose examples** to a single representative line. Keep "what to do" and "what not to do"; drop the third and fourth variations.
+       - **Shorten prose.** Strip filler ("specifically", "in particular", "as a matter of fact"). Convert multi-sentence explanations into one tight sentence.
+       - **Move deep-detail sections** (long file tables, architecture deep-dives, full command references) into linked docs (`DEV.md`, `ARCHITECTURE.md`, etc.) and replace with a one-line pointer.
+    3. **Do NOT trim by deleting whole rules unless you're sure they're obsolete** — ask the user before removing any rule, convention, or guidance that still describes current behavior.
+    4. **Re-check size** after trimming. Repeat until `wc -c < <path>` reports ≤ 40,000.
+    5. **Report what you cut** in your response so the user can spot-check (e.g. "Trimmed CLAUDE.md from 40,900 → 38,200 chars: merged 2 duplicate logging rules, removed 2026-01 incident narrative, collapsed run.sh example block").
+
+    **Scope:** Applies to every `CLAUDE.md` in any repo — global (`~/.claude/CLAUDE.md`), project root, and nested subdirectory CLAUDE.md files. Does NOT apply to `DEV.md`, `ARCHITECTURE.md`, or other linked docs — only files literally named `CLAUDE.md`.
+
+    **Note on global CLAUDE.md:** `~/.claude/CLAUDE.md` is generated from `software/scripts/advanced/claude/claude-instructions.md` in `synle/bashrc` (per the `claude-instructions.md is source of truth` rule). To trim the global file, edit `claude-instructions.md` and re-run `claude.js` — do not hand-edit `~/.claude/CLAUDE.md` directly.
