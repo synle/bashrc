@@ -15,6 +15,7 @@ async function doWork() {
     alias sql="sqluinative"
     alias displaydj='open "/Applications/Display DJ.app"'
     alias skiff='open "/Applications/Skiff Files.app"'
+    alias proxie='open "/Applications/Proxie.app"'
 
     # accessibility: jump straight to System Settings > Privacy & Security > Accessibility
     # (where you grant input-event permission to apps like Display DJ, Ghostty, etc.)
@@ -32,6 +33,7 @@ async function doWork() {
         "/Applications/sqlui-native.app"
         "/Applications/Display DJ.app"
         "/Applications/Skiff Files.app"
+        "/Applications/Proxie.app"
       )
       _xattr_app=""
       for _xattr_app in "\${_xattr_app_list[@]}"; do

@@ -421,6 +421,7 @@ VEOF
     "synle/sqlui-native"
     "synle/display-dj"
     "synle/skiff-files"
+    "synle/proxie"
   )
 
   # Make sure the cache release exists before the first upload; this is a no-op

@@ -248,7 +248,7 @@ build_hosts: build_update_hosts
 # CI Phase 1: Format code, build autocomplete specs, build webapp, smoke test local, dry-run test, build installer, and download release binaries
 ci_prep: clean_artifacts clean_prebuilt_profiles format build_autocomplete_specs build_webapp ci_test_smoke_local test_dryrun build_installer ci_download_release_binaries
 
-# Mirror latest release binaries (url-porter, sqlui-native, display-dj, skiff-files)
+# Mirror latest release binaries (url-porter, sqlui-native, display-dj, skiff-files, proxie)
 # into the binary-cache rolling release on synle/bashrc. No local files are written —
 # downloadAssetWithFallback() in software/index.js fetches the cache from that release URL.
 ci_download_release_binaries:

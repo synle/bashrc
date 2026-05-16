@@ -134,14 +134,14 @@ When Docker Desktop's WSL integration is enabled, the WSL distro automatically g
 
 ### What each tool does
 
-| Tool       | What it does                                                                                          |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| `kubectl`  | Core CLI. Talks to the K8s API server.                                                                |
-| `kubectx`  | `kubectx docker-desktop` — switch between clusters fast.                                              |
-| `kubens`   | `kubens my-app` — set the default namespace for `kubectl` so you don't have to type `-n my-app`.      |
-| `helm`     | Install pre-packaged K8s apps (charts). E.g. one command to install nginx-ingress, Prometheus, etc.   |
-| `stern`    | `stern -l app=backend` — stream logs from every matching pod into one colored stream.                 |
-| `k9s`      | Curses TUI. Hit `:pods` to navigate pods, press Enter to drill in, `l` for logs, `s` for shell. Fast. |
+| Tool      | What it does                                                                                          |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| `kubectl` | Core CLI. Talks to the K8s API server.                                                                |
+| `kubectx` | `kubectx docker-desktop` — switch between clusters fast.                                              |
+| `kubens`  | `kubens my-app` — set the default namespace for `kubectl` so you don't have to type `-n my-app`.      |
+| `helm`    | Install pre-packaged K8s apps (charts). E.g. one command to install nginx-ingress, Prometheus, etc.   |
+| `stern`   | `stern -l app=backend` — stream logs from every matching pod into one colored stream.                 |
+| `k9s`     | Curses TUI. Hit `:pods` to navigate pods, press Enter to drill in, `l` for logs, `s` for shell. Fast. |
 
 ---
 
@@ -320,12 +320,12 @@ Or use a unique tag every build (e.g., a short git SHA) and `kubectl set image d
 
 Three ways to reach your app from your laptop's browser:
 
-| Method                   | Setup effort                | URL                       | Best for                 |
-| ------------------------ | --------------------------- | ------------------------- | ------------------------ |
-| `kubectl port-forward`   | Zero                        | `http://localhost:<port>` | Quick checks, debugging  |
-| `Service type: NodePort` | Trivial YAML change         | `http://localhost:30080`  | Long-running access      |
-| Ingress + nginx-ingress  | Install controller + DNS    | `http://myapp.local`      | Realistic multi-app dev  |
-| `Service type: LoadBalancer` | Works on Docker Desktop | `http://localhost:80`     | One-app-per-port testing |
+| Method                       | Setup effort             | URL                       | Best for                 |
+| ---------------------------- | ------------------------ | ------------------------- | ------------------------ |
+| `kubectl port-forward`       | Zero                     | `http://localhost:<port>` | Quick checks, debugging  |
+| `Service type: NodePort`     | Trivial YAML change      | `http://localhost:30080`  | Long-running access      |
+| Ingress + nginx-ingress      | Install controller + DNS | `http://myapp.local`      | Realistic multi-app dev  |
+| `Service type: LoadBalancer` | Works on Docker Desktop  | `http://localhost:80`     | One-app-per-port testing |
 
 ### port-forward
 
@@ -432,12 +432,12 @@ Docker Desktop → Settings → **Resources** → **Advanced**.
 
 Suggested starting points:
 
-| Workload                     | CPUs | Memory | Disk image  |
-| ---------------------------- | ---- | ------ | ----------- |
-| Just Docker, no K8s          | 2    | 4 GB   | 30 GB       |
-| K8s + 1–2 small apps         | 4    | 6 GB   | 60 GB       |
-| K8s + Helm stack (Prom etc.) | 6    | 10 GB  | 80 GB       |
-| Heavy multi-app dev          | 8    | 12 GB+ | 100 GB+     |
+| Workload                     | CPUs | Memory | Disk image |
+| ---------------------------- | ---- | ------ | ---------- |
+| Just Docker, no K8s          | 2    | 4 GB   | 30 GB      |
+| K8s + 1–2 small apps         | 4    | 6 GB   | 60 GB      |
+| K8s + Helm stack (Prom etc.) | 6    | 10 GB  | 80 GB      |
+| Heavy multi-app dev          | 8    | 12 GB+ | 100 GB+    |
 
 **Symptoms of under-allocation:**
 
@@ -538,13 +538,13 @@ This is where the workflow gets enjoyable. The goal: edit YAML with autocomplete
 
 Install all of these from the Extensions panel (`Ctrl/Cmd + Shift + X`):
 
-| Extension                                                | Publisher       | What it does                                                                                                                              |
-| -------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Kubernetes** (`ms-kubernetes-tools.vscode-kubernetes-tools`) | Microsoft       | The big one. Sidebar tree of clusters/pods/services. Right-click pods to view logs, get a shell, port-forward, describe.                  |
-| **YAML** (`redhat.vscode-yaml`)                          | Red Hat         | YAML language server + K8s schema validation. Catches typos before you `kubectl apply`.                                                   |
-| **Docker** (`ms-azuretools.vscode-docker`)               | Microsoft       | Manages Dockerfiles, images, containers, Compose files. Pairs with the K8s extension.                                                     |
-| **Bridge to Kubernetes** (`mindaro.mindaro`)             | Microsoft       | Run/debug a service locally while the rest of the system runs in your cluster (advanced — optional).                                      |
-| **Helm Intellisense** (`tim-koehler.helm-intellisense`)  | Tim Koehler     | Autocomplete and validation for Helm templates if you write charts.                                                                       |
+| Extension                                                      | Publisher   | What it does                                                                                                             |
+| -------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Kubernetes** (`ms-kubernetes-tools.vscode-kubernetes-tools`) | Microsoft   | The big one. Sidebar tree of clusters/pods/services. Right-click pods to view logs, get a shell, port-forward, describe. |
+| **YAML** (`redhat.vscode-yaml`)                                | Red Hat     | YAML language server + K8s schema validation. Catches typos before you `kubectl apply`.                                  |
+| **Docker** (`ms-azuretools.vscode-docker`)                     | Microsoft   | Manages Dockerfiles, images, containers, Compose files. Pairs with the K8s extension.                                    |
+| **Bridge to Kubernetes** (`mindaro.mindaro`)                   | Microsoft   | Run/debug a service locally while the rest of the system runs in your cluster (advanced — optional).                     |
+| **Helm Intellisense** (`tim-koehler.helm-intellisense`)        | Tim Koehler | Autocomplete and validation for Helm templates if you write charts.                                                      |
 
 ### Configure K8s YAML schemas (one-time)
 
@@ -561,11 +561,11 @@ Open VS Code settings (`Cmd/Ctrl + ,`), search for `yaml.schemas`, and click **E
       "service.yaml",
       "ingress.yaml",
       "configmap.yaml",
-      "secret.yaml"
-    ]
+      "secret.yaml",
+    ],
   },
   "yaml.format.enable": true,
-  "yaml.validate": true
+  "yaml.validate": true,
 }
 ```
 
@@ -639,13 +639,13 @@ In `keybindings.json` (Command Palette → "Open Keyboard Shortcuts (JSON)"):
   {
     "key": "cmd+shift+k a",
     "command": "kubernetes.fileApply",
-    "when": "editorTextFocus && editorLangId == 'yaml'"
+    "when": "editorTextFocus && editorLangId == 'yaml'",
   },
   // Open a shell in the currently-selected pod
   {
     "key": "cmd+shift+k t",
-    "command": "extension.vsKubernetesTerminal"
-  }
+    "command": "extension.vsKubernetesTerminal",
+  },
 ]
 ```
 

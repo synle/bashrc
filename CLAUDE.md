@@ -23,7 +23,7 @@ CLAUDE.md is the rules; DEV.md + architecture notes are the map. Consult the map
 - **`.build/profile_bashrc_*.sh` is gitignored.** Each CI build writes a per-OS profile, uploads it as `profile-build-<os>` artifact, and mirrors to the `binary-cache` rolling release. Do not commit locally.
 - **Do not modify owner/CI-managed files in `software/metadata/`.** Includes `autocomplete-complete-spec/` (e.g. `git`, `docker`), `hosts-*.consolidated.config`, `hosts-blocked-ads.config`.
 - **Leave locally-modified protected files alone.** If `.build/`, `autocomplete-complete-spec/git`, or `hosts-blocked-ads.config` show as modified in `git status`, don't edit, revert, stage, or commit them.
-- **Do not modify `assets/` directly.** Owner-managed. Release backups for `display-dj`, `sqlui-native`, `url-porter`, `skiff-files` live in the `binary-cache` rolling release (refreshed by `software/tools/ci-download-release-binaries.sh`). `assets/binaries/` is gitignored.
+- **Do not modify `assets/` directly.** Owner-managed. Release backups for `display-dj`, `sqlui-native`, `url-porter`, `skiff-files`, `proxie` live in the `binary-cache` rolling release (refreshed by `software/tools/ci-download-release-binaries.sh`). `assets/binaries/` is gitignored.
 - **Do not modify content inside `# BEGIN`/`# END` markers.** Managed by `build-include`; overwritten on next `make format_build_include`. Edit the source file referenced in the marker.
 - **Do not modify `SOURCE_BEGIN`/`SOURCE_END` blocks in generated profile files.** Runtime SOURCE includes — re-fetched each run. Edit the source file. In repo sources only the single-line `# SOURCE path` or `// SOURCE path` marker should appear.
 
@@ -170,23 +170,23 @@ Key concepts at a glance:
 
 ### Key Files
 
-| Path | Purpose |
-| --- | --- |
-| `run.sh` | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()` |
-| `software/bootstrap/common-env.sh` | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); sourced by `run.sh` via BEGIN/END |
-| `software/metadata/presets.json` | Named install presets (`--preset=<name>`); read by `run.sh` into `PRESETS_JSON`, expanded by `parseRawArgs` |
-| `software/bootstrap/common-functions.bash` | Shared shell helpers; sourced by `.sh` scripts via SOURCE markers |
-| `software/index.js` | Arg parsing (`parseRawArgs`), utility library, script runner, run info |
-| `software/scripts/_full-setup.common.linux.bash` | Shared Linux helpers (fnm/node, lock waits, display-dj, power mgmt); sourced by all Linux `_full-setup.sh` |
-| `software/scripts/*.js` | Cross-platform scripts |
-| `software/scripts/<os>/` | OS-specific scripts |
-| `software/common.js` | Core shared constants and `replaceBlock`. Inlined into index.js |
-| `software/tools/build-include.js` | BEGIN/END block substitution engine + inline marker processor |
-| `software/tools/generate-ci-binary-list.js` | Renders BEGIN/END `ci-binary-checks` block in `action.yml` from `ci-binaries.json` |
-| `software/tools/build-installer.js` | Builds `.build/install-bashrc.sh` self-extracting installer |
-| `software/metadata/autocomplete.common.js` | Single source for spec-based autocomplete mappings |
-| `software/metadata/ci-binaries.json` | Single source for CI binary verification (`required` + `warn`). YAML block in `action.yml` is auto-generated |
-| `$BASHRC_TEMP_DIR/run_timing.json` | Per-run timing data (start/end, per-script duration+status); read by CI |
+| Path                                             | Purpose                                                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `run.sh`                                         | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                           |
+| `software/bootstrap/common-env.sh`               | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); sourced by `run.sh` via BEGIN/END                 |
+| `software/metadata/presets.json`                 | Named install presets (`--preset=<name>`); read by `run.sh` into `PRESETS_JSON`, expanded by `parseRawArgs`  |
+| `software/bootstrap/common-functions.bash`       | Shared shell helpers; sourced by `.sh` scripts via SOURCE markers                                            |
+| `software/index.js`                              | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                       |
+| `software/scripts/_full-setup.common.linux.bash` | Shared Linux helpers (fnm/node, lock waits, display-dj, power mgmt); sourced by all Linux `_full-setup.sh`   |
+| `software/scripts/*.js`                          | Cross-platform scripts                                                                                       |
+| `software/scripts/<os>/`                         | OS-specific scripts                                                                                          |
+| `software/common.js`                             | Core shared constants and `replaceBlock`. Inlined into index.js                                              |
+| `software/tools/build-include.js`                | BEGIN/END block substitution engine + inline marker processor                                                |
+| `software/tools/generate-ci-binary-list.js`      | Renders BEGIN/END `ci-binary-checks` block in `action.yml` from `ci-binaries.json`                           |
+| `software/tools/build-installer.js`              | Builds `.build/install-bashrc.sh` self-extracting installer                                                  |
+| `software/metadata/autocomplete.common.js`       | Single source for spec-based autocomplete mappings                                                           |
+| `software/metadata/ci-binaries.json`             | Single source for CI binary verification (`required` + `warn`). YAML block in `action.yml` is auto-generated |
+| `$BASHRC_TEMP_DIR/run_timing.json`               | Per-run timing data (start/end, per-script duration+status); read by CI                                      |
 
 ## Testing
 
