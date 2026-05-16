@@ -850,7 +850,19 @@ const EDITOR_CONFIGS = {
  */
 let HOME_HOST_NAMES = [];
 
-//////////////////////////////////////////////////////
+/**
+ * Looks up the IP address for a given hostname from the loaded home host mapping.
+ * Searches `HOME_HOST_NAMES` (populated at bootstrap from `.build/ip-address.config.hostnamesFlattened`).
+ * Returns the IP as a string, or `null` if the hostname is not found.
+ * @param {string} hostname - The hostname to look up (e.g. "sy-omen45l")
+ * @returns {string|null} The IP address associated with the hostname, or `null` if not found.
+ */
+function getHomeIPAddressForHostname(hostname) {
+  const entry = HOME_HOST_NAMES.find(([hostName]) => hostName === hostname);
+  return entry ? entry[1] : null;
+}
+
+///////////////////////////////////////////////////
 // OS Flags
 //////////////////////////////////////////////////////
 /**

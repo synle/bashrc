@@ -1,7 +1,11 @@
 /** Configures opencode to use a local Ollama provider, with models discovered from /api/tags. */
 
+/** @type {string} The hostname to look up in the home IP address config for resolving Ollama's network IP address. */
+const OPENCODE_OLLAMA_HOSTNAME = "sy-omen45l";
+
 /** @type {string} Host running Ollama. Always localhost — works on native Linux/Mac, WSL2 mirrored networking, and Ollama-in-WSL. */
 const OPENCODE_OLLAMA_HOST = "localhost";
+
 /** @type {number} Default Ollama HTTP port (upstream default). */
 const OPENCODE_OLLAMA_PORT = 11434;
 /** @type {string[]} Fallback model names used when `/api/tags` returns no models (Ollama unreachable, empty install, etc.). */
@@ -13,7 +17,8 @@ const OPENCODE_OLLAMA_FALLBACK_MODELS = ["qwen3.6:latest"];
  * @returns {Promise<string[]>} Model names (e.g. ["qwen3.6:latest"]).
  */
 async function _fetchOpencodeOllamaModels() {
-  const url = `http://${OPENCODE_OLLAMA_HOST}:${OPENCODE_OLLAMA_PORT}/api/tags`;
+  const host = getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
+  const url = `http://${host}:${OPENCODE_OLLAMA_PORT}/api/tags`;
   log(`>> opencode: getting models from ${url} (curl ${url})`);
   try {
     const json = await readJson`${url}`;
@@ -31,7 +36,8 @@ async function _fetchOpencodeOllamaModels() {
  * @returns {object} The full opencode.json content.
  */
 function _buildOpencodeConfig(modelNames) {
-  const baseURL = `http://${OPENCODE_OLLAMA_HOST}:${OPENCODE_OLLAMA_PORT}/v1`;
+  const host = getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
+  const baseURL = `http://${host}:${OPENCODE_OLLAMA_PORT}/v1`;
   return {
     $schema: "https://opencode.ai/config.json",
     provider: {
@@ -141,9 +147,10 @@ async function doWork() {
   }
 
   let modelNames = await _fetchOpencodeOllamaModels();
+  const resolvedHost = getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
   if (modelNames.length === 0) {
     log(
-      `WARN opencode: no models reachable at http://${OPENCODE_OLLAMA_HOST}:${OPENCODE_OLLAMA_PORT}/api/tags — falling back to ${OPENCODE_OLLAMA_FALLBACK_MODELS.join(", ")}`,
+      `WARN opencode: no models reachable at http://${resolvedHost}:${OPENCODE_OLLAMA_PORT}/api/tags — falling back to ${OPENCODE_OLLAMA_FALLBACK_MODELS.join(", ")}`,
     );
     modelNames = OPENCODE_OLLAMA_FALLBACK_MODELS;
   } else {
