@@ -533,6 +533,9 @@ alias amend="git amend"
 # ---- Aliases: Claude ----
 # SOURCE | software/scripts/advanced/claude/claude.profile.bash
 
+# ---- Aliases: GitHub Copilot ----
+# SOURCE | software/scripts/advanced/copilot/copilot.profile.bash
+
 # ---- Aliases: Gemini ----
 alias gem="gemini"
 

@@ -1,0 +1,8 @@
+auth
+auth login
+auth logout
+auth status
+config
+explain
+suggest
+|--allow-all,--help,-h,--version

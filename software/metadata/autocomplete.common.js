@@ -163,6 +163,8 @@ const SPEC_COMMANDS = [
   { command: "cl", specCommand: "claude" },
   { command: "cm", specCommand: "claude" },
   { command: "opencode", specFile: "software/metadata/autocomplete-complete-spec/opencode" },
+  { command: "github-copilot-cli", specFile: "software/metadata/autocomplete-complete-spec/github-copilot-cli" },
+  { command: "co", specCommand: "github-copilot-cli" },
   // ---- System and services ----
   { command: "adb", specFile: "software/metadata/autocomplete-complete-spec/adb" },
   { command: "journalctl", specFile: "software/metadata/autocomplete-complete-spec/journalctl", os: "mac,linux" },

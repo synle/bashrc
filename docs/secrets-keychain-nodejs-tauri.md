@@ -51,12 +51,12 @@ The Linux row is the one that hurts. See [headless gotcha](#the-linux-headless-g
 
 ### Node.js
 
-| Library              | Status               | Notes                                                            |
-| -------------------- | -------------------- | ---------------------------------------------------------------- |
-| `@napi-rs/keyring`   | **Active, current**  | NAPI (no node-gyp), prebuilt binaries, wraps Rust `keyring-rs`   |
-| `keytar`             | **Archived in 2023** | Don't use. Electron team dropped it.                             |
-| `node-keytar` forks  | Stale                | Avoid.                                                           |
-| `keyring` (npm)      | Niche                | Less polish, smaller community.                                  |
+| Library             | Status               | Notes                                                          |
+| ------------------- | -------------------- | -------------------------------------------------------------- |
+| `@napi-rs/keyring`  | **Active, current**  | NAPI (no node-gyp), prebuilt binaries, wraps Rust `keyring-rs` |
+| `keytar`            | **Archived in 2023** | Don't use. Electron team dropped it.                           |
+| `node-keytar` forks | Stale                | Avoid.                                                         |
+| `keyring` (npm)     | Niche                | Less polish, smaller community.                                |
 
 #### `@napi-rs/keyring` quickstart
 
@@ -65,20 +65,20 @@ npm install @napi-rs/keyring
 ```
 
 ```js
-import { Entry } from '@napi-rs/keyring';
+import { Entry } from "@napi-rs/keyring";
 
-const entry = new Entry('my-app', 'connection:prod-mysql'); // service, account
-entry.setPassword('hunter2');
-const pw = entry.getPassword();           // → 'hunter2'
+const entry = new Entry("my-app", "connection:prod-mysql"); // service, account
+entry.setPassword("hunter2");
+const pw = entry.getPassword(); // → 'hunter2'
 entry.deletePassword();
 ```
 
 ### Tauri (Rust side)
 
-| Crate                        | Notes                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `keyring`                    | Same `keyring-rs` that `@napi-rs/keyring` wraps. Standard choice.         |
-| `tauri-plugin-stronghold`    | Encrypted file vault (IOTA Stronghold), NOT OS keychain. Password-gated.  |
+| Crate                     | Notes                                                                    |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `keyring`                 | Same `keyring-rs` that `@napi-rs/keyring` wraps. Standard choice.        |
+| `tauri-plugin-stronghold` | Encrypted file vault (IOTA Stronghold), NOT OS keychain. Password-gated. |
 
 #### Rust `keyring` quickstart
 
@@ -104,21 +104,21 @@ fn secret_set(service: &str, account: &str, value: &str) -> Result<(), String> {
 ```
 
 ```ts
-import { invoke } from '@tauri-apps/api/core';
-await invoke('secret_set', { service: 'my-app', account: 'conn:prod', value: 'hunter2' });
+import { invoke } from "@tauri-apps/api/core";
+await invoke("secret_set", { service: "my-app", account: "conn:prod", value: "hunter2" });
 ```
 
 ---
 
 ## Decision matrix
 
-| Your situation                                | Pick                                                       |
-| --------------------------------------------- | ---------------------------------------------------------- |
-| Pure Node.js CLI / server                     | `@napi-rs/keyring` + encrypted-file fallback               |
-| Tauri-only desktop app                        | Rust `keyring` crate via Tauri command                     |
-| Tauri **+** standalone Node mode (e.g. portal)| `@napi-rs/keyring` everywhere (one code path)              |
-| Need shared vault, no OS dependency           | `tauri-plugin-stronghold` (Tauri) or libsodium file (Node) |
-| Headless Linux server in scope                | Encrypted file is the only realistic option                |
+| Your situation                                 | Pick                                                       |
+| ---------------------------------------------- | ---------------------------------------------------------- |
+| Pure Node.js CLI / server                      | `@napi-rs/keyring` + encrypted-file fallback               |
+| Tauri-only desktop app                         | Rust `keyring` crate via Tauri command                     |
+| Tauri **+** standalone Node mode (e.g. portal) | `@napi-rs/keyring` everywhere (one code path)              |
+| Need shared vault, no OS dependency            | `tauri-plugin-stronghold` (Tauri) or libsodium file (Node) |
+| Headless Linux server in scope                 | Encrypted file is the only realistic option                |
 
 The trap to avoid: **two stores** (Rust keychain in Tauri mode, Node keychain in standalone mode) means secrets set in one mode don't appear in the other. Pick one library and stick with it across modes, OR document the boundary loudly.
 
@@ -157,13 +157,16 @@ export interface SecretStore {
 
 ```ts
 // KeychainSecretStore.ts
-import { Entry } from '@napi-rs/keyring';
+import { Entry } from "@napi-rs/keyring";
 
 export class KeychainSecretStore implements SecretStore {
   constructor(private service: string) {}
   async get(account: string) {
-    try { return new Entry(this.service, account).getPassword(); }
-    catch { return null; }
+    try {
+      return new Entry(this.service, account).getPassword();
+    } catch {
+      return null;
+    }
   }
   async set(account: string, value: string) {
     new Entry(this.service, account).setPassword(value);
@@ -205,18 +208,18 @@ Primitives:
 Skeleton:
 
 ```ts
-import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
+import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from "node:crypto";
 
 function deriveKey(machineId: string): Buffer {
-  return Buffer.from(hkdfSync('sha256', machineId, Buffer.alloc(0), 'my-app-secrets', 32));
+  return Buffer.from(hkdfSync("sha256", machineId, Buffer.alloc(0), "my-app-secrets", 32));
 }
 
 function encrypt(plain: string, key: Buffer): string {
   const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', key, iv);
-  const ct = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const ct = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
-  return Buffer.concat([iv, tag, ct]).toString('base64');
+  return Buffer.concat([iv, tag, ct]).toString("base64");
 }
 ```
 
@@ -244,11 +247,11 @@ When loading a connection, the runtime checks `passwordRef` and pulls the actual
 
 If your Tauri app has a Node.js sidecar (Hono / Express / etc.) the question is **where the secret-store call lives**.
 
-| Approach                                              | Pros                                | Cons                                                    |
-| ----------------------------------------------------- | ----------------------------------- | ------------------------------------------------------- |
-| Rust `keyring` exposed via Tauri command              | Native, no Node deps                | Sidecar can't invoke Tauri commands directly            |
-| `@napi-rs/keyring` in the Node sidecar                | Sidecar self-contained              | Native `.node` artifact must ship alongside bundled JS  |
-| Both (Rust for frontend ops, Node for sidecar ops)    | Each side uses native               | **Two stores** — secrets diverge unless you sync them   |
+| Approach                                           | Pros                   | Cons                                                   |
+| -------------------------------------------------- | ---------------------- | ------------------------------------------------------ |
+| Rust `keyring` exposed via Tauri command           | Native, no Node deps   | Sidecar can't invoke Tauri commands directly           |
+| `@napi-rs/keyring` in the Node sidecar             | Sidecar self-contained | Native `.node` artifact must ship alongside bundled JS |
+| Both (Rust for frontend ops, Node for sidecar ops) | Each side uses native  | **Two stores** — secrets diverge unless you sync them  |
 
 **Note on sidecar → Tauri command:** Tauri's `invoke` API is frontend-only. The sidecar cannot directly call a Tauri command — it would have to HTTP back to the frontend, which then invokes Rust. Usually not worth it; just use `@napi-rs/keyring` in the sidecar.
 
@@ -259,7 +262,7 @@ If you bundle the sidecar with Vite/esbuild into a single JS file, mark the nati
 export default defineConfig({
   build: {
     rollupOptions: {
-      external: ['@napi-rs/keyring', /\.node$/],
+      external: ["@napi-rs/keyring", /\.node$/],
     },
   },
 });
@@ -305,7 +308,7 @@ export interface SecretStore {
 ### `src/KeychainSecretStore.ts`
 
 ```ts
-import { Entry } from '@napi-rs/keyring';
+import { Entry } from "@napi-rs/keyring";
 
 /**
  * OS-keychain backend. Uses macOS Keychain, Windows Credential Manager,
@@ -315,7 +318,7 @@ import { Entry } from '@napi-rs/keyring';
  * so we maintain a sidecar index file with the account names we've written.
  */
 export class KeychainSecretStore implements SecretStore {
-  readonly backend = 'keychain';
+  readonly backend = "keychain";
   private index = new Set<string>();
 
   constructor(private service: string) {}
@@ -354,13 +357,13 @@ export class KeychainSecretStore implements SecretStore {
    * "Secret Service not available" case before users hit it).
    */
   static probe(service: string): boolean {
-    const sentinel = '__probe__';
+    const sentinel = "__probe__";
     try {
       const e = new Entry(service, sentinel);
-      e.setPassword('ok');
+      e.setPassword("ok");
       const v = e.getPassword();
       e.deletePassword();
-      return v === 'ok';
+      return v === "ok";
     } catch {
       return false;
     }
@@ -371,11 +374,11 @@ export class KeychainSecretStore implements SecretStore {
 ### `src/EncryptedFileSecretStore.ts`
 
 ```ts
-import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
-import { readFile, writeFile, mkdir, rename, chmod } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { homedir, hostname } from 'node:os';
+import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from "node:crypto";
+import { readFile, writeFile, mkdir, rename, chmod } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { homedir, hostname } from "node:os";
 
 /**
  * Encrypted-file fallback. AES-256-GCM with a key derived (HKDF-SHA256)
@@ -386,12 +389,12 @@ import { homedir, hostname } from 'node:os';
  * at startup and derive the key with Argon2id instead — see derivePassKey().
  */
 export class EncryptedFileSecretStore implements SecretStore {
-  readonly backend = 'file';
+  readonly backend = "file";
   private cache = new Map<string, string>();
   private loaded = false;
 
   constructor(
-    private filePath = join(homedir(), '.myapp', 'secrets.enc'),
+    private filePath = join(homedir(), ".myapp", "secrets.enc"),
     private key: Buffer = deriveMachineKey(),
   ) {}
 
@@ -424,9 +427,9 @@ export class EncryptedFileSecretStore implements SecretStore {
     const iv = blob.subarray(0, 12);
     const tag = blob.subarray(12, 28);
     const ct = blob.subarray(28);
-    const decipher = createDecipheriv('aes-256-gcm', this.key, iv);
+    const decipher = createDecipheriv("aes-256-gcm", this.key, iv);
     decipher.setAuthTag(tag);
-    const json = Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8');
+    const json = Buffer.concat([decipher.update(ct), decipher.final()]).toString("utf8");
     for (const [k, v] of Object.entries(JSON.parse(json) as Record<string, string>)) {
       this.cache.set(k, v);
     }
@@ -434,9 +437,9 @@ export class EncryptedFileSecretStore implements SecretStore {
 
   private async flush(): Promise<void> {
     const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
+    const cipher = createCipheriv("aes-256-gcm", this.key, iv);
     const json = JSON.stringify(Object.fromEntries(this.cache));
-    const ct = Buffer.concat([cipher.update(json, 'utf8'), cipher.final()]);
+    const ct = Buffer.concat([cipher.update(json, "utf8"), cipher.final()]);
     const tag = cipher.getAuthTag();
     const blob = Buffer.concat([iv, tag, ct]);
 
@@ -453,9 +456,7 @@ function deriveMachineKey(): Buffer {
   // In real code: read /etc/machine-id on Linux, IOPlatformUUID on macOS,
   // MachineGuid on Windows. hostname is a placeholder.
   const machineId = hostname();
-  return Buffer.from(
-    hkdfSync('sha256', machineId, Buffer.alloc(0), 'my-app-secrets-v1', 32),
-  );
+  return Buffer.from(hkdfSync("sha256", machineId, Buffer.alloc(0), "my-app-secrets-v1", 32));
 }
 
 /** Stronger alternative: derive from a user-entered password with Argon2id. */
@@ -475,8 +476,8 @@ function deriveMachineKey(): Buffer {
 ### `src/SecretStoreFactory.ts`
 
 ```ts
-import { KeychainSecretStore } from './KeychainSecretStore.js';
-import { EncryptedFileSecretStore } from './EncryptedFileSecretStore.js';
+import { KeychainSecretStore } from "./KeychainSecretStore.js";
+import { EncryptedFileSecretStore } from "./EncryptedFileSecretStore.js";
 
 /**
  * Returns the best available SecretStore for this host.
@@ -484,13 +485,13 @@ import { EncryptedFileSecretStore } from './EncryptedFileSecretStore.js';
  * isn't usable (e.g. Linux without Secret Service).
  */
 export function createSecretStore(service: string): SecretStore {
-  if (process.env.MYAPP_FORCE_FILE_SECRETS === '1') {
+  if (process.env.MYAPP_FORCE_FILE_SECRETS === "1") {
     return new EncryptedFileSecretStore();
   }
   if (KeychainSecretStore.probe(service)) {
     return new KeychainSecretStore(service);
   }
-  console.warn('Keychain unavailable; falling back to encrypted file store.');
+  console.warn("Keychain unavailable; falling back to encrypted file store.");
   return new EncryptedFileSecretStore();
 }
 ```
@@ -498,32 +499,32 @@ export function createSecretStore(service: string): SecretStore {
 ### `src/cli.ts` (driver)
 
 ```ts
-import { createSecretStore } from './SecretStoreFactory.js';
+import { createSecretStore } from "./SecretStoreFactory.js";
 
-const store = createSecretStore('my-app');
+const store = createSecretStore("my-app");
 console.log(`Using backend: ${store.backend}`);
 
 const [, , cmd, account, value] = process.argv;
 
 switch (cmd) {
-  case 'set':
+  case "set":
     await store.set(account, value);
     console.log(`Set ${account}`);
     break;
-  case 'get': {
+  case "get": {
     const v = await store.get(account);
-    console.log(v == null ? '(not found)' : v);
+    console.log(v == null ? "(not found)" : v);
     break;
   }
-  case 'del':
+  case "del":
     await store.delete(account);
     console.log(`Deleted ${account}`);
     break;
-  case 'list':
-    console.log((await store.list()).join('\n'));
+  case "list":
+    console.log((await store.list()).join("\n"));
     break;
   default:
-    console.log('usage: cli.ts <set|get|del|list> <account> [value]');
+    console.log("usage: cli.ts <set|get|del|list> <account> [value]");
 }
 ```
 
@@ -539,14 +540,14 @@ npx tsx src/cli.ts del conn:prod
 ### Migration helper (plaintext JSON → SecretStore)
 
 ```ts
-import { readFile, writeFile, rename } from 'node:fs/promises';
+import { readFile, writeFile, rename } from "node:fs/promises";
 
 interface Connection {
   id: string;
   name: string;
   host: string;
-  password?: string;        // legacy field
-  passwordRef?: 'keychain' | 'file';  // new marker
+  password?: string; // legacy field
+  passwordRef?: "keychain" | "file"; // new marker
 }
 
 /**
@@ -555,7 +556,7 @@ interface Connection {
  * rewrites atomically.
  */
 export async function migrateSecrets(jsonPath: string, store: SecretStore) {
-  const raw = await readFile(jsonPath, 'utf8');
+  const raw = await readFile(jsonPath, "utf8");
   const parsed = JSON.parse(raw) as { connections: Connection[]; secretsMigratedAt?: number };
   if (parsed.secretsMigratedAt) return; // already done
 
@@ -563,7 +564,7 @@ export async function migrateSecrets(jsonPath: string, store: SecretStore) {
     if (!c.password) continue;
     await store.set(`conn:${c.id}`, c.password);
     delete c.password;
-    c.passwordRef = store.backend === 'keychain' ? 'keychain' : 'file';
+    c.passwordRef = store.backend === "keychain" ? "keychain" : "file";
   }
   parsed.secretsMigratedAt = Date.now();
 
@@ -694,9 +695,9 @@ Make sure the commands are allowed in your capabilities file. With Tauri v2's pe
 ### Frontend wrapper: `src/lib/secrets.ts`
 
 ```ts
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 
-const SERVICE = 'my-app';
+const SERVICE = "my-app";
 
 /**
  * Typed client for the Rust secret store. All calls are async and may
@@ -706,22 +707,22 @@ const SERVICE = 'my-app';
 export const Secrets = {
   /** True if the OS keychain is usable on this host. */
   async probe(): Promise<boolean> {
-    return invoke<boolean>('secret_probe', { service: SERVICE });
+    return invoke<boolean>("secret_probe", { service: SERVICE });
   },
 
   /** Read; returns null if not found. */
   async get(account: string): Promise<string | null> {
-    return invoke<string | null>('secret_get', { service: SERVICE, account });
+    return invoke<string | null>("secret_get", { service: SERVICE, account });
   },
 
   /** Create or overwrite. */
   async set(account: string, value: string): Promise<void> {
-    await invoke('secret_set', { service: SERVICE, account, value });
+    await invoke("secret_set", { service: SERVICE, account, value });
   },
 
   /** Delete; no-op if missing. */
   async delete(account: string): Promise<void> {
-    await invoke('secret_delete', { service: SERVICE, account });
+    await invoke("secret_delete", { service: SERVICE, account });
   },
 };
 ```
@@ -729,16 +730,16 @@ export const Secrets = {
 ### Using it from React
 
 ```tsx
-import { useEffect, useState } from 'react';
-import { Secrets } from './lib/secrets';
+import { useEffect, useState } from "react";
+import { Secrets } from "./lib/secrets";
 
 export function ConnectionForm({ connectionId }: { connectionId: string }) {
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [keychainOk, setKeychainOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     Secrets.probe().then(setKeychainOk);
-    Secrets.get(`conn:${connectionId}`).then(v => v && setPassword(v));
+    Secrets.get(`conn:${connectionId}`).then((v) => v && setPassword(v));
   }, [connectionId]);
 
   async function save() {
@@ -747,7 +748,7 @@ export function ConnectionForm({ connectionId }: { connectionId: string }) {
 
   async function clear() {
     await Secrets.delete(`conn:${connectionId}`);
-    setPassword('');
+    setPassword("");
   }
 
   if (keychainOk === false) {
@@ -756,7 +757,7 @@ export function ConnectionForm({ connectionId }: { connectionId: string }) {
 
   return (
     <>
-      <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
       <button onClick={save}>Save</button>
       <button onClick={clear}>Forget</button>
     </>
