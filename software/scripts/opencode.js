@@ -1,20 +1,20 @@
-/** Configures opencode to use a local Ollama provider, with models discovered from /api/tags. */
+/** Configures opencode with both remote and local Ollama providers. */
 
 /** @type {string} The hostname to look up in the home IP address config for resolving Ollama's network IP address. */
 const OPENCODE_OLLAMA_HOSTNAME = "sy-omen45l";
 
-/** @type {string} Host running Ollama. Always localhost — works on native Linux/Mac, WSL2 mirrored networking, and Ollama-in-WSL. */
-const OPENCODE_OLLAMA_HOST = "localhost";
+/** @type {string} Fallback Ollama host when hostname lookup fails. */
+const OPENCODE_OLLAMA_DEFAULT_HOST = "127.0.0.1";
 
 /** @type {number} Default Ollama HTTP port (upstream default). */
 const OPENCODE_OLLAMA_PORT = 11434;
-/** @type {string[]} Fallback model names used when `/api/tags` returns no models (Ollama unreachable, empty install, etc.). */
+/** @type {string[]} Model names used when no models can be discovered. */
 const OPENCODE_OLLAMA_FALLBACK_MODELS = ["qwen3.6:latest"];
 
 /**
- * Fetches the installed model names from Ollama's `/api/tags`.
+ * Fetches the installed model names from an Ollama host's `/api/tags`.
  * Returns an empty array on fetch failure or empty list.
- * @param {string} host - The resolved Ollama host (IP or hostname).
+ * @param {string} host - The Ollama host to query.
  * @returns {Promise<string[]>} Model names (e.g. ["qwen3.6:latest"]).
  */
 async function _fetchOpencodeOllamaModels(host) {
@@ -30,27 +30,44 @@ async function _fetchOpencodeOllamaModels(host) {
 }
 
 /**
- * Builds the opencode config object pointing at a local Ollama instance via the
- * `@ai-sdk/openai-compatible` provider.
- * @param {string[]} modelNames - Model names; converted to the `{ [name]: {} }` shape opencode expects.
- * @param {string} host - The resolved Ollama host (IP or hostname).
+ * Tries hosts in order, returns models from the first that responds.
+ * @param {string[]} hosts - Hosts to try in priority order.
+ * @returns {Promise<string[]>} Model names (e.g. ["qwen3.6:latest"]).
+ */
+async function _discoverModels(hosts) {
+  for (const host of hosts) {
+    const models = await _fetchOpencodeOllamaModels(host);
+    if (models.length > 0) return models;
+  }
+  return [];
+}
+
+/**
+ * Builds the opencode config object with both remote and local provider entries.
+ * @param {string[]} modelNames - Model names shared across all providers.
+ * @param {string|null} remoteHost - Resolved remote IP, or null if not found.
+ * @param {string} localHost - Local fallback host.
  * @returns {object} The full opencode.json content.
  */
-function _buildOpencodeConfig(modelNames, host) {
-  const baseURL = `http://${host}:${OPENCODE_OLLAMA_PORT}/v1`;
-  return {
-    $schema: "https://opencode.ai/config.json",
-    provider: {
-      ollama: {
-        npm: "@ai-sdk/openai-compatible",
-        name: `Ollama (local - ${baseURL})`,
-        options: {
-          baseURL,
-        },
-        models: Object.fromEntries(modelNames.map((n) => [n, {}])),
-      },
-    },
+function _buildOpencodeConfig(modelNames, remoteHost, localHost) {
+  const modelEntries = Object.fromEntries(modelNames.map((n) => [n, {}]));
+  /** @type {Record<string, object>} */
+  const providers = {};
+  if (remoteHost) {
+    providers["ollama-remote"] = {
+      npm: "@ai-sdk/openai-compatible",
+      name: `Ollama (${OPENCODE_OLLAMA_HOSTNAME} - http://${remoteHost}:${OPENCODE_OLLAMA_PORT}/v1)`,
+      options: { baseURL: `http://${remoteHost}:${OPENCODE_OLLAMA_PORT}/v1` },
+      models: modelEntries,
+    };
+  }
+  providers["ollama-local"] = {
+    npm: "@ai-sdk/openai-compatible",
+    name: `Ollama (local - http://${localHost}:${OPENCODE_OLLAMA_PORT}/v1)`,
+    options: { baseURL: `http://${localHost}:${OPENCODE_OLLAMA_PORT}/v1` },
+    models: modelEntries,
   };
+  return { $schema: "https://opencode.ai/config.json", provider: providers };
 }
 
 /**
@@ -136,8 +153,8 @@ async function _syncOpencodeCommandSymlinks() {
 }
 
 /**
- * Writes ~/.config/opencode/opencode.json wired to a local Ollama instance, then
- * mirrors all Claude Code slash commands into the opencode commands dir as symlinks.
+ * Writes ~/.config/opencode/opencode.json with remote and local Ollama providers,
+ * then mirrors all Claude Code slash commands into the opencode commands dir as symlinks.
  * Skips entirely when opencode is not installed.
  */
 async function doWork() {
@@ -146,11 +163,12 @@ async function doWork() {
     return;
   }
 
-  const resolvedHost = await getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
-  let modelNames = await _fetchOpencodeOllamaModels(resolvedHost);
+  const remoteHost = await getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME);
+  const hostsToTry = [remoteHost, OPENCODE_OLLAMA_DEFAULT_HOST].filter(Boolean);
+  let modelNames = await _discoverModels(hostsToTry);
   if (modelNames.length === 0) {
     log(
-      `WARN opencode: no models reachable at http://${resolvedHost}:${OPENCODE_OLLAMA_PORT}/api/tags — falling back to ${OPENCODE_OLLAMA_FALLBACK_MODELS.join(", ")}`,
+      `WARN opencode: no models reachable at ${hostsToTry.map((h) => `http://${h}:${OPENCODE_OLLAMA_PORT}/api/tags`).join(" or ")} — using fallback ${OPENCODE_OLLAMA_FALLBACK_MODELS.join(", ")}`,
     );
     modelNames = OPENCODE_OLLAMA_FALLBACK_MODELS;
   } else {
@@ -160,7 +178,7 @@ async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
-  await writeJson(targetPath, _buildOpencodeConfig(modelNames, resolvedHost));
+  await writeJson(targetPath, _buildOpencodeConfig(modelNames, remoteHost, OPENCODE_OLLAMA_DEFAULT_HOST));
   log(">> opencode config written:", targetPath);
 
   await _syncOpencodeCommandSymlinks();
