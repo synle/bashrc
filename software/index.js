@@ -851,15 +851,24 @@ const EDITOR_CONFIGS = {
 let HOME_HOST_NAMES = [];
 
 /**
- * Looks up the IP address for a given hostname from the loaded home host mapping.
- * Searches `HOME_HOST_NAMES` (populated at bootstrap from `.build/ip-address.config.hostnamesFlattened`).
- * Returns the IP as a string, or `null` if the hostname is not found.
+ * Looks up the IP address for a given hostname from the ip-address.config file.
+ * Returns the IP as a string, or `null` if the hostname is not found or the file cannot be read.
  * @param {string} hostname - The hostname to look up (e.g. "sy-omen45l")
- * @returns {string|null} The IP address associated with the hostname, or `null` if not found.
+ * @returns {Promise<string|null>} The IP address associated with the hostname, or `null` if not found.
  */
-function getHomeIPAddressForHostname(hostname) {
-  const entry = HOME_HOST_NAMES.find(([hostName]) => hostName === hostname);
-  return entry ? entry[1] : null;
+async function getHomeIPAddressForHostname(hostname) {
+  try {
+    const content = await readText`software/metadata/ip-address.config`;
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.indexOf("=") === 0) continue;
+      const tokens = trimmed.split(/[\:,|]/gim).map((s) => s.trim()).filter((s) => s);
+      if (tokens.slice(1).some((n) => n === hostname)) return tokens[0];
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 ///////////////////////////////////////////////////

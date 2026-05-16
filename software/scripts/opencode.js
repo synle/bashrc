@@ -14,10 +14,10 @@ const OPENCODE_OLLAMA_FALLBACK_MODELS = ["qwen3.6:latest"];
 /**
  * Fetches the installed model names from Ollama's `/api/tags`.
  * Returns an empty array on fetch failure or empty list.
+ * @param {string} host - The resolved Ollama host (IP or hostname).
  * @returns {Promise<string[]>} Model names (e.g. ["qwen3.6:latest"]).
  */
-async function _fetchOpencodeOllamaModels() {
-  const host = getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
+async function _fetchOpencodeOllamaModels(host) {
   const url = `http://${host}:${OPENCODE_OLLAMA_PORT}/api/tags`;
   log(`>> opencode: getting models from ${url} (curl ${url})`);
   try {
@@ -33,10 +33,10 @@ async function _fetchOpencodeOllamaModels() {
  * Builds the opencode config object pointing at a local Ollama instance via the
  * `@ai-sdk/openai-compatible` provider.
  * @param {string[]} modelNames - Model names; converted to the `{ [name]: {} }` shape opencode expects.
+ * @param {string} host - The resolved Ollama host (IP or hostname).
  * @returns {object} The full opencode.json content.
  */
-function _buildOpencodeConfig(modelNames) {
-  const host = getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
+function _buildOpencodeConfig(modelNames, host) {
   const baseURL = `http://${host}:${OPENCODE_OLLAMA_PORT}/v1`;
   return {
     $schema: "https://opencode.ai/config.json",
@@ -146,8 +146,8 @@ async function doWork() {
     return;
   }
 
-  let modelNames = await _fetchOpencodeOllamaModels();
-  const resolvedHost = getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
+  const resolvedHost = await getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME) || OPENCODE_OLLAMA_HOST;
+  let modelNames = await _fetchOpencodeOllamaModels(resolvedHost);
   if (modelNames.length === 0) {
     log(
       `WARN opencode: no models reachable at http://${resolvedHost}:${OPENCODE_OLLAMA_PORT}/api/tags — falling back to ${OPENCODE_OLLAMA_FALLBACK_MODELS.join(", ")}`,
@@ -160,7 +160,7 @@ async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
-  await writeJson(targetPath, _buildOpencodeConfig(modelNames));
+  await writeJson(targetPath, _buildOpencodeConfig(modelNames, resolvedHost));
   log(">> opencode config written:", targetPath);
 
   await _syncOpencodeCommandSymlinks();
