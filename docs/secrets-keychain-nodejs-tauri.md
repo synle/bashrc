@@ -15,6 +15,8 @@ A practical reference for storing secrets (DB passwords, API tokens, connection 
 - [Encrypted-file fallback](#encrypted-file-fallback)
 - [Migration: plaintext JSON → keychain](#migration-plaintext-json--keychain)
 - [Tauri-specific: Rust vs Node sidecar](#tauri-specific-rust-vs-node-sidecar)
+- [Complete sample: Node.js](#complete-sample-nodejs)
+- [Complete sample: Tauri](#complete-sample-tauri)
 - [Common pitfalls](#common-pitfalls)
 
 ---
@@ -262,6 +264,512 @@ export default defineConfig({
   },
 });
 ```
+
+---
+
+## Complete sample: Node.js
+
+A self-contained working example: `SecretStore` interface, two backends (keychain + encrypted file), a factory that auto-detects, and a small CLI driver.
+
+### `package.json`
+
+```json
+{
+  "name": "secrets-demo",
+  "type": "module",
+  "dependencies": {
+    "@napi-rs/keyring": "^1.1.5",
+    "argon2": "^0.41.1"
+  }
+}
+```
+
+### `src/SecretStore.ts`
+
+```ts
+/** Abstract store for short string secrets, keyed by a stable account id. */
+export interface SecretStore {
+  /** Returns the secret or null if not found. Never throws on missing. */
+  get(account: string): Promise<string | null>;
+  /** Creates or overwrites the secret for `account`. */
+  set(account: string, value: string): Promise<void>;
+  /** Removes the secret. No-op if missing. */
+  delete(account: string): Promise<void>;
+  /** Lists known accounts (best-effort; some backends can't enumerate). */
+  list(): Promise<string[]>;
+  /** Backend identifier for diagnostics ("keychain" | "file"). */
+  readonly backend: string;
+}
+```
+
+### `src/KeychainSecretStore.ts`
+
+```ts
+import { Entry } from '@napi-rs/keyring';
+
+/**
+ * OS-keychain backend. Uses macOS Keychain, Windows Credential Manager,
+ * or Linux Secret Service via @napi-rs/keyring.
+ *
+ * The keychain itself doesn't enumerate by service well across platforms,
+ * so we maintain a sidecar index file with the account names we've written.
+ */
+export class KeychainSecretStore implements SecretStore {
+  readonly backend = 'keychain';
+  private index = new Set<string>();
+
+  constructor(private service: string) {}
+
+  async get(account: string): Promise<string | null> {
+    try {
+      return new Entry(this.service, account).getPassword();
+    } catch (err) {
+      // Entry.getPassword throws when not found AND on other errors;
+      // treat both as "not available" — caller should re-probe via probe().
+      return null;
+    }
+  }
+
+  async set(account: string, value: string): Promise<void> {
+    new Entry(this.service, account).setPassword(value);
+    this.index.add(account);
+  }
+
+  async delete(account: string): Promise<void> {
+    try {
+      new Entry(this.service, account).deletePassword();
+    } catch {
+      // Already gone is fine.
+    }
+    this.index.delete(account);
+  }
+
+  async list(): Promise<string[]> {
+    return [...this.index];
+  }
+
+  /**
+   * One-time probe. Writes-then-reads-then-deletes a sentinel entry to
+   * confirm the backend is actually usable (catches the Linux
+   * "Secret Service not available" case before users hit it).
+   */
+  static probe(service: string): boolean {
+    const sentinel = '__probe__';
+    try {
+      const e = new Entry(service, sentinel);
+      e.setPassword('ok');
+      const v = e.getPassword();
+      e.deletePassword();
+      return v === 'ok';
+    } catch {
+      return false;
+    }
+  }
+}
+```
+
+### `src/EncryptedFileSecretStore.ts`
+
+```ts
+import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
+import { readFile, writeFile, mkdir, rename, chmod } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { homedir, hostname } from 'node:os';
+
+/**
+ * Encrypted-file fallback. AES-256-GCM with a key derived (HKDF-SHA256)
+ * from a machine-stable secret. Not as strong as the OS keychain, but
+ * meaningfully better than plaintext JSON.
+ *
+ * For real production headless deployments, prompt for a master password
+ * at startup and derive the key with Argon2id instead — see derivePassKey().
+ */
+export class EncryptedFileSecretStore implements SecretStore {
+  readonly backend = 'file';
+  private cache = new Map<string, string>();
+  private loaded = false;
+
+  constructor(
+    private filePath = join(homedir(), '.myapp', 'secrets.enc'),
+    private key: Buffer = deriveMachineKey(),
+  ) {}
+
+  async get(account: string): Promise<string | null> {
+    await this.load();
+    return this.cache.get(account) ?? null;
+  }
+
+  async set(account: string, value: string): Promise<void> {
+    await this.load();
+    this.cache.set(account, value);
+    await this.flush();
+  }
+
+  async delete(account: string): Promise<void> {
+    await this.load();
+    if (this.cache.delete(account)) await this.flush();
+  }
+
+  async list(): Promise<string[]> {
+    await this.load();
+    return [...this.cache.keys()];
+  }
+
+  private async load(): Promise<void> {
+    if (this.loaded) return;
+    this.loaded = true;
+    if (!existsSync(this.filePath)) return;
+    const blob = await readFile(this.filePath);
+    const iv = blob.subarray(0, 12);
+    const tag = blob.subarray(12, 28);
+    const ct = blob.subarray(28);
+    const decipher = createDecipheriv('aes-256-gcm', this.key, iv);
+    decipher.setAuthTag(tag);
+    const json = Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8');
+    for (const [k, v] of Object.entries(JSON.parse(json) as Record<string, string>)) {
+      this.cache.set(k, v);
+    }
+  }
+
+  private async flush(): Promise<void> {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv('aes-256-gcm', this.key, iv);
+    const json = JSON.stringify(Object.fromEntries(this.cache));
+    const ct = Buffer.concat([cipher.update(json, 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    const blob = Buffer.concat([iv, tag, ct]);
+
+    await mkdir(dirname(this.filePath), { recursive: true });
+    const tmp = `${this.filePath}.tmp`;
+    await writeFile(tmp, blob);
+    await chmod(tmp, 0o600);
+    await rename(tmp, this.filePath); // atomic
+  }
+}
+
+/** Derive a 32-byte key from a machine-stable identifier (hostname here for portability). */
+function deriveMachineKey(): Buffer {
+  // In real code: read /etc/machine-id on Linux, IOPlatformUUID on macOS,
+  // MachineGuid on Windows. hostname is a placeholder.
+  const machineId = hostname();
+  return Buffer.from(
+    hkdfSync('sha256', machineId, Buffer.alloc(0), 'my-app-secrets-v1', 32),
+  );
+}
+
+/** Stronger alternative: derive from a user-entered password with Argon2id. */
+// import argon2 from 'argon2';
+// export async function derivePassKey(password: string, salt: Buffer): Promise<Buffer> {
+//   const buf = await argon2.hash(password, {
+//     type: argon2.argon2id,
+//     salt,
+//     hashLength: 32,
+//     raw: true,
+//     timeCost: 3, memoryCost: 64 * 1024, parallelism: 1,
+//   });
+//   return buf as Buffer;
+// }
+```
+
+### `src/SecretStoreFactory.ts`
+
+```ts
+import { KeychainSecretStore } from './KeychainSecretStore.js';
+import { EncryptedFileSecretStore } from './EncryptedFileSecretStore.js';
+
+/**
+ * Returns the best available SecretStore for this host.
+ * Prefers OS keychain; falls back to encrypted file if the keychain
+ * isn't usable (e.g. Linux without Secret Service).
+ */
+export function createSecretStore(service: string): SecretStore {
+  if (process.env.MYAPP_FORCE_FILE_SECRETS === '1') {
+    return new EncryptedFileSecretStore();
+  }
+  if (KeychainSecretStore.probe(service)) {
+    return new KeychainSecretStore(service);
+  }
+  console.warn('Keychain unavailable; falling back to encrypted file store.');
+  return new EncryptedFileSecretStore();
+}
+```
+
+### `src/cli.ts` (driver)
+
+```ts
+import { createSecretStore } from './SecretStoreFactory.js';
+
+const store = createSecretStore('my-app');
+console.log(`Using backend: ${store.backend}`);
+
+const [, , cmd, account, value] = process.argv;
+
+switch (cmd) {
+  case 'set':
+    await store.set(account, value);
+    console.log(`Set ${account}`);
+    break;
+  case 'get': {
+    const v = await store.get(account);
+    console.log(v == null ? '(not found)' : v);
+    break;
+  }
+  case 'del':
+    await store.delete(account);
+    console.log(`Deleted ${account}`);
+    break;
+  case 'list':
+    console.log((await store.list()).join('\n'));
+    break;
+  default:
+    console.log('usage: cli.ts <set|get|del|list> <account> [value]');
+}
+```
+
+### Running it
+
+```bash
+npx tsx src/cli.ts set conn:prod 'hunter2'
+npx tsx src/cli.ts get conn:prod          # → hunter2
+npx tsx src/cli.ts list                    # → conn:prod
+npx tsx src/cli.ts del conn:prod
+```
+
+### Migration helper (plaintext JSON → SecretStore)
+
+```ts
+import { readFile, writeFile, rename } from 'node:fs/promises';
+
+interface Connection {
+  id: string;
+  name: string;
+  host: string;
+  password?: string;        // legacy field
+  passwordRef?: 'keychain' | 'file';  // new marker
+}
+
+/**
+ * One-shot migration. Reads connections.json, moves every plaintext
+ * `password` into the SecretStore, replaces with `passwordRef`, and
+ * rewrites atomically.
+ */
+export async function migrateSecrets(jsonPath: string, store: SecretStore) {
+  const raw = await readFile(jsonPath, 'utf8');
+  const parsed = JSON.parse(raw) as { connections: Connection[]; secretsMigratedAt?: number };
+  if (parsed.secretsMigratedAt) return; // already done
+
+  for (const c of parsed.connections) {
+    if (!c.password) continue;
+    await store.set(`conn:${c.id}`, c.password);
+    delete c.password;
+    c.passwordRef = store.backend === 'keychain' ? 'keychain' : 'file';
+  }
+  parsed.secretsMigratedAt = Date.now();
+
+  const tmp = `${jsonPath}.tmp`;
+  await writeFile(tmp, JSON.stringify(parsed, null, 2));
+  await rename(tmp, jsonPath);
+}
+```
+
+---
+
+## Complete sample: Tauri
+
+A self-contained working example: Rust commands for get/set/delete/list, registered with the app builder, plus a typed TypeScript wrapper for the frontend.
+
+### `src-tauri/Cargo.toml` (deps)
+
+```toml
+[dependencies]
+tauri = { version = "2", features = [] }
+keyring = "3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1"
+```
+
+### `src-tauri/src/secrets.rs`
+
+```rust
+//! OS-keychain secret storage commands exposed to the Tauri frontend.
+
+use serde::Serialize;
+use thiserror::Error;
+
+/// Errors surfaced to the frontend. Keep messages generic — never include
+/// the secret value in any error path.
+#[derive(Debug, Error, Serialize)]
+pub enum SecretError {
+    #[error("entry not found")]
+    NotFound,
+    #[error("keychain unavailable: {0}")]
+    Unavailable(String),
+    #[error("io error: {0}")]
+    Io(String),
+}
+
+impl From<keyring::Error> for SecretError {
+    fn from(e: keyring::Error) -> Self {
+        match e {
+            keyring::Error::NoEntry => SecretError::NotFound,
+            keyring::Error::PlatformFailure(inner)
+            | keyring::Error::NoStorageAccess(inner) => SecretError::Unavailable(inner.to_string()),
+            other => SecretError::Io(other.to_string()),
+        }
+    }
+}
+
+/// Probe the OS keychain by writing and reading a sentinel value.
+/// Returns true if the backend is usable. Use this on app startup to
+/// decide whether to fall back to a different store.
+#[tauri::command]
+pub fn secret_probe(service: String) -> bool {
+    let sentinel = "__probe__";
+    let Ok(entry) = keyring::Entry::new(&service, sentinel) else {
+        return false;
+    };
+    if entry.set_password("ok").is_err() {
+        return false;
+    }
+    let ok = entry.get_password().is_ok();
+    let _ = entry.delete_credential();
+    ok
+}
+
+/// Read the secret for (service, account). Returns null if not found.
+#[tauri::command]
+pub fn secret_get(service: String, account: String) -> Result<Option<String>, SecretError> {
+    let entry = keyring::Entry::new(&service, &account)?;
+    match entry.get_password() {
+        Ok(s) => Ok(Some(s)),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Create or overwrite the secret.
+#[tauri::command]
+pub fn secret_set(service: String, account: String, value: String) -> Result<(), SecretError> {
+    let entry = keyring::Entry::new(&service, &account)?;
+    entry.set_password(&value)?;
+    Ok(())
+}
+
+/// Delete the secret. No-op if missing.
+#[tauri::command]
+pub fn secret_delete(service: String, account: String) -> Result<(), SecretError> {
+    let entry = keyring::Entry::new(&service, &account)?;
+    match entry.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(e) => Err(e.into()),
+    }
+}
+```
+
+### `src-tauri/src/lib.rs`
+
+```rust
+mod secrets;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![
+            secrets::secret_probe,
+            secrets::secret_get,
+            secrets::secret_set,
+            secrets::secret_delete,
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+```
+
+### `src-tauri/capabilities/default.json`
+
+Make sure the commands are allowed in your capabilities file. With Tauri v2's permission model, custom commands defined in your own crate are allowed by default for the main window — no extra entry needed unless you've narrowed `core:default`. If you've locked things down, add an explicit allow.
+
+### Frontend wrapper: `src/lib/secrets.ts`
+
+```ts
+import { invoke } from '@tauri-apps/api/core';
+
+const SERVICE = 'my-app';
+
+/**
+ * Typed client for the Rust secret store. All calls are async and may
+ * reject with `{ NotFound: null }`, `{ Unavailable: string }`, or `{ Io: string }`
+ * (Rust enum serialized by serde).
+ */
+export const Secrets = {
+  /** True if the OS keychain is usable on this host. */
+  async probe(): Promise<boolean> {
+    return invoke<boolean>('secret_probe', { service: SERVICE });
+  },
+
+  /** Read; returns null if not found. */
+  async get(account: string): Promise<string | null> {
+    return invoke<string | null>('secret_get', { service: SERVICE, account });
+  },
+
+  /** Create or overwrite. */
+  async set(account: string, value: string): Promise<void> {
+    await invoke('secret_set', { service: SERVICE, account, value });
+  },
+
+  /** Delete; no-op if missing. */
+  async delete(account: string): Promise<void> {
+    await invoke('secret_delete', { service: SERVICE, account });
+  },
+};
+```
+
+### Using it from React
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Secrets } from './lib/secrets';
+
+export function ConnectionForm({ connectionId }: { connectionId: string }) {
+  const [password, setPassword] = useState('');
+  const [keychainOk, setKeychainOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    Secrets.probe().then(setKeychainOk);
+    Secrets.get(`conn:${connectionId}`).then(v => v && setPassword(v));
+  }, [connectionId]);
+
+  async function save() {
+    await Secrets.set(`conn:${connectionId}`, password);
+  }
+
+  async function clear() {
+    await Secrets.delete(`conn:${connectionId}`);
+    setPassword('');
+  }
+
+  if (keychainOk === false) {
+    return <div>Keychain unavailable — secrets will be stored in an encrypted file.</div>;
+  }
+
+  return (
+    <>
+      <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button onClick={save}>Save</button>
+      <button onClick={clear}>Forget</button>
+    </>
+  );
+}
+```
+
+### Notes on the Tauri sample
+
+- `keyring` crate v3 renamed `delete_password` → `delete_credential`. Older tutorials may show the old name.
+- Errors are serialized as a tagged enum because `SecretError` derives `Serialize`. On the JS side, a rejection is the JSON form: `{ NotFound: null }` etc. Wrap in a `try/catch` and switch on the key if you need typed handling.
+- `secret_probe` is the recommended startup check. Call it once, store the result, and either show a "secrets stored in keychain" badge or fall back to a Rust-side encrypted-file store (not shown — same primitives as the Node sample but using `aes-gcm` + `argon2` crates).
+- If the user denies keychain access (macOS prompt), `get_password` returns `PlatformFailure`. Surface it as a soft error and offer "remember decision" UX rather than retrying in a loop.
 
 ---
 
