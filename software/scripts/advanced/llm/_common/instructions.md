@@ -158,4 +158,4 @@ Never leak secrets, credentials, or env config to any tracked file or external s
 
     **Scope:** Every `CLAUDE.md` (global `~/.claude/CLAUDE.md`, project root, nested). Not `DEV.md`, `ARCHITECTURE.md`, or other linked docs — only files literally named `CLAUDE.md`.
 
-    **Global CLAUDE.md note:** `~/.claude/CLAUDE.md` is generated from `software/scripts/advanced/claude/claude-instructions.md` in `synle/bashrc`. To trim the global file, edit `claude-instructions.md` and re-run `claude.js` — don't hand-edit `~/.claude/CLAUDE.md` directly.
+    **Global CLAUDE.md note:** `~/.claude/CLAUDE.md` is generated from `software/scripts/advanced/llm/claude/setup.js` in `synle/bashrc`. To trim the global file, edit `instructions.md` and re-run `setup.js` — don't hand-edit `~/.claude/CLAUDE.md` directly.
