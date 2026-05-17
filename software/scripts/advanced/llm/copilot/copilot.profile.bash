@@ -11,10 +11,20 @@
 
 # copilot: wrapper around the `github-copilot-cli` binary
 function copilot() {
-  if ! type -P copilot > /dev/null 2>&1; then
+  local cmd=""
+
+  if type -P copilot > /dev/null 2>&1; then
+    cmd="copilot"
+  # this is deprecrated
+  # elif type -P github-copilot-cli > /dev/null 2>&1; then
+  #   cmd="github-copilot-cli"
+  else
     echo "copilot is not installed" >&2
     return 1
   fi
-  command copilot --allow-all "$@"
+
+  # Run the resolved command once at the end
+  echo GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command "$cmd" --allow-all "$@"
+  GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command "$cmd" --allow-all "$@"
 }
 alias co='copilot'
