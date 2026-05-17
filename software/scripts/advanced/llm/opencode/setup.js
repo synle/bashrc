@@ -78,7 +78,7 @@ function _buildOpencodeConfig(modelNames, remoteHost, localHost) {
  * deployed entries before re-deploying — but since every entry we deploy here is a
  * symlink, "unlink the previous symlink-into-~/.claude/commands" replaces "delete the
  * file contents". No backup is made: the source of truth lives in ~/.claude/commands/
- * (itself rebuilt from software/scripts/advanced/claude/commands/ by claude.js), and
+ * (itself rebuilt from software/scripts/advanced/llm/claude/commands/ by claude.js), and
  * symlinks are trivially reproducible. Non-symlink entries already in the opencode
  * commands dir (user-authored, foreign) are left alone — we only touch links we own.
  *

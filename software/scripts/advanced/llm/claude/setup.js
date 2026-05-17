@@ -1,4 +1,4 @@
-/** Claude Code setup: settings, keybindings, and telemetry opt-out. Run: `bash run.sh --files="claude.js"` */
+/** Claude Code setup: settings, keybindings, and telemetry opt-out. Run: `bash run.sh --files="setup.js"` */
 // SOURCE software/scripts/advanced/editor.common.js
 
 ////// Keybindings //////
@@ -193,7 +193,7 @@ async function _doInstructionsWork(targetDir) {
   log(">> Claude Code Instructions:", targetPath);
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
+  const sourceContent = (await readText`software/scripts/advanced/llm/instructions.md`).trim();
 
   /** @type {string} Existing CLAUDE.md content (empty if file is missing). */
   let existing = "";
@@ -297,7 +297,7 @@ const SY_SKILL_MARKERS = ["[Sy] ", "Sy Skill - "];
  */
 const CLAUDE_COMMAND_RETIRED_NAMES = [
   // TODO(retired-cleanup): drop these once we're confident every dev machine
-  // has re-run `bash run.sh --files=claude.js` at least once after the merge
+  // has re-run `bash run.sh --files=setup.js` at least once after the merge
   // commit (rule of thumb: 3+ months after the date below). Removing too
   // early orphans files; periodically prune so this list stays signal-only.
   "sync-babysit-pr.md", // merged into /sy-babysit-pr in 119cc9d (2026-04-24)
@@ -305,7 +305,7 @@ const CLAUDE_COMMAND_RETIRED_NAMES = [
   // 2026-05-11: every Sy-managed command was renamed to a `sy-` prefix
   // (e.g. /babysit-pr -> /sy-babysit-pr) so they cluster in the `/` menu and
   // never collide with user-authored or plugin-shipped commands. The OLD
-  // non-prefixed filenames below are retired — re-running claude.js on any
+  // non-prefixed filenames below are retired — re-running setup.js on any
   // dev machine that still has these on disk will unlink them.
   "babysit-pr.md", // renamed to sy-babysit-pr.md (2026-05-11)
   "babysit-prs.md", // renamed to sy-babysit-prs.md (2026-05-11)
