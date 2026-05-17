@@ -193,7 +193,7 @@ async function _doInstructionsWork(targetDir) {
   log(">> Claude Code Instructions:", targetPath);
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (await readText`software/scripts/advanced/llm/instructions.md`).trim();
+  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
 
   /** @type {string} Existing CLAUDE.md content (empty if file is missing). */
   let existing = "";
