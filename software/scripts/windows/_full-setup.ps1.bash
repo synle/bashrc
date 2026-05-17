@@ -614,7 +614,7 @@ Write-Host "`n=== Installing AI CLI Tools ===" -ForegroundColor Cyan
 $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
 
 # Keep this list aligned with the npm_install_global calls in
-# software/scripts/advanced/*.sh (gemini.sh, opencode.sh, ...).
+# software/scripts/advanced/llm/*/ (claude, copilot, gemini, ollama, opencode).
 $npmAiPackages = @(
     @{ pkg = "opencode-ai";        bin = "opencode" },  # terminal-based AI coding agent (https://opencode.ai)
     @{ pkg = "@google/gemini-cli"; bin = "gemini"   }   # Google's AI CLI (https://github.com/google-gemini/gemini-cli)

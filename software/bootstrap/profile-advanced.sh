@@ -531,13 +531,13 @@ alias pop="git stash pop"
 alias amend="git amend"
 
 # ---- Aliases: Claude ----
-# SOURCE | software/scripts/advanced/claude/claude.profile.bash
+# SOURCE | software/scripts/advanced/llm/claude/claude.profile.bash
 
 # ---- Aliases: OpenCode ----
-# SOURCE | software/scripts/advanced/opencode/opencode.profile.bash
+# SOURCE | software/scripts/advanced/llm/opencode/opencode.profile.bash
 
 # ---- Aliases: Copilot ----
-# SOURCE | software/scripts/advanced/copilot/copilot.profile.bash
+# SOURCE | software/scripts/advanced/llm/copilot/copilot.profile.bash
 
 # ---- Aliases: Gemini ----
 alias gem="gemini"
