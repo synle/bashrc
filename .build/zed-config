@@ -73,6 +73,7 @@
     },
     "option_as_meta": false
   },
+  "disable_ai": true,
   "telemetry": {
     "diagnostics": false,
     "metrics": false

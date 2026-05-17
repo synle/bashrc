@@ -58,6 +58,9 @@
     "option_as_meta": false, // Send alt-key chords to Zed's keymap instead of the shell as Meta — pairs with the OS_KEY+X auto-mirror in zed.js so chords like alt+\ fire from terminal focus. Values: true, false
   },
 
+  // --- AI ---
+  "disable_ai": true, // Disable all AI features — we only use the CLI. Values: true, false
+
   // --- Performance & Telemetry ---
   "telemetry": {
     "diagnostics": false, // Disable sending crash reports. Values: true, false
