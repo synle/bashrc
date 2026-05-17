@@ -11,10 +11,10 @@
 
 # copilot: wrapper around the `github-copilot-cli` binary
 function copilot() {
-  if ! type -P github-copilot-cli > /dev/null 2>&1; then
-    echo "github-copilot-cli is not installed" >&2
+  if ! type -P copilot > /dev/null 2>&1; then
+    echo "copilot is not installed" >&2
     return 1
   fi
-  command github-copilot-cli --allow-all "$@"
+  command copilot --allow-all "$@"
 }
 alias co='copilot'

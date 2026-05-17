@@ -103,75 +103,211 @@ function dedupeSpecLines(lines) {
  */
 const SPEC_COMMANDS = [
   // ---- File viewers (completes with files) ----
-  { command: "cat", specFile: "software/metadata/autocomplete-complete-spec/cat" },
+  {
+    command: "cat",
+    specFile: "software/metadata/autocomplete-complete-spec/cat",
+  },
   { command: "bat", specCommand: "cat" },
   { command: "batcat", specCommand: "cat" },
   { command: "less", specCommand: "cat" },
   // ---- Text / file editors (completes with paths) ----
-  { command: "vim", specFile: "software/metadata/autocomplete-complete-spec/vim" },
+  {
+    command: "vim",
+    specFile: "software/metadata/autocomplete-complete-spec/vim",
+  },
   { command: "code", specCommand: "vim" },
   { command: "subl", specCommand: "vim" },
   { command: "zed", specCommand: "vim" },
   // ---- Directory navigation and listing (completes with folders) ----
-  { command: "cd", specFile: "software/metadata/autocomplete-complete-spec/cd" },
-  { command: "eza", specFile: "software/metadata/autocomplete-complete-spec/eza" },
-  { command: "ls", specFile: "software/metadata/autocomplete-complete-spec/ls" },
-  { command: "tree", specFile: "software/metadata/autocomplete-complete-spec/tree", os: "mac,linux" },
-  { command: "zoxide", specFile: "software/metadata/autocomplete-complete-spec/zoxide" },
+  {
+    command: "cd",
+    specFile: "software/metadata/autocomplete-complete-spec/cd",
+  },
+  {
+    command: "eza",
+    specFile: "software/metadata/autocomplete-complete-spec/eza",
+  },
+  {
+    command: "ls",
+    specFile: "software/metadata/autocomplete-complete-spec/ls",
+  },
+  {
+    command: "tree",
+    specFile: "software/metadata/autocomplete-complete-spec/tree",
+    os: "mac,linux",
+  },
+  {
+    command: "zoxide",
+    specFile: "software/metadata/autocomplete-complete-spec/zoxide",
+  },
   // ---- File search and processing ----
-  { command: "fd", specFile: "software/metadata/autocomplete-complete-spec/fd" },
-  { command: "jq", specFile: "software/metadata/autocomplete-complete-spec/jq" },
-  { command: "rg", specFile: "software/metadata/autocomplete-complete-spec/rg" },
+  {
+    command: "fd",
+    specFile: "software/metadata/autocomplete-complete-spec/fd",
+  },
+  {
+    command: "jq",
+    specFile: "software/metadata/autocomplete-complete-spec/jq",
+  },
+  {
+    command: "rg",
+    specFile: "software/metadata/autocomplete-complete-spec/rg",
+  },
   // ---- Git ----
-  { command: "delta", specFile: "software/metadata/autocomplete-complete-spec/delta" },
+  {
+    command: "delta",
+    specFile: "software/metadata/autocomplete-complete-spec/delta",
+  },
   { command: "g", specCommand: "git" },
-  { command: "gh", specFile: "software/metadata/autocomplete-complete-spec/gh" },
-  { command: "git", specFile: "software/metadata/autocomplete-complete-spec/git" },
+  {
+    command: "gh",
+    specFile: "software/metadata/autocomplete-complete-spec/gh",
+  },
+  {
+    command: "git",
+    specFile: "software/metadata/autocomplete-complete-spec/git",
+  },
   // ---- Package managers and runtimes ----
-  { command: "brew", specFile: "software/metadata/autocomplete-complete-spec/brew", os: "mac,linux" },
-  { command: "bun", specFile: "software/metadata/autocomplete-complete-spec/bun" },
-  { command: "cargo", specFile: "software/metadata/autocomplete-complete-spec/cargo" },
-  { command: "composer", specFile: "software/metadata/autocomplete-complete-spec/composer" },
-  { command: "deno", specFile: "software/metadata/autocomplete-complete-spec/deno" },
-  { command: "fnm", specFile: "software/metadata/autocomplete-complete-spec/fnm" },
+  {
+    command: "brew",
+    specFile: "software/metadata/autocomplete-complete-spec/brew",
+    os: "mac,linux",
+  },
+  {
+    command: "bun",
+    specFile: "software/metadata/autocomplete-complete-spec/bun",
+  },
+  {
+    command: "cargo",
+    specFile: "software/metadata/autocomplete-complete-spec/cargo",
+  },
+  {
+    command: "composer",
+    specFile: "software/metadata/autocomplete-complete-spec/composer",
+  },
+  {
+    command: "deno",
+    specFile: "software/metadata/autocomplete-complete-spec/deno",
+  },
+  {
+    command: "fnm",
+    specFile: "software/metadata/autocomplete-complete-spec/fnm",
+  },
   { command: "n", specCommand: "npm" },
-  { command: "npm", specFile: "software/metadata/autocomplete-complete-spec/npm" },
-  { command: "npx", specFile: "software/metadata/autocomplete-complete-spec/npx" },
-  { command: "uv", specFile: "software/metadata/autocomplete-complete-spec/uv" },
+  {
+    command: "npm",
+    specFile: "software/metadata/autocomplete-complete-spec/npm",
+  },
+  {
+    command: "npx",
+    specFile: "software/metadata/autocomplete-complete-spec/npx",
+  },
+  {
+    command: "uv",
+    specFile: "software/metadata/autocomplete-complete-spec/uv",
+  },
   { command: "y", specCommand: "yarn" },
-  { command: "yarn", specFile: "software/metadata/autocomplete-complete-spec/yarn" },
+  {
+    command: "yarn",
+    specFile: "software/metadata/autocomplete-complete-spec/yarn",
+  },
   // ---- Build tools ----
   { command: "gmake", specCommand: "make", os: "mac" },
-  { command: "gradle", specFile: "software/metadata/autocomplete-complete-spec/gradle" },
+  {
+    command: "gradle",
+    specFile: "software/metadata/autocomplete-complete-spec/gradle",
+  },
   { command: "gradlew", specCommand: "gradle" },
-  { command: "make", specFile: "software/metadata/autocomplete-complete-spec/make", os: "mac,linux" },
+  {
+    command: "make",
+    specFile: "software/metadata/autocomplete-complete-spec/make",
+    os: "mac,linux",
+  },
   // ---- Containers and orchestration ----
-  { command: "docker", specFile: "software/metadata/autocomplete-complete-spec/docker" },
-  { command: "docker-compose", specFile: "software/metadata/autocomplete-complete-spec/docker-compose" },
-  { command: "kubectl", specFile: "software/metadata/autocomplete-complete-spec/kubectl" },
+  {
+    command: "docker",
+    specFile: "software/metadata/autocomplete-complete-spec/docker",
+  },
+  {
+    command: "docker-compose",
+    specFile: "software/metadata/autocomplete-complete-spec/docker-compose",
+  },
+  {
+    command: "kubectl",
+    specFile: "software/metadata/autocomplete-complete-spec/kubectl",
+  },
   // ---- Cloud CLIs ----
-  { command: "aws", specFile: "software/metadata/autocomplete-complete-spec/aws" },
-  { command: "az", specFile: "software/metadata/autocomplete-complete-spec/az" },
-  { command: "gcloud", specFile: "software/metadata/autocomplete-complete-spec/gcloud" },
+  {
+    command: "aws",
+    specFile: "software/metadata/autocomplete-complete-spec/aws",
+  },
+  {
+    command: "az",
+    specFile: "software/metadata/autocomplete-complete-spec/az",
+  },
+  {
+    command: "gcloud",
+    specFile: "software/metadata/autocomplete-complete-spec/gcloud",
+  },
   // ---- Network and remote ----
-  { command: "curl", specFile: "software/metadata/autocomplete-complete-spec/curl" },
-  { command: "rsync", specFile: "software/metadata/autocomplete-complete-spec/rsync" },
+  {
+    command: "curl",
+    specFile: "software/metadata/autocomplete-complete-spec/curl",
+  },
+  {
+    command: "rsync",
+    specFile: "software/metadata/autocomplete-complete-spec/rsync",
+  },
   { command: "s", specCommand: "ssh" },
-  { command: "ssh", specFile: "software/metadata/autocomplete-complete-spec/ssh" },
+  {
+    command: "ssh",
+    specFile: "software/metadata/autocomplete-complete-spec/ssh",
+  },
   // ---- AI / agentic tools ----
-  { command: "claude", specFile: "software/metadata/autocomplete-complete-spec/claude" },
+  {
+    command: "claude",
+    specFile: "software/metadata/autocomplete-complete-spec/claude",
+  },
   { command: "cl", specCommand: "claude" },
   { command: "cm", specCommand: "claude" },
-  { command: "opencode", specFile: "software/metadata/autocomplete-complete-spec/opencode" },
-  { command: "github-copilot-cli", specFile: "software/metadata/autocomplete-complete-spec/github-copilot-cli" },
+  {
+    command: "opencode",
+    specFile: "software/metadata/autocomplete-complete-spec/opencode",
+  },
+  {
+    command: "github-copilot-cli",
+    specFile: "software/metadata/autocomplete-complete-spec/github-copilot-cli",
+  },
+  { command: "copilot", specCommand: "github-copilot-cli" },
   { command: "co", specCommand: "github-copilot-cli" },
   // ---- System and services ----
-  { command: "adb", specFile: "software/metadata/autocomplete-complete-spec/adb" },
-  { command: "journalctl", specFile: "software/metadata/autocomplete-complete-spec/journalctl", os: "mac,linux" },
-  { command: "sqlite3", specFile: "software/metadata/autocomplete-complete-spec/sqlite3" },
-  { command: "systemctl", specFile: "software/metadata/autocomplete-complete-spec/systemctl", os: "mac,linux" },
-  { command: "tldr", specFile: "software/metadata/autocomplete-complete-spec/tldr" },
-  { command: "tmux", specFile: "software/metadata/autocomplete-complete-spec/tmux", os: "mac,linux" },
+  {
+    command: "adb",
+    specFile: "software/metadata/autocomplete-complete-spec/adb",
+  },
+  {
+    command: "journalctl",
+    specFile: "software/metadata/autocomplete-complete-spec/journalctl",
+    os: "mac,linux",
+  },
+  {
+    command: "sqlite3",
+    specFile: "software/metadata/autocomplete-complete-spec/sqlite3",
+  },
+  {
+    command: "systemctl",
+    specFile: "software/metadata/autocomplete-complete-spec/systemctl",
+    os: "mac,linux",
+  },
+  {
+    command: "tldr",
+    specFile: "software/metadata/autocomplete-complete-spec/tldr",
+  },
+  {
+    command: "tmux",
+    specFile: "software/metadata/autocomplete-complete-spec/tmux",
+    os: "mac,linux",
+  },
 ];
 
 /**
