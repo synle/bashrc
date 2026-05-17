@@ -1999,6 +1999,7 @@ _PATCH_FIND_EOF_
   echo "Message: $commit_msg"
 
   if git apply --reject --whitespace=fix "$latest_patch" && git add -A && git commit --allow-empty --no-verify -m "$commit_msg"; then
+    git commit --amend --reset-author --no-verify
     mv "$latest_patch" "$archive_folder"
     echo "Successfully applied and archived."
   else
