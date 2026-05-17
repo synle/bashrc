@@ -15,6 +15,18 @@
 # grants the agent permission to read/write files, execute shell commands and
 # access the network without prompting per-action.
 #
+# Two layers of repo-managed config flow into Copilot:
+#   1. Per-repo (handled below): the `copilot` function auto-symlinks
+#      `.github/copilot-instructions.md` → `../CLAUDE.md` so per-project
+#      Claude rules become per-project Copilot rules without a separately-
+#      maintained instructions file.
+#   2. User-level (handled by software/scripts/advanced/llm/copilot/setup.js):
+#      seeds defaults into `~/.copilot/settings.json` and deploys the shared
+#      engineering principles into `~/.copilot/AGENTS.md` between
+#      `<!-- BEGIN managed-rules --> / <!-- END managed-rules -->` markers,
+#      mirroring `~/.claude/CLAUDE.md` and `~/.gemini/GEMINI.md`. Source of
+#      truth: `software/scripts/advanced/llm/_common/instructions.md`.
+#
 # Use `co` (or `copilot`) to launch, then type natural-language requests.
 # Use `co auth` to authenticate with GitHub first.
 ################################################################################

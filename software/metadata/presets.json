@@ -20,9 +20,11 @@
       "advanced/llm/claude/install.sh",
       "advanced/llm/claude/setup.js",
       "advanced/llm/copilot/install.sh",
+      "advanced/llm/copilot/setup.js",
       "advanced/llm/opencode/install.sh",
       "advanced/llm/opencode/setup.js",
-      "advanced/llm/gemini/install.sh"
+      "advanced/llm/gemini/install.sh",
+      "advanced/llm/gemini/setup.js"
     ]
   },
   "browsers": {

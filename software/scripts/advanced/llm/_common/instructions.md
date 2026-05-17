@@ -158,4 +158,4 @@ Never leak secrets, credentials, or env config to any tracked file or external s
 
     **Scope:** Every `CLAUDE.md` (global `~/.claude/CLAUDE.md`, project root, nested). Not `DEV.md`, `ARCHITECTURE.md`, or other linked docs — only files literally named `CLAUDE.md`.
 
-    **Global CLAUDE.md note:** `~/.claude/CLAUDE.md` is generated from `software/scripts/advanced/llm/claude/setup.js` in `synle/bashrc`. To trim the global file, edit `instructions.md` and re-run `setup.js` — don't hand-edit `~/.claude/CLAUDE.md` directly.
+    **Global CLAUDE.md note:** `~/.claude/CLAUDE.md` is generated from `software/scripts/advanced/llm/claude/setup.js` in `synle/bashrc`. The same source markdown — `software/scripts/advanced/llm/_common/instructions.md` — also feeds `~/.copilot/AGENTS.md` (via `copilot/setup.js`) and `~/.gemini/GEMINI.md` (via `gemini/setup.js`), and OpenCode reads `~/.claude/CLAUDE.md` directly. To trim any of these global files, edit `instructions.md` and re-run the matching `setup.js` — don't hand-edit the generated files directly.

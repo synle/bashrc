@@ -6,21 +6,22 @@
 
 All repo source files under `software/scripts/` unless noted.
 
-| App               | Repo source files                                                                       | On-disk keybinding path                                                                                                                                |
-| ----------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Chromium browsers | `advanced/browser-config.js`                                                            | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux)                                             |
-| VS Code           | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`             | `~/Library/.../Code/User/keybindings.json` (mac), `~/.config/Code/User/keybindings.json` (linux)                                                       |
-| Sublime Text      | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`   | `~/Library/.../Sublime Text/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-text/Packages/User/Default.sublime-keymap` (linux)   |
-| Sublime Merge     | `advanced/sublime-merge-keys.common.jsonc`, `advanced/sublime-merge-keys.windows.jsonc` | `~/Library/.../Sublime Merge/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-merge/Packages/User/Default.sublime-keymap` (linux) |
-| Zed               | `zed-keys.common.jsonc`                                                                 | `~/.config/zed/keymap.json`                                                                                                                            |
-| Claude Code       | `advanced/claude/claude-keys.common.jsonc`, `advanced/claude/claude-keys.windows.jsonc` | `~/.claude/keybindings.json`                                                                                                                           |
-| OpenCode CLI      | `advanced/llm/opencode/opencode-keys.common.jsonc`                                      | `~/.config/opencode/opencode.json` (merged under `keybinds` key)                                                                                       |
-| Copilot CLI       | _none — see [Copilot CLI](#copilot-cli) gap below_                                      | _no on-disk keymap; chords are hardcoded in the binary_                                                                                                |
-| Vim               | `vim-config-settings.vim`                                                               | `~/.vimrc`                                                                                                                                             |
-| Bash readline     | `bash-keys.profile.bash`                                                                | Sourced into `~/.bash_syle`                                                                                                                            |
-| Windows Terminal  | `windows-terminal-keys.jsonc`                                                           | `%LOCALAPPDATA%/Packages/Microsoft.WindowsTerminal_.../LocalState/settings.json`                                                                       |
-| tmux              | `advanced/tmux.config`                                                                  | `~/.tmux.conf`                                                                                                                                         |
-| Ghostty           | `advanced/ghostty-keys.common.jsonc`                                                    | `~/.config/ghostty/config` (mac + linux)                                                                                                               |
+| App               | Repo source files                                                                               | On-disk keybinding path                                                                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Chromium browsers | `advanced/browser-config.js`                                                                    | `~/Library/.../Brave-Browser/Default/Preferences` (mac), `~/.config/BraveSoftware/.../Preferences` (linux)                                             |
+| VS Code           | `advanced/vs-code-keys.common.jsonc`, `advanced/vs-code-keys.windows.jsonc`                     | `~/Library/.../Code/User/keybindings.json` (mac), `~/.config/Code/User/keybindings.json` (linux)                                                       |
+| Sublime Text      | `advanced/sublime-text-keys.common.jsonc`, `advanced/sublime-text-keys.windows.jsonc`           | `~/Library/.../Sublime Text/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-text/Packages/User/Default.sublime-keymap` (linux)   |
+| Sublime Merge     | `advanced/sublime-merge-keys.common.jsonc`, `advanced/sublime-merge-keys.windows.jsonc`         | `~/Library/.../Sublime Merge/Packages/User/Default (OSX).sublime-keymap` (mac), `~/.config/sublime-merge/Packages/User/Default.sublime-keymap` (linux) |
+| Zed               | `zed-keys.common.jsonc`                                                                         | `~/.config/zed/keymap.json`                                                                                                                            |
+| Claude Code       | `advanced/llm/claude/claude-keys.common.jsonc`, `advanced/llm/claude/claude-keys.windows.jsonc` | `~/.claude/keybindings.json`                                                                                                                           |
+| OpenCode CLI      | `advanced/llm/opencode/opencode-keys.common.jsonc`                                              | `~/.config/opencode/opencode.json` (merged under `keybinds` key)                                                                                       |
+| Copilot CLI       | _none — see [Copilot CLI](#ai-cli-assistants) gap below_                                        | _no on-disk keymap; chords are hardcoded in the binary_                                                                                                |
+| Gemini CLI        | _none yet — schema undocumented; see [AI CLI Assistants](#ai-cli-assistants) below_             | _`~/.gemini/keybindings.json` per upstream docs, but no published schema_                                                                              |
+| Vim               | `vim-config-settings.vim`                                                                       | `~/.vimrc`                                                                                                                                             |
+| Bash readline     | `bash-keys.profile.bash`                                                                        | Sourced into `~/.bash_syle`                                                                                                                            |
+| Windows Terminal  | `windows-terminal-keys.jsonc`                                                                   | `%LOCALAPPDATA%/Packages/Microsoft.WindowsTerminal_.../LocalState/settings.json`                                                                       |
+| tmux              | `advanced/tmux.config`                                                                          | `~/.tmux.conf`                                                                                                                                         |
+| Ghostty           | `advanced/ghostty-keys.common.jsonc`                                                            | `~/.config/ghostty/config` (mac + linux)                                                                                                               |
 
 ## Editor-Specific Gotchas
 
@@ -351,23 +352,27 @@ Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these si
 
 ## AI CLI Assistants
 
-Three terminal AI clients are deployed: **Claude Code**, **OpenCode**, and **GitHub Copilot CLI** (the [official `gh.io/copilot-install` distribution](https://gh.io/copilot-install), not the deprecated `@github/copilot-cli` package). Where possible the input-layer chords are aligned to Claude's conventions so muscle memory carries across tools.
+Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub Copilot CLI** (the [official `gh.io/copilot-install` distribution](https://gh.io/copilot-install), not the deprecated `@github/copilot-cli` package), and **Google Gemini CLI**. Where possible the input-layer chords are aligned to Claude's conventions so muscle memory carries across tools.
+
+**Shared engineering principles:** `software/scripts/advanced/llm/_common/instructions.md` is the single source of truth and gets deployed to `~/.claude/CLAUDE.md`, `~/.copilot/AGENTS.md`, and `~/.gemini/GEMINI.md` (one per `setup.js`). OpenCode reads `~/.claude/CLAUDE.md` directly via its global fallback, so it's automatically covered.
 
 **OpenCode leader move:** OpenCode's upstream default leader is `ctrl+x`, which we move to `ctrl+o` (`tui.json` → `keybinds.leader`) so `ctrl+x` can be bound to `editor_open` (matching Claude's `chat:externalEditor` convention). Every `<leader>X` chord still works — just typed as `ctrl+o <key>` (e.g. `ctrl+o e` for the leader-style editor open, `ctrl+o n` for new session, `ctrl+o t` for themes). `ctrl+o` was chosen because it's free in opencode, bash readline, vim, and tmux — no tmux-prefix or XON/XOFF flow-control collisions.
 
-**Copilot CLI configurability gap:** `copilot help config` (v1.0.48) exposes **no keymap configuration** — every in-app chord is hardcoded in the binary. Parity for Copilot is therefore limited to whatever its defaults happen to ship; any divergence from Claude's convention is a permanent ⚠️ until upstream changes. The only knobs we can set live in the wrapper (`software/scripts/advanced/llm/copilot/copilot.profile.bash`: `--allow-all` + `GITHUB_COPILOT_ALLOW_ALL_TOOLS=true`) and `~/.copilot/settings.json` (model, theme, hooks, etc., all listed in `copilot help config`).
+**Copilot CLI configurability gap:** `copilot help config` (v1.0.48) exposes **no keymap configuration** — every in-app chord is hardcoded in the binary. Parity for Copilot is therefore limited to whatever its defaults happen to ship; any divergence from Claude's convention is a permanent ⚠️ until upstream changes. The only knobs we can set live in the wrapper (`software/scripts/advanced/llm/copilot/copilot.profile.bash`: `--allow-all` + `GITHUB_COPILOT_ALLOW_ALL_TOOLS=true`) and `~/.copilot/settings.json` (model, theme, hooks, etc., all listed in `copilot help config`, seeded by `copilot/setup.js`).
+
+**Gemini CLI keybindings deferred:** Upstream docs reference `~/.gemini/keybindings.json` (see `docs/gemini_cli_readme.md`) but ship no schema reference, no default file, and no introspection subcommand. Deferred until the format can be snapshotted from a live `/keybindings` install. `gemini/setup.js` still deploys settings defaults + `~/.gemini/GEMINI.md` from the shared `_common/instructions.md`.
 
 ### Input Editing
 
-| Key                                 | Action                    |     Claude     |    OpenCode    | Copilot CLI |
-| ----------------------------------- | ------------------------- | :------------: | :------------: | :---------: |
-| `shift+enter`, `ctrl+enter`         | Newline                   |       ✅       |       ✅       |     ⚠️      |
-| `OS_KEY+z`                          | Undo input                |       ✅       |       ✅       |     ⚠️      |
-| `OS_KEY+l`, `ctrl+l`                | Clear input               | ✅<sup>a</sup> |       ✅       |     ⚠️      |
-| `ctrl+v`                            | Paste image               | ✅<sup>b</sup> |       ☑️       |     ⚠️      |
-| `home` / `end`, `ctrl+a` / `ctrl+e` | Home / End (current line) | ✅<sup>c</sup> |       ✅       |     ⚠️      |
-| `ctrl+home` / `ctrl+end`            | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |     ⚠️      |
-| `ctrl+x`                            | Open `$EDITOR`            |       ✅       | ✅<sup>e</sup> |     ⚠️      |
+| Key                                 | Action                    |     Claude     |    OpenCode    | Copilot CLI | Gemini CLI |
+| ----------------------------------- | ------------------------- | :------------: | :------------: | :---------: | :--------: |
+| `shift+enter`, `ctrl+enter`         | Newline                   |       ✅       |       ✅       |     ⚠️      |     ⚠️     |
+| `OS_KEY+z`                          | Undo input                |       ✅       |       ✅       |     ⚠️      |     ⚠️     |
+| `OS_KEY+l`, `ctrl+l`                | Clear input               | ✅<sup>a</sup> |       ✅       |     ⚠️      |     ⚠️     |
+| `ctrl+v`                            | Paste image               | ✅<sup>b</sup> |       ☑️       |     ⚠️      |     ⚠️     |
+| `home` / `end`, `ctrl+a` / `ctrl+e` | Home / End (current line) | ✅<sup>c</sup> |       ✅       |     ⚠️      |     ⚠️     |
+| `ctrl+home` / `ctrl+end`            | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |     ⚠️      |     ⚠️     |
+| `ctrl+x`                            | Open `$EDITOR`            |       ✅       | ✅<sup>e</sup> |     ⚠️      |     ⚠️     |
 
 <sup>a</sup> Claude binds only `OS_KEY+l`; `ctrl+l` is the bash-readline convention added by opencode (alongside `ctrl+c` for the dual-purpose exit-when-empty default).
 <sup>b</sup> Bound on all platforms via `claude-keys.common.jsonc`; `claude-keys.windows.jsonc` additionally nulls `alt+v` so it doesn't double-fire when `OS_KEY` = `alt` on Windows.
@@ -377,12 +382,12 @@ Three terminal AI clients are deployed: **Claude Code**, **OpenCode**, and **Git
 
 ### Panels
 
-| Key        | Action         |     Claude     |    OpenCode    |  Copilot CLI   |
-| ---------- | -------------- | :------------: | :------------: | :------------: |
-| `ctrl+t`   | Toggle todos   |       ✅       | ❌<sup>f</sup> | ❌<sup>f</sup> |
-| `OS_KEY+\` | Toggle sidebar | ❌<sup>g</sup> | ✅<sup>g</sup> | ❌<sup>g</sup> |
+| Key        | Action         |     Claude     |    OpenCode    |  Copilot CLI   |   Gemini CLI   |
+| ---------- | -------------- | :------------: | :------------: | :------------: | :------------: |
+| `ctrl+t`   | Toggle todos   |       ✅       | ❌<sup>f</sup> | ❌<sup>f</sup> | ❌<sup>f</sup> |
+| `OS_KEY+\` | Toggle sidebar | ❌<sup>g</sup> | ✅<sup>g</sup> | ❌<sup>g</sup> | ❌<sup>g</sup> |
 
-<sup>f</sup> No todos panel exists in OpenCode or Copilot CLI. OpenCode's default `ctrl+t` is `variant_cycle` and is kept intact.
+<sup>f</sup> No todos panel exists in OpenCode, Copilot CLI, or Gemini CLI. OpenCode's default `ctrl+t` is `variant_cycle` and is kept intact.
 <sup>g</sup> Only OpenCode has a sidebar (sessions / files / MCP pane); `OS_KEY+\` matches the cross-app sidebar-toggle convention used by Sublime / VS Code / Zed. The opencode default `<leader>b` (= `ctrl+o b`) still works as an alternate.
 
 ### Copilot Wrapper-Layer Parity
@@ -397,18 +402,21 @@ Because Copilot's in-app keymap is unreachable, the equivalents of Claude's chor
 | Launch alias   | `cl`                                                                                                | `co`                                                                                                                                     |
 | In-app chords  | Configurable via `~/.claude/keybindings.json`                                                       | Hardcoded — `shift+tab` for mode cycle (interactive / plan / autopilot), standard readline-ish chords in the input field                 |
 
-If GitHub ever ships a keymap config knob, the natural home is a new `software/scripts/advanced/llm/copilot/copilot-keys.common.jsonc` mirroring the opencode layout, with deploy code in a `_doKeysWork()` inside a future `copilot/setup.js` (parallel to `claude/setup.js` and `opencode/setup.js`).
+If GitHub ever ships a keymap config knob, the natural home is a new `software/scripts/advanced/llm/copilot/copilot-keys.common.jsonc` mirroring the opencode layout, with deploy code in a `_doKeysWork()` inside `copilot/setup.js` (parallel to `claude/setup.js` and `opencode/setup.js`).
 
 ### AI CLI-Specific Gaps
 
-| Gap                                             | Reason                                                                                                                                                                                                                                                          |
-| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Copilot CLI — `ctrl+enter` newline              | Copilot v1.0.48 has no keymap config. Chord is hardcoded in the binary; cannot be added.                                                                                                                                                                        |
-| Copilot CLI — `home` / `end` line navigation    | Same reason: input-layer chords are hardcoded. Falls back to whatever the binary ships.                                                                                                                                                                         |
-| Copilot CLI — `ctrl+l` / `OS_KEY+l` clear input | Same reason: input-layer chords are hardcoded.                                                                                                                                                                                                                  |
-| Copilot CLI — `ctrl+x` open `$EDITOR`           | Same reason: input-layer chords are hardcoded. Use the wrapper-layer alternative (paste content from `$EDITOR` manually) until upstream exposes a keymap.                                                                                                       |
-| OpenCode — sidebar hidden by default            | The TUI schema (`https://opencode.ai/tui.json`) has no field for sidebar default state; the SQLite db (`~/.local/share/opencode/opencode.db`) has no settings table for view state. Only runtime toggles exist: `OS_KEY+\` keybind or `ctrl+p` command palette. |
-| OpenCode / Copilot — `ctrl+t` toggle todos      | Neither tool has a todos panel. OpenCode's default `ctrl+t` is `variant_cycle`, left intact.                                                                                                                                                                    |
+| Gap                                                 | Reason                                                                                                                                                                                                                                                          |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Copilot CLI — `ctrl+enter` newline                  | Copilot v1.0.48 has no keymap config. Chord is hardcoded in the binary; cannot be added.                                                                                                                                                                        |
+| Copilot CLI — `home` / `end` line navigation        | Same reason: input-layer chords are hardcoded. Falls back to whatever the binary ships.                                                                                                                                                                         |
+| Copilot CLI — `ctrl+l` / `OS_KEY+l` clear input     | Same reason: input-layer chords are hardcoded.                                                                                                                                                                                                                  |
+| Copilot CLI — `ctrl+x` open `$EDITOR`               | Same reason: input-layer chords are hardcoded. Use the wrapper-layer alternative (paste content from `$EDITOR` manually) until upstream exposes a keymap.                                                                                                       |
+| Copilot CLI — user-level slash commands             | Copilot's "skills" require a plugin manifest (`copilot plugin install`) — there's no `~/.copilot/commands/*.md` fallthrough like Claude's. Out of scope for `setup.js`; use the Captain `install-plugin-to-copilot` skill or manage plugins manually.           |
+| Gemini CLI — keybindings                            | Upstream docs reference `~/.gemini/keybindings.json` but ship no schema reference, no default file, and no introspection subcommand. Deferred until the format can be snapshotted from a live `/keybindings` install.                                           |
+| Gemini CLI — user-level slash commands              | Gemini's equivalent is the extension system (`gemini extensions install/link`) which requires an extension manifest. No `~/.gemini/commands/*.md` fallthrough. Out of scope for `setup.js`.                                                                     |
+| OpenCode — sidebar hidden by default                | The TUI schema (`https://opencode.ai/tui.json`) has no field for sidebar default state; the SQLite db (`~/.local/share/opencode/opencode.db`) has no settings table for view state. Only runtime toggles exist: `OS_KEY+\` keybind or `ctrl+p` command palette. |
+| OpenCode / Copilot / Gemini — `ctrl+t` toggle todos | None of these tools have a todos panel. OpenCode's default `ctrl+t` is `variant_cycle`, left intact.                                                                                                                                                            |
 
 ---
 
