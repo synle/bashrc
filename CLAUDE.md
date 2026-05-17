@@ -235,14 +235,14 @@ CI build action (`ci-build/action.yml`) generates a job summary with collapsible
 
 Step-by-step playbooks live in `.claude/skills/<name>/SKILL.md`. Read the matching SKILL.md before reinventing the steps.
 
-| Skill / slash command | When to use                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------- |
-| `/add-package`        | Adding a new CLI tool / package across platforms                                             |
-| `/remove-package`     | Dropping a CLI tool from the setup                                                           |
-| `/add-os`             | Onboarding a new Linux distro, macOS variant, or platform                                    |
-| `/remove-os`          | Dropping platform support                                                                    |
+| Skill / slash command | When to use                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| `/add-package`        | Adding a new CLI tool / package across platforms                                                    |
+| `/remove-package`     | Dropping a CLI tool from the setup                                                                  |
+| `/add-os`             | Onboarding a new Linux distro, macOS variant, or platform                                           |
+| `/remove-os`          | Dropping platform support                                                                           |
 | `/run`                | Resolving `bash run.sh --files="..."` from a script-name keyword (handles fuzzy match + OS subdirs) |
-| `/check`              | Verifying changes from this session survived a merge / rebase / hook (restores if missing)   |
+| `/check`              | Verifying changes from this session survived a merge / rebase / hook (restores if missing)          |
 
 ## Git / PR Merge Policy
 

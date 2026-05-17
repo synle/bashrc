@@ -353,31 +353,37 @@ Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these si
 
 Three terminal AI clients are deployed: **Claude Code**, **OpenCode**, and **GitHub Copilot CLI** (the [official `gh.io/copilot-install` distribution](https://gh.io/copilot-install), not the deprecated `@github/copilot-cli` package). Where possible the input-layer chords are aligned to Claude's conventions so muscle memory carries across tools.
 
+**OpenCode leader move:** OpenCode's upstream default leader is `ctrl+x`, which we move to `ctrl+o` (`tui.json` → `keybinds.leader`) so `ctrl+x` can be bound to `editor_open` (matching Claude's `chat:externalEditor` convention). Every `<leader>X` chord still works — just typed as `ctrl+o <key>` (e.g. `ctrl+o e` for the leader-style editor open, `ctrl+o n` for new session, `ctrl+o t` for themes). `ctrl+o` was chosen because it's free in opencode, bash readline, vim, and tmux — no tmux-prefix or XON/XOFF flow-control collisions.
+
 **Copilot CLI configurability gap:** `copilot help config` (v1.0.48) exposes **no keymap configuration** — every in-app chord is hardcoded in the binary. Parity for Copilot is therefore limited to whatever its defaults happen to ship; any divergence from Claude's convention is a permanent ⚠️ until upstream changes. The only knobs we can set live in the wrapper (`software/scripts/advanced/llm/copilot/copilot.profile.bash`: `--allow-all` + `GITHUB_COPILOT_ALLOW_ALL_TOOLS=true`) and `~/.copilot/settings.json` (model, theme, hooks, etc., all listed in `copilot help config`).
 
 ### Input Editing
 
-| Key                         | Action       |     Claude     |    OpenCode    | Copilot CLI |
-| --------------------------- | ------------ | :------------: | :------------: | :---------: |
-| `shift+enter`, `ctrl+enter` | Newline      |       ✅       |       ☑️       |     ⚠️      |
-| `OS_KEY+z`                  | Undo input   |       ✅       |       ✅       |     ⚠️      |
-| `OS_KEY+l`                  | Clear input  |       ✅       |       ✅       |     ⚠️      |
-| `ctrl+v`                    | Paste image  | ✅<sup>a</sup> |       ☑️       |     ⚠️      |
-| `ctrl+a` / `ctrl+e`         | Home / End   | ✅<sup>b</sup> | ☑️<sup>c</sup> |     ⚠️      |
-| `ctrl+x`                    | Open $EDITOR |       ✅       | ⚠️<sup>d</sup> |     ⚠️      |
+| Key                                 | Action                    |     Claude     |    OpenCode    | Copilot CLI |
+| ----------------------------------- | ------------------------- | :------------: | :------------: | :---------: |
+| `shift+enter`, `ctrl+enter`         | Newline                   |       ✅       |       ✅       |     ⚠️      |
+| `OS_KEY+z`                          | Undo input                |       ✅       |       ✅       |     ⚠️      |
+| `OS_KEY+l`, `ctrl+l`                | Clear input               | ✅<sup>a</sup> |       ✅       |     ⚠️      |
+| `ctrl+v`                            | Paste image               | ✅<sup>b</sup> |       ☑️       |     ⚠️      |
+| `home` / `end`, `ctrl+a` / `ctrl+e` | Home / End (current line) | ✅<sup>c</sup> |       ✅       |     ⚠️      |
+| `ctrl+home` / `ctrl+end`            | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |     ⚠️      |
+| `ctrl+x`                            | Open `$EDITOR`            |       ✅       | ✅<sup>e</sup> |     ⚠️      |
 
-<sup>a</sup> Bound on all platforms via `claude-keys.common.jsonc`; `claude-keys.windows.jsonc` additionally nulls `alt+v` so it doesn't double-fire when `OS_KEY` = `alt` on Windows.
-<sup>b</sup> Claude **null**s both chords so the underlying terminal readline gets HOME/END.
-<sup>c</sup> OpenCode's `input_line_home` / `input_line_end` defaults already bind `ctrl+a` / `ctrl+e` to HOME/END — no unbind needed.
-<sup>d</sup> `ctrl+x` is opencode's **leader** for ~30 `<leader>X` chords (`<leader>n` new session, `<leader>t` themes, `<leader>m` models, …). Rebinding it would break the entire leader group, so editor stays at `<leader>e` (`ctrl+x` then `e`).
+<sup>a</sup> Claude binds only `OS_KEY+l`; `ctrl+l` is the bash-readline convention added by opencode (alongside `ctrl+c` for the dual-purpose exit-when-empty default).
+<sup>b</sup> Bound on all platforms via `claude-keys.common.jsonc`; `claude-keys.windows.jsonc` additionally nulls `alt+v` so it doesn't double-fire when `OS_KEY` = `alt` on Windows.
+<sup>c</sup> Claude **null**s `ctrl+a`/`ctrl+e` so the underlying terminal readline gets HOME/END. OpenCode binds both the readline chords AND the physical `home`/`end` keys directly via `input_line_home` / `input_line_end`.
+<sup>d</sup> OpenCode's `input_buffer_home` / `input_buffer_end` default to `home`/`end` (which would conflict with the line-home/end binding above); we remap them to `ctrl+home`/`ctrl+end` so the bare `home`/`end` keys do current-line navigation and `ctrl+home`/`ctrl+end` jump to the start/end of multi-line buffers.
+<sup>e</sup> Free after the leader move (`ctrl+x` → `ctrl+o`). `<leader>e` (= `ctrl+o e`) still works as an alternate.
 
 ### Panels
 
-| Key      | Action       | Claude |    OpenCode    |  Copilot CLI   |
-| -------- | ------------ | :----: | :------------: | :------------: |
-| `ctrl+t` | Toggle todos |   ✅   | ❌<sup>e</sup> | ❌<sup>e</sup> |
+| Key        | Action         |     Claude     |    OpenCode    |  Copilot CLI   |
+| ---------- | -------------- | :------------: | :------------: | :------------: |
+| `ctrl+t`   | Toggle todos   |       ✅       | ❌<sup>f</sup> | ❌<sup>f</sup> |
+| `OS_KEY+\` | Toggle sidebar | ❌<sup>g</sup> | ✅<sup>g</sup> | ❌<sup>g</sup> |
 
-<sup>e</sup> No todos panel exists in OpenCode or Copilot CLI. OpenCode's default `ctrl+t` is `variant_cycle` and is kept intact.
+<sup>f</sup> No todos panel exists in OpenCode or Copilot CLI. OpenCode's default `ctrl+t` is `variant_cycle` and is kept intact.
+<sup>g</sup> Only OpenCode has a sidebar (sessions / files / MCP pane); `OS_KEY+\` matches the cross-app sidebar-toggle convention used by Sublime / VS Code / Zed. The opencode default `<leader>b` (= `ctrl+o b`) still works as an alternate.
 
 ### Copilot Wrapper-Layer Parity
 
@@ -395,11 +401,14 @@ If GitHub ever ships a keymap config knob, the natural home is a new `software/s
 
 ### AI CLI-Specific Gaps
 
-| Gap                                          | Reason                                                                                                                                                |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Copilot CLI — every configurable input chord | No keymap config exists in CLI v1.0.48 (`copilot help config` exposes only `model`/`theme`/`mouse`/`hooks`/etc.). Chords are baked into the binary.   |
-| OpenCode — `ctrl+x` can't open `$EDITOR`     | `ctrl+x` is opencode's leader for ~30 `<leader>X` chords; rebinding would break the leader. Editor opens via `<leader>e` (`ctrl+x` then `e`) instead. |
-| OpenCode / Copilot — `ctrl+t` toggle todos   | Neither tool has a todos panel. OpenCode's default `ctrl+t` is `variant_cycle`, left intact.                                                          |
+| Gap                                             | Reason                                                                                                                                                                                                                                                          |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Copilot CLI — `ctrl+enter` newline              | Copilot v1.0.48 has no keymap config. Chord is hardcoded in the binary; cannot be added.                                                                                                                                                                        |
+| Copilot CLI — `home` / `end` line navigation    | Same reason: input-layer chords are hardcoded. Falls back to whatever the binary ships.                                                                                                                                                                         |
+| Copilot CLI — `ctrl+l` / `OS_KEY+l` clear input | Same reason: input-layer chords are hardcoded.                                                                                                                                                                                                                  |
+| Copilot CLI — `ctrl+x` open `$EDITOR`           | Same reason: input-layer chords are hardcoded. Use the wrapper-layer alternative (paste content from `$EDITOR` manually) until upstream exposes a keymap.                                                                                                       |
+| OpenCode — sidebar hidden by default            | The TUI schema (`https://opencode.ai/tui.json`) has no field for sidebar default state; the SQLite db (`~/.local/share/opencode/opencode.db`) has no settings table for view state. Only runtime toggles exist: `OS_KEY+\` keybind or `ctrl+p` command palette. |
+| OpenCode / Copilot — `ctrl+t` toggle todos      | Neither tool has a todos panel. OpenCode's default `ctrl+t` is `variant_cycle`, left intact.                                                                                                                                                                    |
 
 ---
 
