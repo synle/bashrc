@@ -193,7 +193,7 @@ async function _doInstructionsWork(targetDir) {
   log(">> Claude Code Instructions:", targetPath);
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (await readText`software/scripts/advanced/llm/claude/claude-instructions.md`).trim();
+  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
 
   /** @type {string} Existing CLAUDE.md content (empty if file is missing). */
   let existing = "";
@@ -216,7 +216,7 @@ async function _doInstructionsWork(targetDir) {
  *
  * Each key is the destination filename in ~/.claude/commands/ (becomes a
  * /<name> command). Each value is the source filename (without .md) under
- * software/scripts/advanced/llm/claude/commands/. Multiple keys may point at the
+ * software/scripts/advanced/llm/_common/commands/. Multiple keys may point at the
  * same source so aliases stay byte-exact across destinations.
  *
  * Naming convention: every destination filename is prefixed with `sy-` so all
@@ -227,7 +227,7 @@ async function _doInstructionsWork(targetDir) {
  * prefix every time.
  *
  * Editing a command: edit the .md file under
- *   software/scripts/advanced/llm/claude/commands/<name>.md
+ *   software/scripts/advanced/llm/_common/commands/<name>.md
  * Adding a command: drop a new .md file there + add a `sy-<name>.md` deploy
  *   entry whose value is the bare source name.
  * Aliasing: add a deploy-map entry whose value points at an existing source.
@@ -337,7 +337,7 @@ const CLAUDE_COMMAND_RETIRED_NAMES = [
  * Deploys slash command definitions to ~/.claude/commands/. Each entry in
  * CLAUDE_COMMAND_DEPLOY_MAP becomes a /<name> user-level command available
  * across all projects. Source files live under
- * software/scripts/advanced/llm/claude/commands/ and are read verbatim via
+ * software/scripts/advanced/llm/_common/commands/ and are read verbatim via
  * readText (same pattern as claude-instructions.md). Aliased sources are read
  * once and cached so identical destinations stay byte-exact.
  * @param {string} targetDir - Path to the ~/.claude directory.
@@ -394,7 +394,7 @@ async function _doCommandsWork(targetDir) {
 
   for (const [destFile, sourceName] of Object.entries(CLAUDE_COMMAND_DEPLOY_MAP)) {
     if (!(sourceName in sourceCache)) {
-      sourceCache[sourceName] = (await readText`software/scripts/advanced/llm/claude/commands/${sourceName}.md`).trimEnd();
+      sourceCache[sourceName] = (await readText`software/scripts/advanced/llm/_common/commands/${sourceName}.md`).trimEnd();
     }
     const dest = path.join(commandsDir, destFile);
     await backupConfigFile(dest);
