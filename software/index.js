@@ -862,7 +862,10 @@ async function getHomeIPAddressForHostname(hostname) {
     for (const line of content.split("\n")) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.indexOf("=") === 0) continue;
-      const tokens = trimmed.split(/[\:,|]/gim).map((s) => s.trim()).filter((s) => s);
+      const tokens = trimmed
+        .split(/[\:,|]/gim)
+        .map((s) => s.trim())
+        .filter((s) => s);
       if (tokens.slice(1).some((n) => n === hostname)) return tokens[0];
     }
     return null;

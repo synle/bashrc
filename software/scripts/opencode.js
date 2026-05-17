@@ -8,8 +8,8 @@ const OPENCODE_OLLAMA_DEFAULT_HOST = "127.0.0.1";
 
 /** @type {number} Default Ollama HTTP port (upstream default). */
 const OPENCODE_OLLAMA_PORT = 11434;
-/** @type {string[]} Model names used when no models can be discovered. */
-const OPENCODE_OLLAMA_FALLBACK_MODELS = ["qwen3.6:latest"];
+/** @type {string[]} Models always included in every provider's model list, merged with any auto-discovered models. */
+const OPENCODE_OLLAMA_FALLBACK_MODELS = ["qwen3.6:latest", "qwen2.5-coder:32b"];
 
 /**
  * Fetches the installed model names from an Ollama host's `/api/tags`.
@@ -165,14 +165,17 @@ async function doWork() {
 
   const remoteHost = await getHomeIPAddressForHostname(OPENCODE_OLLAMA_HOSTNAME);
   const hostsToTry = [remoteHost, OPENCODE_OLLAMA_DEFAULT_HOST].filter(Boolean);
-  let modelNames = await _discoverModels(hostsToTry);
-  if (modelNames.length === 0) {
+  const discovered = await _discoverModels(hostsToTry);
+  /** @type {Set<string>} Merged model set — discovered + always-include fallbacks. */
+  const modelSet = new Set(discovered);
+  for (const m of OPENCODE_OLLAMA_FALLBACK_MODELS) modelSet.add(m);
+  const modelNames = [...modelSet].sort();
+  if (discovered.length === 0) {
     log(
       `WARN opencode: no models reachable at ${hostsToTry.map((h) => `http://${h}:${OPENCODE_OLLAMA_PORT}/api/tags`).join(" or ")} — using fallback ${OPENCODE_OLLAMA_FALLBACK_MODELS.join(", ")}`,
     );
-    modelNames = OPENCODE_OLLAMA_FALLBACK_MODELS;
   } else {
-    log(`>> opencode: discovered ${modelNames.length} model(s): ${modelNames.join(", ")}`);
+    log(`>> opencode: discovered ${discovered.length} model(s): ${discovered.join(", ")}`);
   }
 
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
