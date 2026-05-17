@@ -123,6 +123,9 @@ winget_packages=(
   # ---- Local LLM ----
   "Ollama.Ollama"
 
+  # ---- AI / agentic CLIs ----
+  "GitHub.Copilot" # `copilot` — GitHub Copilot CLI (https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli)
+
   # ---- Cloud CLIs ----
   "Amazon.AWSCLI"
   "Google.CloudSDK"

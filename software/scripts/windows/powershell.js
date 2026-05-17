@@ -276,12 +276,10 @@ const SPEC_COMMANDS = [
     command: "opencode",
     specFile: "software/metadata/autocomplete-complete-spec/opencode",
   },
-  {
-    command: "github-copilot-cli",
-    specFile: "software/metadata/autocomplete-complete-spec/github-copilot-cli",
-  },
-  { command: "copilot", specCommand: "github-copilot-cli" },
-  { command: "co", specCommand: "github-copilot-cli" },
+  // The `copilot` binary (from @github/copilot / brew `copilot-cli`) ships its own
+  // bash completion (`copilot completion bash`), so we intentionally do NOT register
+  // a static spec here. The legacy `github-copilot-cli` / `co` aliases pointed at the
+  // deprecated @githubnext/github-copilot-cli npm package and were removed.
   // ---- System and services ----
   {
     command: "adb",

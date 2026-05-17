@@ -129,7 +129,21 @@ make test_buildconfig_update  # Update inline snapshots
 make dry_run               # Unit tests + dry-run all scripts
 make clean                 # Clean prebuilt profiles + autogen + BEGIN/END
 make doctor                # Diagnostics
+make new-script name=<n> [os=mac] [type=sh]   # Scaffold a new script file
 ```
+
+### Single test
+
+One Vitest config per suite. Pass a file path as a positional arg, or `-t` to filter by test name:
+
+```bash
+npx vitest run --config vitest.config.js software/tests/parseRawArgs.spec.js
+npx vitest run --config vitest.config.js -t "parses --files flag"
+npx vitest run --config vitest.profile.config.js software/tests/profileSyntax.spec.js
+npx vitest run --config vitest.buildconfig.config.js software/tests/buildConfigShape.spec.js
+```
+
+Suite → config: unit → `vitest.config.js`, profile syntax → `vitest.profile.config.js`, buildconfig snapshots → `vitest.buildconfig.config.js`, Puppeteer smokes → `vitest.smoke.config.js` (live) / `vitest.smoke.local.config.js` (local dist). Update snapshots: `make test_buildconfig_update`.
 
 ### run.sh
 
@@ -219,7 +233,16 @@ CI build action (`ci-build/action.yml`) generates a job summary with collapsible
 
 ## Skills Reference
 
-Use `/add-package`, `/add-os` for adding packages/OS support. `/remove-package`, `/remove-os` for removal. `/run` to generate test commands. `/validate` for formatting and tests.
+Step-by-step playbooks live in `.claude/skills/<name>/SKILL.md`. Read the matching SKILL.md before reinventing the steps.
+
+| Skill / slash command | When to use                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `/add-package`        | Adding a new CLI tool / package across platforms                                             |
+| `/remove-package`     | Dropping a CLI tool from the setup                                                           |
+| `/add-os`             | Onboarding a new Linux distro, macOS variant, or platform                                    |
+| `/remove-os`          | Dropping platform support                                                                    |
+| `/run`                | Resolving `bash run.sh --files="..."` from a script-name keyword (handles fuzzy match + OS subdirs) |
+| `/check`              | Verifying changes from this session survived a merge / rebase / hook (restores if missing)   |
 
 ## Git / PR Merge Policy
 

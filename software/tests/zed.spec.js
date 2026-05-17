@@ -166,3 +166,165 @@ describe("_getZedKeymap > terminal-context mirroring", () => {
     expect(result[0].context).toBeUndefined();
   });
 });
+
+// ---- _buildZedLanguageModelsBlock: Ollama provider pre-registration ----
+
+describe("_buildZedLanguageModelsBlock > local provider", () => {
+  it("should always register the local ollama provider with auto_discover=true", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock({
+      modelNames: [],
+      remoteHost: null,
+      localHost: "127.0.0.1",
+      hostname: "sy-omen45l",
+      discoveredHost: null,
+      firstDiscoveredModel: null,
+    });
+    expect(result.languageModels.ollama).toEqual({ api_url: "http://127.0.0.1:11434", auto_discover: true });
+  });
+
+  it("should NOT register openai_compatible when remoteHost is null", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock({
+      modelNames: ["qwen2.5-coder:32b"],
+      remoteHost: null,
+      localHost: "127.0.0.1",
+      hostname: "sy-omen45l",
+      discoveredHost: "127.0.0.1",
+      firstDiscoveredModel: "qwen2.5-coder:32b",
+    });
+    expect(result.languageModels.openai_compatible).toBeUndefined();
+  });
+
+  it("should NOT register openai_compatible when modelNames is empty (even if remoteHost is set)", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock({
+      modelNames: [],
+      remoteHost: "192.168.1.45",
+      localHost: "127.0.0.1",
+      hostname: "sy-omen45l",
+      discoveredHost: null,
+      firstDiscoveredModel: null,
+    });
+    expect(result.languageModels.openai_compatible).toBeUndefined();
+  });
+});
+
+describe("_buildZedLanguageModelsBlock > remote provider", () => {
+  it("should register openai_compatible keyed by `Ollama (<hostname>)` when remote + models present", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock({
+      modelNames: ["qwen3.6:latest", "qwen2.5-coder:32b"],
+      remoteHost: "192.168.1.45",
+      localHost: "127.0.0.1",
+      hostname: "sy-omen45l",
+      discoveredHost: "192.168.1.45",
+      firstDiscoveredModel: "qwen3.6:latest",
+    });
+    expect(result.languageModels.openai_compatible).toBeDefined();
+    expect(Object.keys(result.languageModels.openai_compatible)).toEqual(["Ollama (sy-omen45l)"]);
+    const remote = result.languageModels.openai_compatible["Ollama (sy-omen45l)"];
+    expect(remote.api_url).toBe("http://192.168.1.45:11434/v1");
+    expect(remote.available_models).toHaveLength(2);
+    expect(remote.available_models[0]).toEqual({
+      name: "qwen3.6:latest",
+      display_name: "qwen3.6:latest",
+      max_tokens: 32768,
+      capabilities: { tools: true, images: false, parallel_tool_calls: false, prompt_cache_key: false },
+    });
+  });
+});
+
+describe("_buildZedLanguageModelsBlock > default_model selection", () => {
+  it("should set default_model when discovery hit the LOCAL ollama host", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock({
+      modelNames: ["qwen2.5-coder:32b"],
+      remoteHost: null,
+      localHost: "127.0.0.1",
+      hostname: "sy-omen45l",
+      discoveredHost: "127.0.0.1",
+      firstDiscoveredModel: "qwen2.5-coder:32b",
+    });
+    expect(result.defaultModel).toEqual({ provider: "ollama", model: "qwen2.5-coder:32b" });
+  });
+
+  it("should NOT set default_model when discovery hit the REMOTE host (openai_compatible default-provider keying is unstable)", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock({
+      modelNames: ["qwen3.6:latest"],
+      remoteHost: "192.168.1.45",
+      localHost: "127.0.0.1",
+      hostname: "sy-omen45l",
+      discoveredHost: "192.168.1.45",
+      firstDiscoveredModel: "qwen3.6:latest",
+    });
+    expect(result.defaultModel).toBeNull();
+  });
+
+  it("should NOT set default_model when nothing was discovered (even with fallback models registered)", () => {
+    const zed = loadZed();
+    const result = zed._buildZedLanguageModelsBlock({
+      modelNames: ["qwen3.6:latest", "qwen2.5-coder:32b"],
+      remoteHost: "192.168.1.45",
+      localHost: "127.0.0.1",
+      hostname: "sy-omen45l",
+      discoveredHost: null,
+      firstDiscoveredModel: null,
+    });
+    expect(result.defaultModel).toBeNull();
+    // Fallback models still get registered on the remote provider, just no default_model.
+    expect(result.languageModels.openai_compatible["Ollama (sy-omen45l)"].available_models).toHaveLength(2);
+  });
+});
+
+// ---- _getZedSettings: agent.default_model merge preserves baseConfig.agent.* ----
+
+describe("_getZedSettings > agent merge", () => {
+  it("should preserve baseConfig.agent.* keys when merging in default_model", () => {
+    const zed = loadZed();
+    const baseConfig = {
+      agent: {
+        dock: "right",
+        tool_permissions: { default: "allow" },
+        always_allow_tool_actions: true,
+      },
+    };
+    const result = zed._getZedSettings(baseConfig, {
+      is_prebuilt_config: false,
+      defaultModel: { provider: "ollama", model: "qwen3.6:latest" },
+    });
+    expect(result.agent).toEqual({
+      dock: "right",
+      tool_permissions: { default: "allow" },
+      always_allow_tool_actions: true,
+      default_model: { provider: "ollama", model: "qwen3.6:latest" },
+    });
+  });
+
+  it("should not include language_models when languageModels option is omitted (CI prebuilt artifacts)", () => {
+    const zed = loadZed();
+    const result = zed._getZedSettings({}, { is_prebuilt_config: true });
+    expect(result.language_models).toBeUndefined();
+  });
+
+  it("should include language_models when languageModels option is provided (local install)", () => {
+    const zed = loadZed();
+    const result = zed._getZedSettings(
+      {},
+      {
+        is_prebuilt_config: false,
+        languageModels: { ollama: { api_url: "http://127.0.0.1:11434", auto_discover: true } },
+      },
+    );
+    expect(result.language_models).toEqual({ ollama: { api_url: "http://127.0.0.1:11434", auto_discover: true } });
+  });
+
+  it("should leave agent untouched when defaultModel is null", () => {
+    const zed = loadZed();
+    const baseConfig = { agent: { dock: "right" } };
+    const result = zed._getZedSettings(baseConfig, { is_prebuilt_config: false, defaultModel: null });
+    expect(result.agent).toEqual({ dock: "right" });
+    expect(result.agent.default_model).toBeUndefined();
+  });
+});

@@ -259,7 +259,6 @@ installBrewPackageInBackground stern
 # ---- Cloud CLIs ----
 installBrewPackageInBackground awscli                  # `aws` — AWS CLI v2
 installBrewPackageInBackground azure-cli               # `az` — Microsoft Azure CLI
-installBrewPackageInBackground copilot-cli               # `copilot` — Github Copilot CLI
 installBrewPackageInBackground --cask google-cloud-sdk # `gcloud` — Google Cloud CLI
 
 # ---- HTTP / RPC clients ----

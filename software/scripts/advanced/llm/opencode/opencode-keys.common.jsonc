@@ -1,0 +1,44 @@
+// OpenCode TUI keybinding overrides — applied on top of opencode's defaults
+// (https://opencode.ai/docs/keybinds/). Only the chords listed here are
+// touched; every other default is left intact via the deploy-time merge in
+// software/scripts/advanced/llm/opencode/setup.js.
+//
+// Goal: pull opencode's input-layer chords toward the conventions used by
+// Claude Code (~/.claude/keybindings.json, generated from
+// software/scripts/advanced/llm/claude/claude-keys.common.jsonc) so muscle
+// memory carries across AI CLIs. OS_KEY is substituted at deploy time:
+// "super" on macOS (= cmd in opencode's vocabulary), "alt" on Windows/Linux.
+//
+// Bindings NOT mirrored here (intentional gaps, documented in
+// docs/editor-keybindings.md):
+//   - ctrl+t (Claude's app:toggleTodos) — opencode has no todos panel; the
+//     default ctrl+t is variant_cycle, kept.
+//   - ctrl+x (Claude's chat:externalEditor) — ctrl+x is opencode's *leader*
+//     key for the whole ~30-chord <leader>… group (<leader>e opens editor,
+//     <leader>n new session, etc.). Rebinding ctrl+x → editor_open would
+//     either disable the leader (breaking <leader>n, <leader>t, …) or never
+//     fire (leader swallows the chord). Open editor stays at <leader>e
+//     (ctrl+x then e).
+//   - ctrl+a / ctrl+e null (Claude unbinds them so the underlying readline
+//     can do HOME/END) — opencode's input_line_home / input_line_end already
+//     default to ctrl+a / ctrl+e, which IS the HOME/END behavior we want.
+//     Unbinding them would just disable HOME/END, not restore readline.
+//   - shift+enter / ctrl+enter (Claude's chat:newline) — already covered by
+//     opencode's default input_newline = "shift+return,ctrl+return,…".
+//   - ctrl+v (Claude's chat:imagePaste) — already covered by opencode's
+//     default input_paste = { key: "ctrl+v", preventDefault: false }.
+//
+// Mac-only image-paste rebind / Windows-only alt+v unbind from Claude do not
+// apply here because opencode's paste handling is platform-agnostic.
+{
+  "keybinds": {
+    // Undo last typed input. Claude binds OS_KEY+z (cmd+z mac, alt+z linux/win).
+    // Default: "ctrl+-,super+z" — super+z already covers mac, so we just need
+    // to add alt+z on Windows/Linux. Keeping ctrl+- and super+z as fallbacks.
+    "input_undo": "OS_KEY+z,ctrl+-,super+z",
+    // Clear current input. Claude binds OS_KEY+l (cmd+l mac, alt+l linux/win).
+    // Default: "ctrl+c" (also bound to app_exit when input is empty). Keeping
+    // ctrl+c so the dual-purpose exit-when-empty behavior still works.
+    "input_clear": "OS_KEY+l,ctrl+c",
+  },
+}

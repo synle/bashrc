@@ -1,4 +1,5 @@
 /** Configures opencode with both remote and local Ollama providers. */
+// SOURCE software/scripts/advanced/editor.common.js
 
 /** @type {string} The hostname to look up in the home IP address config for resolving Ollama's network IP address. */
 const OPENCODE_OLLAMA_HOSTNAME = "sy-omen45l";
@@ -47,9 +48,10 @@ async function _discoverModels(hosts) {
  * @param {string[]} modelNames - Model names shared across all providers.
  * @param {string|null} remoteHost - Resolved remote IP, or null if not found.
  * @param {string} localHost - Local fallback host.
+ * @param {Record<string, any>} [keybinds] - Optional keybind overrides to merge into config.
  * @returns {object} The full opencode.json content.
  */
-function _buildOpencodeConfig(modelNames, remoteHost, localHost) {
+function _buildOpencodeConfig(modelNames, remoteHost, localHost, keybinds) {
   const modelEntries = Object.fromEntries(modelNames.map((n) => [n, {}]));
   /** @type {Record<string, object>} */
   const providers = {};
@@ -67,7 +69,33 @@ function _buildOpencodeConfig(modelNames, remoteHost, localHost) {
     options: { baseURL: `http://${localHost}:${OPENCODE_OLLAMA_PORT}/v1` },
     models: modelEntries,
   };
-  return { $schema: "https://opencode.ai/config.json", provider: providers };
+  /** @type {Record<string, any>} */
+  const out = { $schema: "https://opencode.ai/config.json", provider: providers };
+  if (keybinds && Object.keys(keybinds).length > 0) {
+    out.keybinds = keybinds;
+  }
+  return out;
+}
+
+/**
+ * Loads opencode-keys.common.jsonc and substitutes OS_KEY for the current platform.
+ * Opencode uses "super" (= cmd) on macOS and "alt" on Windows/Linux — matching the
+ * EDITOR_WINDOWS_OS_KEY / EDITOR_MAC_OS_KEYS fallback used by Sublime/Zed editor scripts.
+ *
+ * @returns {Promise<Record<string, any>>} Resolved keybinds map (empty object if file missing).
+ */
+async function _loadOpencodeKeybinds() {
+  /** @type {{ keybinds?: Record<string, any> } | null} */
+  const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
+  if (!raw || !raw.keybinds) return {};
+
+  const osKey = getEditorOsKey("opencode");
+  /** @type {Record<string, any>} */
+  const resolved = {};
+  for (const [action, binding] of Object.entries(raw.keybinds)) {
+    resolved[action] = typeof binding === "string" ? binding.replace(/OS_KEY/g, osKey) : binding;
+  }
+  return resolved;
 }
 
 /**
@@ -181,7 +209,9 @@ async function doWork() {
   const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
-  await writeJson(targetPath, _buildOpencodeConfig(modelNames, remoteHost, OPENCODE_OLLAMA_DEFAULT_HOST));
+  /** @type {Record<string, any>} Keybind overrides mirroring claude where they fit; empty object means "keep all opencode defaults". */
+  const keybinds = await _loadOpencodeKeybinds();
+  await writeJson(targetPath, _buildOpencodeConfig(modelNames, remoteHost, OPENCODE_OLLAMA_DEFAULT_HOST, keybinds));
   log(">> opencode config written:", targetPath);
 
   await _syncOpencodeCommandSymlinks();
