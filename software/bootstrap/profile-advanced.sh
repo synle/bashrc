@@ -533,7 +533,10 @@ alias amend="git amend"
 # ---- Aliases: Claude ----
 # SOURCE | software/scripts/advanced/claude/claude.profile.bash
 
-# ---- Aliases: GitHub Copilot ----
+# ---- Aliases: OpenCode ----
+# SOURCE | software/scripts/advanced/opencode/opencode.profile.bash
+
+# ---- Aliases: Copilot ----
 # SOURCE | software/scripts/advanced/copilot/copilot.profile.bash
 
 # ---- Aliases: Gemini ----
