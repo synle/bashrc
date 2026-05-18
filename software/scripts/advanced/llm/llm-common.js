@@ -4,8 +4,12 @@ const OLLAMA_SY_OMEN45L = "192.168.1.45";
 /** @type {number} Default Ollama HTTP port (upstream default). */
 const OLLAMA_PORT = 11434;
 const OLLAMA_MODELS = [
-  { name: "qwen3-coder:30b" }, // ollama pull qwen3-coder:30b
-  { name: "qwen3.6:latest" }, // ollama pull qwen3.6:30b
+  // { name: "qwen3-coder:30b" }, // ollama pull qwen3-coder:30b
+  // { name: "qwen3.6:latest" }, // ollama pull qwen3.6:30b
+  // heavyweight - 5090
+  { name: "qwen2.5-coder:14b" }, // ollama pull qwen2.5-coder:14b
+  // lightweight - 3070ti 8gb laptop
+  { name: "qwen2.5-coder:3b" }, // ollama pull qwen2.5-coder:3b
 ];
 
 /** Simplified Provider Array schema passing into configuration builder */
