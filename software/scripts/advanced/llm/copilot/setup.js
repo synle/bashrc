@@ -17,13 +17,17 @@
 //                   paths; it confirmed `~/.copilot/AGENTS.md` as the
 //                   user-level fallback alongside cwd `./AGENTS.md` and
 //                   `.github/copilot-instructions.md`)
-//
-//   ❌ Keybindings — Copilot v1.0.48 has NO keymap config (every input chord
-//                    is hardcoded in the Mach-O binary; see
-//                    docs/editor-keybindings.md → "Copilot CLI configurability
-//                    gap"). If GitHub ever ships a config knob, drop a
-//                    `copilot-keys.common.jsonc` next to this file and wire a
-//                    _doKeysWork() in here mirroring opencode/setup.js.
+//   ⚠️ Keybindings — Mirror-shaped only. copilot-keys.common.jsonc and
+//                    copilot-keys.windows.jsonc exist in the same format as
+//                    Claude's pair, and _doCopilotKeysWork() below merges
+//                    them into .build/copilot-keys{,-mac} every CI run so
+//                    the merge stays exercised. The LIVE deploy to a real
+//                    config path is no-op'd because Copilot v1.0.48 has NO
+//                    keymap config (every input chord is hardcoded in the
+//                    Mach-O binary; see docs/editor-keybindings.md →
+//                    "Copilot CLI configurability gap"). When upstream ships
+//                    a config knob, the only edit needed is to uncomment the
+//                    writeJson() block at the bottom of _doCopilotKeysWork().
 //
 //   ❌ User-level slash commands — Copilot has no `~/.copilot/commands/*.md`
 //                    fallthrough the way Claude does. Its equivalent is
@@ -40,6 +44,142 @@
 //                    are owned by the user (or by the Captain
 //                    `install-plugin-to-copilot` skill if the user opts in).
 //                    This script intentionally leaves them untouched.
+
+////// Keybindings //////
+
+/** @type {string} Copilot CLI OS modifier key on macOS (meta = cmd in terminals). Mirrors CLAUDE_MAC_OS_KEY. */
+const COPILOT_MAC_OS_KEY = "meta";
+
+/** @type {object[]} Common keybindings loaded from JSONC. */
+let COPILOT_COMMON_KEY_BINDINGS;
+/** @type {object[]} Windows/Linux-only keybindings loaded from JSONC. */
+let COPILOT_WINDOWS_ONLY_KEY_BINDINGS;
+
+/**
+ * Replaces OS_KEY placeholders in Copilot CLI keybinding context groups with the actual OS-specific modifier key.
+ * Copilot bindings reuse Claude's { context, bindings: { key: action } } shape where OS_KEY appears in object keys.
+ * @param {object[]} contextGroups - Array of { context, bindings } objects.
+ * @param {string} osKeyToUse - The OS-specific modifier key to substitute (e.g. "alt", "meta").
+ * @returns {object[]} Context groups with resolved binding keys.
+ */
+function _formatCopilotKeybindings(contextGroups, osKeyToUse) {
+  contextGroups = clone(contextGroups);
+
+  for (const group of contextGroups) {
+    /** @type {Record<string, string>} Resolved bindings with OS_KEY replaced in keys. */
+    const resolved = {};
+    for (const [key, action] of Object.entries(group.bindings)) {
+      resolved[key.replace(/OS_KEY/g, osKeyToUse)] = action;
+    }
+    group.bindings = resolved;
+  }
+
+  return contextGroups;
+}
+
+/**
+ * Merges multiple arrays of Copilot CLI keybinding context groups, combining bindings for the same context.
+ * Direct mirror of claude/setup.js's _mergeContextGroups — kept local to avoid cross-file coupling between
+ * the two setup.js scripts (matches the opencode/setup.js precedent of duplicating helpers locally).
+ * @param  {...object[]} arrays - Arrays of { context, bindings } objects to merge.
+ * @returns {object[]} Merged context groups with combined bindings.
+ */
+function _mergeCopilotContextGroups(...arrays) {
+  /** @type {Map<string, object>} Map of context name to merged bindings. */
+  const map = new Map();
+
+  for (const arr of arrays) {
+    for (const group of arr) {
+      if (map.has(group.context)) {
+        Object.assign(map.get(group.context).bindings, group.bindings);
+      } else {
+        map.set(group.context, clone(group));
+      }
+    }
+  }
+
+  return [...map.values()];
+}
+
+/**
+ * Returns the merged and resolved keybinding config for the given OS.
+ * Schema metadata fields ($schema / $docs) are placeholders — Copilot has no published keybindings schema yet.
+ * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
+ * @returns {object} Full Copilot CLI keybindings config with schema metadata.
+ */
+function _getCopilotKeyConfig(isOsMac) {
+  const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
+  const osKey = isMac ? COPILOT_MAC_OS_KEY : EDITOR_WINDOWS_OS_KEY;
+
+  /** @type {object[]} Platform-specific bindings merged with common. */
+  const merged = isMac
+    ? _mergeCopilotContextGroups(COPILOT_COMMON_KEY_BINDINGS)
+    : _mergeCopilotContextGroups(COPILOT_COMMON_KEY_BINDINGS, COPILOT_WINDOWS_ONLY_KEY_BINDINGS);
+
+  return {
+    // Pre-staged schema URL — github/copilot-cli has not published a
+    // keybindings schema yet (no equivalent of schemastore's
+    // claude-code-keybindings.json). Update when upstream publishes one.
+    $schema: "https://example.invalid/copilot-cli-keybindings.json",
+    $docs: "https://docs.github.com/copilot/concepts/agents/about-copilot-cli",
+    bindings: _formatCopilotKeybindings(merged, osKey),
+  };
+}
+
+/**
+ * Loads common + windows JSONC files, merges them, and writes per-platform build artifacts.
+ * The LIVE deploy to ~/.copilot/keybindings.json is intentionally NOT performed: Copilot
+ * v1.0.48 does not read any keybindings file from disk (chords are hardcoded in the binary).
+ * The merge runs every CI run so the schema is exercised and stays parseable; when upstream
+ * ships a keymap config surface, uncomment the writeJson() block at the bottom of this
+ * function and add a backupConfigFile() call mirroring claude/setup.js exactly.
+ * @param {string} targetDir - Path to the ~/.copilot directory (used only by the deferred live deploy).
+ */
+async function _doCopilotKeysWork(targetDir) {
+  log(">> GitHub Copilot CLI Keybindings (preview only — Copilot has no on-disk keymap surface yet):");
+  log("   Build artifacts:", `${BUILD_DIR}/copilot-keys`, "+", `${BUILD_DIR}/copilot-keys-mac`);
+
+  COPILOT_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/llm/copilot/copilot-keys.common.jsonc`) || [];
+  COPILOT_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/llm/copilot/copilot-keys.windows.jsonc`) || [];
+
+  // write to build file (one per platform) — mirrors claude/setup.js exactly
+  const comments = "GitHub Copilot CLI Keybindings (pre-staged; not yet read by Copilot)";
+  await writeBuildArtifact([
+    {
+      file: `${BUILD_DIR}/copilot-keys`,
+      data: _getCopilotKeyConfig(false),
+      isJson: true,
+      comments,
+      commentStyle: "json",
+    },
+    {
+      file: `${BUILD_DIR}/copilot-keys-mac`,
+      data: _getCopilotKeyConfig(true),
+      isJson: true,
+      comments,
+      commentStyle: "json",
+    },
+  ]);
+
+  // ----------------------------------------------------------------------
+  // DEFERRED LIVE DEPLOY — uncomment when github/copilot-cli ships a keymap
+  // config surface. Mirror the bottom half of claude/setup.js's _doKeysWork()
+  // exactly: read existing user bindings, merge ours on top, backupConfigFile,
+  // writeJson. The target path below is a guess; replace with whatever
+  // upstream documents (likely ~/.copilot/keybindings.json by convention).
+  // ----------------------------------------------------------------------
+  // const targetPath = path.join(targetDir, "keybindings.json");
+  // log(">> GitHub Copilot CLI Keybindings (live deploy):", targetPath);
+  // let existingBindings = [];
+  // try {
+  //   const data = JSON.parse(fs.readFileSync(targetPath, "utf-8"));
+  //   if (data && Array.isArray(data.bindings)) existingBindings = data.bindings;
+  // } catch (e) {}
+  // const ourConfig = _getCopilotKeyConfig();
+  // ourConfig.bindings = _mergeCopilotContextGroups(existingBindings, ourConfig.bindings);
+  // await backupConfigFile(targetPath);
+  // await writeJson(targetPath, ourConfig);
+}
 
 ////// Settings //////
 
@@ -178,5 +318,6 @@ async function doWork() {
   log(">> Configuring GitHub Copilot CLI:", targetDir);
 
   await _doCopilotSettingsWork(targetDir);
+  await _doCopilotKeysWork(targetDir);
   await _doCopilotInstructionsWork(targetDir);
 }

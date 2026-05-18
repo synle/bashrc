@@ -1,0 +1,22 @@
+// GitHub Copilot CLI Windows/Linux-only keybindings.
+// These supplement the common keybindings with platform-specific shortcuts.
+// Mirrors software/scripts/advanced/llm/claude/claude-keys.windows.jsonc.
+//
+// Same pre-staged status as copilot-keys.common.jsonc — see that file's
+// header for the upstream-gap explanation. The merge in
+// copilot/setup.js's _doCopilotKeysWork() runs every CI run and the result
+// lands in .build/copilot-keys; nothing is deployed live until upstream
+// ships a keymap configuration surface.
+[
+  {
+    "context": "Chat",
+    "bindings": {
+      // remove default alt+v paste image — ctrl+v is used instead (set in common).
+      // On Windows/Linux, OS_KEY resolves to alt, so OS_KEY+z / OS_KEY+l in
+      // the common file become alt+z / alt+l; an unbound alt+v would double-
+      // fire with chat:imagePaste's ctrl+v (same reason claude-keys.windows.jsonc
+      // nulls this binding).
+      "alt+v": null,
+    },
+  },
+]

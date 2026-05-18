@@ -1,0 +1,61 @@
+// GitHub Copilot CLI custom keybindings shared across all platforms.
+// OS_KEY = CMD (meta) key on macOS, ALT key on Windows/Linux.
+//
+// Mirrors the schema and chord set of
+// software/scripts/advanced/llm/claude/claude-keys.common.jsonc so muscle
+// memory carries across the two CLIs. See docs/editor-keybindings.md →
+// "AI CLI Assistants" for the cross-tool comparison tables.
+//
+// PRE-STAGED — NOT LIVE-DEPLOYED YET
+// ----------------------------------
+// Copilot CLI v1.0.48 has NO keymap configuration surface. `copilot help
+// config` lists every settable key (model, theme, banner, beep, hooks,
+// enabledPlugins, allowedUrls, etc.) and `keybindings` / `keymap` is not
+// among them. github/copilot-cli source search returns 0 hits for those
+// schema keys; the chord vocabulary is bundled into the Mach-O binary and
+// not addressable from disk.
+//
+// This file is still kept in tree (and exercised by copilot/setup.js, which
+// merges common + windows just like claude/setup.js does and writes the
+// result to .build/copilot-keys{,-mac}) so that:
+//   1. The merge code path is live every CI run and won't bit-rot.
+//   2. When upstream ships a keymap config knob, the only edit needed is to
+//      uncomment the live writeJson() call in copilot/setup.js's
+//      _doCopilotKeysWork() — the chord intent is already captured here.
+//   3. The schema for "what Copilot's keymap should look like" is reviewable
+//      in PRs against this file, not in someone's head.
+//
+// Upstream feature-request status (verified 2026-05):
+//   - github/copilot-cli#1069  CLOSED — readline/emacs editing shortcuts
+//   - github/copilot-cli#2403  CLOSED — remap esc / ctrl+esc cancel
+//   - related closed: #37, #423, #540, #1041, #139
+[
+  {
+    "context": "Global",
+    "bindings": {
+      // toggle task list — matches Claude's app:toggleTodos
+      "ctrl+t": "app:toggleTodos",
+    },
+  },
+  {
+    "context": "Chat",
+    "bindings": {
+      // newline insertion
+      "shift+enter": "chat:newline",
+      "ctrl+enter": "chat:newline",
+      // undo (OS_KEY+z, matching cmd+z on Mac, alt+z on Windows/Linux)
+      "OS_KEY+z": "chat:undo",
+      // clear input (OS_KEY+l, matching cmd+l on Mac, alt+l on Windows/Linux)
+      "OS_KEY+l": "chat:clearInput",
+      // unbind ctrl+a / ctrl+e so readline HOME / END work
+      "ctrl+a": null,
+      "ctrl+e": null,
+      // open $EDITOR (vim) — Copilot's current default is ctrl+g and ctrl+x
+      // is a two-step prefix (ctrl+x → b / o). Pulling editor-open onto
+      // ctrl+x matches Claude + opencode + bash readline.
+      "ctrl+x": "chat:externalEditor",
+      // paste image — contingent on Copilot adding multimodal input
+      "ctrl+v": "chat:imagePaste",
+    },
+  },
+]
