@@ -21,11 +21,11 @@
 //                   `{ command, key }` objects; prefixing `command` with `-`
 //                   removes a default binding. Discovered in Gemini bundle
 //                   chunk-MODIYMRW.js (function `loadCustomKeybindings`, ~ line
-//                   64732). Gemini's upstream defaults already cover most of
-//                   Claude's convention natively (ctrl+enter newline, OS_KEY+z
-//                   undo, ctrl+t todos, ctrl+x editor, ctrl+v paste); the only
-//                   gap we close here is OS_KEY+l → edit.clear. See
-//                   gemini-keys.common.jsonc for the full mirror table.
+//                   64732). Mirrors Claude's common+windows split:
+//                   gemini-keys.common.jsonc carries every Claude chord
+//                   explicitly (no reliance on Gemini upstream defaults),
+//                   gemini-keys.windows.jsonc removes the default alt+v
+//                   paste so OS_KEY=alt on Windows/Linux doesn't collide.
 //
 //   ❌ User-level slash commands — Gemini has no `~/.gemini/commands/*.md`
 //                    fallthrough. Its equivalent is the extension system
@@ -55,19 +55,33 @@ function _geminiOsKey(isOsMac) {
 }
 
 /**
- * Loads `gemini-keys.common.jsonc` and substitutes `OS_KEY` in every chord
- * for the current platform. Returns a flat array of `{ command, key }` objects
+ * Loads `gemini-keys.common.jsonc` (and `gemini-keys.windows.jsonc` on
+ * non-mac platforms) and substitutes `OS_KEY` in every chord for the
+ * current platform. Returns a flat array of `{ command, key }` objects
  * ready to write to `~/.gemini/keybindings.json`.
+ *
+ * Mirrors the common+windows split used by claude/setup.js. The windows
+ * file currently only nulls `alt+v` paste (`{ command: "-input.paste",
+ * key: "alt+v" }`) so OS_KEY=alt on Windows/Linux doesn't double-bind
+ * paste; expand as needed if more OS_KEY=alt collisions surface.
  *
  * @param {boolean} [isOsMac] - Override for macOS detection. Defaults to the global `is_os_mac` flag.
  * @returns {Promise<Array<{ command: string, key: string }>>} Resolved managed bindings.
  */
 async function _loadGeminiManagedKeybindings(isOsMac) {
-  /** @type {Array<{ command: string, key: string }> | null} */
-  const raw = await readJson`software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc`;
-  if (!Array.isArray(raw)) return [];
+  const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
 
-  const osKey = _geminiOsKey(isOsMac);
+  /** @type {Array<{ command: string, key: string }> | null} */
+  const common = await readJson`software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc`;
+  /** @type {Array<{ command: string, key: string }> | null} */
+  const windows = isMac ? null : await readJson`software/scripts/advanced/llm/gemini/gemini-keys.windows.jsonc`;
+
+  /** @type {Array<{ command: string, key: string }>} */
+  const raw = [...(Array.isArray(common) ? common : []), ...(Array.isArray(windows) ? windows : [])];
+
+  if (raw.length === 0) return [];
+
+  const osKey = _geminiOsKey(isMac);
 
   return raw.map((entry) => ({
     command: entry.command,

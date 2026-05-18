@@ -1,8 +1,6 @@
 /** Claude Code setup: settings, keybindings, and telemetry opt-out. Run: `bash run.sh --files="setup.js"` */
 // SOURCE software/scripts/advanced/editor.common.js
 
-////// Keybindings //////
-
 /** @type {string} Claude Code OS modifier key on macOS (meta = cmd in terminals). */
 const CLAUDE_MAC_OS_KEY = "meta";
 
