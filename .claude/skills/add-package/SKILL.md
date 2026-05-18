@@ -70,6 +70,8 @@ If the tool has subcommands worth completing:
 2. Add a `specFile` entry to `SPEC_COMMANDS` in `software/metadata/autocomplete.common.js`
 3. Add a `# BEGIN/END - <command> Autocomplete` marker in `software/bootstrap/profile-advanced.sh`
 
+For static flag lists that you want to reuse across multiple subcommands in the same spec file, declare a `>__name__|val,val,...` macro at the bottom of the spec file (separated by one blank line from the command lines) and reference `__name__` from any command line in that file. Macros are expanded at build time by `expandSpecMacros()`; the runtime shell never sees the `>` definitions. Use macros only for static lists — dynamic tokens (`__git_branches__`, `__npm_scripts__`, etc.) are runtime-expanded and must stay in `DYNAMIC_TOKENS`.
+
 ### 6. CI binary verification
 
 Add a `check_binary` call for the new tool in the "Binary verification" step of `.github/actions/ci-build/action.yml`. Place it in the appropriate category comment section, following the existing pattern:

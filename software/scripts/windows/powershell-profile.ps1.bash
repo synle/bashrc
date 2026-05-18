@@ -381,20 +381,6 @@ function _Register-SpecCompleter {
         $carets = '^'; 1..10 | ForEach-Object { $expanded += "HEAD$carets"; $carets += '^' }
       } elseif ($t -eq '__git_commits__') {
         $expanded += (git log --format='%h' -500 2>$null)
-      } elseif ($t -eq '__git_add_flags__') {
-        $expanded += @('--all', '-A', '--patch', '-p', '--update', '-u', '--force', '-f', '--intent-to-add', '-N', '--dry-run', '-n', '--verbose', '-v', '--edit', '-e')
-      } elseif ($t -eq '__git_branch_flags__') {
-        $expanded += @('--all', '-a', '--delete', '-d', '-D', '--force', '-f', '--move', '-m', '-M', '--copy', '-c', '--list', '-l', '--remotes', '-r', '--verbose', '-v', '--set-upstream-to', '-u', '--unset-upstream', '--sort', '--contains', '--no-contains', '--merged', '--no-merged', '--show-current', '--track', '-t', '--no-track')
-      } elseif ($t -eq '__git_commit_flags__') {
-        $expanded += @('--all', '-a', '--message', '-m', '--amend', '--no-edit', '--allow-empty', '--no-verify', '--fixup', '--squash', '--signoff', '-s', '--verbose', '-v', '--dry-run', '--patch', '-p', '--author', '--date')
-      } elseif ($t -eq '__git_diff_flags__') {
-        $expanded += @('--staged', '--cached', '--word-diff', '--stat', '--name-only', '--name-status', '--no-index', '--color', '--no-color', '--ignore-all-space', '-w', '--ignore-space-change', '-b', '--compact-summary', '--diff-filter')
-      } elseif ($t -eq '__git_log_flags__') {
-        $expanded += @('--oneline', '--graph', '--all', '--stat', '--patch', '-p', '--follow', '--author', '--since', '--until', '--grep', '-n', '--decorate', '--abbrev-commit', '--date', '--format', '--no-merges', '--first-parent', '--reverse')
-      } elseif ($t -eq '__git_show_flags__') {
-        $expanded += @('--stat', '--name-only', '--name-status', '--format', '--patch', '-p', '--word-diff', '-w', '--no-patch', '--abbrev-commit', '--color', '--no-color')
-      } elseif ($t -eq '__git_rebase_flags__') {
-        $expanded += @('--abort', '--continue', '--skip', '--interactive', '-i', '--onto', '--reapply-cherry-picks', '--autosquash', '--no-autosquash', '--exec', '-x', '--update-refs', '--keep-base', '--quit', '--edit-todo')
       } elseif ($t -eq '__files__') {
         $expanded += (Get-ChildItem -File -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
       } elseif ($t -eq '__folders__') {

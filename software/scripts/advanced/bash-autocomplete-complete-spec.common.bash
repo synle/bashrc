@@ -71,27 +71,6 @@ function __spec_complete() {
     local commits=$(git log --format='%h' -500 2> /dev/null | __to_opts)
     opts="${opts//__git_commits__/} $commits"
   fi
-  if [[ "$opts" == *"__git_add_flags__"* ]]; then
-    opts="${opts//__git_add_flags__/} --all -A --patch -p --update -u --force -f --intent-to-add -N --dry-run -n --verbose -v --edit -e"
-  fi
-  if [[ "$opts" == *"__git_branch_flags__"* ]]; then
-    opts="${opts//__git_branch_flags__/} --all -a --delete -d -D --force -f --move -m -M --copy -c --list -l --remotes -r --verbose -v --set-upstream-to -u --unset-upstream --sort --contains --no-contains --merged --no-merged --show-current --track -t --no-track"
-  fi
-  if [[ "$opts" == *"__git_commit_flags__"* ]]; then
-    opts="${opts//__git_commit_flags__/} --all -a --message -m --amend --no-edit --allow-empty --no-verify --fixup --squash --signoff -s --verbose -v --dry-run --patch -p --author --date"
-  fi
-  if [[ "$opts" == *"__git_diff_flags__"* ]]; then
-    opts="${opts//__git_diff_flags__/} --staged --cached --word-diff --stat --name-only --name-status --no-index --color --no-color --ignore-all-space -w --ignore-space-change -b --compact-summary --diff-filter"
-  fi
-  if [[ "$opts" == *"__git_log_flags__"* ]]; then
-    opts="${opts//__git_log_flags__/} --oneline --graph --all --stat --patch -p --follow --author --since --until --grep -n --decorate --abbrev-commit --date --format --no-merges --first-parent --reverse"
-  fi
-  if [[ "$opts" == *"__git_show_flags__"* ]]; then
-    opts="${opts//__git_show_flags__/} --stat --name-only --name-status --format --patch -p --word-diff -w --no-patch --abbrev-commit --color --no-color"
-  fi
-  if [[ "$opts" == *"__git_rebase_flags__"* ]]; then
-    opts="${opts//__git_rebase_flags__/} --abort --continue --skip --interactive -i --onto --reapply-cherry-picks --autosquash --no-autosquash --exec -x --update-refs --keep-base --quit --edit-todo"
-  fi
   if [[ "$opts" == *"__npm_scripts__"* ]]; then
     local scripts=$(node -e "try{console.log(Object.keys(require('./package.json').scripts).join(' '))}catch(e){}" 2> /dev/null)
     opts="${opts//__npm_scripts__/} $scripts"

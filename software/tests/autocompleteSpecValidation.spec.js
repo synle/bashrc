@@ -13,36 +13,8 @@ const sandbox = {};
 vm.default.runInNewContext(commonSource.replace(/^(const|let) /gm, "var ").replace(/^function /gm, "var _fn = function "), sandbox);
 const SPEC_COMMANDS = sandbox.SPEC_COMMANDS;
 
-/** Valid dynamic tokens documented in autocomplete.common.js. */
-const VALID_TOKENS = new Set([
-  "__git_branches__",
-  "__git_remotes__",
-  "__git_files__",
-  "__git_head_refs__",
-  "__git_commits__",
-  "__git_add_flags__",
-  "__git_branch_flags__",
-  "__git_commit_flags__",
-  "__git_diff_flags__",
-  "__git_log_flags__",
-  "__git_show_flags__",
-  "__git_rebase_flags__",
-  "__npm_scripts__",
-  "__makefile_targets__",
-  "__ssh_hosts__",
-  "__tldr_commands__",
-  "__cargo_targets__",
-  "__python_scripts__",
-  "__gradle_tasks__",
-  "__composer_scripts__",
-  "__files__",
-  "__folders__",
-  "__paths__",
-  "__nested_text_files__",
-  "__nested_files__",
-  "__nested_folders__",
-  "__nested_paths__",
-]);
+/** Valid dynamic tokens — loaded from autocomplete.common.js DYNAMIC_TOKENS (single source of truth). */
+const VALID_TOKENS = new Set(sandbox.DYNAMIC_TOKENS);
 
 /** Unique spec file paths referenced by SPEC_COMMANDS (excludes specCommand proxies). */
 const uniqueSpecFiles = [...new Set(SPEC_COMMANDS.map((c) => c.specFile).filter(Boolean))];
@@ -148,17 +120,20 @@ describe("spec file formatting", () => {
         expect(content.endsWith("\n\n"), "File should not end with multiple newlines").toBe(false);
       });
 
-      it("should not have blank lines in the middle", () => {
-        // Allow trailing newline but no empty lines within the spec
+      it("should allow at most one blank line, used only as a separator before the macro section", () => {
+        // Allow trailing newline; allow ONE blank line iff it immediately precedes the
+        // first `>__name__|...` macro definition line (sections: commands / blank / macros).
         const trimmed = content.replace(/\n$/, "");
-        const blankLines = trimmed
-          .split("\n")
-          .map((line, i) => ({ line, num: i + 1 }))
-          .filter(({ line }) => line.trim() === "");
+        const allLines = trimmed.split("\n");
+        const blankIndices = allLines.map((line, i) => ({ line, num: i + 1 })).filter(({ line }) => line.trim() === "");
+        if (blankIndices.length === 0) return;
+        expect(blankIndices.length, `Multiple blank lines found`).toBeLessThanOrEqual(1);
+        const blankIdx = blankIndices[0].num - 1;
+        const nextNonBlank = allLines.slice(blankIdx + 1).find((l) => l.trim() !== "");
         expect(
-          blankLines.map((b) => `line ${b.num}`),
-          `Blank lines found`,
-        ).toEqual([]);
+          nextNonBlank && nextNonBlank.trim().startsWith(">"),
+          `Blank line at line ${blankIdx + 1} is not a macro-section separator`,
+        ).toBe(true);
       });
 
       it("should not have duplicate prefixes (left of |)", () => {
@@ -177,17 +152,29 @@ describe("spec file formatting", () => {
         expect(duplicates, `Duplicate prefixes`).toEqual([]);
       });
 
-      it("should only use valid dynamic tokens", () => {
+      it("should only use valid dynamic tokens or local macros", () => {
+        // First pass: collect macro definitions (`>__name__|...` lines).
+        const localMacros = new Set();
+        for (const line of lines) {
+          const trimmed = line.trim();
+          const m = trimmed.match(/^>(__[a-zA-Z0-9_]+__)\|/);
+          if (m) localMacros.add(m[1]);
+        }
+        const allowedTokens = new Set([...VALID_TOKENS, ...localMacros]);
+
+        // Second pass: validate every `__token__` reference on command and macro lines.
         const invalid = [];
         for (const line of lines) {
           const trimmed = line.trim();
           if (!trimmed) continue;
-          const parts = trimmed.split("|");
+          // Strip leading `>__name__` for macro lines so we only validate RHS tokens.
+          const body = trimmed.startsWith(">") ? trimmed.replace(/^>(__[a-zA-Z0-9_]+__)\|/, "|") : trimmed;
+          const parts = body.split("|");
           if (parts.length < 2 || !parts[1]) continue;
           const completions = parts[1].split(",");
           for (const token of completions) {
             const t = token.trim();
-            if (t.startsWith("__") && t.endsWith("__") && !VALID_TOKENS.has(t)) {
+            if (t.startsWith("__") && t.endsWith("__") && !allowedTokens.has(t)) {
               invalid.push(`${t} in "${trimmed}"`);
             }
           }
@@ -438,59 +425,6 @@ describe("dynamic token expansion (bash integration)", () => {
       for (const hash of results) {
         expect(hash).toMatch(/^[0-9a-f]+$/);
       }
-    });
-  });
-
-  // ---- static git flag tokens ----
-
-  describe("static git flag tokens", () => {
-    it("__git_add_flags__ should include --all and --patch", () => {
-      const script = buildCompletionTestScript("add|__git_add_flags__", ["testcmd", "add", "--"], 2);
-      const results = runCompletionScript(script);
-      expect(results).toContain("--all");
-      expect(results).toContain("--patch");
-    });
-
-    it("__git_branch_flags__ should include --delete and --move", () => {
-      const script = buildCompletionTestScript("branch|__git_branch_flags__", ["testcmd", "branch", "--"], 2);
-      const results = runCompletionScript(script);
-      expect(results).toContain("--delete");
-      expect(results).toContain("--move");
-    });
-
-    it("__git_commit_flags__ should include --amend and --message", () => {
-      const script = buildCompletionTestScript("commit|__git_commit_flags__", ["testcmd", "commit", "--"], 2);
-      const results = runCompletionScript(script);
-      expect(results).toContain("--amend");
-      expect(results).toContain("--message");
-    });
-
-    it("__git_diff_flags__ should include --staged and --word-diff", () => {
-      const script = buildCompletionTestScript("diff|__git_diff_flags__", ["testcmd", "diff", "--"], 2);
-      const results = runCompletionScript(script);
-      expect(results).toContain("--staged");
-      expect(results).toContain("--word-diff");
-    });
-
-    it("__git_log_flags__ should include --oneline and --graph", () => {
-      const script = buildCompletionTestScript("log|__git_log_flags__", ["testcmd", "log", "--"], 2);
-      const results = runCompletionScript(script);
-      expect(results).toContain("--oneline");
-      expect(results).toContain("--graph");
-    });
-
-    it("__git_show_flags__ should include --stat and --name-only", () => {
-      const script = buildCompletionTestScript("show|__git_show_flags__", ["testcmd", "show", "--"], 2);
-      const results = runCompletionScript(script);
-      expect(results).toContain("--stat");
-      expect(results).toContain("--name-only");
-    });
-
-    it("__git_rebase_flags__ should include --abort and --interactive", () => {
-      const script = buildCompletionTestScript("rebase|__git_rebase_flags__", ["testcmd", "rebase", "--"], 2);
-      const results = runCompletionScript(script);
-      expect(results).toContain("--abort");
-      expect(results).toContain("--interactive");
     });
   });
 

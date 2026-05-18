@@ -25,7 +25,7 @@ https://synle.github.io/bashrc/
 A custom spec-based autocomplete system that works on both Bash and PowerShell from the same source files. Plain text spec files define completions for any command -- no shell-specific syntax required.
 
 - **37 spec files** covering **49 commands** (including aliases like `g` for `git`, `n` for `npm`)
-- **27 dynamic tokens** that expand at tab time (`__git_branches__`, `__npm_scripts__`, `__makefile_targets__`, `__ssh_hosts__`, etc.)
+- **20 dynamic tokens** that expand at tab time (`__git_branches__`, `__npm_scripts__`, `__makefile_targets__`, `__ssh_hosts__`, etc.) — plus **per-spec `>__name__|...` macros** for static flag lists, resolved at build time
 - **Nested subcommand support** (`kubectl rollout status <TAB>` gives resource types + flags)
 - **Spec generators** that auto-build specs from `--help` output (git, docker, npm)
 - **Alias proxying** -- one line to give any alias the same completions as its target command

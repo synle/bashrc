@@ -27,13 +27,6 @@
  *   __git_files__          modified + untracked files (git diff + ls-files)
  *   __git_head_refs__      HEAD, HEAD~1..HEAD~100, HEAD^..HEAD^^^^^^^^^^
  *   __git_commits__        up to 500 recent commit short hashes (git log --format='%h' -500)
- *   __git_add_flags__      git add flags (--all, -A, --patch, -p, --edit, -e, etc.)
- *   __git_branch_flags__   git branch flags (--all, -a, --delete, -d, --show-current, etc.)
- *   __git_commit_flags__   git commit flags (--all, -a, --message, -m, --patch, -p, etc.)
- *   __git_diff_flags__     git diff flags (--staged, --cached, --word-diff, -w, -b, etc.)
- *   __git_log_flags__      git log flags (--oneline, --graph, --all, --format, etc.)
- *   __git_show_flags__     git show flags (--stat, --name-only, --patch, --no-patch, etc.)
- *   __git_rebase_flags__   git rebase flags (--abort, --continue, --skip, -i, --exec, etc.)
  *   __npm_scripts__        script names from ./package.json
  *   __makefile_targets__   target names from ./Makefile
  *   __ssh_hosts__          hostnames from ~/.ssh/config and ~/.ssh/config.d/*
@@ -50,38 +43,242 @@
  *   __nested_folders__     nested directories up to MAX_NESTED_DEPTH levels deep (fd/find)
  *   __nested_paths__       nested files and directories up to MAX_NESTED_DEPTH levels deep (fd/find)
  *
- * Token expansion is implemented in two places:
- *   - Bash (Linux/macOS): software/index.js — registerWithBashSyleAutocompleteWithRawContent()
- *   - PowerShell (Windows): software/scripts/windows/powershell-profile.ps1.bash — _Register-SpecCompleter()
+ * Dynamic token expansion is implemented in two places (runtime):
+ *   - Bash (Linux/macOS): software/scripts/advanced/bash-autocomplete-complete-spec.common.bash
+ *   - PowerShell (Windows): software/scripts/windows/powershell-profile.ps1.bash
+ *
+ * Macro definitions (resolved at BUILD time — runtime parsers never see them):
+ *
+ * Per-spec-file static flag lists live as `>` lines at the bottom of the spec file:
+ *
+ *   add|__git_files__,__git_add_flags__
+ *   diff|__git_files__,__git_diff_flags__
+ *
+ *   >__git_add_flags__|--all,-A,--patch,-p,--update,-u,--force,-f,...
+ *   >__git_diff_flags__|--staged,--cached,--word-diff,--stat,--name-only,...
+ *
+ * Syntax:
+ *   - Line starts with `>` (sorts macros below command lines via dedupeSpecLines).
+ *   - Followed by macro name `__name__` (matches the same `__token__` shape as
+ *     dynamic tokens — they're indistinguishable to the human reader at the
+ *     reference site, only the `>` definition line marks them as static).
+ *   - Pipe-separated body, comma-delimited entries — same as command lines.
+ *
+ * expandSpecMacros() resolves macro references recursively (max 10 layers),
+ * dedupes the expanded completion list, and strips macro definition lines
+ * from the output before the spec content is injected into bash/PowerShell
+ * templates. Result: the seven `__git_*_flags__` lists live in the git spec
+ * file (declarative + diffable), not duplicated in two completer implementations.
  *
  * To add a new command:
  *   1. Create the spec file: software/metadata/autocomplete-complete-spec/<command>
  *   2. Add an entry to SPEC_COMMANDS below
  *   3. Run `make format_build_include` to propagate to consuming scripts
  *
- * To add a new dynamic token:
- *   1. Add expansion logic in software/index.js (bash completer)
- *   2. Add expansion logic in software/scripts/windows/powershell-profile.ps1.bash (PowerShell completer)
- *   3. Document the token in the table above
+ * To add a new dynamic token (expanded at runtime by shell/PowerShell):
+ *   1. Add the token name to DYNAMIC_TOKENS below
+ *   2. Add expansion logic in software/scripts/advanced/bash-autocomplete-complete-spec.common.bash
+ *   3. Add expansion logic in software/scripts/windows/powershell-profile.ps1.bash
+ *   4. Document the token in the table above
+ *
+ * To add a new static macro for a command (e.g. extra flag list):
+ *   1. Add a `>__name__|val,val,...` line to the relevant spec file (or to
+ *      the generator that writes it, e.g. autocomplete-spec-git.js)
+ *   2. Reference it from any command line in the SAME spec file
+ *   3. No completer code changes required
  */
 
 /**
+ * Allow-list of `__token__` names that runtime shells expand themselves.
+ * Used by expandSpecMacros() and the spec-validation tests to reject
+ * unknown / typo'd token references at build time. Keep this in sync
+ * with the runtime expansion logic in:
+ *   - software/scripts/advanced/bash-autocomplete-complete-spec.common.bash
+ *   - software/scripts/windows/powershell-profile.ps1.bash
+ */
+const DYNAMIC_TOKENS = [
+  "__git_branches__",
+  "__git_remotes__",
+  "__git_files__",
+  "__git_head_refs__",
+  "__git_commits__",
+  "__npm_scripts__",
+  "__makefile_targets__",
+  "__ssh_hosts__",
+  "__tldr_commands__",
+  "__cargo_targets__",
+  "__python_scripts__",
+  "__gradle_tasks__",
+  "__composer_scripts__",
+  "__files__",
+  "__folders__",
+  "__paths__",
+  "__nested_text_files__",
+  "__nested_files__",
+  "__nested_folders__",
+  "__nested_paths__",
+];
+
+/**
  * Deduplicates spec lines by prefix (left of |). If two lines share the same prefix, keeps the longer one.
+ * Command lines and `>__name__|...` macro-definition lines are sorted into separate sections —
+ * commands first, then a blank line, then macros — so macros always sit at the bottom of the
+ * generated spec file regardless of where they appear in the input array.
  * @param {string[]} lines - Array of spec lines in "prefix|completions" format.
  * @returns {string} Sorted, deduped spec content joined by newlines.
  */
 function dedupeSpecLines(lines) {
-  const byPrefix = new Map();
+  const commands = new Map();
+  const macros = new Map();
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
+    const target = trimmed.startsWith(">") ? macros : commands;
     const prefix = trimmed.split("|")[0];
-    const existing = byPrefix.get(prefix);
+    const existing = target.get(prefix);
     if (!existing || trimmed.length > existing.length) {
-      byPrefix.set(prefix, trimmed);
+      target.set(prefix, trimmed);
     }
   }
-  return [...byPrefix.values()].sort().join("\n") + "\n";
+  const commandLines = [...commands.values()].sort();
+  const macroLines = [...macros.values()].sort();
+  const sections = [];
+  if (commandLines.length > 0) sections.push(commandLines.join("\n"));
+  if (macroLines.length > 0) sections.push(macroLines.join("\n"));
+  return sections.join("\n\n") + "\n";
+}
+
+/**
+ * Expands `>__name__|val,val,...` macro definitions in spec content at build time.
+ *
+ * - Parses every line starting with `>` as a macro definition (must match
+ *   `^>(__\w+__)\|(.*)$` — throws on malformed `>` lines or duplicate names).
+ * - For each remaining command line, splits the completions on `,` and replaces
+ *   any token whose name matches a macro with the macro's body, recursively
+ *   (up to maxDepth layers). Cycles and over-deep references throw.
+ * - Unknown `__token__` references that are NOT defined as a local macro AND
+ *   NOT in DYNAMIC_TOKENS throw — they are almost certainly typos.
+ * - Dedupes the expanded completion list per line (first-occurrence order).
+ * - Drops all macro definition lines from the output.
+ *
+ * The result is a spec body where every `__static_flag__` macro reference has
+ * been replaced with its literal flag list, but dynamic tokens (`__git_files__`,
+ * `__npm_scripts__`, etc.) pass through unchanged for runtime expansion by the
+ * shell/PowerShell completer.
+ *
+ * @param {string} content - Raw spec file content.
+ * @param {{maxDepth?: number, knownDynamicTokens?: string[]}} [options]
+ *   - maxDepth: macro recursion ceiling (default 10).
+ *   - knownDynamicTokens: list of `__token__` names allowed as passthrough
+ *     references (default DYNAMIC_TOKENS).
+ * @returns {string} Spec content with macros resolved and definition lines removed.
+ */
+function expandSpecMacros(content, options) {
+  const opts = options || {};
+  const maxDepth = opts.maxDepth !== undefined ? opts.maxDepth : 10;
+  const dynamic = new Set(opts.knownDynamicTokens || DYNAMIC_TOKENS);
+
+  const macros = new Map();
+  /** @type {Array<{prefix?: string, tokens?: string[], rawCommand?: string}>} */
+  const commandEntries = [];
+
+  for (const rawLine of content.split("\n")) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+    if (trimmed.startsWith(">")) {
+      const m = trimmed.match(/^>(__[a-zA-Z0-9_]+__)\|(.*)$/);
+      if (!m) {
+        throw new Error(`expandSpecMacros: malformed macro line "${trimmed}" (expected ">__name__|val,val,...")`);
+      }
+      const name = m[1];
+      const body = m[2];
+      if (macros.has(name)) {
+        throw new Error(`expandSpecMacros: duplicate macro definition for "${name}"`);
+      }
+      const tokens = body
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      macros.set(name, tokens);
+      continue;
+    }
+    const pipeIdx = trimmed.indexOf("|");
+    if (pipeIdx < 0) {
+      commandEntries.push({ rawCommand: trimmed });
+      continue;
+    }
+    const prefix = trimmed.slice(0, pipeIdx);
+    const body = trimmed.slice(pipeIdx + 1);
+    const tokens = body
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    commandEntries.push({ prefix, tokens });
+  }
+
+  if (macros.size === 0) {
+    // Still validate that any __token__ references are recognized dynamic tokens.
+    for (const entry of commandEntries) {
+      if (!entry.tokens) continue;
+      for (const tok of entry.tokens) {
+        if (/^__[a-zA-Z0-9_]+__$/.test(tok) && !dynamic.has(tok)) {
+          throw new Error(`expandSpecMacros: unknown token "${tok}" (not a local macro and not in DYNAMIC_TOKENS)`);
+        }
+      }
+    }
+    return content;
+  }
+
+  /**
+   * Recursively resolves macro references in a token list.
+   * @param {string[]} tokens - Token list to expand.
+   * @param {number} depth - Current recursion depth.
+   * @param {Set<string>} seen - Macro names currently being expanded (for cycle detection).
+   * @returns {string[]} Expanded token list with macros substituted.
+   */
+  function expandTokens(tokens, depth, seen) {
+    if (depth > maxDepth) {
+      throw new Error(`expandSpecMacros: macro recursion exceeded ${maxDepth} layers`);
+    }
+    const out = [];
+    for (const tok of tokens) {
+      if (macros.has(tok)) {
+        if (seen.has(tok)) {
+          throw new Error(`expandSpecMacros: macro cycle detected on "${tok}"`);
+        }
+        seen.add(tok);
+        for (const sub of expandTokens(macros.get(tok), depth + 1, seen)) {
+          out.push(sub);
+        }
+        seen.delete(tok);
+      } else if (/^__[a-zA-Z0-9_]+__$/.test(tok) && !dynamic.has(tok)) {
+        throw new Error(`expandSpecMacros: unknown token "${tok}" (not a local macro and not in DYNAMIC_TOKENS)`);
+      } else {
+        out.push(tok);
+      }
+    }
+    return out;
+  }
+
+  const outLines = [];
+  for (const entry of commandEntries) {
+    if (entry.rawCommand !== undefined) {
+      outLines.push(entry.rawCommand);
+      continue;
+    }
+    const expanded = expandTokens(entry.tokens, 0, new Set());
+    const seen = new Set();
+    const deduped = [];
+    for (const t of expanded) {
+      if (!seen.has(t)) {
+        seen.add(t);
+        deduped.push(t);
+      }
+    }
+    outLines.push(entry.prefix + "|" + deduped.join(","));
+  }
+
+  return outLines.join("\n") + "\n";
 }
 
 /**
@@ -339,9 +536,12 @@ async function _registerInlineSpecs() {
     if (!resolvedSpecFile) continue;
     const specContent = await readText`${resolvedSpecFile}`;
     if (!specContent) continue;
+    // Resolve `>__name__|...` static macros at build time so the PowerShell
+    // _Register-SpecCompleter only sees fully-expanded command lines.
+    const expandedSpec = expandSpecMacros(specContent);
 
     // convert spec lines to a PowerShell string array
-    const lines = specContent
+    const lines = expandedSpec
       .split("\n")
       .map((l) => l.trim())
       .filter((l) => l.length > 0)
