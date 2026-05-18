@@ -41,7 +41,7 @@
 # ---- Repo & Path Constants ----
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | 4d449357fe3ef60d6612ad2b53ef8512 | 971 B
+# software/bootstrap/common-env.sh | fa9d3160b42b3475240283db388e82d4 | 964 B
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"

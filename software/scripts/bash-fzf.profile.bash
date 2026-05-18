@@ -20,7 +20,7 @@
 # add_bookmark_dir       — Bookmark a directory (as "cd <dir>")
 #
 # Configures FZF defaults, aliases (glog, fvim), and provides the
-# _fuzzy_list_all directory crawler (Node.js BFS with git fast path).
+# _fuzzy_list_all directory crawler (Node.js BFS combined with git fast path).
 ################################################################################
 export FZF_COMPLETION_TRIGGER='*'
 # Single source of truth for fzf defaults. All flags here apply to every fzf
@@ -190,11 +190,16 @@ function _fuzzy_list_all() {
   #   text_files — files matching text-file extensions only
   #   folders    — folders only
   #
-  # Git fast path: when a directory is a git repo (has .git/), uses async
-  # `git ls-files` / `git ls-tree` instead of readdirSync. For `paths` mode
-  # only one git command runs (ls-files) and directories are derived from
-  # file paths to avoid a second call. Nested git repos discovered during
-  # BFS are processed in parallel via Promise.all.
+  # Git fast path: when a directory is a git repo (has .git/), runs async
+  # `git ls-files` / `git ls-tree` in parallel with the readdir BFS. For
+  # `paths` mode only one git command runs (ls-files) and directories are
+  # derived from file paths to avoid a second call. Nested git repos
+  # discovered during BFS are processed in parallel via Promise.all. The
+  # BFS keeps running alongside git output to surface untracked files
+  # (e.g. brand-new files, `.env`, locally generated artifacts) that
+  # `git ls-files` would miss; emit() dedups overlap via a Set. When root
+  # is a git repo, BFS depth is capped at GIT_BFS_DEPTH (3) since the deep
+  # tracked tree is already covered by git ls-files.
   #
   # Prefix filter (optional `filter` arg): when set, only top-level entries
   # whose name starts with `filter` are processed. This is the key perf
@@ -222,7 +227,10 @@ function _fuzzy_list_all() {
     const isTextFiles = mode === 'text_files';
     function matchesFilter(name) { return !filter || name.toLowerCase().startsWith(filter); }
     function isGitRepo(abs) { try { return fs.statSync(path.join(abs, '.git')).isDirectory(); } catch { return false; } }
+    const emitted = new Set();
     function emit(rp) {
+      if (emitted.has(rp)) return;
+      emitted.add(rp);
       const isDir = rp.endsWith('/');
       if (folderPats.some(r => r.test(rp))) return;
       if (isDir) {
@@ -271,9 +279,18 @@ function _fuzzy_list_all() {
       }
     }
     (async () => {
-    if (isGitRepo(dir)) { await emitGitRepo(dir, ''); process.exit(0); }
     const queue = [{abs: dir, rel: '', depth: 0}];
     const gitPromises = [];
+    // git fast path runs in parallel with BFS; emit() dedups overlap so
+    // tracked files come from git ls-files (fast, full-depth) and
+    // untracked/locally created files come from the readdir BFS.
+    const rootIsGit = isGitRepo(dir);
+    if (rootIsGit) gitPromises.push(emitGitRepo(dir, ''));
+    // When root is a git repo, supplemental BFS only needs to surface
+    // untracked files near the top — git ls-files already covers the deep
+    // tracked tree. Cap BFS depth to keep this cheap in large repos.
+    const GIT_BFS_DEPTH = 3;
+    const bfsMaxDepth = rootIsGit ? Math.min(maxDepth, GIT_BFS_DEPTH) : maxDepth;
     while (queue.length) {
       if (Date.now() > deadline) break;
       const {abs, rel, depth} = queue.shift();
@@ -288,12 +305,12 @@ function _fuzzy_list_all() {
         if (folderPats.some(r => r.test(label))) continue;
         if (isDir) {
           if (isGitRepo(path.join(abs, name))) {
-            if (mode !== 'files' && mode !== 'text_files') process.stdout.write(label + '\n');
             gitPromises.push(emitGitRepo(path.join(abs, name), rp));
-            continue;
+            // fall through — BFS into the nested repo too so untracked
+            // files surface; emit() dedups against git ls-files output.
           }
-          if (mode !== 'files' && mode !== 'text_files') process.stdout.write(label + '\n');
-          if (depth + 1 < maxDepth) queue.push({abs: path.join(abs, name), rel: rp, depth: depth + 1});
+          if (mode !== 'files' && mode !== 'text_files') emit(label);
+          if (depth + 1 < bfsMaxDepth) queue.push({abs: path.join(abs, name), rel: rp, depth: depth + 1});
         } else {
           emit(label);
         }
