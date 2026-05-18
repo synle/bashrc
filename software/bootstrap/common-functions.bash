@@ -67,6 +67,9 @@ function curl_bash_install() {
 #   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
 # Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
 # via cmd.exe. Logs status (Skipped/Success/Error) for each target.
+# When IS_FORCE_REFRESH=1 (and target is stale on the unix side, or unconditionally on Windows),
+# re-runs `npm install -g <pkg>` which re-fetches the npm "latest" dist-tag so callers like
+# gemini / opencode / yarn / clasp pick up upstream releases.
 function npm_install_global() {
   local pkg="$1"
   local bin="${2:-${pkg##*/}}"
@@ -74,10 +77,12 @@ function npm_install_global() {
   # install for current system
   local _resolved
   _resolved=$(has_persistent_binary "$bin")
-  if [ -n "$_resolved" ]; then
+  if [ -n "$_resolved" ] && ! is_force_refresh_stale "$_resolved"; then
     echo ">> $pkg >> Installing with npm global >> Skipped ($_resolved)"
   else
-    echo -n ">> $pkg >> Installing with npm global >> "
+    local _action="Installing"
+    [ -n "$_resolved" ] && _action="Refreshing"
+    echo -n ">> $pkg >> ${_action} with npm global >> "
     if npm install -g --prefix "$HOME/.local" "$pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
       echo "Success"
     else
@@ -87,10 +92,14 @@ function npm_install_global() {
 
   # install for Windows host via WSL
   if ((is_os_wsl)) && type -P cmd.exe &> /dev/null; then
-    if cmd.exe /c "where $bin" &> /dev/null; then
+    local _win_present=0
+    cmd.exe /c "where $bin" &> /dev/null && _win_present=1
+    if ((_win_present)) && ! ((IS_FORCE_REFRESH)); then
       echo ">> $pkg >> Installing with npm global (Windows) >> Skipped"
     else
-      echo -n ">> $pkg >> Installing with npm global (Windows) >> "
+      local _winaction="Installing"
+      ((_win_present)) && _winaction="Refreshing"
+      echo -n ">> $pkg >> ${_winaction} with npm global (Windows) >> "
       if cmd.exe /c "npm install -g $pkg" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
         echo "Success"
       else
