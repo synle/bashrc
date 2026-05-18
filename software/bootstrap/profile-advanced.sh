@@ -644,7 +644,6 @@ function diff() {
 ################################################################################
 # ---- Git Helpers ----
 ################################################################################
-alias clean='_clean_reset_head_to_main_branch' # hard reset current branch to origin default branch
 
 # list source repo names for a GitHub user (default: synle)
 function repos() {
@@ -791,9 +790,23 @@ function rebase_origin_main_branch() {
   git lastd
 }
 
-# Resets the local default branch HEAD to match origin (fetches and force-resets)
-function _clean_reset_head_to_main_branch() {
-  local total_steps=9
+# Safely resets the current branch to origin's default branch.
+# Stashes ALL changes (staged + unstaged + untracked) first as a safety backup so nothing is lost
+# (recover with `git stash list` / `git stash pop`). Does NOT delete untracked working-tree files.
+# Also deletes stale local branches (squash-merged PRs) and prunes stale worktrees.
+function clean() {
+  if is_help_arg "${1:-}"; then
+    echo "clean: safely reset current branch to origin's default branch
+  Usage: clean
+  Notes:
+    - Stashes ALL changes (staged + unstaged + untracked) first as a safety backup
+    - Recover from stash with: git stash list  |  git stash pop
+    - Does NOT delete untracked working-tree files
+    - Also deletes stale local branches (squash-merged PRs) and prunes stale worktrees"
+    return 1
+  fi
+
+  local total_steps=11
   local current_step=0
 
   function _log_step() {
@@ -803,10 +816,24 @@ function _clean_reset_head_to_main_branch() {
     echo "[Step $current_step/$total_steps - ${percent}% done, $remaining left] $1"
   }
 
-  _log_step "Aborting any in-progress git operation..."
-  git abort
+  # Safe stash first: capture staged + unstaged + untracked so nothing is lost.
+  # If working tree is already clean (or an in-progress op blocks stash), this is a no-op.
+  local stash_msg
+  stash_msg="clean backup $(command date +%Y-%m-%d_%H:%M:%S)"
+  _log_step "Stashing all changes (staged + unstaged + untracked) as: '$stash_msg' ..."
+  git stash push --include-untracked --message "$stash_msg" > /dev/null 2>&1
+  echo "  -> recover with: git stash list  |  git stash pop"
 
-  _log_step "Cleaning working tree and fetching latest from origin..."
+  # Soft abort: cancel in-progress merge/rebase/cherry-pick/am WITHOUT 'git clean -fd',
+  # so any untracked working-tree files that did not make it into the stash are preserved.
+  _log_step "Aborting any in-progress merge/rebase/cherry-pick/am (working tree preserved)..."
+  command rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD 2> /dev/null
+  git merge --abort 2> /dev/null
+  git rebase --abort 2> /dev/null
+  git cherry-pick --abort 2> /dev/null
+  git am --abort 2> /dev/null
+
+  _log_step "Fetching latest from origin..."
   git clean-and-fetch
 
   _log_step "Resolving default branch..."
@@ -837,6 +864,9 @@ function _clean_reset_head_to_main_branch() {
 
   _log_step "Deleting stale local branches whose upstream is gone (squash-merged PRs)..."
   git clean-stale-branches
+
+  _log_step "Pruning stale worktree references..."
+  git worktree prune
 
   echo "# ---- Reset to origin/$default_branch (100% done) ----"
   git lastd
