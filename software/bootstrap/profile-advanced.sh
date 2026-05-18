@@ -536,6 +536,9 @@ alias amend="git amend"
 # ---- Aliases: OpenCode ----
 # SOURCE | software/scripts/advanced/llm/opencode/opencode.profile.bash
 
+# ---- Ollama Performance ----
+# SOURCE | software/scripts/advanced/llm/ollama.profile.bash
+
 # ---- Aliases: Copilot ----
 # SOURCE | software/scripts/advanced/llm/copilot/copilot.profile.bash
 
