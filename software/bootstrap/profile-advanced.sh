@@ -543,7 +543,7 @@ alias amend="git amend"
 # SOURCE | software/scripts/advanced/llm/copilot/copilot.profile.bash
 
 # ---- Aliases: Gemini ----
-alias gem="gemini"
+# SOURCE | software/scripts/advanced/llm/gemini/gemini.profile.bash
 
 # ---- Aliases: SSH ----
 alias s="ssh"

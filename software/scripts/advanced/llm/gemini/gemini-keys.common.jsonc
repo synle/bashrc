@@ -1,0 +1,37 @@
+// Gemini CLI custom keybindings shared across all platforms.
+// OS_KEY = "cmd" on macOS, "alt" on Windows/Linux — matches the modifier
+// strings already used by Gemini's defaultKeyBindingConfig (cmd+z + alt+z
+// on edit.undo, cmd+enter + alt+enter on input.newline, etc.).
+//
+// Schema (discovered in Gemini bundle chunk-MODIYMRW.js ~ line 64600):
+//   [{ "command": "<dotNamespacedCommand>", "key": "<chord>" }, ...]
+// Prefix command with "-" to REMOVE a binding from the default config.
+// Anything not listed below keeps its upstream default.
+//
+// Goal: pull Gemini's input-layer chords toward Claude Code's conventions
+// (~/.claude/keybindings.json, generated from
+// software/scripts/advanced/llm/claude/claude-keys.common.jsonc) so muscle
+// memory carries across AI CLIs.
+//
+// Bindings NOT mirrored here — Gemini's upstream defaults already match
+// Claude's convention out-of-the-box, so no overrides are needed:
+//   - app.showFullTodos     = ctrl+t          (mirrors Claude's chat ctrl+t = app:toggleTodos)
+//   - input.newline         = ctrl+enter, cmd+enter, alt+enter, shift+enter, ctrl+j
+//                                              (mirrors Claude's chat shift+enter / ctrl+enter = chat:newline)
+//   - edit.undo             = cmd+z, alt+z   (mirrors Claude's chat OS_KEY+z = chat:undo)
+//   - cursor.home           = ctrl+a, home   (matches Claude's "let HOME flow through" by binding the physical key)
+//   - cursor.end            = ctrl+e, end    (same as above for END)
+//   - input.openExternalEditor = ctrl+x      (mirrors Claude's chat ctrl+x = chat:externalEditor)
+//   - input.paste           = ctrl+v, cmd+v, alt+v
+//                                              (mirrors Claude's chat ctrl+v = chat:imagePaste, plus the
+//                                              alt+v overlap that Claude *nulls* on Windows; we leave it
+//                                              alone here because Gemini's paste is a single command, not
+//                                              an image-specific handler, so the alt+v overlap is benign)
+[
+  // Add OS_KEY+l as an alternate clear-input chord (matches Claude's
+  // chat:clearInput = OS_KEY+l). Gemini's edit.clear default is ctrl+c
+  // (also bound to basic.quit for the dual-purpose exit-when-empty
+  // behavior); we keep ctrl+c intact and just layer OS_KEY+l on top.
+  // Resolves to cmd+l on macOS and alt+l on Windows/Linux.
+  { "command": "edit.clear", "key": "OS_KEY+l" },
+]

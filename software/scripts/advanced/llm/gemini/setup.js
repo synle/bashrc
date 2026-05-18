@@ -15,15 +15,17 @@
 //                   ~/.claude/CLAUDE.md's pattern; Gemini loads this as the
 //                   global context file — see docs/gemini_cli_readme.md)
 //
-//   ⚠️ Keybindings — Gemini docs reference `~/.gemini/keybindings.json` (see
-//                    docs/gemini_cli_readme.md table) but the binary ships
-//                    no schema reference, the file doesn't exist by default
-//                    after install, and there's no `gemini keybindings ...`
-//                    subcommand to introspect the format. Deferred: when
-//                    upstream documents the schema (or a `/keybindings` slash
-//                    command snapshots a real file we can copy), add a
-//                    `gemini-keys.common.jsonc` next to this file and wire a
-//                    _doKeysWork() mirroring opencode/setup.js.
+//   ✅ Keybindings — ~/.gemini/keybindings.json (additive merge: managed
+//                   bindings always apply; user's other entries pass through
+//                   unchanged). Schema is a flat JSON array of
+//                   `{ command, key }` objects; prefixing `command` with `-`
+//                   removes a default binding. Discovered in Gemini bundle
+//                   chunk-MODIYMRW.js (function `loadCustomKeybindings`, ~ line
+//                   64732). Gemini's upstream defaults already cover most of
+//                   Claude's convention natively (ctrl+enter newline, OS_KEY+z
+//                   undo, ctrl+t todos, ctrl+x editor, ctrl+v paste); the only
+//                   gap we close here is OS_KEY+l → edit.clear. See
+//                   gemini-keys.common.jsonc for the full mirror table.
 //
 //   ❌ User-level slash commands — Gemini has no `~/.gemini/commands/*.md`
 //                    fallthrough. Its equivalent is the extension system
@@ -35,6 +37,91 @@
 //
 //   ❌ Skills — Gemini exposes `gemini skills install/link` for agent skills.
 //                    Same reasoning as commands: out of scope (user-owned).
+
+////// Keybindings //////
+
+/**
+ * OS-specific modifier substituted into the `OS_KEY` placeholder used in
+ * `gemini-keys.common.jsonc`. Matches the modifier strings Gemini's own
+ * `defaultKeyBindingConfig` uses: `cmd` on macOS (cmd+z, cmd+enter, cmd+v)
+ * and `alt` on Windows/Linux (alt+z, alt+enter, alt+v).
+ *
+ * @param {boolean} [isOsMac] - Override for macOS detection. Defaults to the global `is_os_mac` flag.
+ * @returns {string} The modifier string to substitute (`"cmd"` or `"alt"`).
+ */
+function _geminiOsKey(isOsMac) {
+  const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
+  return isMac ? "cmd" : "alt";
+}
+
+/**
+ * Loads `gemini-keys.common.jsonc` and substitutes `OS_KEY` in every chord
+ * for the current platform. Returns a flat array of `{ command, key }` objects
+ * ready to write to `~/.gemini/keybindings.json`.
+ *
+ * @param {boolean} [isOsMac] - Override for macOS detection. Defaults to the global `is_os_mac` flag.
+ * @returns {Promise<Array<{ command: string, key: string }>>} Resolved managed bindings.
+ */
+async function _loadGeminiManagedKeybindings(isOsMac) {
+  /** @type {Array<{ command: string, key: string }> | null} */
+  const raw = await readJson`software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc`;
+  if (!Array.isArray(raw)) return [];
+
+  const osKey = _geminiOsKey(isOsMac);
+
+  return raw.map((entry) => ({
+    command: entry.command,
+    key: typeof entry.key === "string" ? entry.key.replace(/OS_KEY/g, osKey) : entry.key,
+  }));
+}
+
+/**
+ * Deploys the managed bindings to `~/.gemini/keybindings.json`. Additive merge:
+ *   1. Managed bindings (from `gemini-keys.common.jsonc`, OS_KEY substituted)
+ *      always apply.
+ *   2. Any existing user bindings whose `(command, key)` pair does NOT collide
+ *      with a managed entry are preserved untouched.
+ *   3. Existing user bindings that collide with a managed entry are replaced
+ *      by the managed one (so a re-run of this script always converges to the
+ *      managed state for the chords we own).
+ *
+ * @param {string} targetDir - Path to the `~/.gemini` directory.
+ */
+async function _doGeminiKeysWork(targetDir) {
+  const targetPath = path.join(targetDir, "keybindings.json");
+
+  log(">> Gemini CLI Keybindings:", targetPath);
+
+  const managed = await _loadGeminiManagedKeybindings();
+  if (managed.length === 0) {
+    log("   No managed bindings — skipping");
+    return;
+  }
+
+  /** @type {Array<{ command: string, key: string }>} Existing user bindings (empty if file missing or invalid). */
+  let existing = [];
+  try {
+    const data = JSON.parse(fs.readFileSync(targetPath, "utf-8"));
+    if (Array.isArray(data)) existing = data;
+  } catch (e) {}
+
+  // build collision set keyed by (command, key) so user entries that target
+  // the same chord-command pair as a managed entry get dropped in favor of
+  // the managed version
+  const managedKeys = new Set(managed.map((b) => `${b.command}\u0000${b.key}`));
+  const preserved = existing.filter((b) => {
+    if (!b || typeof b.command !== "string" || typeof b.key !== "string") return false;
+    return !managedKeys.has(`${b.command}\u0000${b.key}`);
+  });
+
+  // managed first so they take precedence when loaded by Gemini (its loader
+  // prepends each new binding to the per-command list, but the on-disk order
+  // is also what's read back on the next run)
+  const merged = [...managed, ...preserved];
+
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, merged);
+}
 
 ////// Settings //////
 
@@ -158,5 +245,6 @@ async function doWork() {
   log(">> Configuring Gemini CLI:", targetDir);
 
   await _doGeminiSettingsWork(targetDir);
+  await _doGeminiKeysWork(targetDir);
   await _doGeminiInstructionsWork(targetDir);
 }

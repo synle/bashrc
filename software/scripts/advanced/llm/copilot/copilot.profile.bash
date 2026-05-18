@@ -54,3 +54,29 @@ function copilot() {
   GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command copilot --allow-all "$@"
 }
 alias co='copilot'
+
+# copilot_edit_config: open ~/.copilot/settings.json (Copilot CLI user settings) in the editor
+function copilot_edit_config() {
+  if is_help_arg "${1:-}"; then
+    echo "copilot_edit_config: open ~/.copilot/settings.json in the editor via view_file
+  Usage: copilot_edit_config
+
+~/.copilot/settings.json holds every user-tunable Copilot CLI setting that
+'copilot help config' exposes (model, theme, banner, hooks, enabledPlugins,
+extraKnownMarketplaces, etc.). Managed defaults are seeded by copilot/setup.js;
+this opens the live file so the user can layer their own overrides.
+
+Related files NOT opened here:
+  ~/.copilot/config.json    - state/credential file (auth tokens, session
+                              metadata); managed by the copilot binary.
+  ~/.copilot/AGENTS.md      - user-level engineering rules (sourced from
+                              software/scripts/advanced/llm/_common/instructions.md).
+  ~/.copilot/mcp-config.json - MCP server registrations; managed by user or by
+                              the Captain install-plugin-to-copilot skill.
+
+Note: Copilot has no keymap config in v1.0.48 — in-app chords are hardcoded
+in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
+    return 0
+  fi
+  view_file "$HOME/.copilot/settings.json"
+}
