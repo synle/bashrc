@@ -62,7 +62,7 @@ bash run.sh --dryrun --setup                       # preview a full setup, no wr
 bash run.sh --remove --files=fzf.js                # undoWork for one script
 ```
 
-Presets currently include `lightweight`, `editor-and-emulators`, `browsers`, `terminal`, and `prompt` — see `software/metadata/presets.json` for the authoritative list and per-preset descriptions.
+Presets currently include `lightweight`, `editor-and-emulators`, `browsers`, `terminal`, `prompt`, and `llm` — see `software/metadata/presets.json` for the authoritative list and per-preset descriptions.
 
 ## Testing
 
