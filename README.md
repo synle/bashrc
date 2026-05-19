@@ -71,6 +71,10 @@ Manages settings, keybindings, extensions, and themes for VS Code, Sublime Text,
 bash run.sh --files="sublime-text.js,sublime-merge.js,vs-code-ext.sh"
 ```
 
+### AI CLI Setup
+
+Unified setup for the major terminal AI clients: Claude Code, GitHub Copilot CLI, Gemini CLI, and OpenCode. Lives under `software/scripts/advanced/llm/` with shared rules + slash commands + keybindings in `_common/` (the `instructions.md` in there is the single source for the generated global `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` configs). Includes an Ollama installer + dynamic provider discovery shared between Zed and OpenCode.
+
 ### CI/CD
 
 GitHub Actions with 5 parallel OS builds (Ubuntu, RHEL, Arch, Debian, macOS), automated formatting, webapp deployment to GitHub Pages, and profile syntax testing across all platforms.
@@ -150,7 +154,9 @@ make setup_local_profile # Refresh profile only (no dependency install)
 make setup_prod        # Bootstrap from GitHub
 make validate          # Format + run tests
 make build             # Build all artifacts
-make test_all          # Run all test suites
+make build_installer   # Build .build/install-bashrc.sh (self-extracting; ~1 MB)
+make test_all          # Run all test suites (skips coverage)
+make test_coverage     # Unit tests + istanbul coverage report (thresholds in vitest.config.js)
 make dry_run           # Unit tests + dry-run all scripts (no file writes)
 make clean             # Clean up
 make doctor            # Run diagnostics
