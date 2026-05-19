@@ -122,10 +122,14 @@ make build                 # All default build steps
 make build_webapp          # Build webapp for production
 make build_installer       # Build .build/install-bashrc.sh (self-extracting; uploaded to binary-cache in CI)
 make test_unit             # Unit tests
+make test_coverage         # Unit tests + istanbul coverage report (thresholds pinned in vitest.config.js)
 make test_profile          # bash -n profile syntax checks
-make test_dryrun           # Dry-run setup (JS scripts only, no writes)
-make test_all              # All test suites
+make test_smoke            # Puppeteer webapp smokes (live)
+make test_smoke_local      # Puppeteer webapp smokes (local dist)
+make test_buildconfig      # Inline snapshot shape checks
 make test_buildconfig_update  # Update inline snapshots
+make test_dryrun           # Dry-run setup (JS scripts only, no writes)
+make test_all              # All test suites except coverage
 make dry_run               # Unit tests + dry-run all scripts
 make clean                 # Clean prebuilt profiles + autogen + BEGIN/END
 make doctor                # Diagnostics
@@ -180,6 +184,7 @@ Key concepts at a glance:
 - **BEGIN/END**: build-time inlining (`make format_build_include`). **SOURCE**: runtime includes via `readText()`.
 - **Presets** (`software/metadata/presets.json`): named `--preset=<name>` bundles; each entry has `files[]` + optional description. Current: `lightweight`, `editor-and-emulators`, `browsers`, `terminal`, `prompt`. Compose: `--preset=a,b` unions lists. `printRunInfo` prints each preset's description + file list. To add: edit `presets.json`, `make format`, `bash run.sh --preset=<new>`.
 - **Partial matching**: `--preset=` and `--files=` both support case-insensitive substring fallback. 1 match auto-resolves. 2+ matches print copy-paste suggestions. 0 matches → not-found error.
+- **LLM client setup** (`software/scripts/advanced/llm/`): per-CLI subfolders for `claude`, `copilot`, `gemini`, `opencode`, plus `ollama.sh` / `ollama.profile.bash`. Shared rules + commands + keybindings live in `_common/` (e.g. `instructions.md` is the single source for the global CLAUDE.md / AGENTS.md / GEMINI.md generated files — never hand-edit those). `llm-common.js` is the shared JS helper.
 - **Self-extracting installer** (`make build_installer` → `.build/install-bashrc.sh`): bash script with base64'd `tar.gz` of `run.sh` + `software/{index.js,common.js,bootstrap,scripts,metadata}` after a `__BASHRC_INSTALLER_PAYLOAD_BELOW__` sentinel. Extracts to per-PID tmp dir (`BASHRC_INSTALLER_DIR` to override; `BASHRC_INSTALLER_KEEP=1` to persist) and `exec`s `run.sh "$@"`. Built in Prep CI (`make ci_prep`), mirrored to binary-cache as `bashrc-installer__install-bashrc.sh`. `.build/` is gitignored.
 
 ### Key Files
@@ -200,11 +205,17 @@ Key concepts at a glance:
 | `software/tools/build-installer.js`              | Builds `.build/install-bashrc.sh` self-extracting installer                                                                                   |
 | `software/metadata/autocomplete.common.js`       | Single source for spec-based autocomplete mappings, dynamic-token list (`DYNAMIC_TOKENS`), and build-time macro expander (`expandSpecMacros`) |
 | `software/metadata/ci-binaries.json`             | Single source for CI binary verification (`required` + `warn`). YAML block in `action.yml` is auto-generated                                  |
+| `software/metadata/script-list.js` / `.config`   | Scans `software/scripts/` and emits the canonical sorted script list consumed at build time                                                   |
+| `software/metadata/ip-address.config.js` / `.config` | Parses hostname/IP groups; feeds host-mapping build steps (`build_host_mappings`)                                                         |
+| `software/scripts/advanced/llm/`                 | Per-CLI LLM client setup (`claude/`, `copilot/`, `gemini/`, `opencode/`, `ollama.sh`) plus shared `_common/` (instructions, commands, keys)   |
+| `vitest.config.js`                               | Unit test config + istanbul coverage thresholds (one-off override of rule 38; numbers live here, not in CLAUDE.md)                            |
 | `$BASHRC_TEMP_DIR/run_timing.json`               | Per-run timing data (start/end, per-script duration+status); read by CI                                                                       |
 
 ## Testing
 
-Five suites: `make test_unit` (vitest sandbox tests for index.js), `make test_profile` (bash -n syntax checks), `make test_smoke` (Puppeteer webapp), `make test_buildconfig` (inline snapshot shape), `make test_dryrun` (dry-run all JS, no writes). `make test_all` runs all.
+Six suites: `make test_unit` (vitest sandbox tests for index.js), `make test_coverage` (unit tests + istanbul coverage report), `make test_profile` (bash -n syntax checks), `make test_smoke` (Puppeteer webapp), `make test_buildconfig` (inline snapshot shape), `make test_dryrun` (dry-run all JS, no writes). `make test_all` runs everything except coverage.
+
+**Coverage:** Vitest unit suite uses istanbul. Thresholds (lines/statements/branches/functions) are pinned in `vitest.config.js` — that file is the source of truth for the actual numbers and for the `include`/`exclude` globs. Treat it as authoritative; do not duplicate the percentage here. The current floor is a one-off override of the default 80/90 gate (rule 38), justified inline in `vitest.config.js`. There is no Rust / `cargo-llvm-cov` in this repo; if a future sibling project (Rust, Tauri) is added under this tree, document its coverage config path alongside the vitest entry rather than hardcoding numbers.
 
 **VSCode debugging:** `.vscode/launch.json` provides launch configs for the current script (via `software/.debug-runner.js`) and Vitest (run-all + debug-current-file).
 
