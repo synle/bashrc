@@ -317,6 +317,7 @@ installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
 brew uninstall --cask --force iterm2 < /dev/null &>> "$BASHRC_TEMP_DIR/fullsetup.log" || true
 rm -f "$HOME/.iterm2_shell_integration.bash"
 defaults delete com.googlecode.iterm2 > /dev/null 2>&1 || true
+installBrewPackageInBackground --cask --app="Postman.app" postman
 installBrewPackageInBackground --cask --app="Sublime Text.app" sublime-text
 installBrewPackageInBackground --cask --app="Sublime Merge.app" sublime-merge
 installBrewPackageInBackground --cask --app="Visual Studio Code.app" visual-studio-code
