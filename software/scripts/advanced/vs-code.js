@@ -1,5 +1,6 @@
 /** VS Code editor setup: settings, keybindings, color customizations, extensions installer scripts, and devcontainer.json sync. Mirrors sublime-text.js / sublime-merge.js / zed.js. */
 // SOURCE software/scripts/advanced/editor.common.js
+// SOURCE software/scripts/advanced/llm/llm-common.js
 
 ////// Constants //////
 
@@ -102,7 +103,13 @@ function _getCommandsToSkipShell(keybindings) {
  * @param {boolean} [options.isOsMac] - When true, override `editor.multiCursorModifier` to `"alt"` so Cmd+click opens terminal links on macOS. Defaults to the global `is_os_mac` flag.
  * @returns {object} The fully resolved settings.json content.
  */
-function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_prebuilt_config = false, isOsMac } = {}) {
+function _getSettings(
+  baseConfig,
+  darkColors,
+  lightColors,
+  keybindings,
+  { is_prebuilt_config = false, isOsMac, ollamaEndpoint = null } = {},
+) {
   const fontFamily = is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily;
   const fontSize = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
   // VS Code ties the terminal link-click modifier to the inverse of editor.multiCursorModifier.
@@ -151,6 +158,17 @@ function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_pre
 
     // --- Auto-derived: every OS_KEY+X binding bypasses the shell so it fires from terminal focus too ---
     "terminal.integrated.commandsToSkipShell": _getCommandsToSkipShell(keybindings),
+
+    // --- Copilot Chat → Ollama BYOK (only set when discovery found a reachable host) ---
+    // Upstream limitation: `github.copilot.chat.byok.ollamaEndpoint` is a single string,
+    // not an array — Copilot Chat has NO documented settings.json way to enumerate multiple
+    // Ollama hosts (per microsoft/vscode-copilot-chat configurationService.ts, the key is
+    // marked Deprecated and migrated once into BYOK secret-storage on first run). We pick
+    // the first reachable host from `getOllamaProviderInputs()` (local 127.0.0.1 preferred
+    // over the remote sy-omen45l workstation) and write it here; additional remote hosts
+    // must be added via Copilot Chat's "Manage Models…" UI which writes to globalState,
+    // not settings.json.
+    ...(ollamaEndpoint ? { "github.copilot.chat.byok.ollamaEndpoint": ollamaEndpoint } : {}),
   };
 }
 
@@ -272,6 +290,25 @@ async function doWork() {
   const commonKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.common.jsonc`) || [];
   const windowsKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.windows.jsonc`) || [];
 
+  // --- Ollama BYOK discovery (only for local-deploy; CI prebuilt artifact stays generic) ---
+  // Probe the known home-network Ollama hosts via the shared helper in llm-common.js and
+  // pick the first reachable one for Copilot Chat's deprecated single-endpoint setting.
+  // Local 127.0.0.1 is preferred (zero network hop) — falls back to the remote sy-omen45l
+  // workstation if loopback isn't running. Empty array means no host responded, in which
+  // case the endpoint key is omitted entirely (Copilot Chat falls back to its built-ins).
+  const ollamaProviders = userPaths.length > 0 ? await getOllamaProviderInputs() : [];
+  const localProvider = ollamaProviders.find((p) => p.baseURL.includes("127.0.0.1"));
+  const remoteProvider = ollamaProviders.find((p) => !p.baseURL.includes("127.0.0.1"));
+  // `baseURL` from getOllamaProviderInputs includes the `/v1` suffix (OpenAI-compat) — Copilot
+  // Chat's BYOK setting wants the native Ollama root (no `/v1`) since it calls `/api/tags`
+  // and `/api/show` directly. Strip the trailing `/v1` if present.
+  const ollamaEndpoint = (localProvider || remoteProvider || {}).baseURL?.replace(/\/v1$/, "") || null;
+  if (ollamaEndpoint) {
+    log(`>>> vs-code: Copilot Chat BYOK Ollama endpoint -> ${ollamaEndpoint}`);
+  } else if (userPaths.length > 0) {
+    log(">>> vs-code: no reachable Ollama hosts — leaving Copilot Chat BYOK endpoint unset");
+  }
+
   // --- Local system: write settings + keybindings into each detected install ---
   const localKeybindings = _getKeyConfigs(commonKeyBindings, windowsKeyBindings);
   for (const userPath of userPaths) {
@@ -279,7 +316,10 @@ async function doWork() {
 
     const settingsPath = path.join(userPath, "settings.json");
     await backupConfigFile(settingsPath);
-    await writeJson(settingsPath, _getSettings(baseConfig, darkColors, lightColors, localKeybindings, { is_prebuilt_config: false }));
+    await writeJson(
+      settingsPath,
+      _getSettings(baseConfig, darkColors, lightColors, localKeybindings, { is_prebuilt_config: false, ollamaEndpoint }),
+    );
 
     const keybindingsPath = path.join(userPath, "keybindings.json");
     await backupConfigFile(keybindingsPath);

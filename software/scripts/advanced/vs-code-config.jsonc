@@ -9,8 +9,12 @@
   "workbench.settings.enableNaturalLanguageSearch": false, // Don't send settings searches to Microsoft servers. Values: true, false
 
   // --- AI & Copilot ---
-  "github.copilot.enable": { "*": false }, // Disable GitHub Copilot completions for all languages. Values: per-language true/false map
-  "chat.agent.enabled": false, // Disable AI chat agent. Values: true, false
+  // Completions stay off across all languages — we don't want ghost-text inline
+  // suggestions interrupting typing. Chat agent is ENABLED so Copilot Chat /
+  // BYOK Ollama (wired by vs-code.js to the home-network Ollama hosts via
+  // getOllamaProviderInputs()) is available in the side panel.
+  "github.copilot.enable": { "*": false }, // Disable GitHub Copilot inline completions for all languages. Values: per-language true/false map
+  "chat.agent.enabled": true, // Enable AI chat agent panel so Copilot Chat + BYOK Ollama provider are available. Values: true, false
   "chat.mcp.enabled": false, // Disable MCP (Model Context Protocol) servers. Values: true, false
   "claudeCode.allowDangerouslySkipPermissions": true, // Allow Claude Code to use --dangerously-skip-permissions in the VS Code extension. Values: true, false
   "workbench.enableExperiments": false, // Disable A/B experiments from Microsoft. Values: true, false

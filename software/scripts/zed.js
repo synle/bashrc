@@ -1,96 +1,81 @@
 /** Zed editor setup: settings + custom dark/light themes. Reads zed-config.jsonc and zed-color-{dark,light}.jsonc, augments with shared EDITOR_CONFIGS, and writes to the local Zed config dir + build artifacts for prebuilt configs. */
 // SOURCE software/scripts/advanced/editor.common.js
+// SOURCE software/scripts/advanced/llm/llm-common.js
 
 /** @type {string} Filename for the dark theme written into Zed's themes/ folder. Must match `dark_color_scheme` in the merged settings (currently `Sy Dark`). */
 const ZED_DARK_THEME_FILE = "Sy Dark.json";
 /** @type {string} Filename for the light theme written into Zed's themes/ folder. */
 const ZED_LIGHT_THEME_FILE = "Sy Light.json";
 
-// ---- Agent / LLM auto-config (mirrors software/scripts/advanced/llm/opencode/setup.js) ----
+// --- Agent / LLM auto-config (shared discovery with software/scripts/advanced/llm/opencode/setup.js) ---
 //
 // Pre-registers Ollama LLM providers for Zed's Agent Panel so the dropdown is populated
-// the first time the user opens the panel — no manual provider setup required. We discover
-// model names from a remote Ollama host (lookup via ip-address.config) and a local 127.0.0.1
-// fallback, then write `language_models.ollama` (local, auto_discover) and
+// the first time the user opens the panel — no manual provider setup required. Discovery
+// is delegated to `getOllamaProviderInputs()` in llm-common.js (single source of truth for
+// reachable hosts + models). We then translate the generic provider inputs into Zed's
+// settings shape: `language_models.ollama` (local, auto_discover) and
 // `language_models.openai_compatible["Ollama (<hostname>)"]` (remote, explicit available_models).
 //
 // Network discovery only runs on the local-deploy code path (never for CI prebuilt artifacts),
 // so the build artifacts uploaded to binary-cache stay generic across machines.
 
-/** @type {string} Hostname to look up in software/metadata/ip-address.config for resolving remote Ollama. */
-const ZED_OLLAMA_HOSTNAME = "sy-omen45l";
-/** @type {string} Loopback host used as the local-Ollama fallback when the remote host isn't reachable. */
-const ZED_OLLAMA_DEFAULT_HOST = "127.0.0.1";
-/** @type {number} Default Ollama HTTP port (upstream default). */
-const ZED_OLLAMA_PORT = 11434;
-/** @type {string[]} Models always included in the remote provider's `available_models`, merged with any auto-discovered models. */
-const ZED_OLLAMA_FALLBACK_MODELS = ["qwen3.6:latest", "qwen2.5-coder:32b"];
+/**
+ * Friendly hostname used as the key under `language_models.openai_compatible` for the
+ * remote Ollama provider. Per the Zed crate `language_models/src/language_models.rs`
+ * (register_openai_compatible_providers L193-L220), the provider_id used by
+ * `agent.default_model.provider` is literally this JSON key — so it's stable as long as
+ * the key isn't renamed.
+ * @type {string}
+ */
+const ZED_OLLAMA_REMOTE_KEY = "Ollama (sy-omen45l)";
 
 /**
- * Fetches the installed model names from an Ollama host's `/api/tags`.
- * Returns an empty array on fetch failure, JSON parse error, or empty list — never throws.
- * @param {string} host - The Ollama host to query (IP or hostname, no scheme).
- * @returns {Promise<string[]>} Model names (e.g. ["qwen3.6:latest"]).
- */
-async function _fetchZedOllamaModels(host) {
-  const url = `http://${host}:${ZED_OLLAMA_PORT}/api/tags`;
-  log(`>> zed: getting models from ${url} (curl ${url})`);
-  try {
-    const json = await readJson`${url}`;
-    const tags = Array.isArray(json && json.models) ? json.models : [];
-    return tags.map((m) => m && m.name).filter((n) => typeof n === "string" && n);
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Tries hosts in order, returns models from the first that responds non-empty.
- * Also reports which host produced the result so the caller can pick the right
- * provider key for `agent.default_model`.
- * @param {string[]} hosts - Hosts to try in priority order.
- * @returns {Promise<{ host: string|null, models: string[] }>} First non-empty result, or `{host:null, models:[]}`.
- */
-async function _discoverZedOllamaModels(hosts) {
-  for (const host of hosts) {
-    const models = await _fetchZedOllamaModels(host);
-    if (models.length > 0) return { host, models };
-  }
-  return { host: null, models: [] };
-}
-
-/**
- * Builds the `language_models` block + `agent.default_model` entry for Zed's settings.json.
+ * Builds the `language_models` block + `agent.default_model` entry for Zed's settings.json
+ * from the generic provider-input array produced by `getOllamaProviderInputs()` in
+ * llm-common.js. Translation rules:
  *
- * Always registers the local `ollama` provider (Zed auto-discovers models there).
- * When `remoteHost` is non-null, additionally registers an `openai_compatible` provider
- * keyed by `Ollama (<hostname>)` with explicit `available_models` — openai_compatible
- * doesn't auto-discover, so we list them.
+ *   - Loopback provider (baseURL containing 127.0.0.1) becomes `language_models.ollama`
+ *     with `auto_discover: true` — Zed's native Ollama provider enumerates models itself,
+ *     so we don't pass `available_models` for the local host (saves a re-enumeration).
+ *   - Remote providers become a `language_models.openai_compatible[ZED_OLLAMA_REMOTE_KEY]`
+ *     entry; `openai_compatible` does NOT auto-discover, so we list `available_models`
+ *     explicitly from the discovered model names. The remote URL needs the `/v1` suffix
+ *     (Ollama exposes both `/api/*` native and `/v1/*` OpenAI-compatible — the
+ *     openai_compatible provider needs the latter).
  *
- * `default_model` is only set when discovery succeeded against the local Ollama host
- * (provider="ollama" is unambiguous). For remote hits we leave default_model unset and
- * let the user pick from the dropdown — openai_compatible provider key disambiguation
- * for default_model is not stable across Zed versions.
+ * `default_model` picks the first reachable provider in priority order: local Ollama (if
+ * any models found) wins because `provider: "ollama"` is the documented enum value; the
+ * remote openai_compatible key is the documented-stable fallback when no local provider
+ * responded (per the upstream crate referenced above).
  *
- * @param {object} opts
- * @param {string[]} opts.modelNames - Model names to expose on the remote provider (discovered + fallback, deduped/sorted).
- * @param {string|null} opts.remoteHost - Resolved remote IP, or null to skip the openai_compatible entry.
- * @param {string} opts.localHost - Loopback host for the local provider.
- * @param {string} opts.hostname - Friendly hostname used in the openai_compatible provider key.
- * @param {string|null} opts.discoveredHost - Host that responded with models (null if none did).
- * @param {string|null} opts.firstDiscoveredModel - First discovered model name, used to pick the default model.
- * @returns {{ languageModels: object, defaultModel: ({provider:string, model:string})|null }}
+ * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providers - From getOllamaProviderInputs().
+ * @returns {{ languageModels: object, defaultModel: ({provider: string, model: string})|null }}
  */
-function _buildZedLanguageModelsBlock({ modelNames, remoteHost, localHost, hostname, discoveredHost, firstDiscoveredModel }) {
+function _buildZedLanguageModelsBlock(providers) {
   /** @type {Record<string, object>} */
-  const languageModels = {
-    ollama: { api_url: `http://${localHost}:${ZED_OLLAMA_PORT}`, auto_discover: true },
-  };
-  if (remoteHost && modelNames.length > 0) {
+  const languageModels = {};
+  /** @type {({provider: string, model: string})|null} */
+  let defaultModel = null;
+
+  const localProvider = providers.find((p) => p.baseURL.includes("127.0.0.1"));
+  const remoteProvider = providers.find((p) => !p.baseURL.includes("127.0.0.1"));
+
+  if (localProvider) {
+    // baseURL from llm-common.js includes the `/v1` OpenAI-compat suffix; Zed's native
+    // `ollama` provider talks to the root URL (it calls `/api/tags` etc. itself), so
+    // strip the suffix before writing it.
+    const rootUrl = localProvider.baseURL.replace(/\/v1$/, "");
+    languageModels.ollama = { api_url: rootUrl, auto_discover: true };
+    if (localProvider.models.length > 0) {
+      defaultModel = { provider: "ollama", model: localProvider.models[0].name };
+    }
+  }
+
+  if (remoteProvider && remoteProvider.models.length > 0) {
     languageModels.openai_compatible = {
-      [`Ollama (${hostname})`]: {
-        api_url: `http://${remoteHost}:${ZED_OLLAMA_PORT}/v1`,
-        available_models: modelNames.map((name) => ({
+      [ZED_OLLAMA_REMOTE_KEY]: {
+        api_url: remoteProvider.baseURL, // baseURL already ends in /v1 — exactly what openai_compatible wants.
+        available_models: remoteProvider.models.map(({ name }) => ({
           name,
           display_name: name,
           max_tokens: 32768,
@@ -98,11 +83,14 @@ function _buildZedLanguageModelsBlock({ modelNames, remoteHost, localHost, hostn
         })),
       },
     };
+    // Fall back to the remote provider for default_model when no local provider responded.
+    // The provider id used by `agent.default_model.provider` is the literal JSON key
+    // (per upstream crate registration) — stable across Zed versions.
+    if (!defaultModel) {
+      defaultModel = { provider: ZED_OLLAMA_REMOTE_KEY, model: remoteProvider.models[0].name };
+    }
   }
-  // Only set default_model when discovery hit the LOCAL Ollama — provider="ollama" is unambiguous.
-  // For remote hits the openai_compatible provider key disambiguation isn't stable across Zed versions,
-  // so leave default_model unset and let the user pick from the agent panel dropdown.
-  const defaultModel = discoveredHost === localHost && firstDiscoveredModel ? { provider: "ollama", model: firstDiscoveredModel } : null;
+
   return { languageModels, defaultModel };
 }
 
@@ -272,32 +260,20 @@ async function doWork() {
 
     // Pre-register Ollama LLM providers for Zed's Agent Panel. Network discovery only
     // runs here (never for CI prebuilt artifacts) so the build artifacts stay generic.
-    const remoteHost = await getHomeIpAddress(ZED_OLLAMA_HOSTNAME);
-    const hostsToTry = [remoteHost, ZED_OLLAMA_DEFAULT_HOST].filter(Boolean);
-    const { host: discoveredHost, models: discovered } = await _discoverZedOllamaModels(hostsToTry);
-    /** @type {Set<string>} Merged model set — discovered + always-include fallbacks. */
-    const modelSet = new Set(discovered);
-    for (const m of ZED_OLLAMA_FALLBACK_MODELS) modelSet.add(m);
-    const modelNames = [...modelSet].sort();
-    if (discovered.length === 0) {
-      log(
-        `WARN zed: no Ollama models reachable at ${hostsToTry.map((h) => `http://${h}:${ZED_OLLAMA_PORT}/api/tags`).join(" or ")} — using fallback ${ZED_OLLAMA_FALLBACK_MODELS.join(", ")}`,
-      );
-    } else {
-      log(`>> zed: discovered ${discovered.length} Ollama model(s) on ${discoveredHost}: ${discovered.join(", ")}`);
+    // Delegated to llm-common.js's `getOllamaProviderInputs()` so opencode + zed share
+    // one source of truth for which hosts are reachable + what models they advertise.
+    const providers = await getOllamaProviderInputs();
+    if (providers.length === 0) {
+      log(">>> zed: no reachable Ollama hosts — leaving language_models / agent.default_model unset");
     }
-    const { languageModels, defaultModel } = _buildZedLanguageModelsBlock({
-      modelNames,
-      remoteHost,
-      localHost: ZED_OLLAMA_DEFAULT_HOST,
-      hostname: ZED_OLLAMA_HOSTNAME,
-      discoveredHost,
-      firstDiscoveredModel: discovered[0] || null,
-    });
+    const { languageModels, defaultModel } = _buildZedLanguageModelsBlock(providers);
 
+    // Only pass through `language_models` when discovery actually populated it — empty
+    // object would clobber any pre-existing user-managed providers under that key.
+    const lmToWrite = Object.keys(languageModels).length > 0 ? languageModels : null;
     const settingsPath = path.join(targetPath, "settings.json");
     await backupConfigFile(settingsPath);
-    await writeJson(settingsPath, _getZedSettings(baseConfig, { is_prebuilt_config: false, languageModels, defaultModel }));
+    await writeJson(settingsPath, _getZedSettings(baseConfig, { is_prebuilt_config: false, languageModels: lmToWrite, defaultModel }));
 
     const darkThemePath = path.join(targetPath, "themes", ZED_DARK_THEME_FILE);
     await backupConfigFile(darkThemePath);

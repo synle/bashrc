@@ -59,7 +59,12 @@
   },
 
   // --- AI ---
-  "disable_ai": true, // Disable all AI features — we only use the CLI. Values: true, false
+  // Agent panel ON: zed.js auto-registers `language_models.ollama` (local 127.0.0.1
+  // with auto_discover) and `language_models.openai_compatible["Ollama (sy-omen45l)"]`
+  // (remote, models enumerated from /api/tags) when those hosts are reachable, then
+  // pins `agent.default_model` to the best provider. Inline completions remain off
+  // (`inline_completions.disabled_globs: ["**/*"]` near the top of this file).
+  "disable_ai": false, // Enable Zed agent / AI features so Ollama providers populate the agent panel. Values: true, false
 
   // --- Performance & Telemetry ---
   "telemetry": {

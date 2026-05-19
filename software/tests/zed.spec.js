@@ -7,7 +7,7 @@ import { getIndexFunction } from "./setup.js";
 
 const clone = getIndexFunction("clone");
 
-// ---- Load zed.js (with SOURCE marker for editor.common.js inlined) ----
+// ---- Load zed.js (with every SOURCE marker — editor.common.js + llm-common.js — inlined) ----
 const zedRaw = fs.readFileSync("software/scripts/zed.js", "utf-8");
 const zedSource = zedRaw.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
   return fs.readFileSync(path.resolve(srcFile), "utf-8");
@@ -54,6 +54,10 @@ function loadZed(overrides = {}) {
     writeJson: async () => {},
     readJson: async () => ({}),
     writeBuildArtifact: async () => {},
+    // llm-common.js helpers — inlined via SOURCE; mock the ip-address.config lookup so the
+    // sourced module's top-level evaluation doesn't try to hit the real filesystem.
+    getSyHPOmenHomeIpAddress: async () => "192.168.1.45",
+    getHomeIpAddress: async () => null,
     ...overrides,
   };
   vm.runInNewContext(zedSource.replace(/^(const|let) /gm, "var "), sandbox);
@@ -168,59 +172,52 @@ describe("_getZedKeymap > terminal-context mirroring", () => {
 });
 
 // ---- _buildZedLanguageModelsBlock: Ollama provider pre-registration ----
+//
+// New signature (post-DRY refactor against llm-common.js's getOllamaProviderInputs):
+//   _buildZedLanguageModelsBlock(providers) where each provider is
+//   { id, name, baseURL, models: [{name}] }. Local provider is identified by
+//   baseURL containing "127.0.0.1"; everything else is treated as remote.
+
+/**
+ * Helper: builds a getOllamaProviderInputs-shaped provider entry for tests.
+ * @param {string} host - The host portion (e.g. "127.0.0.1" or "192.168.1.45").
+ * @param {string[]} modelNames - Model names to embed.
+ * @returns {{id: string, name: string, baseURL: string, models: Array<{name: string}>}}
+ */
+function makeProvider(host, modelNames) {
+  const isLocal = host === "127.0.0.1";
+  return {
+    id: isLocal ? "ollama-local" : "ollama-sy-omen45l",
+    name: isLocal ? `Local - ${host}:11434` : `Sy-omen45l - ${host}:11434`,
+    baseURL: `http://${host}:11434/v1`,
+    models: modelNames.map((name) => ({ name })),
+  };
+}
 
 describe("_buildZedLanguageModelsBlock > local provider", () => {
-  it("should always register the local ollama provider with auto_discover=true", () => {
+  it("registers `language_models.ollama` with auto_discover when local 127.0.0.1 is among providers", () => {
     const zed = loadZed();
-    const result = zed._buildZedLanguageModelsBlock({
-      modelNames: [],
-      remoteHost: null,
-      localHost: "127.0.0.1",
-      hostname: "sy-omen45l",
-      discoveredHost: null,
-      firstDiscoveredModel: null,
-    });
+    const result = zed._buildZedLanguageModelsBlock([makeProvider("127.0.0.1", ["qwen2.5-coder:3b"])]);
     expect(result.languageModels.ollama).toEqual({ api_url: "http://127.0.0.1:11434", auto_discover: true });
   });
 
-  it("should NOT register openai_compatible when remoteHost is null", () => {
+  it("does NOT register `language_models.ollama` when no local provider is in the array", () => {
     const zed = loadZed();
-    const result = zed._buildZedLanguageModelsBlock({
-      modelNames: ["qwen2.5-coder:32b"],
-      remoteHost: null,
-      localHost: "127.0.0.1",
-      hostname: "sy-omen45l",
-      discoveredHost: "127.0.0.1",
-      firstDiscoveredModel: "qwen2.5-coder:32b",
-    });
-    expect(result.languageModels.openai_compatible).toBeUndefined();
+    const result = zed._buildZedLanguageModelsBlock([makeProvider("192.168.1.45", ["qwen3-coder:30b"])]);
+    expect(result.languageModels.ollama).toBeUndefined();
   });
 
-  it("should NOT register openai_compatible when modelNames is empty (even if remoteHost is set)", () => {
+  it("does NOT register openai_compatible when only the local provider is reachable", () => {
     const zed = loadZed();
-    const result = zed._buildZedLanguageModelsBlock({
-      modelNames: [],
-      remoteHost: "192.168.1.45",
-      localHost: "127.0.0.1",
-      hostname: "sy-omen45l",
-      discoveredHost: null,
-      firstDiscoveredModel: null,
-    });
+    const result = zed._buildZedLanguageModelsBlock([makeProvider("127.0.0.1", ["qwen2.5-coder:3b"])]);
     expect(result.languageModels.openai_compatible).toBeUndefined();
   });
 });
 
 describe("_buildZedLanguageModelsBlock > remote provider", () => {
-  it("should register openai_compatible keyed by `Ollama (<hostname>)` when remote + models present", () => {
+  it("registers openai_compatible keyed by `Ollama (sy-omen45l)` when a remote provider is present", () => {
     const zed = loadZed();
-    const result = zed._buildZedLanguageModelsBlock({
-      modelNames: ["qwen3.6:latest", "qwen2.5-coder:32b"],
-      remoteHost: "192.168.1.45",
-      localHost: "127.0.0.1",
-      hostname: "sy-omen45l",
-      discoveredHost: "192.168.1.45",
-      firstDiscoveredModel: "qwen3.6:latest",
-    });
+    const result = zed._buildZedLanguageModelsBlock([makeProvider("192.168.1.45", ["qwen3.6:latest", "qwen2.5-coder:14b"])]);
     expect(result.languageModels.openai_compatible).toBeDefined();
     expect(Object.keys(result.languageModels.openai_compatible)).toEqual(["Ollama (sy-omen45l)"]);
     const remote = result.languageModels.openai_compatible["Ollama (sy-omen45l)"];
@@ -236,45 +233,28 @@ describe("_buildZedLanguageModelsBlock > remote provider", () => {
 });
 
 describe("_buildZedLanguageModelsBlock > default_model selection", () => {
-  it("should set default_model when discovery hit the LOCAL ollama host", () => {
+  it("prefers the local ollama provider for default_model when both local and remote are reachable", () => {
     const zed = loadZed();
-    const result = zed._buildZedLanguageModelsBlock({
-      modelNames: ["qwen2.5-coder:32b"],
-      remoteHost: null,
-      localHost: "127.0.0.1",
-      hostname: "sy-omen45l",
-      discoveredHost: "127.0.0.1",
-      firstDiscoveredModel: "qwen2.5-coder:32b",
-    });
-    expect(result.defaultModel).toEqual({ provider: "ollama", model: "qwen2.5-coder:32b" });
+    const result = zed._buildZedLanguageModelsBlock([
+      makeProvider("127.0.0.1", ["qwen2.5-coder:3b"]),
+      makeProvider("192.168.1.45", ["qwen3.6:latest"]),
+    ]);
+    expect(result.defaultModel).toEqual({ provider: "ollama", model: "qwen2.5-coder:3b" });
   });
 
-  it("should NOT set default_model when discovery hit the REMOTE host (openai_compatible default-provider keying is unstable)", () => {
+  it("falls back to the remote `Ollama (sy-omen45l)` provider for default_model when only remote is reachable", () => {
+    // Upstream Zed crate (language_models/src/language_models.rs L193-L220) registers
+    // openai_compatible providers under provider_id = JSON key, so the key is stable.
     const zed = loadZed();
-    const result = zed._buildZedLanguageModelsBlock({
-      modelNames: ["qwen3.6:latest"],
-      remoteHost: "192.168.1.45",
-      localHost: "127.0.0.1",
-      hostname: "sy-omen45l",
-      discoveredHost: "192.168.1.45",
-      firstDiscoveredModel: "qwen3.6:latest",
-    });
-    expect(result.defaultModel).toBeNull();
+    const result = zed._buildZedLanguageModelsBlock([makeProvider("192.168.1.45", ["qwen3.6:latest"])]);
+    expect(result.defaultModel).toEqual({ provider: "Ollama (sy-omen45l)", model: "qwen3.6:latest" });
   });
 
-  it("should NOT set default_model when nothing was discovered (even with fallback models registered)", () => {
+  it("returns null defaultModel + empty languageModels when no providers reachable", () => {
     const zed = loadZed();
-    const result = zed._buildZedLanguageModelsBlock({
-      modelNames: ["qwen3.6:latest", "qwen2.5-coder:32b"],
-      remoteHost: "192.168.1.45",
-      localHost: "127.0.0.1",
-      hostname: "sy-omen45l",
-      discoveredHost: null,
-      firstDiscoveredModel: null,
-    });
+    const result = zed._buildZedLanguageModelsBlock([]);
     expect(result.defaultModel).toBeNull();
-    // Fallback models still get registered on the remote provider, just no default_model.
-    expect(result.languageModels.openai_compatible["Ollama (sy-omen45l)"].available_models).toHaveLength(2);
+    expect(result.languageModels).toEqual({});
   });
 });
 
