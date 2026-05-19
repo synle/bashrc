@@ -1,5 +1,5 @@
 /** Claude Code setup: settings, keybindings, and telemetry opt-out. Run: `bash run.sh --files="setup.js"` */
-// SOURCE software/scripts/advanced/editor.common.js
+// SOURCE software/scripts/advanced/llm/llm-common.js
 
 /** @type {string} Claude Code OS modifier key on macOS (meta = cmd in terminals). */
 const CLAUDE_MAC_OS_KEY = "meta";
@@ -60,7 +60,7 @@ function _mergeContextGroups(...arrays) {
  */
 function _getKeyConfig(isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
-  const osKey = isMac ? CLAUDE_MAC_OS_KEY : EDITOR_WINDOWS_OS_KEY;
+  const osKey = isMac ? CLAUDE_MAC_OS_KEY : LLM_WINDOWS_OS_KEY;
 
   /** @type {object[]} Platform-specific bindings merged with common. */
   const merged = isMac

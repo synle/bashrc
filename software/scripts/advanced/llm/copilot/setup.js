@@ -1,5 +1,5 @@
 /** GitHub Copilot CLI setup: settings + user-level AGENTS.md instructions. Run: `bash run.sh --files="copilot/setup.js"` */
-// SOURCE software/scripts/advanced/editor.common.js
+// SOURCE software/scripts/advanced/llm/llm-common.js
 
 // ----------------------------------------------------------------------------
 // What this file does and does NOT do
@@ -109,7 +109,7 @@ function _mergeCopilotContextGroups(...arrays) {
  */
 function _getCopilotKeyConfig(isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
-  const osKey = isMac ? COPILOT_MAC_OS_KEY : EDITOR_WINDOWS_OS_KEY;
+  const osKey = isMac ? COPILOT_MAC_OS_KEY : LLM_WINDOWS_OS_KEY;
 
   /** @type {object[]} Platform-specific bindings merged with common. */
   const merged = isMac

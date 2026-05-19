@@ -1,5 +1,5 @@
 /** Google Gemini CLI setup: settings + user-level GEMINI.md instructions. Run: `bash run.sh --files="gemini/setup.js"` */
-// SOURCE software/scripts/advanced/editor.common.js
+// SOURCE software/scripts/advanced/llm/llm-common.js
 
 // ----------------------------------------------------------------------------
 // What this file does and does NOT do

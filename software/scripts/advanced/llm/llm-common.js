@@ -1,29 +1,119 @@
-const OLLAMA_IP_LOCAL = "127.0.0.1";
-const OLLAMA_SY_OMEN45L = "192.168.1.45";
+/**
+ * Shared constants and helpers for LLM CLI setup scripts (claude, copilot, gemini, opencode).
+ *
+ * Lives here (instead of pulling from software/scripts/advanced/editor.common.js) so the
+ * llm/* setup scripts are self-contained — none of them SOURCE editor.common.js anymore.
+ * Anything that the editor.common.js helpers used to expose AND that an llm/* script still
+ * needs lives below as a local copy.
+ *
+ * Run: `bash run.sh --files="opencode/setup.js"` (or any other llm/<name>/setup.js).
+ */
 
-/** @type {number} Default Ollama HTTP port (upstream default). */
+// --- OS Modifier Keys (local mirror of editor.common.js bits the LLM scripts need) ---
+
+/**
+ * OS modifier key used on Windows/Linux for LLM CLI keybindings.
+ * Mirrors `EDITOR_WINDOWS_OS_KEY` from editor.common.js so llm/(name)/setup.js scripts can
+ * drop the `// SOURCE editor.common.js` line and stay self-contained.
+ * @type {string}
+ */
+const LLM_WINDOWS_OS_KEY = "alt";
+
+/**
+ * Mac-side OS modifier key map keyed by LLM source. Mirrors the `opencode` entry that
+ * `EDITOR_MAC_OS_KEYS` would have served via `getEditorOsKey("opencode", isMac)`.
+ * Default fallback is `"super"` so any unknown source still resolves to a sensible mac key.
+ * @type {Record<string, string>}
+ */
+const LLM_MAC_OS_KEYS = { opencode: "super" };
+
+/**
+ * Resolves the OS-specific modifier key for an LLM CLI's keybindings. Direct local mirror
+ * of editor.common.js's `getEditorOsKey` so the llm/* scripts no longer SOURCE that file.
+ *
+ * @param {string} source - The LLM source name (e.g. `"opencode"`).
+ * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global `is_os_mac` flag.
+ * @returns {string} The resolved modifier key (`"alt"` on Windows/Linux, mac-specific otherwise).
+ */
+function getLLMOsKey(source, isOsMac) {
+  const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
+  return isMac ? LLM_MAC_OS_KEYS[source] || "super" : LLM_WINDOWS_OS_KEY;
+}
+
+// --- Ollama Provider Discovery ---
+
+/**
+ * Default Ollama HTTP port (upstream default).
+ * @type {number}
+ */
 const OLLAMA_PORT = 11434;
-const OLLAMA_MODELS = [
-  // { name: "qwen3-coder:30b" }, // ollama pull qwen3-coder:30b
-  // { name: "qwen3.6:latest" }, // ollama pull qwen3.6:30b
-  // heavyweight - 5090
-  { name: "qwen2.5-coder:14b" }, // ollama pull qwen2.5-coder:14b
-  // lightweight - 3070ti 8gb laptop
-  { name: "qwen2.5-coder:3b" }, // ollama pull qwen2.5-coder:3b
-];
 
-/** Simplified Provider Array schema passing into configuration builder */
-const OPENCODE_OLLAMA_PROVIDERS_INPUT = [
-  {
-    id: "ollama-sy-omen45l",
-    name: `Sy-omen45l - ${OLLAMA_SY_OMEN45L}:${OLLAMA_PORT}`,
-    baseURL: `http://${OLLAMA_SY_OMEN45L}:${OLLAMA_PORT}/v1`,
-    models: OLLAMA_MODELS,
-  },
-  {
-    id: "ollama-local",
-    name: `Local - ${OLLAMA_IP_LOCAL}:${OLLAMA_PORT}`,
-    baseURL: `http://${OLLAMA_IP_LOCAL}:${OLLAMA_PORT}/v1`,
-    models: OLLAMA_MODELS,
-  },
-];
+/**
+ * Fetches the installed model names from an Ollama host's `/api/tags` endpoint.
+ * Mirrors zed.js's `_fetchZedOllamaModels`. Returns an empty array on fetch failure,
+ * JSON parse error, or empty list — never throws.
+ *
+ * @param {string} host - The Ollama host to query (IP or hostname, no scheme).
+ * @returns {Promise<string[]>} Model names (e.g. `["qwen2.5-coder:14b"]`).
+ */
+async function _fetchOllamaModelNames(host) {
+  const url = `http://${host}:${OLLAMA_PORT}/api/tags`;
+  log(`>> ollama: getting models from ${url} (curl ${url})`);
+  try {
+    const json = await readJson`${url}`;
+    const tags = Array.isArray(json && json.models) ? json.models : [];
+    return tags.map((m) => m && m.name).filter((n) => typeof n === "string" && n);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Discovers reachable Ollama providers and the models they expose, returning input objects
+ * shaped for downstream config builders (e.g. opencode's `_buildOpencodeConfig`).
+ *
+ * Probes the two known hosts in priority order: the sy-omen45l workstation (IP resolved via
+ * `getSyHPOmenHomeIpAddress` from `software/metadata/ip-address.config`, with `192.168.1.45`
+ * as the documented fallback if the config lookup returns null) and the local loopback
+ * `127.0.0.1`. Each host that responds with at least one model becomes one provider entry.
+ * Hosts that fail to respond (offline, unreachable, no models) are dropped entirely — the
+ * caller never has to worry about pruning an empty `ollama-local` from its provider map.
+ *
+ * Models are NOT hardcoded: every reachable host contributes whatever `/api/tags` reports.
+ *
+ * @returns {Promise<Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>>}
+ *   Empty array if no host is reachable.
+ */
+async function getOllamaProviderInputs() {
+  // Resolve sy-omen45l via the shared ip-address.config lookup (in index.js so any script
+  // can use it). Fall back to the documented LAN IP only when the config is missing or
+  // hasn't been built yet — keeps behavior consistent on a fresh dev machine.
+  const omenIpFromConfig = await getSyHPOmenHomeIpAddress();
+  const omenIp = omenIpFromConfig || "192.168.1.45";
+  const localIp = "127.0.0.1";
+
+  /** @type {Array<{id: string, host: string, displayName: string}>} */
+  const candidates = [
+    { id: "ollama-sy-omen45l", host: omenIp, displayName: `Sy-omen45l - ${omenIp}:${OLLAMA_PORT}` },
+    { id: "ollama-local", host: localIp, displayName: `Local - ${localIp}:${OLLAMA_PORT}` },
+  ];
+
+  /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
+  const providers = [];
+  for (const { id, host, displayName } of candidates) {
+    const modelNames = await _fetchOllamaModelNames(host);
+    if (modelNames.length === 0) {
+      log(`>> ollama: dropping provider ${id} (${host}) — no reachable models`);
+      continue;
+    }
+    log(`>> ollama: discovered ${modelNames.length} model(s) on ${id} (${host}): ${modelNames.join(", ")}`);
+    providers.push({
+      id,
+      name: displayName,
+      baseURL: `http://${host}:${OLLAMA_PORT}/v1`,
+      models: modelNames.map((name) => ({ name })),
+    });
+  }
+
+  return providers;
+}

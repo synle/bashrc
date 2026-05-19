@@ -5,7 +5,18 @@ Stack-agnostic rules. Apply across every language, framework, and codebase.
 ## Source Control & PRs
 
 1. Branch from a fresh default. Pull right before branching. Task-scoped name. Never branch off a feature branch.
-2. Squash on merge — one PR, one commit. **Applies to manual merges AND automerge.** Always `gh pr merge --squash` (or `gh pr merge --squash --auto`). Never merge commits, never rebase merges. If a repo's default automerge mode differs, switch to explicit `--squash` or fix the repo setting.
+2. **Squash merge — PRs only, one PR / one commit. AND verify commit author matches local `.gitconfig`.**
+
+   **Squash on merge (PR only).** Always `gh pr merge --squash` (or `gh pr merge --squash --auto`) — never merge commits, never rebase merges. Applies to manual merges AND automerge. If a repo's default automerge mode differs, switch to explicit `--squash` or fix the repo setting. This rule covers PR-level merges only; do NOT squash local development history, do NOT auto-squash arbitrary multi-commit branches outside the PR-merge context.
+
+   **Commit-author check (every commit, every push).** Before creating any new commit (or before pushing a branch you're about to open a PR from), compare each pending commit's `author.name` / `author.email` against the local `git config --get user.name` / `git config --get user.email`. If either differs from the local `.gitconfig`:
+   1. **Flag the mismatch to the user explicitly** — show the offending commit SHA(s), the commit-author identity, and the `.gitconfig` identity side-by-side.
+   2. **Ask whether to ignore and proceed with the existing (different) author.**
+   3. **Default = "no".** Without an explicit "yes" from the user, run `git commit --amend --reset-author --no-edit` for the latest commit, or `git rebase -i <base> --exec 'git commit --amend --reset-author --no-edit'` (or equivalent filter-branch / git-filter-repo invocation) so every commit on the branch uses the local `.gitconfig` `user.name` and `user.email`.
+   4. **Only proceed without `--reset-author` if the user explicitly confirms "yes".**
+
+   **Why:** Mixed-author history on a single dev's branch (e.g. when commits were authored under `noreply@anthropic.com`, a stale corp email, or a co-author setup left over from a pair-programming tool) breaks Git provenance, contributor stats, and downstream `git log --author` queries. Resetting to the local identity keeps every commit attributable to the one human running the merge.
+
 3. Sync with `git merge origin/<default>`. Never rebase or force-push shared branches.
 4. Each PR is a standalone, mergeable unit. Bundle tightly-coupled changes (API + schema + models). Never stack PRs.
 

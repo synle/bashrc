@@ -851,12 +851,14 @@ const EDITOR_CONFIGS = {
 let HOME_HOST_NAMES = [];
 
 /**
- * Looks up the IP address for a given hostname from the ip-address.config file.
+ * Looks up the IP address for a given hostname from `software/metadata/ip-address.config`.
  * Returns the IP as a string, or `null` if the hostname is not found or the file cannot be read.
- * @param {string} hostname - The hostname to look up (e.g. "sy-omen45l")
+ * Generic, reusable across every script that needs to resolve a home-network host (zed.js,
+ * llm/llm-common.js, etc.). Never throws — returns `null` on any I/O or parse failure.
+ * @param {string} hostname - The hostname to look up (e.g. "sy-omen45l").
  * @returns {Promise<string|null>} The IP address associated with the hostname, or `null` if not found.
  */
-async function getHomeIPAddressForHostname(hostname) {
+async function getHomeIpAddress(hostname) {
   try {
     const content = await readText`software/metadata/ip-address.config`;
     for (const line of content.split("\n")) {
@@ -872,6 +874,18 @@ async function getHomeIPAddressForHostname(hostname) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Returns the home-network IP address for the `sy-omen45l` workstation by looking it
+ * up via `getHomeIpAddress("sy-omen45l")`. Thin wrapper kept here (rather than in any
+ * single LLM/editor script) so the lookup is reusable across zed.js, llm-common.js,
+ * and any future caller that needs the Omen45L address without re-typing the hostname.
+ * Returns `null` if the hostname is not present in `ip-address.config`.
+ * @returns {Promise<string|null>} The resolved IP (e.g. `"192.168.1.45"`) or `null`.
+ */
+async function getSyHPOmenHomeIpAddress() {
+  return getHomeIpAddress("sy-omen45l");
 }
 
 ///////////////////////////////////////////////////

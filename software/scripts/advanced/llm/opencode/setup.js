@@ -1,6 +1,5 @@
 /** Configures opencode with both remote and local Ollama providers. */
 
-// SOURCE software/scripts/advanced/editor.common.js
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
 /**
@@ -41,8 +40,9 @@ function _buildOpencodeConfig(providersArray, keybinds) {
 
 /**
  * Loads opencode-keys.common.jsonc and substitutes OS_KEY for the current platform.
- * Opencode uses "super" (= cmd) on macOS and "alt" on Windows/Linux — matching the
- * EDITOR_WINDOWS_OS_KEY / EDITOR_MAC_OS_KEYS fallback used by Sublime/Zed editor scripts.
+ * Opencode uses "super" (= cmd) on macOS and "alt" on Windows/Linux — same fallback the
+ * Sublime/Zed editor scripts use via `getEditorOsKey`, replicated locally as `getLLMOsKey`
+ * in llm-common.js so this script no longer SOURCEs editor.common.js.
  *
  * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
  * @returns {Promise<Record<string, any>>} Resolved keybinds map (empty object if file missing).
@@ -52,7 +52,7 @@ async function _loadOpencodeKeybinds(isOsMac) {
   const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
   if (!raw || !raw.keybinds) return {};
 
-  const osKey = getEditorOsKey("opencode", isOsMac);
+  const osKey = getLLMOsKey("opencode", isOsMac);
   /** @type {Record<string, any>} */
   const resolved = {};
   for (const [action, binding] of Object.entries(raw.keybinds)) {
@@ -128,8 +128,15 @@ async function _syncOpencodeCommandSymlinks() {
 }
 
 /**
- * Writes ~/.config/opencode/opencode.json with remote and local Ollama providers,
+ * Writes ~/.config/opencode/opencode.json with dynamically-discovered Ollama providers,
  * then mirrors all Claude Code slash commands into the opencode commands dir as symlinks.
+ *
+ * Provider discovery: `getOllamaProviderInputs()` (in llm-common.js) probes the sy-omen45l
+ * workstation and `127.0.0.1` on port `OLLAMA_PORT` (`/api/tags`) and returns ONLY hosts
+ * that responded with at least one model. No hardcoded model list — every reachable host
+ * contributes whatever it advertises. When zero hosts respond, the `provider` block is
+ * omitted entirely so opencode falls back to its built-in defaults.
+ *
  * Skips entirely when opencode is not installed.
  */
 async function doWork() {
@@ -145,8 +152,13 @@ async function doWork() {
   /** @type {Record<string, any>} Keybind overrides mirroring claude where they fit */
   const keybinds = await _loadOpencodeKeybinds();
 
-  // Pass the unified provider schemas down cleanly here
-  await writeJson(targetPath, _buildOpencodeConfig(OPENCODE_OLLAMA_PROVIDERS_INPUT, keybinds));
+  /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
+  const providerInputs = await getOllamaProviderInputs();
+  if (providerInputs.length === 0) {
+    log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
+  }
+
+  await writeJson(targetPath, _buildOpencodeConfig(providerInputs, keybinds));
   log(">> opencode config written:", targetPath);
 
   await _syncOpencodeCommandSymlinks();

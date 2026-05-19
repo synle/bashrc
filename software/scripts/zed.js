@@ -272,7 +272,7 @@ async function doWork() {
 
     // Pre-register Ollama LLM providers for Zed's Agent Panel. Network discovery only
     // runs here (never for CI prebuilt artifacts) so the build artifacts stay generic.
-    const remoteHost = await getHomeIPAddressForHostname(ZED_OLLAMA_HOSTNAME);
+    const remoteHost = await getHomeIpAddress(ZED_OLLAMA_HOSTNAME);
     const hostsToTry = [remoteHost, ZED_OLLAMA_DEFAULT_HOST].filter(Boolean);
     const { host: discoveredHost, models: discovered } = await _discoverZedOllamaModels(hostsToTry);
     /** @type {Set<string>} Merged model set — discovered + always-include fallbacks. */
