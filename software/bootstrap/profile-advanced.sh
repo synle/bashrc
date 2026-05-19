@@ -46,6 +46,7 @@ ignored_history=(
   "???"
   "????"
   "clear"
+  "clean"
   "history"
   "git add*"
   "git commit*"
