@@ -44,14 +44,15 @@ function _buildOpencodeConfig(providersArray, keybinds) {
  * Opencode uses "super" (= cmd) on macOS and "alt" on Windows/Linux — matching the
  * EDITOR_WINDOWS_OS_KEY / EDITOR_MAC_OS_KEYS fallback used by Sublime/Zed editor scripts.
  *
+ * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
  * @returns {Promise<Record<string, any>>} Resolved keybinds map (empty object if file missing).
  */
-async function _loadOpencodeKeybinds() {
+async function _loadOpencodeKeybinds(isOsMac) {
   /** @type {{ keybinds?: Record<string, any> } | null} */
   const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
   if (!raw || !raw.keybinds) return {};
 
-  const osKey = getEditorOsKey("opencode");
+  const osKey = getEditorOsKey("opencode", isOsMac);
   /** @type {Record<string, any>} */
   const resolved = {};
   for (const [action, binding] of Object.entries(raw.keybinds)) {

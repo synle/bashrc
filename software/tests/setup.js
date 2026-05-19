@@ -251,6 +251,27 @@ export async function runScript(scriptPath) {
   await sandbox.flushProfileBlocks();
 }
 
+/**
+ * Loads a script file's source into the sandbox WITHOUT invoking doWork().
+ *
+ * Used by tests that exercise individual helpers (e.g. keymap merge/format
+ * functions) in isolation, separate from the script's full side-effect chain.
+ * Same SOURCE-marker expansion and `const`/`let` → `var` rewrite as runScript;
+ * the only difference is the doWork() / flushProfileBlocks() invocation is
+ * skipped, so the resulting sandbox state has the script's helpers defined as
+ * top-level vars accessible via getIndexFunction(name).
+ *
+ * @param {string} scriptPath - Relative path from repo root (e.g. "software/scripts/advanced/llm/claude/setup.js").
+ */
+export function loadScriptHelpers(scriptPath) {
+  let scriptSource = fs.readFileSync(path.resolve(scriptPath), "utf-8");
+  scriptSource = scriptSource.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
+    return fs.readFileSync(path.resolve(srcFile), "utf-8");
+  });
+  const varScript = scriptSource.replace(/^(const|let) /gm, "var ");
+  vm.runInNewContext(varScript, sandbox, { filename: scriptPath });
+}
+
 // ---- auto-reset between tests ----
 beforeEach(() => {
   for (const key of Object.keys(fileSystem)) {

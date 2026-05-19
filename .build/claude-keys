@@ -23,6 +23,8 @@
         "alt+l": "chat:clearInput",
         "ctrl+a": null,
         "ctrl+e": null,
+        "home": null,
+        "end": null,
         "ctrl+x": "chat:externalEditor",
         "ctrl+v": "chat:imagePaste",
         "alt+v": null

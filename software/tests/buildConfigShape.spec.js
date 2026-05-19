@@ -563,6 +563,7 @@ describe("build config shape - objects", () => {
         "buffer_font_weight",
         "colorize_brackets",
         "cursor_blink",
+        "disable_ai",
         "ensure_final_newline_on_save",
         "file_scan_exclusions",
         "format_on_paste",

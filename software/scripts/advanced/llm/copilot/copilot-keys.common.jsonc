@@ -47,9 +47,20 @@
       "OS_KEY+z": "chat:undo",
       // clear input (OS_KEY+l, matching cmd+l on Mac, alt+l on Windows/Linux)
       "OS_KEY+l": "chat:clearInput",
-      // unbind ctrl+a / ctrl+e so readline HOME / END work
+      // EXPLICIT HOME/END PARITY (mirrors claude-keys.common.jsonc):
+      //   ctrl+a → BOL  (unbound here so terminal readline handles it)
+      //   ctrl+e → EOL  (unbound here so terminal readline handles it)
+      //   home   → BOL  (unbound here so terminal readline handles it)
+      //   end    → EOL  (unbound here so terminal readline handles it)
+      // Copilot has no chat:cursorHome/cursorEnd action surface today;
+      // nulling these four chords is what makes HOME-key and Ctrl+A behave
+      // identically (both jump to beginning of line via the terminal's
+      // readline layer). Listed explicitly so a future upstream binding for
+      // any of them can't silently take HOME/EOL away.
       "ctrl+a": null,
       "ctrl+e": null,
+      "home": null,
+      "end": null,
       // open $EDITOR (vim) — Copilot's current default is ctrl+g and ctrl+x
       // is a two-step prefix (ctrl+x → b / o). Pulling editor-open onto
       // ctrl+x matches Claude + opencode + bash readline.
