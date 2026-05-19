@@ -1,0 +1,64 @@
+# LLM CLI setup — shared rules
+
+Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, OpenCode) derives its rules, slash commands, and ergonomics from the same source files in this folder. Each per-CLI `setup.js` is responsible for mapping the shared content onto whatever config surface that specific CLI exposes on disk.
+
+## Single sources of truth
+
+| Shared file                                                        | Consumed by                                                                                               |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md` (OpenCode falls through to Claude's) |
+| `_common/commands/*.md`                                            | `~/.claude/commands/sy-*.md` (deployed) + `~/.config/opencode/commands/sy-*.md` (symlinked from Claude)   |
+| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                          |
+
+Run all four CLIs end-to-end with:
+
+```bash
+bash run.sh --preset=llm
+```
+
+Run a single one:
+
+```bash
+bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
+```
+
+## Surface parity matrix
+
+|              | Instructions                                                 | Slash commands                                                  | Keybindings                                                      | Managed settings              |
+| ------------ | ------------------------------------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------- |
+| **claude**   | ✅ `~/.claude/CLAUDE.md`                                     | ✅ `~/.claude/commands/sy-*.md`                                 | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  |
+| **copilot**  | ✅ `~/.copilot/AGENTS.md`                                    | ❌ no `~/.<cli>/commands/` slot (would need plugin manifest)    | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` |
+| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                     | ❌ no `~/.<cli>/commands/` slot (would need extension manifest) | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  |
+| **opencode** | ➡️ reads `~/.claude/CLAUDE.md` directly (no separate deploy) | ✅ symlinks from `~/.claude/commands/`                          | ✅ inline `keybinds` in `~/.config/opencode/opencode.json`       | ✅ inline in `opencode.json`  |
+
+Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today, ➡️ fallthrough.
+
+When upstream Copilot ships a keymap config or a `~/.copilot/commands/` slot, see the deferred-deploy comment at the bottom of `copilot/setup.js::_doCopilotKeysWork` — the merge already runs on every CI build so the schema stays exercised.
+
+## Settings-intent table
+
+Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key names differ (`banner` vs `hideBanner` vs `spinnerTipsEnabled`). The _intent_ is supposed to stay aligned across the four. Use this table when adding a new managed setting — implement it everywhere it has a meaning, and call out anywhere it can't be expressed.
+
+| Intent                     | claude                                    | copilot                | gemini             | opencode                                          |
+| -------------------------- | ----------------------------------------- | ---------------------- | ------------------ | ------------------------------------------------- |
+| Hide splash / banner       | `spinnerTipsEnabled: false`               | `banner: "never"`      | `hideBanner: true` | n/a                                               |
+| Mute terminal bell         | n/a                                       | `beep: false`          | n/a                | n/a                                               |
+| Reduce UI animations       | `prefersReducedMotion: true`              | n/a                    | n/a                | n/a                                               |
+| Verbose transcript         | `viewMode: "verbose"`                     | n/a                    | n/a                | n/a                                               |
+| Default model              | `model: "claude-opus-4-7[1m]"`            | user-owned             | user-owned         | provider entries from `getOllamaProviderInputs()` |
+| Extended thinking          | `alwaysThinkingEnabled: true`             | n/a                    | n/a                | n/a                                               |
+| Auto-cleanup old sessions  | `cleanupPeriodDays: 30`                   | n/a                    | n/a                | n/a                                               |
+| Skip dangerous-mode prompt | `skipDangerousModePermissionPrompt: true` | n/a                    | n/a                | n/a                                               |
+| Compact paste in input     | n/a                                       | `compactPaste: true`   | n/a                | n/a                                               |
+| Render markdown in TUI     | n/a                                       | `renderMarkdown: true` | n/a                | n/a                                               |
+| Hide inline tips           | `spinnerTipsEnabled: false`               | n/a                    | `hideTips: true`   | n/a                                               |
+
+**n/a** here means _the CLI does not expose a settings key for that intent today_. Don't silently drop an intent if upstream later ships one — add the key and update this table in the same edit.
+
+## Editing rules
+
+- **Instructions / rules**: edit `_common/instructions.md`, then re-run all four setup scripts (or `bash run.sh --preset=llm`).
+- **Slash commands**: edit a file under `_common/commands/<name>.md` — every deploy (Claude direct + OpenCode symlink) picks it up on the next setup run.
+- **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.
+- **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
+- **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).

@@ -148,6 +148,11 @@ async function _doGeminiKeysWork(targetDir) {
  * user-managed shape (`mcpServers`, `theme`, `model.*` overrides) are
  * deliberately omitted so they survive untouched across re-runs.
  *
+ * When adding a new managed setting, also update the settings-intent table in
+ * `software/scripts/advanced/llm/_common/README.md` so cross-CLI parity stays
+ * visible at review time (intent must be implemented in claude/copilot/opencode
+ * too, or explicitly marked n/a there).
+ *
  * @type {Record<string, any>}
  */
 const GEMINI_MANAGED_SETTINGS = {

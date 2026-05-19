@@ -1,4 +1,15 @@
-/** Configures opencode with both remote and local Ollama providers. */
+/**
+ * Configures opencode with both remote and local Ollama providers.
+ *
+ * NOTE: OpenCode does NOT have its own `~/.config/opencode/AGENTS.md` (or similar)
+ * deployment in this script — it intentionally falls through to `~/.claude/CLAUDE.md`,
+ * which `claude/setup.js` deploys from `_common/instructions.md`. So the shared
+ * engineering-principles block reaches OpenCode automatically; do not add a
+ * `_doInstructionsWork` mirror here. See `_common/README.md` for the parity matrix.
+ *
+ * Slash commands are symlinked from `~/.claude/commands/` in `_syncOpencodeCommandSymlinks`
+ * below — same single-source-of-truth pattern as the instructions fallthrough.
+ */
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
 

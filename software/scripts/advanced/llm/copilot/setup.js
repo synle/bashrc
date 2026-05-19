@@ -194,6 +194,11 @@ async function _doCopilotKeysWork(targetDir) {
  * Sourced from `copilot help config` (v1.0.48) — only safe-to-default keys
  * land here.
  *
+ * When adding a new managed setting, also update the settings-intent table in
+ * `software/scripts/advanced/llm/_common/README.md` so cross-CLI parity stays
+ * visible at review time (intent must be implemented in claude/gemini/opencode
+ * too, or explicitly marked n/a there).
+ *
  * @type {Record<string, any>}
  */
 const COPILOT_MANAGED_SETTINGS = {

@@ -38,5 +38,19 @@
   "prompt": {
     "description": "Shell prompt + navigation: Starship prompt install/config and zoxide (smarter cd).",
     "files": ["advanced/starship.sh", "advanced/starship-config.js", "zoxide.js"]
+  },
+  "llm": {
+    "description": "AI CLI clients: install + configure Claude Code, GitHub Copilot, Google Gemini, and OpenCode (settings, keybindings, shared instructions, slash commands). Claude is the base — all four CLIs read the same `_common/instructions.md`, and OpenCode symlinks Claude's `/sy-*` commands.",
+    "files": [
+      "advanced/llm/ollama.sh",
+      "advanced/llm/claude/install.sh",
+      "advanced/llm/claude/setup.js",
+      "advanced/llm/copilot/install.sh",
+      "advanced/llm/copilot/setup.js",
+      "advanced/llm/gemini/install.sh",
+      "advanced/llm/gemini/setup.js",
+      "advanced/llm/opencode/install.sh",
+      "advanced/llm/opencode/setup.js"
+    ]
   }
 }
