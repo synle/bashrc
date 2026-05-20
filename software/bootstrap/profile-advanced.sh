@@ -56,76 +56,126 @@ export HISTIGNORE=$(
 )
 unset ignored_history
 
-# Rewrite the last history entry to a canonical form so 1-2 character shorthand
-# aliases (g, gg, n, d, v, c, y, f, ...) collapse to the underlying command.
+# Canonicalize a command: expand short (≤2 char) aliases via BASH_ALIASES and
+# strip marker commands (clear, clean, br) that are noise in compound commands.
+# usage: _canonicalize_command "command string"
+# echoes the canonicalized command; original if unchanged; empty if stripped bare.
+function _canonicalize_command() {
+  local cmd="$1" first expansion
+
+  # First-word alias expansion: any ≤2-char alias resolves to its target via
+  # the BASH_ALIASES associative array (populated by bash in interactive shells).
+  first="${cmd%% *}"
+  if [ ${#first} -le 2 ] && [ -n "${BASH_ALIASES[$first]+_}" ]; then
+    expansion="${BASH_ALIASES[$first]}"
+    if [ "$first" = "$cmd" ]; then
+      cmd="$expansion"
+    else
+      cmd="$expansion ${cmd#"$first "}"
+    fi
+  fi
+
+  # Strip marker commands that add noise in compound commands.
+  # Matches: `clear ; git status` → `git status`, `git status ; clear` → `git status`,
+  # `; clear ; git status` → `git status`, `clear && clean && git status` → `git status`.
+  local _HISTORY_MARKER_COMMANDS='clear|clean|br'
+  while true; do
+    if [[ "$cmd" =~ ^(;\ )?(${_HISTORY_MARKER_COMMANDS})(\ ;\ |\ \&\& )(.*)$ ]]; then
+      cmd="${BASH_REMATCH[4]}"
+      continue
+    fi
+    if [[ "$cmd" =~ ^(.*)(\ ;\ |\ \&\& )(${_HISTORY_MARKER_COMMANDS})(;\ )?$ ]]; then
+      cmd="${BASH_REMATCH[1]}"
+      continue
+    fi
+    break
+  done
+
+  echo "$cmd"
+}
+
+# Rewrite the last history entry to a canonical form via _canonicalize_command.
 # Combined with HISTCONTROL=erasedups, this gives a deduped history of canonical
 # commands — `g status` and `git status` converge to one `git status` entry.
 # Runs via PROMPT_COMMAND after every command; idempotent and skipped on
-# bare-Enter (no new history entry). Single-pass: no recursive alias resolution.
-# Lookup is dynamic via BASH_ALIASES, so adding/removing a short alias updates
-# the rewriter automatically — no hardcoded mapping to keep in sync.
+# bare-Enter (no new history entry).
 _rewrite_last_history() {
-  local hline hnum last new rest first expansion
+  local hline hnum last rest new
   hline=$(builtin history 1) || return 0
-  # Strip leading whitespace
   hline="${hline#"${hline%%[![:space:]]*}"}"
-  # Extract history number (leading digits)
   hnum="${hline%%[^0-9]*}"
   [ -z "$hnum" ] && return 0
-  # Drop number + following whitespace
   rest="${hline#"$hnum"}"
   rest="${rest#"${rest%%[![:space:]]*}"}"
-  # Drop the "[timestamp]" prefix when HISTTIMEFORMAT is set
   if [[ "$rest" == \[*\]* ]]; then
     rest="${rest#*] }"
   fi
   last="$rest"
 
-  # Skip when bash hasn't recorded a new entry (bare Enter / filtered command)
   [ "$hnum" = "${_LAST_REWRITE_HNUM:-}" ] && return 0
   _LAST_REWRITE_HNUM=$hnum
 
-  new=$last
-
-  # First-word expansion: any ≤2-char alias resolves to its target via the
-  # BASH_ALIASES associative array (populated by bash in interactive shells).
-  first="${new%% *}"
-  if [ ${#first} -le 2 ] && [ -n "${BASH_ALIASES[$first]+_}" ]; then
-    expansion="${BASH_ALIASES[$first]}"
-    if [ "$first" = "$new" ]; then
-      new="$expansion"
-    else
-      new="$expansion ${new#"$first "}"
-    fi
-  fi
-
-  # Strip marker commands (clear, clean, br) that are noise in compound commands.
-  # Matches leading/trailing positions: `clear ; git status` → `git status`,
-  # `git status ; clear` → `git status`, `; clear ; git status` → `git status`.
-  # Loop handles stacked markers: `clear ; clean ; git status` → `git status`.
-  local _HISTORY_MARKER_COMMANDS='clear|clean|br'
-  while true; do
-    # Strip leading: `;? <marker> ;|&& ...`
-    if [[ "$new" =~ ^(;\ )?(${_HISTORY_MARKER_COMMANDS})(\ ;\ |\ \&\& )(.*)$ ]]; then
-      new="${BASH_REMATCH[4]}"
-      continue
-    fi
-    # Strip trailing: `... ;|&& <marker> ;?`
-    if [[ "$new" =~ ^(.*)(\ ;\ |\ \&\& )(${_HISTORY_MARKER_COMMANDS})(;\ )?$ ]]; then
-      new="${BASH_REMATCH[1]}"
-      continue
-    fi
-    break
-  done
-  # If stripping ate the whole command (e.g. user typed `; clear ;`), keep
-  # original — HISTIGNORE will filter the bare marker later.
+  new=$(_canonicalize_command "$last")
   [ -z "$new" ] && return 0
-
-  # Nothing to rewrite
   [ "$new" = "$last" ] && return 0
 
   builtin history -d "$hnum"
   builtin history -s "$new"
+}
+
+# Rewrite the entire history file: canonicalize every entry and dedup (keeping
+# most recent per canonical command). Uses _canonicalize_command for alias
+# expansion and marker stripping. Reloads in-memory history from disk after.
+# Safe to call at any time — preserves timestamps; only COMMANDS change.
+function _rewrite_history_file() {
+  local histfile="${HISTFILE:-$HOME/.bash_history}"
+  [ -f "$histfile" ] || return 0
+
+  local tmp=$(mktemp)
+  local ts="" cmd="" canonical=""
+
+  # Phase 1: canonicalize every entry, preserve timestamps
+  while IFS= read -r line; do
+    if [[ "$line" == \#* ]]; then
+      ts="$line"
+    else
+      canonical=$(_canonicalize_command "$line")
+      if [ -n "$canonical" ]; then
+        echo "${ts:-}"
+        echo "$canonical"
+      fi
+      ts=""
+    fi
+  done < "$histfile" > "$tmp"
+
+  # Phase 2: dedup pairs keeping last occurrence per command (most recent wins)
+  local deduped=$(mktemp)
+  perl -e '
+    my @lines = <>;
+    my (%seen, @out);
+    for (my $i = $#lines; $i >= 1; $i -= 2) {
+      my $cmd = $lines[$i];
+      my $ts  = $lines[$i-1];
+      chomp $cmd;
+      chomp $ts;
+      next unless $cmd;
+      next if $seen{$cmd};
+      $seen{$cmd} = 1;
+      if ($ts ne "") {
+        unshift @out, "$ts\n$cmd\n";
+      } else {
+        unshift @out, "$cmd\n";
+      }
+    }
+    print @out;
+  ' "$tmp" > "$deduped"
+
+  if ! cmp -s "$histfile" "$deduped" 2> /dev/null; then
+    command cat "$deduped" > "$histfile"
+    builtin history -r
+  fi
+
+  rm -f "$tmp" "$deduped"
 }
 
 # prune a recents file, removing entries that fail the given test (-d or -f)
