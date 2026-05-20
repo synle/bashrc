@@ -99,6 +99,28 @@ _rewrite_last_history() {
     fi
   fi
 
+  # Strip marker commands (clear, clean, br) that are noise in compound commands.
+  # Matches leading/trailing positions: `clear ; git status` → `git status`,
+  # `git status ; clear` → `git status`, `; clear ; git status` → `git status`.
+  # Loop handles stacked markers: `clear ; clean ; git status` → `git status`.
+  local _HISTORY_MARKER_COMMANDS='clear|clean|br'
+  while true; do
+    # Strip leading: `;? <marker> ;|&& ...`
+    if [[ "$new" =~ ^(;\ )?(${_HISTORY_MARKER_COMMANDS})(\ ;\ |\ \&\& )(.*)$ ]]; then
+      new="${BASH_REMATCH[4]}"
+      continue
+    fi
+    # Strip trailing: `... ;|&& <marker> ;?`
+    if [[ "$new" =~ ^(.*)(\ ;\ |\ \&\& )(${_HISTORY_MARKER_COMMANDS})(;\ )?$ ]]; then
+      new="${BASH_REMATCH[1]}"
+      continue
+    fi
+    break
+  done
+  # If stripping ate the whole command (e.g. user typed `; clear ;`), keep
+  # original — HISTIGNORE will filter the bare marker later.
+  [ -z "$new" ] && return 0
+
   # Nothing to rewrite
   [ "$new" = "$last" ] && return 0
 
