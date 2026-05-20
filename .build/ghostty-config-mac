@@ -27,7 +27,12 @@ shell-integration-features = sudo
 working-directory = inherit
 
 # ---- Window / Behavior ----
-scrollback-limit = 200000
+# NOTE: ghostty's scrollback-limit is in BYTES (unlike VS Code / Zed /
+# Windows Terminal, which all take lines). Reusing EDITOR_CONFIGS.terminalScrollback
+# (200000) here gave only ~200KB of scrollback — about 2k lines, not 200k.
+# Hardcoded to 100mb (≈1M+ lines at typical density) to match "effectively
+# unbounded" intent across all terminals.
+scrollback-limit = 100mb
 mouse-hide-while-typing = true
 copy-on-select = false
 confirm-close-surface = false

@@ -166,13 +166,20 @@ function last_folder() {
   fi
 }
 
-# Ghostty's bash shell-integration script (loaded before this profile) appends
-# `\[\e[5 q\]` (blinking bar) to PS1 inside its __ghostty_precmd hook whenever
-# `$GHOSTTY_SHELL_FEATURES` contains the literal string "cursor". Even if
-# `shell-integration-features` is updated in ~/.config/ghostty/config to drop
-# "cursor", existing shells already have the old env var. Strip it here so the
-# precmd hook's cursor branch becomes a no-op and our block-cursor sticks.
-[ -n "${GHOSTTY_SHELL_FEATURES:-}" ] && export GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES//cursor/}"
+# Ghostty's bash shell-integration script (loaded before this profile) reads
+# `$GHOSTTY_SHELL_FEATURES` inside its __ghostty_precmd hook and injects
+# behavior per listed feature: "cursor" appends `\[\e[5 q\]` (blinking bar)
+# to PS1; "title" writes its own OSC 0/2 title (the last-run command name,
+# producing tab titles like "clean", "open .", "ckeab" instead of the pwd
+# we want). Existing shells keep whatever feature list they inherited at
+# spawn time even after `shell-integration-features` is edited in the
+# ghostty config — so strip the offending features here defensively, making
+# the precmd hooks no-ops and letting our block-cursor + PROMPT_COMMAND
+# OSC 0 (shorter_pwd_path) stick.
+if [ -n "${GHOSTTY_SHELL_FEATURES:-}" ]; then
+  export GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES//cursor/}"
+  export GHOSTTY_SHELL_FEATURES="${GHOSTTY_SHELL_FEATURES//title/}"
+fi
 
 # append history to file after every command (but do NOT clear+reload with -c/-r,
 # so Up arrow navigates current tab's session history instead of showing commands
