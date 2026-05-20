@@ -55,14 +55,14 @@ See `software/tools/build-installer.js`.
 ```bash
 bash run.sh --files=git.js                         # one script (exact)
 bash run.sh --files=vim                            # fuzzy match (auto-resolves if unambiguous)
-bash run.sh --preset=lightweight                   # named preset from software/metadata/presets.json
+bash run.sh --preset=lightweight                   # named preset from software/metadata/presets.jsonc
 bash run.sh --preset=terminal,prompt               # union of multiple presets
 bash run.sh --refresh="fzf.js,fonts.js"            # force-refresh specific scripts
 bash run.sh --dryrun --setup                       # preview a full setup, no writes
 bash run.sh --remove --files=fzf.js                # undoWork for one script
 ```
 
-Presets currently include `lightweight`, `editor-and-emulators`, `browsers`, `terminal`, `prompt`, and `llm` — see `software/metadata/presets.json` for the authoritative list and per-preset descriptions.
+End-user presets currently include `lightweight`, `editors-emulators-and-apps`, `browsers`, `terminal`, `prompt`, and `llm`. Internal building blocks (leading underscore, exact-match only — excluded from the fuzzy substring fallback) include `_editors`, `_emulators`, and `_apps`. See `software/metadata/presets.jsonc` for the authoritative list and per-preset descriptions; the file is JSONC, so `//`, `/* */`, and trailing commas are allowed (stripped by `stripJsoncComments` in `software/index.js` before `JSON.parse`). Each entry declares a `files[]` list and/or a `presets[]` list pointing at other presets (composed recursively); `editors-emulators-and-apps` is the canonical example, defined as `{ "presets": ["_editors", "_emulators", "_apps", "llm"] }`. Cycles (a preset referencing itself, directly or transitively) are rejected at parse time by `expandPresetFiles` in `software/index.js` and guarded by `software/tests/presets.spec.js`.
 
 ## Testing
 

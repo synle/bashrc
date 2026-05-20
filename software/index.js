@@ -82,18 +82,131 @@ const getRuntimeOption = (optionKey, parseFunc = parseString) => {
 //////////////////////////////////////////////////////
 
 /**
- * Loads the presets map from the PRESETS_JSON env var (set by run.sh from software/metadata/presets.json).
- * Each preset is a named file-list bundle that --preset=<name> expands into.
- * @returns {Record<string, { description?: string, files?: string[] }>}
+ * Strips JSONC syntax extensions (line `//` comments, `/* *\/` block comments, and
+ * trailing commas before `}` / `]`) from a text blob so the result is plain JSON
+ * suitable for `JSON.parse`. Comment markers inside string literals are preserved
+ * (the scanner tracks string state and respects backslash escapes).
+ *
+ * Intentionally hand-rolled rather than pulled from a dep — presets.jsonc is the
+ * only JSONC surface in this repo and avoiding an npm dep keeps the bootstrap
+ * pipeline (curl | bash, no node_modules yet) working.
+ *
+ * @param {string} text - Raw JSONC text
+ * @returns {string} Equivalent text with comments and trailing commas removed
+ */
+function stripJsoncComments(text) {
+  let out = "";
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    const next = i + 1 < n ? text[i + 1] : "";
+    if (c === '"') {
+      // String literal — copy through verbatim, honoring backslash escapes so an
+      // escaped quote (\") doesn't terminate the string early.
+      out += c;
+      i++;
+      while (i < n) {
+        const cc = text[i];
+        out += cc;
+        if (cc === "\\" && i + 1 < n) {
+          out += text[i + 1];
+          i += 2;
+          continue;
+        }
+        i++;
+        if (cc === '"') break;
+      }
+    } else if (c === "/" && next === "/") {
+      // Line comment — skip to end-of-line.
+      while (i < n && text[i] !== "\n") i++;
+    } else if (c === "/" && next === "*") {
+      // Block comment — skip to closing "*/".
+      i += 2;
+      while (i < n && !(text[i] === "*" && i + 1 < n && text[i + 1] === "/")) i++;
+      i += 2;
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  // Drop trailing commas immediately before `}` or `]` (with optional whitespace).
+  return out.replace(/,(\s*[}\]])/g, "$1");
+}
+
+/**
+ * Loads the presets map from the PRESETS_JSON env var (set by run.sh from software/metadata/presets.jsonc).
+ * Each preset is a named bundle of either a direct `files[]` list and/or a `presets[]` list of
+ * other preset names to compose recursively. The env var holds raw JSONC; we strip comments
+ * and trailing commas before `JSON.parse` so the .jsonc file can carry inline documentation.
+ * @returns {Record<string, { description?: string, files?: string[], presets?: string[] }>}
  */
 function loadPresets() {
   const raw = process.env.PRESETS_JSON || "{}";
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(stripJsoncComments(raw));
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
   }
+}
+
+/**
+ * Recursively expands a preset into its full, flattened, deduplicated file list.
+ * Walks `presets[]` references depth-first (referenced presets contribute their files
+ * first, this preset's own `files[]` appended after) and detects cycles eagerly so a
+ * misconfigured `presets.jsonc` (self-reference or A → B → A loops) fails fast at parse
+ * time with a readable chain instead of recursing forever.
+ *
+ * Sub-preset references must match by exact name — fuzzy resolution applies only to
+ * user-facing CLI input (`--preset=<name>`), not to entries inside `presets.jsonc`.
+ *
+ * @param {string} name - Canonical preset name to expand (already resolved against the map)
+ * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} presetMap - Full preset map (from loadPresets)
+ * @param {Set<string>} visited - Names currently on the resolution stack; passed through recursion to detect cycles
+ * @param {string[]} [chain] - Ordered chain of preset names visited along the current path, used to render a useful error on cycle
+ * @returns {string[]} Flattened, deduplicated file list (order: referenced presets first, then own files)
+ * @throws {Error} When `name` is unknown, when a cycle is detected, or when a sub-preset reference points at an unknown name
+ */
+function expandPresetFiles(name, presetMap, visited = new Set(), chain = []) {
+  const nextChain = [...chain, name];
+  if (visited.has(name)) {
+    throw new Error(
+      `Preset cycle detected in presets.jsonc: ${nextChain.join(" -> ")}. ` +
+        `A preset must not reference itself, directly or transitively.`,
+    );
+  }
+  const preset = presetMap[name];
+  if (!preset || typeof preset !== "object") {
+    const ctx = chain.length ? ` (referenced from "${chain[chain.length - 1]}")` : "";
+    throw new Error(`Unknown preset "${name}"${ctx}.`);
+  }
+  visited.add(name);
+  const out = [];
+  if (Array.isArray(preset.presets)) {
+    for (const ref of preset.presets) {
+      if (!ref || typeof ref !== "string") continue;
+      const refFiles = expandPresetFiles(ref, presetMap, visited, nextChain);
+      for (const f of refFiles) out.push(f);
+    }
+  }
+  if (Array.isArray(preset.files)) {
+    for (const f of preset.files) {
+      if (f) out.push(f);
+    }
+  }
+  visited.delete(name);
+  // Dedup while preserving first-seen order so a file shared across multiple referenced
+  // presets is run once at its earliest position.
+  const seen = new Set();
+  const dedup = [];
+  for (const f of out) {
+    if (!seen.has(f)) {
+      seen.add(f);
+      dedup.push(f);
+    }
+  }
+  return dedup;
 }
 
 /**
@@ -173,9 +286,13 @@ function parseRawArgs() {
       let preset = presetMap[name];
 
       // Fuzzy fallback: case-insensitive substring match across known preset names.
+      // Underscore-prefixed names (e.g. `_editors`, `_emulators`, `_apps`) are treated
+      // as internal building blocks — they only resolve by exact name, never via fuzzy
+      // match. Without this carve-out, `--preset=editors` would be ambiguous between
+      // `_editors` and any composite that has "editors" in its name.
       if (!preset) {
         const needle = name.toLowerCase();
-        const matches = known.filter((k) => k.toLowerCase().includes(needle));
+        const matches = known.filter((k) => !k.startsWith("_") && k.toLowerCase().includes(needle));
         if (matches.length === 1) {
           resolvedName = matches[0];
           preset = presetMap[resolvedName];
@@ -196,10 +313,11 @@ function parseRawArgs() {
       // reflect what actually ran.
       presets[i] = resolvedName;
 
-      if (Array.isArray(preset.files)) {
-        for (const f of preset.files) {
-          if (f) files = files ? `${files},${f}` : f;
-        }
+      // Recursively expand: a preset may pull in other presets via `presets:` for composition.
+      // expandPresetFiles handles cycle detection and unknown-ref errors.
+      const expandedFiles = expandPresetFiles(resolvedName, presetMap);
+      for (const f of expandedFiles) {
+        if (f) files = files ? `${files},${f}` : f;
       }
     }
   }
@@ -4544,9 +4662,20 @@ function printRunInfo() {
     for (const name of _parsedArgs.presets) {
       const preset = presetMap[name] || {};
       const description = preset.description || "[no description]";
-      const presetFiles = Array.isArray(preset.files) ? preset.files : [];
+      const refs = Array.isArray(preset.presets) ? preset.presets : [];
+      // Try recursive expansion so the printed file list reflects what actually runs
+      // (own files + files pulled in via `presets:` references). On any structural
+      // error (cycle, unknown ref) fall back to the directly-declared files so the
+      // run-info block still prints rather than crashing the whole run.
+      let presetFiles;
+      try {
+        presetFiles = expandPresetFiles(name, presetMap);
+      } catch {
+        presetFiles = Array.isArray(preset.files) ? preset.files : [];
+      }
       log(`  - ${name}`);
       log(`      description : ${description}`);
+      if (refs.length) log(`      presets (${refs.length}) : ${refs.join(", ")}`);
       log(`      files (${presetFiles.length}) : ${presetFiles.length ? presetFiles.join(", ") : "[none]"}`);
     }
   }

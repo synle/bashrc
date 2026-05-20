@@ -159,7 +159,7 @@ bash run.sh --debug                  # Keep temp files, show retry commands
 bash run.sh --force-refresh          # Force reinstall (heavy items only if stale >2 weeks)
 bash run.sh --refresh="fzf.js,fonts.js" # Force refresh specific scripts
 bash run.sh --verbose                # Bash tracing (set -x)
-bash run.sh --preset=lightweight     # Run a named preset (see software/metadata/presets.json)
+bash run.sh --preset=lightweight     # Run a named preset (see software/metadata/presets.jsonc)
 bash run.sh --preset=a,b             # Compose multiple presets — file lists union
 bash run.sh --preset=editor          # Partial match: case-insensitive substring; auto-resolves if 1 hit
 bash run.sh --files=vim              # Same partial match; ambiguous matches print suggestions
@@ -182,34 +182,34 @@ Key concepts at a glance:
 - **`--files` auto-refresh**: `_doWorkTestFiles()` appends `~refresh-source.standalone.js` to every `--files` run to refresh SOURCE_BEGIN/SOURCE_END in `~/.bash_syle`. Full runs use `~cleanup.js` instead.
 - **Profile assembly**: `~/.bash_syle` from `profile-core.sh` + `profile-advanced.sh` via `registerWithBashSyleProfile()` / `registerPlatformTweaks()`.
 - **BEGIN/END**: build-time inlining (`make format_build_include`). **SOURCE**: runtime includes via `readText()`.
-- **Presets** (`software/metadata/presets.json`): named `--preset=<name>` bundles; each entry has `files[]` + optional description. Current: `lightweight`, `editor-and-emulators`, `browsers`, `terminal`, `prompt`, `llm`. Compose: `--preset=a,b` unions lists. `printRunInfo` prints each preset's description + file list. To add: edit `presets.json`, `make format`, `bash run.sh --preset=<new>`.
+- **Presets** (`software/metadata/presets.jsonc`): named `--preset=<name>` bundles. JSONC format — supports `//` and `/* */` comments and trailing commas; `loadPresets()` in `software/index.js` strips them via `stripJsoncComments` before `JSON.parse`. Each entry has `files[]` and/or `presets[]` (references to other presets — composed recursively) + optional description. Current end-user presets: `lightweight`, `editors-emulators-and-apps` (composite), `browsers`, `terminal`, `prompt`, `llm`. Internal building blocks (leading underscore, exact-match only — excluded from fuzzy match): `_editors`, `_emulators`, `_apps`. Compose at the CLI: `--preset=a,b` unions lists. Recursive expansion is cycle-detected at parse time — self-references and transitive loops (A→B→A) throw with the offending chain; `software/tests/presets.spec.js` guards the checked-in file. `printRunInfo` prints each preset's description, referenced presets, and fully-expanded file list. To add: edit `presets.jsonc`, `make format`, `bash run.sh --preset=<new>`.
 - **Partial matching**: `--preset=` and `--files=` both support case-insensitive substring fallback. 1 match auto-resolves. 2+ matches print copy-paste suggestions. 0 matches → not-found error.
 - **LLM client setup** (`software/scripts/advanced/llm/`): per-CLI subfolders for `claude`, `copilot`, `gemini`, `opencode`, plus `ollama.sh` / `ollama.profile.bash`. Claude is the base — shared rules + commands + keybindings live in `_common/` (e.g. `instructions.md` is the single source for the global CLAUDE.md / AGENTS.md / GEMINI.md generated files — never hand-edit those; `_common/commands/*.md` feeds Claude + opencode-via-symlink). Full surface-parity matrix + settings-intent table: [`software/scripts/advanced/llm/_common/README.md`](software/scripts/advanced/llm/_common/README.md). Refresh all four CLIs at once: `bash run.sh --preset=llm`. `llm-common.js` is the shared JS helper.
 - **Self-extracting installer** (`make build_installer` → `.build/install-bashrc.sh`): bash script with base64'd `tar.gz` of `run.sh` + `software/{index.js,common.js,bootstrap,scripts,metadata}` after a `__BASHRC_INSTALLER_PAYLOAD_BELOW__` sentinel. Extracts to per-PID tmp dir (`BASHRC_INSTALLER_DIR` to override; `BASHRC_INSTALLER_KEEP=1` to persist) and `exec`s `run.sh "$@"`. Built in Prep CI (`make ci_prep`), mirrored to binary-cache as `bashrc-installer__install-bashrc.sh`. `.build/` is gitignored.
 
 ### Key Files
 
-| Path                                                 | Purpose                                                                                                                                       |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `run.sh`                                             | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                                                            |
-| `software/bootstrap/common-env.sh`                   | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); sourced by `run.sh` via BEGIN/END                                                  |
-| `software/metadata/presets.json`                     | Named install presets (`--preset=<name>`); read by `run.sh` into `PRESETS_JSON`, expanded by `parseRawArgs`                                   |
-| `software/bootstrap/common-functions.bash`           | Shared shell helpers; sourced by `.sh` scripts via SOURCE markers                                                                             |
-| `software/index.js`                                  | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                                                        |
-| `software/scripts/_full-setup.common.linux.bash`     | Shared Linux helpers (fnm/node, lock waits, display-dj, power mgmt); sourced by all Linux `_full-setup.sh`                                    |
-| `software/scripts/*.js`                              | Cross-platform scripts                                                                                                                        |
-| `software/scripts/<os>/`                             | OS-specific scripts                                                                                                                           |
-| `software/common.js`                                 | Core shared constants and `replaceBlock`. Inlined into index.js                                                                               |
-| `software/tools/build-include.js`                    | BEGIN/END block substitution engine + inline marker processor                                                                                 |
-| `software/tools/generate-ci-binary-list.js`          | Renders BEGIN/END `ci-binary-checks` block in `action.yml` from `ci-binaries.json`                                                            |
-| `software/tools/build-installer.js`                  | Builds `.build/install-bashrc.sh` self-extracting installer                                                                                   |
-| `software/metadata/autocomplete.common.js`           | Single source for spec-based autocomplete mappings, dynamic-token list (`DYNAMIC_TOKENS`), and build-time macro expander (`expandSpecMacros`) |
-| `software/metadata/ci-binaries.json`                 | Single source for CI binary verification (`required` + `warn`). YAML block in `action.yml` is auto-generated                                  |
-| `software/metadata/script-list.js` / `.config`       | Scans `software/scripts/` and emits the canonical sorted script list consumed at build time                                                   |
-| `software/metadata/ip-address.config.js` / `.config` | Parses hostname/IP groups; feeds host-mapping build steps (`build_host_mappings`)                                                             |
-| `software/scripts/advanced/llm/`                     | Per-CLI LLM client setup (`claude/`, `copilot/`, `gemini/`, `opencode/`, `ollama.sh`) plus shared `_common/` (instructions, commands, keys)   |
-| `vitest.config.js`                                   | Unit test config + istanbul coverage thresholds (one-off override of rule 38; numbers live here, not in CLAUDE.md)                            |
-| `$BASHRC_TEMP_DIR/run_timing.json`                   | Per-run timing data (start/end, per-script duration+status); read by CI                                                                       |
+| Path                                                 | Purpose                                                                                                                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run.sh`                                             | Entry point. Bash pre-scan, JSON-encodes args, calls `run_files()`                                                                                      |
+| `software/bootstrap/common-env.sh`                   | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); sourced by `run.sh` via BEGIN/END                                                            |
+| `software/metadata/presets.jsonc`                    | Named install presets (`--preset=<name>`); JSONC (comments + trailing commas allowed); read by `run.sh` into `PRESETS_JSON`, expanded by `parseRawArgs` |
+| `software/bootstrap/common-functions.bash`           | Shared shell helpers; sourced by `.sh` scripts via SOURCE markers                                                                                       |
+| `software/index.js`                                  | Arg parsing (`parseRawArgs`), utility library, script runner, run info                                                                                  |
+| `software/scripts/_full-setup.common.linux.bash`     | Shared Linux helpers (fnm/node, lock waits, display-dj, power mgmt); sourced by all Linux `_full-setup.sh`                                              |
+| `software/scripts/*.js`                              | Cross-platform scripts                                                                                                                                  |
+| `software/scripts/<os>/`                             | OS-specific scripts                                                                                                                                     |
+| `software/common.js`                                 | Core shared constants and `replaceBlock`. Inlined into index.js                                                                                         |
+| `software/tools/build-include.js`                    | BEGIN/END block substitution engine + inline marker processor                                                                                           |
+| `software/tools/generate-ci-binary-list.js`          | Renders BEGIN/END `ci-binary-checks` block in `action.yml` from `ci-binaries.json`                                                                      |
+| `software/tools/build-installer.js`                  | Builds `.build/install-bashrc.sh` self-extracting installer                                                                                             |
+| `software/metadata/autocomplete.common.js`           | Single source for spec-based autocomplete mappings, dynamic-token list (`DYNAMIC_TOKENS`), and build-time macro expander (`expandSpecMacros`)           |
+| `software/metadata/ci-binaries.json`                 | Single source for CI binary verification (`required` + `warn`). YAML block in `action.yml` is auto-generated                                            |
+| `software/metadata/script-list.js` / `.config`       | Scans `software/scripts/` and emits the canonical sorted script list consumed at build time                                                             |
+| `software/metadata/ip-address.config.js` / `.config` | Parses hostname/IP groups; feeds host-mapping build steps (`build_host_mappings`)                                                                       |
+| `software/scripts/advanced/llm/`                     | Per-CLI LLM client setup (`claude/`, `copilot/`, `gemini/`, `opencode/`, `ollama.sh`) plus shared `_common/` (instructions, commands, keys)             |
+| `vitest.config.js`                                   | Unit test config + istanbul coverage thresholds (one-off override of rule 38; numbers live here, not in CLAUDE.md)                                      |
+| `$BASHRC_TEMP_DIR/run_timing.json`                   | Per-run timing data (start/end, per-script duration+status); read by CI                                                                                 |
 
 ## Testing
 

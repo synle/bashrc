@@ -154,6 +154,30 @@ describe("parseRawArgs", () => {
     expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editor-pro/);
   });
 
+  it("should exclude underscore-prefixed presets from fuzzy substring matching", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      _editors: { files: ["internal.js"] },
+      "editors-emulators-and-apps": { files: ["public.js"] },
+    });
+    // "editors" is a substring of both names, but `_editors` is an internal building
+    // block — fuzzy should land on the public composite only.
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editors"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["editors-emulators-and-apps"]);
+    expect(result.files).toBe("public.js");
+  });
+
+  it("should still allow underscore-prefixed presets via EXACT name", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      _editors: { files: ["internal.js"] },
+      "editors-emulators-and-apps": { files: ["public.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=_editors"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["_editors"]);
+    expect(result.files).toBe("internal.js");
+  });
+
   it("should prefer exact match over partial when both exist", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       // "edit" is an exact match; "editors" would also be a partial match.
@@ -164,6 +188,77 @@ describe("parseRawArgs", () => {
     const result = parseRawArgs();
     expect(result.presets).toEqual(["edit"]);
     expect(result.files).toBe("exact.js");
+  });
+
+  it("should recursively expand a preset that references other presets via presets:[]", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      editors: { files: ["vim.js", "vs-code.js"] },
+      emulators: { files: ["ghostty.js"] },
+      "editors-emulators-and-apps": { presets: ["editors", "emulators"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editors-emulators-and-apps"]);
+    const result = parseRawArgs();
+    expect(result.files).toBe("vim.js,vs-code.js,ghostty.js");
+  });
+
+  it("should expand nested preset references multiple levels deep", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      leaf: { files: ["leaf.js"] },
+      mid: { presets: ["leaf"], files: ["mid.js"] },
+      root: { presets: ["mid"], files: ["root.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=root"]);
+    const result = parseRawArgs();
+    // Referenced presets contribute first, this preset's own files appended after.
+    expect(result.files).toBe("leaf.js,mid.js,root.js");
+  });
+
+  it("should dedup files within a single preset expansion (shared sub-preset files run once)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      a: { files: ["shared.js", "a.js"] },
+      b: { files: ["shared.js", "b.js"] },
+      combo: { presets: ["a", "b"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=combo"]);
+    const result = parseRawArgs();
+    expect(result.files).toBe("shared.js,a.js,b.js");
+  });
+
+  it("should detect a direct self-reference cycle", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      loop: { presets: ["loop"], files: ["a.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=loop"]);
+    expect(() => parseRawArgs()).toThrow(/Preset cycle detected/);
+    expect(() => parseRawArgs()).toThrow(/loop -> loop/);
+  });
+
+  it("should detect a transitive cycle (A -> B -> A)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      a: { presets: ["b"] },
+      b: { presets: ["a"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a"]);
+    expect(() => parseRawArgs()).toThrow(/Preset cycle detected/);
+    expect(() => parseRawArgs()).toThrow(/a -> b -> a/);
+  });
+
+  it("should detect a deeper transitive cycle (A -> B -> C -> A)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      a: { presets: ["b"] },
+      b: { presets: ["c"] },
+      c: { presets: ["a"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a"]);
+    expect(() => parseRawArgs()).toThrow(/a -> b -> c -> a/);
+  });
+
+  it("should throw when a sub-preset references an unknown preset name", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      a: { presets: ["does-not-exist"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a"]);
+    expect(() => parseRawArgs()).toThrow(/Unknown preset "does-not-exist".*referenced from "a"/);
   });
 
   it("should treat empty --preset= value as a no-op", () => {

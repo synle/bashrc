@@ -15,8 +15,8 @@
 #   bash run.sh git.js vim.js                      # Multiple bare args
 #   bash run.sh --force-refresh                    # Force refresh node and reinstall
 #   bash run.sh -f                                 # Shorthand for --force-refresh
-#   bash run.sh --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.json
-#   bash run.sh --preset=lightweight,editor-and-emulators  # Multiple presets compose (file lists union)
+#   bash run.sh --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.jsonc
+#   bash run.sh --preset=lightweight,editors-emulators-and-apps  # Multiple presets compose (file lists union)
 #   bash run.sh --preset=editor                    # Partial match (case-insensitive substring); 1 hit auto-resolves, 2+ hits errors with suggestions
 #   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
 #   bash run.sh -D                                 # Shorthand for --debug
@@ -412,14 +412,18 @@ done
 
 ################################################################################
 # ---- Load PRESETS_JSON (named --preset bundles) ----
-# Source of truth: software/metadata/presets.json. parseRawArgs() in index.js
-# expands --preset=<name> into files+modes by reading PRESETS_JSON. Read locally
-# when running from a checkout, otherwise fetched from the repo at runtime.
+# Source of truth: software/metadata/presets.jsonc. parseRawArgs() in index.js
+# expands --preset=<name> into files+modes by reading PRESETS_JSON. The .jsonc
+# file is passed through verbatim — Node's loadPresets() strips // and /* */
+# comments and trailing commas before JSON.parse, so we can carry the file
+# contents (including comments) directly into the env var without preprocessing
+# here. Read locally when running from a checkout, otherwise fetched from the
+# repo at runtime.
 ################################################################################
-if [ -f "software/metadata/presets.json" ]; then
-  PRESETS_JSON=$(cat software/metadata/presets.json)
+if [ -f "software/metadata/presets.jsonc" ]; then
+  PRESETS_JSON=$(cat software/metadata/presets.jsonc)
 else
-  PRESETS_JSON=$(curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/metadata/presets.json?raw=1" 2> /dev/null || echo "{}")
+  PRESETS_JSON=$(curl -fsSL "$BASH_PROFILE_CODE_REPO_RAW_URL/software/metadata/presets.jsonc?raw=1" 2> /dev/null || echo "{}")
 fi
 export PRESETS_JSON
 

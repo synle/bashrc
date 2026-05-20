@@ -172,7 +172,7 @@ bash run.sh --debug                  # Keep temp files, show retry commands
 bash run.sh --force-refresh          # Force reinstall (heavy items only if stale >2 weeks)
 bash run.sh --refresh="fzf.js,fonts.js" # Force refresh specific scripts
 bash run.sh --verbose                # Enable bash tracing (set -x)
-bash run.sh --preset=lightweight     # Run a named preset (expands to its file list); see software/metadata/presets.json
+bash run.sh --preset=lightweight     # Run a named preset (expands to its file list); see software/metadata/presets.jsonc
 bash run.sh --preset=editor          # Partial-name match (case-insensitive); auto-resolves if exactly 1 hit
 bash run.sh --files=vim              # Same partial match for files; ambiguous matches print copy-paste suggestions
 bash run.sh --dryrun                 # Show what would change without writing
