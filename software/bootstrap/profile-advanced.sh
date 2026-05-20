@@ -56,10 +56,11 @@ export HISTIGNORE=$(
 )
 unset ignored_history
 
-# Canonicalize a command: expand short (≤2 char) aliases via BASH_ALIASES and
-# strip marker commands (clear, clean, br) that are noise in compound commands.
+# Canonicalize a command: expand short (≤2 char) aliases via BASH_ALIASES,
+# strip marker commands (clear, clean, br), and validate bash syntax.
 # usage: _canonicalize_command "command string"
-# echoes the canonicalized command; original if unchanged; empty if stripped bare.
+# echoes the canonicalized command; original if unchanged; empty if stripped
+# bare or syntax-invalid.
 function _canonicalize_command() {
   local cmd="$1" first expansion
 
@@ -90,6 +91,13 @@ function _canonicalize_command() {
     fi
     break
   done
+
+  # Validate bash syntax — drops entries with unmatched quotes, braces, pipes.
+  [ -z "$cmd" ] && echo "" && return 0
+  bash -n -c "$cmd" 2> /dev/null || {
+    echo ""
+    return 0
+  }
 
   echo "$cmd"
 }
@@ -123,10 +131,11 @@ _rewrite_last_history() {
   builtin history -s "$new"
 }
 
-# Rewrite the entire history file: canonicalize every entry and dedup (keeping
-# most recent per canonical command). Uses _canonicalize_command for alias
-# expansion and marker stripping. Reloads in-memory history from disk after.
-# Safe to call at any time — preserves timestamps; only COMMANDS change.
+# Rewrite the entire history file: canonicalize every entry via
+# _canonicalize_command (alias expansion, marker stripping, syntax validation)
+# and dedup keeping most recent per canonical command. Drops entries with
+# invalid bash syntax — cleans up terminal-corruption or truncated lines.
+# Reloads in-memory history from disk. Safe to call at any time.
 function _rewrite_history_file() {
   local histfile="${HISTFILE:-$HOME/.bash_history}"
   [ -f "$histfile" ] || return 0
