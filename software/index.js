@@ -286,13 +286,17 @@ function parseRawArgs() {
       let preset = presetMap[name];
 
       // Fuzzy fallback: case-insensitive substring match across known preset names.
-      // Underscore-prefixed names (e.g. `_editors`, `_emulators`, `_apps`) are treated
-      // as internal building blocks — they only resolve by exact name, never via fuzzy
-      // match. Without this carve-out, `--preset=editors` would be ambiguous between
-      // `_editors` and any composite that has "editors" in its name.
+      // Underscore-prefixed names (e.g. `_editors`, `_apps`, `_llm`) are internal
+      // building blocks. Resolution prefers public names: if any non-underscore name
+      // matches, underscore matches are excluded — so `--preset=editors` resolves to
+      // the public `editors-emulators-and-apps` composite, not `_editors`. If zero
+      // public names match, underscore matches are included as a fallback so common
+      // shorthands like `--preset=llm` still resolve to `_llm`.
       if (!preset) {
         const needle = name.toLowerCase();
-        const matches = known.filter((k) => !k.startsWith("_") && k.toLowerCase().includes(needle));
+        const allMatches = known.filter((k) => k.toLowerCase().includes(needle));
+        const publicMatches = allMatches.filter((k) => !k.startsWith("_"));
+        const matches = publicMatches.length > 0 ? publicMatches : allMatches;
         if (matches.length === 1) {
           resolvedName = matches[0];
           preset = presetMap[resolvedName];

@@ -154,17 +154,29 @@ describe("parseRawArgs", () => {
     expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editor-pro/);
   });
 
-  it("should exclude underscore-prefixed presets from fuzzy substring matching", () => {
+  it("should prefer public (non-underscore) names over underscore-prefixed building blocks in fuzzy matching", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       _editors: { files: ["internal.js"] },
       "editors-emulators-and-apps": { files: ["public.js"] },
     });
-    // "editors" is a substring of both names, but `_editors` is an internal building
-    // block — fuzzy should land on the public composite only.
+    // "editors" is a substring of both names. Public name wins — `_editors` is excluded.
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editors"]);
     const result = parseRawArgs();
     expect(result.presets).toEqual(["editors-emulators-and-apps"]);
     expect(result.files).toBe("public.js");
+  });
+
+  it("should fall back to underscore-prefixed matches when no public name matches the substring", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      _llm: { files: ["llm.js"] },
+      browsers: { files: ["browser.js"] },
+    });
+    // "llm" only matches `_llm`. With no public match available, the underscore
+    // building block is selected so common shorthands like --preset=llm still work.
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=llm"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["_llm"]);
+    expect(result.files).toBe("llm.js");
   });
 
   it("should still allow underscore-prefixed presets via EXACT name", () => {
