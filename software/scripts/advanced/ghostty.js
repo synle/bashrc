@@ -41,7 +41,6 @@ function _renderKeybindLines(bindings) {
 async function _buildConfigContent(isOsMac) {
   const fontFamily = EDITOR_CONFIGS.fontFamily;
   const fontSize = EDITOR_CONFIGS.fontSize;
-  const scrollback = EDITOR_CONFIGS.terminalScrollback;
   const bindings = await _getKeyBindings(isOsMac);
 
   // macOS-only block: option-as-alt is required for readline word-jumps, the
@@ -91,7 +90,12 @@ async function _buildConfigContent(isOsMac) {
     working-directory = inherit
 
     # ---- Window / Behavior ----
-    scrollback-limit = ${scrollback}
+    # NOTE: ghostty's scrollback-limit is in BYTES (unlike VS Code / Zed /
+    # Windows Terminal, which all take lines). Reusing EDITOR_CONFIGS.terminalScrollback
+    # (200000) here gave only ~200KB of scrollback — about 2k lines, not 200k.
+    # Hardcoded to 100mb (≈1M+ lines at typical density) to match "effectively
+    # unbounded" intent across all terminals.
+    scrollback-limit = 100mb
     mouse-hide-while-typing = true
     copy-on-select = false
     confirm-close-surface = false
