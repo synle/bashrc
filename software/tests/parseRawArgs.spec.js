@@ -157,12 +157,12 @@ describe("parseRawArgs", () => {
   it("should prefer public (non-underscore) names over underscore-prefixed building blocks in fuzzy matching", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       _editors: { files: ["internal.js"] },
-      "editors-emulators-and-apps": { files: ["public.js"] },
+      "editors-pack": { files: ["public.js"] },
     });
     // "editors" is a substring of both names. Public name wins — `_editors` is excluded.
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editors"]);
     const result = parseRawArgs();
-    expect(result.presets).toEqual(["editors-emulators-and-apps"]);
+    expect(result.presets).toEqual(["editors-pack"]);
     expect(result.files).toBe("public.js");
   });
 
@@ -182,7 +182,7 @@ describe("parseRawArgs", () => {
   it("should still allow underscore-prefixed presets via EXACT name", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       _editors: { files: ["internal.js"] },
-      "editors-emulators-and-apps": { files: ["public.js"] },
+      "editors-pack": { files: ["public.js"] },
     });
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=_editors"]);
     const result = parseRawArgs();
@@ -206,9 +206,9 @@ describe("parseRawArgs", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       editors: { files: ["vim.js", "vs-code.js"] },
       emulators: { files: ["ghostty.js"] },
-      "editors-emulators-and-apps": { presets: ["editors", "emulators"] },
+      combo: { presets: ["editors", "emulators"] },
     });
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editors-emulators-and-apps"]);
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=combo"]);
     const result = parseRawArgs();
     expect(result.files).toBe("vim.js,vs-code.js,ghostty.js");
   });

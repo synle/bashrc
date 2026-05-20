@@ -289,9 +289,9 @@ function parseRawArgs() {
       // Underscore-prefixed names (e.g. `_editors`, `_apps`, `_llm`) are internal
       // building blocks. Resolution prefers public names: if any non-underscore name
       // matches, underscore matches are excluded — so `--preset=editors` resolves to
-      // the public `editors-emulators-and-apps` composite, not `_editors`. If zero
-      // public names match, underscore matches are included as a fallback so common
-      // shorthands like `--preset=llm` still resolve to `_llm`.
+      // the public `heavyweight` composite, not `_editors`. If zero public names
+      // match, underscore matches are included as a fallback so common shorthands
+      // like `--preset=llm` / `--preset=browsers` still resolve to `_llm` / `_browsers`.
       if (!preset) {
         const needle = name.toLowerCase();
         const allMatches = known.filter((k) => k.toLowerCase().includes(needle));

@@ -67,14 +67,15 @@
     ],
   },
 
+  "_browsers": {
+    "description": "Building block: browser tweaks (DOM/CSS hacks via Stylus + per-browser config) plus CLI launchers for Brave, Chrome, Edge, Vivaldi, Opera, Arc, Chromium.",
+    "files": ["advanced/browser-config.js", "advanced/browser-launchers.js"],
+  },
+
   // --- End-user-facing composites ---
 
-  "editors-emulators-and-apps": {
-    "description": "Composite (preferred end-user preset): editors + terminal emulators + GUI apps + shell terminal tooling + shell prompt + LLM clients. Composed via `presets:` from `_editors`, `_emulators`, `_apps`, `_terminal`, `_prompt`, `_llm`. OS-specific scripts self-skip on the wrong platform.",
-    "presets": ["_editors", "_emulators", "_apps", "_terminal", "_prompt", "_llm"],
-  },
-  "browsers": {
-    "description": "Browser tweaks (DOM/CSS hacks via Stylus + per-browser config) plus CLI launchers for Brave, Chrome, Edge, Vivaldi, Opera, Arc, Chromium.",
-    "files": ["advanced/browser-config.js", "advanced/browser-launchers.js"],
+  "heavyweight": {
+    "description": "Composite (preferred end-user preset, symmetric counterpart to `lightweight`): editors + terminal emulators + GUI apps + browsers + shell terminal tooling + shell prompt + LLM clients. Composed via `presets:` from every `_*` internal block. OS-specific scripts self-skip on the wrong platform.",
+    "presets": ["_editors", "_emulators", "_apps", "_browsers", "_terminal", "_prompt", "_llm"],
   },
 }
