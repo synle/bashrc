@@ -2315,6 +2315,45 @@ async function _forceCloseApp(appLabel) {
 }
 
 /**
+ * Reads CFBundleShortVersionString from a /Applications/*.app bundle whose name
+ * matches the given app label. Lets downloadAndInstallBinary skip the full
+ * download + mount + copy pipeline when the upstream release version equals
+ * the version already installed.
+ *
+ * Discovery mirrors _forceCloseApp: scans /Applications/ for .app bundles
+ * matching the dash-tolerant regex (dashes become dots, so "display-dj"
+ * matches both `display-dj.app` and `Display DJ.app`). For each match, reads
+ * Info.plist via `defaults read`. Returns the first version-shaped string
+ * (semver-ish: digits and dots), or null if no .app is found, the plist read
+ * fails (e.g. display-dj's currently-funky Info.plist), or the value doesn't
+ * look like a version.
+ *
+ * Mac-only. Returns null on every other platform.
+ * @param {string} appLabel - The app label (e.g. "sqlui-native", "proxie")
+ * @returns {Promise<string|null>} The installed version string (e.g. "0.4.3") or null
+ */
+async function getMacInstalledAppVersion(appLabel) {
+  if (!is_os_mac) return null;
+  /** @type {string} Dash-tolerant regex pattern reused from _forceCloseApp. */
+  const pattern = appLabel.replace(/-/g, ".");
+  /** @type {string[]} Matching .app bundles in /Applications/. */
+  let apps = [];
+  try {
+    apps = fs.readdirSync("/Applications/").filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
+  } catch (e) {
+    return null;
+  }
+  for (const appName of apps) {
+    /** @type {string} Path to the bundle's Info plist (without the .plist suffix — `defaults read` adds it). */
+    const plistPath = `/Applications/${appName}/Contents/Info`;
+    /** @type {string} Trimmed stdout from `defaults read`. Empty on read failure (execBash swallows stderr). */
+    const out = await execBash(`defaults read "${plistPath}" CFBundleShortVersionString 2>/dev/null`);
+    if (/^\d+(\.\d+)+/.test(out)) return out;
+  }
+  return null;
+}
+
+/**
  * Downloads and installs a binary from a GitHub release.
  *
  * Storage strategy by platform:
@@ -2326,6 +2365,11 @@ async function _forceCloseApp(appLabel) {
  *   backgrounded subshell `rm -rf`s the staging folder once NSIS exits — so
  *   nothing lingers in `_extra/` after the run.
  * - Linux: the AppImage IS the run target, so it stays in ~/_extra/<app>/.
+ *
+ * On Mac, the entire pipeline is short-circuited when the installed
+ * CFBundleShortVersionString already equals the upstream release version —
+ * unless IS_REFRESH_MODE is set (i.e. `--refresh="<script>"`), which forces
+ * the reinstall. Saves the ~30-300 MB download + dmg mount + cp on every run.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
  */
@@ -2336,6 +2380,17 @@ async function downloadAndInstallBinary(repo, getFileName) {
   const ver = version.replace(/^v/, "");
   const fileName = getFileName(ver, isArm64);
   const url = `https://github.com/${repo}/releases/download/${version}/${fileName}`;
+
+  // Mac: skip the whole pipeline when the installed app version matches upstream.
+  // IS_REFRESH_MODE (set by `--refresh="<script>"`) is the explicit force-reinstall override.
+  if (is_os_mac && !IS_REFRESH_MODE) {
+    const installed = await getMacInstalledAppVersion(appLabel);
+    if (installed === ver) {
+      log(`>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`);
+      return;
+    }
+    if (installed) log(`>> ${appLabel}: installed ${installed} → upstream ${ver}, upgrading`);
+  }
 
   const legacyExtraPath = await getCustomTweaksPath(appLabel);
   // Mac throws away the .dmg via BASHRC_TEMP_DIR. Windows MUST stage on a real
