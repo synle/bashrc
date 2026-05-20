@@ -39,6 +39,10 @@ function _buildOpencodeConfig(providersArray, keybinds) {
   /** @type {Record<string, any>} */
   const out = {
     $schema: "https://opencode.ai/config.json",
+    // Disable opencode's startup auto-update prompt. The "Update Available …
+    // Skip / Confirm" modal is a distraction; we update opencode out-of-band
+    // (homebrew / installer). Documented at https://opencode.ai/docs/config/.
+    autoupdate: false,
     provider: providers,
   };
 
@@ -47,6 +51,31 @@ function _buildOpencodeConfig(providersArray, keybinds) {
   }
 
   return out;
+}
+
+/**
+ * Writes ~/.config/opencode/tui.json with `mouse: false` so the TUI does NOT
+ * capture mouse events — selection/highlight stays handled by the terminal
+ * (cmd+c on macOS, ctrl+shift+c on Linux) and the "Copied to clipboard"
+ * auto-copy-on-highlight toast no longer fires. Trade-off accepted: clicking
+ * UI elements (commands, options, revert links) no longer responds; everything
+ * is keyboard-driven. Schema: https://opencode.ai/tui.json.
+ *
+ * Preserves any existing keys in tui.json (e.g. a manual `keybinds` block) —
+ * only the `mouse` field is forced.
+ */
+async function _writeOpencodeTuiConfig() {
+  const tuiPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/tui.json");
+  /** @type {Record<string, any>} */
+  const existing = (await readJson`${tuiPath}`) || {};
+  /** @type {Record<string, any>} */
+  const out = {
+    $schema: "https://opencode.ai/tui.json",
+    ...existing,
+    mouse: false,
+  };
+  await writeJson(tuiPath, out);
+  log(">> opencode tui.json written:", tuiPath);
 }
 
 /**
@@ -171,6 +200,8 @@ async function doWork() {
 
   await writeJson(targetPath, _buildOpencodeConfig(providerInputs, keybinds));
   log(">> opencode config written:", targetPath);
+
+  await _writeOpencodeTuiConfig();
 
   await _syncOpencodeCommandSymlinks();
 }
