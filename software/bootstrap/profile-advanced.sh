@@ -35,46 +35,17 @@ shopt -s globstar 2> /dev/null # enable recursive globbing with ** (e.g. ls **/*
 shopt -s dirspell 2> /dev/null # auto-correct directory typos during tab completion
 
 ignored_history=(
-  # Length-based filters: bare commands of 1-4 chars are nearly always navigation
-  # or noise (ls/ll/cd/.. / vi/cat/git/exit/make/etc. with no args). The patterns
-  # are anchored to the FULL command line, so 'vim a.txt' (12 chars) and any
-  # command-with-args is unaffected — only standalone short commands are dropped.
-  # See docs/bash-common-knowledge.md → "Bash History" for the full mechanics
-  # and the reasoning behind these filters.
-  "?"
-  "??"
-  "???"
-  "????"
+  # Most former entries (length-based filters for 1-4 char commands, and explicit
+  # `git xxx`/`n xxx`/`y xxx`/`yarn xxx` patterns) were removed: they suppressed
+  # the very commands the user types most. _rewrite_last_history (defined below)
+  # canonicalizes shorthand → canonical form (g→git, n→npm, d→docker, plus simple
+  # git aliases), and HISTCONTROL=erasedups then collapses repeats. The result
+  # is a history of canonical commands, deduped, with no "interesting" ones lost.
+  # Only entries left here are truly noise-with-no-canonical-form.
   "clear"
   "clean"
   "history"
-  "git add*"
-  "git commit*"
-  "git amend*"
-  "git push*"
-  "git pull*"
-  "git stash*"
-  "git checkout*"
-  "git status"
-  "git diff"
-  "git log"
-  "git fetch*"
   "fuzzy_*"
-  "n install*"
-  "n i*"
-  "n run *"
-  "n start"
-  "n test"
-  "yarn install*"
-  "yarn add*"
-  "yarn run *"
-  "yarn start"
-  "yarn test"
-  "y install*"
-  "y add*"
-  "y run *"
-  "y start"
-  "y test"
   "pip install*"
   "pip3 install*"
   "uv pip install*"
@@ -84,6 +55,56 @@ export HISTIGNORE=$(
   echo "${ignored_history[*]}"
 )
 unset ignored_history
+
+# Rewrite the last history entry to a canonical form so 1-2 character shorthand
+# aliases (g, gg, n, d, v, c, y, f, ...) collapse to the underlying command.
+# Combined with HISTCONTROL=erasedups, this gives a deduped history of canonical
+# commands — `g status` and `git status` converge to one `git status` entry.
+# Runs via PROMPT_COMMAND after every command; idempotent and skipped on
+# bare-Enter (no new history entry). Single-pass: no recursive alias resolution.
+# Lookup is dynamic via BASH_ALIASES, so adding/removing a short alias updates
+# the rewriter automatically — no hardcoded mapping to keep in sync.
+_rewrite_last_history() {
+  local hline hnum last new rest first expansion
+  hline=$(builtin history 1) || return 0
+  # Strip leading whitespace
+  hline="${hline#"${hline%%[![:space:]]*}"}"
+  # Extract history number (leading digits)
+  hnum="${hline%%[^0-9]*}"
+  [ -z "$hnum" ] && return 0
+  # Drop number + following whitespace
+  rest="${hline#"$hnum"}"
+  rest="${rest#"${rest%%[![:space:]]*}"}"
+  # Drop the "[timestamp]" prefix when HISTTIMEFORMAT is set
+  if [[ "$rest" == \[*\]* ]]; then
+    rest="${rest#*] }"
+  fi
+  last="$rest"
+
+  # Skip when bash hasn't recorded a new entry (bare Enter / filtered command)
+  [ "$hnum" = "${_LAST_REWRITE_HNUM:-}" ] && return 0
+  _LAST_REWRITE_HNUM=$hnum
+
+  new=$last
+
+  # First-word expansion: any ≤2-char alias resolves to its target via the
+  # BASH_ALIASES associative array (populated by bash in interactive shells).
+  first="${new%% *}"
+  if [ ${#first} -le 2 ] && [ -n "${BASH_ALIASES[$first]+_}" ]; then
+    expansion="${BASH_ALIASES[$first]}"
+    if [ "$first" = "$new" ]; then
+      new="$expansion"
+    else
+      new="$expansion ${new#"$first "}"
+    fi
+  fi
+
+  # Nothing to rewrite
+  [ "$new" = "$last" ] && return 0
+
+  builtin history -d "$hnum"
+  builtin history -s "$new"
+}
 
 # prune a recents file, removing entries that fail the given test (-d or -f)
 # usage: _prune_recents <file> <test_flag>
@@ -159,7 +180,7 @@ function last_folder() {
 # Also force the terminal cursor back to a steady (non-blinking) block via
 # DECSCUSR `\e[2 q` on every prompt — defends against shell integrations,
 # plugins, or stray escape sequences that flip the cursor to a bar/beam.
-PROMPT_COMMAND="_track_folder; history -a; echo -ne '\033]0;'\"\$(shorter_pwd_path)\"'\007\033[2 q'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+PROMPT_COMMAND="_rewrite_last_history; _track_folder; history -a; echo -ne '\033]0;'\"\$(shorter_pwd_path)\"'\007\033[2 q'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
 ################################################################################
 # ---- Track Recent Files ----
