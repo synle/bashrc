@@ -37,7 +37,7 @@ shopt -s dirspell 2> /dev/null # auto-correct directory typos during tab complet
 ignored_history=(
   # Most former entries (length-based filters for 1-4 char commands, and explicit
   # `git xxx`/`n xxx`/`y xxx`/`yarn xxx` patterns) were removed: they suppressed
-  # the very commands the user types most. _rewrite_last_history (defined below)
+  # the very commands the user types most. _rewrite_last_history_entry (defined below)
   # canonicalizes shorthand → canonical form (g→git, n→npm, d→docker, plus simple
   # git aliases), and HISTCONTROL=erasedups then collapses repeats. The result
   # is a history of canonical commands, deduped, with no "interesting" ones lost.
@@ -56,14 +56,74 @@ export HISTIGNORE=$(
 )
 unset ignored_history
 
-# Canonicalize a command: expand short (≤2 char) aliases via BASH_ALIASES and
-# strip marker commands (clear, clean, br) that are noise in compound commands.
+# Canonicalize a single history entry. Single canonicalizer used by both the
+# hot path (_rewrite_last_history_entry via PROMPT_COMMAND) and the batch path
+# (cleanup_history in bash-history.profile.bash).
+#
+# Pipeline (drop returns empty; rewrite returns canonical form):
+#   1. trim leading/trailing whitespace
+#   2. strip marker commands (clear|clean|br) in compound chains, both leading
+#      and trailing — whitespace-tolerant so `clear;cmd`, `clear ; cmd`,
+#      `cmd && clear`, etc. all collapse
+#   3. drop bare markers
+#   4. drop paste-residue patterns that bash -n can't catch (JSON/PowerShell
+#      paste, JS brace fragments, hex bytes — see _PASTE_RESIDUE_PATTERNS)
+#   5. expand ≤2-char aliases via BASH_ALIASES (g → git, n → npm, d → docker)
+#   6. validate via `bash -nc` — drops invalid syntax (terminal corruption,
+#      truncation, legacy multi-line splits)
+#
 # usage: _canonicalize_command "command string"
-# echoes the canonicalized command; original if unchanged; empty if stripped bare.
+# echoes the canonical command on success; nothing on drop.
 function _canonicalize_command() {
-  local cmd="$1" first expansion
+  local cmd="$1" first expansion pattern
 
-  # First-word alias expansion: any ≤2-char alias resolves to its target via
+  # 1. Trim leading/trailing whitespace
+  cmd="${cmd#"${cmd%%[![:space:]]*}"}"
+  cmd="${cmd%"${cmd##*[![:space:]]}"}"
+  [ -z "$cmd" ] && return 0
+
+  # 2. Strip marker commands in compound chains. Whitespace-tolerant — handles
+  # `clear;cmd`, `clear ; cmd`, `clear && cmd`, `cmd;clear`, `cmd && clear`,
+  # `; clear ; cmd`, and chained variants like `clear && clean && cmd`.
+  local _HISTORY_MARKER_COMMANDS='clear|clean|br'
+  while true; do
+    # leading: optional leading `;`, marker, separator (`;` or `&&`), then rest
+    if [[ "$cmd" =~ ^[[:space:]]*\;?[[:space:]]*(${_HISTORY_MARKER_COMMANDS})[[:space:]]*(\;|\&\&)[[:space:]]*(.+)$ ]]; then
+      cmd="${BASH_REMATCH[3]}"
+      continue
+    fi
+    # trailing: rest, separator, marker, optional trailing `;`
+    if [[ "$cmd" =~ ^(.+[^[:space:]\;\&])[[:space:]]*(\;|\&\&)[[:space:]]*(${_HISTORY_MARKER_COMMANDS})[[:space:]]*\;?[[:space:]]*$ ]]; then
+      cmd="${BASH_REMATCH[1]}"
+      continue
+    fi
+    break
+  done
+
+  # 3. Bare marker (e.g. `clear` alone) — drop. HISTIGNORE normally filters
+  # these, but catch the leftover-in-file case explicitly.
+  if [[ "$cmd" =~ ^(${_HISTORY_MARKER_COMMANDS})$ ]]; then
+    return 0
+  fi
+
+  # 4. Paste-residue drop filters. These patterns are valid command words to
+  # `bash -n` but virtually never legitimate interactive bash — they come from
+  # accidental paste of JSON/PowerShell/JS/Go source into the terminal. Order
+  # matters only for performance (cheapest first).
+  local _PASTE_RESIDUE_PATTERNS=(
+    '^"'                                 # JSON/PowerShell leading quote
+    '^\$'                                # PowerShell variable reference
+    '\{$'                                # JS/TS/Go block-opener residue
+    '^\}'                                # JS/TS/Go closing-brace residue
+    '^0x[0-9A-Fa-f]'                     # C/Go/Python hex byte literal
+    '^[A-Z][a-z][a-z]*-[A-Z]'            # PowerShell verb-noun cmdlet
+    '^(try|catch|finally)[[:space:]]*\{' # JS try/catch/finally + brace
+  )
+  for pattern in "${_PASTE_RESIDUE_PATTERNS[@]}"; do
+    [[ "$cmd" =~ $pattern ]] && return 0
+  done
+
+  # 5. First-word alias expansion: any ≤2-char alias resolves to its target via
   # the BASH_ALIASES associative array (populated by bash in interactive shells).
   first="${cmd%% *}"
   if [ -n "$first" ] && [ ${#first} -le 2 ] && [ -n "${BASH_ALIASES[$first]+_}" ]; then
@@ -75,23 +135,13 @@ function _canonicalize_command() {
     fi
   fi
 
-  # Strip marker commands that add noise in compound commands.
-  # Matches: `clear ; git status` → `git status`, `git status ; clear` → `git status`,
-  # `; clear ; git status` → `git status`, `clear && clean && git status` → `git status`.
-  local _HISTORY_MARKER_COMMANDS='clear|clean|br'
-  while true; do
-    if [[ "$cmd" =~ ^(;\ )?(${_HISTORY_MARKER_COMMANDS})(\ ;\ |\ \&\& )(.*)$ ]]; then
-      cmd="${BASH_REMATCH[4]}"
-      continue
-    fi
-    if [[ "$cmd" =~ ^(.*)(\ ;\ |\ \&\& )(${_HISTORY_MARKER_COMMANDS})(;\ )?$ ]]; then
-      cmd="${BASH_REMATCH[1]}"
-      continue
-    fi
-    break
-  done
+  [ -z "$cmd" ] && return 0
 
-  [ -z "$cmd" ] && echo "" && return 0
+  # 6. Drop entries with invalid bash syntax (terminal corruption, truncation,
+  # paste artifacts, legacy multi-line splits). Validates without executing
+  # via `bash -nc`. Cheap (~1ms fork) — runs once per prompt for the last
+  # entry, and on demand for full-history rewrites.
+  bash -nc "$cmd" 2> /dev/null || return 0
 
   echo "$cmd"
 }
@@ -101,7 +151,7 @@ function _canonicalize_command() {
 # commands — `g status` and `git status` converge to one `git status` entry.
 # Runs via PROMPT_COMMAND after every command; idempotent and skipped on
 # bare-Enter (no new history entry).
-_rewrite_last_history() {
+function _rewrite_last_history_entry() {
   local hline hnum last rest new
   hline=$(builtin history 1) || return 0
   hline="${hline#"${hline%%[![:space:]]*}"}"
@@ -123,62 +173,6 @@ _rewrite_last_history() {
 
   builtin history -d "$hnum"
   builtin history -s "$new"
-}
-
-# Rewrite the entire history file: canonicalize every entry via
-# _canonicalize_command (alias expansion, marker stripping, syntax validation)
-# and dedup keeping most recent per canonical command. Drops entries with
-# invalid bash syntax — cleans up terminal-corruption or truncated lines.
-# Reloads in-memory history from disk. Safe to call at any time.
-function _rewrite_history_file() {
-  local histfile="${HISTFILE:-$HOME/.bash_history}"
-  [ -f "$histfile" ] || return 0
-
-  local tmp=$(mktemp)
-  local ts="" cmd="" canonical=""
-
-  # Phase 1: canonicalize every entry, preserve timestamps
-  while IFS= read -r line; do
-    if [[ "$line" == \#* ]]; then
-      ts="$line"
-    else
-      canonical=$(_canonicalize_command "$line")
-      if [ -n "$canonical" ]; then
-        echo "${ts:-}"
-        echo "$canonical"
-      fi
-      ts=""
-    fi
-  done < "$histfile" > "$tmp"
-
-  # Phase 2: dedup pairs keeping last occurrence per command (most recent wins)
-  local deduped=$(mktemp)
-  perl -e '
-    my @lines = <>;
-    my (%seen, @out);
-    for (my $i = $#lines; $i >= 1; $i -= 2) {
-      my $cmd = $lines[$i];
-      my $ts  = $lines[$i-1];
-      chomp $cmd;
-      chomp $ts;
-      next unless $cmd;
-      next if $seen{$cmd};
-      $seen{$cmd} = 1;
-      if ($ts ne "") {
-        unshift @out, "$ts\n$cmd\n";
-      } else {
-        unshift @out, "$cmd\n";
-      }
-    }
-    print @out;
-  ' "$tmp" > "$deduped"
-
-  if ! cmp -s "$histfile" "$deduped" 2> /dev/null; then
-    command cat "$deduped" > "$histfile"
-    builtin history -r
-  fi
-
-  rm -f "$tmp" "$deduped"
 }
 
 # prune a recents file, removing entries that fail the given test (-d or -f)
@@ -262,7 +256,7 @@ fi
 # Also force the terminal cursor back to a steady (non-blinking) block via
 # DECSCUSR `\e[2 q` on every prompt — defends against shell integrations,
 # plugins, or stray escape sequences that flip the cursor to a bar/beam.
-PROMPT_COMMAND="_rewrite_last_history; _track_folder; history -a; echo -ne '\033]0;'\"\$(shorter_pwd_path)\"'\007\033[2 q'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+PROMPT_COMMAND="_rewrite_last_history_entry; _track_folder; history -a; echo -ne '\033]0;'\"\$(shorter_pwd_path)\"'\007\033[2 q'${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 
 ################################################################################
 # ---- Track Recent Files ----

@@ -14,94 +14,122 @@
 HISTORY_BACKUP_DIR="$HOME/.bash_history_backups"
 HISTORY_BACKUP_MAX=7
 
-# rewrites a history file in place. Two passes:
+# cleanup_history: deep-clean $HISTFILE in place. Sole history-file cleaner —
+# replaces the earlier two-tier _clean_history_file (quick) + cleanup_history
+# (deep) split now that all paste-residue heuristics live in _canonicalize_command.
 #
-# Quick pass (default — used by fuzzy_history on every Ctrl+R, must stay fast):
-#   1. trim leading/trailing whitespace
-#   2. strip leading wrapper prefixes (`br;`, `clear;` — user-defined no-op
-#      wrappers that don't change the meaningful command). Looped so chains
-#      like `br; clear; foo` collapse to `foo` before dedupe sees them, which
-#      lets `foo` and `clear; foo` count as the same entry.
-#   3. drop empty lines (post-trim — blank lines from pasted blocks)
-#   4. drop bash HISTTIMEFORMAT timestamp markers — `#<unix_seconds>` lines
-#      written by bash itself. Pattern is narrow (`^#[0-9]+$`) so user-typed
-#      `# note` lines and `# TODO ...` reminders survive.
-#   5. drop any line starting with `"` (JSON / PowerShell / config paste
-#      fragments — `"model": "..."`, `"$edgeBase\Main" = @{...}`, etc. Legit
-#      bash starting with `"` is rare in interactive history — usually you'd
-#      type `$VAR arg` not `"$VAR" arg` — so the simpler blanket rule beats
-#      narrower patterns)
-#   5b. drop any line starting with `$` (PowerShell variable assignments and
-#       references — `$var = "..."`, `$var.Method()`, etc. `bash -n` accepts
-#       `$var = ...` because spaced `=` makes it three args, not assignment.
-#       Legit bash starting with `$` like `$EDITOR file` is rare interactively
-#       — same tradeoff as the `^"` rule)
-#   6. drop lines ending in bare `{` (JS/TS/Go/Java block-opener paste — `try {`,
-#      `function foo() {`, `if (x) {`. Real bash multi-line defs get joined by
-#      `cmdhist` into a single entry, so a stored entry ending in `{` is paste
-#      residue. Catches what `bash -n` misses since `{` in arg position parses fine)
-#   7. drop lines starting with `}` (closing-brace paste residue: `}`, `});`,
-#      `} catch`, `} else {`. Mostly redundant with `bash -n` but cheaper and
-#      defends against future parser quirks)
-#   7b. drop PowerShell verb-noun cmdlets — `Set-ItemProperty`, `Get-ChildItem`,
-#       `New-Object`, etc. Pattern is `<Capital><lowercase>+-<Capital>`, which
-#       virtually never matches a real bash command. `bash -n` accepts these
-#       because the cmdlet name is a syntactically valid command word.
-#   7c. drop JS-keyword-then-brace lines: `try { ... }`, `catch { ... }`,
-#       `finally { ... }`. `try`/`catch`/`finally` aren't bash reserved words,
-#       so `try { foo }` parses as a simple command with literal brace args
-#       (caught nothing in earlier `[{]$` and bash -n filters when the closing
-#       `}` is on the same line).
-#   7d. drop hex-byte literal lines: `0x80, 0x99, 0x19, ...`. C/Go/Python
-#       byte-array paste residue. `0x80,` is a syntactically valid bash command
-#       word (digits, letters, comma all legal in token position).
-#   8. dedupe
+# Pipeline:
+#   1. walk (#<epoch>, <cmd>) pairs from $HISTFILE
+#   2. canonicalize every cmd via _canonicalize_command:
+#        - trim whitespace
+#        - strip leading/trailing marker commands (clear|clean|br) in compound chains
+#        - drop bare markers
+#        - drop paste-residue patterns (JSON/PowerShell/JS brace/hex byte/cmdlet)
+#        - expand ≤2-char aliases via BASH_ALIASES
+#        - drop entries failing `bash -nc` syntax check
+#   3. dedup (ts, cmd) pairs in node — most recent sighting wins, chronological
+#      order preserved
+#   4. atomic write back; reload in-memory history via `history -r`
 #
-# Strict pass (`--strict` — used by _backup_history once a day):
-#   9. drop anything that fails `bash -n` (unbalanced quotes, dangling pipes,
-#      half-pasted commands). Forks bash once per unique line; only worth it
-#      on the daily backup, not on every Ctrl+R.
-#
-# Atomic via tmp + mv.
-# usage: _clean_history_file [path] [--strict]   (path default: ~/.bash_history)
-function _clean_history_file() {
-  local file="$HOME/.bash_history"
-  local strict=0
-  local arg
-  for arg in "$@"; do
-    case "$arg" in
-    --strict) strict=1 ;;
-    *) file="$arg" ;;
-    esac
-  done
-  [ -f "$file" ] || return 0
-  local tmp="$file.tmp.$$"
-  sed 's/^[[:space:]]*//;s/[[:space:]]*$//' "$file" \
-    | sed -E -e ':loop' -e 's/^(br|clear)[[:space:]]*;[[:space:]]*//' -e 't loop' \
-    | command grep -v '^$' \
-    | command grep -v '^#[0-9][0-9]*$' \
-    | command grep -v '^"' \
-    | command grep -v '^\$' \
-    | command grep -v '[{]$' \
-    | command grep -v '^}' \
-    | command grep -v '^[A-Z][a-z][a-z]*-[A-Z]' \
-    | command grep -v '^try[[:space:]]*{' \
-    | command grep -v '^catch[[:space:]]*{' \
-    | command grep -v '^finally[[:space:]]*{' \
-    | command grep -v '^0x[0-9A-Fa-f]' \
-    | awk '!seen[$0]++' \
-    | {
-      if ((strict)); then
-        while IFS= read -r line; do bash -n <<< "$line" 2> /dev/null && printf '%s\n' "$line"; done
-      else
-        command cat
+# Called once per shell startup (first one of the day) by _backup_history.
+# Safe to invoke manually at any time. usage: cleanup_history [help]
+function cleanup_history() {
+  if is_help_arg "${1:-}"; then
+    echo "cleanup_history: deep-clean \$HISTFILE (canonicalize + bash -nc drop + dedup)"
+    echo "  cleanup_history       run on \$HISTFILE (default ~/.bash_history)"
+    echo "  cleanup_history help  show this help"
+    return 0
+  fi
+
+  local histfile="${HISTFILE:-$HOME/.bash_history}"
+  [ -f "$histfile" ] || return 0
+
+  local tmp
+  tmp=$(mktemp)
+  local ts="" cmd="" canonical=""
+
+  # Phase 1: canonicalize every entry, preserve timestamps
+  while IFS= read -r line; do
+    if [[ "$line" == \#* ]]; then
+      ts="$line"
+    else
+      canonical=$(_canonicalize_command "$line")
+      if [ -n "$canonical" ]; then
+        echo "${ts:-}"
+        echo "$canonical"
       fi
-    } > "$tmp" && mv "$tmp" "$file"
+      ts=""
+    fi
+  done < "$histfile" > "$tmp"
+
+  # Phase 2: dedup (ts, cmd) pairs keeping last occurrence per command — most
+  # recent wins. Implemented in node for consistency with the rest of the repo
+  # (run.sh, profile-advanced.sh, scripts/* all shell out to `node -e` for
+  # non-trivial text munging). Input is the Phase 1 temp file on stdin; output
+  # to deduped on stdout.
+  local deduped
+  deduped=$(mktemp)
+  node -e "$(
+    command cat << 'JS_EOF'
+const fs = require('fs');
+const lines = fs.readFileSync(0, 'utf8').split('\n');
+// Phase 1 emits "${ts:-}\n${cmd}\n" pairs — every cmd is preceded by a ts
+// line (possibly empty). Trailing newline produces an extra empty element;
+// drop it so iteration pairs line up.
+if (lines.length && lines[lines.length - 1] === '') lines.pop();
+const seen = new Set();
+const out = [];
+// Walk back-to-front in (ts, cmd) pairs. First sighting wins (= most recent
+// in file); unshift restores original chronological order.
+for (let i = lines.length - 1; i >= 1; i -= 2) {
+  const cmd = lines[i];
+  const ts = lines[i - 1];
+  if (!cmd) continue;
+  if (seen.has(cmd)) continue;
+  seen.add(cmd);
+  out.unshift(ts ? ts + '\n' + cmd + '\n' : cmd + '\n');
+}
+process.stdout.write(out.join(''));
+JS_EOF
+  )" < "$tmp" > "$deduped"
+
+  if ! cmp -s "$histfile" "$deduped" 2> /dev/null; then
+    command cat "$deduped" > "$histfile"
+    builtin history -r
+  fi
+
+  rm -f "$tmp" "$deduped"
 }
 
-# backs up ~/.bash_history daily (rotated, keeps HISTORY_BACKUP_MAX copies)
-# runs automatically on shell startup. Cleans the live file first so the backup
-# is the cleaned snapshot, not the raw stream.
+# _maybe_cleanup_history: gates cleanup_history to at most once per 6 hours.
+# Last-run epoch stored in $HISTORY_CLEANUP_GATE — a flat path directly under
+# /tmp (no subdirs to mkdir; /tmp always exists). Wiped on reboot, desirable —
+# first shell after boot triggers a fresh clean. Concurrent shells crossing
+# the gate at the same moment may both run cleanup; benign because the
+# canonicalize pipeline is deterministic and the writes converge.
+HISTORY_CLEANUP_GATE="/tmp/synle_bashrc_history_cleanup_last"
+HISTORY_CLEANUP_INTERVAL_SECONDS=21600 # 6h → 4 runs/day
+function _maybe_cleanup_history() {
+  local now last
+  now=$(command date +%s)
+  if [ -f "$HISTORY_CLEANUP_GATE" ]; then
+    last=$(command cat "$HISTORY_CLEANUP_GATE" 2> /dev/null)
+    # Defensive: reject empty / non-numeric / corrupted gate content. Without
+    # this, $((now - "garbage")) raises a bash arithmetic error and the gate
+    # wedges. Treat anything that isn't pure digits as "never ran".
+    [[ "$last" =~ ^[0-9]+$ ]] || last=0
+    if [ $((now - last)) -lt $HISTORY_CLEANUP_INTERVAL_SECONDS ]; then
+      return 0
+    fi
+  fi
+  cleanup_history
+  echo "$now" > "$HISTORY_CLEANUP_GATE"
+}
+
+# backs up ~/.bash_history daily (rotated, keeps HISTORY_BACKUP_MAX copies).
+# Runs after _maybe_cleanup_history so the daily snapshot captures the freshly
+# cleaned file (assuming the 6h gate fired on this shell startup; if not, the
+# live file is still recent enough — at most 6h of post-cleanup activity).
 function _backup_history() {
   local today
   today=$(command date +%Y-%m-%d)
@@ -110,14 +138,13 @@ function _backup_history() {
   # skip if already backed up today
   [ -f "$backup_file" ] && return
 
-  _clean_history_file "$HOME/.bash_history" --strict
-
   mkdir -p "$HISTORY_BACKUP_DIR"
   cp "$HOME/.bash_history" "$backup_file" 2> /dev/null
 
   # rotate: keep only the most recent backups
   ls -1t "$HISTORY_BACKUP_DIR"/bash_history_* 2> /dev/null | tail -n +$((HISTORY_BACKUP_MAX + 1)) | xargs rm -f 2> /dev/null
 }
+_maybe_cleanup_history
 _backup_history
 
 # interactive fuzzy history search using fzf. Dual-mode based on call context:
@@ -152,13 +179,11 @@ function fuzzy_history() {
     header="fuzzy_history - fzf history search; selection runs on Enter"
   fi
 
-  # Clean the live history file first (dedupe + bash -n), then fzf reads the cleaned
-  # content. Mutating ~/.bash_history here means subsequent Ctrl+R calls are fast
-  # (no-op on already-clean entries) and `history` reflects the cleaned dataset.
-  _clean_history_file "$HOME/.bash_history"
-
+  # No per-Ctrl+R cleanup — cleanup_history runs once daily via _backup_history
+  # and is too expensive (bash -nc per line) for a hot keystroke. Filter out
+  # HISTTIMEFORMAT timestamp lines (`#<epoch>`) so fzf shows only commands.
   local selected
-  selected=$(command cat "$HOME/.bash_history" | fzf \
+  selected=$(command grep -v '^#[0-9][0-9]*$' "$HOME/.bash_history" | fzf \
     --no-sort --tac --layout=reverse --height=100% --query="${1:-}" \
     --prompt="history> " \
     --header="$header" \
