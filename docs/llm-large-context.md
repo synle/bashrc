@@ -59,16 +59,16 @@ Three numbers that shape every decision:
 
 ## Capability matrix at a glance
 
-| Capability                       | OpenAI                 | Anthropic Claude        | Google Gemini            | GitHub Models             |
-|----------------------------------|------------------------|-------------------------|--------------------------|---------------------------|
-| Max context window               | 1M (gpt-4.1, gpt-5)    | 1M (Sonnet long-ctx)    | 2M (Gemini 1.5/2.5 Pro)  | depends on model routed   |
-| Common default window            | 128K (gpt-4o family)   | 200K (Sonnet/Opus)      | 1M (Gemini 2.5 Flash)    | varies                    |
-| Prompt caching                   | automatic, ≥1024-token prefix, 50% off | **explicit** via `cache_control`, 90% off, 5min–1h TTL | **explicit** context caching, ~75% off cached, hourly storage fee | passes through for OpenAI-backed models; depends per model |
-| Batch / async mode               | yes — 50% off, 24h SLA | yes — Message Batches, 50% off, 24h SLA | yes — Batch prediction (Vertex AI), ~50% off | **no**                    |
-| Embeddings model                 | text-embedding-3-small/large | voyage-3 (partner) or use 3rd party | text-embedding-004      | yes (OpenAI-backed)       |
-| Native file/PDF input            | Files API + Responses API | Files API + native PDF support | native PDF + multimodal | depends per model         |
-| Native multimodal (image/video)  | yes                    | image yes, no video yet | image + video + audio    | depends per model         |
-| SDK shape                        | `openai`               | `@anthropic-ai/sdk`     | `@google/generative-ai`  | `openai`-compatible       |
+| Capability                      | OpenAI                                 | Anthropic Claude                                       | Google Gemini                                                     | GitHub Models                                              |
+| ------------------------------- | -------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| Max context window              | 1M (gpt-4.1, gpt-5)                    | 1M (Sonnet long-ctx)                                   | 2M (Gemini 1.5/2.5 Pro)                                           | depends on model routed                                    |
+| Common default window           | 128K (gpt-4o family)                   | 200K (Sonnet/Opus)                                     | 1M (Gemini 2.5 Flash)                                             | varies                                                     |
+| Prompt caching                  | automatic, ≥1024-token prefix, 50% off | **explicit** via `cache_control`, 90% off, 5min–1h TTL | **explicit** context caching, ~75% off cached, hourly storage fee | passes through for OpenAI-backed models; depends per model |
+| Batch / async mode              | yes — 50% off, 24h SLA                 | yes — Message Batches, 50% off, 24h SLA                | yes — Batch prediction (Vertex AI), ~50% off                      | **no**                                                     |
+| Embeddings model                | text-embedding-3-small/large           | voyage-3 (partner) or use 3rd party                    | text-embedding-004                                                | yes (OpenAI-backed)                                        |
+| Native file/PDF input           | Files API + Responses API              | Files API + native PDF support                         | native PDF + multimodal                                           | depends per model                                          |
+| Native multimodal (image/video) | yes                                    | image yes, no video yet                                | image + video + audio                                             | depends per model                                          |
+| SDK shape                       | `openai`                               | `@anthropic-ai/sdk`                                    | `@google/generative-ai`                                           | `openai`-compatible                                        |
 
 The four are not interchangeable for large-context work — caching
 mechanics in particular differ a lot. Pick deliberately.
@@ -190,35 +190,35 @@ breakpoints per prompt. Discount: 90% off cached input tokens (much
 deeper than OpenAI's 50%).
 
 ```js
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic();
 
 const resp = await client.messages.create({
-  model: 'claude-sonnet-4-5',
+  model: "claude-sonnet-4-5",
   max_tokens: 1024,
   system: [
     {
-      type: 'text',
-      text: '...long stable system prompt...',
-      cache_control: { type: 'ephemeral' }   // ← cache marker
-    }
+      type: "text",
+      text: "...long stable system prompt...",
+      cache_control: { type: "ephemeral" }, // ← cache marker
+    },
   ],
   messages: [
     {
-      role: 'user',
+      role: "user",
       content: [
         {
-          type: 'text',
-          text: '...big reference document...',
-          cache_control: { type: 'ephemeral' }   // ← another cache marker
+          type: "text",
+          text: "...big reference document...",
+          cache_control: { type: "ephemeral" }, // ← another cache marker
         },
         {
-          type: 'text',
-          text: 'My actual question about the doc.'  // variable, not cached
-        }
-      ]
-    }
-  ]
+          type: "text",
+          text: "My actual question about the doc.", // variable, not cached
+        },
+      ],
+    },
+  ],
 });
 
 console.log(resp.usage.cache_read_input_tokens);
@@ -233,7 +233,7 @@ When to pick which provider on caching alone:
 - **OpenAI** — simpler (zero opt-in), works automatically. Smaller
   discount.
 - **Claude** — bigger discount, explicit control over what to cache.
-  Lets you cache *multiple* segments (e.g. system + a big document
+  Lets you cache _multiple_ segments (e.g. system + a big document
   shared across many user questions). Worth more code for 4–5×
   bigger savings.
 
@@ -276,26 +276,28 @@ do want to stuff everything in (entire codebases, hours of video,
 huge document sets), Gemini is the easy path.
 
 **Context caching (explicit, stateful).** Different model again: you
-create a *named cache object* with content, then reference it from
+create a _named cache object_ with content, then reference it from
 subsequent calls.
 
 ```js
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // 1. Create the cache (once, reusable across calls)
 const cache = await ai.caches.create({
-  model: 'gemini-2.5-pro',
+  model: "gemini-2.5-pro",
   config: {
-    contents: [/* big stable content — docs, code, transcripts */],
-    systemInstruction: '...',
-    ttl: '3600s'        // 1 hour
-  }
+    contents: [
+      /* big stable content — docs, code, transcripts */
+    ],
+    systemInstruction: "...",
+    ttl: "3600s", // 1 hour
+  },
 });
 
 // 2. Reference it from generate calls
 const model = ai.getGenerativeModelFromCachedContent(cache);
-const result = await model.generateContent('My question about the cached docs');
+const result = await model.generateContent("My question about the cached docs");
 ```
 
 Pricing model is different from OpenAI/Claude:
@@ -311,11 +313,13 @@ break-even at ~3–10 calls/hour against a cached payload, depending
 on size and model.
 
 When Gemini caching wins:
+
 - A single stable document you ask 50 questions about
 - A codebase you analyze repeatedly within a session
 - Many users querying the same FAQ corpus
 
 When it loses:
+
 - One-off per-artifact workflows where you wouldn't reuse the cache
   enough times to amortize the storage fee. OpenAI/Claude caching
   (no storage fee) is better here.
@@ -339,10 +343,10 @@ Models** at `models.github.ai/inference`, which is OpenAI-SDK-
 compatible.
 
 ```js
-import OpenAI from 'openai';
+import OpenAI from "openai";
 const client = new OpenAI({
-  baseURL: 'https://models.github.ai/inference',
-  apiKey: process.env.GITHUB_TOKEN
+  baseURL: "https://models.github.ai/inference",
+  apiKey: process.env.GITHUB_TOKEN,
 });
 // Everything else identical to OpenAI direct
 ```
@@ -392,11 +396,11 @@ Cheapest savings — no API call, no model needed. For any text input
 For transcripts (calls, dialogues, meeting recordings):
 
 - **Filler words** — `(um|uh|er|ah|hmm|like|you know|i mean|kind of|
-  sort of|basically|actually)` when filler-shaped (word boundaries +
+sort of|basically|actually)` when filler-shaped (word boundaries +
   punctuation bracketing)
 - **Backchannels during one speaker's long turn** — drop short
   turns by another speaker that are only `(yeah|right|mhm|okay|got it|
-  sure|exactly|totally|makes sense)`
+sure|exactly|totally|makes sense)`
 - **Stutter collapse** — `I-I-I think` → `I think`
 - **Disfluency markers** — `[inaudible]`, `[crosstalk]`, `[laughter]`
 - **Speaker-turn merge** — consecutive turns by same speaker collapse
@@ -415,7 +419,7 @@ For code diffs:
 - Collapse 20+ imports to a summary line listing the dependencies
 
 **Marker allowlist — protect domain-specific signal.** Filler regex
-will eat tokens that *look* like filler but carry meaning in your
+will eat tokens that _look_ like filler but carry meaning in your
 domain. Pre-substitute marker phrases with sentinels before the
 filler pass, then restore. Examples of domain markers worth
 protecting:
@@ -455,26 +459,28 @@ Cost arithmetic typically:
   cheaper
 
 Net: **5–10× cost reduction with minimal quality loss** because
-Stage 1 catches the *what* and Stage 2 just judges the *how*.
+Stage 1 catches the _what_ and Stage 2 just judges the _how_.
 
 Practical shape:
 
 ```js
 // Stage 1
 const card = await cheapModel.create({
-  messages: [{ role: 'user', content: extractPrompt(rawArtifact) }],
-  response_format: { type: 'json_schema', json_schema: EvidenceCardSchema }
+  messages: [{ role: "user", content: extractPrompt(rawArtifact) }],
+  response_format: { type: "json_schema", json_schema: EvidenceCardSchema },
 });
 
 // Stage 2
 const result = await expensiveModel.create({
-  messages: [{
-    role: 'user',
-    content: classifyPrompt({
-      evidenceCard: card,
-      excerpts: pickKeyExcerpts(rawArtifact, card.keyAnchors),
-    })
-  }]
+  messages: [
+    {
+      role: "user",
+      content: classifyPrompt({
+        evidenceCard: card,
+        excerpts: pickKeyExcerpts(rawArtifact, card.keyAnchors),
+      }),
+    },
+  ],
 });
 ```
 
@@ -535,17 +541,17 @@ sub-problem. Useful when:
   the rest)
 - Each sub-call has its own stable cacheable prefix
 
-**Cost reality check** — fan-out is often *more* expensive than a
+**Cost reality check** — fan-out is often _more_ expensive than a
 single call, not less, because you pay the system-prompt + variable-
 context overhead N times. Worth modeling before committing.
 
 Example: classifying a code change against 12 candidate skills.
 
-| Strategy | Calls | Input/call | Total input | Cost basis |
-|---|---|---|---|---|
-| Single call, all 12 skills bundled | 1 | 13K | 13K | baseline |
-| Fan-out, 1 skill per call | 12 | 5K each | 60K | 4.6× baseline |
-| Cluster: 3 calls, ~4 skills each | 3 | 7K each | 21K | 1.6× baseline |
+| Strategy                           | Calls | Input/call | Total input | Cost basis    |
+| ---------------------------------- | ----- | ---------- | ----------- | ------------- |
+| Single call, all 12 skills bundled | 1     | 13K        | 13K         | baseline      |
+| Fan-out, 1 skill per call          | 12    | 5K each    | 60K         | 4.6× baseline |
+| Cluster: 3 calls, ~4 skills each   | 3     | 7K each    | 21K         | 1.6× baseline |
 
 Even with caching applied to all rows, the ranking is stable: fan-out
 is the most expensive, single-call is cheapest, clustering is the
@@ -607,18 +613,20 @@ content hash — persisted, durable, provider-agnostic.
 Pattern:
 
 ```js
-const cacheKey = sha256([
-  promptTemplateVersion,
-  modelName,
-  taxonomyVersion,           // whatever stable inputs feed the prompt
-  artifactPayloadHash
-].join('|'));
+const cacheKey = sha256(
+  [
+    promptTemplateVersion,
+    modelName,
+    taxonomyVersion, // whatever stable inputs feed the prompt
+    artifactPayloadHash,
+  ].join("|"),
+);
 
-const cached = await db.responseCache.findUnique({ where: { key: cacheKey }});
+const cached = await db.responseCache.findUnique({ where: { key: cacheKey } });
 if (cached) return JSON.parse(cached.response);
 
 const response = await llm.complete(prompt);
-await db.responseCache.create({ data: { key: cacheKey, response: JSON.stringify(response) }});
+await db.responseCache.create({ data: { key: cacheKey, response: JSON.stringify(response) } });
 return response;
 ```
 
@@ -643,27 +651,33 @@ above.
 Walk through these in order. Stop when you hit a "yes."
 
 **1. Is the input ≤ 50K tokens after structural drops?**
+
 - Just send it. Apply provider prompt caching on the stable parts of
   your prompt template; that's all the optimization you need.
 
 **2. Is the input ≤ 200K tokens but you can extract structure cheaply?**
+
 - Two-stage pipeline. Cheap-model evidence card → expensive-model
   final answer. Single biggest win for most workloads.
 
 **3. Is the input bigger than that, but you only query slices of it?**
+
 - RAG. Embed the corpus once, retrieve top-K per query. Combine with
   reranking for quality.
 
 **4. Is the input bigger than that, and you need global reasoning?**
+
 - Hierarchical summarization, OR Gemini's 2M context window if the
   workload doesn't justify the engineering.
 
 **5. Is per-call cost the bottleneck (not context size)?**
+
 - Provider caching (Claude > Gemini > OpenAI on discount magnitude).
 - Batch API for any non-real-time path (OpenAI/Anthropic/Vertex).
 - Application-level response cache if you re-process artifacts.
 
 **6. Is per-call reliability the bottleneck?**
+
 - Cluster-based fan-out (3–5 calls per artifact, not N=skills count).
 - Pre-validate prompt size before each call; auto-fan-out on threshold.
 
@@ -675,17 +689,17 @@ Snapshot rates — always check current provider pricing pages before
 committing to a budget. Numbers below illustrate orders-of-magnitude
 and discount ratios, not exact dollars.
 
-| Model                         | Input ($/M) | Cached ($/M) | Output ($/M) | Context |
-|-------------------------------|-------------|--------------|--------------|---------|
-| OpenAI gpt-4o-mini            | $0.15       | $0.075       | $0.60        | 128K    |
-| OpenAI gpt-4o                 | $2.50       | $1.25        | $10.00       | 128K    |
-| OpenAI gpt-4.1                | $2.00       | $0.50        | $8.00        | 1M      |
-| OpenAI o3-mini                | $1.10       | $0.55        | $4.40        | 200K    |
-| Anthropic Haiku 4.5           | $1.00       | $0.10 (90% off) | $5.00     | 200K    |
-| Anthropic Sonnet 4.5          | $3.00       | $0.30        | $15.00       | 200K (1M variant) |
-| Anthropic Opus 4              | $15.00      | $1.50        | $75.00       | 200K    |
-| Gemini 2.5 Flash              | $0.30       | $0.075       | $2.50        | 1M      |
-| Gemini 2.5 Pro                | $1.25       | $0.31        | $10.00       | 2M      |
+| Model                | Input ($/M) | Cached ($/M)    | Output ($/M) | Context           |
+| -------------------- | ----------- | --------------- | ------------ | ----------------- |
+| OpenAI gpt-4o-mini   | $0.15       | $0.075          | $0.60        | 128K              |
+| OpenAI gpt-4o        | $2.50       | $1.25           | $10.00       | 128K              |
+| OpenAI gpt-4.1       | $2.00       | $0.50           | $8.00        | 1M                |
+| OpenAI o3-mini       | $1.10       | $0.55           | $4.40        | 200K              |
+| Anthropic Haiku 4.5  | $1.00       | $0.10 (90% off) | $5.00        | 200K              |
+| Anthropic Sonnet 4.5 | $3.00       | $0.30           | $15.00       | 200K (1M variant) |
+| Anthropic Opus 4     | $15.00      | $1.50           | $75.00       | 200K              |
+| Gemini 2.5 Flash     | $0.30       | $0.075          | $2.50        | 1M                |
+| Gemini 2.5 Pro       | $1.25       | $0.31           | $10.00       | 2M                |
 
 **Batch discounts (where available):** -50% on top of the sync rates
 above. Stacks with caching: cached + batched = 25% of sync input for
@@ -733,7 +747,7 @@ almost always negligible vs the inference savings from RAG.
   query, per-call ID) before stable content (system, reference docs)
   invalidates the cache on every call.
 - **Skipping the marker allowlist before filler-word stripping.**
-  Domain-specific jargon often *looks* like filler. Pre-substitute
+  Domain-specific jargon often _looks_ like filler. Pre-substitute
   with sentinels, then strip, then restore.
 
 ---
