@@ -56,18 +56,17 @@ export HISTIGNORE=$(
 )
 unset ignored_history
 
-# Canonicalize a command: expand short (≤2 char) aliases via BASH_ALIASES,
-# strip marker commands (clear, clean, br), and validate bash syntax.
+# Canonicalize a command: expand short (≤2 char) aliases via BASH_ALIASES and
+# strip marker commands (clear, clean, br) that are noise in compound commands.
 # usage: _canonicalize_command "command string"
-# echoes the canonicalized command; original if unchanged; empty if stripped
-# bare or syntax-invalid.
+# echoes the canonicalized command; original if unchanged; empty if stripped bare.
 function _canonicalize_command() {
   local cmd="$1" first expansion
 
   # First-word alias expansion: any ≤2-char alias resolves to its target via
   # the BASH_ALIASES associative array (populated by bash in interactive shells).
   first="${cmd%% *}"
-  if [ ${#first} -le 2 ] && [ -n "${BASH_ALIASES[$first]+_}" ]; then
+  if [ -n "$first" ] && [ ${#first} -le 2 ] && [ -n "${BASH_ALIASES[$first]+_}" ]; then
     expansion="${BASH_ALIASES[$first]}"
     if [ "$first" = "$cmd" ]; then
       cmd="$expansion"
@@ -92,12 +91,7 @@ function _canonicalize_command() {
     break
   done
 
-  # Validate bash syntax — drops entries with unmatched quotes, braces, pipes.
   [ -z "$cmd" ] && echo "" && return 0
-  bash -n -c "$cmd" 2> /dev/null || {
-    echo ""
-    return 0
-  }
 
   echo "$cmd"
 }
