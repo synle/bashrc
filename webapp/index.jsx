@@ -434,12 +434,79 @@ function ScriptNameInputSection() {
 }
 
 /**
- * Form section for selecting a named preset (`--preset=<name>`) and previewing the full,
- * recursively expanded list of files it will run. The picker lets the user search by
- * substring via a datalist; the expansion is computed in-browser via `expandPresetFiles`
- * so the displayed file list matches what `bash run.sh --preset=<name>` would actually
- * execute. Internally only the preset name is written to formValue (`presetToUse`); the
- * expanded list is purely informational so the generated command line stays terse.
+ * Recursive accordion node rendering a single preset and (depth-first) its referenced
+ * sub-presets. Uses the native `<details>` element so per-section open/close state is
+ * free and survives without React state. Each node's summary shows the preset name +
+ * an expanded file-count badge so the user can see scope at a glance before expanding.
+ * Cycle guard: `visited` carries the names currently on the resolution stack — a
+ * malformed `presets.jsonc` with a self-reference or A → B → A loop renders an inline
+ * warning instead of recursing forever.
+ * @param {Object} props
+ * @param {string} props.name - Preset name to render at this node
+ * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} props.presetMap - Full preset map
+ * @param {number} [props.level] - Nesting depth (root = 0); used to set the default-open behavior
+ * @param {Set<string>} [props.visited] - Names currently on the resolution stack (cycle guard)
+ * @returns {React.ReactElement|null} A `<details>` node, or null when the preset is unknown
+ */
+function PresetTreeNode({ name, presetMap, level = 0, visited = new Set() }) {
+  if (visited.has(name)) {
+    return (
+      <div className="preset-tree-cycle">
+        Cycle detected — <code>{name}</code> already on the resolution path. Check <code>software/metadata/presets.jsonc</code>.
+      </div>
+    );
+  }
+  const preset = presetMap[name];
+  if (!preset || typeof preset !== "object") {
+    return (
+      <div className="preset-tree-unknown">
+        Unknown preset reference: <code>{name}</code>
+      </div>
+    );
+  }
+  const ownFiles = Array.isArray(preset.files) ? preset.files : [];
+  const refs = Array.isArray(preset.presets) ? preset.presets : [];
+  const totalCount = useMemo(() => expandPresetFiles(name, presetMap).length, [name, presetMap]);
+  const childVisited = new Set(visited);
+  childVisited.add(name);
+
+  return (
+    <details className={`preset-tree-node preset-tree-node--level-${level}`} open={level === 0}>
+      <summary>
+        <code className="preset-tree-name">{name}</code>
+        <span className="preset-tree-count">
+          {totalCount} {totalCount === 1 ? "file" : "files"}
+        </span>
+      </summary>
+      <div className="preset-tree-body">
+        {preset.description ? <div className="preset-tree-description">{preset.description}</div> : null}
+        {refs.map((ref) => (
+          <PresetTreeNode key={ref} name={ref} presetMap={presetMap} level={level + 1} visited={childVisited} />
+        ))}
+        {ownFiles.length > 0 ? (
+          <ul className="preset-tree-files">
+            {ownFiles.map((f) => (
+              <li key={f}>
+                <code>{f}</code>
+              </li>
+            ))}
+          </ul>
+        ) : refs.length === 0 ? (
+          <div className="preset-tree-empty">(no files in this preset)</div>
+        ) : null}
+      </div>
+    </details>
+  );
+}
+
+/**
+ * Form section for selecting a named preset (`--preset=<name>`) and previewing its
+ * recursively-expanded contents as a nested accordion tree. The picker lets the user
+ * search by substring via a datalist; the contents tree (rendered by `PresetTreeNode`)
+ * groups files under the preset they belong to, so for composites like `heavyweight` the
+ * user can see at a glance which `_editors` / `_apps` / etc. sub-preset contributes
+ * which scripts. Internally only the preset name is written to formValue
+ * (`presetToUse`); the tree is purely informational so the generated command stays terse.
  * Consumes MainAppContext for form state, preset map, and input change handling.
  * @returns {React.ReactElement} The preset picker form section.
  */
@@ -450,8 +517,6 @@ function ScriptPresetInputSection() {
   const presetNames = appData.presetNames || [];
   const currentPreset = formValue.presetToUse || "";
   const preset = presetMap[currentPreset];
-  const expandedFiles = useMemo(() => expandPresetFiles(currentPreset, presetMap), [currentPreset, presetMap]);
-  const referencedPresets = preset && Array.isArray(preset.presets) ? preset.presets : [];
 
   return (
     <>
@@ -481,32 +546,10 @@ function ScriptPresetInputSection() {
         ))}
       </datalist>
       {preset ? (
-        <div className="form-row" name="formValue.presetToUse.expanded">
+        <div className="form-row form-row--top-aligned" name="formValue.presetToUse.expanded">
           <div className="form-label">Preset Contents</div>
-          <div className="form-input" style={{ display: "flex", flexDirection: "column", gap: "var(--spaceSize2)" }}>
-            {preset.description ? <div style={{ opacity: 0.8 }}>{preset.description}</div> : null}
-            {referencedPresets.length > 0 ? (
-              <div>
-                <strong>Referenced presets:</strong>{" "}
-                {referencedPresets.map((ref, idx) => (
-                  <React.Fragment key={ref}>
-                    {idx > 0 ? ", " : ""}
-                    <code>{ref}</code>
-                  </React.Fragment>
-                ))}
-              </div>
-            ) : null}
-            <div>
-              <strong>Files ({expandedFiles.length}):</strong>
-              <ul style={{ margin: "var(--spaceSize1) 0 0", paddingInlineStart: "var(--spaceSize4)" }}>
-                {expandedFiles.map((f) => (
-                  <li key={f}>
-                    <code>{f}</code>
-                  </li>
-                ))}
-                {expandedFiles.length === 0 ? <li style={{ opacity: 0.6 }}>(no files resolved)</li> : null}
-              </ul>
-            </div>
+          <div className="form-input form-input--block">
+            <PresetTreeNode name={currentPreset} presetMap={presetMap} />
           </div>
         </div>
       ) : currentPreset ? (

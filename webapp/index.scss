@@ -244,6 +244,98 @@ input {
   }
 }
 
+// Modifier: rows whose right-hand content is tall (e.g. the preset-contents
+// accordion tree) need the label pinned to the top instead of vertically
+// centered against a 30+ line block, and the form-input must lay out as a
+// block (the default `flex` + `flex-wrap: wrap` centers narrow children).
+.form-row.form-row--top-aligned {
+  align-items: flex-start;
+
+  .form-label {
+    padding-top: var(--spaceSize1);
+  }
+}
+
+.form-input.form-input--block {
+  display: block;
+  width: 100%;
+}
+
+// Recursive preset-contents accordion (rendered by PresetTreeNode). Each
+// `<details>` is one preset; nested `<details>` are its referenced sub-presets.
+// Native disclosure widget gives us free open/close state, and the indented
+// border-left makes the parent → child relationship readable at a glance.
+.preset-tree-node {
+  border: var(--borderSize1) solid var(--colorBorderSecondary);
+  border-radius: var(--borderRadius1);
+  background: var(--colorBgMain);
+  margin-bottom: var(--spaceSize2);
+
+  > summary {
+    cursor: pointer;
+    padding: var(--spaceSize2);
+    display: flex;
+    align-items: center;
+    gap: var(--spaceSize2);
+    font-weight: var(--fontWeightSemiBold);
+    list-style: revert; // keep the native disclosure triangle visible
+
+    .preset-tree-name {
+      font-family: var(--fontFamilyMonospace);
+      background: var(--colorBgSecondary);
+      padding: var(--spaceSize1) var(--spaceSize2);
+      border-radius: var(--borderRadius1);
+    }
+
+    .preset-tree-count {
+      opacity: 0.7;
+      font-weight: var(--fontWeightRegular);
+      font-size: var(--fontSize2);
+    }
+  }
+
+  > .preset-tree-body {
+    padding: 0 var(--spaceSize2) var(--spaceSize2) var(--spaceSize3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spaceSize2);
+    border-top: var(--borderSize1) solid var(--colorBorderSecondary);
+    padding-top: var(--spaceSize2);
+  }
+
+  .preset-tree-description {
+    opacity: 0.85;
+    font-size: var(--fontSize2);
+  }
+
+  .preset-tree-files {
+    margin: 0;
+    padding-inline-start: var(--spaceSize4);
+
+    li {
+      padding: 1px 0;
+    }
+  }
+
+  .preset-tree-empty {
+    opacity: 0.6;
+    font-style: italic;
+  }
+
+  // Nested levels: tone down chrome so the outermost preset reads as the
+  // primary container and sub-presets read as collapsible sub-sections.
+  .preset-tree-node {
+    background: transparent;
+    border-style: dashed;
+  }
+}
+
+.preset-tree-cycle,
+.preset-tree-unknown {
+  color: var(--colorTextError, #b00);
+  font-size: var(--fontSize2);
+}
+
 .codeBlockWrapper {
   // Unify the wrapper background with the page surface so code reads as
   // part of its containing section instead of as a floating gray panel.
