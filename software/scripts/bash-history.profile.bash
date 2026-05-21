@@ -14,8 +14,8 @@
 HISTORY_BACKUP_DIR="$HOME/.bash_history_backups"
 HISTORY_BACKUP_MAX=7
 
-# cleanup_history: deep-clean $HISTFILE in place. Sole history-file cleaner —
-# replaces the earlier two-tier _clean_history_file (quick) + cleanup_history
+# history_cleanup: deep-clean $HISTFILE in place. Sole history-file cleaner —
+# replaces the earlier two-tier _clean_history_file (quick) + history_cleanup
 # (deep) split now that all paste-residue heuristics live in _canonicalize_command.
 #
 # Pipeline:
@@ -32,12 +32,12 @@ HISTORY_BACKUP_MAX=7
 #   4. atomic write back; reload in-memory history via `history -r`
 #
 # Called once per shell startup (first one of the day) by _backup_history.
-# Safe to invoke manually at any time. usage: cleanup_history [help]
-function cleanup_history() {
+# Safe to invoke manually at any time. usage: history_cleanup [help]
+function history_cleanup() {
   if is_help_arg "${1:-}"; then
-    echo "cleanup_history: deep-clean \$HISTFILE (canonicalize + bash -nc drop + dedup)"
-    echo "  cleanup_history       run on \$HISTFILE (default ~/.bash_history)"
-    echo "  cleanup_history help  show this help"
+    echo "history_cleanup: deep-clean \$HISTFILE (canonicalize + bash -nc drop + dedup)"
+    echo "  history_cleanup       run on \$HISTFILE (default ~/.bash_history)"
+    echo "  history_cleanup help  show this help"
     return 0
   fi
 
@@ -101,7 +101,7 @@ JS_EOF
   rm -f "$tmp" "$deduped"
 }
 
-# _maybe_cleanup_history: gates cleanup_history to at most once per 6 hours.
+# _maybe_history_cleanup: gates history_cleanup to at most once per 6 hours.
 # Last-run epoch stored in $HISTORY_CLEANUP_GATE — a flat path directly under
 # /tmp (no subdirs to mkdir; /tmp always exists). Wiped on reboot, desirable —
 # first shell after boot triggers a fresh clean. Concurrent shells crossing
@@ -109,7 +109,7 @@ JS_EOF
 # canonicalize pipeline is deterministic and the writes converge.
 HISTORY_CLEANUP_GATE="/tmp/synle_bashrc_history_cleanup_last"
 HISTORY_CLEANUP_INTERVAL_SECONDS=21600 # 6h → 4 runs/day
-function _maybe_cleanup_history() {
+function _maybe_history_cleanup() {
   local now last
   now=$(command date +%s)
   if [ -f "$HISTORY_CLEANUP_GATE" ]; then
@@ -122,12 +122,12 @@ function _maybe_cleanup_history() {
       return 0
     fi
   fi
-  cleanup_history
+  history_cleanup
   echo "$now" > "$HISTORY_CLEANUP_GATE"
 }
 
 # backs up ~/.bash_history daily (rotated, keeps HISTORY_BACKUP_MAX copies).
-# Runs after _maybe_cleanup_history so the daily snapshot captures the freshly
+# Runs after _maybe_history_cleanup so the daily snapshot captures the freshly
 # cleaned file (assuming the 6h gate fired on this shell startup; if not, the
 # live file is still recent enough — at most 6h of post-cleanup activity).
 function _backup_history() {
@@ -144,7 +144,7 @@ function _backup_history() {
   # rotate: keep only the most recent backups
   ls -1t "$HISTORY_BACKUP_DIR"/bash_history_* 2> /dev/null | tail -n +$((HISTORY_BACKUP_MAX + 1)) | xargs rm -f 2> /dev/null
 }
-_maybe_cleanup_history
+_maybe_history_cleanup
 _backup_history
 
 # interactive fuzzy history search using fzf. Dual-mode based on call context:
@@ -179,7 +179,7 @@ function fuzzy_history() {
     header="fuzzy_history - fzf history search; selection runs on Enter"
   fi
 
-  # No per-Ctrl+R cleanup — cleanup_history runs once daily via _backup_history
+  # No per-Ctrl+R cleanup — history_cleanup runs once daily via _backup_history
   # and is too expensive (bash -nc per line) for a hot keystroke. Filter out
   # HISTTIMEFORMAT timestamp lines (`#<epoch>`) so fzf shows only commands.
   local selected
@@ -202,10 +202,13 @@ function fuzzy_history() {
   fi
 }
 
-# lists all available history backups with date and line count
+# lists all available history backups with date, line count, and a 1-based
+# index. Index matches the same `ls -1t` newest-first order used by
+# history_restore, so the integer printed here can be passed directly to
+# `history_restore N` as a shortcut for the date.
 function history_list_backups() {
   if is_help_arg "${1:-}"; then
-    echo "history_list_backups: list all available history backups"
+    echo "history_list_backups: list all available history backups (with index for history_restore N)"
     echo "  history_list_backups help  show this help"
     return
   fi
@@ -218,28 +221,46 @@ function history_list_backups() {
   fi
 
   echo "Available history backups:"
+  local idx=1
   while IFS= read -r file; do
     local date_part lines
     date_part=$(basename "$file" | sed 's/bash_history_//')
     lines=$(wc -l < "$file" 2> /dev/null | tr -d ' ')
-    echo "  $date_part  $lines lines  $file"
+    echo "  $idx  $date_part  $lines lines  $file"
+    idx=$((idx + 1))
   done <<< "$backups"
 }
 
-# restores ~/.bash_history from a backup
+# restores ~/.bash_history from a backup. Target identifier may be either a
+# YYYY-MM-DD date string or a 1-based numeric index from history_list_backups
+# (matching the same `ls -1t` newest-first order — `1` = most recent).
 function history_restore() {
   if is_help_arg "${1:-}"; then
     echo "history_restore: restore ~/.bash_history from a backup"
     echo "  history_restore              restore latest (only if history is empty)"
     echo "  history_restore YYYY-MM-DD   restore specific date (overwrites)"
+    echo "  history_restore N            restore by index from history_list_backups (1 = newest)"
     echo "  history_restore help         show this help"
     return
   fi
-  local target_date="$1"
+  local target="$1"
 
-  if [ -n "$target_date" ]; then
-    # restore a specific date (overwrites current history)
-    local specific_file="$HISTORY_BACKUP_DIR/bash_history_$target_date"
+  if [ -n "$target" ]; then
+    # Resolve numeric index → backup file via `ls -1t` order (same as
+    # history_list_backups). Anything else falls through to date-string mode.
+    local specific_file=""
+    if [[ "$target" =~ ^[0-9]+$ ]]; then
+      specific_file=$(ls -1t "$HISTORY_BACKUP_DIR"/bash_history_* 2> /dev/null | sed -n "${target}p")
+      if [ -z "$specific_file" ]; then
+        echo "history_restore: no backup at index $target"
+        echo "Run history_list_backups to see available indexes"
+        return 1
+      fi
+    else
+      specific_file="$HISTORY_BACKUP_DIR/bash_history_$target"
+    fi
+
+    # restore a specific backup (overwrites current history)
     if [ ! -f "$specific_file" ]; then
       echo "history_restore: backup not found: $specific_file"
       echo "Run history_list_backups to see available dates"

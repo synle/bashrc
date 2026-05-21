@@ -1,10 +1,10 @@
 /**
- * Regression tests for cleanup_history in software/scripts/bash-history.profile.bash.
+ * Regression tests for history_cleanup in software/scripts/bash-history.profile.bash.
  *
  * Background (history): there used to be a two-tier split — _clean_history_file
- * (regex-only quick path used by every Ctrl+R) and cleanup_history (deep clean
+ * (regex-only quick path used by every Ctrl+R) and history_cleanup (deep clean
  * via _canonicalize_command for the daily backup). The two were merged into a
- * single cleanup_history function once all paste-residue heuristics were lifted
+ * single history_cleanup function once all paste-residue heuristics were lifted
  * into _canonicalize_command (which lives in profile-advanced.sh and is shared
  * with the PROMPT_COMMAND hot path via _rewrite_last_history_entry).
  *
@@ -76,7 +76,7 @@ function extractBashFunction(file, fnName) {
 
 /**
  * Source the extracted functions + a stubbed environment + sample HISTFILE,
- * run cleanup_history, and return the resulting file content.
+ * run history_cleanup, and return the resulting file content.
  *
  * @param {string} input - raw HISTFILE content to clean
  * @param {Record<string, string>} [aliases] - BASH_ALIASES entries (e.g. { g: "git" })
@@ -102,14 +102,14 @@ declare -gA BASH_ALIASES=(${aliasEntries})
 function _backup_history() { :; }
 ${canonicalize}
 ${histSource}
-HISTFILE='${histfile}' cleanup_history
+HISTFILE='${histfile}' history_cleanup
 `;
 
   execSync(`bash`, { input: script, stdio: ["pipe", "ignore", "ignore"] });
   return fs.readFileSync(histfile, "utf-8");
 }
 
-describe("cleanup_history — pipeline", () => {
+describe("history_cleanup — pipeline", () => {
   it("preserves valid commands and their timestamps", () => {
     const input = ["#1700000001", "git status", "#1700000002", "ls -la", ""].join("\n");
     const out = runCleanup(input);
@@ -300,8 +300,8 @@ describe("cleanup_history — pipeline", () => {
 
 /**
  * Source bash-history.profile.bash with overridden HISTORY_CLEANUP_GATE and a
- * stubbed `cleanup_history` (replaced by a sentinel echo), then invoke
- * _maybe_cleanup_history. Returns whether the sentinel fired and the final
+ * stubbed `history_cleanup` (replaced by a sentinel echo), then invoke
+ * _maybe_history_cleanup. Returns whether the sentinel fired and the final
  * gate-file contents. Used to assert the 6h interval gate behavior.
  *
  * @param {object} opts
@@ -324,21 +324,21 @@ function runMaybeCleanup(opts) {
     gateBefore = String(past);
   }
 
-  // Extract ONLY _maybe_cleanup_history. Sourcing the whole file would invoke
-  // its bottom-of-file `_maybe_cleanup_history` + `_backup_history` calls
-  // against the real /tmp/synle/bashrc/ gate AND replace our cleanup_history
+  // Extract ONLY _maybe_history_cleanup. Sourcing the whole file would invoke
+  // its bottom-of-file `_maybe_history_cleanup` + `_backup_history` calls
+  // against the real /tmp/synle/bashrc/ gate AND replace our history_cleanup
   // stub with the real one (which depends on _canonicalize_command, absent here).
-  const maybeCleanup = extractBashFunction(HISTORY_FILE, "_maybe_cleanup_history");
+  const maybeCleanup = extractBashFunction(HISTORY_FILE, "_maybe_history_cleanup");
 
   const script = `
 set +e
 HISTORY_CLEANUP_GATE='${gate}'
 HISTORY_CLEANUP_INTERVAL_SECONDS=21600
-# Sentinel stub — touches the marker file when _maybe_cleanup_history lets the
+# Sentinel stub — touches the marker file when _maybe_history_cleanup lets the
 # call through the gate.
-function cleanup_history() { command touch '${sentinel}'; }
+function history_cleanup() { command touch '${sentinel}'; }
 ${maybeCleanup}
-_maybe_cleanup_history
+_maybe_history_cleanup
 `;
 
   execSync(`bash`, { input: script, stdio: ["pipe", "ignore", "ignore"] });
@@ -347,7 +347,7 @@ _maybe_cleanup_history
   return { ran, gateBefore, gateAfter };
 }
 
-describe("_maybe_cleanup_history — 6h interval gate", () => {
+describe("_maybe_history_cleanup — 6h interval gate", () => {
   it("runs when no gate file exists (fresh shell after reboot)", () => {
     const { ran, gateAfter } = runMaybeCleanup({ gateAgeSeconds: null });
     expect(ran).toBe(true);

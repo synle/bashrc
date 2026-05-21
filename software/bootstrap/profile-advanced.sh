@@ -58,7 +58,7 @@ unset ignored_history
 
 # Canonicalize a single history entry. Single canonicalizer used by both the
 # hot path (_rewrite_last_history_entry via PROMPT_COMMAND) and the batch path
-# (cleanup_history in bash-history.profile.bash).
+# (history_cleanup in bash-history.profile.bash).
 #
 # Pipeline (drop returns empty; rewrite returns canonical form):
 #   1. trim leading/trailing whitespace
