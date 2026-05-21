@@ -1,14 +1,17 @@
 /**
  * Configures opencode with both remote and local Ollama providers.
  *
- * NOTE: OpenCode does NOT have its own `~/.config/opencode/AGENTS.md` (or similar)
- * deployment in this script — it intentionally falls through to `~/.claude/CLAUDE.md`,
- * which `claude/setup.js` deploys from `_common/instructions.md`. So the shared
- * engineering-principles block reaches OpenCode automatically; do not add a
- * `_doInstructionsWork` mirror here. See `_common/README.md` for the parity matrix.
+ * NOTE: OpenCode WOULD fall through to `~/.claude/CLAUDE.md` automatically when
+ * `~/.config/opencode/AGENTS.md` is absent (per https://opencode.ai/docs/rules/),
+ * but we deploy our OWN copy of `_common/instructions.md` to
+ * `~/.config/opencode/AGENTS.md` anyway — see `_doOpencodeInstructionsWork`
+ * below. Reason: redundancy. If the user later disables claude-code fallback
+ * (`OPENCODE_DISABLE_CLAUDE_CODE=1`) or relocates `~/.claude/`, OpenCode still
+ * has the engineering-principles block locally. Precedence per OpenCode docs:
+ * `~/.config/opencode/AGENTS.md` wins over `~/.claude/CLAUDE.md` if both exist.
  *
  * Slash commands are symlinked from `~/.claude/commands/` in `_syncOpencodeCommandSymlinks`
- * below — same single-source-of-truth pattern as the instructions fallthrough.
+ * below — single source of truth in `~/.claude/commands/`, no separate copy.
  */
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
@@ -168,6 +171,51 @@ async function _syncOpencodeCommandSymlinks() {
 }
 
 /**
+ * Marker key used to wrap the managed engineering principles block inside
+ * ~/.config/opencode/AGENTS.md. Anything outside the BEGIN/END markers is
+ * preserved as user-owned content (matches claude/copilot/gemini setup.js).
+ * @type {string}
+ */
+const OPENCODE_INSTRUCTIONS_MARKER = "managed-rules";
+
+/**
+ * Deploys the shared engineering principles into ~/.config/opencode/AGENTS.md
+ * between BEGIN/END markers. Mirrors the copilot/gemini pattern: managed
+ * block is upserted; any user content outside the markers is preserved on
+ * re-runs.
+ *
+ * Why this exists even though OpenCode falls through to ~/.claude/CLAUDE.md:
+ * redundancy / defense-in-depth. If the user sets OPENCODE_DISABLE_CLAUDE_CODE=1
+ * or ~/.claude/ goes missing, OpenCode still has the principles locally. Per
+ * https://opencode.ai/docs/rules/, ~/.config/opencode/AGENTS.md takes
+ * precedence over ~/.claude/CLAUDE.md when both exist — so this deploy is
+ * authoritative, not just a fallback.
+ */
+async function _doOpencodeInstructionsWork() {
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/AGENTS.md");
+
+  log(">> OpenCode Instructions:", targetPath);
+
+  await mkdir(path.dirname(targetPath));
+
+  /** @type {string} The markdown source for the managed engineering principles block. */
+  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
+
+  /** @type {string} Existing AGENTS.md content (empty if file is missing). */
+  let existing = "";
+  try {
+    existing = fs.readFileSync(targetPath, "utf-8");
+  } catch (e) {}
+
+  // Upsert the managed block between <!-- BEGIN managed-rules --> / <!-- END managed-rules -->.
+  // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.
+  const merged = replaceBlock(existing, OPENCODE_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+
+  await backupConfigFile(targetPath);
+  await writeText(targetPath, merged);
+}
+
+/**
  * Writes ~/.config/opencode/opencode.json with dynamically-discovered Ollama providers,
  * then mirrors all Claude Code slash commands into the opencode commands dir as symlinks.
  *
@@ -202,6 +250,8 @@ async function doWork() {
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();
+
+  await _doOpencodeInstructionsWork();
 
   await _syncOpencodeCommandSymlinks();
 }

@@ -4,11 +4,11 @@ Claude Code is the **base / foundation**. Every other CLI (Copilot, Gemini, Open
 
 ## Single sources of truth
 
-| Shared file                                                        | Consumed by                                                                                               |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md` (OpenCode falls through to Claude's) |
-| `_common/commands/*.md`                                            | `~/.claude/commands/sy-*.md` (deployed) + `~/.config/opencode/commands/sy-*.md` (symlinked from Claude)   |
-| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                          |
+| Shared file                                                        | Consumed by                                                                                             |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`    |
+| `_common/commands/*.md`                                            | `~/.claude/commands/sy-*.md` (deployed) + `~/.config/opencode/commands/sy-*.md` (symlinked from Claude) |
+| `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                        |
 
 Run all four CLIs end-to-end with:
 
@@ -24,14 +24,14 @@ bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
 
 ## Surface parity matrix
 
-|              | Instructions                                                 | Slash commands                                                  | Keybindings                                                      | Managed settings              |
-| ------------ | ------------------------------------------------------------ | --------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------- |
-| **claude**   | ✅ `~/.claude/CLAUDE.md`                                     | ✅ `~/.claude/commands/sy-*.md`                                 | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  |
-| **copilot**  | ✅ `~/.copilot/AGENTS.md`                                    | ❌ no `~/.<cli>/commands/` slot (would need plugin manifest)    | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` |
-| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                     | ❌ no `~/.<cli>/commands/` slot (would need extension manifest) | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  |
-| **opencode** | ➡️ reads `~/.claude/CLAUDE.md` directly (no separate deploy) | ✅ symlinks from `~/.claude/commands/`                          | ✅ inline `keybinds` in `~/.config/opencode/opencode.json`       | ✅ inline in `opencode.json`  |
+|              | Instructions                                                                                        | Slash commands                                                  | Keybindings                                                      | Managed settings              |
+| ------------ | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------- |
+| **claude**   | ✅ `~/.claude/CLAUDE.md`                                                                            | ✅ `~/.claude/commands/sy-*.md`                                 | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  |
+| **copilot**  | ✅ `~/.copilot/AGENTS.md`                                                                           | ❌ no `~/.<cli>/commands/` slot (would need plugin manifest)    | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` |
+| **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ❌ no `~/.<cli>/commands/` slot (would need extension manifest) | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  |
+| **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ symlinks from `~/.claude/commands/`                          | ✅ inline `keybinds` in `~/.config/opencode/opencode.json`       | ✅ inline in `opencode.json`  |
 
-Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today, ➡️ fallthrough.
+Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today.
 
 When upstream Copilot ships a keymap config or a `~/.copilot/commands/` slot, see the deferred-deploy comment at the bottom of `copilot/setup.js::_doCopilotKeysWork` — the merge already runs on every CI build so the schema stays exercised.
 
