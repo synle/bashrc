@@ -155,6 +155,89 @@ function getGitHubRawUrl(filePath) {
   return `${GITHUB_RAW_FETCH_URL}/${filePath}`;
 }
 
+/**
+ * Strips `//` line comments, `/* *\/` block comments, and trailing commas from a JSONC
+ * string so the result is parseable by `JSON.parse`. Mirrors `stripJsoncComments` in
+ * `software/index.js` — kept in sync so the webapp can read `software/metadata/presets.jsonc`
+ * directly without bundling a JSONC dep.
+ * @param {string} text - Raw JSONC text
+ * @returns {string} Equivalent text with comments and trailing commas removed
+ */
+function stripJsoncComments(text) {
+  let out = "";
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    const next = i + 1 < n ? text[i + 1] : "";
+    if (c === '"') {
+      out += c;
+      i++;
+      while (i < n) {
+        const cc = text[i];
+        out += cc;
+        if (cc === "\\" && i + 1 < n) {
+          out += text[i + 1];
+          i += 2;
+          continue;
+        }
+        i++;
+        if (cc === '"') break;
+      }
+    } else if (c === "/" && next === "/") {
+      while (i < n && text[i] !== "\n") i++;
+    } else if (c === "/" && next === "*") {
+      i += 2;
+      while (i < n && !(text[i] === "*" && i + 1 < n && text[i + 1] === "/")) i++;
+      i += 2;
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  return out.replace(/,(\s*[}\]])/g, "$1");
+}
+
+/**
+ * Recursively expands a preset name into its full flattened file list. Walks `presets[]`
+ * references depth-first (referenced presets contribute files first, then this preset's
+ * own `files[]`) and detects cycles via the `visited` set. Mirrors `expandPresetFiles` in
+ * `software/index.js`. Returns an empty array on any unknown reference or cycle so the
+ * UI degrades gracefully instead of throwing.
+ * @param {string} name - Preset name to expand
+ * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} presetMap - Full preset map
+ * @param {Set<string>} [visited] - Names currently on the resolution stack (cycle guard)
+ * @returns {string[]} Flattened, deduplicated file list
+ */
+function expandPresetFiles(name, presetMap, visited = new Set()) {
+  if (!name || visited.has(name)) return [];
+  const preset = presetMap[name];
+  if (!preset || typeof preset !== "object") return [];
+  visited.add(name);
+  const out = [];
+  if (Array.isArray(preset.presets)) {
+    for (const ref of preset.presets) {
+      if (!ref || typeof ref !== "string") continue;
+      for (const f of expandPresetFiles(ref, presetMap, visited)) out.push(f);
+    }
+  }
+  if (Array.isArray(preset.files)) {
+    for (const f of preset.files) {
+      if (f) out.push(f);
+    }
+  }
+  visited.delete(name);
+  const seen = new Set();
+  const dedup = [];
+  for (const f of out) {
+    if (!seen.has(f)) {
+      seen.add(f);
+      dedup.push(f);
+    }
+  }
+  return dedup;
+}
+
 /** @type {string} Base URL for viewing files on GitHub (blob view). */
 const BASH_PROFILE_CODE_REPO_VIEW_URL = `${REPO_URL}/blob/${REPO_BRANCH_NAME}`;
 /** @type {string} Base URL for editing files on GitHub (edit view). */
@@ -351,6 +434,133 @@ function ScriptNameInputSection() {
 }
 
 /**
+ * Form section for selecting a named preset (`--preset=<name>`) and previewing the full,
+ * recursively expanded list of files it will run. The picker lets the user search by
+ * substring via a datalist; the expansion is computed in-browser via `expandPresetFiles`
+ * so the displayed file list matches what `bash run.sh --preset=<name>` would actually
+ * execute. Internally only the preset name is written to formValue (`presetToUse`); the
+ * expanded list is purely informational so the generated command line stays terse.
+ * Consumes MainAppContext for form state, preset map, and input change handling.
+ * @returns {React.ReactElement} The preset picker form section.
+ */
+function ScriptPresetInputSection() {
+  const { appData, onInputChange } = useContext(MainAppContext);
+  const formValue = appData.formValue;
+  const presetMap = appData.presetMap || {};
+  const presetNames = appData.presetNames || [];
+  const currentPreset = formValue.presetToUse || "";
+  const preset = presetMap[currentPreset];
+  const expandedFiles = useMemo(() => expandPresetFiles(currentPreset, presetMap), [currentPreset, presetMap]);
+  const referencedPresets = preset && Array.isArray(preset.presets) ? preset.presets : [];
+
+  return (
+    <>
+      <div className="form-row" name="formValue.presetToUse">
+        <div className="form-label">Preset To Run</div>
+        <div className="form-input">
+          <input
+            style={{ width: "100%" }}
+            list="presetToRunOptions"
+            type="text"
+            placeholder="Preset name (e.g. lightweight, heavyweight, llm)"
+            autoFocus
+            required
+            onBlur={(e) => {
+              const value = e.target.value.trim();
+              onInputChange("presetToUse", value);
+            }}
+            defaultValue={currentPreset}
+          />
+        </div>
+      </div>
+      <datalist id="presetToRunOptions">
+        {presetNames.map((name) => (
+          <option key={name} value={name}>
+            {presetMap[name]?.description || name}
+          </option>
+        ))}
+      </datalist>
+      {preset ? (
+        <div className="form-row" name="formValue.presetToUse.expanded">
+          <div className="form-label">Preset Contents</div>
+          <div className="form-input" style={{ display: "flex", flexDirection: "column", gap: "var(--spaceSize2)" }}>
+            {preset.description ? <div style={{ opacity: 0.8 }}>{preset.description}</div> : null}
+            {referencedPresets.length > 0 ? (
+              <div>
+                <strong>Referenced presets:</strong>{" "}
+                {referencedPresets.map((ref, idx) => (
+                  <React.Fragment key={ref}>
+                    {idx > 0 ? ", " : ""}
+                    <code>{ref}</code>
+                  </React.Fragment>
+                ))}
+              </div>
+            ) : null}
+            <div>
+              <strong>Files ({expandedFiles.length}):</strong>
+              <ul style={{ margin: "var(--spaceSize1) 0 0", paddingInlineStart: "var(--spaceSize4)" }}>
+                {expandedFiles.map((f) => (
+                  <li key={f}>
+                    <code>{f}</code>
+                  </li>
+                ))}
+                {expandedFiles.length === 0 ? <li style={{ opacity: 0.6 }}>(no files resolved)</li> : null}
+              </ul>
+            </div>
+          </div>
+        </div>
+      ) : currentPreset ? (
+        <div className="form-row">
+          <div className="form-label" />
+          <div className="form-input" style={{ color: "var(--colorTextError, #b00)" }}>
+            Unknown preset: <code>{currentPreset}</code>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * Combined form section for the "Test Custom Run" tab. Lets the user pick between two
+ * input modes — `files` (free-form list of script paths) and `preset` (named bundle from
+ * `software/metadata/presets.jsonc`) — via a radio toggle. Renders the matching input
+ * section + OS selector + the appropriate generated `bash run.sh` command line (using
+ * `--files="""..."""` or `--preset=<name>` depending on mode). Mode is persisted in
+ * formValue.scriptMode so the choice survives reloads.
+ * @returns {React.ReactElement} The custom-run tab body.
+ */
+function CustomRunSection() {
+  const { appData, onInputChange } = useContext(MainAppContext);
+  const mode = appData.formValue.scriptMode === "preset" ? "preset" : "files";
+  const scriptTemplate =
+    mode === "preset"
+      ? `curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset="{{SELECT_PRESET}}"`
+      : `curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --files="""\n{{SELECT_SCRIPTS}}\n"""`;
+
+  return (
+    <>
+      <div className="form-row" name="formValue.scriptMode">
+        <div className="form-label">Run Mode</div>
+        <div className="form-input">
+          <div className="nav-radio-group">
+            <button className={mode === "files" ? "selected" : ""} onClick={() => onInputChange("scriptMode", "files")} type="button">
+              Script Files
+            </button>
+            <button className={mode === "preset" ? "selected" : ""} onClick={() => onInputChange("scriptMode", "preset")} type="button">
+              Script Preset
+            </button>
+          </div>
+        </div>
+      </div>
+      {mode === "preset" ? <ScriptPresetInputSection /> : <ScriptNameInputSection />}
+      <OsSelectionInputSection />
+      <ScriptOutputSection script={scriptTemplate} />
+    </>
+  );
+}
+
+/**
  * Dropdown section for selecting the target operating system type.
  * Renders a select element with OS options (Windows WSL, Ming_64, Mac, Chrome OS, Ubuntu,
  * Arch Linux/Steam Deck, Android Termux) and displays an OS mismatch warning below it.
@@ -462,6 +672,7 @@ function ScriptOutputSection({ script }) {
       REPO_URL: REPO_URL,
       BASH_PROFILE_CODE_REPO_RAW_URL: BASH_PROFILE_CODE_REPO_RAW_URL,
       SELECT_SCRIPTS: formValue.scriptsToUse.join("\n"),
+      SELECT_PRESET: formValue.presetToUse || "",
       SETUP_DEPS: formValue.setupDependencies === "yes" ? (appData.setupDepsScript || "") + "\n" : "",
       SETUP_HOSTS_SCRIPT: appData.setupHostsScript || "",
       IP_ADDRESS_MAPPING_CONFIGS: appData.ipAddressMappingConfigs || "",
@@ -1477,7 +1688,7 @@ function App() {
       try {
         const configsByKey = {};
 
-        const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs] = await Promise.all([
+        const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs, presetMap] = await Promise.all([
           fetch(getGitHubRawUrl("software/bootstrap/setup.sh"))
             .then((res) => res.text())
             .then((res) => res.trim()),
@@ -1502,6 +1713,16 @@ function App() {
                 .map((s) => "# " + s.trim())
                 .join("\n"),
             ),
+          fetch(getGitHubRawUrl("software/metadata/presets.jsonc"))
+            .then((res) => res.text())
+            .then((raw) => {
+              try {
+                const parsed = JSON.parse(stripJsoncComments(raw));
+                return parsed && typeof parsed === "object" ? parsed : {};
+              } catch {
+                return {};
+              }
+            }),
         ]);
 
         const osConfigs = OS_FLAGS.map((flag) => {
@@ -1539,16 +1760,8 @@ function App() {
             ),
           },
           {
-            text: "Test Single Script",
-            renderBody: () => (
-              <>
-                <ScriptNameInputSection />
-                <OsSelectionInputSection />
-                <ScriptOutputSection
-                  script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --files="""\n{{SELECT_SCRIPTS}}\n"""`}
-                />
-              </>
-            ),
+            text: "Test Custom Run",
+            renderBody: () => <CustomRunSection />,
           },
         ].map((config) => ({
           idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, "-")}`,
@@ -1560,6 +1773,13 @@ function App() {
         }
 
         // back it up
+        const presetNames = Object.keys(presetMap || {}).sort();
+        const storedPreset = getStorage("presetToUse") || "";
+        // Prefer a remembered preset; otherwise fall back to the first public (non-underscore)
+        // preset so the picker isn't blank on first load.
+        const defaultPreset = presetNames.includes(storedPreset)
+          ? storedPreset
+          : presetNames.find((n) => !n.startsWith("_")) || presetNames[0] || "";
         const newAppData = {
           configs,
           configsByKey,
@@ -1567,10 +1787,14 @@ function App() {
           scriptToRunOptions,
           setupHostsScript,
           ipAddressMappingConfigs,
+          presetMap: presetMap || {},
+          presetNames,
           formValue: {
             osToRun: getStorage("osToRun") || "is_os_windows",
             setupDependencies: getStorage("setupDependencies") || "yes",
             scriptsToUse: (getStorage("scriptsToUse") || "").split("\n").filter((s) => s.trim()),
+            scriptMode: getStorage("scriptMode") === "preset" ? "preset" : "files",
+            presetToUse: defaultPreset,
           },
         };
 

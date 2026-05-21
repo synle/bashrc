@@ -89,7 +89,7 @@ describe("webapp smoke test", () => {
           "SETUP LIGHTWEIGHT PROFILE",
           "SETUP ETC HOSTS",
           "TEST FULL RUN LIVE",
-          "TEST SINGLE SCRIPT",
+          "TEST CUSTOM RUN",
         ];
 
         for (const expected of expectedTabs) {

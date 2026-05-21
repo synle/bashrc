@@ -52,9 +52,9 @@ body {
 
 // Align outer page padding with synle/nav-generator's webapp so the two
 // apps read as a consistent set. nav-generator uses `body { padding:
-// spaceSize2 }` (0.5rem); we mirror that on `#root` here.
+// spaceSize2 }` (0.5rem); the inner-gutter equivalent here lives on
+// `#container` (see below) so the header can sit flush at the page edge.
 #root {
-  margin-inline: var(--spaceSize2);
   padding-bottom: var(--spaceSize2);
 }
 
@@ -171,6 +171,7 @@ input {
   flex-direction: column;
   gap: var(--spaceSize3);
   margin-top: var(--spaceSize4);
+  padding-inline: var(--spaceSize2);
   overflow-x: clip;
 }
 
