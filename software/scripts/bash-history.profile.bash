@@ -95,7 +95,7 @@ JS_EOF
 
   if ! cmp -s "$histfile" "$deduped" 2> /dev/null; then
     command cat "$deduped" > "$histfile"
-    builtin history -r
+    builtin history -r "$histfile"
   fi
 
   rm -f "$tmp" "$deduped"

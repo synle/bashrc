@@ -2443,6 +2443,7 @@ PROMPT_COMMAND="_bashrc_update_check_show${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 # ---- Deferred Profile Blocks (heavy or late-loading) ----
 # ---- Post-profile Integrations (registerWithBashSyleProfile) ----
 ################################################################################
+# SOURCE | software/scripts/bash-history.profile.bash
 # SOURCE | software/scripts/bash-keys.profile.bash
 # SOURCE | software/scripts/bash-file-utils.profile.bash
 # BEGIN/END | Fuzzy Filter Patterns

@@ -39,7 +39,6 @@ fi
 # BEGIN/END | Profile Generated Timestamp
 #
 ################################################################################
-# SOURCE | software/scripts/bash-history.profile.bash
 # BEGIN/END | fnm - fast node manager
 # BEGIN/END | format script
 # BEGIN/END | mac-system-setup
