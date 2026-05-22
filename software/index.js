@@ -210,11 +210,41 @@ function expandPresetFiles(name, presetMap, visited = new Set(), chain = []) {
 }
 
 /**
+ * Resolves a user-supplied preset name against the loaded preset map.
+ * Exact match wins; otherwise falls back to case-insensitive substring match.
+ * Shared by `parseRawArgs` (handling `--preset=` / `@bare-arg`) and
+ * `_resolveBareArgPresetFallback` (handling plain bare args that miss the script lookup).
+ *
+ * @param {string} name - User-supplied preset name (may be partial or wrong case).
+ * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} presetMap - Full preset map (from loadPresets).
+ * @param {{ suggestionFlag?: string }} [opts] - When ambiguous, format suggestions using this CLI form
+ *   (e.g. `"--preset="` or `"@"`). Defaults to `"--preset="`.
+ * @returns {string|null} Canonical preset name, or `null` when no match exists.
+ * @throws {Error} When the fuzzy match is ambiguous (2+ hits) — message includes copy-pasteable
+ *   suggestions formatted with `opts.suggestionFlag`.
+ */
+function _resolvePresetName(name, presetMap, opts = {}) {
+  const flag = opts.suggestionFlag || "--preset=";
+  if (presetMap[name]) return name;
+  const needle = name.toLowerCase();
+  const known = Object.keys(presetMap);
+  const matches = known.filter((k) => k.toLowerCase().includes(needle));
+  if (matches.length === 1) return matches[0];
+  if (matches.length > 1) {
+    const suggestions = matches.map((m) => `  bash run.sh ${flag}${m}`).join("\n");
+    throw new Error(
+      `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` + `Pick one and re-run:\n${suggestions}`,
+    );
+  }
+  return null;
+}
+
+/**
  * Parses the raw CLI arguments passed from run.sh via the BASHRC_RAW_ARGS env var.
  * Sets process.env variables (TEST_SCRIPT_FILES, IS_FORCE_REFRESH, etc.)
  * so that subsequent getRuntimeOption() calls pick them up.
  * Must be called before any getRuntimeOption() reads of flag env vars.
- * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean }}
+ * @returns {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[] }}
  */
 function parseRawArgs() {
   const rawJson = process.env.BASHRC_RAW_ARGS || "[]";
@@ -232,8 +262,22 @@ function parseRawArgs() {
   let debug = false;
   let dryrun = false;
   let remove = false;
-  /** @type {string[]} Preset names requested via --preset= or --presets= (composable). */
+  /**
+   * @type {Array<{ name: string, viaAtMarker: boolean }>} Preset requests collected from
+   *   `--preset=` (viaAtMarker=false → ambiguity suggestions use `--preset=` form) and
+   *   `@bare-arg` (viaAtMarker=true → suggestions use `@` form). Flattened to a plain
+   *   `string[]` of canonical names (`presets`) below.
+   */
+  const presetRequests = [];
+  /** @type {string[]} Canonical preset names actually expanded (one per request, in order). */
   const presets = [];
+  /**
+   * @type {string[]} Plain bare-arg names (no leading @, no --files= flag) — eligible for
+   *   the script→preset fallback in `_resolveBareArgPresetFallback`. `--files=` values and
+   *   preset-expanded files are NOT included; only those entries fall back to preset lookup
+   *   when script resolution fails.
+   */
+  const bareArgs = [];
 
   for (const arg of args) {
     if (/^-?-files=/.test(arg)) {
@@ -255,7 +299,11 @@ function parseRawArgs() {
           .split(/[,;\s]/)
           .map((s) => s.trim())
           .filter(Boolean)) {
-          presets.push(name);
+          // Strip leading `@` so `--preset=@llm` and `--preset=llm` resolve identically.
+          // The marker is the bare-arg disambiguator (see below); on the explicit
+          // --preset= flag it's just symmetric noise. Origin stays `--preset=` so
+          // ambiguity error messages use `--preset=` formatted suggestions.
+          presetRequests.push({ name: name.replace(/^@/, ""), viaAtMarker: false });
         }
       }
     } else if (/^-?-(setup|is-setup)$/.test(arg)) {
@@ -268,8 +316,19 @@ function parseRawArgs() {
       remove = true;
     } else if (/^-?-no-color$/.test(arg)) {
       process.env.NO_COLOR = "1";
+    } else if (arg.startsWith("@")) {
+      // Bare-arg `@xxx` → strict preset lookup (skip script search entirely).
+      // The `@` marker disambiguates intent on bare args, where script-vs-preset
+      // would otherwise be ambiguous. Routes to the same fuzzy-substring preset
+      // matcher used by --preset=, but ambiguity messages use `@` suggestions.
+      const stripped = arg.slice(1).trim();
+      if (stripped) presetRequests.push({ name: stripped, viaAtMarker: true });
     } else if (!arg.startsWith("-")) {
+      // Plain bare arg → tentatively a file (script-first priority). If script
+      // resolution later returns not_found, `_resolveBareArgPresetFallback`
+      // retries it as a preset.
       files = files ? `${files},${arg}` : arg;
+      bareArgs.push(arg);
     }
   }
 
@@ -277,45 +336,19 @@ function parseRawArgs() {
   // Files: union (preset files appended in order).
   // Name resolution: exact match wins. If no exact match, try case-insensitive
   // substring match — exactly one hit auto-resolves; zero hits or 2+ hits error.
-  if (presets.length > 0) {
+  if (presetRequests.length > 0) {
     const presetMap = loadPresets();
     const known = Object.keys(presetMap);
-    for (let i = 0; i < presets.length; i++) {
-      const name = presets[i];
-      let resolvedName = name;
-      let preset = presetMap[name];
-
-      // Fuzzy fallback: case-insensitive substring match across known preset names.
-      // Underscore-prefixed names (e.g. `_editors`, `_apps`, `_llm`) are internal
-      // building blocks. Resolution prefers public names: if any non-underscore name
-      // matches, underscore matches are excluded — so `--preset=editors` resolves to
-      // the public `heavyweight` composite, not `_editors`. If zero public names
-      // match, underscore matches are included as a fallback so common shorthands
-      // like `--preset=llm` / `--preset=browsers` still resolve to `_llm` / `_browsers`.
-      if (!preset) {
-        const needle = name.toLowerCase();
-        const allMatches = known.filter((k) => k.toLowerCase().includes(needle));
-        const publicMatches = allMatches.filter((k) => !k.startsWith("_"));
-        const matches = publicMatches.length > 0 ? publicMatches : allMatches;
-        if (matches.length === 1) {
-          resolvedName = matches[0];
-          preset = presetMap[resolvedName];
-        } else if (matches.length > 1) {
-          const suggestions = matches.map((m) => `  bash run.sh --preset=${m}`).join("\n");
-          throw new Error(
-            `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` + `Pick one and re-run:\n${suggestions}`,
-          );
-        }
-      }
-
-      if (!preset) {
+    for (const { name, viaAtMarker } of presetRequests) {
+      const suggestionFlag = viaAtMarker ? "@" : "--preset=";
+      const resolvedName = _resolvePresetName(name, presetMap, { suggestionFlag });
+      if (!resolvedName) {
         const list = known.length ? known.join(", ") : "(none defined)";
         throw new Error(`Unknown preset "${name}". Available presets: ${list}`);
       }
 
-      // Replace the user's input with the canonical name so debug output / printRunInfo
-      // reflect what actually ran.
-      presets[i] = resolvedName;
+      // Track canonical names so debug output / printRunInfo reflect what actually ran.
+      presets.push(resolvedName);
 
       // Recursively expand: a preset may pull in other presets via `presets:` for composition.
       // expandPresetFiles handles cycle detection and unknown-ref errors.
@@ -333,11 +366,15 @@ function parseRawArgs() {
   if (debug) process.env.IS_DEBUG = "1";
   if (dryrun) process.env.IS_DRY_RUN = "1";
   if (remove) process.env.IS_REMOVE_MODE = "1";
+  // Propagate bare-arg list to downstream resolution (_resolveBareArgPresetFallback).
+  // Only plain bare args (no leading `@`, no --files= flag) are fallback-eligible —
+  // explicit flags stay strict so typos surface loudly.
+  if (bareArgs.length > 0) process.env.BASHRC_BARE_ARGS = bareArgs.join(",");
 
-  return { files, forceRefresh, refreshFiles, debug, dryrun, remove, presets, setup };
+  return { files, forceRefresh, refreshFiles, debug, dryrun, remove, presets, setup, bareArgs };
 }
 
-/** @type {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean }} */
+/** @type {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[] }} */
 const _parsedArgs = parseRawArgs();
 
 //////////////////////////////////////////////////////
@@ -4093,6 +4130,80 @@ function _resolveScriptFile(file, originalFile, allRepoFiles) {
 }
 
 /**
+ * Script-first / preset-fallback resolution for plain bare CLI args.
+ *
+ * For each entry in `softwareFiles` that came from a plain bare arg (no `--files=` flag,
+ * no `@` prefix — see `BASHRC_BARE_ARGS` set by `parseRawArgs`), if script resolution
+ * returns `not_found`, retry as a preset. On a preset hit, splice in the preset's
+ * expanded file list at that position. Script-side ambiguous matches stay in place
+ * so the downstream `_runScripts` ambiguity reporter can surface them.
+ *
+ * Entries from `--files=`, `--refresh=`, or `--preset=` expansion are NEVER fallback-eligible;
+ * the explicit flag means the user is asserting intent and a typo should fail loudly.
+ *
+ * Probes script resolution on a SHALLOW COPY of `allRepoFiles` so this helper stays
+ * side-effect-free — the real (mutating) resolution happens later in `_runScripts`.
+ *
+ * @param {string[]} softwareFiles - Caller-supplied script list (post-CSV split).
+ * @param {string[]} allRepoFiles - Repo file list for the script-resolution probe.
+ * @returns {string[]} New list with preset expansions spliced in for fallback hits.
+ * @throws {Error} When the preset fuzzy match is ambiguous (2+ hits) — re-thrown
+ *   from `_resolvePresetName` with `@<name>` formatted suggestions.
+ */
+function _resolveBareArgPresetFallback(softwareFiles, allRepoFiles) {
+  const bareArgsCsv = process.env.BASHRC_BARE_ARGS || "";
+  if (!bareArgsCsv) return softwareFiles;
+  const bareArgs = new Set(
+    bareArgsCsv
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  if (bareArgs.size === 0) return softwareFiles;
+
+  const presetMap = loadPresets();
+  const known = Object.keys(presetMap);
+  if (known.length === 0) return softwareFiles;
+
+  const result = [];
+  for (const entry of softwareFiles) {
+    if (!bareArgs.has(entry)) {
+      result.push(entry);
+      continue;
+    }
+
+    // Probe script resolution on a shallow copy so the mutation in _resolveScriptFile
+    // (which removes matched entries from allRepoFiles for dedup) doesn't affect the
+    // real downstream pass.
+    const probe = entry.startsWith("software/") ? entry : `software/scripts/${entry}`;
+    const probeRepo = allRepoFiles.slice();
+    const resolved = _resolveScriptFile(probe, entry, probeRepo);
+
+    // Script found OR ambiguous → keep as-is; downstream handles the rest.
+    if (resolved.fileMatchState !== "not_found") {
+      result.push(entry);
+      continue;
+    }
+
+    // Script not_found → try preset lookup. Pass `@` as the suggestion-flag so
+    // ambiguous-match error messages point users back at the bare-arg form.
+    const resolvedName = _resolvePresetName(entry, presetMap, { suggestionFlag: "@" });
+    if (resolvedName) {
+      log(`>> Bare arg "${entry}" matched no script — resolved as preset "${resolvedName}".`);
+      const expanded = expandPresetFiles(resolvedName, presetMap);
+      for (const f of expanded) result.push(f);
+    } else {
+      // Neither script nor preset matched. Leave the entry in place so the existing
+      // "File not found" path in _runScripts prints its script-side suggestions;
+      // ME also surface the preset list here so the user sees both worlds.
+      log(`>> Bare arg "${entry}" matched no script and no preset. Available presets: ${known.join(", ")}`);
+      result.push(entry);
+    }
+  }
+  return result;
+}
+
+/**
  * Reads a script file's content via readText with caching. Results are cached to avoid
  * re-fetching (e.g. index.js is read once and reused for every .js script).
  * @param {string} file - The repo-relative file path (e.g. "software/index.js")
@@ -4616,6 +4727,12 @@ async function _doWorkTestFiles() {
   let softwareFiles = TEST_SCRIPT_FILES.split(/[,;\s]/)
     .map((s) => s.trim())
     .filter((s) => !!s);
+
+  // ---- Bare-arg preset fallback ----
+  // For each entry that came from a plain bare arg (no --files=, no @ prefix), if it
+  // matches no script, retry as a preset. Runs BEFORE the OS guard so preset-expanded
+  // files get the same OS filtering treatment.
+  softwareFiles = _resolveBareArgPresetFallback(softwareFiles, allRepoFiles);
 
   // ---- OS folder guard ----
   // Apply the same OS-folder filter that getSoftwareScriptFiles() uses for full runs.

@@ -57,12 +57,16 @@ bash run.sh --files=git.js                         # one script (exact)
 bash run.sh --files=vim                            # fuzzy match (auto-resolves if unambiguous)
 bash run.sh --preset=lightweight                   # named preset from software/metadata/presets.jsonc
 bash run.sh --preset=terminal,prompt               # union of multiple presets
+bash run.sh @llm                                   # bare @-marker → strict preset lookup
+bash run.sh editors                                # bare arg → script-first, falls back to preset on miss
 bash run.sh --refresh="fzf.js,fonts.js"            # force-refresh specific scripts
 bash run.sh --dryrun --setup                       # preview a full setup, no writes
 bash run.sh --remove --files=fzf.js                # undoWork for one script
 ```
 
-End-user presets currently include `lightweight` and `heavyweight` (kitchen-sink composite — symmetric counterpart to `lightweight`). Internal building blocks (leading underscore — fuzzy matcher prefers public names but falls back to underscore names when no public match exists, so `--preset=llm`/`terminal`/`prompt`/`browsers` still resolve to `_llm`/`_terminal`/`_prompt`/`_browsers`) include `_editors`, `_emulators`, `_apps`, `_browsers`, `_terminal`, `_prompt`, and `_llm`. See `software/metadata/presets.jsonc` for the authoritative list and per-preset descriptions; the file is JSONC, so `//`, `/* */`, and trailing commas are allowed (stripped by `stripJsoncComments` in `software/index.js` before `JSON.parse`). Each entry declares a `files[]` list and/or a `presets[]` list pointing at other presets (composed recursively); `heavyweight` is the canonical example, defined as `{ "presets": ["_editors", "_emulators", "_apps", "_browsers", "_terminal", "_prompt", "_llm"] }`. Cycles (a preset referencing itself, directly or transitively) are rejected at parse time by `expandPresetFiles` in `software/index.js` and guarded by `software/tests/presets.spec.js`.
+End-user composites: `lightweight` and `heavyweight` (kitchen-sink — symmetric counterpart to `lightweight`). Building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`. See `software/metadata/presets.jsonc` for the authoritative list and per-preset descriptions; the file is JSONC, so `//`, `/* */`, and trailing commas are allowed (stripped by `stripJsoncComments` in `software/index.js` before `JSON.parse`). Each entry declares a `files[]` list and/or a `presets[]` list pointing at other presets (composed recursively); `heavyweight` is the canonical example, defined as `{ "presets": ["editors", "emulators", "apps", "browsers", "terminal", "prompt", "llm"] }`. Cycles (a preset referencing itself, directly or transitively) are rejected at parse time by `expandPresetFiles` in `software/index.js` and guarded by `software/tests/presets.spec.js`.
+
+CLI resolution priority: `--files=<x>` is strict (script only); `--preset=<x>` (and `--preset=@<x>`, which strips the `@`) is strict preset with case-insensitive substring fuzzy fallback; bare `<x>` tries scripts first and falls back to a preset lookup (`_resolveBareArgPresetFallback` in `software/index.js`); bare `@<x>` skips the script search and goes straight to preset resolution. On script-vs-preset name collision the script wins (e.g. `bash run.sh llm` partial-matches `llm-common.js`; use `@llm` to force the `llm` preset).
 
 ## Testing
 

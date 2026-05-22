@@ -18,6 +18,8 @@
 #   bash run.sh --preset=lightweight               # Expand a named preset (its file list); see software/metadata/presets.jsonc
 #   bash run.sh --preset=lightweight,heavyweight   # Multiple presets compose (file lists union)
 #   bash run.sh --preset=editor                    # Partial match (case-insensitive substring); 1 hit auto-resolves, 2+ hits errors with suggestions
+#   bash run.sh @llm                               # Bare @-marker → strict preset lookup (skip script search)
+#   bash run.sh editors                            # Bare arg → script-first; falls back to preset on miss
 #   bash run.sh --debug                            # Enable debug mode (keep temp scripts for inspection)
 #   bash run.sh -D                                 # Shorthand for --debug
 #   bash run.sh --verbose                          # Enable verbose mode (set -x for bash tracing)

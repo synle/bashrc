@@ -154,32 +154,9 @@ describe("parseRawArgs", () => {
     expect(() => parseRawArgs()).toThrow(/bash run\.sh --preset=editor-pro/);
   });
 
-  it("should prefer public (non-underscore) names over underscore-prefixed building blocks in fuzzy matching", () => {
-    proc.env.PRESETS_JSON = JSON.stringify({
-      _editors: { files: ["internal.js"] },
-      "editors-pack": { files: ["public.js"] },
-    });
-    // "editors" is a substring of both names. Public name wins — `_editors` is excluded.
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=editors"]);
-    const result = parseRawArgs();
-    expect(result.presets).toEqual(["editors-pack"]);
-    expect(result.files).toBe("public.js");
-  });
-
-  it("should fall back to underscore-prefixed matches when no public name matches the substring", () => {
-    proc.env.PRESETS_JSON = JSON.stringify({
-      _llm: { files: ["llm.js"] },
-      browsers: { files: ["browser.js"] },
-    });
-    // "llm" only matches `_llm`. With no public match available, the underscore
-    // building block is selected so common shorthands like --preset=llm still work.
-    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=llm"]);
-    const result = parseRawArgs();
-    expect(result.presets).toEqual(["_llm"]);
-    expect(result.files).toBe("llm.js");
-  });
-
-  it("should still allow underscore-prefixed presets via EXACT name", () => {
+  it("should still resolve presets by EXACT name regardless of prefix style", () => {
+    // Underscore-prefixed names no longer get special handling — they're treated
+    // like any other name. Exact match still wins over fuzzy.
     proc.env.PRESETS_JSON = JSON.stringify({
       _editors: { files: ["internal.js"] },
       "editors-pack": { files: ["public.js"] },
@@ -358,6 +335,73 @@ describe("parseRawArgs", () => {
     proc.env.BASHRC_RAW_ARGS = JSON.stringify(["git.js", "vim-config.js"]);
     const result = parseRawArgs();
     expect(result.files).toBe("git.js,vim-config.js");
+  });
+
+  it("should track plain bare args separately in bareArgs[] for downstream fallback", () => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["git.js", "editors"]);
+    const result = parseRawArgs();
+    expect(result.bareArgs).toEqual(["git.js", "editors"]);
+    expect(proc.env.BASHRC_BARE_ARGS).toBe("git.js,editors");
+  });
+
+  it("should NOT track --files= entries as bare args (explicit flag is strict)", () => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--files=git.js", "vim-config.js"]);
+    const result = parseRawArgs();
+    expect(result.bareArgs).toEqual(["vim-config.js"]);
+    expect(result.files).toBe("git.js,vim-config.js");
+  });
+
+  it("should treat @xxx bare arg as a strict preset request (skip script search)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      llm: { files: ["claude.js", "copilot.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@llm"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["llm"]);
+    expect(result.files).toBe("claude.js,copilot.js");
+    // @xxx is NOT a bare-arg-eligible candidate; it routed directly to the preset path.
+    expect(result.bareArgs).toEqual([]);
+  });
+
+  it("should apply fuzzy substring matching to @xxx bare arg", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      editors: { files: ["vim.js"] },
+      browsers: { files: ["brave.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@edit"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["editors"]);
+    expect(result.files).toBe("vim.js");
+  });
+
+  it("should strip leading @ from --preset=@xxx (symmetry with bare @xxx)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      llm: { files: ["claude.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=@llm"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual(["llm"]);
+    expect(result.files).toBe("claude.js");
+  });
+
+  it("should error with @-formatted suggestions when @xxx fuzzy match is ambiguous", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      editors: { files: ["a.js"] },
+      "editor-pro": { files: ["b.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@editor"]);
+    // Ambiguous fuzzy match uses the @ suggestion-flag because the entry-point was @xxx.
+    expect(() => parseRawArgs()).toThrow(/ambiguous — matched 2: editors, editor-pro/);
+    expect(() => parseRawArgs()).toThrow(/bash run\.sh @editors/);
+    expect(() => parseRawArgs()).toThrow(/bash run\.sh @editor-pro/);
+  });
+
+  it("should treat lone @ as a no-op (empty preset name)", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({ lightweight: { files: ["a.js"] } });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["@"]);
+    const result = parseRawArgs();
+    expect(result.presets).toEqual([]);
+    expect(result.files).toBe("");
   });
 
   it("should handle invalid JSON gracefully", () => {

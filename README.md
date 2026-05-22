@@ -90,6 +90,9 @@ A self-extracting bash script that bundles `run.sh` + the entire `software/` tre
 ```bash
 # Full setup (installs dependencies + writes profile)
 tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --setup
+
+# Heavyweight preset (every building block — editors, emulators, apps, browsers, terminal, prompt, llm)
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --preset=heavyweight
 ```
 
 Every `run.sh` flag works — swap `--setup` for any of these:

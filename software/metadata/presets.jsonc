@@ -1,4 +1,5 @@
-// Named --preset=<name> bundles. Source of truth for `bash run.sh --preset=...`.
+// Named --preset=<name> bundles. Source of truth for `bash run.sh --preset=...`
+// and bare-arg preset lookup (`bash run.sh <name>` / `bash run.sh @<name>`).
 // Format: JSONC — supports `//` line comments, `/* */` block comments, and trailing
 // commas. Parsed by loadPresets() in software/index.js (strips comments before
 // JSON.parse). Run.sh reads this file verbatim into PRESETS_JSON.
@@ -10,20 +11,21 @@
 //                     by expandPresetFiles() with cycle detection (presets.spec.js
 //                     guards against self-references and transitive loops).
 //
-// Naming convention:
-//   - Leading-underscore names (e.g. "_editors", "_terminal", "_llm") are
-//     INTERNAL building blocks. Fuzzy substring matching prefers public
-//     (non-underscore) names — underscore names are only chosen when there is
-//     no public match. End-user-facing presets have no underscore prefix.
+// CLI resolution:
+//   --files=<name>   → strict script lookup (no preset fallback).
+//   --preset=<name>  → strict preset lookup (fuzzy substring match on miss).
+//   --preset=@<name> → same as --preset=<name> (leading @ stripped for symmetry).
+//   <bare-arg>       → script lookup first; if no script matches, preset fallback.
+//   @<bare-arg>      → strict preset lookup (skip script search entirely).
 {
   "lightweight": {
     "description": "Minimal config-only setup: git, vim, inputrc. Only the listed files run — no advanced/heavy installs.",
     "files": ["git.js", "vim-config.js", "vim-vundle.sh", "bash-inputrc.js"],
   },
 
-  // --- Internal building blocks (underscore-prefixed) ---
+  // --- Building blocks ---
 
-  "_editors": {
+  "editors": {
     "description": "Building block: editors only — Vim, Sublime Text, Sublime Merge, VS Code, Zed + shell editor launchers.",
     "files": [
       "vim-config.js",
@@ -36,23 +38,23 @@
       "advanced/editor-launchers.js",
     ],
   },
-  "_emulators": {
+  "emulators": {
     "description": "Building block: terminal emulators only — Ghostty on mac/linux, Windows Terminal on Windows. OS-specific scripts self-skip on the wrong platform.",
     "files": ["advanced/ghostty.js", "windows-terminal.js"],
   },
-  "_apps": {
+  "apps": {
     "description": "Building block: self-built GUI apps — sqlui-native, skiff-files, proxie, display-dj. Each script downloads the release binary from binary-cache and installs it.",
     "files": ["advanced/sqlui-native.js", "advanced/skiff-files.js", "advanced/proxie.js", "advanced/display-dj.js"],
   },
-  "_terminal": {
+  "terminal": {
     "description": "Building block: bash and shell tooling — readline (inputrc), fzf, autocomplete complete-spec.",
     "files": ["bash-inputrc.js", "fzf.js", "advanced/bash-autocomplete-complete-spec.js"],
   },
-  "_prompt": {
+  "prompt": {
     "description": "Building block: shell prompt + navigation — Starship prompt install/config and zoxide (smarter cd).",
     "files": ["advanced/starship.sh", "advanced/starship-config.js", "zoxide.js"],
   },
-  "_llm": {
+  "llm": {
     "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, and OpenCode (settings, keybindings, shared instructions, slash commands). Claude is the base — all four CLIs read the same `_common/instructions.md`, and OpenCode symlinks Claude's `/sy-*` commands.",
     "files": [
       "advanced/llm/ollama.sh",
@@ -67,7 +69,7 @@
     ],
   },
 
-  "_browsers": {
+  "browsers": {
     "description": "Building block: browser tweaks (DOM/CSS hacks via Stylus + per-browser config) plus CLI launchers for Brave, Chrome, Edge, Vivaldi, Opera, Arc, Chromium.",
     "files": ["advanced/browser-config.js", "advanced/browser-launchers.js"],
   },
@@ -75,7 +77,7 @@
   // --- End-user-facing composites ---
 
   "heavyweight": {
-    "description": "Composite (preferred end-user preset, symmetric counterpart to `lightweight`): editors + terminal emulators + GUI apps + browsers + shell terminal tooling + shell prompt + LLM clients. Composed via `presets:` from every `_*` internal block. OS-specific scripts self-skip on the wrong platform.",
-    "presets": ["_editors", "_emulators", "_apps", "_browsers", "_terminal", "_prompt", "_llm"],
+    "description": "Composite (preferred end-user preset, symmetric counterpart to `lightweight`): editors + terminal emulators + GUI apps + browsers + shell terminal tooling + shell prompt + LLM clients. Composed via `presets:` from every building block. OS-specific scripts self-skip on the wrong platform.",
+    "presets": ["editors", "emulators", "apps", "browsers", "terminal", "prompt", "llm"],
   },
 }
