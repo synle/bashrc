@@ -282,10 +282,12 @@ describe("AI CLI keymap build — OpenCode", () => {
       input_line_end: "ctrl+e,end",
       input_buffer_home: "ctrl+home",
       input_buffer_end: "ctrl+end",
+      session_rename: "f2",
+      history_search: "ctrl+r",
       input_clear: "super+l,ctrl+l,ctrl+c",
       input_undo: "super+z,ctrl+-,super+z",
       input_paste: "ctrl+v",
-      sidebar_toggle: "super+\\,<leader>b",
+      sidebar_toggle: "ctrl+\\,super+\\,<leader>b",
     });
   });
 
@@ -299,10 +301,12 @@ describe("AI CLI keymap build — OpenCode", () => {
       input_line_end: "ctrl+e,end",
       input_buffer_home: "ctrl+home",
       input_buffer_end: "ctrl+end",
+      session_rename: "f2",
+      history_search: "ctrl+r",
       input_clear: "alt+l,ctrl+l,ctrl+c",
       input_undo: "alt+z,ctrl+-,super+z",
       input_paste: "ctrl+v",
-      sidebar_toggle: "alt+\\,<leader>b",
+      sidebar_toggle: "ctrl+\\,alt+\\,<leader>b",
     });
   });
 });
