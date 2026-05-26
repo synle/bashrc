@@ -1249,10 +1249,16 @@ function replaceBlocks(content, blockMap, commentPrefix, commentSuffix = "", ins
     const block = `${BEGIN}\n${trimmed}\n${END}`;
 
     const beginIdx = content.indexOf(BEGIN);
-    const endIdx = content.indexOf(END);
+    let endIdx = content.indexOf(END);
 
-    if (beginIdx !== -1 && endIdx !== -1) {
-      content = content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
+    if (beginIdx !== -1) {
+      // Use lastIndexOf to find the LAST END marker — content between markers
+      // may accidentally contain the END marker text (e.g. backtick-quoted
+      // references in documentation), and indexOf would match that first.
+      endIdx = content.lastIndexOf(END);
+      if (endIdx !== -1 && endIdx > beginIdx) {
+        content = content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
+      }
     } else if (insertMode === "append") {
       content = `${content}\n\n${block}\n`;
     } else if (insertMode === "prepend") {
