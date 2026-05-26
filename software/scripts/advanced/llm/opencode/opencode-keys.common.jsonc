@@ -73,10 +73,10 @@
     // See header comment for rationale. Every <leader>X chord (~30 of them:
     // <leader>e editor, <leader>n new session, <leader>t themes, <leader>m
     // models, etc.) continues to work, just with ctrl+o as the prefix.
-    // session_rename: moved to f2 to free ctrl+r for when upstream ships
-    // history_search (reverse-i-search). Default ctrl+r collides with bash
-    // readline convention.
-    "session_rename": "f2",
+    // session_rename: moved to f6 to free f2 for sidebar_toggle and ctrl+r
+    // for when upstream ships history_search (reverse-i-search). Default
+    // ctrl+r collides with bash readline convention.
+    "session_rename": "f6",
     // Reserved for future history_search (currently no-op in v1.14.33, but
     // the upstream default is ctrl+r, so this works automatically on upgrade).
     "history_search": "ctrl+r",

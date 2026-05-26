@@ -19,10 +19,9 @@
 /**
  * Builds the opencode config object dynamically from an array of providers.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providersArray - Simplified input schemas.
- * @param {Record<string, any>} [keybinds] - Optional keybind overrides to merge into config.
  * @returns {object} The full opencode.json content.
  */
-function _buildOpencodeConfig(providersArray, keybinds) {
+function _buildOpencodeConfig(providersArray) {
   const providers = {};
 
   for (const item of providersArray) {
@@ -49,34 +48,37 @@ function _buildOpencodeConfig(providersArray, keybinds) {
     provider: providers,
   };
 
-  if (keybinds && Object.keys(keybinds).length > 0) {
-    out.keybinds = keybinds;
-  }
-
   return out;
 }
 
 /**
- * Writes ~/.config/opencode/tui.json with `mouse: false` so the TUI does NOT
- * capture mouse events — selection/highlight stays handled by the terminal
- * (cmd+c on macOS, ctrl+shift+c on Linux) and the "Copied to clipboard"
- * auto-copy-on-highlight toast no longer fires. Trade-off accepted: clicking
- * UI elements (commands, options, revert links) no longer responds; everything
- * is keyboard-driven. Schema: https://opencode.ai/tui.json.
+ * Writes ~/.config/opencode/tui.json with keybinds and `mouse: false`.
+ * Keybinds belong in tui.json (the TUI config), not in opencode.json (the
+ * provider/config schema at https://opencode.ai/config.json which has no
+ * keybinds field). Schema: https://opencode.ai/tui.json.
  *
- * Preserves any existing keys in tui.json (e.g. a manual `keybinds` block) —
- * only the `mouse` field is forced.
+ * Strips invalid legacy fields (`title.enabled`, `animations.enabled`)
+ * that crept into earlier versions but are not valid in the tui.json schema.
+ * All other existing keys are preserved.
  */
 async function _writeOpencodeTuiConfig() {
   const tuiPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/tui.json");
   /** @type {Record<string, any>} */
   const existing = (await readJson`${tuiPath}`) || {};
+  // Strip invalid legacy fields not in the tui.json schema
+  delete existing.title;
+  delete existing.animations;
+  /** @type {Record<string, any>} */
+  const keybinds = await _loadOpencodeKeybinds();
   /** @type {Record<string, any>} */
   const out = {
     $schema: "https://opencode.ai/tui.json",
     ...existing,
     mouse: false,
   };
+  if (keybinds && Object.keys(keybinds).length > 0) {
+    out.keybinds = keybinds;
+  }
   await writeJson(tuiPath, out);
   log(">> opencode tui.json written:", tuiPath);
 }
@@ -237,16 +239,13 @@ async function doWork() {
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
 
-  /** @type {Record<string, any>} Keybind overrides mirroring claude where they fit */
-  const keybinds = await _loadOpencodeKeybinds();
-
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
   const providerInputs = await getOllamaProviderInputs();
   if (providerInputs.length === 0) {
     log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
   }
 
-  await writeJson(targetPath, _buildOpencodeConfig(providerInputs, keybinds));
+  await writeJson(targetPath, _buildOpencodeConfig(providerInputs));
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();
