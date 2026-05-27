@@ -97,6 +97,9 @@ async function _buildConfigContent(isOsMac) {
     # unbounded" intent across all terminals.
     scrollback-limit = 100mb
     mouse-hide-while-typing = true
+    # Hold shift to capture mouse events and send to terminal app (e.g. vim,
+    # tmux). Without this, Ghostty consumes shift+click for its own selection.
+    mouse-shift-capture = true
     copy-on-select = false
     confirm-close-surface = false
     window-padding-x = 6

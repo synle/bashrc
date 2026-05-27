@@ -38,6 +38,26 @@ function _buildOpencodeConfig(providersArray) {
     };
   }
 
+  // GitHub Copilot provider: large context/output limits for models like claude-opus-4.6/4.7.
+  // Without explicit limits, opencode's GitHub Copilot adapter caps at its defaults
+  // (~128k context / 8k output), which wastes the model's full capacity.
+  providers["github-copilot"] = {
+    models: {
+      "claude-opus-4.6": {
+        limit: {
+          context: 1000000,
+          output: 64000,
+        },
+      },
+      "claude-opus-4.7": {
+        limit: {
+          context: 1000000,
+          output: 64000,
+        },
+      },
+    },
+  };
+
   /** @type {Record<string, any>} */
   const out = {
     $schema: "https://opencode.ai/config.json",
