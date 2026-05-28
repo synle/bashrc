@@ -272,42 +272,32 @@ describe("AI CLI keymap build — Google Gemini CLI", () => {
 // ----------------------------------------------------------------------------
 
 describe("AI CLI keymap build — OpenCode", () => {
-  it("produces the expected keybinds map for macOS (OS_KEY → super)", async () => {
+  /** @type {Record<string, any>} */
+  const OPENCODE_EXPECTED = {
+    leader: "ctrl+o",
+    editor_open: "ctrl+x",
+    input_newline: "shift+return,ctrl+return,alt+return,ctrl+j",
+    input_line_home: "ctrl+a,home",
+    input_line_end: "ctrl+e,end",
+    input_buffer_home: "ctrl+home,super+home",
+    input_buffer_end: "ctrl+end,super+end",
+    session_rename: "f6",
+    history_search: "ctrl+r",
+    input_clear: "super+l,ctrl+l",
+    input_undo: "super+z,ctrl+-,super+z",
+    input_paste: "ctrl+v",
+    yank_last_code: "ctrl+y",
+    sidebar_toggle: "ctrl+\\,tab",
+  };
+
+  it("produces the expected keybinds map for macOS", async () => {
     const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(true);
-    expect(keybinds).toEqual({
-      leader: "ctrl+o",
-      editor_open: "ctrl+x,<leader>e",
-      input_newline: "shift+return,ctrl+return,alt+return,ctrl+j",
-      input_line_home: "ctrl+a,home",
-      input_line_end: "ctrl+e,end",
-      input_buffer_home: "ctrl+home",
-      input_buffer_end: "ctrl+end",
-      session_rename: "f6",
-      history_search: "ctrl+r",
-      input_clear: "super+l,ctrl+l,ctrl+c",
-      input_undo: "super+z,ctrl+-,super+z",
-      input_paste: "ctrl+v",
-      sidebar_toggle: "ctrl+\\,super+\\,<leader>b",
-    });
+    expect(keybinds).toEqual(OPENCODE_EXPECTED);
   });
 
-  it("produces the expected keybinds map for Windows/Linux (OS_KEY → alt)", async () => {
+  it("produces the expected keybinds map for Windows/Linux", async () => {
     const keybinds = await getIndexFunction("_loadOpencodeKeybinds")(false);
-    expect(keybinds).toEqual({
-      leader: "ctrl+o",
-      editor_open: "ctrl+x,<leader>e",
-      input_newline: "shift+return,ctrl+return,alt+return,ctrl+j",
-      input_line_home: "ctrl+a,home",
-      input_line_end: "ctrl+e,end",
-      input_buffer_home: "ctrl+home",
-      input_buffer_end: "ctrl+end",
-      session_rename: "f6",
-      history_search: "ctrl+r",
-      input_clear: "alt+l,ctrl+l,ctrl+c",
-      input_undo: "alt+z,ctrl+-,super+z",
-      input_paste: "ctrl+v",
-      sidebar_toggle: "ctrl+\\,alt+\\,<leader>b",
-    });
+    expect(keybinds).toEqual(OPENCODE_EXPECTED);
   });
 });
 

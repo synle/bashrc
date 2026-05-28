@@ -16,8 +16,9 @@
 //       credits chords that are explicitly listed in our key files; no
 //       "happens to align with upstream default" entries.
 //
-// OS_KEY is substituted at deploy time: "super" on macOS (= cmd in
-// opencode's vocabulary), "alt" on Windows/Linux.
+// Opencode uses "super" as its cross-platform term for the primary OS
+// modifier (Cmd on macOS, Super/Windows key on Linux). All chords use
+// "super" directly — no OS-specific substitution needed.
 //
 // Direct mirror of software/scripts/advanced/llm/claude/claude-keys.common.jsonc:
 //
@@ -39,9 +40,13 @@
 //
 // Opencode-specific additions (no Claude equivalent — kept for cross-app
 // muscle memory):
-//   sidebar_toggle    OS_KEY+\,<leader>b  — matches Sublime/VS Code/Zed.
-//   input_buffer_home ctrl+home           — start of multi-line buffer.
-//   input_buffer_end  ctrl+end            — end of multi-line buffer.
+//   sidebar_toggle    ctrl+\,tab  — matches Sublime/VS Code/Zed sidebar
+//                                   toggle; tab is the alternate for quick
+//                                   panel access.
+//   input_buffer_home ctrl+home,super+home — start of multi-line buffer.
+//   input_buffer_end  ctrl+end,super+end   — end of multi-line buffer.
+//   yank_last_code    ctrl+y               — yank last code block from
+//                                            assistant response.
 //
 // Leader move:
 //   The default leader is ctrl+x — which collides with Claude's editor-open
@@ -56,12 +61,8 @@
 //   - The opencode SQLite db has no settings table for view state.
 //   - The command-palette "Hide sidebar" command (ctrl+p) is a runtime
 //     toggle only, not persisted between launches.
-//   - The only knob is the toggle keybind (now OS_KEY+\ or <leader>b).
+//   - The only knob is the toggle keybind (now ctrl+\ or tab).
 //   Documented as a permanent gap in docs/editor-keybindings.md.
-//
-// No -keys.windows.jsonc companion needed: opencode's input_paste default
-// is `ctrl+v` only (no alt+v), so OS_KEY=alt on Windows/Linux does not
-// introduce a paste collision the way it does on Gemini.
 //
 // TODO(future): opencode's docs flag the top-level `keybinds` key in
 // opencode.json as deprecated (auto-migrated). The canonical location is
@@ -82,50 +83,48 @@
     "history_search": "ctrl+r",
     "leader": "ctrl+o",
     // Open $EDITOR (typically vim) to compose input. Mirrors Claude's
-    // ctrl+x → chat:externalEditor. Default was "<leader>e" — we keep that
-    // as an alternate chord for users who prefer leader-style.
-    "editor_open": "ctrl+x,<leader>e",
+    // ctrl+x → chat:externalEditor.
+    "editor_open": "ctrl+x",
     // Newline in input. Claude binds shift+enter / ctrl+enter. We list
     // every chord explicitly (no reliance on opencode default) plus
     // alt+return / ctrl+j which opencode upstream historically shipped.
     "input_newline": "shift+return,ctrl+return,alt+return,ctrl+j",
-    // Beginning of current input line. Claude nulls ctrl+a so readline
-    // gets HOME; on opencode we bind both ctrl+a and the physical HOME key
-    // to input_line_home so the user-visible behavior matches across
+    // Beginning of current input line. We bind both ctrl+a and the physical
+    // HOME key to input_line_home so the user-visible behavior matches across
     // Sublime, VS Code, Zed, and bash readline. For multi-line input, this
-    // jumps to the start of the current line; ctrl+home jumps to the start
-    // of the whole buffer (see input_buffer_home below).
+    // jumps to the start of the current line; ctrl+home/super+home jump to
+    // the start of the whole buffer (see input_buffer_home below).
     "input_line_home": "ctrl+a,home",
     // End of current input line. Mirror of input_line_home — binds ctrl+e
-    // and the physical END key (Claude nulls ctrl+e for the same readline
-    // pass-through reason).
+    // and the physical END key.
     "input_line_end": "ctrl+e,end",
     // Beginning of the entire input buffer (only different from
-    // input_line_home for multi-line input). Bound to ctrl+home since
-    // bare HOME now belongs to input_line_home above.
-    "input_buffer_home": "ctrl+home",
-    // End of the entire input buffer. Bound to ctrl+end since bare END
-    // now belongs to input_line_end above.
-    "input_buffer_end": "ctrl+end",
-    // Clear current input. Claude binds OS_KEY+l (cmd+l mac, alt+l linux/win).
-    // We layer ctrl+l (bash readline convention) and keep ctrl+c so the
-    // dual-purpose exit-when-empty behavior still works.
-    "input_clear": "OS_KEY+l,ctrl+l,ctrl+c",
-    // Undo last typed input. Claude binds OS_KEY+z (cmd+z mac, alt+z linux/win).
-    // We also keep ctrl+- and super+z as alternate chords (super+z covers
-    // mac users who type the chord via the bare cmd modifier path; ctrl+-
-    // is an opencode legacy chord retained for muscle memory).
-    "input_undo": "OS_KEY+z,ctrl+-,super+z",
+    // input_line_home for multi-line input). Bound to ctrl+home and super+home
+    // since bare HOME now belongs to input_line_home above.
+    "input_buffer_home": "ctrl+home,super+home",
+    // End of the entire input buffer. Bound to ctrl+end and super+end since
+    // bare END now belongs to input_line_end above.
+    "input_buffer_end": "ctrl+end,super+end",
+    // Clear current input. Claude binds super+l (cmd+l mac, super+l linux).
+    // We also layer ctrl+l (bash readline convention).
+    "input_clear": "super+l,ctrl+l",
+    // Undo last typed input. Claude binds super+z (cmd+z mac, super+z linux).
+    // We layer ctrl+- (opencode legacy chord) and keep super+z as an
+    // alternate.
+    "input_undo": "super+z,ctrl+-,super+z",
     // Paste into the input field. Claude binds ctrl+v → chat:imagePaste;
     // opencode's input_paste is text-paste (no image pipeline today).
     // Listed explicitly so a future upstream default flip can't drop it.
     "input_paste": "ctrl+v",
+    // Yank the last code block from the assistant's response. Mirrors
+    // Claude's built-in yank behavior.
+    "yank_last_code": "ctrl+y",
     // Toggle sidebar (sessions / files / MCP pane). Default is "<leader>b";
-    // we add OS_KEY+\ and ctrl+\ as alternate flat chords to match the
-    // cross-app sidebar-toggle convention used by Sublime / VS Code / Zed
-    // (cmd+\ mac, ctrl+\ win/linux). The "\\" in the JSON source represents
-    // a literal backslash; after JSON parse the chord is "ctrl+\" for bare
-    // ctrl+backslash and "super+\" / "alt+\" for OS_KEY on mac/linux.
-    "sidebar_toggle": "ctrl+\\,OS_KEY+\\,<leader>b",
+    // we add ctrl+\ as the primary chord (matches cross-app sidebar-toggle
+    // convention used by Sublime / VS Code / Zed) and tab as an alternate for
+    // quick panel access. The "\\" in the JSON source represents a literal
+    // backslash; after JSON parse the chord is "ctrl+\" for bare
+    // ctrl+backslash.
+    "sidebar_toggle": "ctrl+\\,tab",
   },
 }

@@ -157,26 +157,19 @@ async function _writeOpencodeTuiConfig() {
 }
 
 /**
- * Loads opencode-keys.common.jsonc and substitutes OS_KEY for the current platform.
- * Opencode uses "super" (= cmd) on macOS and "alt" on Windows/Linux — same fallback the
- * Sublime/Zed editor scripts use via `getEditorOsKey`, replicated locally as `getLLMOsKey`
- * in llm-common.js so this script no longer SOURCEs editor.common.js.
+ * Loads opencode-keys.common.jsonc and returns the keybinds map as-is.
+ * All chords use "super" directly (opencode's cross-platform term for the
+ * primary OS modifier — Cmd on macOS, Super/Windows key on Linux), so no
+ * OS-specific substitution is needed.
  *
- * @param {boolean} [isOsMac] - Override for macOS detection. When omitted, uses the global is_os_mac flag.
+ * @param {boolean} [_isOsMac] - Ignored; kept for backward compat with tests.
  * @returns {Promise<Record<string, any>>} Resolved keybinds map (empty object if file missing).
  */
-async function _loadOpencodeKeybinds(isOsMac) {
+async function _loadOpencodeKeybinds(_isOsMac) {
   /** @type {{ keybinds?: Record<string, any> } | null} */
   const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
   if (!raw || !raw.keybinds) return {};
-
-  const osKey = getLLMOsKey("opencode", isOsMac);
-  /** @type {Record<string, any>} */
-  const resolved = {};
-  for (const [action, binding] of Object.entries(raw.keybinds)) {
-    resolved[action] = typeof binding === "string" ? binding.replace(/OS_KEY/g, osKey) : binding;
-  }
-  return resolved;
+  return { ...raw.keybinds };
 }
 
 /**
