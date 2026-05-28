@@ -16,6 +16,54 @@
 
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
+// --- Limit buckets ---
+
+/**
+ * Small context/output limit for small local models.
+ * @type {{ context: number, output: number }}
+ */
+const LIMIT_SMALL = { context: 16384, output: 4096 };
+
+/**
+ * Medium context/output limit — default for most local code models.
+ * @type {{ context: number, output: number }}
+ */
+const LIMIT_MEDIUM = { context: 32768, output: 4096 };
+
+/**
+ * Large context/output limit for hosted models (GitHub Copilot, large local models like 70B+).
+ * @type {{ context: number, output: number }}
+ */
+const LIMIT_LARGE = { context: 1000000, output: 64000 };
+
+// --- Known Ollama model configs ---
+//
+// Models discovered dynamically from `/api/tags` that are NOT in this map
+// get `OLLAMA_DEFAULT_CONFIG` (medium limit + 0.15 temperature).
+
+/**
+ * Default temperature for all local Ollama models.
+ * @type {number}
+ */
+const OLLAMA_TEMPERATURE = 0.15;
+
+/**
+ * Per-model configs for known Ollama models. Keyed by full model tag as returned by `/api/tags`.
+ * @type {Record<string, { limit: { context: number, output: number }, temperature: number }>}
+ */
+const OLLAMA_MODEL_CONFIGS = {
+  "qwen2.5-coder:3b": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM },
+  "qwen2.5-coder:14b": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM },
+  "qwen3-coder:30b": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM },
+  "qwen3.6:latest": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_SMALL },
+};
+
+/**
+ * Default config for any Ollama model not listed in `OLLAMA_MODEL_CONFIGS`.
+ * @type {{ temperature: number, limit: { context: number, output: number } }}
+ */
+const OLLAMA_DEFAULT_CONFIG = { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM };
+
 /**
  * Builds the opencode config object dynamically from an array of providers.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providersArray - Simplified input schemas.
@@ -25,8 +73,13 @@ function _buildOpencodeConfig(providersArray) {
   const providers = {};
 
   for (const item of providersArray) {
-    // Dynamically transform your simple array format: [{name: "x"}] -> {"x": {}}
-    const modelsObject = Object.fromEntries(item.models.map((m) => [m.name, {}]));
+    // Enrich each model with temperature and limit from the known config map.
+    const modelsObject = Object.fromEntries(
+      item.models.map((m) => {
+        const cfg = OLLAMA_MODEL_CONFIGS[m.name] || OLLAMA_DEFAULT_CONFIG;
+        return [m.name, { temperature: cfg.temperature, limit: cfg.limit }];
+      }),
+    );
 
     providers[item.id] = {
       npm: "@ai-sdk/openai-compatible",
@@ -43,18 +96,8 @@ function _buildOpencodeConfig(providersArray) {
   // (~128k context / 8k output), which wastes the model's full capacity.
   providers["github-copilot"] = {
     models: {
-      "claude-opus-4.6": {
-        limit: {
-          context: 1000000,
-          output: 64000,
-        },
-      },
-      "claude-opus-4.7": {
-        limit: {
-          context: 1000000,
-          output: 64000,
-        },
-      },
+      "claude-opus-4.6": { limit: LIMIT_LARGE },
+      "claude-opus-4.7": { limit: LIMIT_LARGE },
     },
   };
 
