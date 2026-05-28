@@ -79,6 +79,8 @@ function npm_install_global() {
   local _check_pkg="${pkg#@}"
   [[ "$_check_pkg" != *@* ]] && pkg="${pkg}@latest"
 
+  echo "  >> npm install -g $pkg ($bin)"
+
   # install for current system
   local _resolved
   _resolved=$(has_persistent_binary "$bin")
