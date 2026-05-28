@@ -7,3 +7,4 @@ echo '> Installing opencode'
 npm uninstall -g opencode-darwin-arm64
 npm uninstall -g opencode-ai
 npm_install_global opencode-ai opencode
+

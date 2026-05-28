@@ -29,5 +29,5 @@ Related files NOT opened here:
   ~/.local/share/opencode/opencode.db - SQLite store for sessions/history."
     return 0
   fi
-  view_file "$HOME/.config/opencode/opencode.json"
+  view_file "$HOME/.config/opencode"
 }

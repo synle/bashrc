@@ -85,5 +85,5 @@ Related files NOT opened here:
                               software/scripts/advanced/llm/claude/claude-keys.common.jsonc."
     return 0
   fi
-  view_file "$HOME/.claude.json"
+  view_file "$HOME"
 }

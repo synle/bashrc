@@ -78,5 +78,5 @@ Note: Copilot has no keymap config in v1.0.48 — in-app chords are hardcoded
 in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
     return 0
   fi
-  view_file "$HOME/.copilot/settings.json"
+  view_file "$HOME/.copilot"
 }

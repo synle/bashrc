@@ -33,5 +33,5 @@ Related files NOT opened here:
                               software/scripts/advanced/llm/_common/instructions.md)."
     return 0
   fi
-  view_file "$HOME/.gemini/settings.json"
+  view_file "$HOME/.gemini"
 }
