@@ -58,6 +58,16 @@ function _buildOpencodeConfig(providersArray) {
     },
   };
 
+  // Auto-name every model: "<provider_key> / <model_key>" so the model picker in TUI
+  // shows a human-readable label instead of bare IDs.
+  for (const [providerId, providerCfg] of Object.entries(providers)) {
+    for (const modelKey of Object.keys(providerCfg.models)) {
+      if (!providerCfg.models[modelKey].name) {
+        providerCfg.models[modelKey].name = `${providerId} / ${modelKey}`;
+      }
+    }
+  }
+
   /** @type {Record<string, any>} */
   const out = {
     $schema: "https://opencode.ai/config.json",
