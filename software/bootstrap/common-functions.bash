@@ -74,8 +74,10 @@ function npm_install_global() {
   local pkg="$1"
   local bin="${2:-${pkg##*/}}"
 
+  # Safe version tagger: skips leading '@' for scoped packages
   # If the package string doesn't contain an '@', append '@latest'
-  [[ "$pkg" != *@* ]] && pkg="${pkg}@latest"
+  local _check_pkg="${pkg#@}"
+  [[ "$_check_pkg" != *@* ]] && pkg="${pkg}@latest"
 
   # install for current system
   local _resolved
