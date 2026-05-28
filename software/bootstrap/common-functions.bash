@@ -74,6 +74,9 @@ function npm_install_global() {
   local pkg="$1"
   local bin="${2:-${pkg##*/}}"
 
+  # If the package string doesn't contain an '@', append '@latest'
+  [[ "$pkg" != *@* ]] && pkg="${pkg}@latest"
+
   # install for current system
   local _resolved
   _resolved=$(has_persistent_binary "$bin")
