@@ -82,7 +82,7 @@ function _buildOpencodeConfig(providersArray) {
 }
 
 /**
- * Writes ~/.config/opencode/tui.json with keybinds and `mouse: false`.
+ * Writes ~/.config/opencode/tui.json with keybinds.
  * Keybinds belong in tui.json (the TUI config), not in opencode.json (the
  * provider/config schema at https://opencode.ai/config.json which has no
  * keybinds field). Schema: https://opencode.ai/tui.json.
@@ -104,7 +104,6 @@ async function _writeOpencodeTuiConfig() {
   const out = {
     $schema: "https://opencode.ai/tui.json",
     ...existing,
-    mouse: false,
   };
   if (keybinds && Object.keys(keybinds).length > 0) {
     out.keybinds = keybinds;
