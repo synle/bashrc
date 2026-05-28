@@ -104,6 +104,7 @@ async function _writeOpencodeTuiConfig() {
   const out = {
     $schema: "https://opencode.ai/tui.json",
     ...existing,
+    mouse: true,
   };
   if (keybinds && Object.keys(keybinds).length > 0) {
     out.keybinds = keybinds;
