@@ -57,7 +57,9 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Auto-switch to auto mode on rate limit | n/a                                       | `continueOnAutoMode: true`   | n/a                | n/a                                               |
 | Reasoning effort                       | `alwaysThinkingEnabled: true`             | `effortLevel: "xhigh"`       | n/a                | n/a                                               |
 | Exclude gitignored from @ picker       | n/a                                       | `respectGitignore: true`     | n/a                | n/a                                               |
-| Terminal progress indicator            | n/a                                       | `terminalProgress: true`     | n/a                | n/a                                               |
+| Terminal progress indicator | n/a                                       | `terminalProgress: true` | n/a               | n/a                                               |
+| Tool output truncation      | n/a                                       | n/a                    | n/a                | `tool_output.max_lines: 3000`                     |
+| Context compaction          | `alwaysThinkingEnabled: true`             | n/a                    | n/a                | `compaction: { auto: true, tail_turns: 4 }`       |
 | PR conflict resolution                 | n/a                                       | `mergeStrategy: "merge"`     | n/a                | n/a                                               |
 
 **n/a** here means _the CLI does not expose a settings key for that intent today_. Don't silently drop an intent if upstream later ships one — add the key and update this table in the same edit.

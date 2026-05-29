@@ -118,6 +118,19 @@ function _buildOpencodeConfig(providersArray) {
     permission: {
       "*": "allow",
     },
+    // Keep more recent conversation turns verbatim during compaction (default: 2)
+    // so the agent has more context about what was just discussed before it gets
+    // summarized. tradeoff: higher token usage per compaction cycle. risk: low
+    compaction: {
+      auto: true,
+      tail_turns: 4,
+    },
+    // Allow more tool output lines before truncation (default: 2000) so the
+    // agent sees fuller command output before falling back to the saved-to-disk
+    // preview. tradeoff: more tokens consumed by verbose tools. risk: low
+    tool_output: {
+      max_lines: 3000,
+    },
     provider: providers,
   };
 
