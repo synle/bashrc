@@ -124,6 +124,6 @@
     // quick panel access. The "\\" in the JSON source represents a literal
     // backslash; after JSON parse the chord is "ctrl+\" for bare
     // ctrl+backslash.
-    "sidebar_toggle": "ctrl+\\,tab",
+    "sidebar_toggle": "ctrl+\\,super+\\",
   },
 }

@@ -39,30 +39,24 @@ const LIMIT_LARGE = { context: 1000000, output: 64000 };
 // --- Known Ollama model configs ---
 //
 // Models discovered dynamically from `/api/tags` that are NOT in this map
-// get `OLLAMA_DEFAULT_CONFIG` (medium limit + 0.15 temperature).
-
-/**
- * Default temperature for all local Ollama models.
- * @type {number}
- */
-const OLLAMA_TEMPERATURE = 0.15;
+// get `OLLAMA_DEFAULT_CONFIG` (medium limit).
 
 /**
  * Per-model configs for known Ollama models. Keyed by full model tag as returned by `/api/tags`.
- * @type {Record<string, { limit: { context: number, output: number }, temperature: number }>}
+ * @type {Record<string, { limit: { context: number, output: number } }>}
  */
 const OLLAMA_MODEL_CONFIGS = {
-  "qwen2.5-coder:3b": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM },
-  "qwen2.5-coder:14b": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM },
-  "qwen3-coder:30b": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM },
-  "qwen3.6:latest": { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_SMALL },
+  "qwen2.5-coder:3b": { limit: LIMIT_MEDIUM },
+  "qwen2.5-coder:14b": { limit: LIMIT_MEDIUM },
+  "qwen3-coder:30b": { limit: LIMIT_MEDIUM },
+  "qwen3.6:latest": { limit: LIMIT_SMALL },
 };
 
 /**
  * Default config for any Ollama model not listed in `OLLAMA_MODEL_CONFIGS`.
- * @type {{ temperature: number, limit: { context: number, output: number } }}
+ * @type {{ limit: { context: number, output: number } }}
  */
-const OLLAMA_DEFAULT_CONFIG = { temperature: OLLAMA_TEMPERATURE, limit: LIMIT_MEDIUM };
+const OLLAMA_DEFAULT_CONFIG = { limit: LIMIT_MEDIUM };
 
 /**
  * Builds the opencode config object dynamically from an array of providers.
@@ -73,11 +67,11 @@ function _buildOpencodeConfig(providersArray) {
   const providers = {};
 
   for (const item of providersArray) {
-    // Enrich each model with temperature and limit from the known config map.
+    // Enrich each model with limit from the known config map.
     const modelsObject = Object.fromEntries(
       item.models.map((m) => {
         const cfg = OLLAMA_MODEL_CONFIGS[m.name] || OLLAMA_DEFAULT_CONFIG;
-        return [m.name, { temperature: cfg.temperature, limit: cfg.limit }];
+        return [m.name, { limit: cfg.limit }];
       }),
     );
 

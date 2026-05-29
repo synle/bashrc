@@ -287,7 +287,7 @@ describe("AI CLI keymap build — OpenCode", () => {
     input_paste: "ctrl+v",
     messages_copy: "ctrl+y",
     command_list: "ctrl+p,super+p",
-    sidebar_toggle: "ctrl+\\,tab",
+    sidebar_toggle: "ctrl+\\,super+\\",
   };
 
   it("produces the expected keybinds map for macOS", async () => {
