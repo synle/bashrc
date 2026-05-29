@@ -285,6 +285,8 @@ describe("AI CLI keymap build — OpenCode", () => {
     input_clear: "super+l,ctrl+l",
     input_undo: "super+z,ctrl+-,super+z",
     input_paste: "ctrl+v",
+    messages_copy: "ctrl+y",
+    command_list: "ctrl+p,super+p",
     sidebar_toggle: "ctrl+\\,tab",
   };
 

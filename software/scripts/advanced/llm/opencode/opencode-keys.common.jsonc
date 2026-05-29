@@ -111,6 +111,13 @@
     // opencode's input_paste is text-paste (no image pipeline today).
     // Listed explicitly so a future upstream default flip can't drop it.
     "input_paste": "ctrl+v",
+    // Copy messages from the assistant's response. ctrl+y matches the
+    // bash-readline yank convention for muscle-memory carryover.
+    "messages_copy": "ctrl+y",
+    // Command list / palette. ctrl+p is the opencode upstream default
+    // (file-finder); super+l is the cross-app convention matching
+    // Sublime / VS Code / Zed command palette.
+    "command_list": "ctrl+p,super+p",
     // Toggle sidebar (sessions / files / MCP pane). Default is "<leader>b";
     // we add ctrl+\ as the primary chord (matches cross-app sidebar-toggle
     // convention used by Sublime / VS Code / Zed) and tab as an alternate for
