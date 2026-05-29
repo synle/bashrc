@@ -368,15 +368,15 @@ Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub C
 
 ### Input Editing
 
-| Key                                 | Action                    |     Claude     |    OpenCode    | Copilot CLI |   Gemini CLI    |
-| ----------------------------------- | ------------------------- | :------------: | :------------: | :---------: | :-------------: |
-| `shift+enter`, `ctrl+enter`         | Newline                   |       ✅       |       ✅       |     ⚠️      |       ✅        |
-| `super+z`, `ctrl+-`                 | Undo input                |       ✅       |       ✅       |     ⚠️      |       ✅        |
-| `super+l`, `ctrl+l`                 | Clear input               | ✅<sup>a</sup> |       ✅       |     ⚠️      | ✅<sup>i</sup>  |
-| `ctrl+v`                            | Paste image / text        | ✅<sup>b</sup> | ✅<sup>j</sup> |     ⚠️      | ✅<sup>b2</sup> |
-| `home` / `end`, `ctrl+a` / `ctrl+e` | Home / End (current line) | ✅<sup>c</sup> |       ✅       |     ⚠️      | ✅<sup>c2</sup> |
+| Key                                                  | Action                    |     Claude     |    OpenCode    | Copilot CLI |   Gemini CLI    |
+| ---------------------------------------------------- | ------------------------- | :------------: | :------------: | :---------: | :-------------: |
+| `shift+enter`, `ctrl+enter`                          | Newline                   |       ✅       |       ✅       |     ⚠️      |       ✅        |
+| `super+z`, `ctrl+-`                                  | Undo input                |       ✅       |       ✅       |     ⚠️      |       ✅        |
+| `super+l`, `ctrl+l`                                  | Clear input               | ✅<sup>a</sup> |       ✅       |     ⚠️      | ✅<sup>i</sup>  |
+| `ctrl+v`                                             | Paste image / text        | ✅<sup>b</sup> | ✅<sup>j</sup> |     ⚠️      | ✅<sup>b2</sup> |
+| `home` / `end`, `ctrl+a` / `ctrl+e`                  | Home / End (current line) | ✅<sup>c</sup> |       ✅       |     ⚠️      | ✅<sup>c2</sup> |
 | `ctrl+home` / `super+home`, `ctrl+end` / `super+end` | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |     ⚠️      |       ❌        |
-| `ctrl+x`                            | Open `$EDITOR`            |       ✅       | ✅<sup>e</sup> |     ⚠️      |       ✅        |
+| `ctrl+x`                                             | Open `$EDITOR`            |       ✅       | ✅<sup>e</sup> |     ⚠️      |       ✅        |
 
 <sup>a</sup> Claude binds only `OS_KEY+l`; `ctrl+l` is the bash-readline convention added by opencode.
 <sup>b</sup> Bound on all platforms via `claude-keys.common.jsonc`; `claude-keys.windows.jsonc` additionally nulls `alt+v` so it doesn't double-fire when `OS_KEY` = `alt` on Windows.
@@ -390,10 +390,10 @@ Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub C
 
 ### Panels
 
-| Key               | Action         |     Claude     |    OpenCode    |  Copilot CLI   |   Gemini CLI   |
-| ----------------- | -------------- | :------------: | :------------: | :------------: | :------------: |
-| `ctrl+t`          | Toggle todos   |       ✅       | ❌<sup>f</sup> | ❌<sup>f</sup> |       ✅       |
-| `ctrl+\,tab`      | Toggle sidebar | ❌<sup>g</sup> | ✅<sup>g</sup> | ❌<sup>g</sup> | ❌<sup>g</sup> |
+| Key          | Action         |     Claude     |    OpenCode    |  Copilot CLI   |   Gemini CLI   |
+| ------------ | -------------- | :------------: | :------------: | :------------: | :------------: |
+| `ctrl+t`     | Toggle todos   |       ✅       | ❌<sup>f</sup> | ❌<sup>f</sup> |       ✅       |
+| `ctrl+\,tab` | Toggle sidebar | ❌<sup>g</sup> | ✅<sup>g</sup> | ❌<sup>g</sup> | ❌<sup>g</sup> |
 
 <sup>f</sup> No todos panel exists in OpenCode or Copilot CLI. OpenCode's default `ctrl+t` is `variant_cycle` and is kept intact.
 <sup>g</sup> Only OpenCode has a sidebar (sessions / files / MCP pane); `ctrl+\` matches the cross-app sidebar-toggle convention used by Sublime / VS Code / Zed. `tab` is the alternate for quick panel access.
@@ -422,7 +422,7 @@ Because Copilot's in-app keymap is unreachable, the equivalents of Claude's chor
 | Copilot CLI — `ctrl+x` open `$EDITOR`           | Same reason: input-layer chords are hardcoded. Use the wrapper-layer alternative (paste content from `$EDITOR` manually) until upstream exposes a keymap.                                                                                                                                                                                                                                                                                                                                                        |
 | Copilot CLI — user-level slash commands         | Copilot's "skills" require a plugin manifest (`copilot plugin install`) — there's no `~/.copilot/commands/*.md` fallthrough like Claude's. Out of scope for `setup.js`; use the Captain `install-plugin-to-copilot` skill or manage plugins manually.                                                                                                                                                                                                                                                            |
 | Gemini CLI — user-level slash commands          | Gemini's equivalent is the extension system (`gemini extensions install/link`) which requires an extension manifest. No `~/.gemini/commands/*.md` fallthrough. Out of scope for `setup.js`.                                                                                                                                                                                                                                                                                                                      |
-| OpenCode — sidebar hidden by default            | The TUI schema (`https://opencode.ai/tui.json`) has no field for sidebar default state; the SQLite db (`~/.local/share/opencode/opencode.db`) has no settings table for view state. Only runtime toggles exist: `ctrl+\` keybind, `tab`, or `ctrl+p` command palette.                                                                                                                                                                           |
+| OpenCode — sidebar hidden by default            | The TUI schema (`https://opencode.ai/tui.json`) has no field for sidebar default state; the SQLite db (`~/.local/share/opencode/opencode.db`) has no settings table for view state. Only runtime toggles exist: `ctrl+\` keybind, `tab`, or `ctrl+p` command palette.                                                                                                                                                                                                                                            |
 | OpenCode / Copilot — `ctrl+t` toggle todos      | Neither tool has a todos panel. OpenCode's default `ctrl+t` is `variant_cycle`, left intact. (Gemini's `app.showFullTodos` is native on `ctrl+t`.)                                                                                                                                                                                                                                                                                                                                                               |
 
 ---

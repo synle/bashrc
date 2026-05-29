@@ -11,7 +11,7 @@
 # `@githubnext/github-copilot-cli` package (which provided `github-copilot-cli`
 # / `??`, `gh?`, `git?`) was deprecated upstream and removed from this repo.
 #
-# Adds `--allow-all` + GITHUB_COPILOT_ALLOW_ALL_TOOLS=true for autonomous mode:
+# Adds `--autopilot --allow-all` + GITHUB_COPILOT_ALLOW_ALL_TOOLS=true for autonomous mode:
 # grants the agent permission to read/write files, execute shell commands and
 # access the network without prompting per-action.
 #
@@ -49,9 +49,9 @@ function copilot() {
   fi
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of any `copilot ... | jq` style pipelines).
-  echo "GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command copilot --allow-all $*" >&2
+  echo "GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command copilot --autopilot --allow-all $*" >&2
   # `command copilot` bypasses this function so the call hits the real binary, not us.
-  GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command copilot --allow-all "$@"
+  GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command copilot --autopilot --allow-all "$@"
 }
 alias co='copilot'
 

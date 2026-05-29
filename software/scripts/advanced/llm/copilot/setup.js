@@ -211,14 +211,39 @@ const COPILOT_MANAGED_SETTINGS = {
   // own the terminal session don't benefit from audio cues, and CI / tmux
   // users get a stray BEL otherwise. tradeoff: no audio nudge. risk: low
   beep: false,
-  // collapse pasted content over 10 lines into a compact [Paste #N - X lines]
-  // token so the input field stays readable when pasting log dumps / large
-  // diffs. matches upstream default; pinned here so a future flip upstream
-  // doesn't change behavior silently. tradeoff: none. risk: none
-  compactPaste: true,
+  // show pasted content inline instead of collapsing into a compact token —
+  // intentional deviation from upstream default (true). full pastes are easier
+  // to review when the agent is reading multi-line context. tradeoff: input
+  // field wraps on very large pastes. risk: low
+  compactPaste: false,
   // render markdown in the terminal — matches upstream default; pinned for
   // the same reason as compactPaste. tradeoff: none. risk: none
   renderMarkdown: true,
+  // show intent in terminal tab title — disabled because tmux/screen users
+  // get flicker from rapid title updates during agent loops. tradeoff: lose
+  // context peek in tab bar. risk: low
+  updateTerminalTitle: false,
+  // auto-copy selected text to clipboard — matches upstream default on mac;
+  // pinned for parity. tradeoff: none. risk: none
+  copyOnSelect: true,
+  // auto-switch to auto mode when rate-limited — keeps long-running agent
+  // tasks going without manual intervention. tradeoff: agent may proceed
+  // autonomously after a rate-limit blip. risk: low
+  continueOnAutoMode: true,
+  // max reasoning effort — uses more compute for harder tasks. tradeoff:
+  // slower responses, higher token usage. risk: low
+  effortLevel: "xhigh",
+  // exclude gitignored files from the @ file mention picker — matches
+  // upstream default; pinned for the same reason as compactPaste.
+  // tradeoff: none. risk: none
+  respectGitignore: true,
+  // emit terminal progress indicators while agent is working — matches
+  // upstream default; pinned for parity. tradeoff: none. risk: none
+  terminalProgress: true,
+  // default conflict resolution strategy for `/pr fix conflicts` — merge
+  // instead of rebase to preserve explicit merge commits and avoid
+  // rewriting history. tradeoff: merge commits in log. risk: low
+  mergeStrategy: "merge",
 };
 
 /**
