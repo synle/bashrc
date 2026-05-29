@@ -265,19 +265,22 @@ const OS_NOTES_LIST = [
   { key: "is_os_redhat", Component: LinuxNotesDom },
   { key: "is_os_arch_linux", Component: LinuxNotesDom },
   { key: "is_os_steamos", Component: LinuxNotesDom },
-  { key: "is_os_android_termux", Component: AndroidNotesDom },
+  { key: "is_os_android_termux", label: "Android", Component: AndroidNotesDom },
   { key: "is_os_chromeos", Component: LinuxNotesDom },
   { key: "is_os_mingw64", Component: GenericLightWeightNotesDom },
   { key: "is_os_wsl", Component: LinuxNotesDom },
 ].map((entry) => ({
   ...entry,
   // Derive label from key: strip "is_os_", replace underscores with spaces, capitalize each word
-  label: entry.key
-    .replace("is_os_", "")
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ")
-    .replace(/\b(os|wsl)\b/gi, (m) => m.toUpperCase()),
+  // Explicit `entry.label` (e.g. "Android") overrides derivation.
+  label:
+    entry.label ||
+    entry.key
+      .replace("is_os_", "")
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+      .replace(/\b(os|wsl)\b/gi, (m) => m.toUpperCase()),
 }));
 
 /**
@@ -1532,15 +1535,18 @@ function GenericLightWeightNotesDom() {
 }
 
 /**
- * Android/Termux setup notes page. Renders the Android shell script, SponsorBlock settings,
- * ReVanced Extended patch configs for YouTube and YouTube Music, and links to Android
- * applications (MicroG, YouTube, YouTube Music, Google News, Nova Companion).
- * @returns {React.ReactElement} The Android/Termux setup notes section.
+ * Android/Termux setup notes page. Renders debloat/restore shell scripts, the main Android
+ * shell script, SponsorBlock settings, ReVanced Extended patch configs for YouTube and
+ * YouTube Music, and links to Android applications (MicroG, YouTube, YouTube Music,
+ * Google News, Nova Companion).
+ * @returns {React.ReactElement} The Android setup notes section.
  */
 function AndroidNotesDom() {
   return (
     <>
       <TargetSystemOSWarningDom targetDomString="is_os_android_termux" />
+      <DynamicTextArea path="/docs/android/android.debloat.sh" />
+      <DynamicTextArea path="/docs/android/android.restore.sh" />
       <DynamicTextArea path="/docs/android/android.sh" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
       <DynamicTextArea path="/docs/android/rvx-yt.txt" />
@@ -1709,7 +1715,7 @@ function App() {
       : currentSystemFlag === "is_os_windows"
         ? "command-option-setup-windows"
         : currentSystemFlag === "is_os_android_termux"
-          ? "command-option-setup-android-termux"
+          ? "command-option-setup-android"
           : "command-option-setup-ubuntu",
   );
   const [theme, setTheme] = useState(() => {
