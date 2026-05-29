@@ -118,6 +118,12 @@ function _buildOpencodeConfig(providersArray) {
     // Skip / Confirm" modal is a distraction; we update opencode out-of-band
     // (homebrew / installer). Documented at https://opencode.ai/docs/config/.
     autoupdate: false,
+    // Allow all tools, paths, and URLs without prompting — matches the
+    // `--allow-dangerously-skip-permissions` / `GITHUB_COPILOT_ALLOW_ALL_TOOLS=true`
+    // convention used across the other AI CLI configs in this repo.
+    permission: {
+      "*": "allow",
+    },
     provider: providers,
   };
 
