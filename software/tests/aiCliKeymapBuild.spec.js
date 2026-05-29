@@ -282,11 +282,9 @@ describe("AI CLI keymap build — OpenCode", () => {
     input_buffer_home: "ctrl+home,super+home",
     input_buffer_end: "ctrl+end,super+end",
     session_rename: "f6",
-    history_search: "ctrl+r",
     input_clear: "super+l,ctrl+l",
     input_undo: "super+z,ctrl+-,super+z",
     input_paste: "ctrl+v",
-    yank_last_code: "ctrl+y",
     sidebar_toggle: "ctrl+\\,tab",
   };
 

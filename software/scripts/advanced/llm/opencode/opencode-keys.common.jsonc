@@ -74,13 +74,8 @@
     // See header comment for rationale. Every <leader>X chord (~30 of them:
     // <leader>e editor, <leader>n new session, <leader>t themes, <leader>m
     // models, etc.) continues to work, just with ctrl+o as the prefix.
-    // session_rename: moved to f6 to free f2 for sidebar_toggle and ctrl+r
-    // for when upstream ships history_search (reverse-i-search). Default
-    // ctrl+r collides with bash readline convention.
+    // session_rename: moved to f6 to free f2 for sidebar_toggle.
     "session_rename": "f6",
-    // Reserved for future history_search (currently no-op in v1.14.33, but
-    // the upstream default is ctrl+r, so this works automatically on upgrade).
-    "history_search": "ctrl+r",
     "leader": "ctrl+o",
     // Open $EDITOR (typically vim) to compose input. Mirrors Claude's
     // ctrl+x → chat:externalEditor.
@@ -116,9 +111,6 @@
     // opencode's input_paste is text-paste (no image pipeline today).
     // Listed explicitly so a future upstream default flip can't drop it.
     "input_paste": "ctrl+v",
-    // Yank the last code block from the assistant's response. Mirrors
-    // Claude's built-in yank behavior.
-    "yank_last_code": "ctrl+y",
     // Toggle sidebar (sessions / files / MCP pane). Default is "<leader>b";
     // we add ctrl+\ as the primary chord (matches cross-app sidebar-toggle
     // convention used by Sublime / VS Code / Zed) and tab as an alternate for

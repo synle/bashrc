@@ -374,7 +374,6 @@ Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub C
 | `super+z`, `ctrl+-`                 | Undo input                |       ✅       |       ✅       |     ⚠️      |       ✅        |
 | `super+l`, `ctrl+l`                 | Clear input               | ✅<sup>a</sup> |       ✅       |     ⚠️      | ✅<sup>i</sup>  |
 | `ctrl+v`                            | Paste image / text        | ✅<sup>b</sup> | ✅<sup>j</sup> |     ⚠️      | ✅<sup>b2</sup> |
-| `ctrl+y`                            | Yank last code block      |       ✅       | ✅<sup>k</sup> |     ⚠️      |       ❌        |
 | `home` / `end`, `ctrl+a` / `ctrl+e` | Home / End (current line) | ✅<sup>c</sup> |       ✅       |     ⚠️      | ✅<sup>c2</sup> |
 | `ctrl+home` / `super+home`, `ctrl+end` / `super+end` | Home / End (whole buffer) |       ❌       | ✅<sup>d</sup> |     ⚠️      |       ❌        |
 | `ctrl+x`                            | Open `$EDITOR`            |       ✅       | ✅<sup>e</sup> |     ⚠️      |       ✅        |
@@ -388,7 +387,6 @@ Four terminal AI clients are deployed: **Claude Code**, **OpenCode**, **GitHub C
 <sup>e</sup> Free after the leader move (`ctrl+x` → `ctrl+o`).
 <sup>i</sup> Gemini's `edit.clear` default is `ctrl+c` only (dual-purposes with quit-when-empty). `gemini-keys.common.jsonc` binds `OS_KEY+l` explicitly so it matches Claude's `chat:clearInput`. `ctrl+l` is intentionally NOT added on Gemini because it would collide with `app.clearScreen` (Gemini's screen-clear chord).
 <sup>j</sup> OpenCode's `input_paste` is text-paste (no image pipeline today). `opencode-keys.common.jsonc` binds `ctrl+v` explicitly under the explicit-match policy.
-<sup>k</sup> OpenCode's `yank_last_code` (`ctrl+y`) yanks the last code block from the assistant's response. Claude has native yank behavior; opencode uses `ctrl+y` as the chord matching the cross-app readline convention.
 
 ### Panels
 
