@@ -148,6 +148,16 @@ async function _writeOpencodeTuiConfig() {
     $schema: "https://opencode.ai/tui.json",
     ...existing,
     mouse: true,
+    scroll_speed: 3,
+    scroll_acceleration: {
+      enabled: true,
+    },
+    attention: {
+      enabled: true,
+      notifications: true,
+      sound: true,
+      volume: 0.4,
+    },
   };
   if (keybinds && Object.keys(keybinds).length > 0) {
     out.keybinds = keybinds;
