@@ -28,7 +28,9 @@
         "redhat.vscode-yaml",
         "wholroyd.jinja",
         "clinyong.vscode-css-modules",
-        "andrejunges.handlebars"
+        "andrejunges.handlebars",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
       ]
     }
   }

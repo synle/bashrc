@@ -3234,7 +3234,7 @@ async function _readTextFromFile(filePath) {
 }
 
 /** Max wall time for any single URL fetch via readText/readJson. */
-const _URL_FETCH_TIMEOUT_MS = 10000;
+const _URL_FETCH_TIMEOUT_MS = 3000;
 
 /** Max age of an on-disk URL cache entry before it is treated as stale and refetched. */
 const _URL_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -3302,8 +3302,8 @@ function _writeUrlCache(url, content) {
  *
  * Transport is selected ONCE up front so an AbortSignal timeout on the fetch
  * branch is NOT misinterpreted as "fetch unavailable, try curl" — that
- * misread would double the wall time on unreachable hosts (10s fetch timeout
- * + 10s curl --max-time). With single-transport selection, an offline host
+ * misread would double the wall time on unreachable hosts (3s fetch timeout
+ * + 3s curl --max-time). With single-transport selection, an offline host
  * costs exactly {@link _URL_FETCH_TIMEOUT_MS}ms.
  *
  * GET responses are cached on disk for {@link _URL_CACHE_TTL_MS} (5 min) so

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-29]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-30]
 set -u
 deprecated_extensions=(
   "visualstudioexptteam.vscodeintellicode"
@@ -21,6 +21,8 @@ extensions=(
   "wholroyd.jinja"
   "clinyong.vscode-css-modules"
   "andrejunges.handlebars"
+  "GitHub.copilot"
+  "GitHub.copilot-chat"
 )
 if ! type -P code > /dev/null 2>&1; then
   echo ">>> Skipped : 'code' binary not on PATH"

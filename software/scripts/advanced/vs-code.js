@@ -36,6 +36,10 @@ const TO_INSTALL_EXTENSIONS = list`
   wholroyd.jinja
   clinyong.vscode-css-modules
   andrejunges.handlebars
+
+  // AI assistants (opencode has no marketplace extension — runs as TUI in integrated terminal)
+  GitHub.copilot
+  GitHub.copilot-chat
 `;
 
 /**
