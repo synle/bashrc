@@ -467,17 +467,22 @@ function prompt_yes_no() {
 ################################################################################
 # ---- HTTP / Networking Utilities ----
 ################################################################################
-# curl drop-in: pretty-prints JSON responses via jq when available
+# curl drop-in: pretty-prints structured responses via prettier when available
 function curl() {
   if is_help_arg "${1:-}"; then
     echo "
-      curl: drop-in curl wrapper that pretty-prints JSON / XML / HTML responses
-        curl <url> [flags...]    standard curl; auto-formats by sniffing body
-        Format detection (first + last non-whitespace bytes must pair):
-          { ... }   ->  JSON via jq
-          [ ... ]   ->  JSON via jq
-          < ... >   ->  XML or HTML via xmllint (strict XML first, then --html)
-          anything else -> raw cat
+      curl: drop-in curl wrapper that pretty-prints structured responses via prettier
+        curl <url> [flags...]    standard curl; auto-formats by body sniff + URL extension
+        Format detection (first pass: body shape, then: URL extension hint):
+          { ... } / [ ... ]   ->  prettier --parser json
+          < ... >             ->  prettier --parser html  (covers HTML and most XML)
+          URL ends in .md     ->  prettier --parser markdown
+          URL ends in .yml/.yaml -> prettier --parser yaml
+          URL ends in .js/.mjs/.cjs/.jsx -> prettier --parser babel
+          URL ends in .ts/.tsx -> prettier --parser typescript
+          URL ends in .json   ->  prettier --parser json
+          URL ends in .html/.htm/.xml/.svg -> prettier --parser html
+          anything else       ->  raw cat
         Always prepends:
           -L (follow redirects, max 50 hops; curl strips Authorization on
               cross-origin hops by default so this is safe)
@@ -488,11 +493,11 @@ function curl() {
         win (e.g. \`curl <url> --max-redirs 0\` to disable redirect follow).
         Falls back to plain \`command curl\` (still with -L + no-cache headers)
         when:
-          - jq is not installed (JSON path) / xmllint not installed (XML path)
+          - prettier is not installed
           - stdout is not a TTY (i.e. piped or redirected — preserves streaming)
           - any output-redirect / download flag is present
             (-o, -O, -J, --remote-name-all, -i, -I, -D, -T, -w, --output-dir)
-          - the response body sniff doesn't match any known format
+          - no parser can be inferred from body sniff or URL extension
     "
     return 0
   fi
@@ -516,11 +521,8 @@ function curl() {
     -H 'If-Modified-Since:'
   )
 
-  # No formatter installed at all → straight pass-through (still with defaults
-  # + headers). If either jq OR xmllint is present, fall through to the
-  # intercept path; the format dispatch below handles the missing-formatter
-  # case per-format.
-  if ! type -P jq &> /dev/null && ! type -P xmllint &> /dev/null; then
+  # No prettier installed → straight pass-through (still with defaults + headers).
+  if ! type -P prettier &> /dev/null; then
     command curl "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@"
     return
   fi
@@ -571,35 +573,100 @@ function curl() {
     return $_curl_rc
   fi
 
-  # Sniff first AND last non-whitespace bytes to decide format. Bounded reads
-  # (256 bytes head + tail) avoid slurping huge non-text downloads. Strict
-  # pairing rules:
-  #   '{' / '['  + '}' / ']'   -> JSON  (validated + pretty-printed by jq)
-  #   '<'        + '>'         -> XML/HTML (pretty-printed by xmllint if present)
-  # Validators below do full parsing — sniff just avoids launching them on
-  # obviously-not-structured bodies (plain text, binary, partial chunks).
+  # --- Format detection -----------------------------------------------------
+  # Two-pass parser selection: body shape sniff first, then URL extension hint.
+  # Body sniff covers the common case (API responses lack file extensions);
+  # URL hint catches raw-content URLs (raw.githubusercontent.com/.../file.md).
+  local parser=""
+
+  # Pass 1 — body shape sniff. Bounded reads (256 bytes head + tail) avoid
+  # slurping huge non-text downloads. Strict open/close pairing.
   local first_char last_char
   first_char=$(head -c 256 "$tmpfile" 2> /dev/null | tr -d '[:space:]' | head -c 1)
   last_char=$(tail -c 256 "$tmpfile" 2> /dev/null | tr -d '[:space:]' | tail -c 1)
-
   if [[ ("$first_char" == "{" && "$last_char" == "}") \
-    || ("$first_char" == "[" && "$last_char" == "]") ]] \
-    && jq -e . "$tmpfile" &> /dev/null; then
-    jq . "$tmpfile"
-  elif [[ "$first_char" == "<" && "$last_char" == ">" ]] \
-    && type -P xmllint &> /dev/null; then
-    # Try strict XML mode first (preserves XML declarations + namespaces); fall
-    # back to HTML mode (lenient parser handles unclosed tags, missing root,
-    # SGML quirks). Both modes silence stderr — xmllint is chatty about minor
-    # parse warnings we don't want polluting the output. If both fail, cat raw.
-    if ! xmllint --format "$tmpfile" 2> /dev/null; then
-      xmllint --html --format "$tmpfile" 2> /dev/null || command cat "$tmpfile"
+    || ("$first_char" == "[" && "$last_char" == "]") ]]; then
+    parser="json"
+  elif [[ "$first_char" == "<" && "$last_char" == ">" ]]; then
+    # prettier's html parser is lenient enough to handle most XML
+    # (raw <?xml ?> declarations, SVG, well-formed XML docs).
+    parser="html"
+  fi
+
+  # Pass 2 — URL extension hint (only if sniff didn't decide). Walk args
+  # right-to-left; first arg that looks like a URL with a recognized extension
+  # wins. Strip query (?...) and fragment (#...) before matching.
+  if [ -z "$parser" ]; then
+    local _arg _url _ext
+    for _arg in "$@"; do
+      case "$_arg" in
+        http://* | https://* | file://*) _url="$_arg" ;;
+      esac
+    done
+    if [ -n "${_url:-}" ]; then
+      # strip ?query and #fragment, then take the trailing extension
+      _ext="${_url%%\?*}"
+      _ext="${_ext%%#*}"
+      _ext="${_ext##*.}"
+      case "$_ext" in
+        json) parser="json" ;;
+        md | markdown) parser="markdown" ;;
+        yml | yaml) parser="yaml" ;;
+        js | mjs | cjs | jsx) parser="babel" ;;
+        ts | tsx) parser="typescript" ;;
+        html | htm | xml | svg) parser="html" ;;
+        css | scss | less) parser="css" ;;
+      esac
     fi
+  fi
+
+  # --- Format dispatch ------------------------------------------------------
+  if [ -n "$parser" ]; then
+    # Prettier exits 2 on parse errors; fall back to raw cat so the user still
+    # sees the body instead of an opaque "SyntaxError" trace. stderr is
+    # silenced because prettier emits noisy "[error]" prefixes that we'd
+    # rather hide in favor of the raw fallback.
+    prettier --parser "$parser" "$tmpfile" 2> /dev/null || command cat "$tmpfile"
   else
     command cat "$tmpfile"
   fi
 
   return $_curl_rc
+}
+
+# prettier drop-in: auto-installs `prettier` to ~/.local via npm on first call
+# if the binary is missing, then dispatches to the real CLI. Mirrors the
+# install-on-demand pattern used by the `curl` wrapper above and the
+# `opencode` / `copilot` wrappers under software/scripts/advanced/llm/.
+function prettier() {
+  if is_help_arg "${1:-}"; then
+    echo "
+      prettier: drop-in prettier wrapper that auto-installs the CLI on first use
+        prettier <args...>    standard prettier; installs via 'npm install -g' if missing
+        Install target: \$HOME/.local (via --prefix) so no sudo is needed.
+        Requires npm on PATH; aborts with a clear message otherwise.
+    "
+    return 0
+  fi
+
+  if ! type -P prettier > /dev/null 2>&1; then
+    if ! type -P npm > /dev/null 2>&1; then
+      echo "prettier wrapper: npm not found on PATH; cannot bootstrap prettier" >&2
+      return 127
+    fi
+    echo ">> prettier not installed; running: npm install -g --prefix \"\$HOME/.local\" prettier@latest" >&2
+    npm install -g --prefix "$HOME/.local" prettier@latest >&2 || {
+      echo "prettier wrapper: npm install failed" >&2
+      return 1
+    }
+    if ! type -P prettier > /dev/null 2>&1; then
+      echo "prettier wrapper: install reported success but 'prettier' still not on PATH" >&2
+      echo "  Ensure \"\$HOME/.local/bin\" is in PATH." >&2
+      return 1
+    fi
+  fi
+
+  command prettier "$@"
 }
 
 ################################################################################
