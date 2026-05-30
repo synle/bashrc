@@ -3,12 +3,11 @@
 
 # install GitHub Copilot CLI - https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli
 #
-# Single install path on mac / Linux / WSL: the official GitHub installer at
-# https://gh.io/copilot-install (script source: https://github.com/github/copilot-cli/install.sh).
-# It downloads the prebuilt `copilot-${PLATFORM}-${ARCH}.tar.gz` release tarball
-# and drops `copilot` into $HOME/.local/bin (PREFIX defaults to $HOME/.local for
-# non-root). On Windows-native the same upstream installer routes to
-# `winget install GitHub.Copilot` — we run that path through winget directly
-# (see software/scripts/windows/_winget-install.sh).
+# Uses npm_install_global (not the curl|bash native installer at gh.io/copilot-install)
+# so that on WSL we get a side-by-side install on both the Linux side and the
+# Windows host — `npm_install_global` auto-mirrors via `cmd.exe /c npm install -g`.
+# A curl|bash install would only land on the current OS, forcing a separate winget
+# step for the Windows side. Trade-off: lose the native installer's winget routing;
+# refresh comes from `bash run.sh --force-refresh --files=copilot` instead.
 echo '> Installing GitHub Copilot CLI'
-curl_bash_install https://gh.io/copilot-install
+npm_install_global @github/copilot copilot
