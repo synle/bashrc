@@ -1292,6 +1292,9 @@ function _escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/** Number of leading content lines shown when a code block is collapsed. */
+const COLLAPSED_PREVIEW_LINES = 10;
+
 function EnhancedTextArea(props) {
   let { url, label, height, error, defaultCollapsed = false, ...restProps } = props;
   label = label || props.placeholder;
@@ -1323,6 +1326,13 @@ function EnhancedTextArea(props) {
     formattedUrl = `${BASH_PROFILE_CODE_REPO_VIEW_URL}/${shortUrl}`;
   }
 
+  // When collapsed, render only the first COLLAPSED_PREVIEW_LINES so users can glance
+  // at the start of the block. The "Show More" link below expands to full content.
+  const lines = content.split("\n");
+  const isTruncatable = lines.length > COLLAPSED_PREVIEW_LINES;
+  const displayedContent = collapsed && isTruncatable ? lines.slice(0, COLLAPSED_PREVIEW_LINES).join("\n") : content;
+  const hiddenLineCount = isTruncatable ? lines.length - COLLAPSED_PREVIEW_LINES : 0;
+
   return (
     <div
       className={collapsed ? "codeBlockWrapper collapsed" : "codeBlockWrapper"}
@@ -1352,7 +1362,22 @@ function EnhancedTextArea(props) {
       {error ? (
         <div className="text-error">Content Error: {content}</div>
       ) : (
-        !collapsed && <CodeEditor content={content} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />
+        <>
+          <CodeEditor content={displayedContent} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />
+          {collapsed && isTruncatable && (
+            <a
+              className="codeBlockShowMore"
+              data-testid="show-more-toggle"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setCollapsed(false);
+              }}
+            >
+              Show More ({hiddenLineCount} more {hiddenLineCount === 1 ? "line" : "lines"})
+            </a>
+          )}
+        </>
       )}
     </div>
   );

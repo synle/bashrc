@@ -635,8 +635,13 @@ textarea {
   border: var(--borderSize1) solid var(--colorBorderSecondary);
   border-radius: var(--borderRadius1);
   padding: 0 var(--spaceSize2);
-  margin-bottom: var(--spaceSize2);
+  margin-bottom: var(--spaceSize3);
   background: var(--colorBgSecondary);
+  // Subtle elevation so adjacent blocks read as discrete cards rather than one
+  // continuous slab — easier to skim a long page of code samples.
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.06);
 
   &.collapsed .codeBlockBanner {
     margin-bottom: 0;
@@ -644,6 +649,23 @@ textarea {
 
   &.collapsed .codeBlockToggle {
     transform: rotate(-90deg);
+  }
+
+  .codeBlockShowMore {
+    display: block;
+    padding: var(--spaceSize2);
+    text-align: center;
+    font-weight: var(--fontWeightSemiBold);
+    color: var(--colorTextLink);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-top: var(--borderSize1) solid var(--colorBorderSecondary);
+
+    &:hover {
+      opacity: 0.8;
+    }
   }
 }
 
