@@ -53,7 +53,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Render markdown in TUI                 | n/a                                       | `renderMarkdown: true`       | n/a                | n/a                                               |
 | Hide inline tips                       | `spinnerTipsEnabled: false`               | n/a                          | `hideTips: true`   | n/a                                               |
 | Show intent in tab title               | n/a                                       | `updateTerminalTitle: false` | n/a                | n/a                                               |
-| Auto-copy on select                    | n/a                                       | `copyOnSelect: true`         | n/a                | n/a                                               |
+| Auto-copy on select                    | n/a                                       | `copyOnSelect: false`        | n/a                | n/a                                               |
 | Auto-switch to auto mode on rate limit | n/a                                       | `continueOnAutoMode: true`   | n/a                | n/a                                               |
 | Reasoning effort                       | `alwaysThinkingEnabled: true`             | `effortLevel: "xhigh"`       | n/a                | n/a                                               |
 | Exclude gitignored from @ picker       | n/a                                       | `respectGitignore: true`     | n/a                | n/a                                               |

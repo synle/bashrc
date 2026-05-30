@@ -223,9 +223,13 @@ const COPILOT_MANAGED_SETTINGS = {
   // get flicker from rapid title updates during agent loops. tradeoff: lose
   // context peek in tab bar. risk: low
   updateTerminalTitle: false,
-  // auto-copy selected text to clipboard — matches upstream default on mac;
-  // pinned for parity. tradeoff: none. risk: none
-  copyOnSelect: true,
+  // do NOT auto-copy selected text to the system clipboard — user handles
+  // copy/paste explicitly (Ctrl+C / right-click) and doesn't want selections
+  // made for visual reference to silently overwrite the clipboard. Overrides
+  // upstream's mac default (true). Linux X11 primary selection is updated on
+  // selection regardless of this setting, so middle-click paste still works.
+  // tradeoff: must press Ctrl+C / right-click to copy. risk: none.
+  copyOnSelect: false,
   // auto-switch to auto mode when rate-limited — keeps long-running agent
   // tasks going without manual intervention. tradeoff: agent may proceed
   // autonomously after a rate-limit blip. risk: low
