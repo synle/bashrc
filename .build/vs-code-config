@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-29]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-05-30]
 // 
 // VS Code settings.json (drop into <Code>/User/)
 // ################################################################################
@@ -87,7 +87,10 @@
   "typescript.inlayHints.variableTypes.enabled": true,
   "typescript.suggestionActions.enabled": false,
   "terminal.integrated.scrollback": 200000,
-  "terminal.integrated.gpuAcceleration": "auto",
+  "terminal.integrated.gpuAcceleration": "off",
+  "terminal.integrated.rescaleOverlappingGlyphs": false,
+  "terminal.integrated.experimentalImageSupport": false,
+  "terminal.integrated.smoothScrolling": false,
   "terminal.integrated.defaultLocation": "editor",
   "security.workspace.trust.enabled": false,
   "security.workspace.trust.startupPrompt": "never",

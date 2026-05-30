@@ -104,7 +104,10 @@
 
   // --- Terminal & System ---
   "terminal.integrated.scrollback": 200000, // EDITOR_CONFIGS.terminalScrollback
-  "terminal.integrated.gpuAcceleration": "auto", // Let VS Code decide whether to use GPU for terminal rendering. Values: "auto", "on", "off"
+  "terminal.integrated.gpuAcceleration": "off", // Disable GPU rendering for the integrated terminal — fixes garbled first-paint redraw bug for TUI apps (claude, copilot, gemini, opencode) that only clears after a window resize. Values: "auto", "on", "off"
+  "terminal.integrated.rescaleOverlappingGlyphs": false, // Don't auto-rescale overlapping glyphs — keeps renderer cheaper and avoids overlap-induced redraw glitches. Values: true, false
+  "terminal.integrated.experimentalImageSupport": false, // Disable experimental in-terminal image protocol (Sixel/iTerm2/Kitty) — extra renderer path that can cause first-paint glitches in TUIs. Values: true, false
+  "terminal.integrated.smoothScrolling": false, // Disable smooth scrolling in the terminal — native scroll is snappier and avoids tween-driven redraw artifacts. Values: true, false
   "terminal.integrated.defaultLocation": "editor", // Open new terminals as editor tabs (not in the bottom panel). Values: "editor", "view"
   "security.workspace.trust.enabled": false, // Master kill-switch for workspace trust / restricted mode. Values: true, false
   "security.workspace.trust.startupPrompt": "never", // Never show the trust prompt when opening a folder. Values: "always", "once", "never"
