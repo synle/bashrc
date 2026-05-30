@@ -212,12 +212,12 @@ installPacmanPackageInBackground xz
 _installFnmAndNode
 
 # ---- GUI apps (only if a display server is available) ----
-if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+if has_a_gui; then
   echo '>> Installing GUI apps'
 
   # ---- Clipboard (install only for the active display server) ----
-  if [ -n "$DISPLAY" ]; then installPacmanPackageInBackground xclip; fi
-  if [ -n "$WAYLAND_DISPLAY" ]; then installPacmanPackageInBackground wl-clipboard; fi
+  if has_a_gui x11; then installPacmanPackageInBackground xclip; fi
+  if has_a_gui wayland; then installPacmanPackageInBackground wl-clipboard; fi
 
   installPacmanPackageInBackground libreoffice-fresh
   installPacmanPackageInBackground nautilus

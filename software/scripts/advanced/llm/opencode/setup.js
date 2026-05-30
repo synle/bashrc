@@ -198,8 +198,7 @@ async function _writeOpencodeTuiConfig() {
  */
 async function _loadOpencodeKeybinds(_isOsMac) {
   /** @type {{ keybinds?: Record<string, any> } | null} */
-  const raw =
-    await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
+  const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
   if (!raw || !raw.keybinds) return {};
   return { ...raw.keybinds };
 }
@@ -211,22 +210,11 @@ async function _loadOpencodeKeybinds(_isOsMac) {
  * commands Claude Code uses.
  */
 async function _syncOpencodeCommandSymlinks() {
-  const claudeCommandsDir = path.join(
-    BASE_HOMEDIR_LINUX,
-    ".claude",
-    "commands",
-  );
-  const opencodeCommandsDir = path.join(
-    BASE_HOMEDIR_LINUX,
-    ".config",
-    "opencode",
-    "commands",
-  );
+  const claudeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".claude", "commands");
+  const opencodeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "commands");
 
   if (!fs.existsSync(claudeCommandsDir)) {
-    log(
-      ">> Skipped opencode commands: ~/.claude/commands not found (run claude.js first)",
-    );
+    log(">> Skipped opencode commands: ~/.claude/commands not found (run claude.js first)");
     return;
   }
 
@@ -249,13 +237,8 @@ async function _syncOpencodeCommandSymlinks() {
     } catch {
       continue;
     }
-    const resolved = path.isAbsolute(target)
-      ? target
-      : path.resolve(path.dirname(fullPath), target);
-    if (
-      resolved === claudeCommandsDir ||
-      resolved.startsWith(claudeCommandsDir + path.sep)
-    ) {
+    const resolved = path.isAbsolute(target) ? target : path.resolve(path.dirname(fullPath), target);
+    if (resolved === claudeCommandsDir || resolved.startsWith(claudeCommandsDir + path.sep)) {
       fs.unlinkSync(fullPath);
     }
   }
@@ -282,9 +265,7 @@ async function _syncOpencodeCommandSymlinks() {
   }
   log(
     `>> opencode: symlinked ${linkedCount} command(s) from ~/.claude/commands/` +
-      (skippedForeign
-        ? ` (skipped ${skippedForeign} foreign / user-authored entries)`
-        : ""),
+      (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
   );
 }
 
@@ -310,19 +291,14 @@ const OPENCODE_INSTRUCTIONS_MARKER = "managed-rules";
  * authoritative, not just a fallback.
  */
 async function _doOpencodeInstructionsWork() {
-  const targetPath = path.join(
-    BASE_HOMEDIR_LINUX,
-    ".config/opencode/AGENTS.md",
-  );
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/AGENTS.md");
 
   log(">> OpenCode Instructions:", targetPath);
 
   await mkdir(path.dirname(targetPath));
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (
-    await readText`software/scripts/advanced/llm/_common/instructions.md`
-  ).trim();
+  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
 
   /** @type {string} Existing AGENTS.md content (empty if file is missing). */
   let existing = "";
@@ -332,15 +308,7 @@ async function _doOpencodeInstructionsWork() {
 
   // Upsert the managed block between <!-- BEGIN managed-rules --> / <!-- END managed-rules -->.
   // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.
-  const merged =
-    replaceBlock(
-      existing,
-      OPENCODE_INSTRUCTIONS_MARKER,
-      sourceContent,
-      "<!--",
-      " -->",
-      "append",
-    ).trim() + "\n";
+  const merged = replaceBlock(existing, OPENCODE_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);
@@ -365,19 +333,14 @@ async function doWork() {
     return;
   }
 
-  const targetPath = path.join(
-    BASE_HOMEDIR_LINUX,
-    ".config/opencode/opencode.json",
-  );
+  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
   const providerInputs = await getOllamaProviderInputs();
   if (providerInputs.length === 0) {
-    log(
-      ">> opencode: no reachable Ollama hosts — writing config without provider entries",
-    );
+    log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
   }
 
   await writeJson(targetPath, _buildOpencodeConfig(providerInputs));

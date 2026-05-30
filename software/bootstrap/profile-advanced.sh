@@ -538,14 +538,14 @@ function curl() {
   local arg
   for arg in "$@"; do
     case "$arg" in
-      -o | --output | -O | --remote-name | --remote-name-all | \
-        -J | --remote-header-name | \
-        -i | --include | -I | --head | \
-        -D | --dump-header | -T | --upload-file | \
-        -w | --write-out | --output-dir)
-        command curl "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@"
-        return
-        ;;
+    -o | --output | -O | --remote-name | --remote-name-all | \
+      -J | --remote-header-name | \
+      -i | --include | -I | --head | \
+      -D | --dump-header | -T | --upload-file | \
+      -w | --write-out | --output-dir)
+      command curl "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@"
+      return
+      ;;
     esac
   done
 
@@ -584,8 +584,8 @@ function curl() {
   local first_char last_char
   first_char=$(head -c 256 "$tmpfile" 2> /dev/null | tr -d '[:space:]' | head -c 1)
   last_char=$(tail -c 256 "$tmpfile" 2> /dev/null | tr -d '[:space:]' | tail -c 1)
-  if [[ ("$first_char" == "{" && "$last_char" == "}") \
-    || ("$first_char" == "[" && "$last_char" == "]") ]]; then
+  if [[ ("$first_char" == "{" && "$last_char" == "}") ||
+    ("$first_char" == "[" && "$last_char" == "]") ]]; then
     parser="json"
   elif [[ "$first_char" == "<" && "$last_char" == ">" ]]; then
     # prettier's html parser is lenient enough to handle most XML
@@ -600,7 +600,7 @@ function curl() {
     local _arg _url _ext
     for _arg in "$@"; do
       case "$_arg" in
-        http://* | https://* | file://*) _url="$_arg" ;;
+      http://* | https://* | file://*) _url="$_arg" ;;
       esac
     done
     if [ -n "${_url:-}" ]; then
@@ -609,13 +609,13 @@ function curl() {
       _ext="${_ext%%#*}"
       _ext="${_ext##*.}"
       case "$_ext" in
-        json) parser="json" ;;
-        md | markdown) parser="markdown" ;;
-        yml | yaml) parser="yaml" ;;
-        js | mjs | cjs | jsx) parser="babel" ;;
-        ts | tsx) parser="typescript" ;;
-        html | htm | xml | svg) parser="html" ;;
-        css | scss | less) parser="css" ;;
+      json) parser="json" ;;
+      md | markdown) parser="markdown" ;;
+      yml | yaml) parser="yaml" ;;
+      js | mjs | cjs | jsx) parser="babel" ;;
+      ts | tsx) parser="typescript" ;;
+      html | htm | xml | svg) parser="html" ;;
+      css | scss | less) parser="css" ;;
       esac
     fi
   fi
@@ -1582,9 +1582,9 @@ function maximize_and_focus_window() {
     _mac_activate_and_tile "$app_name" "$process_name" 2> /dev/null
   elif ((is_os_wsl)); then
     _wsl_activate_and_maximize "$app_name" 2> /dev/null
-  elif [[ -n "$WAYLAND_DISPLAY" ]]; then
+  elif has_a_gui wayland; then
     _wayland_activate_and_maximize "$app_name" 2> /dev/null
-  elif [[ -n "$DISPLAY" ]]; then
+  elif has_a_gui x11; then
     _x11_activate_and_maximize "$app_name" 2> /dev/null
   fi
   # Best-effort: never signal failure to the caller. An app that is not running,
@@ -1831,10 +1831,10 @@ if ((is_os_mac)); then
 elif ((is_os_wsl)) && type -P clip.exe &> /dev/null && type -P powershell.exe &> /dev/null; then
   _COPY_CMD="clip.exe"
   _PASTE_CMD="powershell.exe -NoProfile -Command Get-Clipboard | sed 's/\r$//'"
-elif [ -n "$WAYLAND_DISPLAY" ] && type -P wl-copy &> /dev/null && type -P wl-paste &> /dev/null; then
+elif has_a_gui wayland && type -P wl-copy &> /dev/null && type -P wl-paste &> /dev/null; then
   _COPY_CMD="wl-copy"
   _PASTE_CMD="wl-paste"
-elif [ -n "$DISPLAY" ] && type -P xclip &> /dev/null; then
+elif has_a_gui x11 && type -P xclip &> /dev/null; then
   _COPY_CMD="xclip -selection clipboard"
   _PASTE_CMD="xclip -selection clipboard -o"
 else

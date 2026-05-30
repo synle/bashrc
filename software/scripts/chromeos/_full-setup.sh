@@ -186,12 +186,12 @@ installAptPackageInBackground dotnet-sdk-8.0
 _installFnmAndNode
 
 # ---- GUI apps (only if a display server is available) ----
-if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+if has_a_gui; then
   echo '>> Installing GUI apps'
 
   # ---- Clipboard (install only for the active display server) ----
-  if [ -n "$DISPLAY" ]; then installAptPackageInBackground xclip; fi
-  if [ -n "$WAYLAND_DISPLAY" ]; then installAptPackageInBackground wl-clipboard; fi
+  if has_a_gui x11; then installAptPackageInBackground xclip; fi
+  if has_a_gui wayland; then installAptPackageInBackground wl-clipboard; fi
   installAptPackageInBackground libreoffice
   installAptPackageInBackground nautilus
   installAptPackageInBackground remmina

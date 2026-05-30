@@ -77,6 +77,41 @@ function is_help_arg() {
   esac
 }
 
+# has_a_gui [mode] - Returns 0 if a GUI display surface is available, else 1.
+#   (no arg)  any GUI: mac and windows always true; linux true iff $DISPLAY or
+#             $WAYLAND_DISPLAY is set. Use for "should we install/run GUI apps?"
+#   wayland   linux Wayland session only — true iff $WAYLAND_DISPLAY is set.
+#             Always false on mac/windows (no Wayland there).
+#   x11       linux X11 session only — true iff $DISPLAY is set. Always false on
+#             mac/windows. Note WSLg sets $DISPLAY on WSL — treat that as x11.
+# Use the specific modes when picking server-specific tools (xclip vs wl-copy,
+# wmctrl vs Wayland compositor calls). Return 2 on unknown mode.
+# Mirror of the same function in common-functions.bash — keep byte-identical.
+function has_a_gui() {
+  if is_help_arg "${1:-}"; then
+    echo "has_a_gui: returns 0 if a GUI display is available, else 1."
+    echo "Usage:"
+    echo "  has_a_gui           # any GUI (mac/windows always; linux needs \$DISPLAY or \$WAYLAND_DISPLAY)"
+    echo "  has_a_gui wayland   # only true if \$WAYLAND_DISPLAY is set"
+    echo "  has_a_gui x11       # only true if \$DISPLAY is set"
+    return 0
+  fi
+  local mode="${1:-any}"
+  case "$mode" in
+  wayland) [ -n "${WAYLAND_DISPLAY:-}" ] ;;
+  x11) [ -n "${DISPLAY:-}" ] ;;
+  any)
+    ((${is_os_mac:-0})) && return 0
+    ((${is_os_windows:-0})) && return 0
+    [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]
+    ;;
+  *)
+    echo "has_a_gui: unknown mode '$mode' (expected: wayland, x11, or omit)" >&2
+    return 2
+    ;;
+  esac
+}
+
 ################################################################################
 # ---- Path / Action Helpers ----
 # Defined here in profile-core (not profile-advanced) so any partial sourced
