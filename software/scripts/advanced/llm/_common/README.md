@@ -61,6 +61,9 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Tool output truncation                 | n/a                                       | n/a                          | n/a                | `tool_output.max_lines: 3000`                     |
 | Context compaction                     | n/a                                       | n/a                          | n/a                | `compaction: { auto: true, tail_turns: 4 }`       |
 | PR conflict resolution                 | n/a                                       | `mergeStrategy: "merge"`     | n/a                | n/a                                               |
+| Parallel tool calls                    | native                                    | n/a                          | n/a                | `experimental.batch_tool: true`                   |
+| Diff rendering style                   | n/a                                       | n/a                          | n/a                | `diff_style: "stacked"`                           |
+| Mute attention chime                   | n/a                                       | `beep: false`                | n/a                | `attention.sound: false`                          |
 
 **n/a** here means _the CLI does not expose a settings key for that intent today_. Don't silently drop an intent if upstream later ships one — add the key and update this table in the same edit.
 

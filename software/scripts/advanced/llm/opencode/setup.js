@@ -136,6 +136,18 @@ function _buildOpencodeConfig(providersArray) {
     tool_output: {
       max_lines: 3000,
     },
+    // Enable opencode's experimental batch tool so the agent can fan out
+    // parallel tool calls within a single turn (read three files at once,
+    // run two greps concurrently, etc.) instead of serializing them. Matches
+    // the parallelization rule in CLAUDE.md §37 ("independent changes → one
+    // message, multiple sub-agent calls") that's already native in Claude
+    // Code. Gated behind `experimental` because upstream may rename / restage
+    // the flag — re-check `https://opencode.ai/config.json` if a future run
+    // logs an unknown-key warning. tradeoff: experimental schema, may move.
+    // risk: low — opencode ignores unknown experimental keys silently.
+    experimental: {
+      batch_tool: true,
+    },
     provider: providers,
   };
 
@@ -169,14 +181,29 @@ async function _writeOpencodeTuiConfig() {
     $schema: "https://opencode.ai/tui.json",
     ...existing,
     mouse: true,
+    // Force single-column stacked diff rendering instead of the default "auto"
+    // (which flips to side-by-side on wide terminals). Stacked diffs read
+    // cleanly in tmux splits, VS Code's integrated terminal pane, and any
+    // half-width terminal where side-by-side cramming truncates both columns.
+    // Trade for full-width terminals: lose the simultaneous before/after view.
+    // tradeoff: less info density on wide screens. risk: none.
+    diff_style: "stacked",
     scroll_speed: 3,
     scroll_acceleration: {
       enabled: true,
     },
+    // Attention block: visual + OS-notification still on; audio chime OFF
+    // because parallel-session workflows (e.g. running claude / copilot /
+    // gemini / opencode side-by-side via `bash run.sh --preset=llm`) make
+    // overlapping audio cues unhelpful. enabled:true keeps the visual flash;
+    // notifications:true keeps OS desktop notifications (silent unless the
+    // OS notification center adds its own sound). sound:false suppresses
+    // opencode's in-app chime. volume is moot when sound is off but kept at
+    // 0.4 so flipping sound:true later doesn't blast at 100%.
     attention: {
       enabled: true,
       notifications: true,
-      sound: true,
+      sound: false,
       volume: 0.4,
     },
   };
