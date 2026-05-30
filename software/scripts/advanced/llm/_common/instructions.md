@@ -27,7 +27,9 @@ Stack-agnostic rules. Apply across every language, framework, and codebase.
    3. **Default = "no"** — without explicit "yes", run `git commit --amend --reset-author --no-edit` (latest) or `git rebase -i <base> --exec 'git commit --amend --reset-author --no-edit'` so every commit uses local `.gitconfig` identity.
    4. Only proceed without `--reset-author` on explicit "yes".
 
-   **Why:** Mixed-author history (Anthropic noreply, stale corp email, leftover pair-programming co-author) breaks provenance, contributor stats, and `git log --author` queries.
+   **Gotcha — preserve `Co-Authored-By:` trailers for supported LLM CLIs.** The check above targets the `author` field only. Trailers in the commit message body that attribute a supported LLM assistant — Claude Code (`noreply@anthropic.com`), GitHub Copilot (`copilot@github.com` / `Copilot`), Gemini (`gemini-cli@google.com` / `Gemini`), opencode (`noreply@opencode.ai` / `opencode`) — are intentional provenance. Keep them. Do not strip, rewrite, or replace these `Co-Authored-By:` lines when amending/rebasing to fix the author identity. `--reset-author` only changes the author header; it leaves the commit message body (and trailers) alone, which is the desired behavior here.
+
+   **Why:** Mixed-author history (Anthropic noreply, stale corp email, leftover pair-programming co-author) breaks provenance, contributor stats, and `git log --author` queries. LLM co-author trailers are the exception — they accurately attribute assistant participation and should survive the author-reset.
 
 3. Sync with `git merge origin/<default>`. Never rebase or force-push shared branches.
 4. Each PR is a standalone, mergeable unit. Bundle tightly-coupled changes (API + schema + models). Never stack PRs.
