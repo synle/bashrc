@@ -3205,20 +3205,35 @@ async function _readTextFromFile(filePath) {
   return result.trim();
 }
 
+/** Max wall time for any single URL fetch via readText/readJson. */
+const _URL_FETCH_TIMEOUT_MS = 10000;
+
 /**
- * Fetches text content from a URL, trying fetch first and falling back to curl.
+ * Fetches text content from a URL. Uses the built-in `fetch` when available
+ * (Node 18+), otherwise falls back to `curl` via execBash for older runtimes
+ * (e.g. the bootstrap node fetched by run.sh on a fresh machine).
+ *
+ * Transport is selected ONCE up front so an AbortSignal timeout on the fetch
+ * branch is NOT misinterpreted as "fetch unavailable, try curl" — that
+ * misread would double the wall time on unreachable hosts (10s fetch timeout
+ * + 10s curl --max-time). With single-transport selection, an offline host
+ * costs exactly {@link _URL_FETCH_TIMEOUT_MS}ms.
+ *
+ * Any failure (timeout, DNS, non-2xx) is swallowed and returns "" — callers
+ * (readJson, ollama provider discovery) treat empty as "host unreachable".
+ *
  * @param {string} url - The URL to fetch
- * @returns {Promise<string>} The response body as text
+ * @returns {Promise<string>} The response body as text, or "" on any failure
  */
 async function _readTextFromURL(url) {
   if (!url.startsWith("http")) throw new Error(`Invalid URL: ${url}`);
   let result = "";
   try {
-    try {
-      const res = await fetch(url);
+    if (typeof fetch === "function") {
+      const res = await fetch(url, { signal: AbortSignal.timeout(_URL_FETCH_TIMEOUT_MS) });
       result = await res.text();
-    } catch (err) {
-      result = await execBash(`curl -fsSL ${url}`);
+    } else {
+      result = await execBash(`curl -fsSL --max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`);
     }
   } catch (_) {}
   return result.trim();
