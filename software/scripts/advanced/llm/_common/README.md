@@ -47,7 +47,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Verbose transcript                     | `viewMode: "verbose"`                     | n/a                          | n/a                | n/a                                               |
 | Default model                          | `model: "claude-opus-4-7[1m]"`            | user-owned                   | user-owned         | provider entries from `getOllamaProviderInputs()` |
 | Extended thinking                      | `alwaysThinkingEnabled: true`             | n/a                          | n/a                | n/a                                               |
-| Auto-cleanup old sessions              | `cleanupPeriodDays: 30`                   | n/a                          | n/a                | n/a                                               |
+| Auto-cleanup old sessions              | `cleanupPeriodDays: 30`                   | n/a                          | `general.sessionRetention: { enabled: true, maxAge: "30d" }` | n/a                                               |
 | Skip dangerous-mode prompt             | `skipDangerousModePermissionPrompt: true` | n/a                          | n/a                | n/a                                               |
 | Compact paste in input                 | n/a                                       | `compactPaste: false`        | n/a                | n/a                                               |
 | Render markdown in TUI                 | n/a                                       | `renderMarkdown: true`       | n/a                | n/a                                               |
@@ -56,7 +56,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Auto-copy on select                    | n/a                                       | `copyOnSelect: false`        | n/a                | n/a                                               |
 | Auto-switch to auto mode on rate limit | n/a                                       | `continueOnAutoMode: true`   | n/a                | n/a                                               |
 | Reasoning effort                       | `alwaysThinkingEnabled: true`             | `effortLevel: "xhigh"`       | n/a                | n/a                                               |
-| Exclude gitignored from @ picker       | n/a                                       | `respectGitignore: true`     | n/a                | n/a                                               |
+| Exclude gitignored from @ picker       | n/a                                       | `respectGitignore: true`     | `context.fileFiltering.respectGitIgnore: true` | n/a                                               |
 | Terminal progress indicator            | n/a                                       | `terminalProgress: true`     | n/a                | n/a                                               |
 | Tool output truncation                 | n/a                                       | n/a                          | n/a                | `tool_output.max_lines: 3000`                     |
 | Context compaction                     | n/a                                       | n/a                          | n/a                | `compaction: { auto: true, tail_turns: 4 }`       |
@@ -64,6 +64,9 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Parallel tool calls                    | native                                    | n/a                          | n/a                | `experimental.batch_tool: true`                   |
 | Diff rendering style                   | n/a                                       | n/a                          | n/a                | `diff_style: "stacked"`                           |
 | Mute attention chime                   | n/a                                       | `beep: false`                | n/a                | `attention.sound: false`                          |
+| Disable in-session auto-update         | n/a                                       | `autoUpdate: false`          | `general.enableAutoUpdate: false` | `autoupdate: false`                               |
+| Telemetry / usage-stats opt-out        | n/a                                       | n/a                          | `privacy.usageStatisticsEnabled: false` | n/a (consider `share: "disabled"`)              |
+| Don't append Co-Authored-By trailer    | n/a                                       | `includeCoAuthoredBy: false` | n/a                | n/a                                               |
 
 **n/a** here means _the CLI does not expose a settings key for that intent today_. Don't silently drop an intent if upstream later ships one — add the key and update this table in the same edit.
 

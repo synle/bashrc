@@ -159,10 +159,82 @@ const GEMINI_MANAGED_SETTINGS = {
   // skip the splash screen / animations on every launch — same reasoning as
   // copilot's banner=never. tradeoff: never see the splash. risk: none
   hideBanner: true,
-  // disable terminal-bell when user attention is required. tradeoff: no
-  // audio nudge. risk: low (matches our copilot+claude convention)
+  // hide rotating tips in the loading spinner. tradeoff: miss occasional
+  // tips. risk: none (matches claude's spinnerTipsEnabled:false convention)
   hideTips: true,
+  // --- general.* — top-level UX / lifecycle defaults ---
+  // Nested under `general` per gemini's schema (verified in bundle
+  // chunk-7I6BZ5I5.js: `settings.general.enableAutoUpdate`,
+  // `settings.general.sessionRetention.enabled/maxAge`). _doGeminiSettingsWork
+  // below uses _deepMerge so adding nested defaults here doesn't clobber any
+  // sibling user-set keys under `general` (e.g. `general.preferredEditor`).
+  general: {
+    // Disable in-session auto-update. We refresh gemini out-of-band via
+    // `bash run.sh --files=gemini/install.sh` (npm_install_global). Matches
+    // opencode's autoupdate:false (opencode/setup.js:119) so all four LLM
+    // CLIs update on the same cadence — when the dotfiles bootstrap runs,
+    // not mid-session. tradeoff: must re-run installer to pick up new
+    // versions. risk: low.
+    enableAutoUpdate: false,
+    // Auto-delete session files older than 30 days. Direct analog of
+    // claude's cleanupPeriodDays:30 — keeps the session dir from
+    // accumulating stale transcripts. tradeoff: lose old session history
+    // (resume past 30 days won't work). risk: low.
+    sessionRetention: {
+      enabled: true,
+      maxAge: "30d",
+    },
+  },
+  // --- privacy.* — telemetry opt-out ---
+  // Opt out of usage statistics. Default is true (ships anonymized stats to
+  // Google). Matches the privacy intent driving opencode's share:"disabled"
+  // and CLAUDE.md §42 ("No secret values, ever, anywhere") — even anonymized
+  // tool input is a leak surface for conversation content. tradeoff: lose
+  // anonymous-stats contribution. risk: none.
+  privacy: {
+    usageStatisticsEnabled: false,
+  },
+  // --- context.* — file-discovery filtering ---
+  // Exclude gitignored files from the @ file mention picker. Default is
+  // already true in gemini, but pinning makes the intent visible in the
+  // managed map and protects against an upstream default flip. Direct
+  // mirror of copilot's respectGitignore:true (copilot/setup.js:239).
+  // tradeoff: none. risk: none.
+  context: {
+    fileFiltering: {
+      respectGitIgnore: true,
+    },
+  },
 };
+
+/**
+ * Recursively merges `source` into `target`, mutating and returning `target`.
+ * Plain-object values are merged deeply; arrays and primitives in `source`
+ * overwrite anything in `target`. Mirrors the helper used by browser-config.js,
+ * handbrake-config.js, and docker-config.js — duplicated here to keep
+ * llm/gemini/ self-contained (matches the local-helper precedent in
+ * opencode/setup.js).
+ * @param {Record<string, any>} target - Object to merge into.
+ * @param {Record<string, any>} source - Object whose values overwrite target.
+ * @returns {Record<string, any>} The mutated target.
+ */
+function _deepMerge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] &&
+      typeof source[key] === "object" &&
+      !Array.isArray(source[key]) &&
+      target[key] &&
+      typeof target[key] === "object" &&
+      !Array.isArray(target[key])
+    ) {
+      _deepMerge(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
 
 /**
  * Merges managed defaults into ~/.gemini/settings.json, preserving every
@@ -184,8 +256,14 @@ async function _doGeminiSettingsWork(targetDir) {
     existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
   } catch (e) {}
 
-  // merge: managed settings are applied as defaults, existing user overrides are preserved
-  const merged = { ...GEMINI_MANAGED_SETTINGS, ...existing };
+  // Merge: managed settings are applied as defaults; existing user values win
+  // at every depth. Uses _deepMerge (target=cloned managed, source=existing)
+  // because some managed keys are nested (general.*, privacy.*,
+  // context.fileFiltering.*) — a shallow spread would let the user's top-level
+  // `general` block clobber our default `general.enableAutoUpdate` /
+  // `general.sessionRetention`. Deep merge fills in missing leaves at every
+  // nesting level while preserving every existing user-set leaf.
+  const merged = _deepMerge(clone(GEMINI_MANAGED_SETTINGS), existing);
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);

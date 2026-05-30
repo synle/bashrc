@@ -248,6 +248,21 @@ const COPILOT_MANAGED_SETTINGS = {
   // instead of rebase to preserve explicit merge commits and avoid
   // rewriting history. tradeoff: merge commits in log. risk: low
   mergeStrategy: "merge",
+  // Disable in-session auto-update prompt. We refresh copilot out-of-band via
+  // gh.io/copilot-install (copilot/install.sh) on the next dotfiles bootstrap.
+  // Matches opencode's autoupdate:false (opencode/setup.js:119) and the
+  // gemini general.enableAutoUpdate:false so all four LLM CLIs update on the
+  // same cadence — when `bash run.sh` runs, not mid-session. tradeoff: must
+  // re-run installer to pick up new copilot versions. risk: low.
+  autoUpdate: false,
+  // Don't append `Co-authored-by: Copilot <noreply@github.com>` to git
+  // commits copilot makes on the user's behalf. Global CLAUDE.md rule §2
+  // ("Squash merge — PRs only … Verify commit author matches local
+  // .gitconfig") treats mixed-author trailers (Anthropic noreply, stale
+  // corp email, leftover pair-programming co-author) as a provenance
+  // hazard that breaks contributor stats and `git log --author` queries.
+  // tradeoff: lose copilot attribution in git log. risk: none.
+  includeCoAuthoredBy: false,
 };
 
 /**
