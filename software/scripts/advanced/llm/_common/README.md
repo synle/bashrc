@@ -66,7 +66,7 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Mute attention chime                   | n/a                                       | `beep: false`                | n/a                | `attention.sound: false`                          |
 | Disable in-session auto-update         | n/a                                       | `autoUpdate: false`          | `general.enableAutoUpdate: false` | `autoupdate: false`                               |
 | Telemetry / usage-stats opt-out        | n/a                                       | n/a                          | `privacy.usageStatisticsEnabled: false` | n/a (consider `share: "disabled"`)              |
-| Don't append Co-Authored-By trailer    | n/a                                       | `includeCoAuthoredBy: false` | n/a                | n/a                                               |
+| Preserve Co-Authored-By trailer        | native (system prompt)                    | `includeCoAuthoredBy: true`  | native (no setting) | native (no setting)                              |
 
 **n/a** here means _the CLI does not expose a settings key for that intent today_. Don't silently drop an intent if upstream later ships one — add the key and update this table in the same edit.
 

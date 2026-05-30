@@ -255,14 +255,17 @@ const COPILOT_MANAGED_SETTINGS = {
   // same cadence — when `bash run.sh` runs, not mid-session. tradeoff: must
   // re-run installer to pick up new copilot versions. risk: low.
   autoUpdate: false,
-  // Don't append `Co-authored-by: Copilot <noreply@github.com>` to git
-  // commits copilot makes on the user's behalf. Global CLAUDE.md rule §2
-  // ("Squash merge — PRs only … Verify commit author matches local
-  // .gitconfig") treats mixed-author trailers (Anthropic noreply, stale
-  // corp email, leftover pair-programming co-author) as a provenance
-  // hazard that breaks contributor stats and `git log --author` queries.
-  // tradeoff: lose copilot attribution in git log. risk: none.
-  includeCoAuthoredBy: false,
+  // Keep the `Co-authored-by: Copilot <copilot@github.com>` trailer on git
+  // commits copilot makes on the user's behalf. Matches upstream default
+  // (true) but pinned for explicit intent. Per the engineering-principles
+  // gotcha in software/scripts/advanced/llm/_common/instructions.md (and
+  // the deployed ~/.claude/CLAUDE.md / ~/.copilot/AGENTS.md /
+  // ~/.gemini/GEMINI.md / ~/.config/opencode/AGENTS.md), Co-Authored-By
+  // trailers for supported LLM CLIs are INTENTIONAL provenance and must
+  // survive author-identity fixups. The global commit-author check
+  // (`--reset-author`) targets only the author header, not the trailer.
+  // tradeoff: none — exception explicitly carved out in rule §2. risk: none.
+  includeCoAuthoredBy: true,
 };
 
 /**
