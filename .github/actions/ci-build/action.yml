@@ -373,11 +373,13 @@ runs:
         check_binary_warn gcloud "gcloud --version"
         # END ci-binary-checks
         # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`.
-        # Promoted from warn -> required: passed on all 5 OS jobs in recent runs.
+        # `magick` (v7, Homebrew) stays required — mac install is reliable.
+        # `convert` (v6, apt) is warn-tier: Ubuntu apt mirror periodically 404s on
+        # libcaca0 (an imagemagick dep), breaking the install through no fault of ours.
         if type -P magick &>/dev/null; then
           check_binary_required magick "magick -version"
         else
-          check_binary_required convert "convert -version"
+          check_binary_warn convert "convert -version"
         fi
 
         # Write summary with collapsible details
