@@ -323,12 +323,15 @@ installBrewPackageInBackground --cask --app="Sublime Merge.app" sublime-merge
 installBrewPackageInBackground --cask --app="Visual Studio Code.app" visual-studio-code
 installBrewPackageInBackground --cask --app="Zed.app" zed
 
-# ---- GUI apps (reinstall in background) ----
-installBrewPackageInBackground --cask --force balenaetcher
-installBrewPackageInBackground --cask --force blender
-installBrewPackageInBackground --cask --force vlc
-installBrewPackageInBackground --cask --force keka
-installBrewPackageInBackground --cask --force docker
+# ---- GUI apps (skip if already present in /Applications or brew cask cache) ----
+# --app="X.app" makes installBrewPackage's /Applications fast-path catch installs
+# from any source (Docker.com .dmg, App Store, brew cask). Without it the skip
+# only fires for brew-managed installs and the package reinstalls every run.
+installBrewPackageInBackground --cask --app="balenaEtcher.app" balenaetcher
+installBrewPackageInBackground --cask --app="Blender.app" blender
+installBrewPackageInBackground --cask --app="VLC.app" vlc
+installBrewPackageInBackground --cask --app="Keka.app" keka
+installBrewPackageInBackground --cask --app="Docker.app" docker
 
 ################################################################################
 # ---- Shell Setup (default shell) ----

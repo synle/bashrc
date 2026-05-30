@@ -3219,8 +3219,10 @@ const _URL_FETCH_TIMEOUT_MS = 10000;
  * + 10s curl --max-time). With single-transport selection, an offline host
  * costs exactly {@link _URL_FETCH_TIMEOUT_MS}ms.
  *
- * Any failure (timeout, DNS, non-2xx) is swallowed and returns "" — callers
- * (readJson, ollama provider discovery) treat empty as "host unreachable".
+ * On failure returns "" so callers (readJson, ollama provider discovery)
+ * can treat empty as "host unreachable" — but ALSO logs a one-liner with
+ * the reason (timeout / errno / HTTP status) and a short error detail, so
+ * silent dead probes are visible in run logs.
  *
  * @param {string} url - The URL to fetch
  * @returns {Promise<string>} The response body as text, or "" on any failure
@@ -3231,11 +3233,28 @@ async function _readTextFromURL(url) {
   try {
     if (typeof fetch === "function") {
       const res = await fetch(url, { signal: AbortSignal.timeout(_URL_FETCH_TIMEOUT_MS) });
+      if (!res.ok) {
+        log(`[Warning] readTextFromURL ${url} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 20)}`);
+        return "";
+      }
       result = await res.text();
     } else {
       result = await execBash(`curl -fsSL --max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`);
     }
-  } catch (_) {}
+  } catch (err) {
+    // Normalize the failure reason to one of: timeout | <node errno> | <error name>.
+    // AbortSignal.timeout throws a DOMException with name="TimeoutError"; fetch
+    // network errors set err.cause.code (ENOTFOUND/ECONNREFUSED/etc.); execBash
+    // bubbles up a child_process error with err.code as the exit code.
+    const reason =
+      (err && err.name === "TimeoutError" && "timeout") ||
+      (err && err.cause && err.cause.code) ||
+      (err && err.code) ||
+      (err && err.name) ||
+      "unknown";
+    const detail = String((err && err.message) || err || "").slice(0, 20);
+    log(`[Warning] readTextFromURL ${url} failed: ${reason} ${detail}`);
+  }
   return result.trim();
 }
 
