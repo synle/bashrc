@@ -10,7 +10,7 @@
 # User-level config managed by software/scripts/advanced/llm/gemini/setup.js:
 #   ~/.gemini/settings.json    - hideBanner, hideTips, etc. (defaults-merge)
 #   ~/.gemini/keybindings.json - from gemini-keys.common.jsonc (additive merge)
-#   ~/.gemini/GEMINI.md        - shared engineering rules (managed-rules block)
+#   ~/.gemini/GEMINI.md        - shared engineering rules (managed block keyed by source path)
 ################################################################################
 
 alias gem="gemini"

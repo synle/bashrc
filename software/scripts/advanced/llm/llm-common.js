@@ -40,6 +40,34 @@ function getLLMOsKey(source, isOsMac) {
   return isMac ? LLM_MAC_OS_KEYS[source] || "super" : LLM_WINDOWS_OS_KEY;
 }
 
+// --- Managed Instructions Block Markers ---
+
+/**
+ * Marker key used by every LLM CLI's instructions deploy (CLAUDE.md, AGENTS.md, GEMINI.md,
+ * opencode's AGENTS.md) to wrap the managed engineering principles block. The key embeds
+ * the source-of-truth path so anyone opening a generated rules file immediately sees where
+ * the managed content originates and where to edit it.
+ *
+ * Shape on disk: `<!-- BEGIN synle/bashrc | software/scripts/advanced/llm/_common/instructions.md -->`
+ *                ... managed content ...
+ *                `<!-- END synle/bashrc | software/scripts/advanced/llm/_common/instructions.md -->`
+ *
+ * Shared so all four CLI setups stay in lockstep — changing this here updates claude,
+ * copilot, gemini, and opencode in one edit.
+ * @type {string}
+ */
+const LLM_INSTRUCTIONS_MARKER = "synle/bashrc | software/scripts/advanced/llm/_common/instructions.md";
+
+/**
+ * Legacy marker key used by every LLM CLI's instructions deploy before the descriptive-key
+ * migration. Each `setup.js` calls `removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, ...)`
+ * before upserting under `LLM_INSTRUCTIONS_MARKER` so the rename doesn't append a duplicate
+ * block alongside the old one. Idempotent — once the legacy block is gone, the call is a no-op.
+ * Safe to keep around indefinitely.
+ * @type {string}
+ */
+const LLM_INSTRUCTIONS_LEGACY_MARKER = "managed-rules";
+
 // --- Ollama Provider Discovery ---
 
 /**

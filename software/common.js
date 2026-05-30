@@ -127,6 +127,32 @@ function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix 
   return replaceBlocks(content, { [key]: sourceContent }, commentPrefix, commentSuffix, insertMode);
 }
 
+/**
+ * Remove a BEGIN/END block (markers + content + a single trailing newline) from `content`.
+ * Mirrors `replaceBlock`'s signature so callers can pass any comment style — bash (`#`/``),
+ * JS (`//`/``), HTML (`<!--`/` -->`), etc. Returns the input unchanged when markers are
+ * absent (idempotent), so it's safe to call on every run for legacy-marker cleanup.
+ * Uses the same `lastIndexOf(END)` strategy as `replaceBlock` to tolerate END marker text
+ * appearing inside the block body (e.g. quoted in documentation).
+ * @param {string} content - The full text content
+ * @param {string} key - The marker key to remove
+ * @param {string} commentPrefix - Comment prefix (e.g. '#', '//', '<!--')
+ * @param {string} [commentSuffix=''] - Comment suffix (e.g. ' -->', '')
+ * @returns {string} The content with the block removed, or the original content if not found
+ */
+function removeBlock(content, key, commentPrefix, commentSuffix = "") {
+  if (!content) return content;
+  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
+  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
+  const beginIdx = content.indexOf(BEGIN);
+  const endIdx = content.lastIndexOf(END);
+  if (beginIdx === -1 || endIdx === -1 || endIdx <= beginIdx) return content;
+  let cutEnd = endIdx + END.length;
+  // Swallow exactly one trailing newline so we don't leave a blank line where the block was.
+  if (content[cutEnd] === "\n") cutEnd += 1;
+  return content.slice(0, beginIdx) + content.slice(cutEnd);
+}
+
 // Only export when required as a module (e.g. by build-include.js).
 // Skip when this file is inlined into index.js via BEGIN/END markers,
 // where index.js runs as the main module (require.main === module).
@@ -142,5 +168,6 @@ if (typeof module !== "undefined" && require.main !== module) {
     _expandSourceMarkers,
     replaceBlock,
     replaceBlocks,
+    removeBlock,
   };
 }

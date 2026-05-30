@@ -270,14 +270,6 @@ async function _syncOpencodeCommandSymlinks() {
 }
 
 /**
- * Marker key used to wrap the managed engineering principles block inside
- * ~/.config/opencode/AGENTS.md. Anything outside the BEGIN/END markers is
- * preserved as user-owned content (matches claude/copilot/gemini setup.js).
- * @type {string}
- */
-const OPENCODE_INSTRUCTIONS_MARKER = "managed-rules";
-
-/**
  * Deploys the shared engineering principles into ~/.config/opencode/AGENTS.md
  * between BEGIN/END markers. Mirrors the copilot/gemini pattern: managed
  * block is upserted; any user content outside the markers is preserved on
@@ -306,9 +298,13 @@ async function _doOpencodeInstructionsWork() {
     existing = fs.readFileSync(targetPath, "utf-8");
   } catch (e) {}
 
-  // Upsert the managed block between <!-- BEGIN managed-rules --> / <!-- END managed-rules -->.
+  // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
+  // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
+  existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
+
+  // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.
-  const merged = replaceBlock(existing, OPENCODE_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

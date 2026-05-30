@@ -11,7 +11,7 @@
 //   ✅ Settings  — ~/.gemini/settings.json (defaults-merge; never clobbers
 //                   auth keys like selectedAuthType, gcpProjectId, or any
 //                   mcpServers entries the user has set up)
-//   ✅ Instructions — ~/.gemini/GEMINI.md (managed-rules block, mirrors
+//   ✅ Instructions — ~/.gemini/GEMINI.md (managed block keyed by source path, mirrors
 //                   ~/.claude/CLAUDE.md's pattern; Gemini loads this as the
 //                   global context file — see docs/gemini_cli_readme.md)
 //
@@ -194,15 +194,6 @@ async function _doGeminiSettingsWork(targetDir) {
 ////// Instructions (User-Level GEMINI.md) //////
 
 /**
- * Marker key used to wrap the managed engineering principles block inside
- * ~/.gemini/GEMINI.md. Anything outside the BEGIN/END markers is preserved
- * as user-owned content (matches the claude/setup.js + copilot/setup.js
- * convention).
- * @type {string}
- */
-const GEMINI_INSTRUCTIONS_MARKER = "managed-rules";
-
-/**
  * Deploys the shared engineering principles into ~/.gemini/GEMINI.md between
  * BEGIN/END markers. The markdown source uses backticks for inline code;
  * readText returns file content verbatim (only the path argument is a
@@ -234,9 +225,13 @@ async function _doGeminiInstructionsWork(targetDir) {
     existing = fs.readFileSync(targetPath, "utf-8");
   } catch (e) {}
 
-  // Upsert the managed block between <!-- BEGIN managed-rules --> / <!-- END managed-rules -->.
+  // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
+  // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
+  existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
+
+  // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when GEMINI.md is brand new or the markers are missing.
-  const merged = replaceBlock(existing, GEMINI_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

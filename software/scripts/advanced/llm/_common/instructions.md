@@ -202,7 +202,7 @@ Never leak secrets, credentials, or env config to any tracked file or external s
 
     **Global note:** `~/.claude/CLAUDE.md` is generated from `software/scripts/advanced/llm/claude/setup.js` in `synle/bashrc`. Same source — `_common/instructions.md` — also feeds `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md` (via each `setup.js`). Edit `instructions.md` for shared rules; re-run matching `setup.js` (or `bash run.sh --preset=llm` for all four). Hand-editing the generated file is fine for machine-local content — respect markers.
 
-    **Managed-block boundary — hand-edit OUTSIDE the markers, never inside.** Each generated file wraps shared content in `BEGIN managed-rules` / `END managed-rules` marker pairs.
+    **Managed-block boundary — hand-edit OUTSIDE the markers, never inside.** Each generated file wraps shared content in `BEGIN synle/bashrc | software/scripts/advanced/llm/_common/instructions.md` / `END synle/bashrc | software/scripts/advanced/llm/_common/instructions.md` marker pairs (the key embeds the source-of-truth path so the file points at where to edit).
     1. **Outside the markers — safe, persists.** Content above BEGIN or below END is byte-preserved across re-runs by `replaceBlock` in `software/common.js`. Machine-local notes, personal overrides, scratch rules go here.
     2. **Inside the markers — REGENERATED, wiped.** Anything between BEGIN and END is overwritten on next `bash run.sh --preset=llm` (or single `setup.js`). Shared rules go in `_common/instructions.md`; CLI-specific managed defaults go in that CLI's `setup.js`.
     3. **Never modify/delete/move the marker lines themselves** — that breaks the upsert and next run re-appends a duplicate block.

@@ -10,7 +10,7 @@
 //
 //   ✅ Settings  — ~/.copilot/settings.json (defaults-merge, never clobbers
 //                   enabledPlugins / extraKnownMarketplaces / model / etc.)
-//   ✅ Instructions — ~/.copilot/AGENTS.md (managed-rules block, mirrors
+//   ✅ Instructions — ~/.copilot/AGENTS.md (managed block keyed by source path, mirrors
 //                   ~/.claude/CLAUDE.md's pattern; Copilot CLI loads AGENTS.md
 //                   user-level — verified by running `copilot -p ... AGENTS
 //                   marker` and asking it to list its custom instruction file
@@ -276,14 +276,6 @@ async function _doCopilotSettingsWork(targetDir) {
 ////// Instructions (User-Level AGENTS.md) //////
 
 /**
- * Marker key used to wrap the managed engineering principles block inside
- * ~/.copilot/AGENTS.md. Anything outside the BEGIN/END markers is preserved
- * as user-owned content (matches the claude/setup.js convention).
- * @type {string}
- */
-const COPILOT_INSTRUCTIONS_MARKER = "managed-rules";
-
-/**
  * Deploys the shared engineering principles into ~/.copilot/AGENTS.md between
  * BEGIN/END markers. The markdown source uses backticks for inline code;
  * readText returns file content verbatim (only the path argument is a
@@ -315,9 +307,13 @@ async function _doCopilotInstructionsWork(targetDir) {
     existing = fs.readFileSync(targetPath, "utf-8");
   } catch (e) {}
 
-  // Upsert the managed block between <!-- BEGIN managed-rules --> / <!-- END managed-rules -->.
+  // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
+  // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
+  existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
+
+  // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.
-  const merged = replaceBlock(existing, COPILOT_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

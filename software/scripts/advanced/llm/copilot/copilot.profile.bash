@@ -24,8 +24,9 @@
 #      maintained instructions file.
 #   2. User-level (handled by software/scripts/advanced/llm/copilot/setup.js):
 #      seeds defaults into `~/.copilot/settings.json` and deploys the shared
-#      engineering principles into `~/.copilot/AGENTS.md` between
-#      `<!-- BEGIN managed-rules --> / <!-- END managed-rules -->` markers,
+#      engineering principles into `~/.copilot/AGENTS.md` between BEGIN/END
+#      markers keyed by the source-of-truth path
+#      (`synle/bashrc | software/scripts/advanced/llm/_common/instructions.md`),
 #      mirroring `~/.claude/CLAUDE.md` and `~/.gemini/GEMINI.md`. Source of
 #      truth: `software/scripts/advanced/llm/_common/instructions.md`.
 #
