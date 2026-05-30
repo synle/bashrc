@@ -379,11 +379,16 @@ function queue_pmset() {
   if [ "$flag" = "-c" ]; then section="AC Power"; fi
   local check_output="$_pmset_current"
   if [ -n "$section" ]; then
-    check_output=$(echo "$_pmset_current" | sed -n "/$section/,/^\S/p")
+    # POSIX `[^[:space:]]` (not `\S`) — BSD sed on macOS treats `\S` as literal
+    # `S`, which never matches any pmset line and leaves the range open to EOF
+    # (so a -b extract leaks into the AC section, breaking value matches).
+    check_output=$(echo "$_pmset_current" | sed -n "/$section/,/^[^[:space:]]/p")
   fi
   if ! echo "$check_output" | grep -q " $key[[:space:]]"; then
     echo ">> Power: $desc >> Skipped (key not supported)"
-  elif echo "$check_output" | grep -q " $key[[:space:]]*$val"; then
+  elif echo "$check_output" | grep -q " $key[[:space:]]*$val[[:space:]]*$"; then
+    # End-anchored ([[:space:]]*$) so ` displaysleep[[:space:]]*0` does NOT
+    # spuriously match the trailing `0` of " displaysleep         180".
     echo ">> Power: $desc >> Skipped (already $val)"
   else
     echo ">> Power: $desc >> Queued"

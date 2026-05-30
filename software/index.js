@@ -384,6 +384,7 @@ process.env.TZ = "UTC";
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const crypto = require("crypto");
 const { exec, execSync } = require("child_process");
 /** @type {string} Base home directory path for the current user. Read from env var set by run.sh before any sudo runs. RHEL/Fedora sudoers has `always_set_home` which resets $HOME to /root even with `sudo -E`, and os.homedir() reads /etc/passwd which also returns /root. This custom env var survives sudo because sudoers only resets HOME, not arbitrary vars. Falls back to os.homedir() for non-run.sh contexts (tests, direct invocation). */
 const BASE_HOMEDIR_LINUX = process.env.BASE_HOMEDIR_LINUX || process.env.HOME || os.homedir();
@@ -3208,6 +3209,65 @@ async function _readTextFromFile(filePath) {
 /** Max wall time for any single URL fetch via readText/readJson. */
 const _URL_FETCH_TIMEOUT_MS = 10000;
 
+/** Max age of an on-disk URL cache entry before it is treated as stale and refetched. */
+const _URL_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/** On-disk cache directory for URL GET responses. Lives under `/tmp/synle/bashrc/`
+ * (same root tree used by run.sh's bootstrap-node fallback and the debug log) so
+ * cache files survive across per-run BASHRC_TEMP_DIR rotations and a single run's
+ * back-to-back URL fetches hit the cache instead of re-paying network cost. */
+const _URL_CACHE_DIR = "/tmp/synle/bashrc/url_cache";
+
+/**
+ * Maps a URL to its on-disk cache file path. Uses a sha256 prefix so the
+ * filename is filesystem-safe regardless of URL contents (slashes, query
+ * strings, fragments, etc.). 32 hex chars = 128 bits of hash, plenty for
+ * collision-free caching across a single run.
+ * @param {string} url - The URL being cached
+ * @returns {string} Absolute path inside {@link _URL_CACHE_DIR}
+ */
+function _urlCachePath(url) {
+  const hash = crypto.createHash("sha256").update(url).digest("hex").slice(0, 32);
+  return path.join(_URL_CACHE_DIR, hash);
+}
+
+/**
+ * Reads a cached URL response if one exists AND is younger than
+ * {@link _URL_CACHE_TTL_MS}. Stale entries are deleted on access so we never
+ * accumulate dead files. Returns null on miss / stale / read error.
+ * @param {string} url - The URL whose cache to look up
+ * @returns {string | null} Cached body, or null if no fresh entry exists
+ */
+function _readUrlCache(url) {
+  try {
+    const file = _urlCachePath(url);
+    const stat = fs.statSync(file);
+    if (Date.now() - stat.mtimeMs > _URL_CACHE_TTL_MS) {
+      try {
+        fs.unlinkSync(file);
+      } catch (_) {}
+      return null;
+    }
+    return fs.readFileSync(file, "utf8");
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Writes a successful URL response to the on-disk cache. Failures are
+ * swallowed — caching is best-effort; a write error just means the next
+ * call refetches.
+ * @param {string} url - The URL being cached
+ * @param {string} content - The response body to cache
+ */
+function _writeUrlCache(url, content) {
+  try {
+    fs.mkdirSync(_URL_CACHE_DIR, { recursive: true });
+    fs.writeFileSync(_urlCachePath(url), content);
+  } catch (_) {}
+}
+
 /**
  * Fetches text content from a URL. Uses the built-in `fetch` when available
  * (Node 18+), otherwise falls back to `curl` via execBash for older runtimes
@@ -3219,6 +3279,12 @@ const _URL_FETCH_TIMEOUT_MS = 10000;
  * + 10s curl --max-time). With single-transport selection, an offline host
  * costs exactly {@link _URL_FETCH_TIMEOUT_MS}ms.
  *
+ * GET responses are cached on disk for {@link _URL_CACHE_TTL_MS} (5 min) so
+ * repeated calls within a single run (e.g. ollama provider discovery hitting
+ * the same host from multiple LLM setup scripts) don't re-pay the network
+ * cost. Only successful responses are cached — failures/timeouts always
+ * refetch on the next call so a transient outage doesn't get pinned.
+ *
  * On failure returns "" so callers (readJson, ollama provider discovery)
  * can treat empty as "host unreachable" — but ALSO logs a one-liner with
  * the reason (timeout / errno / HTTP status) and a short error detail, so
@@ -3229,12 +3295,14 @@ const _URL_FETCH_TIMEOUT_MS = 10000;
  */
 async function _readTextFromURL(url) {
   if (!url.startsWith("http")) throw new Error(`Invalid URL: ${url}`);
+  const cached = _readUrlCache(url);
+  if (cached !== null) return cached.trim();
   let result = "";
   try {
     if (typeof fetch === "function") {
       const res = await fetch(url, { signal: AbortSignal.timeout(_URL_FETCH_TIMEOUT_MS) });
       if (!res.ok) {
-        log(`[Warning] readTextFromURL ${url} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 20)}`);
+        log(`[Warning] readTextFromURL ${url} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 100)}`);
         return "";
       }
       result = await res.text();
@@ -3252,10 +3320,12 @@ async function _readTextFromURL(url) {
       (err && err.code) ||
       (err && err.name) ||
       "unknown";
-    const detail = String((err && err.message) || err || "").slice(0, 20);
+    const detail = String((err && err.message) || err || "").slice(0, 100);
     log(`[Warning] readTextFromURL ${url} failed: ${reason} ${detail}`);
   }
-  return result.trim();
+  const trimmed = result.trim();
+  if (trimmed) _writeUrlCache(url, trimmed);
+  return trimmed;
 }
 
 /**
