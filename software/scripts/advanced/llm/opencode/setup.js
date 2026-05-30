@@ -85,19 +85,24 @@ function _buildOpencodeConfig(providersArray) {
     };
   }
 
-  // GitHub Copilot provider: large context/output limits for models like claude-opus-4.6/4.7.
-  // Without explicit limits, opencode's GitHub Copilot adapter caps at its defaults
-  // (~128k context / 8k output), which wastes the model's full capacity.
+  // GitHub Copilot provider: large context/output limits for high-capacity models
+  // (claude-opus-4.6/4.7/4.8, gpt-5.3-codex, gpt-5.5). LIMIT_LARGE overrides the
+  // models.dev registry defaults; the auto-name loop below fills in friendly
+  // TUI labels ("github-copilot / <model>").
   providers["github-copilot"] = {
     models: {
       "claude-opus-4.6": { limit: LIMIT_LARGE },
       "claude-opus-4.7": { limit: LIMIT_LARGE },
+      "claude-opus-4.8": { limit: LIMIT_LARGE },
+      "gpt-5.3-codex": { limit: LIMIT_LARGE },
+      "gpt-5.5": { limit: LIMIT_LARGE },
     },
   };
 
   // Auto-name every model: "<provider_key> / <model_key>" so the model picker in TUI
   // shows a human-readable label instead of bare IDs.
   for (const [providerId, providerCfg] of Object.entries(providers)) {
+    if (!providerCfg.models) continue;
     for (const modelKey of Object.keys(providerCfg.models)) {
       if (!providerCfg.models[modelKey].name) {
         providerCfg.models[modelKey].name = `${providerId} / ${modelKey}`;
@@ -113,7 +118,7 @@ function _buildOpencodeConfig(providersArray) {
     // (homebrew / installer). Documented at https://opencode.ai/docs/config/.
     autoupdate: false,
     // Allow all tools, paths, and URLs without prompting — matches the
-    // `--allow-dangerously-skip-permissions` / `GITHUB_COPILOT_ALLOW_ALL_TOOLS=true`
+    // `--allow-dangerously-skip-permissions` (Claude) / `--allow-all` (Copilot)
     // convention used across the other AI CLI configs in this repo.
     permission: {
       "*": "allow",
@@ -138,20 +143,23 @@ function _buildOpencodeConfig(providersArray) {
 }
 
 /**
- * Writes ~/.config/opencode/tui.json with keybinds.
+ * Writes ~/.config/opencode/tui.json with managed TUI defaults + keybinds.
  * Keybinds belong in tui.json (the TUI config), not in opencode.json (the
  * provider/config schema at https://opencode.ai/config.json which has no
  * keybinds field). Schema: https://opencode.ai/tui.json.
  *
- * Strips invalid legacy fields (`title.enabled`, `animations.enabled`)
- * that crept into earlier versions but are not valid in the tui.json schema.
- * All other existing keys are preserved.
+ * Managed fields written here (overwrite on every run):
+ *   mouse, scroll_speed, scroll_acceleration, attention, keybinds.
+ *
+ * Strips invalid legacy top-level fields (`title`, `animations`) that crept
+ * into earlier versions but are not valid in the tui.json schema. All other
+ * existing keys are preserved.
  */
 async function _writeOpencodeTuiConfig() {
   const tuiPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/tui.json");
   /** @type {Record<string, any>} */
   const existing = (await readJson`${tuiPath}`) || {};
-  // Strip invalid legacy fields not in the tui.json schema
+  // Strip invalid legacy top-level fields not in the tui.json schema
   delete existing.title;
   delete existing.animations;
   /** @type {Record<string, any>} */
@@ -190,7 +198,8 @@ async function _writeOpencodeTuiConfig() {
  */
 async function _loadOpencodeKeybinds(_isOsMac) {
   /** @type {{ keybinds?: Record<string, any> } | null} */
-  const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
+  const raw =
+    await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
   if (!raw || !raw.keybinds) return {};
   return { ...raw.keybinds };
 }
@@ -202,11 +211,22 @@ async function _loadOpencodeKeybinds(_isOsMac) {
  * commands Claude Code uses.
  */
 async function _syncOpencodeCommandSymlinks() {
-  const claudeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".claude", "commands");
-  const opencodeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "commands");
+  const claudeCommandsDir = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".claude",
+    "commands",
+  );
+  const opencodeCommandsDir = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".config",
+    "opencode",
+    "commands",
+  );
 
   if (!fs.existsSync(claudeCommandsDir)) {
-    log(">> Skipped opencode commands: ~/.claude/commands not found (run claude.js first)");
+    log(
+      ">> Skipped opencode commands: ~/.claude/commands not found (run claude.js first)",
+    );
     return;
   }
 
@@ -229,8 +249,13 @@ async function _syncOpencodeCommandSymlinks() {
     } catch {
       continue;
     }
-    const resolved = path.isAbsolute(target) ? target : path.resolve(path.dirname(fullPath), target);
-    if (resolved === claudeCommandsDir || resolved.startsWith(claudeCommandsDir + path.sep)) {
+    const resolved = path.isAbsolute(target)
+      ? target
+      : path.resolve(path.dirname(fullPath), target);
+    if (
+      resolved === claudeCommandsDir ||
+      resolved.startsWith(claudeCommandsDir + path.sep)
+    ) {
       fs.unlinkSync(fullPath);
     }
   }
@@ -257,7 +282,9 @@ async function _syncOpencodeCommandSymlinks() {
   }
   log(
     `>> opencode: symlinked ${linkedCount} command(s) from ~/.claude/commands/` +
-      (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
+      (skippedForeign
+        ? ` (skipped ${skippedForeign} foreign / user-authored entries)`
+        : ""),
   );
 }
 
@@ -283,14 +310,19 @@ const OPENCODE_INSTRUCTIONS_MARKER = "managed-rules";
  * authoritative, not just a fallback.
  */
 async function _doOpencodeInstructionsWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/AGENTS.md");
+  const targetPath = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".config/opencode/AGENTS.md",
+  );
 
   log(">> OpenCode Instructions:", targetPath);
 
   await mkdir(path.dirname(targetPath));
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
+  const sourceContent = (
+    await readText`software/scripts/advanced/llm/_common/instructions.md`
+  ).trim();
 
   /** @type {string} Existing AGENTS.md content (empty if file is missing). */
   let existing = "";
@@ -300,21 +332,30 @@ async function _doOpencodeInstructionsWork() {
 
   // Upsert the managed block between <!-- BEGIN managed-rules --> / <!-- END managed-rules -->.
   // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.
-  const merged = replaceBlock(existing, OPENCODE_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  const merged =
+    replaceBlock(
+      existing,
+      OPENCODE_INSTRUCTIONS_MARKER,
+      sourceContent,
+      "<!--",
+      " -->",
+      "append",
+    ).trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);
 }
 
 /**
- * Writes ~/.config/opencode/opencode.json with dynamically-discovered Ollama providers,
+ * Writes ~/.config/opencode/opencode.json with dynamically-discovered Ollama providers
+ * plus a static github-copilot provider entry, then writes the TUI config + AGENTS.md,
  * then mirrors all Claude Code slash commands into the opencode commands dir as symlinks.
  *
  * Provider discovery: `getOllamaProviderInputs()` (in llm-common.js) probes the sy-omen45l
  * workstation and `127.0.0.1` on port `OLLAMA_PORT` (`/api/tags`) and returns ONLY hosts
  * that responded with at least one model. No hardcoded model list — every reachable host
- * contributes whatever it advertises. When zero hosts respond, the `provider` block is
- * omitted entirely so opencode falls back to its built-in defaults.
+ * contributes whatever it advertises. When zero hosts respond, the Ollama provider entries
+ * are omitted (github-copilot is still written either way).
  *
  * Skips entirely when opencode is not installed.
  */
@@ -324,14 +365,19 @@ async function doWork() {
     return;
   }
 
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
+  const targetPath = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".config/opencode/opencode.json",
+  );
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
   const providerInputs = await getOllamaProviderInputs();
   if (providerInputs.length === 0) {
-    log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
+    log(
+      ">> opencode: no reachable Ollama hosts — writing config without provider entries",
+    );
   }
 
   await writeJson(targetPath, _buildOpencodeConfig(providerInputs));

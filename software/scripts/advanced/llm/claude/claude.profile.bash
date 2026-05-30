@@ -64,25 +64,27 @@ function claude() {
 alias cl='claude'
 alias cm='claude --model claude-opus-4-7[1m]'
 
-# claude_edit_config: open ~/.claude.json (Claude Code top-level config) in the editor
+# claude_edit_config: open ~/.claude.json AND the ~/.claude/ config dir in the editor
 function claude_edit_config() {
   if is_help_arg "${1:-}"; then
-    echo "claude_edit_config: open ~/.claude.json in the editor via view_file
+    echo "claude_edit_config: open ~/.claude.json + ~/.claude/ in the editor via view_file
   Usage: claude_edit_config
 
 ~/.claude.json is Claude Code's top-level state file (recent project paths,
 MCP server registrations, OAuth token state, per-project settings). This is the
-file most users actually want to edit when tweaking Claude Code.
+file most users actually want to edit when tweaking Claude Code. The companion
+~/.claude/ directory is opened alongside it so settings.json, CLAUDE.md,
+keybindings.json, and commands/*.md are all reachable in the same session.
 
-Related files NOT opened here:
-  ~/.claude/settings.json   - managed defaults seeded by claude/setup.js; edit
-                              software/scripts/advanced/llm/claude/setup.js
-                              (GLOBAL_CLAUDE_SETTINGS) if you want changes to
-                              survive a re-run.
-  ~/.claude/CLAUDE.md       - user-level engineering rules (sourced from
-                              software/scripts/advanced/llm/_common/instructions.md).
+Files inside ~/.claude/ worth knowing about:
+  ~/.claude/settings.json    - managed defaults seeded by claude/setup.js; edit
+                               software/scripts/advanced/llm/claude/setup.js
+                               (GLOBAL_CLAUDE_SETTINGS) if you want changes to
+                               survive a re-run.
+  ~/.claude/CLAUDE.md        - user-level engineering rules (sourced from
+                               software/scripts/advanced/llm/_common/instructions.md).
   ~/.claude/keybindings.json - generated from
-                              software/scripts/advanced/llm/claude/claude-keys.common.jsonc."
+                               software/scripts/advanced/llm/claude/claude-keys.common.jsonc."
     return 0
   fi
   view_file "$HOME/.claude.json"

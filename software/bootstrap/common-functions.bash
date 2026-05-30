@@ -63,7 +63,10 @@ function curl_bash_install() {
 }
 
 # npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
-#   pkg:    npm package name (e.g. @google/gemini-cli, yarn)
+#   pkg:    npm package name (e.g. @google/gemini-cli, yarn). If no `@<version>`
+#           suffix is present, `@latest` is auto-appended so we always re-fetch
+#           the npm "latest" dist-tag on refresh runs (the leading `@` of scoped
+#           packages is excluded from the suffix check).
 #   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
 # Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
 # via cmd.exe. Logs status (Skipped/Success/Error) for each target.
@@ -74,8 +77,8 @@ function npm_install_global() {
   local pkg="$1"
   local bin="${2:-${pkg##*/}}"
 
-  # Safe version tagger: skips leading '@' for scoped packages
-  # If the package string doesn't contain an '@', append '@latest'
+  # Auto-tag with @latest when no version is pinned. Strip a leading `@` first
+  # so scoped packages (@scope/name) aren't misread as already having a version.
   local _check_pkg="${pkg#@}"
   [[ "$_check_pkg" != *@* ]] && pkg="${pkg}@latest"
 

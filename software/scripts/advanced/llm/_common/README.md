@@ -29,7 +29,7 @@ bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
 | **claude**   | ✅ `~/.claude/CLAUDE.md`                                                                            | ✅ `~/.claude/commands/sy-*.md`                                 | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  |
 | **copilot**  | ✅ `~/.copilot/AGENTS.md`                                                                           | ❌ no `~/.<cli>/commands/` slot (would need plugin manifest)    | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` |
 | **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ❌ no `~/.<cli>/commands/` slot (would need extension manifest) | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  |
-| **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ symlinks from `~/.claude/commands/`                          | ✅ inline `keybinds` in `~/.config/opencode/opencode.json`       | ✅ inline in `opencode.json`  |
+| **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ symlinks from `~/.claude/commands/`                          | ✅ inline `keybinds` in `~/.config/opencode/tui.json`            | ✅ inline in `opencode.json`  |
 
 Legend: ✅ wired, ⚠️ partial / awaiting upstream, ❌ unsupported by CLI today.
 
@@ -57,9 +57,9 @@ Each `setup.js` has its own `<CLI>_MANAGED_SETTINGS` map because the literal key
 | Auto-switch to auto mode on rate limit | n/a                                       | `continueOnAutoMode: true`   | n/a                | n/a                                               |
 | Reasoning effort                       | `alwaysThinkingEnabled: true`             | `effortLevel: "xhigh"`       | n/a                | n/a                                               |
 | Exclude gitignored from @ picker       | n/a                                       | `respectGitignore: true`     | n/a                | n/a                                               |
-| Terminal progress indicator | n/a                                       | `terminalProgress: true` | n/a               | n/a                                               |
-| Tool output truncation      | n/a                                       | n/a                    | n/a                | `tool_output.max_lines: 3000`                     |
-| Context compaction          | `alwaysThinkingEnabled: true`             | n/a                    | n/a                | `compaction: { auto: true, tail_turns: 4 }`       |
+| Terminal progress indicator            | n/a                                       | `terminalProgress: true`     | n/a                | n/a                                               |
+| Tool output truncation                 | n/a                                       | n/a                          | n/a                | `tool_output.max_lines: 3000`                     |
+| Context compaction                     | n/a                                       | n/a                          | n/a                | `compaction: { auto: true, tail_turns: 4 }`       |
 | PR conflict resolution                 | n/a                                       | `mergeStrategy: "merge"`     | n/a                | n/a                                               |
 
 **n/a** here means _the CLI does not expose a settings key for that intent today_. Don't silently drop an intent if upstream later ships one — add the key and update this table in the same edit.

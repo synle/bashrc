@@ -11,9 +11,11 @@
 # `@githubnext/github-copilot-cli` package (which provided `github-copilot-cli`
 # / `??`, `gh?`, `git?`) was deprecated upstream and removed from this repo.
 #
-# Adds `--autopilot --allow-all` + GITHUB_COPILOT_ALLOW_ALL_TOOLS=true for autonomous mode:
-# grants the agent permission to read/write files, execute shell commands and
-# access the network without prompting per-action.
+# Adds `--autopilot --allow-all` for autonomous mode: grants the agent
+# permission to read/write files, execute shell commands and access the network
+# without prompting per-action. `--allow-all` is the documented umbrella flag
+# (equivalent to --allow-all-tools --allow-all-paths --allow-all-urls per
+# `copilot --help`), so no separate env vars are needed.
 #
 # Two layers of repo-managed config flow into Copilot:
 #   1. Per-repo (handled below): the `copilot` function auto-symlinks
@@ -49,30 +51,34 @@ function copilot() {
   fi
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of any `copilot ... | jq` style pipelines).
-  echo "GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command copilot --autopilot --allow-all $*" >&2
+  echo "command copilot --autopilot --allow-all $*" >&2
   # `command copilot` bypasses this function so the call hits the real binary, not us.
-  GITHUB_COPILOT_ALLOW_ALL_TOOLS=true command copilot --autopilot --allow-all "$@"
+  command copilot --autopilot --allow-all "$@"
 }
 alias co='copilot'
 
-# copilot_edit_config: open ~/.copilot/settings.json (Copilot CLI user settings) in the editor
+# copilot_edit_config: open the ~/.copilot/ config dir (settings, AGENTS.md, mcp-config) in the editor
 function copilot_edit_config() {
   if is_help_arg "${1:-}"; then
-    echo "copilot_edit_config: open ~/.copilot/settings.json in the editor via view_file
+    echo "copilot_edit_config: open ~/.copilot/ in the editor via view_file
   Usage: copilot_edit_config
 
-~/.copilot/settings.json holds every user-tunable Copilot CLI setting that
-'copilot help config' exposes (model, theme, banner, hooks, enabledPlugins,
-extraKnownMarketplaces, etc.). Managed defaults are seeded by copilot/setup.js;
-this opens the live file so the user can layer their own overrides.
+Opens the whole ~/.copilot/ config dir so settings.json, AGENTS.md, and
+mcp-config.json are all reachable in the same session.
 
-Related files NOT opened here:
-  ~/.copilot/config.json    - state/credential file (auth tokens, session
-                              metadata); managed by the copilot binary.
-  ~/.copilot/AGENTS.md      - user-level engineering rules (sourced from
-                              software/scripts/advanced/llm/_common/instructions.md).
+Files inside ~/.copilot/ worth knowing about:
+  ~/.copilot/settings.json   - every user-tunable Copilot CLI setting that
+                               'copilot help config' exposes (model, theme,
+                               banner, hooks, enabledPlugins,
+                               extraKnownMarketplaces, etc.). Managed defaults
+                               are seeded by copilot/setup.js; layer your own
+                               overrides on top.
+  ~/.copilot/config.json     - state/credential file (auth tokens, session
+                               metadata); managed by the copilot binary.
+  ~/.copilot/AGENTS.md       - user-level engineering rules (sourced from
+                               software/scripts/advanced/llm/_common/instructions.md).
   ~/.copilot/mcp-config.json - MCP server registrations; managed by user or by
-                              the Captain install-plugin-to-copilot skill.
+                               the Captain install-plugin-to-copilot skill.
 
 Note: Copilot has no keymap config in v1.0.48 — in-app chords are hardcoded
 in the binary. Wrapper-layer parity lives here in copilot.profile.bash."

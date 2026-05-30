@@ -40,13 +40,16 @@
 //
 // Opencode-specific additions (no Claude equivalent — kept for cross-app
 // muscle memory):
-//   sidebar_toggle    ctrl+\,tab  — matches Sublime/VS Code/Zed sidebar
-//                                   toggle; tab is the alternate for quick
-//                                   panel access.
+//   sidebar_toggle    ctrl+\,super+\       — matches Sublime/VS Code/Zed
+//                                            sidebar toggle convention.
 //   input_buffer_home ctrl+home,super+home — start of multi-line buffer.
 //   input_buffer_end  ctrl+end,super+end   — end of multi-line buffer.
-//   yank_last_code    ctrl+y               — yank last code block from
-//                                            assistant response.
+//   messages_copy     ctrl+y               — copy last assistant message
+//                                            (bash-readline yank chord).
+//   command_list      ctrl+p,super+p       — command palette (super+p matches
+//                                            Sublime / VS Code / Zed).
+//   session_rename    f6                   — moved off f2 so f2 is free for
+//                                            future bindings.
 //
 // Leader move:
 //   The default leader is ctrl+x — which collides with Claude's editor-open
@@ -61,20 +64,16 @@
 //   - The opencode SQLite db has no settings table for view state.
 //   - The command-palette "Hide sidebar" command (ctrl+p) is a runtime
 //     toggle only, not persisted between launches.
-//   - The only knob is the toggle keybind (now ctrl+\ or tab).
+//   - The only knob is the toggle keybind (now ctrl+\ or super+\).
 //   Documented as a permanent gap in docs/editor-keybindings.md.
-//
-// TODO(future): opencode's docs flag the top-level `keybinds` key in
-// opencode.json as deprecated (auto-migrated). The canonical location is
-// now ~/.config/opencode/tui.json. Migrate the writer in setup.js when
-// upstream removes the auto-migration shim.
 {
   "keybinds": {
     // Move leader off ctrl+x so we can bind ctrl+x directly to editor_open.
     // See header comment for rationale. Every <leader>X chord (~30 of them:
     // <leader>e editor, <leader>n new session, <leader>t themes, <leader>m
     // models, etc.) continues to work, just with ctrl+o as the prefix.
-    // session_rename: moved to f6 to free f2 for sidebar_toggle.
+    // session_rename: moved off f2 (opencode default) onto f6 so f2 stays
+    // free for terminal/system-level bindings.
     "session_rename": "f6",
     "leader": "ctrl+o",
     // Open $EDITOR (typically vim) to compose input. Mirrors Claude's
@@ -103,10 +102,9 @@
     // Clear current input. Claude binds super+l (cmd+l mac, super+l linux).
     // We also layer ctrl+l (bash readline convention).
     "input_clear": "super+l,ctrl+l",
-    // Undo last typed input. Claude binds super+z (cmd+z mac, super+z linux).
-    // We layer ctrl+- (opencode legacy chord) and keep super+z as an
-    // alternate.
-    "input_undo": "super+z,ctrl+-,super+z",
+    // Undo last typed input. Claude binds super+z (cmd+z mac, super+z linux);
+    // ctrl+- is opencode's legacy chord retained for muscle memory.
+    "input_undo": "super+z,ctrl+-",
     // Paste into the input field. Claude binds ctrl+v → chat:imagePaste;
     // opencode's input_paste is text-paste (no image pipeline today).
     // Listed explicitly so a future upstream default flip can't drop it.
@@ -115,15 +113,14 @@
     // bash-readline yank convention for muscle-memory carryover.
     "messages_copy": "ctrl+y",
     // Command list / palette. ctrl+p is the opencode upstream default
-    // (file-finder); super+l is the cross-app convention matching
+    // (file-finder); super+p is the cross-app convention matching
     // Sublime / VS Code / Zed command palette.
     "command_list": "ctrl+p,super+p",
     // Toggle sidebar (sessions / files / MCP pane). Default is "<leader>b";
     // we add ctrl+\ as the primary chord (matches cross-app sidebar-toggle
-    // convention used by Sublime / VS Code / Zed) and tab as an alternate for
-    // quick panel access. The "\\" in the JSON source represents a literal
-    // backslash; after JSON parse the chord is "ctrl+\" for bare
-    // ctrl+backslash.
+    // convention used by Sublime / VS Code / Zed) and super+\ as the
+    // OS-modifier alternate. The "\\" in the JSON source represents a literal
+    // backslash; after JSON parse the chords are "ctrl+\" and "super+\".
     "sidebar_toggle": "ctrl+\\,super+\\",
   },
 }

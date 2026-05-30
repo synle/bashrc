@@ -283,7 +283,7 @@ describe("AI CLI keymap build — OpenCode", () => {
     input_buffer_end: "ctrl+end,super+end",
     session_rename: "f6",
     input_clear: "super+l,ctrl+l",
-    input_undo: "super+z,ctrl+-,super+z",
+    input_undo: "super+z,ctrl+-",
     input_paste: "ctrl+v",
     messages_copy: "ctrl+y",
     command_list: "ctrl+p,super+p",
