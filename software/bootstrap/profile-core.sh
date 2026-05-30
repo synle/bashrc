@@ -171,13 +171,10 @@ alias ls_biggest_last="ls_biggest -r" # sort by file size (smallest first)
 alias lc="wc -l"                      # line count
 alias tailf="tail -n 500 -f"          # show last 500 lines then follow
 alias tailn="tail -n"                 # show last N lines
-# prevent curl from using cached responses
-alias curl="curl \
-  -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0' \
-  -H 'Pragma: no-cache' \
-  -H 'Expires: 0' \
-  -H 'If-None-Match:' \
-  -H 'If-Modified-Since:'"
+# Note: no-cache headers for the `curl` wrapper are baked into the function
+# itself in profile-advanced.sh (see `function curl()`); the previous alias
+# here was removed to avoid double-prepending headers via alias-then-function.
+# Header reference (kept for documentation):
 # Cache-Control: no-cache, no-store, must-revalidate, max-age=0 — HTTP/1.1: don't cache, don't store, revalidate, expire immediately
 # Pragma: no-cache — HTTP/1.0 fallback
 # Expires: 0 — forces expiration

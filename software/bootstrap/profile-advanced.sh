@@ -471,28 +471,64 @@ function prompt_yes_no() {
 function curl() {
   if is_help_arg "${1:-}"; then
     echo "
-      curl: drop-in curl wrapper that pretty-prints JSON responses via jq
-        curl <url> [flags...]    standard curl; auto-formats JSON when applicable
-        Falls back to plain \`command curl\` when:
-          - jq is not installed
+      curl: drop-in curl wrapper that pretty-prints JSON / XML / HTML responses
+        curl <url> [flags...]    standard curl; auto-formats by sniffing body
+        Format detection (first + last non-whitespace bytes must pair):
+          { ... }   ->  JSON via jq
+          [ ... ]   ->  JSON via jq
+          < ... >   ->  XML or HTML via xmllint (strict XML first, then --html)
+          anything else -> raw cat
+        Always prepends:
+          -L (follow redirects, max 50 hops; curl strips Authorization on
+              cross-origin hops by default so this is safe)
+          no-cache headers (Cache-Control / Pragma / Expires / empty
+              If-None-Match / empty If-Modified-Since) so responses are
+              never served from upstream/intermediary caches.
+        Override either by passing flags AFTER the URL — user-supplied flags
+        win (e.g. \`curl <url> --max-redirs 0\` to disable redirect follow).
+        Falls back to plain \`command curl\` (still with -L + no-cache headers)
+        when:
+          - jq is not installed (JSON path) / xmllint not installed (XML path)
           - stdout is not a TTY (i.e. piped or redirected — preserves streaming)
           - any output-redirect / download flag is present
             (-o, -O, -J, --remote-name-all, -i, -I, -D, -T, -w, --output-dir)
-          - the response is not JSON
+          - the response body sniff doesn't match any known format
     "
     return 0
   fi
 
-  # No jq installed → straight pass-through.
-  type -P jq &> /dev/null || {
-    command curl "$@"
+  # Default behavior flags: follow redirects so URLs like github.com/x/raw/...
+  # resolve to their final destination instead of returning a 30x with an HTML
+  # body. Bounded by curl's --max-redirs (default 50). Auth headers are
+  # automatically stripped by curl on cross-origin hops (since 7.58.0), so this
+  # is safe even when callers pass `-H 'Authorization: ...'`.
+  local _default_flags=(-L)
+
+  # No-cache headers: defeat browser/intermediary caches so curl always sees a
+  # fresh upstream response. Cache-Control covers HTTP/1.1, Pragma the HTTP/1.0
+  # fallback, Expires forces immediate expiry, and the empty If-None-Match /
+  # If-Modified-Since suppress conditional 304 short-circuits.
+  local _no_cache_headers=(
+    -H 'Cache-Control: no-cache, no-store, must-revalidate, max-age=0'
+    -H 'Pragma: no-cache'
+    -H 'Expires: 0'
+    -H 'If-None-Match:'
+    -H 'If-Modified-Since:'
+  )
+
+  # No formatter installed at all → straight pass-through (still with defaults
+  # + headers). If either jq OR xmllint is present, fall through to the
+  # intercept path; the format dispatch below handles the missing-formatter
+  # case per-format.
+  if ! type -P jq &> /dev/null && ! type -P xmllint &> /dev/null; then
+    command curl "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@"
     return
-  }
+  fi
 
   # stdout is not a TTY (caller is piping or redirecting) → don't intercept.
   # Preserves streaming for `curl URL | tar xz`, `curl URL | bash`, `curl URL > file`, etc.
   [ -t 1 ] || {
-    command curl "$@"
+    command curl "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@"
     return
   }
 
@@ -500,36 +536,70 @@ function curl() {
   local arg
   for arg in "$@"; do
     case "$arg" in
-    -o | --output | -O | --remote-name | --remote-name-all | \
-      -J | --remote-header-name | \
-      -i | --include | -I | --head | \
-      -D | --dump-header | -T | --upload-file | \
-      -w | --write-out | --output-dir)
-      command curl "$@"
-      return
-      ;;
+      -o | --output | -O | --remote-name | --remote-name-all | \
+        -J | --remote-header-name | \
+        -i | --include | -I | --head | \
+        -D | --dump-header | -T | --upload-file | \
+        -w | --write-out | --output-dir)
+        command curl "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@"
+        return
+        ;;
     esac
   done
 
-  local tmpdir
-  tmpdir=$(mktemp -d) || {
-    command curl "$@"
+  local tmpfile
+  tmpfile=$(mktemp) || {
+    command curl "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@"
     return
   }
-  trap 'rm -rf "$tmpdir"' RETURN
+  trap 'rm -f "$tmpfile"' RETURN
 
-  command curl "$@" -D "$tmpdir/headers" -o "$tmpdir/body" || return
+  # Capture body to tmpfile + http status code via -w. Body goes to file via
+  # -o; stdout receives only the http_code from -w, which we capture. `-sS`
+  # hides the progress meter (we'll print our own status summary below) while
+  # `-S` keeps real network errors visible. User-supplied flags come after, so
+  # explicit `-v` / `--progress-bar` / `--no-progress-meter` still win.
+  local http_code
+  http_code=$(command curl -sS "${_default_flags[@]}" "${_no_cache_headers[@]}" "$@" -o "$tmpfile" -w '%{http_code}')
+  local _curl_rc=$?
 
-  # Use `tail -1` so the FINAL response's Content-Type wins after redirects
-  # (-D dumps every hop's headers; the first hop is usually text/html for 30x).
-  local content_type
-  content_type=$(grep -i '^content-type:' "$tmpdir/headers" | tail -1 | tr -d '\r' | sed 's/.*://' | tr '[:upper:]' '[:lower:]')
-
-  if [[ "$content_type" == *json* ]] && jq -e . "$tmpdir/body" &> /dev/null; then
-    jq . "$tmpdir/body"
-  else
-    command cat "$tmpdir/body"
+  # Empty body (e.g. httpbin.org/status/404, HEAD-like endpoints, 204 responses)
+  # would otherwise leave the user staring at a silent terminal. Surface the
+  # status code + curl exit code to stderr so the call is never a black box.
+  if [ ! -s "$tmpfile" ]; then
+    echo "(empty body; http ${http_code:-?}, curl exit $_curl_rc)" >&2
+    return $_curl_rc
   fi
+
+  # Sniff first AND last non-whitespace bytes to decide format. Bounded reads
+  # (256 bytes head + tail) avoid slurping huge non-text downloads. Strict
+  # pairing rules:
+  #   '{' / '['  + '}' / ']'   -> JSON  (validated + pretty-printed by jq)
+  #   '<'        + '>'         -> XML/HTML (pretty-printed by xmllint if present)
+  # Validators below do full parsing — sniff just avoids launching them on
+  # obviously-not-structured bodies (plain text, binary, partial chunks).
+  local first_char last_char
+  first_char=$(head -c 256 "$tmpfile" 2> /dev/null | tr -d '[:space:]' | head -c 1)
+  last_char=$(tail -c 256 "$tmpfile" 2> /dev/null | tr -d '[:space:]' | tail -c 1)
+
+  if [[ ("$first_char" == "{" && "$last_char" == "}") \
+    || ("$first_char" == "[" && "$last_char" == "]") ]] \
+    && jq -e . "$tmpfile" &> /dev/null; then
+    jq . "$tmpfile"
+  elif [[ "$first_char" == "<" && "$last_char" == ">" ]] \
+    && type -P xmllint &> /dev/null; then
+    # Try strict XML mode first (preserves XML declarations + namespaces); fall
+    # back to HTML mode (lenient parser handles unclosed tags, missing root,
+    # SGML quirks). Both modes silence stderr — xmllint is chatty about minor
+    # parse warnings we don't want polluting the output. If both fail, cat raw.
+    if ! xmllint --format "$tmpfile" 2> /dev/null; then
+      xmllint --html --format "$tmpfile" 2> /dev/null || command cat "$tmpfile"
+    fi
+  else
+    command cat "$tmpfile"
+  fi
+
+  return $_curl_rc
 }
 
 ################################################################################
