@@ -336,6 +336,7 @@ runs:
         check_binary_required fzf
         check_binary_required unzip
         check_binary_required yarn
+        check_binary_required prettier
         check_binary_required bun
         check_binary_required deno
         check_binary_required uv

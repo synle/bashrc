@@ -10,6 +10,7 @@
     "fzf",
     "unzip",
     "yarn",
+    "prettier",
     "bun",
     "deno",
     "uv",
