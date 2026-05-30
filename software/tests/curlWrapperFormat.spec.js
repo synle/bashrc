@@ -47,13 +47,30 @@ beforeEach(() => {
   }
 
   // Resolve and symlink prettier (real binary — formatting is the unit under test).
+  // execSync defaults to /bin/sh — dash on Ubuntu CI doesn't support `type -P`. Force bash.
+  // Fall back to node_modules/.bin/prettier so the test still works in CI where no global
+  // prettier is installed (vitest's PATH already includes node_modules/.bin, but the
+  // path-based fallback avoids depending on that detail).
   if (!prettierBin) {
-    prettierBin = execSync("type -P prettier", { encoding: "utf-8" }).trim();
+    try {
+      prettierBin = execSync("type -P prettier", { encoding: "utf-8", shell: "/bin/bash" }).trim();
+    } catch {
+      prettierBin = "";
+    }
+    if (!prettierBin) {
+      const localBin = path.join(ROOT_DIR, "node_modules", ".bin", "prettier");
+      if (fs.existsSync(localBin)) prettierBin = fs.realpathSync(localBin);
+    }
     if (!prettierBin) throw new Error("prettier not on PATH; cannot run curl-wrapper format tests");
   }
   fs.symlinkSync(prettierBin, path.join(sandbox, "bin", "prettier"));
   // Prettier itself is a Node shim — node must also resolve from sandbox PATH.
-  const nodeBin = execSync("type -P node", { encoding: "utf-8" }).trim();
+  let nodeBin = "";
+  try {
+    nodeBin = execSync("type -P node", { encoding: "utf-8", shell: "/bin/bash" }).trim();
+  } catch {
+    nodeBin = process.execPath;
+  }
   if (nodeBin) fs.symlinkSync(nodeBin, path.join(sandbox, "bin", "node"));
 });
 
