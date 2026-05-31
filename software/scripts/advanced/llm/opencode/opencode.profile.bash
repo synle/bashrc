@@ -53,12 +53,30 @@ Related file NOT inside the dir:
   view_file "$HOME/.config/opencode"
 }
 
+# _opencode_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from opencode's SQLite store
+#
+# Internal helper consumed by `opencode_list_prompts` (single-CLI public
+# surface) and `llm_list_prompts` (aggregate). NOT deduped, NOT capped —
+# `_llm_dedupe_and_cap` does that downstream so the aggregate can merge
+# raw streams from four CLIs into one global newest-first cut.
+#
+# Source: ~/.local/share/opencode/opencode.db. User messages are rows in
+# `message` with role=user; their text content lives in `part` rows of
+# type=text linked by message_id. `m.time_created` is epoch-ms; divide by
+# 1000 and feed to jq's `todate` to get an ISO-8601 string.
+function _opencode_list_prompts_ts() {
+  local db="$HOME/.local/share/opencode/opencode.db"
+  [ -f "$db" ] || return 0
+  type -P sqlite3 > /dev/null 2>&1 || return 0
+  type -P jq > /dev/null 2>&1 || return 0
+  sqlite3 -json "$db" "SELECT json_extract(p.data,'\$.text') AS c, (m.time_created/1000) AS ts_s FROM message m JOIN part p ON p.message_id=m.id WHERE json_extract(m.data,'\$.role')='user' AND json_extract(p.data,'\$.type')='text' ORDER BY m.time_created DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
+    | jq -j '.[] | select(.c != null and .c != "") | (.ts_s|todate), "\t", .c, "\u0000"' 2> /dev/null
+}
+
 # opencode_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
 #
-# Source: ~/.local/share/opencode/opencode.db (SQLite). User messages are
-# rows in `message` with role=user; their text content lives in `part` rows
-# of type=text linked by message_id. Output is consumed by
-# opencode_search_prompts (or any pipeline that wants raw prompts).
+# Public surface. Wraps `_opencode_list_prompts_ts` through `_llm_dedupe_and_cap`,
+# which sorts, dedupes, caps, and emits content-only NUL records.
 function opencode_list_prompts() {
   if is_help_arg "${1:-}"; then
     echo "opencode_list_prompts: stream past user prompts from opencode's SQLite store
@@ -70,13 +88,7 @@ occurrence) and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-
 Source: ~/.local/share/opencode/opencode.db -> message JOIN part WHERE role=user."
     return 0
   fi
-  local db="$HOME/.local/share/opencode/opencode.db"
-  [ -f "$db" ] || return 0
-  type -P sqlite3 > /dev/null 2>&1 || return 0
-  type -P jq > /dev/null 2>&1 || return 0
-  sqlite3 -json "$db" "SELECT json_extract(p.data,'\$.text') AS c, m.time_created AS ts FROM message m JOIN part p ON p.message_id=m.id WHERE json_extract(m.data,'\$.role')='user' AND json_extract(p.data,'\$.type')='text' ORDER BY m.time_created DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
-    | jq -j '.[] | select(.c != null and .c != "") | .c, "\u0000"' 2> /dev/null \
-    | _llm_dedupe_and_cap
+  _opencode_list_prompts_ts | _llm_dedupe_and_cap
 }
 
 # opencode_search_prompts: fuzzy-pick a past opencode prompt and copy it to the clipboard

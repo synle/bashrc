@@ -91,12 +91,31 @@ Files inside ~/.claude/ worth knowing about:
   view_file "$HOME/.claude"
 }
 
-# claude_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+# _claude_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from Claude Code's JSONL sessions
 #
-# Source: ~/.claude/projects/<encoded-cwd>/*.jsonl session logs. Each line is
-# a JSON record; user prompts have type=user with .message.role=user and a
-# STRING .message.content (array content is tool_result payloads, skipped).
-# Records are sorted by .timestamp DESC across all sessions.
+# Internal helper consumed by `claude_list_prompts` and the aggregate
+# `llm_list_prompts`. NOT deduped, NOT capped — downstream `_llm_dedupe_and_cap`
+# handles ordering, dedupe, and cap so the four CLIs can merge cleanly.
+#
+# Source: ~/.claude/projects/<encoded-cwd>/*.jsonl. Each line is a JSON
+# record; user prompts have type=user with .message.role=user and a STRING
+# .message.content (array content is tool_result payloads, skipped).
+function _claude_list_prompts_ts() {
+  local dir="$HOME/.claude/projects"
+  [ -d "$dir" ] || return 0
+  type -P jq > /dev/null 2>&1 || return 0
+  # `sort -r` on `{"ts":"<ISO ts>"...` JSON lines is a valid newest-first
+  # cut because ISO-8601 is lex-sortable. `head` keeps the working set
+  # bounded before jq formats it for the dedupe-cap stage.
+  command find "$dir" -name '*.jsonl' -type f -print0 2> /dev/null \
+    | command xargs -0 command cat 2> /dev/null \
+    | jq -c 'select(.type=="user" and (.message.content|type=="string")) | {ts: .timestamp, c: .message.content}' 2> /dev/null \
+    | command sort -r \
+    | command head -n $((_LLM_PROMPTS_LIMIT * 4)) \
+    | jq -j '.ts, "\t", .c, "\u0000"' 2> /dev/null
+}
+
+# claude_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
 function claude_list_prompts() {
   if is_help_arg "${1:-}"; then
     echo "claude_list_prompts: stream past Claude Code user prompts as NUL records
@@ -106,19 +125,7 @@ Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PR
 Source: ~/.claude/projects/<encoded-cwd>/*.jsonl, filtered to user-typed text."
     return 0
   fi
-  local dir="$HOME/.claude/projects"
-  [ -d "$dir" ] || return 0
-  type -P jq > /dev/null 2>&1 || return 0
-  # `sort -r` over JSON lines starting with "{\"ts\":\"<ISO timestamp>\"" is a
-  # valid newest-first sort because ISO-8601 is lex-sortable. Then jq strips
-  # the wrapper and emits .c followed by a NUL.
-  command find "$dir" -name '*.jsonl' -type f -print0 2> /dev/null \
-    | command xargs -0 command cat 2> /dev/null \
-    | jq -c 'select(.type=="user" and (.message.content|type=="string")) | {ts: .timestamp, c: .message.content}' 2> /dev/null \
-    | command sort -r \
-    | command head -n $((_LLM_PROMPTS_LIMIT * 4)) \
-    | jq -j '.c, "\u0000"' 2> /dev/null \
-    | _llm_dedupe_and_cap
+  _claude_list_prompts_ts | _llm_dedupe_and_cap
 }
 
 # claude_search_prompts: fuzzy-pick a past Claude Code prompt and copy it to the clipboard

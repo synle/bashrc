@@ -8,37 +8,49 @@
 # defines the storage-specific lister, then delegates the picker to the shared
 # `_llm_search_prompts` helper here.
 #
-# Public surface (defined in each per-CLI partial, NOT here):
-#   claude_list_prompts    / claude_search_prompts
-#   copilot_list_prompts   / copilot_search_prompts
-#   gemini_list_prompts    / gemini_search_prompts
-#   opencode_list_prompts  / opencode_search_prompts
+# Public surface:
+#   claude_list_prompts    / claude_search_prompts      (defined in claude.profile.bash)
+#   copilot_list_prompts   / copilot_search_prompts     (defined in copilot.profile.bash)
+#   gemini_list_prompts    / gemini_search_prompts      (defined in gemini.profile.bash)
+#   opencode_list_prompts  / opencode_search_prompts    (defined in opencode.profile.bash)
+#   llm_list_prompts       / llm_search_prompts         (aggregate, defined HERE)
 #
 # Internal contract:
-#   *_list_prompts  — emit user prompts to stdout as NUL-delimited records,
-#                     newest first, deduplicated, capped at _LLM_PROMPTS_LIMIT.
-#                     Use `_llm_dedupe_and_cap` as the final pipeline stage.
-#   *_search_prompts — call `_llm_search_prompts <cli-name>` which consumes the
-#                     matching `_list_prompts` function, drives fzf with a
-#                     preview pane (a la `fuzzy_recent_files` / `fvim`), and
-#                     copies the selected prompt to the system clipboard via
-#                     the shared `copy` helper (defined in profile-advanced.sh).
+#   _<cli>_list_prompts_ts — emit `<ISO-8601 ts>\t<content>` NUL-delimited
+#                            records straight from the CLI's storage. Not
+#                            deduped, not capped, not sorted across CLIs.
+#                            The aggregate lister concatenates the four.
+#   *_list_prompts         — public lister. Pipes the matching `*_ts` raw
+#                            stream through `_llm_dedupe_and_cap`, which
+#                            sorts newest first by ts, dedupes by content,
+#                            caps at _LLM_PROMPTS_LIMIT, and emits content
+#                            only (ts stripped).
+#   *_search_prompts       — call `_llm_search_prompts <cli-name>` which
+#                            consumes the matching `_list_prompts` function
+#                            and drives fzf with an inline-base64 preview.
+#                            On Enter, the selected prompt is piped to the
+#                            shared `copy` helper (profile-advanced.sh).
 #
-# Why NUL records: user prompts span many lines (code, configs, multi-paragraph
-# instructions). Newline-delimited would fracture every entry. NUL is the only
-# byte legal prompt content cannot contain.
+# Why NUL records: user prompts span many lines. Newline-delimited would
+# fracture every entry. NUL is the only byte legal prompt content cannot
+# contain. ISO-8601 ts is lex-sortable across CLIs, so a single combined
+# sort gives a correct newest-first global ordering.
 ################################################################################
 
 # Cap on emitted prompts per lister. Single place to tune for ALL four CLIs.
 _LLM_PROMPTS_LIMIT=500
 
-# _llm_dedupe_and_cap: dedupe NUL-delimited stdin records, cap at _LLM_PROMPTS_LIMIT, preserve input order
+# _llm_dedupe_and_cap: sort+dedupe NUL `<ts>\t<content>` records, cap, emit content-only NUL records
 #
-# Reads NUL-delimited records from stdin, drops duplicate records (first
-# occurrence wins — so when piped newest-first, the newest copy of each
-# repeated prompt is kept), and stops after _LLM_PROMPTS_LIMIT unique records.
-# Output: same NUL-delimited records, no trailing newline. node is used for
-# portability — BSD awk on macOS does not reliably honor `RS='\0'`.
+# Input: NUL-delimited records of `<ISO-8601 ts>\t<prompt content>`. Empty
+# ts is tolerated (sorts last). Behavior: collect all records, sort by ts
+# DESC (lex sort works for ISO-8601), dedupe by content (first kept wins),
+# cap at _LLM_PROMPTS_LIMIT. Output: NUL-delimited records of the content
+# only — ts stripped, so downstream consumers (`_llm_search_prompts`,
+# user pipelines) see clean prompt bytes.
+#
+# node is used for portability — BSD awk on macOS does not reliably honor
+# `RS='\0'`, and we also need NUL-aware splitting on the FIRST tab.
 function _llm_dedupe_and_cap() {
   local limit="${_LLM_PROMPTS_LIMIT:-500}"
   node -e "
@@ -49,25 +61,31 @@ function _llm_dedupe_and_cap() {
     process.stdin.on('end', () => {
       const buf = Buffer.concat(chunks);
       const lim = parseInt(process.argv[1], 10);
-      const seen = new Set();
-      let kept = 0, start = 0;
-      const out = [];
+      const records = [];
+      let start = 0;
       for (let i = 0; i <= buf.length; i++) {
         if (i === buf.length || buf[i] === 0) {
           if (i > start) {
             const s = buf.slice(start, i).toString('utf8');
-            if (!seen.has(s)) {
-              seen.add(s);
-              out.push(s);
-              if (++kept >= lim) break;
-            }
+            // Split on FIRST tab only — prompt content may contain tabs.
+            const tabIdx = s.indexOf('\t');
+            const ts = tabIdx === -1 ? '' : s.slice(0, tabIdx);
+            const content = tabIdx === -1 ? s : s.slice(tabIdx + 1);
+            if (content.length > 0) records.push({ ts, content });
           }
           start = i + 1;
         }
       }
-      for (const s of out) {
-        process.stdout.write(s);
+      // ISO-8601 lex DESC == chronological newest first.
+      records.sort((a, b) => (b.ts < a.ts ? -1 : b.ts > a.ts ? 1 : 0));
+      const seen = new Set();
+      let kept = 0;
+      for (const r of records) {
+        if (seen.has(r.content)) continue;
+        seen.add(r.content);
+        process.stdout.write(r.content);
         process.stdout.write('\0');
+        if (++kept >= lim) break;
       }
     });
   " "$limit"
@@ -152,4 +170,45 @@ function _llm_search_prompts() {
     printf '%s' "$content" | copy
     echo ">> Copied ${name} prompt #${sel_idx} (${bytes} bytes) to clipboard" >&2
   fi
+}
+
+# llm_list_prompts: aggregate user prompts from ALL four LLM CLIs as NUL-delimited records
+#
+# Concatenates the four `_<cli>_list_prompts_ts` raw streams (each emits
+# `<ISO-8601 ts>\t<content>` NUL records straight from its CLI's storage)
+# and pipes through `_llm_dedupe_and_cap` for a single global newest-first
+# sort, content-based dedupe, and cap at _LLM_PROMPTS_LIMIT.
+function llm_list_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "llm_list_prompts: stream merged user prompts from claude+copilot+gemini+opencode
+  Usage: llm_list_prompts                # NUL-delimited stream, newest first across ALL CLIs
+
+Aggregates the four \`_<cli>_list_prompts_ts\` raw streams, sorts globally by
+ISO-8601 timestamp (newest first), deduplicates identical prompts, and caps
+at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
+
+When a CLI's raw lister is missing (CLI not installed / partial not sourced),
+the missing source is silently skipped — the aggregate still works."
+    return 0
+  fi
+  {
+    type _claude_list_prompts_ts > /dev/null 2>&1 && _claude_list_prompts_ts
+    type _copilot_list_prompts_ts > /dev/null 2>&1 && _copilot_list_prompts_ts
+    type _gemini_list_prompts_ts > /dev/null 2>&1 && _gemini_list_prompts_ts
+    type _opencode_list_prompts_ts > /dev/null 2>&1 && _opencode_list_prompts_ts
+  } | _llm_dedupe_and_cap
+}
+
+# llm_search_prompts: fuzzy-pick across past prompts from ALL four LLM CLIs and copy to clipboard
+function llm_search_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "llm_search_prompts: fzf picker over past prompts from claude+copilot+gemini+opencode
+  Usage: llm_search_prompts
+
+Pipes llm_list_prompts into the shared fzf picker. The preview pane shows
+the full prompt; Enter copies the selected prompt to the system clipboard
+(via the universal copy helper). Paste back into whichever CLI you wanted."
+    return 0
+  fi
+  _llm_search_prompts llm
 }

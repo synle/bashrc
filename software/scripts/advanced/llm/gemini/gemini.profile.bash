@@ -39,22 +39,16 @@ Files inside ~/.gemini/ worth knowing about:
   view_file "$HOME/.gemini"
 }
 
-# gemini_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+# _gemini_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from Gemini CLI's session JSONs
 #
-# Source: ~/.gemini/tmp/<project>/chats/session-*.json. Each session file has
-# a `messages` array; user prompts have type=user (or role=user) with a
-# string `content`. Filenames are ISO-timestamped so a reverse filename sort
-# is a good newest-first ordering; we still defer the final dedupe + cap to
-# the shared helper.
-function gemini_list_prompts() {
-  if is_help_arg "${1:-}"; then
-    echo "gemini_list_prompts: stream past Gemini CLI user prompts as NUL records
-  Usage: gemini_list_prompts             # NUL-delimited stream, newest first
-
-Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
-Source: ~/.gemini/tmp/<project>/chats/session-*.json, .messages[] WHERE role/type=user."
-    return 0
-  fi
+# Internal helper consumed by `gemini_list_prompts` and `llm_list_prompts`.
+# NOT deduped, NOT capped.
+#
+# Source: ~/.gemini/tmp/<project>/chats/session-*.json. Each session has a
+# `messages` array; user prompts have type=user (or role=user) and a STRING
+# `content`. Filenames are ISO-timestamped; reverse filename sort is a good
+# coarse newest-first ordering before the dedupe-cap stage.
+function _gemini_list_prompts_ts() {
   local dir="$HOME/.gemini/tmp"
   [ -d "$dir" ] || return 0
   type -P jq > /dev/null 2>&1 || return 0
@@ -64,8 +58,20 @@ Source: ~/.gemini/tmp/<project>/chats/session-*.json, .messages[] WHERE role/typ
     | jq -c '(.messages // [])[] | select(((.type // .role) == "user") and ((.content // "") | type == "string")) | {ts: (.timestamp // ""), c: .content}' 2> /dev/null \
     | command sort -r \
     | command head -n $((_LLM_PROMPTS_LIMIT * 4)) \
-    | jq -j '.c, "\u0000"' 2> /dev/null \
-    | _llm_dedupe_and_cap
+    | jq -j '.ts, "\t", .c, "\u0000"' 2> /dev/null
+}
+
+# gemini_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+function gemini_list_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "gemini_list_prompts: stream past Gemini CLI user prompts as NUL records
+  Usage: gemini_list_prompts             # NUL-delimited stream, newest first
+
+Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
+Source: ~/.gemini/tmp/<project>/chats/session-*.json, .messages[] WHERE role/type=user."
+    return 0
+  fi
+  _gemini_list_prompts_ts | _llm_dedupe_and_cap
 }
 
 # gemini_search_prompts: fuzzy-pick a past Gemini CLI prompt and copy it to the clipboard

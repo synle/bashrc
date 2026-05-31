@@ -88,13 +88,29 @@ in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
   view_file "$HOME/.copilot"
 }
 
-# copilot_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+# _copilot_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from Copilot CLI's SQLite store
 #
-# Source: ~/.copilot/session-store.db (SQLite). The `turns` table holds
-# (session_id, turn_index, user_message, assistant_response, timestamp).
-# Note: in copilot v1.0.48 this table is frequently empty on disk because the
-# binary streams conversation state through other channels — when there's
-# nothing persisted, this lister simply emits nothing (no error).
+# Internal helper consumed by `copilot_list_prompts` and `llm_list_prompts`.
+# NOT deduped, NOT capped.
+#
+# Source: ~/.copilot/session-store.db, table `turns`. The `timestamp` column
+# is a SQLite datetime string (defaulted via `datetime('now')`, UTC) — we
+# reformat it to ISO-8601 with `strftime` so the aggregate sort lines up
+# with the other CLIs' ISO timestamps.
+#
+# Note: in copilot v1.0.48 the `turns` table is frequently empty on disk
+# because the binary streams conversation state through other channels —
+# when there's nothing persisted, this emits nothing (no error).
+function _copilot_list_prompts_ts() {
+  local db="$HOME/.copilot/session-store.db"
+  [ -f "$db" ] || return 0
+  type -P sqlite3 > /dev/null 2>&1 || return 0
+  type -P jq > /dev/null 2>&1 || return 0
+  sqlite3 -json "$db" "SELECT user_message AS c, strftime('%Y-%m-%dT%H:%M:%SZ', timestamp) AS ts FROM turns WHERE user_message IS NOT NULL AND user_message != '' ORDER BY timestamp DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
+    | jq -j '.[] | select(.c != null and .c != "") | .ts, "\t", .c, "\u0000"' 2> /dev/null
+}
+
+# copilot_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
 function copilot_list_prompts() {
   if is_help_arg "${1:-}"; then
     echo "copilot_list_prompts: stream past Copilot CLI user prompts as NUL records
@@ -108,13 +124,7 @@ case this command produces no output (and copilot_search_prompts will say
 'No copilot prompts found')."
     return 0
   fi
-  local db="$HOME/.copilot/session-store.db"
-  [ -f "$db" ] || return 0
-  type -P sqlite3 > /dev/null 2>&1 || return 0
-  type -P jq > /dev/null 2>&1 || return 0
-  sqlite3 -json "$db" "SELECT user_message AS c, timestamp AS ts FROM turns WHERE user_message IS NOT NULL AND user_message != '' ORDER BY timestamp DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
-    | jq -j '.[] | select(.c != null and .c != "") | .c, "\u0000"' 2> /dev/null \
-    | _llm_dedupe_and_cap
+  _copilot_list_prompts_ts | _llm_dedupe_and_cap
 }
 
 # copilot_search_prompts: fuzzy-pick a past Copilot CLI prompt and copy it to the clipboard
