@@ -40,6 +40,11 @@ _LLM_PROMPTS_LIMIT=500
 _LLM_PROMPTS_CACHE_DB="${XDG_CACHE_HOME:-$HOME/.cache}/llm-prompts.db"
 _LLM_PROMPTS_CACHE_MIN_SIZE=5
 
+# Minimum prompt length (trimmed) before fzf surfaces a row. Raw listers and
+# `*_list_prompts` still emit everything; this only filters the picker view
+# so junk like "push", "yes", "ok" doesn't clutter the search.
+_LLM_PROMPTS_MIN_LEN=20
+
 # Canonical list of cache `type` labels. The aggregate refresh walks this
 # array; `<type>_search_prompts` uses the same string as the cache key.
 _LLM_PROMPTS_TYPES=(claude copilot gemini opencode)
@@ -301,9 +306,13 @@ function _llm_search_prompts() {
   fi
 
   # Build fzf input as `idx<TAB>summary<TAB>b64` lines from the cache stream.
+  # Prompts shorter than _LLM_PROMPTS_MIN_LEN (default 20) bytes after
+  # whitespace trim are skipped here — junk like "push", "ok", "y" pollutes
+  # the picker but is still kept in the cache for any raw consumers.
   local fzf_input
-  fzf_input=$(_llm_cache_read "$cache_type" | node -e "
+  fzf_input=$(_llm_cache_read "$cache_type" | _LLM_PROMPTS_MIN_LEN="${_LLM_PROMPTS_MIN_LEN:-20}" node -e "
     process.stdout.on('error', (e) => { if (e.code === 'EPIPE') process.exit(0); });
+    const minLen = parseInt(process.env._LLM_PROMPTS_MIN_LEN || '20', 10);
     let chunks = [];
     process.stdin.on('data', (d) => chunks.push(d));
     process.stdin.on('end', () => {
@@ -312,9 +321,12 @@ function _llm_search_prompts() {
       for (let i = 0; i <= buf.length; i++) {
         if (i === buf.length || buf[i] === 0) {
           if (i > start) {
-            idx++;
             const slice = buf.slice(start, i);
-            const summary = slice.toString('utf8').replace(/[\\r\\n\\t]+/g, ' ').slice(0, 240);
+            const text = slice.toString('utf8');
+            // Filter — short / whitespace-only prompts never reach fzf.
+            if (text.trim().length < minLen) { start = i + 1; continue; }
+            idx++;
+            const summary = text.replace(/[\\r\\n\\t]+/g, ' ').slice(0, 240);
             const b64 = slice.toString('base64');
             process.stdout.write(String(idx).padStart(5, '0') + '\\t' + summary + '\\t' + b64 + '\\n');
           }
