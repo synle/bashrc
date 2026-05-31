@@ -156,7 +156,7 @@ function _llm_search_prompts() {
   OUT=$(fzf <<< "$fzf_input" \
     --prompt="${name} prompts> " \
     --header="(${name}) - select a past prompt; Enter copies full prompt to clipboard" \
-    --delimiter=$'\t' --with-nth=1,2 \
+    --delimiter=$'\t' --with-nth=2 \
     --preview="printf '%s' {3} | base64 -d" \
     --preview-window=down:60%:wrap)
 

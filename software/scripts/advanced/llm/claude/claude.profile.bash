@@ -107,9 +107,17 @@ function _claude_list_prompts_ts() {
   # `sort -r` on `{"ts":"<ISO ts>"...` JSON lines is a valid newest-first
   # cut because ISO-8601 is lex-sortable. `head` keeps the working set
   # bounded before jq formats it for the dedupe-cap stage.
+  # The jq filter drops Claude Code's synthetic wrapper messages that look
+  # like user prompts on disk but were injected by the framework, not typed
+  # by Sy: slash-command machinery (`<command-name>`, `<command-message>`,
+  # `<command-args>`, `<local-command-caveat>`, `<local-command-stdout>`),
+  # Task-tool output (`<task-notification>`, `<task-id>`, `<tool-use-id>`,
+  # `<summary>`, `<status>`, `<output-file>`, `<result>`, `<usage>`,
+  # `<host>`, `<worktree>`). Low-frequency tags like `<svg>` / `<stem>` are
+  # real user pastes and are KEPT.
   command find "$dir" -name '*.jsonl' -type f -print0 2> /dev/null \
     | command xargs -0 command cat 2> /dev/null \
-    | jq -c 'select(.type=="user" and (.message.content|type=="string")) | {ts: .timestamp, c: .message.content}' 2> /dev/null \
+    | jq -c 'select(.type=="user" and (.message.content|type=="string") and ((.message.content | test("^<(command-(name|message|args)|local-command-(caveat|stdout)|task-(notification|id)|tool-use-id|summary|status|output-file|result|usage|host|worktree)[> ]")) | not)) | {ts: .timestamp, c: .message.content}' 2> /dev/null \
     | command sort -r \
     | command head -n $((_LLM_PROMPTS_LIMIT * 4)) \
     | jq -j '.ts, "\t", .c, "\u0000"' 2> /dev/null
