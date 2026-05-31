@@ -73,22 +73,18 @@ function _opencode_list_prompts_ts() {
     | jq -j '.[] | select(.c != null and .c != "") | (.ts_s|todate), "\t", .c, "\u0000"' 2> /dev/null
 }
 
-# opencode_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
-#
-# Public surface. Wraps `_opencode_list_prompts_ts` through `_llm_dedupe_and_cap`,
-# which sorts, dedupes, caps, and emits content-only NUL records.
+# opencode_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function opencode_list_prompts() {
   if is_help_arg "${1:-}"; then
     echo "opencode_list_prompts: stream past user prompts from opencode's SQLite store
   Usage: opencode_list_prompts            # NUL-delimited stream, newest first
 
-Records are deduplicated (identical prompts collapsed to the most recent
-occurrence) and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
-
-Source: ~/.local/share/opencode/opencode.db -> message JOIN part WHERE role=user."
+Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
+one-shot foreground refresh from ~/.local/share/opencode/opencode.db.
+Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500})."
     return 0
   fi
-  _opencode_list_prompts_ts | _llm_dedupe_and_cap
+  _llm_list_prompts_cached opencode
 }
 
 # opencode_search_prompts: fuzzy-pick a past opencode prompt and copy it to the clipboard

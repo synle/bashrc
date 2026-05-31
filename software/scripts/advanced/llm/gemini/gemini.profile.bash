@@ -61,17 +61,18 @@ function _gemini_list_prompts_ts() {
     | jq -j '.ts, "\t", .c, "\u0000"' 2> /dev/null
 }
 
-# gemini_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+# gemini_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function gemini_list_prompts() {
   if is_help_arg "${1:-}"; then
     echo "gemini_list_prompts: stream past Gemini CLI user prompts as NUL records
   Usage: gemini_list_prompts             # NUL-delimited stream, newest first
 
-Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
-Source: ~/.gemini/tmp/<project>/chats/session-*.json, .messages[] WHERE role/type=user."
+Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
+one-shot foreground refresh from ~/.gemini/tmp/<project>/chats/session-*.json.
+Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500})."
     return 0
   fi
-  _gemini_list_prompts_ts | _llm_dedupe_and_cap
+  _llm_list_prompts_cached gemini
 }
 
 # gemini_search_prompts: fuzzy-pick a past Gemini CLI prompt and copy it to the clipboard

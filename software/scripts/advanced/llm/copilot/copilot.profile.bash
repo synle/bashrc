@@ -110,21 +110,21 @@ function _copilot_list_prompts_ts() {
     | jq -j '.[] | select(.c != null and .c != "") | .ts, "\t", .c, "\u0000"' 2> /dev/null
 }
 
-# copilot_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+# copilot_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function copilot_list_prompts() {
   if is_help_arg "${1:-}"; then
     echo "copilot_list_prompts: stream past Copilot CLI user prompts as NUL records
   Usage: copilot_list_prompts            # NUL-delimited stream, newest first
 
-Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
-Source: ~/.copilot/session-store.db, table 'turns', column user_message.
+Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
+one-shot foreground refresh from ~/.copilot/session-store.db. Records are
+deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
 
 Note: Copilot CLI v1.0.48 frequently leaves 'turns' empty — when that's the
-case this command produces no output (and copilot_search_prompts will say
-'No copilot prompts found')."
+case the cache stays empty too."
     return 0
   fi
-  _copilot_list_prompts_ts | _llm_dedupe_and_cap
+  _llm_list_prompts_cached copilot
 }
 
 # copilot_search_prompts: fuzzy-pick a past Copilot CLI prompt and copy it to the clipboard

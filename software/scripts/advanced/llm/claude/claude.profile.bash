@@ -123,17 +123,18 @@ function _claude_list_prompts_ts() {
     | jq -j '.ts, "\t", .c, "\u0000"' 2> /dev/null
 }
 
-# claude_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+# claude_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
 function claude_list_prompts() {
   if is_help_arg "${1:-}"; then
     echo "claude_list_prompts: stream past Claude Code user prompts as NUL records
   Usage: claude_list_prompts             # NUL-delimited stream, newest first
 
-Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
-Source: ~/.claude/projects/<encoded-cwd>/*.jsonl, filtered to user-typed text."
+Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
+one-shot foreground refresh from ~/.claude/projects/<encoded-cwd>/*.jsonl.
+Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500})."
     return 0
   fi
-  _claude_list_prompts_ts | _llm_dedupe_and_cap
+  _llm_list_prompts_cached claude
 }
 
 # claude_search_prompts: fuzzy-pick a past Claude Code prompt and copy it to the clipboard
