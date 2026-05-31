@@ -884,10 +884,10 @@ function ActionButton(props) {
  * @returns {React.ReactElement} A read-only EnhancedTextArea with the fetched content.
  */
 function DynamicTextArea(props) {
-  // Default to expanded so code blocks render their content immediately,
-  // matching synle/nav-generator's webapp behavior. Callers can opt back in
-  // to collapsed-on-load by passing `collapsed={true}`.
-  let { path, url, height, collapsed = false } = props;
+  // Default to collapsed so code blocks render a short preview on load and
+  // the user opts in to the full content. Callers can opt back in to
+  // expanded-on-load by passing `collapsed={false}`.
+  let { path, url, height, collapsed = true } = props;
   const [text, setText] = useState("");
   const [success, setSuccess] = useState(true);
 
@@ -1296,7 +1296,7 @@ function _escapeHtml(str) {
 const COLLAPSED_PREVIEW_LINES = 10;
 
 function EnhancedTextArea(props) {
-  let { url, label, height, error, defaultCollapsed = false, ...restProps } = props;
+  let { url, label, height, error, defaultCollapsed = true, ...restProps } = props;
   label = label || props.placeholder;
 
   const content = restProps.value || restProps.defaultValue || "";
