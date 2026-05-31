@@ -79,12 +79,14 @@ function _llm_dedupe_and_cap() {
 #   <cli-name>  short label used in the fzf prompt + header (e.g. "claude")
 #   <list-fn>   name of the lister function (default: "<cli-name>_list_prompts")
 #
-# Pattern mirrors `fuzzy_recent_files`: each prompt is materialized into a
-# temp file (`<tmpdir>/<idx>`), and fzf is fed a tab-delimited
-# `<idx>\t<one-line-summary>` table. `--with-nth=2` shows only the summary in
-# the picker row; `--preview` renders the full prompt via `bat` on the
-# numbered file (same trick as `fuzzy_edit`). On selection, the file's content
-# is piped to `copy` (universal clipboard helper from profile-advanced.sh).
+# Self-contained rows — no tempfile buffer. Each NUL-delimited prompt from the
+# lister is encoded into a single fzf row as three TAB-separated fields:
+#   1. zero-padded index (for stable ordering / display label)
+#   2. one-line summary (newlines/tabs collapsed; truncated to 240 chars)
+#   3. base64-encoded full prompt
+# fzf renders fields 1+2 (`--with-nth=1,2`) and the preview decodes field 3
+# inline (`{3} | base64 -d`). On Enter, field 3 is decoded again to recover
+# the original bytes for the clipboard. No bat, no tempfiles, no path leaks.
 function _llm_search_prompts() {
   local name="$1"
   local list_fn="${2:-${name}_list_prompts}"
@@ -98,46 +100,56 @@ function _llm_search_prompts() {
     return 1
   fi
 
-  local tmp
-  tmp=$(command mktemp -d -t llm-prompts.XXXXXX) || return 1
-  # shellcheck disable=SC2064 — expand $tmp now; we want the literal path baked in.
-  trap "command rm -rf '$tmp'" RETURN
+  # Build fzf input as `idx<TAB>summary<TAB>b64` lines. node is the cleanest
+  # way to walk NUL records, build the one-line summary, and emit unwrapped
+  # base64 (Buffer.toString('base64') has no embedded newlines).
+  local fzf_input
+  fzf_input=$("$list_fn" | node -e "
+    process.stdout.on('error', (e) => { if (e.code === 'EPIPE') process.exit(0); });
+    let chunks = [];
+    process.stdin.on('data', (d) => chunks.push(d));
+    process.stdin.on('end', () => {
+      const buf = Buffer.concat(chunks);
+      let start = 0, idx = 0;
+      for (let i = 0; i <= buf.length; i++) {
+        if (i === buf.length || buf[i] === 0) {
+          if (i > start) {
+            idx++;
+            const slice = buf.slice(start, i);
+            // One-line summary — collapse whitespace runs, cap at 240 chars.
+            const summary = slice.toString('utf8').replace(/[\\r\\n\\t]+/g, ' ').slice(0, 240);
+            const b64 = slice.toString('base64');
+            process.stdout.write(String(idx).padStart(5, '0') + '\\t' + summary + '\\t' + b64 + '\\n');
+          }
+          start = i + 1;
+        }
+      }
+    });
+  ")
 
-  local fzf_input="$tmp/_fzf_input"
-  : > "$fzf_input"
-
-  local idx=0 prompt summary
-  # NUL-delimited read works on bash 3.2+ (`read -d ''` sets the delimiter
-  # to a literal NUL byte). Each record is one full prompt.
-  while IFS= read -r -d '' prompt; do
-    idx=$((idx + 1))
-    printf '%s' "$prompt" > "$tmp/$idx"
-    # Collapse newlines/tabs to spaces so the fzf row stays one visual line.
-    summary=$(printf '%s' "$prompt" | command tr '\n\t' '  ' | command head -c 240)
-    printf '%05d\t%s\n' "$idx" "$summary" >> "$fzf_input"
-  done < <("$list_fn")
-
-  if [ "$idx" -eq 0 ]; then
+  if [ -z "$fzf_input" ]; then
     echo "No ${name} prompts found" >&2
     return 0
   fi
 
+  # Preview decodes field 3 inline. `base64 -d` works on macOS 10.13+ and all
+  # GNU coreutils. No file path, no bat — the bytes are right there in the row.
   local OUT
-  OUT=$(fzf < "$fzf_input" \
+  OUT=$(fzf <<< "$fzf_input" \
     --prompt="${name} prompts> " \
     --header="(${name}) - select a past prompt; Enter copies full prompt to clipboard" \
-    --delimiter=$'\t' --with-nth=2 \
-    --preview="bat --paging=never --style=plain --color=always --language=md '$tmp/{1}'" \
+    --delimiter=$'\t' --with-nth=1,2 \
+    --preview="printf '%s' {3} | base64 -d" \
     --preview-window=down:60%:wrap)
 
   if [ -n "$OUT" ]; then
+    # Selection format mirrors input. Field 1 = idx; field 3 = b64 payload.
     local sel_idx="${OUT%%$'\t'*}"
-    local sel_file="$tmp/$sel_idx"
-    if [ -f "$sel_file" ]; then
-      local bytes
-      bytes=$(command wc -c < "$sel_file" | command tr -d ' ')
-      command cat "$sel_file" | copy
-      echo ">> Copied ${name} prompt #${sel_idx} (${bytes} bytes) to clipboard" >&2
-    fi
+    local sel_b64="${OUT##*$'\t'}"
+    local content
+    content=$(printf '%s' "$sel_b64" | base64 -d 2> /dev/null)
+    local bytes=${#content}
+    printf '%s' "$content" | copy
+    echo ">> Copied ${name} prompt #${sel_idx} (${bytes} bytes) to clipboard" >&2
   fi
 }
