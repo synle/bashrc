@@ -759,6 +759,9 @@ alias stash="git stash"
 alias pop="git stash pop"
 alias amend="git amend"
 
+# ---- LLM Prompt History (shared) ----
+# SOURCE | software/scripts/advanced/llm/_common/llm-prompts.profile.bash
+
 # ---- Aliases: Claude ----
 # SOURCE | software/scripts/advanced/llm/claude/claude.profile.bash
 

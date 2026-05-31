@@ -52,3 +52,43 @@ Related file NOT inside the dir:
   fi
   view_file "$HOME/.config/opencode"
 }
+
+# opencode_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+#
+# Source: ~/.local/share/opencode/opencode.db (SQLite). User messages are
+# rows in `message` with role=user; their text content lives in `part` rows
+# of type=text linked by message_id. Output is consumed by
+# opencode_search_prompts (or any pipeline that wants raw prompts).
+function opencode_list_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "opencode_list_prompts: stream past user prompts from opencode's SQLite store
+  Usage: opencode_list_prompts            # NUL-delimited stream, newest first
+
+Records are deduplicated (identical prompts collapsed to the most recent
+occurrence) and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
+
+Source: ~/.local/share/opencode/opencode.db -> message JOIN part WHERE role=user."
+    return 0
+  fi
+  local db="$HOME/.local/share/opencode/opencode.db"
+  [ -f "$db" ] || return 0
+  type -P sqlite3 > /dev/null 2>&1 || return 0
+  type -P jq > /dev/null 2>&1 || return 0
+  sqlite3 -json "$db" "SELECT json_extract(p.data,'\$.text') AS c, m.time_created AS ts FROM message m JOIN part p ON p.message_id=m.id WHERE json_extract(m.data,'\$.role')='user' AND json_extract(p.data,'\$.type')='text' ORDER BY m.time_created DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
+    | jq -j '.[] | select(.c != null and .c != "") | .c, "\u0000"' 2> /dev/null \
+    | _llm_dedupe_and_cap
+}
+
+# opencode_search_prompts: fuzzy-pick a past opencode prompt and copy it to the clipboard
+function opencode_search_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "opencode_search_prompts: fzf picker over past opencode prompts
+  Usage: opencode_search_prompts
+
+Pipes opencode_list_prompts into a shared fzf picker. The preview pane shows
+the full prompt; Enter copies the selected prompt to the system clipboard
+(via the universal copy helper). Paste it back into opencode with Cmd/Ctrl+V."
+    return 0
+  fi
+  _llm_search_prompts opencode
+}

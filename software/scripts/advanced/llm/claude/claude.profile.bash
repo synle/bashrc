@@ -90,3 +90,47 @@ Files inside ~/.claude/ worth knowing about:
   view_file "$HOME/.claude.json"
   view_file "$HOME/.claude"
 }
+
+# claude_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+#
+# Source: ~/.claude/projects/<encoded-cwd>/*.jsonl session logs. Each line is
+# a JSON record; user prompts have type=user with .message.role=user and a
+# STRING .message.content (array content is tool_result payloads, skipped).
+# Records are sorted by .timestamp DESC across all sessions.
+function claude_list_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "claude_list_prompts: stream past Claude Code user prompts as NUL records
+  Usage: claude_list_prompts             # NUL-delimited stream, newest first
+
+Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
+Source: ~/.claude/projects/<encoded-cwd>/*.jsonl, filtered to user-typed text."
+    return 0
+  fi
+  local dir="$HOME/.claude/projects"
+  [ -d "$dir" ] || return 0
+  type -P jq > /dev/null 2>&1 || return 0
+  # `sort -r` over JSON lines starting with "{\"ts\":\"<ISO timestamp>\"" is a
+  # valid newest-first sort because ISO-8601 is lex-sortable. Then jq strips
+  # the wrapper and emits .c followed by a NUL.
+  command find "$dir" -name '*.jsonl' -type f -print0 2> /dev/null \
+    | command xargs -0 command cat 2> /dev/null \
+    | jq -c 'select(.type=="user" and (.message.content|type=="string")) | {ts: .timestamp, c: .message.content}' 2> /dev/null \
+    | command sort -r \
+    | command head -n $((_LLM_PROMPTS_LIMIT * 4)) \
+    | jq -j '.c, "\u0000"' 2> /dev/null \
+    | _llm_dedupe_and_cap
+}
+
+# claude_search_prompts: fuzzy-pick a past Claude Code prompt and copy it to the clipboard
+function claude_search_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "claude_search_prompts: fzf picker over past Claude Code prompts
+  Usage: claude_search_prompts
+
+Pipes claude_list_prompts into a shared fzf picker. The preview pane shows
+the full prompt; Enter copies the selected prompt to the system clipboard
+(via the universal copy helper). Paste it back into Claude Code."
+    return 0
+  fi
+  _llm_search_prompts claude
+}

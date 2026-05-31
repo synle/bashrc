@@ -87,3 +87,49 @@ in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
   fi
   view_file "$HOME/.copilot"
 }
+
+# copilot_list_prompts: stream past user prompts (newest first, deduped, capped) as NUL-delimited records
+#
+# Source: ~/.copilot/session-store.db (SQLite). The `turns` table holds
+# (session_id, turn_index, user_message, assistant_response, timestamp).
+# Note: in copilot v1.0.48 this table is frequently empty on disk because the
+# binary streams conversation state through other channels — when there's
+# nothing persisted, this lister simply emits nothing (no error).
+function copilot_list_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "copilot_list_prompts: stream past Copilot CLI user prompts as NUL records
+  Usage: copilot_list_prompts            # NUL-delimited stream, newest first
+
+Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500}).
+Source: ~/.copilot/session-store.db, table 'turns', column user_message.
+
+Note: Copilot CLI v1.0.48 frequently leaves 'turns' empty — when that's the
+case this command produces no output (and copilot_search_prompts will say
+'No copilot prompts found')."
+    return 0
+  fi
+  local db="$HOME/.copilot/session-store.db"
+  [ -f "$db" ] || return 0
+  type -P sqlite3 > /dev/null 2>&1 || return 0
+  type -P jq > /dev/null 2>&1 || return 0
+  sqlite3 -json "$db" "SELECT user_message AS c, timestamp AS ts FROM turns WHERE user_message IS NOT NULL AND user_message != '' ORDER BY timestamp DESC LIMIT $((_LLM_PROMPTS_LIMIT * 2));" 2> /dev/null \
+    | jq -j '.[] | select(.c != null and .c != "") | .c, "\u0000"' 2> /dev/null \
+    | _llm_dedupe_and_cap
+}
+
+# copilot_search_prompts: fuzzy-pick a past Copilot CLI prompt and copy it to the clipboard
+function copilot_search_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "copilot_search_prompts: fzf picker over past Copilot CLI prompts
+  Usage: copilot_search_prompts
+
+Pipes copilot_list_prompts into a shared fzf picker. The preview pane shows
+the full prompt; Enter copies the selected prompt to the system clipboard
+(via the universal copy helper). Paste it back into copilot.
+
+Note: if Copilot CLI hasn't persisted any prompts on this machine, this
+picker will report 'No copilot prompts found' and exit cleanly."
+    return 0
+  fi
+  _llm_search_prompts copilot
+}
