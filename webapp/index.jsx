@@ -1355,9 +1355,6 @@ function EnhancedTextArea(props) {
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
         <FullScreenTextViewer value={content} label={label} url={formattedUrl} />
-        <ActionButton data-action="toggle-collapse" data-testid="collapse-toggle" onClick={() => setCollapsed(!collapsed)}>
-          {collapsed ? "▶" : "▼"}
-        </ActionButton>
       </div>
       {error ? (
         <div className="text-error">Content Error: {content}</div>
@@ -1886,8 +1883,12 @@ function App() {
     _loadData();
   }, []);
 
+  // Start with collapseAll=true so code blocks render collapsed on first paint.
+  // EnhancedTextArea's useEffect mirrors this signal into each block's local
+  // state — if the signal started false, every block would snap to expanded
+  // immediately after mount and override the per-block `defaultCollapsed` prop.
   const [collapseSignal, setCollapseSignal] = useState({
-    collapseAll: false,
+    collapseAll: true,
     tick: 0,
   });
 

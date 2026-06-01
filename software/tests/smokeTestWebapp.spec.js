@@ -146,10 +146,10 @@ describe("webapp smoke test", () => {
 
         const page = await browser.newPage();
         await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
-        await page.waitForSelector('[data-testid="code-block"][data-collapsed="false"] [data-testid="copy-button"]', { timeout: 10000 });
+        await page.waitForSelector('[data-testid="code-block"] [data-testid="copy-button"]', { timeout: 10000 });
 
         // Click the first visible copy button
-        await page.click('[data-testid="code-block"][data-collapsed="false"] [data-testid="copy-button"]');
+        await page.click('[data-testid="code-block"] [data-testid="copy-button"]');
 
         // Wait for the alert modal to appear
         await page.waitForSelector('[data-testid="alert-ok"]', { timeout: 5000 });
@@ -174,12 +174,12 @@ describe("webapp smoke test", () => {
       try {
         const page = await browser.newPage();
         await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
-        await page.waitForSelector('[data-testid="code-block"][data-collapsed="false"] [data-testid="fullscreen-button"]', {
+        await page.waitForSelector('[data-testid="code-block"] [data-testid="fullscreen-button"]', {
           timeout: 10000,
         });
 
         // Click the first visible fullscreen button
-        await page.click('[data-testid="code-block"][data-collapsed="false"] [data-testid="fullscreen-button"]');
+        await page.click('[data-testid="code-block"] [data-testid="fullscreen-button"]');
 
         // Wait for the fullscreen modal to appear
         await page.waitForSelector('[data-testid="fullscreen-dialog"]', { timeout: 5000 });
@@ -215,12 +215,12 @@ describe("webapp smoke test", () => {
 
         const page = await browser.newPage();
         await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
-        await page.waitForSelector('[data-testid="code-block"][data-collapsed="false"] [data-testid="fullscreen-button"]', {
+        await page.waitForSelector('[data-testid="code-block"] [data-testid="fullscreen-button"]', {
           timeout: 10000,
         });
 
         // Open fullscreen modal
-        await page.click('[data-testid="code-block"][data-collapsed="false"] [data-testid="fullscreen-button"]');
+        await page.click('[data-testid="code-block"] [data-testid="fullscreen-button"]');
         await page.waitForSelector('[data-testid="fullscreen-copy"]', { timeout: 5000 });
 
         // Click copy in the modal
@@ -241,35 +241,27 @@ describe("webapp smoke test", () => {
   );
 
   it(
-    "phase 9 - collapse and expand code blocks",
+    "phase 9 - expand a collapsed code block via Show More",
     async () => {
       const puppeteer = await import("puppeteer");
       const browser = await puppeteer.default.launch({ headless: "new", args: ["--no-sandbox"] });
       try {
         const page = await browser.newPage();
         await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
-        await page.waitForSelector('[data-testid="code-block"][data-collapsed="false"] [data-testid="collapse-toggle"]', {
+        // Blocks default to collapsed; long blocks render a Show More link.
+        await page.waitForSelector('[data-testid="code-block"][data-collapsed="true"] [data-testid="show-more-toggle"]', {
           timeout: 10000,
         });
 
-        // Count initially expanded blocks
-        const initialExpanded = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
-        expect(initialExpanded).toBeGreaterThan(0);
+        const initialCollapsed = await page.$$eval('[data-testid="code-block"][data-collapsed="true"]', (els) => els.length);
+        expect(initialCollapsed).toBeGreaterThan(0);
 
-        // Click collapse on the first expanded block
-        await page.click('[data-testid="code-block"][data-collapsed="false"] [data-testid="collapse-toggle"]');
+        // Click Show More on the first collapsed block to expand it.
+        await page.click('[data-testid="code-block"][data-collapsed="true"] [data-testid="show-more-toggle"]');
         await new Promise((r) => setTimeout(r, 500));
 
-        // That block should now be collapsed
-        const afterCollapse = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
-        expect(afterCollapse).toBeLessThan(initialExpanded);
-
-        // Click the same toggle to expand it back
-        await page.click('[data-testid="code-block"][data-collapsed="true"] [data-testid="collapse-toggle"]');
-        await new Promise((r) => setTimeout(r, 500));
-
-        const afterExpand = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
-        expect(afterExpand).toBe(initialExpanded);
+        const afterExpand = await page.$$eval('[data-testid="code-block"][data-collapsed="true"]', (els) => els.length);
+        expect(afterExpand).toBeLessThan(initialCollapsed);
       } finally {
         await browser.close();
       }
@@ -287,21 +279,19 @@ describe("webapp smoke test", () => {
         await page.goto(WEBAPP_URL, { waitUntil: "networkidle0", timeout: TIMEOUT });
         await page.waitForSelector('[data-testid="global-collapse"]', { timeout: 10000 });
 
-        // Click global collapse
+        // Blocks default to collapsed; the first click on the global toggle expands all.
         await page.click('[data-testid="global-collapse"]');
         await new Promise((r) => setTimeout(r, 1000));
 
-        // All blocks should be collapsed
-        const expandedAfterCollapse = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
-        expect(expandedAfterCollapse).toBe(0);
-
-        // Click global expand
-        await page.click('[data-testid="global-collapse"]');
-        await new Promise((r) => setTimeout(r, 1000));
-
-        // Blocks should be expanded again
         const expandedAfterExpand = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
         expect(expandedAfterExpand).toBeGreaterThan(0);
+
+        // Second click collapses everything back.
+        await page.click('[data-testid="global-collapse"]');
+        await new Promise((r) => setTimeout(r, 1000));
+
+        const expandedAfterCollapse = await page.$$eval('[data-testid="code-block"][data-collapsed="false"]', (els) => els.length);
+        expect(expandedAfterCollapse).toBe(0);
       } finally {
         await browser.close();
       }
