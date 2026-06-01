@@ -48,3 +48,34 @@ else
   # Upstream installer is `sh`-only (it greps /etc/os-release with POSIX syntax).
   curl -fsSL https://ollama.com/install.sh | sh > /dev/null
 fi
+
+# Pull a small FIM-capable coding model so editors (Zed edit_predictions, future
+# VSCode wiring) have a localhost autocomplete target. Tiered by `is_system_desktop`
+# to match the perf-env split in ollama.profile.bash:
+#   - Laptop (battery present)  -> qwen2.5-coder:1.5b-base (~1 GB, ~1.5 GB VRAM)
+#   - Desktop (no battery)      -> qwen2.5-coder:3b-base (~2 GB, ~3 GB VRAM)
+# Both are the `-base` checkpoints (FIM tokens present); `-instruct` produces chatty
+# replies and is wrong for inline completion. The model list here MUST stay in sync
+# with AUTOCOMPLETE_MODELS in software/scripts/advanced/llm/llm-common.js — that's
+# the discovery side; this is the install side.
+#
+# Skip if `ollama` isn't on PATH yet (install above may have set up only the systemd
+# unit on a fresh box). Skip if the model is already pulled (avoids re-downloading
+# multi-GB blobs on every run). Background daemon start is intentional — `ollama
+# pull` will spawn the server itself if needed.
+if type -P ollama > /dev/null 2>&1; then
+  if ((is_system_desktop)); then
+    _autocomplete_model="qwen2.5-coder:3b-base"
+  else
+    _autocomplete_model="qwen2.5-coder:1.5b-base"
+  fi
+
+  # `ollama list` prints `NAME ID SIZE MODIFIED` rows; grep the exact tag to avoid
+  # matching a different size of the same family (e.g. `1.5b-base` vs `3b-base`).
+  if ollama list 2> /dev/null | grep -q "^${_autocomplete_model}[[:space:]]"; then
+    echo ">> Skipped ollama model pull: ${_autocomplete_model} already present"
+  else
+    echo ">> Pulling ${_autocomplete_model} (editor autocomplete)"
+    ollama pull "$_autocomplete_model" > /dev/null
+  fi
+fi

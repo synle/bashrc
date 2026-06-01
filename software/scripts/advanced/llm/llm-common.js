@@ -145,3 +145,68 @@ async function getOllamaProviderInputs() {
 
   return providers;
 }
+
+// --- Editor Autocomplete Provider Discovery ---
+
+/**
+ * FIM-capable autocomplete models in priority order — smallest/fastest first.
+ *
+ * Why `-base` variants only: only the base checkpoints of qwen2.5-coder carry the
+ * `<|fim_prefix|>` / `<|fim_suffix|>` / `<|fim_middle|>` tokens that Zed's edit-prediction
+ * (and other FIM clients) inject for inline completion. The `-instruct` variants strip
+ * those tokens and produce chatty, suggestion-style replies that drift past the cursor.
+ *
+ * Order rationale: inline autocomplete fires on EVERY keystroke, so latency and parallel
+ * throughput dominate quality wins from larger models. A laptop with only the 1.5B variant
+ * still gets useful completions; a desktop with the 7B variant only reaches it after the
+ * 1.5B and 3B aren't present (intentional — keeps the lighter model on the hot path).
+ *
+ * @type {string[]}
+ */
+const AUTOCOMPLETE_MODELS = ["qwen2.5-coder:1.5b-base", "qwen2.5-coder:3b-base", "qwen2.5-coder:7b-base"];
+
+/**
+ * Picks the best Ollama host + model for editor inline autocomplete (Zed's
+ * `edit_predictions`, future VSCode-side wiring, etc.).
+ *
+ * Priority is the INVERSE of `getOllamaProviderInputs`: `127.0.0.1` is probed FIRST and
+ * `sy-omen45l` only as a LAN fallback. Reason: autocomplete fires per keystroke; localhost
+ * round-trip (~sub-ms) beats LAN (~5-20ms+ on residential WiFi), and a dead remote host
+ * shouldn't add network round-trips to every typing event. Agent/chat traffic (the
+ * `getOllamaProviderInputs` use case) is happy to prefer the beefier remote box because
+ * its requests are user-initiated and few — different tradeoff, different priority.
+ *
+ * Within each reachable host, the first model in `preferred` that appears in `/api/tags`
+ * wins. So a laptop with only `qwen2.5-coder:1.5b-base` uses that; a desktop with all three
+ * still picks the smallest (see AUTOCOMPLETE_MODELS rationale above).
+ *
+ * Returns `null` when no host has any preferred model. Callers MUST then omit the
+ * autocomplete config block entirely — leaving a stale endpoint configured would make the
+ * editor hammer a dead host on every keystroke. With the block absent, editors fall back
+ * to their own defaults (Zeta in Zed, no inline completion in vanilla VSCode).
+ *
+ * Network reachability is bounded by `_URL_FETCH_TIMEOUT_MS` (3s) in `_readTextFromURL`
+ * via the existing `AbortSignal.timeout` in `readJson`, so a totally-offline omen45l can't
+ * stall setup.
+ *
+ * @param {string[]} [preferred=AUTOCOMPLETE_MODELS] - Acceptable model tags in priority order.
+ * @returns {Promise<{host: string, port: number, model: string}|null>} Picked host+model or null.
+ */
+async function getAutocompleteProvider(preferred = AUTOCOMPLETE_MODELS) {
+  const omenIp = (await getSyHPOmenHomeIpAddress()) || "192.168.1.45";
+  // Localhost FIRST, sy-omen45l SECOND. Reverse of getOllamaProviderInputs (see JSDoc).
+  /** @type {string[]} */
+  const hosts = ["127.0.0.1", omenIp];
+
+  for (const host of hosts) {
+    const tags = await _fetchOllamaModelNames(host);
+    if (tags.length === 0) continue; // Host unreachable OR has no models — try the next one.
+    const match = preferred.find((m) => tags.includes(m));
+    if (match) {
+      log(`>> autocomplete: picked ${match} on ${host}`);
+      return { host, port: OLLAMA_PORT, model: match };
+    }
+    log(`>> autocomplete: ${host} reachable but no preferred model present (saw: ${tags.join(", ")})`);
+  }
+  return null;
+}

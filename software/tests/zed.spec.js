@@ -307,4 +307,23 @@ describe("_getZedSettings > agent merge", () => {
     expect(result.agent).toEqual({ dock: "right" });
     expect(result.agent.default_model).toBeUndefined();
   });
+
+  // Symmetric pair: edit_predictions mirrors the language_models behavior above —
+  // omitted when discovery returns null (so Zed keeps its Zeta default), present
+  // verbatim when getAutocompleteProvider() resolved a host+model.
+  it("should not include edit_predictions when editPredictions option is omitted", () => {
+    const zed = loadZed();
+    const result = zed._getZedSettings({}, { is_prebuilt_config: false });
+    expect(result.edit_predictions).toBeUndefined();
+  });
+
+  it("should include edit_predictions when editPredictions option is provided", () => {
+    const zed = loadZed();
+    const editPredictions = {
+      provider: "ollama",
+      ollama: { api_url: "http://127.0.0.1:11434", model: "qwen2.5-coder:1.5b-base" },
+    };
+    const result = zed._getZedSettings({}, { is_prebuilt_config: false, editPredictions });
+    expect(result.edit_predictions).toEqual(editPredictions);
+  });
 });

@@ -128,9 +128,13 @@ async function _getPathZed() {
  * @param {boolean} [options.is_prebuilt_config] - When true, use safe fallback fonts/sizes for shipped artifacts.
  * @param {object|null} [options.languageModels] - `language_models` block from `_buildZedLanguageModelsBlock` to merge in.
  * @param {({provider:string, model:string})|null} [options.defaultModel] - `agent.default_model` entry to merge in.
+ * @param {object|null} [options.editPredictions] - `edit_predictions` block (Ollama inline autocomplete) to merge in. Omit / null to keep Zed on its default (Zeta).
  * @returns {object} The fully resolved settings.json content.
  */
-function _getZedSettings(baseConfig, { is_prebuilt_config = false, languageModels = null, defaultModel = null } = {}) {
+function _getZedSettings(
+  baseConfig,
+  { is_prebuilt_config = false, languageModels = null, defaultModel = null, editPredictions = null } = {},
+) {
   const fontFamily = is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily;
   const fontSize = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
 
@@ -171,6 +175,15 @@ function _getZedSettings(baseConfig, { is_prebuilt_config = false, languageModel
   // Only present in local-deploy writes — CI prebuilt artifacts stay generic.
   if (languageModels) {
     settings.language_models = languageModels;
+  }
+
+  // Inline edit prediction (per-keystroke ghost text) wired to an Ollama host. Only present
+  // when `getAutocompleteProvider()` actually found a reachable host with a FIM-capable model.
+  // When omitted, Zed falls back to its default edit-prediction provider (Zeta) — exactly the
+  // behavior we want if no local/LAN Ollama is up: never leave a stale endpoint configured
+  // because Zed would then hammer a dead host on every keystroke.
+  if (editPredictions) {
+    settings.edit_predictions = editPredictions;
   }
 
   return settings;
@@ -271,9 +284,33 @@ async function doWork() {
     // Only pass through `language_models` when discovery actually populated it — empty
     // object would clobber any pre-existing user-managed providers under that key.
     const lmToWrite = Object.keys(languageModels).length > 0 ? languageModels : null;
+
+    // Pick host+model for Zed's inline edit prediction (autocomplete ghost text). Reuses the
+    // shared discovery in llm-common.js but with INVERSE host priority vs the agent panel:
+    // 127.0.0.1 is preferred over sy-omen45l because inline completion fires per keystroke
+    // and localhost latency beats LAN. See `getAutocompleteProvider` JSDoc for the full rationale.
+    // When no host+model match (null return), we leave `edit_predictions` unset so Zed keeps
+    // its default provider (Zeta) instead of hammering a dead endpoint on every keystroke.
+    const autocomplete = await getAutocompleteProvider();
+    const editPredictions = autocomplete
+      ? {
+          provider: "ollama",
+          ollama: {
+            api_url: `http://${autocomplete.host}:${autocomplete.port}`,
+            model: autocomplete.model,
+          },
+        }
+      : null;
+    if (!editPredictions) {
+      log(">>> zed: no Ollama autocomplete model reachable — leaving edit_predictions unset (Zed will use Zeta default)");
+    }
+
     const settingsPath = path.join(targetPath, "settings.json");
     await backupConfigFile(settingsPath);
-    await writeJson(settingsPath, _getZedSettings(baseConfig, { is_prebuilt_config: false, languageModels: lmToWrite, defaultModel }));
+    await writeJson(
+      settingsPath,
+      _getZedSettings(baseConfig, { is_prebuilt_config: false, languageModels: lmToWrite, defaultModel, editPredictions }),
+    );
 
     const darkThemePath = path.join(targetPath, "themes", ZED_DARK_THEME_FILE);
     await backupConfigFile(darkThemePath);
