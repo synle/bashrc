@@ -1025,7 +1025,8 @@ function rebase_origin_main_branch() {
 # Safely resets the current branch to origin's default branch.
 # Stashes ALL changes (staged + unstaged + untracked) first as a safety backup so nothing is lost
 # (recover with `git stash list` / `git stash pop`). Does NOT delete untracked working-tree files.
-# Also deletes stale local branches (squash-merged PRs) and prunes stale worktrees.
+# Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
+# branch, local tags that no longer exist on origin, and prunes stale worktrees.
 function clean() {
   if is_help_arg "${1:-}"; then
     echo "clean: safely reset current branch to origin's default branch
@@ -1034,11 +1035,11 @@ function clean() {
     - Stashes ALL changes (staged + unstaged + untracked) first as a safety backup
     - Recover from stash with: git stash list  |  git stash pop
     - Does NOT delete untracked working-tree files
-    - Also deletes stale local branches (squash-merged PRs) and prunes stale worktrees"
+    - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes worktrees"
     return 1
   fi
 
-  local total_steps=11
+  local total_steps=12
   local current_step=0
 
   function _log_step() {
@@ -1096,6 +1097,9 @@ function clean() {
 
   _log_step "Deleting stale local branches whose upstream is gone (squash-merged PRs)..."
   git clean-stale-branches
+
+  _log_step "Deleting merged local branches and tags pruned from origin..."
+  git clean-merged-branches-and-tags
 
   _log_step "Pruning stale worktree references..."
   git worktree prune
