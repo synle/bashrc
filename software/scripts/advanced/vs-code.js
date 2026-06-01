@@ -107,13 +107,7 @@ function _getCommandsToSkipShell(keybindings) {
  * @param {boolean} [options.isOsMac] - When true, override `editor.multiCursorModifier` to `"alt"` so Cmd+click opens terminal links on macOS. Defaults to the global `is_os_mac` flag.
  * @returns {object} The fully resolved settings.json content.
  */
-function _getSettings(
-  baseConfig,
-  darkColors,
-  lightColors,
-  keybindings,
-  { is_prebuilt_config = false, isOsMac, ollamaEndpoint = null } = {},
-) {
+function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_prebuilt_config = false, isOsMac } = {}) {
   const fontFamily = is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily;
   const fontSize = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
   // VS Code ties the terminal link-click modifier to the inverse of editor.multiCursorModifier.
@@ -163,16 +157,13 @@ function _getSettings(
     // --- Auto-derived: every OS_KEY+X binding bypasses the shell so it fires from terminal focus too ---
     "terminal.integrated.commandsToSkipShell": _getCommandsToSkipShell(keybindings),
 
-    // --- Copilot Chat → Ollama BYOK (only set when discovery found a reachable host) ---
-    // Upstream limitation: `github.copilot.chat.byok.ollamaEndpoint` is a single string,
-    // not an array — Copilot Chat has NO documented settings.json way to enumerate multiple
-    // Ollama hosts (per microsoft/vscode-copilot-chat configurationService.ts, the key is
-    // marked Deprecated and migrated once into BYOK secret-storage on first run). We pick
-    // the first reachable host from `getOllamaProviderInputs()` (local 127.0.0.1 preferred
-    // over the remote sy-omen45l workstation) and write it here; additional remote hosts
-    // must be added via Copilot Chat's "Manage Models…" UI which writes to globalState,
-    // not settings.json.
-    ...(ollamaEndpoint ? { "github.copilot.chat.byok.ollamaEndpoint": ollamaEndpoint } : {}),
+    // NOTE: Copilot Chat → Ollama BYOK is configured via `chatLanguageModels.json` directly
+    // (see `_buildChatLanguageModels` + the `doWork` write loop), NOT a settings.json key.
+    // Reason: the previously used `github.copilot.chat.byok.ollamaEndpoint` setting is a
+    // single string and Copilot Chat migrates it once into globalState with a hardcoded
+    // `name: "Ollama"`, which clobbers any prior name and silently drops the second host.
+    // Managing `chatLanguageModels.json` lets us register BOTH `ollama-local` and
+    // `ollama-sy-omen45l` at once, matching opencode + Zed naming.
   };
 }
 
@@ -274,6 +265,58 @@ async function _updateDevcontainerExtensions() {
   log(">>> Synced .devcontainer/devcontainer.json extensions list");
 }
 
+////// Copilot Chat: chatLanguageModels.json //////
+
+/**
+ * Merges discovered Ollama providers into VS Code's `chatLanguageModels.json` — the file
+ * Copilot Chat reads to populate its BYOK provider list (Manage Models... UI writes here too).
+ *
+ * Schema (observed; not officially documented — see CAVEAT below):
+ *   [
+ *     { "name": "<display name>", "vendor": "<provider id>", "url": "<http endpoint>" },
+ *     ...
+ *   ]
+ *
+ * Translation rules:
+ *   - Reuse the provider ids from `getOllamaProviderInputs()` verbatim as `name`
+ *     (`ollama-local` for 127.0.0.1, `ollama-sy-omen45l` for the workstation) so VS Code,
+ *     opencode, and Zed all label the same backend with the same string.
+ *   - `vendor` is hardcoded to `"ollama"` — Copilot Chat's BYOK provider registry keys
+ *     Ollama-compatible servers under this exact string.
+ *   - `url` strips the trailing `/v1` that `getOllamaProviderInputs` adds for OpenAI-compat
+ *     consumers — Copilot Chat hits the native `/api/tags` and `/api/show` endpoints, not
+ *     the OpenAI-compat layer, so it wants the root URL.
+ *
+ * Existing-entries policy:
+ *   - All `vendor: "ollama"` entries are dropped from the existing array and re-derived from
+ *     discovery (we are the source of truth for the Ollama providers).
+ *   - Entries with any other `vendor` (Anthropic / OpenAI / Azure / etc. added via the UI)
+ *     pass through untouched — we only manage the Ollama subset.
+ *
+ * CAVEAT: This schema is observed from VS Code's runtime migration of the deprecated
+ * `github.copilot.chat.byok.ollamaEndpoint` setting; Microsoft has not published a stable
+ * spec for `chatLanguageModels.json`. A future VS Code release could rename fields or move
+ * the file to globalState (SQLite). When that happens, re-derive by capturing a fresh write
+ * from the Manage Models... UI and updating this builder.
+ *
+ * @param {Array<{id: string, baseURL: string}>} providers - From `getOllamaProviderInputs()`.
+ * @param {Array<object>} [existing=[]] - Existing `chatLanguageModels.json` array (any vendor).
+ * @returns {Array<object>} Merged array ready to write to `chatLanguageModels.json`.
+ */
+function _buildChatLanguageModels(providers, existing = []) {
+  /** @type {Array<object>} Pass-through entries from non-ollama vendors (e.g. anthropic, openai). */
+  const passthrough = Array.isArray(existing) ? existing.filter((e) => e && e.vendor !== "ollama") : [];
+
+  /** @type {Array<object>} Freshly-derived ollama entries from discovery. */
+  const ollamaEntries = providers.map((p) => ({
+    name: p.id, // ollama-local / ollama-sy-omen45l — matches opencode + Zed naming convention.
+    vendor: "ollama",
+    url: p.baseURL.replace(/\/v1$/, ""), // Strip OpenAI-compat suffix — Copilot Chat wants native root.
+  }));
+
+  return [...passthrough, ...ollamaEntries];
+}
+
 ////// Main Entry Point //////
 
 /**
@@ -295,39 +338,43 @@ async function doWork() {
   const windowsKeyBindings = (await readJson`software/scripts/advanced/vs-code-keys.windows.jsonc`) || [];
 
   // --- Ollama BYOK discovery (only for local-deploy; CI prebuilt artifact stays generic) ---
-  // Probe the known home-network Ollama hosts via the shared helper in llm-common.js and
-  // pick the first reachable one for Copilot Chat's deprecated single-endpoint setting.
-  // Local 127.0.0.1 is preferred (zero network hop) — falls back to the remote sy-omen45l
-  // workstation if loopback isn't running. Empty array means no host responded, in which
-  // case the endpoint key is omitted entirely (Copilot Chat falls back to its built-ins).
+  // Probe the known home-network Ollama hosts via the shared helper in llm-common.js. We
+  // register EVERY reachable host (not just the first) directly in `chatLanguageModels.json`
+  // below — this is the modern equivalent of the deprecated `github.copilot.chat.byok.
+  // ollamaEndpoint` single-string setting which could only hold one host and stamped a
+  // generic `name: "Ollama"`. Empty array means no host responded, in which case we leave
+  // chatLanguageModels.json alone except for stripping any STALE `vendor: "ollama"` rows
+  // (so a previously-discovered host that's now offline doesn't sit in the UI forever).
   const ollamaProviders = userPaths.length > 0 ? await getOllamaProviderInputs() : [];
-  const localProvider = ollamaProviders.find((p) => p.baseURL.includes("127.0.0.1"));
-  const remoteProvider = ollamaProviders.find((p) => !p.baseURL.includes("127.0.0.1"));
-  // `baseURL` from getOllamaProviderInputs includes the `/v1` suffix (OpenAI-compat) — Copilot
-  // Chat's BYOK setting wants the native Ollama root (no `/v1`) since it calls `/api/tags`
-  // and `/api/show` directly. Strip the trailing `/v1` if present.
-  const ollamaEndpoint = (localProvider || remoteProvider || {}).baseURL?.replace(/\/v1$/, "") || null;
-  if (ollamaEndpoint) {
-    log(`>>> vs-code: Copilot Chat BYOK Ollama endpoint -> ${ollamaEndpoint}`);
+  if (ollamaProviders.length > 0) {
+    log(`>>> vs-code: Copilot Chat BYOK Ollama providers -> ${ollamaProviders.map((p) => p.id).join(", ")}`);
   } else if (userPaths.length > 0) {
-    log(">>> vs-code: no reachable Ollama hosts — leaving Copilot Chat BYOK endpoint unset");
+    log(">>> vs-code: no reachable Ollama hosts — clearing any stale ollama entries from chatLanguageModels.json");
   }
 
-  // --- Local system: write settings + keybindings into each detected install ---
+  // --- Local system: write settings + keybindings + chatLanguageModels into each detected install ---
   const localKeybindings = _getKeyConfigs(commonKeyBindings, windowsKeyBindings);
   for (const userPath of userPaths) {
     log(">>> Deploying to local VS Code install:", userPath);
 
     const settingsPath = path.join(userPath, "settings.json");
     await backupConfigFile(settingsPath);
-    await writeJson(
-      settingsPath,
-      _getSettings(baseConfig, darkColors, lightColors, localKeybindings, { is_prebuilt_config: false, ollamaEndpoint }),
-    );
+    await writeJson(settingsPath, _getSettings(baseConfig, darkColors, lightColors, localKeybindings, { is_prebuilt_config: false }));
 
     const keybindingsPath = path.join(userPath, "keybindings.json");
     await backupConfigFile(keybindingsPath);
     await writeJson(keybindingsPath, localKeybindings);
+
+    // Copilot Chat's BYOK provider list. We rewrite `vendor: "ollama"` rows from discovery
+    // and pass through any other vendors (Anthropic / OpenAI / Azure / etc. added via UI).
+    // See `_buildChatLanguageModels` JSDoc for the full schema + caveat about Microsoft not
+    // publishing a stable spec for this file.
+    const chatModelsPath = path.join(userPath, "chatLanguageModels.json");
+    const existingChatModels = (await readJson`${chatModelsPath}`) || [];
+    const existingArray = Array.isArray(existingChatModels) ? existingChatModels : [];
+    const mergedChatModels = _buildChatLanguageModels(ollamaProviders, existingArray);
+    await backupConfigFile(chatModelsPath);
+    await writeJson(chatModelsPath, mergedChatModels);
   }
 
   // --- Devcontainer extensions list (single source of truth) ---

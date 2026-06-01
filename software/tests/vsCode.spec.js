@@ -194,3 +194,79 @@ describe("_getSettings -> editor.multiCursorModifier (per-OS)", () => {
     expect(settings["editor.multiCursorModifier"]).toBe("alt");
   });
 });
+
+// ---- _buildChatLanguageModels: Copilot Chat BYOK Ollama provider registration ----
+//
+// Builds the array written to `<Code>/User/chatLanguageModels.json`. We own all
+// `vendor: "ollama"` rows (re-derived from discovery on every run); rows with any
+// other vendor pass through untouched so UI-added providers (Anthropic / OpenAI /
+// Azure / etc.) survive a setup re-run.
+
+/**
+ * Helper: builds a getOllamaProviderInputs-shaped provider entry for tests. Mirrors the
+ * helper in `zed.spec.js` so both test files use the same shape.
+ * @param {string} host - The host portion (e.g. "127.0.0.1" or "192.168.1.45").
+ * @returns {{id: string, baseURL: string}} Minimal shape `_buildChatLanguageModels` reads.
+ */
+function makeProvider(host) {
+  const isLocal = host === "127.0.0.1";
+  return {
+    id: isLocal ? "ollama-local" : "ollama-sy-omen45l",
+    baseURL: `http://${host}:11434/v1`,
+  };
+}
+
+describe("_buildChatLanguageModels", () => {
+  it("uses the provider id as the entry name (matches opencode + Zed naming)", () => {
+    const vs = loadVsCode();
+    const result = vs._buildChatLanguageModels([makeProvider("127.0.0.1"), makeProvider("192.168.1.45")]);
+    expect(result.map((e) => e.name)).toEqual(["ollama-local", "ollama-sy-omen45l"]);
+  });
+
+  it("strips the /v1 suffix from baseURL so Copilot Chat hits the native /api root", () => {
+    const vs = loadVsCode();
+    const result = vs._buildChatLanguageModels([makeProvider("192.168.1.45")]);
+    expect(result[0].url).toBe("http://192.168.1.45:11434");
+  });
+
+  it("hardcodes vendor to 'ollama' on every entry", () => {
+    const vs = loadVsCode();
+    const result = vs._buildChatLanguageModels([makeProvider("127.0.0.1"), makeProvider("192.168.1.45")]);
+    expect(result.every((e) => e.vendor === "ollama")).toBe(true);
+  });
+
+  it("drops existing vendor:'ollama' rows and re-derives them from discovery (we own the ollama subset)", () => {
+    const vs = loadVsCode();
+    const existing = [{ name: "Ollama", vendor: "ollama", url: "http://stale.example:11434" }];
+    const result = vs._buildChatLanguageModels([makeProvider("127.0.0.1")], existing);
+    expect(result).toEqual([{ name: "ollama-local", vendor: "ollama", url: "http://127.0.0.1:11434" }]);
+  });
+
+  it("preserves non-ollama vendors (UI-added providers like anthropic / openai survive a re-run)", () => {
+    const vs = loadVsCode();
+    const existing = [
+      { name: "Claude", vendor: "anthropic", url: "https://api.anthropic.com" },
+      { name: "Ollama", vendor: "ollama", url: "http://stale.example:11434" },
+    ];
+    const result = vs._buildChatLanguageModels([makeProvider("127.0.0.1")], existing);
+    expect(result).toEqual([
+      { name: "Claude", vendor: "anthropic", url: "https://api.anthropic.com" },
+      { name: "ollama-local", vendor: "ollama", url: "http://127.0.0.1:11434" },
+    ]);
+  });
+
+  it("returns only passthrough entries when no providers were discovered (clears stale ollama rows)", () => {
+    const vs = loadVsCode();
+    const existing = [
+      { name: "Claude", vendor: "anthropic", url: "https://api.anthropic.com" },
+      { name: "Ollama", vendor: "ollama", url: "http://stale.example:11434" },
+    ];
+    const result = vs._buildChatLanguageModels([], existing);
+    expect(result).toEqual([{ name: "Claude", vendor: "anthropic", url: "https://api.anthropic.com" }]);
+  });
+
+  it("returns an empty array when neither providers nor existing entries are present", () => {
+    const vs = loadVsCode();
+    expect(vs._buildChatLanguageModels([])).toEqual([]);
+  });
+});

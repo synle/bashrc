@@ -9,14 +9,16 @@ edit so the next reader doesn't have to chase references.
 
 ## Why two flavors of Qwen Coder show up
 
-- **`-base` variants** are used for **inline autocomplete** (Zed `edit_predictions`,
-  future VSCode wiring). Only the base checkpoints carry the FIM tokens
-  (`<|fim_prefix|>` / `<|fim_suffix|>` / `<|fim_middle|>`) that FIM clients inject
-  for cursor-position completion. Instruct variants strip those tokens and produce
-  chatty, suggestion-style replies that drift past the cursor.
+- **`-base` variants** are used for **inline autocomplete** (Zed `edit_predictions`).
+  Only the base checkpoints carry the FIM tokens (`<|fim_prefix|>` / `<|fim_suffix|>`
+  / `<|fim_middle|>`) that FIM clients inject for cursor-position completion.
+  Instruct variants strip those tokens and produce chatty, suggestion-style replies
+  that drift past the cursor. VS Code has no native inline-completion API surface
+  that accepts custom endpoints, so `-base` models stay Zed-only.
 - **instruct variants** (no `-base` suffix) are used for **agent / chat** traffic via
-  opencode. They follow chat templates and are appropriate for back-and-forth
-  conversation, tool calls, and code-edit assistant flows.
+  opencode, the Zed agent panel, and VS Code Copilot Chat (BYOK). They follow chat
+  templates and are appropriate for back-and-forth conversation, tool calls, and
+  code-edit assistant flows.
 
 ## Model inventory
 
@@ -60,10 +62,10 @@ on the next setup run and wire them into the relevant config without any further
 
 Two different discoverers, two different priorities — by design.
 
-| Discoverer                  | Used by                             | Host priority              | Rationale                                                                                                                                     |
-| --------------------------- | ----------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `getOllamaProviderInputs()` | opencode providers, Zed agent panel | **sy-omen45l → 127.0.0.1** | Agent / chat traffic is user-initiated and infrequent. Prefer the beefier remote box so the big models actually get to serve.                 |
-| `getAutocompleteProvider()` | Zed `edit_predictions`              | **127.0.0.1 → sy-omen45l** | Inline autocomplete fires on every keystroke. Localhost (~sub-ms) beats LAN (~5-20ms+) and dodges network round-trips on the typing hot path. |
+| Discoverer                  | Used by                                                                               | Host priority              | Rationale                                                                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `getOllamaProviderInputs()` | opencode providers, Zed agent panel, VS Code Copilot Chat (`chatLanguageModels.json`) | **sy-omen45l → 127.0.0.1** | Agent / chat traffic is user-initiated and infrequent. Prefer the beefier remote box so the big models actually get to serve. VS Code registers EVERY reachable host (not just the first); opencode and Zed do the same for their provider panels. |
+| `getAutocompleteProvider()` | Zed `edit_predictions`                                                                | **127.0.0.1 → sy-omen45l** | Inline autocomplete fires on every keystroke. Localhost (~sub-ms) beats LAN (~5-20ms+) and dodges network round-trips on the typing hot path.                                                                                                      |
 
 When a host doesn't have a matching model, the discoverer falls through to the next
 host. When no host has any matching model, the caller omits the relevant config block
@@ -74,6 +76,14 @@ hammering a dead endpoint on every keystroke.
 [`software/index.js`](../../../index.js), with `192.168.1.45` as the documented LAN
 fallback when [`ip-address.config`](../../../metadata/ip-address.config) hasn't been
 built yet.
+
+VS Code Copilot Chat reads `~/Library/Application Support/Code/User/chatLanguageModels.json`
+on macOS (Linux equivalent: `~/.config/Code/User/chatLanguageModels.json`). The file's
+schema is observed from VS Code's runtime — Microsoft has not published a stable spec.
+See [`vs-code.js` `_buildChatLanguageModels`](../vs-code.js) JSDoc for the full caveat
+and the merge rules: we own all `vendor: "ollama"` rows and re-derive them from
+discovery on every run; entries from other vendors (Anthropic, OpenAI, Azure, etc.,
+added via the Manage Models... UI) pass through untouched.
 
 ## Adding a new model
 

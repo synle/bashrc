@@ -49,8 +49,10 @@ else
   curl -fsSL https://ollama.com/install.sh | sh > /dev/null
 fi
 
-# Pull a small FIM-capable coding model so editors (Zed edit_predictions, future
-# VSCode wiring) have a localhost autocomplete target. Tiered by `is_system_desktop`
+# Pull a small FIM-capable coding model so Zed's `edit_predictions` has a localhost
+# autocomplete target. (VS Code has no native inline-completion API for custom
+# endpoints — Copilot Chat handles only chat-side BYOK via chatLanguageModels.json.)
+# Tiered by `is_system_desktop`
 # to match the perf-env split in ollama.profile.bash:
 #   - Laptop (battery present)  -> qwen2.5-coder:1.5b-base (~1 GB, ~1.5 GB VRAM)
 #   - Desktop (no battery)      -> qwen2.5-coder:3b-base (~2 GB, ~3 GB VRAM)

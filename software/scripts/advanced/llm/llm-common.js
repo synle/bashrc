@@ -167,7 +167,8 @@ const AUTOCOMPLETE_MODELS = ["qwen2.5-coder:1.5b-base", "qwen2.5-coder:3b-base",
 
 /**
  * Picks the best Ollama host + model for editor inline autocomplete (Zed's
- * `edit_predictions`, future VSCode-side wiring, etc.).
+ * `edit_predictions`). Currently Zed-only — VS Code has no native inline-completion API
+ * for custom endpoints (Copilot Chat handles only chat-side BYOK via chatLanguageModels.json).
  *
  * Priority is the INVERSE of `getOllamaProviderInputs`: `127.0.0.1` is probed FIRST and
  * `sy-omen45l` only as a LAN fallback. Reason: autocomplete fires per keystroke; localhost
