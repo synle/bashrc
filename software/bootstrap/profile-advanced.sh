@@ -1039,7 +1039,7 @@ function clean() {
     return 1
   fi
 
-  local total_steps=12
+  local total_steps=13
   local current_step=0
 
   function _log_step() {
@@ -1068,6 +1068,9 @@ function clean() {
 
   _log_step "Fetching latest from origin..."
   git clean-and-fetch
+
+  _log_step "Garbage-collecting (only if last gc was >14d ago)..."
+  git gc-if-stale
 
   _log_step "Resolving default branch..."
   local default_branch

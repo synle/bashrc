@@ -207,7 +207,8 @@ where-is = branch -r --contains # Find which remote branches contain a commit: g
 
 # ---- Cleanup ----
 abort = "!rm -rf .git/rebase-merge .git/rebase-apply .git/MERGE_HEAD .git/CHERRY_PICK_HEAD; git stash 2>/dev/null; git clean -fd 2>/dev/null; git reset --hard HEAD 2>/dev/null; git merge --abort 2>/dev/null; git rebase --abort 2>/dev/null; git cherry-pick --abort 2>/dev/null; git am --abort 2>/dev/null" # Abort all in-progress operations and reset working tree
-clean-and-fetch = "!git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git gc --prune=now 2>/dev/null; git fetch --all --prune 2>/dev/null" # Reset fetch refspec, GC, and fetch all remotes
+clean-and-fetch = "!git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git fetch --all --prune 2>/dev/null" # Reset fetch refspec and fetch all remotes (gc moved to `git gc-if-stale`)
+gc-if-stale = "!f() { d=$(git rev-parse --git-common-dir 2>/dev/null) || { echo '  -> not a git repo'; return 1; }; s=\"$d/.last-gc\"; threshold=$((14*24*60*60)); now=$(date +%s); if [ -f \"$s\" ]; then last=$(stat -c %Y \"$s\" 2>/dev/null || stat -f %m \"$s\" 2>/dev/null); age=$((now - last)); if [ $age -lt $threshold ]; then echo \"  -> gc skipped (last ran $((age/86400))d ago, threshold 14d)\"; return 0; fi; fi; echo '  -> running git gc --prune=now'; git gc --prune=now 2>/dev/null; touch \"$s\"; }; f" # Run `git gc --prune=now` only if it hasn't run in the last 14 days (sentinel: <git-common-dir>/.last-gc)
 last = "!git log -1 --format='%h %an: %s' HEAD | sed 's/  */ /g'" # Print last commit summary
 lastd = "!git last && git dhs" # Last commit summary + file change stats
 cleanfd = "!git abort; git gc --prune=now --aggressive" # Abort all, clean untracked files, and aggressively garbage-collect
