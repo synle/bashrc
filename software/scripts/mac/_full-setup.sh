@@ -230,6 +230,7 @@ installBrewPackageInBackground --cask powershell
 
 # ---- Local LLM ----
 installBrewPackageInBackground ollama
+installBrewPackageInBackground --cask --app="LM Studio.app" lm-studio
 
 # ---- Observability ----
 # btop is foreground on every platform so CI can mark it as a required binary —

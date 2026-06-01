@@ -122,6 +122,7 @@ winget_packages=(
 
   # ---- Local LLM ----
   "Ollama.Ollama"
+  "ElementLabs.LMStudio" # LM Studio GUI — local LLM runner (https://lmstudio.ai)
 
   # ---- AI / agentic CLIs ----
   "GitHub.Copilot" # `copilot` — GitHub Copilot CLI (https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli)
