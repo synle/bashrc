@@ -95,7 +95,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
 37. Always parallelize within a session. Independent changes → one message, multiple sub-agent calls. Applies inside macro repos containing micro-repos / sub-projects / vendored packages too — fan them out as separate sub-agent worktrees.
 38. Run sub-agents in the background → `run_in_background: true`.
-39. Phased work: parallelize within a phase; serialize between phases. Fan out Phase 1, wait, fan out Phase 2.
+39. **Plan before fan-out** for multi-PR / multi-file scope — use the Plan agent to outline phases first, then phased work: parallelize within a phase, serialize between phases. Fan out Phase 1, wait, fan out Phase 2. Skip planning only for single-file / single-PR work that's obviously contained.
 40. PR order: tests first, then coverage gate, then push. **Respect the repo's existing coverage threshold; if none configured, ≥ 80% line + branch on changed code.** No PR without tests.
 41. Babysit every PR to green CI. Use `/babysit-pr` / `/babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the rule 36 sync command. Poll every 8 minutes — each wake addresses comments AND CI in one pass. **After every applied fix: reply `Fixed — <one-liner>` and resolve the thread. Detect broken-main early — if the same CI failure appears on `origin/<default>`'s latest commit, stop babysit, flag, and ask the user (don't retry-fix-retry against an unfixable base). Cap at 10 polls (~80 min) — if not green by then, STOP, summarize what was tried, and ask the user.**
 
