@@ -307,6 +307,34 @@ Symmetric pattern: every Prettier-handled language gets `formatter: "prettier"`;
 - `Cmd+Shift+P` → `zed: open log` — search for `UndefinedParserError` or `Formatting failed: prettier at ...`. The log includes the file path and which prettier instance was invoked.
 - Inspect the live settings: `python3 -c "import json; s=json.load(open('$HOME/.config/zed/settings.json')); print(s.get('languages', {}))"` — confirm the per-language `formatter` pins are deployed.
 
+### macOS — jdtls fails with "Unable to locate a Java Runtime"
+
+**Symptom.** Open a `.java` file in Zed (or any editor wired to `jdtls`) → LSP log shows:
+
+```
+Language server jdtls: initializing server jdtls, id 3: Server reset the connection
+-- stderr --
+The operation couldn't be completed. Unable to locate a Java Runtime.
+Please visit http://www.java.com for information on installing Java.
+```
+
+**Cause.** macOS ships a `/usr/bin/java` stub binary that delegates to `/usr/libexec/java_home` to find an installed JDK. Brew's `openjdk` formula installs the JDK at `/opt/homebrew/Cellar/openjdk/.../libexec/openjdk.jdk` but does **not** register it with `/Library/Java/JavaVirtualMachines/` — so `java_home` returns nothing, and the stub errors out. The jdtls launcher in `lsp/install.sh` does `exec java ...` which hits the stub first → fails before jdtls can start.
+
+**Fix.** Symlink brew's openjdk into the macOS java_home registry:
+
+```bash
+sudo ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
+```
+
+Wired into `software/scripts/mac/_full-setup.sh` right after the `brew install java` line — every fresh mac registers the JDK automatically.
+
+**Debug.**
+
+- `java -version` from a terminal → confirms whether the stub can find a JDK.
+- `/usr/libexec/java_home` → prints the resolved JDK path (or errors if none registered).
+- `ls -la /Library/Java/JavaVirtualMachines/` → confirms the symlink exists.
+- `brew --prefix openjdk` → confirms the keg location for the symlink target.
+
 ### Multi-formatter conflicts (general)
 
 When two formatters claim the same file type, the editor picks one and silently ignores the other. Always pick **one** owner per file type per editor:

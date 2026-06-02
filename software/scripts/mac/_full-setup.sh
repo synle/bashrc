@@ -281,6 +281,16 @@ installBrewPackageInBackground sqlite
 installBrewPackageInBackground --force android-platform-tools
 installBrewPackageInBackground --cask font-jetbrains-mono-nerd-font
 installBrewPackageInBackground java
+# Register brew's openjdk with macOS java_home registry so /usr/bin/java (the Apple
+# stub that delegates to /usr/libexec/java_home) can locate it. Without this symlink
+# the brew install is invisible to anything that resolves Java via the system stub —
+# including LSP servers like jdtls (Eclipse JDT) that launch via `exec java ...`.
+# Symptom when missing: "Unable to locate a Java Runtime" on every `java -version` /
+# `jdtls` invocation despite the keg being installed at /opt/homebrew/Cellar/openjdk.
+if [ -d /opt/homebrew/opt/openjdk/libexec/openjdk.jdk ] && [ ! -L /Library/Java/JavaVirtualMachines/openjdk.jdk ]; then
+  echo '>> Registering brew openjdk with macOS java_home (requires sudo)'
+  sudo ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
+fi
 installBrewPackageInBackground duti
 installBrewPackageInBackground xz
 
