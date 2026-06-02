@@ -87,7 +87,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
 35. Always use a git worktree. Each unit of work in its own isolated worktree (sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work.
 36. **Sync with latest default branch at three mandatory gates** — stale base = merge pain, redundant re-implementation, CI failures on already-fixed code. The sync command is `git fetch origin && git merge origin/<default>`; resolve conflicts at each gate.
-    - **Gate 1 — Before work starts.** `git checkout <default> && git pull --ff-only`, then cut the branch. Always `--ff-only` — on failure (stray local commit on default), STOP and reconcile (`git reset --hard origin/<default>` after confirming no unmerged work, or rebase the stray commit). Never let a merge commit land on default.
+    - **Gate 1 — Before work starts.** `git checkout <default> && git pull --ff-only`, then cut the branch. Always `--ff-only` — on failure (stray local commit on default), STOP and reconcile (`git reset --hard origin/<default>` after confirming no unmerged work, or rebase the stray commit). Never let a merge commit land on default. **Then check `origin/<default>`'s CI health: `gh run list --branch <default> --limit 1 --json conclusion,name,headSha`. If the latest run's `conclusion == "failure"`, STOP and tell the user — branching off broken main wastes babysit cycles on an unfixable base.**
     - **Gate 2 — Right before `gh pr create`.** Re-run the sync command on the feature branch. Load-bearing under "skip babysit" override.
     - **Gate 3 — Before every iteration.** Re-run the sync command before every review comment, CI fix, rebuild, follow-up commit.
 
