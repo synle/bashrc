@@ -131,22 +131,22 @@ Never leak secrets, credentials, or env config to any tracked file or external s
 43. **Coverage and artifact scope = source + metrics only.** Coverage `include:` lists explicit source globs — never `**/*` or `.`. `exclude:` covers `.env*`, `**/secret*`, `**/credential*`, `**/*.pem`, `**/*.key`, `**/*.p12`, `assets/binaries/**`, `secrets/**`, and fixture paths with literal-looking tokens. Artifact uploads use explicit `path:` (e.g. `coverage/`) — never `.` or whole workspace.
 44. **CI summaries and PR comments = metrics + filenames only.** Numbers, percentages, paths, status labels — yes. File contents, env dumps, build-time config, response bodies from authenticated calls — no. Before any step writing to `$GITHUB_STEP_SUMMARY`, posting `gh pr comment`, or uploading an artifact: audit what it can read.
 45. **No catch-all artifact uploads.** Scope to the exact subdirectory. Never upload the whole workspace — that's how `.env`, `~/.aws/credentials`, and node_modules with embedded keys leak.
-46. **Scan staged changes for secret leaks before every commit AND every push.** Audit `git diff --cached` (pre-commit) and `git log <upstream>..HEAD -p` + `git diff <upstream>..HEAD` (pre-push).
+46. **Scan staged changes for secret leaks before every commit AND every push.** Audit `git diff --cached` (pre-commit) and `git log <upstream>..HEAD -p` (pre-push).
 
-    **Why:** A leaked `.env`, `~/.aws/credentials`, `id_rsa`, or hardcoded API key means rotating every exposed credential and force-pushing a rewrite — painful, public, often incomplete. Catching pre-push is orders of magnitude cheaper.
+    **Why:** A leaked credential means rotate-everything + history-rewrite — painful, public, often incomplete. Pre-push catch is orders of magnitude cheaper.
 
     **How — every commit, every push:**
-    1. **Filename allowlist.** Block if any staged path matches: `.env`, `.env.*` (except `.env.example`/`.sample`/`.template`), `**/credentials*`, `**/secret*`, `**/*.pem`, `**/*.key` (except `*.pub.key`), `**/*.p12`, `**/*.pfx`, `**/*.keystore`, `id_rsa*`, `id_ed25519*`, `id_ecdsa*`, `id_dsa*`, `*.kdbx`, `service-account*.json`, `gha-creds-*.json`, `.npmrc`/`.pypirc`/`.netrc` with auth lines, `.aws/credentials`, `.ssh/` keys, `.gnupg/`, `.kube/config`, `.docker/config.json`, `terraform.tfstate*`, `*.sqlite`/`*.db` from user dirs.
-    2. **Content patterns.** Grep staged diff for: `AKIA[0-9A-Z]{16}`, `ASIA[0-9A-Z]{16}`, `aws_secret_access_key\s*=`, `gh[pous]_[A-Za-z0-9]{36,}` / `github_pat_`, `sk-(ant-|proj-)?[A-Za-z0-9_-]{20,}`, `xox[abprs]-[A-Za-z0-9-]+`, `AIza[0-9A-Za-z_-]{35}`, `-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----`, `eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+` (JWT), assignments like `password\s*=\s*["'][^"']{6,}`, `api[_-]?key\s*=\s*["'][^"']{10,}`, `token\s*=\s*["'][^"']{16,}`, `secret\s*=\s*["'][^"']{10,}` — excluding `<placeholder>`/`xxx`/`***`/`example` markers.
-    3. **`.gitignore` sanity.** If a newly-added file matches a `.gitignore` rule (`git check-ignore --no-index <path>` → 0), flag — `git add -f` may have bypassed.
+    1. **Filename allowlist.** Block staged paths matching: `.env*` (except `.example`/`.sample`/`.template`), `**/credential*`, `**/secret*`, `**/*.pem`, `**/*.key` (except `.pub.key`), `**/*.p12`/`*.pfx`/`*.keystore`, ssh keys (`id_rsa*`/`id_ed25519*`/`id_ecdsa*`/`id_dsa*`), `*.kdbx`, `service-account*.json`, `gha-creds-*.json`, `.npmrc`/`.pypirc`/`.netrc` with auth lines, `.aws/credentials`, `.ssh/` keys, `.gnupg/`, `.kube/config`, `.docker/config.json`, `terraform.tfstate*`, user-dir `*.sqlite`/`*.db`.
+    2. **Content patterns.** Grep staged diff for: AWS (`AKIA|ASIA[0-9A-Z]{16}`, `aws_secret_access_key\s*=`), GitHub (`gh[pous]_[A-Za-z0-9]{36,}`, `github_pat_`), Anthropic/OpenAI (`sk-(ant-|proj-)?[A-Za-z0-9_-]{20,}`), Slack (`xox[abprs]-`), Google (`AIza[0-9A-Za-z_-]{35}`), private keys (`-----BEGIN .* PRIVATE KEY-----`), JWTs (`eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`), assignments `(password|api[_-]?key|token|secret)\s*=\s*["'][^"']{6,}` — skip placeholder markers (`<...>`/`xxx`/`***`/`example`).
+    3. **`.gitignore` sanity.** Newly-added file matching a `.gitignore` rule (`git check-ignore --no-index <path>` → 0) → flag; `git add -f` may have bypassed.
     4. **Flag and STOP.** Show path, line, matched pattern (redact value — `AKIA****REDACTED****`). Ask: _"Looks like this commit may contain a secret. Proceed? (default: no)"_.
     5. **Default = "no":**
        - Pre-commit: abort. Tell user to `git restore --staged <path>` and add to `.gitignore`.
        - Pre-push (local commit): `git reset HEAD~N` or `git rebase -i` to remove, re-stage clean. Do NOT push.
-       - Post-push (on remote): tell user IMMEDIATELY — rotate credential first, then rewrite history (`git filter-repo` / BFG) and force-push. Rotation first, history rewrite second.
+       - Post-push (on remote): tell user IMMEDIATELY — rotate credential first, then rewrite history (`git filter-repo` / BFG) and force-push.
     6. Proceed only on explicit "yes" + user confirms false positive.
 
-    **Scope:** Every channel — direct `git commit`/`push`, `gh pr create`, `/sy-create-pr`, `/sy-draft-pr`, `/sy-babysit-pr`, automerge, release commands.
+    **Scope:** Every commit/push channel — direct `git`, `gh pr create`, `/sy-*-pr`, automerge, release.
 
 ## Release Commands
 
