@@ -91,6 +91,12 @@
   "search.useIgnoreFiles": false, // Don't use .gitignore for search — ensures all project files are searchable. Values: true, false
 
   // --- Languages & Formatting ---
+  "editor.formatOnSave": true, // Run the configured formatter on every save. Values: true, false
+  "editor.defaultFormatter": "esbenp.prettier-vscode", // Global default — Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue. Per-language overrides below for native LSP formatters. Values: any extension id
+  "[python]": { "editor.defaultFormatter": "charliermarsh.ruff" }, // ruff (LSP) handles Python formatting
+  "[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" }, // rust-analyzer shells out to rustfmt
+  "[go]": { "editor.defaultFormatter": "golang.go" }, // gopls handles gofmt/goimports
+  "[java]": { "editor.defaultFormatter": "redhat.java" }, // jdtls (Eclipse formatter)
   "editor.codeActionsOnSave": {
     "source.fixAll": true, // Auto-fix all fixable lint errors on save. Values: true, false, "explicit", "always", "never"
     "source.organizeImports": true, // Auto-sort and remove unused imports on save. Values: true, false, "explicit", "always", "never"

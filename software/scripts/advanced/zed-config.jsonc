@@ -85,4 +85,23 @@
     "material-icon-theme": true, // Auto-install Material Icon Theme extension. Values: true, false
   },
   "icon_theme": "Material Icon Theme", // File icon theme for sidebar. Values: any installed icon theme name
+
+  // --- Formatters (per-language) ---
+  // Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue — same set as VS Code's vs-code-config.jsonc.
+  // Other languages (Rust/Python/Go/Java) fall through to their LSP server's built-in formatter.
+  "prettier": { "allowed": true }, // Permit Zed to run the prettier CLI on PATH. Values: { allowed: true|false, command?: string }
+  "languages": {
+    "JavaScript": { "formatter": "prettier" },
+    "TypeScript": { "formatter": "prettier" },
+    "TSX": { "formatter": "prettier" },
+    "JSX": { "formatter": "prettier" },
+    "JSON": { "formatter": "prettier" },
+    "JSONC": { "formatter": "prettier" },
+    "HTML": { "formatter": "prettier" },
+    "CSS": { "formatter": "prettier" },
+    "Markdown": { "formatter": "prettier" },
+    "YAML": { "formatter": "prettier" },
+    "GraphQL": { "formatter": "prettier" },
+    "Vue.js": { "formatter": "prettier" },
+  },
 }

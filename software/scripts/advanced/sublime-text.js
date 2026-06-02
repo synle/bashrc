@@ -102,6 +102,14 @@ async function _doConfigWork(targetPath, artifacts) {
     log(`>>> Deployed config:`, targetPath);
     await backupConfigFile(path.join(targetPath, "Packages/User/Preferences.sublime-settings"));
     await writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_mac: is_os_mac }));
+
+    // JsPrettier — format-on-save for JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue. Mirrors VS Code's editor.formatOnSave + Zed's format_on_save="on".
+    await backupConfigFile(path.join(targetPath, "Packages/User/JsPrettier.sublime-settings"));
+    await writeConfigToFile(targetPath, "Packages/User/JsPrettier.sublime-settings", {
+      auto_format_on_save: true,
+      auto_format_on_save_requires_prettier_config: false,
+      allow_inline_formatting: true,
+    });
   }
 
   // queue build artifacts (written in bulk at end of doWork)
