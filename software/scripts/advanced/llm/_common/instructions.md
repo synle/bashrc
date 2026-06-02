@@ -43,7 +43,7 @@ Stack-agnostic rules. Apply across every language, framework, and codebase.
 7. Delete leftovers in the refactor PR — unused imports, mocks, props, dead helpers. Audit the test file too.
 8. Skip no-op wrappers; factor near-duplicates. Passthroughs are noise; N literals differing in a few fields aren't.
 9. Imports and declarations at the top. Lazy only for circular deps or cold-start, with a comment.
-10. **Inline-document every method/function/class/exported symbol you touch.** Language-native style (JSDoc, Python docstrings, Rust `///`, Go `// FuncName ...`, bash `#`, Javadoc, Swift `///`, Ruby YARD). Cover: one-line description, params, return + type, raised errors, side effects. Update on signature/behavior/contract change in the same edit. Undocumented public methods or stale doc next to modified code → review block. Trivial one-liners (`function isEmpty(x){return !x}`) can skip.
+10. **Inline-document every method/function/class/exported symbol you touch** in language-native style. Cover: one-line description, params, return + type, raised errors, side effects. Update on signature/behavior/contract change in the same edit. Undocumented public methods or stale doc next to modified code → review block. Trivial one-liners (`function isEmpty(x){return !x}`) can skip.
 
 ## Logging & Errors
 
