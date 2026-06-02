@@ -83,7 +83,7 @@ Stack-agnostic. Apply everywhere.
 
 ## Change Execution Workflow
 
-TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green. Per-request overrides at the end of this section.
+TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green.
 
 35. Always use a git worktree. Each unit of work in its own isolated worktree (sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work.
 36. **Sync with latest default branch at three mandatory gates** — stale base = merge pain, redundant re-implementation, CI failures on already-fixed code. The sync command is `git fetch origin && git merge origin/<default>`; resolve conflicts at each gate.
@@ -99,20 +99,9 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 40. PR order: tests first, then coverage gate, then push. **Respect the repo's existing coverage threshold; if none configured, ≥ 80% line + branch on changed code.** No PR without tests.
 41. Babysit every PR to green CI. Use `/babysit-pr` / `/babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the rule 36 sync command. Poll every 60s.
 
-### Coverage thresholds
+**Coverage thresholds.** Existing repo with a configured threshold (vitest/jest config, `.coveragerc`, `pyproject.toml`, `codecov.yml`, CI gate, etc.) — respect it; don't relax just because the current diff would meet a lower bar. New project / no existing config — ≥ 80% line + branch coverage on changed code, and wire CI to run tests + coverage gate on every PR before feature work lands.
 
-- **Existing repo with a configured threshold** (vitest/jest config, `.coveragerc`, `pyproject.toml`, `codecov.yml`, CI gate, etc.) — respect it. Don't relax the gate just because the current diff would meet a lower bar.
-- **New project / no existing config** — ≥ 80% line + branch coverage on changed code. Wire CI to run tests + coverage gate on every PR before feature work lands.
-
-### Per-request overrides
-
-User phrase → drop the matching rule for this request only:
-
-- "do this one foreground" → skip background.
-- "wait before starting the next" → serialize instead of parallelize.
-- "skip babysit" → open PR and stop.
-- "WIP only" / "don't push" → no push, no PR.
-- "single-shot" / "no worktree" → work in main checkout.
+**Per-request overrides — user phrase drops the matching rule for this request only:** "do this one foreground" → skip background; "wait before starting the next" → serialize instead of parallelize; "skip babysit" → open PR and stop; "WIP only" / "don't push" → no push, no PR; "single-shot" / "no worktree" → work in main checkout.
 
 ## Secrets & Sensitive Data
 
