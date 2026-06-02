@@ -32,9 +32,8 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
    - `gh api repos/<owner>/<repo>/contents/AGENTS.md`
    - `gh api repos/<owner>/<repo>/contents/CONTRIBUTING.md`
    - `gh api repos/<owner>/<repo>/contents/.cursorrules`
-   - `gh api repos/<owner>/<repo>/contents/.github/pull_request_template.md`
 
-   Skip silently if a file is missing. Use what you find to inform what counts as a violation in this repo (architectural rules, naming conventions, required tests, mandatory sections in the PR body, etc.). Repo-specific guardrails override generic review heuristics. If the PR template lists required sections (e.g. "Test plan", "Rollback") and the body is missing them, that's a legitimate author-flag in Step 5.
+   Skip silently if a file is missing. Use what you find to inform what counts as a violation in this repo (architectural rules, naming conventions, required tests, etc.). Repo-specific guardrails override generic review heuristics.
 
 5. **Pre-flight author flags (always leave as PR comments, never as the review verdict).** These are coordination signals to the author, NOT blockers. Post each via `gh pr comment <number> --repo <owner/repo> --body "..."`. Skip any flag already raised in an existing comment (see Step 6's de-dup rule).
    - **Diff doesn't match the PR title or description.** Read `body` + the diff (`gh pr diff <number> --repo <owner/repo>`). If the implemented changes diverge from what the title / description promises (extra scope, missing scope, different feature), comment: `"The diff appears to diverge from the PR title / description. Could you update the title or description so they match what landed?"`.
@@ -117,7 +116,7 @@ Run these only when the diff includes new database migration files. Detect by pa
 - **Skip PRs already blocked by another reviewer's open `REQUEST_CHANGES` when there are no new commits since their block.** One flag at a time — don't pile on. Don't re-raise concerns they've already raised.
 - **Already-approved-by-me + clean (green CI, no conflict, no new commits) → SKIP.** Don't re-comment to say "still good". For approved + conflict, post the rebase flag; for approved + CI failure, post the CI-failure flag with the specific failing check + link to the failed run. See Step 3 triage.
 - **Cannot APPROVE while another reviewer's `REQUEST_CHANGES` is open or while CI is failing.** Max verdict in those states is COMMENT. The author-flag goes out as a PR comment; the review verdict separately drops to COMMENT.
-- **Load repo rules before reviewing.** Check `CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules` / `.github/pull_request_template.md` (Step 4). Repo-specific guardrails (architectural rules, naming, mandatory PR-body sections) override generic review heuristics.
+- **Load repo rules before reviewing.** Check `CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules` (Step 4). Repo-specific guardrails (architectural rules, naming) override generic review heuristics.
 - **No duplicate comments.** Read every existing review thread and issue comment (human AND bot — CodeRabbit, Copilot, SonarCloud, Coderabbitai, etc.) before posting. Match on substance, not wording.
 - **Stay consistent across follow-up reviews — no flip-flopping.** Your prior reviews on this PR are the baseline. Before posting a new review or comment:
   1. **Read every comment and review you previously authored on this PR** (filter `gh api repos/<owner>/<repo>/pulls/<number>/comments` and `.../issues/<number>/comments` and `gh pr view --json reviews` by your own login).

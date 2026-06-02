@@ -21,7 +21,7 @@ Argument: `$ARGUMENTS` (optional — scope filter; see "Resolving scope" below).
 
 4. **For each PR, delegate to `/sy-review-pr <PR-URL>`.** The per-PR skill owns the full behavior:
    - Skip drafts / WIP / DO NOT MERGE / already-reviewed-no-new-commits / blocked-by-other-reviewer.
-   - Load repo rules and culture context (`CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules` / PR template).
+   - Load repo rules and culture context (`CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules`).
    - Pre-flight author flags (diff-vs-description mismatch, merge conflict with base, failing CI with run-URL pinpoint, migration coordination) as PR comments.
    - De-dup against existing review threads (human + bot + own past comments).
    - Read the diff (or just the new commits for stale-approval re-reviews).
