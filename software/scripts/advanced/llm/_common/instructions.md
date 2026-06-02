@@ -151,7 +151,7 @@ Drop the matching rule for the current request only when user says:
 
 48. **Release workflows must never derive a tag from a branch ref.** `workflow_dispatch --ref main` sets `github.ref_name = "main"`. Any workflow `${{ inputs.tag || github.ref_name }}` produces a `vmain` release that overwrites real versions. Before any official `gh workflow run --ref <branch>`:
     1. Fetch workflow; grep for `github.ref_name` near `version:`/`tag:`/`release:`/`name:`.
-    2. If a `tag` `workflow_dispatch` input exists, pass `--field tag=v<version>` from `tauri.conf.json`/`package.json`/`Cargo.toml`/`pyproject.toml`.
+    2. If a `tag` `workflow_dispatch` input exists, pass `--field tag=v<version>` from the project's version manifest.
     3. Else ABORT and tell user to push a `v*` tag or fix the workflow.
 
     After dispatch, poll the run and confirm tag matches `^v\d+\.\d+\.\d+(-[\w.]+)?$` — else `gh release delete` + `gh run cancel`.
