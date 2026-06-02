@@ -94,9 +94,10 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 - If any fail, **fix them before pushing** — including lint/format violations, syntax errors, type errors, broken config (`tsconfig.json`, `pyproject.toml`, `Cargo.toml`, etc.), and unit/integration test failures. Re-run until green locally.
 - Commit and push the fixes.
 
-11. **Step 8 — Monitor CI and fix any failure (language-agnostic)** — poll every **8 minutes**: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable`.
+11. **Step 8 — Monitor CI and fix any failure (language-agnostic)** — poll every **8 minutes**, max **10 polls (~80 min)**: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable`.
+    - Track a poll counter. On poll 11: STOP. Post a summary comment on the PR (`gh pr comment`) listing what was tried (commits pushed, comments addressed, CI failures seen), tell the user the PR needs hands-on attention, and exit.
     - If all checks pass: go back to **step 1 (early-exit)** to confirm green + approved.
-    - If checks are still pending: keep polling.
+    - If checks are still pending: keep polling (counts toward the 10-poll cap).
     - If any check is failing (test job, lint job, type-check job, build job, security scan, custom CI step — anything):
       a. Get failing run IDs from `statusCheckRollup`.
       b. Examine logs: `gh run view <run-id> --repo <owner/repo> --log-failed`.
@@ -125,5 +126,5 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 - **Bot comments: only trivial / minor fixes** (typos, single-line lint nits, doc wording). Never let a bot drive a refactor or redesign — skip anything non-trivial.
 - **Every behavior-changing fix from step 3 or 4 needs test coverage in step 5.** Doc/typo/format-only changes are exempt.
 - Fix CI failures of every kind (tests, lint, type-check, build, config) regardless of language — do not assume JS/Node.
-- Poll CI every 8 minutes; do not spam `gh` calls. Each wake runs the full loop (comments + CI) in one pass.
+- Poll CI every 8 minutes; do not spam `gh` calls. Each wake runs the full loop (comments + CI) in one pass. Hard cap at 10 polls (~80 min) — escalate to user after that.
 - **After every applied fix: reply `Fixed — <one-liner>` and resolve the thread** (mechanics in step 3). Reply-without-fix → post reply, leave thread open.
