@@ -54,6 +54,17 @@ async function doWork() {
     const lspSettingsPath = path.join(targetPath, "Packages/User/LSP.sublime-settings");
     await backupConfigFile(lspSettingsPath);
     await writeJson(lspSettingsPath, { lsp_format_on_save: true });
+
+    // LSP-prettier.sublime-settings — pin the selector explicitly so we don't depend on
+    // LSP-prettier's evolving default. Includes every syntax scope Prettier handles AND
+    // the MarkdownEditing package's scope (`text.html.markdown.gfm`) so .md files format
+    // whether the user runs stock Sublime markdown or MarkdownEditing.
+    const lspPrettierSettingsPath = path.join(targetPath, "Packages/User/LSP-prettier.sublime-settings");
+    await backupConfigFile(lspPrettierSettingsPath);
+    await writeJson(lspPrettierSettingsPath, {
+      selector:
+        "source.css | source.scss | source.less | source.js | source.jsx | source.ts | source.tsx | source.vue | source.json | source.jsonc | source.yaml | source.graphql | text.html | text.html.basic | text.html.markdown | text.html.markdown.gfm",
+    });
   } else {
     log(">>> sublime-lsp: Sublime Text config dir not found — skipping local deploy");
   }
