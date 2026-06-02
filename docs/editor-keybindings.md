@@ -29,7 +29,7 @@ All repo source files under `software/scripts/` unless noted.
 
 Zed resolves a chord to the **shifted glyph** of the key, not to `shift-<unshifted>`. So a binding written as `shift-cmd-\` is never matched — Zed sees the keypress as `cmd-|` (because `shift+\` produces `|` on a US keyboard) and falls through to whatever default is bound to `cmd-|`. This bit us twice on the `\` family before we figured it out.
 
-**Rule of thumb when binding a shifted-symbol chord in `software/scripts/zed-keys.common.jsonc`:** write the resulting glyph, not the base key + shift modifier. Same physical chord on the user's keyboard, but the keymap actually wins.
+**Rule of thumb when binding a shifted-symbol chord in `software/scripts/advanced/zed-keys.common.jsonc`:** write the resulting glyph, not the base key + shift modifier. Same physical chord on the user's keyboard, but the keymap actually wins.
 
 | Physical chord on US keyboard | ❌ Won't match in Zed | ✅ Matches in Zed |
 | ----------------------------- | --------------------- | ----------------- |

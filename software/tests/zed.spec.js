@@ -8,7 +8,7 @@ import { getIndexFunction } from "./setup.js";
 const clone = getIndexFunction("clone");
 
 // ---- Load zed.js (with every SOURCE marker — editor.common.js + llm-common.js — inlined) ----
-const zedRaw = fs.readFileSync("software/scripts/zed.js", "utf-8");
+const zedRaw = fs.readFileSync("software/scripts/advanced/zed.js", "utf-8");
 const zedSource = zedRaw.replace(/^\/\/ SOURCE\s+(\S+\/\S+)\s*$/gm, (_, srcFile) => {
   return fs.readFileSync(path.resolve(srcFile), "utf-8");
 });

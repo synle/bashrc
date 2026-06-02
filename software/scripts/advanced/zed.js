@@ -195,10 +195,10 @@ function _getZedSettings(
  * @returns {Promise<{baseConfig: object, darkTheme: object, lightTheme: object}>}
  */
 async function _readZedSources() {
-  const baseConfig = (await readJson`software/scripts/zed-config.jsonc`) || {};
-  const darkTheme = (await readJson`software/scripts/zed-color-dark.jsonc`) || {};
-  const lightTheme = (await readJson`software/scripts/zed-color-light.jsonc`) || {};
-  const keymap = (await readJson`software/scripts/zed-keys.common.jsonc`) || [];
+  const baseConfig = (await readJson`software/scripts/advanced/zed-config.jsonc`) || {};
+  const darkTheme = (await readJson`software/scripts/advanced/zed-color-dark.jsonc`) || {};
+  const lightTheme = (await readJson`software/scripts/advanced/zed-color-light.jsonc`) || {};
+  const keymap = (await readJson`software/scripts/advanced/zed-keys.common.jsonc`) || [];
   return { baseConfig, darkTheme, lightTheme, keymap };
 }
 

@@ -3,7 +3,7 @@
 
 /**
  * Locates the Zed config directory across platforms. Re-implemented locally rather than
- * imported from `software/scripts/zed.js` so the LSP wiring is decoupled from the main
+ * imported from `software/scripts/advanced/zed.js` so the LSP wiring is decoupled from the main
  * Zed setup script — each script owns its own discovery.
  *
  * Returns the path containing settings.json + themes/, or null if not found.
