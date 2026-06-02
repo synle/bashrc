@@ -92,7 +92,26 @@
 
   // --- Languages & Formatting ---
   "editor.formatOnSave": true, // Run the configured formatter on every save. Values: true, false
-  "editor.defaultFormatter": "esbenp.prettier-vscode", // Global default — Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue. Per-language overrides below for native LSP formatters. Values: any extension id
+  "editor.defaultFormatter": "esbenp.prettier-vscode", // Global default — Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue. Values: any extension id
+  // Per-language overrides — must be EXPLICIT for every file type where multiple
+  // formatters compete (built-in language features vs Prettier vs LSP). Without an
+  // explicit `[lang]` entry, VS Code shows the "Configure Default Formatter" picker on
+  // first format attempt OR silently fails to format. Pin every prettier-supported type
+  // to Prettier; pin Python/Rust/Go/Java to their native LSP formatter.
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[scss]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[less]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[graphql]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[vue]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
   "[python]": { "editor.defaultFormatter": "charliermarsh.ruff" }, // ruff (LSP) handles Python formatting
   "[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" }, // rust-analyzer shells out to rustfmt
   "[go]": { "editor.defaultFormatter": "golang.go" }, // gopls handles gofmt/goimports
