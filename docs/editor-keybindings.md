@@ -348,6 +348,24 @@ Vim doesn't use the same `OS_KEY+\` chord family as the GUI editors — these si
 | `,b`           | Buffer list       |
 | `,r`           | Recent files      |
 
+### Vim LSP (coc.nvim)
+
+Wired by `software/scripts/advanced/lsp/vim-coc.sh` (writes `~/.vim/coc-settings.json`) + the `Plugin 'neoclide/coc.nvim'` entry in `software/scripts/vim-config.js`. Server binaries come from `software/scripts/advanced/lsp/install.sh` (separate PR); coc extensions (coc-tsserver, coc-pyright, …) install on demand via `:CocInstall`.
+
+| Key          | Action                |
+| ------------ | --------------------- |
+| `gd`         | Go to definition      |
+| `gy`         | Go to type definition |
+| `gi`         | Go to implementation  |
+| `gr`         | Find references       |
+| `K`          | Hover documentation   |
+| `<leader>rn` | Rename symbol         |
+| `<leader>ca` | Code action           |
+| `<leader>f`  | Format selection      |
+| `<Tab>`      | Next completion       |
+| `<S-Tab>`    | Previous completion   |
+| `<CR>`       | Confirm completion    |
+
 ---
 
 ## AI CLI Assistants
