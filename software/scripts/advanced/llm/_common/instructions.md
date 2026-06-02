@@ -150,7 +150,7 @@ Never leak secrets, credentials, or env config to any tracked file or external s
 
 ## Release Commands
 
-47. **Default: every `release` / `/sy-release` is OFFICIAL from default branch.** Unless explicit beta signal in same message, treat all of these as OFFICIAL: bare `release`, bare `/sy-release`, `/sy-release main`/`master`, `release prod`, `release stable`, `ship/cut a release`, `release from main`, `release official`, any phrasing without a SHA / non-default branch / `beta` keyword. Don't ask "official or beta?" — official is default; asking creates friction.
+47. **Default: every `release` / `/sy-release` is OFFICIAL from default branch.** Any phrasing without an explicit beta signal (see below) → OFFICIAL. Don't ask "official or beta?" — official is default; asking creates friction.
 
     **Explicit beta signals (only these flip to BETA):**
     1. Literal `beta` in `$ARGUMENTS`.
