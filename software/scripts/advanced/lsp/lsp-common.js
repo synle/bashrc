@@ -74,12 +74,16 @@ function buildZedLspBlock() {
 
 /**
  * Returns the list of Sublime LSP-* helper packages to register via Package Control.
- * Always includes the core `LSP` client package; appends every non-null `sublimePackage`
- * from `LSP_SERVERS`. De-duplicates so a future shared entry doesn't double-register.
+ * Always includes the core `LSP` client package and `LSP-prettier` (Sublime-only —
+ * prettier itself isn't an LSP server; this package wraps it so Sublime's LSP framework
+ * can dispatch formatting requests for JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue uniformly
+ * with every other LSP server. VS Code and Zed wire prettier directly without an LSP
+ * wrapper). Appends every non-null `sublimePackage` from `LSP_SERVERS`. De-duplicates
+ * so a future shared entry doesn't double-register.
  * @returns {string[]} Sorted, deduped list of package names.
  */
 function getSublimeLspPackages() {
-  const pkgs = new Set(["LSP"]);
+  const pkgs = new Set(["LSP", "LSP-prettier"]);
   for (const { sublimePackage } of Object.values(LSP_SERVERS)) {
     if (sublimePackage) pkgs.add(sublimePackage);
   }

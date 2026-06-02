@@ -47,6 +47,13 @@ async function doWork() {
 
     await backupConfigFile(pkgControlPath);
     await writeJson(pkgControlPath, { installed_packages: mergedPackages });
+
+    // LSP.sublime-settings — enable format-on-save uniformly across every attached LSP
+    // server (including LSP-prettier). Matches VS Code's `editor.formatOnSave: true` and
+    // Zed's `format_on_save: "on"` so the format chord and save use the same code path.
+    const lspSettingsPath = path.join(targetPath, "Packages/User/LSP.sublime-settings");
+    await backupConfigFile(lspSettingsPath);
+    await writeJson(lspSettingsPath, { lsp_format_on_save: true });
   } else {
     log(">>> sublime-lsp: Sublime Text config dir not found — skipping local deploy");
   }
