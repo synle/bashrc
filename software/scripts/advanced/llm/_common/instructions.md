@@ -8,7 +8,7 @@ Respond in caveman speak in prose only. Short. Drop articles/auxiliaries/pronoun
 
 # Engineering Principles
 
-Stack-agnostic rules. Apply across every language, framework, and codebase.
+Stack-agnostic. Apply everywhere.
 
 ## Source Control & PRs
 
@@ -83,9 +83,7 @@ Stack-agnostic rules. Apply across every language, framework, and codebase.
 
 ## Change Execution Workflow
 
-How a "work on a change" request runs. Follow exactly unless overridden in the same message.
-
-TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green.
+TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green. Follow exactly unless overridden in the same message.
 
 35. Always use a git worktree. Each unit of work in its own isolated worktree (sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work.
 36. **Sync with latest default branch at three mandatory gates.** Run `git fetch origin && git merge origin/<default>` and resolve conflicts at each — stale base = merge pain, redundant re-implementation, CI failures on already-fixed code:
@@ -119,9 +117,7 @@ Drop the matching rule for the current request only when user says:
 
 ## Secrets & Sensitive Data
 
-Never leak secrets, credentials, or env config to any tracked file or external surface. Applies to every output channel — logs, CI summaries, PR comments, artifacts, coverage reports, error messages, debug dumps, generated docs.
-
-42. **No secret values, ever, anywhere.** No raw env vars, API tokens, passwords, OAuth/signing keys, private hostnames, internal URLs, customer IDs, PII in any output. Never `echo`/`printenv`/`env` into `$GITHUB_STEP_SUMMARY`, never reference `${{ secrets.* }}` in summary/comment templates, never `console.log(process.env)`, never `JSON.stringify(req)` for objects with auth headers.
+42. **No secret values, ever, anywhere.** No raw env vars, API tokens, passwords, OAuth/signing keys, private hostnames, internal URLs, customer IDs, PII in any output channel (logs, CI summaries, PR comments, artifacts, coverage reports, error messages, debug dumps, generated docs). Never `echo`/`printenv`/`env` into `$GITHUB_STEP_SUMMARY`, never reference `${{ secrets.* }}` in summary/comment templates, never `console.log(process.env)`, never `JSON.stringify(req)` for objects with auth headers.
 43. **Coverage and artifact scope = source + metrics only.** Coverage `include:` lists explicit source globs — never `**/*` or `.`. `exclude:` covers `.env*`, `**/secret*`, `**/credential*`, `**/*.pem`, `**/*.key`, `**/*.p12`, `assets/binaries/**`, `secrets/**`, and fixture paths with literal-looking tokens. Artifact uploads use explicit `path:` (e.g. `coverage/`) — never `.` or whole workspace.
 44. **CI summaries and PR comments = metrics + filenames only.** Numbers, percentages, paths, status labels — yes. File contents, env dumps, build-time config, response bodies from authenticated calls — no. Before any step writing to `$GITHUB_STEP_SUMMARY`, posting `gh pr comment`, or uploading an artifact: audit what it can read.
 45. **No catch-all artifact uploads.** Scope to the exact subdirectory. Never upload the whole workspace — that's how `.env`, `~/.aws/credentials`, and node_modules with embedded keys leak.
