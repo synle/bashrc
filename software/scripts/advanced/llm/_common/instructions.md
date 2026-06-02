@@ -162,7 +162,7 @@ Drop the matching rule for the current request only when user says:
 
 50. **Stay consistent across follow-up reviews — never flip-flop on your own prior positions.** Earlier reviews are the baseline for every subsequent review on the same PR.
 
-    **Why:** Flip-flopping (Option 1 then Option 2; APPROVE → COMMENT with no new reason; concern X then contradictory Y on the same code) destroys reviewer trust and forces the author to redo accepted work.
+    **Why:** Flip-flopping destroys reviewer trust and forces the author to redo accepted work.
 
     **How — every time you post on a PR you've previously touched:**
     1. Read your prior reviews and comments first. Filter `gh api repos/<owner>/<repo>/pulls/<n>/comments` + `.../issues/<n>/comments` + `gh pr view <n> --json reviews` by your own login (`gh api user --jq .login`).
@@ -181,7 +181,7 @@ Drop the matching rule for the current request only when user says:
 
 52. **Keep every `CLAUDE.md` under 40,000 characters. Check size after any change (direct or via generator source like `_common/instructions.md`).**
 
-    **Why:** Claude Code loads every `CLAUDE.md` into the system prompt every turn. Over ~40k degrades performance, slows first-token latency, crowds out task context.
+    **Why:** Every `CLAUDE.md` loads into the system prompt every turn. Over ~40k degrades performance and crowds out task context.
 
     **Trigger:** wrote bytes to a `CLAUDE.md`; edited a generator (`software/scripts/advanced/llm/_common/instructions.md` regenerates `~/.claude/CLAUDE.md`); added any rule/section/example/paragraph; user asked to update/append. Always measure after — small adds accumulate.
 
