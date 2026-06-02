@@ -50,12 +50,20 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
    - **Filter to humans first.** For each comment, check `user.type` (skip when `Bot`) and `user.login` — separate out anything matching known bot patterns (`*[bot]`, `coderabbitai*`, `copilot*`, `dependabot*`, `sonarcloud*`, `github-actions*`, `renovate*`, etc.) for step 4. This step is humans only.
    - For every remaining (human) unresolved, substantive comment: read the referenced code, apply the fix (or reply explaining why not), and commit.
    - Skip comments already marked resolved / outdated / on stale SHAs.
+   - **After every applied fix: reply + resolve the thread.**
+     - Reply with a short `Fixed — <one-line summary>` describing the fix:
+       - Review (line) comments: `gh api repos/<owner>/<repo>/pulls/<number>/comments/<comment-id>/replies -f body='Fixed — <summary>'`.
+       - Issue (top-level) comments: `gh pr comment <number> --repo <owner/repo> --body 'Fixed — <summary>'`.
+     - Resolve the review thread (GraphQL — review comments only; issue comments have no thread to resolve):
+       `gh api graphql -F threadId='<thread-id>' -f query='mutation($threadId:ID!){ resolveReviewThread(input:{threadId:$threadId}){ thread{ id isResolved } } }'`. Get `<thread-id>` from `gh api graphql -F owner=<owner> -F repo=<repo> -F number=<number> -f query='query($owner:String!,$repo:String!,$number:Int!){ repository(owner:$owner,name:$repo){ pullRequest(number:$number){ reviewThreads(first:100){ nodes{ id isResolved comments(first:1){ nodes{ databaseId } } } } } } }'` — match by `comments.nodes[0].databaseId == <comment-id>`.
+     - If you're replying "explaining why not" instead of fixing: post the reply but DO NOT resolve the thread — leave it open so the reviewer can respond.
 
 7. **Step 4 — Address ONLY trivial / minor bot comments:**
    - From the bot-authored comments separated out in step 3, address **only the small, low-risk ones**: typo fixes, obvious lint one-liners, missing semicolons / trailing commas, simple rename suggestions, doc/comment wording tweaks, dead-import removal, and similar one-line nits.
    - **Do NOT redesign or refactor based on bot suggestions.** Skip anything that asks for: architectural changes, API redesigns, new abstractions, broad renames, restructured control flow, added error handling beyond a one-liner, new tests, performance rewrites, or anything requiring judgment about intent.
    - When in doubt, skip. Bots over-suggest — their job is to flag, yours is to triage. Err on the side of leaving the bot comment unaddressed.
    - Commit any trivial fixes you apply.
+   - **Same reply + resolve pattern as step 3** for every trivial bot fix applied: `Fixed — <one-liner>` reply, then resolve the thread. Skipped bot comments — leave unaddressed (no reply, no resolve).
 
 8. **Step 5 — Add / update tests to cover the changes from steps 3 and 4:**
    - For every code change introduced while addressing human comments (step 3) and trivial bot fixes (step 4), check whether existing tests cover the new behavior. If not, **add a new test or extend an existing one**. This is language-agnostic — unit tests, integration tests, snapshot tests, table-driven tests, doctests, whatever the repo uses.
@@ -119,3 +127,4 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 - **Every behavior-changing fix from step 3 or 4 needs test coverage in step 5.** Doc/typo/format-only changes are exempt.
 - Fix CI failures of every kind (tests, lint, type-check, build, config) regardless of language — do not assume JS/Node.
 - Poll CI every 5 minutes; do not spam `gh` calls.
+- **Comments are addressed as they appear, not batched.** Every 5-min poll re-checks comments; a new human comment → jump back to step 3 before resuming the CI watch. After every applied fix: reply `Fixed — <one-liner>` and resolve the thread (see step 3 mechanics).
