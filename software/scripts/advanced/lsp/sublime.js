@@ -48,39 +48,15 @@ async function doWork() {
     await backupConfigFile(pkgControlPath);
     await writeJson(pkgControlPath, { installed_packages: mergedPackages });
 
-    // LSP.sublime-settings — enable format-on-save uniformly across every attached LSP
-    // server (including LSP-prettier). Matches VS Code's `editor.formatOnSave: true` and
-    // Zed's `format_on_save: "on"` so the format chord and save use the same code path.
+    // LSP.sublime-settings — enable format-on-save for non-prettier languages
+    // (rust-analyzer, gopls, jdtls). Prettier-supported types (JS/TS/JSON/CSS/HTML/MD/
+    // YAML/GraphQL/Vue) are owned by JsPrettier (see sublime-text.js) which has its own
+    // auto_format_on_save toggle. Format chord routes via context-based binding in
+    // sublime-text-keys.common.jsonc — js_prettier for prettier types, lsp_format_document
+    // for everything else.
     const lspSettingsPath = path.join(targetPath, "Packages/User/LSP.sublime-settings");
     await backupConfigFile(lspSettingsPath);
     await writeJson(lspSettingsPath, { lsp_format_on_save: true });
-
-    // LSP-prettier.sublime-settings — pin the selector explicitly so we don't depend on
-    // LSP-prettier's evolving default. Includes every syntax scope Prettier handles AND
-    // the MarkdownEditing package's scope (`text.html.markdown.gfm`) so .md files format
-    // whether the user runs stock Sublime markdown or MarkdownEditing.
-    const lspPrettierSettingsPath = path.join(targetPath, "Packages/User/LSP-prettier.sublime-settings");
-    await backupConfigFile(lspPrettierSettingsPath);
-    await writeJson(lspPrettierSettingsPath, {
-      selector:
-        "source.css | source.scss | source.less | source.js | source.jsx | source.ts | source.tsx | source.vue | source.json | source.jsonc | source.yaml | source.graphql | text.html | text.html.basic | text.html.markdown | text.html.markdown.gfm",
-    });
-
-    // LSP-marksman.sublime-settings — marksman provides markdown intelligence (link refs,
-    // TOC generation, header navigation) but also CLAIMS textDocument/formatting even
-    // though it doesn't actually format prose. When marksman + LSP-prettier both attach
-    // to a .md buffer, Sublime's LSP framework routes the format request to marksman
-    // first → marksman returns no edits → user sees nothing happen. Disabling marksman's
-    // formatting capabilities lets LSP-prettier own format requests cleanly while keeping
-    // every other marksman feature intact.
-    const lspMarksmanSettingsPath = path.join(targetPath, "Packages/User/LSP-marksman.sublime-settings");
-    await backupConfigFile(lspMarksmanSettingsPath);
-    await writeJson(lspMarksmanSettingsPath, {
-      disabled_capabilities: {
-        documentFormattingProvider: true,
-        documentRangeFormattingProvider: true,
-      },
-    });
   } else {
     log(">>> sublime-lsp: Sublime Text config dir not found — skipping local deploy");
   }

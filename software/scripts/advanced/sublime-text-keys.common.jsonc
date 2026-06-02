@@ -84,7 +84,21 @@
       "reverse": false,
     },
   },
-  // format document — unified cross-editor chord (ctrl+shift+cmd+f mac / ctrl+shift+alt+f linux); routes through LSP package
+  // format document — unified cross-editor chord (ctrl+shift+cmd+f mac / ctrl+shift+alt+f linux).
+  // For prettier-supported syntaxes the chord routes through JsPrettier (which runs prettier CLI
+  // directly — same engine as the auto_format_on_save path). For everything else (rust-analyzer,
+  // pyright, gopls, jdtls, etc.) the chord falls through to lsp_format_document.
+  {
+    "key": "ctrl+shift+OS_KEY+f",
+    "command": "js_prettier",
+    "context": [
+      {
+        "key": "selector",
+        "operator": "equal",
+        "operand": "source.js, source.jsx, source.ts, source.tsx, source.css, source.scss, source.less, source.json, source.jsonc, source.yaml, source.graphql, text.html, text.html.basic, text.html.markdown, text.html.markdown.gfm, text.html.vue",
+      },
+    ],
+  },
   { "key": "ctrl+shift+OS_KEY+f", "command": "lsp_format_document" },
   {
     "key": "OS_KEY+shift+f",

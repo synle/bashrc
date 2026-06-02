@@ -103,14 +103,16 @@ async function _doConfigWork(targetPath, artifacts) {
     await backupConfigFile(path.join(targetPath, "Packages/User/Preferences.sublime-settings"));
     await writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_mac: is_os_mac }));
 
-    // JsPrettier was previously used for format-on-save but is now superseded by LSP-prettier
-    // (see software/scripts/advanced/lsp/lsp-common.js + lsp/sublime.js). Force-disable its
-    // auto_format_on_save on any machine that still has JsPrettier installed so the two
-    // formatters don't race. Harmless no-op on machines where JsPrettier isn't installed —
-    // the settings file just sits unread.
+    // JsPrettier — owns format-on-save for every prettier-supported syntax (JS/TS/JSON/
+    // CSS/HTML/MD/YAML/GraphQL/Vue). For non-prettier types (Python/Rust/Go/Java) the
+    // Sublime LSP framework handles format-on-save via lsp_format_on_save:true (see
+    // software/scripts/advanced/lsp/sublime.js). Both auto-save paths coexist — JsPrettier
+    // fires for prettier types, LSP fires for the others, no overlap on file types.
     await backupConfigFile(path.join(targetPath, "Packages/User/JsPrettier.sublime-settings"));
     await writeConfigToFile(targetPath, "Packages/User/JsPrettier.sublime-settings", {
-      auto_format_on_save: false,
+      auto_format_on_save: true,
+      auto_format_on_save_requires_prettier_config: false,
+      allow_inline_formatting: true,
     });
   }
 
@@ -429,8 +431,9 @@ const toInstallExtensions = set`
   Sass
   TypeScript
 
-  // code formatting (prettier is wired via LSP-prettier in software/scripts/advanced/lsp/lsp-common.js so format-on-save and the format chord both route through Sublime's LSP framework — see _doConfigWork below for the LSP_format_on_save setting)
+  // code formatting (JsPrettier owns prettier-supported file types — JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue. Format chord is context-bound in sublime-text-keys.common.jsonc: js_prettier for prettier types, lsp_format_document fallback for everything else (rust-analyzer / gopls / jdtls / pyright). LSP-prettier was attempted but didn't auto-install reliably from Package Control.)
   CodeFormatter
+  JsPrettier
 
   // editing
   Alignment
