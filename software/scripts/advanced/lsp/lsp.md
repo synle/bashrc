@@ -44,3 +44,262 @@ Shared LSP server binaries on `$PATH` so vim, Sublime Text, Zed, and VS Code all
    - Go-toolchain-only (`go install`) → mirror the gopls block in section 3.
 2. Add a row to the Server Table above.
 3. Wire each editor: add the binary path to Zed `settings.json`, an extension to `vs-code.js`, the corresponding `LSP-*` package to Sublime, and a `languageserver` entry to `coc-settings.json` for Vim.
+
+## Formatter Setup
+
+Goal: one Prettier config (`.prettierrc` at repo root) drive all four editors uniformly for the file types Prettier supports; native LSP formatters cover everything else. Save and the unified format chord (`ctrl+shift+OS_KEY+f` — `Ctrl+Shift+Cmd+F` mac / `Ctrl+Shift+Alt+F` linux) route through the **same engine** per file type in every editor.
+
+| Editor       | Prettier types (JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue) | Native LSP types (Python/Rust/Go/Java) | Save trigger                                            | Chord trigger                                                                             |
+| ------------ | -------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| VS Code      | `esbenp.prettier-vscode` extension                       | Per-language LSP extension             | `editor.formatOnSave: true`                             | `editor.action.formatDocument` → honors `editor.defaultFormatter` / `[lang]`              |
+| Zed          | Built-in prettier integration (`prettier.allowed: true`) | Built-in LSP formatter                 | `format_on_save: "on"` + `languages.<X>.formatter`      | `editor::Format` → honors `formatter` setting                                             |
+| Sublime Text | `JsPrettier` package (runs `prettier` CLI)               | `LSP` package + per-language `LSP-*`   | JsPrettier `auto_format_on_save` + `lsp_format_on_save` | Context-bound chord — `js_prettier` for prettier syntaxes, `lsp_format_document` fallback |
+| Vim          | (deferred) `coc-prettier`                                | `coc.nvim` with `coc-settings.json`    | `autocmd BufWritePre` (manual)                          | `<Plug>(coc-format)` / `:CocAction format`                                                |
+
+Repo source files:
+
+- VS Code: `software/scripts/advanced/vs-code-config.jsonc` (`editor.formatOnSave`, `editor.defaultFormatter`, explicit `[lang]` overrides for every Prettier-supported syntax + native LSP overrides for Python/Rust/Go/Java).
+- Zed: `software/scripts/advanced/zed-config.jsonc` (`languages.<X>.formatter: "prettier"` block + `prettier.allowed: true`; `format_on_save: "on"` set globally near the top).
+- Sublime: `software/scripts/advanced/sublime-text.js` writes `Packages/User/JsPrettier.sublime-settings` (`auto_format_on_save: true`); `software/scripts/advanced/lsp/sublime.js` writes `Packages/User/LSP.sublime-settings` (`lsp_format_on_save: true`).
+- Sublime chord: `software/scripts/advanced/sublime-text-keys.common.jsonc` — context-bound binding (selector match → `js_prettier`, fallback → `lsp_format_document`).
+
+## Plugins & Extensions Reference
+
+Every plugin/extension/package that participates in LSP + formatting, by editor. Each row lists what it does, where its settings live on disk, and where the repo declares/configures it. **Read this before debugging — most "why isn't X working" answers are "the plugin isn't installed yet" or "the setting is in a different file than you thought".**
+
+### VS Code extensions
+
+Installed via `software/scripts/advanced/vs-code-ext.sh` (which curls `.build/vs-code-ext-{mac,linux,windows}` generated from the `TO_INSTALL_EXTENSIONS` list in `software/scripts/advanced/vs-code.js`). The same list is mirrored into `.devcontainer/devcontainer.json` for codespaces.
+
+| Extension ID                    | Role                                                                           | On-disk settings path                                                                                   | Repo source for config                           |
+| ------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `esbenp.prettier-vscode`        | Prettier integration — owns format for JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue | `~/Library/Application Support/Code/User/settings.json` → `editor.defaultFormatter`, `[lang]` overrides | `software/scripts/advanced/vs-code-config.jsonc` |
+| `dbaeumer.vscode-eslint`        | ESLint diagnostics + autofix-on-save                                           | Same settings.json → `eslint.*`, `editor.codeActionsOnSave["source.fixAll"]`                            | `vs-code-config.jsonc`                           |
+| `ms-pyright.pyright`            | Python LSP — diagnostics + autocomplete (no format)                            | Same settings.json → `python.analysis.*`; per-project `pyrightconfig.json`                              | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `charliermarsh.ruff`            | Python format + lint (replaces Black + Flake8 for us)                          | Same settings.json → `[python]: { "editor.defaultFormatter": "charliermarsh.ruff" }`                    | `vs-code-config.jsonc`                           |
+| `rust-lang.rust-analyzer`       | Rust LSP — diagnostics + format (shells out to rustfmt)                        | Same settings.json → `rust-analyzer.*`                                                                  | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `golang.go`                     | Go LSP — diagnostics + format (gopls/gofmt)                                    | Same settings.json → `go.*`                                                                             | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `redhat.java`                   | Java LSP — JDTLS-backed                                                        | Same settings.json → `java.*`                                                                           | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `redhat.vscode-yaml`            | YAML LSP — diagnostics + format                                                | Same settings.json → `yaml.*`                                                                           | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `mads-hartmann.bash-ide-vscode` | Bash LSP — diagnostics + shellcheck                                            | Same settings.json → `bashIde.*`                                                                        | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `bradlc.vscode-tailwindcss`     | Tailwind LSP — class autocomplete + sort                                       | Same settings.json → `tailwindCSS.*`                                                                    | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `ms-azuretools.vscode-docker`   | Dockerfile + Compose LSP                                                       | Same settings.json → `docker.*`                                                                         | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `Vue.volar`                     | Vue 3 LSP                                                                      | Same settings.json → `vue.*`                                                                            | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `GraphQL.vscode-graphql`        | GraphQL LSP                                                                    | Same settings.json → `graphql.*`                                                                        | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `Prisma.prisma`                 | Prisma schema LSP                                                              | Same settings.json → `prisma.*`                                                                         | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+| `tamasfe.even-better-toml`      | TOML LSP — diagnostics + format (taplo)                                        | Same settings.json → `evenBetterToml.*`                                                                 | `vs-code.js` `TO_INSTALL_EXTENSIONS`             |
+
+Where to inspect at runtime:
+
+- `Cmd+Shift+P` → `Preferences: Open User Settings (JSON)` — opens the live settings file.
+- `Cmd+Shift+P` → `Extensions: Show Installed Extensions` — confirms which extensions are loaded.
+- `View → Output` → dropdown → pick `Prettier` / `ESLint` / `Pyright` / etc. — per-server logs.
+
+### Sublime Text packages
+
+Installed via Package Control. Repo declares the list in two places:
+
+- `software/scripts/advanced/sublime-text.js` `toInstallExtensions` — non-LSP packages (JsPrettier, CodeFormatter, etc.) + themes.
+- `software/scripts/advanced/lsp/lsp-common.js` `getSublimeLspPackages()` — the `LSP` core + every `LSP-*` helper derived from `LSP_SERVERS`.
+
+Both lists get unioned into `~/Library/Application Support/Sublime Text/Packages/User/Package Control.sublime-settings` `installed_packages`. Package Control diffs this against `Installed Packages/` on the next Sublime startup and downloads missing entries.
+
+| Package             | Role                                                                                                                                 | On-disk settings path                              | Repo source for config                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------- |
+| `JsPrettier`        | Wraps `prettier` CLI as a Sublime command. Owns format-on-save AND format chord (via context binding) for all prettier syntaxes.     | `Packages/User/JsPrettier.sublime-settings`        | Written by `sublime-text.js` `_doConfigWork` → `auto_format_on_save: true` |
+| `LSP`               | Sublime LSP framework core. Talks LSP protocol to every `LSP-*` helper.                                                              | `Packages/User/LSP.sublime-settings`               | Written by `lsp/sublime.js` → `lsp_format_on_save: true`                   |
+| `LSP-typescript`    | TypeScript / JS LSP helper (wraps `typescript-language-server`).                                                                     | `Packages/User/LSP-typescript.sublime-settings`    | Auto-config from `LSP_SERVERS.typescript`                                  |
+| `LSP-pyright`       | Python LSP helper (wraps `pyright-langserver`). Diagnostics + autocomplete; does NOT format (use `ruff` for that).                   | `Packages/User/LSP-pyright.sublime-settings`       | Auto-config from `LSP_SERVERS.pyright`                                     |
+| `LSP-rust-analyzer` | Rust LSP helper (wraps `rust-analyzer`). Includes format (rustfmt).                                                                  | `Packages/User/LSP-rust-analyzer.sublime-settings` | Auto-config from `LSP_SERVERS["rust-analyzer"]`                            |
+| `LSP-gopls`         | Go LSP helper (wraps `gopls`). Includes format (gofmt/goimports).                                                                    | `Packages/User/LSP-gopls.sublime-settings`         | Auto-config from `LSP_SERVERS.gopls`                                       |
+| `LSP-jdtls`         | Java LSP helper (wraps `jdtls`). Includes Eclipse formatter.                                                                         | `Packages/User/LSP-jdtls.sublime-settings`         | Auto-config from `LSP_SERVERS.jdtls`                                       |
+| `LSP-bash`          | Bash LSP helper (wraps `bash-language-server`).                                                                                      | `Packages/User/LSP-bash.sublime-settings`          | Auto-config from `LSP_SERVERS.bash`                                        |
+| `LSP-yaml`          | YAML LSP helper (wraps `yaml-language-server`).                                                                                      | `Packages/User/LSP-yaml.sublime-settings`          | Auto-config from `LSP_SERVERS.yaml`                                        |
+| `LSP-html`          | HTML LSP helper (wraps `vscode-html-language-server`).                                                                               | `Packages/User/LSP-html.sublime-settings`          | Auto-config from `LSP_SERVERS.html`                                        |
+| `LSP-css`           | CSS LSP helper (wraps `vscode-css-language-server`).                                                                                 | `Packages/User/LSP-css.sublime-settings`           | Auto-config from `LSP_SERVERS.css`                                         |
+| `LSP-json`          | JSON LSP helper (wraps `vscode-json-language-server`).                                                                               | `Packages/User/LSP-json.sublime-settings`          | Auto-config from `LSP_SERVERS.json`                                        |
+| `LSP-eslint`        | ESLint LSP helper (wraps `vscode-eslint-language-server`). Requires `eslint` in project `node_modules/` OR a global eslint install.  | `Packages/User/LSP-eslint.sublime-settings`        | Auto-config from `LSP_SERVERS.eslint`                                      |
+| `LSP-dockerfile`    | Dockerfile LSP helper (wraps `docker-langserver`).                                                                                   | `Packages/User/LSP-dockerfile.sublime-settings`    | Auto-config from `LSP_SERVERS.docker`                                      |
+| `LSP-marksman`      | Markdown LSP helper (wraps `marksman` binary — auto-downloaded by the package). Provides link refs / TOC / nav. **Does NOT format.** | `Packages/User/LSP-marksman.sublime-settings`      | Auto-config from `LSP_SERVERS.markdown`                                    |
+| `LSP-volar`         | Vue 3 LSP helper (wraps `vue-language-server`).                                                                                      | `Packages/User/LSP-volar.sublime-settings`         | Auto-config from `LSP_SERVERS.vue`                                         |
+| `LSP-tailwindcss`   | Tailwind LSP helper (wraps `tailwindcss-language-server`). Auto-runs `npm ci` for its own bundled server on first launch.            | `Packages/User/LSP-tailwindcss.sublime-settings`   | Auto-config from `LSP_SERVERS.tailwind`                                    |
+| `LSP-graphql`       | GraphQL LSP helper (wraps `graphql-lsp`).                                                                                            | `Packages/User/LSP-graphql.sublime-settings`       | Auto-config from `LSP_SERVERS.graphql`                                     |
+| `LSP-prisma`        | Prisma LSP helper (wraps `prisma-language-server`).                                                                                  | `Packages/User/LSP-prisma.sublime-settings`        | Auto-config from `LSP_SERVERS.prisma`                                      |
+| `LSP-SQL`           | SQL LSP helper (wraps `sql-language-server`).                                                                                        | `Packages/User/LSP-SQL.sublime-settings`           | Auto-config from `LSP_SERVERS.sql`                                         |
+| `CodeFormatter`     | Catch-all formatter for syntaxes not covered by Prettier or LSP (PHP, etc.). Legacy — keep for now, unused by current workflow.      | `Packages/User/CodeFormatter.sublime-settings`     | `sublime-text.js` `toInstallExtensions` list                               |
+
+Where to inspect at runtime:
+
+- `Cmd+Shift+P` → `Package Control: List Packages` — confirms which packages installed.
+- `Cmd+Shift+P` → `Preferences: List Packages` — list of all loaded packages including dependencies.
+- `Cmd+Shift+P` → `LSP: Toggle Log Panel` — every LSP JSON-RPC message in/out.
+- `Cmd+Shift+P` → `LSP: Show LSP Servers` — what's attached to the current buffer.
+- `View → Show Console` — Python REPL where Package Control logs installs/errors.
+- `Tools → Developer → Show Scope Name` — current syntax scope under cursor (essential for chord-context debugging).
+
+NOTES we hit while wiring Sublime:
+
+- **`LSP-prettier` is NOT used.** We tried it and it didn't auto-install reliably from Package Control or didn't attach to buffers. JsPrettier is the working alternative.
+- **`LSP-marksman` does not claim `documentFormattingProvider`** in its `initialize` response — so `lsp_format_document` on `.md` finds zero candidates and silently no-ops. JsPrettier owns markdown format via the context-bound chord.
+- **`LSP-eslint` needs eslint installed** in either project `node_modules/` or globally on `$PATH`. Without either, you get `"Failed resolving eslint library"` warnings in the log — harmless if you don't use ESLint diagnostics in Sublime; disable the package or install eslint to silence.
+
+### Zed extensions / built-ins
+
+Zed has first-class LSP and formatter support built in — most servers download themselves the first time you open a matching file. Our config overrides where the binaries come from:
+
+| Built-in / extension   | Role                                                                                          | On-disk settings path                         | Repo source for config                                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Prettier (built-in)    | Owns format for JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue when `prettier.allowed: true`         | `~/.config/zed/settings.json`                 | `software/scripts/advanced/zed-config.jsonc` → `prettier.allowed`, `languages.<X>.formatter: "prettier"` |
+| LSP integration        | Spawns each server (rust-analyzer, gopls, pyright, etc.) and dispatches per-language requests | Same settings.json → `lsp.<name>.binary.path` | `software/scripts/advanced/lsp/zed.js` overlays `lsp` block built from `LSP_SERVERS`                     |
+| Tree-sitter (built-in) | Syntax highlighting / scope resolution; powers `languages.<X>.*` matching                     | Settings via syntax detection                 | Auto-detected by file extension                                                                          |
+| `material-icon-theme`  | File icon theme — purely cosmetic                                                             | Settings.json → `icon_theme`                  | `zed-config.jsonc` → `auto_install_extensions`                                                           |
+
+Where to inspect at runtime:
+
+- `Cmd+Shift+P` → `zed: open settings` — live settings.json.
+- `Cmd+Shift+P` → `zed: open log` — Zed's process log including LSP startup.
+- `Cmd+Shift+P` → `editor: open lsp logs` — per-server JSON-RPC trace.
+- Status bar bottom-right — language mode (click to change for current buffer).
+
+### Vim plugins (coc.nvim)
+
+| Plugin                                 | Role                                                                                                                                                                                 | On-disk settings path                           | Repo source for config                                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `neoclide/coc.nvim` (Vundle)           | LSP client + completion engine + extension host                                                                                                                                      | `~/.vim/coc-settings.json` + `~/.config/coc/`   | Plugin entry in `software/scripts/vim-config.js`; settings written by `software/scripts/advanced/lsp/vim-coc.sh` |
+| coc extensions (`coc-tsserver` etc.)   | Per-language wrappers — auto-install via `:CocInstall coc-tsserver coc-pyright coc-html coc-css coc-json coc-eslint coc-volar coc-prisma coc-markdownlint` after first install       | `~/.config/coc/extensions/`                     | `vim-coc.sh` echoes the `:CocInstall` command for the user to run once                                           |
+| LSP servers via `languageserver` block | rust-analyzer / gopls / jdtls / bash-language-server / yaml-language-server / docker-langserver / graphql-lsp / tailwindcss-language-server / taplo — pointed at the shared binaries | `~/.vim/coc-settings.json` `languageserver.<X>` | `vim-coc.sh` writes the JSON                                                                                     |
+
+Where to inspect at runtime:
+
+- `:CocList services` — what's attached to the current buffer.
+- `:CocInfo` — health check (versions, paths, missing extensions).
+- `:CocOpenLog` — full coc.nvim log.
+- `:set filetype?` — Vim's detected filetype (essential for LSP attach).
+- `:messages` — recent errors.
+
+## Troubleshooting & Gotchas
+
+Real issues we hit setting this up. Each entry: what went wrong, why, how we fixed it, how to debug.
+
+### VS Code — "Configure Default Formatter" popup on first format
+
+**Symptom.** Hit format chord on a `.json` (or `.md`, `.html`, etc.) → modal prompts "There are multiple formatters for 'JSON' files. One of them should be configured as default formatter." Picker offers e.g. `Prettier - Code formatter` vs `JSON Language Features`.
+
+**Cause.** VS Code's per-file-type formatter resolver requires an **explicit** `[lang]` block when multiple extensions claim the type. The global `editor.defaultFormatter: "esbenp.prettier-vscode"` is **not enough** when another extension also advertises a formatter for the same language ID — VS Code refuses to pick on the user's behalf.
+
+**Fix.** Pin every Prettier-supported file type explicitly:
+
+```jsonc
+"editor.defaultFormatter": "esbenp.prettier-vscode",
+"[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+"[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+"[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+// ... every prettier-supported type
+"[python]": { "editor.defaultFormatter": "charliermarsh.ruff" },
+"[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" },
+```
+
+`vs-code-config.jsonc` has the full list.
+
+**Debug.**
+
+- `View → Output` → pick `Prettier` from the dropdown — shows whether Prettier is even being asked to format.
+- `Cmd+Shift+P` → `Format Document With...` — manual one-off picker that bypasses the resolver.
+- Status bar bottom-right shows the language mode; click to confirm VS Code thinks it's the type you think it is.
+
+### VS Code — chord fires but nothing changes
+
+**Cause.** File is unsaved scratch buffer (`Untitled-1` etc.) → bottom-right shows `Plain Text` → no formatter resolves.
+
+**Fix.** Save the file with a real extension OR click `Plain Text` in status bar → pick the language.
+
+### Sublime Text — LSP-prettier doesn't reliably install/attach
+
+**Symptom.** Wired `LSP-prettier` via Package Control on paper, but the LSP log shows no prettier server attaching. `lsp_format_document` chord on `.md` is silent.
+
+**Cause.** `LSP-prettier` either isn't auto-installable from Package Control (varies by Sublime version / Package Control cache state) or doesn't attach to the buffer despite a permissive `selector`. We don't fully know why — `JsPrettier`, the standalone Sublime package that just calls the `prettier` CLI, works reliably.
+
+**Fix.** Don't wire prettier as an LSP server in Sublime. Use `JsPrettier` for every Prettier-supported syntax; use `LSP` framework only for non-Prettier types (Python/Rust/Go/Java). Format chord is context-bound — `js_prettier` for Prettier syntaxes, `lsp_format_document` fallback for everything else.
+
+**Debug.**
+
+- `Cmd+Shift+P` → `Package Control: List Packages` — verify `JsPrettier`, `LSP`, and the `LSP-*` helpers you expect are present.
+- `Cmd+Shift+P` → `LSP: Toggle Log Panel` — watch for `initialize` / `initialized` / `textDocument/didOpen` messages when you open a file.
+- `Cmd+Shift+P` → `LSP: Show LSP Servers` — confirm which servers are attached to the current buffer.
+- `Cmd+Shift+P` → `JsPrettier Format Code` — manual one-shot to confirm `JsPrettier` is wired and `prettier` is on `$PATH`.
+
+### Sublime Text — markdown chord does nothing, only marksman attaches
+
+**Symptom.** Chord on `.md` → LSP log shows only `marksman` is attached → nothing happens.
+
+**Cause.** `marksman` provides markdown intelligence (link refs, TOC generation, header navigation) but its `initialize` capabilities response does **not** include `documentFormattingProvider`. So `lsp_format_document` finds zero candidates and silently returns. (Other markdown LSPs may differ — always check the `initialize` response.)
+
+**Fix.** The context-bound chord routes `.md` through `js_prettier` instead of LSP. With `JsPrettier` installed and `prettier` on `$PATH`, `prettier --parser markdown` formats the buffer.
+
+**Debug.**
+
+- `Cmd+Shift+P` → `LSP: Toggle Log Panel` → search for the server's `initialize` response. Look for `documentFormattingProvider` in the `capabilities` object. If missing, that server cannot format — period.
+- `prettier --parser markdown < /path/to/file.md` from a terminal — confirms the CLI itself can format your file before you blame the editor wiring.
+
+### Sublime Text — package install requires full restart
+
+**Symptom.** New `LSP-*` package added to repo wiring, ran `bash run.sh`, restarted Sublime via close-window, package still missing.
+
+**Cause.** Package Control reads `Packages/User/Package Control.sublime-settings` `installed_packages` on **startup** to compute the diff vs what's on disk. Closing a window doesn't restart the Python host that drives Package Control.
+
+**Fix.** Full quit (`Cmd+Q`) → reopen. Then `Cmd+Shift+P` → `Package Control: Satisfy Dependencies` if the diff still didn't run.
+
+**Debug.**
+
+- `View → Show Console` opens the Python REPL — Package Control logs install/uninstall events there.
+- `Cmd+Shift+P` → `Package Control: List Packages` confirms what's actually installed.
+
+### Sublime Text — chord fires the wrong formatter
+
+**Symptom.** Chord on `.ts` formats with tsserver style (LSP-typescript), but save formats with Prettier style. Or vice versa.
+
+**Cause.** Save vs chord were wired through different code paths. Save used `JsPrettier`'s `auto_format_on_save`; chord used `lsp_format_document`. Different engines → different output for the same file type.
+
+**Fix.** Context-bound chord — `js_prettier` for Prettier syntaxes, `lsp_format_document` for everything else. Save and chord now share an engine per file type (mirrors VS Code / Zed behavior).
+
+**Debug.** Open the same file in both editors, run a known-ugly snippet through each path, diff results. If they differ, the chord context selector probably doesn't match the syntax scope — see next gotcha.
+
+### Sublime Text — context selector doesn't match a syntax package
+
+**Symptom.** Chord works on stock `Markdown` syntax but not on a buffer using `MarkdownEditing` package.
+
+**Cause.** `MarkdownEditing` reports its scope as `text.html.markdown.gfm`, not `text.html.markdown`. Selector match fails.
+
+**Fix.** Add the variant to the chord's `selector` operand: `text.html.markdown.gfm` (and similar for other syntax-shadowing packages).
+
+**Debug.** `Tools → Developer → Show Scope Name` (or `Ctrl+Alt+Shift+P`) — pops the current scope under the cursor. Confirm it's what you bound against.
+
+### Multi-formatter conflicts (general)
+
+When two formatters claim the same file type, the editor picks one and silently ignores the other. Always pick **one** owner per file type per editor:
+
+- VS Code → `[lang]` block.
+- Zed → `languages.<X>.formatter`.
+- Sublime → JsPrettier auto-save selector AND chord context match must agree.
+
+### Unsaved files don't format anywhere
+
+LSP servers and JsPrettier both need to know the file's **language ID** to pick a parser. Unsaved buffers default to "Plain Text" in every editor we use → no formatter resolves.
+
+**Fix.** Save with the right extension OR set the syntax manually:
+
+- VS Code: click `Plain Text` in status bar.
+- Sublime: `View → Syntax → ...`.
+- Zed: click language mode in bottom status bar.
+
+### Debug command cheat-sheet
+
+| Editor       | Show servers attached            | Show server log            | Show file's language ID               | Manual format probe                       |
+| ------------ | -------------------------------- | -------------------------- | ------------------------------------- | ----------------------------------------- |
+| VS Code      | `Output` panel → server dropdown | Same `Output` panel        | Status bar bottom-right               | `Format Document With...` palette command |
+| Zed          | `zed: open log` palette          | Same                       | Status bar bottom-right               | `editor: format` palette command          |
+| Sublime Text | `LSP: Show LSP Servers` palette  | `LSP: Toggle Log Panel`    | `Tools → Developer → Show Scope Name` | `JsPrettier Format Code` palette command  |
+| Vim (coc)    | `:CocList services`              | `:CocInfo` / `:CocOpenLog` | `:set filetype?`                      | `:call CocAction('format')`               |
+| CLI          | n/a                              | n/a                        | n/a                                   | `prettier --parser <X> < file.<ext>`      |
+
+The CLI probe is the most powerful first check: if `prettier --parser markdown < README.md` succeeds at the terminal, your editor wiring is the only thing that could be wrong. If it fails, fix `prettier`/`.prettierrc` first before touching the editor.
