@@ -307,6 +307,32 @@ Symmetric pattern: every Prettier-handled language gets `formatter: "prettier"`;
 - `Cmd+Shift+P` → `zed: open log` — search for `UndefinedParserError` or `Formatting failed: prettier at ...`. The log includes the file path and which prettier instance was invoked.
 - Inspect the live settings: `python3 -c "import json; s=json.load(open('$HOME/.config/zed/settings.json')); print(s.get('languages', {}))"` — confirm the per-language `formatter` pins are deployed.
 
+### Zed — LSP override not applied / Zed's bundled server runs instead of ours
+
+**Symptom.** Zed log shows it's launching a built-in version of a language server (jdtls, rust-analyzer, etc.) — not our shared install. Errors look like "Server reset the connection" with no stderr that matches our wrapper's behavior. Manual `<binary> < /dev/null` from a terminal succeeds, but Zed still fails.
+
+**Cause.** Zed has built-in language support for most major LSP servers and downloads/manages them itself. Our `lsp.<name>.binary.path` override in `software/scripts/advanced/lsp/zed.js` only takes effect once it's actually written to `~/.config/zed/settings.json`. If the deploy hasn't run, Zed continues to use its bundled copy.
+
+**Fix.** Deploy the override:
+
+```bash
+bash run.sh --files=advanced/lsp/zed.js
+```
+
+Then full quit Zed (`Cmd+Q`) and reopen.
+
+**Debug.**
+
+```bash
+# Confirm the lsp block exists with one entry per LSP_SERVERS entry (typescript, pyright, rust-analyzer, gopls, jdtls, bash, yaml, html, css, json, eslint, docker, markdown, vue, tailwind, graphql, prisma, sql, taplo)
+python3 -c "import json; print(sorted(json.load(open('$HOME/.config/zed/settings.json')).get('lsp', {}).keys()))"
+
+# Inspect a specific override
+python3 -c "import json; print(json.dumps(json.load(open('$HOME/.config/zed/settings.json')).get('lsp', {}).get('jdtls'), indent=2))"
+```
+
+Empty list / `null` value → the deploy hasn't run on this machine. Same gotcha applies to ANY change in `lsp/zed.js` or `lsp-common.js` — the source JSONC + JS scripts are not live until you re-run the script.
+
 ### jdtls — "Server reset the connection" / OSGi bundle resolution fails
 
 **Symptom.** Zed log shows `jdtls: Server reset the connection`. Manual `jdtls < /dev/null` prints `An error has occurred. See the log file <jdtls>/config_*/<ts>.log`. The log file contains:
