@@ -307,7 +307,6 @@ Symmetric pattern: every Prettier-handled language gets `formatter: "prettier"`;
 - `Cmd+Shift+P` → `zed: open log` — search for `UndefinedParserError` or `Formatting failed: prettier at ...`. The log includes the file path and which prettier instance was invoked.
 - Inspect the live settings: `python3 -c "import json; s=json.load(open('$HOME/.config/zed/settings.json')); print(s.get('languages', {}))"` — confirm the per-language `formatter` pins are deployed.
 
-<<<<<<< HEAD
 ### Zed — LSP override not applied / Zed's bundled server runs instead of ours
 
 **Symptom.** Zed log shows it's launching a built-in version of a language server (jdtls, rust-analyzer, etc.) — not our shared install. Errors look like "Server reset the connection" with no stderr that matches our wrapper's behavior. Manual `<binary> < /dev/null` from a terminal succeeds, but Zed still fails.
