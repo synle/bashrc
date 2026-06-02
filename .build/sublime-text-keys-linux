@@ -146,6 +146,25 @@
     ]
   },
   {
+    "command": "js_prettier",
+    "context": [
+      {
+        "key": "selector",
+        "operator": "equal",
+        "operand": "source.js, source.jsx, source.ts, source.tsx, source.css, source.scss, source.less, source.json, source.jsonc, source.yaml, source.graphql, text.html, text.html.basic, text.html.markdown, text.html.markdown.gfm, text.html.vue"
+      }
+    ],
+    "keys": [
+      "ctrl+shift+alt+f"
+    ]
+  },
+  {
+    "command": "lsp_format_document",
+    "keys": [
+      "ctrl+shift+alt+f"
+    ]
+  },
+  {
     "command": "show_panel",
     "args": {
       "panel": "find_in_files"

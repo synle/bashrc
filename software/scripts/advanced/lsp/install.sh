@@ -135,22 +135,18 @@ else
   fi
   safe_mkdir "$_jdtls_root"
   if curl -fsSL "$_jdtls_url" | tar -xz -C "$_jdtls_root"; then
-    # Write thin launcher to ~/.local/bin/jdtls.
+    # Write thin launcher to ~/.local/bin/jdtls. Delegates to the upstream-bundled
+    # bin/jdtls.py Python launcher, which handles:
+    #   - JVM args (-Xms / -Xmx / --add-modules / --add-opens for OSGi)
+    #   - Per-arch config dir selection (config_mac_arm / config_linux / config_win / etc.)
+    #   - Workspace -data path (auto-generated under $XDG_CACHE_HOME)
+    #   - Java home discovery (honors JAVA_HOME env)
+    # Our previous hand-rolled launcher had two bugs: it mapped `uname -s` (Darwin) to
+    # `config_darwin` (a low-priority generic dir) instead of arch-specific `config_mac_arm`,
+    # and -Xmx2G is too small for medium-size projects. bin/jdtls.py gets both right.
     command cat > "$HOME/.local/bin/jdtls" << 'EOF'
 #!/usr/bin/env bash
-exec java \
-  -Declipse.application=org.eclipse.jdt.ls.core.id1 \
-  -Dosgi.bundles.defaultStartLevel=4 \
-  -Declipse.product=org.eclipse.jdt.ls.core.product \
-  -Dlog.level=ALL \
-  -Xms1g -Xmx2G \
-  --add-modules=ALL-SYSTEM \
-  --add-opens java.base/java.util=ALL-UNNAMED \
-  --add-opens java.base/java.lang=ALL-UNNAMED \
-  -jar "$HOME/.local/share/jdtls"/plugins/org.eclipse.equinox.launcher_*.jar \
-  -configuration "$HOME/.local/share/jdtls/config_$(uname -s | tr '[:upper:]' '[:lower:]')" \
-  -data "${1:-$HOME/.cache/jdtls-workspace}" \
-  "${@:2}"
+exec python3 "$HOME/.local/share/jdtls/bin/jdtls.py" "$@"
 EOF
     safe_chmod +x "$HOME/.local/bin/jdtls"
     echo 'Success'

@@ -128,6 +128,10 @@
     "command": "actions.find"
   },
   {
+    "key": "ctrl+shift+cmd+f",
+    "command": "editor.action.formatDocument"
+  },
+  {
     "key": "cmd+shift+f",
     "command": "workbench.action.findInFiles"
   },

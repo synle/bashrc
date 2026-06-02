@@ -88,6 +88,71 @@
     "material-icon-theme": true
   },
   "icon_theme": "Material Icon Theme",
+  "prettier": {
+    "allowed": true
+  },
+  "languages": {
+    "JavaScript": {
+      "formatter": "prettier"
+    },
+    "TypeScript": {
+      "formatter": "prettier"
+    },
+    "TSX": {
+      "formatter": "prettier"
+    },
+    "JSX": {
+      "formatter": "prettier"
+    },
+    "JSON": {
+      "formatter": "prettier"
+    },
+    "JSONC": {
+      "formatter": "prettier"
+    },
+    "HTML": {
+      "formatter": "prettier"
+    },
+    "CSS": {
+      "formatter": "prettier"
+    },
+    "Markdown": {
+      "formatter": "prettier"
+    },
+    "YAML": {
+      "formatter": "prettier"
+    },
+    "GraphQL": {
+      "formatter": "prettier"
+    },
+    "Vue.js": {
+      "formatter": "prettier"
+    },
+    "Rust": {
+      "formatter": "language_server"
+    },
+    "Python": {
+      "formatter": "language_server"
+    },
+    "Go": {
+      "formatter": "language_server"
+    },
+    "Java": {
+      "formatter": "language_server"
+    },
+    "TOML": {
+      "formatter": "language_server"
+    },
+    "Shell Script": {
+      "formatter": "language_server"
+    },
+    "C": {
+      "formatter": "language_server"
+    },
+    "C++": {
+      "formatter": "language_server"
+    }
+  },
   "buffer_font_family": "Courier New",
   "buffer_font_size": 16,
   "buffer_font_weight": 700,
