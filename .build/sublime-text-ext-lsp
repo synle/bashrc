@@ -1,0 +1,2 @@
+# Use Preferences > Package Control > Package Control: Advanced Install Package. 
+LSP,LSP-SQL,LSP-bash,LSP-css,LSP-dockerfile,LSP-eslint,LSP-gopls,LSP-graphql,LSP-html,LSP-jdtls,LSP-json,LSP-marksman,LSP-prisma,LSP-pyright,LSP-rust-analyzer,LSP-tailwindcss,LSP-typescript,LSP-volar,LSP-yaml

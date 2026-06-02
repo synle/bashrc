@@ -40,6 +40,22 @@ const TO_INSTALL_EXTENSIONS = list`
   // AI assistants (opencode has no marketplace extension — runs as TUI in integrated terminal)
   GitHub.copilot
   GitHub.copilot-chat
+
+  // LSP servers (paired with software/scripts/advanced/lsp/lsp-common.js;
+  // binaries installed by software/scripts/advanced/lsp/install.sh — separate PR).
+  // redhat.vscode-yaml + dbaeumer.vscode-eslint are already declared above; do NOT
+  // re-add them here.
+  ms-pyright.pyright
+  rust-lang.rust-analyzer
+  golang.go
+  redhat.java
+  mads-hartmann.bash-ide-vscode
+  bradlc.vscode-tailwindcss
+  ms-azuretools.vscode-docker
+  Vue.volar
+  GraphQL.vscode-graphql
+  Prisma.prisma
+  tamasfe.even-better-toml
 `;
 
 /**

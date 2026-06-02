@@ -1,0 +1,154 @@
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-06-02]
+// 
+// Zed LSP server binary overrides — merge into <Zed>/settings.json
+// ################################################################################
+
+
+{
+  "lsp": {
+    "typescript": {
+      "binary": {
+        "path": "typescript-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "pyright": {
+      "binary": {
+        "path": "pyright-langserver",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "rust-analyzer": {
+      "binary": {
+        "path": "rust-analyzer",
+        "arguments": []
+      }
+    },
+    "gopls": {
+      "binary": {
+        "path": "gopls",
+        "arguments": []
+      }
+    },
+    "jdtls": {
+      "binary": {
+        "path": "jdtls",
+        "arguments": []
+      }
+    },
+    "bash": {
+      "binary": {
+        "path": "bash-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "yaml": {
+      "binary": {
+        "path": "yaml-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "html": {
+      "binary": {
+        "path": "vscode-html-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "css": {
+      "binary": {
+        "path": "vscode-css-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "json": {
+      "binary": {
+        "path": "vscode-json-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "eslint": {
+      "binary": {
+        "path": "vscode-eslint-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "docker": {
+      "binary": {
+        "path": "docker-langserver",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "markdown": {
+      "binary": {
+        "path": "vscode-markdown-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "vue": {
+      "binary": {
+        "path": "vue-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "tailwind": {
+      "binary": {
+        "path": "tailwindcss-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "graphql": {
+      "binary": {
+        "path": "graphql-lsp",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "prisma": {
+      "binary": {
+        "path": "prisma-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "sql": {
+      "binary": {
+        "path": "sql-language-server",
+        "arguments": [
+          "--stdio"
+        ]
+      }
+    },
+    "taplo": {
+      "binary": {
+        "path": "taplo",
+        "arguments": []
+      }
+    }
+  }
+}
