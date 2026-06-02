@@ -101,9 +101,10 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
     - If any check is failing (test job, lint job, type-check job, build job, security scan, custom CI step — anything):
       a. Get failing run IDs from `statusCheckRollup`.
       b. Examine logs: `gh run view <run-id> --repo <owner/repo> --log-failed`.
-      c. Diagnose the failure regardless of category — could be a test failure, a lint/format violation, a syntax error, a type error, a misconfigured `tsconfig.json` / `pyproject.toml` / `Cargo.toml` / similar, a missing dependency, or a build error in any language. Read the relevant code/config, fix it, and re-run the matching local check from step 7 to confirm.
-      d. Commit and push.
-      e. **Go back to step 0** — re-run the full loop: skip-if-running → early-exit → merge → human comments → bot trivia → tests → pre-emptive CI fix → local checks → CI monitor.
+      c. **Broken-main check (do this BEFORE diagnosing as a PR-side bug).** Check whether the same check is also failing on `origin/<default>`'s latest commit: `gh run list --repo <owner/repo> --branch <default> --limit 1 --json conclusion,name,headSha`. If the same check name has `conclusion == "failure"` on the latest default-branch commit, this is broken main — **STOP babysit**. Post a comment on the PR (`gh pr comment`) saying `"Broken-main detected — <check-name> is failing on <default>@<sha>. PR can't go green until <default> is fixed."`, tell the user, and exit. Do not retry-fix-retry against an unfixable base.
+      d. Diagnose the failure regardless of category — could be a test failure, a lint/format violation, a syntax error, a type error, a misconfigured `tsconfig.json` / `pyproject.toml` / `Cargo.toml` / similar, a missing dependency, or a build error in any language. Read the relevant code/config, fix it, and re-run the matching local check from step 7 to confirm.
+      e. Commit and push.
+      f. **Go back to step 0** — re-run the full loop: skip-if-running → early-exit → merge → human comments → bot trivia → tests → pre-emptive CI fix → local checks → CI monitor.
 
 12. **Step 9 — Post-merge release trigger** (per global rule 47):
 
@@ -126,5 +127,6 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 - **Bot comments: only trivial / minor fixes** (typos, single-line lint nits, doc wording). Never let a bot drive a refactor or redesign — skip anything non-trivial.
 - **Every behavior-changing fix from step 3 or 4 needs test coverage in step 5.** Doc/typo/format-only changes are exempt.
 - Fix CI failures of every kind (tests, lint, type-check, build, config) regardless of language — do not assume JS/Node.
+- **Broken-main detection runs before every fix attempt.** If the same check is failing on `origin/<default>`'s latest commit, the PR can't go green until default is fixed — stop and flag the user.
 - Poll CI every 8 minutes; do not spam `gh` calls. Each wake runs the full loop (comments + CI) in one pass. Hard cap at 10 polls (~80 min) — escalate to user after that.
 - **After every applied fix: reply `Fixed — <one-liner>` and resolve the thread** (mechanics in step 3). Reply-without-fix → post reply, leave thread open.
