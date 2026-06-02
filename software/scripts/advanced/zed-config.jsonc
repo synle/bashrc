@@ -88,9 +88,14 @@
 
   // --- Formatters (per-language) ---
   // Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue — same set as VS Code's vs-code-config.jsonc.
-  // Other languages (Rust/Python/Go/Java) fall through to their LSP server's built-in formatter.
+  // Every non-Prettier language MUST be pinned to `language_server` explicitly. Otherwise
+  // Zed's default `formatter: "auto"` + global `prettier.allowed: true` routes the file
+  // to prettier, which fails with UndefinedParserError on Rust/Python/Go/Java (prettier
+  // doesn't support them). Symmetric: every Prettier-supported language gets
+  // `formatter: "prettier"`; every native-LSP language gets `formatter: "language_server"`.
   "prettier": { "allowed": true }, // Permit Zed to run the prettier CLI on PATH. Values: { allowed: true|false, command?: string }
   "languages": {
+    // Prettier-handled
     "JavaScript": { "formatter": "prettier" },
     "TypeScript": { "formatter": "prettier" },
     "TSX": { "formatter": "prettier" },
@@ -103,5 +108,14 @@
     "YAML": { "formatter": "prettier" },
     "GraphQL": { "formatter": "prettier" },
     "Vue.js": { "formatter": "prettier" },
+    // Native LSP-handled — explicit pin prevents prettier fallback (UndefinedParserError)
+    "Rust": { "formatter": "language_server" }, // rust-analyzer → rustfmt
+    "Python": { "formatter": "language_server" }, // pyright (no format) or ruff if attached
+    "Go": { "formatter": "language_server" }, // gopls → gofmt + goimports
+    "Java": { "formatter": "language_server" }, // jdtls → Eclipse formatter
+    "TOML": { "formatter": "language_server" }, // taplo
+    "Shell Script": { "formatter": "language_server" }, // bash-language-server (no format) — falls back gracefully
+    "C": { "formatter": "language_server" },
+    "C++": { "formatter": "language_server" },
   },
 }
