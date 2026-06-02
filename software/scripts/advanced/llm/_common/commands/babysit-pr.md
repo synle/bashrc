@@ -86,7 +86,8 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 - If any fail, **fix them before pushing** — including lint/format violations, syntax errors, type errors, broken config (`tsconfig.json`, `pyproject.toml`, `Cargo.toml`, etc.), and unit/integration test failures. Re-run until green locally.
 - Commit and push the fixes.
 
-11. **Step 8 — Monitor CI and fix any failure (language-agnostic)** — poll every **60 seconds**: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable`.
+11. **Step 8 — Monitor CI and fix any failure (language-agnostic)** — poll every **5 minutes**: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup,reviews,reviewDecision,mergeable`.
+    - **Mid-poll comment check.** On every poll, also re-fetch human review/issue comments (same calls as step 3). If a NEW unresolved human comment surfaced since the last loop iteration — drop the CI watch immediately and jump back to **Step 3** to address it. Resume the monitor only after the new comment is fixed + replied + resolved.
     - If all checks pass: go back to **step 1 (early-exit)** to confirm green + approved.
     - If checks are still pending: keep polling.
     - If any check is failing (test job, lint job, type-check job, build job, security scan, custom CI step — anything):
@@ -117,4 +118,4 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 - **Bot comments: only trivial / minor fixes** (typos, single-line lint nits, doc wording). Never let a bot drive a refactor or redesign — skip anything non-trivial.
 - **Every behavior-changing fix from step 3 or 4 needs test coverage in step 5.** Doc/typo/format-only changes are exempt.
 - Fix CI failures of every kind (tests, lint, type-check, build, config) regardless of language — do not assume JS/Node.
-- Poll CI every 60s; do not spam `gh` calls.
+- Poll CI every 5 minutes; do not spam `gh` calls.
