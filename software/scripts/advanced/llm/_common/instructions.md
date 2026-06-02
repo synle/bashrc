@@ -177,27 +177,26 @@ Drop the matching rule for the current request only when user says:
 
 51. **Local folder name ≠ repo — always resolve the remote.** Folder names diverge from GitHub `owner/repo` (e.g. `~/git/file-explorer` is `synle/skiff-files`). Before any `gh` call, sub-agent spawn, PR action, or remote-aware reasoning: run `git remote get-url origin` (or `gh repo view --json nameWithOwner`) and use that as authoritative `owner/repo`. Never derive from `basename "$(pwd)"`, `$PWD`, or directory name. When delegating, pass resolved `owner/repo` explicitly.
 
-## CLAUDE.md Size Limit
+## Agent Instruction File Size Limit
 
-52. **Keep every `CLAUDE.md` under 40,000 characters. Check size after any change (direct or via generator source like `_common/instructions.md`).**
+52. **Keep every per-turn agent instruction file under 40,000 characters.** Applies to `~/.claude/CLAUDE.md`, `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`, plus project-root and nested variants of the same names. Not linked docs (`DEV.md`/`ARCHITECTURE.md`).
 
-    **Why:** Every `CLAUDE.md` loads into the system prompt every turn. Over ~40k degrades performance and crowds out task context.
+    **Why:** Each file loads into the system prompt every turn. Over ~40k degrades performance and crowds out task context.
 
-    **Trigger:** wrote bytes to a `CLAUDE.md`; edited a generator (`software/scripts/advanced/llm/_common/instructions.md` regenerates `~/.claude/CLAUDE.md`); added any rule/section/example/paragraph; user asked to update/append. Always measure after — small adds accumulate.
+    **Trigger:** any byte write to one of these files — direct edit, edit to the generator source (`_common/instructions.md`), or any rule/section/example added. Small adds accumulate; measure after every change.
 
     **How (no asking first):**
-    1. `wc -c < <path>`. If ≤ 40,000, report and stop.
-    2. If over, trim in order: merge duplicates → cut stale incident dates/war stories > 6mo → collapse verbose examples → shorten prose (strip filler) → move deep-detail sections (file tables, architecture, command refs) to `DEV.md`/`ARCHITECTURE.md`, leave a one-line pointer.
+    1. `wc -c < <path>`. If ≤ 40,000, stop.
+    2. If over, trim in order: merge duplicates → cut stale incident dates / war stories > 6mo → collapse verbose examples → shorten prose → move deep-detail sections (file tables, architecture, command refs) to `DEV.md`/`ARCHITECTURE.md` with a one-line pointer.
     3. Don't delete whole rules unless obsolete — ask before removing a rule that still describes current behavior.
-    4. Re-check size. Repeat until ≤ 40,000.
+    4. Re-check; repeat until ≤ 40,000.
     5. Report what you cut (e.g. "40,900 → 38,200: merged 2 logging rules, removed 2026-01 incident, collapsed run.sh example").
 
-    **Scope:** Every `CLAUDE.md` (global, project root, nested). Not `DEV.md`/`ARCHITECTURE.md`/other linked docs.
+    **Generator wiring.** All four global files above are regenerated from `_common/instructions.md` (in `synle/bashrc`) via per-CLI `setup.js` scripts under `software/scripts/advanced/llm/<cli>/`. Edit the source; re-run `bash run.sh --preset=llm` (or a single `setup.js`). Hand-editing a generated file is fine OUTSIDE the managed block.
 
-    **Global note:** `~/.claude/CLAUDE.md` is generated from `software/scripts/advanced/llm/claude/setup.js` in `synle/bashrc`. Same source — `_common/instructions.md` — also feeds `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md` (via each `setup.js`). Edit `instructions.md` for shared rules; re-run matching `setup.js` (or `bash run.sh --preset=llm` for all four). Hand-editing the generated file is fine for machine-local content — respect markers.
+    **Managed-block boundary.** Each generated file wraps shared content between `BEGIN synle/bashrc | software/scripts/advanced/llm/_common/instructions.md` / `END ...` marker pairs (the key embeds the source-of-truth path).
+    - **Outside markers:** persists across re-runs (`replaceBlock` in `software/common.js`). Machine-local notes, personal overrides go here.
+    - **Inside markers:** wiped on next setup run. Shared rules belong in `_common/instructions.md`; CLI-specific managed defaults go in that CLI's `setup.js`.
+    - Never modify/move the marker lines — breaks the upsert and re-appends a duplicate block.
 
-    **Managed-block boundary — hand-edit OUTSIDE the markers, never inside.** Each generated file wraps shared content in `BEGIN synle/bashrc | software/scripts/advanced/llm/_common/instructions.md` / `END synle/bashrc | software/scripts/advanced/llm/_common/instructions.md` marker pairs (the key embeds the source-of-truth path so the file points at where to edit).
-    1. **Outside the markers — safe, persists.** Content above BEGIN or below END is byte-preserved across re-runs by `replaceBlock` in `software/common.js`. Machine-local notes, personal overrides, scratch rules go here.
-    2. **Inside the markers — REGENERATED, wiped.** Anything between BEGIN and END is overwritten on next `bash run.sh --preset=llm` (or single `setup.js`). Shared rules go in `_common/instructions.md`; CLI-specific managed defaults go in that CLI's `setup.js`.
-    3. **Never modify/delete/move the marker lines themselves** — that breaks the upsert and next run re-appends a duplicate block.
-    4. **Memory belongs in the memory system**, not in these files. User-specific facts go in `~/.claude/projects/<encoded-cwd>/memory/`, not `CLAUDE.md`/`AGENTS.md`/`GEMINI.md`.
+    **Memory ≠ instruction file.** Per-user / per-project facts go in the CLI's memory system (e.g. `~/.claude/projects/<encoded-cwd>/memory/` for Claude Code), never inline in any of the files above.
