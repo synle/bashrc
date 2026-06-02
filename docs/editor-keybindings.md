@@ -186,13 +186,14 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 ### Code Editing
 
-| Key        | Action         | VS Code | Subl Text | Subl Merge | Zed | Vim |
-| ---------- | -------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `OS_KEY+/` | Toggle comment |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+[` | Outdent        |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+]` | Indent         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+,` | Fold           |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+.` | Unfold         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| Key                   | Action          | VS Code | Subl Text | Subl Merge | Zed | Vim |
+| --------------------- | --------------- | :-----: | :-------: | :--------: | :-: | :-: |
+| `OS_KEY+/`            | Toggle comment  |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+[`            | Outdent         |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+]`            | Indent          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+,`            | Fold            |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+.`            | Unfold          |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `ctrl+shift+OS_KEY+f` | Format document |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 
 ### Editor UI
 

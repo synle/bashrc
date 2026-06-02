@@ -107,6 +107,8 @@
       // ---- Find / search ----
       // find in buffer — matches VS Code `actions.find`
       "OS_KEY-f": "buffer_search::Deploy",
+      // format document — unified cross-editor chord (ctrl+shift+cmd+f mac / ctrl+shift+alt+f linux)
+      "OS_KEY-ctrl-shift-f": "editor::Format",
       // find next / previous (after deploy) — matches VS Code's move-selection-to-next/prev-find-match
       "OS_KEY-g": "search::SelectNextMatch",
       "OS_KEY-shift-g": "search::SelectPrevMatch",

@@ -88,6 +88,11 @@
     "key": "OS_KEY+f",
     "command": "actions.find",
   },
+  // format document — unified cross-editor chord (ctrl+shift+cmd+f mac / ctrl+shift+alt+f linux)
+  {
+    "key": "ctrl+shift+OS_KEY+f",
+    "command": "editor.action.formatDocument",
+  },
   {
     "key": "OS_KEY+shift+f",
     "command": "workbench.action.findInFiles",

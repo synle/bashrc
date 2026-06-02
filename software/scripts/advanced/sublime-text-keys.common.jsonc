@@ -84,6 +84,8 @@
       "reverse": false,
     },
   },
+  // format document — unified cross-editor chord (ctrl+shift+cmd+f mac / ctrl+shift+alt+f linux); routes through LSP package
+  { "key": "ctrl+shift+OS_KEY+f", "command": "lsp_format_document" },
   {
     "key": "OS_KEY+shift+f",
     "command": "show_panel",
