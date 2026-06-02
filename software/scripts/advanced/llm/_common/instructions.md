@@ -93,7 +93,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
     Never push past a conflicted state. Never `--strategy=ours` away upstream changes you haven't read.
 
-37. Always parallelize within a session. Independent changes → one message, multiple sub-agent calls. Applies inside macro repos containing micro-repos / sub-projects / vendored packages too — fan them out as separate sub-agent worktrees.
+37. Always parallelize within a session. Independent changes → one message, multiple sub-agent calls. Applies inside macro repos containing micro-repos / sub-projects / vendored packages too — fan them out as separate sub-agent worktrees. **Soft cap: ≤ 6 concurrent sub-agents per phase** (context bloat, `gh` rate limits, reviewer overwhelm beyond that). For wider scopes, phase via rule 39.
 38. Run sub-agents in the background → `run_in_background: true`.
 39. **Plan before fan-out** for multi-PR / multi-file scope — use the Plan agent to outline phases first, then phased work: parallelize within a phase, serialize between phases. Fan out Phase 1, wait, fan out Phase 2. Skip planning only for single-file / single-PR work that's obviously contained.
 40. PR order: tests first, then coverage gate, then push. **Respect the repo's existing coverage threshold; if none configured, ≥ 80% line + branch on changed code.** No PR without tests.
