@@ -68,6 +68,15 @@
       "advanced/llm/opencode/setup.js",
     ],
   },
+  "llm-prompts": {
+    "description": "Building block subset of `llm`: re-sync prompts, slash commands, keybindings, and settings only — runs each CLI's setup.js without the install.sh / npm-install steps. Fast refresh after editing `_common/instructions.md` or `_common/commands/*.md`.",
+    "files": [
+      "advanced/llm/claude/setup.js",
+      "advanced/llm/copilot/setup.js",
+      "advanced/llm/gemini/setup.js",
+      "advanced/llm/opencode/setup.js",
+    ],
+  },
 
   "browsers": {
     "description": "Building block: browser tweaks (DOM/CSS hacks via Stylus + per-browser config) plus CLI launchers for Brave, Chrome, Edge, Vivaldi, Opera, Arc, Chromium.",
@@ -78,6 +87,6 @@
 
   "heavyweight": {
     "description": "Composite (preferred end-user preset, symmetric counterpart to `lightweight`): editors + terminal emulators + GUI apps + browsers + shell terminal tooling + shell prompt + LLM clients. Composed via `presets:` from every building block. OS-specific scripts self-skip on the wrong platform.",
-    "presets": ["editors", "emulators", "apps", "browsers", "terminal", "prompt", "llm"],
+    "presets": ["editors", "emulators", "apps", "browsers", "terminal", "prompt", "llm", "llm-prompts"],
   },
 }
