@@ -307,6 +307,32 @@ Symmetric pattern: every Prettier-handled language gets `formatter: "prettier"`;
 - `Cmd+Shift+P` → `zed: open log` — search for `UndefinedParserError` or `Formatting failed: prettier at ...`. The log includes the file path and which prettier instance was invoked.
 - Inspect the live settings: `python3 -c "import json; s=json.load(open('$HOME/.config/zed/settings.json')); print(s.get('languages', {}))"` — confirm the per-language `formatter` pins are deployed.
 
+### jdtls — "Server reset the connection" / OSGi bundle resolution fails
+
+**Symptom.** Zed log shows `jdtls: Server reset the connection`. Manual `jdtls < /dev/null` prints `An error has occurred. See the log file <jdtls>/config_*/<ts>.log`. The log file contains:
+
+```
+java.lang.IllegalStateException: Unable to acquire application service.
+Ensure that the org.eclipse.core.runtime bundle is resolved and started (see config.ini).
+```
+
+**Cause.** Our previous hand-rolled bash launcher mapped `uname -s` (`Darwin`) to `config_darwin`. Modern jdtls tarballs ship many per-arch config dirs (`config_mac`, `config_mac_arm`, `config_linux`, `config_linux_arm`, `config_win`, etc.) — `config_darwin` is a generic fallback that doesn't include the right plugins for Apple Silicon OSGi resolution. Also `-Xmx2G` is undersized for medium projects.
+
+**Fix.** Delegate to the upstream-bundled `bin/jdtls.py` Python launcher. It handles arch-specific config dir selection, JVM args, and workspace `-data` automatically. Our launcher is now a one-liner:
+
+```bash
+#!/usr/bin/env bash
+exec python3 "$HOME/.local/share/jdtls/bin/jdtls.py" "$@"
+```
+
+Source: `software/scripts/advanced/lsp/install.sh` (jdtls section). To re-deploy on an existing machine: `bash run.sh --files=advanced/lsp/install.sh --refresh=lsp/install.sh`.
+
+**Debug.**
+
+- Find the error log: `ls -t $HOME/.local/share/jdtls/config_*/.log | head -1` then `cat` the newest.
+- Run upstream launcher manually: `python3 ~/.local/share/jdtls/bin/jdtls.py < /dev/null` — should hang waiting for stdin (LSP). If it errors immediately, the JVM or jdtls install itself is broken.
+- `which jdtls` → confirm it's our wrapper, not some other binary.
+
 ### macOS — jdtls fails with "Unable to locate a Java Runtime"
 
 **Symptom.** Open a `.java` file in Zed (or any editor wired to `jdtls`) → LSP log shows:
