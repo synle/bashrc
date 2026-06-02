@@ -65,6 +65,22 @@ async function doWork() {
       selector:
         "source.css | source.scss | source.less | source.js | source.jsx | source.ts | source.tsx | source.vue | source.json | source.jsonc | source.yaml | source.graphql | text.html | text.html.basic | text.html.markdown | text.html.markdown.gfm",
     });
+
+    // LSP-marksman.sublime-settings — marksman provides markdown intelligence (link refs,
+    // TOC generation, header navigation) but also CLAIMS textDocument/formatting even
+    // though it doesn't actually format prose. When marksman + LSP-prettier both attach
+    // to a .md buffer, Sublime's LSP framework routes the format request to marksman
+    // first → marksman returns no edits → user sees nothing happen. Disabling marksman's
+    // formatting capabilities lets LSP-prettier own format requests cleanly while keeping
+    // every other marksman feature intact.
+    const lspMarksmanSettingsPath = path.join(targetPath, "Packages/User/LSP-marksman.sublime-settings");
+    await backupConfigFile(lspMarksmanSettingsPath);
+    await writeJson(lspMarksmanSettingsPath, {
+      disabled_capabilities: {
+        documentFormattingProvider: true,
+        documentRangeFormattingProvider: true,
+      },
+    });
   } else {
     log(">>> sublime-lsp: Sublime Text config dir not found — skipping local deploy");
   }
