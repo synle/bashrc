@@ -86,10 +86,10 @@ Stack-agnostic. Apply everywhere.
 TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green. Follow exactly unless overridden in the same message.
 
 35. Always use a git worktree. Each unit of work in its own isolated worktree (sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work.
-36. **Sync with latest default branch at three mandatory gates.** Run `git fetch origin && git merge origin/<default>` and resolve conflicts at each — stale base = merge pain, redundant re-implementation, CI failures on already-fixed code:
+36. **Sync with latest default branch at three mandatory gates** — stale base = merge pain, redundant re-implementation, CI failures on already-fixed code. The sync command is `git fetch origin && git merge origin/<default>`; resolve conflicts at each gate.
     - **Gate 1 — Before work starts.** `git checkout <default> && git pull --ff-only`, then cut the branch. Always `--ff-only` — on failure (stray local commit on default), STOP and reconcile (`git reset --hard origin/<default>` after confirming no unmerged work, or rebase the stray commit). Never let a merge commit land on default.
-    - **Gate 2 — Right before `gh pr create`.** Re-sync feature branch with `origin/<default>`. Load-bearing under "skip babysit" override.
-    - **Gate 3 — Before every iteration.** Every review comment, CI fix, rebuild, follow-up commit starts with `git fetch origin && git merge origin/<default>`.
+    - **Gate 2 — Right before `gh pr create`.** Re-run the sync command on the feature branch. Load-bearing under "skip babysit" override.
+    - **Gate 3 — Before every iteration.** Re-run the sync command before every review comment, CI fix, rebuild, follow-up commit.
 
     Never push past a conflicted state. Never `--strategy=ours` away upstream changes you haven't read.
 
@@ -97,7 +97,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 38. Run sub-agents in the background → `run_in_background: true`.
 39. Phased work: parallelize within a phase; serialize between phases. Fan out Phase 1, wait, fan out Phase 2.
 40. PR order: tests first, then coverage gate, then push. **≥ 80% line coverage; branch threshold 75% BE/agent, 90% FE.** No PR without tests.
-41. Babysit every PR to green CI. Use `/babysit-pr` / `/babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with `git fetch origin && git merge origin/<default>`. Poll every 60s.
+41. Babysit every PR to green CI. Use `/babysit-pr` / `/babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the rule 36 sync command. Poll every 60s.
 
 ### New project setup
 
