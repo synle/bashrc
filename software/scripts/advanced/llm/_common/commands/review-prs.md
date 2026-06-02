@@ -20,12 +20,13 @@ Argument: `$ARGUMENTS` (optional — scope filter; see "Resolving scope" below).
 3. **Announce:** Tell the user how many open PRs were found and list them (repo, PR number, title, author). Skip PRs already filtered out by `/sy-review-pr`'s own skip rules in the per-PR step — don't pre-filter here.
 
 4. **For each PR, delegate to `/sy-review-pr <PR-URL>`.** The per-PR skill owns the full behavior:
-   - Step 0: skip drafts / WIP / DO NOT MERGE / already-reviewed-no-new-commits.
-   - Step 1: pre-flight author flags (diff-vs-description mismatch, merge conflict with base, failing CI, migration coordination) as PR comments.
-   - Step 2: de-dup against existing review threads (human + bot).
-   - Step 3: read the diff (or just the new commits for stale-approval re-reviews).
-   - Step 4: pick verdict — APPROVE / COMMENT (default bias) / REQUEST_CHANGES (show-stoppers only).
-   - Step 5: post the review.
+   - Skip drafts / WIP / DO NOT MERGE / already-reviewed-no-new-commits / blocked-by-other-reviewer.
+   - Load repo rules and culture context (`CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules` / PR template).
+   - Pre-flight author flags (diff-vs-description mismatch, merge conflict with base, failing CI with run-URL pinpoint, migration coordination) as PR comments.
+   - De-dup against existing review threads (human + bot + own past comments).
+   - Read the diff (or just the new commits for stale-approval re-reviews).
+   - Pick verdict — APPROVE / COMMENT (default bias) / REQUEST_CHANGES (show-stoppers only). Cap at COMMENT when another reviewer's `REQUEST_CHANGES` is open or CI is failing.
+   - Post the review.
 
    Do NOT re-implement any of that logic here — if per-PR behavior needs to change, edit `/sy-review-pr`.
 
@@ -38,5 +39,5 @@ Argument: `$ARGUMENTS` (optional — scope filter; see "Resolving scope" below).
 - **This command is a dispatcher. The per-PR logic lives in `/sy-review-pr` — do not re-implement it here.**
 - **Honor `/sy-review-pr`'s skip rules** — never pre-filter drafts / WIP / already-reviewed PRs in this wrapper. Let the per-PR skill decide and report `SKIPPED + reason` so the audit trail is complete.
 - **Default bias inherits from `/sy-review-pr`**: APPROVE or COMMENT — REQUEST_CHANGES is reserved for show-stoppers only.
-- **Multi-repo workspaces** (e.g. a bundle like `tde-tool-backend, tde-tool-docs, tde-tool-ui, tde-agent, tde-grpc-proto-api`): pass each repo as a `<owner>/<repo>` token. The cross-PR migration check (step 5) runs across the full union so coordination flags surface before any verdict is posted.
+- **Multi-repo workspaces** (e.g. a bundle like `tde-tool-backend, tde-tool-docs, tde-tool-ui, tde-agent, tde-grpc-proto-api`): pass each repo as a `<owner>/<repo>` token. The cross-PR migration check (Step 5) runs across the full union so coordination flags surface before any verdict is posted.
 - **Always resolve `<owner>/<repo>` via `git remote get-url origin`** (global rule 46) when defaulting to the current repo — never derive from the folder name.
