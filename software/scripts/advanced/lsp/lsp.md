@@ -274,6 +274,39 @@ Real issues we hit setting this up. Each entry: what went wrong, why, how we fix
 
 **Debug.** `Tools → Developer → Show Scope Name` (or `Ctrl+Alt+Shift+P`) — pops the current scope under the cursor. Confirm it's what you bound against.
 
+### Zed — `UndefinedParserError` on Rust / Python / Go / Java
+
+**Symptom.** Save a `.rs` / `.py` / `.go` / `.java` file in Zed → Zed log shows:
+
+```
+ERROR Formatting failed: prettier at "<project>" failed to format buffer:
+UndefinedParserError: No parser could be inferred for file "<path>.rs"
+```
+
+**Cause.** Zed's default `formatter: "auto"` resolution. When `prettier.allowed: true` is set globally AND no per-language `formatter` is pinned, Zed tries prettier first — even for languages prettier doesn't support. The format request goes to prettier → "no parser" error → file isn't formatted.
+
+**Fix.** Pin `formatter: "language_server"` **explicitly** for every non-Prettier language we care about. Don't rely on auto-fallback:
+
+```jsonc
+"languages": {
+  "Rust":          { "formatter": "language_server" },
+  "Python":        { "formatter": "language_server" },
+  "Go":            { "formatter": "language_server" },
+  "Java":          { "formatter": "language_server" },
+  "TOML":          { "formatter": "language_server" },
+  "Shell Script":  { "formatter": "language_server" },
+  "C":             { "formatter": "language_server" },
+  "C++":           { "formatter": "language_server" }
+}
+```
+
+Symmetric pattern: every Prettier-handled language gets `formatter: "prettier"`; every native-LSP language gets `formatter: "language_server"`. No language relies on `auto` fall-through.
+
+**Debug.**
+
+- `Cmd+Shift+P` → `zed: open log` — search for `UndefinedParserError` or `Formatting failed: prettier at ...`. The log includes the file path and which prettier instance was invoked.
+- Inspect the live settings: `python3 -c "import json; s=json.load(open('$HOME/.config/zed/settings.json')); print(s.get('languages', {}))"` — confirm the per-language `formatter` pins are deployed.
+
 ### Multi-formatter conflicts (general)
 
 When two formatters claim the same file type, the editor picks one and silently ignores the other. Always pick **one** owner per file type per editor:
