@@ -28,7 +28,7 @@ Stack-agnostic. Apply everywhere.
    **Why:** Mixed-author history (Anthropic noreply, stale corp email, leftover pair-programming co-author) breaks provenance, contributor stats, and `git log --author` queries. LLM co-author trailers are the exception — they accurately attribute assistant participation and should survive the author-reset.
 
 3. Sync with `git merge origin/<default>`. Never rebase or force-push shared branches.
-4. Each PR is a standalone, mergeable unit. Bundle tightly-coupled changes (API + schema + models). Never stack PRs.
+4. Each PR is a standalone, mergeable unit. Bundle tightly-coupled changes (API + schema + models). Never stack PRs. **When splitting work, prefer non-conflicting splits** — sequence so siblings in flight touch different files/hunks. If overlap is unavoidable, land one first and rebase the other; never open both in parallel against the same base. Goal: every split mergeable in any order without manual conflict resolution.
 
 ## Code Hygiene
 
@@ -83,7 +83,7 @@ Stack-agnostic. Apply everywhere.
 
 ## Change Execution Workflow
 
-TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green. Follow exactly unless overridden in the same message.
+TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green. Per-request overrides at the end of this section.
 
 35. Always use a git worktree. Each unit of work in its own isolated worktree (sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work.
 36. **Sync with latest default branch at three mandatory gates** — stale base = merge pain, redundant re-implementation, CI failures on already-fixed code. The sync command is `git fetch origin && git merge origin/<default>`; resolve conflicts at each gate.
@@ -93,7 +93,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
     Never push past a conflicted state. Never `--strategy=ours` away upstream changes you haven't read.
 
-37. Always parallelize within a session. Independent changes → one message, multiple sub-agent calls.
+37. Always parallelize within a session. Independent changes → one message, multiple sub-agent calls. Applies inside macro repos containing micro-repos / sub-projects / vendored packages too — fan them out as separate sub-agent worktrees.
 38. Run sub-agents in the background → `run_in_background: true`.
 39. Phased work: parallelize within a phase; serialize between phases. Fan out Phase 1, wait, fan out Phase 2.
 40. PR order: tests first, then coverage gate, then push. **Respect the repo's existing coverage threshold; if none configured, ≥ 80% line + branch on changed code.** No PR without tests.
@@ -106,7 +106,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
 ### Per-request overrides
 
-Drop the matching rule for the current request only when user says:
+User phrase → drop the matching rule for this request only:
 
 - "do this one foreground" → skip background.
 - "wait before starting the next" → serialize instead of parallelize.
