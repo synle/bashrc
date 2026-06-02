@@ -96,13 +96,13 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 37. Always parallelize within a session. Independent changes → one message, multiple sub-agent calls.
 38. Run sub-agents in the background → `run_in_background: true`.
 39. Phased work: parallelize within a phase; serialize between phases. Fan out Phase 1, wait, fan out Phase 2.
-40. PR order: tests first, then coverage gate, then push. **≥ 80% line and branch coverage on changed code.** No PR without tests.
+40. PR order: tests first, then coverage gate, then push. **Respect the repo's existing coverage threshold; if none configured, ≥ 80% line + branch on changed code.** No PR without tests.
 41. Babysit every PR to green CI. Use `/babysit-pr` / `/babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the rule 36 sync command. Poll every 60s.
 
-### New project setup
+### Coverage thresholds
 
-- ≥ 80% line and branch coverage on changed code (same threshold as established repos).
-- Wire CI to run tests + coverage gate on every PR before feature work lands.
+- **Existing repo with a configured threshold** (vitest/jest config, `.coveragerc`, `pyproject.toml`, `codecov.yml`, CI gate, etc.) — respect it. Don't relax the gate just because the current diff would meet a lower bar.
+- **New project / no existing config** — ≥ 80% line + branch coverage on changed code. Wire CI to run tests + coverage gate on every PR before feature work lands.
 
 ### Per-request overrides
 
