@@ -34,7 +34,11 @@ async function doWork() {
     Plugin 'airblade/vim-gitgutter'                                     " Show git diff markers (+/-/~) in the gutter
 
     " --- LSP / Autocomplete ---
-    Plugin 'neoclide/coc.nvim', { 'branch': 'release' }                 " LSP client with built-in autocomplete (replaces AutoComplPop); needs coc-settings.json (written by software/scripts/advanced/lsp/vim-coc.sh) and :CocInstall coc-tsserver coc-pyright ... for non-LSP-binary servers
+    " NOTE: Vundle does NOT honor a 'branch' option (that's a vim-plug feature) — so we can't
+    " pass { 'branch': 'release' } here. coc.nvim only ships prebuilt build/index.js on the
+    " 'release' branch; software/scripts/advanced/lsp/vim-coc.sh force-checks-out 'release'
+    " after Vundle clones the plugin, which is why this entry stays a plain master clone here.
+    Plugin 'neoclide/coc.nvim'                                          " LSP client with built-in autocomplete (replaces AutoComplPop); needs coc-settings.json (written by software/scripts/advanced/lsp/vim-coc.sh) and :CocInstall coc-tsserver coc-pyright ... for non-LSP-binary servers
 
     " --- Search ---
     Plugin 'junegunn/fzf'                                               " Fuzzy finder core (binary integration)
