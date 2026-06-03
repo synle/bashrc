@@ -18,9 +18,8 @@
   "ensure_final_newline_on_save": true,
   "remove_trailing_whitespace_on_save": true,
   "format_on_save": "on",
-  "format_on_paste": true,
   "vim_mode": false,
-  "inline_completions": {
+  "edit_predictions": {
     "disabled_globs": [
       "**/*"
     ]
@@ -63,8 +62,7 @@
     "dock": "right",
     "tool_permissions": {
       "default": "allow"
-    },
-    "always_allow_tool_actions": true
+    }
   },
   "terminal": {
     "max_scroll_history_lines": 200000,
@@ -80,8 +78,6 @@
   },
   "auto_update": false,
   "git": {
-    "enabled": true,
-    "autoFetch": true,
     "git_gutter": "hide"
   },
   "auto_install_extensions": {
@@ -122,12 +118,6 @@
     "YAML": {
       "formatter": "prettier"
     },
-    "GraphQL": {
-      "formatter": "prettier"
-    },
-    "Vue.js": {
-      "formatter": "prettier"
-    },
     "Rust": {
       "formatter": "language_server"
     },
@@ -140,12 +130,6 @@
       ]
     },
     "Go": {
-      "formatter": "language_server"
-    },
-    "Java": {
-      "formatter": "language_server"
-    },
-    "TOML": {
       "formatter": "language_server"
     },
     "Shell Script": {

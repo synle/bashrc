@@ -13,9 +13,8 @@
   "ensure_final_newline_on_save": true, // Always end files with a newline on save. Values: true, false
   "remove_trailing_whitespace_on_save": true, // Strip trailing whitespace on save. Values: true, false
   "format_on_save": "on", // Auto-format code on save. Values: "on", "off"
-  "format_on_paste": true, // Auto-format code on paste — mirrors VS Code's editor.formatOnPaste. Values: true, false
   "vim_mode": false, // Enable vim keybindings. Values: true, false
-  "inline_completions": { "disabled_globs": ["**/*"] }, // Disable inline AI completions (Zed's analog of VS Code's editor.lightbulb.enabled=off and copilot disable). Values: array of glob patterns where completions are disabled
+  "edit_predictions": { "disabled_globs": ["**/*"] }, // Disable inline AI completions (Zed's analog of VS Code's editor.lightbulb.enabled=off and copilot disable). Renamed from `inline_completions` in Zed v0.169+. Values: array of glob patterns where completions are disabled
   "show_completions_on_input": true, // Auto-trigger completions on typing. Values: true, false
 
   // --- Search ---
@@ -48,7 +47,6 @@
   "agent": {
     "dock": "right", // Agent / AI panel dock side. Values: "left", "right", "bottom"
     "tool_permissions": { "default": "allow" }, // Auto-approve agent tool actions without prompting (Zed v0.224.0+ analog of VS Code's claudeCode.allowDangerouslySkipPermissions). Values: "confirm", "allow", "deny"
-    "always_allow_tool_actions": true, // Legacy fallback for Zed <v0.224.0 — same effect as tool_permissions.default="allow". Values: true, false
   },
 
   // --- Terminal ---
@@ -62,8 +60,8 @@
   // Agent panel ON: zed.js auto-registers `language_models.ollama` (local 127.0.0.1
   // with auto_discover) and `language_models.openai_compatible["Ollama (sy-omen45l)"]`
   // (remote, models enumerated from /api/tags) when those hosts are reachable, then
-  // pins `agent.default_model` to the best provider. Inline completions remain off
-  // (`inline_completions.disabled_globs: ["**/*"]` near the top of this file).
+  // pins `agent.default_model` to the best provider. Edit predictions remain off
+  // (`edit_predictions.disabled_globs: ["**/*"]` near the top of this file).
   "disable_ai": false, // Enable Zed agent / AI features so Ollama providers populate the agent panel. Values: true, false
 
   // --- Performance & Telemetry ---
@@ -74,9 +72,10 @@
   "auto_update": false, // Disable automatic updates. Values: true, false
 
   // --- Git ---
+  // Only `git_gutter` is a valid key under Zed's `git` block. `enabled` and `autoFetch`
+  // were never supported (linter rejects them) — git integration is always on; remotes
+  // are managed by the user.
   "git": {
-    "enabled": true, // Disable git integration entirely. Values: true, false
-    "autoFetch": true, // Don't auto-fetch from remotes. Values: true, false
     "git_gutter": "hide", // Hide git diff indicators in the gutter. Values: "tracked_files", "hide"
   },
 
@@ -87,12 +86,18 @@
   "icon_theme": "Material Icon Theme", // File icon theme for sidebar. Values: any installed icon theme name
 
   // --- Formatters (per-language) ---
-  // Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML/GraphQL/Vue — same set as VS Code's vs-code-config.jsonc.
+  // Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML — same set as VS Code's vs-code-config.jsonc.
   // Every non-Prettier language MUST be pinned to `language_server` explicitly. Otherwise
   // Zed's default `formatter: "auto"` + global `prettier.allowed: true` routes the file
-  // to prettier, which fails with UndefinedParserError on Rust/Python/Go/Java (prettier
-  // doesn't support them). Symmetric: every Prettier-supported language gets
-  // `formatter: "prettier"`; every native-LSP language gets `formatter: "language_server"`.
+  // to prettier, which fails with UndefinedParserError on Rust/Python/Go (prettier doesn't
+  // support them). Symmetric: every Prettier-supported language gets `formatter: "prettier"`;
+  // every native-LSP language gets `formatter: "language_server"`.
+  //
+  // Only languages that ship with Zed (or are reliably present via bundled grammars) are
+  // listed. Extension-only languages (GraphQL, Vue.js, Java, TOML) used to be here but were
+  // dropped — Zed emits `No language with this name is installed.` on machines without the
+  // matching extension, so the config can't reference them unconditionally. Add them back
+  // alongside the relevant extension install when an extension is added to the setup.
   "prettier": { "allowed": true }, // Permit Zed to run the prettier CLI on PATH. Values: { allowed: true|false, command?: string }
   "languages": {
     // Prettier-handled
@@ -106,14 +111,10 @@
     "CSS": { "formatter": "prettier" },
     "Markdown": { "formatter": "prettier" },
     "YAML": { "formatter": "prettier" },
-    "GraphQL": { "formatter": "prettier" },
-    "Vue.js": { "formatter": "prettier" },
     // Native LSP-handled — explicit pin prevents prettier fallback (UndefinedParserError)
     "Rust": { "formatter": "language_server" }, // rust-analyzer → rustfmt
     "Python": { "formatter": "language_server", "language_servers": ["pyright", "!basedpyright", "!pylsp"] }, // pyright (no format) or ruff if attached — explicit opt-in silences Zed's "Basedpyright is now the only default language server for Python" notice; matches the binary installed by lsp/install.sh
     "Go": { "formatter": "language_server" }, // gopls → gofmt + goimports
-    "Java": { "formatter": "language_server" }, // jdtls → Eclipse formatter
-    "TOML": { "formatter": "language_server" }, // taplo
     "Shell Script": { "formatter": "language_server" }, // bash-language-server (no format) — falls back gracefully
     "C": { "formatter": "language_server" },
     "C++": { "formatter": "language_server" },

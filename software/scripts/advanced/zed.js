@@ -163,8 +163,8 @@ function _getZedSettings(
     // --- File hiding ---
     file_scan_exclusions: EDITOR_CONFIGS.ignoredFolders.concat(EDITOR_CONFIGS.ignoredFiles),
 
-    // --- Agent: preserve dock / tool_permissions / always_allow_tool_actions from baseConfig
-    // and optionally add the discovered default_model (only set when local Ollama responded).
+    // --- Agent: preserve dock / tool_permissions from baseConfig and optionally add the
+    // discovered default_model (only set when local Ollama responded).
     agent: {
       ...(baseConfig.agent || {}),
       ...(defaultModel ? { default_model: defaultModel } : {}),
