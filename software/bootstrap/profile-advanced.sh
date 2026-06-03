@@ -177,21 +177,26 @@ function _rewrite_last_history_entry() {
 
 # prune a recents file, removing entries that fail the given test (-d or -f)
 # usage: _prune_recents <file> <test_flag>
+# tmp filename includes $$ (shell PID) so concurrent PROMPT_COMMAND runs across
+# multiple terminals don't race on the same `<file>.tmp` — without the suffix,
+# one shell's mv would consume the other's tmp and the second mv would surface
+# `mv: <file>.tmp: No such file or directory` on the user's prompt.
 function _prune_recents() {
-  local file="$1" flag="$2" tmp="$1.tmp"
+  local file="$1" flag="$2" tmp="$1.tmp.$$"
   touch "$file"
   while IFS= read -r entry; do
     [ "$flag" "$entry" ] && echo "$entry"
   done < "$file" 2> /dev/null > "$tmp"
-  mv "$tmp" "$file"
+  [ -f "$tmp" ] && mv "$tmp" "$file"
 }
 
 # prepend stdin lines to a recents file (deduped, capped at max)
 # usage: echo "entry" | _prepend_recents <file> <max>
+# See _prune_recents for why tmp carries the $$ suffix.
 function _prepend_recents() {
-  local file="$1" max="$2" tmp="$1.tmp"
+  local file="$1" max="$2" tmp="$1.tmp.$$"
   command cat - "$file" 2> /dev/null | awk '!seen[$0]++' | head -n "$max" > "$tmp"
-  mv "$tmp" "$file"
+  [ -f "$tmp" ] && mv "$tmp" "$file"
 }
 
 ################################################################################
