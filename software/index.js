@@ -2441,8 +2441,13 @@ async function getMacInstalledAppVersion(appLabel) {
  * CFBundleShortVersionString already equals the upstream release version —
  * unless IS_REFRESH_MODE is set (i.e. `--refresh="<script>"`), which forces
  * the reinstall. Saves the ~30-300 MB download + dmg mount + cp on every run.
+ *
+ * Returns a boolean so callers can gate post-install side effects (e.g.
+ * display-dj's `tccutil reset Accessibility`, which forces the user to
+ * re-grant permission and must only run on actual upgrades, not no-op skips).
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
+ * @returns {Promise<boolean>} True if an install was attempted, false if skipped because the installed version already matches upstream
  */
 async function downloadAndInstallBinary(repo, getFileName) {
   const appLabel = repo.split("/")[1];
@@ -2458,7 +2463,7 @@ async function downloadAndInstallBinary(repo, getFileName) {
     const installed = await getMacInstalledAppVersion(appLabel);
     if (installed === ver) {
       log(`>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`);
-      return;
+      return false;
     }
     if (installed) log(`>> ${appLabel}: installed ${installed} → upstream ${ver}, upgrading`);
   }
@@ -2487,6 +2492,7 @@ async function downloadAndInstallBinary(repo, getFileName) {
     await installMacDmg(destination);
     await installWindowsSetupExe(destination, appLabel, targetPath);
   }
+  return true;
 }
 
 //////////////////////////////////////////////////////
