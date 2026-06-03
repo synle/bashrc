@@ -110,7 +110,7 @@
     "Vue.js": { "formatter": "prettier" },
     // Native LSP-handled — explicit pin prevents prettier fallback (UndefinedParserError)
     "Rust": { "formatter": "language_server" }, // rust-analyzer → rustfmt
-    "Python": { "formatter": "language_server" }, // pyright (no format) or ruff if attached
+    "Python": { "formatter": "language_server", "language_servers": ["pyright", "!basedpyright", "!pylsp"] }, // pyright (no format) or ruff if attached — explicit opt-in silences Zed's "Basedpyright is now the only default language server for Python" notice; matches the binary installed by lsp/install.sh
     "Go": { "formatter": "language_server" }, // gopls → gofmt + goimports
     "Java": { "formatter": "language_server" }, // jdtls → Eclipse formatter
     "TOML": { "formatter": "language_server" }, // taplo
