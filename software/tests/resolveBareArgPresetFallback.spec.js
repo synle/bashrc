@@ -77,7 +77,7 @@ describe("_resolveBareArgPresetFallback", () => {
     proc.env.PRESETS_JSON = JSON.stringify({
       vim: { files: ["preset-only.js"] },
     });
-    const result = _resolveBareArgPresetFallback(["vim"], ["software/scripts/vim-config.js", "software/scripts/vim-vundle.sh"]);
+    const result = _resolveBareArgPresetFallback(["vim"], ["software/scripts/vim-config.js", "software/scripts/vim-plug.sh"]);
     // Two scripts both regex-match "vim" → ambiguous. Helper leaves it for downstream
     // reporting; preset fallback only fires on `not_found`, not on `ambiguous`.
     expect(result).toEqual(["vim"]);

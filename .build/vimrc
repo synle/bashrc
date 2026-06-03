@@ -30,7 +30,7 @@ hi ReactLifeCycleMethods ctermfg=204 guifg=#D19A66                  " React life
 """""""""""""""""""""""""""""""""""""""""""""""""
 " Plugin Settings
 """""""""""""""""""""""""""""""""""""""""""""""""
-filetype on                                                         " Re-enable filetype detection after Vundle init
+filetype on                                                         " Re-enable filetype detection after vim-plug init
 let g:airline#extensions#tabline#enabled = 1                        " Show open buffers as tabs in the top bar
 let g:airline#extensions#tabline#formatter = 'default'              " Use default tab label format (filename only)
 let g:airline#extensions#tabline#left_alt_sep = '|'                 " Alternate separator between inactive tabs

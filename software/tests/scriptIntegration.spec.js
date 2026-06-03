@@ -51,7 +51,7 @@ describe("vim-config.js", () => {
 
     const vimrc = fileSystem[`${BASE_HOMEDIR_LINUX}/.vimrc`];
     expect(vimrc).toBeDefined();
-    expect(vimrc).toContain('" Vundle Plugin Manager');
+    expect(vimrc).toContain('" vim-plug Plugin Manager');
     expect(vimrc).toContain("set number");
     expect(vimrc).toContain("set tabstop=2");
   });
@@ -62,7 +62,7 @@ describe("vim-config.js", () => {
     await runScript("software/scripts/vim-config.js");
 
     const vimrc = fileSystem[`${BASE_HOMEDIR_LINUX}/.vimrc`];
-    expect(vimrc).toContain("call vundle#begin()");
+    expect(vimrc).toContain("call plug#begin('~/.vim/plugged')");
     expect(vimrc).toContain("set number");
   });
 });

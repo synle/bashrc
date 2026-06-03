@@ -1,50 +1,56 @@
-/** Generates vimrc configuration with Vundle plugins, syntax highlighting, and keybindings for Linux, Mac, and Windows. */
+/** Generates vimrc configuration with vim-plug plugins, syntax highlighting, and keybindings for Linux, Mac, and Windows. */
 async function doWork() {
   let targetPath;
+
+  // TODO: Remove this legacy-Vundle cleanup once all machines have migrated off Vundle.
+  //       Vundle cloned plugins into ~/.vim/bundle; vim-plug uses ~/.vim/plugged. The old
+  //       tree is dead weight on migrated boxes and a source of confusion for vim-coc.
+  const legacyVundleDir = path.join(BASE_HOMEDIR_LINUX, ".vim", "bundle");
+  if (pathExists(legacyVundleDir)) {
+    log(">> Removing legacy Vundle bundle dir", legacyVundleDir);
+    fs.rmSync(legacyVundleDir, { recursive: true, force: true });
+  }
 
   const contentOnlyFullVimrc = code`
     " ~/.vimrc
 
     """""""""""""""""""""""""""""""""""""""""""""""""
-    " Vundle Plugin Manager
+    " vim-plug Plugin Manager
     """""""""""""""""""""""""""""""""""""""""""""""""
-    set nocompatible              " Disable vi compatibility — required for Vundle and modern vim features
-    filetype off                  " Turn off filetype detection temporarily — Vundle requires this during init
-    set rtp+=~/.vim/bundle/Vundle.vim
-    call vundle#begin()
+    set nocompatible              " Disable vi compatibility — required for vim-plug and modern vim features
+    filetype off                  " Turn off filetype detection temporarily — re-enabled after plug#end()
+    call plug#begin('~/.vim/plugged')
 
     " --- Syntax & Language Support ---
-    Plugin 'pangloss/vim-javascript'                                    " Improved JavaScript syntax and indentation
-    Plugin 'isRuslan/vim-es6'                                           " ES6+ syntax highlighting (arrow functions, template strings, etc.)
-    Plugin 'maxmellon/vim-jsx-pretty'                                   " JSX/TSX syntax highlighting with pretty indentation
-    Plugin 'mxw/vim-jsx'                                                " JSX syntax support for React components
-    Plugin 'peitalin/vim-jsx-typescript'                                " TypeScript JSX (.tsx) syntax highlighting
-    Plugin 'leafgarland/typescript-vim'                                 " TypeScript syntax highlighting and indentation
-    Plugin 'styled-components/vim-styled-components', { 'branch': 'main' } " Syntax highlighting inside styled-components template literals
-    Plugin 'jparise/vim-graphql'                                        " GraphQL schema and query syntax highlighting
-    Plugin 'JulesWang/css.vim'                                          " Improved CSS syntax highlighting
-    Plugin 'cakebaker/scss-syntax.vim'                                  " SCSS/Sass syntax highlighting
+    Plug 'pangloss/vim-javascript'                                    " Improved JavaScript syntax and indentation
+    Plug 'isRuslan/vim-es6'                                           " ES6+ syntax highlighting (arrow functions, template strings, etc.)
+    Plug 'maxmellon/vim-jsx-pretty'                                   " JSX/TSX syntax highlighting with pretty indentation
+    Plug 'mxw/vim-jsx'                                                " JSX syntax support for React components
+    Plug 'peitalin/vim-jsx-typescript'                                " TypeScript JSX (.tsx) syntax highlighting
+    Plug 'leafgarland/typescript-vim'                                 " TypeScript syntax highlighting and indentation
+    Plug 'styled-components/vim-styled-components', { 'branch': 'main' } " Syntax highlighting inside styled-components template literals
+    Plug 'jparise/vim-graphql'                                        " GraphQL schema and query syntax highlighting
+    Plug 'JulesWang/css.vim'                                          " Improved CSS syntax highlighting
+    Plug 'cakebaker/scss-syntax.vim'                                  " SCSS/Sass syntax highlighting
 
     " --- UI & Status ---
-    Plugin 'vim-airline/vim-airline'                                     " Lightweight status bar with mode, branch, and file info
-    Plugin 'vim-airline/vim-airline-themes'                              " Theme pack for vim-airline
-    Plugin 'dracula/vim'                                                 " Dracula color scheme
+    Plug 'vim-airline/vim-airline'                                     " Lightweight status bar with mode, branch, and file info
+    Plug 'vim-airline/vim-airline-themes'                              " Theme pack for vim-airline
+    Plug 'dracula/vim'                                                 " Dracula color scheme
 
     " --- Git ---
-    Plugin 'airblade/vim-gitgutter'                                     " Show git diff markers (+/-/~) in the gutter
+    Plug 'airblade/vim-gitgutter'                                     " Show git diff markers (+/-/~) in the gutter
 
     " --- LSP / Autocomplete ---
-    " NOTE: Vundle does NOT honor a 'branch' option (that's a vim-plug feature) — so we can't
-    " pass { 'branch': 'release' } here. coc.nvim only ships prebuilt build/index.js on the
-    " 'release' branch; software/scripts/advanced/lsp/vim-coc.sh force-checks-out 'release'
-    " after Vundle clones the plugin, which is why this entry stays a plain master clone here.
-    Plugin 'neoclide/coc.nvim'                                          " LSP client with built-in autocomplete (replaces AutoComplPop); needs coc-settings.json (written by software/scripts/advanced/lsp/vim-coc.sh) and :CocInstall coc-tsserver coc-pyright ... for non-LSP-binary servers
+    " vim-plug honors { 'branch': 'release' } natively — coc.nvim only ships prebuilt
+    " build/index.js on the release branch, so we pin here directly (no post-clone hack).
+    Plug 'neoclide/coc.nvim', { 'branch': 'release' }                  " LSP client with built-in autocomplete (replaces AutoComplPop); needs coc-settings.json (written by software/scripts/advanced/lsp/vim-coc.sh) and :CocInstall coc-tsserver coc-pyright ... for non-LSP-binary servers
 
     " --- Search ---
-    Plugin 'junegunn/fzf'                                               " Fuzzy finder core (binary integration)
-    Plugin 'junegunn/fzf.vim'                                           " Fuzzy finder vim commands (:Files, :Rg, :Buffers, etc.)
+    Plug 'junegunn/fzf'                                               " Fuzzy finder core (binary integration)
+    Plug 'junegunn/fzf.vim'                                           " Fuzzy finder vim commands (:Files, :Rg, :Buffers, etc.)
 
-    call vundle#end()
+    call plug#end()
 
     """""""""""""""""""""""""""""""""""""""""""""""""
     " Color Scheme

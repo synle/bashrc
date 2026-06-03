@@ -9,7 +9,7 @@
 #   bash run.sh --files="""                        # Multiple files (multiline)
 #     vim.js
 #     git.js
-#     vundle.js
+#     vim-plug.sh
 #   """
 #   bash run.sh git.js                             # Bare args treated as files
 #   bash run.sh git.js vim.js                      # Multiple bare args

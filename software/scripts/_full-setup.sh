@@ -57,7 +57,7 @@ if ! ((IS_CI)); then
   echo ">> Creating common directories"
   safe_mkdir "$HOME/.local/bin"
   safe_mkdir "$HOME/.ssh/sockets"
-  safe_mkdir "$HOME/.vim/bundle"
+  safe_mkdir "$HOME/.vim/autoload"
 
   ################################################################################
   # ---- Permissions ----
