@@ -1,5 +1,7 @@
 [Sy] Run `/sy-review-pr` on EVERY open PR in scope. Fan-out wrapper — finds matching open PRs and delegates the full per-PR review (skip checks, author flags, diff review, verdict, post) to `/sy-review-pr` for each one. Repo-, language-, and framework-agnostic.
 
+**Recommended order.** Run `/sy-review-prs` first (verdict pass — fast, no code changes), then `/sy-babysit-prs` (apply fixes, drive CI green). Reversing wastes babysit cycles on PRs that would otherwise be requested-changes and rewritten.
+
 Argument: `$ARGUMENTS` (optional — scope filter; see "Resolving scope" below). Defaults to **all open PRs in the current repo, authored by anyone**, when invoked from inside a git checkout — otherwise **all open PRs authored by me**.
 
 ## Steps

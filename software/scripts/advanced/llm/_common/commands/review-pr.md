@@ -1,5 +1,7 @@
 [Sy] Review a single pull request. Repo-, language-, and framework-agnostic. Default bias is APPROVE or COMMENT — REQUEST_CHANGES is reserved for show-stoppers only.
 
+**Scope.** Verdict pass only — produces a review (APPROVE / COMMENT / REQUEST_CHANGES) plus optional author-facing flags. Does NOT apply fixes, address comment threads with code changes, or sync the branch. For fix-and-green-CI work, use `/sy-babysit-pr` after the review verdict lands.
+
 Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR.)
 
 ## Steps

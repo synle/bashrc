@@ -1,5 +1,7 @@
 [Sy] Run `/sy-babysit-pr` on EVERY open PR. This command is a fan-out wrapper — it finds all your open PRs and delegates the full per-PR loop (sync, comments, local checks, CI monitor) to `/sy-babysit-pr` for each one.
 
+**Recommended order.** Run `/sy-review-prs` first (verdict pass), then `/sy-babysit-prs` (this command). Reversing wastes babysit cycles on PRs that would be requested-changes anyway.
+
 ## Steps
 
 1. Run `gh search prs --author=@me --state=open --json number,title,repository,isDraft,url,headRefName,baseRefName` to find all open PRs.
