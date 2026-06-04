@@ -103,8 +103,6 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
 **Coverage thresholds.** Existing repo with a configured threshold (vitest/jest config, `.coveragerc`, `pyproject.toml`, `codecov.yml`, CI gate, etc.) — respect it; don't relax just because the current diff would meet a lower bar. New project / no existing config — ≥ 80% line + branch coverage on changed code, and wire CI to run tests + coverage gate on every PR before feature work lands.
 
-**Per-request overrides — user phrase drops the matching rule for this request only:** "do this one foreground" → skip background; "wait before starting the next" → serialize instead of parallelize; "skip babysit" → open PR and stop; "WIP only" / "don't push" → no push, no PR; "single-shot" / "no worktree" → work in main checkout.
-
 ## Secrets & Sensitive Data
 
 42. **No secret values, ever, anywhere.** No raw env vars, API tokens, passwords, OAuth/signing keys, private hostnames, internal URLs, customer IDs, PII in any output channel (logs, CI summaries, PR comments, artifacts, coverage reports, error messages, debug dumps, generated docs). Never `echo`/`printenv`/`env` into `$GITHUB_STEP_SUMMARY`, never reference `${{ secrets.* }}` in summary/comment templates, never `console.log(process.env)`, never `JSON.stringify(req)` for objects with auth headers.
@@ -190,3 +188,34 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
     - Never modify/move the marker lines — breaks the upsert and re-appends a duplicate block.
 
     **Memory ≠ instruction file.** Per-user / per-project facts go in the CLI's memory system (e.g. `~/.claude/projects/<encoded-cwd>/memory/` for Claude Code), never inline in any of the files above.
+
+    **Rule numbers are stable.** Commands under `commands/*.md` cross-reference rules by number (`see rule 47`, `per rule 46`). Renumbering existing rules silently breaks those refs. Append new rules at the next free number; never insert in the middle of the existing 1-N range. Deprecated rules stay as `(deprecated — superseded by rule N)` for one release cycle before removal.
+
+## Per-Request Overrides
+
+53. **Explicit user phrases drop matching rules for the current request only.** Scope: the current request, not follow-ups.
+    - `do this one foreground` → drop rule 38 (background sub-agents).
+    - `wait before starting the next` → drop rule 37 (parallelize within session).
+    - `skip babysit` → drop rule 41 (babysit to green) — open PR and stop.
+    - `WIP only` / `don't push` → no push, no PR (drops rules 40-41).
+    - `single-shot` / `no worktree` → drop rule 35 (worktree isolation).
+    - `push to main directly` → drop PR flow on the current request. Default on `synle/*` repos per memory; phrase confirms intent on others.
+    - `skip release` → drop rule 49 (auto-release after merge) for this merge only.
+
+    Overrides are per-request. The next conversation turn or task re-enables all rules unless re-asserted.
+
+## Engineering Practices
+
+54. **Production dependency upgrades require local-first verification.** For any `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` / `Gemfile` / `requirements.txt` change crossing a major or minor version on a runtime dep:
+    1. Read the changelog; link it in the PR body.
+    2. Run the full local test suite before pushing — do not lean on CI alone for first signal.
+    3. Pin exact version on prod deps (no leading `^` / `~` / `>=`) when the repo's lockfile would otherwise float.
+    4. Note any deprecation warnings the new version emits in the PR body.
+
+    Patch bumps and dev-only deps may skip steps 1-2. Lockfile-only refreshes (e.g. `npm i` with no version change) skip entirely.
+
+55. **Every schema / data migration ships with its reversal.** Up migration → matching down/rollback migration in the same PR. Irreversible operations (`DROP COLUMN`, `DROP TABLE`, destructive backfills, type narrowing) require an explicit `## Recovery` section in the PR body documenting how to recover (backup restore, event replay, manual SQL). Review blocks on missing down migration or undocumented destruction.
+
+56. **Rollback PRs are emergency fast-track — skip babysit, ship immediately.** Title: `Revert "<original PR title>"` (use `gh pr revert` or `git revert <sha>`). Body links the original PR and the failure that triggered the revert. CI must pass green but the address-comments loop is skipped (no review-cycle latency on emergencies). Auto-merge as soon as CI green; invoke `/sy-release` immediately after merge per rule 49. Rollback-of-rollback is allowed if the original revert proves wrong.
+
+57. **Breaking changes need a flag in the title and a migration note in the body.** Title prefix: `BREAKING:` (or Conventional Commits `feat!:` / `fix!:` when the repo uses that style). Body has a `## Migration` section with the minimum diff a downstream consumer must apply. Applies to: removed / renamed exports, removed CLI flags, changed default behavior, schema deletions, env-var renames, config-key renames. Internal-only refactors that no consumer can observe are not breaking.
