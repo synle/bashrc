@@ -238,8 +238,10 @@ async function _doInstructionsWork(targetDir) {
 const CLAUDE_COMMAND_DEPLOY_MAP = {
   "sy-babysit-pr.md": "babysit-pr",
   "sy-babysit-prs.md": "babysit-prs",
+  "sy-close-stale-prs.md": "close-stale-prs",
   "sy-sync-and-groom-repo.md": "sync-and-groom-repo",
   "sy-sync-and-groom-repos.md": "sync-and-groom-repos",
+  "sy-sync-pr-branch.md": "sync-pr-branch",
   "sy-create-pr.md": "create-pr",
   "sy-draft-pr.md": "draft-pr",
   "sy-list-prs.md": "list-prs",
