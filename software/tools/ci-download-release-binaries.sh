@@ -418,6 +418,7 @@ VEOF
   ##############################################################################
   RELEASE_REPOS=(
     "synle/url-porter"
+    "synle/skippy-ff"
     "synle/sqlui-native"
     "synle/display-dj"
     "synle/skiff-files"
