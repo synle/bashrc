@@ -1559,8 +1559,9 @@ function GenericLightWeightNotesDom() {
 /**
  * Android/Termux setup notes page. Renders debloat/restore shell scripts, the main Android
  * shell script, SponsorBlock settings, ReVanced Extended patch configs for YouTube and
- * YouTube Music, and links to Android applications (MicroG, YouTube, YouTube Music,
- * Google News, Nova Companion).
+ * YouTube Music, links to Android applications (MicroG, YouTube, YouTube Music,
+ * Google News, Nova Companion), and a curated reference list of Android emulators
+ * (high-end + low-to-mid range) with download links and hardware notes.
  * @returns {React.ReactElement} The Android setup notes section.
  */
 function AndroidNotesDom() {
@@ -1598,6 +1599,210 @@ function AndroidNotesDom() {
         >
           Nova Companion
         </LinkButton>
+      </div>
+
+      {/* Android Emulators */}
+      <div className="form-label">Android Emulators — High-End</div>
+      <div className="emulator-list">
+        <div>
+          <strong>Nintendo Switch - Eden Emulator / Sudachi</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://git.eden-emu.dev/eden-emu/eden/" target="_blank" rel="noreferrer">
+                Eden Project Git Releases
+              </a>{" "}
+              or{" "}
+              <a href="https://github.com/sudachi-emu/sudachi" target="_blank" rel="noreferrer">
+                Sudachi GitHub Source
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 845 / 6GB RAM</li>
+            <li>Recommended: Snapdragon 8 Gen 1 or higher / 8GB to 12GB+ RAM</li>
+            <li>Equivalent S-Series Devices: Galaxy S23, S24, S25 variants with Snapdragon (e.g. S23 Ultra 8 Gen 2, S24 Ultra 8 Gen 3)</li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Windows PC (x86) - Winlator</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/brunodev85/winlator/releases" target="_blank" rel="noreferrer">
+                Winlator GitHub Releases (brunodev85)
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 700 series / 6GB RAM (older 2D games)</li>
+            <li>Recommended: Snapdragon 8 Gen 2 or newer / 12GB+ RAM (critical for translation layers and 3D titles)</li>
+            <li>
+              Equivalent S-Series Devices: Galaxy S23 Ultra, S24 Ultra, S26 series. Snapdragon 8 Gen 2 (S23 series / Fold 5) currently
+              offers the most stable custom Turnip driver compatibility.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>PlayStation 2 - NetherSX2 (Turnip Edition)</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/nckstwrt/NetherSX2-Turnip/releases" target="_blank" rel="noreferrer">
+                NetherSX2-Turnip GitHub Releases
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 665 / 4GB RAM</li>
+            <li>Recommended: Snapdragon 865 or higher / 6GB to 8GB+ RAM</li>
+            <li>Equivalent S-Series Devices: Galaxy S20 Ultra (Snapdragon 865) and any subsequent flagship.</li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo Wii U - Cemu for Android</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/cemu-project/cemu/releases" target="_blank" rel="noreferrer">
+                Cemu Project GitHub Releases
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 855 / 6GB RAM</li>
+            <li>Recommended: Snapdragon 8 Gen 1 or newer / 8GB RAM</li>
+            <li>Equivalent S-Series Devices: Galaxy S22 Ultra, S23 Ultra, and newer.</li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo 3DS - Azahar / Lime3DS</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/azahar-emu/azahar/releases" target="_blank" rel="noreferrer">
+                Azahar GitHub Releases
+              </a>{" "}
+              or{" "}
+              <a href="https://github.com/Lime3DS/Lime3DS/releases" target="_blank" rel="noreferrer">
+                Lime3DS GitHub Releases
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 600 or 700 series / 4GB RAM</li>
+            <li>Recommended: Snapdragon 855 or higher / 6GB RAM (allows 3x-4x upscaling)</li>
+            <li>Equivalent S-Series Devices: Galaxy S10 series (Snapdragon 855) and up.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="form-label">Android Emulators — Low-to-Mid Range</div>
+      <div className="emulator-list">
+        <div>
+          <strong>Nintendo GameCube &amp; Wii - Dolphin</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.dolphinemu.dolphinemu" target="_blank" rel="noreferrer">
+                Dolphin Emulator
+              </a>
+            </li>
+            <li>
+              Cutting-edge dev APKs:{" "}
+              <a href="https://dolphin-emu.org/download/" target="_blank" rel="noreferrer">
+                Dolphin Official Downloads
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo DS - DraStic DS Emulator</strong>
+          <ul>
+            <li>Cost: Free (formerly paid)</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=com.dsemu.drastic" target="_blank" rel="noreferrer">
+                DraStic DS Emulator
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>PlayStation Portable - PPSSPP</strong>
+          <ul>
+            <li>Cost: Free base / optional $4.99 Gold (donation, feature-identical)</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.ppsspp.ppsspp" target="_blank" rel="noreferrer">
+                PPSSPP Standard
+              </a>{" "}
+              or{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.ppsspp.ppssppgold" target="_blank" rel="noreferrer">
+                PPSSPP Gold
+              </a>
+            </li>
+            <li>
+              GitHub Releases:{" "}
+              <a href="https://github.com/hrydgard/ppsspp/releases" target="_blank" rel="noreferrer">
+                PPSSPP Project Releases
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>PlayStation 1 - DuckStation</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.duckstation.android" target="_blank" rel="noreferrer">
+                DuckStation
+              </a>
+            </li>
+            <li>
+              GitHub Releases:{" "}
+              <a href="https://github.com/stenzek/duckstation/releases" target="_blank" rel="noreferrer">
+                DuckStation Releases
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo 64 - Mupen64Plus FZ</strong>
+          <ul>
+            <li>Cost: Free base / optional $3.99 Pro (netplay + cloud saves)</li>
+            <li>
+              Project:{" "}
+              <a href="https://github.com/mupen64plus-ae/mupen64plus-ae" target="_blank" rel="noreferrer">
+                Mupen64Plus AE GitHub
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Retro Cartridges (NES, SNES, Sega Genesis, GBA) - Lemuroid</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=com.swordfish.lemuroid" target="_blank" rel="noreferrer">
+                Lemuroid
+              </a>
+            </li>
+            <li>
+              GitHub Releases:{" "}
+              <a href="https://github.com/Swordfish90/Lemuroid/releases" target="_blank" rel="noreferrer">
+                Lemuroid Releases
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </>
   );
