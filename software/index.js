@@ -3738,13 +3738,15 @@ async function downloadApp(applicationName, findFilter) {
  * Downloads and installs a browser extension from a GitHub release zip.
  * Fetches the latest release version, deletes any previous install, downloads the zip, extracts, and cleans up.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/url-porter")
+ * @param {string} [zipName] - Optional release asset filename when it differs from `<extensionName>.zip` (e.g. "skippy.zip" for "synle/skippy-ff")
  */
-async function installBrowserExtension(repo) {
+async function installBrowserExtension(repo, zipName) {
   const version = await fetchGitHubReleaseVersion(repo);
   const extensionName = repo.split("/").pop();
+  const assetName = zipName || `${extensionName}.zip`;
   const targetPath = await getCustomTweaksPath(extensionName);
-  const zipUrl = `https://github.com/${repo}/releases/download/${version}/${extensionName}.zip`;
-  const tmpZip = `${BASHRC_TEMP_DIR}/${extensionName}.zip`;
+  const zipUrl = `https://github.com/${repo}/releases/download/${version}/${assetName}`;
+  const tmpZip = `${BASHRC_TEMP_DIR}/${assetName}`;
   log(`>> Installing ${extensionName} ${version} extension to:`, targetPath);
   await deleteFolder(targetPath);
   await mkdir(targetPath);
