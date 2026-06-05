@@ -10,6 +10,7 @@ async function doWork() {
     swap: "24GB",
     processors: "2",
     networkingMode: "mirrored",
+    virtiofs: "true",
   };
 
   let content = "";

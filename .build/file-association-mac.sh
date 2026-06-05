@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-06-04]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-06-05]
 # 
 # File Associations for macOS
 # Requires duti: brew install duti
@@ -330,6 +330,17 @@ ARCHIVE_EXTENSIONS=(
 
 for ext in "${ARCHIVE_EXTENSIONS[@]}"; do
   duti -s com.aone.keka ".$ext" all 2>/dev/null
+done
+
+################################################################################
+# terminal file association (e.g. .command — double-click runs in Ghostty)
+################################################################################
+TERMINAL_EXTENSIONS=(
+  "command"
+)
+
+for ext in "${TERMINAL_EXTENSIONS[@]}"; do
+  duti -s com.mitchellh.ghostty ".$ext" all 2>/dev/null
 done
 
 echo ""

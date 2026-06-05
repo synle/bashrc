@@ -1,4 +1,4 @@
-# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-06-04]
+# NOTE: STOP - do not edit by hand - this file is auto-generated [2026-06-05]
 # 
 # Revert File Associations for macOS
 # This resets the Launch Services database to restore default file associations
@@ -303,6 +303,7 @@ ALL_EXTENSIONS=(
 "jar"
 "war"
 "ear"
+"command"
 )
 
 for ext in "${ALL_EXTENSIONS[@]}"; do

@@ -47,6 +47,8 @@ async function _buildConfigContent(isOsMac) {
   // tabs-in-titlebar style matches modern Mac apps, and a cmd+grave quick
   // terminal gives a Quake-style drop-down. Skipped on Linux where most of
   // these settings either don't apply or use a different keybind.
+  // background-blur-radius is macOS-only (no Linux compositor equivalent in Ghostty)
+  // and pairs with the cross-platform background-opacity below.
   const macOnlyBlock = isOsMac
     ? code`
 
@@ -55,6 +57,7 @@ async function _buildConfigContent(isOsMac) {
         macos-titlebar-style = tabs
         macos-non-native-fullscreen = visible-menu
         quit-after-last-window-closed = true
+        background-blur-radius = 20
         keybind = global:cmd+grave_accent=toggle_quick_terminal
         quick-terminal-position = top
         quick-terminal-animation-duration = 0.1
@@ -69,6 +72,10 @@ async function _buildConfigContent(isOsMac) {
     # Render the regular face in bold by default — matches the user's "heavy" look.
     font-style = bold
     font-style-italic = bold italic
+    # Thicken stems on top of the bold face for an even heavier, easier-on-the-eyes look.
+    font-thicken = true
+    # 2px of extra vertical space between rows — readable without feeling spread out.
+    adjust-cell-height = 2
 
     # ---- Theme (auto-switch with OS appearance, high-contrast both ways) ----
     # GitHub's high-contrast pair: maximum readability in either mode.
@@ -108,6 +115,14 @@ async function _buildConfigContent(isOsMac) {
     # Even padding on both sides of a split, regardless of split orientation.
     window-padding-balance = true
     window-save-state = always
+    # Slightly translucent background. Pairs with macOS background-blur-radius
+    # (set in the mac-only block); on Linux it relies on the compositor.
+    background-opacity = 0.9
+    # Match the window chrome / titlebar to the OS appearance instead of forcing
+    # a single theme variant.
+    window-theme = auto
+    # Suppress the "WxH" overlay during resize — it flickers on fast redraws.
+    resize-overlay = never
 
     # ---- Splits (focus visibility) ----
     # Aggressive dimming on unfocused splits so the active pane is obvious in
@@ -127,6 +142,8 @@ async function _buildConfigContent(isOsMac) {
     # Steady (non-blinking) block — no animation, easier on the eyes.
     cursor-style = block
     cursor-style-blink = false
+    # Dim the cursor slightly so it doesn't dominate the active line.
+    cursor-opacity = 0.8
     ${macOnlyBlock}
 
     # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----

@@ -1,7 +1,8 @@
-/** Configures macOS default file associations for Sublime Text, VLC, and Keka. */
+/** Configures macOS default file associations for Sublime Text, VLC, Keka, and Ghostty. */
 const sublimeBundleId = "com.sublimetext.4";
 const vlcBundleId = "org.videolan.vlc";
 const kekaBundleId = "com.aone.keka";
+const ghosttyBundleId = "com.mitchellh.ghostty";
 
 const shFooter = `
 echo ""
@@ -16,10 +17,12 @@ async function doWork() {
   const textExtensions = await readSet`software/metadata/file-association.textfile.config`;
   const mediaExtensions = await readSet`software/metadata/file-association.media.config`;
   const archiveExtensions = await readSet`software/metadata/file-association.archive.config`;
-  const allExtensions = [...textExtensions, ...mediaExtensions, ...archiveExtensions];
+  const terminalExtensions = await readSet`software/metadata/file-association.terminal.config`;
+  const allExtensions = [...textExtensions, ...mediaExtensions, ...archiveExtensions, ...terminalExtensions];
 
-  // install duti if not already installed
-  execBash(`type -P duti &>/dev/null || brew install duti`, true);
+  // duti is installed by software/scripts/mac/_full-setup.sh via installBrewPackageInBackground.
+  // The generated scripts below also check `type -P duti` at run time and exit with a
+  // friendly error message if it is somehow missing.
 
   const associationContent = trimLeftSpaces(`
     #!/usr/bin/env bash
@@ -62,6 +65,17 @@ async function doWork() {
 
     for ext in "\${ARCHIVE_EXTENSIONS[@]}"; do
       duti -s ${kekaBundleId} ".$ext" all 2>/dev/null
+    done
+
+    ${LINE_BREAK_HASH}
+    # terminal file association (e.g. .command — double-click runs in Ghostty)
+    ${LINE_BREAK_HASH}
+    TERMINAL_EXTENSIONS=(
+    ${terminalExtensions.map((ext) => `  "${ext}"`).join("\n")}
+    )
+
+    for ext in "\${TERMINAL_EXTENSIONS[@]}"; do
+      duti -s ${ghosttyBundleId} ".$ext" all 2>/dev/null
     done
 
     ${shFooter}
