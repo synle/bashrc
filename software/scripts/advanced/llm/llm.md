@@ -105,6 +105,25 @@ key and update this table in the same edit.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
+### Memory promotion bridge (Claude → other CLIs)
+
+Claude Code auto-loads `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and
+every record it links on every turn. The other three CLIs have no equivalent
+layer — every session starts cold. To bridge, snapshot Claude's per-project
+memory into a single managed "Persistent Context" appendix and upsert into the
+other three CLIs' user-level instructions files:
+
+```bash
+bash run.sh --files=memory-bridge.standalone.js
+```
+
+Standalone — runs on demand, NOT on every `bash run.sh --preset=llm` (a
+snapshot freezes whatever Claude's memory looked like at run time). Writes to
+`~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`
+between BEGIN/END markers keyed by the source script path. Idempotent. Skips
+Claude itself (already loads memory natively) and skips any target whose
+instructions file isn't on disk yet (run the CLI's `setup.js` first).
+
 ### Per-repo `AGENTS.md` → `CLAUDE.md` symlink
 
 Claude Code reads per-repo `CLAUDE.md`. The other three look for `AGENTS.md` at
