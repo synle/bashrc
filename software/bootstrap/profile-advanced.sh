@@ -767,6 +767,9 @@ alias amend="git amend"
 # ---- LLM Prompt History (shared) ----
 # SOURCE | software/scripts/advanced/llm/_common/llm-prompts.profile.bash
 
+# ---- sy-* slash command dispatchers (shared) ----
+# SOURCE | software/scripts/advanced/llm/_common/sy-commands.profile.bash
+
 # ---- Aliases: Claude ----
 # SOURCE | software/scripts/advanced/llm/claude/claude.profile.bash
 
