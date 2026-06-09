@@ -2,37 +2,65 @@
 
 ## Inputs
 
-`$ARGUMENTS` is a free-form string that may contain a **format keyword** and/or an **author**:
+`$ARGUMENTS` is a free-form string that may carry three independent dimensions: a **format keyword**, a **scope**, and an **author**. Scope mirrors `/sy-babysit-prs` so the two commands stay symmetric.
 
 - **Format keyword** (one of, case-insensitive): `short`, `long`, `table`. Defaults to `short` if absent.
-- **Author**: a GitHub handle, a full name, or one of `me`/`mine`/`self` (= current user). Defaults to the current user (`--author=@me`) if absent.
+- **Scope** — pick exactly one (first match wins):
+  - **All** (default, no scope token present) — every open PR for the resolved author across all repos.
+  - **PWD keyword** — one of: `pwd`, `.`, `./`, `here`, `cwd`, `this folder`, `this-folder` (case-insensitive). Scan the current working directory up to 2 child levels deep for git repos and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
+  - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin` — global rule 51). Explicit-refs scope is author-agnostic (you asked for those PRs).
+- **Author** (only meaningful in default scope): a GitHub handle, a full name, or one of `me`/`mine`/`self` (= current user). Defaults to `@me`.
 
 Examples:
 
-- `/sy-list-prs` → short format, current user (default)
-- `/sy-list-prs short` → short format, current user
-- `/sy-list-prs long` → long format, current user
-- `/sy-list-prs table` → table format, current user
+- `/sy-list-prs` → short format, all `@me` PRs (default)
+- `/sy-list-prs short` → short format, all `@me` PRs
+- `/sy-list-prs long` → long format, all `@me` PRs
+- `/sy-list-prs table` → table format, all `@me` PRs
 - `/sy-list-prs alice` → short format, author `alice`
 - `/sy-list-prs long alice` → long format, author `alice`
 - `/sy-list-prs alice table` → table format, author `alice`
+- `/sy-list-prs pwd` → short format, `@me` PRs in repos under cwd (2 levels)
+- `/sy-list-prs table here` → table format, `@me` PRs in repos under cwd
+- `/sy-list-prs long https://github.com/synle/bashrc/pull/42 synle/foo#7` → long format, those two PRs only
+- `/sy-list-prs #42` → short format, PR #42 in cwd's repo (cwd must be a git repo)
 
 ## Parsing $ARGUMENTS
 
-1. Tokenize `$ARGUMENTS` on whitespace.
-2. Extract the **format keyword** — pick the first token (case-insensitive) that matches `short`, `long`, or `table`. Remove it from the token list. If no match, format = `short`.
-3. The remaining tokens form the **author** argument:
-   - Empty → current user (`--author=@me`).
-   - Single token of `me`/`mine`/`self` (case-insensitive) → current user.
-   - Single token (no spaces) → treat as a GitHub handle (`--author=<token>`).
-   - Multiple tokens → treat as a full name. Resolve via `gh api "search/users?q=<name>" --jq '.items[0].login'` and confirm the match with the user before proceeding.
+1. Tokenize `$ARGUMENTS` on whitespace. (Quoted multi-word author names — e.g. `"Alice Doe"` — preserve as one token.)
+2. **Extract the format keyword** — pick the first token (case-insensitive) that matches `short`, `long`, or `table`. Remove it from the token list. If no match, format = `short`.
+3. **Determine scope from remaining tokens** (first match wins):
+   - **Explicit PR refs** — every remaining token is a PR ref (URL, `<owner>/<repo>#<n>`, `#<n>`, or pure digits) → scope = explicit. Normalize each to a full URL per the `/sy-babysit-prs` rules (bare `#<n>` / digits require cwd is a git repo with GitHub `origin`; resolve `<owner>/<repo>` via `git remote get-url origin`; bad tokens error out — do NOT silently skip).
+   - **PWD keyword** — first remaining token (case-insensitive) is one of `pwd`, `.`, `./`, `here`, `cwd`, `this folder`, `this-folder` → scope = pwd. Any extra tokens after the keyword are an error (PWD mode takes no author or refs).
+   - **Otherwise** → scope = all (default). The remaining tokens form the author:
+     - Empty → current user (`--author=@me`).
+     - Single token of `me`/`mine`/`self` (case-insensitive) → current user.
+     - Single token (no spaces) → treat as a GitHub handle (`--author=<token>`).
+     - Multiple tokens → treat as a full name. Resolve via `gh api "search/users?q=<name>" --jq '.items[0].login'` and confirm the match with the user before proceeding.
+4. **No mixing.** PWD keyword + explicit refs in the same call is an error; pick one.
 
 ## Fetch PR data
 
-1. Fetch open PRs for the resolved author:
+1. **Fetch the open PR list — branch on scope:**
+
+   a. **Scope = all** (default):
    `gh search prs --author=<resolved> --state=open --json number,title,repository,isDraft,url,headRefName,createdAt`
 
-2. For each PR, fetch detailed status:
+   b. **Scope = pwd**:
+   - Discover git repo roots under cwd up to 2 child levels deep:
+     `find . -maxdepth 3 -type d -name .git -not -path '*/node_modules/*' -not -path '*/.build/*' -not -path '*/vendor/*'`
+     Each match's parent dir is a repo root. Include cwd itself if `./.git` exists.
+   - For each root, resolve `<owner>/<repo>` from `git -C <root> remote get-url origin` (global rule 51 — never folder name). Skip roots with no `origin` or a non-GitHub remote.
+   - De-duplicate `<owner>/<repo>` list. If empty, print `No git repos found within 2 levels of $(pwd).` and stop.
+   - Query in one call:
+     `gh search prs --author=@me --state=open --repo <o1>/<r1> --repo <o2>/<r2> ... --json number,title,repository,isDraft,url,headRefName,createdAt`
+
+   c. **Scope = explicit refs**:
+   - For each normalized PR URL, fetch metadata:
+     `gh pr view <url> --json number,title,headRefName,baseRefName,isDraft,url,repository,createdAt`
+   - De-duplicate by URL. Order preserves the user's input order; classification + sort still happen below.
+
+2. **For each PR, fetch detailed status:**
    - CI/build status: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` → passing / failing / pending
    - Reviews: `gh pr view <number> --repo <owner/repo> --json reviews,reviewDecision` → approved (count) / changes requested / pending review
    - Unresolved review comments: `gh pr view <number> --repo <owner/repo> --json reviewThreads --jq '[.reviewThreads[] | select(.isResolved == false)] | length'` → count of open threads
@@ -120,6 +148,9 @@ Print one markdown table per group with these columns:
 
 ## Edge cases
 
-- If the author has zero open PRs, print: `No open PRs found for <author>.` and stop.
+- **Scope = all**, author has zero open PRs → print `No open PRs found for <author>.` and stop.
+- **Scope = pwd**, zero git repos under cwd → print `No git repos found within 2 levels of $(pwd).` and stop. If repos resolved but zero matching PRs → print `No open PRs found for @me in <N> repos under $(pwd).` and stop.
+- **Scope = explicit refs**, a bare `#<n>` / digits token and cwd is not a git repo → error out, name the unresolvable token, ask the user to use a fully-qualified ref. Unparseable token (not a URL, shorthand, `#<n>`, or digits) → error out, name the bad token, do NOT silently skip.
+- PWD keyword + explicit refs in the same call → error (no mixing).
 - If a single PR's status fetch fails, include it under NEEDS ATTENTION with the reason `status fetch failed` rather than dropping it silently.
 - If `reviewDecision` is `null` (no reviews requested yet), treat as `NEED APPROVAL` (not READY).
