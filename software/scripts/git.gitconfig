@@ -90,7 +90,6 @@ strategy = incremental
 navigate = true
 side-by-side = true
 line-numbers = true
-syntax-theme = Dracula
 
 [alias]
 # ---- Status & Staging ----
