@@ -105,6 +105,29 @@ key and update this table in the same edit.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
+### Shell dispatchers (`sy-*` from the terminal)
+
+Every `_common/commands/<name>.md` slash command also has a matching bash
+function `sy-<name>` so the same workflow can run from the terminal without
+opening a TUI. Source: `_common/sy-commands.profile.bash` (sourced via
+`profile-advanced.sh`). Dispatcher auto-registers one wrapper per
+`~/.claude/commands/sy-*.md` on shell load — no per-command edits needed when
+you add a new command (the regular Claude deploy flow creates the body and
+the next shell picks up the wrapper).
+
+CLI selection mirrors the `EDITOR` convention:
+
+```bash
+sy-review-pr <pr-url>                # uses $LLM (default claude)
+sy-review-pr opencode <pr-url>       # leading positional override
+LLM=gemini sy-review-pr <pr-url>     # env-var override
+```
+
+Supported tags: `claude`, `copilot`, `gemini`, `opencode`. Unknown values for
+`$LLM` fall back to the default. Resolved CLI is echoed to stderr so the
+user can see which one fired. `sy-<name> --help` prints inline help without
+invoking any CLI.
+
 ### Memory promotion bridge (Claude → other CLIs)
 
 Claude Code auto-loads `~/.claude/projects/<encoded-cwd>/memory/MEMORY.md` and
