@@ -1,4 +1,4 @@
-[Sy] Run `/sy-babysit-pr` on EVERY open PR in scope. This command is a fan-out wrapper — it resolves a list of target PRs (from `$ARGUMENTS`) and delegates the full per-PR loop (sync, comments, local checks, CI monitor) to `/sy-babysit-pr` for each one.
+[Sy] Run `/sy-babysit-pr` on EVERY open PR in scope. This command is a fan-out wrapper — it resolves a list of target PRs (from `$ARGUMENTS`) and delegates each one to `/sy-babysit-pr`.
 
 **Recommended order.** Run `/sy-review-prs` first (verdict pass), then `/sy-babysit-prs` (this command). Reversing wastes babysit cycles on PRs that would be requested-changes anyway.
 
@@ -41,26 +41,15 @@ Argument: `$ARGUMENTS` (optional — selects scope; the first token decides the 
 
 2. **Announce:** Tell the user which scope mode was resolved (`all @me PRs`, `pwd scan of <N> repos`, or `explicit list of <N> PRs`), how many PRs were resolved, and list them (repo, PR number, title).
 
-3. **For each PR, delegate to `/sy-babysit-pr <PR-URL>`.** That command owns the full per-PR behavior:
-   - step 0: early-exit if already green + approved (skipped PRs cost nothing),
-   - step 1: merge base + resolve conflicts (always sync first),
-   - step 2: address comments from human (non-bot) users,
-   - step 3: address ONLY trivial / minor bot comments (typos, one-line nits — never redesign),
-   - step 4: add / update tests to cover gaps from steps 2 and 3,
-   - step 5: pull current CI state and pre-emptively fix any visible failures (lint, type, test, etc.),
-   - step 6: run local tests / format / type checks / build (language-agnostic), fix before pushing,
-   - step 7: monitor CI every 60s, fix any failing check (any language), loop back to step 0 on failure.
-     Do NOT duplicate any of that logic here — if the per-PR flow needs to change, edit `/sy-babysit-pr`.
+3. **Render the resolved PR set as a table** so the user sees exactly what is about to be babysat. Delegate to `/sy-list-prs table <same-scope-token>` — `/sy-list-prs` accepts the same scope vocabulary as this command (empty / PWD keyword / explicit refs), so pass the same scope `$ARGUMENTS` (prefixed with `table`) and let it render. Single source of truth for the table layout lives in `/sy-list-prs`.
 
-4. **Periodic status snapshot:** At the end of every 60-second polling cycle (across all PRs), run `/sy-list-prs` to render the current readiness table. This is the single source of truth for status output — do not hand-roll a separate table. Between snapshots, keep log lines terse (one line per action).
+4. **For each PR, delegate to `/sy-babysit-pr <PR-URL>`.** The per-PR command owns the full loop. This wrapper does not describe or duplicate per-PR behavior — if the per-PR flow needs to change, edit `/sy-babysit-pr`.
 
-5. Repeat — delegate, wait 60s, render `/sy-list-prs` — until all PRs are green + approved or the remaining issues require human intervention (flaky infra, missing secrets, approval-gated checks). Report those clearly.
-
-6. **Final report:** one last `/sy-list-prs` render plus a short summary of which PRs were skipped (already green), which were processed, and which need human attention.
+5. **Final report:** one last `/sy-list-prs table <same-scope-token>` render plus a short summary of which PRs were skipped (already green), which were processed, and which need human attention.
 
 ## Rules
 
 - This command is a dispatcher. The per-PR loop lives in `/sy-babysit-pr` — do not re-implement it here.
-- Poll `/sy-list-prs` every 60s; do not spam `gh` calls.
+- **Table output is owned by `/sy-list-prs`.** Both the pre-flight render (Step 3) and the final report (Step 5) reuse its `table` format. Pass the same scope `$ARGUMENTS` to `/sy-list-prs table` so the rendered set matches the resolved PR set exactly. Do not hand-roll a different table layout.
 - **First token of `$ARGUMENTS` decides the mode — no mixing.** PWD-keyword + explicit refs in the same call is an error; pick one. PWD mode always re-filters to `@me` authored PRs (consistent with the empty-args default); explicit-list mode does not filter by author (you asked for those specific PRs).
 - **Always resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name** (global rule 51). Applies to PWD scan and to bare-`#<n>` ref expansion.
