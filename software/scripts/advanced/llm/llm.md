@@ -102,6 +102,23 @@ key and update this table in the same edit.
 - **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
+### Per-repo `AGENTS.md` → `CLAUDE.md` symlink
+
+Claude Code reads per-repo `CLAUDE.md`. The other three look for `AGENTS.md` at
+the repo root (OpenCode falls through to the global `~/.claude/CLAUDE.md` only,
+not per-repo). To get Copilot, Gemini, and per-repo OpenCode the same rules
+without maintaining two copies, drop an `AGENTS.md` symlink next to every
+`CLAUDE.md`:
+
+```bash
+bash run.sh --files=repo-agents-symlink.standalone.js
+```
+
+Standalone — runs on demand, NOT on every `bash run.sh --preset=llm`. Walks
+`$HOME/git/*/` by default; override / extend with comma-separated paths via
+`BASHRC_AGENTS_REPO_ROOTS=~/git,~/work`. Idempotent. Never clobbers an existing
+regular file or a foreign symlink — those are reported and skipped.
+
 ---
 
 ## Part 2 — Migrating from Claude Code to another CLI
