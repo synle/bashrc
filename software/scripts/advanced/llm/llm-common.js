@@ -68,6 +68,91 @@ const LLM_INSTRUCTIONS_MARKER = "synle/bashrc | software/scripts/advanced/llm/_c
  */
 const LLM_INSTRUCTIONS_LEGACY_MARKER = "managed-rules";
 
+// --- Shared MCP Server Registry ---
+
+/**
+ * Repo-relative path to the cross-CLI MCP server registry. Each per-CLI
+ * `setup.js` reads this file via `loadSharedMcpServers()` and merges the
+ * entries into the CLI's native MCP config location. Authored in the
+ * standard `mcpServers` shape (Claude / Copilot / Gemini consume verbatim;
+ * OpenCode translates via `_translateToOpencodeMcp()`).
+ * @type {string}
+ */
+const SHARED_MCP_REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-servers.jsonc";
+
+/**
+ * Loads the shared MCP server registry from `_common/mcp-servers.jsonc` and
+ * returns the inner `mcpServers` map (an object of `name → server-config`).
+ * Returns an empty object when the file is missing, unreadable, or the
+ * `mcpServers` key is absent — callers can iterate the result without
+ * additional guards.
+ *
+ * @returns {Promise<Record<string, any>>} Map of server name to server config (standard shape).
+ */
+async function loadSharedMcpServers() {
+  /** @type {{ mcpServers?: Record<string, any> } | null} */
+  const json = await readJson`${SHARED_MCP_REGISTRY_PATH}`;
+  if (!json || typeof json !== "object") return {};
+  /** @type {Record<string, any>} */
+  const servers = json.mcpServers && typeof json.mcpServers === "object" ? json.mcpServers : {};
+  return servers;
+}
+
+/**
+ * Translates ONE server entry from the standard `mcpServers` shape (used by
+ * Claude / Copilot / Gemini) into the opencode-native `mcp` shape. Handles:
+ *
+ *   Local stdio (standard `{ command, args, env }`) →
+ *     `{ type: "local", command: [command, ...args], environment: env, enabled: true }`
+ *
+ *   Remote URL  (standard `{ url, headers }`) →
+ *     `{ type: "remote", url, headers, enabled: true }`
+ *
+ * Entries that don't look like either shape are returned with `type` left
+ * undefined so opencode surfaces the schema error at load time instead of
+ * silently dropping the server.
+ *
+ * @param {any} entry - Server config in the standard `mcpServers` shape.
+ * @returns {Record<string, any>} Opencode-shaped server config.
+ */
+function _translateToOpencodeMcp(entry) {
+  if (entry && typeof entry === "object") {
+    if (typeof entry.command === "string") {
+      /** @type {string[]} CLI tokens — opencode expects a single array, not [command, args]. */
+      const command = [entry.command, ...(Array.isArray(entry.args) ? entry.args : [])];
+      /** @type {Record<string, any>} */
+      const out = { type: "local", command, enabled: true };
+      if (entry.env && typeof entry.env === "object") out.environment = entry.env;
+      return out;
+    }
+    if (typeof entry.url === "string") {
+      /** @type {Record<string, any>} */
+      const out = { type: "remote", url: entry.url, enabled: true };
+      if (entry.headers && typeof entry.headers === "object") out.headers = entry.headers;
+      return out;
+    }
+  }
+  // Unknown shape — pass through so opencode reports the schema error.
+  return entry;
+}
+
+/**
+ * Translates a whole `name → standard-config` map into a `name → opencode-config`
+ * map suitable for writing under `opencode.json::mcp`. Thin loop on top of
+ * `_translateToOpencodeMcp` so the per-CLI deploy stays one line.
+ *
+ * @param {Record<string, any>} servers - Standard-shape map (e.g. result of `loadSharedMcpServers`).
+ * @returns {Record<string, any>} Opencode-shape map keyed by the same names.
+ */
+function translateMcpServersForOpencode(servers) {
+  /** @type {Record<string, any>} */
+  const out = {};
+  for (const [name, entry] of Object.entries(servers || {})) {
+    out[name] = _translateToOpencodeMcp(entry);
+  }
+  return out;
+}
+
 // --- Ollama Provider Discovery ---
 
 /**

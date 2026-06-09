@@ -61,9 +61,10 @@ const OLLAMA_DEFAULT_CONFIG = { limit: LIMIT_MEDIUM };
 /**
  * Builds the opencode config object dynamically from an array of providers.
  * @param {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} providersArray - Simplified input schemas.
+ * @param {Record<string, any>} [mcpServersOpencodeShape={}] - Map of MCP server name → opencode-native config (already translated from the standard shape via `translateMcpServersForOpencode`). Pass `{}` (or omit) when the shared registry is empty so opencode falls back to whatever the user has under `mcp` in `opencode.json`.
  * @returns {object} The full opencode.json content.
  */
-function _buildOpencodeConfig(providersArray) {
+function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   const providers = {};
 
   for (const item of providersArray) {
@@ -150,6 +151,14 @@ function _buildOpencodeConfig(providersArray) {
     },
     provider: providers,
   };
+
+  // Only write the `mcp` key when we actually have managed entries — leaving
+  // the key absent lets opencode keep whatever the user maintains under `mcp`
+  // in their own opencode.json. Once a registry entry is added, opencode.json
+  // gets the translated shape written verbatim on each setup run.
+  if (mcpServersOpencodeShape && Object.keys(mcpServersOpencodeShape).length > 0) {
+    out.mcp = mcpServersOpencodeShape;
+  }
 
   return out;
 }
@@ -366,7 +375,13 @@ async function doWork() {
     log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
   }
 
-  await writeJson(targetPath, _buildOpencodeConfig(providerInputs));
+  /** @type {Record<string, any>} Shared MCP entries in opencode's native `{ type, command|url, ... }` shape. */
+  const mcpServersOpencodeShape = translateMcpServersForOpencode(await loadSharedMcpServers());
+  if (Object.keys(mcpServersOpencodeShape).length > 0) {
+    log(`>> opencode: deploying ${Object.keys(mcpServersOpencodeShape).length} MCP server(s) from shared registry`);
+  }
+
+  await writeJson(targetPath, _buildOpencodeConfig(providerInputs, mcpServersOpencodeShape));
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();

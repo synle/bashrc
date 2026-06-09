@@ -9,8 +9,11 @@
 // reachable from disk:
 //
 //   ✅ Settings  — ~/.gemini/settings.json (defaults-merge; never clobbers
-//                   auth keys like selectedAuthType, gcpProjectId, or any
-//                   mcpServers entries the user has set up)
+//                   auth keys like selectedAuthType, gcpProjectId. The
+//                   `mcpServers` key is now additively managed by
+//                   `_doMcpWork` from the shared MCP registry — user-added
+//                   server entries with names NOT in the registry are still
+//                   preserved untouched.)
 //   ✅ Instructions — ~/.gemini/GEMINI.md (managed block keyed by source path, mirrors
 //                   ~/.claude/CLAUDE.md's pattern; Gemini loads this as the
 //                   global context file — see docs/gemini_cli_readme.md)
@@ -145,8 +148,10 @@ async function _doGeminiKeysWork(targetDir) {
  * has already set in settings.json wins — these only fill in MISSING keys.
  *
  * Auth-shaped keys (`selectedAuthType`, `gcpProjectId`, etc.) and
- * user-managed shape (`mcpServers`, `theme`, `model.*` overrides) are
- * deliberately omitted so they survive untouched across re-runs.
+ * user-managed shape (`theme`, `model.*` overrides) are deliberately omitted
+ * so they survive untouched across re-runs. `mcpServers` is handled
+ * separately by `_doMcpWork` (additive merge from the shared registry,
+ * preserves user-added server names).
  *
  * When adding a new managed setting, also update the settings-intent table in
  * `software/scripts/advanced/llm/llm.md` so cross-CLI parity stays
@@ -240,8 +245,10 @@ function _deepMerge(target, source) {
  * Merges managed defaults into ~/.gemini/settings.json, preserving every
  * existing user-set key. Only keys in GEMINI_MANAGED_SETTINGS that are
  * missing from the user's settings.json are filled in — anything already
- * present (selectedAuthType, mcpServers, theme, model.*, etc.) is left
- * exactly as the user / `gemini mcp add` / etc. left it.
+ * present (selectedAuthType, theme, model.*, etc.) is left exactly as the
+ * user left it. `mcpServers` is handled separately by `_doMcpWork` — an
+ * additive merge from the shared registry; user-added server names that
+ * aren't in the registry survive untouched.
  *
  * @param {string} targetDir - Path to the ~/.gemini directory.
  */
@@ -267,6 +274,51 @@ async function _doGeminiSettingsWork(targetDir) {
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
+}
+
+////// MCP Servers //////
+
+/**
+ * Additively merges every entry from the shared MCP registry into
+ * `~/.gemini/settings.json::mcpServers`. Semantics:
+ *
+ *   - Names listed in `_common/mcp-servers.jsonc` get our value (file wins).
+ *   - Names ONLY in the on-disk settings.json — added by hand or via
+ *     `gemini mcp add` — are preserved untouched.
+ *   - Removing a name from the registry does NOT remove it from settings.json
+ *     (additive overlay only; documented in the registry header).
+ *
+ * Runs AFTER `_doGeminiSettingsWork` so the read-modify-write here sees the
+ * managed settings already on disk and only touches the `mcpServers` key.
+ *
+ * @param {string} targetDir - Path to the `~/.gemini` directory.
+ */
+async function _doMcpWork(targetDir) {
+  const targetPath = path.join(targetDir, "settings.json");
+
+  log(">> Gemini CLI MCP Servers:", targetPath);
+
+  /** @type {Record<string, any>} */
+  const sharedServers = await loadSharedMcpServers();
+  if (Object.keys(sharedServers).length === 0) {
+    log("   No managed MCP entries — skipping");
+    return;
+  }
+
+  /** @type {object} Existing settings — empty object on missing / invalid file. */
+  let existing = {};
+  try {
+    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
+  } catch (e) {}
+
+  /** @type {Record<string, any>} */
+  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
+  /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
+  const merged = { ...existingServers, ...sharedServers };
+
+  existing.mcpServers = merged;
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, existing);
 }
 
 ////// Instructions (User-Level GEMINI.md) //////
@@ -337,6 +389,7 @@ async function doWork() {
   log(">> Configuring Gemini CLI:", targetDir);
 
   await _doGeminiSettingsWork(targetDir);
+  await _doMcpWork(targetDir);
   await _doGeminiKeysWork(targetDir);
   await _doGeminiInstructionsWork(targetDir);
 }

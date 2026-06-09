@@ -174,6 +174,51 @@ async function _doSettingsWork(targetDir) {
   await writeJson(targetPath, merged);
 }
 
+////// MCP Servers //////
+
+/**
+ * Additively merges every entry from the shared MCP registry into
+ * `~/.claude/settings.json::mcpServers`. Semantics:
+ *
+ *   - Names listed in `_common/mcp-servers.jsonc` get our value (file wins).
+ *   - Names ONLY in the on-disk settings.json — added by hand or via
+ *     `claude mcp add` — are preserved untouched.
+ *   - Removing a name from the registry does NOT remove it from settings.json
+ *     (additive overlay only; documented in the registry header).
+ *
+ * Runs AFTER `_doSettingsWork` so the read-modify-write here sees the managed
+ * settings already on disk and only touches the `mcpServers` key.
+ *
+ * @param {string} targetDir - Path to the `~/.claude` directory.
+ */
+async function _doMcpWork(targetDir) {
+  const targetPath = path.join(targetDir, "settings.json");
+
+  log(">> Claude Code MCP Servers:", targetPath);
+
+  /** @type {Record<string, any>} */
+  const sharedServers = await loadSharedMcpServers();
+  if (Object.keys(sharedServers).length === 0) {
+    log("   No managed MCP entries — skipping");
+    return;
+  }
+
+  /** @type {object} Existing settings — empty object on missing / invalid file. */
+  let existing = {};
+  try {
+    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
+  } catch (e) {}
+
+  /** @type {Record<string, any>} */
+  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
+  /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
+  const merged = { ...existingServers, ...sharedServers };
+
+  existing.mcpServers = merged;
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, existing);
+}
+
 ////// Instructions (User-Level CLAUDE.md) //////
 
 /**
@@ -422,6 +467,7 @@ async function doWork() {
   log(">> Configuring Claude Code:", targetDir);
 
   await _doSettingsWork(targetDir);
+  await _doMcpWork(targetDir);
   await _doKeysWork(targetDir);
   await _doCommandsWork(targetDir);
   await _doInstructionsWork(targetDir);

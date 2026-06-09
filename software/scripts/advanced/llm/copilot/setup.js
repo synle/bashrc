@@ -39,11 +39,15 @@
 //                    Per-repo `.github/copilot-instructions.md` is already
 //                    handled at the wrapper layer in copilot.profile.bash.
 //
-//   ⚠️ Plugins / MCP — `~/.copilot/settings.json` → `enabledPlugins` and
-//                    `extraKnownMarketplaces`, plus `~/.copilot/mcp-config.json`,
-//                    are owned by the user (or by the Captain
-//                    `install-plugin-to-copilot` skill if the user opts in).
-//                    This script intentionally leaves them untouched.
+//   ⚠️ Plugins — `~/.copilot/settings.json` → `enabledPlugins` and
+//                    `extraKnownMarketplaces` are owned by the user (or by the
+//                    Captain `install-plugin-to-copilot` skill if the user
+//                    opts in). This script intentionally leaves them untouched.
+//
+//   ✅ MCP servers — `~/.copilot/mcp-config.json` → `mcpServers` is additively
+//                    merged from the shared `_common/mcp-servers.jsonc` registry
+//                    so the same MCP server list lands in every CLI. User-added
+//                    entries (names not in the registry) are preserved untouched.
 
 ////// Keybindings //////
 
@@ -295,6 +299,51 @@ async function _doCopilotSettingsWork(targetDir) {
   await writeJson(targetPath, merged);
 }
 
+////// MCP Servers //////
+
+/**
+ * Additively merges every entry from the shared MCP registry into
+ * `~/.copilot/mcp-config.json::mcpServers`. Copilot CLI reads MCP config from
+ * `~/.copilot/mcp-config.json` (separate file from `settings.json`, per the
+ * `mcp-config.json` reference in the existing "Plugins / MCP" comment above).
+ * Semantics:
+ *
+ *   - Names listed in `_common/mcp-servers.jsonc` get our value (file wins).
+ *   - Names ONLY in the on-disk mcp-config.json — added by hand or via
+ *     `copilot mcp add` — are preserved untouched.
+ *   - Removing a name from the registry does NOT remove it from mcp-config.json
+ *     (additive overlay only; documented in the registry header).
+ *
+ * @param {string} targetDir - Path to the `~/.copilot` directory.
+ */
+async function _doMcpWork(targetDir) {
+  const targetPath = path.join(targetDir, "mcp-config.json");
+
+  log(">> GitHub Copilot CLI MCP Servers:", targetPath);
+
+  /** @type {Record<string, any>} */
+  const sharedServers = await loadSharedMcpServers();
+  if (Object.keys(sharedServers).length === 0) {
+    log("   No managed MCP entries — skipping");
+    return;
+  }
+
+  /** @type {object} Existing config — empty object on missing / invalid file. */
+  let existing = {};
+  try {
+    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
+  } catch (e) {}
+
+  /** @type {Record<string, any>} */
+  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
+  /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
+  const merged = { ...existingServers, ...sharedServers };
+
+  existing.mcpServers = merged;
+  await backupConfigFile(targetPath);
+  await writeJson(targetPath, existing);
+}
+
 ////// Instructions (User-Level AGENTS.md) //////
 
 /**
@@ -366,6 +415,7 @@ async function doWork() {
   log(">> Configuring GitHub Copilot CLI:", targetDir);
 
   await _doCopilotSettingsWork(targetDir);
+  await _doMcpWork(targetDir);
   await _doCopilotKeysWork(targetDir);
   await _doCopilotInstructionsWork(targetDir);
 }
