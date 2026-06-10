@@ -116,11 +116,37 @@
   # exists but is in draft state — draft assets are private (404 to anonymous
   # curl), which defeats the entire downloadAssetWithFallback() / installer
   # one-liner story. Idempotent: subsequent calls are a no-op on a healthy release.
+  #
+  # Retries `gh release view` up to 3 times on transient API/auth failures.
+  # Why: GitHub-hosted runners occasionally see one-off 5xx or "no auth"
+  # responses for a valid token, and the prior code swallowed any non-zero
+  # exit via `> /dev/null 2>&1`, then fell through to the "first-time setup"
+  # branch — which crashed with HTTP 401 when `gh release create` ran against
+  # an already-existing release. The fix: only fall through to create when we
+  # see a literal "release not found" body (genuine 404); any other failure is
+  # retried with backoff and surfaced loudly if it survives all attempts.
   function ensure_cache_release() {
-    if gh release view "$CACHE_TAG" --repo "$CACHE_REPO" > /dev/null 2>&1; then
-      local is_draft
-      is_draft=$(gh release view "$CACHE_TAG" --repo "$CACHE_REPO" --json isDraft --jq .isDraft 2> /dev/null || echo "false")
-      if [ "$is_draft" = "true" ]; then
+    local view_output view_rc attempt
+    for attempt in 1 2 3; do
+      view_rc=0
+      view_output=$(gh release view "$CACHE_TAG" --repo "$CACHE_REPO" --json isDraft --jq .isDraft 2>&1) || view_rc=$?
+      if [ "$view_rc" -eq 0 ]; then
+        break
+      fi
+      # 404 from the API surfaces as "release not found" in gh CLI output.
+      # Anything else (401, 5xx, network blips) gets retried.
+      if echo "$view_output" | grep -qi "release not found"; then
+        view_rc=404
+        break
+      fi
+      if [ "$attempt" -lt 3 ]; then
+        echo "::warning::gh release view $CACHE_TAG attempt $attempt/3 failed (rc=$view_rc): $view_output"
+        sleep $((attempt * 2))
+      fi
+    done
+
+    if [ "$view_rc" -eq 0 ]; then
+      if [ "$view_output" = "true" ]; then
         echo ">> $CACHE_REPO release $CACHE_TAG is in draft state — publishing for anonymous access"
         if ! gh release edit "$CACHE_TAG" --repo "$CACHE_REPO" --draft=false > /dev/null 2>&1; then
           echo "::warning::Failed to publish draft release $CACHE_TAG — assets will remain private (404 to anonymous curl)"
@@ -128,6 +154,12 @@
       fi
       return 0
     fi
+
+    if [ "$view_rc" != "404" ]; then
+      echo "::error::gh release view $CACHE_TAG --repo $CACHE_REPO failed 3x (rc=$view_rc); last error: $view_output"
+      return 1
+    fi
+
     echo ">> Creating $CACHE_REPO release $CACHE_TAG (first-time setup)"
     gh release create "$CACHE_TAG" \
       --repo "$CACHE_REPO" \
