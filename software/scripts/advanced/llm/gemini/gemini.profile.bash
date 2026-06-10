@@ -3,26 +3,46 @@
 ################################################################################
 # ---- Aliases: Gemini ----
 #
-# Lightweight wrapper layer for Google Gemini CLI. The `gemini` wrapper is a
-# pure passthrough that only adds an installed-check up front (matching the
-# claude / copilot / opencode wrappers); the binary's defaults are otherwise
-# acceptable and there are no autonomous-mode flags worth pre-binding.
+# Wrapper around the `gemini` binary from the official Google Gemini CLI
+# (installed via software/scripts/advanced/llm/gemini/install.sh).
 #
-# User-level config managed by software/scripts/advanced/llm/gemini/setup.js:
-#   ~/.gemini/settings.json    - hideBanner, hideTips, etc. (defaults-merge)
-#   ~/.gemini/keybindings.json - from gemini-keys.common.jsonc (additive merge)
-#   ~/.gemini/GEMINI.md        - shared engineering rules (managed block keyed by source path)
+# Adds `--yolo` for autonomous mode: auto-approves all tool calls (edits,
+# shell, network) without prompting per-action. This is gemini's documented
+# umbrella flag (equivalent to `--approval-mode yolo` per `gemini --help`) and
+# matches the autonomy posture of the claude (bypass permissions) and copilot
+# (`--autopilot --allow-all`) wrappers in this repo.
+#
+# Two layers of repo-managed config flow into Gemini:
+#   1. Per-repo (handled below): the `gemini` function auto-symlinks
+#      `GEMINI.md` → `CLAUDE.md` so per-project Claude rules become per-project
+#      Gemini rules without a separately-maintained instructions file.
+#   2. User-level (handled by software/scripts/advanced/llm/gemini/setup.js):
+#      seeds ~/.gemini/settings.json defaults, ~/.gemini/keybindings.json from
+#      gemini-keys.common.jsonc, and ~/.gemini/GEMINI.md from the shared
+#      engineering rules (managed block keyed by source path). Source of truth:
+#      software/scripts/advanced/llm/_common/instructions.md.
 ################################################################################
 
-# gemini: wrapper around the `gemini` binary; checks the binary is on PATH, otherwise passthrough
+# gemini: wrapper around the `gemini` binary; auto-yolo, auto-symlinks GEMINI.md → CLAUDE.md, echoes resolved invocation to stderr
 function gemini() {
   # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
   if ! type -P gemini > /dev/null 2>&1; then
     echo "gemini is not installed" >&2
     return 1
   fi
+  # Auto-link GEMINI.md → CLAUDE.md at the repo root so Gemini CLI picks up
+  # the same repo guidance as Claude Code without a separately maintained
+  # instructions file. Only acts when CLAUDE.md exists and GEMINI.md (file or
+  # symlink) does not yet; otherwise stays silent.
+  if [ -f "CLAUDE.md" ] && [ ! -e "GEMINI.md" ] && [ ! -L "GEMINI.md" ]; then
+    command ln -s CLAUDE.md GEMINI.md
+    echo ">> Linked GEMINI.md → CLAUDE.md" >&2
+  fi
+  # Echo the resolved invocation to stderr so the user can see all flags being
+  # passed through (stderr keeps it out of any `gemini ... | jq` style pipelines).
+  echo "command gemini --yolo $*" >&2
   # `command gemini` bypasses this function so the call hits the real binary, not us.
-  command gemini "$@"
+  command gemini --yolo "$@"
 }
 
 alias gem="gemini"
