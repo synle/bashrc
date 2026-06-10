@@ -3,8 +3,9 @@
 ################################################################################
 # ---- Aliases: Gemini ----
 #
-# Lightweight wrapper layer for Google Gemini CLI. No `gemini` wrapper function
-# (unlike claude / copilot / opencode) — the binary's defaults are already
+# Lightweight wrapper layer for Google Gemini CLI. The `gemini` wrapper is a
+# pure passthrough that only adds an installed-check up front (matching the
+# claude / copilot / opencode wrappers); the binary's defaults are otherwise
 # acceptable and there are no autonomous-mode flags worth pre-binding.
 #
 # User-level config managed by software/scripts/advanced/llm/gemini/setup.js:
@@ -12,6 +13,17 @@
 #   ~/.gemini/keybindings.json - from gemini-keys.common.jsonc (additive merge)
 #   ~/.gemini/GEMINI.md        - shared engineering rules (managed block keyed by source path)
 ################################################################################
+
+# gemini: wrapper around the `gemini` binary; checks the binary is on PATH, otherwise passthrough
+function gemini() {
+  # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
+  if ! type -P gemini > /dev/null 2>&1; then
+    echo "gemini is not installed" >&2
+    return 1
+  fi
+  # `command gemini` bypasses this function so the call hits the real binary, not us.
+  command gemini "$@"
+}
 
 alias gem="gemini"
 
