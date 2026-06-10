@@ -50,6 +50,15 @@ function copilot() {
     command ln -s ../CLAUDE.md .github/copilot-instructions.md
     echo ">> Linked .github/copilot-instructions.md → ../CLAUDE.md" >&2
   fi
+  # Also auto-link AGENTS.md → CLAUDE.md at the repo root. AGENTS.md is the
+  # cross-tool convention (Copilot CLI, OpenCode, OpenAI Codex, others) for
+  # repo-level agent instructions. Symlinking it to CLAUDE.md keeps a single
+  # source of truth without a separately maintained file. Only acts when
+  # CLAUDE.md exists and AGENTS.md (file or symlink) does not yet.
+  if [ -f "CLAUDE.md" ] && [ ! -e "AGENTS.md" ] && [ ! -L "AGENTS.md" ]; then
+    command ln -s CLAUDE.md AGENTS.md
+    echo ">> Linked AGENTS.md → CLAUDE.md" >&2
+  fi
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of any `copilot ... | jq` style pipelines).
   echo "command copilot --autopilot --allow-all $*" >&2
