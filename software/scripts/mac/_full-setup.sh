@@ -119,10 +119,24 @@ function installBrewPackage() {
 }
 
 # queue a package for background installation after essential packages finish
-_BACKGROUND_INSTALL_LOG="/tmp/bashrc_bg_brew_$$.log"
-_BACKGROUND_INSTALL_SCRIPT="/tmp/bashrc_bg_brew_$$.sh"
+# Packages are round-robin distributed across N buckets — each bucket runs as its
+# own background subshell, giving real inter-package parallelism. Brew installs
+# different formulae concurrently safely (per-formula locks; only `brew link`
+# briefly contends, which is rare and short). Logs share the per-PID prefix with
+# a `_<bucket>` suffix so `tail -f /tmp/bashrc_bg_brew_$$_*.log` watches them all.
+_BACKGROUND_NUM_BUCKETS=4
+_BACKGROUND_INSTALL_LOG_PREFIX="/tmp/bashrc_bg_brew_$$"
+_BACKGROUND_INSTALL_SCRIPT_PREFIX="/tmp/bashrc_bg_brew_$$_script"
 _BACKGROUND_PKG_NAMES=()
-> "$_BACKGROUND_INSTALL_SCRIPT"
+_BACKGROUND_PKG_COUNT=0
+_BACKGROUND_INSTALL_PIDS=()
+_BACKGROUND_INSTALL_LOGS=()
+
+# Pre-create empty bucket scripts so appends are atomic and `[ -s "$f" ]` works.
+for _i in $(seq 1 $_BACKGROUND_NUM_BUCKETS); do
+  > "${_BACKGROUND_INSTALL_SCRIPT_PREFIX}_${_i}.sh"
+done
+unset _i
 
 function installBrewPackageInBackground() {
   if ((IS_CI)); then
@@ -130,21 +144,35 @@ function installBrewPackageInBackground() {
     return
   fi
   _BACKGROUND_PKG_NAMES+=("${@: -1}")
-  printf 'installBrewPackage' >> "$_BACKGROUND_INSTALL_SCRIPT"
-  printf ' %q' "$@" >> "$_BACKGROUND_INSTALL_SCRIPT"
-  printf '\n' >> "$_BACKGROUND_INSTALL_SCRIPT"
+  local _bucket=$(((_BACKGROUND_PKG_COUNT % _BACKGROUND_NUM_BUCKETS) + 1))
+  _BACKGROUND_PKG_COUNT=$((_BACKGROUND_PKG_COUNT + 1))
+  local _script="${_BACKGROUND_INSTALL_SCRIPT_PREFIX}_${_bucket}.sh"
+  printf 'installBrewPackage' >> "$_script"
+  printf ' %q' "$@" >> "$_script"
+  printf '\n' >> "$_script"
 }
 
-# install all queued background packages in a single background subshell
+# Install all queued background packages across N parallel subshells (one per
+# non-empty bucket). Populates _BACKGROUND_INSTALL_PIDS / _BACKGROUND_INSTALL_LOGS
+# so _waitForBackgroundPackages (in _full-setup.common.linux.bash) can join on all
+# of them and dump each bucket log on completion.
 function _installBackgroundPackages() {
-  _BACKGROUND_INSTALL_PID=""
-  if [ ! -s "$_BACKGROUND_INSTALL_SCRIPT" ]; then return; fi
-  echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages (log: $_BACKGROUND_INSTALL_LOG) >> ${_BACKGROUND_PKG_NAMES[*]}"
-  (
-    safe_source "$_BACKGROUND_INSTALL_SCRIPT"
-    rm -f "$_BACKGROUND_INSTALL_SCRIPT"
-  ) > "$_BACKGROUND_INSTALL_LOG" 2>&1 &
-  _BACKGROUND_INSTALL_PID=$!
+  _BACKGROUND_INSTALL_PIDS=()
+  _BACKGROUND_INSTALL_LOGS=()
+  if [ "${#_BACKGROUND_PKG_NAMES[@]}" -eq 0 ]; then return; fi
+  local _i _script _log
+  for _i in $(seq 1 $_BACKGROUND_NUM_BUCKETS); do
+    _script="${_BACKGROUND_INSTALL_SCRIPT_PREFIX}_${_i}.sh"
+    _log="${_BACKGROUND_INSTALL_LOG_PREFIX}_${_i}.log"
+    [ -s "$_script" ] || continue
+    (
+      safe_source "$_script"
+      rm -f "$_script"
+    ) > "$_log" 2>&1 &
+    _BACKGROUND_INSTALL_PIDS+=($!)
+    _BACKGROUND_INSTALL_LOGS+=("$_log")
+  done
+  echo ">> Installing ${#_BACKGROUND_PKG_NAMES[@]} background packages across ${#_BACKGROUND_INSTALL_PIDS[@]} parallel buckets (logs: ${_BACKGROUND_INSTALL_LOG_PREFIX}_*.log) >> ${_BACKGROUND_PKG_NAMES[*]}"
 }
 
 # refresh the brew formula/cask index so installs resolve the latest versions

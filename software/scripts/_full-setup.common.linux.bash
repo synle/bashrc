@@ -224,32 +224,66 @@ function _installZedEditor() {
 
 # ---- Background Install Wait ----
 
-# wait for background packages to finish (max 5 minutes to avoid blocking the build)
-# after waiting, dumps background log to stdout so CI summary can capture results
+# wait for background packages to finish (max ~16 minutes to avoid blocking the build)
+# after waiting, dumps each bucket log to stdout so CI summary can capture results
 # emits timeout entries for queued packages that did not complete
+# Supports two queue models:
+#   - mac: parallel buckets — _BACKGROUND_INSTALL_PIDS[] + _BACKGROUND_INSTALL_LOGS[]
+#   - linux: single bucket — _BACKGROUND_INSTALL_PID + _BACKGROUND_INSTALL_LOG (legacy)
+# CI never queues background packages (installXxxPackageInBackground returns early
+# on ((IS_CI))), so the early ((IS_CI)) && return below is redundant but explicit.
 function _waitForBackgroundPackages() {
-  if [ -z "$_BACKGROUND_INSTALL_PID" ]; then return; fi
-  local _max_wait=300
+  ((IS_CI)) && return
+  # Collect PIDs and logs from whichever queue model is in use.
+  local _pids=()
+  local _logs=()
+  if [ "${#_BACKGROUND_INSTALL_PIDS[@]}" -gt 0 ]; then
+    _pids=("${_BACKGROUND_INSTALL_PIDS[@]}")
+    _logs=("${_BACKGROUND_INSTALL_LOGS[@]}")
+  elif [ -n "${_BACKGROUND_INSTALL_PID:-}" ]; then
+    _pids=("$_BACKGROUND_INSTALL_PID")
+    _logs=("$_BACKGROUND_INSTALL_LOG")
+  else
+    return
+  fi
+  local _max_wait=1000
   local _elapsed=0
-  while kill -0 "$_BACKGROUND_INSTALL_PID" 2> /dev/null && [ "$_elapsed" -lt "$_max_wait" ]; do
+  local _all_done=0
+  local _pid
+  while [ "$_elapsed" -lt "$_max_wait" ]; do
+    _all_done=1
+    for _pid in "${_pids[@]}"; do
+      if kill -0 "$_pid" 2> /dev/null; then
+        _all_done=0
+        break
+      fi
+    done
+    ((_all_done)) && break
     sleep 5
     _elapsed=$((_elapsed + 5))
   done
   local _timed_out=0
-  if kill -0 "$_BACKGROUND_INSTALL_PID" 2> /dev/null; then
+  if ! ((_all_done)); then
     echo ">> Background packages still running after ${_max_wait}s, proceeding"
     _timed_out=1
   else
     echo ">> Background packages completed (${_elapsed}s)"
   fi
-  if [ -f "$_BACKGROUND_INSTALL_LOG" ]; then
-    cat "$_BACKGROUND_INSTALL_LOG"
-  fi
+  local _log
+  for _log in "${_logs[@]}"; do
+    [ -f "$_log" ] && cat "$_log"
+  done
   if ((_timed_out)) && [ ${#_BACKGROUND_PKG_NAMES[@]} -gt 0 ]; then
+    local _pkg _found
     for _pkg in "${_BACKGROUND_PKG_NAMES[@]}"; do
-      if ! grep -q ">> $_pkg >>" "$_BACKGROUND_INSTALL_LOG" 2> /dev/null; then
-        echo ">> $_pkg >> Installing with Background >> ⏸️ Skipped (timeout)"
-      fi
+      _found=0
+      for _log in "${_logs[@]}"; do
+        if grep -q ">> $_pkg >>" "$_log" 2> /dev/null; then
+          _found=1
+          break
+        fi
+      done
+      ((_found)) || echo ">> $_pkg >> Installing with Background >> ⏸️ Skipped (timeout)"
     done
   fi
 }
