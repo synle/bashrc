@@ -20,7 +20,7 @@
 {
   "lightweight": {
     "description": "Minimal config-only setup: git, vim, inputrc. Only the listed files run — no advanced/heavy installs.",
-    "files": ["git.js", "vim-config.js", "vim-vundle.sh", "bash-inputrc.js"],
+    "files": ["git.js", "vim-config.js", "vim-plug.sh", "bash-inputrc.js"],
   },
 
   // --- Building blocks ---
@@ -29,7 +29,7 @@
     "description": "Building block: editors only — Vim, Sublime Text, Sublime Merge, VS Code, Zed + shell editor launchers.",
     "files": [
       "vim-config.js",
-      "vim-vundle.sh",
+      "vim-plug.sh",
       "zed.js",
       "advanced/sublime-text.js",
       "advanced/sublime-merge.js",

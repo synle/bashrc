@@ -2,15 +2,6 @@
 async function doWork() {
   let targetPath;
 
-  // TODO: Remove this legacy-Vundle cleanup once all machines have migrated off Vundle.
-  //       Vundle cloned plugins into ~/.vim/bundle; vim-plug uses ~/.vim/plugged. The old
-  //       tree is dead weight on migrated boxes and a source of confusion for vim-coc.
-  const legacyVundleDir = path.join(BASE_HOMEDIR_LINUX, ".vim", "bundle");
-  if (pathExists(legacyVundleDir)) {
-    log(">> Removing legacy Vundle bundle dir", legacyVundleDir);
-    fs.rmSync(legacyVundleDir, { recursive: true, force: true });
-  }
-
   const contentOnlyFullVimrc = code`
     " ~/.vimrc
 
@@ -36,7 +27,7 @@ async function doWork() {
     " --- UI & Status ---
     Plug 'vim-airline/vim-airline'                                     " Lightweight status bar with mode, branch, and file info
     Plug 'vim-airline/vim-airline-themes'                              " Theme pack for vim-airline
-    Plug 'dracula/vim'                                                 " Dracula color scheme
+    Plug 'tomasiser/vim-code-dark'                                     " VS Code Default Dark+ palette — matches Sublime/Zed/VSCode 'Sy Dark' high-contrast palette
 
     " --- Git ---
     Plug 'airblade/vim-gitgutter'                                     " Show git diff markers (+/-/~) in the gutter
@@ -56,9 +47,15 @@ async function doWork() {
     " Color Scheme
     """""""""""""""""""""""""""""""""""""""""""""""""
     try
-        colorscheme dracula       " Primary color scheme — dark theme with good contrast
-    catch
-        colorscheme evening       " Fallback if Dracula is not installed
+        colorscheme codedark      " VS Code Default Dark+ palette — high contrast, matches Sy Dark in Sublime/Zed/VSCode
+    catch /^Vim\\%((\\a\\+)\\)\\=:E185/
+        " E185 = colorscheme not found. Loud warning so a missing vim-code-dark install
+        " (e.g. vim-plug.sh never ran, or PlugInstall failed) is visible instead of
+        " a silent fallback that looks like codedark "just doesn't work".
+        echohl WarningMsg
+        echom "codedark colorscheme not found — run: bash run.sh --files=vim-plug.sh"
+        echohl None
+        colorscheme industry      " Fallback (vim built-in, high contrast) if vim-code-dark is not installed
     endtry
 
     """""""""""""""""""""""""""""""""""""""""""""""""

@@ -5,8 +5,7 @@
 #
 # The coc.nvim plugin itself is installed by vim-plug (see software/scripts/vim-config.js,
 # `Plug 'neoclide/coc.nvim', { 'branch': 'release' }`). vim-plug honors the `branch:` option
-# natively, so coc.nvim is fetched directly on the prebuilt `release` branch — no post-clone
-# checkout fix needed here (the prior Vundle-era hack was removed alongside vim-vundle.sh).
+# natively, so coc.nvim is fetched directly on the prebuilt `release` branch.
 # This script only writes the per-language `languageserver` config that coc.nvim reads to
 # know which binaries to spawn for which filetypes. Binary install is handled by
 # lsp/install.sh (separate PR) — this script is independent and safe to run before that PR
