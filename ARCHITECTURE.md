@@ -45,6 +45,84 @@ The repo also ships a Vite + React single-page webapp (in `webapp/`, sources als
 - **`DEV.md`** — Developer quick-start (install deps, run dev server, run setup, run tests, build).
 - **`README.md`** — User-facing overview, highlights, install one-liner, and `run.sh` flag reference.
 
+## Execution Pipeline
+
+End-to-end flow when a user runs `bash run.sh`:
+
+1. **`run.sh` bootstrap.** Detects local vs remote mode (presence of `software/index.js` next to the script). In remote mode, fetches `run.sh` + `software/` from `raw.githubusercontent.com` into a per-PID temp dir (`$BASHRC_TEMP_DIR`) and re-execs itself. In local mode, runs in place.
+2. **Argument pre-scan.** A small bash pre-scan in `run.sh` extracts the few flags it has to act on directly (`--debug`, `--verbose`, `--dryrun`, `--force-refresh`, `--remove`). All remaining args are JSON-encoded into `BASHRC_RAW_ARGS` for the Node side to parse.
+3. **OS detection.** `_detect_os` in `run.sh` writes `is_os_<name>=1` env vars (`is_os_mac`, `is_os_ubuntu`, `is_os_arch_linux`, `is_os_redhat`, `is_os_steamos`, `is_os_chromeos`, `is_os_mingw64`, `is_os_android_termux`, `is_os_wsl`, `is_os_windows`). Order matters — `is_os_ubuntu` is the catch-all Debian-family flag and must stay last (see CLAUDE.md). The detection function is hermetically tested in `software/tests/osDetection.spec.js`.
+4. **Env sourcing.** `software/bootstrap/common-env.sh` exports `LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`, `REPO_PATH_IDENTIFIER`, and other shared constants. It is inlined into `run.sh` via `# BEGIN`/`# END` markers at build time so a self-contained `run.sh` works without the rest of the repo present.
+5. **The `node | bash` step.** `run_files()` pipes `software/index.js` through `node` to `bash`: `cat software/index.js | node | bash`. `index.js` runs in two modes simultaneously — it (a) acts as a library that defines globals (`code`, `list`, `json`, `readText`, `pathExists`, `registerWithBashSyleProfile`, ...) and (b) acts as a runner that enumerates scripts under `software/scripts/`, fetches each one, evaluates it with the library already in scope, and writes the resulting bash commands to stdout.
+6. **Bash execution.** stdout becomes bash input. Each script's emitted commands install tools, write config files, and register profile blocks via the marker system. Errors are captured per script (a `ScriptSkipError` aborts that script without killing the run).
+7. **Cleanup & wrapup.** `software/scripts/~cleanup.js` runs last among JS scripts: flushes any remaining profile-block buffer, strips unfilled BEGIN/END markers, and finalizes `~/.bash_syle`. `~wrapup.sh` (when present) runs after all bash output to dump `$BASHRC_TEMP_DIR/fullsetup.log` in CI and stamp `run_timing.json`.
+
+Output redirection: `index.js` uses `log()` (stderr) for human-readable progress; only `emitBash()` writes to stdout (i.e. the bash pipeline). Raw `console.log` is forbidden.
+
+## Script Discovery & Ordering
+
+`getSoftwareScriptFiles()` in `software/index.js` (line ~3918) is the canonical enumerator. It walks `software/scripts/` (in local mode via `listRepoDir("local")`; in remote mode via the GitHub contents API → `listRepoDir("remote_api")`), then applies filters and ordering:
+
+1. **Filter to runnable.** Drop `.common.js` (shared helpers, never run standalone) and `.standalone.js` (on-demand only — never picked up by a full run or `--files=`). Drop `_full-setup.*` unless `IS_SETUP` (the `--setup` flag) is set. Drop everything under `advanced/` on limited-support OSes (`IS_ADVANCED_PROFILE_ENABLED=0`).
+2. **OS-folder filter.** `_filterByOsFolders()` keeps top-level scripts (cross-platform) plus only the OS subdirectories matching the active `is_os_*` flags (so an Arch-only script never runs on macOS).
+3. **Priority tiers (lexical sort plus prefix rules).**
+   - `_init.*` files run first.
+   - `_full-setup.*` files run next (setup mode only).
+   - `_only.*` files run next.
+   - Plain `a-z` files run in lexical order.
+   - `~cleanup.*` / `~wrapup.*` (tilde-prefixed) run last.
+
+Consecutive same-bundle-type scripts are batched into one bash subshell to amortize startup cost (see `getScriptBundleType` in `index.js`). `.su.js` scripts are bundled together so the sudo prompt fires once.
+
+`_doWorkTestFiles()` is the `--files=` path — it bypasses the full ordering pass, accepts an explicit comma-separated file list, and always appends `~refresh-source.standalone.js` so SOURCE_BEGIN/END blocks inside `~/.bash_syle` get refreshed. Full runs reach the equivalent through `~cleanup.js` instead.
+
+## Profile Assembly (`~/.bash_syle`)
+
+`~/.bash_syle` is the single sourced-by-`~/.bashrc` profile. Scripts never write to it directly — they buffer block updates via:
+
+- `registerWithBashSyleProfile(configKey, content)` — appends or replaces a `# BEGIN - <configKey>` / `# END - <configKey>` block.
+- `registerPlatformTweaks(platformName, content, subKey?)` — sugar for `"<platformName> OS-specific Tweaks[ - <subKey>]"`. Pass `subKey` when one platform needs multiple blocks (e.g. `Mac OS-specific Tweaks - iTerm2`).
+- `registerWithBashSyleAutocompleteWithRawContent(configKey, content)` — autocomplete-specific block.
+- `registerWithPowershellProfile(configKey, content)` — same mechanism for `POWERSHELL_SYLE_PATH`.
+- `removeFromBashSyleProfile(configKey)` — buffer a deletion (used by `--remove`).
+
+All writes accumulate in `_profileBlockBuffer` (a `Map<profilePath, Map<configKey, {content, isPrepend, isRemove}>>`) and flush once via `flushProfileBlocks()` — invoked at the end of each script bundle and again in `~cleanup.js`. Duplicate `configKey` within one flush window throws (was silently overwriting real config historically). Empty BEGIN/END marker pairs are pre-placed in `profile-core.sh` (pre-core) and `profile-advanced.sh` (post-profile, autocomplete, platform tweaks) so blocks update in place rather than appending unboundedly.
+
+## BEGIN/END Inlining vs SOURCE Runtime Includes
+
+Two distinct include mechanisms — easy to mix up:
+
+| Mechanism                                  | When it runs | Where it lives                                                                                        | Use case                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------ | ------------ | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`# BEGIN <path>` / `# END <path>`**      | Build-time   | Implemented by `software/tools/build-include.js`; triggered by `make format_build_include`            | Inline content of a small partial file into a generated/checked-in file (e.g. embedding `common-env.sh` into `run.sh`, or the CI binary checks block into `.github/actions/ci-build/action.yml`). Block contents are checked into git after `format`. Edits to inlined blocks are overwritten on the next format run — edit the source file. |
+| **`# SOURCE <path>` / `SOURCE_BEGIN…END`** | Runtime      | Inlined by `readText()` / `~refresh-source.standalone.js` when `~/.bash_syle` is regenerated each run | Pull a partial into the live profile every run so changes propagate without re-running the full setup. The inline `# SOURCE path` marker is the only thing committed in repo source files; the materialized `SOURCE_BEGIN/SOURCE_END` block lives only in generated profile artifacts (`.build/profile_bashrc_*.sh`, `~/.bash_syle`).        |
+
+Practical rule: if it's a config you ship in this repo and want bundled into a generated artifact at build time, use BEGIN/END. If it's a piece of live shell that needs to update on every `run.sh` (without rerunning full setup), use SOURCE.
+
+## Preset Composition
+
+`software/metadata/presets.jsonc` is JSONC (line `//`, block `/* */`, and trailing-comma tolerant — stripped by `stripJsoncComments` in `index.js` before `JSON.parse`). Each preset entry is:
+
+```jsonc
+{
+  "files": ["git.js", "fzf.js"], // optional — direct script list
+  "presets": ["editors", "terminal"], // optional — references to other presets (recursive)
+  "description": "...", // optional — shown in `printRunInfo`
+}
+```
+
+`expandPresetFiles(name, presetMap)` (index.js:171) recursively flattens `presets[]` into a deduped `files[]` set with cycle detection (`visited` set + path `chain` for error messages). Self-references and transitive cycles (A→B→A) throw at parse time with the offending chain. `software/tests/presets.spec.js` guards the checked-in file.
+
+CLI resolution precedence (see `parseRawArgs`):
+
+- `--files=<x>` — strict script match only (`_resolveScriptFile`'s three tiers: exact path → exact basename → partial regex). 1 match auto-resolves; 2+ prints copy-paste suggestions; 0 errors.
+- `--preset=<x>` (and `--preset=@<x>`, `@` stripped) — strict preset name match with case-insensitive substring fuzzy fallback.
+- Bare `<x>` — tries script first, falls back to preset (`_resolveBareArgPresetFallback`). Script wins on collision: `bash run.sh llm` resolves `llm-common.js` partial match, not the `llm` preset. Use `@llm` to force preset.
+- Bare `@<x>` — strict preset; skips script search entirely.
+- `--preset=a,b` — unions the file lists.
+
+End-user composites today: `lightweight` and `heavyweight` (symmetric kitchen-sink). Building blocks: `editors`, `emulators`, `apps`, `browsers`, `terminal`, `prompt`, `llm`. `heavyweight` is defined as `{ "presets": ["editors", "emulators", "apps", "browsers", "terminal", "prompt", "llm"] }` — illustrative example of preset-of-presets.
+
 ## Build & Release Flow
 
 CI runs in `.github/workflows/build-main.yml`, phased:
