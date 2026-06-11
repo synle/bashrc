@@ -77,9 +77,7 @@ const getRuntimeOption = (optionKey, parseFunc = parseString) => {
   return parseFunc(process.env[optionKey] || "");
 };
 
-//////////////////////////////////////////////////////
-// Arg Parsing (from BASHRC_RAW_ARGS)
-//////////////////////////////////////////////////////
+// --- Arg Parsing (from BASHRC_RAW_ARGS) ---
 
 /**
  * Strips JSONC syntax extensions (line `//` comments, `/* *\/` block comments, and
@@ -377,9 +375,7 @@ function parseRawArgs() {
 /** @type {{ files: string, forceRefresh: boolean, refreshFiles: string, debug: boolean, dryrun: boolean, remove: boolean, presets: string[], setup: boolean, bareArgs: string[] }} */
 const _parsedArgs = parseRawArgs();
 
-//////////////////////////////////////////////////////
-// Global Imports & Path Constants
-//////////////////////////////////////////////////////
+// --- Global Imports & Path Constants ---
 process.env.TZ = "UTC";
 const fs = require("fs");
 const path = require("path");
@@ -560,9 +556,7 @@ function getCachedValue(key) {
   return _resolvedCache[key];
 }
 
-//////////////////////////////////////////////////////
-// Editor Configuration
-//////////////////////////////////////////////////////
+// --- Editor Configuration ---
 /** @type {number} Default editor font size */
 const DEFAULT_FONT_SIZE = 16;
 /** @type {number} Editor font size (min 10, default 16). Override with FONT_SIZE env var */
@@ -1000,9 +994,7 @@ const EDITOR_CONFIGS = {
   ],
 };
 
-//////////////////////////////////////////////////////
-// Host Config
-//////////////////////////////////////////////////////
+// --- Host Config ---
 /**
  * Flattened array of IP-to-hostname entries loaded from .build/ip-address.config.hostnamesFlattened.
  * Populated at bootstrap time; empty array on failure.
@@ -1048,9 +1040,7 @@ async function getSyHPOmenHomeIpAddress() {
   return getHomeIpAddress("sy-omen45l");
 }
 
-///////////////////////////////////////////////////
-// OS Flags
-//////////////////////////////////////////////////////
+// --- OS Flags ---
 /**
  * OS detection flags and script path mappings.
  *
@@ -1146,9 +1136,7 @@ const hasChromiumBrowser = resolveOsKey({
     pathExists("/usr/bin", /^chromium-browser$/),
 })();
 
-//////////////////////////////////////////////////////
-// Formatting Constants
-//////////////////////////////////////////////////////
+// --- Formatting Constants ---
 /** @type {string} Hash-character line break for section separators (e.g. "####...####") */
 const LINE_BREAK_HASH = "".padStart(LINE_BREAK_COUNT, "#");
 /** @type {string} Slash-character line break for section separators (e.g. "////...////") */
@@ -1361,9 +1349,7 @@ function _replaceSourceBlocks(content, blockMap, commentPrefix, commentSuffix = 
   return content;
 }
 
-//////////////////////////////////////////////////////
-// Path Search Utilities
-//////////////////////////////////////////////////////
+// --- Path Search Utilities ---
 
 /**
  * Searches a directory for entries matching a regex pattern and returns all matches.
@@ -1493,9 +1479,7 @@ function findFirstDirFromList(findProps) {
   return findPathFromList(findProps, { type: "folder" });
 }
 
-//////////////////////////////////////////////////////
-// File I/O Utilities
-//////////////////////////////////////////////////////
+// --- File I/O Utilities ---
 /**
  * Writes text content to a file. Skips writing if the trimmed content hasn't changed or if override is false.
  * @param {string} filePath - The file path to write to
@@ -2126,9 +2110,7 @@ function isForceRefreshStale(targetPath) {
   return false;
 }
 
-//////////////////////////////////////////////////////
-// Platform-Specific Path Utilities
-//////////////////////////////////////////////////////
+// --- Platform-Specific Path Utilities ---
 /**
  * Detects and returns the Windows user home directory under WSL.
  * @returns {string|undefined} The Windows user home directory path, or undefined if not found
@@ -2495,9 +2477,7 @@ async function downloadAndInstallBinary(repo, getFileName) {
   return true;
 }
 
-//////////////////////////////////////////////////////
-// Text Block Management
-//////////////////////////////////////////////////////
+// --- Text Block Management ---
 /**
  * Appends a delimited text block to the end of a text body (or replaces it if it already exists).
  * @param {string} content - The full text content to modify
@@ -2568,9 +2548,7 @@ function _stripTextBlock(content, key, commentPrefix = "#") {
   return content;
 }
 
-//////////////////////////////////////////////////////
-// Profile Registration
-//////////////////////////////////////////////////////
+// --- Profile Registration ---
 
 /**
  * Buffer for profile block registrations. Keyed by profilePath, each value is a Map of configKey → {content, isPrepend, isRemove}.
@@ -2799,9 +2777,7 @@ function removeFromPowershellProfile(configKey) {
   removeProfileBlock({ profilePath: POWERSHELL_SYLE_PATH, configKey });
 }
 
-//////////////////////////////////////////////////////
-// Guard Clauses
-//////////////////////////////////////////////////////
+// --- Guard Clauses ---
 /**
  * Sentinel error thrown by guard functions to skip the current script without killing the process.
  * In bundled execution, the per-script try/catch catches this and silently moves to the next script.
@@ -2902,9 +2878,7 @@ function exitIfNoChromiumBrowser() {
   }
 }
 
-//////////////////////////////////////////////////////
-// Text Processing Utilities
-//////////////////////////////////////////////////////
+// --- Text Processing Utilities ---
 /**
  * Collapses runs of 3+ consecutive newlines into double newlines and trims the result.
  * @param {string} text - The text to clean up
@@ -3446,9 +3420,7 @@ function calculatePercentage(count, total) {
   return ((count * 100) / total).toFixed(2);
 }
 
-//////////////////////////////////////////////////////
-// Network / API Utilities
-//////////////////////////////////////////////////////
+// --- Network / API Utilities ---
 /**
  * Extracts the root domain (e.g. "example.com") from a URL or hostname string.
  * @param {string} url - The URL or hostname to extract the root domain from
@@ -3755,9 +3727,7 @@ async function installBrowserExtension(repo) {
   await deleteFile(tmpZip);
 }
 
-//////////////////////////////////////////////////////
-// Script File Discovery & Platform Filtering
-//////////////////////////////////////////////////////
+// --- Script File Discovery & Platform Filtering ---
 /**
  * Deduplicates and filters raw file list to valid software script paths.
  * Normalizes prefixes, removes non-script files, and returns unique entries.
@@ -3942,9 +3912,7 @@ async function getSoftwareScriptFiles() {
   return _filterByOsFolders(softwareFiles, "software/scripts");
 }
 
-//////////////////////////////////////////////////////
-// Bash Execution
-//////////////////////////////////////////////////////
+// --- Bash Execution ---
 /**
  * Executes a bash command asynchronously and returns the trimmed output as a string. Default timeout is 30s, capped at 30s max.
  * @param {string} cmd - The shell command to execute
@@ -3996,9 +3964,7 @@ function hasBinary(name) {
   }
 }
 
-//////////////////////////////////////////////////////
-// Console Colors & Output
-//////////////////////////////////////////////////////
+// --- Console Colors & Output ---
 /**
  * Emits a string to stdout for bash to execute in the `node | bash` pipeline.
  * Use this instead of console.log when outputting bash commands from the orchestration layer.
@@ -4191,9 +4157,7 @@ const LOG_COLORS = {
 /** @type {(str: string) => string} */ const colorBoldCyan = (str) => color(str, LOG_COLORS.boldCyan);
 /** @type {(str: string) => string} */ const colorBoldMagenta = (str) => color(str, LOG_COLORS.boldMagenta);
 
-//////////////////////////////////////////////////////
-// Script Processing & Execution
-//////////////////////////////////////////////////////
+// --- Script Processing & Execution ---
 /** @type {Map<string, string>} Cache for script file contents read during inline mode */
 const _scriptContentCache = new Map();
 
@@ -4602,9 +4566,7 @@ function printSectionBlock(header, lines = [], addBlock = true) {
   if (addBlock) echo(colorYellow(LINE_BREAK_EQUAL));
 }
 
-//////////////////////////////////////////////////////
-// doWork: Unified script runner (test files or full run)
-//////////////////////////////////////////////////////
+// --- doWork: Unified script runner (test files or full run) ---
 /**
  * Shared runner for both test-specific and full-run modes.
  * Resolves script file paths, generates bash pipeline commands, and prints results.
@@ -4920,9 +4882,7 @@ function _filterFilesByOsGuard(files) {
   });
 }
 
-//////////////////////////////////////////////////////
-// doWork: Full Run
-//////////////////////////////////////////////////////
+// --- doWork: Full Run ---
 /**
  * Runs the full software setup: discovers platform-applicable script files and executes them.
  * _full-setup.sh files are included only when IS_SETUP is set (--setup flag).
@@ -4936,9 +4896,7 @@ async function _doWorkFullRun() {
   await _runScripts(softwareFiles, allRepoFiles, IS_SETUP ? "Full Setup" : "Full Run");
 }
 
-//////////////////////////////////////////////////////
-// Bootstrap / Run Info
-//////////////////////////////////////////////////////
+// --- Bootstrap / Run Info ---
 
 /**
  * Prints the run configuration summary to stderr. Only prints when running as bootstrap (not in script mode).
@@ -5002,9 +4960,7 @@ function printRunInfo() {
   log(LINE_BREAK_HASH);
 }
 
-//////////////////////////////////////////////////////
-// Bootstrap / Main Entry Point
-//////////////////////////////////////////////////////
+// --- Bootstrap / Main Entry Point ---
 /**
  * Main bootstrap entry point. Validates required environment variables,
  * fetches host configuration, creates necessary directories, sets up
