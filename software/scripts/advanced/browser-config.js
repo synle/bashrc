@@ -417,9 +417,7 @@ function _getBrowserConfigs(browserName, existingPrefs = {}) {
   return merged;
 }
 
-//////////////////////////////////////////////////////
-// Browser Accelerator Keymaps (shared Chromium logic)
-//////////////////////////////////////////////////////
+// --- Browser Accelerator Keymaps (shared Chromium logic) ---
 
 /**
  * Returns browser accelerator overrides shared across all platforms.

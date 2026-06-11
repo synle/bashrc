@@ -80,7 +80,7 @@ CLAUDE.md is the rules; DEV.md + architecture notes are the map. Consult the map
 
 ### Profile & Config Conventions
 
-- **Place code in the correct section.** Every organized file uses section markers in this style: `// --- Title ---` in JS/JSONC/TS, `# --- Title ---` in bash, `[section]` in git config. **Do NOT use the older `////// Title //////` style** — when touching a file that still has those markers, convert them to `// --- Title ---` in the same edit so the codebase converges on one style. Read existing sections before adding new code so similar things cluster together.
+- **Place code in the correct section.** Every organized file uses section markers in this style: `// --- Title ---` in JS/JSONC/TS, `# --- Title ---` in bash, `[section]` in git config. **Do NOT use the older `////// Title //////` style** — when touching a file that still has those markers, convert them to `// --- Title ---` in the same edit so the codebase converges on one style. Enforced for JS/TS/JSONC by `software/tests/sectionMarkerStyle.spec.js` (any line that is solely 3+ `/` chars fails the build). Read existing sections before adding new code so similar things cluster together.
 - **Pre-place empty markers for every registered block.** Short form: `# BEGIN/END - key`. Pre-core → `profile-core.sh` top. Platform tweaks / post-profile → `profile-advanced.sh` bottom. Autocomplete → `profile-advanced.sh` (before post-profile). PowerShell → `powershell-profile.ps1.bash`.
 - **Do not use `/` in config key names** — Prettier inserts stray blank lines. Use `-`.
 - **Use `registerWithBashSyleProfile` / `registerPlatformTweaks` for writes to `BASH_SYLE_PATH`.** Never read/write directly — conflicts with buffered flush. Exception: `~cleanup.js`.
