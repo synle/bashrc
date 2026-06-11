@@ -15,6 +15,9 @@ echo ">> Installing vim-plug - $PLUG_URL"
 safe_mkdir "$HOME/.vim/autoload"
 curl -fsSL "$PLUG_URL" -o "$PLUG_DEST"
 
-echo ">> Installing vim plugins via :PlugInstall (background)"
+echo ">> Installing vim plugins via :PlugInstall"
 echo "   Manual fallback: vim -E -s -u ~/.vimrc +PlugInstall +qall"
-(vim -E -s -u ~/.vimrc +PlugInstall +qall > /dev/null 2>&1) &
+# Foreground (not `&`) — backgrounding made run.sh return before the 17 plugin
+# clones finished, leaving ~/.vim/plugged/ empty and colorscheme dracula missing.
+# Keep stderr visible per CLAUDE.md rule on standalone install commands.
+vim -E -s -u ~/.vimrc +PlugInstall +qall > /dev/null
