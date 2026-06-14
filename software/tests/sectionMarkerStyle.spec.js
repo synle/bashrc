@@ -19,18 +19,7 @@ import { fileURLToPath } from "url";
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 /** Directories the test refuses to descend into. */
-const SKIP_DIRS = new Set([
-  ".git",
-  "node_modules",
-  ".build",
-  "dist",
-  "assets",
-  "coverage",
-  ".vscode",
-  ".claude",
-  ".github",
-  "docs",
-]);
+const SKIP_DIRS = new Set([".git", "node_modules", ".build", "dist", "assets", "coverage", ".vscode", ".claude", ".github", "docs"]);
 
 /** File extensions the rule covers (JS / TS / JSONC). */
 const SCAN_EXTS = new Set([".js", ".jsx", ".ts", ".tsx", ".jsonc"]);
@@ -72,8 +61,7 @@ describe("section marker style", () => {
     }
     expect(
       offenders,
-      `Found legacy '//////' section fences. Convert to '// --- Title ---' per CLAUDE.md.\n` +
-        offenders.map((o) => `  ${o}`).join("\n"),
+      `Found legacy '//////' section fences. Convert to '// --- Title ---' per CLAUDE.md.\n` + offenders.map((o) => `  ${o}`).join("\n"),
     ).toEqual([]);
   });
 });
