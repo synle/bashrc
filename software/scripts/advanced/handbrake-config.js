@@ -7,8 +7,15 @@ function _getHandBrakeConfigDir() {
   const candidates = [
     path.join(BASE_HOMEDIR_LINUX, ".config/ghb"), // Linux (GTK)
     path.join(BASE_HOMEDIR_LINUX, "Library/Application Support/HandBrake"), // macOS
-    `/mnt/c/Users/${CURRENT_USER}/AppData/Roaming/HandBrake`, // Windows (WSL)
   ];
+  // Windows (WSL): resolve real Windows user folder. Linux $USER may differ from the
+  // Windows folder name (e.g. "syle" vs "Sy Le"), so don't interpolate CURRENT_USER.
+  if (is_os_windows) {
+    try {
+      const winRoaming = getWindowAppDataRoamingUserPath();
+      if (winRoaming) candidates.push(path.join(winRoaming, "HandBrake"));
+    } catch (e) {}
+  }
   return candidates.find((d) => pathExists(d));
 }
 

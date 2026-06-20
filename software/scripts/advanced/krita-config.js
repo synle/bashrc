@@ -8,8 +8,15 @@ function _getKritaConfigPath(fileName) {
   const candidates = [
     path.join(BASE_HOMEDIR_LINUX, `.config/${fileName}`), // Linux
     path.join(BASE_HOMEDIR_LINUX, `Library/Preferences/${fileName}`), // macOS
-    path.join(`/mnt/c/Users/${CURRENT_USER}/AppData/Local`, fileName), // Windows (WSL)
   ];
+  // Windows (WSL): resolve real Windows user folder. CURRENT_USER is the Linux name and may
+  // not match the Windows folder (e.g. "syle" vs "Sy Le").
+  if (is_os_windows) {
+    try {
+      const winLocal = getWindowAppDataLocalUserPath();
+      if (winLocal) candidates.push(path.join(winLocal, fileName));
+    } catch (e) {}
+  }
   return candidates.find((p) => pathExists(p));
 }
 

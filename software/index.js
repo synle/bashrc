@@ -1106,6 +1106,8 @@ const IS_ADVANCED_PROFILE_ENABLED =
 
 /** @type {string} WSL path to Windows Program Files (64-bit) */
 const BASE_PROGRAM_FILES_WINDOW = "/mnt/c/Program Files";
+/** @type {string} WSL path to Windows Program Files (32-bit). Edge and many older Chrome installs live here. */
+const BASE_PROGRAM_FILES_X86_WINDOW = "/mnt/c/Program Files (x86)";
 
 /**
  * Resolves OS_KEY based on current platform flags.
@@ -1118,16 +1120,40 @@ function resolveOsKey(keys) {
   return keys.linux;
 }
 
-/** @type {boolean} True when a Chromium-based browser (Chrome, Brave, Edge, Chromium) is installed. */
+/**
+ * @type {boolean} True when a Chromium-based browser (Chrome, Brave, Edge, Chromium) is installed.
+ * Windows branch probes 64-bit Program Files, 32-bit Program Files (x86), AND per-user installs
+ * under %LOCALAPPDATA%. Brave/Chrome default installers are per-user (no admin) so checking only
+ * "Program Files" silently misses them — that's the bug this branch guards against.
+ */
 const hasChromiumBrowser = resolveOsKey({
   mac: () =>
     pathExists("/Applications", /^Google Chrome\.app$/) ||
     pathExists("/Applications", /^Brave Browser\.app$/) ||
     pathExists("/Applications", /^Microsoft Edge\.app$/),
-  windows: () =>
-    pathExists(`${BASE_PROGRAM_FILES_WINDOW}/Google/Chrome`, /Application/) ||
-    pathExists(`${BASE_PROGRAM_FILES_WINDOW}/BraveSoftware/Brave-Browser`, /Application/) ||
-    pathExists(`${BASE_PROGRAM_FILES_WINDOW}/Microsoft/Edge`, /Application/),
+  windows: () => {
+    const chromiumSubPaths = ["Google/Chrome", "BraveSoftware/Brave-Browser", "Microsoft/Edge"];
+    // System-wide installs (Program Files / Program Files (x86))
+    for (const root of [BASE_PROGRAM_FILES_WINDOW, BASE_PROGRAM_FILES_X86_WINDOW]) {
+      for (const sub of chromiumSubPaths) {
+        if (pathExists(`${root}/${sub}`, /Application/)) return true;
+      }
+    }
+    // Per-user installs under {WindowsUserHome}/AppData/Local — wrapped because
+    // getWindowAppDataLocalUserPath() throws when getWindowUserBaseDir() returns undefined
+    // (no resolvable Windows host from WSL).
+    try {
+      const localAppData = getWindowAppDataLocalUserPath();
+      if (localAppData) {
+        for (const sub of chromiumSubPaths) {
+          if (pathExists(`${localAppData}/${sub}`, /Application/)) return true;
+        }
+      }
+    } catch (e) {
+      // No Windows host reachable — fall through.
+    }
+    return false;
+  },
   linux: () =>
     pathExists("/usr/bin", /^google-chrome$/) ||
     pathExists("/usr/bin", /^brave-browser$/) ||
@@ -2871,11 +2897,30 @@ function exitIfNotSudo() {
 
 /**
  * Guard clause: exits if no Chromium-based browser (Chrome, Brave, Edge, Chromium) is installed.
+ * Strict — applies the static probe verdict on every platform. Use this when the caller truly
+ * needs a Chromium browser present right now (config writes, profile edits). For "install a
+ * Chromium extension" callers — where mac/windows detection is unreliable due to per-user /
+ * store / MSIX install layouts — use exitIfCannotInstallChromiumExtension() instead.
  */
 function exitIfNoChromiumBrowser() {
   if (!hasChromiumBrowser) {
     throw new ScriptSkipError("No Chromium browser found (Chrome/Brave/Edge)");
   }
+}
+
+/**
+ * Guard clause for Chromium extension installers (url-porter, skippy-ff, etc.).
+ * Wraps exitIfNoChromiumBrowser with a lenient fallthrough on mac/windows: those platforms
+ * have countless install layouts (per-user %LOCALAPPDATA%, Microsoft Store, MSIX, dev/canary
+ * channels, custom paths) that the static probe can't enumerate cleanly, so we'd rather
+ * attempt the extension install than silently skip on a box that actually has Chrome in an
+ * unrecognized location. Linux probe (apt/snap-managed /usr/bin entries) is reliable, so
+ * the guard stays strict there — no point dropping an extension where no browser will load it.
+ */
+function exitIfCannotInstallChromiumExtension() {
+  if (hasChromiumBrowser) return;
+  if (is_os_mac || is_os_windows) return;
+  exitIfNoChromiumBrowser();
 }
 
 // --- Text Processing Utilities ---

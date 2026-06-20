@@ -8,8 +8,16 @@ function _getAudacityCfgPath() {
     path.join(BASE_HOMEDIR_LINUX, ".config/audacity/audacity.cfg"), // Linux (3.x+)
     path.join(BASE_HOMEDIR_LINUX, ".audacity-data/audacity.cfg"), // Linux (older)
     path.join(BASE_HOMEDIR_LINUX, "Library/Application Support/audacity/audacity.cfg"), // macOS
-    `/mnt/c/Users/${CURRENT_USER}/AppData/Roaming/audacity/audacity.cfg`, // Windows (WSL)
   ];
+  // Windows (WSL): resolve real Windows user folder — Linux username may differ from
+  // Windows folder name (e.g. "syle" vs "Sy Le"). getWindowAppDataRoamingUserPath()
+  // throws when getWindowUserBaseDir() returns undefined, so gate + try/catch.
+  if (is_os_windows) {
+    try {
+      const winRoaming = getWindowAppDataRoamingUserPath();
+      if (winRoaming) candidates.push(path.join(winRoaming, "audacity/audacity.cfg"));
+    } catch (e) {}
+  }
   return candidates.find((p) => pathExists(p));
 }
 

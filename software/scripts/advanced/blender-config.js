@@ -7,8 +7,16 @@ function _getBlenderConfigDir() {
   const baseDirs = [
     path.join(BASE_HOMEDIR_LINUX, ".config/blender"), // Linux
     path.join(BASE_HOMEDIR_LINUX, "Library/Application Support/Blender"), // macOS
-    `/mnt/c/Users/${CURRENT_USER}/AppData/Roaming/Blender Foundation/Blender`, // Windows (WSL)
   ];
+  // Windows (WSL): resolve real Windows user folder via getWindowAppDataRoamingUserPath().
+  // Avoids hard-coding `${CURRENT_USER}`, which is the Linux username and may not match
+  // the Windows user folder name (e.g. "syle" vs "Sy Le").
+  if (is_os_windows) {
+    try {
+      const winRoaming = getWindowAppDataRoamingUserPath();
+      if (winRoaming) baseDirs.push(path.join(winRoaming, "Blender Foundation/Blender"));
+    } catch (e) {}
+  }
 
   for (const baseDir of baseDirs) {
     if (!pathExists(baseDir)) continue;

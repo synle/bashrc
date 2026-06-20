@@ -3,6 +3,6 @@ const URL_PORTER_REPO = "synle/url-porter";
 
 /** Downloads and installs the url-porter Chrome extension. */
 async function doWork() {
-  exitIfNoChromiumBrowser();
+  exitIfCannotInstallChromiumExtension();
   await installBrowserExtension(URL_PORTER_REPO);
 }

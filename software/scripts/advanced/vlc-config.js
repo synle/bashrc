@@ -7,8 +7,15 @@ function _getVlcConfigPath() {
   const candidates = [
     path.join(BASE_HOMEDIR_LINUX, ".config/vlc/vlcrc"), // Linux
     path.join(BASE_HOMEDIR_LINUX, "Library/Preferences/org.videolan.vlc/vlcrc"), // macOS
-    `/mnt/c/Users/${CURRENT_USER}/AppData/Roaming/vlc/vlcrc`, // Windows (WSL)
   ];
+  // Windows (WSL): resolve real Windows user folder. CURRENT_USER is the Linux name and may
+  // not match the Windows folder (e.g. "syle" vs "Sy Le").
+  if (is_os_windows) {
+    try {
+      const winRoaming = getWindowAppDataRoamingUserPath();
+      if (winRoaming) candidates.push(path.join(winRoaming, "vlc/vlcrc"));
+    } catch (e) {}
+  }
   return candidates.find((p) => pathExists(p));
 }
 

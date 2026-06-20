@@ -6,8 +6,15 @@ function _getLibreOfficeUserDir() {
   const candidates = [
     path.join(BASE_HOMEDIR_LINUX, ".config/libreoffice"), // Linux
     path.join(BASE_HOMEDIR_LINUX, "Library/Application Support/LibreOffice"), // macOS
-    `/mnt/c/Users/${CURRENT_USER}/AppData/Roaming/LibreOffice`, // Windows (WSL)
   ];
+  // Windows (WSL): resolve real Windows user folder. CURRENT_USER is the Linux name and may
+  // not match the Windows folder (e.g. "syle" vs "Sy Le").
+  if (is_os_windows) {
+    try {
+      const winRoaming = getWindowAppDataRoamingUserPath();
+      if (winRoaming) candidates.push(path.join(winRoaming, "LibreOffice"));
+    } catch (e) {}
+  }
 
   const baseDir = candidates.find((d) => pathExists(d));
   if (!baseDir) return undefined;
