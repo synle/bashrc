@@ -219,3 +219,19 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 56. **Rollback PRs are emergency fast-track — skip babysit, ship immediately.** Title: `Revert "<original PR title>"` (use `gh pr revert` or `git revert <sha>`). Body links the original PR and the failure that triggered the revert. CI must pass green but the address-comments loop is skipped (no review-cycle latency on emergencies). Auto-merge as soon as CI green; invoke `/sy-release` immediately after merge per rule 49. Rollback-of-rollback is allowed if the original revert proves wrong.
 
 57. **Breaking changes need a flag in the title and a migration note in the body.** Title prefix: `BREAKING:` (or Conventional Commits `feat!:` / `fix!:` when the repo uses that style). Body has a `## Migration` section with the minimum diff a downstream consumer must apply. Applies to: removed / renamed exports, removed CLI flags, changed default behavior, schema deletions, env-var renames, config-key renames. Internal-only refactors that no consumer can observe are not breaking.
+
+58. **YAGNI — climb the ponytail ladder before writing code.** Before adding any function, class, abstraction, or dependency, stop at the first rung that holds:
+    1. Does this need to exist at all? — no: skip it.
+    2. Does the stdlib do it? — use it.
+    3. Native platform feature (shell builtin, browser API, OS facility, language primitive)? — use it.
+    4. Already-installed dependency does it? — use it.
+    5. Solvable in one line? — write the one line.
+    6. Only then: write the minimum that works.
+
+    **Default "don'ts" (drop only when the problem genuinely cannot be solved without):** new abstraction layer, new library / dependency install, new class / module / wrapper, anything built ahead of a concrete caller.
+
+    **Lazy, not negligent — never skip, regardless of rung:** trust-boundary validation, data-loss handling, security controls, accessibility. The ladder cuts speculative work, not safety work.
+
+    **Why:** Every speculative abstraction, helper, or dependency costs maintenance, audit surface, and cognitive load forever — and only pays off if the imagined future arrives. Most don't. Inspired by [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
+
+    **How to apply:** When the task says "add feature X", state rungs 1-5 out loud (in the plan, the PR body, or self-review) before descending to rung 6 with a concrete reason. Any new class / new dependency / new wrapper in a diff must justify itself against the ladder. Complements rule 5 (fix root causes) and rule 8 (skip no-op wrappers) — rule 58 prevents what 5 and 8 clean up.
