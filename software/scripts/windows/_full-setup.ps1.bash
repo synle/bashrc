@@ -40,7 +40,7 @@ $ProgressPreference = 'SilentlyContinue'
 
 Write-Host "`n=== Setting up WSL ===" -ForegroundColor Cyan
 
-wsl --update --pre-release
+wsl --update
 wsl --set-default-version 2
 
 # Auto-shutdown WSL when laptop enters sleep (Event ID 42 = entering sleep)
