@@ -264,7 +264,7 @@ const OS_NOTES_LIST = [
   { key: "is_os_ubuntu", Component: LinuxNotesDom },
   { key: "is_os_redhat", Component: LinuxNotesDom },
   { key: "is_os_arch_linux", Component: LinuxNotesDom },
-  { key: "is_os_steamos", Component: LinuxNotesDom },
+  { key: "is_os_steamos", Component: SteamOSNotesDom },
   { key: "is_os_android_termux", label: "Android", Component: AndroidNotesDom },
   { key: "is_os_chromeos", Component: LinuxNotesDom },
   { key: "is_os_mingw64", Component: GenericLightWeightNotesDom },
@@ -1532,6 +1532,35 @@ function LinuxNotesDom({ osFlag }) {
       <PreCompiledProfileDom osFlag={osFlag} />
       <CommonEditorSetupDom />
       {/* Linux */}
+      <div className="form-label">Other Applications</div>
+      <div className="link-group">{CommonOtherAppDom}</div>
+    </>
+  );
+}
+
+/**
+ * SteamOS / Steam Deck setup notes page. Renders the standard Linux setup content
+ * plus the Steam Deck-specific `steamos-setup.md` helper that downloads Decky Loader,
+ * Decky Lossless Scaling (lsfg-vk), and EmuDeck installers to ~/Desktop/.
+ * @returns {React.ReactElement} The SteamOS setup notes section.
+ */
+function SteamOSNotesDom() {
+  return (
+    <>
+      <TargetSystemOSWarningDom targetDomString="is_os_steamos" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/docs/steamos-setup.md" />
+      <DynamicTextArea path="/docs/linux/README.md" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
+      <DynamicTextArea path="/.build/gitconfig" />
+      <DynamicTextArea path="/.build/gitignore_global" />
+      <DynamicTextArea path="/.build/ssh-config" />
+      <DynamicTextArea path="/.build/inputrc" />
+      <DynamicTextArea path="/.build/vimrc" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <PreCompiledProfileDom osFlag="is_os_steamos" />
+      <CommonEditorSetupDom />
+      {/* SteamOS */}
       <div className="form-label">Other Applications</div>
       <div className="link-group">{CommonOtherAppDom}</div>
     </>
