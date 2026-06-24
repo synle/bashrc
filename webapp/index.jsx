@@ -1529,6 +1529,7 @@ function LinuxNotesDom({ osFlag }) {
       <DynamicTextArea path="/.build/inputrc" />
       <DynamicTextArea path="/.build/vimrc" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/game-streaming-moonlight-steamlink.md" />
       <PreCompiledProfileDom osFlag={osFlag} />
       <CommonEditorSetupDom />
       {/* Linux */}
@@ -1558,6 +1559,7 @@ function SteamOSNotesDom() {
       <DynamicTextArea path="/.build/inputrc" />
       <DynamicTextArea path="/.build/vimrc" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/game-streaming-moonlight-steamlink.md" />
       <PreCompiledProfileDom osFlag="is_os_steamos" />
       <CommonEditorSetupDom />
       {/* SteamOS */}
@@ -1855,6 +1857,7 @@ function WindowsNotesDom() {
       <DynamicTextArea path="/assets/fonts/install.sh" />
       <DynamicTextArea path="/.build/windows-terminal" />
       <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/game-streaming-moonlight-steamlink.md" />
       <CommonEditorSetupDom />
 
       {/* other links */}

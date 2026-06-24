@@ -118,7 +118,7 @@ Steam itself is the server. Almost nothing to configure beyond turning it on.
 ### Host extras worth doing once
 
 - **Disable Windows sleep on AC power**: `powercfg /change standby-timeout-ac
-  0`. Hibernation can stay on; sleep kills streaming.
+0`. Hibernation can stay on; sleep kills streaming.
 - **Disable display auto-off**: `powercfg /change monitor-timeout-ac 0`.
   Sunshine's virtual display avoids this issue if you configure it, but
   belt-and-suspenders.
@@ -246,17 +246,17 @@ maintained.
 
 ## Quick troubleshooting
 
-| Symptom                                    | Likely cause                                  | Fix                                                                                                                                 |
-| ------------------------------------------ | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Host not discovered                        | Different subnet / VLAN / mDNS blocked        | Add host manually by IP. Check router AP isolation / "guest network" setting.                                                       |
-| Pairing PIN never accepted                 | Sunshine service not running                  | `services.msc` → `SunshineService` → Start. Web UI must load at <https://localhost:47990>.                                          |
-| Black screen after connecting              | No display attached / sleep                   | Plug in a dummy HDMI plug or enable Sunshine Virtual Display.                                                                       |
-| Stutter / frame drops                      | Wi-Fi congestion or bitrate too high          | Drop bitrate by 30%. Move client to 5 GHz. Check host CPU usage during encode.                                                      |
-| Controller works on Deck but not in game   | Game expects XInput, Moonlight sends DirectIn | Ensure ViGEmBus is installed on host. Restart Sunshine after install.                                                               |
-| Audio out of sync                          | Host using software encoder fallback          | Sunshine Web UI → Configuration → Audio/Video → confirm `NVENC` / `AMF` / `QuickSync` is selected, not `software`.                  |
-| Steam Link works, Moonlight doesn't        | Sunshine firewall rule missing                | Re-run Sunshine installer as admin; it re-adds firewall rules.                                                                      |
-| Cursor stuck / can't move on Mac client    | Local Network permission not granted          | System Settings → Privacy & Security → Local Network → enable Moonlight. Restart the app.                                           |
-| Deck OLED HDR streaming washed out         | Host not in HDR mode                          | Windows → Settings → Display → enable HDR on the streamed display. Sunshine then forwards the HDR signal.                           |
+| Symptom                                  | Likely cause                                  | Fix                                                                                                                |
+| ---------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Host not discovered                      | Different subnet / VLAN / mDNS blocked        | Add host manually by IP. Check router AP isolation / "guest network" setting.                                      |
+| Pairing PIN never accepted               | Sunshine service not running                  | `services.msc` → `SunshineService` → Start. Web UI must load at <https://localhost:47990>.                         |
+| Black screen after connecting            | No display attached / sleep                   | Plug in a dummy HDMI plug or enable Sunshine Virtual Display.                                                      |
+| Stutter / frame drops                    | Wi-Fi congestion or bitrate too high          | Drop bitrate by 30%. Move client to 5 GHz. Check host CPU usage during encode.                                     |
+| Controller works on Deck but not in game | Game expects XInput, Moonlight sends DirectIn | Ensure ViGEmBus is installed on host. Restart Sunshine after install.                                              |
+| Audio out of sync                        | Host using software encoder fallback          | Sunshine Web UI → Configuration → Audio/Video → confirm `NVENC` / `AMF` / `QuickSync` is selected, not `software`. |
+| Steam Link works, Moonlight doesn't      | Sunshine firewall rule missing                | Re-run Sunshine installer as admin; it re-adds firewall rules.                                                     |
+| Cursor stuck / can't move on Mac client  | Local Network permission not granted          | System Settings → Privacy & Security → Local Network → enable Moonlight. Restart the app.                          |
+| Deck OLED HDR streaming washed out       | Host not in HDR mode                          | Windows → Settings → Display → enable HDR on the streamed display. Sunshine then forwards the HDR signal.          |
 
 ## Related
 
