@@ -17,7 +17,7 @@ Stack-agnostic. Apply everywhere.
 1. Branch from a fresh default. Pull right before branching. Task-scoped name. Never branch off a feature branch.
 2. **Squash merge — PRs only, one PR / one commit. Verify commit author matches local `.gitconfig`.**
 
-   **Squash on merge (PR only).** Always `gh pr merge --squash` (or `--squash --auto`) — never merge commits, never rebase merges. Applies to manual merges AND automerge. Fix repo automerge default if needed. PR-level only; don't squash local dev history or arbitrary multi-commit branches.
+   **Squash on merge (PR only).** Always `gh pr merge --squash` — never merge commits, never rebase merges. The `--auto` flag is opt-in only and gated by rule 59 — never pass it by default. PR-level only; don't squash local dev history or arbitrary multi-commit branches.
 
    **Commit-author check (every commit, every push).** Compare each pending commit's `author.name`/`author.email` against `git config --get user.{name,email}`. On mismatch:
    1. Flag explicitly — show SHA(s), commit identity, `.gitconfig` identity side-by-side.
@@ -99,7 +99,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 38. Run sub-agents in the background → `run_in_background: true`.
 39. **Plan before fan-out** for multi-PR / multi-file scope — use the Plan agent to outline phases first, then phased work: parallelize within a phase, serialize between phases. Fan out Phase 1, wait, fan out Phase 2. Skip planning only for single-file / single-PR work that's obviously contained.
 40. PR order: tests first, then coverage gate, then push. **Respect the repo's existing coverage threshold; if none configured, ≥ 80% line + branch on changed code.** No PR without tests.
-41. Babysit every PR to green CI. Use `/babysit-pr` / `/babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the rule 36 sync command. Poll every 15 minutes — each wake addresses comments AND CI in one pass. **After every applied fix: reply `Fixed — <one-liner>` and resolve the thread. Detect broken-main early — if the same CI failure appears on `origin/<default>`'s latest commit, stop babysit, flag, and ask the user (don't retry-fix-retry against an unfixable base). Cap at 10 polls (~2.5 hours) — if not green by then, STOP, summarize what was tried, and ask the user.**
+41. Babysit every PR to green CI. Use `/sy-babysit-pr` / `/sy-babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the rule 36 sync command. Poll every 15 minutes — each wake addresses comments AND CI in one pass. **After every applied fix: reply `Fixed — <one-liner>` and resolve the thread. Detect broken-main early — if the same CI failure appears on `origin/<default>`'s latest commit, stop babysit, flag, and ask the user (don't retry-fix-retry against an unfixable base). Cap at 10 polls (~2.5 hours) — if not green by then, STOP, summarize what was tried, and ask the user.**
 
 **Coverage thresholds.** Existing repo with a configured threshold (vitest/jest config, `.coveragerc`, `pyproject.toml`, `codecov.yml`, CI gate, etc.) — respect it; don't relax just because the current diff would meet a lower bar. New project / no existing config — ≥ 80% line + branch coverage on changed code, and wire CI to run tests + coverage gate on every PR before feature work lands.
 
@@ -144,7 +144,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
     After dispatch, poll the run and confirm tag matches `^v\d+\.\d+\.\d+(-[\w.]+)?$` — else `gh release delete` + `gh run cancel`.
 
-49. **Every PR merge auto-triggers `/sy-release` (when repo has a release workflow).** PR transitions to `MERGED` on default → invoke `/sy-release` against `<owner/repo>`. Skill gracefully aborts on repos without a release workflow — safe to apply uniformly. **For automerge PRs**: babysit must NOT stop at "green + approved" — poll `gh pr view --json state,mergedAt` and invoke `/sy-release` only after `state == "MERGED"`. User-confirmation prompt inside `/sy-release` is the human-in-the-loop step.
+49. **Every PR merge auto-triggers `/sy-release` (when repo has a release workflow).** PR transitions to `MERGED` on default → invoke `/sy-release` against `<owner/repo>`. Skill gracefully aborts on repos without a release workflow — safe to apply uniformly. The user-confirmation prompt inside `/sy-release` is the human-in-the-loop step. **Babysit caveat:** when babysit observes `state == "MERGED"` (whether via user-driven `gh pr merge --squash`, opt-in automerge per rule 59, or solo+bots push-direct per rule 60), invoke `/sy-release` once before reporting done. Babysit does NOT enable automerge on its own behalf.
 
 ## Code Review
 
@@ -199,7 +199,9 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
     - `skip babysit` → drop rule 41 (babysit to green) — open PR and stop.
     - `WIP only` / `don't push` → no push, no PR (drops rules 40-41).
     - `single-shot` / `no worktree` → drop rule 35 (worktree isolation).
-    - `push to main directly` → drop PR flow on the current request. Default on `synle/*` repos per memory; phrase confirms intent on others.
+    - `push to main directly` → drop PR flow on the current request. Default on solo+bots repos per rule 60; phrase confirms intent on other repos.
+    - `open a PR` / `create a PR` / `draft a PR` → force PR flow even on a solo+bots repo (overrides rule 60's push-direct default for the current request).
+    - `automerge` / `enable automerge` → opt into `gh pr merge --squash --auto` per rule 59. Without this phrase, never pass `--auto`.
     - `skip release` → drop rule 49 (auto-release after merge) for this merge only.
 
     Overrides are per-request. The next conversation turn or task re-enables all rules unless re-asserted.
@@ -216,7 +218,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
 55. **Every schema / data migration ships with its reversal.** Up migration → matching down/rollback migration in the same PR. Irreversible operations (`DROP COLUMN`, `DROP TABLE`, destructive backfills, type narrowing) require an explicit `## Recovery` section in the PR body documenting how to recover (backup restore, event replay, manual SQL). Review blocks on missing down migration or undocumented destruction.
 
-56. **Rollback PRs are emergency fast-track — skip babysit, ship immediately.** Title: `Revert "<original PR title>"` (use `gh pr revert` or `git revert <sha>`). Body links the original PR and the failure that triggered the revert. CI must pass green but the address-comments loop is skipped (no review-cycle latency on emergencies). Auto-merge as soon as CI green; invoke `/sy-release` immediately after merge per rule 49. Rollback-of-rollback is allowed if the original revert proves wrong.
+56. **Rollback PRs are emergency fast-track — skip babysit, ship immediately.** Title: `Revert "<original PR title>"` (use `gh pr revert` or `git revert <sha>`). Body links the original PR and the failure that triggered the revert. CI must pass green but the address-comments loop is skipped (no review-cycle latency on emergencies). Merge with `gh pr merge --squash` as soon as CI green (rollbacks qualify as "trivial" under rule 59, so ASK the user whether to flip on `--auto` rather than waiting at the keyboard). Invoke `/sy-release` immediately after merge per rule 49. Rollback-of-rollback is allowed if the original revert proves wrong.
 
 57. **Breaking changes need a flag in the title and a migration note in the body.** Title prefix: `BREAKING:` (or Conventional Commits `feat!:` / `fix!:` when the repo uses that style). Body has a `## Migration` section with the minimum diff a downstream consumer must apply. Applies to: removed / renamed exports, removed CLI flags, changed default behavior, schema deletions, env-var renames, config-key renames. Internal-only refactors that no consumer can observe are not breaking.
 
@@ -235,3 +237,44 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
     **Why:** Every speculative abstraction, helper, or dependency costs maintenance, audit surface, and cognitive load forever — and only pays off if the imagined future arrives. Most don't. Inspired by [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
 
     **How to apply:** When the task says "add feature X", state rungs 1-5 out loud (in the plan, the PR body, or self-review) before descending to rung 6 with a concrete reason. Any new class / new dependency / new wrapper in a diff must justify itself against the ladder. Complements rule 5 (fix root causes) and rule 8 (skip no-op wrappers) — rule 58 prevents what 5 and 8 clean up.
+
+## Merge Strategy
+
+59. **Automerge is opt-in by user, never automatic — and only surfaced for low-risk PRs.** Default merge flow is `gh pr merge --squash` (no `--auto`) after the user confirms. The `--auto` flag is added only when the user explicitly says "automerge", "enable automerge", or equivalent in the current request.
+
+    **Four categories where you MAY surface the question proactively** (otherwise stay silent):
+    1. **Trivial.** Typo fix, single-line lint/format nit, simple rename. Rollback PRs (rule 56) qualify.
+    2. **Tests-only.** Every changed file lives under a test path (`*test*`, `*spec*`, `__tests__/`, `tests/`, `*.test.*`, `*.spec.*`, `*_test.go`, `software/tests/`). Source files unchanged.
+    3. **Dependency-only.** Lockfile + manifest changes with no source edits (dependabot-style bumps, new library install with no callsite yet, `npm i` lockfile refresh).
+    4. **Docs/comments-only.** Every changed file is documentation (`*.md`, `*.mdx`, `*.rst`, `*.txt`, `docs/`, `README*`, `CHANGELOG*`, `CONTRIBUTING*`, `LICENSE*`) OR every non-doc-file change is comment-only (lines starting with `//`, `#`, `--`, `/*`, `*`, or inside docstring blocks — no semantic code changed). New docs files are explicitly in scope.
+
+    **Prompt template:** `"This PR looks like <trivial|tests-only|dependency-only|docs-only>. Want me to enable automerge (gh pr merge --squash --auto)? (yes/no, default no)"`. Proceed with `--auto` only on explicit "yes". Default = no.
+
+    **Outside those four categories: do not ask, do not pass `--auto`.** Even within the four, the prompt is optional, not mandatory — silence is also valid. Let the user enable automerge via the GitHub UI or an explicit follow-up if they want it.
+
+    **Why:** Automerge silently lands code the moment CI flips green — fine for mechanical PRs, dangerous for anything needing a second human pass. Explicit consent gates the silent-land path; the three-category filter prevents prompt fatigue on every PR.
+
+    **How to apply:** Before any `gh pr merge --squash --auto`, classify the diff against the four categories. If outside, drop `--auto`. If inside, ask once and honor the answer. `/sy-create-pr`, `/sy-draft-pr`, `/sy-babysit-pr` all defer to this rule — none of them set automerge on their own.
+
+## Solo / Solo+Bots Repos
+
+60. **Solo / solo+bots repos default to push-direct on the default branch, not PR flow.** Generalizes the existing `synle/*` push-direct default to any repo where every recent author is Sy + autonomous agents.
+
+    **Detection — run once per repo at task start:**
+    ```
+    git log --format='%ae' -200 | sort -u
+    ```
+    Repo qualifies as solo+bots if every email matches one of:
+    - **Sy:** the value of `git config --get user.email`, plus historical Sy emails (`*@linkedin.com`, `*sy@*`, `*syle*`).
+    - **Known bot/agent:** `*[bot]@*` (covers dependabot, github-actions, renovate, copilot), `noreply@anthropic.com` (Claude Code), `noreply@opencode.ai`, `copilot@github.com`, `gemini-cli@google.com`.
+
+    **Default behavior on solo+bots repos:**
+    - `/sy-create-pr` and `/sy-draft-pr` skip PR creation. Push commits directly to the default branch (`git push origin <default>`). Report the pushed SHA, not a PR URL.
+    - `/sy-babysit-pr` invoked with no `$ARGUMENTS` is a no-op on solo+bots repos — there's no PR to babysit. Watch CI on default via `gh run watch <run-id>` instead if the user asks.
+    - Auto-release per rule 49 still fires after the push lands on default (the post-push hook / next babysit cycle catches it).
+
+    **Override — only on explicit user phrase:** "open a PR", "create a PR", "draft a PR", "I want a PR for this". Without that phrase, push-direct is the default.
+
+    **Why:** When the only humans on a repo are Sy + autonomous agents, PRs add ceremony without review value. Memory already locked this in for `synle/*`; rule 60 extends the same shape to forks and personal repos with identical authorship. Saves a PR + babysit cycle on every change.
+
+    **How to apply:** At the top of `/sy-create-pr`, `/sy-draft-pr`, and any "create PR" intent: resolve `owner/repo` per rule 51, then run detection. On solo+bots: tell the user `"Looks like a solo+bots repo (<N> author(s): <emails>) — pushing direct to <default> instead of opening a PR. Override with 'open a PR' if you want one."` then push direct. Skip the "want me to babysit?" prompt — there is no PR.
