@@ -1,4 +1,4 @@
-"disable_player_gesture": true,
+"disable_player_gesture": false,
 "enable_landscape_mode": true,
 "enable_zen_mode": true,
 "enable_zen_mode_podcast": true,
