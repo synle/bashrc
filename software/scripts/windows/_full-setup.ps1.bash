@@ -267,21 +267,41 @@ foreach ($exe in $AdobeExeList) {
     $idx++
 }
 
-# --- Allow inbound ports for local dev, AI, and DB services (Private network only) ---
+# --- Allow inbound ports for local dev, AI, DB, media, and streaming (Private network only) ---
 # To set a network as Private: Settings > Network & Internet > Wi-Fi/Ethernet > Private network
+# Port reference:
+#   Sunshine TCP:  software/scripts/windows/_full-setup.ps1.bash (this file, _Sy_ALLOW_DevStack)
+#   Sunshine UDP:  same file, _Sy_ALLOW_Sunshine_UDP
+#   Jellyfin:      https://jellyfin.org/docs/general/networking/
+#   Plex:          https://support.plex.tv/articles/201543147-what-network-ports-do-i-need-to-allow-through-my-firewall/
 $allowRules = @(
     @{
         Name = "_Sy_ALLOW_DevStack"
-        Desc = "Dev servers, databases, backends, and standard services"
+        Desc = "Dev servers, databases, backends, media, streaming, and standard services"
         Ports = @(
+            # Dev / DB
             22,           # SSH
             80,           # HTTP (local nginx, Apache, Docker)
             443,          # HTTPS (mkcert, self-signed, Docker)
             1433,         # SQL Server
             "3000-9999",  # dev servers, MySQL, Postgres, Redis, backends, Jupyter, Portainer, Temporal (7233 gRPC, 8233 UI), etc.
             11434,        # Ollama REST API
-            27017         # MongoDB
+            27017,        # MongoDB
+            # Media streaming
+            8096,         # Jellyfin HTTP
+            8920,         # Jellyfin HTTPS
+            32400,        # Plex web UI / streaming
+            3005,         # Plex Companion
+            8324,         # Plex for Roku
+            32469,        # Plex DLNA server
+            # Game streaming
+            47984,        # Sunshine HTTPS
+            47989,        # Sunshine HTTP
+            47990,        # Sunshine Control
+            48010         # Sunshine Web UI
         )
+    }
+)
     }
 )
 foreach ($rule in $allowRules) {
