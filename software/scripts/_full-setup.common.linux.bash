@@ -300,12 +300,12 @@ function _configureDisplayDjPermissions() {
 
 # ---- Power Management ----
 
-# configure systemd power management — guard: requires systemctl (Linux only, no-op on mac/termux)
+# configure systemd power actions + disable CPU turbo boost
 # WARNING: Hibernation saves RAM to disk on suspend. Disabling it means unsaved work is lost if battery drains.
 #   To revert hibernation: sudo systemctl unmask hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 # WARNING: Closing the lid will power off the machine instead of sleeping.
 #   To revert lid close: sudo sed -i 's/^HandleLidSwitch=poweroff/#HandleLidSwitch=suspend/' /etc/systemd/logind.conf && sudo systemctl restart systemd-logind
-function _configureSystemdPowerManagement() {
+function _configureDisableSystemdPowerAndTurboBoost() {
   if ! type -P systemctl &> /dev/null; then return; fi
 
   # Power: Disable Hibernation
@@ -327,4 +327,14 @@ function _configureSystemdPowerManagement() {
   sudo sed -i 's/^#\?HandleSuspendKey=.*/HandleSuspendKey=ignore/' /etc/systemd/logind.conf
 
   sudo systemctl restart systemd-logind &> /dev/null
+
+  # Power: Disable CPU Turbo Boost (sysfs — works on any Linux, no systemctl needed)
+  if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
+    echo ">> Disabling Intel Turbo Boost >>"
+    echo "1" | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+  fi
+  if [ -f /sys/devices/system/cpu/cpufreq/boost ]; then
+    echo ">> Disabling AMD CPU Boost >>"
+    echo "0" | sudo tee /sys/devices/system/cpu/cpufreq/boost
+  fi
 }
