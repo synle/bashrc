@@ -33,18 +33,15 @@ _response=$(curl -fsSL "https://api.github.com/repos/pkgforge-dev/ghostty-appima
   exit 1
 }
 
-# Parse tag and find the matching arch asset URL
-# Uses python3 to reliably extract JSON — available on all Ubuntu targets.
-_url=$(echo "$_response" | python3 -c "
-import json, sys
-data = json.load(sys.stdin)
-tag = data.get('tag_name', '').lstrip('v')
-arch = '${_ghostty_arch}'
-for a in data.get('assets', []):
-    name = a.get('name', '')
-    if name.endswith(f'{arch}.AppImage') and tag in name:
-        print(a['browser_download_url'])
-        break
+_url=$(echo "$_response" | GHOSTTY_ARCH="$_ghostty_arch" node -e "
+const data = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+const arch = process.env.GHOSTTY_ARCH;
+const tag = data.tag_name.replace(/^v/, '');
+for (const a of data.assets) {
+  if (a.name.endsWith(arch + '.AppImage') && a.name.includes(tag)) {
+    console.log(a.browser_download_url); break;
+  }
+}
 " 2> /dev/null) || {
   echo ">> Failed to find AppImage asset for $_ghostty_arch"
   exit 1
