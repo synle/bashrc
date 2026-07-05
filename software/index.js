@@ -1259,10 +1259,7 @@ function _expandShortFormMarkers(content, commentPrefix, commentSuffix = "") {
   const escaped = commentPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const escapedSuffix = commentSuffix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const keywords = `${TEXT_BLOCK_SHORT_MARKER}|${TEXT_BLOCK_ALIAS_MARKER}`;
-  const pattern = new RegExp(
-    `${escaped} (?:${keywords})\\s+[^a-zA-Z0-9]*([^\\r\\n]+?)\\s*${escapedSuffix}$`,
-    "gm",
-  );
+  const pattern = new RegExp(`${escaped} (?:${keywords})\\s+[^a-zA-Z0-9]*([^\\r\\n]+?)\\s*${escapedSuffix}$`, "gm");
   return content.replace(pattern, (_, key) => {
     const begin = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
     const end = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
@@ -1284,10 +1281,7 @@ function _expandSourceMarkers(content, commentPrefix, commentSuffix = "") {
   const escapedSuffix = commentSuffix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   // Step 1: Expand short-form "# SOURCE path" into "# SOURCE_BEGIN path\n# SOURCE_END path"
-  const shortPattern = new RegExp(
-    `${escaped} ${TEXT_BLOCK_SOURCE_MARKER}\\s+.*?(\\S+\\/\\S+?)\\s*${escapedSuffix}$`,
-    "gm",
-  );
+  const shortPattern = new RegExp(`${escaped} ${TEXT_BLOCK_SOURCE_MARKER}\\s+.*?(\\S+\\/\\S+?)\\s*${escapedSuffix}$`, "gm");
   content = content.replace(shortPattern, (_, key) => {
     const trimmedKey = key.trim();
     const begin = `${commentPrefix} ${TEXT_BLOCK_SOURCE_START_MARKER} ${trimmedKey}${commentSuffix}`;
@@ -1298,10 +1292,7 @@ function _expandSourceMarkers(content, commentPrefix, commentSuffix = "") {
   // Step 2: Collect all file paths from SOURCE_BEGIN markers (including freshly expanded ones)
   /** @type {string[]} */
   const sourceFiles = [];
-  const beginPattern = new RegExp(
-    `${escaped} ${TEXT_BLOCK_SOURCE_START_MARKER}\\s+(\\S+)\\s*${escapedSuffix}$`,
-    "gm",
-  );
+  const beginPattern = new RegExp(`${escaped} ${TEXT_BLOCK_SOURCE_START_MARKER}\\s+(\\S+)\\s*${escapedSuffix}$`, "gm");
   let match;
   while ((match = beginPattern.exec(content)) !== null) {
     sourceFiles.push(match[1].trim());
@@ -1320,13 +1311,7 @@ function _expandSourceMarkers(content, commentPrefix, commentSuffix = "") {
  * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns content as-is.
  * @returns {string} The modified content with all blocks replaced
  */
-function replaceBlocks(
-  content,
-  blockMap,
-  commentPrefix,
-  commentSuffix = "",
-  insertMode,
-) {
+function replaceBlocks(content, blockMap, commentPrefix, commentSuffix = "", insertMode) {
   content = _expandShortFormMarkers(content, commentPrefix, commentSuffix);
 
   for (const [key, sourceContent] of Object.entries(blockMap)) {
@@ -1344,10 +1329,7 @@ function replaceBlocks(
       // references in documentation), and indexOf would match that first.
       endIdx = content.lastIndexOf(END);
       if (endIdx !== -1 && endIdx > beginIdx) {
-        content =
-          content.slice(0, beginIdx) +
-          block +
-          content.slice(endIdx + END.length);
+        content = content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
       }
     } else if (insertMode === "append") {
       content = `${content}\n\n${block}\n`;
@@ -1373,21 +1355,8 @@ function replaceBlocks(
  * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns content as-is.
  * @returns {string} The modified content, or original content if markers not found and no insertMode
  */
-function replaceBlock(
-  content,
-  key,
-  sourceContent,
-  commentPrefix,
-  commentSuffix = "",
-  insertMode,
-) {
-  return replaceBlocks(
-    content,
-    { [key]: sourceContent },
-    commentPrefix,
-    commentSuffix,
-    insertMode,
-  );
+function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix = "", insertMode) {
+  return replaceBlocks(content, { [key]: sourceContent }, commentPrefix, commentSuffix, insertMode);
 }
 
 /**
