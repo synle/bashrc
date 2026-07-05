@@ -2547,7 +2547,7 @@ async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
   );
 }
 
-/**
+  /**
  * Installs a Linux AppImage: makes it executable, creates a .desktop shortcut,
  * and registers it in ~/.local/share/applications/.
  * @param {string} appImagePath - Full path to the .AppImage file.
@@ -2767,22 +2767,13 @@ async function downloadAndInstallBinary(repo, getFileName, desktopExtra) {
     !is_os_windows &&
     !is_os_mingw64 &&
     !is_os_android_termux &&
-    !IS_REFRESH_MODE
+    !IS_REFRESH_MODE &&
+    pathExists(targetPath, /\.AppImage$/, "file")
   ) {
-    let existingAppImage;
-    try {
-      existingAppImage = fs
-        .readdirSync(targetPath)
-        .find((f) => f.endsWith(".AppImage"));
-    } catch {
-      // folder doesn't exist yet — proceed
-    }
-    if (existingAppImage) {
-      log(
-        `>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`,
-      );
-      return false;
-    }
+    log(
+      `>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`,
+    );
+    return false;
   }
 
   await _forceCloseApp(appLabel);
