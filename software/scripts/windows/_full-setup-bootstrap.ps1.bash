@@ -983,6 +983,9 @@ if ($isDesktop) {
     powercfg /change standby-timeout-dc 180
 }
 
+# Showing Performance Boost Mode toggle => to turn off turbo boost on laptop CPU (AMD vs Intel)
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\be337238-0d82-4146-a960-4f3749d470c7" -Name "Attributes" -Value 2
+
 Write-Host "Performance optimizations applied." -ForegroundColor Green
 
 
