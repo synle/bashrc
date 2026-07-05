@@ -234,6 +234,19 @@ fi
 ################################################################################
 _configureSystemdPowerManagement
 
+# --- Disable Turbo Boost (laptop CPU power saving) ---
+# Intel: disables turbo boost via intel_pstate driver (1 = no turbo)
+if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
+  echo ">> Disabling Intel Turbo Boost >>"
+  echo "1" | sudo tee /sys/devices/system/cpu/intel_pstate/no_turbo
+fi
+
+# AMD: disables CPU frequency boost (0 = boost disabled)
+if [ -f /sys/devices/system/cpu/cpufreq/boost ]; then
+  echo ">> Disabling AMD CPU Boost >>"
+  echo "0" | sudo tee /sys/devices/system/cpu/cpufreq/boost
+fi
+
 ################################################################################
 # ---- User Permissions ----
 ################################################################################
