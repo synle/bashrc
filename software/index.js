@@ -2549,16 +2549,17 @@ async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
 
 /**
  * Installs a Linux AppImage: makes it executable, creates a .desktop shortcut,
- * and registers it in ~/.local/share/applications/. Reads extra desktop fields
- * from _desktop.txt in the source folder (defaults: Type=Application, Categories=Development).
+ * and registers it in ~/.local/share/applications/.
  * @param {string} appImagePath - Full path to the .AppImage file.
  * @param {string} appLabel - App display name used for the .desktop file and icon lookup.
- * @param {string} sourceFolder - Folder containing the AppImage and optional _desktop.txt / icon.
+ * @param {string} sourceFolder - Folder containing the AppImage and optional icon.
+ * @param {string} [desktopExtra] - Extra lines for the .desktop file (default: "Type=Application\\nCategories=Development").
  */
 async function installLinuxUniversalAppImage(
   appImagePath,
   appLabel,
   sourceFolder,
+  desktopExtra,
 ) {
   if (is_os_mac || is_os_windows || is_os_mingw64 || is_os_android_termux)
     return;
@@ -2574,19 +2575,15 @@ async function installLinuxUniversalAppImage(
   // Make executable
   await execBash(`chmod +x "${appImagePath}"`);
 
-  // Read or create _desktop.txt for extra desktop entries
-  const desktopExtraFile = path.join(sourceFolder, "_desktop.txt");
-  const defaultExtra = "Type=Application\nCategories=Development";
-  let desktopExtra;
-  try {
-    if (!fs.existsSync(desktopExtraFile)) {
-      await mkdir(path.dirname(desktopExtraFile));
-      await writeText(desktopExtraFile, defaultExtra);
-    }
-    desktopExtra = (await readText(desktopExtraFile)).trim();
-  } catch {
-    desktopExtra = defaultExtra;
+  // Rename to a stable App.AppImage so the folder is clean regardless of version
+  const renamedPath = path.join(sourceFolder, "App.AppImage");
+  if (appImagePath !== renamedPath) {
+    if (fs.existsSync(renamedPath)) fs.unlinkSync(renamedPath);
+    fs.renameSync(appImagePath, renamedPath);
+    appImagePath = renamedPath;
   }
+
+  desktopExtra = desktopExtra || "Type=Application\nCategories=Development";
 
   // Look for an icon file in the source folder (jpg, png, svg)
   let iconPath = "";
@@ -2722,11 +2719,14 @@ async function getMacInstalledAppVersion(appLabel) {
  * re-grant permission and must only run on actual upgrades, not no-op skips).
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
+ * @param {string} [desktopExtra] - Extra lines for the .desktop file (Linux AppImage only). Defaults to "Type=Application\\nCategories=Development".
  * @returns {Promise<boolean>} True if an install was attempted, false if skipped because the installed version already matches upstream
  */
-async function downloadAndInstallBinary(repo, getFileName) {
+async function downloadAndInstallBinary(repo, getFileName, desktopExtra) {
   const isUrl = repo.includes("://");
-  const appLabel = isUrl ? path.basename(repo).replace(/\.[^.]+$/, "") : repo.split("/")[1];
+  const appLabel = isUrl
+    ? path.basename(repo).replace(/\.[^.]+$/, "")
+    : repo.split("/")[1];
   const version = isUrl ? "" : await fetchGitHubReleaseVersion(repo);
   const isArm64 = os.arch() === "arm64";
   const ver = version.replace(/^v/, "");
@@ -2761,6 +2761,30 @@ async function downloadAndInstallBinary(repo, getFileName) {
 
   log(`>> Installing ${appLabel} ${version} to:`, targetPath);
 
+  // Linux: skip re-download if an AppImage already exists in the target folder.
+  if (
+    !is_os_mac &&
+    !is_os_windows &&
+    !is_os_mingw64 &&
+    !is_os_android_termux &&
+    !IS_REFRESH_MODE
+  ) {
+    let existingAppImage;
+    try {
+      existingAppImage = fs
+        .readdirSync(targetPath)
+        .find((f) => f.endsWith(".AppImage"));
+    } catch {
+      // folder doesn't exist yet — proceed
+    }
+    if (existingAppImage) {
+      log(
+        `>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`,
+      );
+      return false;
+    }
+  }
+
   await _forceCloseApp(appLabel);
 
   // Reap any legacy ~/_extra/<app>/ leftover from a prior Mac run that parked the .dmg there.
@@ -2777,7 +2801,12 @@ async function downloadAndInstallBinary(repo, getFileName) {
     log(`>> ${appLabel} ${version} downloaded:`, destination);
     await installMacDmg(destination);
     await installWindowsSetupExe(destination, appLabel, targetPath);
-    await installLinuxUniversalAppImage(destination, appLabel, targetPath);
+    await installLinuxUniversalAppImage(
+      destination,
+      appLabel,
+      targetPath,
+      desktopExtra,
+    );
   }
   return true;
 }

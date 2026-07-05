@@ -180,9 +180,11 @@ async function doWork() {
   // ---- Install Ghostty AppImage on Linux ----
   if (!is_os_mac && !is_os_windows && !is_os_mingw64 && !is_os_android_termux) {
     const GHOSTTY_APPIMAGE_REPO = "pkgforge-dev/ghostty-appimage";
-    await downloadAndInstallBinary(GHOSTTY_APPIMAGE_REPO, (ver, isArm64) => {
-      return `Ghostty-${ver}-${isArm64 ? "aarch64" : "x86_64"}.AppImage`;
-    });
+    await downloadAndInstallBinary(
+      GHOSTTY_APPIMAGE_REPO,
+      (ver, isArm64) => `Ghostty-${ver}-${isArm64 ? "aarch64" : "x86_64"}.AppImage`,
+      "Type=Application\nCategories=Development",
+    );
   }
 
   // ---- Deploy to local install ----
