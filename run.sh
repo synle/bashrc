@@ -307,6 +307,17 @@ function install_bootstrap_node() {
     return
   fi
 
+  # Termux: install via pkg instead of standalone download
+  if ((is_os_android_termux)); then
+    echo ">> Installing nodejs-lts via pkg (Termux)"
+    pkg install -y nodejs-lts
+    if type -P node > /dev/null 2>&1; then
+      echo ">> Using node from pkg ($(node -v 2> /dev/null))"
+      return
+    fi
+    echo ">> pkg install failed, falling through to standalone download"
+  fi
+
   # Fallback: download standalone node to /tmp
   echo ">> Downloading standalone Node $NODE_JS_VERSION"
   rm -rf "$node_tmp"
