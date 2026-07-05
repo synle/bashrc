@@ -2458,16 +2458,17 @@ async function getMacInstalledAppVersion(appLabel) {
  * @returns {Promise<boolean>} True if an install was attempted, false if skipped because the installed version already matches upstream
  */
 async function downloadAndInstallBinary(repo, getFileName) {
-  const appLabel = repo.split("/")[1];
-  const version = await fetchGitHubReleaseVersion(repo);
+  const isUrl = repo.includes("://");
+  const appLabel = isUrl ? path.basename(repo).replace(/\.[^.]+$/, "") : repo.split("/")[1];
+  const version = isUrl ? "" : await fetchGitHubReleaseVersion(repo);
   const isArm64 = os.arch() === "arm64";
   const ver = version.replace(/^v/, "");
-  const fileName = getFileName(ver, isArm64);
-  const url = `https://github.com/${repo}/releases/download/${version}/${fileName}`;
+  const fileName = isUrl ? path.basename(repo) : getFileName(ver, isArm64);
+  const url = isUrl ? repo : `https://github.com/${repo}/releases/download/${version}/${fileName}`;
 
   // Mac: skip the whole pipeline when the installed app version matches upstream.
   // IS_REFRESH_MODE (set by `--refresh="<script>"`) is the explicit force-reinstall override.
-  if (is_os_mac && !IS_REFRESH_MODE) {
+  if (is_os_mac && !IS_REFRESH_MODE && version) {
     const installed = await getMacInstalledAppVersion(appLabel);
     if (installed === ver) {
       log(`>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`);
