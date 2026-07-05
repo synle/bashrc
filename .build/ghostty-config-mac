@@ -89,7 +89,7 @@ quick-terminal-position = top
 quick-terminal-animation-duration = 0.1
 quick-terminal-screen = mouse
 
-# ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
+# ---- Keybindings (managed by software/scripts/advanced/ghostty-config.js) ----
 keybind = cmd+t=new_tab
 keybind = cmd+1=goto_tab:1
 keybind = cmd+2=goto_tab:2

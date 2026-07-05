@@ -4,9 +4,9 @@
 # software/scripts/advanced/ghostty.su.sh - installs Ghostty terminal via universal AppImage on Linux
 # Downloads the latest AppImage from pkgforge-dev/ghostty-appimage and installs to $HOME/.local/bin/
 
-# Only supported on Ubuntu/Debian Linux via the catch-all is_os_ubuntu flag.
-if ! ((is_os_ubuntu)); then
-  echo ">>> Skipped ghostty.su.sh: only supported on Ubuntu/Debian Linux"
+# Skip on macOS (separate path via brew) and Windows (not supported).
+if ((is_os_mac)) || ((is_os_windows)); then
+  echo ">>> Skipped ghostty.su.sh: not supported on this OS"
   exit 0
 fi
 
