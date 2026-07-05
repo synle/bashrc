@@ -146,7 +146,7 @@ async function _buildConfigContent(isOsMac) {
     cursor-opacity = 0.8
     ${macOnlyBlock}
 
-    # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
+    # ---- Keybindings (managed by software/scripts/advanced/ghostty-config.js) ----
     ${_renderKeybindLines(bindings)}
   `;
 }
