@@ -160,7 +160,7 @@ installPkgPackageInBackground cmake
 
 # ---- OS-specific ----
 installPkgPackage proot # needed for android termux fhd fixes
-installPkgPackage nodejs
+# installPkgPackage nodejs # not needed, already handled with the run.sh
 installPkgPackageInBackground perl
 installPkgPackageInBackground tig
 installPkgPackage tmux
