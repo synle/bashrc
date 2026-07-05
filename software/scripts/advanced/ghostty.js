@@ -146,7 +146,7 @@ async function _buildConfigContent(isOsMac) {
     cursor-opacity = 0.8
     ${macOnlyBlock}
 
-    # ---- Keybindings (managed by software/scripts/advanced/ghostty-config.js) ----
+    # ---- Keybindings (managed by software/scripts/advanced/ghostty.js) ----
     ${_renderKeybindLines(bindings)}
   `;
 }
@@ -175,6 +175,14 @@ async function doWork() {
   if (is_os_windows || is_os_mingw64 || is_os_android_termux) {
     log(">>> Skipped (Ghostty not supported on this OS)");
     return;
+  }
+
+  // ---- Install Ghostty AppImage on Linux ----
+  if (!is_os_mac && !is_os_windows && !is_os_mingw64 && !is_os_android_termux) {
+    const GHOSTTY_APPIMAGE_REPO = "pkgforge-dev/ghostty-appimage";
+    await downloadAndInstallBinary(GHOSTTY_APPIMAGE_REPO, (ver, isArm64) => {
+      return `Ghostty-${ver}-${isArm64 ? "aarch64" : "x86_64"}.AppImage`;
+    });
   }
 
   // ---- Deploy to local install ----
