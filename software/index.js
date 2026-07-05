@@ -2547,7 +2547,7 @@ async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
   );
 }
 
-  /**
+/**
  * Installs a Linux AppImage: makes it executable, creates a .desktop shortcut,
  * and registers it in ~/.local/share/applications/.
  * @param {string} appImagePath - Full path to the .AppImage file.
@@ -2786,6 +2786,15 @@ async function downloadAndInstallBinary(repo, getFileName, desktopExtra) {
   await mkdir(targetPath);
 
   const destination = path.join(targetPath, fileName);
+
+  await writeJson(path.join(targetPath, "App.json"), {
+    repo,
+    destination,
+    appLabel,
+    targetPath,
+    desktopExtra,
+  });
+
   const ok = await downloadAssetWithFallback(repo, url, destination);
 
   if (ok) {
