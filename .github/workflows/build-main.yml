@@ -582,7 +582,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         if: github.event_name == 'push'
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: Overall Summary
         if: always()
@@ -616,7 +616,7 @@ jobs:
   # ---- Phase 4: Unit tests and smoke test ----
   test:
     needs: [prep, build-ubuntu, build-rhel, build-arch, build-debian, build-mac, publish]
-    if: ${{ needs.publish.result == 'success' }}
+    if: ${{ needs.prep.result == 'success' && needs.build-ubuntu.result == 'success' && needs.build-rhel.result == 'success' && needs.build-arch.result == 'success' && needs.build-debian.result == 'success' && needs.build-mac.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
