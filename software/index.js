@@ -2701,10 +2701,23 @@ async function installLinuxUniversalAppImage(
     // ignore
   }
 
-  // Build the .desktop content from extracted fields, with overrides
-  const desktopFields = metadata.desktopFields
-    ? { ...metadata.desktopFields }
-    : {};
+  // Build the .desktop content from extracted fields, with overrides.
+  // Only whitelisted keys from the AppImage .desktop are inherited.
+  const DESKTOP_INHERIT_KEYS = new Set([
+    "Version",
+    "Name",
+    "Type",
+    "Comment",
+    "Categories",
+  ]);
+  const desktopFields = {};
+  if (metadata.desktopFields) {
+    for (const key of Object.keys(metadata.desktopFields)) {
+      if (DESKTOP_INHERIT_KEYS.has(key)) {
+        desktopFields[key] = metadata.desktopFields[key];
+      }
+    }
+  }
   desktopFields.Exec = appImagePath;
   if (iconPath) desktopFields.Icon = iconPath;
   desktopFields.Terminal = "false";
