@@ -2517,6 +2517,107 @@ async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
 }
 
 /**
+ * Extracts an icon from an AppImage via --appimage-extract in a temp directory.
+ * Cleans up the temp dir on completion.
+ * @param {string} appImagePath - Path to the AppImage
+ * @param {string} appLabel - App name used for icon matching and naming
+ * @param {string} destFolder - Folder to copy the extracted icon into
+ * @returns {Promise<string>} Path to the extracted icon, or empty string on failure
+ */
+async function _extractIconFromAppImage(appImagePath, appLabel, destFolder) {
+  let tmpDir = "";
+  try {
+    tmpDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "bashrc-appimage-icon-"),
+    );
+    const tmpAppImage = path.join(tmpDir, "App.AppImage");
+    try {
+      fs.copyFileSync(appImagePath, tmpAppImage);
+    } catch {
+      fs.writeFileSync(tmpAppImage, fs.readFileSync(appImagePath));
+    }
+    fs.chmodSync(tmpAppImage, 0o755);
+
+    await execBash(`"${tmpAppImage}" --appimage-extract`, {
+      cwd: tmpDir,
+      timeout: 30_000,
+    });
+
+    const squashRoot = path.join(tmpDir, "squashfs-root");
+    if (!fs.existsSync(squashRoot)) return "";
+
+    const findResult = await execBash(
+      `find -L "${squashRoot}" -type f \\( -iname "*.png" -o -iname "*.svg" \\) 2>/dev/null`,
+      { cwd: tmpDir, timeout: 10_000 },
+    );
+    const candidates = findResult.split("\n").filter(Boolean);
+    if (candidates.length === 0) return "";
+
+    // Read .desktop for Icon= name (most reliable match)
+    let desktopIcon = "";
+    try {
+      const desktopFile = fs
+        .readdirSync(squashRoot)
+        .find((f) => f.endsWith(".desktop"));
+      if (desktopFile) {
+        const content = fs.readFileSync(
+          path.join(squashRoot, desktopFile),
+          "utf8",
+        );
+        const m = content.match(/^Icon=(.+)$/m);
+        if (m) desktopIcon = m[1].trim();
+      }
+    } catch {
+      // ignore
+    }
+
+    // Score candidates — prefer Icon= match, app label match, PNG, large hicolor
+    let best = "";
+    let bestScore = -1;
+    const labelLower = appLabel.toLowerCase();
+    for (const fp of candidates) {
+      const base = path.basename(fp);
+      const baseLower = base.toLowerCase();
+      let s = 0;
+      if (
+        desktopIcon &&
+        baseLower.replace(/\.(png|svg)$/, "") === desktopIcon.toLowerCase()
+      ) {
+        s += 100;
+      }
+      if (baseLower.includes(labelLower)) s += 50;
+      if (/\.png$/i.test(fp)) s += 10;
+      const rel = path.relative(squashRoot, path.dirname(fp));
+      s += Math.max(0, 5 - rel.split(path.sep).length);
+      const sizeMatch = fp.match(/\/(\d+)x\d+\//);
+      if (sizeMatch) s += Math.min(parseInt(sizeMatch[1], 10) / 64, 3);
+      if (/\/apps\//i.test(fp)) s += 2;
+      if (s > bestScore) {
+        bestScore = s;
+        best = fp;
+      }
+    }
+
+    if (!best) return "";
+
+    const ext = path.extname(best);
+    const destPath = path.join(destFolder, `App${ext}`);
+    try {
+      fs.copyFileSync(best, destPath);
+    } catch {
+      fs.writeFileSync(destPath, fs.readFileSync(best));
+    }
+    return destPath;
+  } catch {
+    return "";
+  } finally {
+    if (tmpDir && fs.existsSync(tmpDir)) {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+}
+
+/**
  * Installs a Linux AppImage: makes it executable, creates a .desktop shortcut,
  * and registers it in ~/.local/share/applications/.
  * @param {string} appImagePath - Full path to the .AppImage file.
@@ -2562,6 +2663,18 @@ async function installLinuxUniversalAppImage(
     if (iconFile) iconPath = path.join(sourceFolder, iconFile);
   } catch {
     // ignore — no icon is fine
+  }
+
+  // If no icon in source folder, extract it from the AppImage
+  if (!iconPath) {
+    iconPath = await _extractIconFromAppImage(
+      appImagePath,
+      appLabel,
+      sourceFolder,
+    );
+    if (iconPath) {
+      log(`>> Icon extracted from AppImage: ${iconPath}`);
+    }
   }
 
   // Build the .desktop content
