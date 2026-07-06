@@ -183,7 +183,6 @@ async function doWork() {
     await downloadAndInstallBinary(
       GHOSTTY_APPIMAGE_REPO,
       (ver, isArm64) => `Ghostty-${ver}-${isArm64 ? "aarch64" : "x86_64"}.AppImage`,
-      "Type=Application\nCategories=Development",
     );
   }
 

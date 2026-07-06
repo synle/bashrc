@@ -2517,14 +2517,43 @@ async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
 }
 
 /**
- * Extracts an icon from an AppImage via --appimage-extract in a temp directory.
- * Cleans up the temp dir on completion.
- * @param {string} appImagePath - Path to the AppImage
- * @param {string} appLabel - App name used for icon matching and naming
- * @param {string} destFolder - Folder to copy the extracted icon into
- * @returns {Promise<string>} Path to the extracted icon, or empty string on failure
+ * Parses the [Desktop Entry] section of a .desktop file into key-value pairs.
+ * Skips subsequent sections (e.g. [Desktop Action ...]).
+ * @param {string} content - Raw .desktop file content
+ * @returns {Object<string, string>} Desktop entry fields keyed by name
  */
-async function _extractIconFromAppImage(appImagePath, appLabel, destFolder) {
+function _parseDesktopEntry(content) {
+  const fields = {};
+  let inEntry = false;
+  for (const rawLine of content.split("\n")) {
+    const line = rawLine.trim();
+    if (line === "[Desktop Entry]") {
+      inEntry = true;
+      continue;
+    }
+    if (line.startsWith("[")) {
+      inEntry = false;
+      continue;
+    }
+    if (!inEntry) continue;
+    const eqIdx = line.indexOf("=");
+    if (eqIdx === -1) continue;
+    const key = line.slice(0, eqIdx).trim();
+    const value = line.slice(eqIdx + 1).trim();
+    if (key) fields[key] = value;
+  }
+  return fields;
+}
+
+/**
+ * Extracts icon and .desktop entry metadata from an AppImage.
+ * Runs --appimage-extract in a temp dir, cleans up on completion.
+ * @param {string} appImagePath - Path to the AppImage
+ * @param {string} appLabel - App name used for icon matching
+ * @param {string} destFolder - Folder to copy the extracted icon into
+ * @returns {Promise<{iconPath: string, desktopFields: Object<string,string>|null}>}
+ */
+async function _extractAppImageMetadata(appImagePath, appLabel, destFolder) {
   let tmpDir = "";
   try {
     tmpDir = fs.mkdtempSync(
@@ -2544,17 +2573,10 @@ async function _extractIconFromAppImage(appImagePath, appLabel, destFolder) {
     });
 
     const squashRoot = path.join(tmpDir, "squashfs-root");
-    if (!fs.existsSync(squashRoot)) return "";
+    if (!fs.existsSync(squashRoot)) return { iconPath: "", desktopFields: null };
 
-    const findResult = await execBash(
-      `find -L "${squashRoot}" -type f \\( -iname "*.png" -o -iname "*.svg" \\) 2>/dev/null`,
-      { cwd: tmpDir, timeout: 10_000 },
-    );
-    const candidates = findResult.split("\n").filter(Boolean);
-    if (candidates.length === 0) return "";
-
-    // Read .desktop for Icon= name (most reliable match)
-    let desktopIcon = "";
+    // Parse .desktop entry fields
+    let desktopFields = null;
     try {
       const desktopFile = fs
         .readdirSync(squashRoot)
@@ -2564,52 +2586,63 @@ async function _extractIconFromAppImage(appImagePath, appLabel, destFolder) {
           path.join(squashRoot, desktopFile),
           "utf8",
         );
-        const m = content.match(/^Icon=(.+)$/m);
-        if (m) desktopIcon = m[1].trim();
+        desktopFields = _parseDesktopEntry(content);
       }
     } catch {
       // ignore
     }
 
-    // Score candidates — prefer Icon= match, app label match, PNG, large hicolor
-    let best = "";
-    let bestScore = -1;
-    const labelLower = appLabel.toLowerCase();
-    for (const fp of candidates) {
-      const base = path.basename(fp);
-      const baseLower = base.toLowerCase();
-      let s = 0;
-      if (
-        desktopIcon &&
-        baseLower.replace(/\.(png|svg)$/, "") === desktopIcon.toLowerCase()
-      ) {
-        s += 100;
+    // Find best icon
+    const findResult = await execBash(
+      `find -L "${squashRoot}" -type f \\( -iname "*.png" -o -iname "*.svg" \\) 2>/dev/null`,
+      { cwd: tmpDir, timeout: 10_000 },
+    );
+    const candidates = findResult.split("\n").filter(Boolean);
+
+    let iconPath = "";
+    if (candidates.length > 0) {
+      const desktopIcon = desktopFields?.Icon || "";
+      let best = "";
+      let bestScore = -1;
+      const labelLower = appLabel.toLowerCase();
+      for (const fp of candidates) {
+        const base = path.basename(fp);
+        const baseLower = base.toLowerCase();
+        let s = 0;
+        if (
+          desktopIcon &&
+          baseLower.replace(/\.(png|svg)$/, "") === desktopIcon.toLowerCase()
+        ) {
+          s += 100;
+        }
+        if (baseLower.includes(labelLower)) s += 50;
+        if (/\.png$/i.test(fp)) s += 10;
+        const rel = path.relative(squashRoot, path.dirname(fp));
+        s += Math.max(0, 5 - rel.split(path.sep).length);
+        const sizeMatch = fp.match(/\/(\d+)x\d+\//);
+        if (sizeMatch) s += Math.min(parseInt(sizeMatch[1], 10) / 64, 3);
+        if (/\/apps\//i.test(fp)) s += 2;
+        if (s > bestScore) {
+          bestScore = s;
+          best = fp;
+        }
       }
-      if (baseLower.includes(labelLower)) s += 50;
-      if (/\.png$/i.test(fp)) s += 10;
-      const rel = path.relative(squashRoot, path.dirname(fp));
-      s += Math.max(0, 5 - rel.split(path.sep).length);
-      const sizeMatch = fp.match(/\/(\d+)x\d+\//);
-      if (sizeMatch) s += Math.min(parseInt(sizeMatch[1], 10) / 64, 3);
-      if (/\/apps\//i.test(fp)) s += 2;
-      if (s > bestScore) {
-        bestScore = s;
-        best = fp;
+
+      if (best) {
+        const ext = path.extname(best);
+        const destPath = path.join(destFolder, `App${ext}`);
+        try {
+          fs.copyFileSync(best, destPath);
+        } catch {
+          fs.writeFileSync(destPath, fs.readFileSync(best));
+        }
+        iconPath = destPath;
       }
     }
 
-    if (!best) return "";
-
-    const ext = path.extname(best);
-    const destPath = path.join(destFolder, `App${ext}`);
-    try {
-      fs.copyFileSync(best, destPath);
-    } catch {
-      fs.writeFileSync(destPath, fs.readFileSync(best));
-    }
-    return destPath;
+    return { iconPath, desktopFields };
   } catch {
-    return "";
+    return { iconPath: "", desktopFields: null };
   } finally {
     if (tmpDir && fs.existsSync(tmpDir)) {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -2621,15 +2654,13 @@ async function _extractIconFromAppImage(appImagePath, appLabel, destFolder) {
  * Installs a Linux AppImage: makes it executable, creates a .desktop shortcut,
  * and registers it in ~/.local/share/applications/.
  * @param {string} appImagePath - Full path to the .AppImage file.
- * @param {string} appLabel - App display name used for the .desktop file and icon lookup.
+ * @param {string} appLabel - App display name used for the .desktop file name.
  * @param {string} sourceFolder - Folder containing the AppImage and optional icon.
- * @param {string} [desktopExtra] - Extra lines for the .desktop file (default: "Type=Application\\nCategories=Development").
  */
 async function installLinuxUniversalAppImage(
   appImagePath,
   appLabel,
   sourceFolder,
-  desktopExtra,
 ) {
   if (is_os_mac || is_os_windows || is_os_mingw64 || is_os_android_termux)
     return;
@@ -2653,42 +2684,48 @@ async function installLinuxUniversalAppImage(
     appImagePath = renamedPath;
   }
 
-  desktopExtra = desktopExtra || "Type=Application\nCategories=Development";
+  // Extract metadata (icon + desktop entry) from the AppImage
+  const metadata = await _extractAppImageMetadata(
+    appImagePath,
+    appLabel,
+    sourceFolder,
+  );
+  let iconPath = metadata.iconPath;
 
-  // Look for an icon file in the source folder (jpg, png, svg)
-  let iconPath = "";
+  // Also check for icon in source folder (prefer manually-placed icons)
   try {
     const files = fs.readdirSync(sourceFolder);
     const iconFile = files.find((f) => /\.(jpg|jpeg|png|svg)$/i.test(f));
     if (iconFile) iconPath = path.join(sourceFolder, iconFile);
   } catch {
-    // ignore — no icon is fine
+    // ignore
   }
 
-  // If no icon in source folder, extract it from the AppImage
-  if (!iconPath) {
-    iconPath = await _extractIconFromAppImage(
-      appImagePath,
-      appLabel,
-      sourceFolder,
-    );
-    if (iconPath) {
-      log(`>> Icon extracted from AppImage: ${iconPath}`);
-    }
-  }
+  // Build the .desktop content from extracted fields, with overrides
+  const desktopFields = metadata.desktopFields
+    ? { ...metadata.desktopFields }
+    : {};
+  desktopFields.Exec = appImagePath;
+  if (iconPath) desktopFields.Icon = iconPath;
+  desktopFields.Terminal = "false";
 
-  // Build the .desktop content
-  const desktopContent = [
-    "[Desktop Entry]",
-    `Name=${appLabel}`,
-    `Comment=${appLabel}`,
-    `Exec=${appImagePath}`,
-    iconPath ? `Icon=${iconPath}` : "",
-    "Terminal=false",
-    desktopExtra,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const desktopContent =
+    Object.keys(desktopFields).length > 0
+      ? `[Desktop Entry]\n${Object.entries(desktopFields)
+          .map(([k, v]) => `${k}=${v}`)
+          .join("\n")}`
+      : [
+          "[Desktop Entry]",
+          `Name=${appLabel}`,
+          `Comment=${appLabel}`,
+          `Exec=${appImagePath}`,
+          iconPath ? `Icon=${iconPath}` : "",
+          "Terminal=false",
+          "Type=Application",
+          "Categories=Development",
+        ]
+          .filter(Boolean)
+          .join("\n");
 
   // Write to ~/.local/share/applications/
   const desktopDir = path.join(BASE_HOMEDIR_LINUX, ".local/share/applications");
@@ -2801,10 +2838,9 @@ async function getMacInstalledAppVersion(appLabel) {
  * re-grant permission and must only run on actual upgrades, not no-op skips).
  * @param {string} repo - GitHub repo identifier (e.g. "synle/sqlui-native")
  * @param {function(string, boolean): string} getFileName - Callback that receives the release version and isArm64 flag, returns the platform-specific file name
- * @param {string} [desktopExtra] - Extra lines for the .desktop file (Linux AppImage only). Defaults to "Type=Application\\nCategories=Development".
  * @returns {Promise<boolean>} True if an install was attempted, false if skipped because the installed version already matches upstream
  */
-async function downloadAndInstallBinary(repo, getFileName, desktopExtra) {
+async function downloadAndInstallBinary(repo, getFileName) {
   const isUrl = repo.includes("://");
   const appLabel = isUrl
     ? path.basename(repo).replace(/\.[^.]+$/, "")
@@ -2874,7 +2910,6 @@ async function downloadAndInstallBinary(repo, getFileName, desktopExtra) {
     destination,
     appLabel,
     targetPath,
-    desktopExtra,
   });
 
   const ok = await downloadAssetWithFallback(repo, url, destination);
@@ -2887,7 +2922,6 @@ async function downloadAndInstallBinary(repo, getFileName, desktopExtra) {
       destination,
       appLabel,
       targetPath,
-      desktopExtra,
     );
   }
   return true;
