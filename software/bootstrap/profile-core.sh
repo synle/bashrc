@@ -197,7 +197,9 @@ alias du='du -h'                              # human-readable sizes
 alias free='free -h'                          # human-readable sizes (linux)
 function less() { command vim -R "${@:--}"; } # open in vim read-only mode (supports piping)
 function ld() { find "${1:-.}" -maxdepth 1 -type d | sort; } # List directories only, sorted
+function lda() { find "${1:-$PWD}" -maxdepth 1 -type d -exec realpath {} \; | sort; } # List directories (absolute path), sorted
 function lf() { find "${1:-.}" -maxdepth 1 -type f | sort; } # List files only, sorted
+function lfa() { find "${1:-$PWD}" -maxdepth 1 -type f -exec realpath {} \; | sort; } # List files (absolute path), sorted
 alias grep='grep --color'                     # colorize matches
 alias ls="ls -1 -F --color"
 alias ll="ls -lah"
