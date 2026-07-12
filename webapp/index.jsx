@@ -20,15 +20,7 @@ import "prismjs/components/prism-c";
 import "prismjs/components/prism-cpp";
 import "prismjs/components/prism-csharp";
 import "prismjs/components/prism-php";
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createPortal } from "react-dom";
 import "./index.scss";
@@ -89,13 +81,7 @@ function AlertModal(props) {
           {message}
         </div>
         <footer className="modalFooter">
-          <button
-            ref={primaryButtonRef}
-            type="button"
-            className="modalBtn primary"
-            data-testid="alert-ok"
-            onClick={() => onClose()}
-          >
+          <button ref={primaryButtonRef} type="button" className="modalBtn primary" data-testid="alert-ok" onClick={() => onClose()}>
             OK
           </button>
         </footer>
@@ -202,8 +188,7 @@ function stripJsoncComments(text) {
       while (i < n && text[i] !== "\n") i++;
     } else if (c === "/" && next === "*") {
       i += 2;
-      while (i < n && !(text[i] === "*" && i + 1 < n && text[i + 1] === "/"))
-        i++;
+      while (i < n && !(text[i] === "*" && i + 1 < n && text[i + 1] === "/")) i++;
       i += 2;
     } else {
       out += c;
@@ -305,17 +290,13 @@ const OS_NOTES_LIST = [
  */
 const OS_FLAGS = OS_NOTES_LIST.map((e) => e.key)
   .filter((k) => (window.OS_FLAGS || []).includes(k))
-  .sort((a, b) =>
-    a === currentSystemFlag ? -1 : b === currentSystemFlag ? 1 : 0,
-  );
+  .sort((a, b) => (a === currentSystemFlag ? -1 : b === currentSystemFlag ? 1 : 0));
 
 /**
  * Lookup map from OS flag key to its OS notes entry. Built from OS_NOTES_LIST.
  * @type {Object<string, {key: string, label: string, Component: Function}>}
  */
-const OS_KEY_TO_NOTES_MAP = Object.fromEntries(
-  OS_NOTES_LIST.map((e) => [e.key, e]),
-);
+const OS_KEY_TO_NOTES_MAP = Object.fromEntries(OS_NOTES_LIST.map((e) => [e.key, e]));
 
 /**
  * Writes a value to localStorage under the given key.
@@ -395,11 +376,7 @@ function ScriptNameInputSection() {
   const formValue = appData.formValue;
 
   const _onScriptChange = () => {
-    onInputChange(
-      "scriptsToUse",
-      formValue.scriptsToUse,
-      formValue.scriptsToUse.join("\n"),
-    );
+    onInputChange("scriptsToUse", formValue.scriptsToUse, formValue.scriptsToUse.join("\n"));
   };
 
   const onChangeTestScript = (idx, newValue) => {
@@ -478,8 +455,7 @@ function PresetTreeNode({ name, presetMap, level = 0, visited = new Set() }) {
   if (visited.has(name)) {
     return (
       <div className="preset-tree-cycle">
-        Cycle detected — <code>{name}</code> already on the resolution path.
-        Check <code>software/metadata/presets.jsonc</code>.
+        Cycle detected — <code>{name}</code> already on the resolution path. Check <code>software/metadata/presets.jsonc</code>.
       </div>
     );
   }
@@ -493,18 +469,12 @@ function PresetTreeNode({ name, presetMap, level = 0, visited = new Set() }) {
   }
   const ownFiles = Array.isArray(preset.files) ? preset.files : [];
   const refs = Array.isArray(preset.presets) ? preset.presets : [];
-  const totalCount = useMemo(
-    () => expandPresetFiles(name, presetMap).length,
-    [name, presetMap],
-  );
+  const totalCount = useMemo(() => expandPresetFiles(name, presetMap).length, [name, presetMap]);
   const childVisited = new Set(visited);
   childVisited.add(name);
 
   return (
-    <details
-      className={`preset-tree-node preset-tree-node--level-${level}`}
-      open={level === 0}
-    >
+    <details className={`preset-tree-node preset-tree-node--level-${level}`} open={level === 0}>
       <summary>
         <code className="preset-tree-name">{name}</code>
         <span className="preset-tree-count">
@@ -512,17 +482,9 @@ function PresetTreeNode({ name, presetMap, level = 0, visited = new Set() }) {
         </span>
       </summary>
       <div className="preset-tree-body">
-        {preset.description ? (
-          <div className="preset-tree-description">{preset.description}</div>
-        ) : null}
+        {preset.description ? <div className="preset-tree-description">{preset.description}</div> : null}
         {refs.map((ref) => (
-          <PresetTreeNode
-            key={ref}
-            name={ref}
-            presetMap={presetMap}
-            level={level + 1}
-            visited={childVisited}
-          />
+          <PresetTreeNode key={ref} name={ref} presetMap={presetMap} level={level + 1} visited={childVisited} />
         ))}
         {ownFiles.length > 0 ? (
           <ul className="preset-tree-files">
@@ -587,10 +549,7 @@ function ScriptPresetInputSection() {
         ))}
       </datalist>
       {preset ? (
-        <div
-          className="form-row form-row--top-aligned"
-          name="formValue.presetToUse.expanded"
-        >
+        <div className="form-row form-row--top-aligned" name="formValue.presetToUse.expanded">
           <div className="form-label">Preset Contents</div>
           <div className="form-input form-input--block">
             <PresetTreeNode name={currentPreset} presetMap={presetMap} />
@@ -599,10 +558,7 @@ function ScriptPresetInputSection() {
       ) : currentPreset ? (
         <div className="form-row">
           <div className="form-label" />
-          <div
-            className="form-input"
-            style={{ color: "var(--colorTextError, #b00)" }}
-          >
+          <div className="form-input" style={{ color: "var(--colorTextError, #b00)" }}>
             Unknown preset: <code>{currentPreset}</code>
           </div>
         </div>
@@ -634,28 +590,16 @@ function CustomRunSection() {
         <div className="form-label">Run Mode</div>
         <div className="form-input">
           <div className="nav-radio-group">
-            <button
-              className={mode === "files" ? "selected" : ""}
-              onClick={() => onInputChange("scriptMode", "files")}
-              type="button"
-            >
+            <button className={mode === "files" ? "selected" : ""} onClick={() => onInputChange("scriptMode", "files")} type="button">
               Script Files
             </button>
-            <button
-              className={mode === "preset" ? "selected" : ""}
-              onClick={() => onInputChange("scriptMode", "preset")}
-              type="button"
-            >
+            <button className={mode === "preset" ? "selected" : ""} onClick={() => onInputChange("scriptMode", "preset")} type="button">
               Script Preset
             </button>
           </div>
         </div>
       </div>
-      {mode === "preset" ? (
-        <ScriptPresetInputSection />
-      ) : (
-        <ScriptNameInputSection />
-      )}
+      {mode === "preset" ? <ScriptPresetInputSection /> : <ScriptNameInputSection />}
       <OsSelectionInputSection />
       <ScriptOutputSection script={scriptTemplate} />
     </>
@@ -757,10 +701,7 @@ function ScriptOutputSection({ script }) {
       is_os_mac: osFlag === "is_os_mac",
       is_os_windows: osFlag === "is_os_windows",
       is_os_wsl: osFlag === "is_os_windows" || osFlag === "is_os_wsl",
-      is_os_ubuntu:
-        osFlag === "is_os_ubuntu" ||
-        osFlag === "is_os_windows" ||
-        osFlag === "is_os_chromeos",
+      is_os_ubuntu: osFlag === "is_os_ubuntu" || osFlag === "is_os_windows" || osFlag === "is_os_chromeos",
       is_os_chromeos: osFlag === "is_os_chromeos",
       is_os_mingw64: osFlag === "is_os_mingw64",
       is_os_android_termux: osFlag === "is_os_android_termux",
@@ -778,19 +719,13 @@ function ScriptOutputSection({ script }) {
       BASH_PROFILE_CODE_REPO_RAW_URL: BASH_PROFILE_CODE_REPO_RAW_URL,
       SELECT_SCRIPTS: formValue.scriptsToUse.join("\n"),
       SELECT_PRESET: formValue.presetToUse || "",
-      SETUP_DEPS:
-        formValue.setupDependencies === "yes"
-          ? (appData.setupDepsScript || "") + "\n"
-          : "",
+      SETUP_DEPS: formValue.setupDependencies === "yes" ? (appData.setupDepsScript || "") + "\n" : "",
       SETUP_HOSTS_SCRIPT: appData.setupHostsScript || "",
       IP_ADDRESS_MAPPING_CONFIGS: appData.ipAddressMappingConfigs || "",
     };
 
     // Mustache-style template rendering: replaces all {{KEY}} with corresponding values
-    const rendered = script.replace(
-      /\{\{(\w+)\}\}/g,
-      (_, key) => templateVars[key] || "",
-    );
+    const rendered = script.replace(/\{\{(\w+)\}\}/g, (_, key) => templateVars[key] || "");
 
     return rendered
       .split("\\")
@@ -799,9 +734,7 @@ function ScriptOutputSection({ script }) {
       .trim();
   }, [formValue, script]);
 
-  return (
-    <EnhancedTextArea placeholder="Output" readOnly value={formValueOutput} />
-  );
+  return <EnhancedTextArea placeholder="Output" readOnly value={formValueOutput} />;
 }
 
 /**
@@ -812,9 +745,7 @@ function ScriptOutputSection({ script }) {
  */
 function MainBodyContainer() {
   const { appData, route } = useContext(MainAppContext);
-  const selectedConfig =
-    appData.configs.find((config) => config.idx === route) ||
-    appData.configs[0];
+  const selectedConfig = appData.configs.find((config) => config.idx === route) || appData.configs[0];
 
   return <div id="mainBodyContainer">{selectedConfig.renderBody()}</div>;
 }
@@ -857,12 +788,8 @@ function BottomContainer() {
       <hr />
       <div className="link-group">
         <LinkButton href={REPO_URL}>Repo</LinkButton>
-        <LinkButton href={`${BASH_PROFILE_CODE_REPO_VIEW_URL}/.build`}>
-          Pre-compiled Configs
-        </LinkButton>
-        <LinkButton href={`${REPO_URL}/find/${REPO_BRANCH_NAME}`}>
-          Bashrc Code
-        </LinkButton>
+        <LinkButton href={`${BASH_PROFILE_CODE_REPO_VIEW_URL}/.build`}>Pre-compiled Configs</LinkButton>
+        <LinkButton href={`${REPO_URL}/find/${REPO_BRANCH_NAME}`}>Bashrc Code</LinkButton>
       </div>
     </div>
   );
@@ -984,16 +911,7 @@ function DynamicTextArea(props) {
     _load();
   }, [url]);
 
-  return (
-    <EnhancedTextArea
-      height={height}
-      url={url}
-      value={text}
-      error={!success}
-      readOnly
-      defaultCollapsed={collapsed}
-    />
-  );
+  return <EnhancedTextArea height={height} url={url} value={text} error={!success} readOnly defaultCollapsed={collapsed} />;
 }
 
 /**
@@ -1031,9 +949,7 @@ function MultipleUrlDynamicTextArea(props) {
     _load();
   }, []);
 
-  return (
-    <EnhancedTextArea height={height} label={label} value={text} readOnly />
-  );
+  return <EnhancedTextArea height={height} label={label} value={text} readOnly />;
 }
 
 /**
@@ -1102,35 +1018,23 @@ function detectLanguageFromContent(content) {
 
   // Check for shebang
   if (trimmedContent.startsWith("#!")) {
-    if (trimmedContent.includes("/bash") || trimmedContent.includes("/sh"))
-      return "bash";
+    if (trimmedContent.includes("/bash") || trimmedContent.includes("/sh")) return "bash";
     if (trimmedContent.includes("/python")) return "python";
     if (trimmedContent.includes("/node")) return "javascript";
   }
 
   // Check for markdown headers
-  if (
-    /^#+\s/.test(trimmedContent) ||
-    /^-{3,}$|^\*{3,}$/m.test(trimmedContent)
-  ) {
+  if (/^#+\s/.test(trimmedContent) || /^-{3,}$|^\*{3,}$/m.test(trimmedContent)) {
     return "markdown";
   }
 
   // Check for PowerShell cmdlets
-  if (
-    /\b(Get-|Set-|New-|Remove-|Invoke-|Test-|Write-Host|param\()/i.test(
-      trimmedContent,
-    )
-  ) {
+  if (/\b(Get-|Set-|New-|Remove-|Invoke-|Test-|Write-Host|param\()/i.test(trimmedContent)) {
     return "powershell";
   }
 
   // Check for common shell patterns
-  if (
-    /^(export|alias|function|sudo|apt-get|yum|brew|echo|cd|ls|mkdir)\s/m.test(
-      trimmedContent,
-    )
-  ) {
+  if (/^(export|alias|function|sudo|apt-get|yum|brew|echo|cd|ls|mkdir)\s/m.test(trimmedContent)) {
     return "bash";
   }
 
@@ -1164,11 +1068,7 @@ function Modal(props) {
 
   return createPortal(
     <div className="modal" onClick={onClose}>
-      <div
-        className="modalContent fullscreenCodeViewer"
-        data-testid="fullscreen-dialog"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="modalContent fullscreenCodeViewer" data-testid="fullscreen-dialog" onClick={(e) => e.stopPropagation()}>
         <div className="modalBody">
           <div className="codeBlockBanner">
             {title &&
@@ -1181,19 +1081,11 @@ function Modal(props) {
               ))}
             <div className="codeBlockActions">
               {onCopy && (
-                <button
-                  data-action="modal-copy"
-                  data-testid="fullscreen-copy"
-                  onClick={onCopy}
-                >
+                <button data-action="modal-copy" data-testid="fullscreen-copy" onClick={onCopy}>
                   Copy
                 </button>
               )}
-              <button
-                data-action="modal-close"
-                data-testid="fullscreen-close"
-                onClick={onClose}
-              >
+              <button data-action="modal-close" data-testid="fullscreen-close" onClick={onClose}>
                 Close
               </button>
             </div>
@@ -1229,25 +1121,14 @@ function FullScreenTextViewer(props) {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isOpen]);
 
-  const language =
-    detectLanguageFromLabel(label) || detectLanguageFromContent(value);
+  const language = detectLanguageFromLabel(label) || detectLanguageFromContent(value);
 
   return (
     <>
-      <ActionButton
-        data-action="fullscreen"
-        data-testid="fullscreen-button"
-        onClick={() => setIsOpen(true)}
-      >
+      <ActionButton data-action="fullscreen" data-testid="fullscreen-button" onClick={() => setIsOpen(true)}>
         Fullscreen
       </ActionButton>
-      <Modal
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        title={label}
-        titleUrl={url}
-        onCopy={() => copyTextToClipboard(value)}
-      >
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={label} titleUrl={url} onCopy={() => copyTextToClipboard(value)}>
         <CodeEditor content={value || ""} syntax={language} readOnly />
       </Modal>
     </>
@@ -1332,11 +1213,7 @@ function DropdownButtons(props) {
   return (
     <div className="dropdown" ref={dropdownRef}>
       {enhancedTrigger}
-      {isOpen && (
-        <div className={`dropdown-content ${type}`.trim()}>
-          {enhancedButtons}
-        </div>
-      )}
+      {isOpen && <div className={`dropdown-content ${type}`.trim()}>{enhancedButtons}</div>}
     </div>
   );
 }
@@ -1350,11 +1227,7 @@ function ThemeToggle() {
   const { theme, toggleTheme } = useContext(ThemeContext);
 
   return (
-    <button
-      data-action="theme-toggle"
-      data-testid="theme-toggle"
-      onClick={toggleTheme}
-    >
+    <button data-action="theme-toggle" data-testid="theme-toggle" onClick={toggleTheme}>
       {theme === "dark" ? "Light Mode" : "Dark Mode"}
     </button>
   );
@@ -1368,11 +1241,7 @@ function ThemeToggle() {
 function Settings() {
   return (
     <DropdownButtons>
-      <button
-        className="dropdown-trigger"
-        data-action="settings-toggle"
-        data-testid="settings-toggle"
-      >
+      <button className="dropdown-trigger" data-action="settings-toggle" data-testid="settings-toggle">
         Settings
       </button>
       <ThemeToggle />
@@ -1405,16 +1274,11 @@ function Settings() {
 function CodeEditor({ content = "", syntax, readOnly = false }) {
   const language = syntax || detectLanguageFromContent(content);
   const grammar = Prism.languages[language];
-  const highlighted = grammar
-    ? Prism.highlight(content, grammar, language)
-    : _escapeHtml(content);
+  const highlighted = grammar ? Prism.highlight(content, grammar, language) : _escapeHtml(content);
 
   return (
     <pre className="prism-code-block">
-      <code
-        className={`language-${language}`}
-        dangerouslySetInnerHTML={{ __html: highlighted }}
-      />
+      <code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: highlighted }} />
     </pre>
   );
 }
@@ -1425,25 +1289,14 @@ function CodeEditor({ content = "", syntax, readOnly = false }) {
  * @returns {string} The escaped string.
  */
 function _escapeHtml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 /** Number of leading content lines shown when a code block is collapsed. */
 const COLLAPSED_PREVIEW_LINES = 10;
 
 function EnhancedTextArea(props) {
-  let {
-    url,
-    label,
-    height,
-    error,
-    defaultCollapsed = true,
-    ...restProps
-  } = props;
+  let { url, label, height, error, defaultCollapsed = true, ...restProps } = props;
   label = label || props.placeholder;
 
   const content = restProps.value || restProps.defaultValue || "";
@@ -1477,13 +1330,8 @@ function EnhancedTextArea(props) {
   // at the start of the block. The "Show More" link below expands to full content.
   const lines = content.split("\n");
   const isTruncatable = lines.length > COLLAPSED_PREVIEW_LINES;
-  const displayedContent =
-    collapsed && isTruncatable
-      ? lines.slice(0, COLLAPSED_PREVIEW_LINES).join("\n")
-      : content;
-  const hiddenLineCount = isTruncatable
-    ? lines.length - COLLAPSED_PREVIEW_LINES
-    : 0;
+  const displayedContent = collapsed && isTruncatable ? lines.slice(0, COLLAPSED_PREVIEW_LINES).join("\n") : content;
+  const hiddenLineCount = isTruncatable ? lines.length - COLLAPSED_PREVIEW_LINES : 0;
 
   return (
     <div
@@ -1501,31 +1349,18 @@ function EnhancedTextArea(props) {
             <span>{label}</span>
           )}
         </div>
-        <ActionButton
-          data-action="copy"
-          data-testid="copy-button"
-          onClick={() => copyTextToClipboard(content)}
-        >
+        <ActionButton data-action="copy" data-testid="copy-button" onClick={() => copyTextToClipboard(content)}>
           Copy
         </ActionButton>
         {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
         {url && <LinkButton href={url}>View Raw</LinkButton>}
-        <FullScreenTextViewer
-          value={content}
-          label={label}
-          url={formattedUrl}
-        />
+        <FullScreenTextViewer value={content} label={label} url={formattedUrl} />
       </div>
       {error ? (
         <div className="text-error">Content Error: {content}</div>
       ) : (
         <>
-          <CodeEditor
-            content={displayedContent}
-            syntax={syntax}
-            height={height}
-            readOnly={restProps.readOnly || false}
-          />
+          <CodeEditor content={displayedContent} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />
           {collapsed && isTruncatable && (
             <a
               className="codeBlockShowMore"
@@ -1536,8 +1371,7 @@ function EnhancedTextArea(props) {
                 setCollapsed(false);
               }}
             >
-              Show More ({hiddenLineCount} more{" "}
-              {hiddenLineCount === 1 ? "line" : "lines"})
+              Show More ({hiddenLineCount} more {hiddenLineCount === 1 ? "line" : "lines"})
             </a>
           )}
         </>
@@ -1563,25 +1397,16 @@ const CommonOtherAppDom = (
     <LinkButton block href="https://www.sublimemerge.com/download">
       Sublime Merge
     </LinkButton>
-    <LinkButton
-      block
-      href="https://www.charlesproxy.com/download/latest-release/"
-    >
+    <LinkButton block href="https://www.charlesproxy.com/download/latest-release/">
       Charles Proxy
     </LinkButton>
-    <LinkButton
-      block
-      href="https://ultimaker.com/software/ultimaker-cura/#links"
-    >
+    <LinkButton block href="https://ultimaker.com/software/ultimaker-cura/#links">
       Ultimaker Cura
     </LinkButton>
     <LinkButton block href="https://design.cricut.com/#/">
       Cricut Design Space
     </LinkButton>
-    <LinkButton
-      block
-      href="https://download.battle.net/en-us/?product=bnetdesk"
-    >
+    <LinkButton block href="https://download.battle.net/en-us/?product=bnetdesk">
       Battle Net
     </LinkButton>
   </>
@@ -1603,11 +1428,7 @@ function TargetSystemOSWarningDom({ targetDomString }) {
   const entry = OS_KEY_TO_NOTES_MAP[targetDomString];
   const name = entry ? entry.label : targetDomString;
 
-  return (
-    <h3 className="text-error">
-      This is meant for {name}. Your system is detected as a different OS.
-    </h3>
-  );
+  return <h3 className="text-error">This is meant for {name}. Your system is detected as a different OS.</h3>;
 }
 
 /**
@@ -1757,9 +1578,7 @@ function GenericLightWeightNotesDom() {
   return (
     <>
       <DynamicTextArea path="/software/bootstrap/setup.sh" />
-      <ScriptOutputSection
-        script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`}
-      />
+      <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`} />
       <DynamicTextArea path="/.build/gitconfig" />
       <DynamicTextArea path="/.build/ssh-config" />
       <DynamicTextArea path="/.build/inputrc" />
@@ -1800,10 +1619,7 @@ function AndroidNotesDom() {
         <LinkButton block href="https://vanced.to/revanced-youtube-extended">
           Youtube
         </LinkButton>
-        <LinkButton
-          block
-          href="https://vanced.to/revanced-youtube-music-extended"
-        >
+        <LinkButton block href="https://vanced.to/revanced-youtube-music-extended">
           Youtube Music
         </LinkButton>
         <LinkButton block href="https://vanced.to/revanced-google-news">
@@ -1826,30 +1642,17 @@ function AndroidNotesDom() {
             <li>Cost: Free</li>
             <li>
               Download:{" "}
-              <a
-                href="https://git.eden-emu.dev/eden-emu/eden/"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://git.eden-emu.dev/eden-emu/eden/" target="_blank" rel="noreferrer">
                 Eden Project Git Releases
               </a>{" "}
               or{" "}
-              <a
-                href="https://github.com/sudachi-emu/sudachi"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/sudachi-emu/sudachi" target="_blank" rel="noreferrer">
                 Sudachi GitHub Source
               </a>
             </li>
             <li>Minimum: Snapdragon 845 / 6GB RAM</li>
-            <li>
-              Recommended: Snapdragon 8 Gen 1 or higher / 8GB to 12GB+ RAM
-            </li>
-            <li>
-              Equivalent S-Series Devices: Galaxy S23, S24, S25 variants with
-              Snapdragon (e.g. S23 Ultra 8 Gen 2, S24 Ultra 8 Gen 3)
-            </li>
+            <li>Recommended: Snapdragon 8 Gen 1 or higher / 8GB to 12GB+ RAM</li>
+            <li>Equivalent S-Series Devices: Galaxy S23, S24, S25 variants with Snapdragon (e.g. S23 Ultra 8 Gen 2, S24 Ultra 8 Gen 3)</li>
           </ul>
         </div>
 
@@ -1859,23 +1662,15 @@ function AndroidNotesDom() {
             <li>Cost: Free</li>
             <li>
               Download:{" "}
-              <a
-                href="https://github.com/brunodev85/winlator/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/brunodev85/winlator/releases" target="_blank" rel="noreferrer">
                 Winlator GitHub Releases (brunodev85)
               </a>
             </li>
             <li>Minimum: Snapdragon 700 series / 6GB RAM (older 2D games)</li>
+            <li>Recommended: Snapdragon 8 Gen 2 or newer / 12GB+ RAM (critical for translation layers and 3D titles)</li>
             <li>
-              Recommended: Snapdragon 8 Gen 2 or newer / 12GB+ RAM (critical for
-              translation layers and 3D titles)
-            </li>
-            <li>
-              Equivalent S-Series Devices: Galaxy S23 Ultra, S24 Ultra, S26
-              series. Snapdragon 8 Gen 2 (S23 series / Fold 5) currently offers
-              the most stable custom Turnip driver compatibility.
+              Equivalent S-Series Devices: Galaxy S23 Ultra, S24 Ultra, S26 series. Snapdragon 8 Gen 2 (S23 series / Fold 5) currently
+              offers the most stable custom Turnip driver compatibility.
             </li>
           </ul>
         </div>
@@ -1886,20 +1681,13 @@ function AndroidNotesDom() {
             <li>Cost: Free</li>
             <li>
               Download:{" "}
-              <a
-                href="https://github.com/nckstwrt/NetherSX2-Turnip/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/nckstwrt/NetherSX2-Turnip/releases" target="_blank" rel="noreferrer">
                 NetherSX2-Turnip GitHub Releases
               </a>
             </li>
             <li>Minimum: Snapdragon 665 / 4GB RAM</li>
             <li>Recommended: Snapdragon 865 or higher / 6GB to 8GB+ RAM</li>
-            <li>
-              Equivalent S-Series Devices: Galaxy S20 Ultra (Snapdragon 865) and
-              any subsequent flagship.
-            </li>
+            <li>Equivalent S-Series Devices: Galaxy S20 Ultra (Snapdragon 865) and any subsequent flagship.</li>
           </ul>
         </div>
 
@@ -1909,20 +1697,13 @@ function AndroidNotesDom() {
             <li>Cost: Free</li>
             <li>
               Download:{" "}
-              <a
-                href="https://github.com/cemu-project/cemu/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/cemu-project/cemu/releases" target="_blank" rel="noreferrer">
                 Cemu Project GitHub Releases
               </a>
             </li>
             <li>Minimum: Snapdragon 855 / 6GB RAM</li>
             <li>Recommended: Snapdragon 8 Gen 1 or newer / 8GB RAM</li>
-            <li>
-              Equivalent S-Series Devices: Galaxy S22 Ultra, S23 Ultra, and
-              newer.
-            </li>
+            <li>Equivalent S-Series Devices: Galaxy S22 Ultra, S23 Ultra, and newer.</li>
           </ul>
         </div>
 
@@ -1932,31 +1713,17 @@ function AndroidNotesDom() {
             <li>Cost: Free</li>
             <li>
               Download:{" "}
-              <a
-                href="https://github.com/azahar-emu/azahar/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/azahar-emu/azahar/releases" target="_blank" rel="noreferrer">
                 Azahar GitHub Releases
               </a>{" "}
               or{" "}
-              <a
-                href="https://github.com/Lime3DS/Lime3DS/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/Lime3DS/Lime3DS/releases" target="_blank" rel="noreferrer">
                 Lime3DS GitHub Releases
               </a>
             </li>
             <li>Minimum: Snapdragon 600 or 700 series / 4GB RAM</li>
-            <li>
-              Recommended: Snapdragon 855 or higher / 6GB RAM (allows 3x-4x
-              upscaling)
-            </li>
-            <li>
-              Equivalent S-Series Devices: Galaxy S10 series (Snapdragon 855)
-              and up.
-            </li>
+            <li>Recommended: Snapdragon 855 or higher / 6GB RAM (allows 3x-4x upscaling)</li>
+            <li>Equivalent S-Series Devices: Galaxy S10 series (Snapdragon 855) and up.</li>
           </ul>
         </div>
       </div>
@@ -1969,21 +1736,13 @@ function AndroidNotesDom() {
             <li>Cost: Free</li>
             <li>
               Google Play Store:{" "}
-              <a
-                href="https://play.google.com/store/apps/details?id=org.dolphinemu.dolphinemu"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://play.google.com/store/apps/details?id=org.dolphinemu.dolphinemu" target="_blank" rel="noreferrer">
                 Dolphin Emulator
               </a>
             </li>
             <li>
               Cutting-edge dev APKs:{" "}
-              <a
-                href="https://dolphin-emu.org/download/"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://dolphin-emu.org/download/" target="_blank" rel="noreferrer">
                 Dolphin Official Downloads
               </a>
             </li>
@@ -1996,11 +1755,7 @@ function AndroidNotesDom() {
             <li>Cost: Free (formerly paid)</li>
             <li>
               Google Play Store:{" "}
-              <a
-                href="https://play.google.com/store/apps/details?id=com.dsemu.drastic"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://play.google.com/store/apps/details?id=com.dsemu.drastic" target="_blank" rel="noreferrer">
                 DraStic DS Emulator
               </a>
             </li>
@@ -2010,35 +1765,20 @@ function AndroidNotesDom() {
         <div>
           <strong>PlayStation Portable - PPSSPP</strong>
           <ul>
-            <li>
-              Cost: Free base / optional $4.99 Gold (donation,
-              feature-identical)
-            </li>
+            <li>Cost: Free base / optional $4.99 Gold (donation, feature-identical)</li>
             <li>
               Google Play Store:{" "}
-              <a
-                href="https://play.google.com/store/apps/details?id=org.ppsspp.ppsspp"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://play.google.com/store/apps/details?id=org.ppsspp.ppsspp" target="_blank" rel="noreferrer">
                 PPSSPP Standard
               </a>{" "}
               or{" "}
-              <a
-                href="https://play.google.com/store/apps/details?id=org.ppsspp.ppssppgold"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://play.google.com/store/apps/details?id=org.ppsspp.ppssppgold" target="_blank" rel="noreferrer">
                 PPSSPP Gold
               </a>
             </li>
             <li>
               GitHub Releases:{" "}
-              <a
-                href="https://github.com/hrydgard/ppsspp/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/hrydgard/ppsspp/releases" target="_blank" rel="noreferrer">
                 PPSSPP Project Releases
               </a>
             </li>
@@ -2051,21 +1791,13 @@ function AndroidNotesDom() {
             <li>Cost: Free</li>
             <li>
               Google Play Store:{" "}
-              <a
-                href="https://play.google.com/store/apps/details?id=org.duckstation.android"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://play.google.com/store/apps/details?id=org.duckstation.android" target="_blank" rel="noreferrer">
                 DuckStation
               </a>
             </li>
             <li>
               GitHub Releases:{" "}
-              <a
-                href="https://github.com/stenzek/duckstation/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/stenzek/duckstation/releases" target="_blank" rel="noreferrer">
                 DuckStation Releases
               </a>
             </li>
@@ -2075,16 +1807,10 @@ function AndroidNotesDom() {
         <div>
           <strong>Nintendo 64 - Mupen64Plus FZ</strong>
           <ul>
-            <li>
-              Cost: Free base / optional $3.99 Pro (netplay + cloud saves)
-            </li>
+            <li>Cost: Free base / optional $3.99 Pro (netplay + cloud saves)</li>
             <li>
               Project:{" "}
-              <a
-                href="https://github.com/mupen64plus-ae/mupen64plus-ae"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/mupen64plus-ae/mupen64plus-ae" target="_blank" rel="noreferrer">
                 Mupen64Plus AE GitHub
               </a>
             </li>
@@ -2092,28 +1818,18 @@ function AndroidNotesDom() {
         </div>
 
         <div>
-          <strong>
-            Retro Cartridges (NES, SNES, Sega Genesis, GBA) - Lemuroid
-          </strong>
+          <strong>Retro Cartridges (NES, SNES, Sega Genesis, GBA) - Lemuroid</strong>
           <ul>
             <li>Cost: Free</li>
             <li>
               Google Play Store:{" "}
-              <a
-                href="https://play.google.com/store/apps/details?id=com.swordfish.lemuroid"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://play.google.com/store/apps/details?id=com.swordfish.lemuroid" target="_blank" rel="noreferrer">
                 Lemuroid
               </a>
             </li>
             <li>
               GitHub Releases:{" "}
-              <a
-                href="https://github.com/Swordfish90/Lemuroid/releases"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/Swordfish90/Lemuroid/releases" target="_blank" rel="noreferrer">
                 Lemuroid Releases
               </a>
             </li>
@@ -2148,16 +1864,10 @@ function WindowsNotesDom() {
       {/* other links */}
       <div className="form-label">Windows Related</div>
       <div className="link-group">
-        <LinkButton
-          block
-          href="https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
-        >
+        <LinkButton block href="https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi">
           WSL Kernel
         </LinkButton>
-        <LinkButton
-          block
-          href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170"
-        >
+        <LinkButton block href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170">
           Microsoft Visual C++ Redistributable
         </LinkButton>
         <LinkButton
@@ -2182,16 +1892,10 @@ function WindowsNotesDom() {
         <code>\\sshfs.k\syle@127.0.0.1</code>
       </div>
       <div className="link-group">
-        <LinkButton
-          block
-          href="https://github.com/winfsp/winfsp/releases/latest"
-        >
+        <LinkButton block href="https://github.com/winfsp/winfsp/releases/latest">
           WinFSP {/* https://github.com/winfsp/sshfs-win */}
         </LinkButton>
-        <LinkButton
-          block
-          href="https://github.com/winfsp/sshfs-win/releases/latest"
-        >
+        <LinkButton block href="https://github.com/winfsp/sshfs-win/releases/latest">
           SSHFS
         </LinkButton>
       </div>
@@ -2219,31 +1923,19 @@ function WindowsNotesDom() {
         >
           CUDA Toolkit Driver for WSL
         </LinkButton>
-        <LinkButton
-          block
-          href="https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8"
-        >
+        <LinkButton block href="https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8">
           Raw Image Extension
         </LinkButton>
-        <LinkButton
-          block
-          href="https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg"
-        >
+        <LinkButton block href="https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg">
           Heif Image Extension
         </LinkButton>
         <LinkButton href="https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq">
           Hevc Video Extension (Device Manager)
         </LinkButton>
-        <LinkButton
-          block
-          href="https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4"
-        >
+        <LinkButton block href="https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4">
           MPEG-2 Video Extension
         </LinkButton>
-        <LinkButton
-          block
-          href="https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v"
-        >
+        <LinkButton block href="https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v">
           AV1 Video Extension
         </LinkButton>
       </div>
@@ -2305,13 +1997,7 @@ function App() {
       try {
         const configsByKey = {};
 
-        const [
-          setupDepsScript,
-          scriptToRunOptions,
-          setupHostsScript,
-          ipAddressMappingConfigs,
-          presetMap,
-        ] = await Promise.all([
+        const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs, presetMap] = await Promise.all([
           fetch(getGitHubRawUrl("software/bootstrap/setup.sh"))
             .then((res) => res.text())
             .then((res) => res.trim()),
@@ -2362,9 +2048,7 @@ function App() {
           {
             text: "Setup Lightweight Profile",
             renderBody: () => (
-              <ScriptOutputSection
-                script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`}
-              />
+              <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`} />
             ),
           },
           {
@@ -2380,9 +2064,7 @@ function App() {
             renderBody: () => (
               <>
                 <OsSelectionInputSection />
-                <ScriptOutputSection
-                  script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash`}
-                />
+                <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash`} />
               </>
             ),
           },
@@ -2419,11 +2101,8 @@ function App() {
           formValue: {
             osToRun: getStorage("osToRun") || "is_os_windows",
             setupDependencies: getStorage("setupDependencies") || "yes",
-            scriptsToUse: (getStorage("scriptsToUse") || "")
-              .split("\n")
-              .filter((s) => s.trim()),
-            scriptMode:
-              getStorage("scriptMode") === "preset" ? "preset" : "files",
+            scriptsToUse: (getStorage("scriptsToUse") || "").split("\n").filter((s) => s.trim()),
+            scriptMode: getStorage("scriptMode") === "preset" ? "preset" : "files",
             presetToUse: defaultPreset,
           },
         };
@@ -2457,11 +2136,7 @@ function App() {
   useEffect(() => {
     const isMac = /mac/i.test(navigator.platform);
     const handleKeyDown = (e) => {
-      const isHotkey =
-        e.key === "\\" &&
-        (isMac
-          ? e.metaKey && !e.altKey && !e.ctrlKey
-          : e.altKey && !e.metaKey && !e.ctrlKey);
+      const isHotkey = e.key === "\\" && (isMac ? e.metaKey && !e.altKey && !e.ctrlKey : e.altKey && !e.metaKey && !e.ctrlKey);
       if (!isHotkey) return;
       e.preventDefault();
       setCollapseSignal((prev) => ({
@@ -2517,11 +2192,7 @@ function App() {
             <div className="app-header">
               <h1 style={{ textTransform: "uppercase" }}>
                 <LinkText href={REPO_URL}>{window.document.title}</LinkText>
-                <a
-                  href={`${REPO_URL}/actions/workflows/build-main.yml`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href={`${REPO_URL}/actions/workflows/build-main.yml`} target="_blank" rel="noopener noreferrer">
                   <img
                     src={`${REPO_URL}/actions/workflows/build-main.yml/badge.svg`}
                     alt="build"
@@ -2560,10 +2231,8 @@ function App() {
               <code>git clone git@github.com:synle/bashrc.git</code>
               <code>git clone https://github.com/synle/bashrc.git</code>
               <code>
-                rm -rf bashrc && curl -fsSL
-                https://github.com/synle/bashrc/archive/refs/heads/main.zip -o
-                /tmp/bashrc.zip && unzip -q -o /tmp/bashrc.zip -d /tmp && mv
-                /tmp/bashrc-main bashrc
+                rm -rf bashrc && curl -fsSL https://github.com/synle/bashrc/archive/refs/heads/main.zip -o /tmp/bashrc.zip && unzip -q -o
+                /tmp/bashrc.zip -d /tmp && mv /tmp/bashrc-main bashrc
               </code>
             </div>
             <TopNavigationContainer />
@@ -2573,9 +2242,7 @@ function App() {
           <div className="fixed-nav-buttons fixed-nav-left">
             <button
               onClick={() => {
-                const sections = [
-                  ...document.querySelectorAll(".codeBlockWrapper"),
-                ];
+                const sections = [...document.querySelectorAll(".codeBlockWrapper")];
                 const scrollY = window.scrollY;
                 for (let i = sections.length - 1; i >= 0; i--) {
                   const top = sections[i].getBoundingClientRect().top + scrollY;
@@ -2591,9 +2258,7 @@ function App() {
             </button>
             <button
               onClick={() => {
-                const sections = [
-                  ...document.querySelectorAll(".codeBlockWrapper"),
-                ];
+                const sections = [...document.querySelectorAll(".codeBlockWrapper")];
                 const scrollY = window.scrollY;
                 for (let i = 0; i < sections.length; i++) {
                   const top = sections[i].getBoundingClientRect().top + scrollY;
@@ -2607,10 +2272,7 @@ function App() {
               ▼ Next
             </button>
           </div>
-          <button
-            className="fixed-nav-buttons fixed-nav-right"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          >
+          <button className="fixed-nav-buttons fixed-nav-right" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
             Top
           </button>
         </EditorCollapseContext.Provider>

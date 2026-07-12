@@ -261,9 +261,11 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 60. **Solo / solo+bots repos default to push-direct on the default branch, not PR flow.** Generalizes the existing `synle/*` push-direct default to any repo where every recent author is Sy + autonomous agents.
 
     **Detection — run once per repo at task start:**
+
     ```
     git log --format='%ae' -200 | sort -u
     ```
+
     Repo qualifies as solo+bots if every email matches one of:
     - **Sy:** the value of `git config --get user.email`, plus historical Sy emails (`*@linkedin.com`, `*sy@*`, `*syle*`).
     - **Known bot/agent:** `*[bot]@*` (covers dependabot, github-actions, renovate, copilot), `noreply@anthropic.com` (Claude Code), `noreply@opencode.ai`, `copilot@github.com`, `gemini-cli@google.com`.
