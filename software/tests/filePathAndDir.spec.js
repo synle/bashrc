@@ -174,6 +174,27 @@ describe("pathExists", () => {
   it("should return false for non-existent simple path", () => {
     expect(pathExists("/does/not/exist")).toBe(false);
   });
+
+  it("should check statSync when type is provided without targetMatch", () => {
+    mockFsExistence["/test/file.txt"] = { type: "file" };
+    expect(pathExists("/test/file.txt", undefined, "file")).toBe(true);
+    expect(pathExists("/test/file.txt", undefined, "folder")).toBe(false);
+  });
+
+  it("should check statSync for folder type without targetMatch", () => {
+    mockFsExistence["/test/mydir"] = { type: "dir" };
+    expect(pathExists("/test/mydir", undefined, "folder")).toBe(true);
+    expect(pathExists("/test/mydir", undefined, "file")).toBe(false);
+  });
+
+  it("should return true for unknown type without targetMatch", () => {
+    mockFsExistence["/test/something"] = { type: "file" };
+    expect(pathExists("/test/something", undefined, "other")).toBe(true);
+  });
+
+  it("should return false when statSync throws (catch block)", () => {
+    expect(pathExists("/nonexistent_path_xyz", undefined, "file")).toBe(false);
+  });
 });
 
 describe("deprecated wrappers", () => {

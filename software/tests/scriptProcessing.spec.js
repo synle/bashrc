@@ -1,8 +1,9 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { getIndexFunction, getIndexConstant, mockExecCommands, mockFsExistence } from "./setup.js";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { getIndexFunction, getIndexConstant, mockExecCommands, mockFsExistence, fileSystem, setSandboxGlobal } from "./setup.js";
 import fs from "fs";
 
 const mkdir = getIndexFunction("mkdir");
+const copyFile = getIndexFunction("copyFile");
 const deleteFolder = getIndexFunction("deleteFolder");
 const deleteFile = getIndexFunction("deleteFile");
 const execBash = getIndexFunction("execBash");
@@ -13,6 +14,10 @@ const printScriptProcessingResults = getIndexFunction("printScriptProcessingResu
 const downloadAsset = getIndexFunction("downloadAsset");
 const downloadAssets = getIndexFunction("downloadAssets");
 const isBinaryFound = getIndexFunction("isBinaryFound");
+const backupConfigFile = getIndexFunction("backupConfigFile");
+const backupProfileSnapshot = getIndexFunction("backupProfileSnapshot");
+const _readRunTiming = getIndexFunction("_readRunTiming");
+const backupProfileFilesToTempDir = getIndexFunction("backupProfileFilesToTempDir");
 
 describe("execBash", () => {
   it("should execute command asynchronously by default", async () => {
@@ -179,5 +184,139 @@ describe("isBinaryFound", () => {
     const cmd = mockExecCommands.find((c) => c.includes("type g"));
     expect(cmd).toContain("type g");
     expect(cmd).not.toContain("type -P");
+  });
+});
+
+describe("copyFile", () => {
+  it("should fall back to readFileSync when copyFileSync throws", () => {
+    fileSystem["/src/fallback.txt"] = "fallback content";
+    copyFile("/src/fallback.txt", "/dest/fallback.txt");
+    expect(fileSystem["/dest/fallback.txt"]).toBe("fallback content");
+  });
+});
+
+describe("backupConfigFile", () => {
+  beforeEach(() => {
+    Object.keys(mockFsExistence).forEach((k) => delete mockFsExistence[k]);
+    Object.keys(fileSystem).forEach((k) => delete fileSystem[k]);
+  });
+
+  it("should return early if file does not exist", async () => {
+    await backupConfigFile("/mock/nonexistent.txt");
+    expect(fileSystem["/mock/nonexistent.txt.bak_original"]).toBeUndefined();
+  });
+
+  it("should create original backup when it does not exist", async () => {
+    mockFsExistence["/mock/config.txt"] = true;
+    fileSystem["/mock/config.txt"] = "config content";
+    await backupConfigFile("/mock/config.txt");
+    expect(fileSystem["/mock/config.txt.bak_original"]).toBe("config content");
+  });
+
+  it("should skip original backup when it already exists", async () => {
+    mockFsExistence["/mock/config.txt"] = true;
+    mockFsExistence["/mock/config.txt.bak_original"] = true;
+    fileSystem["/mock/config.txt"] = "new content";
+    fileSystem["/mock/config.txt.bak_original"] = "old original";
+    await backupConfigFile("/mock/config.txt");
+    expect(fileSystem["/mock/config.txt.bak_original"]).toBe("old original");
+  });
+
+  it("should create latest backup when content differs from original", async () => {
+    mockFsExistence["/mock/config.txt"] = true;
+    mockFsExistence["/mock/config.txt.bak_original"] = true;
+    fileSystem["/mock/config.txt"] = "current content";
+    fileSystem["/mock/config.txt.bak_original"] = "original content";
+    await backupConfigFile("/mock/config.txt");
+    expect(fileSystem["/mock/config.txt.bak_latest"]).toBe("current content");
+  });
+
+  it("should skip latest backup when content matches original", async () => {
+    mockFsExistence["/mock/config.txt"] = true;
+    mockFsExistence["/mock/config.txt.bak_original"] = true;
+    fileSystem["/mock/config.txt"] = "same content";
+    fileSystem["/mock/config.txt.bak_original"] = "same content";
+    await backupConfigFile("/mock/config.txt");
+    expect(fileSystem["/mock/config.txt.bak_latest"]).toBeUndefined();
+  });
+});
+
+describe("backupProfileSnapshot", () => {
+  beforeEach(() => {
+    Object.keys(mockFsExistence).forEach((k) => delete mockFsExistence[k]);
+    Object.keys(fileSystem).forEach((k) => delete fileSystem[k]);
+  });
+
+  it("should return early if BASHRC_TEMP_DIR is not set", async () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "");
+    await backupProfileSnapshot("test-snapshot.txt");
+    expect(fileSystem["/mock/home/.bash_syle"]).toBeUndefined();
+  });
+
+  it("should write snapshot when BASHRC_TEMP_DIR is set and content exists", async () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "/tmp/test-backup");
+    fileSystem["/mock/home/.bash_syle"] = "profile content";
+    mockFsExistence["/mock/home/.bash_syle"] = true;
+    await backupProfileSnapshot("snapshot.txt");
+    expect(fileSystem["/tmp/test-backup/snapshot.txt"]).toBe("profile content");
+  });
+
+  it("should not write snapshot when content is empty", async () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "/tmp/test-backup");
+    fileSystem["/mock/home/.bash_syle"] = "";
+    mockFsExistence["/mock/home/.bash_syle"] = true;
+    await backupProfileSnapshot("snapshot.txt");
+    expect(fileSystem["/tmp/test-backup/snapshot.txt"]).toBeUndefined();
+  });
+});
+
+describe("_readRunTiming", () => {
+  beforeEach(() => {
+    Object.keys(mockFsExistence).forEach((k) => delete mockFsExistence[k]);
+    Object.keys(fileSystem).forEach((k) => delete fileSystem[k]);
+  });
+
+  it("should return empty object when BASHRC_TEMP_DIR is not set", () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "");
+    const result = _readRunTiming();
+    expect(result).toEqual({});
+  });
+
+  it("should parse timing JSON when file exists", () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "/tmp/test-timing");
+    fileSystem["/tmp/test-timing/run_timing.json"] = JSON.stringify({ start: "2026-01-01", end: "2026-01-02" });
+    const result = _readRunTiming();
+    expect(result.start).toBe("2026-01-01");
+  });
+
+  it("should return empty object when timing file does not exist", () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "/tmp/test-timing");
+    const result = _readRunTiming();
+    expect(result).toEqual({});
+  });
+});
+
+describe("backupProfileFilesToTempDir", () => {
+  beforeEach(() => {
+    Object.keys(mockFsExistence).forEach((k) => delete mockFsExistence[k]);
+    Object.keys(fileSystem).forEach((k) => delete fileSystem[k]);
+  });
+
+  it("should return early if BASHRC_TEMP_DIR is not set", async () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "");
+    await backupProfileFilesToTempDir("before");
+    expect(mockExecCommands.some((c) => c.includes("mkdir"))).toBe(false);
+  });
+
+  it("should back up existing profile files", async () => {
+    setSandboxGlobal("BASHRC_TEMP_DIR", "/tmp/test-prof");
+    fileSystem["/mock/home/.bashrc"] = "bashrc content";
+    fileSystem["/mock/home/.bash_profile"] = "bash_profile content";
+    fileSystem["/mock/home/.bash_syle"] = "bash_syle content";
+    mockFsExistence["/mock/home/.bashrc"] = true;
+    mockFsExistence["/mock/home/.bash_profile"] = true;
+    mockFsExistence["/mock/home/.bash_syle"] = true;
+    await backupProfileFilesToTempDir("before");
+    expect(fileSystem["/tmp/test-prof/before/.bashrc"]).toBe("bashrc content");
   });
 });
