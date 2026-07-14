@@ -8,7 +8,7 @@
     "key": "f5",
     "command": "chain",
     "args": {
-      "commands": [["revert"], ["refresh_folder_list"]],
+      "commands": [["refresh_folder_list"], ["revert"]],
     },
   },
   {
