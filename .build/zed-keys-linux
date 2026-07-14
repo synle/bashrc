@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-07-12]
+// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-07-14]
 // 
 // Zed keymap.json (Linux/Windows)
 // ################################################################################
@@ -11,7 +11,11 @@
       "alt-|": "workspace::ToggleRightDock",
       "ctrl-alt-|": "editor::ToggleSoftWrap",
       "ctrl-`": "terminal_panel::Toggle",
-      "f5": "workspace::ReloadActiveItem",
+      "f5": [
+        "project_panel::Refresh",
+        "pane::RevertEditor",
+        "workspace::ReloadActiveItem"
+      ],
       "alt-n": "workspace::NewFile",
       "alt-shift-n": "workspace::NewWindow",
       "alt-shift-]": "pane::ActivateNextItem",
