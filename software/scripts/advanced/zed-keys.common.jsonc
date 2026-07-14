@@ -36,7 +36,7 @@
       // F5 — refresh project panel + revert/reload the active file from disk.
       // Matches VS Code's chained `refreshFilesExplorer` + `revert` and
       // Sublime's chained `refresh_folder_list` + `revert`.
-      "f5": ["project_panel::Refresh", "pane::RevertEditor"],
+      "f5": ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"],
 
       // ---- Tabs / panes / windows ----
       // new file tab — matches VS Code `workbench.action.files.newUntitledFile` / Sublime `new_file`
