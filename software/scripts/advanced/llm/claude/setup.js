@@ -298,6 +298,7 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
   // /sy-release-{main,master,stable,official,beta} aliases were retired
   // 2026-05-13; see CLAUDE_COMMAND_RETIRED_NAMES below).
   "sy-release.md": "release",
+  "sy-plan-grill-me.md": "plan-grill-me",
 };
 
 /**

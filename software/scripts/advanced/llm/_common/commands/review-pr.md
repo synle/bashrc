@@ -51,8 +51,19 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 7. **Read the diff and review.**
    - `gh pr diff <number> --repo <owner/repo>` → full diff.
    - For stale-approval cases (Step 3), restrict to the new commits since your last review.
-   - **What to review:** correctness, safety, architectural issues, security holes, data-loss risks, broken core invariants, load-bearing test gaps.
-   - **YAGNI / ponytail violations (rule 58)** — flag where the diff adds a new abstraction layer, a new runtime dependency, or a new class / module / wrapper without a concrete caller in the same diff, OR where stdlib / a native platform feature / an already-installed dep would have covered the use case. Code shipped "for the future" with no current consumer counts. This is structural overhead, not a style nit — name the cheaper alternative when flagging (stdlib X, existing dep Y, inline one-liner, drop the wrapper).
+    - **What to review:** correctness, safety, architectural issues, security holes, data-loss risks, broken core invariants, load-bearing test gaps.
+    - **YAGNI / ponytail violations (rule 58)** — flag where the diff adds a new abstraction layer, a new runtime dependency, or a new class / module / wrapper without a concrete caller in the same diff, OR where stdlib / a native platform feature / an already-installed dep would have covered the use case. Code shipped "for the future" with no current consumer counts. This is structural overhead, not a style nit — name the cheaper alternative when flagging (stdlib X, existing dep Y, inline one-liner, drop the wrapper).
+
+      **Output format — one line per finding:** `L<line>: <tag> <what>. <replacement>.` or `<file>:L<line>: ...` for multi-file diffs.
+
+      Tags:
+      - `delete:` dead code, unused flexibility, speculative feature. Replacement: nothing.
+      - `stdlib:` hand-rolled thing the standard library ships. Name the function.
+      - `native:` dependency or code doing what the platform already does. Name the feature.
+      - `yagni:` abstraction with one implementation, config nobody sets, layer with one caller.
+      - `shrink:` same logic, fewer lines. Show the shorter form.
+
+      **Scoring:** end ponytail section with `net: -<N> lines possible.` If nothing to cut, skip the section entirely.
    - **What NOT to review (skip):**
      - Nitpicks — style drift, naming preferences, formatting, doc wording (unless wrong/misleading).
      - Anything another reviewer already covered (Step 6 de-dup).
