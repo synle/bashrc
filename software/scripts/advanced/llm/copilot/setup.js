@@ -442,7 +442,7 @@ async function _doCopilotInstructionsWork(targetDir) {
   } catch {
     // AGENTS.md doesn't exist — fine, we'll create the symlink below.
   }
-  fs.symlinkSync("copilot-instructions.md", agentsLink);
+  safeSymlink("copilot-instructions.md", agentsLink);
 }
 
 /**
