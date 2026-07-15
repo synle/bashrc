@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-07-14]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-07-15]
 // 
 // Zed keymap.json (Linux/Windows)
 // ################################################################################
@@ -12,14 +12,17 @@
       "ctrl-alt-|": "editor::ToggleSoftWrap",
       "ctrl-`": "terminal_panel::Toggle",
       "f5": [
-        "project_panel::Refresh",
-        "pane::RevertEditor",
-        "workspace::ReloadActiveItem"
+        "action::Sequence",
+        [
+          "project_panel::Refresh",
+          "pane::RevertEditor",
+          "workspace::ReloadActiveItem"
+        ]
       ],
       "alt-n": "workspace::NewFile",
       "alt-shift-n": "workspace::NewWindow",
       "alt-shift-]": "pane::ActivateNextItem",
-      "alt-shift-[": "pane::ActivatePrevItem",
+      "alt-shift-[": "pane::ActivatePreviousItem",
       "alt-1": [
         "pane::ActivateItem",
         0
@@ -65,6 +68,14 @@
       "alt-t": "workspace::NewCenterTerminal",
       "alt-s": "workspace::Save",
       "alt-shift-s": "workspace::SaveAll",
+      "alt-shift-r": [
+        "action::Sequence",
+        [
+          "project_panel::Refresh",
+          "pane::RevertEditor",
+          "workspace::ReloadActiveItem"
+        ]
+      ],
       "alt-a": "editor::SelectAll",
       "alt-c": "editor::Copy",
       "alt-v": "editor::Paste",
@@ -139,7 +150,7 @@
       "alt-n": "workspace::NewFile",
       "alt-shift-n": "workspace::NewWindow",
       "alt-shift-]": "pane::ActivateNextItem",
-      "alt-shift-[": "pane::ActivatePrevItem",
+      "alt-shift-[": "pane::ActivatePreviousItem",
       "alt-1": [
         "pane::ActivateItem",
         0
@@ -185,6 +196,14 @@
       "alt-t": "workspace::NewCenterTerminal",
       "alt-s": "workspace::Save",
       "alt-shift-s": "workspace::SaveAll",
+      "alt-shift-r": [
+        "action::Sequence",
+        [
+          "project_panel::Refresh",
+          "pane::RevertEditor",
+          "workspace::ReloadActiveItem"
+        ]
+      ],
       "alt-a": "editor::SelectAll",
       "alt-x": "editor::Cut",
       "alt-z": "editor::Undo",

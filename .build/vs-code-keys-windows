@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-07-14]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-07-15]
 // 
 // VS Code keybindings.json (Windows/Linux)
 // ################################################################################
@@ -47,6 +47,16 @@
   },
   {
     "key": "f5",
+    "command": "runCommands",
+    "args": {
+      "commands": [
+        "workbench.files.action.refreshFilesExplorer",
+        "workbench.action.files.revert"
+      ]
+    }
+  },
+  {
+    "key": "alt+shift+r",
     "command": "runCommands",
     "args": {
       "commands": [

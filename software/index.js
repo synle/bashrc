@@ -56,7 +56,8 @@ const parseInteger = function (v) {
  * @param {*} v - The value to parse
  * @returns {boolean}
  */
-const parseBoolean = (v) => parseString(v).toLowerCase() === "true" || parseInteger(v, 0) === 1;
+const parseBoolean = (v) =>
+  parseString(v).toLowerCase() === "true" || parseInteger(v, 0) === 1;
 
 /**
  * Retrieves a runtime option by key. Checks command-line arguments first (--key=value or -key=value),
@@ -121,7 +122,8 @@ function stripJsoncComments(text) {
     } else if (c === "/" && next === "*") {
       // Block comment — skip to closing "*/".
       i += 2;
-      while (i < n && !(text[i] === "*" && i + 1 < n && text[i + 1] === "/")) i++;
+      while (i < n && !(text[i] === "*" && i + 1 < n && text[i + 1] === "/"))
+        i++;
       i += 2;
     } else {
       out += c;
@@ -176,7 +178,9 @@ function expandPresetFiles(name, presetMap, visited = new Set(), chain = []) {
   }
   const preset = presetMap[name];
   if (!preset || typeof preset !== "object") {
-    const ctx = chain.length ? ` (referenced from "${chain[chain.length - 1]}")` : "";
+    const ctx = chain.length
+      ? ` (referenced from "${chain[chain.length - 1]}")`
+      : "";
     throw new Error(`Unknown preset "${name}"${ctx}.`);
   }
   visited.add(name);
@@ -229,9 +233,12 @@ function _resolvePresetName(name, presetMap, opts = {}) {
   const matches = known.filter((k) => k.toLowerCase().includes(needle));
   if (matches.length === 1) return matches[0];
   if (matches.length > 1) {
-    const suggestions = matches.map((m) => `  bash run.sh ${flag}${m}`).join("\n");
+    const suggestions = matches
+      .map((m) => `  bash run.sh ${flag}${m}`)
+      .join("\n");
     throw new Error(
-      `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` + `Pick one and re-run:\n${suggestions}`,
+      `Preset "${name}" is ambiguous — matched ${matches.length}: ${matches.join(", ")}.\n` +
+        `Pick one and re-run:\n${suggestions}`,
     );
   }
   return null;
@@ -398,7 +405,8 @@ const os = require("os");
 const crypto = require("crypto");
 const { exec, execSync } = require("child_process");
 /** @type {string} Base home directory path for the current user. Read from env var set by run.sh before any sudo runs. RHEL/Fedora sudoers has `always_set_home` which resets $HOME to /root even with `sudo -E`, and os.homedir() reads /etc/passwd which also returns /root. This custom env var survives sudo because sudoers only resets HOME, not arbitrary vars. Falls back to os.homedir() for non-run.sh contexts (tests, direct invocation). */
-const BASE_HOMEDIR_LINUX = process.env.BASE_HOMEDIR_LINUX || process.env.HOME || os.homedir();
+const BASE_HOMEDIR_LINUX =
+  process.env.BASE_HOMEDIR_LINUX || process.env.HOME || os.homedir();
 
 /** @type {string} Path to the main ~/.bash_syle profile file */
 const BASH_SYLE_PATH = getRuntimeOption("BASH_SYLE_PATH");
@@ -414,7 +422,9 @@ const FNM_DIR = getRuntimeOption("FNM_DIR");
 /** @type {string} Path to the default Node.js binary managed by fnm */
 const FNM_DEFAULT_NODE_PATH = getRuntimeOption("FNM_DEFAULT_NODE_PATH");
 /** @type {string} Base URL for fetching raw files from the repo (e.g. GitHub raw content URL) */
-const BASH_PROFILE_CODE_REPO_RAW_URL = getRuntimeOption("BASH_PROFILE_CODE_REPO_RAW_URL");
+const BASH_PROFILE_CODE_REPO_RAW_URL = getRuntimeOption(
+  "BASH_PROFILE_CODE_REPO_RAW_URL",
+);
 /** @type {string} GitHub repo identifier in "owner/repo" format */
 const REPO_PATH_IDENTIFIER = getRuntimeOption("REPO_PATH_IDENTIFIER");
 /** @type {string} Git branch name to fetch remote content from */
@@ -424,7 +434,10 @@ const BUILD_DIR = ".build";
 /** @type {string} Comma-separated list of specific script files to run (empty for full run) */
 const TEST_SCRIPT_FILES = getRuntimeOption("TEST_SCRIPT_FILES");
 /** @type {boolean} When true, prints active OS detection flags at startup */
-const SHOULD_PRINT_OS_FLAGS = getRuntimeOption("SHOULD_PRINT_OS_FLAGS", parseBoolean);
+const SHOULD_PRINT_OS_FLAGS = getRuntimeOption(
+  "SHOULD_PRINT_OS_FLAGS",
+  parseBoolean,
+);
 /** @type {boolean} When true, deletes and re-downloads resources before installing */
 const IS_FORCE_REFRESH = getRuntimeOption("IS_FORCE_REFRESH", parseBoolean);
 /** @type {boolean} When true, reads files from disk instead of fetching remotely. Auto-detected from CWD. */
@@ -496,11 +509,15 @@ function getGitHubRawUrl(filePath) {
 /** @type {string} Temp directory for the current run (set by common-env.sh, e.g. /tmp/synle/bashrc/2026_03_24_14_00) */
 const BASHRC_TEMP_DIR = getRuntimeOption("BASHRC_TEMP_DIR");
 /** @type {string} Prefix for all temp script files written during execution (inside BASHRC_TEMP_DIR or /tmp fallback) */
-const TEMP_SCRIPT_PREFIX = BASHRC_TEMP_DIR ? `${BASHRC_TEMP_DIR}/sw_` : "/tmp/bashrc_syle_sw_";
+const TEMP_SCRIPT_PREFIX = BASHRC_TEMP_DIR
+  ? `${BASHRC_TEMP_DIR}/sw_`
+  : "/tmp/bashrc_syle_sw_";
 /** @type {string} Path to the download asset metadata log file for tracking download status */
 const DOWNLOAD_ASSET_METADATA_PATH = `${TEMP_SCRIPT_PREFIX}download_asset_metadata.log`;
 /** @type {number} Console line break width for separator lines (default 80) */
-const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseInteger(v, 80));
+const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) =>
+  parseInteger(v, 80),
+);
 /**
  * @type {number} Code print width for formatting (default 140).
  * KEEP IN SYNC with `--print-width 140` in the `format` script in package.json
@@ -509,7 +526,10 @@ const LINE_BREAK_COUNT = getRuntimeOption("LINE_BREAK_COUNT", (v) => parseIntege
  * other must too (otherwise Prettier-formatted files won't line up with the
  * editor ruler). Override at runtime via the PRINT_WIDTH_BREAK_COUNT env var.
  */
-const PRINT_WIDTH_BREAK_COUNT = getRuntimeOption("PRINT_WIDTH_BREAK_COUNT", (v) => parseInteger(v, 140));
+const PRINT_WIDTH_BREAK_COUNT = getRuntimeOption(
+  "PRINT_WIDTH_BREAK_COUNT",
+  (v) => parseInteger(v, 140),
+);
 
 /**
  * Tracks the processing status of each script file during execution.
@@ -575,7 +595,9 @@ function getCachedValue(key) {
 /** @type {number} Default editor font size */
 const DEFAULT_FONT_SIZE = 16;
 /** @type {number} Editor font size (min 10, default 16). Override with FONT_SIZE env var */
-const fontSize = getRuntimeOption("FONT_SIZE", (v) => parseInteger(v, DEFAULT_FONT_SIZE));
+const fontSize = getRuntimeOption("FONT_SIZE", (v) =>
+  parseInteger(v, DEFAULT_FONT_SIZE),
+);
 /**
  * @type {number} Editor tab / indentation size (default 2). Single source of
  * truth for indent width across the codebase. KEEP IN SYNC with:
@@ -593,7 +615,9 @@ const fontFamily = getRuntimeOption("FONT_FAMILY") || "Fira Code";
 /** @type {string} Editor font weight keyword (default 'bold'). Override with FONT_WEIGHT_KEYWORD env var */
 const fontWeightKeyword = getRuntimeOption("FONT_WEIGHT_KEYWORD") || "bold";
 /** @type {number} Editor font weight number (default 700). Override with FONT_WEIGHT_NUMBER env var */
-const fontWeightNumber = getRuntimeOption("FONT_WEIGHT_NUMBER", (v) => parseInteger(v, 700));
+const fontWeightNumber = getRuntimeOption("FONT_WEIGHT_NUMBER", (v) =>
+  parseInteger(v, 700),
+);
 
 /**
  * Editor configuration object containing font settings, tab size, max line length,
@@ -1098,26 +1122,37 @@ Object.keys(process.env)
 
 // Explicit const declarations so tsc emits these in the .d.ts (see table above)
 /** @type {boolean} macOS (darwin) */ const is_os_mac = !!global.is_os_mac;
-/** @type {boolean} Ubuntu, Debian, Mint */ const is_os_ubuntu = !!global.is_os_ubuntu;
+/** @type {boolean} Ubuntu, Debian, Mint */ const is_os_ubuntu =
+  !!global.is_os_ubuntu;
 /** @type {boolean} ChromeOS */ const is_os_chromeos = !!global.is_os_chromeos;
-/** @type {boolean} MSYS2 / Cygwin / MinGW64 */ const is_os_mingw64 = !!global.is_os_mingw64;
-/** @type {boolean} Android Termux */ const is_os_android_termux = !!global.is_os_android_termux;
-/** @type {boolean} Arch Linux, SteamOS */ const is_os_arch_linux = !!global.is_os_arch_linux;
+/** @type {boolean} MSYS2 / Cygwin / MinGW64 */ const is_os_mingw64 =
+  !!global.is_os_mingw64;
+/** @type {boolean} Android Termux */ const is_os_android_termux =
+  !!global.is_os_android_termux;
+/** @type {boolean} Arch Linux, SteamOS */ const is_os_arch_linux =
+  !!global.is_os_arch_linux;
 /** @type {boolean} SteamOS */ const is_os_steamos = !!global.is_os_steamos;
-/** @type {boolean} Fedora, RHEL, CentOS, Rocky */ const is_os_redhat = !!global.is_os_redhat;
-/** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_windows = !!global.is_os_windows;
-/** @type {boolean} Windows Subsystem for Linux */ const is_os_wsl = !!global.is_os_wsl;
+/** @type {boolean} Fedora, RHEL, CentOS, Rocky */ const is_os_redhat =
+  !!global.is_os_redhat;
+/** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_windows =
+  !!global.is_os_windows;
+/** @type {boolean} Windows Subsystem for Linux */ const is_os_wsl =
+  !!global.is_os_wsl;
 
 /**
  * List of OS flags considered limited-support platforms. Scripts calling
  * `exitIfLimitedSupportOs()` will exit early when running on any of these.
  * @type {string[]}
  */
-const LIMITED_SUPPORT_OSES = (process.env.LIMITED_SUPPORT_OSES || "").split(",").filter(Boolean);
+const LIMITED_SUPPORT_OSES = (process.env.LIMITED_SUPPORT_OSES || "")
+  .split(",")
+  .filter(Boolean);
 
 /** @type {boolean} When true, the current OS supports advanced profile features (any is_os_* flag set and not in LIMITED_SUPPORT_OSES). */
 const IS_ADVANCED_PROFILE_ENABLED =
-  Object.keys(process.env).some((k) => k.indexOf("is_os_") === 0 && global[k]) && LIMITED_SUPPORT_OSES.every((k) => !global[k]);
+  Object.keys(process.env).some(
+    (k) => k.indexOf("is_os_") === 0 && global[k],
+  ) && LIMITED_SUPPORT_OSES.every((k) => !global[k]);
 
 /** @type {string} WSL path to Windows Program Files (64-bit) */
 const BASE_PROGRAM_FILES_WINDOW = "/mnt/c/Program Files";
@@ -1147,9 +1182,16 @@ const hasChromiumBrowser = resolveOsKey({
     pathExists("/Applications", /^Brave Browser\.app$/) ||
     pathExists("/Applications", /^Microsoft Edge\.app$/),
   windows: () => {
-    const chromiumSubPaths = ["Google/Chrome", "BraveSoftware/Brave-Browser", "Microsoft/Edge"];
+    const chromiumSubPaths = [
+      "Google/Chrome",
+      "BraveSoftware/Brave-Browser",
+      "Microsoft/Edge",
+    ];
     // System-wide installs (Program Files / Program Files (x86))
-    for (const root of [BASE_PROGRAM_FILES_WINDOW, BASE_PROGRAM_FILES_X86_WINDOW]) {
+    for (const root of [
+      BASE_PROGRAM_FILES_WINDOW,
+      BASE_PROGRAM_FILES_X86_WINDOW,
+    ]) {
       for (const sub of chromiumSubPaths) {
         if (pathExists(`${root}/${sub}`, /Application/)) return true;
       }
@@ -1217,7 +1259,10 @@ function _expandShortFormMarkers(content, commentPrefix, commentSuffix = "") {
   const escaped = commentPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const escapedSuffix = commentSuffix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const keywords = `${TEXT_BLOCK_SHORT_MARKER}|${TEXT_BLOCK_ALIAS_MARKER}`;
-  const pattern = new RegExp(`${escaped} (?:${keywords})\\s+[^a-zA-Z0-9]*([^\\r\\n]+?)\\s*${escapedSuffix}$`, "gm");
+  const pattern = new RegExp(
+    `${escaped} (?:${keywords})\\s+[^a-zA-Z0-9]*([^\\r\\n]+?)\\s*${escapedSuffix}$`,
+    "gm",
+  );
   return content.replace(pattern, (_, key) => {
     const begin = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}${commentSuffix}`;
     const end = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}${commentSuffix}`;
@@ -1239,7 +1284,10 @@ function _expandSourceMarkers(content, commentPrefix, commentSuffix = "") {
   const escapedSuffix = commentSuffix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   // Step 1: Expand short-form "# SOURCE path" into "# SOURCE_BEGIN path\n# SOURCE_END path"
-  const shortPattern = new RegExp(`${escaped} ${TEXT_BLOCK_SOURCE_MARKER}\\s+.*?(\\S+\\/\\S+?)\\s*${escapedSuffix}$`, "gm");
+  const shortPattern = new RegExp(
+    `${escaped} ${TEXT_BLOCK_SOURCE_MARKER}\\s+.*?(\\S+\\/\\S+?)\\s*${escapedSuffix}$`,
+    "gm",
+  );
   content = content.replace(shortPattern, (_, key) => {
     const trimmedKey = key.trim();
     const begin = `${commentPrefix} ${TEXT_BLOCK_SOURCE_START_MARKER} ${trimmedKey}${commentSuffix}`;
@@ -1250,7 +1298,10 @@ function _expandSourceMarkers(content, commentPrefix, commentSuffix = "") {
   // Step 2: Collect all file paths from SOURCE_BEGIN markers (including freshly expanded ones)
   /** @type {string[]} */
   const sourceFiles = [];
-  const beginPattern = new RegExp(`${escaped} ${TEXT_BLOCK_SOURCE_START_MARKER}\\s+(\\S+)\\s*${escapedSuffix}$`, "gm");
+  const beginPattern = new RegExp(
+    `${escaped} ${TEXT_BLOCK_SOURCE_START_MARKER}\\s+(\\S+)\\s*${escapedSuffix}$`,
+    "gm",
+  );
   let match;
   while ((match = beginPattern.exec(content)) !== null) {
     sourceFiles.push(match[1].trim());
@@ -1269,7 +1320,13 @@ function _expandSourceMarkers(content, commentPrefix, commentSuffix = "") {
  * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns content as-is.
  * @returns {string} The modified content with all blocks replaced
  */
-function replaceBlocks(content, blockMap, commentPrefix, commentSuffix = "", insertMode) {
+function replaceBlocks(
+  content,
+  blockMap,
+  commentPrefix,
+  commentSuffix = "",
+  insertMode,
+) {
   content = _expandShortFormMarkers(content, commentPrefix, commentSuffix);
 
   for (const [key, sourceContent] of Object.entries(blockMap)) {
@@ -1287,7 +1344,10 @@ function replaceBlocks(content, blockMap, commentPrefix, commentSuffix = "", ins
       // references in documentation), and indexOf would match that first.
       endIdx = content.lastIndexOf(END);
       if (endIdx !== -1 && endIdx > beginIdx) {
-        content = content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
+        content =
+          content.slice(0, beginIdx) +
+          block +
+          content.slice(endIdx + END.length);
       }
     } else if (insertMode === "append") {
       content = `${content}\n\n${block}\n`;
@@ -1313,8 +1373,21 @@ function replaceBlocks(content, blockMap, commentPrefix, commentSuffix = "", ins
  * @param {'append'|'prepend'|null} [insertMode] - Where to insert if block not found. null/undefined returns content as-is.
  * @returns {string} The modified content, or original content if markers not found and no insertMode
  */
-function replaceBlock(content, key, sourceContent, commentPrefix, commentSuffix = "", insertMode) {
-  return replaceBlocks(content, { [key]: sourceContent }, commentPrefix, commentSuffix, insertMode);
+function replaceBlock(
+  content,
+  key,
+  sourceContent,
+  commentPrefix,
+  commentSuffix = "",
+  insertMode,
+) {
+  return replaceBlocks(
+    content,
+    { [key]: sourceContent },
+    commentPrefix,
+    commentSuffix,
+    insertMode,
+  );
 }
 
 /**
@@ -1372,7 +1445,12 @@ if (typeof module !== "undefined" && require.main !== module) {
  * @param {string} [commentSuffix=''] - Comment suffix
  * @returns {string} The modified content with all source blocks replaced
  */
-function _replaceSourceBlocks(content, blockMap, commentPrefix, commentSuffix = "") {
+function _replaceSourceBlocks(
+  content,
+  blockMap,
+  commentPrefix,
+  commentSuffix = "",
+) {
   for (const [key, sourceContent] of Object.entries(blockMap)) {
     const trimmed = sourceContent.trim();
     const BEGIN = `${commentPrefix} ${TEXT_BLOCK_SOURCE_START_MARKER} ${key}${commentSuffix}`;
@@ -1383,7 +1461,8 @@ function _replaceSourceBlocks(content, blockMap, commentPrefix, commentSuffix = 
     const endIdx = content.indexOf(END);
 
     if (beginIdx !== -1 && endIdx !== -1) {
-      content = content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
+      content =
+        content.slice(0, beginIdx) + block + content.slice(endIdx + END.length);
     }
   }
 
@@ -1403,14 +1482,21 @@ function _replaceSourceBlocks(content, blockMap, commentPrefix, commentSuffix = 
  */
 function findPathList(srcDir, targetMatch, options = {}) {
   const { type = "any", recursive = false } = options;
-  const matcher = typeof targetMatch === "string" ? (name) => name === targetMatch : (name) => name.match(targetMatch);
+  const matcher =
+    typeof targetMatch === "string"
+      ? (name) => name === targetMatch
+      : (name) => name.match(targetMatch);
   try {
     const entries = fs.readdirSync(srcDir, { withFileTypes: true });
     const results = [];
     for (const entry of entries) {
       const fullPath = path.join(srcDir, entry.name);
       if (matcher(entry.name)) {
-        if (type === "any" || (type === "file" && entry.isFile()) || (type === "folder" && entry.isDirectory())) {
+        if (
+          type === "any" ||
+          (type === "file" && entry.isFile()) ||
+          (type === "folder" && entry.isDirectory())
+        ) {
           results.push(fullPath);
         }
       }
@@ -1529,7 +1615,12 @@ function findFirstDirFromList(findProps) {
  * @param {boolean} [suppressError=false] - Whether to suppress the "skipped" log message
  * @returns {Promise<void>}
  */
-async function writeText(filePath, text, override = true, suppressError = false) {
+async function writeText(
+  filePath,
+  text,
+  override = true,
+  suppressError = false,
+) {
   const pathToUse = filePath;
   const newContent = (text || "").trim();
   const oldContent = (await readText`${pathToUse}`).trim();
@@ -1542,10 +1633,16 @@ async function writeText(filePath, text, override = true, suppressError = false)
     // if content don't change, then don't save
     // if override is set to false, then don't override
     if (suppressError !== true) {
-      log(`<<<< Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
+      log(
+        `<<<< Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`,
+        pathToUse,
+      );
     }
   } else if (IS_DRY_RUN) {
-    log(`<<<< [DryRun] Would update newContent=${newContent.length}`, pathToUse);
+    log(
+      `<<<< [DryRun] Would update newContent=${newContent.length}`,
+      pathToUse,
+    );
   } else {
     log(`<<<< Updated [Modified] newContent=${newContent.length}`, pathToUse);
     await _atomicWrite(pathToUse, newContent);
@@ -1594,11 +1691,23 @@ async function writeJson(filePath, json, comments = "") {
  * @param {string} [backupContent] - Optional existing content to validate against
  * @param {number} [minRatio=0.1] - Minimum ratio of new content size to backup size (0-1)
  */
-async function safeWriteText(targetPath, newContent, backupContent, minRatio = 0.1) {
+async function safeWriteText(
+  targetPath,
+  newContent,
+  backupContent,
+  minRatio = 0.1,
+) {
   if (!newContent || newContent.trim().length === 0) {
-    throw new Error(`generated content is empty, keeping backup: ${targetPath}`);
-  } else if (backupContent && newContent.length < backupContent.length * minRatio) {
-    throw new Error(`generated content is <${Math.round(minRatio * 100)}% of backup size, keeping backup: ${targetPath}`);
+    throw new Error(
+      `generated content is empty, keeping backup: ${targetPath}`,
+    );
+  } else if (
+    backupContent &&
+    newContent.length < backupContent.length * minRatio
+  ) {
+    throw new Error(
+      `generated content is <${Math.round(minRatio * 100)}% of backup size, keeping backup: ${targetPath}`,
+    );
   } else {
     await writeText(targetPath, newContent);
   }
@@ -1612,14 +1721,21 @@ async function safeWriteText(targetPath, newContent, backupContent, minRatio = 0
  * @param {number} [changeThreshold=0.1] - Minimum percentage of change (0 to 1) required to trigger a write. Defaults to 10%
  * @returns {void}
  */
-async function writeTextIfSignificantChange(filePath, text, changeThreshold = 0.1) {
+async function writeTextIfSignificantChange(
+  filePath,
+  text,
+  changeThreshold = 0.1,
+) {
   const pathToUse = filePath;
   const newContent = (text || "").trim();
   const oldContent = (await readText`${pathToUse}`).trim();
 
   if (oldContent.length === 0) {
     if (IS_DRY_RUN) {
-      log(`<<<< [DryRun] Would create newContent=${newContent.length}`, pathToUse);
+      log(
+        `<<<< [DryRun] Would create newContent=${newContent.length}`,
+        pathToUse,
+      );
     } else {
       log(`<<<< Updated [New] newContent=${newContent.length}`, pathToUse);
       await _atomicWrite(pathToUse, newContent);
@@ -1628,22 +1744,38 @@ async function writeTextIfSignificantChange(filePath, text, changeThreshold = 0.
   }
 
   if (newContent === oldContent) {
-    log(`<<<< Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
+    log(
+      `<<<< Skipped [NotModified] oldContent=${oldContent.length} newContent=${newContent.length}`,
+      pathToUse,
+    );
     return;
   }
 
-  const changeRatio = Math.abs(newContent.length - oldContent.length) / oldContent.length;
-  const changePercent = calculatePercentage(Math.abs(newContent.length - oldContent.length), oldContent.length);
+  const changeRatio =
+    Math.abs(newContent.length - oldContent.length) / oldContent.length;
+  const changePercent = calculatePercentage(
+    Math.abs(newContent.length - oldContent.length),
+    oldContent.length,
+  );
 
   if (changeRatio >= changeThreshold) {
     if (IS_DRY_RUN) {
-      log(`<<<< [DryRun] Would update [Modified ${changePercent}] newContent=${newContent.length}`, pathToUse);
+      log(
+        `<<<< [DryRun] Would update [Modified ${changePercent}] newContent=${newContent.length}`,
+        pathToUse,
+      );
     } else {
-      log(`<<<< Updated [Modified ${changePercent}] newContent=${newContent.length}`, pathToUse);
+      log(
+        `<<<< Updated [Modified ${changePercent}] newContent=${newContent.length}`,
+        pathToUse,
+      );
       await _atomicWrite(pathToUse, newContent);
     }
   } else {
-    log(`<<<< Skipped [BelowThreshold ${changePercent}] oldContent=${oldContent.length} newContent=${newContent.length}`, pathToUse);
+    log(
+      `<<<< Skipped [BelowThreshold ${changePercent}] oldContent=${oldContent.length} newContent=${newContent.length}`,
+      pathToUse,
+    );
   }
 }
 
@@ -1725,7 +1857,11 @@ async function backupProfileFilesToTempDir(label) {
   }
   const backupDir = path.join(BASHRC_TEMP_DIR, label);
   fs.mkdirSync(backupDir, { recursive: true });
-  const filesToBackup = [path.join(BASE_HOMEDIR_LINUX, ".bashrc"), path.join(BASE_HOMEDIR_LINUX, ".bash_profile"), BASH_SYLE_PATH];
+  const filesToBackup = [
+    path.join(BASE_HOMEDIR_LINUX, ".bashrc"),
+    path.join(BASE_HOMEDIR_LINUX, ".bash_profile"),
+    BASH_SYLE_PATH,
+  ];
   for (const filePath of filesToBackup) {
     const content = await readText`${filePath}`;
     if (content) {
@@ -1766,7 +1902,7 @@ function getAutoGeneratedText() {
   const MM = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
 
-  return `NOTE: STOP - do not edit by hand - this file is auto-generated [${yyyy}-${MM}-${dd}]\n`;
+  return `NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [${yyyy}-${MM}-${dd}]\n`;
 }
 
 /**
@@ -1789,7 +1925,9 @@ async function writeBuildArtifact(tasks) {
 
   if (IS_CI) {
     mkdir(BUILD_DIR);
-    for (let { file, data, isJson, comments, commentStyle } of [].concat(tasks)) {
+    for (let { file, data, isJson, comments, commentStyle } of [].concat(
+      tasks,
+    )) {
       isJson = !!isJson;
       comments = (comments || "").trim();
 
@@ -1873,7 +2011,11 @@ async function appendText(filePath, text) {
  * @param {boolean} [makeAdditionalBackup=false] - If true, also creates a timestamped backup
  * @returns {void}
  */
-async function replaceTextLineByLine(filePath, replacements, makeAdditionalBackup = false) {
+async function replaceTextLineByLine(
+  filePath,
+  replacements,
+  makeAdditionalBackup = false,
+) {
   const oldText = await readText`${filePath}`;
 
   const newText = oldText
@@ -1990,7 +2132,9 @@ function parseJsonWithComments(oldText) {
     try {
       return new Function(`return (${oldText})`)();
     } catch (e) {
-      throw new Error(`parseJsonWithComments: failed to parse input - ${e.message} - ${oldText.replace(/\s+/g, " ").substr(0, 200)}...`);
+      throw new Error(
+        `parseJsonWithComments: failed to parse input - ${e.message} - ${oldText.replace(/\s+/g, " ").substr(0, 200)}...`,
+      );
     }
   }
 }
@@ -2001,7 +2145,9 @@ function parseJsonWithComments(oldText) {
  * @returns {object} A deep copy of the input object
  */
 function clone(obj) {
-  return typeof structuredClone === "function" ? structuredClone(obj) : JSON.parse(JSON.stringify(obj));
+  return typeof structuredClone === "function"
+    ? structuredClone(obj)
+    : JSON.parse(JSON.stringify(obj));
 }
 
 /**
@@ -2013,7 +2159,9 @@ function clone(obj) {
  * @returns {Promise<boolean>} True if the command is found
  */
 async function isBinaryFound(name, includeAliases = false) {
-  const cmd = includeAliases ? `type ${name} 2>/dev/null` : `type -P ${name} 2>/dev/null`;
+  const cmd = includeAliases
+    ? `type ${name} 2>/dev/null`
+    : `type -P ${name} 2>/dev/null`;
   const result = await execBash(cmd);
   return result.trim().length > 0;
 }
@@ -2084,7 +2232,9 @@ async function deleteFolder(targetPath) {
   log(`>> Deleting folder ${targetPath}`);
   await execBash(`rm -rf "${targetPath}"`);
   if (pathExists(targetPath)) {
-    throw new Error(`Failed to delete ${targetPath} (permission denied — is it root-owned? try: sudo rm -rf "${targetPath}")`);
+    throw new Error(
+      `Failed to delete ${targetPath} (permission denied — is it root-owned? try: sudo rm -rf "${targetPath}")`,
+    );
   }
   return "";
 }
@@ -2161,9 +2311,13 @@ let _windowUserBaseDir;
 function getWindowUserBaseDir() {
   if (_windowUserBaseDir !== undefined) return _windowUserBaseDir;
   try {
-    const userProfile = execBashSync(`cmd.exe /C "echo %USERPROFILE%" 2>/dev/null`).replace(/\r/g, "");
+    const userProfile = execBashSync(
+      `cmd.exe /C "echo %USERPROFILE%" 2>/dev/null`,
+    ).replace(/\r/g, "");
     if (userProfile && !userProfile.includes("%USERPROFILE%")) {
-      const wslPath = userProfile.replace(/^([A-Za-z]):/, (_, d) => `/mnt/${d.toLowerCase()}`).replace(/\\/g, "/");
+      const wslPath = userProfile
+        .replace(/^([A-Za-z]):/, (_, d) => `/mnt/${d.toLowerCase()}`)
+        .replace(/\\/g, "/");
       if (pathExists(wslPath)) {
         _windowUserBaseDir = wslPath;
         return _windowUserBaseDir;
@@ -2175,7 +2329,8 @@ function getWindowUserBaseDir() {
   const regexSystemUsers = /^(Public|Default|Default User|All Users)$/i;
   const allUsers = findPathList(usersDir, /./, { type: "folder" });
   _windowUserBaseDir =
-    findPath(usersDir, regexUsername, { type: "folder" }) || allUsers.find((d) => !path.basename(d).match(regexSystemUsers));
+    findPath(usersDir, regexUsername, { type: "folder" }) ||
+    allUsers.find((d) => !path.basename(d).match(regexSystemUsers));
   return _windowUserBaseDir;
 }
 
@@ -2186,8 +2341,12 @@ function getWindowUserBaseDir() {
  * @returns {Promise<string>} The resolved directory path for storing application binaries
  */
 async function getWindowsApplicationBinaryDir(applicationName) {
-  const mntDrive = findPath("/mnt", /^d$/, { type: "folder" }) || findPath("/mnt", /^c$/, { type: "folder" });
-  let targetPath = mntDrive ? path.join(mntDrive, "Applications") : await getCustomTweaksPath("windows");
+  const mntDrive =
+    findPath("/mnt", /^d$/, { type: "folder" }) ||
+    findPath("/mnt", /^c$/, { type: "folder" });
+  let targetPath = mntDrive
+    ? path.join(mntDrive, "Applications")
+    : await getCustomTweaksPath("windows");
   if (applicationName) targetPath = path.join(targetPath, applicationName);
   return targetPath;
 }
@@ -2198,7 +2357,9 @@ async function getWindowsApplicationBinaryDir(applicationName) {
  * @returns {string} The resolved path
  */
 function getCustomTweaksPath(subPath) {
-  const baseDir = is_os_windows ? path.join(getWindowUserBaseDir(), "_extra") : path.join(BASE_HOMEDIR_LINUX, "_extra");
+  const baseDir = is_os_windows
+    ? path.join(getWindowUserBaseDir(), "_extra")
+    : path.join(BASE_HOMEDIR_LINUX, "_extra");
   return subPath ? path.join(baseDir, subPath) : baseDir;
 }
 
@@ -2208,7 +2369,10 @@ function getCustomTweaksPath(subPath) {
  */
 function getDesktopPath() {
   if (is_os_windows)
-    return findPath("/mnt/d", /^Desktop$/i, { type: "folder" }) || findPath(getWindowUserBaseDir(), /^Desktop$/i, { type: "folder" });
+    return (
+      findPath("/mnt/d", /^Desktop$/i, { type: "folder" }) ||
+      findPath(getWindowUserBaseDir(), /^Desktop$/i, { type: "folder" })
+    );
   return findPath(BASE_HOMEDIR_LINUX, /^Desktop$/i, { type: "folder" });
 }
 
@@ -2218,7 +2382,9 @@ function getDesktopPath() {
  * @returns {string} The Windows-formatted path
  */
 function toWindowsPath(wslPath) {
-  return wslPath.replace(/\/mnt\/([a-z])/i, (_, d) => `${d.toUpperCase()}:`).replace(/\//g, "\\");
+  return wslPath
+    .replace(/\/mnt\/([a-z])/i, (_, d) => `${d.toUpperCase()}:`)
+    .replace(/\//g, "\\");
 }
 
 /**
@@ -2243,7 +2409,8 @@ function getWindowAppDataLocalUserPath() {
  */
 function getEtcHostsPath() {
   const windowsEtcHostPath = "/mnt/c/Windows/System32/drivers/etc/hosts";
-  if (pathExists(windowsEtcHostPath) || is_os_windows) return windowsEtcHostPath;
+  if (pathExists(windowsEtcHostPath) || is_os_windows)
+    return windowsEtcHostPath;
   return "/etc/hosts";
 }
 
@@ -2280,7 +2447,9 @@ async function installMacDmg(dmgPath) {
     return;
   }
   const mountPoint = `/tmp/dmg-${Date.now()}`;
-  await execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
+  await execBash(
+    `hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`,
+  );
   const apps = fs.readdirSync(mountPoint).filter((f) => f.endsWith(".app"));
   for (const appName of apps) {
     await execBash(`rm -rf "/Applications/${appName}"`);
@@ -2362,7 +2531,9 @@ async function clearMacQuarantine(readmePath, appPath) {
 async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
   if (!is_os_windows) return;
   if (IS_DRY_RUN) {
-    log(`>> [DryRun] Would silent-install ${exePath} and clean up ${cleanupFolder}`);
+    log(
+      `>> [DryRun] Would silent-install ${exePath} and clean up ${cleanupFolder}`,
+    );
     return;
   }
   log(`>> Silent-installing ${appLabel} (background) from`, exePath);
@@ -2371,7 +2542,9 @@ async function installWindowsSetupExe(exePath, appLabel, cleanupFolder) {
   // even though the binfmt interop only needs the file to launch the Windows binary.
   // chmod first so the direct exec succeeds.
   await execBash(`chmod +x "${exePath}"`);
-  await execBash(`( "${exePath}" /S > /dev/null 2>&1 ; rm -rf "${cleanupFolder}" ) &`);
+  await execBash(
+    `( "${exePath}" /S > /dev/null 2>&1 ; rm -rf "${cleanupFolder}" ) &`,
+  );
 }
 
 /**
@@ -2429,14 +2602,20 @@ async function _extractAppImageMetadata(appImagePath, appLabel, destFolder) {
     });
 
     const squashRoot = path.join(tmpDir, "squashfs-root");
-    if (!fs.existsSync(squashRoot)) return { iconPath: "", desktopFields: null };
+    if (!fs.existsSync(squashRoot))
+      return { iconPath: "", desktopFields: null };
 
     // Parse .desktop entry fields
     let desktopFields = null;
     try {
-      const desktopFile = fs.readdirSync(squashRoot).find((f) => f.endsWith(".desktop"));
+      const desktopFile = fs
+        .readdirSync(squashRoot)
+        .find((f) => f.endsWith(".desktop"));
       if (desktopFile) {
-        const content = fs.readFileSync(path.join(squashRoot, desktopFile), "utf8");
+        const content = fs.readFileSync(
+          path.join(squashRoot, desktopFile),
+          "utf8",
+        );
         desktopFields = _parseDesktopEntry(content);
       }
     } catch {
@@ -2444,10 +2623,13 @@ async function _extractAppImageMetadata(appImagePath, appLabel, destFolder) {
     }
 
     // Find best icon
-    const findResult = await execBash(`find -L "${squashRoot}" -type f \\( -iname "*.png" -o -iname "*.svg" \\) 2>/dev/null`, {
-      cwd: tmpDir,
-      timeout: 10_000,
-    });
+    const findResult = await execBash(
+      `find -L "${squashRoot}" -type f \\( -iname "*.png" -o -iname "*.svg" \\) 2>/dev/null`,
+      {
+        cwd: tmpDir,
+        timeout: 10_000,
+      },
+    );
     const candidates = findResult.split("\n").filter(Boolean);
 
     let iconPath = "";
@@ -2460,7 +2642,10 @@ async function _extractAppImageMetadata(appImagePath, appLabel, destFolder) {
         const base = path.basename(fp);
         const baseLower = base.toLowerCase();
         let s = 0;
-        if (desktopIcon && baseLower.replace(/\.(png|svg)$/, "") === desktopIcon.toLowerCase()) {
+        if (
+          desktopIcon &&
+          baseLower.replace(/\.(png|svg)$/, "") === desktopIcon.toLowerCase()
+        ) {
           s += 100;
         }
         if (baseLower.includes(labelLower)) s += 50;
@@ -2505,10 +2690,17 @@ async function _extractAppImageMetadata(appImagePath, appLabel, destFolder) {
  * @param {string} appLabel - App display name used for the .desktop file name.
  * @param {string} sourceFolder - Folder containing the AppImage and optional icon.
  */
-async function installLinuxUniversalAppImage(appImagePath, appLabel, sourceFolder) {
-  if (is_os_mac || is_os_windows || is_os_mingw64 || is_os_android_termux) return;
+async function installLinuxUniversalAppImage(
+  appImagePath,
+  appLabel,
+  sourceFolder,
+) {
+  if (is_os_mac || is_os_windows || is_os_mingw64 || is_os_android_termux)
+    return;
   if (IS_DRY_RUN) {
-    log(`>> [DryRun] Would install Linux AppImage ${appLabel} at ${appImagePath}`);
+    log(
+      `>> [DryRun] Would install Linux AppImage ${appLabel} at ${appImagePath}`,
+    );
     return;
   }
 
@@ -2526,7 +2718,11 @@ async function installLinuxUniversalAppImage(appImagePath, appLabel, sourceFolde
   }
 
   // Extract metadata (icon + desktop entry) from the AppImage
-  const metadata = await _extractAppImageMetadata(appImagePath, appLabel, sourceFolder);
+  const metadata = await _extractAppImageMetadata(
+    appImagePath,
+    appLabel,
+    sourceFolder,
+  );
   let iconPath = metadata.iconPath;
 
   // Also check for icon in source folder (prefer manually-placed icons)
@@ -2540,7 +2736,13 @@ async function installLinuxUniversalAppImage(appImagePath, appLabel, sourceFolde
 
   // Build the .desktop content from extracted fields, with overrides.
   // Only whitelisted keys from the AppImage .desktop are inherited.
-  const DESKTOP_INHERIT_KEYS = new Set(["Version", "Name", "Type", "Comment", "Categories"]);
+  const DESKTOP_INHERIT_KEYS = new Set([
+    "Version",
+    "Name",
+    "Type",
+    "Comment",
+    "Categories",
+  ]);
   const desktopFields = {};
   if (metadata.desktopFields) {
     for (const key of Object.keys(metadata.desktopFields)) {
@@ -2599,7 +2801,9 @@ async function _forceCloseApp(appLabel) {
   if (is_os_mac) {
     try {
       /** @type {string[]} Matching .app bundles in /Applications/. */
-      const apps = fs.readdirSync("/Applications/").filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
+      const apps = fs
+        .readdirSync("/Applications/")
+        .filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
       for (const app of apps) {
         const name = app.replace(".app", "");
         log(`>> Force-closing ${name}`);
@@ -2639,7 +2843,9 @@ async function getMacInstalledAppVersion(appLabel) {
   /** @type {string[]} Matching .app bundles in /Applications/. */
   let apps = [];
   try {
-    apps = fs.readdirSync("/Applications/").filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
+    apps = fs
+      .readdirSync("/Applications/")
+      .filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
   } catch (e) {
     return null;
   }
@@ -2647,7 +2853,9 @@ async function getMacInstalledAppVersion(appLabel) {
     /** @type {string} Path to the bundle's Info plist (without the .plist suffix — `defaults read` adds it). */
     const plistPath = `/Applications/${appName}/Contents/Info`;
     /** @type {string} Trimmed stdout from `defaults read`. Empty on read failure (execBash swallows stderr). */
-    const out = await execBash(`defaults read "${plistPath}" CFBundleShortVersionString 2>/dev/null`);
+    const out = await execBash(
+      `defaults read "${plistPath}" CFBundleShortVersionString 2>/dev/null`,
+    );
     if (/^\d+(\.\d+)+/.test(out)) return out;
   }
   return null;
@@ -2680,29 +2888,40 @@ async function getMacInstalledAppVersion(appLabel) {
  */
 async function downloadAndInstallBinary(repo, getFileName) {
   const isUrl = repo.includes("://");
-  const appLabel = isUrl ? path.basename(repo).replace(/\.[^.]+$/, "") : repo.split("/")[1];
+  const appLabel = isUrl
+    ? path.basename(repo).replace(/\.[^.]+$/, "")
+    : repo.split("/")[1];
   const version = isUrl ? "" : await fetchGitHubReleaseVersion(repo);
   const isArm64 = os.arch() === "arm64";
   const ver = version.replace(/^v/, "");
   const fileName = isUrl ? path.basename(repo) : getFileName(ver, isArm64);
-  const url = isUrl ? repo : `https://github.com/${repo}/releases/download/${version}/${fileName}`;
+  const url = isUrl
+    ? repo
+    : `https://github.com/${repo}/releases/download/${version}/${fileName}`;
 
   // Mac: skip the whole pipeline when the installed app version matches upstream.
   // IS_REFRESH_MODE (set by `--refresh="<script>"`) is the explicit force-reinstall override.
   if (is_os_mac && !IS_REFRESH_MODE && version) {
     const installed = await getMacInstalledAppVersion(appLabel);
     if (installed === ver) {
-      log(`>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`);
+      log(
+        `>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`,
+      );
       return false;
     }
-    if (installed) log(`>> ${appLabel}: installed ${installed} → upstream ${ver}, upgrading`);
+    if (installed)
+      log(
+        `>> ${appLabel}: installed ${installed} → upstream ${ver}, upgrading`,
+      );
   }
 
   const legacyExtraPath = await getCustomTweaksPath(appLabel);
   // Mac throws away the .dmg via BASHRC_TEMP_DIR. Windows MUST stage on a real
   // drive for NSIS, so we re-use ~/_extra/<app>/ and clean it up after install.
   // Linux AppImages are the run target — they stay in ~/_extra/<app>/.
-  const targetPath = is_os_mac ? path.join(BASHRC_TEMP_DIR, appLabel) : legacyExtraPath;
+  const targetPath = is_os_mac
+    ? path.join(BASHRC_TEMP_DIR, appLabel)
+    : legacyExtraPath;
 
   log(`>> Installing ${appLabel} ${version} to:`, targetPath);
 
@@ -2715,14 +2934,17 @@ async function downloadAndInstallBinary(repo, getFileName) {
     !IS_REFRESH_MODE &&
     pathExists(targetPath, /\.AppImage$/, "file")
   ) {
-    log(`>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`);
+    log(
+      `>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`,
+    );
     return false;
   }
 
   await _forceCloseApp(appLabel);
 
   // Reap any legacy ~/_extra/<app>/ leftover from a prior Mac run that parked the .dmg there.
-  if (is_os_mac && targetPath !== legacyExtraPath) await deleteFolder(legacyExtraPath);
+  if (is_os_mac && targetPath !== legacyExtraPath)
+    await deleteFolder(legacyExtraPath);
 
   await deleteFolder(targetPath);
   await mkdir(targetPath);
@@ -2757,7 +2979,9 @@ async function downloadAndInstallBinary(repo, getFileName) {
  * @returns {string} The modified text content
  */
 function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "append"));
+  return cleanupExtraWhitespaces(
+    replaceBlock(content, key, sourceContent, commentPrefix, "", "append"),
+  );
 }
 
 /**
@@ -2769,7 +2993,9 @@ function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
  * @returns {string} The modified text content
  */
 function prependTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "prepend"));
+  return cleanupExtraWhitespaces(
+    replaceBlock(content, key, sourceContent, commentPrefix, "", "prepend"),
+  );
 }
 
 /**
@@ -2795,7 +3021,12 @@ function moveTextBlockToEnd(content, key, sourceContent, commentPrefix = "#") {
  * @param {string} [commentPrefix='#'] - The comment character/prefix
  * @returns {string} The modified text content
  */
-function moveTextBlockToStart(content, key, sourceContent, commentPrefix = "#") {
+function moveTextBlockToStart(
+  content,
+  key,
+  sourceContent,
+  commentPrefix = "#",
+) {
   content = _stripTextBlock(content, key, commentPrefix);
   return prependTextBlock(content, key, sourceContent, commentPrefix);
 }
@@ -2871,7 +3102,12 @@ function _validateBashSyntax(content, blockName) {
  * @param {string} options.content - The content to register
  * @param {boolean} [options.isPrepend=false] - When true, prepends the block; when false, appends it
  */
-function registerProfileBlock({ profilePath, configKey, content, isPrepend = false }) {
+function registerProfileBlock({
+  profilePath,
+  configKey,
+  content,
+  isPrepend = false,
+}) {
   log(`>> Register ProfileBlock`, colorRed(configKey), profilePath);
 
   let wrappedContent = content;
@@ -2879,7 +3115,10 @@ function registerProfileBlock({ profilePath, configKey, content, isPrepend = fal
   if (isBashProfile) {
     const syntaxError = _validateBashSyntax(wrappedContent, configKey);
     if (syntaxError) {
-      log(colorBgRed(`>>>> INVALID BASH SYNTAX in block "${configKey}":`), syntaxError);
+      log(
+        colorBgRed(`>>>> INVALID BASH SYNTAX in block "${configKey}":`),
+        syntaxError,
+      );
       wrappedContent = `echo '[bashrc] WARNING: invalid bash syntax detected in block "${configKey}" in "${profilePath}" — block skipped' >&2`;
     }
   }
@@ -2895,7 +3134,9 @@ function registerProfileBlock({ profilePath, configKey, content, isPrepend = fal
       `Duplicate profile block key "${configKey}" for ${profilePath} — use a distinct sub-key like "${configKey} - <subname>" instead`,
     );
   }
-  _profileBlockBuffer.get(profilePath).set(configKey, { content: wrappedContent, isPrepend, isRemove: false });
+  _profileBlockBuffer
+    .get(profilePath)
+    .set(configKey, { content: wrappedContent, isPrepend, isRemove: false });
 }
 
 /**
@@ -2915,7 +3156,9 @@ async function flushProfileBlocks(immediate = false) {
       let textContent = await readText`${profilePath}`;
       const blockKeys = [...blockEntries.keys()];
 
-      log(`>> Flush start: ${profilePath} (${fileSize} chars, ${blockEntries.size} blocks: ${blockKeys.join(", ")})`);
+      log(
+        `>> Flush start: ${profilePath} (${fileSize} chars, ${blockEntries.size} blocks: ${blockKeys.join(", ")})`,
+      );
 
       // Expand short-form markers before any block updates.
       textContent = _expandShortFormMarkers(textContent, "#");
@@ -2924,7 +3167,10 @@ async function flushProfileBlocks(immediate = false) {
       const removeMap = {};
       const prependMap = {};
       const appendMap = {};
-      for (const [configKey, { content, isPrepend, isRemove }] of blockEntries) {
+      for (const [
+        configKey,
+        { content, isPrepend, isRemove },
+      ] of blockEntries) {
         if (isRemove) {
           removeMap[configKey] = content;
         } else if (isPrepend) {
@@ -2936,17 +3182,27 @@ async function flushProfileBlocks(immediate = false) {
 
       // Apply removals first (no insertMode — only replaces existing blocks)
       if (Object.keys(removeMap).length > 0) {
-        log(`>>> Removing ${Object.keys(removeMap).length} block(s): ${Object.keys(removeMap).join(", ")}`);
+        log(
+          `>>> Removing ${Object.keys(removeMap).length} block(s): ${Object.keys(removeMap).join(", ")}`,
+        );
         textContent = replaceBlocks(textContent, removeMap, "#", "");
       }
       // Apply prepends, then appends
       if (Object.keys(prependMap).length > 0) {
-        log(`>>> Prepending ${Object.keys(prependMap).length} block(s): ${Object.keys(prependMap).join(", ")}`);
-        textContent = cleanupExtraWhitespaces(replaceBlocks(textContent, prependMap, "#", "", "prepend"));
+        log(
+          `>>> Prepending ${Object.keys(prependMap).length} block(s): ${Object.keys(prependMap).join(", ")}`,
+        );
+        textContent = cleanupExtraWhitespaces(
+          replaceBlocks(textContent, prependMap, "#", "", "prepend"),
+        );
       }
       if (Object.keys(appendMap).length > 0) {
-        log(`>>> Appending ${Object.keys(appendMap).length} block(s): ${Object.keys(appendMap).join(", ")}`);
-        textContent = cleanupExtraWhitespaces(replaceBlocks(textContent, appendMap, "#", "", "append"));
+        log(
+          `>>> Appending ${Object.keys(appendMap).length} block(s): ${Object.keys(appendMap).join(", ")}`,
+        );
+        textContent = cleanupExtraWhitespaces(
+          replaceBlocks(textContent, appendMap, "#", "", "append"),
+        );
       }
 
       // Check for duplicate BEGIN markers after flush
@@ -2955,9 +3211,15 @@ async function flushProfileBlocks(immediate = false) {
       for (const m of beginMatches) {
         beginCounts[m] = (beginCounts[m] || 0) + 1;
       }
-      const duplicates = Object.entries(beginCounts).filter(([, count]) => count > 1);
+      const duplicates = Object.entries(beginCounts).filter(
+        ([, count]) => count > 1,
+      );
       if (duplicates.length > 0) {
-        log(colorRed(`>>> WARNING: Duplicate BEGIN blocks detected after flush in ${profilePath}:`));
+        log(
+          colorRed(
+            `>>> WARNING: Duplicate BEGIN blocks detected after flush in ${profilePath}:`,
+          ),
+        );
         for (const [marker, count] of duplicates) {
           log(colorRed(`>>>   ${marker} (${count}x)`));
         }
@@ -3015,7 +3277,9 @@ function registerWithBashSyleAutocompleteWithRawContent(configKey, content) {
  * @param {string} [subKey] - Optional sub-key to distinguish multiple blocks for the same platform
  */
 function registerPlatformTweaks(platformName, content, subKey) {
-  const configKey = subKey ? `${platformName} OS-specific Tweaks - ${subKey}` : `${platformName} OS-specific Tweaks`;
+  const configKey = subKey
+    ? `${platformName} OS-specific Tweaks - ${subKey}`
+    : `${platformName} OS-specific Tweaks`;
   registerProfileBlock({ profilePath: BASH_SYLE_PATH, configKey, content });
 }
 
@@ -3032,7 +3296,9 @@ function removeProfileBlock({ profilePath, configKey, commentPrefix = "#" }) {
   if (!_profileBlockBuffer.has(profilePath)) {
     _profileBlockBuffer.set(profilePath, new Map());
   }
-  _profileBlockBuffer.get(profilePath).set(configKey, { content: "", isPrepend: false, isRemove: true });
+  _profileBlockBuffer
+    .get(profilePath)
+    .set(configKey, { content: "", isPrepend: false, isRemove: true });
 }
 
 /**
@@ -3072,7 +3338,9 @@ class ScriptSkipError extends Error {
 function exitIfPathCheck(targetPath, exitIfFound = false, message) {
   const found = pathExists(targetPath);
   if (exitIfFound ? found : !found) {
-    const defaultMessage = exitIfFound ? "Skipped : Found Folder" : "Skipped : Not Found";
+    const defaultMessage = exitIfFound
+      ? "Skipped : Found Folder"
+      : "Skipped : Not Found";
     throw new ScriptSkipError(`${message || defaultMessage} ${targetPath}`);
   }
 }
@@ -3199,8 +3467,14 @@ function removeEmptyBlocks(text, commentPrefix = "#") {
     "g",
   );
   const shortKeywords = `${TEXT_BLOCK_SHORT_MARKER}|${TEXT_BLOCK_ALIAS_MARKER}`;
-  const shortFormPattern = new RegExp(`${commentPrefix} (?:${shortKeywords})\\s+[^a-zA-Z0-9]*[^\\r\\n]+`, "g");
-  const sourcePattern = new RegExp(`${commentPrefix} ${TEXT_BLOCK_SOURCE_MARKER}\\s+[^\\r\\n]+`, "g");
+  const shortFormPattern = new RegExp(
+    `${commentPrefix} (?:${shortKeywords})\\s+[^a-zA-Z0-9]*[^\\r\\n]+`,
+    "g",
+  );
+  const sourcePattern = new RegExp(
+    `${commentPrefix} ${TEXT_BLOCK_SOURCE_MARKER}\\s+[^\\r\\n]+`,
+    "g",
+  );
   return text
     .replace(longFormPattern, "")
     .replace(sourceLongFormPattern, "")
@@ -3215,7 +3489,13 @@ function removeEmptyBlocks(text, commentPrefix = "#") {
  * @returns {string[]} Array of unique, non-empty, non-comment lines
  */
 function convertTextToList(...texts) {
-  return convertRawTextToList(...texts).filter((s) => !!s && !s.match(/^\s*\/\/\/*/) && !s.match(/^\s*#+/) && !s.match(/^\s*[*]+/));
+  return convertRawTextToList(...texts).filter(
+    (s) =>
+      !!s &&
+      !s.match(/^\s*\/\/\/*/) &&
+      !s.match(/^\s*#+/) &&
+      !s.match(/^\s*[*]+/),
+  );
 }
 
 /**
@@ -3250,7 +3530,12 @@ function convertRawTextToList(...texts) {
 function convertTextToHosts(...texts) {
   const hosts = convertRawTextToList(...texts)
     .map((s) => s.replace(/^[0-9]+.[0-9]+.[0-9]+.[0-9]+[ ]*/, "").trim())
-    .filter((s) => s.length > 0 && s.match(/^[0-9a-zA-Z-.]+/) && s.match(/^[0-9a-zA-Z-.]+/)[0] === s);
+    .filter(
+      (s) =>
+        s.length > 0 &&
+        s.match(/^[0-9a-zA-Z-.]+/) &&
+        s.match(/^[0-9a-zA-Z-.]+/)[0] === s,
+    );
   return [...new Set(hosts)];
 }
 
@@ -3429,7 +3714,10 @@ async function _resolveSourceIncludes(filePath, content) {
       try {
         const stat = fs.statSync(srcFile);
         const md5 = await md5Hash(fileContent);
-        const size = stat.size < 1024 ? `${stat.size} B` : `${(stat.size / 1024).toFixed(1)} KB`;
+        const size =
+          stat.size < 1024
+            ? `${stat.size} B`
+            : `${(stat.size / 1024).toFixed(1)} KB`;
         const mtime = stat.mtime;
         const date = `${mtime.getFullYear()}-${String(mtime.getMonth() + 1).padStart(2, "0")}-${String(mtime.getDate()).padStart(2, "0")}`;
         fileContent = `${commentPrefix} ${srcFile} | ${md5} | ${size} | ${date}\n${fileContent.trim()}`;
@@ -3527,7 +3815,11 @@ const _URL_CACHE_DIR = "/tmp/synle/bashrc/url_cache";
  * @returns {string} Absolute path inside {@link _URL_CACHE_DIR}
  */
 function _urlCachePath(url) {
-  const hash = crypto.createHash("sha256").update(url).digest("hex").slice(0, 32);
+  const hash = crypto
+    .createHash("sha256")
+    .update(url)
+    .digest("hex")
+    .slice(0, 32);
   return path.join(_URL_CACHE_DIR, hash);
 }
 
@@ -3604,12 +3896,16 @@ async function _readTextFromURL(url) {
         signal: AbortSignal.timeout(_URL_FETCH_TIMEOUT_MS),
       });
       if (!res.ok) {
-        log(`[Warning] readTextFromURL ${url} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 100)}`);
+        log(
+          `[Warning] readTextFromURL ${url} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 100)}`,
+        );
         return "";
       }
       result = await res.text();
     } else {
-      result = await execBash(`curl -fsSL --max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`);
+      result = await execBash(
+        `curl -fsSL --max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`,
+      );
     }
   } catch (err) {
     // Normalize the failure reason to one of: timeout | <node errno> | <error name>.
@@ -3755,7 +4051,9 @@ function gitClone(repo, destinationDir, cloneAll = false) {
     return Promise.resolve("");
   }
   const branchFlag = cloneAll ? "" : "--single-branch";
-  return execBash(`git clone --depth 1 ${branchFlag} "${repo}" "${destinationDir}" &>/dev/null`);
+  return execBash(
+    `git clone --depth 1 ${branchFlag} "${repo}" "${destinationDir}" &>/dev/null`,
+  );
 }
 
 /**
@@ -3768,7 +4066,9 @@ function gitClone(repo, destinationDir, cloneAll = false) {
 function downloadAsset(url, destination) {
   url = getFullUrl(url);
   const dest =
-    fs.existsSync(destination) && fs.statSync(destination).isDirectory() ? path.join(destination, path.basename(url)) : destination;
+    fs.existsSync(destination) && fs.statSync(destination).isDirectory()
+      ? path.join(destination, path.basename(url))
+      : destination;
   return downloadAssets(url, dest).then((results) => results[0]);
 }
 
@@ -3782,14 +4082,17 @@ function downloadAsset(url, destination) {
  */
 function downloadAssets(urls, destination) {
   urls = [].concat(urls).map(getFullUrl);
-  const isDir = fs.existsSync(destination) && fs.statSync(destination).isDirectory();
+  const isDir =
+    fs.existsSync(destination) && fs.statSync(destination).isDirectory();
 
   const args = [];
   const results = [];
   const pending = [];
   const localCopied = [];
   for (const url of urls) {
-    const dest = isDir ? path.join(destination, path.basename(url)) : destination;
+    const dest = isDir
+      ? path.join(destination, path.basename(url))
+      : destination;
     results.push(dest);
     log(`>> Downloading Asset ${path.basename(url)}:`, url);
 
@@ -3805,7 +4108,9 @@ function downloadAssets(urls, destination) {
 
     // local repo optimization: copy from repo instead of downloading
     if (IS_LOCAL_REPO && REPO_PREFIX_URL && url.startsWith(REPO_PREFIX_URL)) {
-      const localPath = url.slice(REPO_PREFIX_URL.length).replace(/\?raw=1$/, "");
+      const localPath = url
+        .slice(REPO_PREFIX_URL.length)
+        .replace(/\?raw=1$/, "");
       if (pathExists(localPath)) {
         copyFile(localPath, dest);
         log("<<< Copied from local repo", localPath);
@@ -3832,7 +4137,10 @@ function downloadAssets(urls, destination) {
     }
     if (metadata.length > 0) {
       try {
-        fs.appendFileSync(DOWNLOAD_ASSET_METADATA_PATH, metadata.join("\n") + "\n");
+        fs.appendFileSync(
+          DOWNLOAD_ASSET_METADATA_PATH,
+          metadata.join("\n") + "\n",
+        );
       } catch (_) {}
     }
   }
@@ -3841,10 +4149,12 @@ function downloadAssets(urls, destination) {
   _recordDownloadMetadata(localCopied);
 
   if (args.length === 0) return Promise.resolve(results);
-  return execBash(`curl --parallel --parallel-max 10 ${args.join(" ")}`).then(() => {
-    _recordDownloadMetadata(pending);
-    return results;
-  });
+  return execBash(`curl --parallel --parallel-max 10 ${args.join(" ")}`).then(
+    () => {
+      _recordDownloadMetadata(pending);
+      return results;
+    },
+  );
 }
 
 /**
@@ -3885,7 +4195,8 @@ function getRepoNameFromId(repoId) {
 async function fetchGitHubReleaseVersion(repoId) {
   const releaseData = await readJson`${getGitHubReleaseApiUrl(repoId)}`;
   const version = releaseData.tag_name || "";
-  if (!version) throw new ScriptSkipError(`No official release found for ${repoId}`);
+  if (!version)
+    throw new ScriptSkipError(`No official release found for ${repoId}`);
   return version;
 }
 
@@ -3962,23 +4273,30 @@ async function downloadAssetWithFallback(repoId, url, destination) {
   if (IS_DRY_RUN) return true;
 
   // Step 2: validate — if file exists and non-empty, success
-  const isValid = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
+  const isValid =
+    fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
   if (isValid) return true;
 
   // Step 3-4: upstream failed — try the binary-cache release on synle/bashrc.
   // Extension is preserved (.zip / .tar.gz / .dmg / .exe / .AppImage), so callers
   // that extract or mount the destination keep working unchanged.
   const fallbackUrl = getBinaryCacheUrl(appName, path.basename(destination));
-  log(`>> Download of ${appName} failed, trying binary-cache fallback:`, fallbackUrl);
+  log(
+    `>> Download of ${appName} failed, trying binary-cache fallback:`,
+    fallbackUrl,
+  );
   await mkdir(path.dirname(destination));
   // deleteFile so downloadAsset doesn't short-circuit on the empty/partial file from step 1
   await deleteFile(destination);
   await downloadAsset(fallbackUrl, destination);
-  const fallbackOk = fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
+  const fallbackOk =
+    fs.existsSync(destination) && (fs.statSync(destination).size || 0) > 0;
   if (fallbackOk) return true;
 
   // Step 5: no fallback available
-  log(`>> Download of ${appName} failed, no backup available in binary-cache release for ${appName}/`);
+  log(
+    `>> Download of ${appName} failed, no backup available in binary-cache release for ${appName}/`,
+  );
   return false;
 }
 
@@ -3991,12 +4309,17 @@ async function downloadAssetWithFallback(repoId, url, destination) {
  * @returns {Promise<string>} The target directory path where the app was downloaded
  */
 async function downloadApp(applicationName, findFilter) {
-  const targetPath = is_os_windows ? await getWindowsApplicationBinaryDir(applicationName) : await getCustomTweaksPath(applicationName);
+  const targetPath = is_os_windows
+    ? await getWindowsApplicationBinaryDir(applicationName)
+    : await getCustomTweaksPath(applicationName);
   log(`>> Downloading App:`, colorRed(applicationName), targetPath);
   await mkdir(targetPath);
   const files = await listRepoDir("remote_api", true);
-  const filterFn = typeof findFilter === "string" ? (f) => f.includes(findFilter) : findFilter;
-  const filesToDownload = files.filter((s) => s.includes("assets/") && !s.toLowerCase().includes(".md")).filter(filterFn);
+  const filterFn =
+    typeof findFilter === "string" ? (f) => f.includes(findFilter) : findFilter;
+  const filesToDownload = files
+    .filter((s) => s.includes("assets/") && !s.toLowerCase().includes(".md"))
+    .filter(filterFn);
   await downloadAssets(filesToDownload, targetPath);
   return targetPath;
 }
@@ -4033,7 +4356,12 @@ function filterRepoScripts(files) {
   const filtered = (files || [])
     .map((s) => s.trim().replace(/^\.\//, ""))
     .filter((f) => f && f.startsWith("software/"))
-    .filter((f) => !f.endsWith(".json") && !f.endsWith(".test.js") && f !== "software/index.js")
+    .filter(
+      (f) =>
+        !f.endsWith(".json") &&
+        !f.endsWith(".test.js") &&
+        f !== "software/index.js",
+    )
     .filter((f) => [`.js`, `.sh`].some((allowedExt) => f.endsWith(allowedExt)));
 
   // this is a list of files to run last
@@ -4121,7 +4449,9 @@ async function listRepoDir(source = "remote_api", fallthrough = false) {
         convertTextToList(await readText`software/metadata/script-list.config`),
       ))) ||
     ((source === "local" || fallthrough) &&
-      (await cacheInMemory("listRepoDir.local", async () => filterRepoScripts(convertRawTextToList(await execBash("find .")))))) ||
+      (await cacheInMemory("listRepoDir.local", async () =>
+        filterRepoScripts(convertRawTextToList(await execBash("find ."))),
+      ))) ||
     []
   );
 }
@@ -4190,9 +4520,13 @@ async function getSoftwareScriptFiles() {
   }
 
   // clean up the files, only include software/scripts (used for run mode by the os)
-  files = filterRepoScripts(files).filter((f) => f.includes("software/scripts/"));
+  files = filterRepoScripts(files).filter((f) =>
+    f.includes("software/scripts/"),
+  );
 
-  let softwareFiles = files.filter((f) => !f.includes(".common.js") && !f.includes(".standalone.js"));
+  let softwareFiles = files.filter(
+    (f) => !f.includes(".common.js") && !f.includes(".standalone.js"),
+  );
 
   // _full-setup.sh files only run in setup mode (--setup flag)
   if (!IS_SETUP) {
@@ -4286,7 +4620,9 @@ function color(str, colorCode) {
  * @returns {boolean} True if the text matches a path or URL pattern
  */
 function _looksLikePathOrUrl(text) {
-  return /^(\/[\w./-]+|~\/[\w./-]+|https?:\/\/\S+|[a-zA-Z]:\\[\w.\\/-]+)$/.test(text);
+  return /^(\/[\w./-]+|~\/[\w./-]+|https?:\/\/\S+|[a-zA-Z]:\\[\w.\\/-]+)$/.test(
+    text,
+  );
 }
 
 /** @type {RegExp} Matches repeated marker chars (>, <, #) at start of string, followed by space or end */
@@ -4341,14 +4677,20 @@ function _getAutoColor(text) {
   }
 
   // 2. Error/fail keywords => colorBgRed
-  if (/(?<=^| )(err|error|errors|fail|failed|failing|failure|failures)(?=$| )/i.test(text)) {
+  if (
+    /(?<=^| )(err|error|errors|fail|failed|failing|failure|failures)(?=$| )/i.test(
+      text,
+    )
+  ) {
     return colorBgRed;
   }
 
   // 3. Success/done/finished keywords => colorGreen
   // (?<!auto) prevents matching "autocomplete"
   if (
-    /(?<=^| )(done|success|succeed|succeeded|succeeds|finished|accept|accepted|(?<!auto)complete|(?<!auto)completed)(?=$| )/i.test(text)
+    /(?<=^| )(done|success|succeed|succeeded|succeeds|finished|accept|accepted|(?<!auto)complete|(?<!auto)completed)(?=$| )/i.test(
+      text,
+    )
   ) {
     return colorGreen;
   }
@@ -4377,10 +4719,16 @@ function _applyAutoColor(data) {
       if (str.includes("\x1b[")) return elem;
       const autoColor = _getAutoColor(str);
       // Strip repeated markers to single char, indent by marker count (skip pure line-break strings)
-      if (str !== LINE_BREAK_HASH) str = str.replace(_MARKER_REGEX, (_, marker) => "".padStart(marker.length - 1, " ") + marker[0] + " ");
+      if (str !== LINE_BREAK_HASH)
+        str = str.replace(
+          _MARKER_REGEX,
+          (_, marker) => "".padStart(marker.length - 1, " ") + marker[0] + " ",
+        );
       return autoColor ? autoColor(str) : str;
     })
-    .map((elem) => (IS_NO_COLOR ? String(elem).replace(/\x1b\[[0-9;]*m/g, "") : elem));
+    .map((elem) =>
+      IS_NO_COLOR ? String(elem).replace(/\x1b\[[0-9;]*m/g, "") : elem,
+    );
 }
 
 /**
@@ -4434,23 +4782,40 @@ const LOG_COLORS = {
   boldMagenta: "1;35m",
 };
 
-/** @type {(str: string) => string} */ const colorGreen = (str) => color(str, LOG_COLORS.green);
-/** @type {(str: string) => string} */ const colorYellow = (str) => color(str, LOG_COLORS.yellow);
-/** @type {(str: string) => string} */ const colorCyan = (str) => color(str, LOG_COLORS.cyan);
-/** @type {(str: string) => string} */ const colorDim = (str) => color(str, LOG_COLORS.dim);
-/** @type {(str: string) => string} */ const colorRed = (str) => color(str, LOG_COLORS.red);
-/** @type {(str: string) => string} */ const colorBgRed = (str) => color(str, LOG_COLORS.bgRed);
-/** @type {(str: string) => string} */ const colorBgYellow = (str) => color(str, LOG_COLORS.bgYellow);
-/** @type {(str: string) => string} */ const colorBgCyan = (str) => color(str, LOG_COLORS.bgCyan);
-/** @type {(str: string) => string} */ const colorBgMagenta = (str) => color(str, LOG_COLORS.bgMagenta);
-/** @type {(str: string) => string} */ const colorBgOrange = (str) => color(str, LOG_COLORS.bgOrange);
-/** @type {(str: string) => string} */ const colorBgBlue = (str) => color(str, LOG_COLORS.bgBlue);
-/** @type {(str: string) => string} */ const colorMagenta = (str) => color(str, LOG_COLORS.magenta);
-/** @type {(str: string) => string} */ const colorOrange = (str) => color(str, LOG_COLORS.orange);
-/** @type {(str: string) => string} */ const colorBlue = (str) => color(str, LOG_COLORS.blue);
-/** @type {(str: string) => string} */ const colorBoldYellow = (str) => color(str, LOG_COLORS.boldYellow);
-/** @type {(str: string) => string} */ const colorBoldCyan = (str) => color(str, LOG_COLORS.boldCyan);
-/** @type {(str: string) => string} */ const colorBoldMagenta = (str) => color(str, LOG_COLORS.boldMagenta);
+/** @type {(str: string) => string} */ const colorGreen = (str) =>
+  color(str, LOG_COLORS.green);
+/** @type {(str: string) => string} */ const colorYellow = (str) =>
+  color(str, LOG_COLORS.yellow);
+/** @type {(str: string) => string} */ const colorCyan = (str) =>
+  color(str, LOG_COLORS.cyan);
+/** @type {(str: string) => string} */ const colorDim = (str) =>
+  color(str, LOG_COLORS.dim);
+/** @type {(str: string) => string} */ const colorRed = (str) =>
+  color(str, LOG_COLORS.red);
+/** @type {(str: string) => string} */ const colorBgRed = (str) =>
+  color(str, LOG_COLORS.bgRed);
+/** @type {(str: string) => string} */ const colorBgYellow = (str) =>
+  color(str, LOG_COLORS.bgYellow);
+/** @type {(str: string) => string} */ const colorBgCyan = (str) =>
+  color(str, LOG_COLORS.bgCyan);
+/** @type {(str: string) => string} */ const colorBgMagenta = (str) =>
+  color(str, LOG_COLORS.bgMagenta);
+/** @type {(str: string) => string} */ const colorBgOrange = (str) =>
+  color(str, LOG_COLORS.bgOrange);
+/** @type {(str: string) => string} */ const colorBgBlue = (str) =>
+  color(str, LOG_COLORS.bgBlue);
+/** @type {(str: string) => string} */ const colorMagenta = (str) =>
+  color(str, LOG_COLORS.magenta);
+/** @type {(str: string) => string} */ const colorOrange = (str) =>
+  color(str, LOG_COLORS.orange);
+/** @type {(str: string) => string} */ const colorBlue = (str) =>
+  color(str, LOG_COLORS.blue);
+/** @type {(str: string) => string} */ const colorBoldYellow = (str) =>
+  color(str, LOG_COLORS.boldYellow);
+/** @type {(str: string) => string} */ const colorBoldCyan = (str) =>
+  color(str, LOG_COLORS.boldCyan);
+/** @type {(str: string) => string} */ const colorBoldMagenta = (str) =>
+  color(str, LOG_COLORS.boldMagenta);
 
 // --- Script Processing & Execution ---
 /** @type {Map<string, string>} Cache for script file contents read during inline mode */
@@ -4491,18 +4856,29 @@ function _resolveScriptFile(file, originalFile, allRepoFiles) {
   // Tier 2: exact basename match sans extension — e.g. "git" matches "git.js"
   if (!foundMatchedPath) {
     foundMatchedPath = allRepoFiles.find(
-      (f) => path.basename(f, path.extname(f)).toLowerCase() === inputBase.toLowerCase() && f.startsWith(inputFolder),
+      (f) =>
+        path.basename(f, path.extname(f)).toLowerCase() ===
+          inputBase.toLowerCase() && f.startsWith(inputFolder),
     );
   }
 
   // Tier 3: partial regex match on basename — e.g. "vim" matches "vim-config.js".
   // Collect ALL matches: 1 → use it, 2+ → ambiguous (return a copy-pasteable suggestion list).
   if (!foundMatchedPath) {
-    const partial = allRepoFiles.filter((f) => new RegExp(inputBase, "i").test(path.basename(f)) && f.startsWith(inputFolder));
+    const partial = allRepoFiles.filter(
+      (f) =>
+        new RegExp(inputBase, "i").test(path.basename(f)) &&
+        f.startsWith(inputFolder),
+    );
     if (partial.length === 1) {
       foundMatchedPath = partial[0];
     } else if (partial.length > 1) {
-      const suggestions = partial.map((p) => `  bash run.sh --files=${p.replace(/^software\/scripts\//, "")}`).join("\n");
+      const suggestions = partial
+        .map(
+          (p) =>
+            `  bash run.sh --files=${p.replace(/^software\/scripts\//, "")}`,
+        )
+        .join("\n");
       return {
         resolvedFile: file,
         fileExists: false,
@@ -4582,7 +4958,9 @@ function _resolveBareArgPresetFallback(softwareFiles, allRepoFiles) {
     // Probe script resolution on a shallow copy so the mutation in _resolveScriptFile
     // (which removes matched entries from allRepoFiles for dedup) doesn't affect the
     // real downstream pass.
-    const probe = entry.startsWith("software/") ? entry : `software/scripts/${entry}`;
+    const probe = entry.startsWith("software/")
+      ? entry
+      : `software/scripts/${entry}`;
     const probeRepo = allRepoFiles.slice();
     const resolved = _resolveScriptFile(probe, entry, probeRepo);
 
@@ -4598,14 +4976,18 @@ function _resolveBareArgPresetFallback(softwareFiles, allRepoFiles) {
       suggestionFlag: "@",
     });
     if (resolvedName) {
-      log(`>> Bare arg "${entry}" matched no script — resolved as preset "${resolvedName}".`);
+      log(
+        `>> Bare arg "${entry}" matched no script — resolved as preset "${resolvedName}".`,
+      );
       const expanded = expandPresetFiles(resolvedName, presetMap);
       for (const f of expanded) result.push(f);
     } else {
       // Neither script nor preset matched. Leave the entry in place so the existing
       // "File not found" path in _runScripts prints its script-side suggestions;
       // ME also surface the preset list here so the user sees both worlds.
-      log(`>> Bare arg "${entry}" matched no script and no preset. Available presets: ${known.join(", ")}`);
+      log(
+        `>> Bare arg "${entry}" matched no script and no preset. Available presets: ${known.join(", ")}`,
+      );
       result.push(entry);
     }
   }
@@ -4634,7 +5016,9 @@ async function _readScriptContent(file) {
  */
 function _logRunScript(file, index, total, bundleLabel) {
   const label = bundleLabel ? ` [${bundleLabel}]` : "";
-  echo(`# _runScripts | ${file} (${calculatePercentage(index + 1, total)}%)${label}`);
+  echo(
+    `# _runScripts | ${file} (${calculatePercentage(index + 1, total)}%)${label}`,
+  );
 }
 
 /**
@@ -4647,7 +5031,12 @@ function _logRunScript(file, index, total, bundleLabel) {
  * @param {string} [bundleLabel] - Optional bundle label for logging
  * @returns {Promise<void>}
  */
-async function _emitBundledJsEntries(validEntries, totalFiles, heredocDelimiter, bundleLabel) {
+async function _emitBundledJsEntries(
+  validEntries,
+  totalFiles,
+  heredocDelimiter,
+  bundleLabel,
+) {
   emitBash(await _readScriptContent("software/index.js"));
 
   for (let i = 0; i < validEntries.length; i++) {
@@ -4680,7 +5069,10 @@ async function _emitBundledJsEntries(validEntries, totalFiles, heredocDelimiter,
  * @returns {Promise<void>}
  */
 async function _emitBundledJsScripts(entries, allRepoFiles, totalFiles) {
-  const bundleLabel = entries.length > 1 ? `Bundle #${++_bundleIdCounter} JS Bundle (${entries.length} scripts)` : undefined;
+  const bundleLabel =
+    entries.length > 1
+      ? `Bundle #${++_bundleIdCounter} JS Bundle (${entries.length} scripts)`
+      : undefined;
   const validEntries = [];
 
   for (const entry of entries) {
@@ -4705,18 +5097,28 @@ async function _emitBundledJsScripts(entries, allRepoFiles, totalFiles) {
   if (validEntries.length === 0) return;
 
   // Use sudo runner when any entry in the bundle is a .su.js script (skip sudo in dry run)
-  const hasSudo = !IS_DRY_RUN && validEntries.some((e) => e.file.includes(".su.js"));
+  const hasSudo =
+    !IS_DRY_RUN && validEntries.some((e) => e.file.includes(".su.js"));
   const heredocDelimiter = ["_BASHRC", "INLINE", "EOF_"].join("_");
   const nodeBin = process.execPath; // absolute path to the running node binary, works with sudo even when node isn't on root's PATH
   let runner = `${nodeBin}`;
   if (hasSudo) {
     runner = `sudo -E ${nodeBin}`;
-    const suScripts = validEntries.filter((e) => e.file.includes(".su.js")).map((e) => e.file);
-    log(`[sudo] _emitBundledJsScripts: sudo -E ${nodeBin} for ${suScripts.join(", ")}`);
+    const suScripts = validEntries
+      .filter((e) => e.file.includes(".su.js"))
+      .map((e) => e.file);
+    log(
+      `[sudo] _emitBundledJsScripts: sudo -E ${nodeBin} for ${suScripts.join(", ")}`,
+    );
   }
   const tempFileCommand = `${runner} <<'${heredocDelimiter}'`;
   emitBash(tempFileCommand);
-  await _emitBundledJsEntries(validEntries, totalFiles, heredocDelimiter, bundleLabel);
+  await _emitBundledJsEntries(
+    validEntries,
+    totalFiles,
+    heredocDelimiter,
+    bundleLabel,
+  );
 
   for (const e of validEntries) {
     scriptProcessingResults.push({
@@ -4744,7 +5146,10 @@ async function _emitBundledJsScripts(entries, allRepoFiles, totalFiles) {
  * @returns {Promise<void>}
  */
 async function _emitBundledShScripts(entries, allRepoFiles, totalFiles) {
-  const bundleLabel = entries.length > 1 ? `Bundle #${++_bundleIdCounter} SH Bundle (${entries.length} scripts)` : undefined;
+  const bundleLabel =
+    entries.length > 1
+      ? `Bundle #${++_bundleIdCounter} SH Bundle (${entries.length} scripts)`
+      : undefined;
 
   // Dry run skips shell scripts entirely — only JS scripts run in dry-run mode
   if (IS_DRY_RUN) {
@@ -4798,7 +5203,9 @@ async function _emitBundledShScripts(entries, allRepoFiles, totalFiles) {
     emitBash(tempFileCommand);
     emitBash(`# --- ${e.resolvedFile} ---`);
     _logRunScript(e.resolvedFile, e.index, totalFiles, bundleLabel);
-    emitBash(e.isRefreshTarget ? `export IS_REFRESH_MODE=1` : `unset IS_REFRESH_MODE`);
+    emitBash(
+      e.isRefreshTarget ? `export IS_REFRESH_MODE=1` : `unset IS_REFRESH_MODE`,
+    );
     emitBash(`_sh_bench_start=$(date +%s)`);
     emitBash(scriptContent);
     emitBash(`_sh_bench_dur_ms=$(( ($(date +%s) - _sh_bench_start) * 1000 ))`);
@@ -4897,9 +5304,12 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
     // (e.g. "git" → "software/scripts/git.js" before _getBundleRunnerType checks the extension)
     const resolved = _resolveScriptFile(file, originalFile, allRepoFiles);
     const resolvedFile = resolved.fileExists ? resolved.resolvedFile : file;
-    const isRefreshTarget = REFRESH_FILES.size > 0 && _isRefreshTarget(originalFile);
+    const isRefreshTarget =
+      REFRESH_FILES.size > 0 && _isRefreshTarget(originalFile);
     const isExcludedFromBundle = path.basename(resolvedFile).startsWith("~");
-    const bundleType = isExcludedFromBundle ? null : _getBundleRunnerType(resolvedFile);
+    const bundleType = isExcludedFromBundle
+      ? null
+      : _getBundleRunnerType(resolvedFile);
     return {
       file: resolvedFile,
       originalFile,
@@ -4913,7 +5323,9 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
   // Surface ambiguous matches up-front. Without this, an input like `--files=vim` would
   // route to the bundle dispatcher first, fail on missing extension, and the helpful
   // suggestion list buried in resolved.description would never reach the user.
-  const ambiguous = entries.filter((e) => e.resolved.fileMatchState === "ambiguous");
+  const ambiguous = entries.filter(
+    (e) => e.resolved.fileMatchState === "ambiguous",
+  );
   for (const entry of ambiguous) {
     echo(`>>`, colorOrange(entry.originalFile), colorRed(`is ambiguous`));
     log(entry.resolved.description);
@@ -4943,7 +5355,11 @@ async function _runScripts(softwareFiles, allRepoFiles, label) {
       } else {
         suGroup.entries.push(entry);
       }
-    } else if (entry.bundleType && currentGroup && currentGroup.type === entry.bundleType) {
+    } else if (
+      entry.bundleType &&
+      currentGroup &&
+      currentGroup.type === entry.bundleType
+    ) {
       currentGroup.entries.push(entry);
     } else {
       currentGroup = { type: entry.bundleType, entries: [entry] };
@@ -5008,7 +5424,9 @@ function printScriptProcessingResults(results) {
 
   // emit a post-run bash command to print consolidated results with per-script timing
   if (BASHRC_TEMP_DIR) {
-    const timingPath = path.join(BASHRC_TEMP_DIR, "run_timing.json").replace(/'/g, "'\\''");
+    const timingPath = path
+      .join(BASHRC_TEMP_DIR, "run_timing.json")
+      .replace(/'/g, "'\\''");
     emitBash(`TIMING_FILE="${timingPath}" node <<'_BASHRC_PRINT_RESULTS_EOF'
 const fs = require("fs");
 const data = JSON.parse(fs.readFileSync(process.env.TIMING_FILE, "utf8"));
@@ -5085,7 +5503,10 @@ function _printScriptProcessingResultsDirect(results) {
           : `  Success - ${result.file} (${result.path}).${result.description ? ` ${result.description}` : ""}`,
       );
     } else {
-      echo(`  Error - ${result.file} (${result.path}). ${result.description}.`, colorDim(`${result.tempFileCommand || ""}`));
+      echo(
+        `  Error - ${result.file} (${result.path}). ${result.description}.`,
+        colorDim(`${result.tempFileCommand || ""}`),
+      );
     }
   }
 }
@@ -5161,7 +5582,9 @@ async function _doWorkTestFiles() {
     softwareFiles.push(refreshScript);
   }
 
-  echo(`> _doWorkTestFiles => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `);
+  echo(
+    `> _doWorkTestFiles => ${softwareFiles.length} Files, and allRepoFiles=${allRepoFiles.length} `,
+  );
   await _runScripts(softwareFiles, allRepoFiles, "Test Files");
 }
 
@@ -5177,7 +5600,9 @@ async function _doWorkTestFiles() {
 function _filterFilesByOsGuard(files) {
   // Build a list of disallowed leading segments (e.g. ["windows/", "mac/"]) for
   // OS folders whose `is_os_*` flag is NOT set on the current platform.
-  const disallowed = OS_SCRIPT_PATHS.filter(([valid]) => !valid).map(([, scriptPath]) => `${scriptPath.replace("software/scripts/", "")}/`);
+  const disallowed = OS_SCRIPT_PATHS.filter(([valid]) => !valid).map(
+    ([, scriptPath]) => `${scriptPath.replace("software/scripts/", "")}/`,
+  );
 
   return files.filter((file) => {
     const norm = file.replace(/^software\/scripts\//, "");
@@ -5201,8 +5626,14 @@ async function _doWorkFullRun() {
   const allRepoFiles = await getAllRepoSoftwareFiles();
   const softwareFiles = await getSoftwareScriptFiles();
 
-  echo(`> _doWorkFullRun => software=${softwareFiles.length} allRepoFiles=${allRepoFiles.length} setup=${IS_SETUP} `);
-  await _runScripts(softwareFiles, allRepoFiles, IS_SETUP ? "Full Setup" : "Full Run");
+  echo(
+    `> _doWorkFullRun => software=${softwareFiles.length} allRepoFiles=${allRepoFiles.length} setup=${IS_SETUP} `,
+  );
+  await _runScripts(
+    softwareFiles,
+    allRepoFiles,
+    IS_SETUP ? "Full Setup" : "Full Run",
+  );
 }
 
 // --- Bootstrap / Run Info ---
@@ -5261,8 +5692,11 @@ function printRunInfo() {
       }
       log(`  - ${name}`);
       log(`      description : ${description}`);
-      if (refs.length) log(`      presets (${refs.length}) : ${refs.join(", ")}`);
-      log(`      files (${presetFiles.length}) : ${presetFiles.length ? presetFiles.join(", ") : "[none]"}`);
+      if (refs.length)
+        log(`      presets (${refs.length}) : ${refs.join(", ")}`);
+      log(
+        `      files (${presetFiles.length}) : ${presetFiles.length ? presetFiles.join(", ") : "[none]"}`,
+      );
     }
   }
 
@@ -5284,13 +5718,16 @@ function printRunInfo() {
     .filter(([, value]) => !value)
     .map(([key]) => key);
   if (missingEnvVars.length > 0) {
-    echo(`Missing required environment variables error: ${missingEnvVars.join(", ")}`);
+    echo(
+      `Missing required environment variables error: ${missingEnvVars.join(", ")}`,
+    );
     process.exit(1);
   }
 
   // getting the ip address mapping
   try {
-    const hostnamesData = await readJson`.build/ip-address.config.hostnamesFlattened`;
+    const hostnamesData =
+      await readJson`.build/ip-address.config.hostnamesFlattened`;
     HOME_HOST_NAMES = Array.isArray(hostnamesData) ? hostnamesData : [];
   } catch (err) {
     HOME_HOST_NAMES = [];
@@ -5305,7 +5742,8 @@ function printRunInfo() {
   // create the sy tweak folder
   const pathsToCreateDir = [];
   if (is_os_mac) pathsToCreateDir.push(await getCustomTweaksPath("mac"));
-  if (is_os_windows) pathsToCreateDir.push(await getCustomTweaksPath("windows"));
+  if (is_os_windows)
+    pathsToCreateDir.push(await getCustomTweaksPath("windows"));
   for (const aPath of pathsToCreateDir) {
     try {
       await mkdir(aPath);
@@ -5315,7 +5753,9 @@ function printRunInfo() {
   // for debugging
   process
     .on("unhandledRejection", (reason, p) => {
-      echo(`[Error] unhandledRejection ${reason} Unhandled Rejection at Promise ${p}`);
+      echo(
+        `[Error] unhandledRejection ${reason} Unhandled Rejection at Promise ${p}`,
+      );
       process.exit(1);
     })
     .on("uncaughtException", (err) => {
@@ -5325,7 +5765,9 @@ function printRunInfo() {
     .on("exit", () => {
       // safety net — log if any unflushed blocks remain (should not happen, finally block handles it)
       if (_profileBlockBuffer.size > 0) {
-        console.error(`[bashrc] WARNING: ${_profileBlockBuffer.size} unflushed profile block(s) at exit`);
+        console.error(
+          `[bashrc] WARNING: ${_profileBlockBuffer.size} unflushed profile block(s) at exit`,
+        );
       }
     });
 
@@ -5344,9 +5786,21 @@ function printRunInfo() {
           else delete process.env.IS_REFRESH_MODE;
           if (IS_REMOVE_MODE) {
             if (s.fn.undoWork) await s.fn.undoWork();
-            else log("> No undoWork() defined for " + s.file + " — nothing to remove");
+            else
+              log(
+                "> No undoWork() defined for " +
+                  s.file +
+                  " — nothing to remove",
+              );
           } else {
-            log("# _runScripts | " + s.file + " (" + s.pct + "%)" + (s.bundleLabel ? " [" + s.bundleLabel + "]" : ""));
+            log(
+              "# _runScripts | " +
+                s.file +
+                " (" +
+                s.pct +
+                "%)" +
+                (s.bundleLabel ? " [" + s.bundleLabel + "]" : ""),
+            );
             if (s.fn.doWork) await s.fn.doWork();
           }
         } catch (err) {

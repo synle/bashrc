@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-07-14]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-07-15]
 // 
 // Zed keymap.json (macOS)
 // ################################################################################
@@ -12,14 +12,17 @@
       "ctrl-cmd-|": "editor::ToggleSoftWrap",
       "ctrl-`": "terminal_panel::Toggle",
       "f5": [
-        "project_panel::Refresh",
-        "pane::RevertEditor",
-        "workspace::ReloadActiveItem"
+        "action::Sequence",
+        [
+          "project_panel::Refresh",
+          "pane::RevertEditor",
+          "workspace::ReloadActiveItem"
+        ]
       ],
       "cmd-n": "workspace::NewFile",
       "cmd-shift-n": "workspace::NewWindow",
       "cmd-shift-]": "pane::ActivateNextItem",
-      "cmd-shift-[": "pane::ActivatePrevItem",
+      "cmd-shift-[": "pane::ActivatePreviousItem",
       "cmd-1": [
         "pane::ActivateItem",
         0
@@ -65,6 +68,14 @@
       "cmd-t": "workspace::NewCenterTerminal",
       "cmd-s": "workspace::Save",
       "cmd-shift-s": "workspace::SaveAll",
+      "cmd-shift-r": [
+        "action::Sequence",
+        [
+          "project_panel::Refresh",
+          "pane::RevertEditor",
+          "workspace::ReloadActiveItem"
+        ]
+      ],
       "cmd-a": "editor::SelectAll",
       "cmd-c": "editor::Copy",
       "cmd-v": "editor::Paste",
@@ -139,7 +150,7 @@
       "cmd-n": "workspace::NewFile",
       "cmd-shift-n": "workspace::NewWindow",
       "cmd-shift-]": "pane::ActivateNextItem",
-      "cmd-shift-[": "pane::ActivatePrevItem",
+      "cmd-shift-[": "pane::ActivatePreviousItem",
       "cmd-1": [
         "pane::ActivateItem",
         0
@@ -185,6 +196,14 @@
       "cmd-t": "workspace::NewCenterTerminal",
       "cmd-s": "workspace::Save",
       "cmd-shift-s": "workspace::SaveAll",
+      "cmd-shift-r": [
+        "action::Sequence",
+        [
+          "project_panel::Refresh",
+          "pane::RevertEditor",
+          "workspace::ReloadActiveItem"
+        ]
+      ],
       "cmd-a": "editor::SelectAll",
       "cmd-x": "editor::Cut",
       "cmd-z": "editor::Undo",

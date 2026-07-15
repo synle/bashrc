@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-07-14]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-07-15]
 // 
 // VS Code settings.json (drop into <Code>/User/)
 // ################################################################################
@@ -1231,6 +1231,7 @@
     "problems.action.copy",
     "projectManager.listProjects",
     "redo",
+    "runCommands",
     "search.action.copyMatch",
     "testing.toggleTestingPeekHistory",
     "undo",

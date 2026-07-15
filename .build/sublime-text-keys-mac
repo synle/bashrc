@@ -1,4 +1,4 @@
-// NOTE: STOP - do not edit by hand - this file is auto-generated [2026-07-14]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-07-15]
 // 
 // Preferences Key Bindings
 // ################################################################################
@@ -34,6 +34,22 @@
     },
     "keys": [
       "f5"
+    ]
+  },
+  {
+    "command": "chain",
+    "args": {
+      "commands": [
+        [
+          "refresh_folder_list"
+        ],
+        [
+          "revert"
+        ]
+      ]
+    },
+    "keys": [
+      "super+shift+r"
     ]
   },
   {
