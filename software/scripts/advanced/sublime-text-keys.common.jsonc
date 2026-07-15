@@ -12,6 +12,13 @@
     },
   },
   {
+    "key": "OS_KEY+shift+r",
+    "command": "chain",
+    "args": {
+      "commands": [["refresh_folder_list"], ["revert"]],
+    },
+  },
+  {
     "key": "OS_KEY+r",
     "command": "show_overlay",
     "args": {

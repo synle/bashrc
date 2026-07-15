@@ -36,7 +36,7 @@
       // F5 — refresh project panel + revert/reload the active file from disk.
       // Matches VS Code's chained `refreshFilesExplorer` + `revert` and
       // Sublime's chained `refresh_folder_list` + `revert`.
-      "f5": ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"],
+      "f5": ["action::Sequence", ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"]],
 
       // ---- Tabs / panes / windows ----
       // new file tab — matches VS Code `workbench.action.files.newUntitledFile` / Sublime `new_file`
@@ -45,7 +45,7 @@
       "OS_KEY-shift-n": "workspace::NewWindow",
       // tab navigation — matches VS Code nextEditor/previousEditor + Sublime next_view/prev_view
       "OS_KEY-shift-]": "pane::ActivateNextItem",
-      "OS_KEY-shift-[": "pane::ActivatePrevItem",
+      "OS_KEY-shift-[": "pane::ActivatePreviousItem",
       // jump directly to tab by index — matches VS Code `workbench.action.openEditorAtIndex{N}`
       // (OS_KEY+1..9). Zed uses the tuple form `[action, arg]` for parameterised actions.
       "OS_KEY-1": ["pane::ActivateItem", 0],
@@ -77,6 +77,8 @@
       // save / save all — matches VS Code `workbench.action.files.save{,All}`
       "OS_KEY-s": "workspace::Save",
       "OS_KEY-shift-s": "workspace::SaveAll",
+      // reload/revert — alternative to F5 (same sequence)
+      "OS_KEY-shift-r": ["action::Sequence", ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"]],
 
       // ---- Editing ----
       // select all — matches VS Code `editor.action.selectAll`

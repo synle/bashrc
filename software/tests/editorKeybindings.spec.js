@@ -69,18 +69,22 @@ describe("VS Code keybindings — no duplicate keys", () => {
 
   it("has no undisambiguated duplicate key chords in the common file", () => {
     // VS Code fires all matching commands in sequence (no `when` = both fire).
-    // Track all duplicates for visibility, but only assert on F5 specifically
-    // to prevent the original regression (F5 rebound silently).
+    // Track all duplicates for visibility, but only assert on F5 and
+    // OS_KEY+shift+r specifically to prevent regressions.
     const dups = findUndisambiguatedDuplicates(keybindings);
-    const f5Dup = dups.find((d) => d.key.toLowerCase() === "f5");
-    expect(f5Dup).toBeUndefined();
+    for (const key of ["f5", "os_key+shift+r"]) {
+      const dup = dups.find((d) => d.key.toLowerCase() === key);
+      expect(dup).toBeUndefined();
+    }
   });
 
   it("has no undisambiguated duplicate key chords in the windows file", () => {
     const winKeybindings = readJsonc("software/scripts/advanced/vs-code-keys.windows.jsonc");
     const dups = findUndisambiguatedDuplicates(winKeybindings);
-    const f5Dup = dups.find((d) => d.key.toLowerCase() === "f5");
-    expect(f5Dup).toBeUndefined();
+    for (const key of ["f5", "os_key+shift+r"]) {
+      const dup = dups.find((d) => d.key.toLowerCase() === key);
+      expect(dup).toBeUndefined();
+    }
   });
 
   it("F5 is bound to runCommands (chained refresh + revert)", () => {
@@ -88,6 +92,16 @@ describe("VS Code keybindings — no duplicate keys", () => {
     expect(f5).toBeDefined();
     expect(f5.command).toBe("runCommands");
     expect(f5.args.commands).toEqual([
+      "workbench.files.action.refreshFilesExplorer",
+      "workbench.action.files.revert",
+    ]);
+  });
+
+  it("OS_KEY+shift+r is bound to runCommands (chained refresh + revert)", () => {
+    const shiftR = keybindings.find((e) => e.key === "OS_KEY+shift+r");
+    expect(shiftR).toBeDefined();
+    expect(shiftR.command).toBe("runCommands");
+    expect(shiftR.args.commands).toEqual([
       "workbench.files.action.refreshFilesExplorer",
       "workbench.action.files.revert",
     ]);
@@ -140,10 +154,12 @@ describe("Sublime Text keybindings — no duplicate keys", () => {
   it("has no undisambiguated duplicate key chords in the common file", () => {
     // Sublime fires all matching commands in sequence. The js_prettier +
     // lsp_format_document pair is intentional (context-scoped fallback).
-    // Only assert on F5 to prevent regressions.
+    // Only assert on F5 and OS_KEY+shift+r to prevent regressions.
     const dups = findUndisambiguatedDuplicates(keybindings);
-    const f5Dup = dups.find((d) => d.key === "f5");
-    expect(f5Dup).toBeUndefined();
+    for (const key of ["f5", "os_key+shift+r"]) {
+      const dup = dups.find((d) => d.key === key);
+      expect(dup).toBeUndefined();
+    }
   });
 
   it("has no undisambiguated duplicate key chords in the windows file", () => {
@@ -159,6 +175,16 @@ describe("Sublime Text keybindings — no duplicate keys", () => {
     expect(f5).toBeDefined();
     expect(f5.command).toBe("chain");
     expect(f5.args.commands).toEqual([["refresh_folder_list"], ["revert"]]);
+  });
+
+  it("OS_KEY+shift+r is bound to chain (refresh_folder_list + revert)", () => {
+    const shiftR = keybindings.find((e) => {
+      const k = extractKey(e);
+      return k === "os_key+shift+r";
+    });
+    expect(shiftR).toBeDefined();
+    expect(shiftR.command).toBe("chain");
+    expect(shiftR.args.commands).toEqual([["refresh_folder_list"], ["revert"]]);
   });
 });
 
@@ -195,14 +221,23 @@ describe("Zed keybindings — no duplicate keys", () => {
     }
   });
 
-  it("F5 is bound to the three-command chain (refresh + revert + reload)", () => {
+  it("F5 is bound to action::Sequence (refresh + revert + reload)", () => {
     const noContext = keybindings.find((e) => !e.context);
     expect(noContext).toBeDefined();
     const f5Action = noContext.bindings["f5"];
     expect(f5Action).toEqual([
-      "project_panel::Refresh",
-      "pane::RevertEditor",
-      "workspace::ReloadActiveItem",
+      "action::Sequence",
+      ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"],
+    ]);
+  });
+
+  it("OS_KEY-shift-r is bound to action::Sequence (refresh + revert + reload)", () => {
+    const noContext = keybindings.find((e) => !e.context);
+    expect(noContext).toBeDefined();
+    const shiftRAction = noContext.bindings["OS_KEY-shift-r"];
+    expect(shiftRAction).toEqual([
+      "action::Sequence",
+      ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"],
     ]);
   });
 });

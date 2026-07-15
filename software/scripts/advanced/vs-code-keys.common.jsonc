@@ -22,6 +22,16 @@
       ],
     },
   },
+  {
+    "key": "OS_KEY+shift+r",
+    "command": "runCommands",
+    "args": {
+      "commands": [
+        "workbench.files.action.refreshFilesExplorer",
+        "workbench.action.files.revert",
+      ],
+    },
+  },
   { "key": "OS_KEY+h", "command": "editor.action.startFindReplaceAction", "when": "editorFocus || editorIsOpen" },
   { "key": "OS_KEY+h", "command": "testing.toggleTestingPeekHistory", "when": "testing.isPeekVisible" },
   {
