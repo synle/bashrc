@@ -75,18 +75,12 @@ async function _loadGeminiManagedKeybindings(isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
 
   /** @type {Array<{ command: string, key: string }> | null} */
-  const common =
-    await readJson`software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc`;
+  const common = await readJson`software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc`;
   /** @type {Array<{ command: string, key: string }> | null} */
-  const windows = isMac
-    ? null
-    : await readJson`software/scripts/advanced/llm/gemini/gemini-keys.windows.jsonc`;
+  const windows = isMac ? null : await readJson`software/scripts/advanced/llm/gemini/gemini-keys.windows.jsonc`;
 
   /** @type {Array<{ command: string, key: string }>} */
-  const raw = [
-    ...(Array.isArray(common) ? common : []),
-    ...(Array.isArray(windows) ? windows : []),
-  ];
+  const raw = [...(Array.isArray(common) ? common : []), ...(Array.isArray(windows) ? windows : [])];
 
   if (raw.length === 0) return [];
 
@@ -94,10 +88,7 @@ async function _loadGeminiManagedKeybindings(isOsMac) {
 
   return raw.map((entry) => ({
     command: entry.command,
-    key:
-      typeof entry.key === "string"
-        ? entry.key.replace(/OS_KEY/g, osKey)
-        : entry.key,
+    key: typeof entry.key === "string" ? entry.key.replace(/OS_KEY/g, osKey) : entry.key,
   }));
 }
 
@@ -136,8 +127,7 @@ async function _doGeminiKeysWork(targetDir) {
   // the managed version
   const managedKeys = new Set(managed.map((b) => `${b.command}\u0000${b.key}`));
   const preserved = existing.filter((b) => {
-    if (!b || typeof b.command !== "string" || typeof b.key !== "string")
-      return false;
+    if (!b || typeof b.command !== "string" || typeof b.key !== "string") return false;
     return !managedKeys.has(`${b.command}\u0000${b.key}`);
   });
 
@@ -322,10 +312,7 @@ async function _doMcpWork(targetDir) {
   } catch (e) {}
 
   /** @type {Record<string, any>} */
-  const existingServers =
-    existing.mcpServers && typeof existing.mcpServers === "object"
-      ? existing.mcpServers
-      : {};
+  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
   /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
   const merged = { ...existingServers, ...sharedServers };
 
@@ -370,24 +357,11 @@ async function _doGeminiInstructionsWork(targetDir) {
 
   // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
   // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
-  existing = removeBlock(
-    existing,
-    LLM_INSTRUCTIONS_LEGACY_MARKER,
-    "<!--",
-    " -->",
-  );
+  existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when GEMINI.md is brand new or the markers are missing.
-  const merged =
-    replaceBlock(
-      existing,
-      LLM_INSTRUCTIONS_MARKER,
-      sourceContent,
-      "<!--",
-      " -->",
-      "append",
-    ).trim() + "\n";
+  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

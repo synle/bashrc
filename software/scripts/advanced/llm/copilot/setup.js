@@ -122,10 +122,7 @@ function _getCopilotKeyConfig(isOsMac) {
   /** @type {object[]} Platform-specific bindings merged with common. */
   const merged = isMac
     ? _mergeCopilotContextGroups(COPILOT_COMMON_KEY_BINDINGS)
-    : _mergeCopilotContextGroups(
-        COPILOT_COMMON_KEY_BINDINGS,
-        COPILOT_WINDOWS_ONLY_KEY_BINDINGS,
-      );
+    : _mergeCopilotContextGroups(COPILOT_COMMON_KEY_BINDINGS, COPILOT_WINDOWS_ONLY_KEY_BINDINGS);
 
   return {
     // Pre-staged schema URL — github/copilot-cli has not published a
@@ -147,26 +144,14 @@ function _getCopilotKeyConfig(isOsMac) {
  * @param {string} targetDir - Path to the ~/.copilot directory (used only by the deferred live deploy).
  */
 async function _doCopilotKeysWork(targetDir) {
-  log(
-    ">> GitHub Copilot CLI Keybindings (preview only — Copilot has no on-disk keymap surface yet):",
-  );
-  log(
-    "   Build artifacts:",
-    `${BUILD_DIR}/copilot-keys`,
-    "+",
-    `${BUILD_DIR}/copilot-keys-mac`,
-  );
+  log(">> GitHub Copilot CLI Keybindings (preview only — Copilot has no on-disk keymap surface yet):");
+  log("   Build artifacts:", `${BUILD_DIR}/copilot-keys`, "+", `${BUILD_DIR}/copilot-keys-mac`);
 
-  COPILOT_COMMON_KEY_BINDINGS =
-    (await readJson`software/scripts/advanced/llm/copilot/copilot-keys.common.jsonc`) ||
-    [];
-  COPILOT_WINDOWS_ONLY_KEY_BINDINGS =
-    (await readJson`software/scripts/advanced/llm/copilot/copilot-keys.windows.jsonc`) ||
-    [];
+  COPILOT_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/llm/copilot/copilot-keys.common.jsonc`) || [];
+  COPILOT_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/llm/copilot/copilot-keys.windows.jsonc`) || [];
 
   // write to build file (one per platform) — mirrors claude/setup.js exactly
-  const comments =
-    "GitHub Copilot CLI Keybindings (pre-staged; not yet read by Copilot)";
+  const comments = "GitHub Copilot CLI Keybindings (pre-staged; not yet read by Copilot)";
   await writeBuildArtifact([
     {
       file: `${BUILD_DIR}/copilot-keys`,
@@ -354,10 +339,7 @@ async function _doMcpWork(targetDir) {
   } catch (e) {}
 
   /** @type {Record<string, any>} */
-  const existingServers =
-    existing.mcpServers && typeof existing.mcpServers === "object"
-      ? existing.mcpServers
-      : {};
+  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
   /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
   const merged = { ...existingServers, ...sharedServers };
 
@@ -401,24 +383,11 @@ async function _doCopilotInstructionsWork(targetDir) {
 
   // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
   // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
-  existing = removeBlock(
-    existing,
-    LLM_INSTRUCTIONS_LEGACY_MARKER,
-    "<!--",
-    " -->",
-  );
+  existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when copilot-instructions.md is brand new or the markers are missing.
-  const merged =
-    replaceBlock(
-      existing,
-      LLM_INSTRUCTIONS_MARKER,
-      sourceContent,
-      "<!--",
-      " -->",
-      "append",
-    ).trim() + "\n";
+  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);

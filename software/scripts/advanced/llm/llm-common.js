@@ -56,8 +56,7 @@ function getLLMOsKey(source, isOsMac) {
  * copilot, gemini, and opencode in one edit.
  * @type {string}
  */
-const LLM_INSTRUCTIONS_MARKER =
-  "synle/bashrc | software/scripts/advanced/llm/_common/instructions.md";
+const LLM_INSTRUCTIONS_MARKER = "synle/bashrc | software/scripts/advanced/llm/_common/instructions.md";
 
 /**
  * Legacy marker key used by every LLM CLI's instructions deploy before the descriptive-key
@@ -79,8 +78,7 @@ const LLM_INSTRUCTIONS_LEGACY_MARKER = "managed-rules";
  * OpenCode translates via `_translateToOpencodeMcp()`).
  * @type {string}
  */
-const SHARED_MCP_REGISTRY_PATH =
-  "software/scripts/advanced/llm/_common/mcp-servers.jsonc";
+const SHARED_MCP_REGISTRY_PATH = "software/scripts/advanced/llm/_common/mcp-servers.jsonc";
 
 /**
  * Loads the shared MCP server registry from `_common/mcp-servers.jsonc` and
@@ -96,10 +94,7 @@ async function loadSharedMcpServers() {
   const json = await readJson`${SHARED_MCP_REGISTRY_PATH}`;
   if (!json || typeof json !== "object") return {};
   /** @type {Record<string, any>} */
-  const servers =
-    json.mcpServers && typeof json.mcpServers === "object"
-      ? json.mcpServers
-      : {};
+  const servers = json.mcpServers && typeof json.mcpServers === "object" ? json.mcpServers : {};
   return servers;
 }
 
@@ -124,21 +119,16 @@ function _translateToOpencodeMcp(entry) {
   if (entry && typeof entry === "object") {
     if (typeof entry.command === "string") {
       /** @type {string[]} CLI tokens — opencode expects a single array, not [command, args]. */
-      const command = [
-        entry.command,
-        ...(Array.isArray(entry.args) ? entry.args : []),
-      ];
+      const command = [entry.command, ...(Array.isArray(entry.args) ? entry.args : [])];
       /** @type {Record<string, any>} */
       const out = { type: "local", command, enabled: true };
-      if (entry.env && typeof entry.env === "object")
-        out.environment = entry.env;
+      if (entry.env && typeof entry.env === "object") out.environment = entry.env;
       return out;
     }
     if (typeof entry.url === "string") {
       /** @type {Record<string, any>} */
       const out = { type: "remote", url: entry.url, enabled: true };
-      if (entry.headers && typeof entry.headers === "object")
-        out.headers = entry.headers;
+      if (entry.headers && typeof entry.headers === "object") out.headers = entry.headers;
       return out;
     }
   }
@@ -185,9 +175,7 @@ async function _fetchOllamaModelNames(host) {
   try {
     const json = await readJson`${url}`;
     const tags = Array.isArray(json && json.models) ? json.models : [];
-    return tags
-      .map((m) => m && m.name)
-      .filter((n) => typeof n === "string" && n);
+    return tags.map((m) => m && m.name).filter((n) => typeof n === "string" && n);
   } catch {
     return [];
   }
@@ -239,9 +227,7 @@ async function getOllamaProviderInputs() {
       log(`>> ollama: dropping provider ${id} (${host}) — no reachable models`);
       continue;
     }
-    log(
-      `>> ollama: discovered ${modelNames.length} model(s) on ${id} (${host}): ${modelNames.join(", ")}`,
-    );
+    log(`>> ollama: discovered ${modelNames.length} model(s) on ${id} (${host}): ${modelNames.join(", ")}`);
     providers.push({
       id,
       name: displayName,
@@ -270,11 +256,7 @@ async function getOllamaProviderInputs() {
  *
  * @type {string[]}
  */
-const AUTOCOMPLETE_MODELS = [
-  "qwen2.5-coder:1.5b-base",
-  "qwen2.5-coder:3b-base",
-  "qwen2.5-coder:7b-base",
-];
+const AUTOCOMPLETE_MODELS = ["qwen2.5-coder:1.5b-base", "qwen2.5-coder:3b-base", "qwen2.5-coder:7b-base"];
 
 /**
  * Picks the best Ollama host + model for editor inline autocomplete (Zed's
@@ -318,9 +300,7 @@ async function getAutocompleteProvider(preferred = AUTOCOMPLETE_MODELS) {
       log(`>> autocomplete: picked ${match} on ${host}`);
       return { host, port: OLLAMA_PORT, model: match };
     }
-    log(
-      `>> autocomplete: ${host} reachable but no preferred model present (saw: ${tags.join(", ")})`,
-    );
+    log(`>> autocomplete: ${host} reachable but no preferred model present (saw: ${tags.join(", ")})`);
   }
   return null;
 }

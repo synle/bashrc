@@ -30,11 +30,7 @@ function _resolveRepoRoots() {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((s) =>
-      s
-        .replace(/^~(?=$|\/)/, BASE_HOMEDIR_LINUX)
-        .replace(/\$HOME/g, BASE_HOMEDIR_LINUX),
-    )
+    .map((s) => s.replace(/^~(?=$|\/)/, BASE_HOMEDIR_LINUX).replace(/\$HOME/g, BASE_HOMEDIR_LINUX))
     .map((s) => path.resolve(s));
 
   /** @type {string[]} Filtered to entries that actually exist as directories on disk. */
@@ -122,7 +118,7 @@ function _processRepo(repoPath) {
   }
 
   if (agentsStat === null) {
-    safeSymlink("CLAUDE.md", agentsPath);
+    fs.symlinkSync("CLAUDE.md", agentsPath);
     log(`   Created: ${agentsPath} -> CLAUDE.md`);
     return "created";
   }
@@ -131,9 +127,7 @@ function _processRepo(repoPath) {
     /** @type {string} Raw link target as stored on disk. */
     const target = fs.readlinkSync(agentsPath);
     /** @type {string} Target resolved to an absolute path (handles both relative + absolute symlinks). */
-    const resolved = path.isAbsolute(target)
-      ? target
-      : path.resolve(repoPath, target);
+    const resolved = path.isAbsolute(target) ? target : path.resolve(repoPath, target);
     if (resolved === claudePath) return "skipped-already-linked";
     log(`   Foreign symlink (kept): ${agentsPath} -> ${target}`);
     return "skipped-foreign-link";
@@ -152,9 +146,7 @@ async function doWork() {
   /** @type {string[]} Absolute paths of repo-root folders that actually exist. */
   const roots = _resolveRepoRoots();
   if (roots.length === 0) {
-    log(
-      ">> No usable repo roots — set BASHRC_AGENTS_REPO_ROOTS or create ~/git",
-    );
+    log(">> No usable repo roots — set BASHRC_AGENTS_REPO_ROOTS or create ~/git");
     return;
   }
 
