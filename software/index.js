@@ -1714,6 +1714,19 @@ async function safeWriteText(
 }
 
 /**
+ * Creates a symbolic link, logging a warning on failure instead of throwing.
+ * @param {string} src - The source path the symlink points to
+ * @param {string} dest - The destination path where the symlink is created
+ */
+function safeSymlink(src, dest) {
+  try {
+    fs.symlinkSync(src, dest);
+  } catch (err) {
+    log(`[Warning] symlink failed: ${src} -> ${dest}`, err.message);
+  }
+}
+
+/**
  * Writes text content to a file only if the content has changed by more than a given percentage threshold.
  * Useful for files with volatile content (e.g., fetched host lists) where minor fluctuations should not trigger a write.
  * @param {string} filePath - The file path to write to

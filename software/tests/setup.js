@@ -18,6 +18,11 @@ export const mockFsDirEntries = {};
 export const mockExecCommands = [];
 export let mockExecSyncReturn = "";
 
+// ---- mock fs.symlinkSync tracking ----
+export const mockSymlinkCalls = [];
+/** Set `mockSymlinkError.value` to an Error to make `symlinkSync` throw. */
+export const mockSymlinkError = { value: null };
+
 // ---- mock process.exit tracking ----
 export let processExitCalled = false;
 
@@ -103,6 +108,10 @@ const mockFs = {
     };
   },
   createWriteStream: () => ({ on: () => {} }),
+  symlinkSync: (src, dest) => {
+    mockSymlinkCalls.push({ src, dest });
+    if (mockSymlinkError.value) throw mockSymlinkError.value;
+  },
 };
 
 // mock child_process
@@ -285,6 +294,8 @@ beforeEach(() => {
   }
   mockExecCommands.length = 0;
   mockExecSyncReturn = "";
+  mockSymlinkCalls.length = 0;
+  mockSymlinkError.value = null;
   processExitCalled = false;
   sandbox._profileBlockBuffer.clear();
   fetchResponses = {};
