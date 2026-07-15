@@ -373,7 +373,7 @@ async function _doCopilotInstructionsWork(targetDir) {
   log(">> GitHub Copilot CLI Instructions:", targetPath);
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
+  const sourceContent = await getLLMCustomInstructions();
 
   /** @type {string} Existing copilot-instructions.md content (empty if file is missing). */
   let existing = "";

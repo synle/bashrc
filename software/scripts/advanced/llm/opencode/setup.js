@@ -326,7 +326,7 @@ async function _doOpencodeInstructionsWork() {
   await mkdir(path.dirname(targetPath));
 
   /** @type {string} The markdown source for the managed engineering principles block. */
-  const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
+  const sourceContent = await getLLMCustomInstructions();
 
   /** @type {string} Existing AGENTS.md content (empty if file is missing). */
   let existing = "";
