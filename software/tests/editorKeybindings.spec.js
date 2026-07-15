@@ -91,20 +91,14 @@ describe("VS Code keybindings — no duplicate keys", () => {
     const f5 = keybindings.find((e) => e.key === "f5");
     expect(f5).toBeDefined();
     expect(f5.command).toBe("runCommands");
-    expect(f5.args.commands).toEqual([
-      "workbench.files.action.refreshFilesExplorer",
-      "workbench.action.files.revert",
-    ]);
+    expect(f5.args.commands).toEqual(["workbench.files.action.refreshFilesExplorer", "workbench.action.files.revert"]);
   });
 
   it("OS_KEY+shift+r is bound to runCommands (chained refresh + revert)", () => {
     const shiftR = keybindings.find((e) => e.key === "OS_KEY+shift+r");
     expect(shiftR).toBeDefined();
     expect(shiftR.command).toBe("runCommands");
-    expect(shiftR.args.commands).toEqual([
-      "workbench.files.action.refreshFilesExplorer",
-      "workbench.action.files.revert",
-    ]);
+    expect(shiftR.args.commands).toEqual(["workbench.files.action.refreshFilesExplorer", "workbench.action.files.revert"]);
   });
 });
 
@@ -225,19 +219,13 @@ describe("Zed keybindings — no duplicate keys", () => {
     const noContext = keybindings.find((e) => !e.context);
     expect(noContext).toBeDefined();
     const f5Action = noContext.bindings["f5"];
-    expect(f5Action).toEqual([
-      "action::Sequence",
-      ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"],
-    ]);
+    expect(f5Action).toEqual(["action::Sequence", ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"]]);
   });
 
   it("OS_KEY-shift-r is bound to action::Sequence (refresh + revert + reload)", () => {
     const noContext = keybindings.find((e) => !e.context);
     expect(noContext).toBeDefined();
     const shiftRAction = noContext.bindings["OS_KEY-shift-r"];
-    expect(shiftRAction).toEqual([
-      "action::Sequence",
-      ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"],
-    ]);
+    expect(shiftRAction).toEqual(["action::Sequence", ["project_panel::Refresh", "pane::RevertEditor", "workspace::ReloadActiveItem"]]);
   });
 });
