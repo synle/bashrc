@@ -66,7 +66,7 @@ function makeProject(fakeHome, encodedName, memoryIndex, linkedFiles = {}) {
  */
 function seedTargets(fakeHome, which) {
   const targets = {
-    copilot: path.join(fakeHome, ".copilot/AGENTS.md"),
+    copilot: path.join(fakeHome, ".copilot/copilot-instructions.md"),
     gemini: path.join(fakeHome, ".gemini/GEMINI.md"),
     opencode: path.join(fakeHome, ".config/opencode/AGENTS.md"),
   };
@@ -102,7 +102,7 @@ describe("memory-bridge.standalone.js", () => {
     seedTargets(fakeHome, ["copilot"]);
     const sandbox = loadSandbox(fakeHome);
     await sandbox.doWork();
-    const after = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const after = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     expect(after).toBe("# Existing user content\n");
   });
 
@@ -115,7 +115,7 @@ describe("memory-bridge.standalone.js", () => {
     await sandbox.doWork();
 
     for (const target of [
-      path.join(fakeHome, ".copilot/AGENTS.md"),
+      path.join(fakeHome, ".copilot/copilot-instructions.md"),
       path.join(fakeHome, ".gemini/GEMINI.md"),
       path.join(fakeHome, ".config/opencode/AGENTS.md"),
     ]) {
@@ -135,9 +135,9 @@ describe("memory-bridge.standalone.js", () => {
     seedTargets(fakeHome, ["copilot"]);
     const sandbox = loadSandbox(fakeHome);
     await sandbox.doWork();
-    const first = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const first = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     await sandbox.doWork();
-    const second = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const second = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     expect(second).toBe(first);
   });
 
@@ -149,7 +149,7 @@ describe("memory-bridge.standalone.js", () => {
     await sandbox.doWork();
     expect(fs.existsSync(path.join(fakeHome, ".gemini/GEMINI.md"))).toBe(false);
     expect(fs.existsSync(path.join(fakeHome, ".config/opencode/AGENTS.md"))).toBe(false);
-    expect(fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8")).toContain("# Persistent Context");
+    expect(fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8")).toContain("# Persistent Context");
   });
 
   it("renders every linked file in the index", async () => {
@@ -161,7 +161,7 @@ describe("memory-bridge.standalone.js", () => {
     seedTargets(fakeHome, ["copilot"]);
     const sandbox = loadSandbox(fakeHome);
     await sandbox.doWork();
-    const content = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const content = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     expect(content).toContain("alpha body");
     expect(content).toContain("beta body");
     expect(content).toContain("gamma body");
@@ -175,7 +175,7 @@ describe("memory-bridge.standalone.js", () => {
     seedTargets(fakeHome, ["copilot"]);
     const sandbox = loadSandbox(fakeHome);
     await sandbox.doWork();
-    const content = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const content = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     expect(content).toContain("(file missing on disk:");
     expect(content).toContain("ghost.md");
   });
@@ -186,7 +186,7 @@ describe("memory-bridge.standalone.js", () => {
     seedTargets(fakeHome, ["copilot"]);
     const sandbox = loadSandbox(fakeHome);
     await sandbox.doWork();
-    const content = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const content = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     // `-Users-syle-git-bar` sorts before `-Users-syle-git-foo`.
     expect(content.indexOf("bar body")).toBeLessThan(content.indexOf("foo body"));
   });
@@ -203,7 +203,7 @@ describe("memory-bridge.standalone.js", () => {
     seedTargets(fakeHome, ["copilot"]);
     const sandbox = loadSandbox(fakeHome);
     await sandbox.doWork();
-    const content = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const content = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     expect(content).toContain("~/git/display-dj");
   });
 
@@ -215,7 +215,7 @@ describe("memory-bridge.standalone.js", () => {
     seedTargets(fakeHome, ["copilot"]);
     const sandbox = loadSandbox(fakeHome);
     await sandbox.doWork();
-    const content = fs.readFileSync(path.join(fakeHome, ".copilot/AGENTS.md"), "utf-8");
+    const content = fs.readFileSync(path.join(fakeHome, ".copilot/copilot-instructions.md"), "utf-8");
     expect(content).toContain("/Users/syle/git/nonexistent");
   });
 });

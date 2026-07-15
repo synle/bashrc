@@ -12,7 +12,7 @@
  *
  * Source:  $HOME/.claude/projects/<encoded-cwd>/memory/MEMORY.md (index)
  *          plus every linked `.md` next to it.
- * Targets: $HOME/.copilot/AGENTS.md, $HOME/.gemini/GEMINI.md,
+ * Targets: $HOME/.copilot/copilot-instructions.md, $HOME/.gemini/GEMINI.md,
  *          $HOME/.config/opencode/AGENTS.md  (Claude reads memory natively, so
  *          we skip ~/.claude/CLAUDE.md to avoid double-loading.)
  *
@@ -174,7 +174,7 @@ function _renderMemoryBlock(snapshots) {
  */
 function _getTargets() {
   return [
-    path.join(BASE_HOMEDIR_LINUX, ".copilot/AGENTS.md"),
+    path.join(BASE_HOMEDIR_LINUX, ".copilot/copilot-instructions.md"),
     path.join(BASE_HOMEDIR_LINUX, ".gemini/GEMINI.md"),
     path.join(BASE_HOMEDIR_LINUX, ".config/opencode/AGENTS.md"),
   ];

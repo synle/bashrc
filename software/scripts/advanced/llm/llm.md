@@ -21,7 +21,7 @@ disk.
 
 | Shared file                                                        | Consumed by                                                                                                                                                                  |
 | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                                         |
+| `_common/instructions.md`                                          | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`                                                           |
 | `_common/commands/*.md`                                            | `~/.claude/commands/sy-*.md` (deployed) + `~/.config/opencode/commands/sy-*.md` (symlinked from Claude)                                                                      |
 | `_common/mcp-servers.jsonc`                                        | `~/.claude/settings.json::mcpServers`, `~/.copilot/mcp-config.json::mcpServers`, `~/.gemini/settings.json::mcpServers`, `~/.config/opencode/opencode.json::mcp` (translated) |
 | `<cli>/<cli>-keys.common.jsonc` + `<cli>/<cli>-keys.windows.jsonc` | Per-CLI keybinding files, with `OS_KEY` substituted per platform                                                                                                             |
@@ -43,7 +43,7 @@ bash run.sh --files="claude/setup.js"     # or copilot/, gemini/, opencode/
 |              | Instructions                                                                                        | Slash commands                                                  | Keybindings                                                      | Managed settings              | MCP servers                                               |
 | ------------ | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------- |
 | **claude**   | ✅ `~/.claude/CLAUDE.md`                                                                            | ✅ `~/.claude/commands/sy-*.md`                                 | ✅ live `~/.claude/keybindings.json`                             | ✅ `~/.claude/settings.json`  | ✅ additive into `~/.claude/settings.json::mcpServers`    |
-| **copilot**  | ✅ `~/.copilot/AGENTS.md`                                                                           | ❌ no `~/.<cli>/commands/` slot (would need plugin manifest)    | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` | ✅ additive into `~/.copilot/mcp-config.json::mcpServers` |
+| **copilot**  | ✅ `~/.copilot/copilot-instructions.md` (+ symlink `AGENTS.md`)                                     | ❌ no `~/.<cli>/commands/` slot (would need plugin manifest)    | ⚠️ build artifact only — binary has no keymap surface in v1.0.48 | ✅ `~/.copilot/settings.json` | ✅ additive into `~/.copilot/mcp-config.json::mcpServers` |
 | **gemini**   | ✅ `~/.gemini/GEMINI.md`                                                                            | ❌ no `~/.<cli>/commands/` slot (would need extension manifest) | ✅ live `~/.gemini/keybindings.json`                             | ✅ `~/.gemini/settings.json`  | ✅ additive into `~/.gemini/settings.json::mcpServers`    |
 | **opencode** | ✅ `~/.config/opencode/AGENTS.md` (own copy; also falls through to `~/.claude/CLAUDE.md` if absent) | ✅ symlinks from `~/.claude/commands/`                          | ✅ inline `keybinds` in `~/.config/opencode/tui.json`            | ✅ inline in `opencode.json`  | ✅ inline `mcp` in `opencode.json` (translated shape)     |
 
@@ -142,7 +142,7 @@ bash run.sh --files=memory-bridge.standalone.js
 
 Standalone — runs on demand, NOT on every `bash run.sh --preset=llm` (a
 snapshot freezes whatever Claude's memory looked like at run time). Writes to
-`~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`
+`~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`
 between BEGIN/END markers keyed by the source script path. Idempotent. Skips
 Claude itself (already loads memory natively) and skips any target whose
 instructions file isn't on disk yet (run the CLI's `setup.js` first).
@@ -217,17 +217,17 @@ Copilot CLI is more divergent — it has instructions and settings, but **no
 slash-command slot, no skills loader, and no live keymap surface** (as of
 `v1.0.48`). You will lose ergonomics. Plan accordingly.
 
-| From (Claude Code)                      | To (Copilot CLI)                    | Notes                                                                                                                      |
-| --------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `~/.claude/CLAUDE.md`                   | `~/.copilot/AGENTS.md`              | Same Markdown-as-system-prompt model.                                                                                      |
-| `~/.claude/commands/*.md`               | ❌ no `~/.copilot/commands/` slot   | Plugin manifest (`plugin.json` + `skills/<name>/`) is the only way today — heavyweight, requires `copilot plugin install`. |
-| `~/.claude/skills/<name>/SKILL.md`      | ⚠️ plugin manifest required         | Possible via the plugin system; not worth the ceremony for personal use.                                                   |
-| `~/.claude/keybindings.json`            | ❌ no live keymap config in v1.0.48 | This repo still builds a `copilot-keys.*.jsonc` artifact so the schema stays exercised for the day upstream ships one.     |
-| `~/.claude/settings.json`               | `~/.copilot/settings.json`          | Different key names — see the settings-intent table above for the cross-CLI mapping.                                       |
-| `<repo>/CLAUDE.md`                      | `<repo>/AGENTS.md`                  | Copilot CLI also reads `AGENTS.md` at the repo root.                                                                       |
-| `<repo>/.claude/skills/<name>/SKILL.md` | ❌ no per-project skill slot        | Inline into `<repo>/AGENTS.md` or move to a wrapper script.                                                                |
-| `<repo>/.claude/settings.json` hooks    | ❌ no hook system today             | Same gap as OpenCode.                                                                                                      |
-| `~/.claude/projects/.../memory/*.md`    | ❌ no auto-memory layer today       | Same gap as OpenCode — anything load-bearing must move into `AGENTS.md`.                                                   |
+| From (Claude Code)                      | To (Copilot CLI)                     | Notes                                                                                                                      |
+| --------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `~/.claude/CLAUDE.md`                   | `~/.copilot/copilot-instructions.md` | Same Markdown-as-system-prompt model.                                                                                      |
+| `~/.claude/commands/*.md`               | ❌ no `~/.copilot/commands/` slot    | Plugin manifest (`plugin.json` + `skills/<name>/`) is the only way today — heavyweight, requires `copilot plugin install`. |
+| `~/.claude/skills/<name>/SKILL.md`      | ⚠️ plugin manifest required          | Possible via the plugin system; not worth the ceremony for personal use.                                                   |
+| `~/.claude/keybindings.json`            | ❌ no live keymap config in v1.0.48  | This repo still builds a `copilot-keys.*.jsonc` artifact so the schema stays exercised for the day upstream ships one.     |
+| `~/.claude/settings.json`               | `~/.copilot/settings.json`           | Different key names — see the settings-intent table above for the cross-CLI mapping.                                       |
+| `<repo>/CLAUDE.md`                      | `<repo>/AGENTS.md`                   | Copilot CLI also reads `AGENTS.md` at the repo root.                                                                       |
+| `<repo>/.claude/skills/<name>/SKILL.md` | ❌ no per-project skill slot         | Inline into `<repo>/AGENTS.md` or move to a wrapper script.                                                                |
+| `<repo>/.claude/settings.json` hooks    | ❌ no hook system today              | Same gap as OpenCode.                                                                                                      |
+| `~/.claude/projects/.../memory/*.md`    | ❌ no auto-memory layer today        | Same gap as OpenCode — anything load-bearing must move into `AGENTS.md`.                                                   |
 
 ### Starting from scratch — what a brand-new machine needs
 
@@ -259,7 +259,7 @@ above has to be hand-maintained per CLI. One edit, four deployments, every run.
   (`claude/`, `copilot/`, `gemini/`, `opencode/`) writes it out to the right
   filename in the right folder, in the right managed-block format for that CLI:
   - `~/.claude/CLAUDE.md`
-  - `~/.copilot/AGENTS.md`
+  - `~/.copilot/copilot-instructions.md`
   - `~/.gemini/GEMINI.md`
   - `~/.config/opencode/AGENTS.md`
 - **One command corpus feeds two CLIs without duplication.**

@@ -167,7 +167,7 @@ TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in backg
 
 ## Agent Instruction File Size Limit
 
-52. **Keep every per-turn agent instruction file under 40,000 characters.** Applies to `~/.claude/CLAUDE.md`, `~/.copilot/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`, plus project-root and nested variants of the same names. Not linked docs (`DEV.md`/`ARCHITECTURE.md`).
+52. **Keep every per-turn agent instruction file under 40,000 characters.** Applies to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`, plus project-root and nested variants of the same names. Not linked docs (`DEV.md`/`ARCHITECTURE.md`).
 
     **Why:** Each file loads into the system prompt every turn. Over ~40k degrades performance and crowds out task context.
 

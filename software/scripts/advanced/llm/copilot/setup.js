@@ -1,4 +1,4 @@
-/** GitHub Copilot CLI setup: settings + user-level AGENTS.md instructions. Run: `bash run.sh --files="copilot/setup.js"` */
+/** GitHub Copilot CLI setup: settings + user-level copilot-instructions.md instructions. Run: `bash run.sh --files="copilot/setup.js"` */
 // SOURCE software/scripts/advanced/llm/llm-common.js
 
 // ----------------------------------------------------------------------------
@@ -10,13 +10,17 @@
 //
 //   ✅ Settings  — ~/.copilot/settings.json (defaults-merge, never clobbers
 //                   enabledPlugins / extraKnownMarketplaces / model / etc.)
-//   ✅ Instructions — ~/.copilot/AGENTS.md (managed block keyed by source path, mirrors
-//                   ~/.claude/CLAUDE.md's pattern; Copilot CLI loads AGENTS.md
-//                   user-level — verified by running `copilot -p ... AGENTS
-//                   marker` and asking it to list its custom instruction file
-//                   paths; it confirmed `~/.copilot/AGENTS.md` as the
-//                   user-level fallback alongside cwd `./AGENTS.md` and
-//                   `.github/copilot-instructions.md`)
+//   ✅ Instructions — ~/.copilot/copilot-instructions.md (managed block keyed by
+//                   source path, mirrors ~/.claude/CLAUDE.md's pattern; Copilot
+//                   CLI loads copilot-instructions.md user-level — verified by
+//                   running `copilot -p ... AGENTS marker` and asking it to list
+//                   its custom instruction file paths; it confirmed
+//                   `~/.copilot/copilot-instructions.md` as the user-level
+//                   fallback alongside cwd `./AGENTS.md` and
+//                   `.github/copilot-instructions.md`). A symlink
+//                   `~/.copilot/AGENTS.md` -> `copilot-instructions.md` is
+//                   created so copilot also finds the file via the AGENTS.md
+//                   path.
 //   ⚠️ Keybindings — Mirror-shaped only. copilot-keys.common.jsonc and
 //                    copilot-keys.windows.jsonc exist in the same format as
 //                    Claude's pair, and _doCopilotKeysWork() below merges
@@ -263,7 +267,7 @@ const COPILOT_MANAGED_SETTINGS = {
   // commits copilot makes on the user's behalf. Matches upstream default
   // (true) but pinned for explicit intent. Per the engineering-principles
   // gotcha in software/scripts/advanced/llm/_common/instructions.md (and
-  // the deployed ~/.claude/CLAUDE.md / ~/.copilot/AGENTS.md /
+  // the deployed ~/.claude/CLAUDE.md / ~/.copilot/copilot-instructions.md /
   // ~/.gemini/GEMINI.md / ~/.config/opencode/AGENTS.md), Co-Authored-By
   // trailers for supported LLM CLIs are INTENTIONAL provenance and must
   // survive author-identity fixups. The global commit-author check
@@ -344,35 +348,34 @@ async function _doMcpWork(targetDir) {
   await writeJson(targetPath, existing);
 }
 
-////// Instructions (User-Level AGENTS.md) //////
+////// Instructions (User-Level copilot-instructions.md) //////
 
 /**
- * Deploys the shared engineering principles into ~/.copilot/AGENTS.md between
- * BEGIN/END markers. The markdown source uses backticks for inline code;
- * readText returns file content verbatim (only the path argument is a
- * template literal), and the content flows into replaceBlock as a plain
- * string — no re-templating, so backticks are safe here.
+ * Deploys the shared engineering principles into ~/.copilot/copilot-instructions.md
+ * between BEGIN/END markers, then symlinks ~/.copilot/AGENTS.md -> copilot-instructions.md
+ * so copilot also finds the file via the AGENTS.md path.
  *
- * Why AGENTS.md (not COPILOT.md or copilot-instructions.md): copilot v1.0.48
- * advertises "Disable loading of custom instructions from AGENTS.md and
- * related files" in `copilot --help`. A live probe with a per-cwd AGENTS.md
- * marker confirmed copilot loads `~/.copilot/AGENTS.md` as the user-level
- * fallback (alongside cwd `./AGENTS.md` and `.github/copilot-instructions.md`,
- * the per-repo path handled by copilot.profile.bash).
+ * The markdown source uses backticks for inline code; readText returns file
+ * content verbatim (only the path argument is a template literal), and the
+ * content flows into replaceBlock as a plain string — no re-templating, so
+ * backticks are safe here.
  *
  * Existing user content outside the marker block is preserved on re-runs.
  *
  * @param {string} targetDir - Path to the ~/.copilot directory.
  */
 async function _doCopilotInstructionsWork(targetDir) {
-  const targetPath = path.join(targetDir, "AGENTS.md");
+  /** @type {string} Primary target — the managed instructions file. */
+  const targetPath = path.join(targetDir, "copilot-instructions.md");
+  /** @type {string} Symlink so copilot also discovers the file via the AGENTS.md path. */
+  const agentsLink = path.join(targetDir, "AGENTS.md");
 
   log(">> GitHub Copilot CLI Instructions:", targetPath);
 
   /** @type {string} The markdown source for the managed engineering principles block. */
   const sourceContent = (await readText`software/scripts/advanced/llm/_common/instructions.md`).trim();
 
-  /** @type {string} Existing AGENTS.md content (empty if file is missing). */
+  /** @type {string} Existing copilot-instructions.md content (empty if file is missing). */
   let existing = "";
   try {
     existing = fs.readFileSync(targetPath, "utf-8");
@@ -383,11 +386,32 @@ async function _doCopilotInstructionsWork(targetDir) {
   existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
-  // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.
+  // insertMode: "append" creates the block when copilot-instructions.md is brand new or the markers are missing.
   const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);
+
+  // Ensure ~/.copilot/AGENTS.md symlinks to copilot-instructions.md.
+  // If AGENTS.md is a regular file (leftover from the old setup), remove it first.
+  // If it's already the correct symlink, this is a no-op.
+  try {
+    /** @type {fs.Stats} Lstat to check if AGENTS.md exists and what kind. */
+    const agentsStat = fs.lstatSync(agentsLink);
+    if (agentsStat.isSymbolicLink()) {
+      /** @type {string} Current symlink target. */
+      const currentTarget = fs.readlinkSync(agentsLink);
+      if (currentTarget === "copilot-instructions.md") return; // already correct
+      // Wrong symlink target — remove and re-create.
+      fs.unlinkSync(agentsLink);
+    } else {
+      // Regular file — remove so we can replace with symlink.
+      fs.unlinkSync(agentsLink);
+    }
+  } catch {
+    // AGENTS.md doesn't exist — fine, we'll create the symlink below.
+  }
+  fs.symlinkSync("copilot-instructions.md", agentsLink);
 }
 
 ////// Main Entry Point //////

@@ -24,10 +24,12 @@
 #      maintained instructions file.
 #   2. User-level (handled by software/scripts/advanced/llm/copilot/setup.js):
 #      seeds defaults into `~/.copilot/settings.json` and deploys the shared
-#      engineering principles into `~/.copilot/AGENTS.md` between BEGIN/END
+#      engineering principles into `~/.copilot/copilot-instructions.md` between BEGIN/END
 #      markers keyed by the source-of-truth path
 #      (`synle/bashrc | software/scripts/advanced/llm/_common/instructions.md`),
-#      mirroring `~/.claude/CLAUDE.md` and `~/.gemini/GEMINI.md`. Source of
+#      mirroring `~/.claude/CLAUDE.md` and `~/.gemini/GEMINI.md`. A symlink
+#      `~/.copilot/AGENTS.md` -> `copilot-instructions.md` is also created so
+#      copilot discovers the file via both paths. Source of
 #      truth: `software/scripts/advanced/llm/_common/instructions.md`.
 #
 # Use `co` (or `copilot`) to launch, then type natural-language requests.
@@ -67,28 +69,30 @@ function copilot() {
 }
 alias co='copilot'
 
-# copilot_edit_config: open the ~/.copilot/ config dir (settings, AGENTS.md, mcp-config) in the editor
+# copilot_edit_config: open the ~/.copilot/ config dir (settings, copilot-instructions.md, mcp-config) in the editor
 function copilot_edit_config() {
   if is_help_arg "${1:-}"; then
     echo "copilot_edit_config: open ~/.copilot/ in the editor via view_file
   Usage: copilot_edit_config
 
-Opens the whole ~/.copilot/ config dir so settings.json, AGENTS.md, and
+Opens the whole ~/.copilot/ config dir so settings.json, copilot-instructions.md, and
 mcp-config.json are all reachable in the same session.
 
 Files inside ~/.copilot/ worth knowing about:
-  ~/.copilot/settings.json   - every user-tunable Copilot CLI setting that
-                               'copilot help config' exposes (model, theme,
-                               banner, hooks, enabledPlugins,
-                               extraKnownMarketplaces, etc.). Managed defaults
-                               are seeded by copilot/setup.js; layer your own
-                               overrides on top.
-  ~/.copilot/config.json     - state/credential file (auth tokens, session
-                               metadata); managed by the copilot binary.
-  ~/.copilot/AGENTS.md       - user-level engineering rules (sourced from
-                               software/scripts/advanced/llm/_common/instructions.md).
-  ~/.copilot/mcp-config.json - MCP server registrations; managed by user or by
-                               the Captain install-plugin-to-copilot skill.
+  ~/.copilot/settings.json            - every user-tunable Copilot CLI setting that
+                                        'copilot help config' exposes (model, theme,
+                                        banner, hooks, enabledPlugins,
+                                        extraKnownMarketplaces, etc.). Managed defaults
+                                        are seeded by copilot/setup.js; layer your own
+                                        overrides on top.
+  ~/.copilot/config.json              - state/credential file (auth tokens, session
+                                        metadata); managed by the copilot binary.
+  ~/.copilot/copilot-instructions.md  - user-level engineering rules (sourced from
+                                        software/scripts/advanced/llm/_common/instructions.md).
+  ~/.copilot/AGENTS.md                - symlink to copilot-instructions.md (copilot
+                                        discovers the file via this path too).
+  ~/.copilot/mcp-config.json          - MCP server registrations; managed by user or by
+                                        the Captain install-plugin-to-copilot skill.
 
 Note: Copilot has no keymap config in v1.0.48 — in-app chords are hardcoded
 in the binary. Wrapper-layer parity lives here in copilot.profile.bash."
