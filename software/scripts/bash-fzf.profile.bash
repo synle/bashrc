@@ -51,6 +51,7 @@ export FZF_DEFAULT_OPTS="
 # ---- Aliases: Git (fzf) ----
 alias glog='fuzzy_git_show'
 alias fvim='fuzzy_edit vim'
+alias fcat='fuzzy_edit cat'
 
 ################################################################################
 # ---- Filter Functions ----
