@@ -1,4 +1,4 @@
-[Sy] Bring a single PR branch up to date with its base (merge, not rebase). Same idea as GitHub's "Update branch" button. Per global rule 3, never rebases shared branches.
+[Sy] Bring a single PR branch up to date with its base (merge, not rebase). Same idea as GitHub's "Update branch" button. Never rebases shared branches — always merge to avoid rewriting pushed history.
 
 Argument: $ARGUMENTS (optional — a PR URL, PR number, or `<owner>/<repo>#<n>` shorthand. If empty, use the current branch's PR.)
 
@@ -14,7 +14,7 @@ For full address-comments + drive-CI-green work, use `/sy-babysit-pr` instead. T
 
 1. **Resolve the target PR:**
    - If `$ARGUMENTS` is provided (URL / number / `owner/repo#n`), parse it.
-   - If empty, resolve via `git remote get-url origin` (per global rule 51, never derive from folder name) + `git branch --show-current` + `gh pr view --json number,headRefName,baseRefName,url`. If no PR exists for the current branch, report and stop.
+   - If empty, resolve via `git remote get-url origin` (NEVER from folder name) + `git branch --show-current` + `gh pr view --json number,headRefName,baseRefName,url`. If no PR exists for the current branch, report and stop.
 
 2. **Fetch state:**
    `gh pr view <number> --repo <owner/repo> --json number,title,headRefName,baseRefName,isDraft,state,mergeable,mergeStateStatus,url`
@@ -32,7 +32,7 @@ For full address-comments + drive-CI-green work, use `/sy-babysit-pr` instead. T
    - Check out the PR branch locally: `gh pr checkout <number> --repo <owner/repo>`.
    - `git merge origin/<baseRefName>` and resolve conflicts. Never rebase.
    - Commit the merge (`git commit` — the editor will pre-fill the merge message; accept it).
-   - Author-check the merge commit per global rule 2; reset author if mismatch.
+   - Author-check the merge commit — compare commit author to local `.gitconfig`; reset author if mismatch.
    - Push: `git push`.
 
 5. **Report:**
@@ -43,7 +43,7 @@ For full address-comments + drive-CI-green work, use `/sy-babysit-pr` instead. T
 
 ## Rules
 
-- **Never rebase.** `git pull --rebase`, `gh pr update-branch --rebase`, or interactive rebase on a PR branch are all forbidden — global rule 3 (no rebase on shared branches). Always merge.
+- **Never rebase.** `git pull --rebase`, `gh pr update-branch --rebase`, or interactive rebase on a PR branch are all forbidden — rebasing rewrites pushed history and forces `--force-with-lease` on next push. Always merge.
 - **Don't touch the comment threads or CI.** That's babysit's job. This skill exits after the sync push, regardless of CI state.
 - **One PR per invocation.** For fan-out across all open PRs, use `/sy-babysit-prs` (which includes per-PR sync as step 1) instead of looping this skill.
-- **Resolve `<owner>/<repo>` via `git remote get-url origin`** (global rule 51) when defaulting to the current repo — never derive from the folder name.
+- **Resolve `<owner>/<repo>` via `git remote get-url origin`** (NEVER from folder name) when defaulting to the current repo.

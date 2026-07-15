@@ -8,7 +8,7 @@
 - **Scope** — pick exactly one (first match wins):
   - **All** (default, no scope token present) — every open PR for the resolved author across all repos.
   - **PWD keyword** — one of: `pwd`, `.`, `./`, `here`, `cwd`, `this folder`, `this-folder` (case-insensitive). Scan the current working directory up to 2 child levels deep for git repos and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
-  - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin` — global rule 51). Explicit-refs scope is author-agnostic (you asked for those PRs).
+  - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, NEVER from folder name). Explicit-refs scope is author-agnostic (you asked for those PRs).
 - **Author** (only meaningful in default scope): a GitHub handle, a full name, or one of `me`/`mine`/`self` (= current user). Defaults to `@me`.
 
 Examples:
@@ -50,7 +50,7 @@ Examples:
    - Discover git repo roots under cwd up to 2 child levels deep:
      `find . -maxdepth 3 -type d -name .git -not -path '*/node_modules/*' -not -path '*/.build/*' -not -path '*/vendor/*'`
      Each match's parent dir is a repo root. Include cwd itself if `./.git` exists.
-   - For each root, resolve `<owner>/<repo>` from `git -C <root> remote get-url origin` (global rule 51 — never folder name). Skip roots with no `origin` or a non-GitHub remote.
+   - For each root, resolve `<owner>/<repo>` from `git -C <root> remote get-url origin` (NEVER from folder name). Skip roots with no `origin` or a non-GitHub remote.
    - De-duplicate `<owner>/<repo>` list. If empty, print `No git repos found within 2 levels of $(pwd).` and stop.
    - Query in one call:
      `gh search prs --author=@me --state=open --repo <o1>/<r1> --repo <o2>/<r2> ... --json number,title,repository,isDraft,url,headRefName,createdAt`

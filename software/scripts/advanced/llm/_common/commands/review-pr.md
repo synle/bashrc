@@ -9,7 +9,7 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 1. **Determine which PR to review:**
    - If `$ARGUMENTS` is provided (a PR URL like `https://github.com/<owner>/<repo>/pull/123` or a PR number), use that.
    - If `$ARGUMENTS` is empty, detect from the current working directory:
-     - `git remote get-url origin` → resolve the authoritative `<owner>/<repo>` (per global rule 46, never derive from the folder name).
+     - `git remote get-url origin` → resolve the authoritative `<owner>/<repo>` (via `git remote get-url origin`, NEVER from folder name).
      - `git branch --show-current` → current branch.
      - `gh pr view --json number,title,url,headRefName,baseRefName` → find the PR for the current branch.
      - If no PR exists for the current branch, tell the user and stop.
@@ -52,7 +52,7 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
    - `gh pr diff <number> --repo <owner/repo>` → full diff.
    - For stale-approval cases (Step 3), restrict to the new commits since your last review.
     - **What to review:** correctness, safety, architectural issues, security holes, data-loss risks, broken core invariants, load-bearing test gaps.
-    - **YAGNI / ponytail violations (rule 58)** — flag where the diff adds a new abstraction layer, a new runtime dependency, or a new class / module / wrapper without a concrete caller in the same diff, OR where stdlib / a native platform feature / an already-installed dep would have covered the use case. Code shipped "for the future" with no current consumer counts. This is structural overhead, not a style nit — name the cheaper alternative when flagging (stdlib X, existing dep Y, inline one-liner, drop the wrapper).
+    - **YAGNI / ponytail violations** — flag where the diff adds a new abstraction layer, a new runtime dependency, or a new class / module / wrapper without a concrete caller in the same diff, OR where stdlib / a native platform feature / an already-installed dep would have covered the use case. Code shipped "for the future" with no current consumer counts. This is structural overhead, not a style nit — name the cheaper alternative when flagging (stdlib X, existing dep Y, inline one-liner, drop the wrapper).
 
       **Output format — one line per finding:** `L<line>: <tag> <what>. <replacement>.` or `<file>:L<line>: ...` for multi-file diffs.
 
@@ -140,7 +140,7 @@ Run these only when the diff includes new database migration files. Detect by pa
   4. **If your prior comment was vague or ambiguous and the author picked one reasonable interpretation, accept it.** Don't relitigate just because a different reading was possible.
   5. Same rule applies to verdict flips. If you APPROVED earlier and the new commits are still acceptable, re-APPROVE. Don't downgrade to COMMENT unless the new commits introduce genuinely new concerns (and call out which ones).
 - **No nitpicks.** Correctness, safety, and architecture only. Style / naming / formatting / doc wording is not your job unless it's actually wrong.
-- **YAGNI / ponytail violations are COMMENT-level, not REQUEST_CHANGES (rule 58).** Flag the new abstraction / dep / class / wrapper with a concrete cheaper alternative (stdlib X, platform feature Y, already-installed dep Z, inline one-liner). Escalate only when the violation also carries real risk — unaudited third-party dep, supply-chain / license issue, abstraction that quietly bypasses a validation or trust boundary. And NEVER weaponize YAGNI against the rule-58 carve-outs: trust-boundary validation, data-loss handling, security controls, accessibility. If the PR removed validation, error handling, security checks, or a11y hooks claiming they're "not needed", that's the show-stopper territory — REQUEST_CHANGES, not approve-with-a-ponytail-nod.
+- **YAGNI / ponytail violations are COMMENT-level, not REQUEST_CHANGES.** Flag the new abstraction / dep / class / wrapper with a concrete cheaper alternative (stdlib X, platform feature Y, already-installed dep Z, inline one-liner). Escalate only when the violation also carries real risk — unaudited third-party dep, supply-chain / license issue, abstraction that quietly bypasses a validation or trust boundary. And NEVER weaponize YAGNI against trust-boundary validation, data-loss handling, security controls, accessibility. If the PR removed validation, error handling, security checks, or a11y hooks claiming they're "not needed", that's show-stopper territory — REQUEST_CHANGES, not approve-with-a-ponytail-nod.
 - **Pre-flight author flags are PR comments, not review verdicts.** Diff-vs-description mismatch, merge conflicts with base, failing CI checks, and migration coordination issues → leave a comment addressed to the author. Do NOT use REQUEST_CHANGES for these.
 - **Migration coordination is proactive.** When you see two open PRs both adding migrations, comment on BOTH PRs (symmetric flag) so each author knows about the merge-order risk before either lands.
-- **Always resolve the repo via `git remote get-url origin`** (global rule 46) — never derive `<owner>/<repo>` from the folder name.
+- **Always resolve the repo via `git remote get-url origin`** (NEVER from folder name) — never derive `<owner>/<repo>` from the folder name.

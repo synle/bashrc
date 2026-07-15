@@ -9,7 +9,7 @@ Argument: `$ARGUMENTS` (optional — selects scope; the first token decides the 
 - **Explicit PR refs** — one or more whitespace-separated PR refs. Each ref is one of:
   - full URL: `https://github.com/<owner>/<repo>/pull/<n>`
   - shorthand: `<owner>/<repo>#<n>`
-  - bare `#<n>` or bare digits `<n>` — only valid when the current working directory is a git repo with a GitHub `origin`; resolve `<owner>/<repo>` from `git remote get-url origin` (per global rule 51, NEVER from the folder name).
+  - bare `#<n>` or bare digits `<n>` — only valid when the current working directory is a git repo with a GitHub `origin`; resolve `<owner>/<repo>` from `git remote get-url origin` (NEVER from the folder name).
 
 ## Steps
 
@@ -21,7 +21,7 @@ Argument: `$ARGUMENTS` (optional — selects scope; the first token decides the 
    - Discover git repo roots under the current working directory, up to 2 child levels deep:
      `find . -maxdepth 3 -type d -name .git -not -path '*/node_modules/*' -not -path '*/.build/*' -not -path '*/vendor/*'`
      Each match's parent dir is a repo root. Include the cwd itself if `./.git` exists.
-   - For each repo root, resolve `<owner>/<repo>` from the GitHub remote — NEVER the folder name (global rule 51):
+   - For each repo root, resolve `<owner>/<repo>` from the GitHub remote — NEVER the folder name:
      `git -C <root> remote get-url origin`, parse `owner/repo` out of the URL (handle both `git@github.com:owner/repo.git` and `https://github.com/owner/repo(.git)?` forms).
      Skip roots with no `origin` or a non-GitHub remote — log them as skipped.
    - De-duplicate the `<owner>/<repo>` list.
@@ -33,7 +33,7 @@ Argument: `$ARGUMENTS` (optional — selects scope; the first token decides the 
    - For each token, normalize to a full PR URL:
      - Full URL → use as-is.
      - `<owner>/<repo>#<n>` → expand to `https://github.com/<owner>/<repo>/pull/<n>`.
-     - `#<n>` or bare digits → require cwd to be a git repo; resolve `<owner>/<repo>` from `git remote get-url origin` (global rule 51), then expand. If cwd is not a git repo, error out naming the unresolvable token and ask the user to use a fully-qualified ref.
+     - `#<n>` or bare digits → require cwd to be a git repo; resolve `<owner>/<repo>` from `git remote get-url origin` (NEVER from folder name), then expand. If cwd is not a git repo, error out naming the unresolvable token and ask the user to use a fully-qualified ref.
      - Anything else (not a URL, shorthand, `#<n>`, or digits) → error out, name the bad token, do NOT silently skip.
    - For each resolved URL, fetch metadata to match the search-result shape used downstream:
      `gh pr view <url> --json number,title,headRefName,baseRefName,isDraft,url,repository`.
@@ -52,4 +52,4 @@ Argument: `$ARGUMENTS` (optional — selects scope; the first token decides the 
 - This command is a dispatcher. The per-PR loop lives in `/sy-babysit-pr` — do not re-implement it here.
 - **Table output is owned by `/sy-list-prs`.** Both the pre-flight render (Step 3) and the final report (Step 5) reuse its `table` format. Pass the same scope `$ARGUMENTS` to `/sy-list-prs table` so the rendered set matches the resolved PR set exactly. Do not hand-roll a different table layout.
 - **First token of `$ARGUMENTS` decides the mode — no mixing.** PWD-keyword + explicit refs in the same call is an error; pick one. PWD mode always re-filters to `@me` authored PRs (consistent with the empty-args default); explicit-list mode does not filter by author (you asked for those specific PRs).
-- **Always resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name** (global rule 51). Applies to PWD scan and to bare-`#<n>` ref expansion.
+- **Always resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name.** Applies to PWD scan and to bare-`#<n>` ref expansion.

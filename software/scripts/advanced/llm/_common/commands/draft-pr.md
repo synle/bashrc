@@ -2,8 +2,8 @@
 
 ## Steps
 
-1. **Resolve the repo** per global rule 51: `git remote get-url origin` → authoritative `owner/repo`.
-2. **Solo+bots check (global rule 60).** Run `git log --format='%ae' -200 | sort -u`:
+1. **Resolve the repo** via `git remote get-url origin` → authoritative `owner/repo`. NEVER derive from folder name.
+2. **Solo+bots check.** Run `git log --format='%ae' -200 | sort -u` — if every author is Sy + known bots (`*[bot]@*`, `noreply@anthropic.com`, `noreply@opencode.ai`, `copilot@github.com`, `gemini-cli@google.com`), the repo is solo+bots:
    - All authors are Sy + known bots → **solo+bots**. Unless the user explicitly said "open a PR" / "draft a PR" / "create a PR" in this request, announce `"Looks like a solo+bots repo — pushing direct to <default> with a WIP commit message instead of opening a PR. Override with 'draft a PR' if you want one."`, prefix the latest commit message with `WIP: DO NOT MERGE — ` (amend if needed), push to default, and stop.
    - Otherwise → proceed with WIP PR flow.
 3. Run `git status` to check for uncommitted changes and `git log` to understand the commits on this branch.
@@ -24,5 +24,5 @@
 
 - Always create as a **regular PR** (never `--draft`) so CI runs immediately.
 - Always use the title prefix `WIP: DO NOT MERGE —` followed by a concise description.
-- **Never enable automerge on a WIP PR** (global rule 59). The `DO NOT MERGE` title is the human signal; `--auto` would defeat it.
-- **Skip PR creation entirely on solo+bots repos** per global rule 60 — push direct to default unless the user explicitly asks for a PR.
+- **Never enable automerge on a WIP PR** — automerge is opt-in only, never set `--auto` unless the user explicitly requests it. The `DO NOT MERGE` title is the human signal; `--auto` would defeat it.
+- **Skip PR creation entirely on solo+bots repos** — push direct to default unless the user explicitly asks for a PR.

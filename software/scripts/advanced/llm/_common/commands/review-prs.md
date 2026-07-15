@@ -42,4 +42,4 @@ Argument: `$ARGUMENTS` (optional — scope filter; see "Resolving scope" below).
 - **Honor `/sy-review-pr`'s skip rules** — never pre-filter drafts / WIP / already-reviewed PRs in this wrapper. Let the per-PR skill decide and report `SKIPPED + reason` so the audit trail is complete.
 - **Default bias inherits from `/sy-review-pr`**: APPROVE or COMMENT — REQUEST_CHANGES is reserved for show-stoppers only.
 - **Multi-repo workspaces** (e.g. a bundle like `tde-tool-backend, tde-tool-docs, tde-tool-ui, tde-agent, tde-grpc-proto-api`): pass each repo as a `<owner>/<repo>` token. The cross-PR migration check (Step 5) runs across the full union so coordination flags surface before any verdict is posted.
-- **Always resolve `<owner>/<repo>` via `git remote get-url origin`** (global rule 46) when defaulting to the current repo — never derive from the folder name.
+- **Always resolve `<owner>/<repo>` via `git remote get-url origin`** (NEVER from folder name) when defaulting to the current repo — never derive from the folder name.

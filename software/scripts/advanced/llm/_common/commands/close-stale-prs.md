@@ -15,7 +15,7 @@ For a single PR you want to abandon, just use `gh pr close <n> --comment "..."` 
 1. **Parse arguments.** From `$ARGUMENTS`, extract:
    - **Days threshold** — first bare integer token (e.g. `30`, `90`). Default `60` if none.
    - **Author filter** — `me` / `mine` / `self` (case-insensitive) → `@me`; a single bare handle → that user; default `@me`.
-   - **Repo scope** — any `<owner>/<repo>` token; multiple allowed (comma- or space-separated). If none and invoked from inside a git checkout, default to the current repo (resolve via `git remote get-url origin` per global rule 51). Otherwise default to "all repos".
+   - **Repo scope** — any `<owner>/<repo>` token; multiple allowed (comma- or space-separated). If none and invoked from inside a git checkout, default to the current repo (resolve via `git remote get-url origin`, NEVER from folder name). Otherwise default to "all repos".
    - **Reason override** — quoted string (`"reason text"`) becomes the close-comment body; otherwise use the template below.
 
 2. **Fetch candidates:**
@@ -50,5 +50,5 @@ For a single PR you want to abandon, just use `gh pr close <n> --comment "..."` 
 - **No bulk close without per-PR consent.** Every candidate requires an explicit `y` before closing. `s` / `q` aborts the rest; default on Enter is `n`.
 - **Never delete the branch.** `gh pr close` alone leaves the branch on the remote, which means `gh pr reopen` is a one-liner if the close was a mistake. Branch deletion is a separate, explicit follow-up.
 - **Respect pinned / approved PRs.** Always-skip filters in step 2 are hard exclusions — do not present them as candidates even with confirmation.
-- **Resolve `<owner>/<repo>` via `git remote get-url origin`** (global rule 51) when defaulting to the current repo — never derive from the folder name.
+- **Resolve `<owner>/<repo>` via `git remote get-url origin`** (NEVER from folder name) when defaulting to the current repo.
 - **One staleness threshold per invocation.** Don't try to compute different thresholds per repo; rerun the skill if you need different cutoffs for different scopes.
