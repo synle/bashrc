@@ -65,7 +65,10 @@ function _getKeyConfig(isOsMac) {
   /** @type {object[]} Platform-specific bindings merged with common. */
   const merged = isMac
     ? _mergeContextGroups(CLAUDE_COMMON_KEY_BINDINGS)
-    : _mergeContextGroups(CLAUDE_COMMON_KEY_BINDINGS, CLAUDE_WINDOWS_ONLY_KEY_BINDINGS);
+    : _mergeContextGroups(
+        CLAUDE_COMMON_KEY_BINDINGS,
+        CLAUDE_WINDOWS_ONLY_KEY_BINDINGS,
+      );
 
   return {
     $schema: "https://www.schemastore.org/claude-code-keybindings.json",
@@ -83,8 +86,12 @@ async function _doKeysWork(targetDir) {
 
   log(">> Claude Code Keybindings:", targetPath);
 
-  CLAUDE_COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/llm/claude/claude-keys.common.jsonc`) || [];
-  CLAUDE_WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/llm/claude/claude-keys.windows.jsonc`) || [];
+  CLAUDE_COMMON_KEY_BINDINGS =
+    (await readJson`software/scripts/advanced/llm/claude/claude-keys.common.jsonc`) ||
+    [];
+  CLAUDE_WINDOWS_ONLY_KEY_BINDINGS =
+    (await readJson`software/scripts/advanced/llm/claude/claude-keys.windows.jsonc`) ||
+    [];
 
   // write to build file (one per platform)
   const comments = "Claude Code Keybindings";
@@ -115,7 +122,10 @@ async function _doKeysWork(targetDir) {
 
   const ourConfig = _getKeyConfig();
   // existing first, then ours on top — Object.assign in _mergeContextGroups means later wins
-  ourConfig.bindings = _mergeContextGroups(existingBindings, ourConfig.bindings);
+  ourConfig.bindings = _mergeContextGroups(
+    existingBindings,
+    ourConfig.bindings,
+  );
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, ourConfig);
@@ -210,7 +220,10 @@ async function _doMcpWork(targetDir) {
   } catch (e) {}
 
   /** @type {Record<string, any>} */
-  const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};
+  const existingServers =
+    existing.mcpServers && typeof existing.mcpServers === "object"
+      ? existing.mcpServers
+      : {};
   /** @type {Record<string, any>} Existing names first so shared entries override on collision. */
   const merged = { ...existingServers, ...sharedServers };
 
@@ -245,11 +258,24 @@ async function _doInstructionsWork(targetDir) {
 
   // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
   // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
-  existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
+  existing = removeBlock(
+    existing,
+    LLM_INSTRUCTIONS_LEGACY_MARKER,
+    "<!--",
+    " -->",
+  );
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when CLAUDE.md is brand new or the markers are missing.
-  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  const merged =
+    replaceBlock(
+      existing,
+      LLM_INSTRUCTIONS_MARKER,
+      sourceContent,
+      "<!--",
+      " -->",
+      "append",
+    ).trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);
@@ -428,8 +454,10 @@ async function _doCommandsWork(targetDir) {
       reason = "retired";
     } else {
       /** @type {string} First line of the file, checked against every SY_SKILL_MARKERS entry. */
-      const firstLine = fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
-      if (SY_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
+      const firstLine =
+        fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
+      if (SY_SKILL_MARKERS.some((m) => firstLine.startsWith(m)))
+        reason = "marker";
     }
     if (reason) {
       fs.unlinkSync(filePath);
@@ -440,9 +468,13 @@ async function _doCommandsWork(targetDir) {
   /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
   const sourceCache = {};
 
-  for (const [destFile, sourceName] of Object.entries(CLAUDE_COMMAND_DEPLOY_MAP)) {
+  for (const [destFile, sourceName] of Object.entries(
+    CLAUDE_COMMAND_DEPLOY_MAP,
+  )) {
     if (!(sourceName in sourceCache)) {
-      sourceCache[sourceName] = (await readText`software/scripts/advanced/llm/_common/commands/${sourceName}.md`).trimEnd();
+      sourceCache[sourceName] = (
+        await readText`software/scripts/advanced/llm/_common/commands/${sourceName}.md`
+      ).trimEnd();
     }
     const dest = path.join(commandsDir, destFile);
     await backupConfigFile(dest);
@@ -450,8 +482,6 @@ async function _doCommandsWork(targetDir) {
     log("   Deployed:", destFile);
   }
 }
-
-////// Main Entry Point //////
 
 /**
  * Orchestrates all Claude Code setup: settings, keybindings, and commands.

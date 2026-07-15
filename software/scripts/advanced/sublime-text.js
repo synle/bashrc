@@ -29,7 +29,9 @@ function _convertIgnoredFilesAndFoldersForSublimeText(list = []) {
  * @returns {object} The Sublime Text settings object.
  */
 function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
-  const fontSizeToUse = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
+  const fontSizeToUse = is_prebuilt_config
+    ? EDITOR_CONFIGS.fontSizeDefaultFallback
+    : EDITOR_CONFIGS.fontSize;
 
   const configs = {
     ...mySublimeTextBaseConfigs,
@@ -38,9 +40,14 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     hardware_acceleration: "opengl",
 
     // --- Typography & Rendering ---
-    font_face: is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily, // Primary editor font
+    font_face: is_prebuilt_config
+      ? EDITOR_CONFIGS.fontFamilyDefaultFallback
+      : EDITOR_CONFIGS.fontFamily, // Primary editor font
     font_size: fontSizeToUse, // Base font size for the editor
-    font_options: [...(mySublimeTextBaseConfigs.font_options || []), EDITOR_CONFIGS.fontWeightKeyword], // Add font weight to base font options
+    font_options: [
+      ...(mySublimeTextBaseConfigs.font_options || []),
+      EDITOR_CONFIGS.fontWeightKeyword,
+    ], // Add font weight to base font options
 
     // --- UI Cleanliness ---
     sidebar_font_size: fontSizeToUse, // Match sidebar font size to editor font size (ST4 4200+)
@@ -53,13 +60,21 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
 
     // --- Misc ---
     dark_color_scheme:
-      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME ? SUBLIME_DARK_COLOR_SCHEME : SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME,
+      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME
+        ? SUBLIME_DARK_COLOR_SCHEME
+        : SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME,
     light_color_scheme:
-      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME ? SUBLIME_LIGHT_COLOR_SCHEME : SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME,
+      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME
+        ? SUBLIME_LIGHT_COLOR_SCHEME
+        : SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME,
 
     // --- Ignored Files ---
-    file_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFiles), // Files hidden from sidebar and Goto Anything
-    folder_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFolders), // Folders hidden from sidebar and Goto Anything
+    file_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(
+      EDITOR_CONFIGS.ignoredFiles,
+    ), // Files hidden from sidebar and Goto Anything
+    folder_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(
+      EDITOR_CONFIGS.ignoredFolders,
+    ), // Folders hidden from sidebar and Goto Anything
   };
 
   return configs;
@@ -77,7 +92,8 @@ async function _doConfigWork(targetPath, artifacts) {
   log(`>> Sublime Text Configurations / Settings:`);
 
   // load base hardcoded configs from JSONC
-  mySublimeTextBaseConfigs = await readJson`software/scripts/advanced/sublime-text-config.jsonc`;
+  mySublimeTextBaseConfigs =
+    await readJson`software/scripts/advanced/sublime-text-config.jsonc`;
 
   // for my own system
   if (targetPath) {
@@ -86,8 +102,14 @@ async function _doConfigWork(targetPath, artifacts) {
     // deploy custom color schemes (only when high contrast theme is enabled)
     if (USE_CUSTOM_HIGH_CONTRAST_THEME) {
       const colorSchemes = [
-        { src: "software/scripts/advanced/sublime-text-color-dark.jsonc", dest: SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME },
-        { src: "software/scripts/advanced/sublime-text-color-light.jsonc", dest: SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME },
+        {
+          src: "software/scripts/advanced/sublime-text-color-dark.jsonc",
+          dest: SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME,
+        },
+        {
+          src: "software/scripts/advanced/sublime-text-color-light.jsonc",
+          dest: SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME,
+        },
       ];
       for (const { src, dest } of colorSchemes) {
         log(`>>> Deploying color scheme: ${dest}`);
@@ -100,20 +122,32 @@ async function _doConfigWork(targetPath, artifacts) {
     }
 
     log(`>>> Deployed config:`, targetPath);
-    await backupConfigFile(path.join(targetPath, "Packages/User/Preferences.sublime-settings"));
-    await writeConfigToFile(targetPath, "Packages/User/Preferences.sublime-settings", _getConfigs({ is_os_mac: is_os_mac }));
+    await backupConfigFile(
+      path.join(targetPath, "Packages/User/Preferences.sublime-settings"),
+    );
+    await writeConfigToFile(
+      targetPath,
+      "Packages/User/Preferences.sublime-settings",
+      _getConfigs({ is_os_mac: is_os_mac }),
+    );
 
     // JsPrettier — owns format-on-save for every prettier-supported syntax (JS/TS/JSON/
     // CSS/HTML/MD/YAML/GraphQL/Vue). For non-prettier types (Python/Rust/Go/Java) the
     // Sublime LSP framework handles format-on-save via lsp_format_on_save:true (see
     // software/scripts/advanced/lsp/sublime.js). Both auto-save paths coexist — JsPrettier
     // fires for prettier types, LSP fires for the others, no overlap on file types.
-    await backupConfigFile(path.join(targetPath, "Packages/User/JsPrettier.sublime-settings"));
-    await writeConfigToFile(targetPath, "Packages/User/JsPrettier.sublime-settings", {
-      auto_format_on_save: true,
-      auto_format_on_save_requires_prettier_config: false,
-      allow_inline_formatting: true,
-    });
+    await backupConfigFile(
+      path.join(targetPath, "Packages/User/JsPrettier.sublime-settings"),
+    );
+    await writeConfigToFile(
+      targetPath,
+      "Packages/User/JsPrettier.sublime-settings",
+      {
+        auto_format_on_save: true,
+        auto_format_on_save_requires_prettier_config: false,
+        allow_inline_formatting: true,
+      },
+    );
   }
 
   // queue build artifacts (written in bulk at end of doWork)
@@ -178,7 +212,9 @@ function _formatMouseKey(mouseMaps, osKeyToUse) {
   mouseMaps = clone(mouseMaps);
 
   for (const mouseMap of mouseMaps) {
-    mouseMap.modifiers = mouseMap.modifiers?.map((s) => s.replace(/OS_KEY/g, osKeyToUse));
+    mouseMap.modifiers = mouseMap.modifiers?.map((s) =>
+      s.replace(/OS_KEY/g, osKeyToUse),
+    );
   }
 
   return mouseMaps;
@@ -195,17 +231,34 @@ async function _doMouseWork(targetPath, artifacts) {
   // queue build artifacts (written in bulk at end of doWork)
   log(`>>> For prebuilt configs`);
   artifacts.push(
-    { file: `${BUILD_DIR}/sublime-text-mouse`, data: _formatMouseKey(MOUSE_MAPS, MOUSE_WINDOWS_OS_KEY), isJson: true },
-    { file: `${BUILD_DIR}/sublime-text-mouse-mac`, data: _formatMouseKey(MOUSE_MAPS, MOUSE_MAC_OSX_KEY), isJson: true },
+    {
+      file: `${BUILD_DIR}/sublime-text-mouse`,
+      data: _formatMouseKey(MOUSE_MAPS, MOUSE_WINDOWS_OS_KEY),
+      isJson: true,
+    },
+    {
+      file: `${BUILD_DIR}/sublime-text-mouse-mac`,
+      data: _formatMouseKey(MOUSE_MAPS, MOUSE_MAC_OSX_KEY),
+      isJson: true,
+    },
   );
 
   // for my own system
   if (targetPath) {
     log(">>> For my system", targetPath);
-    const fileDestPath = path.join(targetPath, "Packages/User/Default.sublime-mousemap");
+    const fileDestPath = path.join(
+      targetPath,
+      "Packages/User/Default.sublime-mousemap",
+    );
     log(">>>> fileDestPath", fileDestPath);
     await backupConfigFile(fileDestPath);
-    await writeJson(fileDestPath, _formatMouseKey(MOUSE_MAPS, is_os_mac ? MOUSE_MAC_OSX_KEY : MOUSE_WINDOWS_OS_KEY));
+    await writeJson(
+      fileDestPath,
+      _formatMouseKey(
+        MOUSE_MAPS,
+        is_os_mac ? MOUSE_MAC_OSX_KEY : MOUSE_WINDOWS_OS_KEY,
+      ),
+    );
   }
 }
 
@@ -224,18 +277,26 @@ async function _doPluginsWork(targetPath, artifacts) {
   log(`>>> For prebuilt configs`);
   for (const pluginCodePath of allPlugins) {
     log(`>>>> ${pluginCodePath}`);
-    const pluginContent = await readText`${path.join("software/scripts", pluginCodePath)}`;
-    artifacts.push({ file: `${BUILD_DIR}/${pluginCodePath}`, data: pluginContent });
+    const pluginContent =
+      await readText`${path.join("software/scripts", pluginCodePath)}`;
+    artifacts.push({
+      file: `${BUILD_DIR}/${pluginCodePath}`,
+      data: pluginContent,
+    });
   }
 
   // for my own system
   if (targetPath) {
     log(">>> For my own system", targetPath);
     for (const pluginCodePath of allPlugins) {
-      const fileDestPath = path.join(targetPath, path.join("Packages/User/", pluginCodePath));
+      const fileDestPath = path.join(
+        targetPath,
+        path.join("Packages/User/", pluginCodePath),
+      );
       log(">>>> fileDestPath", fileDestPath);
       await backupConfigFile(fileDestPath);
-      const pluginContent = await readText`${path.join("software/scripts", pluginCodePath)}`;
+      const pluginContent =
+        await readText`${path.join("software/scripts", pluginCodePath)}`;
       await writeText(fileDestPath, pluginContent);
     }
   }
@@ -268,8 +329,14 @@ function _getKeyConfigs(isOsMac) {
   const isMac = isOsMac !== undefined ? isOsMac : is_os_mac;
   const osKey = getEditorOsKey("sublime", isMac);
   return isMac
-    ? formatEditorKeybindings([...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS], osKey)
-    : formatEditorKeybindings([...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS], osKey);
+    ? formatEditorKeybindings(
+        [...COMMON_KEY_BINDINGS, ...MAC_ONLY_KEY_BINDINGS],
+        osKey,
+      )
+    : formatEditorKeybindings(
+        [...COMMON_KEY_BINDINGS, ...WINDOWS_ONLY_KEY_BINDINGS],
+        osKey,
+      );
 }
 
 /**
@@ -278,8 +345,12 @@ function _getKeyConfigs(isOsMac) {
  * @param {object[]} artifacts - Shared list to which prebuilt keybinding build artifacts are pushed.
  */
 async function _doKeysWork(targetPath, artifacts) {
-  COMMON_KEY_BINDINGS = (await readJson`software/scripts/advanced/sublime-text-keys.common.jsonc`) || [];
-  WINDOWS_ONLY_KEY_BINDINGS = (await readJson`software/scripts/advanced/sublime-text-keys.windows.jsonc`) || [];
+  COMMON_KEY_BINDINGS =
+    (await readJson`software/scripts/advanced/sublime-text-keys.common.jsonc`) ||
+    [];
+  WINDOWS_ONLY_KEY_BINDINGS =
+    (await readJson`software/scripts/advanced/sublime-text-keys.windows.jsonc`) ||
+    [];
   MAC_ONLY_KEY_BINDINGS = [];
 
   log(`>> Sublime Text Keybindings:`);
@@ -322,20 +393,68 @@ async function _doKeysWork(targetPath, artifacts) {
 ////// Setup Script Generation //////
 
 const buildFiles = [
-  { buildName: "sublime-text-config", dest: "Preferences.sublime-settings", os: "windows" },
-  { buildName: "sublime-text-keys-windows", dest: "Default.sublime-keymap", os: "windows" },
-  { buildName: "sublime-text-mouse", dest: "Default.sublime-mousemap", os: "windows" },
-  { buildName: "sublime-text-plugins-refresh-on-focus.py", dest: "sublime-text-plugins-refresh-on-focus.py", os: "windows" },
+  {
+    buildName: "sublime-text-config",
+    dest: "Preferences.sublime-settings",
+    os: "windows",
+  },
+  {
+    buildName: "sublime-text-keys-windows",
+    dest: "Default.sublime-keymap",
+    os: "windows",
+  },
+  {
+    buildName: "sublime-text-mouse",
+    dest: "Default.sublime-mousemap",
+    os: "windows",
+  },
+  {
+    buildName: "sublime-text-plugins-refresh-on-focus.py",
+    dest: "sublime-text-plugins-refresh-on-focus.py",
+    os: "windows",
+  },
 
-  { buildName: "sublime-text-config", dest: "Preferences.sublime-settings", os: "linux" },
-  { buildName: "sublime-text-keys-linux", dest: "Default.sublime-keymap", os: "linux" },
-  { buildName: "sublime-text-mouse", dest: "Default.sublime-mousemap", os: "linux" },
-  { buildName: "sublime-text-plugins-refresh-on-focus.py", dest: "sublime-text-plugins-refresh-on-focus.py", os: "linux" },
+  {
+    buildName: "sublime-text-config",
+    dest: "Preferences.sublime-settings",
+    os: "linux",
+  },
+  {
+    buildName: "sublime-text-keys-linux",
+    dest: "Default.sublime-keymap",
+    os: "linux",
+  },
+  {
+    buildName: "sublime-text-mouse",
+    dest: "Default.sublime-mousemap",
+    os: "linux",
+  },
+  {
+    buildName: "sublime-text-plugins-refresh-on-focus.py",
+    dest: "sublime-text-plugins-refresh-on-focus.py",
+    os: "linux",
+  },
 
-  { buildName: "sublime-text-config-mac", dest: "Preferences.sublime-settings", os: "mac" },
-  { buildName: "sublime-text-keys-mac", dest: "Default (OSX).sublime-keymap", os: "mac" },
-  { buildName: "sublime-text-mouse-mac", dest: "Default.sublime-mousemap", os: "mac" },
-  { buildName: "sublime-text-plugins-refresh-on-focus.py", dest: "sublime-text-plugins-refresh-on-focus.py", os: "mac" },
+  {
+    buildName: "sublime-text-config-mac",
+    dest: "Preferences.sublime-settings",
+    os: "mac",
+  },
+  {
+    buildName: "sublime-text-keys-mac",
+    dest: "Default (OSX).sublime-keymap",
+    os: "mac",
+  },
+  {
+    buildName: "sublime-text-mouse-mac",
+    dest: "Default.sublime-mousemap",
+    os: "mac",
+  },
+  {
+    buildName: "sublime-text-plugins-refresh-on-focus.py",
+    dest: "sublime-text-plugins-refresh-on-focus.py",
+    os: "mac",
+  },
 ];
 
 /**
@@ -346,7 +465,10 @@ const buildFiles = [
 function getCurlLines(os) {
   return buildFiles
     .filter((f) => f.os === os)
-    .map((f) => `    curl -fsSL "$REPO_BUILD/${f.buildName}?raw=1" -o "$TARGET_PATH/${f.dest}"`)
+    .map(
+      (f) =>
+        `    curl -fsSL "$REPO_BUILD/${f.buildName}?raw=1" -o "$TARGET_PATH/${f.dest}"`,
+    )
     .join("\n");
 }
 
@@ -357,7 +479,10 @@ function getCurlLines(os) {
 function getPowershellLines() {
   return buildFiles
     .filter((f) => f.os === "windows")
-    .map((f) => `    Invoke-WebRequest -Uri "$RepoBuild/${f.buildName}?raw=1" -OutFile "$W_Path/${f.dest}" -UseBasicParsing`)
+    .map(
+      (f) =>
+        `    Invoke-WebRequest -Uri "$RepoBuild/${f.buildName}?raw=1" -OutFile "$W_Path/${f.dest}" -UseBasicParsing`,
+    )
     .join("\n");
 }
 
@@ -472,7 +597,10 @@ async function _doExtWork(targetPath, artifacts) {
   if (targetPath) {
     log(">>> For my own system", targetPath);
 
-    const pkgControlPath = path.join(targetPath, "Packages/User/Package Control.sublime-settings");
+    const pkgControlPath = path.join(
+      targetPath,
+      "Packages/User/Package Control.sublime-settings",
+    );
     let existingPackages = [];
     try {
       const existing = await readJson`${pkgControlPath}`;
@@ -480,16 +608,22 @@ async function _doExtWork(targetPath, artifacts) {
     } catch (e) {}
 
     // merge: keep existing packages and add new ones
-    const mergedPackages = [...new Set([...existingPackages, ...toInstallExtensions])].sort();
+    const mergedPackages = [
+      ...new Set([...existingPackages, ...toInstallExtensions]),
+    ].sort();
 
-    await backupConfigFile(path.join(targetPath, "Packages/User/Package Control.sublime-settings"));
-    await writeConfigToFile(targetPath, "Packages/User/Package Control.sublime-settings", {
-      installed_packages: mergedPackages,
-    });
+    await backupConfigFile(
+      path.join(targetPath, "Packages/User/Package Control.sublime-settings"),
+    );
+    await writeConfigToFile(
+      targetPath,
+      "Packages/User/Package Control.sublime-settings",
+      {
+        installed_packages: mergedPackages,
+      },
+    );
   }
 }
-
-////// Main Entry Point //////
 
 /**
  * Orchestrates all Sublime Text setup: mouse bindings, plugins, keybindings, extensions, and download script generation.
