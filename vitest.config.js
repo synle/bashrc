@@ -10,7 +10,7 @@
  * via default ESM imports so Vite's transform pipeline picks them up too.
  *
  * Thresholds are pinned at 60% lines / branches / statements / functions —
- * a one-off override of the 80/90 default gate (rule 38), legitimate because
+ * a one-off override of the ≥80% default coverage gate, legitimate because
  * the testable surface is narrowed to three modules with deep test suites.
  */
 
@@ -42,11 +42,12 @@ export default defineConfig({
       //      — direct-execution build scripts (no module exports, just top-level
       //      side effects). They are not callable as libraries, so there is no
       //      stable surface to assert against.
-      // Explicit source globs per rule 41 (Engineering Principles): never `**/*`,
+      // Explicit source globs per the "Coverage and artifact scope = source +
+// metrics only" principle: never `**/*`,
       // never the workspace root.
       include: ["software/index.js", "software/tools/build-include.js", "software/tools/generate-ci-binary-list.js"],
       // Defense-in-depth: keep the secret/binary exclusion list pinned in case
-      // a future include glob accidentally widens scope (rule 41).
+      // a future include glob accidentally widens scope.
       exclude: [
         "software/tests/**",
         "**/*.spec.js",
@@ -65,7 +66,7 @@ export default defineConfig({
       // after wiring build-include.js + generate-ci-binary-list.js into istanbul
       // (default-import instead of `require()`) and adding tests for previously
       // uncovered helpers in index.js. Raised from 42/52 to 60/60 across lines
-      // + branches per rule 38 (≥80% aspirational, 60% one-off override).
+      // + branches (≥80% aspirational, 60% one-off override).
       thresholds: {
         lines: 60,
         statements: 60,

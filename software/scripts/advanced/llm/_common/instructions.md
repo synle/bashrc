@@ -20,273 +20,176 @@ Respond terse like smart caveman. All technical substance stay. Only fluff die.
 
 # Engineering Principles
 
-Stack-agnostic. Apply everywhere.
+Stack-agnostic. Apply everywhere. Each rule is named, not numbered — quote the name when you need to reference one.
 
 ## Source Control & PRs
 
-1. Branch from a fresh default. Pull right before branching. Task-scoped name. Never branch off a feature branch.
-2. **Squash merge — PRs only, one PR / one commit. Verify commit author matches local `.gitconfig`.**
+- Branch from a fresh default. Pull right before branching. Task-scoped name. Never branch off a feature branch.
+- Squash merge — PRs only, one PR / one commit. Always `gh pr merge --squash` — never merge commits, never rebase merges. The `--auto` flag is opt-in only (see Automerge) — never pass it by default. PR-level only; don't squash local dev history or arbitrary multi-commit branches.
+- Commit-author check — every commit, every push. Compare each pending commit's `author.name`/`author.email` against `git config --get user.{name,email}`. On mismatch: (1) flag explicitly — show SHA(s), commit identity, and `.gitconfig` identity side-by-side; (2) ask whether to proceed with the existing author; (3) default = "no" — without an explicit "yes", run `git commit --amend --reset-author --no-edit` (latest) or `git rebase -i <base> --exec 'git commit --amend --reset-author --no-edit'` so every commit uses the local `.gitconfig` identity; (4) only proceed without `--reset-author` on explicit "yes". Mixed-author history (Anthropic noreply, stale corp email, leftover pair-programming co-author) breaks provenance, contributor stats, and `git log --author`.
 
-   **Squash on merge (PR only).** Always `gh pr merge --squash` — never merge commits, never rebase merges. The `--auto` flag is opt-in only and gated by rule 59 — never pass it by default. PR-level only; don't squash local dev history or arbitrary multi-commit branches.
+  Preserve `Co-Authored-By:` trailers. `--reset-author` rewrites only the author field, not the message body, which is desired. Keep LLM co-author trailers — Claude Code (`noreply@anthropic.com`), GitHub Copilot (`copilot@github.com`), Gemini (`gemini-cli@google.com`), opencode (`noreply@opencode.ai`) — intentional provenance; don't strip or rewrite them.
 
-   **Commit-author check (every commit, every push).** Compare each pending commit's `author.name`/`author.email` against `git config --get user.{name,email}`. On mismatch:
-   1. Flag explicitly — show SHA(s), commit identity, `.gitconfig` identity side-by-side.
-   2. Ask whether to ignore and proceed with the existing author.
-   3. **Default = "no"** — without explicit "yes", run `git commit --amend --reset-author --no-edit` (latest) or `git rebase -i <base> --exec 'git commit --amend --reset-author --no-edit'` so every commit uses local `.gitconfig` identity.
-   4. Only proceed without `--reset-author` on explicit "yes".
-
-   **Gotcha — preserve `Co-Authored-By:` trailers for supported LLM CLIs.** The author check targets the `author` field only; `--reset-author` leaves the commit message body (and trailers) alone, which is desired. Keep trailers attributing Claude Code (`noreply@anthropic.com`), GitHub Copilot (`copilot@github.com`), Gemini (`gemini-cli@google.com`), opencode (`noreply@opencode.ai`) — intentional provenance. Do not strip/rewrite them.
-
-   **Why:** Mixed-author history (Anthropic noreply, stale corp email, leftover pair-programming co-author) breaks provenance, contributor stats, and `git log --author` queries. LLM co-author trailers are the exception — they accurately attribute assistant participation and should survive the author-reset.
-
-3. Sync with `git merge origin/<default>`. Never rebase or force-push shared branches.
-4. Each PR is a standalone, mergeable unit. Bundle tightly-coupled changes (API + schema + models). Never stack PRs. **When splitting work, prefer non-conflicting splits** — sequence so siblings in flight touch different files/hunks. If overlap is unavoidable, land one first and rebase the other; never open both in parallel against the same base. Goal: every split mergeable in any order without manual conflict resolution.
+- Sync with `git merge origin/<default>`. Never rebase or force-push shared branches.
+- Each PR is a standalone, mergeable unit. Bundle tightly-coupled changes (API + schema + models). Never stack PRs. When splitting work, prefer non-conflicting splits — sequence so in-flight siblings touch different files/hunks. If overlap is unavoidable, land one first and rebase the other; never open both in parallel against the same base. Goal: every split mergeable in any order without manual conflict resolution.
 
 ## Code Hygiene
 
-5. Fix root causes, not symptoms. Three identical defensive blocks → extract or fix the invariant.
-6. Keep comments, titles, docstrings in sync with code in the same edit.
-7. Delete leftovers in the refactor PR — unused imports, mocks, props, dead helpers. Audit the test file too.
-8. Skip no-op wrappers; factor near-duplicates. Passthroughs are noise; N literals differing in a few fields aren't.
-9. Imports and declarations at the top. Lazy only for circular deps or cold-start, with a comment.
-10. **Inline-document every method/function/class/exported symbol you touch** in language-native style. Cover: one-line description, params, return + type, raised errors, side effects. Update on signature/behavior/contract change in the same edit. Undocumented public methods or stale doc next to modified code → review block. Trivial one-liners (`function isEmpty(x){return !x}`) can skip.
+- Fix root causes, not symptoms. Three identical defensive blocks → extract or fix the invariant.
+- Keep comments, titles, docstrings in sync with code in the same edit.
+- Delete leftovers in the refactor PR — unused imports, mocks, props, dead helpers. Audit the test file too.
+- Skip no-op wrappers; factor near-duplicates. Passthroughs are noise; N literals differing in a few fields aren't.
+- Imports and declarations at the top. Lazy only for circular deps or cold-start, with a comment.
+- Inline-document every method/function/class/exported symbol you touch in language-native style. Cover: one-line description, params, return + type, raised errors, side effects. Update on signature/behavior/contract change in the same edit. Undocumented public methods or stale doc next to modified code → review block. Trivial one-liners (`function isEmpty(x){return !x}`) can skip.
 
 ## Logging & Errors
 
-11. Parameterized logging only — pass values as arguments, not formatted strings.
-12. Catch the narrowest expected exception. Catch-all swallows real bugs.
-13. Catch by type or status code, never by error-message string.
-14. Silent catch-and-pass in diagnostic, rollback, or alert paths is a bug. Log at warning level with original exception attached.
-15. Preserve original stack trace when re-raising. Don't reconstruct an exception from its message.
-16. Don't leak raw exceptions to clients. Generic message externally; raw details server-side only. Identifiers in URLs/paths/workflow keys are PII — log non-identifying discriminators.
+- Parameterized logging only — pass values as arguments, not formatted strings.
+- Catch the narrowest expected exception. Catch-all swallows real bugs.
+- Catch by type or status code, never by error-message string.
+- No silent catch-and-pass in diagnostic, rollback, or alert paths — that's a bug. Log at warning level with the original exception attached.
+- Preserve the original stack trace when re-raising. Don't reconstruct an exception from its message.
+- Don't leak raw exceptions to clients. Generic message externally; raw details server-side only. Identifiers in URLs/paths/workflow keys are PII — log non-identifying discriminators.
 
 ## Security
 
-17. Parameterize all queries and commands — even "internal" inputs. Never interpolate user data into a query, shell command, or RPC string.
-18. URL-encode interpolated path and query params. Signatures accept arbitrary strings.
-19. Sanitize at trust boundaries. HTML via sanitizer; validate `href` protocols; reject empty / absolute / `..` / leading-dot filenames.
+- Parameterize all queries and commands — even "internal" inputs. Never interpolate user data into a query, shell command, or RPC string.
+- URL-encode interpolated path and query params. Signatures accept arbitrary strings.
+- Sanitize at trust boundaries. HTML via sanitizer; validate `href` protocols; reject empty / absolute / `..` / leading-dot filenames.
 
 ## Defensiveness
 
-20. Fail-closed on missing permissions or feature flags.
-21. Allowlist inputs; reject unknowns. Default-branch fallthrough is a leak hazard.
-22. Check input shape before reading fields. Reject non-object payloads before field access; don't coerce into empty defaults.
-23. Treat empty values (`0`, empty string/collection, `false`) as valid, not absent. Test for absence explicitly; never use truthy gates to mean "is set".
-24. Bound numerics on both sides — clamp to `[MIN, MAX]`. One-sided clamps let negatives/overflows through.
+- Fail-closed on missing permissions or feature flags.
+- Allowlist inputs; reject unknowns. Default-branch fallthrough is a leak hazard.
+- Check input shape before reading fields. Reject non-object payloads before field access; don't coerce into empty defaults.
+- Treat empty values (`0`, empty string/collection, `false`) as valid, not absent. Test for absence explicitly; never use truthy gates to mean "is set".
+- Bound numerics on both sides — clamp to `[MIN, MAX]`. One-sided clamps let negatives/overflows through.
 
 ## Concurrency & Resources
 
-25. One try/catch per batch iteration — outer-only discards earlier successes.
-26. Chunk unbounded list params. Query and packet-size limits will bite.
-27. Emit heartbeats from long-running jobs or scheduler kills and retries.
-28. Register teardown for async resources — timers, intervals, abort controllers, handles, sessions, pools.
-29. No long synchronous retry chains in request handlers. One attempt; queue the rest.
-30. Hoist loop-invariant work — permission lookups, regex compiles, deadline math.
+- One try/catch per batch iteration — outer-only discards earlier successes.
+- Chunk unbounded list params. Query and packet-size limits will bite.
+- Emit heartbeats from long-running jobs or the scheduler kills and retries.
+- Register teardown for async resources — timers, intervals, abort controllers, handles, sessions, pools.
+- No long synchronous retry chains in request handlers. One attempt; queue the rest.
+- Hoist loop-invariant work — permission lookups, regex compiles, deadline math.
 
 ## Tests
 
-31. Tests must fail for the right reason — pick assertions only the correct path can satisfy.
-32. For ordering contracts, assert call order, not just that both calls happened.
-33. Test the symmetric path when changing one of a pair — create↔update, attach↔detach, lock↔unlock, success↔failure.
+- Tests must fail for the right reason — pick assertions only the correct path can satisfy.
+- For ordering contracts, assert call order, not just that both calls happened.
+- Test the symmetric path when changing one of a pair — create↔update, attach↔detach, lock↔unlock, success↔failure.
 
 ## Codebase Onboarding
 
-34. **Read DEV.md and the architecture doc before non-trivial work.** CLAUDE.md = rules; `DEV.md` + architecture doc (`ARCHITECTURE.md` or embedded section in CLAUDE.md) = map. Rules without the map produce locally-correct, architecturally-wrong changes. Flag missing docs as a gap.
+- Read DEV.md and the architecture doc before non-trivial work. CLAUDE.md = rules; `DEV.md` + architecture doc (`ARCHITECTURE.md` or an embedded section in CLAUDE.md) = map. Rules without the map produce locally-correct, architecturally-wrong changes. Flag missing docs as a gap.
 
 ## Change Execution Workflow
 
 TL;DR: worktree-isolated, default-fresh at every gate, fan-out parallel in background, tests-first PRs, babysit every PR to green.
 
-35. Always use a git worktree. Each unit of work in its own isolated worktree (sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work.
-36. **Sync with latest default branch at three mandatory gates** — stale base = merge pain, redundant re-implementation, CI failures on already-fixed code. The sync command is `git fetch origin && git merge origin/<default>`; resolve conflicts at each gate.
-    - **Gate 1 — Before work starts.** `git checkout <default> && git pull --ff-only`, then cut the branch. Always `--ff-only` — on failure (stray local commit on default), STOP and reconcile (`git reset --hard origin/<default>` after confirming no unmerged work, or rebase the stray commit). Never let a merge commit land on default. **Then check `origin/<default>`'s CI health: `gh run list --branch <default> --limit 1 --json conclusion,name,headSha`. If the latest run's `conclusion == "failure"`, STOP and tell the user — branching off broken main wastes babysit cycles on an unfixable base.**
-    - **Gate 2 — Right before `gh pr create`.** Re-run the sync command on the feature branch. Load-bearing under "skip babysit" override.
-    - **Gate 3 — Before every iteration.** Re-run the sync command before every review comment, CI fix, rebuild, follow-up commit.
+- Always use a git worktree. Each unit of work in its own isolated worktree (sub-agents with `isolation: "worktree"`). Never modify the main checkout during parallel work.
+- Default-branch sync at three mandatory gates. The sync command is `git fetch origin && git merge origin/<default>`; resolve conflicts at each gate. Stale base = merge pain, redundant re-implementation, CI failures on already-fixed code.
+  Gate 1 — before work starts. `git checkout <default> && git pull --ff-only`, then cut the branch. Always `--ff-only` — on failure (stray local commit on default), STOP and reconcile (`git reset --hard origin/<default>` after confirming no unmerged work, or rebase the stray commit). Never let a merge commit land on default. Then check `origin/<default>`'s CI health: `gh run list --branch <default> --limit 1 --json conclusion,name,headSha`. If the latest run's `conclusion == "failure"`, STOP and tell the user — branching off broken main wastes babysit cycles on an unfixable base.
+  Gate 2 — right before `gh pr create`. Re-run the sync command on the feature branch. Load-bearing even under a "skip babysit" override.
+  Gate 3 — before every iteration. Re-run the sync command before every review comment, CI fix, rebuild, follow-up commit.
 
-    Never push past a conflicted state. Never `--strategy=ours` away upstream changes you haven't read.
+  Never push past a conflicted state. Never `--strategy=ours` away upstream changes you haven't read.
 
-37. Always parallelize within a session. Independent changes → one message, multiple sub-agent calls. Applies inside macro repos containing micro-repos / sub-projects / vendored packages too — fan them out as separate sub-agent worktrees. **Soft cap: ≤ 6 concurrent sub-agents per phase** (context bloat, `gh` rate limits, reviewer overwhelm beyond that). For wider scopes, phase via rule 39.
-38. Run sub-agents in the background → `run_in_background: true`.
-39. **Plan before fan-out** for multi-PR / multi-file scope — use the Plan agent to outline phases first, then phased work: parallelize within a phase, serialize between phases. Fan out Phase 1, wait, fan out Phase 2. Skip planning only for single-file / single-PR work that's obviously contained.
-40. PR order: tests first, then coverage gate, then push. **Respect the repo's existing coverage threshold; if none configured, ≥ 80% line + branch on changed code.** No PR without tests.
-41. Babysit every PR to green CI. Use `/sy-babysit-pr` / `/sy-babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the rule 36 sync command. Poll every 15 minutes — each wake addresses comments AND CI in one pass. **After every applied fix: reply `Fixed — <one-liner>` and resolve the thread. Detect broken-main early — if the same CI failure appears on `origin/<default>`'s latest commit, stop babysit, flag, and ask the user (don't retry-fix-retry against an unfixable base). Cap at 10 polls (~2.5 hours) — if not green by then, STOP, summarize what was tried, and ask the user.**
-
-**Coverage thresholds.** Existing repo with a configured threshold (vitest/jest config, `.coveragerc`, `pyproject.toml`, `codecov.yml`, CI gate, etc.) — respect it; don't relax just because the current diff would meet a lower bar. New project / no existing config — ≥ 80% line + branch coverage on changed code, and wire CI to run tests + coverage gate on every PR before feature work lands.
+- Parallelize within a session. Independent changes → one message, multiple sub-agent calls. Applies inside macro repos containing micro-repos / sub-projects / vendored packages too — fan them out as separate sub-agent worktrees. Soft cap: ≤ 6 concurrent sub-agents per phase (context bloat, `gh` rate limits, reviewer overwhelm beyond that). For wider scopes, phase the work (see Plan before fan-out).
+- Run sub-agents in the background → `run_in_background: true`.
+- Plan before fan-out for multi-PR / multi-file scope — use the Plan agent to outline phases first, then work phased: parallelize within a phase, serialize between phases. Fan out Phase 1, wait, fan out Phase 2. Skip planning only for single-file / single-PR work that's obviously contained.
+- PR order: tests first, then coverage gate, then push. No PR without tests. Respect the repo's existing coverage threshold (vitest/jest config, `.coveragerc`, `pyproject.toml`, `codecov.yml`, CI gate); don't relax it just because the current diff would meet a lower bar. New project / no configured threshold → ≥ 80% line + branch coverage on changed code, and wire CI to run tests + a coverage gate on every PR before feature work lands.
+- Babysit every PR to green CI. Use `/sy-babysit-pr` / `/sy-babysit-prs`. "PR opened" ≠ "done." Every babysit cycle starts with the default-branch sync. Poll every 15 minutes — each wake addresses comments AND CI in one pass. After every applied fix: reply `Fixed — <one-liner>` and resolve the thread. Detect broken-main early — if the same CI failure appears on `origin/<default>`'s latest commit, stop babysit, flag, and ask the user (don't retry-fix-retry against an unfixable base). Cap at 10 polls (~2.5 hours) — if not green by then, STOP, summarize what was tried, and ask the user.
 
 ## Secrets & Sensitive Data
 
-42. **No secret values, ever, anywhere.** No raw env vars, API tokens, passwords, OAuth/signing keys, private hostnames, internal URLs, customer IDs, PII in any output channel (logs, CI summaries, PR comments, artifacts, coverage reports, error messages, debug dumps, generated docs). Never `echo`/`printenv`/`env` into `$GITHUB_STEP_SUMMARY`, never reference `${{ secrets.* }}` in summary/comment templates, never `console.log(process.env)`, never `JSON.stringify(req)` for objects with auth headers.
-43. **Coverage and artifact scope = source + metrics only.** Coverage `include:` lists explicit source globs — never `**/*` or `.`. `exclude:` covers `.env*`, `**/secret*`, `**/credential*`, `**/*.pem`, `**/*.key`, `**/*.p12`, `assets/binaries/**`, `secrets/**`, and fixture paths with literal-looking tokens. Artifact uploads use explicit `path:` (e.g. `coverage/`) — never `.` or whole workspace.
-44. **CI summaries and PR comments = metrics + filenames only.** Numbers, percentages, paths, status labels — yes. File contents, env dumps, build-time config, response bodies from authenticated calls — no. Before any step writing to `$GITHUB_STEP_SUMMARY`, posting `gh pr comment`, or uploading an artifact: audit what it can read.
-45. **No catch-all artifact uploads.** Scope to the exact subdirectory. Never upload the whole workspace — that's how `.env`, `~/.aws/credentials`, and node_modules with embedded keys leak.
-46. **Scan staged changes for secret leaks before every commit AND every push.** Audit `git diff --cached` (pre-commit) and `git log <upstream>..HEAD -p` (pre-push).
+- No secret values, ever, anywhere. No raw env vars, API tokens, passwords, OAuth/signing keys, private hostnames, internal URLs, customer IDs, or PII in any output channel (logs, CI summaries, PR comments, artifacts, coverage reports, error messages, debug dumps, generated docs). Never `echo`/`printenv`/`env` into `$GITHUB_STEP_SUMMARY`, never reference `${{ secrets.* }}` in summary/comment templates, never `console.log(process.env)`, never `JSON.stringify(req)` on objects with auth headers.
+- Coverage and artifact scope = source + metrics only. Coverage `include:` lists explicit source globs — never `**/*` or `.`. `exclude:` covers `.env*`, `**/secret*`, `**/credential*`, `**/*.pem`, `**/*.key`, `**/*.p12`, `assets/binaries/**`, `secrets/**`, and fixture paths with literal-looking tokens. Artifact uploads use explicit `path:` (e.g. `coverage/`) — never `.` or the whole workspace.
+- CI summaries and PR comments = metrics + filenames only. Numbers, percentages, paths, status labels — yes. File contents, env dumps, build-time config, response bodies from authenticated calls — no. Before any step writing to `$GITHUB_STEP_SUMMARY`, posting `gh pr comment`, or uploading an artifact: audit what it can read.
+- No catch-all artifact uploads. Scope to the exact subdirectory. Never upload the whole workspace — that's how `.env`, `~/.aws/credentials`, and node_modules with embedded keys leak.
+- Scan staged changes for secret leaks before every commit AND every push. Audit `git diff --cached` (pre-commit) and `git log <upstream>..HEAD -p` (pre-push). A leaked credential means rotate-everything + history-rewrite — painful, public, often incomplete; pre-push catch is orders of magnitude cheaper.
 
-    **Why:** A leaked credential means rotate-everything + history-rewrite — painful, public, often incomplete. Pre-push catch is orders of magnitude cheaper.
+  **How — every commit, every push:**
+  1. **Filename allowlist.** Block staged paths matching: `.env*` (except `.example`/`.sample`/`.template`), `**/credential*`, `**/secret*`, `**/*.pem`, `**/*.key` (except `.pub.key`), `**/*.p12`/`*.pfx`/`*.keystore`, ssh keys (`id_rsa*`/`id_ed25519*`/`id_ecdsa*`/`id_dsa*`), `*.kdbx`, `service-account*.json`, `gha-creds-*.json`, `.npmrc`/`.pypirc`/`.netrc` with auth lines, `.aws/credentials`, `.ssh/` keys, `.gnupg/`, `.kube/config`, `.docker/config.json`, `terraform.tfstate*`, user-dir `*.sqlite`/`*.db`.
+  2. **Content patterns.** Grep the staged diff for: AWS (`AKIA|ASIA[0-9A-Z]{16}`, `aws_secret_access_key\s*=`), GitHub (`gh[pous]_[A-Za-z0-9]{36,}`, `github_pat_`), Anthropic/OpenAI (`sk-(ant-|proj-)?[A-Za-z0-9_-]{20,}`), Slack (`xox[abprs]-`), Google (`AIza[0-9A-Za-z_-]{35}`), private keys (`-----BEGIN .* PRIVATE KEY-----`), JWTs (`eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`), assignments `(password|api[_-]?key|token|secret)\s*=\s*["'][^"']{6,}` — skip placeholder markers (`<...>`/`xxx`/`***`/`example`).
+  3. **`.gitignore` sanity.** Newly-added file matching a `.gitignore` rule (`git check-ignore --no-index <path>` → 0) → flag; `git add -f` may have bypassed.
+  4. **Flag and STOP.** Show path, line, matched pattern (redact value — `AKIA****REDACTED****`). Ask: _"Looks like this commit may contain a secret. Proceed? (default: no)"_.
+  5. **Default = "no":**
+     - Pre-commit: abort. Tell user to `git restore --staged <path>` and add to `.gitignore`.
+     - Pre-push (local commit): `git reset HEAD~N` or `git rebase -i` to remove, re-stage clean. Do NOT push.
+     - Post-push (on remote): tell user IMMEDIATELY — rotate credential first, then rewrite history (`git filter-repo` / BFG) and force-push.
+  6. Proceed only on explicit "yes" + user confirms false positive.
 
-    **How — every commit, every push:**
-    1. **Filename allowlist.** Block staged paths matching: `.env*` (except `.example`/`.sample`/`.template`), `**/credential*`, `**/secret*`, `**/*.pem`, `**/*.key` (except `.pub.key`), `**/*.p12`/`*.pfx`/`*.keystore`, ssh keys (`id_rsa*`/`id_ed25519*`/`id_ecdsa*`/`id_dsa*`), `*.kdbx`, `service-account*.json`, `gha-creds-*.json`, `.npmrc`/`.pypirc`/`.netrc` with auth lines, `.aws/credentials`, `.ssh/` keys, `.gnupg/`, `.kube/config`, `.docker/config.json`, `terraform.tfstate*`, user-dir `*.sqlite`/`*.db`.
-    2. **Content patterns.** Grep staged diff for: AWS (`AKIA|ASIA[0-9A-Z]{16}`, `aws_secret_access_key\s*=`), GitHub (`gh[pous]_[A-Za-z0-9]{36,}`, `github_pat_`), Anthropic/OpenAI (`sk-(ant-|proj-)?[A-Za-z0-9_-]{20,}`), Slack (`xox[abprs]-`), Google (`AIza[0-9A-Za-z_-]{35}`), private keys (`-----BEGIN .* PRIVATE KEY-----`), JWTs (`eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+`), assignments `(password|api[_-]?key|token|secret)\s*=\s*["'][^"']{6,}` — skip placeholder markers (`<...>`/`xxx`/`***`/`example`).
-    3. **`.gitignore` sanity.** Newly-added file matching a `.gitignore` rule (`git check-ignore --no-index <path>` → 0) → flag; `git add -f` may have bypassed.
-    4. **Flag and STOP.** Show path, line, matched pattern (redact value — `AKIA****REDACTED****`). Ask: _"Looks like this commit may contain a secret. Proceed? (default: no)"_.
-    5. **Default = "no":**
-       - Pre-commit: abort. Tell user to `git restore --staged <path>` and add to `.gitignore`.
-       - Pre-push (local commit): `git reset HEAD~N` or `git rebase -i` to remove, re-stage clean. Do NOT push.
-       - Post-push (on remote): tell user IMMEDIATELY — rotate credential first, then rewrite history (`git filter-repo` / BFG) and force-push.
-    6. Proceed only on explicit "yes" + user confirms false positive.
-
-    **Scope:** Every commit/push channel — direct `git`, `gh pr create`, `/sy-*-pr`, automerge, release.
+  **Scope:** every commit/push channel — direct git, gh pr create, /sy-*-pr, automerge, release.
 
 ## Release Commands
 
-47. **Default: every `release` / `/sy-release` is OFFICIAL from default branch.** Any phrasing without an explicit beta signal (see below) → OFFICIAL. Don't ask "official or beta?" — official is default; asking creates friction.
-
-    **Explicit beta signals (only these flip to BETA):**
-    1. Literal `beta` in `$ARGUMENTS`.
-    2. SHA validated via `git cat-file -e <sha>^{commit}`.
-    3. Non-default branch resolvable via `git rev-parse refs/heads/<n>` / `refs/remotes/origin/<n>` / `git ls-remote --exit-code origin <n>` (excluding the default branch itself).
-
-    **One unified `/sy-release`** — per-channel aliases retired; channel lives in `$ARGUMENTS`. Unknown SHA-shaped tokens / nonexistent branch-shaped strings → **ABORT**, never silently degrade. Confirm before `gh workflow run`. Never auto-pin beta to `HEAD`.
-
-48. **Release workflows must never derive a tag from a branch ref.** `workflow_dispatch --ref main` sets `github.ref_name = "main"`. Any workflow `${{ inputs.tag || github.ref_name }}` produces a `vmain` release that overwrites real versions. Before any official `gh workflow run --ref <branch>`:
-    1. Fetch workflow; grep for `github.ref_name` near `version:`/`tag:`/`release:`/`name:`.
-    2. If a `tag` `workflow_dispatch` input exists, pass `--field tag=v<version>` from the project's version manifest.
-    3. Else ABORT and tell user to push a `v*` tag or fix the workflow.
-
-    After dispatch, poll the run and confirm tag matches `^v\d+\.\d+\.\d+(-[\w.]+)?$` — else `gh release delete` + `gh run cancel`.
-
-49. **Every PR merge auto-triggers `/sy-release` (when repo has a release workflow).** PR transitions to `MERGED` on default → invoke `/sy-release` against `<owner/repo>`. Skill gracefully aborts on repos without a release workflow — safe to apply uniformly. The user-confirmation prompt inside `/sy-release` is the human-in-the-loop step. **Babysit caveat:** when babysit observes `state == "MERGED"` (whether via user-driven `gh pr merge --squash`, opt-in automerge per rule 59, or solo+bots push-direct per rule 60), invoke `/sy-release` once before reporting done. Babysit does NOT enable automerge on its own behalf.
+- Every release / `/sy-release` is OFFICIAL from the default branch by default. Any phrasing without an explicit beta signal → OFFICIAL. Don't ask "official or beta?" — official is default; asking creates friction. Beta signals (only these flip to BETA): (1) literal `beta` in `$ARGUMENTS`; (2) a SHA validated via `git cat-file -e <sha>^{commit}`; (3) a non-default branch resolvable via `git rev-parse refs/heads/<n>` / `refs/remotes/origin/<n>` / `git ls-remote --exit-code origin <n>`. One unified `/sy-release` — channel lives in `$ARGUMENTS`. Unknown SHA-shaped tokens / nonexistent branch-shaped strings → ABORT, never silently degrade. Confirm before `gh workflow run`. Never auto-pin beta to `HEAD`.
+- Release workflows must never derive a tag from a branch ref. `workflow_dispatch --ref main` sets `github.ref_name = "main"`; a workflow using `${{ inputs.tag || github.ref_name }}` then produces a `vmain` release that overwrites real versions. Before any official `gh workflow run --ref <branch>`: (1) fetch the workflow and grep for `github.ref_name` near `version:`/`tag:`/`release:`/`name:`; (2) if a `tag` `workflow_dispatch` input exists, pass `--field tag=v<version>` from the project's version manifest; (3) else ABORT and tell the user to push a `v*` tag or fix the workflow. After dispatch, poll the run and confirm the tag matches `^v\d+\.\d+\.\d+(-[\w.]+)?$` — else `gh release delete` + `gh run cancel`.
+- Every PR merge auto-triggers `/sy-release` when the repo has a release workflow. PR transitions to `MERGED` on default → invoke `/sy-release` against `<owner/repo>`. The skill gracefully aborts on repos without a release workflow, so apply it uniformly; the confirmation prompt inside `/sy-release` is the human-in-the-loop step. When babysit observes `state == "MERGED"` (user-driven `gh pr merge --squash`, opt-in automerge, or solo+bots push-direct), invoke `/sy-release` once before reporting done. Babysit does NOT enable automerge on its own behalf.
 
 ## Code Review
 
-50. **Stay consistent across follow-up reviews — never flip-flop on your own prior positions.** Earlier reviews are the baseline for every subsequent review on the same PR.
+- Stay consistent across follow-up reviews — never flip-flop on your own prior positions. Earlier reviews are the baseline for every subsequent review on the same PR; flip-flopping destroys reviewer trust and forces the author to redo accepted work. Every time you post on a PR you've previously touched:
+  1. Read your prior reviews and comments first. Filter `gh api repos/<owner>/<repo>/pulls/<n>/comments` + `.../issues/<n>/comments` + `gh pr view <n> --json reviews` by your own login (`gh api user --jq .login`).
+  2. Honor every prior recommendation. Author picked your A → don't now ask for B. Concern X addressed → don't raise contradictory Y on the same code.
+  3. Only revise on concrete new reason (new info, related PR landed, advisory, author asked). When reversing, call it out: `"Updating my earlier suggestion (#<comment-id>) — <reason>"`. Never silently contradict.
+  4. Vague earlier comment + reasonable author interpretation → accept. Don't relitigate.
+  5. Verdict consistency: APPROVED earlier and new commits still acceptable → re-APPROVE. Don't quietly downgrade without naming the new concern.
 
-    **Why:** Flip-flopping destroys reviewer trust and forces the author to redo accepted work.
-
-    **How — every time you post on a PR you've previously touched:**
-    1. Read your prior reviews and comments first. Filter `gh api repos/<owner>/<repo>/pulls/<n>/comments` + `.../issues/<n>/comments` + `gh pr view <n> --json reviews` by your own login (`gh api user --jq .login`).
-    2. Honor every prior recommendation. Author picked your A → don't now ask for B. Concern X addressed → don't raise contradictory Y on the same code.
-    3. Only revise on concrete new reason (new info, related PR landed, advisory, author asked). When reversing, call out: `"Updating my earlier suggestion (#<comment-id>) — <reason>"`. Never silently contradict.
-    4. Vague earlier comment + reasonable author interpretation → accept. Don't relitigate.
-    5. Verdict consistency: APPROVED earlier and new commits still acceptable → re-APPROVE. Don't quietly downgrade without naming the new concern.
-
-    **Scope:** Your own past reviews. Other reviewers' positions need not be honored — but call out disagreement so author isn't whipsawed. Every channel: `/sy-review-pr`, ad-hoc reviews, babysit line comments, informal replies.
+  Scope: your own past reviews. Other reviewers' positions need not be honored — but call out disagreement so the author isn't whipsawed. Every channel: `/sy-review-pr`, ad-hoc reviews, babysit line comments, informal replies.
 
 ## Repo Identification
 
-51. **Local folder name ≠ repo — always resolve the remote.** Folder names diverge from GitHub `owner/repo` (e.g. `~/git/file-explorer` is `synle/skiff-files`). Before any `gh` call, sub-agent spawn, PR action, or remote-aware reasoning: run `git remote get-url origin` (or `gh repo view --json nameWithOwner`) and use that as authoritative `owner/repo`. Never derive from `basename "$(pwd)"`, `$PWD`, or directory name. When delegating, pass resolved `owner/repo` explicitly.
+- Local folder name ≠ repo — always resolve the remote. Folder names diverge from GitHub `owner/repo` (e.g. `~/git/file-explorer` is `synle/skiff-files`). Before any `gh` call, sub-agent spawn, PR action, or remote-aware reasoning: run `git remote get-url origin` (or `gh repo view --json nameWithOwner`) and use that as the authoritative `owner/repo`. Never derive it from `basename "$(pwd)"`, `$PWD`, or the directory name. When delegating, pass the resolved `owner/repo` explicitly.
 
 ## Agent Instruction File Size Limit
 
-52. **Keep every per-turn agent instruction file under 40,000 characters.** Applies to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`, plus project-root and nested variants of the same names. Not linked docs (`DEV.md`/`ARCHITECTURE.md`).
-
-    **Why:** Each file loads into the system prompt every turn. Over ~40k degrades performance and crowds out task context.
-
-    **Trigger:** any byte write to one of these files — direct edit, edit to the generator source (`_common/instructions.md`), or any rule/section/example added. Small adds accumulate; measure after every change.
-
-    **How (no asking first):**
-    1. `wc -c < <path>`. If ≤ 40,000, stop.
-    2. If over, trim in order: merge duplicates → cut stale incident dates / war stories > 6mo → collapse verbose examples → shorten prose → move deep-detail sections (file tables, architecture, command refs) to `DEV.md`/`ARCHITECTURE.md` with a one-line pointer.
-    3. Don't delete whole rules unless obsolete — ask before removing a rule that still describes current behavior.
-    4. Re-check; repeat until ≤ 40,000.
-    5. Report what you cut (e.g. "40,900 → 38,200: merged 2 logging rules, removed 2026-01 incident, collapsed run.sh example").
-
-    **Generator wiring.** All four global files above are regenerated from `_common/instructions.md` (in `synle/bashrc`) via per-CLI `setup.js` scripts under `software/scripts/advanced/llm/<cli>/`. Edit the source; re-run `bash run.sh --preset=llm` (or a single `setup.js`). Hand-editing a generated file is fine OUTSIDE the managed block.
-
-    **Managed-block boundary.** Each generated file wraps shared content between `BEGIN synle/bashrc | software/scripts/advanced/llm/_common/instructions.md` / `END ...` marker pairs (the key embeds the source-of-truth path).
-    - **Outside markers:** persists across re-runs (`replaceBlock` in `software/common.js`). Machine-local notes, personal overrides go here.
-    - **Inside markers:** wiped on next setup run. Shared rules belong in `_common/instructions.md`; CLI-specific managed defaults go in that CLI's `setup.js`.
-    - Never modify/move the marker lines — breaks the upsert and re-appends a duplicate block.
-
-    **Memory ≠ instruction file.** Per-user / per-project facts go in the CLI's memory system (e.g. `~/.claude/projects/<encoded-cwd>/memory/` for Claude Code), never inline in any of the files above.
-
-    **Rule numbers are stable.** Commands under `commands/*.md` cross-reference rules by number (`see rule 47`, `per rule 46`). Renumbering existing rules silently breaks those refs. Append new rules at the next free number; never insert in the middle of the existing 1-N range. Deprecated rules stay as `(deprecated — superseded by rule N)` for one release cycle before removal.
+- Keep every per-turn agent instruction file under 40,000 characters. Applies to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`, plus project-root and nested variants of the same names — not linked docs (`DEV.md`/`ARCHITECTURE.md`). Each file loads into the system prompt every turn; over ~40k degrades performance and crowds out task context. Trigger: any byte write to one of these files — direct edit, edit to the generator source (`_common/instructions.md`), or any rule/section/example added. Small adds accumulate; measure after every change.
+  How (no asking first): run `wc -c < <path>`; if ≤ 40,000, stop. If over, trim in order: merge duplicates → cut stale incident dates / war stories > 6mo → collapse verbose examples → shorten prose → move deep-detail sections (file tables, architecture, command refs) to `DEV.md`/`ARCHITECTURE.md` with a one-line pointer. Don't delete whole rules unless obsolete — ask first if a rule still describes current behavior. Re-check; repeat until ≤ 40,000. Report what you cut (e.g. "40,900 → 38,200: merged 2 logging rules, removed 2026-01 incident, collapsed run.sh example").
+  Generator wiring. All four global files above are regenerated from `_common/instructions.md` (in `synle/bashrc`) via per-CLI `setup.js` scripts under `software/scripts/advanced/llm/<cli>/`. Edit the source; re-run `bash run.sh --preset=llm` (or a single `setup.js`). Hand-editing a generated file is fine OUTSIDE the managed block.
+  Managed-block boundary. Each generated file wraps shared content between `BEGIN synle/bashrc | software/scripts/advanced/llm/_common/instructions.md` / `END ...` marker pairs (the key embeds the source-of-truth path). Outside the markers persists across re-runs (`replaceBlock` in `software/common.js`) — machine-local notes and personal overrides go there. Inside the markers is wiped on the next setup run — shared rules belong in `_common/instructions.md`; CLI-specific managed defaults go in that CLI's `setup.js`. Never modify or move the marker lines — that breaks the upsert and re-appends a duplicate block.
+  Memory ≠ instruction file. Per-user / per-project facts go in the CLI's memory system (e.g. `~/.claude/projects/<encoded-cwd>/memory/` for Claude Code), never inline in any of the files above.
 
 ## Per-Request Overrides
 
-53. **Explicit user phrases drop matching rules for the current request only.** Scope: the current request, not follow-ups.
-    - `do this one foreground` → drop rule 38 (background sub-agents).
-    - `wait before starting the next` → drop rule 37 (parallelize within session).
-    - `skip babysit` → drop rule 41 (babysit to green) — open PR and stop.
-    - `WIP only` / `don't push` → no push, no PR (drops rules 40-41).
-    - `single-shot` / `no worktree` → drop rule 35 (worktree isolation).
-    - `push to main directly` → drop PR flow on the current request. Default on solo+bots repos per rule 60; phrase confirms intent on other repos.
-    - `open a PR` / `create a PR` / `draft a PR` → force PR flow even on a solo+bots repo (overrides rule 60's push-direct default for the current request).
-    - `automerge` / `enable automerge` → opt into `gh pr merge --squash --auto` per rule 59. Without this phrase, never pass `--auto`.
-    - `skip release` → drop rule 49 (auto-release after merge) for this merge only.
-
-    Overrides are per-request. The next conversation turn or task re-enables all rules unless re-asserted.
+- Explicit user phrases drop the matching rule for the current request only (not follow-ups):
+  - `do this one foreground` → drop background sub-agents.
+  - `wait before starting the next` → drop parallelize-within-session.
+  - `skip babysit` → drop babysit-to-green — open the PR and stop.
+  - `WIP only` / `don't push` → no push, no PR.
+  - `single-shot` / `no worktree` → drop worktree isolation.
+  - `push to main directly` → drop the PR flow for this request. Already the default on solo+bots repos; the phrase just confirms intent on other repos.
+  - `open a PR` / `create a PR` / `draft a PR` → force the PR flow even on a solo+bots repo.
+  - `automerge` / `enable automerge` → opt into `gh pr merge --squash --auto`. Without this phrase, never pass `--auto`.
+  - `skip release` → drop auto-release-after-merge for this merge only.
+  Overrides are per-request. The next conversation turn or task re-enables all rules unless re-asserted.
+  Overrides are per-request. The next conversation turn or task re-enables all rules unless re-asserted.
 
 ## Engineering Practices
 
-54. **Production dependency upgrades require local-first verification.** For any `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` / `Gemfile` / `requirements.txt` change crossing a major or minor version on a runtime dep:
-    1. Read the changelog; link it in the PR body.
-    2. Run the full local test suite before pushing — do not lean on CI alone for first signal.
-    3. Pin exact version on prod deps (no leading `^` / `~` / `>=`) when the repo's lockfile would otherwise float.
-    4. Note any deprecation warnings the new version emits in the PR body.
+- Production dependency upgrades require local-first verification. For any `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` / `Gemfile` / `requirements.txt` change crossing a major or minor version on a runtime dep: (1) read the changelog and link it in the PR body; (2) run the full local test suite before pushing — don't lean on CI alone for first signal; (3) pin the exact version on prod deps (no leading `^` / `~` / `>=`) when the lockfile would otherwise float; (4) note any deprecation warnings the new version emits in the PR body. Patch bumps and dev-only deps may skip the changelog + local-suite steps; lockfile-only refreshes (e.g. `npm i` with no version change) skip entirely.
+- Every schema / data migration ships with its reversal. Up migration → matching down/rollback migration in the same PR. Irreversible operations (`DROP COLUMN`, `DROP TABLE`, destructive backfills, type narrowing) require an explicit `## Recovery` section in the PR body documenting how to recover (backup restore, event replay, manual SQL). Review blocks on a missing down migration or undocumented destruction.
+- Rollback PRs are emergency fast-track — skip babysit, ship immediately. Title: `Revert "<original PR title>"` (use `gh pr revert` or `git revert <sha>`). Body links the original PR and the failure that triggered the revert. CI must pass green but the address-comments loop is skipped (no review-cycle latency on emergencies). Merge with `gh pr merge --squash` as soon as CI is green (rollbacks qualify as low-risk, so ASK whether to flip on `--auto` rather than waiting at the keyboard). Invoke `/sy-release` immediately after merge. Rollback-of-rollback is allowed if the original revert proves wrong.
+- Breaking changes need a flag in the title and a migration note in the body. Title prefix: `BREAKING:` (or Conventional Commits `feat!:` / `fix!:` when the repo uses that style). Body has a `## Migration` section with the minimum diff a downstream consumer must apply. Applies to: removed / renamed exports, removed CLI flags, changed default behavior, schema deletions, env-var renames, config-key renames. Internal-only refactors no consumer can observe aren't breaking.
+- YAGNI — climb the ponytail ladder before writing code. Before adding any function, class, abstraction, or dependency, stop at the first rung that holds: (1) does this need to exist at all? — no: skip it; (2) does the stdlib do it? — use it; (3) native platform feature (shell builtin, browser API, OS facility, language primitive)? — use it; (4) already-installed dependency does it? — use it; (5) solvable in one line? — write the one line; (6) only then write the minimum that works. Default "don'ts" (drop only when the problem genuinely cannot be solved without): new abstraction layer, new library / dependency install, new class / module / wrapper, anything built ahead of a concrete caller. Never skip regardless of rung: trust-boundary validation, data-loss handling, security controls, accessibility — the ladder cuts speculative work, not safety work. When the task says "add feature X", state rungs 1-5 out loud (in the plan, PR body, or self-review) before descending to rung 6 with a concrete reason; any new class / dependency / wrapper in a diff must justify itself against the ladder. Inspired by DietrichGebert/ponytail.
 
-    Patch bumps and dev-only deps may skip steps 1-2. Lockfile-only refreshes (e.g. `npm i` with no version change) skip entirely.
+## Automerge
 
-55. **Every schema / data migration ships with its reversal.** Up migration → matching down/rollback migration in the same PR. Irreversible operations (`DROP COLUMN`, `DROP TABLE`, destructive backfills, type narrowing) require an explicit `## Recovery` section in the PR body documenting how to recover (backup restore, event replay, manual SQL). Review blocks on missing down migration or undocumented destruction.
+- Automerge is opt-in by the user, never automatic — and only surfaced for low-risk PRs. The default merge flow is `gh pr merge --squash` (no `--auto`) after the user confirms. Add `--auto` only when the user explicitly says "automerge", "enable automerge", or equivalent in the current request. Automerge silently lands code the moment CI flips green — fine for mechanical PRs, dangerous for anything needing a second human pass. Four low-risk categories where you MAY surface the question proactively (otherwise stay silent):
+  1. **Trivial.** Typo fix, single-line lint/format nit, simple rename. Rollback PRs qualify.
+  2. **Tests-only.** Every changed file lives under a test path (`*test*`, `*spec*`, `__tests__/`, `tests/`, `*.test.*`, `*.spec.*`, `*_test.go`, `software/tests/`). Source files unchanged.
+  3. **Dependency-only.** Lockfile + manifest changes with no source edits (dependabot-style bumps, new library install with no callsite yet, `npm i` lockfile refresh).
+  4. **Docs/comments-only.** Every changed file is documentation (`*.md`, `*.mdx`, `*.rst`, `*.txt`, `docs/`, `README*`, `CHANGELOG*`, `CONTRIBUTING*`, `LICENSE*`) OR every non-doc-file change is comment-only (lines starting with `//`, `#`, `--`, `/*`, `*`, or inside docstring blocks — no semantic code changed). New docs files are in scope.
 
-56. **Rollback PRs are emergency fast-track — skip babysit, ship immediately.** Title: `Revert "<original PR title>"` (use `gh pr revert` or `git revert <sha>`). Body links the original PR and the failure that triggered the revert. CI must pass green but the address-comments loop is skipped (no review-cycle latency on emergencies). Merge with `gh pr merge --squash` as soon as CI green (rollbacks qualify as "trivial" under rule 59, so ASK the user whether to flip on `--auto` rather than waiting at the keyboard). Invoke `/sy-release` immediately after merge per rule 49. Rollback-of-rollback is allowed if the original revert proves wrong.
-
-57. **Breaking changes need a flag in the title and a migration note in the body.** Title prefix: `BREAKING:` (or Conventional Commits `feat!:` / `fix!:` when the repo uses that style). Body has a `## Migration` section with the minimum diff a downstream consumer must apply. Applies to: removed / renamed exports, removed CLI flags, changed default behavior, schema deletions, env-var renames, config-key renames. Internal-only refactors that no consumer can observe are not breaking.
-
-58. **YAGNI — climb the ponytail ladder before writing code.** Before adding any function, class, abstraction, or dependency, stop at the first rung that holds:
-    1. Does this need to exist at all? — no: skip it.
-    2. Does the stdlib do it? — use it.
-    3. Native platform feature (shell builtin, browser API, OS facility, language primitive)? — use it.
-    4. Already-installed dependency does it? — use it.
-    5. Solvable in one line? — write the one line.
-    6. Only then: write the minimum that works.
-
-    **Default "don'ts" (drop only when the problem genuinely cannot be solved without):** new abstraction layer, new library / dependency install, new class / module / wrapper, anything built ahead of a concrete caller.
-
-    **Lazy, not negligent — never skip, regardless of rung:** trust-boundary validation, data-loss handling, security controls, accessibility. The ladder cuts speculative work, not safety work.
-
-    **Why:** Every speculative abstraction, helper, or dependency costs maintenance, audit surface, and cognitive load forever — and only pays off if the imagined future arrives. Most don't. Inspired by [DietrichGebert/ponytail](https://github.com/DietrichGebert/ponytail).
-
-    **How to apply:** When the task says "add feature X", state rungs 1-5 out loud (in the plan, the PR body, or self-review) before descending to rung 6 with a concrete reason. Any new class / new dependency / new wrapper in a diff must justify itself against the ladder. Complements rule 5 (fix root causes) and rule 8 (skip no-op wrappers) — rule 58 prevents what 5 and 8 clean up.
-
-## Merge Strategy
-
-59. **Automerge is opt-in by user, never automatic — and only surfaced for low-risk PRs.** Default merge flow is `gh pr merge --squash` (no `--auto`) after the user confirms. The `--auto` flag is added only when the user explicitly says "automerge", "enable automerge", or equivalent in the current request.
-
-    **Four categories where you MAY surface the question proactively** (otherwise stay silent):
-    1. **Trivial.** Typo fix, single-line lint/format nit, simple rename. Rollback PRs (rule 56) qualify.
-    2. **Tests-only.** Every changed file lives under a test path (`*test*`, `*spec*`, `__tests__/`, `tests/`, `*.test.*`, `*.spec.*`, `*_test.go`, `software/tests/`). Source files unchanged.
-    3. **Dependency-only.** Lockfile + manifest changes with no source edits (dependabot-style bumps, new library install with no callsite yet, `npm i` lockfile refresh).
-    4. **Docs/comments-only.** Every changed file is documentation (`*.md`, `*.mdx`, `*.rst`, `*.txt`, `docs/`, `README*`, `CHANGELOG*`, `CONTRIBUTING*`, `LICENSE*`) OR every non-doc-file change is comment-only (lines starting with `//`, `#`, `--`, `/*`, `*`, or inside docstring blocks — no semantic code changed). New docs files are explicitly in scope.
-
-    **Prompt template:** `"This PR looks like <trivial|tests-only|dependency-only|docs-only>. Want me to enable automerge (gh pr merge --squash --auto)? (yes/no, default no)"`. Proceed with `--auto` only on explicit "yes". Default = no.
-
-    **Outside those four categories: do not ask, do not pass `--auto`.** Even within the four, the prompt is optional, not mandatory — silence is also valid. Let the user enable automerge via the GitHub UI or an explicit follow-up if they want it.
-
-    **Why:** Automerge silently lands code the moment CI flips green — fine for mechanical PRs, dangerous for anything needing a second human pass. Explicit consent gates the silent-land path; the three-category filter prevents prompt fatigue on every PR.
-
-    **How to apply:** Before any `gh pr merge --squash --auto`, classify the diff against the four categories. If outside, drop `--auto`. If inside, ask once and honor the answer. `/sy-create-pr`, `/sy-draft-pr`, `/sy-babysit-pr` all defer to this rule — none of them set automerge on their own.
+  Prompt template: `"This PR looks like <trivial|tests-only|dependency-only|docs-only>. Want me to enable automerge (gh pr merge --squash --auto)? (yes/no, default no)"`. Proceed with `--auto` only on explicit "yes"; default = no. Outside these four categories: do not ask, do not pass `--auto`. Even within them the prompt is optional — silence is also valid; let the user enable automerge via the GitHub UI or an explicit follow-up. Before any `gh pr merge --squash --auto`, classify the diff against the four categories. `/sy-create-pr`, `/sy-draft-pr`, `/sy-babysit-pr` all defer here — none of them set automerge on their own.
 
 ## Solo / Solo+Bots Repos
 
-60. **Solo / solo+bots repos default to push-direct on the default branch, not PR flow.** Generalizes the existing `synle/*` push-direct default to any repo where every recent author is Sy + autonomous agents.
+- Solo / solo+bots repos default to push-direct on the default branch, not the PR flow. When the only humans on a repo are Sy + autonomous agents, PRs add ceremony without review value. Detection (run once per repo at task start): `git log --format='%ae' -200 | sort -u`. The repo qualifies if every email matches either Sy — the value of `git config --get user.email`, plus historical Sy emails (`*@linkedin.com`, `*sy@*`, `*syle*`) — or a known bot/agent: `*[bot]@*` (dependabot, github-actions, renovate, copilot), `noreply@anthropic.com` (Claude Code), `noreply@opencode.ai`, `copilot@github.com`, `gemini-cli@google.com`. On solo+bots repos:
+  - `/sy-create-pr` and `/sy-draft-pr` skip PR creation; push commits directly to the default branch (`git push origin <default>`) and report the pushed SHA, not a PR URL.
+  - `/sy-babysit-pr` invoked with no `$ARGUMENTS` is a no-op — there's no PR to babysit. Watch CI on default via `gh run watch <run-id>` if the user asks.
+  - Auto-release still fires after the push lands on default (the post-push hook / next babysit cycle catches it).
 
-    **Detection — run once per repo at task start:**
-
-    ```
-    git log --format='%ae' -200 | sort -u
-    ```
-
-    Repo qualifies as solo+bots if every email matches one of:
-    - **Sy:** the value of `git config --get user.email`, plus historical Sy emails (`*@linkedin.com`, `*sy@*`, `*syle*`).
-    - **Known bot/agent:** `*[bot]@*` (covers dependabot, github-actions, renovate, copilot), `noreply@anthropic.com` (Claude Code), `noreply@opencode.ai`, `copilot@github.com`, `gemini-cli@google.com`.
-
-    **Default behavior on solo+bots repos:**
-    - `/sy-create-pr` and `/sy-draft-pr` skip PR creation. Push commits directly to the default branch (`git push origin <default>`). Report the pushed SHA, not a PR URL.
-    - `/sy-babysit-pr` invoked with no `$ARGUMENTS` is a no-op on solo+bots repos — there's no PR to babysit. Watch CI on default via `gh run watch <run-id>` instead if the user asks.
-    - Auto-release per rule 49 still fires after the push lands on default (the post-push hook / next babysit cycle catches it).
-
-    **Override — only on explicit user phrase:** "open a PR", "create a PR", "draft a PR", "I want a PR for this". Without that phrase, push-direct is the default.
-
-    **Why:** When the only humans on a repo are Sy + autonomous agents, PRs add ceremony without review value. Memory already locked this in for `synle/*`; rule 60 extends the same shape to forks and personal repos with identical authorship. Saves a PR + babysit cycle on every change.
-
-    **How to apply:** At the top of `/sy-create-pr`, `/sy-draft-pr`, and any "create PR" intent: resolve `owner/repo` per rule 51, then run detection. On solo+bots: tell the user `"Looks like a solo+bots repo (<N> author(s): <emails>) — pushing direct to <default> instead of opening a PR. Override with 'open a PR' if you want one."` then push direct. Skip the "want me to babysit?" prompt — there is no PR.
+  Override only on an explicit user phrase: "open a PR", "create a PR", "draft a PR", "I want a PR for this". When pushing direct, tell the user: "Looks like a solo+bots repo (<N> author(s): <emails>) — pushing direct to <default> instead of opening a PR. Override with 'open a PR' if you want one." and skip the "want me to babysit?" prompt — there is no PR.

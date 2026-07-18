@@ -210,14 +210,14 @@ Key concepts at a glance:
 | `software/metadata/script-list.js` / `.config`       | Scans `software/scripts/` and emits the canonical sorted script list consumed at build time                                                             |
 | `software/metadata/ip-address.config.js` / `.config` | Parses hostname/IP groups; feeds host-mapping build steps (`build_host_mappings`)                                                                       |
 | `software/scripts/advanced/llm/`                     | Per-CLI LLM client setup (`claude/`, `copilot/`, `gemini/`, `opencode/`, `ollama.sh`) plus shared `_common/` (instructions, commands, keys)             |
-| `vitest.config.js`                                   | Unit test config + istanbul coverage thresholds (one-off override of rule 38; numbers live here, not in CLAUDE.md)                                      |
+| `vitest.config.js`                                   | Unit test config + istanbul coverage thresholds (one-off override of the default coverage gate; numbers live here, not in CLAUDE.md)                    |
 | `$BASHRC_TEMP_DIR/run_timing.json`                   | Per-run timing data (start/end, per-script duration+status); read by CI                                                                                 |
 
 ## Testing
 
 Six suites: `make test_unit` (vitest sandbox tests for index.js), `make test_coverage` (unit tests + istanbul coverage report), `make test_profile` (bash -n syntax checks), `make test_smoke` (Puppeteer webapp), `make test_buildconfig` (inline snapshot shape), `make test_dryrun` (dry-run all JS, no writes). `make test_all` runs everything except coverage.
 
-**Coverage:** Vitest unit suite uses istanbul. Thresholds (lines/statements/branches/functions) are pinned in `vitest.config.js` — that file is the source of truth for the actual numbers and for the `include`/`exclude` globs. Treat it as authoritative; do not duplicate the percentage here. The current floor is a one-off override of the default 80/90 gate (rule 38), justified inline in `vitest.config.js`. There is no Rust / `cargo-llvm-cov` in this repo; if a future sibling project (Rust, Tauri) is added under this tree, document its coverage config path alongside the vitest entry rather than hardcoding numbers.
+**Coverage:** Vitest unit suite uses istanbul. Thresholds (lines/statements/branches/functions) are pinned in `vitest.config.js` — that file is the source of truth for the actual numbers and for the `include`/`exclude` globs. Treat it as authoritative; do not duplicate the percentage here. The current floor is a one-off override of the default 80/90 coverage gate, justified inline in `vitest.config.js`. There is no Rust / `cargo-llvm-cov` in this repo; if a future sibling project (Rust, Tauri) is added under this tree, document its coverage config path alongside the vitest entry rather than hardcoding numbers.
 
 **VSCode debugging:** `.vscode/launch.json` provides launch configs for the current script (via `software/.debug-runner.js`) and Vitest (run-all + debug-current-file).
 
