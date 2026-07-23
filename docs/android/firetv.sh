@@ -3,7 +3,7 @@
 # Fire TV Stick - debloat and optimize.
 # Shared functions and app lists. Not run directly - use with firetv.debloat.sh or firetv.restore.sh.
 #
-# Removes 54 apps total:
+#   Removes 56 apps total:
 #   Shopping & Store: windowshop, alexashopping, shoptv.client
 #   Media Clutter: avod, bueller.photos, photos.importer, bueller.music, mp3, goodreads.kindle,
 #                  kindle.cms, kindle.devicecontrols, ods.kindleconnect, logan
@@ -16,7 +16,7 @@
 #                          tahoe, tmm.tutorial, tv.csapp, tv.forcedotaupdater.v2, tv.fw.metrics,
 #                          tv.legal.notices, tv.livetv, tv.nimh, tv.releasenotes, tv.support, webview
 #   Alexa & Voice: bueller.notification, device.software.ota, device.software.ota.override,
-#                   imbd.tv.android.app
+#                   imbd.tv.android.app, parentalcontrols, kindle.freetime
 #   Non-Amazon: ivona.orchestrator, ivona.tts.oem, svox.pico, documentsui, wallpaperbackup
 #   Disabled (not removed): device.software.ota, pai, zico.app, ism.recommendations,
 #                            kindle.unifiedreader
@@ -201,6 +201,8 @@ com.amazon.bueller.notification                     # Alexa Notifications - lose
 com.amazon.device.software.ota                      # OTA Updater - lose Amazon system updates
 com.amazon.device.software.ota.override             # OTA Override - lose Amazon update override
 com.amazon.imbd.tv.android.app                      # IMDb TV - lose IMDb ad-supported streaming
+com.amazon.parentalcontrols                         # Parental Controls - lose Amazon parental controls
+com.amazon.kindle.freetime                          # Kindle FreeTime - lose Amazon Kids mode
 
 # ---- Non-Amazon > Cleanup ----
 com.amazon.ivona.orchestrator                       # IVONA TTS Orchestrator - lose Amazon TTS orchestration
