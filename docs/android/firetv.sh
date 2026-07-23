@@ -3,6 +3,25 @@
 # Fire TV Stick - debloat and optimize.
 # Shared functions and app lists. Not run directly - use with firetv.debloat.sh or firetv.restore.sh.
 #
+# Removes 54 apps total:
+#   Shopping & Store: windowshop, alexashopping, shoptv.client
+#   Media Clutter: avod, bueller.photos, photos.importer, bueller.music, mp3, goodreads.kindle,
+#                  kindle.cms, kindle.devicecontrols, ods.kindleconnect, logan
+#   Services & Telemetry: ags.app, alta.h2clientservice, android.service.networkmonitor,
+#                          connectivitydiag, device.crashmanager, device.messaging,
+#                          messaging.sdk.internal.library, messaging.sdk.library, device.sync,
+#                          device.sync.sdk.internal, firebat, ftv.screensaver, hedwig, jackson19,
+#                          kso.blackbird, providers, providers.contentsupport, recess,
+#                          securitysyncclient, sharingservice.android.client.proxy, sync.service,
+#                          tahoe, tmm.tutorial, tv.csapp, tv.forcedotaupdater.v2, tv.fw.metrics,
+#                          tv.legal.notices, tv.livetv, tv.nimh, tv.releasenotes, tv.support, webview
+#   Alexa & Voice: bueller.notification, device.software.ota, device.software.ota.override,
+#                   imbd.tv.android.app
+#   Non-Amazon: ivona.orchestrator, ivona.tts.oem, svox.pico, documentsui, wallpaperbackup
+#   Disabled (not removed): device.software.ota, pai, zico.app, ism.recommendations,
+#                            kindle.unifiedreader
+#   Settings: animations off, telemetry off, Wi-Fi/BT scanning off, device provisioned
+#
 # Debloat:
 #   curl -fsSL https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.sh https://raw.githubusercontent.com/synle/bashrc/HEAD/docs/android/firetv.debloat.sh | bash
 #
