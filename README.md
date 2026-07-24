@@ -95,17 +95,21 @@ tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download
 tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --preset=heavyweight
 ```
 
-Every `run.sh` flag works — swap `--setup` for any of these:
+```bash
+# Light Weight
+tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --preset=lightweight
+```
 
 ```bash
 # Profile refresh only (no dependency install)
 tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp"
+```
 
+Every `run.sh` flag works — swap `--setup` for any of these:
+
+```bash
 # One specific script
 tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --files=git.js
-
-# A preset
-tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --preset=lightweight
 
 # Dry-run (preview without writing)
 tmp=$(mktemp).sh && curl -fsSL https://github.com/synle/bashrc/releases/download/binary-cache/bashrc-installer__install-bashrc.sh -o "$tmp" && bash "$tmp" --dryrun --setup
