@@ -3,11 +3,11 @@
 
 ################################################################################
 # ---- Debug Tracing ----
-# Enable:  echo 1 > /tmp/synle/bashrc/debug
-# Disable: rm /tmp/synle/bashrc/debug
-# Logs stacktrace to /tmp/synle/bashrc/debug.log on ERR and EXIT.
+# Enable:  echo 1 > $_BASHRC_DEBUG_DIR/debug
+# Disable: rm $_BASHRC_DEBUG_DIR/debug
+# Logs stacktrace to $_BASHRC_DEBUG_DIR/debug.log on ERR and EXIT.
 ################################################################################
-_BASHRC_DEBUG_DIR="/tmp/synle/bashrc"
+_BASHRC_DEBUG_DIR="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}"
 if [ -f "$_BASHRC_DEBUG_DIR/debug" ]; then
   _debug_val=$(command cat "$_BASHRC_DEBUG_DIR/debug" 2> /dev/null)
   case "$_debug_val" in

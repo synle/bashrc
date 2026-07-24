@@ -50,8 +50,8 @@ function installPacmanPackage() {
 ################################################################################
 
 # queue a package for background installation after essential packages finish
-_BACKGROUND_INSTALL_LOG="/tmp/bashrc_bg_pacman_$$.log"
-_BACKGROUND_INSTALL_SCRIPT="/tmp/bashrc_bg_pacman_$$.sh"
+_BACKGROUND_INSTALL_LOG="$BASHRC_TEMP_ROOT_DIR/bashrc_bg_pacman_$$.log"
+_BACKGROUND_INSTALL_SCRIPT="$BASHRC_TEMP_ROOT_DIR/bashrc_bg_pacman_$$.sh"
 _BACKGROUND_PKG_NAMES=()
 > "$_BACKGROUND_INSTALL_SCRIPT"
 

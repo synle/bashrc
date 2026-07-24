@@ -2500,18 +2500,21 @@ function sync() {
   local ts
   ts=$(date +%Y_%m_%d_%H_%M)
 
+  local _logdir="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}"
+  command mkdir -p "$_logdir" 2> /dev/null || true
+
   local sync_start=$SECONDS
   echo "sync started at $(date)"
 
   (
-    local log="/tmp/log_${ts}_patch_cleanup.txt"
+    local log="$_logdir/log_${ts}_patch_cleanup.txt"
     local start=$SECONDS
     echo "  > patch_cleanup started at $(date)" | tee -a "$log"
     patch_cleanup &> "$log"
     echo "  > patch_cleanup done at $(date) ($((SECONDS - start))s)" | tee -a "$log"
   ) &
   (
-    local log="/tmp/log_${ts}_screenshot_backup.txt"
+    local log="$_logdir/log_${ts}_screenshot_backup.txt"
     local start=$SECONDS
     echo "  > screenshot_backup started at $(date)" | tee -a "$log"
     screenshot_backup &> "$log"
@@ -2519,7 +2522,7 @@ function sync() {
   ) &
   if type backup &> /dev/null; then
     (
-      local log="/tmp/log_${ts}_backup.txt"
+      local log="$_logdir/log_${ts}_backup.txt"
       local start=$SECONDS
       echo "  > backup started at $(date)" | tee -a "$log"
       backup &> "$log"
@@ -2528,7 +2531,7 @@ function sync() {
   fi
 
   wait
-  echo "sync done at $(date) ($((SECONDS - sync_start))s). Logs: /tmp/log_${ts}_*.txt"
+  echo "sync done at $(date) ($((SECONDS - sync_start))s). Logs: $_logdir/log_${ts}_*.txt"
 }
 
 ################################################################################
@@ -2566,7 +2569,9 @@ function _bashrc_update_check() {
   [ -z "$repo_dir" ] && return
 
   # throttle: at most once per day
-  local stamp_file="/tmp/.bashrc_update_check_stamp"
+  local _tmpdir="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}"
+  command mkdir -p "$_tmpdir" 2> /dev/null || true
+  local stamp_file="$_tmpdir/.bashrc_update_check_stamp"
   if [ -f "$stamp_file" ]; then
     local stamp_age
     stamp_age=$(($(date +%s) - $(stat -c '%Y' "$stamp_file" 2> /dev/null || stat -f '%m' "$stamp_file" 2> /dev/null || echo 0)))
@@ -2574,7 +2579,7 @@ function _bashrc_update_check() {
   fi
   touch "$stamp_file"
 
-  local msg_file="/tmp/.bashrc_update_check_msg"
+  local msg_file="$_tmpdir/.bashrc_update_check_msg"
 
   # fetch and compare (suppress all output from git)
   git -C "$repo_dir" fetch origin master --quiet 2> /dev/null || return
@@ -2589,7 +2594,7 @@ function _bashrc_update_check() {
 # displays the update notification (written by the background check) on the next
 # prompt, then removes the file so it only shows once.
 function _bashrc_update_check_show() {
-  local msg_file="/tmp/.bashrc_update_check_msg"
+  local msg_file="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}/.bashrc_update_check_msg"
   if [ -f "$msg_file" ]; then
     command cat "$msg_file"
     rm -f "$msg_file"

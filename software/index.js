@@ -495,8 +495,10 @@ function getGitHubRawUrl(filePath) {
 
 /** @type {string} Temp directory for the current run (set by common-env.sh, e.g. /tmp/synle/bashrc/2026_03_24_14_00) */
 const BASHRC_TEMP_DIR = getRuntimeOption("BASHRC_TEMP_DIR");
-/** @type {string} Prefix for all temp script files written during execution (inside BASHRC_TEMP_DIR or /tmp fallback) */
-const TEMP_SCRIPT_PREFIX = BASHRC_TEMP_DIR ? `${BASHRC_TEMP_DIR}/sw_` : "/tmp/bashrc_syle_sw_";
+/** @type {string} Stable temp root (set by run.sh; prefers /tmp, falls back to mktemp-derived writable root) */
+const BASHRC_TEMP_ROOT_DIR = getRuntimeOption("BASHRC_TEMP_ROOT_DIR") || "/tmp/synle/bashrc";
+/** @type {string} Prefix for all temp script files written during execution (inside BASHRC_TEMP_DIR or BASHRC_TEMP_ROOT_DIR fallback) */
+const TEMP_SCRIPT_PREFIX = BASHRC_TEMP_DIR ? `${BASHRC_TEMP_DIR}/sw_` : `${BASHRC_TEMP_ROOT_DIR}/sw_`;
 /** @type {string} Path to the download asset metadata log file for tracking download status */
 const DOWNLOAD_ASSET_METADATA_PATH = `${TEMP_SCRIPT_PREFIX}download_asset_metadata.log`;
 /** @type {number} Console line break width for separator lines (default 80) */
@@ -2292,7 +2294,7 @@ async function installMacDmg(dmgPath) {
     log(`>> [DryRun] Would install DMG ${dmgPath}`);
     return;
   }
-  const mountPoint = `/tmp/dmg-${Date.now()}`;
+  const mountPoint = (await execBash("mktemp -d")).trim();
   await execBash(`hdiutil attach "${dmgPath}" -mountpoint "${mountPoint}" -nobrowse -quiet`);
   const apps = fs.readdirSync(mountPoint).filter((f) => f.endsWith(".app"));
   for (const appName of apps) {
@@ -3525,11 +3527,11 @@ const _URL_FETCH_TIMEOUT_MS = 3000;
 /** Max age of an on-disk URL cache entry before it is treated as stale and refetched. */
 const _URL_CACHE_TTL_MS = 5 * 60 * 1000;
 
-/** On-disk cache directory for URL GET responses. Lives under `/tmp/synle/bashrc/`
+/** On-disk cache directory for URL GET responses. Lives under `$BASHRC_TEMP_ROOT_DIR/`
  * (same root tree used by run.sh's bootstrap-node fallback and the debug log) so
  * cache files survive across per-run BASHRC_TEMP_DIR rotations and a single run's
  * back-to-back URL fetches hit the cache instead of re-paying network cost. */
-const _URL_CACHE_DIR = "/tmp/synle/bashrc/url_cache";
+const _URL_CACHE_DIR = `${BASHRC_TEMP_ROOT_DIR}/url_cache`;
 
 /**
  * Maps a URL to its on-disk cache file path. Uses a sha256 prefix so the

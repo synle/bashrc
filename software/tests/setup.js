@@ -153,6 +153,7 @@ const sandbox = {
       BASH_PROFILE_CODE_REPO_RAW_URL: "https://github.com/test/bashrc/blob/HEAD/",
       REPO_PATH_IDENTIFIER: "test/bashrc",
       REPO_BRANCH_NAME: "master",
+      BASHRC_TEMP_ROOT_DIR: "/tmp/test/bashrc",
       NODE_JS_VERSION: "20",
       FNM_DIR: "/mock/home/.fnm",
       FNM_DEFAULT_NODE_PATH: "/mock/home/.fnm/node",

@@ -115,7 +115,42 @@ export FNM_DIR="$HOME/.local/share/fnm"
 export LINE_BREAK_COUNT=80
 export LINE_BREAK_HASH=$(printf '#%.0s' $(seq 1 $LINE_BREAK_COUNT))
 export PRINT_WIDTH_BREAK_COUNT=140
-export BASHRC_TEMP_DIR="/tmp/$REPO_PATH_IDENTIFIER/$(date '+%Y_%m_%d_%H_%M')"
+################################################################################
+# ---- mktemp Polyfill ----
+# Try the real mktemp first (honors /tmp and $TMPDIR). If it fails (e.g. a host
+# with no writable /tmp and no usable $TMPDIR such as Android Termux), retry
+# with the temp target forced to ~/tmp. Delegates all flag/template parsing to
+# the real mktemp via "$@" so it transparently supports -d, -t, suffixes, etc.
+################################################################################
+function mktemp() {
+  command mktemp "$@" 2> /dev/null && return 0
+  local _fallback="$HOME/tmp"
+  command mkdir -p "$_fallback" 2> /dev/null || return 1
+  command mktemp -p "$_fallback" "$@"
+}
+
+################################################################################
+# ---- Temp Root (single source of truth for all scratch paths) ----
+# Prefer /tmp when writable so mac + Linux keep today's /tmp/synle/bashrc layout.
+# Only when /tmp is unwritable (Termux / locked-down hosts) defer to the mktemp
+# polyfill, which resolves to $TMPDIR (Termux) or ~/tmp (last-ditch).
+################################################################################
+if [ -d /tmp ] && [ -w /tmp ]; then
+  _bashrc_tmp_root="/tmp"
+else
+  _bashrc_probe=$(mktemp -d 2> /dev/null)
+  if [ -n "$_bashrc_probe" ] && [ -d "$_bashrc_probe" ]; then
+    _bashrc_tmp_root="${_bashrc_probe%/*}"
+    rmdir "$_bashrc_probe" 2> /dev/null || true
+  else
+    _bashrc_tmp_root="$HOME/tmp"
+  fi
+fi
+
+export BASHRC_TEMP_ROOT_DIR="$_bashrc_tmp_root/$REPO_PATH_IDENTIFIER"
+export BASHRC_TEMP_DIR="$BASHRC_TEMP_ROOT_DIR/$(date '+%Y_%m_%d_%H_%M')"
+
+unset _bashrc_tmp_root _bashrc_probe
 # Snapshot $HOME before any sudo runs. RHEL/Fedora sudoers sets `always_set_home`,
 # which resets HOME to /root even with `sudo -E`. .su.js bundles run under sudo,
 # so os.homedir() and $HOME both return /root there. This custom env var survives
@@ -266,18 +301,18 @@ fi
 
 # install_bootstrap_node - Ensure node (and npm) is available for running software/index.js
 # Checks for existing node first, then falls back to downloading
-# a standalone Node binary to /tmp/synle/bashrc/node/.
+# a standalone Node binary to $BASHRC_TEMP_ROOT_DIR/node/.
 function install_bootstrap_node() {
-  local node_tmp="/tmp/synle/bashrc/node"
+  local node_tmp="$BASHRC_TEMP_ROOT_DIR/node"
   local fnm_default_bin="$FNM_DIR/aliases/default/bin"
 
   # Reset stale /usr/local/bin/{node,npm,npx,...} symlinks left by a previous
-  # run's standalone-node fallback (target /tmp/synle/bashrc/node/bin/*). They
+  # run's standalone-node fallback (target $BASHRC_TEMP_ROOT_DIR/node/bin/*). They
   # survive across runs and shadow fnm-managed node — `which node` resolves to
-  # /usr/local/bin/node -> /tmp/... (often deleted) instead of fnm's default.
-  # If fnm has a default node installed, repoint the symlink at the stable
-  # $FNM_DIR/aliases/default/bin/<name> path (tracks the current fnm default
-  # automatically). Otherwise just remove the dangling /tmp link.
+  # /usr/local/bin/node -> $BASHRC_TEMP_ROOT_DIR/... (often deleted) instead of
+  # fnm's default. If fnm has a default node installed, repoint the symlink at
+  # the stable $FNM_DIR/aliases/default/bin/<name> path (tracks the current fnm
+  # default automatically). Otherwise just remove the dangling link.
   if [ -d /usr/local/bin ]; then
     local _link _target _name
     for _link in /usr/local/bin/*; do
@@ -406,6 +441,7 @@ export REPO_BRANCH_NAME='$REPO_BRANCH_NAME'
 export BASH_PROFILE_CODE_REPO_RAW_URL='$BASH_PROFILE_CODE_REPO_RAW_URL'
 export BASH_SYLE_PATH='$BASH_SYLE_PATH'
 export BASH_SYLE_COMMON_PATH='$BASH_SYLE_COMMON_PATH'
+export BASHRC_TEMP_ROOT_DIR='$BASHRC_TEMP_ROOT_DIR'
 
 export LINE_BREAK_COUNT='$LINE_BREAK_COUNT'
 export LINE_BREAK_HASH='$LINE_BREAK_HASH'
@@ -413,6 +449,7 @@ export PRINT_WIDTH_BREAK_COUNT='$PRINT_WIDTH_BREAK_COUNT'
 
 alias osflags=\"env | grep '^is_os_.*=1' | awk -F= '{print \$1}'\"
 """ >> "$BASH_SYLE_COMMON_PATH"
+declare -f mktemp >> "$BASH_SYLE_COMMON_PATH"
 
 . "$BASH_SYLE_COMMON_PATH"
 export BASH_ENV="$BASH_SYLE_COMMON_PATH"
