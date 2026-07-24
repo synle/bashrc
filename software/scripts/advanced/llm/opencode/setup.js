@@ -92,11 +92,11 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   // TUI labels ("github-copilot / <model>").
   providers["github-copilot"] = {
     models: {
-      "claude-opus-4.6": { limit: LIMIT_LARGE },
       "claude-opus-4.7": { limit: LIMIT_LARGE },
       "claude-opus-4.8": { limit: LIMIT_LARGE },
-      "gpt-5.3-codex": { limit: LIMIT_LARGE },
       "gpt-5.5": { limit: LIMIT_LARGE },
+      "gpt-5.6-sol": { limit: LIMIT_LARGE },
+      "gpt-5.6-terra": { limit: LIMIT_LARGE },
     },
   };
 
@@ -156,7 +156,10 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   // the key absent lets opencode keep whatever the user maintains under `mcp`
   // in their own opencode.json. Once a registry entry is added, opencode.json
   // gets the translated shape written verbatim on each setup run.
-  if (mcpServersOpencodeShape && Object.keys(mcpServersOpencodeShape).length > 0) {
+  if (
+    mcpServersOpencodeShape &&
+    Object.keys(mcpServersOpencodeShape).length > 0
+  ) {
     out.mcp = mcpServersOpencodeShape;
   }
 
@@ -234,7 +237,8 @@ async function _writeOpencodeTuiConfig() {
  */
 async function _loadOpencodeKeybinds(_isOsMac) {
   /** @type {{ keybinds?: Record<string, any> } | null} */
-  const raw = await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
+  const raw =
+    await readJson`software/scripts/advanced/llm/opencode/opencode-keys.common.jsonc`;
   if (!raw || !raw.keybinds) return {};
   return { ...raw.keybinds };
 }
@@ -246,11 +250,22 @@ async function _loadOpencodeKeybinds(_isOsMac) {
  * commands Claude Code uses.
  */
 async function _syncOpencodeCommandSymlinks() {
-  const claudeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".claude", "commands");
-  const opencodeCommandsDir = path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "commands");
+  const claudeCommandsDir = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".claude",
+    "commands",
+  );
+  const opencodeCommandsDir = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".config",
+    "opencode",
+    "commands",
+  );
 
   if (!fs.existsSync(claudeCommandsDir)) {
-    log(">> Skipped opencode commands: ~/.claude/commands not found (run claude.js first)");
+    log(
+      ">> Skipped opencode commands: ~/.claude/commands not found (run claude.js first)",
+    );
     return;
   }
 
@@ -273,8 +288,13 @@ async function _syncOpencodeCommandSymlinks() {
     } catch {
       continue;
     }
-    const resolved = path.isAbsolute(target) ? target : path.resolve(path.dirname(fullPath), target);
-    if (resolved === claudeCommandsDir || resolved.startsWith(claudeCommandsDir + path.sep)) {
+    const resolved = path.isAbsolute(target)
+      ? target
+      : path.resolve(path.dirname(fullPath), target);
+    if (
+      resolved === claudeCommandsDir ||
+      resolved.startsWith(claudeCommandsDir + path.sep)
+    ) {
       fs.unlinkSync(fullPath);
     }
   }
@@ -301,7 +321,9 @@ async function _syncOpencodeCommandSymlinks() {
   }
   log(
     `>> opencode: symlinked ${linkedCount} command(s) from ~/.claude/commands/` +
-      (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
+      (skippedForeign
+        ? ` (skipped ${skippedForeign} foreign / user-authored entries)`
+        : ""),
   );
 }
 
@@ -319,7 +341,10 @@ async function _syncOpencodeCommandSymlinks() {
  * authoritative, not just a fallback.
  */
 async function _doOpencodeInstructionsWork() {
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/AGENTS.md");
+  const targetPath = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".config/opencode/AGENTS.md",
+  );
 
   log(">> OpenCode Instructions:", targetPath);
 
@@ -336,11 +361,24 @@ async function _doOpencodeInstructionsWork() {
 
   // One-time migration: strip the legacy `managed-rules` block so the new descriptive-key
   // upsert below doesn't append a duplicate alongside it. Idempotent — no-op once gone.
-  existing = removeBlock(existing, LLM_INSTRUCTIONS_LEGACY_MARKER, "<!--", " -->");
+  existing = removeBlock(
+    existing,
+    LLM_INSTRUCTIONS_LEGACY_MARKER,
+    "<!--",
+    " -->",
+  );
 
   // Upsert the managed block between BEGIN/END markers keyed by the source-of-truth path.
   // insertMode: "append" creates the block when AGENTS.md is brand new or the markers are missing.
-  const merged = replaceBlock(existing, LLM_INSTRUCTIONS_MARKER, sourceContent, "<!--", " -->", "append").trim() + "\n";
+  const merged =
+    replaceBlock(
+      existing,
+      LLM_INSTRUCTIONS_MARKER,
+      sourceContent,
+      "<!--",
+      " -->",
+      "append",
+    ).trim() + "\n";
 
   await backupConfigFile(targetPath);
   await writeText(targetPath, merged);
@@ -365,23 +403,35 @@ async function doWork() {
     return;
   }
 
-  const targetPath = path.join(BASE_HOMEDIR_LINUX, ".config/opencode/opencode.json");
+  const targetPath = path.join(
+    BASE_HOMEDIR_LINUX,
+    ".config/opencode/opencode.json",
+  );
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
 
   /** @type {Array<{id: string, name: string, baseURL: string, models: Array<{name: string}>}>} */
   const providerInputs = await getOllamaProviderInputs();
   if (providerInputs.length === 0) {
-    log(">> opencode: no reachable Ollama hosts — writing config without provider entries");
+    log(
+      ">> opencode: no reachable Ollama hosts — writing config without provider entries",
+    );
   }
 
   /** @type {Record<string, any>} Shared MCP entries in opencode's native `{ type, command|url, ... }` shape. */
-  const mcpServersOpencodeShape = translateMcpServersForOpencode(await loadSharedMcpServers());
+  const mcpServersOpencodeShape = translateMcpServersForOpencode(
+    await loadSharedMcpServers(),
+  );
   if (Object.keys(mcpServersOpencodeShape).length > 0) {
-    log(`>> opencode: deploying ${Object.keys(mcpServersOpencodeShape).length} MCP server(s) from shared registry`);
+    log(
+      `>> opencode: deploying ${Object.keys(mcpServersOpencodeShape).length} MCP server(s) from shared registry`,
+    );
   }
 
-  await writeJson(targetPath, _buildOpencodeConfig(providerInputs, mcpServersOpencodeShape));
+  await writeJson(
+    targetPath,
+    _buildOpencodeConfig(providerInputs, mcpServersOpencodeShape),
+  );
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();
