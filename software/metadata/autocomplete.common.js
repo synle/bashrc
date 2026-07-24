@@ -314,6 +314,7 @@ const SPEC_COMMANDS = [
   },
   { command: "code", specCommand: "vim" },
   { command: "subl", specCommand: "vim" },
+  { command: "z", specCommand: "vim" },
   { command: "zed", specCommand: "vim" },
   // ---- Directory navigation and listing (completes with folders) ----
   {

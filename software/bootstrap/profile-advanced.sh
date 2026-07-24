@@ -747,6 +747,9 @@ function git() {
 alias g="git"
 alias gg="git --no-pager"
 
+# ---- Aliases: Editors ----
+alias z="zed"
+
 # ---- Aliases: Node ----
 alias n="node"
 alias y="yarn"
