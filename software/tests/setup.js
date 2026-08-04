@@ -3,7 +3,7 @@ import { execSync as realExecSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import vm from "vm";
-import { createInstrumenter } from "istanbul-lib-instrument";
+import { createRequire } from "module";
 
 // ---- mock file system ----
 export const fileSystem = {};
@@ -46,7 +46,7 @@ const librarySource = iifeStart > 0 ? indexSource.substring(0, iifeStart) : inde
 const varSource = librarySource.replace(/^(const|let) /gm, "var ");
 
 /**
- * Instrument the library source with istanbul whenever we're running under vitest.
+ * Instrument the library source with istanbul — but only when coverage is actually on.
  *
  * Vitest's v8/istanbul providers cannot reach code that runs inside `vm.runInNewContext`
  * because their instrumentation hooks attach to Vite's transform pipeline, not to bytes
@@ -55,19 +55,17 @@ const varSource = librarySource.replace(/^(const|let) /gm, "var ");
  * pre-seed that object on the sandbox so the instrumented code writes into the SAME
  * reference the test process exposes. Both sandbox and host then share one counter map.
  *
- * We always instrument under vitest (rather than gating on `--coverage`) because vitest
- * exposes no public worker-side signal for "coverage is enabled". The cost is a single
- * parse + transform of `software/index.js` per worker (~50-100ms), which is negligible
- * compared to the 1400+ tests this setup file runs. Counters are simply discarded when
- * `--coverage` is off (the provider never reads them).
+ * Gated on `BASHRC_TEST_COVERAGE`, which `vitest.config.js` sets to "1" only when the
+ * run was launched with `--coverage`. Instrumenting unconditionally cost ~1.5s per test
+ * file (≈1s to load `istanbul-lib-instrument`, ≈0.5s to transform the 5k-line source),
+ * paid by all 68 files even though the counters were thrown away on a plain `make
+ * test_unit`. Both the module load and the transform are skipped when coverage is off.
  *
- * @returns {string} The (instrumented) library source to feed into the vm.
+ * @returns {string} The (instrumented, when coverage is on) library source to feed into the vm.
  */
 function instrumentSource() {
-  if (process.env.VITEST !== "true" && typeof globalThis.__VITEST_COVERAGE__ === "undefined") {
-    // Defensive escape hatch for any non-vitest direct execution of setup.js.
-    return varSource;
-  }
+  if (process.env.BASHRC_TEST_COVERAGE !== "1") return varSource;
+  const { createInstrumenter } = createRequire(import.meta.url)("istanbul-lib-instrument");
   const instrumenter = createInstrumenter({
     coverageVariable: "__VITEST_COVERAGE__",
     coverageGlobalScope: "globalThis",

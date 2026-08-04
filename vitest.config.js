@@ -15,6 +15,13 @@
  */
 
 import { defineConfig } from "vitest/config";
+import os from "os";
+
+// `software/tests/setup.js` hand-instruments `software/index.js` with istanbul before
+// feeding it to `vm.runInNewContext`. That costs ~1.5s per test file and is pure waste
+// on a non-coverage run, but a worker has no public vitest signal for "coverage is on"
+// — so detect the flag here (the only place that sees the CLI argv) and forward it.
+const IS_COVERAGE_RUN = process.argv.includes("--coverage") || process.argv.includes("--coverage=true");
 
 export default defineConfig({
   test: {
@@ -26,7 +33,16 @@ export default defineConfig({
       "software/tests/buildConfigShape.spec.js",
     ],
     setupFiles: ["software/tests/setup.js"],
+    env: {
+      BASHRC_TEST_COVERAGE: IS_COVERAGE_RUN ? "1" : "0",
+    },
     reporters: ["verbose"],
+    // In-file concurrency for the `describe.concurrent` suites (the bash-subprocess
+    // integration tests: packText, curlWrapperFormat, osDetection, bashHistoryClean…).
+    // Those tests are subprocess-bound, not CPU-bound, so oversubscribing past the core
+    // count is the point — vitest's default of 5 left most cores idle while the longest
+    // file serialized the whole run.
+    maxConcurrency: Math.max(8, os.cpus().length * 2),
     // Several suites (osDetection, packText, bashHistoryClean) spawn real bash
     // subprocesses. Under full-suite parallelism these routinely exceed vitest's
     // 5s default and fail intermittently, while passing in isolation. 30s is

@@ -13,12 +13,16 @@
  *   - stdin input + status-noise filter
  *   - view_pack_text inlines text, leaves binary encoded, output is re-feedable
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { execSync } from "child_process";
+import { describe, it, expect, afterAll } from "vitest";
+import { execSync, exec } from "child_process";
+import { promisify } from "util";
 import fs from "fs";
+import os from "os";
 import path from "path";
 import crypto from "crypto";
 import { fileURLToPath } from "url";
+
+const execAsync = promisify(exec);
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PROFILE_BASH = path.join(ROOT_DIR, "software/scripts/bash-file-utils.profile.bash");
@@ -30,18 +34,29 @@ const FZF_PROFILE_BASH = path.join(ROOT_DIR, "software/scripts/bash-fzf.profile.
 // runner must have it in scope. common-functions.bash is pure function definitions
 // with no top-level side effects, safe to source unconditionally.
 const COMMON_FUNCTIONS_BASH = path.join(ROOT_DIR, "software/bootstrap/common-functions.bash");
-const TMP_DIR = `/tmp/_pack_text_test_${process.pid}`;
 
-/** Runs a bash script that sources the profile and executes the given commands. */
-function runBash(script) {
-  const tmpScript = `${TMP_DIR}_runner.sh`;
+/**
+ * Runs a bash script that sources the profile and executes the given commands.
+ *
+ * Asynchronous on purpose: every test in this file is `it.concurrent`, and a
+ * blocking `execSync` would pin the event loop so the "concurrent" tests still
+ * ran one at a time. With `execFile` the ~1s pack/unpack subprocesses overlap.
+ * The runner script gets a unique name so parallel tests never clobber each
+ * other's file.
+ *
+ * @param {string} script - Bash source appended after the profile `source` lines.
+ * @returns {Promise<string>} Trimmed stdout. Rejects when bash exits non-zero.
+ */
+async function runBash(script) {
+  const tmpScript = path.join(os.tmpdir(), `_pack_text_runner_${crypto.randomUUID()}.sh`);
   fs.writeFileSync(
     tmpScript,
     `#!/usr/bin/env bash\nsource "${COMMON_FUNCTIONS_BASH}"\nsource "${FZF_PROFILE_BASH}"\nsource "${PROFILE_BASH}"\n${script}`,
     "utf-8",
   );
   try {
-    return execSync(`bash "${tmpScript}" 2>/dev/null`, { encoding: "utf-8", timeout: 30000 }).trim();
+    const { stdout } = await execAsync(`bash "${tmpScript}" < /dev/null 2>/dev/null`, { encoding: "utf-8", timeout: 30000 });
+    return stdout.trim();
   } finally {
     try {
       fs.unlinkSync(tmpScript);
@@ -68,19 +83,38 @@ function createTestFiles(baseDir) {
   );
 }
 
-describe("pack_text format", () => {
+/**
+ * Allocates one isolated workspace for a single test and pre-populates `src/`.
+ *
+ * Replaces the old module-level `TMP_DIR` + `beforeEach`/`afterEach` pair. A
+ * shared directory is exactly what stops these tests from running concurrently,
+ * so each test now gets its own `mkdtemp` root. Cleanup is deferred to a single
+ * `afterAll` sweep rather than a per-test hook: `onTestFinished` is unavailable
+ * to a plain helper under `it.concurrent` (it needs the per-test context), and
+ * these roots are small, uniquely-named, and all under the OS temp dir.
+ *
+ * @returns {{TMP_DIR: string, srcDir: string, destDir: string}} Workspace root plus the
+ *   conventional `src` (populated by `createTestFiles`) and `dest` (created on demand) paths.
+ */
+function newCase() {
+  const TMP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "_pack_text_test_"));
+  CASE_DIRS.push(TMP_DIR);
   const srcDir = path.join(TMP_DIR, "src");
+  const destDir = path.join(TMP_DIR, "dest");
+  createTestFiles(srcDir);
+  return { TMP_DIR, srcDir, destDir };
+}
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
+/** Every workspace handed out by `newCase()`, removed in one sweep after the file finishes. */
+const CASE_DIRS = [];
 
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
+afterAll(() => {
+  for (const dir of CASE_DIRS) fs.rmSync(dir, { recursive: true, force: true });
+});
 
-  it("should show help with --help", () => {
-    const output = runBash("pack_text --help");
+describe.concurrent("pack_text format", () => {
+  it.concurrent("should show help with --help", async () => {
+    const output = await runBash("pack_text --help");
     expect(output).toContain("pack_text:");
     expect(output).toContain("Usage:");
     expect(output).toContain("--raw");
@@ -90,33 +124,37 @@ describe("pack_text format", () => {
     expect(output).toContain("--encode-level=");
   });
 
-  it("should emit PACK_BEGIN/PACK_END markers with [<encoding>+base64,mode=0NNN,...]", () => {
+  it.concurrent("should emit PACK_BEGIN/PACK_END markers with [<encoding>+base64,mode=0NNN,...]", async () => {
+    const { srcDir } = newCase();
     // Encoding-agnostic — the default encoding may change. Bracket may carry
     // extra k=v pairs after mode (mtime/btime/etc.); tests use the closing
     // ' =====' anchor instead of '\]' to stay future-proof.
-    const output = runBash(`pack_text "${srcDir}" --raw`);
+    const output = await runBash(`pack_text "${srcDir}" --raw`);
     expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
     expect(output).toContain("===== PACK_END: hello.txt =====");
     expect(output).toMatch(/===== PACK_BEGIN: code\.js \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
     expect(output).toMatch(/===== PACK_BEGIN: sub\/nested\.txt \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
   });
 
-  it("should include binary files (no extension filtering)", () => {
-    const output = runBash(`pack_text "${srcDir}" --raw`);
+  it.concurrent("should include binary files (no extension filtering)", async () => {
+    const { srcDir } = newCase();
+    const output = await runBash(`pack_text "${srcDir}" --raw`);
     expect(output).toMatch(/PACK_BEGIN: binary\.bin \[(?:gzip|brotli)\+base64,mode=/);
   });
 
-  it("should record actual file mode in the marker", () => {
+  it.concurrent("should record actual file mode in the marker", async () => {
+    const { srcDir } = newCase();
     fs.writeFileSync(path.join(srcDir, "exec.sh"), "#!/bin/sh\necho hi\n");
     fs.chmodSync(path.join(srcDir, "exec.sh"), 0o755);
     fs.chmodSync(path.join(srcDir, "hello.txt"), 0o644);
-    const output = runBash(`pack_text "${srcDir}" --raw`);
+    const output = await runBash(`pack_text "${srcDir}" --raw`);
     expect(output).toMatch(/PACK_BEGIN: exec\.sh \[(?:gzip|brotli)\+base64,mode=0755[,\]]/);
     expect(output).toMatch(/PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64,mode=0644[,\]]/);
   });
 
-  it("should auto-name to /tmp/<host>.<stem>.pack.txt for bare raw call", () => {
-    const output = runBash(`pack_text "${srcDir}"`);
+  it.concurrent("should auto-name to /tmp/<host>.<stem>.pack.txt for bare raw call", async () => {
+    const { srcDir } = newCase();
+    const output = await runBash(`pack_text "${srcDir}"`);
     expect(output).toContain("pack_text:");
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     expect(lines.length).toBeGreaterThan(0);
@@ -130,8 +168,9 @@ describe("pack_text format", () => {
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .tar.gz with --tar (host-first naming, sanitized segments)", () => {
-    const output = runBash(`pack_text "${srcDir}" --tar`);
+  it.concurrent("should auto-generate .tar.gz with --tar (host-first naming, sanitized segments)", async () => {
+    const { srcDir } = newCase();
+    const output = await runBash(`pack_text "${srcDir}" --tar`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
     expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\.[a-zA-Z0-9_]+\.pack\.tar\.gz$/);
@@ -139,8 +178,9 @@ describe("pack_text format", () => {
     fs.unlinkSync(outPath);
   });
 
-  it("should auto-generate .zip with --zip (host-first naming, sanitized segments)", () => {
-    const output = runBash(`pack_text "${srcDir}" --zip`);
+  it.concurrent("should auto-generate .zip with --zip (host-first naming, sanitized segments)", async () => {
+    const { srcDir } = newCase();
+    const output = await runBash(`pack_text "${srcDir}" --zip`);
     const lines = output.split("\n").filter((l) => l.startsWith("pack_text: /tmp/"));
     const outPath = lines[0].replace("pack_text: ", "").trim();
     expect(outPath).toMatch(/^\/tmp\/[a-z0-9_]+\.[a-zA-Z0-9_]+\.pack\.zip$/);
@@ -148,24 +188,27 @@ describe("pack_text format", () => {
     fs.unlinkSync(outPath);
   });
 
-  it("should support --plain as alias for --raw", () => {
-    const output = runBash(`pack_text "${srcDir}" --plain`);
+  it.concurrent("should support --plain as alias for --raw", async () => {
+    const { srcDir } = newCase();
+    const output = await runBash(`pack_text "${srcDir}" --plain`);
     expect(output).toMatch(/===== PACK_BEGIN: hello\.txt \[(?:gzip|brotli)\+base64/);
   });
 
-  it("should accept flags in any argument position", () => {
+  it.concurrent("should accept flags in any argument position", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const outFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text --raw "${srcDir}" "${outFile}"`);
+    await runBash(`pack_text --raw "${srcDir}" "${outFile}"`);
     expect(fs.existsSync(outFile)).toBe(true);
     const content = fs.readFileSync(outFile, "utf-8");
     expect(content).toContain("===== PACK_BEGIN: hello.txt");
   });
 
-  it("should fail for nonexistent directory", () => {
-    expect(() => runBash(`pack_text "/tmp/_nonexistent_${process.pid}"`)).toThrow();
+  it.concurrent("should fail for nonexistent directory", async () => {
+    await expect(runBash(`pack_text "/tmp/_nonexistent_${process.pid}"`)).rejects.toThrow();
   });
 
-  it("should skip ignored dirs in non-git walk", () => {
+  it.concurrent("should skip ignored dirs in non-git walk", async () => {
+    const { srcDir } = newCase();
     fs.mkdirSync(path.join(srcDir, "node_modules"), { recursive: true });
     fs.writeFileSync(path.join(srcDir, "node_modules", "pkg.js"), "module");
     fs.mkdirSync(path.join(srcDir, "__pycache__"), { recursive: true });
@@ -174,7 +217,7 @@ describe("pack_text format", () => {
     fs.writeFileSync(path.join(srcDir, ".venv", "pyvenv.cfg"), "venv");
     fs.mkdirSync(path.join(srcDir, ".ruff_cache"), { recursive: true });
     fs.writeFileSync(path.join(srcDir, ".ruff_cache", "data"), "{}");
-    const output = runBash(`pack_text "${srcDir}" --raw`);
+    const output = await runBash(`pack_text "${srcDir}" --raw`);
     expect(output).not.toContain("node_modules");
     expect(output).not.toContain("__pycache__");
     expect(output).not.toContain(".venv");
@@ -182,7 +225,8 @@ describe("pack_text format", () => {
     expect(output).toContain("PACK_BEGIN: hello.txt");
   });
 
-  it("should use git ls-files for git repos", () => {
+  it.concurrent("should use git ls-files for git repos", async () => {
+    const { TMP_DIR } = newCase();
     const gitDir = path.join(TMP_DIR, "gitrepo");
     fs.mkdirSync(gitDir, { recursive: true });
     fs.writeFileSync(path.join(gitDir, "tracked.txt"), "tracked\n");
@@ -192,12 +236,13 @@ describe("pack_text format", () => {
       stdio: "pipe",
       env: { ...process.env, GIT_AUTHOR_NAME: "test", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "test", GIT_COMMITTER_EMAIL: "t@t" },
     });
-    const output = runBash(`pack_text "${gitDir}" --raw`);
+    const output = await runBash(`pack_text "${gitDir}" --raw`);
     expect(output).toContain("PACK_BEGIN: tracked.txt");
     expect(output).not.toContain("PACK_BEGIN: untracked.txt");
   });
 
-  it("should pick up untracked extras (.env / .bash* / .zsh* / .md / .xml / .src / .sh / .sql / .db / .sqlite* / .yml / .json / .toml / .ini / .conf / .cfg) in git mode", () => {
+  it.concurrent("should pick up untracked extras (.env / .bash* / .zsh* / .md / .xml / .src / .sh / .sql / .db / .sqlite* / .yml / .json / .toml / .ini / .conf / .cfg) in git mode", async () => {
+    const { TMP_DIR } = newCase();
     const gitDir = path.join(TMP_DIR, "gitenv");
     fs.mkdirSync(gitDir, { recursive: true });
     fs.writeFileSync(path.join(gitDir, "tracked.js"), "code");
@@ -228,7 +273,7 @@ describe("pack_text format", () => {
     fs.writeFileSync(path.join(gitDir, "settings.ini"), "[main]\nkey=val\n");
     fs.writeFileSync(path.join(gitDir, "nginx.conf"), "server { }\n");
     fs.writeFileSync(path.join(gitDir, "setup.cfg"), "[metadata]\n");
-    const output = runBash(`pack_text "${gitDir}" --raw`);
+    const output = await runBash(`pack_text "${gitDir}" --raw`);
     expect(output).toContain("PACK_BEGIN: .env ");
     expect(output).toContain("PACK_BEGIN: .bash_syle ");
     expect(output).toContain("PACK_BEGIN: .bash_profile ");
@@ -253,153 +298,148 @@ describe("pack_text format", () => {
   });
 });
 
-describe("pack_text + unpack_text round-trip (byte-exact)", () => {
-  const srcDir = path.join(TMP_DIR, "src");
-  const destDir = path.join(TMP_DIR, "dest");
+describe.concurrent("pack_text + unpack_text round-trip (byte-exact)", () => {
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("should preserve text file bytes through raw round-trip", () => {
+  it.concurrent("should preserve text file bytes through raw round-trip", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(destDir, "code.js"))).toBe(sha(path.join(srcDir, "code.js")));
     expect(sha(path.join(destDir, "sub", "nested.txt"))).toBe(sha(path.join(srcDir, "sub", "nested.txt")));
   });
 
-  it("should preserve binary file bytes through round-trip", () => {
+  it.concurrent("should preserve binary file bytes through round-trip", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(sha(path.join(destDir, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
   });
 
-  it("should preserve file modes (chmod) through round-trip", () => {
+  it.concurrent("should preserve file modes (chmod) through round-trip", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     fs.writeFileSync(path.join(srcDir, "exec.sh"), "#!/bin/sh\necho hi\n");
     fs.chmodSync(path.join(srcDir, "exec.sh"), 0o755);
     fs.chmodSync(path.join(srcDir, "hello.txt"), 0o644);
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(fs.statSync(path.join(destDir, "exec.sh")).mode & 0o777).toBe(0o755);
     expect(fs.statSync(path.join(destDir, "hello.txt")).mode & 0o777).toBe(0o644);
   });
 
-  it("should preserve content with leading/trailing blank lines (no trim)", () => {
+  it.concurrent("should preserve content with leading/trailing blank lines (no trim)", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     fs.writeFileSync(path.join(srcDir, "padded.txt"), "\n\n\nActual content\n\n\n");
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(fs.readFileSync(path.join(destDir, "padded.txt"), "utf-8")).toBe("\n\n\nActual content\n\n\n");
   });
 
-  it("should preserve internal blank lines through round-trip", () => {
+  it.concurrent("should preserve internal blank lines through round-trip", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     fs.writeFileSync(path.join(srcDir, "spaced.txt"), "line1\n\nline3\n\nline5\n");
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(fs.readFileSync(path.join(destDir, "spaced.txt"), "utf-8")).toBe("line1\n\nline3\n\nline5\n");
   });
 
-  it("should round-trip files with shell metacharacters in their content", () => {
+  it.concurrent("should round-trip files with shell metacharacters in their content", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     fs.writeFileSync(path.join(srcDir, "special.txt"), "echo \"hello $USER\" && echo 'world'\n");
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(fs.readFileSync(path.join(destDir, "special.txt"), "utf-8")).toBe("echo \"hello $USER\" && echo 'world'\n");
   });
 
-  it("should round-trip empty files", () => {
+  it.concurrent("should round-trip empty files", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     fs.writeFileSync(path.join(srcDir, "empty.txt"), "");
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(fs.existsSync(path.join(destDir, "empty.txt"))).toBe(true);
     expect(fs.readFileSync(path.join(destDir, "empty.txt"), "utf-8")).toBe("");
   });
 
-  it("should recreate nested directory structure", () => {
+  it.concurrent("should recreate nested directory structure", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     fs.mkdirSync(path.join(srcDir, "a", "b", "c"), { recursive: true });
     fs.writeFileSync(path.join(srcDir, "a", "b", "c", "deep.txt"), "deep\n");
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(sha(path.join(destDir, "a", "b", "c", "deep.txt"))).toBe(sha(path.join(srcDir, "a", "b", "c", "deep.txt")));
   });
 
-  it("should round-trip via .tar.gz archive", () => {
+  it.concurrent("should round-trip via .tar.gz archive", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.tar.gz");
-    runBash(`pack_text "${srcDir}" "${packedFile}" --tar`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}" --tar`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(destDir, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
   });
 
-  it("should round-trip via .zip archive", () => {
+  it.concurrent("should round-trip via .zip archive", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.zip");
-    runBash(`pack_text "${srcDir}" "${packedFile}" --zip`);
-    runBash(`unpack_text "${packedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}" --zip`);
+    await runBash(`unpack_text "${packedFile}" "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(destDir, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
   });
 
-  it("should round-trip via stdin pipe (pack_text | unpack_text)", () => {
-    runBash(`pack_text "${srcDir}" 2>/dev/null | unpack_text "${destDir}"`);
+  it.concurrent("should round-trip via stdin pipe (pack_text | unpack_text)", async () => {
+    const { srcDir, destDir } = newCase();
+    await runBash(`pack_text "${srcDir}" 2>/dev/null | unpack_text "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(destDir, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
   });
 
-  it("should ignore status-noise lines when stderr is merged into stdin", () => {
-    runBash(`pack_text "${srcDir}" 2>&1 | unpack_text "${destDir}"`);
+  it.concurrent("should ignore status-noise lines when stderr is merged into stdin", async () => {
+    const { srcDir, destDir } = newCase();
+    await runBash(`pack_text "${srcDir}" 2>&1 | unpack_text "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
   });
 });
 
-describe("unpack_text", () => {
-  const srcDir = path.join(TMP_DIR, "src");
-  const destDir = path.join(TMP_DIR, "dest");
+describe.concurrent("unpack_text", () => {
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("should show help with --help", () => {
-    const output = runBash("unpack_text --help");
+  it.concurrent("should show help with --help", async () => {
+    const output = await runBash("unpack_text --help");
     expect(output).toContain("unpack_text:");
     expect(output).toContain("Usage:");
     expect(output).toContain("--view");
   });
 
-  it("should fail for nonexistent input file", () => {
-    expect(() => runBash(`unpack_text "/tmp/_nonexistent_${process.pid}.txt"`)).toThrow();
+  it.concurrent("should fail for nonexistent input file", async () => {
+    await expect(runBash(`unpack_text "/tmp/_nonexistent_${process.pid}.txt"`)).rejects.toThrow();
   });
 
-  it("should create destination directory if it does not exist", () => {
+  it.concurrent("should create destination directory if it does not exist", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.txt");
     const newDest = path.join(TMP_DIR, "brand_new_dir");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
     expect(fs.existsSync(newDest)).toBe(false);
-    runBash(`unpack_text "${packedFile}" "${newDest}"`);
+    await runBash(`unpack_text "${packedFile}" "${newDest}"`);
     expect(fs.existsSync(path.join(newDest, "hello.txt"))).toBe(true);
   });
 
-  it("should accept '-' as explicit stdin marker", () => {
-    runBash(`pack_text "${srcDir}" 2>/dev/null | unpack_text - "${destDir}"`);
+  it.concurrent("should accept '-' as explicit stdin marker", async () => {
+    const { srcDir, destDir } = newCase();
+    await runBash(`pack_text "${srcDir}" 2>/dev/null | unpack_text - "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
   });
 
-  it("should default dest to current dir when piped without args", () => {
+  it.concurrent("should default dest to current dir when piped without args", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     fs.mkdirSync(destDir, { recursive: true });
     const tmpScript = `${TMP_DIR}_cwd_runner.sh`;
     fs.writeFileSync(
@@ -417,36 +457,28 @@ describe("unpack_text", () => {
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
   });
 
-  it("should fail when archive contains no pack file", () => {
+  it.concurrent("should fail when archive contains no pack file", async () => {
+    const { TMP_DIR, destDir } = newCase();
     const fakeZip = path.join(TMP_DIR, "fake.zip");
     fs.writeFileSync(path.join(TMP_DIR, "random.txt"), "no markers here");
     execSync(`cd "${TMP_DIR}" && zip -q "${fakeZip}" random.txt`, { stdio: "pipe" });
-    expect(() => runBash(`unpack_text "${fakeZip}" "${destDir}"`)).toThrow();
+    await expect(runBash(`unpack_text "${fakeZip}" "${destDir}"`)).rejects.toThrow();
   });
 });
 
-describe("view_pack_text", () => {
-  const srcDir = path.join(TMP_DIR, "src");
-  const destDir = path.join(TMP_DIR, "dest");
+describe.concurrent("view_pack_text", () => {
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("should show help with --help", () => {
-    const output = runBash("view_pack_text --help");
+  it.concurrent("should show help with --help", async () => {
+    const output = await runBash("view_pack_text --help");
     expect(output).toContain("view_pack_text:");
     expect(output).toContain("alias for 'unpack_text --view'");
   });
 
-  it("should decode text blocks inline (no encoding token)", () => {
+  it.concurrent("should decode text blocks inline (no encoding token)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    const view = runBash(`view_pack_text "${packedFile}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    const view = await runBash(`view_pack_text "${packedFile}"`);
     // Text block: encoding token absent, mode preserved, content visible.
     // The trailing blank line between content and END is intentional — the
     // decoder strips one trailing '\n' from raw blocks, so an extra separator
@@ -457,34 +489,38 @@ describe("view_pack_text", () => {
     expect(view).toContain("function foo()");
   });
 
-  it("should keep binary blocks as [<encoding>+base64,mode=0NNN]", () => {
+  it.concurrent("should keep binary blocks as [<encoding>+base64,mode=0NNN]", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    const view = runBash(`view_pack_text "${packedFile}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    const view = await runBash(`view_pack_text "${packedFile}"`);
     // Binary blocks (NUL byte detected) pass through unchanged in view mode —
     // they keep whatever encoding token the original pack used.
     // Bracket may include trailing k=v pairs (mtime/btime); allow them.
     expect(view).toMatch(/===== PACK_BEGIN: binary\.bin \[(?:gzip|brotli)\+base64,mode=\d{4}[^\]]*\] =====/);
   });
 
-  it("output is itself a valid pack — feed back into unpack_text", () => {
+  it.concurrent("output is itself a valid pack — feed back into unpack_text", async () => {
+    const { TMP_DIR, srcDir, destDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.txt");
     const viewedFile = path.join(TMP_DIR, "viewed.txt");
-    runBash(`pack_text "${srcDir}" "${packedFile}"`);
-    runBash(`view_pack_text "${packedFile}" > "${viewedFile}"`);
-    runBash(`unpack_text "${viewedFile}" "${destDir}"`);
+    await runBash(`pack_text "${srcDir}" "${packedFile}"`);
+    await runBash(`view_pack_text "${packedFile}" > "${viewedFile}"`);
+    await runBash(`unpack_text "${viewedFile}" "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(destDir, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
   });
 
-  it("end-to-end pipe: pack_text | view_pack_text | unpack_text", () => {
-    runBash(`pack_text "${srcDir}" 2>/dev/null | view_pack_text | unpack_text "${destDir}"`);
+  it.concurrent("end-to-end pipe: pack_text | view_pack_text | unpack_text", async () => {
+    const { srcDir, destDir } = newCase();
+    await runBash(`pack_text "${srcDir}" 2>/dev/null | view_pack_text | unpack_text "${destDir}"`);
     expect(sha(path.join(destDir, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(destDir, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
   });
 
-  it("should accept stdin via piped input", () => {
-    runBash(`pack_text "${srcDir}" 2>/dev/null | view_pack_text > "${path.join(TMP_DIR, "view.out")}"`);
+  it.concurrent("should accept stdin via piped input", async () => {
+    const { TMP_DIR, srcDir } = newCase();
+    await runBash(`pack_text "${srcDir}" 2>/dev/null | view_pack_text > "${path.join(TMP_DIR, "view.out")}"`);
     const view = fs.readFileSync(path.join(TMP_DIR, "view.out"), "utf-8");
     expect(view).toContain("PACK_BEGIN: hello.txt [mode=");
   });
@@ -496,20 +532,12 @@ describe("view_pack_text", () => {
  * stream carrying host / packed_utc / source / file_count. unpack_text strips
  * the banner as noise; view_pack_text preserves it (so view output is still a
  * valid, re-feedable pack with provenance intact). */
-describe("META_DATA banner + hostname-in-filename", () => {
-  const srcDir = path.join(TMP_DIR, "src");
+describe.concurrent("META_DATA banner + hostname-in-filename", () => {
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("should emit a single META_DATA line at the top of the pack with host/packed_utc/source/file_count", () => {
+  it.concurrent("should emit a single META_DATA line at the top of the pack with host/packed_utc/source/file_count", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "meta.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     const packed = fs.readFileSync(out, "utf-8");
     const lines = packed.split("\n");
     // META_DATA must be the very first line, before any PACK_BEGIN.
@@ -523,9 +551,10 @@ describe("META_DATA banner + hostname-in-filename", () => {
     expect(metaCount).toBe(1);
   });
 
-  it("should record file_count matching the actual number of PACK_BEGIN blocks", () => {
+  it.concurrent("should record file_count matching the actual number of PACK_BEGIN blocks", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "count.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     const packed = fs.readFileSync(out, "utf-8");
     const declared = parseInt(packed.match(/file_count=(\d+)/)[1], 10);
     const actual = (packed.match(/===== PACK_BEGIN: /g) || []).length;
@@ -533,8 +562,9 @@ describe("META_DATA banner + hostname-in-filename", () => {
     expect(declared).toBeGreaterThan(0);
   });
 
-  it("should lead auto-generated filenames with sanitized host AND sanitized stem", () => {
-    const output = runBash(`pack_text "${srcDir}"`);
+  it.concurrent("should lead auto-generated filenames with sanitized host AND sanitized stem", async () => {
+    const { srcDir } = newCase();
+    const output = await runBash(`pack_text "${srcDir}"`);
     const outPath = output
       .split("\n")
       .filter((l) => l.startsWith("pack_text: /tmp/"))[0]
@@ -555,16 +585,18 @@ describe("META_DATA banner + hostname-in-filename", () => {
     fs.unlinkSync(outPath);
   });
 
-  it("should NOT mutate explicit output paths (only auto-generated ones get the host segment)", () => {
+  it.concurrent("should NOT mutate explicit output paths (only auto-generated ones get the host segment)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const explicit = path.join(TMP_DIR, "my-explicit-name.pack.txt");
-    runBash(`pack_text "${srcDir}" "${explicit}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${explicit}" --raw 2>/dev/null`);
     expect(fs.existsSync(explicit)).toBe(true); // exact path honored
   });
 
-  it("unpack_text should silently strip META_DATA outside blocks (extract mode)", () => {
+  it.concurrent("unpack_text should silently strip META_DATA outside blocks (extract mode)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "extract.pack.txt");
     const dest = path.join(TMP_DIR, "out");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null && unpack_text "${out}" "${dest}"`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null && unpack_text "${out}" "${dest}"`);
     // Extracted files must match originals byte-for-byte; META_DATA must NOT
     // leak into any extracted file. Sanity-check by sha-ing one round-trip.
     expect(sha(path.join(dest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
@@ -575,21 +607,23 @@ describe("META_DATA banner + hostname-in-filename", () => {
     }
   });
 
-  it("view_pack_text should preserve META_DATA at the top of view output (and remain re-feedable)", () => {
+  it.concurrent("view_pack_text should preserve META_DATA at the top of view output (and remain re-feedable)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "view.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
-    const viewed = runBash(`view_pack_text "${out}"`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    const viewed = await runBash(`view_pack_text "${out}"`);
     const firstLine = viewed.split("\n")[0];
     expect(firstLine).toMatch(/^===== META_DATA: .* =====$/);
     // View output must still be re-feedable into unpack_text.
     const refeedDest = path.join(TMP_DIR, "refed");
     const viewFile = path.join(TMP_DIR, "view.out");
     fs.writeFileSync(viewFile, viewed + "\n");
-    runBash(`unpack_text "${viewFile}" "${refeedDest}"`);
+    await runBash(`unpack_text "${viewFile}" "${refeedDest}"`);
     expect(sha(path.join(refeedDest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
   });
 
-  it("should still extract older packs that have NO META_DATA line (backward compatibility)", () => {
+  it.concurrent("should still extract older packs that have NO META_DATA line (backward compatibility)", async () => {
+    const { TMP_DIR } = newCase();
     // Hand-craft a pack without META_DATA — single-block, raw text.
     const legacy = path.join(TMP_DIR, "legacy.pack.txt");
     const body = "Hello legacy world\n";
@@ -600,7 +634,7 @@ describe("META_DATA banner + hostname-in-filename", () => {
       "===== PACK_BEGIN: legacy.txt [gzip+base64,mode=0644] =====\n" + wrapped + "===== PACK_END: legacy.txt =====\n",
     );
     const dest = path.join(TMP_DIR, "legacy_out");
-    runBash(`unpack_text "${legacy}" "${dest}"`);
+    await runBash(`unpack_text "${legacy}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "legacy.txt"), "utf-8")).toBe(body);
   });
 });
@@ -611,20 +645,12 @@ describe("META_DATA banner + hostname-in-filename", () => {
  * encoding from the per-block PACK_BEGIN token, so a pack may legally mix
  * encodings. Tests below verify defaults, explicit selection, validation,
  * round-trip for both, mixed packs, and the level knob. */
-describe("encoding selection (gzip / brotli) and --encode-level", () => {
-  const srcDir = path.join(TMP_DIR, "src");
+describe.concurrent("encoding selection (gzip / brotli) and --encode-level", () => {
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("default encoding is brotli (META_DATA + every PACK_BEGIN token)", () => {
+  it.concurrent("default encoding is brotli (META_DATA + every PACK_BEGIN token)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "default.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     const packed = fs.readFileSync(out, "utf-8");
     expect(packed).toMatch(/encoding=brotli/);
     // Every PACK_BEGIN block should use brotli.
@@ -633,42 +659,47 @@ describe("encoding selection (gzip / brotli) and --encode-level", () => {
     expect(new Set(tokens)).toEqual(new Set(["brotli"]));
   });
 
-  it("--encode=gzip emits gzip+base64 tokens and encoding=gzip in META_DATA", () => {
+  it.concurrent("--encode=gzip emits gzip+base64 tokens and encoding=gzip in META_DATA", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "gz.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw --encode=gzip 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw --encode=gzip 2>/dev/null`);
     const packed = fs.readFileSync(out, "utf-8");
     expect(packed).toMatch(/encoding=gzip/);
     const tokens = [...packed.matchAll(/PACK_BEGIN: \S+ \[(\S+?)\+base64,mode=/g)].map((m) => m[1]);
     expect(new Set(tokens)).toEqual(new Set(["gzip"]));
   });
 
-  it("--encode=brotli (explicit) emits brotli+base64 tokens", () => {
+  it.concurrent("--encode=brotli (explicit) emits brotli+base64 tokens", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "br.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw --encode=brotli 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw --encode=brotli 2>/dev/null`);
     const packed = fs.readFileSync(out, "utf-8");
     const tokens = [...packed.matchAll(/PACK_BEGIN: \S+ \[(\S+?)\+base64,mode=/g)].map((m) => m[1]);
     expect(new Set(tokens)).toEqual(new Set(["brotli"]));
   });
 
-  it("gzip round-trip is byte-exact for text + binary", () => {
+  it.concurrent("gzip round-trip is byte-exact for text + binary", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const packed = path.join(TMP_DIR, "gz.pack.txt");
     const dest = path.join(TMP_DIR, "gz_out");
-    runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=gzip 2>/dev/null && unpack_text "${packed}" "${dest}"`);
+    await runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=gzip 2>/dev/null && unpack_text "${packed}" "${dest}"`);
     expect(sha(path.join(dest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(dest, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
     expect(sha(path.join(dest, "code.js"))).toBe(sha(path.join(srcDir, "code.js")));
   });
 
-  it("brotli round-trip is byte-exact for text + binary", () => {
+  it.concurrent("brotli round-trip is byte-exact for text + binary", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const packed = path.join(TMP_DIR, "br.pack.txt");
     const dest = path.join(TMP_DIR, "br_out");
-    runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=brotli 2>/dev/null && unpack_text "${packed}" "${dest}"`);
+    await runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=brotli 2>/dev/null && unpack_text "${packed}" "${dest}"`);
     expect(sha(path.join(dest, "hello.txt"))).toBe(sha(path.join(srcDir, "hello.txt")));
     expect(sha(path.join(dest, "binary.bin"))).toBe(sha(path.join(srcDir, "binary.bin")));
     expect(sha(path.join(dest, "code.js"))).toBe(sha(path.join(srcDir, "code.js")));
   });
 
-  it("mixed-encoding pack (one gzip block + one brotli block) extracts both", () => {
+  it.concurrent("mixed-encoding pack (one gzip block + one brotli block) extracts both", async () => {
+    const { TMP_DIR } = newCase();
     // Hand-craft a pack that interleaves gzip and brotli blocks. unpack_text
     // dispatches per-block via the encoding token, so this MUST work.
     const zlibLib = require("zlib");
@@ -688,15 +719,16 @@ describe("encoding selection (gzip / brotli) and --encode-level", () => {
         "===== PACK_END: br.txt =====\n",
     );
     const dest = path.join(TMP_DIR, "mixed_out");
-    runBash(`unpack_text "${mixed}" "${dest}"`);
+    await runBash(`unpack_text "${mixed}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "gz.txt"), "utf-8")).toBe(gzipBody);
     expect(fs.readFileSync(path.join(dest, "br.txt"), "utf-8")).toBe(brotliBody);
   });
 
-  it("view_pack_text decodes brotli text blocks inline (same as gzip)", () => {
+  it.concurrent("view_pack_text decodes brotli text blocks inline (same as gzip)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const packed = path.join(TMP_DIR, "br.pack.txt");
-    runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=brotli 2>/dev/null`);
-    const view = runBash(`view_pack_text "${packed}"`);
+    await runBash(`pack_text "${srcDir}" "${packed}" --raw --encode=brotli 2>/dev/null`);
+    const view = await runBash(`view_pack_text "${packed}"`);
     // Text content decoded inline -> "Hello World" should appear as-is, NOT
     // as base64.
     expect(view).toContain("Hello World");
@@ -705,23 +737,28 @@ describe("encoding selection (gzip / brotli) and --encode-level", () => {
     expect(view).toMatch(/===== PACK_BEGIN: hello\.txt \[mode=\d{4}[^\]]*\] =====\nHello World/);
   });
 
-  it("--encode=foo errors with a clear allowed-list message", () => {
-    expect(() => runBash(`pack_text "${srcDir}" --encode=foo`)).toThrow();
+  it.concurrent("--encode=foo errors with a clear allowed-list message", async () => {
+    const { srcDir } = newCase();
+    await expect(runBash(`pack_text "${srcDir}" --encode=foo`)).rejects.toThrow();
   });
 
-  it("--encode-level=99 errors when out of range for gzip (max 9)", () => {
-    expect(() => runBash(`pack_text "${srcDir}" --encode=gzip --encode-level=99`)).toThrow();
+  it.concurrent("--encode-level=99 errors when out of range for gzip (max 9)", async () => {
+    const { srcDir } = newCase();
+    await expect(runBash(`pack_text "${srcDir}" --encode=gzip --encode-level=99`)).rejects.toThrow();
   });
 
-  it("--encode-level=99 errors when out of range for brotli (max 11)", () => {
-    expect(() => runBash(`pack_text "${srcDir}" --encode=brotli --encode-level=99`)).toThrow();
+  it.concurrent("--encode-level=99 errors when out of range for brotli (max 11)", async () => {
+    const { srcDir } = newCase();
+    await expect(runBash(`pack_text "${srcDir}" --encode=brotli --encode-level=99`)).rejects.toThrow();
   });
 
-  it("--encode-level=abc errors with non-integer message", () => {
-    expect(() => runBash(`pack_text "${srcDir}" --encode-level=abc`)).toThrow();
+  it.concurrent("--encode-level=abc errors with non-integer message", async () => {
+    const { srcDir } = newCase();
+    await expect(runBash(`pack_text "${srcDir}" --encode-level=abc`)).rejects.toThrow();
   });
 
-  it("brotli max-quality (11) produces measurably smaller output than min (0) on compressible text", () => {
+  it.concurrent("brotli max-quality (11) produces measurably smaller output than min (0) on compressible text", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     // Fill srcDir with a known-compressible blob — repeated text. Quality 11
     // SHOULD beat quality 0 by a comfortable margin; this is a smoke test that
     // --encode-level is actually being plumbed through to the compressor.
@@ -729,8 +766,8 @@ describe("encoding selection (gzip / brotli) and --encode-level", () => {
     fs.writeFileSync(path.join(srcDir, "big.txt"), big);
     const minOut = path.join(TMP_DIR, "min.pack.txt");
     const maxOut = path.join(TMP_DIR, "max.pack.txt");
-    runBash(`pack_text "${srcDir}" "${minOut}" --raw --encode=brotli --encode-level=0 2>/dev/null`);
-    runBash(`pack_text "${srcDir}" "${maxOut}" --raw --encode=brotli --encode-level=11 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${minOut}" --raw --encode=brotli --encode-level=0 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${maxOut}" --raw --encode=brotli --encode-level=11 2>/dev/null`);
     const minSize = fs.statSync(minOut).size;
     const maxSize = fs.statSync(maxOut).size;
     // Higher quality => smaller output. Allow a generous margin since other
@@ -744,30 +781,23 @@ describe("encoding selection (gzip / brotli) and --encode-level", () => {
  * ISO-8601 UTC. unpack_text restores mtime via fs.utimesSync; btime is
  * informational only (no portable Linux syscall to set birthtime). Missing
  * keys (legacy packs) -> file gets the current time at extract, by design. */
-describe("mtime / btime preservation", () => {
-  const srcDir = path.join(TMP_DIR, "src");
+describe.concurrent("mtime / btime preservation", () => {
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("PACK_BEGIN bracket records mtime= as ISO-8601 UTC", () => {
+  it.concurrent("PACK_BEGIN bracket records mtime= as ISO-8601 UTC", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     // Set a known mtime (one year before "now") and verify the marker carries it.
     const knownMtime = new Date("2025-01-15T12:34:56Z");
     fs.utimesSync(path.join(srcDir, "hello.txt"), knownMtime, knownMtime);
     const out = path.join(TMP_DIR, "ts.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     const packed = fs.readFileSync(out, "utf-8");
     expect(packed).toMatch(/PACK_BEGIN: hello\.txt \[[^\]]*mtime=2025-01-15T12:34:56Z/);
   });
 
-  it("PACK_BEGIN bracket records btime= when the OS reports one (skipped on platforms without)", () => {
+  it.concurrent("PACK_BEGIN bracket records btime= when the OS reports one (skipped on platforms without)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "bt.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     const packed = fs.readFileSync(out, "utf-8");
     // macOS / Btrfs / ext4 expose birthtime; if we ever run on a fs that
     // doesn't, the marker simply omits btime= (graceful, not an error).
@@ -777,18 +807,20 @@ describe("mtime / btime preservation", () => {
     }
   });
 
-  it("unpack_text restores mtime from the marker (round-trip within 1s precision)", () => {
+  it.concurrent("unpack_text restores mtime from the marker (round-trip within 1s precision)", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const knownMtime = new Date("2025-01-15T12:34:56Z");
     fs.utimesSync(path.join(srcDir, "hello.txt"), knownMtime, knownMtime);
     const packed = path.join(TMP_DIR, "rt.pack.txt");
     const dest = path.join(TMP_DIR, "rt_out");
-    runBash(`pack_text "${srcDir}" "${packed}" --raw 2>/dev/null && unpack_text "${packed}" "${dest}"`);
+    await runBash(`pack_text "${srcDir}" "${packed}" --raw 2>/dev/null && unpack_text "${packed}" "${dest}"`);
     const restoredMtime = fs.statSync(path.join(dest, "hello.txt")).mtime.getTime();
     // Allow 1-second slack — most filesystems store mtime at second granularity.
     expect(Math.abs(restoredMtime - knownMtime.getTime())).toBeLessThan(1000);
   });
 
-  it("missing mtime in marker (legacy pack) falls back to current time without erroring", () => {
+  it.concurrent("missing mtime in marker (legacy pack) falls back to current time without erroring", async () => {
+    const { TMP_DIR } = newCase();
     // Hand-craft a pack with NO mtime/btime keys — must still extract cleanly
     // and the resulting file gets a fresh mtime (>= test start).
     const zlibLib = require("zlib");
@@ -802,7 +834,7 @@ describe("mtime / btime preservation", () => {
     );
     const dest = path.join(TMP_DIR, "legacy_ts_out");
     const before = Date.now();
-    runBash(`unpack_text "${legacy}" "${dest}"`);
+    await runBash(`unpack_text "${legacy}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "legacy.txt"), "utf-8")).toBe(body);
     const restoredMtime = fs.statSync(path.join(dest, "legacy.txt")).mtime.getTime();
     // Generous lower bound — mtime should be >= the test start (allowing fs
@@ -810,17 +842,19 @@ describe("mtime / btime preservation", () => {
     expect(restoredMtime).toBeGreaterThanOrEqual(before - 1000);
   });
 
-  it("view_pack_text preserves mtime/btime in re-emitted brackets", () => {
+  it.concurrent("view_pack_text preserves mtime/btime in re-emitted brackets", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const knownMtime = new Date("2025-01-15T12:34:56Z");
     fs.utimesSync(path.join(srcDir, "hello.txt"), knownMtime, knownMtime);
     const packed = path.join(TMP_DIR, "view_ts.pack.txt");
-    runBash(`pack_text "${srcDir}" "${packed}" --raw 2>/dev/null`);
-    const view = runBash(`view_pack_text "${packed}"`);
+    await runBash(`pack_text "${srcDir}" "${packed}" --raw 2>/dev/null`);
+    const view = await runBash(`view_pack_text "${packed}"`);
     // Text block in view mode loses the encoding token but should keep mtime.
     expect(view).toMatch(/PACK_BEGIN: hello\.txt \[[^\]]*mtime=2025-01-15T12:34:56Z/);
   });
 
-  it("garbage mtime in marker is silently skipped (no crash, file gets current time)", () => {
+  it.concurrent("garbage mtime in marker is silently skipped (no crash, file gets current time)", async () => {
+    const { TMP_DIR } = newCase();
     const zlibLib = require("zlib");
     const body = "Body for corrupt-mtime test\n";
     const b64 = zlibLib.gzipSync(Buffer.from(body)).toString("base64");
@@ -831,7 +865,7 @@ describe("mtime / btime preservation", () => {
       "===== PACK_BEGIN: corrupt.txt [gzip+base64,mode=0644,mtime=not-a-date] =====\n" + wrapped + "===== PACK_END: corrupt.txt =====\n",
     );
     const dest = path.join(TMP_DIR, "corrupt_ts_out");
-    runBash(`unpack_text "${corrupt}" "${dest}"`);
+    await runBash(`unpack_text "${corrupt}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "corrupt.txt"), "utf-8")).toBe(body);
   });
 });
@@ -842,7 +876,7 @@ describe("mtime / btime preservation", () => {
  * mode we can think of: missing keys, garbage values, empty values, missing
  * brackets, unknown keys, and one mixed pack where a single bad block lives
  * alongside healthy blocks. */
-describe("forgiving metadata parser (malformed / missing fields)", () => {
+describe.concurrent("forgiving metadata parser (malformed / missing fields)", () => {
   const zlibLib = require("zlib");
 
   /** Build a minimal raw pack containing one PACK_BEGIN/PACK_END pair with the
@@ -856,15 +890,8 @@ describe("forgiving metadata parser (malformed / missing fields)", () => {
     );
   }
 
-  beforeEach(() => {
-    fs.mkdirSync(TMP_DIR, { recursive: true });
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("missing bracket entirely -> file extracts as raw text (no crash)", () => {
+  it.concurrent("missing bracket entirely -> file extracts as raw text (no crash)", async () => {
+    const { TMP_DIR } = newCase();
     // No bracket -> encoding/mode/mtime all null, raw-text decode path used.
     // Note: raw-text decoder strips the single '\n' between body and END
     // marker so round-trip is byte-exact for files that may or may not
@@ -873,57 +900,63 @@ describe("forgiving metadata parser (malformed / missing fields)", () => {
     const body = "Plain text body, no bracket";
     fs.writeFileSync(pack, `===== PACK_BEGIN: plain.txt =====\n${body}\n===== PACK_END: plain.txt =====\n`);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "plain.txt"), "utf-8")).toBe(body);
   });
 
-  it("bad mode value (e.g. 'mode=abc') -> file extracts, mode just not chmod'd", () => {
+  it.concurrent("bad mode value (e.g. 'mode=abc') -> file extracts, mode just not chmod'd", async () => {
+    const { TMP_DIR } = newCase();
     const pack = path.join(TMP_DIR, "bad_mode.pack.txt");
     const body = "Body for bad-mode test\n";
     buildPack(pack, "f.txt", "[gzip+base64,mode=abc]", body);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     // File must still be extracted with correct content.
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 
-  it("missing mode -> file extracts (mode falls back to fs default)", () => {
+  it.concurrent("missing mode -> file extracts (mode falls back to fs default)", async () => {
+    const { TMP_DIR } = newCase();
     const pack = path.join(TMP_DIR, "no_mode.pack.txt");
     const body = "Body without mode\n";
     buildPack(pack, "f.txt", "[gzip+base64]", body);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 
-  it("empty mode value (mode= with nothing) -> file extracts, no crash", () => {
+  it.concurrent("empty mode value (mode= with nothing) -> file extracts, no crash", async () => {
+    const { TMP_DIR } = newCase();
     const pack = path.join(TMP_DIR, "empty_mode.pack.txt");
     const body = "Body with empty mode\n";
     buildPack(pack, "f.txt", "[gzip+base64,mode=]", body);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 
-  it("unknown keys in bracket are silently ignored (forward compat)", () => {
+  it.concurrent("unknown keys in bracket are silently ignored (forward compat)", async () => {
+    const { TMP_DIR } = newCase();
     const pack = path.join(TMP_DIR, "unknown_keys.pack.txt");
     const body = "Body with future keys\n";
     buildPack(pack, "f.txt", "[gzip+base64,mode=0644,future_key=x,owner=alice,perm_v2=rw]", body);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 
-  it("ALL optional fields missing (encoding only) -> works", () => {
+  it.concurrent("ALL optional fields missing (encoding only) -> works", async () => {
+    const { TMP_DIR } = newCase();
     const pack = path.join(TMP_DIR, "encoding_only.pack.txt");
     const body = "Body, encoding token only\n";
     buildPack(pack, "f.txt", "[gzip+base64]", body);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 
-  it("unknown encoding token (e.g. 'lzma+base64') -> that block fails, others continue", () => {
+  it.concurrent("unknown encoding token (e.g. 'lzma+base64') -> that block fails, others continue", async () => {
+    const { TMP_DIR } = newCase();
     // Mixed pack: first block uses unknown encoding (corrupt or future), second
     // is a normal gzip block. The first must fail with a clear error, the
     // SECOND must extract normally — no early termination.
@@ -941,27 +974,29 @@ describe("forgiving metadata parser (malformed / missing fields)", () => {
         "===== PACK_END: ok.txt =====\n",
     );
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     // Healthy block extracted; corrupt block silently skipped (or with stderr).
     expect(fs.readFileSync(path.join(dest, "ok.txt"), "utf-8")).toBe(okBody);
     expect(fs.existsSync(path.join(dest, "bad.txt"))).toBe(false);
   });
 
-  it("garbage bracket value 'mode=-999' (negative) -> rejected, file still extracts", () => {
+  it.concurrent("garbage bracket value 'mode=-999' (negative) -> rejected, file still extracts", async () => {
+    const { TMP_DIR } = newCase();
     const pack = path.join(TMP_DIR, "neg_mode.pack.txt");
     const body = "Body with negative mode\n";
     buildPack(pack, "f.txt", "[gzip+base64,mode=-999]", body);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 
-  it("everything malformed except encoding -> file still extracts", () => {
+  it.concurrent("everything malformed except encoding -> file still extracts", async () => {
+    const { TMP_DIR } = newCase();
     const pack = path.join(TMP_DIR, "all_bad.pack.txt");
     const body = "Body with only encoding intact\n";
     buildPack(pack, "f.txt", "[gzip+base64,mode=garbage,mtime=nope,btime=also_nope,extra=ignored]", body);
     const dest = path.join(TMP_DIR, "out");
-    runBash(`unpack_text "${pack}" "${dest}"`);
+    await runBash(`unpack_text "${pack}" "${dest}"`);
     expect(fs.readFileSync(path.join(dest, "f.txt"), "utf-8")).toBe(body);
   });
 });
@@ -975,18 +1010,10 @@ describe("forgiving metadata parser (malformed / missing fields)", () => {
  * here checks the side-effects we CAN observe — no leftover .blocks.tmp file
  * after a successful pack, and round-trip still byte-exact (so streaming
  * doesn't introduce drift). */
-describe("--verbose flag + streaming writer hygiene", () => {
-  const srcDir = path.join(TMP_DIR, "src");
+describe.concurrent("--verbose flag + streaming writer hygiene", () => {
 
-  beforeEach(() => {
-    createTestFiles(srcDir);
-  });
-
-  afterEach(() => {
-    fs.rmSync(TMP_DIR, { recursive: true, force: true });
-  });
-
-  it("--verbose prints per-file PACK lines with raw->encoded byte counts", () => {
+  it.concurrent("--verbose prints per-file PACK lines with raw->encoded byte counts", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     // runBash redirects stderr to /dev/null by default — for this assertion
     // we want stderr captured. Use a one-off invocation that merges fd2->fd1.
     const tmpScript = path.join(TMP_DIR, "verbose_runner.sh");
@@ -1003,7 +1030,8 @@ describe("--verbose flag + streaming writer hygiene", () => {
     expect(stderr).toMatch(/pack_text: scanning /);
   });
 
-  it("default (no --verbose) does NOT emit per-file PACK lines", () => {
+  it.concurrent("default (no --verbose) does NOT emit per-file PACK lines", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const tmpScript = path.join(TMP_DIR, "quiet_runner.sh");
     fs.writeFileSync(
       tmpScript,
@@ -1014,14 +1042,16 @@ describe("--verbose flag + streaming writer hygiene", () => {
     expect(stderr).not.toMatch(/scanning /);
   });
 
-  it("streaming writer cleans up its .blocks.tmp file after a successful pack", () => {
+  it.concurrent("streaming writer cleans up its .blocks.tmp file after a successful pack", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "stream.pack.txt");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     expect(fs.existsSync(out)).toBe(true);
     expect(fs.existsSync(out + ".blocks.tmp")).toBe(false);
   });
 
-  it("streaming writer round-trips byte-exact for a many-files tree", () => {
+  it.concurrent("streaming writer round-trips byte-exact for a many-files tree", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     // Stress the streaming path with 50 small files so we exercise multiple
     // 64 KB chunks during the final concat. Each file gets random-ish content
     // so per-file SHA matches before/after — any drift introduced by the
@@ -1031,16 +1061,17 @@ describe("--verbose flag + streaming writer hygiene", () => {
     }
     const out = path.join(TMP_DIR, "many.pack.txt");
     const dest = path.join(TMP_DIR, "many_out");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null && unpack_text "${out}" "${dest}"`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null && unpack_text "${out}" "${dest}"`);
     for (let i = 0; i < 50; i++) {
       expect(sha(path.join(dest, `gen_${i}.txt`))).toBe(sha(path.join(srcDir, `gen_${i}.txt`)));
     }
   });
 
-  it("unpack_text --verbose prints per-file EXTRACT lines with byte counts and dest path", () => {
+  it.concurrent("unpack_text --verbose prints per-file EXTRACT lines with byte counts and dest path", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "v.pack.txt");
     const dest = path.join(TMP_DIR, "v_out");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     const tmpScript = path.join(TMP_DIR, "unpack_v_runner.sh");
     fs.writeFileSync(
       tmpScript,
@@ -1056,10 +1087,11 @@ describe("--verbose flag + streaming writer hygiene", () => {
     expect(stderr).toMatch(/unpack_text: extracted \d+ files to /);
   });
 
-  it("unpack_text default (no --verbose) does NOT emit per-file EXTRACT lines", () => {
+  it.concurrent("unpack_text default (no --verbose) does NOT emit per-file EXTRACT lines", async () => {
+    const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "q.pack.txt");
     const dest = path.join(TMP_DIR, "q_out");
-    runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
+    await runBash(`pack_text "${srcDir}" "${out}" --raw 2>/dev/null`);
     const tmpScript = path.join(TMP_DIR, "unpack_q_runner.sh");
     fs.writeFileSync(
       tmpScript,
