@@ -55,6 +55,33 @@ _LLM_PROMPTS_MIN_LEN=20
 _LLM_PROMPTS_TYPES=(claude copilot gemini opencode)
 
 ################################################################################
+# --- Shared session bootstrap for the LLM CLI wrappers ---
+################################################################################
+
+# llm_setup_activate: activate node once per shell session for the LLM CLI wrappers
+#
+# Every LLM wrapper (claude / copilot / gemini / opencode) needs a modern node
+# on PATH before it runs, but node activation is slow enough that paying for it
+# on each invocation is wasteful. Guarded by the exported
+# LLM_SETUP_NODE_ACTIVATED flag so the activation happens exactly once per
+# shell session; subsequent calls are a no-op. Returns non-zero when
+# `activate_node` (aliased as `a_node`) is unavailable so callers can bail with
+# their own message. Resolves the underlying function rather than the alias
+# because aliases do not expand inside function bodies.
+function llm_setup_activate() {
+  if is_truthy "${LLM_SETUP_NODE_ACTIVATED:-}"; then
+    return 0
+  fi
+
+  if [ "$(type -t activate_node)" != "function" ]; then
+    return 1
+  fi
+
+  activate_node
+  export LLM_SETUP_NODE_ACTIVATED=1
+}
+
+################################################################################
 # --- Internal helpers: legacy NUL `<ts>\t<content>` pipeline ---
 ################################################################################
 

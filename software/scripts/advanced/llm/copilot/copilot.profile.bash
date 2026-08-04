@@ -42,13 +42,13 @@ function copilot() {
   if ! type -P copilot > /dev/null 2>&1; then
     echo "copilot is not installed" >&2
     return 1
-  elif [ "$(type -t a_node)" != "function" ]; then
-    echo "a_node function is missing" >&2
-    return 1
   fi
 
-  # activate node
-  a_node
+  # Activate node once per shell session (no-op on later calls).
+  if ! llm_setup_activate; then
+    echo "node activation failed: llm_setup_activate/activate_node is missing" >&2
+    return 1
+  fi
 
   # Auto-link .github/copilot-instructions.md → ../CLAUDE.md so Copilot CLI
   # picks up the same repo guidance as Claude Code without a separately
