@@ -1,0 +1,122 @@
+{
+  // --- Session ---
+  "session": { "trust_all_worktrees": true }, // Skip workspace trust prompts — trust all projects. Values: true, false
+
+  // --- Editor Behavior ---
+  "hard_tabs": false, // Use spaces instead of tabs for indentation. Values: true (tabs), false (spaces)
+  "soft_wrap": "editor_width", // Wrap lines at preferred_line_length. Values: "none", "editor_width", "preferred_line_length"
+  "auto_indent_on_paste": true, // Auto-indent pasted code to match surrounding context. Values: true, false
+  "linked_edits": true, // Rename matching HTML/JSX tags when editing one. Values: true, false
+  "multi_cursor_modifier": "cmd_or_ctrl", // Key for adding cursors via click. Values: "alt", "cmd_or_ctrl"
+  "colorize_brackets": true, // Color-code matching bracket pairs. Values: true, false
+  "show_whitespaces": "all", // Show whitespace characters as dots. Values: "all", "selection", "none", "boundary"
+  "ensure_final_newline_on_save": true, // Always end files with a newline on save. Values: true, false
+  "remove_trailing_whitespace_on_save": true, // Strip trailing whitespace on save. Values: true, false
+  "format_on_save": "on", // Auto-format code on save. Values: "on", "off"
+  "vim_mode": false, // Enable vim keybindings. Values: true, false
+  "edit_predictions": { "disabled_globs": ["**/*"] }, // Disable inline AI completions (Zed's analog of VS Code's editor.lightbulb.enabled=off and copilot disable). Renamed from `inline_completions` in Zed v0.169+. Values: array of glob patterns where completions are disabled
+  "show_completions_on_input": true, // Auto-trigger completions on typing. Values: true, false
+
+  // --- Search ---
+  "search": { "include_ignored": false }, // Don't search gitignored files. Values: true, false
+
+  // --- UI ---
+  "cursor_blink": false, // Disable cursor blink animation. Values: true, false
+  "minimap": { "show": "never" }, // Disable the code minimap sidebar. Values: true, false
+  "scrollbar": { "show": "auto" }, // Scrollbar visibility. Values: "auto", "system", "always", "never"
+  "gutter": {
+    "line_numbers": true, // Show line numbers in the gutter. Values: true, false
+    "folds": false, // Hide fold/collapse icons in the gutter. Values: true, false
+  },
+  "indent_guides": { "enabled": false }, // Hide vertical indent guide lines. Values: true, false
+  "toolbar": {
+    "breadcrumbs": false, // Hide breadcrumb navigation at top of editor. Values: true, false
+    "quick_actions": false, // Hide quick action buttons in the toolbar. Values: true, false
+  },
+  "tabs": {
+    "close_position": "right", // Position of the tab close button. Values: "left", "right"
+    "git_status": false, // Hide git status indicators on tabs. Values: true, false
+  },
+  "max_tabs": 10, // Cap concurrent tabs per pane — mirrors VS Code's workbench.editor.limit.value=10. Values: integer
+  "restore_on_startup": "none", // Don't restore the previous session — mirrors VS Code's files.hotExit=off. Values: "last_workspace", "last_session", "none"
+
+  // --- Dock positions (override Zed defaults: project_panel="right", agent="left") ---
+  // Match VS Code / Sublime convention: file tree on the LEFT, agent/AI on the RIGHT.
+  "project_panel": { "dock": "left" }, // File tree dock side. Values: "left", "right"
+  "outline_panel": { "dock": "left" }, // Symbol outline dock side — pair with the file tree. Values: "left", "right"
+  "agent": {
+    "dock": "right", // Agent / AI panel dock side. Values: "left", "right", "bottom"
+    "tool_permissions": { "default": "allow" }, // Auto-approve agent tool actions without prompting (Zed v0.224.0+ analog of VS Code's claudeCode.allowDangerouslySkipPermissions). Values: "confirm", "allow", "deny"
+  },
+
+  // --- Terminal ---
+  "terminal": {
+    "max_scroll_history_lines": 200000, // EDITOR_CONFIGS.terminalScrollback
+    "shell": { "program": "bash" }, // Default to bash — mirrors VS Code's terminal.integrated.defaultProfile.{linux,osx}=bash. Values: { program } or { with_arguments } or "system"
+    "option_as_meta": false, // Send alt-key chords to Zed's keymap instead of the shell as Meta — pairs with the OS_KEY+X auto-mirror in zed.js so chords like alt+\ fire from terminal focus. Values: true, false
+  },
+
+  // --- AI ---
+  // Agent panel ON: zed.js auto-registers `language_models.ollama` (local 127.0.0.1
+  // with auto_discover) and `language_models.openai_compatible["Ollama (sy-omen45l)"]`
+  // (remote, models enumerated from /api/tags) when those hosts are reachable, then
+  // pins `agent.default_model` to the best provider. Edit predictions remain off
+  // (`edit_predictions.disabled_globs: ["**/*"]` near the top of this file).
+  "disable_ai": false, // Enable Zed agent / AI features so Ollama providers populate the agent panel. Values: true, false
+
+  // --- Performance & Telemetry ---
+  "telemetry": {
+    "diagnostics": false, // Disable sending crash reports. Values: true, false
+    "metrics": false, // Disable sending usage metrics. Values: true, false
+  },
+  "auto_update": false, // Disable automatic updates. Values: true, false
+
+  // --- Git ---
+  // Only `git_gutter` is a valid key under Zed's `git` block. `enabled` and `autoFetch`
+  // were never supported (linter rejects them) — git integration is always on; remotes
+  // are managed by the user.
+  "git": {
+    "git_gutter": "hide", // Hide git diff indicators in the gutter. Values: "tracked_files", "hide"
+  },
+
+  // --- Extensions ---
+  "auto_install_extensions": {
+    "material-icon-theme": true, // Auto-install Material Icon Theme extension. Values: true, false
+  },
+  "icon_theme": "Material Icon Theme", // File icon theme for sidebar. Values: any installed icon theme name
+
+  // --- Formatters (per-language) ---
+  // Prettier handles JS/TS/JSON/CSS/HTML/MD/YAML — same set as VS Code's vs-code-config.jsonc.
+  // Every non-Prettier language MUST be pinned to `language_server` explicitly. Otherwise
+  // Zed's default `formatter: "auto"` + global `prettier.allowed: true` routes the file
+  // to prettier, which fails with UndefinedParserError on Rust/Python/Go (prettier doesn't
+  // support them). Symmetric: every Prettier-supported language gets `formatter: "prettier"`;
+  // every native-LSP language gets `formatter: "language_server"`.
+  //
+  // Only languages that ship with Zed (or are reliably present via bundled grammars) are
+  // listed. Extension-only languages (GraphQL, Vue.js, Java, TOML) used to be here but were
+  // dropped — Zed emits `No language with this name is installed.` on machines without the
+  // matching extension, so the config can't reference them unconditionally. Add them back
+  // alongside the relevant extension install when an extension is added to the setup.
+  "prettier": { "allowed": true }, // Permit Zed to run the prettier CLI on PATH. Values: { allowed: true|false, command?: string }
+  "languages": {
+    // Prettier-handled
+    "JavaScript": { "formatter": "prettier" },
+    "TypeScript": { "formatter": "prettier" },
+    "TSX": { "formatter": "prettier" },
+    "JSX": { "formatter": "prettier" },
+    "JSON": { "formatter": "prettier" },
+    "JSONC": { "formatter": "prettier" },
+    "HTML": { "formatter": "prettier" },
+    "CSS": { "formatter": "prettier" },
+    "Markdown": { "formatter": "prettier" },
+    "YAML": { "formatter": "prettier" },
+    // Native LSP-handled — explicit pin prevents prettier fallback (UndefinedParserError)
+    "Rust": { "formatter": "language_server" }, // rust-analyzer → rustfmt
+    "Python": { "formatter": "language_server", "language_servers": ["pyright", "!basedpyright", "!pylsp"] }, // pyright (no format) or ruff if attached — explicit opt-in silences Zed's "Basedpyright is now the only default language server for Python" notice; matches the binary installed by lsp/install.sh
+    "Go": { "formatter": "language_server" }, // gopls → gofmt + goimports
+    "Shell Script": { "formatter": "language_server" }, // bash-language-server (no format) — falls back gracefully
+    "C": { "formatter": "language_server" },
+    "C++": { "formatter": "language_server" },
+  },
+}

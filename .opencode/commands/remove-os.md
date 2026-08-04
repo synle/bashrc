@@ -1,0 +1,1 @@
+../../.claude/skills/remove-os/SKILL.md

@@ -1,0 +1,82 @@
+// Gemini CLI custom keybindings shared across all platforms.
+// OS_KEY = "cmd" on macOS, "alt" on Windows/Linux — matches the modifier
+// strings already used by Gemini's defaultKeyBindingConfig (cmd+z + alt+z
+// on edit.undo, cmd+enter + alt+enter on input.newline, etc.).
+//
+// Schema (discovered in Gemini bundle chunk-MODIYMRW.js ~ line 64600):
+//   [{ "command": "<dotNamespacedCommand>", "key": "<chord>" }, ...]
+// Prefix command with "-" to REMOVE a binding from the default config.
+// One entry per (command, chord) pair — multiple chords for the same
+// command are listed as separate entries.
+//
+// EXPLICIT-MATCH POLICY
+// ---------------------
+// Every chord we want from Claude's convention is listed here EXPLICITLY,
+// even if Gemini's upstream default already happens to bind it. Rationale:
+//   (a) An upstream default flip silently breaks our parity. Owning the
+//       binding here means a re-run of gemini/setup.js always converges to
+//       the Claude-aligned chord even if Gemini changes defaults.
+//   (b) The file is auditable in isolation — no need to grep Gemini's
+//       bundled JS to know which chords we "have".
+//   (c) The cross-tool comparison table in docs/editor-keybindings.md only
+//       credits chords that are explicitly listed in our key files; no
+//       "happens to align with upstream default" entries.
+//
+// Direct mirror of software/scripts/advanced/llm/claude/claude-keys.common.jsonc:
+//
+//   Claude action               Gemini command              Claude chord(s)
+//   ───────────────────────────  ──────────────────────────  ────────────────────────
+//   app:toggleTodos             app.showFullTodos           ctrl+t
+//   chat:newline                input.newline               shift+enter, ctrl+enter
+//   chat:undo                   edit.undo                   OS_KEY+z
+//   chat:clearInput             edit.clear                  OS_KEY+l
+//   chat:externalEditor         input.openExternalEditor    ctrl+x
+//   chat:imagePaste             input.paste                 ctrl+v
+//   (readline HOME, ctrl+a null) cursor.home                ctrl+a, home
+//   (readline END, ctrl+e null)  cursor.end                 ctrl+e, end
+//
+// Note on ctrl+a / ctrl+e: Claude nulls these so the underlying terminal
+// readline handles HOME/END. Gemini has no "let readline through" mode —
+// cursor.home / cursor.end ARE the cursor-jump actions. Binding them here
+// to ctrl+a / ctrl+e (and to the physical home/end keys) is functionally
+// equivalent on Gemini's side: same user-visible behavior, owned by us.
+//
+// Windows-only addendum (null alt+v paste) lives in gemini-keys.windows.jsonc
+// because OS_KEY=alt on Windows/Linux would otherwise leave alt+v bound to
+// input.paste as a Gemini default (alongside our explicit ctrl+v), and the
+// alt+v overlap collides with OS_KEY+v conventions used elsewhere.
+[
+  // app:toggleTodos
+  { "command": "app.showFullTodos", "key": "ctrl+t" },
+
+  // chat:newline
+  { "command": "input.newline", "key": "shift+enter" },
+  { "command": "input.newline", "key": "ctrl+enter" },
+
+  // chat:undo
+  { "command": "edit.undo", "key": "OS_KEY+z" },
+
+  // chat:clearInput
+  // force ctrl+l → edit.clear (clear input). Removes Gemini's default
+  // app.clearScreen on ctrl+l first (schema: "-" prefix removes a default).
+  // TRADEOFF: gemini loses screen-clear on ctrl+l (user-approved).
+  { "command": "-app.clearScreen", "key": "ctrl+l" },
+  { "command": "edit.clear", "key": "ctrl+l" },
+  { "command": "edit.clear", "key": "OS_KEY+l" },
+
+  // chat:externalEditor
+  { "command": "input.openExternalEditor", "key": "ctrl+x" },
+
+  // chat:imagePaste (Claude's chord; Gemini's command is input.paste)
+  { "command": "input.paste", "key": "ctrl+v" },
+
+  // cursor.home — Claude nulls ctrl+a so readline gets HOME; on Gemini we
+  // bind both ctrl+a and the physical home key to cursor.home so the
+  // user-visible behavior matches (HOME jumps to line start).
+  { "command": "cursor.home", "key": "ctrl+a" },
+  { "command": "cursor.home", "key": "home" },
+
+  // cursor.end — mirror of cursor.home for the END side.
+  { "command": "cursor.end", "key": "ctrl+e" },
+  { "command": "cursor.end", "key": "end" },
+]

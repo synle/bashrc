@@ -1,0 +1,35 @@
+{
+  "name": "bashrc-setup",
+  "version": "1.0.6",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "npm run format",
+    "build": "vite build",
+    "format": "oxfmt --write .",
+    "setup:hosts": "curl -s https://github.com/synle/bashrc/blob/HEAD/run.sh?raw=1 | bash -s -- --files=\"software/scripts/etc-hosts.su.js\"",
+    "test": "vitest run --config vitest.config.js",
+    "test:smoke": "vitest run --config vitest.smoke.config.js",
+    "test:smoke:local": "vitest run --config vitest.smoke.local.config.js",
+    "test:profile": "vitest run --config vitest.profile.config.js",
+    "test:buildconfig": "vitest run --config vitest.buildconfig.config.js",
+    "test:buildconfig:update": "vitest run --config vitest.buildconfig.config.js --update",
+    "format:check": "oxfmt --check ."
+  },
+  "dependencies": {
+    "prismjs": "^1.29.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "@vitest/coverage-istanbul": "^4.1.5",
+    "istanbul-lib-instrument": "^6.0.3",
+    "oxfmt": "^0.61.0",
+    "puppeteer": "^24.42.0",
+    "sass": "^1.97.3",
+    "typescript": "^5.9.3",
+    "vite": "^4.4.0",
+    "vite-plugin-singlefile": "^0.13.5",
+    "vitest": "^4.1.5"
+  }
+}

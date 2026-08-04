@@ -1,0 +1,70 @@
+account|list,show,set,clear,get-access-token,list-locations,management-group,subscription,tenant,--help,-h,--output,-o,--query,--verbose
+account show|--subscription,--name,--output,-o,--query
+account set|--subscription,--name
+acr|build,create,delete,list,login,repository,run,show,update,task,--help,-h,--output,-o,--query
+ad|app,group,signed-in-user,sp,user,--help,-h,--output,-o,--query
+aks|create,delete,get-credentials,list,show,start,stop,upgrade,update,scale,nodepool,--help,-h,--output,-o,--query,--name,-n,--resource-group,-g
+appservice|plan,list-locations,--help,-h,--output,-o,--query
+batch|account,application,job,pool,task,--help,-h,--output,-o,--query
+billing|account,invoice,profile,subscription,--help,-h,--output,-o,--query
+cache|delete,list,purge,show,--help,-h,--output,-o,--query
+cdn|endpoint,profile,custom-domain,--help,-h,--output,-o,--query
+cognitiveservices|account,--help,-h,--output,-o,--query
+config|get,set,unset,param-persist,--help,-h
+configure|--defaults,--list-defaults,--scope,--help,-h
+containerapp|create,delete,list,show,update,env,--help,-h,--output,-o,--query
+cosmosdb|create,delete,list,show,update,sql,mongodb,cassandra,gremlin,table,--help,-h,--output,-o,--query
+deployment|create,delete,list,show,validate,group,sub,mg,tenant,--help,-h,--output,-o,--query
+disk|create,delete,grant-access,list,revoke-access,show,update,--help,-h,--output,-o,--query
+dns|record-set,zone,--help,-h,--output,-o,--query
+eventgrid|domain,event-subscription,topic,--help,-h,--output,-o,--query
+eventhubs|eventhub,namespace,--help,-h,--output,-o,--query
+extension|add,list,list-available,remove,show,update,--help,-h,--output,-o,--query
+feedback|--help,-h
+find|--help,-h
+functionapp|create,delete,list,show,start,stop,restart,update,deployment,config,--help,-h,--output,-o,--query
+group|create,delete,exists,list,show,update,wait,lock,--help,-h,--output,-o,--query,--name,-n,--location,-l
+group create|--name,-n,--location,-l,--tags,--subscription
+group delete|--name,-n,--yes,-y,--no-wait,--subscription
+identity|create,delete,list,show,--help,-h,--output,-o,--query
+interactive|--help,-h
+iot|hub,device,dps,--help,-h,--output,-o,--query
+keyvault|create,delete,list,show,update,key,secret,certificate,--help,-h,--output,-o,--query,--name,-n,--resource-group,-g
+lock|create,delete,list,show,update,--help,-h,--output,-o,--query
+login|--username,-u,--password,-p,--service-principal,--tenant,-t,--use-device-code,--allow-no-subscriptions,--help,-h
+logout|--username,--help,-h
+managedapp|create,delete,list,show,definition,--help,-h,--output,-o,--query
+maps|account,creator,--help,-h,--output,-o,--query
+mariadb|server,db,configuration,firewall-rule,--help,-h,--output,-o,--query
+ml|workspace,compute,model,job,--help,-h,--output,-o,--query
+monitor|alert,activity-log,diagnostic-settings,log-analytics,metrics,action-group,autoscale,--help,-h,--output,-o,--query
+mysql|server,db,configuration,firewall-rule,flexible-server,--help,-h,--output,-o,--query
+network|vnet,nsg,public-ip,nic,lb,application-gateway,dns,private-endpoint,vpn-gateway,route-table,traffic-manager,--help,-h,--output,-o,--query
+policy|assignment,definition,exemption,set-definition,--help,-h,--output,-o,--query
+postgres|server,db,configuration,firewall-rule,flexible-server,--help,-h,--output,-o,--query
+provider|list,register,unregister,show,operation,--help,-h,--output,-o,--query
+redis|create,delete,list,show,update,firewall-rules,patch-schedule,--help,-h,--output,-o,--query
+resource|create,delete,list,show,update,move,tag,wait,invoke-action,lock,link,--help,-h,--output,-o,--query
+rest|--method,-m,--uri,-u,--headers,--body,-b,--query,--help,-h
+role|assignment,definition,--help,-h,--output,-o,--query
+search|service,admin-key,query-key,--help,-h,--output,-o,--query
+self-test|--help,-h
+servicebus|namespace,queue,topic,--help,-h,--output,-o,--query
+signalr|create,delete,list,show,update,--help,-h,--output,-o,--query
+snapshot|create,delete,grant-access,list,revoke-access,show,update,--help,-h,--output,-o,--query
+sql|server,db,elastic-pool,failover-group,managed-instance,vm,virtual-network-rule,firewall-rule,--help,-h,--output,-o,--query
+ssh|vm,arc,config,--help,-h
+staticwebapp|create,delete,list,show,update,environment,functions,hostname,identity,secrets,--help,-h,--output,-o,--query
+storage|account,blob,container,file,share,queue,table,fs,directory,copy,--help,-h,--output,-o,--query,--account-name,--account-key
+storage account|create,delete,list,show,update,keys,sas,--help,-h,--output,-o,--query
+storage blob|copy,delete,download,exists,list,show,upload,upload-batch,download-batch,delete-batch,--help,-h,--output,-o,--query
+storage container|create,delete,exists,list,show,--help,-h,--output,-o,--query
+synapse|workspace,sql,spark,role,--help,-h,--output,-o,--query
+tag|add-value,create,delete,list,remove-value,update,--help,-h,--output,-o,--query
+tenant|list,--help,-h,--output,-o,--query
+upgrade|--all,--yes,-y,--help,-h
+version|--help,-h
+vm|create,delete,deallocate,generalize,list,list-ip-addresses,list-sizes,list-skus,list-vm-resize-options,open-port,redeploy,resize,restart,run-command,show,start,stop,update,wait,extension,disk,nic,boot-diagnostics,--help,-h,--output,-o,--query,--name,-n,--resource-group,-g
+vmss|create,delete,deallocate,list,list-instances,list-sizes,reimage,restart,scale,show,start,stop,update,update-instances,extension,nic,--help,-h,--output,-o,--query
+webapp|create,delete,list,show,start,stop,restart,update,deployment,config,log,ssh,deleted,identity,--help,-h,--output,-o,--query
+|--help,-h,--output,-o,--query,--verbose,--debug,--subscription

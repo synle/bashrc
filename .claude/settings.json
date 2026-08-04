@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | grep -q '/\\.build/' && echo 'BLOCKED: Do not edit .build/ files — they are generated artifacts.' && exit 1 || true",
+            "timeout": 5,
+            "statusMessage": "Checking for .build/ edits..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | { read -r f; case \"$f\" in */software/scripts/*.js|*/software/scripts/*.sh) case \"$f\" in *.common.js|*.common.js|*/index.js|*/build-include.js|*/bootstrap/*) ;; *) basename_f=$(basename \"$f\"); case \"$basename_f\" in _*) ;; *) echo \"Reminder: test with → bash run.sh --files=\\\"$basename_f\\\"\" ;; esac ;; esac ;; esac; } || true",
+            "timeout": 5,
+            "statusMessage": "Checking if script test reminder needed..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,734 @@
+name: CI Build
+description: Build, run scripts, and upload build artifacts
+
+inputs:
+  artifact-name:
+    description: Name for the uploaded build artifact
+    required: true
+
+outputs:
+  duration:
+    description: Total job duration in seconds
+    value: ${{ steps.summary.outputs.duration }}
+  binary-check-outcome:
+    description: Outcome of the binary verification check
+    value: ${{ steps.binary-check.outcome }}
+  binary-check-summary:
+    description: Summary of binary verification results
+    value: ${{ steps.binary-check.outputs.summary }}
+  binary-check-status:
+    description: Binary verification status (ok, warning, error)
+    value: ${{ steps.binary-check.outputs.status }}
+  download-check-summary:
+    description: Summary of download asset verification results
+    value: ${{ steps.download-check.outputs.summary }}
+  download-check-status:
+    description: Download verification status (ok, error)
+    value: ${{ steps.download-check.outputs.status }}
+  binary-check-failed-list:
+    description: Comma-separated list of missing required binaries
+    value: ${{ steps.binary-check.outputs.failed-list }}
+  binary-check-warned-list:
+    description: Comma-separated list of warned optional binaries
+    value: ${{ steps.binary-check.outputs.warned-list }}
+
+runs:
+  using: composite
+  steps:
+    - name: Record start time
+      shell: bash
+      run: echo "CI_BUILD_T0=$(date +%s)" >> "$GITHUB_ENV"
+
+    - name: CI Build
+      id: ci-build
+      shell: bash
+      run: make ci_build 2>&1 | tee /tmp/ci_build_output.log
+
+    - name: Record time after ci-build
+      if: always()
+      shell: bash
+      run: echo "CI_BUILD_T1=$(date +%s)" >> "$GITHUB_ENV"
+
+    - name: Upload Build Artifact
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        include-hidden-files: true
+        path: .build/
+        retention-days: 14
+        if-no-files-found: ignore
+
+    # Locate the per-OS profile_bashrc_<os>.sh produced by ~cleanup.js so the
+    # next two steps (artifact upload + release upload) can reference a single
+    # known path. Each build job emits exactly one such file. Sets outputs
+    # `path` and `name` (empty when no profile was produced — both downstream
+    # steps gate on `path != ''`).
+    - name: Locate profile_bashrc artifact
+      id: locate-profile
+      if: always()
+      shell: bash
+      run: |
+        profile_file=$(ls .build/profile_bashrc_*.sh 2>/dev/null | head -1)
+        if [ -z "$profile_file" ] || [ ! -f "$profile_file" ]; then
+          echo "No profile_bashrc_*.sh produced; skipping profile artifact + release upload"
+          echo "path=" >> "$GITHUB_OUTPUT"
+          echo "name=" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        echo "path=$profile_file" >> "$GITHUB_OUTPUT"
+        echo "name=$(basename "$profile_file")" >> "$GITHUB_OUTPUT"
+        echo "Located profile: $profile_file"
+
+    # Upload the profile as its own artifact, separate from the .build/ bundle
+    # above. The publish job downloads ONLY these `profile-*` artifacts and
+    # unpacks them into dist/ so the deployed Pages site serves them
+    # same-origin (the webapp's PreCompiledProfileDom fetches via relative
+    # URL, no CORS). actions/upload-artifact@v7 zips internally for transport;
+    # actions/download-artifact@v8 auto-extracts, so consumers see a plain .sh.
+    - name: Upload profile artifact
+      if: always() && steps.locate-profile.outputs.path != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: profile-${{ inputs.artifact-name }}
+        path: ${{ steps.locate-profile.outputs.path }}
+        retention-days: 14
+        if-no-files-found: ignore
+
+    # Mirror the profile to the binary-cache rolling release on synle/bashrc
+    # as "bashrc-profile__profile_bashrc_<os>.sh" (matches the <app>__<file>
+    # naming convention used by ci-download-release-binaries.sh). Gated to
+    # push events on the default branch — PRs and workflow_dispatch in
+    # test_only mode must not clobber the cache. Failures are warnings, not
+    # build-breakers: the artifact upload above already covers the publish
+    # job's needs; the release mirror is for external consumers and fallback.
+    - name: Upload profile to binary-cache release
+      if: >-
+        always()
+        && steps.locate-profile.outputs.path != ''
+        && github.event_name == 'push'
+        && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PROFILE_PATH: ${{ steps.locate-profile.outputs.path }}
+        PROFILE_NAME: ${{ steps.locate-profile.outputs.name }}
+      run: |
+        set +e
+        CACHE_REPO="synle/bashrc"
+        CACHE_TAG="binary-cache"
+        ASSET_NAME="bashrc-profile__${PROFILE_NAME}"
+        MIN_BYTES=1024
+
+        new_size=$(wc -c < "$PROFILE_PATH" | tr -d ' ')
+        if [ "$new_size" -lt "$MIN_BYTES" ]; then
+          echo "::warning::Refusing to upload $ASSET_NAME — local file is $new_size bytes (<${MIN_BYTES})"
+          exit 0
+        fi
+
+        # Sanity-guard against truncated uploads: if the existing cached asset
+        # is >2x the size of what we're about to upload, refuse the clobber.
+        existing_size=$(gh release view "$CACHE_TAG" --repo "$CACHE_REPO" --json assets \
+          --jq ".assets[] | select(.name == \"$ASSET_NAME\") | .size" 2>/dev/null || true)
+        if [ -n "$existing_size" ] && [ "$existing_size" -gt 0 ]; then
+          half=$((existing_size / 2))
+          if [ "$new_size" -lt "$half" ]; then
+            echo "::warning::Refusing to upload $ASSET_NAME — new size $new_size <50% of existing $existing_size"
+            exit 0
+          fi
+        fi
+
+        staged=$(mktemp -d)/"$ASSET_NAME"
+        cp -f "$PROFILE_PATH" "$staged"
+        if ! gh release upload "$CACHE_TAG" "$staged" --repo "$CACHE_REPO" --clobber > /dev/null; then
+          echo "::warning::Failed to upload $ASSET_NAME to ${CACHE_REPO}/releases/${CACHE_TAG}"
+          exit 0
+        fi
+        echo "Uploaded $ASSET_NAME ($new_size bytes) to ${CACHE_REPO}/releases/${CACHE_TAG}"
+
+    - name: Upload Logs
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: logs-${{ inputs.artifact-name }}
+        path: /tmp/synle/bashrc/
+        retention-days: 14
+        if-no-files-found: ignore
+
+    - name: OS flags
+      id: os-flags
+      if: always()
+      shell: bash
+      run: |
+        # Renders the is_os_* + IS_CI flag table that run.sh produced into
+        # ~/.bash_syle_common. Sorted: active flags (=1) first, then inactive (=0).
+        # Placed before the profile syntax check so a wrong-OS detection (e.g.
+        # ubuntu+arch both set) is obvious in the job summary at a glance.
+        common_path="$HOME/.bash_syle_common"
+        echo "### OS Flags (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        if [ ! -f "$common_path" ]; then
+          echo ":fast_forward: *flags file not found at \`$common_path\`*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+        echo "| Result | Flag | Value |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|------|-------|" >> "$GITHUB_STEP_SUMMARY"
+
+        # Parse `export is_os_xxx=N` lines from the common file. IS_CI is
+        # intentionally excluded — it's always 1 in CI and adds no signal.
+        # Bucket by value so active flags float to the top; sort each bucket by name.
+        active=""
+        inactive=""
+        while IFS= read -r line; do
+          if [[ "$line" =~ ^export[[:space:]]+(is_os_[a-z0-9_]+)=([0-9]+) ]]; then
+            name="${BASH_REMATCH[1]}"
+            val="${BASH_REMATCH[2]}"
+            if [ "$val" = "1" ]; then
+              active+="$name|$val"$'\n'
+            else
+              inactive+="$name|$val"$'\n'
+            fi
+          fi
+        done < "$common_path"
+
+        # Emit active first, then inactive — each bucket alphabetised.
+        {
+          printf '%s' "$active" | sort | awk -F'|' 'NF==2 {printf "| :white_check_mark: | `%s` | %s |\n", $1, $2}'
+          printf '%s' "$inactive" | sort | awk -F'|' 'NF==2 {printf "| :white_circle: | `%s` | %s |\n", $1, $2}'
+        } >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Profile syntax check
+      id: profile-syntax
+      if: always()
+      shell: bash
+      run: |
+        any_failed=0
+        found=0
+
+        function format_filesize() {
+          local bytes=$1
+          if [ "$bytes" -ge 1048576 ]; then
+            awk "BEGIN{printf \"%.1f MB\", $bytes/1048576}"
+          elif [ "$bytes" -ge 1024 ]; then
+            awk "BEGIN{printf \"%.1f KB\", $bytes/1024}"
+          else
+            printf "%d B" "$bytes"
+          fi
+        }
+
+        echo "### Profile Syntax Check (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Result | Snapshot | File Size | Char Count |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|----------|-----------|------------|" >> "$GITHUB_STEP_SUMMARY"
+
+        latest_dir=$(ls -dt /tmp/synle/bashrc/*/ 2>/dev/null | head -1)
+        for f in "$latest_dir"bash_syle.*; do
+          [ -f "$f" ] || continue
+          found=1
+          name=$(basename "$f")
+          fsize=$(wc -c < "$f" | tr -d ' ')
+          ccount=$(wc -m < "$f" | tr -d ' ')
+          status=""
+
+          # Check 1: bash -n syntax validation
+          if ! bash -n "$f" 2>/dev/null; then
+            status="syntax_error"
+            echo "❌ $name syntax errors:"
+            bash -n "$f" 2>&1 || true
+          fi
+
+          # Check 2: scan for invalid bash syntax warning placeholders
+          # (registerProfileBlock replaces broken blocks with WARNING echo — catch those too)
+          if command grep -q "WARNING: invalid bash syntax detected in block" "$f" 2>/dev/null; then
+            status="${status:-warning}"
+            echo "⚠️  $name contains invalid bash syntax warning placeholder(s):"
+            command grep -n "WARNING: invalid bash syntax detected in block" "$f" || true
+          fi
+
+          if [ -n "$status" ]; then
+            echo "| :x: ($status) | \`$name\` | $(format_filesize $fsize) | ${ccount} |" >> "$GITHUB_STEP_SUMMARY"
+            any_failed=1
+          else
+            echo "| :white_check_mark: | \`$name\` | $(format_filesize $fsize) | ${ccount} |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+        done
+
+        if [ "$found" = "0" ]; then
+          echo "| :fast_forward: | *(no snapshots found)* | | |" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "$any_failed" = "1" ]; then
+          exit 1
+        fi
+
+    - name: Binary verification
+      id: binary-check
+      if: always()
+      shell: bash
+      run: |
+        set +e
+        passed=0
+        failed=0
+        total=0
+        warned=0
+        failed_names=""
+        warned_names=""
+        binary_table=""
+
+        function safe_source() { bash -n "$1" 2>/dev/null && . "$1" || echo "[Warning] source $1 failed" >&2; }
+
+        function check_binary() {
+          local name="$1"
+          local version_cmd="${2:-$name --version}"
+          local mode="${3:-required}"
+          total=$((total + 1))
+          local bin_path
+          bin_path=$(type -P "$name" 2>/dev/null) || true
+          if [ -n "$bin_path" ]; then
+            local version_info=""
+            version_info=$(eval "$version_cmd" 2>/dev/null | head -1) || true
+            local detail="$bin_path"
+            if [ -n "$version_info" ]; then
+              detail="$bin_path ($version_info)"
+            fi
+            binary_table+="| :white_check_mark: | \`$name\` | \`$detail\` |"$'\n'
+            passed=$((passed + 1))
+          elif [ "$mode" = "required" ]; then
+            binary_table+="| :x: | \`$name\` | |"$'\n'
+            failed=$((failed + 1))
+            failed_names+="${failed_names:+, }$name"
+          else
+            binary_table+="| :warning: | \`$name\` | |"$'\n'
+            warned=$((warned + 1))
+            warned_names+="${warned_names:+, }$name"
+          fi
+        }
+
+        function check_binary_required() { check_binary "$1" "${2:-}" required; }
+        function check_binary_warn() { check_binary "$1" "${2:-}" warn; }
+
+        # Binary check tiers:
+        #   required: must be present on all platforms — failure if missing
+        #   warn: checked on all platforms — warning if missing (does not fail the build)
+        artifact="${{ inputs.artifact-name }}"
+
+        # Source the profile and path candidates to pick up PATH additions
+        safe_source software/scripts/bash-path-candidate.profile.bash
+        for profile in ~/.bash_syle "$HOME/.bash_syle"; do
+          safe_source "$profile"
+        done
+
+        echo "PATH=$PATH"
+
+        # ---- Binary checks (auto-generated) ----
+        # Source of truth: software/metadata/ci-binaries.json
+        # Regenerate: node software/tools/generate-ci-binary-list.js
+        # BEGIN ci-binary-checks
+        check_binary_required git
+        check_binary_required git-filter-repo "git-filter-repo --version"
+        check_binary_required curl
+        check_binary_required make
+        check_binary_required node
+        check_binary_required npm
+        check_binary_required fzf
+        check_binary_required unzip
+        check_binary_required yarn
+        check_binary_required prettier
+        check_binary_required oxfmt
+        check_binary_required bun
+        check_binary_required deno
+        check_binary_required uv
+        check_binary_required kubectl "kubectl version --client"
+        check_binary_required gemini
+        check_binary_required temporal
+        check_binary_required http "http --version"
+        check_binary_required ansible "ansible --version"
+        check_binary_required btop "btop --version"
+        check_binary_required starship
+        check_binary_required ffmpeg "ffmpeg -version"
+        check_binary_warn pwsh "pwsh --version"
+        check_binary_warn ollama "ollama --version"
+        check_binary_warn psql "psql --version"
+        check_binary_warn pgcli "pgcli --version"
+        check_binary_warn mycli "mycli --version"
+        check_binary_warn xh "xh --version"
+        check_binary_warn grpcurl "grpcurl --version"
+        check_binary_warn helm "helm version --short"
+        check_binary_warn k9s "k9s version --short"
+        check_binary_warn stern "stern --version"
+        check_binary_warn kubectx "kubectx --help"
+        check_binary_warn kubens "kubens --help"
+        check_binary_warn lazydocker "lazydocker --version"
+        check_binary_warn dive "dive --version"
+        check_binary_warn ctop "ctop -v"
+        check_binary_warn terraform "terraform version"
+        check_binary_warn tflint "tflint --version"
+        check_binary_warn procs "procs --version"
+        check_binary_warn btm "btm --version"
+        check_binary_warn gping "gping --version"
+        check_binary_warn aws "aws --version"
+        check_binary_warn az "az --version"
+        check_binary_warn gcloud "gcloud --version"
+        check_binary_warn shellcheck "shellcheck --version"
+        # END ci-binary-checks
+        # ImageMagick v7 (macOS/Homebrew) provides `magick`, v6 (Ubuntu/apt) provides `convert`.
+        # `magick` (v7, Homebrew) stays required — mac install is reliable.
+        # `convert` (v6, apt) is warn-tier: Ubuntu apt mirror periodically 404s on
+        # libcaca0 (an imagemagick dep), breaking the install through no fault of ours.
+        if type -P magick &>/dev/null; then
+          check_binary_required magick "magick -version"
+        else
+          check_binary_warn convert "convert -version"
+        fi
+
+        # Write summary with collapsible details
+        echo "### Binary Verification (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "<summary>Total: $total | Installed: $passed | Missing: $failed | Warned: $warned</summary>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Result | Binary | Path / Version |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|--------|----------------|" >> "$GITHUB_STEP_SUMMARY"
+        echo -n "$binary_table" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        echo "summary=$passed/$total installed ($failed missing, $warned warned)" >> "$GITHUB_OUTPUT"
+        echo "failed-list=$failed_names" >> "$GITHUB_OUTPUT"
+        echo "warned-list=$warned_names" >> "$GITHUB_OUTPUT"
+        if [ "$failed" -gt 0 ]; then
+          echo "status=error" >> "$GITHUB_OUTPUT"
+        elif [ "$warned" -gt 0 ]; then
+          echo "status=warning" >> "$GITHUB_OUTPUT"
+        else
+          echo "status=ok" >> "$GITHUB_OUTPUT"
+        fi
+        echo "Binary verification: $passed/$total installed ($failed missing, $warned warned)"
+        # Echo lists to stdout so diagnostics aren't trapped in GITHUB_STEP_SUMMARY only.
+        if [ -n "$failed_names" ]; then
+          echo "Failed: $failed_names"
+        fi
+        if [ -n "$warned_names" ]; then
+          echo "Warned: $warned_names"
+        fi
+
+        if [ "$warned" -gt 0 ]; then
+          echo "::warning::Binary verification: $warned optional binaries missing"
+        fi
+
+        if [ "$failed" -gt 0 ]; then
+          echo "::error::Binary verification failed: $failed/$total binaries missing"
+          exit 1
+        fi
+
+    - name: Download asset verification
+      id: download-check
+      if: always()
+      shell: bash
+      run: |
+        set +e
+        metadata_file=$(ls /tmp/synle/bashrc/*/sw_download_asset_metadata.log 2>/dev/null | head -1)
+
+        function format_filesize() {
+          local bytes=$1
+          if [ "$bytes" -ge 1048576 ]; then
+            awk "BEGIN{printf \"%.1f MB\", $bytes/1048576}"
+          elif [ "$bytes" -ge 1024 ]; then
+            awk "BEGIN{printf \"%.1f KB\", $bytes/1024}"
+          else
+            printf "%d B" "$bytes"
+          fi
+        }
+
+        if [ -z "$metadata_file" ] || [ ! -f "$metadata_file" ]; then
+          echo "### Download Asset Verification (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+          echo "<summary>Total: 0 | Success: 0 | Error: 0</summary>" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "*(no download metadata found)*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+          echo "summary=no downloads" >> "$GITHUB_OUTPUT"
+          echo "status=ok" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        passed=0
+        failed=0
+        total=0
+        download_table=""
+
+        while IFS=' ' read -r status url dest filesize; do
+          [ -z "$status" ] && continue
+          total=$((total + 1))
+          if [ "$status" = "Success" ]; then
+            download_table+="| :white_check_mark: | \`$url\` | \`$dest\` | $(format_filesize ${filesize:-0}) |"$'\n'
+            passed=$((passed + 1))
+          else
+            download_table+="| :x: | \`$url\` | \`$dest\` | $(format_filesize ${filesize:-0}) |"$'\n'
+            failed=$((failed + 1))
+          fi
+        done < "$metadata_file"
+
+        echo "### Download Asset Verification (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "<summary>Total: $total | Success: $passed | Error: $failed</summary>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Result | URL | Destination | File Size |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|-----|-------------|-----------|" >> "$GITHUB_STEP_SUMMARY"
+        echo -n "$download_table" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        echo "summary=$passed/$total succeeded ($failed errors)" >> "$GITHUB_OUTPUT"
+        if [ "$failed" -gt 0 ]; then
+          echo "status=error" >> "$GITHUB_OUTPUT"
+        else
+          echo "status=ok" >> "$GITHUB_OUTPUT"
+        fi
+        echo "Download asset verification: $passed/$total succeeded ($failed errors)"
+
+        if [ "$failed" -gt 0 ]; then
+          echo "::warning::Download asset verification: $failed/$total downloads had errors"
+        fi
+
+    - name: Script Results
+      id: script-results
+      if: always()
+      shell: bash
+      run: |
+        timing_file=$(ls /tmp/synle/bashrc/*/run_timing.json 2>/dev/null | head -1)
+        if [ -z "$timing_file" ]; then
+          echo "### Script Results (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo ":fast_forward: *No timing data found*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        TIMING_FILE="$timing_file" node <<'SCRIPT_RESULTS_EOF'
+        const fs = require("fs");
+        const data = JSON.parse(fs.readFileSync(process.env.TIMING_FILE, "utf8"));
+        const results = data.results || [];
+        const scripts = data.scripts || {};
+
+        let success = 0, error = 0, skipped = 0;
+
+        const rows = results.map(r => {
+          const timing = scripts[r.path] || scripts[r.file] || {};
+          const status = timing.status || r.status;
+          const durationMs = timing.duration_ms;
+          const duration = durationMs != null ? durationMs + "ms" : "";
+          const file = r.file.replace(/^software\/scripts\//, "");
+
+          if (status === "success") success++;
+          else if (status === "skipped") skipped++;
+          else error++;
+
+          const icon = status === "success" ? ":white_check_mark:"
+                     : status === "skipped" ? ":fast_forward:"
+                     : ":x:";
+          const detail = timing.error || r.description || "";
+          return "| " + icon + " | `" + file + "` | " + status + " | " + duration + " | " + detail + " |";
+        });
+
+        const lines = [];
+        lines.push("### Script Results (" + process.env.ARTIFACT_NAME + ")");
+        lines.push("");
+        lines.push("<details>");
+        lines.push("<summary>Total: " + results.length + " | Success: " + success + " | Error: " + error + " | Skipped: " + skipped + "</summary>");
+        lines.push("");
+        lines.push("| Result | Script | Status | Duration | Details |");
+        lines.push("|--------|--------|--------|----------|---------|");
+        lines.push(...rows);
+        lines.push("");
+        lines.push("</details>");
+        lines.push("");
+
+        if (data.duration_seconds != null) {
+          lines.push("*Total run: " + (data.duration_seconds * 1000) + "ms*");
+          lines.push("");
+        }
+
+        fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n"));
+        SCRIPT_RESULTS_EOF
+      env:
+        ARTIFACT_NAME: ${{ inputs.artifact-name }}
+
+    - name: Package install summary
+      id: package-install
+      if: always()
+      shell: bash
+      run: |
+        log_file="/tmp/ci_build_output.log"
+        if [ ! -f "$log_file" ]; then
+          echo "### Package Install Summary (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo ":fast_forward: *No build log found*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        installed=0
+        failed=0
+        skipped=0
+        timed_out=0
+        total=0
+        total_duration=0
+        required_count=0
+        optional_count=0
+        install_table=""
+
+        # Machine-readable per-package summary so the cross-OS matrix step in
+        # build-main.yml can merge each OS's install results into a 360-view
+        # table. Format: <pkg>\t<manager>\t<status>\t<duration_seconds>\t<tier>
+        # status: success | error | skipped | timeout
+        # tier:   required | optional
+        mkdir -p /tmp/synle/bashrc
+        install_tsv="/tmp/synle/bashrc/install-summary.tsv"
+        : > "$install_tsv"
+
+        # Required-package classifier — matches package names that map to
+        # check_binary_required entries above. Anything else is treated as
+        # optional (warn-tier or not directly checked by binary verification),
+        # so it gets a :wrench: marker next to the package name in the table.
+        # Keep this list in sync with the check_binary_required block above
+        # (plus common package-name aliases like httpie -> http).
+        required_pkgs_re='^(git|git-filter-repo|curl|make|build-essential|node|nodejs|node-?js|npm|fzf|unzip|yarn|bun|deno|uv|kubectl|kubernetes-cli|@google/gemini-cli|gemini-cli|gemini|temporal|temporalio|httpie|http|ansible|btop)$'
+
+        # Parse lines matching: >> <pkg> >> Installing with <manager> >> <result>
+        while IFS= read -r line; do
+          # Strip ANSI escape codes
+          clean=$(echo "$line" | sed 's/\x1b\[[0-9;]*m//g')
+
+          # Match install output lines
+          if [[ "$clean" =~ ^\>\>\ (.+)\ \>\>\ Installing\ with\ (.+)\ \>\>\ (.+)$ ]]; then
+            pkg="${BASH_REMATCH[1]}"
+            manager="${BASH_REMATCH[2]}"
+            result="${BASH_REMATCH[3]}"
+            total=$((total + 1))
+
+            # Extract duration if present: "Success (12s)" or "Error (5s)"
+            duration=""
+            raw_duration=""
+            if [[ "$result" =~ \(([0-9]+)s\) ]]; then
+              raw_duration="${BASH_REMATCH[1]}"
+              total_duration=$((total_duration + raw_duration))
+            fi
+
+            # Determine status and icon
+            if [[ "$result" == Skipped* ]]; then
+              icon=":fast_forward:"
+              status_tag="skipped"
+              skipped=$((skipped + 1))
+            elif [[ "$result" == Success* ]]; then
+              icon=":white_check_mark:"
+              status_tag="success"
+              installed=$((installed + 1))
+              if [ -n "$raw_duration" ]; then duration="${raw_duration}s"; fi
+            elif [[ "$result" == *"timeout"* ]]; then
+              icon=":pause_button:"
+              status_tag="timeout"
+              timed_out=$((timed_out + 1))
+              duration="Skipped (timeout)"
+            else
+              icon=":x:"
+              status_tag="error"
+              failed=$((failed + 1))
+              duration="Error"
+            fi
+
+            # Required vs optional marker. Required = build-failing if missing
+            # (matches check_binary_required). Optional = warn-tier or unchecked.
+            pkg_lower="${pkg,,}"
+            if [[ "$pkg_lower" =~ $required_pkgs_re ]]; then
+              pkg_label="\`$pkg\`"
+              tier_tag="required"
+              required_count=$((required_count + 1))
+            else
+              pkg_label="\`$pkg\` :wrench:"
+              tier_tag="optional"
+              optional_count=$((optional_count + 1))
+            fi
+
+            install_table+="| $icon | $pkg_label | $manager | $duration |"$'\n'
+            printf '%s\t%s\t%s\t%s\t%s\n' "$pkg" "$manager" "$status_tag" "${raw_duration:-0}" "$tier_tag" >> "$install_tsv"
+          fi
+        done < "$log_file"
+
+        if [ "$total" -eq 0 ]; then
+          echo "### Package Install Summary (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo ":fast_forward: *No package installs detected*" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+        fi
+
+        # Format total duration
+        if [ "$total_duration" -ge 60 ]; then
+          fmt_duration="$(( total_duration / 60 ))m $(( total_duration % 60 ))s"
+        else
+          fmt_duration="${total_duration}s"
+        fi
+
+        echo "### Package Install Summary (${{ inputs.artifact-name }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "<details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "<summary>Total: $total | Installed: $installed | Skipped: $skipped | Failed: $failed | Timed out: $timed_out | Required: $required_count | Optional: $optional_count | Duration: $fmt_duration</summary>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "_:wrench: marks optional packages — missing won't fail the build (warn-tier or unchecked)._" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Result | Package | Manager | Duration |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|--------|---------|---------|----------|" >> "$GITHUB_STEP_SUMMARY"
+        echo -n "$install_table" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "</details>" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+
+        echo "Package install summary: $installed installed, $skipped skipped, $failed failed, $timed_out timed out, $required_count required, $optional_count optional ($fmt_duration)"
+
+    - name: Job Summary
+      id: summary
+      if: always()
+      shell: bash
+      run: |
+        function get_status_icon() {
+          case "$1" in
+            success)  echo ":white_check_mark:" ;;
+            failure)  echo ":x:" ;;
+            skipped)  echo ":fast_forward:" ;;
+            *)        echo ":grey_question:" ;;
+          esac
+        }
+
+        function format_duration() {
+          local total=$1
+          if [ "$total" -ge 60 ]; then
+            printf "%dm %ds" $((total / 60)) $((total % 60))
+          else
+            printf "%ds" "$total"
+          fi
+        }
+
+        D_BUILD=$(( ${CI_BUILD_T1:-$CI_BUILD_T0} - CI_BUILD_T0 ))
+
+        echo "## Build Summary (${{ inputs.artifact-name }})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Result | Step | Duration |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|------|----------|" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.ci-build.outcome }}') | CI Build | $(format_duration $D_BUILD) |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.package-install.outcome }}') | Package Install | |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.os-flags.outcome }}') | OS Flags | |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.profile-syntax.outcome }}') | Profile Syntax | |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.binary-check.outcome }}') | Binary Verification | ${{ steps.binary-check.outputs.summary }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.download-check.outcome }}') | Download Asset Verification | |" >> $GITHUB_STEP_SUMMARY
+        echo "| $(get_status_icon '${{ steps.script-results.outcome }}') | Script Results | |" >> $GITHUB_STEP_SUMMARY
+
+        echo "duration=$D_BUILD" >> "$GITHUB_OUTPUT"

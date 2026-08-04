@@ -1,0 +1,248 @@
+// Common keybindings shared across all platforms.
+// OS_KEY = COMMAND (cmd) key on macOS, ALT key on Windows/Linux.
+[
+  { "key": "OS_KEY+1", "command": "workbench.action.openEditorAtIndex1" },
+  { "key": "OS_KEY+2", "command": "workbench.action.openEditorAtIndex2" },
+  { "key": "OS_KEY+3", "command": "workbench.action.openEditorAtIndex3" },
+  { "key": "OS_KEY+4", "command": "workbench.action.openEditorAtIndex4" },
+  { "key": "OS_KEY+5", "command": "workbench.action.openEditorAtIndex5" },
+  { "key": "OS_KEY+6", "command": "workbench.action.openEditorAtIndex6" },
+  { "key": "OS_KEY+7", "command": "workbench.action.openEditorAtIndex7" },
+  { "key": "OS_KEY+8", "command": "workbench.action.openEditorAtIndex8" },
+  { "key": "OS_KEY+9", "command": "workbench.action.openEditorAtIndex9" },
+  // reset font zoom to default (browser-style OS_KEY+0)
+  { "key": "OS_KEY+0", "command": "editor.action.fontZoomReset" },
+  {
+    "key": "f5",
+    "command": "runCommands",
+    "args": {
+      "commands": ["workbench.files.action.refreshFilesExplorer", "workbench.action.files.revert"],
+    },
+  },
+  {
+    "key": "OS_KEY+shift+r",
+    "command": "runCommands",
+    "args": {
+      "commands": ["workbench.files.action.refreshFilesExplorer", "workbench.action.files.revert"],
+    },
+  },
+  { "key": "OS_KEY+h", "command": "editor.action.startFindReplaceAction", "when": "editorFocus || editorIsOpen" },
+  { "key": "OS_KEY+h", "command": "testing.toggleTestingPeekHistory", "when": "testing.isPeekVisible" },
+  {
+    "key": "OS_KEY+\\",
+    "command": "workbench.action.toggleSidebarVisibility",
+  },
+  {
+    // toggle the right (auxiliary) sidebar — matches Zed's ToggleRightDock.
+    // Repurposed from VS Code's default toggleActivityBarVisibility, which we
+    // never used and which conflicted with this binding.
+    "key": "OS_KEY+shift+\\",
+    "command": "workbench.action.toggleAuxiliaryBar",
+  },
+  {
+    "key": "OS_KEY+;",
+    "command": "workbench.action.gotoLine",
+  },
+  {
+    "key": "OS_KEY+r",
+    "command": "workbench.action.gotoSymbol",
+  },
+  // fold/unfold block (OS_KEY+< to fold, OS_KEY+> to unfold, matches Sublime)
+  {
+    "key": "OS_KEY+,",
+    "command": "editor.fold",
+    "when": "editorTextFocus",
+  },
+  {
+    "key": "OS_KEY+.",
+    "command": "editor.unfold",
+    "when": "editorTextFocus",
+  },
+  // jump to bracket (ctrl+m across all platforms and editors, matches Sublime)
+  {
+    "key": "ctrl+m",
+    "command": "editor.action.jumpToBracket",
+    "when": "editorFocus",
+  },
+  {
+    "key": "OS_KEY+shift+l",
+    "command": "editor.action.insertCursorAtEndOfEachLineSelected",
+    "when": "editorTextFocus",
+  },
+  {
+    "key": "OS_KEY+shift+'",
+    "command": "workbench.action.showAllSymbols",
+  },
+  {
+    "key": "OS_KEY+ctrl+g",
+    "command": "editor.action.selectHighlights",
+  },
+  {
+    "key": "OS_KEY+ctrl+p",
+    "command": "workbench.action.openWorkspace",
+  },
+  {
+    "key": "OS_KEY+ctrl+p",
+    "command": "projectManager.listProjects",
+  },
+  {
+    "key": "OS_KEY+ctrl+c",
+    "command": "workbench.files.action.compareWithSaved",
+  },
+  {
+    "key": "OS_KEY+n",
+    "command": "workbench.action.files.newUntitledFile",
+  },
+  {
+    "key": "OS_KEY+f",
+    "command": "actions.find",
+  },
+  // format document — unified cross-editor chord (ctrl+shift+cmd+f mac / ctrl+shift+alt+f linux)
+  {
+    "key": "ctrl+shift+OS_KEY+f",
+    "command": "editor.action.formatDocument",
+  },
+  {
+    "key": "OS_KEY+shift+f",
+    "command": "workbench.action.findInFiles",
+  },
+  // find next/prev (matches Sublime common)
+  {
+    "key": "OS_KEY+g",
+    "command": "editor.action.moveSelectionToNextFindMatch",
+    "when": "editorFocus",
+  },
+  {
+    "key": "OS_KEY+shift+g",
+    "command": "editor.action.moveSelectionToPreviousFindMatch",
+    "when": "editorFocus",
+  },
+  {
+    "key": "OS_KEY+'",
+    "command": "workbench.action.debug.stepOver",
+    "when": "debugState == 'stopped'",
+  },
+  {
+    "key": "OS_KEY+shift+'",
+    "command": "workbench.action.debug.stepInto",
+    "when": "debugState != 'inactive'",
+  },
+  // go to definition (matches Sublime common)
+  {
+    "key": "OS_KEY+enter",
+    "command": "editor.action.revealDefinition",
+    "when": "editorHasDefinitionProvider && editorTextFocus",
+  },
+  {
+    "key": "shift+enter",
+    "command": "editor.action.goToReferences",
+    "when": "editorHasReferenceProvider && editorTextFocus",
+  },
+  // rename
+  { "key": "f2", "command": "editor.action.rename", "when": "editorHasRenameProvider && editorTextFocus && !editorReadonly" },
+  {
+    "key": "f2",
+    "command": "workbench.action.terminal.renameInstance",
+    "when": "terminalHasBeenCreated && terminalTabsFocus && terminalTabsSingularSelection || terminalProcessSupported && terminalTabsFocus && terminalTabsSingularSelection",
+  },
+  { "key": "f2", "command": "debug.renameWatchExpression", "when": "watchExpressionsFocused" },
+  { "key": "f2", "command": "debug.setVariable", "when": "variablesFocused" },
+  {
+    "key": "f2",
+    "command": "remote.tunnel.label",
+    "when": "tunnelViewFocus && tunnelType == 'Forwarded' && tunnelViewMultiSelection == 'undefined'",
+  },
+  {
+    "key": "f2",
+    "command": "renameFile",
+    "when": "explorerViewletVisible && filesExplorerFocus && !explorerResourceIsRoot && !explorerResourceReadonly && !inputFocus",
+  },
+  { "key": "f2", "command": "abracadabra.renameSymbol", "when": "editorTextFocus" },
+  {
+    "key": "OS_KEY+shift+1",
+    "command": "workbench.view.explorer",
+    "when": "viewContainer.workbench.view.explorer.enabled",
+  },
+  {
+    "key": "OS_KEY+shift+2",
+    "command": "workbench.view.search",
+  },
+  {
+    "key": "OS_KEY+shift+`",
+    "command": "workbench.view.debug",
+  },
+  // Toggle terminal panel — same chord across mac/linux/windows. ctrl+` is the
+  // VS Code default everywhere, but lock it in explicitly so a future default
+  // change can't silently break it. Mirrors Zed's `ctrl-`` -> terminal_panel::Toggle.
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.terminal.toggleTerminal",
+  },
+  // Open a new terminal as an editor tab. Repurposes OS_KEY+t away from the
+  // default `workbench.action.showAllSymbols` ("# go to symbol in workspace"
+  // quickpick), which is rarely useful and shadows the obvious "new tab" muscle
+  // memory from browsers / terminal emulators. createTerminalEditor always opens
+  // in the editor area regardless of `terminal.integrated.defaultLocation`.
+  // Fires from terminal focus too — vs-code.js auto-adds every OS_KEY+X command
+  // to terminal.integrated.commandsToSkipShell so the shell doesn't swallow it.
+  {
+    "key": "OS_KEY+t",
+    "command": "workbench.action.createTerminalEditor",
+  },
+  // Insert a newline in the terminal prompt without submitting. Sends ESC + CR
+  // (\u001b\r) — the canonical "alt+enter" / "option+enter" sequence that TUI
+  // apps using Ink / blessed / raw stdin (Claude Code, Cursor agents, etc.)
+  // recognize as "newline in prompt". Tradeoff: this does NOT insert a literal
+  // newline in bare readline shells (bash/zsh) because readline does not bind
+  // meta+CR by default. For multi-line shell commands, use `\<enter>` or
+  // ctrl+v ctrl+j manually. Optimised for Claude Code, the dominant use case.
+  {
+    "key": "ctrl+enter",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001b\r" },
+    "when": "terminalFocus",
+  },
+  // Find within the terminal output. OS_KEY+f is bound globally to
+  // `actions.find` (editor find), so the `terminalFocus` `when` clause
+  // overrides it only when the terminal has focus.
+  {
+    "key": "OS_KEY+f",
+    "command": "workbench.action.terminal.focusFind",
+    "when": "terminalFocus",
+  },
+  // for zooming of font and workspace
+  {
+    "key": "OS_KEY+shift+=",
+    "command": "workbench.action.zoomIn",
+  },
+  {
+    "key": "OS_KEY+shift+-",
+    "command": "workbench.action.zoomOut",
+  },
+  {
+    "key": "OS_KEY+=",
+    "command": "editor.action.fontZoomIn",
+  },
+  {
+    "key": "OS_KEY+-",
+    "command": "editor.action.fontZoomOut",
+  },
+  // split editor (ctrl+d vertical, ctrl+' horizontal, ctrl+w single column)
+  {
+    "key": "ctrl+d",
+    "command": "workbench.action.splitEditor",
+  },
+  {
+    "key": "ctrl+'",
+    "command": "workbench.action.splitEditorDown",
+  },
+  {
+    "key": "ctrl+w",
+    "command": "workbench.action.editorLayoutSingle",
+  },
+  // toggle soft wrap (matches Zed/Sublime — repurposed from default toggleAuxiliaryBar)
+  {
+    "key": "shift+ctrl+OS_KEY+\\",
+    "command": "editor.action.toggleWordWrap",
+  },
+]

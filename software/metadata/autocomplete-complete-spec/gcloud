@@ -1,0 +1,129 @@
+access-context-manager|cloud-bindings,levels,perimeters,policies
+ai|custom-jobs,endpoints,hp-tuning-jobs,index-endpoints,indexes,model-monitoring-jobs,models,operations,tensorboards
+ai-platform|jobs,local,models,operations,predict,versions
+alpha|access-context-manager,ai,api-gateway,artifacts,asset,auth,bigtable,billing,bms,builds,cloud-shell,code,components,composer,compute,config,config-connector,container,dataflow,dataproc,debug,deployment-manager,dns,domains,emulators,endpoints,essential-contacts,events,filestore,firebase,firestore,functions,help,iam,iap,iot,kms,labelmanager,logging,memorystore,migration,ml,monitoring,notebooks,org-policies,organizations,policy-intelligence,policy-troubleshoot,privateca,projects,pubsub,recommender,redis,resource-manager,resource-settings,run,runtime-config,scc,scheduler,secrets,services,source,spanner,sql,storage,survey,tasks,topic,transfer,version,vmware,workflows,workstations
+api-gateway|api-configs,apis,gateways,operations
+app|browse,create,deploy,describe,domain-mappings,firewall,instances,logs,open-console,operations,regions,services,ssl-certificates,update,versions
+artifacts|docker,files,locations,operations,packages,print-settings,repositories,settings,tags,versions,vulnerabilities
+asset|analyze-iam-policy,analyze-iam-policy-longrunning,analyze-move,export,feeds,get-effective-iam-policy,get-history,operations,save-snapshot,search-all-iam-policies,search-all-resources
+auth|activate-refresh-token,activate-service-account,application-default,configure-docker,git-helper,list,login,logout,print-access-token,print-identity-token,revoke
+beta|access-context-manager,ai,ai-platform,api-gateway,apigee,apigee-organizations,artifacts,asset,auth,bigtable,billing,bms,builds,cloud-shell,code,composer,compute,config,container,dataflow,dataproc,datafusion,debug,deployment-manager,dns,domains,emulators,endpoints,essential-contacts,eventarc,filestore,firebase,firestore,functions,help,iam,iap,iot,kms,logging,memorystore,migration,ml,monitoring,notebooks,org-policies,organizations,policy-intelligence,policy-troubleshoot,privateca,projects,pubsub,recommender,redis,resource-manager,resource-settings,run,runtime-config,scc,scheduler,secrets,services,source,spanner,sql,storage,survey,tasks,topic,transfer,version,vmware,workflows,workstations
+bigtable|app-profiles,backups,clusters,instances,iam,operations,tables
+billing|accounts,projects
+bms|instances,locations,networks,operations,resource-policies,snapshot-schedule-policies,snapshots,volumes
+builds|approve,cancel,connections,describe,enterprise-config,list,log,pre-built-images,reject,repositories,submit,triggers,worker-pools
+cloud-shell|get-mount-command,scp,ssh
+code|clean-up,deploy,describe,dev,export-kubernetes-config
+components|copy-bundled-python,install,list,post-process,reinstall,remove,repositories,restore,update
+composer|environments,operations
+compute|accelerator-types,addresses,backend-buckets,backend-services,commitments,config-ssh,connect-to-serial-port,copy-files,disk-types,disks,external-vpn-gateways,firewall-policies,firewall-rules,forwarding-rules,future-reservations,health-checks,http-health-checks,https-health-checks,images,instance-groups,instance-templates,instances,interconnects,machine-images,machine-types,network-edge-security-services,network-endpoint-groups,network-firewall-policies,networks,node-groups,node-templates,node-types,operations,os-config,os-login,packet-mirrorings,project-info,public-advertised-prefixes,public-delegated-prefixes,regions,reset-windows-password,reservations,resource-policies,routers,routes,scp,security-policies,service-attachments,shared-vpc,sign-url,snapshots,sole-tenancy,ssh,ssl-certificates,ssl-policies,start-iap-tunnel,target-grpc-proxies,target-http-proxies,target-https-proxies,target-instances,target-pools,target-ssl-proxies,target-tcp-proxies,target-vpn-gateways,tpus,url-maps,vpn-gateways,vpn-tunnels,zones
+config|configurations,get-value,list,set,unset
+config-connector|apply,bulk-export,export,export-uri,print-resources
+container|aws,azure,binauthz,clusters,fleet,get-server-config,hub,images,node-pools,operations,subnets
+dataflow|flex-template,jobs,logs,metrics,snapshots,sql
+dataproc|autoscaling-policies,batches,clusters,jobs,node-groups,operations,workflow-templates
+datastore|cleanup-indexes,create-indexes,databases,export,import,indexes,operations
+debug|logpoints,snapshots,source,targets
+deploy|apply,delete,delivery-pipelines,releases,rollouts,targets
+deployment-manager|deployments,manifests,operations,resources,types
+dns|active-peering-zones,dns-keys,managed-zones,operations,policies,project-info,record-sets,response-policies
+domains|list-user-verified,registrations
+emulators|bigtable,datastore,firestore,pubsub,spanner,start
+endpoints|configs,operations,services
+essential-contacts|create,delete,describe,list,send-test-message,update
+eventarc|attributes,channels,locations,operations,providers,triggers
+filestore|backups,instances,locations,operations,regions,snapshots
+firebase|test
+firestore|backups,databases,export,import,indexes,operations
+functions|add-iam-policy-binding,add-invoker-policy-binding,call,delete,deploy,describe,detach,event-types,get-iam-policy,list,logs,regions,remove-iam-policy-binding,remove-invoker-policy-binding,set-iam-policy
+iam|policies,roles,service-accounts,workforce-pools,workload-identity-pools
+iap|oauth-brands,oauth-clients,settings,tcp,tunnel,web
+info|--anonymize,--show-log,--run-diagnostics,--format
+init|--console-only,--skip-diagnostics
+kms|encrypt,decrypt,import-jobs,keyrings,keys,locations,raw-decrypt,raw-encrypt,update-version-state,versions
+logging|buckets,exclusions,links,locations,logs,metrics,operations,read,resource-descriptors,settings,sinks,tail,views,write
+memorystore|redis
+metric-scopes|create,delete,list
+ml|jobs,language,local,models,predict,speech,vision
+monitoring|channel-descriptors,channels,dashboards,policies,snoozes,uptime
+network-management|connectivity-tests,operations
+network-services|edge-cache-keysets,edge-cache-origins,edge-cache-services,operations
+notebooks|environments,executions,instances,locations,operations,runtimes,schedules
+org-policies|allow,delete,deny,describe,enable-enforce,list,reset,set-policy
+organizations|add-iam-policy-binding,describe,get-iam-policy,list,remove-iam-policy-binding,set-iam-policy
+policy-intelligence|orgpolicy,query-activity
+policy-troubleshoot|iam
+privateca|certificate-authorities,certificate-templates,certificates,locations,operations,pools,reusable-configs,roots,subordinates
+projects|add-iam-policy-binding,create,delete,describe,get-ancestors,get-iam-policy,list,move,remove-iam-policy-binding,set-iam-policy,undelete,update
+pubsub|lite-operations,lite-reservations,lite-subscriptions,lite-topics,schemas,snapshots,subscriptions,topics
+recommender|insight-types,insights,recommendations,recommender-config,recommenders
+redis|instances,operations,regions
+resource-manager|folders,liens,org-policies,tags
+resource-settings|set-value,settings,value
+run|deploy,domain-mappings,jobs,operations,regions,revisions,services,worker-pools
+scc|assets,findings,muteconfigs,notifications,operations,sources
+scheduler|jobs,locations
+secrets|add-iam-policy-binding,create,delete,describe,get-iam-policy,list,remove-iam-policy-binding,replication,set-iam-policy,update,versions
+services|api-keys,disable,enable,identity,list,operations,peered-dns-domains,vpc-peerings
+source|repos
+spanner|backup-schedules,backups,databases,instance-configs,instances,operations,rows
+sql|backups,connect,databases,export,flags,import,instances,operations,ssl,ssl-certs,tiers,users
+storage|access,buckets,cat,cors,cp,du,encryption,folders,hash,hmac,insights,labels,ls,managed-folders,mb,mv,objects,pap,quota,rb,rm,rsync,signurl,sign-url,uniform-bucket-level-access,versioning,worm
+survey
+tasks|create,delete,describe,list,locations,queues,run
+topic|arg-files,cli-trees,client-libraries,configurations,custom-formats,datetimes,filters,formats,gcloudignore,projections,resource-keys,startup
+transfer|agent-pools,agents,jobs,operations
+version|--help
+vmware|engines,private-clouds,routing-tables
+workflows|deploy,delete,describe,executions,list,run,trigger
+workstations|clusters,configs,operations,workstations
+help|topic
+auth list|--filter,--format,--account
+auth login|--account,--no-launch-browser,--brief,--cred-file,--enable-gdrive-access
+auth print-access-token|--account,--scopes,--lifetime
+auth print-identity-token|--account,--audiences
+auth revoke|--all
+config list|--all,--filter,--format
+config set|account,project,compute/region,compute/zone,disable_prompts,survey/disable_prompts
+config get-value|account,project,compute/region,compute/zone
+config unset|account,project,compute/region,compute/zone
+projects list|--filter,--format,--limit,--page-size,--sort-by
+projects describe|--format,--verbosity
+projects create|--name,--organization,--folder,--labels,--enable-cloud-apis
+compute instances list|--filter,--format,--limit,--zones,--regions,--sort-by
+compute instances create|--zone,--machine-type,--image,--image-family,--image-project,--network,--subnet,--tags,--labels,--metadata,--scopes,--service-account,--boot-disk-size,--boot-disk-type
+compute instances start|--zone,--async
+compute instances stop|--zone,--async,--discard-local-ssd
+compute instances delete|--zone,--quiet,--async,--delete-disks
+compute ssh|--zone,--ssh-flag,--internal-ip,--tunnel-through-iap,--strict-host-key-checking
+compute scp|--zone,--recurse,--scp-flag,--internal-ip,--tunnel-through-iap
+container clusters list|--filter,--format,--limit,--region,--zone
+container clusters create|--zone,--region,--num-nodes,--machine-type,--cluster-version,--release-channel,--enable-autoscaling,--min-nodes,--max-nodes,--enable-autorepair,--enable-autoupgrade,--workload-pool
+container clusters get-credentials|--zone,--region,--internal-ip
+container clusters delete|--zone,--region,--quiet,--async
+run deploy|--region,--platform,--image,--source,--port,--memory,--cpu,--max-instances,--min-instances,--allow-unauthenticated,--no-allow-unauthenticated,--service-account,--set-env-vars,--update-env-vars,--remove-env-vars,--clear-env-vars,--vpc-connector,--ingress,--concurrency,--timeout,--cpu-throttling,--no-cpu-throttling,--execution-environment
+run services list|--filter,--format,--region,--platform
+run services delete|--region,--platform,--quiet,--async
+functions deploy|--region,--runtime,--trigger-http,--trigger-topic,--trigger-bucket,--trigger-event,--memory,--timeout,--source,--entry-point,--allow-unauthenticated,--no-allow-unauthenticated,--service-account,--set-env-vars,--update-env-vars,--gen2
+functions list|--filter,--format,--regions
+functions delete|--region,--quiet,--async,--gen2
+sql instances list|--filter,--format,--limit
+sql instances create|--database-version,--region,--tier,--root-password,--storage-size,--storage-type,--availability-type
+sql instances delete|--quiet,--async
+sql connect|--user,--database
+storage cp|--recursive,-r,--include,--exclude,--quiet,--cache-control,--content-type,--gzip-in-flight,--preserve-acl,--preserve-posix
+storage ls|--recursive,-r,--all-versions,--long,-l,--readable-sizes
+storage rm|--recursive,-r,--quiet,--all-versions
+storage rsync|--recursive,-r,--checksum,--delete-unmatched-destination-objects,--exclude,--include,--quiet
+storage buckets list|--filter,--format
+storage buckets create|--location,--storage-class,--public-access-prevention,--uniform-bucket-level-access
+iam roles list|--filter,--format,--organization,--project
+iam service-accounts list|--filter,--format,--project
+iam service-accounts create|--display-name,--description,--project
+secrets create|--data-file,--locations,--replication-policy
+secrets versions access|--secret
+logging read|--limit,--order,--format,--project,--freshness
+components install|--quiet
+components update|--version,--quiet
+components list|--show-versions,--filter
+|--account,--project,--quiet,-q,--verbosity,--format,--filter,--help,-h,--log-http,--billing-project,--configuration,--flags-file,--flatten,--help-product

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "none",
+    "checkJs": false,
+    "baseUrl": "."
+  },
+  "include": ["software/types/index.d.ts", "**/*.d.ts", "**/*.js"],
+  "exclude": ["node_modules", "dist"]
+}

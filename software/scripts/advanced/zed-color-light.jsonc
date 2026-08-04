@@ -1,0 +1,267 @@
+{
+  // High Contrast Light - modeled after VS Code Default High Contrast Light.
+  // Values are generated: every `// {{light.key}}` marker is rewritten from COLOR_MAP in
+  // software/tools/build-include.js by `make format_build_include`. Edit the marker, not the hex.
+  //
+  // Layering rules (see the COLOR_MAP JSDoc for the FILL / STROKE / FOREGROUND split):
+  // - editor surfaces stay on `background`; chrome (title bar, tabs, panels, status bar) sits on
+  //   `surface` so the editor visually pops out of the frame.
+  // - every `*.background` is an `_alpha10` tint of its matching foreground, never the solid color -
+  //   Zed paints text ON these, so a solid fill makes the text invisible.
+  // - interactive fills ladder up `surface` -> `gray` (hover) -> `pressed` (active) -> `selection`;
+  //   `activeLine` is editor-only and must not be reused for chrome states.
+  "$schema": "https://zed.dev/schema/themes/v0.2.0.json",
+  "name": "Sy Light", // {{light.themeName}}
+  "author": "synle",
+  "themes": [
+    {
+      "name": "Sy Light", // {{light.themeName}}
+      "appearance": "light",
+      "style": {
+        // --- Editor Chrome ---
+        "background.appearance": "opaque",
+        "background": "#ececec", // {{light.surface}}
+        "editor.background": "#f8f8f8", // {{light.background}}
+        "editor.foreground": "#1e1e1e", // {{light.foreground}}
+        "editor.gutter.background": "#f8f8f8", // {{light.background}}
+        "editor.subheader.background": "#ececec", // {{light.surface}}
+        "editor.active_line.background": "#cfe0f7", // {{light.activeLine}}
+        "editor.highlighted_line.background": "#cfe0f7", // {{light.activeLine}}
+        "editor.line_number": "#4a4a4a", // {{light.brightBlack}}
+        "editor.active_line_number": "#0033b3", // {{light.blue}}
+        "editor.hover_line_number": "#1e1e1e", // {{light.foreground}}
+        "editor.invisible": "#a4a4a4", // {{light.guide}}
+        "editor.wrap_guide": "#a4a4a4", // {{light.guide}}
+        "editor.active_wrap_guide": "#262626", // {{light.brightGray}}
+        "editor.indent_guide": "#a4a4a4", // {{light.guide}}
+        "editor.indent_guide_active": "#262626", // {{light.brightGray}}
+        "editor.document_highlight.read_background": "#0033b333", // {{light.blue_alpha20}}
+        "editor.document_highlight.write_background": "#8a3f2033", // {{light.orange_alpha20}}
+        "editor.document_highlight.bracket_background": "#26262666", // {{light.brightGray_alpha40}}
+
+        // --- Text ---
+        "text": "#1e1e1e", // {{light.foreground}}
+        "text.muted": "#4a4a4a", // {{light.brightBlack}}
+        "text.placeholder": "#5a5a5a", // {{light.textDisabled}}
+        "text.disabled": "#5a5a5a", // {{light.textDisabled}}
+        "text.accent": "#0033b3", // {{light.blue}}
+
+        // --- Icons ---
+        "icon": "#1e1e1e", // {{light.foreground}}
+        "icon.muted": "#4a4a4a", // {{light.brightBlack}}
+        "icon.disabled": "#5a5a5a", // {{light.textDisabled}}
+        "icon.placeholder": "#5a5a5a", // {{light.textDisabled}}
+        "icon.accent": "#0033b3", // {{light.blue}}
+
+        // --- UI Elements ---
+        // Disabled reuses the base fill (no state change) so it cannot be mistaken for hover.
+        "element.background": "#ececec", // {{light.surface}}
+        "element.hover": "#cacaca", // {{light.gray}}
+        "element.active": "#b0b0b0", // {{light.pressed}}
+        "element.selected": "#96c6fa", // {{light.selection}}
+        "element.disabled": "#ececec", // {{light.surface}}
+        "ghost_element.background": "#f8f8f800", // {{light.background_alpha0}}
+        "ghost_element.hover": "#cacaca", // {{light.gray}}
+        "ghost_element.active": "#b0b0b0", // {{light.pressed}}
+        "ghost_element.selected": "#96c6fa", // {{light.selection}}
+        "ghost_element.disabled": "#ececec", // {{light.surface}}
+        "drop_target.background": "#0033b333", // {{light.blue_alpha20}}
+
+        // --- Surface / Panel ---
+        "surface.background": "#ececec", // {{light.surface}}
+        "elevated_surface.background": "#ececec", // {{light.surface}}
+        "panel.background": "#ececec", // {{light.surface}}
+        "panel.focused_border": "#0033b3", // {{light.blue}}
+        "panel.indent_guide": "#a4a4a4", // {{light.guide}}
+        "panel.indent_guide_active": "#262626", // {{light.brightGray}}
+        "panel.indent_guide_hover": "#4a4a4a", // {{light.brightBlack}}
+        "pane.focused_border": "#0033b3", // {{light.blue}}
+        "pane_group.border": "#262626", // {{light.brightGray}}
+        "title_bar.background": "#ececec", // {{light.surface}}
+        "title_bar.inactive_background": "#f8f8f8", // {{light.background}}
+        "toolbar.background": "#ececec", // {{light.surface}}
+        "tab_bar.background": "#ececec", // {{light.surface}}
+        "tab.inactive_background": "#ececec", // {{light.surface}}
+        "tab.active_background": "#f8f8f8", // {{light.background}}
+        "search.match_background": "#ffbe3d", // {{light.matchHighlight}}
+        "search.active_match_background": "#0033b366", // {{light.blue_alpha40}}
+        "status_bar.background": "#ececec", // {{light.surface}}
+        "scrollbar.thumb.background": "#4a4a4a", // {{light.brightBlack}}
+        "scrollbar.thumb.hover_background": "#1e1e1e", // {{light.foreground}}
+        "scrollbar.thumb.border": "#262626", // {{light.brightGray}}
+        "scrollbar.track.background": "#f8f8f8", // {{light.background}}
+        "scrollbar.track.border": "#f8f8f8", // {{light.background}}
+
+        // --- Borders ---
+        "border": "#262626", // {{light.brightGray}}
+        "border.variant": "#262626", // {{light.brightGray}}
+        "border.focused": "#0033b3", // {{light.blue}}
+        "border.selected": "#0033b3", // {{light.blue}}
+        "border.transparent": "#f8f8f800", // {{light.background_alpha0}}
+        "border.disabled": "#a4a4a4", // {{light.guide}}
+
+        // --- Links ---
+        "link_text.hover": "#0252ad", // {{light.linkBlue}}
+
+        // --- Conflict / Diff ---
+        "conflict": "#6a5100", // {{light.brown}}
+        "conflict.background": "#6a51001a", // {{light.brown_alpha10}}
+        "conflict.border": "#6a5100", // {{light.brown}}
+        "created": "#004a15", // {{light.green}}
+        "created.background": "#004a151a", // {{light.green_alpha10}}
+        "created.border": "#004a15", // {{light.green}}
+        "deleted": "#840000", // {{light.red}}
+        "deleted.background": "#8400001a", // {{light.red_alpha10}}
+        "deleted.border": "#840000", // {{light.red}}
+        "modified": "#775502", // {{light.yellow}}
+        "modified.background": "#7755021a", // {{light.yellow_alpha10}}
+        "modified.border": "#775502", // {{light.yellow}}
+        "renamed": "#0033b3", // {{light.blue}}
+        "renamed.background": "#0033b31a", // {{light.blue_alpha10}}
+        "renamed.border": "#0033b3", // {{light.blue}}
+
+        // --- Version Control ---
+        "version_control.added": "#004a15", // {{light.green}}
+        "version_control.modified": "#775502", // {{light.yellow}}
+        "version_control.deleted": "#840000", // {{light.red}}
+        "version_control.word_added": "#004a1533", // {{light.green_alpha20}}
+        "version_control.word_deleted": "#84000033", // {{light.red_alpha20}}
+        "version_control.conflict_marker.ours": "#004a1533", // {{light.green_alpha20}}
+        "version_control.conflict_marker.theirs": "#0033b333", // {{light.blue_alpha20}}
+
+        // --- Diagnostics ---
+        "error": "#840000", // {{light.red}}
+        "error.background": "#8400001a", // {{light.red_alpha10}}
+        "error.border": "#840000", // {{light.red}}
+        "warning": "#775502", // {{light.yellow}}
+        "warning.background": "#7755021a", // {{light.yellow_alpha10}}
+        "warning.border": "#775502", // {{light.yellow}}
+        "info": "#0033b3", // {{light.blue}}
+        "info.background": "#0033b31a", // {{light.blue_alpha10}}
+        "info.border": "#0033b3", // {{light.blue}}
+        "hint": "#145e5e", // {{light.brightCyan}}
+        "hint.background": "#145e5e1a", // {{light.brightCyan_alpha10}}
+        "hint.border": "#145e5e", // {{light.brightCyan}}
+        "success": "#004a15", // {{light.green}}
+        "success.background": "#004a151a", // {{light.green_alpha10}}
+        "success.border": "#004a15", // {{light.green}}
+        "predictive": "#5a5a5a", // {{light.textDisabled}}
+        "predictive.background": "#5a5a5a1a", // {{light.textDisabled_alpha10}}
+        "predictive.border": "#5a5a5a", // {{light.textDisabled}}
+        "unreachable": "#5a5a5a", // {{light.textDisabled}}
+        "unreachable.background": "#5a5a5a1a", // {{light.textDisabled_alpha10}}
+        "unreachable.border": "#5a5a5a", // {{light.textDisabled}}
+        "hidden": "#4a4a4a", // {{light.brightBlack}}
+        "hidden.background": "#4a4a4a1a", // {{light.brightBlack_alpha10}}
+        "hidden.border": "#262626", // {{light.brightGray}}
+        "ignored": "#4a4a4a", // {{light.brightBlack}}
+        "ignored.background": "#4a4a4a1a", // {{light.brightBlack_alpha10}}
+        "ignored.border": "#262626", // {{light.brightGray}}
+
+        // --- Players (local cursor + selection; Zed reads selection from players[0], not selection.background) ---
+        "players": [
+          {
+            "cursor": "#0451a5", // {{light.cursorColor}}
+            "background": "#0451a5", // {{light.cursorColor}}
+            "selection": "#96c6fa", // {{light.selection}}
+          },
+        ],
+
+        // --- Accents (collaborator cursors, rainbow indent) — spaced around the hue wheel ---
+        "accents": [
+          "#0033b3", // {{light.blue}}
+          "#004a15", // {{light.green}}
+          "#8a3f20", // {{light.orange}}
+          "#8700c1", // {{light.brightPurple}}
+          "#145e5e", // {{light.brightCyan}}
+          "#775502", // {{light.yellow}}
+          "#840000", // {{light.red}}
+        ],
+
+        // --- Syntax ---
+        "syntax": {
+          "attribute": { "color": "#001080" }, // {{light.darkBlue}}
+          "boolean": { "color": "#0033b3" }, // {{light.blue}}
+          "comment": { "color": "#004a15" }, // {{light.green}}
+          "comment.doc": { "color": "#004a15" }, // {{light.green}}
+          "constant": { "color": "#00416f" }, // {{light.cyan}}
+          "constructor": { "color": "#145e5e" }, // {{light.brightCyan}}
+          "diff.minus": { "color": "#840000" }, // {{light.red}}
+          "diff.plus": { "color": "#004a15" }, // {{light.green}}
+          "embedded": { "color": "#a12626" }, // {{light.brightRed}}
+          "emphasis": { "font_style": "italic", "color": "#0033b3" }, // {{light.blue}}
+          "emphasis.strong": { "font_weight": 700, "color": "#0033b3" }, // {{light.blue}}
+          "enum": { "color": "#145e5e" }, // {{light.brightCyan}}
+          "function": { "color": "#6a5100" }, // {{light.brown}}
+          "function.builtin": { "color": "#6a5100" }, // {{light.brown}}
+          "hint": { "color": "#145e5e" }, // {{light.brightCyan}}
+          "keyword": { "font_weight": 700, "color": "#0033b3" }, // {{light.blue}}
+          "label": { "color": "#001080" }, // {{light.darkBlue}}
+          "link_text": { "color": "#a12626" }, // {{light.brightRed}}
+          "link_uri": { "color": "#0252ad" }, // {{light.linkBlue}}
+          "namespace": { "color": "#145e5e" }, // {{light.brightCyan}}
+          "number": { "color": "#03623a" }, // {{light.darkGreen}}
+          "operator": { "color": "#1e1e1e" }, // {{light.foreground}}
+          "predictive": { "font_style": "italic", "color": "#5a5a5a" }, // {{light.textDisabled}}
+          "preproc": { "color": "#8700c1" }, // {{light.brightPurple}}
+          "primary": { "color": "#001080" }, // {{light.darkBlue}}
+          "property": { "color": "#001080" }, // {{light.darkBlue}}
+          "punctuation": { "color": "#1e1e1e" }, // {{light.foreground}}
+          "punctuation.bracket": { "color": "#1e1e1e" }, // {{light.foreground}}
+          "punctuation.delimiter": { "color": "#1e1e1e" }, // {{light.foreground}}
+          "punctuation.list_marker": { "color": "#0033b3" }, // {{light.blue}}
+          "punctuation.markup": { "color": "#4a4a4a" }, // {{light.brightBlack}}
+          "punctuation.special": { "color": "#9b2c2c" }, // {{light.darkRed}}
+          "selector": { "color": "#9b2c2c" }, // {{light.darkRed}}
+          "selector.pseudo": { "color": "#8700c1" }, // {{light.brightPurple}}
+          "string": { "color": "#a12626" }, // {{light.brightRed}}
+          "string.escape": { "color": "#9b2c2c" }, // {{light.darkRed}}
+          "string.regex": { "color": "#9b2c2c" }, // {{light.darkRed}}
+          "string.special": { "color": "#9b2c2c" }, // {{light.darkRed}}
+          "string.special.symbol": { "color": "#9b2c2c" }, // {{light.darkRed}}
+          "tag": { "color": "#9b2c2c" }, // {{light.darkRed}}
+          "text.literal": { "color": "#a12626" }, // {{light.brightRed}}
+          "title": { "font_weight": 700, "color": "#9b2c2c" }, // {{light.darkRed}}
+          "type": { "color": "#145e5e" }, // {{light.brightCyan}}
+          "variable": { "color": "#001080" }, // {{light.darkBlue}}
+          "variable.parameter": { "color": "#001080" }, // {{light.darkBlue}}
+          "variable.special": { "color": "#0033b3" }, // {{light.blue}}
+          "variant": { "color": "#145e5e" }, // {{light.brightCyan}}
+        },
+
+        // --- Terminal ---
+        // `dim_*` is the base hue at 60% over the terminal background — SGR 2 must read as a
+        // faded version of its base, so it is derived from the base rather than picked by hand.
+        "terminal.background": "#f8f8f8", // {{light.background}}
+        "terminal.ansi.background": "#f8f8f8", // {{light.background}}
+        "terminal.foreground": "#1e1e1e", // {{light.foreground}}
+        "terminal.bright_foreground": "#000000", // {{light.black}}
+        "terminal.dim_foreground": "#6d6d6d", // {{light.white}}
+        "terminal.ansi.black": "#000000", // {{light.black}}
+        "terminal.ansi.red": "#840000", // {{light.red}}
+        "terminal.ansi.green": "#004a15", // {{light.green}}
+        "terminal.ansi.yellow": "#775502", // {{light.yellow}}
+        "terminal.ansi.blue": "#0033b3", // {{light.blue}}
+        "terminal.ansi.magenta": "#6c0099", // {{light.purple}}
+        "terminal.ansi.cyan": "#00416f", // {{light.cyan}}
+        "terminal.ansi.white": "#6d6d6d", // {{light.white}}
+        "terminal.ansi.bright_black": "#4a4a4a", // {{light.brightBlack}}
+        "terminal.ansi.bright_red": "#a12626", // {{light.brightRed}}
+        "terminal.ansi.bright_green": "#106145", // {{light.brightGreen}}
+        "terminal.ansi.bright_yellow": "#7f6000", // {{light.brightYellow}}
+        "terminal.ansi.bright_blue": "#0051ae", // {{light.brightBlue}}
+        "terminal.ansi.bright_magenta": "#8700c1", // {{light.brightPurple}}
+        "terminal.ansi.bright_cyan": "#145e5e", // {{light.brightCyan}}
+        "terminal.ansi.bright_white": "#8b8b8b", // {{light.brightWhite}}
+        "terminal.ansi.dim_black": "#00000099", // {{light.black_alpha60}}
+        "terminal.ansi.dim_red": "#84000099", // {{light.red_alpha60}}
+        "terminal.ansi.dim_green": "#004a1599", // {{light.green_alpha60}}
+        "terminal.ansi.dim_yellow": "#77550299", // {{light.yellow_alpha60}}
+        "terminal.ansi.dim_blue": "#0033b399", // {{light.blue_alpha60}}
+        "terminal.ansi.dim_magenta": "#6c009999", // {{light.purple_alpha60}}
+        "terminal.ansi.dim_cyan": "#00416f99", // {{light.cyan_alpha60}}
+        "terminal.ansi.dim_white": "#6d6d6d99", // {{light.white_alpha60}}
+      },
+    },
+  ],
+}

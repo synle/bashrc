@@ -1,0 +1,36 @@
+agents
+auth
+auth login
+auth logout
+auth status
+auto-mode
+auto-mode config
+auto-mode critique
+auto-mode defaults
+doctor
+install
+mcp
+mcp add|--transport,-s,--scope,-e,--env,--header,-H
+mcp add-from-claude-desktop|-s,--scope
+mcp add-json|-s,--scope
+mcp get
+mcp list
+plugin
+plugin details
+plugin disable
+plugin enable
+plugin install
+plugin list
+plugin marketplace
+plugin prune
+plugin tag
+plugin uninstall
+plugin update
+plugins
+project
+project purge
+setup-token
+ultrareview
+update
+upgrade
+|--add-dir,--agent,--agents,--allow-dangerously-skip-permissions,--allowed-tools,--allowedTools,--append-system-prompt,--bare,--betas,--brief,--chrome,-c,--continue,--dangerously-skip-permissions,-d,--debug,--debug-file,--disable-slash-commands,--disallowed-tools,--disallowedTools,--effort,--exclude-dynamic-system-prompt-sections,--fallback-model,--file,--fork-session,--from-pr,-h,--help,--ide,--include-hook-events,--include-partial-messages,--input-format,--json-schema,--max-budget-usd,--mcp-config,--mcp-debug,--model,-n,--name,--no-chrome,--no-session-persistence,--output-format,--permission-mode,--plugin-dir,--plugin-url,-p,--print,--remote-control,--remote-control-session-name-prefix,--replay-user-messages,-r,--resume,--session-id,--setting-sources,--settings,--strict-mcp-config,--system-prompt,--tmux,--tools,--verbose,-v,--version,-w,--worktree
