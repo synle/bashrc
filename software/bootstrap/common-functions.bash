@@ -244,6 +244,10 @@ function _ensure_npm_binary() {
 #           the npm "latest" dist-tag on refresh runs (the leading `@` of scoped
 #           packages is excluded from the suffix check).
 #   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
+# Returns early (no removal, no npm call) when $HOME/.local/bin/<binary> and/or
+# $HOME/.local/share/<binary> exist and none of the present paths is stale per
+# is_path_stale() (2 weeks, or always under IS_REFRESH_MODE) — reinstalling every CLI on
+# every run is slow and pointless. An arch mismatch still forces the reinstall.
 # Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
 # via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 # On macOS the install runs through a natively built node (find_native_node) and run_native,
@@ -262,6 +266,26 @@ function _npm_install_global() {
   # Auto-tag with @latest when no version is pinned
   local _check_pkg="${pkg#@}"
   [[ "$_check_pkg" != *@* ]] && pkg="${pkg}@latest"
+
+  # Freshness gate — bail out *before* the destructive removals below when the existing
+  # install is still fresh. Both paths matter: npm drops the launcher in ~/.local/bin,
+  # while self-updating CLIs (opencode, claude) keep their payload in ~/.local/share.
+  # is_path_stale() treats a missing path as stale, so only paths that actually exist are
+  # considered; if every present path is fresh we skip the whole reinstall. An arch
+  # mismatch (Rosetta-installed x64 slice on Apple Silicon) always overrides the gate.
+  local _bin_path="$HOME/.local/bin/$bin"
+  local _share_path="$HOME/.local/share/$bin"
+  local _present=0 _stale=0 _p
+  for _p in "$_bin_path" "$_share_path"; do
+    if [ -e "$_p" ] || [ -L "$_p" ]; then
+      _present=1
+      is_path_stale "$_p" && _stale=1
+    fi
+  done
+  if ((_present)) && ! ((_stale)) && ! binary_arch_mismatch "$_bin_path"; then
+    echo ">> $pkg >> Installing with npm global >> Skipped (not stale: $_bin_path)"
+    return 0
+  fi
 
   # Remove stale local binary before npm global install
   if [[ -e "$HOME/.local/bin/$bin" || -L "$HOME/.local/bin/$bin" ]]; then

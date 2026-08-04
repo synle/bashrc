@@ -603,6 +603,21 @@ echo "{\"start\":\"$_run_start_time\"}" > "$BASHRC_TEMP_DIR/run_timing.json"
 
 install_bootstrap_node
 
+# Clear npm's cache and logs before any script runs. A corrupted/partial cache entry
+# (common after an interrupted install) makes every later `npm install -g` fail with
+# EINTEGRITY, and _logs/ grows unbounded across runs. Guarded on npm existing because
+# the standalone-node fallback and Termux paths can leave node without npm.
+if type -P npm > /dev/null 2>&1; then
+  echo ">> Cleaning npm cache and logs"
+  npm cache clean --force > /dev/null 2>&1 || true
+  _npm_cache_folder=$(npm config get cache 2> /dev/null)
+  # Guard: an empty/undefined cache path would make this `rm -rf /_logs`.
+  case "$_npm_cache_folder" in
+  /* | [A-Za-z]:*) rm -rf "$_npm_cache_folder/_logs" > /dev/null 2>&1 || true ;;
+  esac
+  unset _npm_cache_folder
+fi
+
 if type -P node > /dev/null 2>&1; then
   run_files
 else
