@@ -9,7 +9,13 @@ function opencode() {
   if ! type -P opencode > /dev/null 2>&1; then
     echo "opencode is not installed" >&2
     return 1
+  elif [ "$(type -t a_node)" != "function" ]; then
+    echo "a_node function is missing" >&2
+    return 1
   fi
+
+  # activate node
+  a_node
 
   # Single-arg + arg is a readable file -> pipe contents in as the prompt.
   if [ "$#" -eq 1 ] && [ -f "$1" ] && [ -r "$1" ]; then

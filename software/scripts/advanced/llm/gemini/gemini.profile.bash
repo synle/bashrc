@@ -29,7 +29,14 @@ function gemini() {
   if ! type -P gemini > /dev/null 2>&1; then
     echo "gemini is not installed" >&2
     return 1
+  elif [ "$(type -t a_node)" != "function" ]; then
+    echo "a_node function is missing" >&2
+    return 1
   fi
+
+  # activate node
+  a_node
+
   # Auto-link GEMINI.md → CLAUDE.md at the repo root so Gemini CLI picks up
   # the same repo guidance as Claude Code without a separately maintained
   # instructions file. Only acts when CLAUDE.md exists and GEMINI.md (file or
