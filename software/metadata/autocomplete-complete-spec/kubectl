@@ -1,0 +1,37 @@
+get|pods,pod,po,services,svc,deployments,deploy,nodes,node,namespaces,ns,configmaps,cm,secrets,ingress,ing,persistentvolumeclaims,pvc,persistentvolumes,pv,statefulsets,sts,daemonsets,ds,replicasets,rs,jobs,cronjobs,cj,events,ev,endpoints,ep,serviceaccounts,sa,roles,rolebindings,clusterroles,clusterrolebindings,networkpolicies,netpol,storageclasses,sc,all,-o,--output,-w,--watch,-A,--all-namespaces,-l,--selector,--field-selector,--show-labels,--sort-by,--no-headers,-n,--namespace
+describe|pods,pod,po,services,svc,deployments,deploy,nodes,node,namespaces,ns,configmaps,cm,secrets,ingress,ing,persistentvolumeclaims,pvc,statefulsets,sts,daemonsets,ds,replicasets,rs,jobs,cronjobs,cj,-n,--namespace,-l,--selector
+create|deployment,service,configmap,secret,namespace,job,cronjob,role,rolebinding,clusterrole,clusterrolebinding,serviceaccount,quota,ingress,priorityclass,-f,--filename,--dry-run,-o,--output,-n,--namespace
+apply|-f,--filename,-k,--kustomize,-R,--recursive,--dry-run,--force,--prune,-l,--selector,-n,--namespace,--server-side,--field-manager
+delete|pods,pod,po,services,svc,deployments,deploy,namespaces,ns,configmaps,cm,secrets,ingress,ing,persistentvolumeclaims,pvc,statefulsets,sts,daemonsets,ds,replicasets,rs,jobs,cronjobs,cj,-f,--filename,-l,--selector,--all,--force,--grace-period,--cascade,-n,--namespace,--now
+edit|pods,pod,po,services,svc,deployments,deploy,configmaps,cm,secrets,ingress,ing,statefulsets,sts,daemonsets,ds,-n,--namespace,-o,--output
+logs|-f,--follow,-p,--previous,-c,--container,--all-containers,--since,--since-time,--tail,--timestamps,-l,--selector,-n,--namespace,--max-log-requests,--prefix
+exec|-it,-c,--container,-n,--namespace,--stdin,-i,--tty,-t
+port-forward|--address,-n,--namespace
+run|--image,--port,--env,--labels,-l,--command,--restart,--rm,-it,--dry-run,-o,--output,-n,--namespace,--overrides
+expose|deployment,service,replicaset,pod,--port,--target-port,--protocol,--type,--name,-l,--selector,--external-ip,--dry-run,-o,--output,-n,--namespace
+scale|deployment,replicaset,statefulset,--replicas,--current-replicas,--resource-version,-n,--namespace
+rollout|status,history,undo,restart,pause,resume
+rollout status|deployment,statefulset,daemonset,-w,--watch,-n,--namespace
+rollout history|deployment,statefulset,daemonset,--revision,-n,--namespace
+rollout undo|deployment,statefulset,daemonset,--to-revision,-n,--namespace
+rollout restart|deployment,statefulset,daemonset,-n,--namespace
+set|image,resources,env,serviceaccount,selector,subject
+set image|deployment,statefulset,daemonset,-n,--namespace,--all
+top|nodes,node,pods,pod,--containers,--sort-by,-n,--namespace,-l,--selector,-A,--all-namespaces
+config|view,current-context,use-context,set-context,get-contexts,delete-context,set-cluster,get-clusters,delete-cluster,set-credentials,rename-context
+config view|--minify,--flatten,-o,--output,--raw
+config use-context|--namespace
+auth|can-i,whoami,reconcile
+label|pods,nodes,namespaces,deployments,services,--overwrite,--all,-n,--namespace,-l,--selector
+annotate|pods,nodes,namespaces,deployments,services,--overwrite,--all,-n,--namespace,-l,--selector
+taint|nodes,--overwrite,--all
+drain|--force,--grace-period,--ignore-daemonsets,--delete-emptydir-data,--timeout,-l,--selector,--dry-run
+debug|-it,--image,--copy-to,--container,-c,--target,--share-processes,-n,--namespace
+cp|-c,--container,-n,--namespace,--retries
+diff|-f,--filename,-k,--kustomize,-R,--recursive,-n,--namespace
+patch|pods,deployments,services,configmaps,nodes,--type,--patch,-p,-n,--namespace,--dry-run
+replace|-f,--filename,--force,--cascade,--grace-period,-n,--namespace
+wait|-f,--filename,--for,--timeout,-l,--selector,-n,--namespace,-A,--all-namespaces
+cluster-info|dump
+explain|--recursive,--api-version
+api-resources|--namespaced,--verbs,-o,--output,--api-group,--sort-by

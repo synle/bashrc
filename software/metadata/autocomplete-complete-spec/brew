@@ -1,0 +1,26 @@
+install|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--quiet,-q,--overwrite,--dry-run,--HEAD,--fetch-HEAD,--keep-tmp,--build-from-source,-s,--force-bottle,--include-test,--build-bottle,--bottle-arch,--ignore-dependencies,--only-dependencies,--cc,--appdir,--no-binaries,--language,--no-quarantine,--adopt,--require-sha,--audio-unit-plugin-dir,--vst-plugin-dir,--vst3-plugin-dir,--screen-saver-dir
+uninstall|--cask,--formula,--force,-f,--zap,--ignore-dependencies
+reinstall|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--no-quarantine,--adopt,--require-sha
+upgrade|--cask,--formula,--force,-f,--verbose,-v,--debug,-d,--dry-run,--greedy,--greedy-latest,--greedy-auto-updates,--no-quarantine,--fetch-HEAD
+update|--merge,--auto-update,--force,-f,--verbose,-v,--debug,-d,--quiet,-q
+search|--cask,--formula,--desc,--eval-all,--pull-request,--open,--closed
+info|--cask,--formula,--json,--installed,--eval-all,--all,--verbose,-v,--analytics,--days,--category
+list|--cask,--formula,--full-name,--versions,--multiple,--pinned,-1,-l,-r,-t
+services|list,start,stop,restart,run,cleanup,info
+services start|--all,--file
+services stop|--all
+services restart|--all
+tap|--force-auto-update,--custom-remote,--repair,--eval-all,--force
+untap|--force
+cleanup|--prune,--dry-run,-n,-s,--scrub
+doctor|--list-checks,--audit-debug,--verbose,-v,--debug,-d
+deps|--tree,--all,--installed,--eval-all,--for-each,--include-build,--include-optional,--include-test,--skip-recommended,--union,--cask,--formula,-n,-1
+uses|--installed,--eval-all,--include-build,--include-optional,--include-test,--skip-recommended,--cask,--formula,--recursive
+outdated|--cask,--formula,--json,--fetch-HEAD,--greedy,--greedy-latest,--greedy-auto-updates,--verbose,-v,--quiet,-q
+pin|--formula
+unpin|--formula
+link|--overwrite,--dry-run,-n,--force,-f,--HEAD
+unlink|--dry-run,-n
+autoremove|--dry-run,-n
+leaves|--installed-on-request,--installed-as-dependency
+log|--max-count,-n,--oneline,-1

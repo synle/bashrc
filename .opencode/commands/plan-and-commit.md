@@ -1,0 +1,1 @@
+../../.claude/skills/plan-and-commit/SKILL.md

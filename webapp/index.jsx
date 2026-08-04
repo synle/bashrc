@@ -1,0 +1,2342 @@
+import Prism from "prismjs";
+import "prismjs/themes/prism-tomorrow.css";
+import "prismjs/components/prism-markup";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-clike";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-markup-templating";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-yaml";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-sql";
+import "prismjs/components/prism-powershell";
+import "prismjs/components/prism-ruby";
+import "prismjs/components/prism-go";
+import "prismjs/components/prism-java";
+import "prismjs/components/prism-c";
+import "prismjs/components/prism-cpp";
+import "prismjs/components/prism-csharp";
+import "prismjs/components/prism-php";
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
+import "./index.scss";
+
+// Modal component for alerts
+function AlertModalBase(props) {
+  const { isOpen, onClose, children } = props;
+  const modalRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    const handleClickOutside = (e) => {
+      if (modalRef.current && e.target === modalRef.current) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="modal" ref={modalRef}>
+      <div className="modalContent">{children}</div>
+    </div>,
+    document.body,
+  );
+}
+
+function AlertModal(props) {
+  const { message, onClose } = props;
+  const primaryButtonRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (primaryButtonRef.current) {
+      primaryButtonRef.current.focus();
+    }
+  }, []);
+
+  return (
+    <AlertModalBase isOpen={true} onClose={() => onClose()}>
+      <div className="modalBody">
+        <div className="modalMessage" data-testid="alert-message">
+          {message}
+        </div>
+        <footer className="modalFooter">
+          <button ref={primaryButtonRef} type="button" className="modalBtn primary" data-testid="alert-ok" onClick={() => onClose()}>
+            OK
+          </button>
+        </footer>
+      </div>
+    </AlertModalBase>
+  );
+}
+
+// Modal manager to render modals
+const modalManager = {
+  container: null,
+  root: null,
+
+  init() {
+    if (!this.container) {
+      this.container = document.createElement("div");
+      this.container.id = "modal-root";
+      document.body.appendChild(this.container);
+      this.root = createRoot(this.container);
+    }
+  },
+
+  render(component) {
+    this.init();
+    this.root.render(component);
+  },
+
+  unmount() {
+    if (this.root) {
+      this.root.render(null);
+    }
+  },
+};
+
+// Override window.alert
+window.alert = (message) => {
+  return new Promise((resolve) => {
+    modalManager.render(
+      <AlertModal
+        message={message}
+        onClose={() => {
+          modalManager.unmount();
+          resolve();
+        }}
+      />,
+    );
+  });
+};
+
+/** @type {string} GitHub repository path identifier (e.g., "synle/bashrc"). Injected by Vite at build time. */
+const REPO_PATH_IDENTIFIER = window.REPO_PATH_IDENTIFIER;
+/** @type {string} Git branch name (e.g., "master"). Injected by Vite at build time. */
+const REPO_BRANCH_NAME = window.REPO_BRANCH_NAME;
+/** @type {string} Full GitHub repository URL. */
+const REPO_URL = `https://github.com/${REPO_PATH_IDENTIFIER}`;
+/** @type {string} Base URL for blob/HEAD links (used in display strings like curl commands). */
+const BASH_PROFILE_CODE_REPO_RAW_URL = `https://github.com/${REPO_PATH_IDENTIFIER}/blob/HEAD`;
+/** @type {string} Base URL for browser fetch calls. Uses raw.githubusercontent.com because blob/HEAD?raw=1 redirects without CORS headers. */
+const GITHUB_RAW_FETCH_URL = `https://raw.githubusercontent.com/${REPO_PATH_IDENTIFIER}/HEAD`;
+
+/**
+ * Constructs a CORS-compatible GitHub raw content URL for browser fetch calls.
+ * NOTE: raw.githubusercontent.com is normally banned in this repo (see CLAUDE.md) because
+ * blob/HEAD?raw=1 is preferred — but blob/HEAD?raw=1 redirects (302) without CORS headers,
+ * so browser fetch() blocks it. This is the one exception: webapp browser fetches must use
+ * raw.githubusercontent.com directly (has Access-Control-Allow-Origin: *).
+ * @param {string} filePath - Relative path within the repo (e.g. "software/bootstrap/setup.sh")
+ * @returns {string} Full raw content URL
+ */
+function getGitHubRawUrl(filePath) {
+  return `${GITHUB_RAW_FETCH_URL}/${filePath}`;
+}
+
+/**
+ * Strips `//` line comments, `/* *\/` block comments, and trailing commas from a JSONC
+ * string so the result is parseable by `JSON.parse`. Mirrors `stripJsoncComments` in
+ * `software/index.js` — kept in sync so the webapp can read `software/metadata/presets.jsonc`
+ * directly without bundling a JSONC dep.
+ * @param {string} text - Raw JSONC text
+ * @returns {string} Equivalent text with comments and trailing commas removed
+ */
+function stripJsoncComments(text) {
+  let out = "";
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    const next = i + 1 < n ? text[i + 1] : "";
+    if (c === '"') {
+      out += c;
+      i++;
+      while (i < n) {
+        const cc = text[i];
+        out += cc;
+        if (cc === "\\" && i + 1 < n) {
+          out += text[i + 1];
+          i += 2;
+          continue;
+        }
+        i++;
+        if (cc === '"') break;
+      }
+    } else if (c === "/" && next === "/") {
+      while (i < n && text[i] !== "\n") i++;
+    } else if (c === "/" && next === "*") {
+      i += 2;
+      while (i < n && !(text[i] === "*" && i + 1 < n && text[i + 1] === "/")) i++;
+      i += 2;
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  return out.replace(/,(\s*[}\]])/g, "$1");
+}
+
+/**
+ * Recursively expands a preset name into its full flattened file list. Walks `presets[]`
+ * references depth-first (referenced presets contribute files first, then this preset's
+ * own `files[]`) and detects cycles via the `visited` set. Mirrors `expandPresetFiles` in
+ * `software/index.js`. Returns an empty array on any unknown reference or cycle so the
+ * UI degrades gracefully instead of throwing.
+ * @param {string} name - Preset name to expand
+ * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} presetMap - Full preset map
+ * @param {Set<string>} [visited] - Names currently on the resolution stack (cycle guard)
+ * @returns {string[]} Flattened, deduplicated file list
+ */
+function expandPresetFiles(name, presetMap, visited = new Set()) {
+  if (!name || visited.has(name)) return [];
+  const preset = presetMap[name];
+  if (!preset || typeof preset !== "object") return [];
+  visited.add(name);
+  const out = [];
+  if (Array.isArray(preset.presets)) {
+    for (const ref of preset.presets) {
+      if (!ref || typeof ref !== "string") continue;
+      for (const f of expandPresetFiles(ref, presetMap, visited)) out.push(f);
+    }
+  }
+  if (Array.isArray(preset.files)) {
+    for (const f of preset.files) {
+      if (f) out.push(f);
+    }
+  }
+  visited.delete(name);
+  const seen = new Set();
+  const dedup = [];
+  for (const f of out) {
+    if (!seen.has(f)) {
+      seen.add(f);
+      dedup.push(f);
+    }
+  }
+  return dedup;
+}
+
+/** @type {string} Base URL for viewing files on GitHub (blob view). */
+const BASH_PROFILE_CODE_REPO_VIEW_URL = `${REPO_URL}/blob/${REPO_BRANCH_NAME}`;
+/** @type {string} Base URL for editing files on GitHub (edit view). */
+const BASH_PROFILE_CODE_REPO_EDIT_URL = `${REPO_URL}/edit/${REPO_BRANCH_NAME}`;
+/** @type {string} The OS flag key matching the current browser's detected platform. */
+const currentSystemFlag = /mac/i.test(navigator.platform)
+  ? "is_os_mac"
+  : /win/i.test(navigator.platform)
+    ? "is_os_windows"
+    : /android/i.test(navigator.userAgent)
+      ? "is_os_android_termux"
+      : "is_os_ubuntu";
+
+/**
+ * Ordered list of OS setup note entries. Each entry maps an OS flag to its display label and NotesDom component.
+ * The array order defines the default display order in the navigation tabs.
+ * Label is derived from key: strips "is_os_", replaces underscores with spaces, capitalizes each word.
+ * Override map handles special cases (Mac, SteamOS, ChromeOS, WSL).
+ * @type {Array<{key: string, label: string, Component: Function}>}
+ */
+const OS_NOTES_LIST = [
+  { key: "is_os_windows", Component: WindowsNotesDom },
+  { key: "is_os_mac", Component: MacNotesDom },
+  { key: "is_os_ubuntu", Component: LinuxNotesDom },
+  { key: "is_os_redhat", Component: LinuxNotesDom },
+  { key: "is_os_arch_linux", Component: LinuxNotesDom },
+  { key: "is_os_steamos", Component: SteamOSNotesDom },
+  { key: "is_os_android_termux", label: "Android", Component: AndroidNotesDom },
+  { key: "is_os_chromeos", Component: LinuxNotesDom },
+  { key: "is_os_mingw64", Component: GenericLightWeightNotesDom },
+  { key: "is_os_wsl", Component: LinuxNotesDom },
+].map((entry) => ({
+  ...entry,
+  // Derive label from key: strip "is_os_", replace underscores with spaces, capitalize each word
+  // Explicit `entry.label` (e.g. "Android") overrides derivation.
+  label:
+    entry.label ||
+    entry.key
+      .replace("is_os_", "")
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+      .replace(/\b(os|wsl)\b/gi, (m) => m.toUpperCase()),
+}));
+
+/**
+ * Sorted list of active OS flag keys. Filtered to only include flags passed in from Vite (via window.OS_FLAGS),
+ * sorted with the current system's OS first.
+ * @type {string[]}
+ */
+const OS_FLAGS = OS_NOTES_LIST.map((e) => e.key)
+  .filter((k) => (window.OS_FLAGS || []).includes(k))
+  .sort((a, b) => (a === currentSystemFlag ? -1 : b === currentSystemFlag ? 1 : 0));
+
+/**
+ * Lookup map from OS flag key to its OS notes entry. Built from OS_NOTES_LIST.
+ * @type {Object<string, {key: string, label: string, Component: Function}>}
+ */
+const OS_KEY_TO_NOTES_MAP = Object.fromEntries(OS_NOTES_LIST.map((e) => [e.key, e]));
+
+/**
+ * Writes a value to localStorage under the given key.
+ * @param {string} key - The localStorage key to write to.
+ * @param {string} value - The value to store.
+ */
+function setStorage(key, value) {
+  localStorage[key] = value;
+}
+
+/**
+ * Reads a value from localStorage, returning a default if the key is not set or falsy.
+ * @param {string} key - The localStorage key to read from.
+ * @param {string} [defaultValue] - The fallback value if the key is missing or falsy.
+ * @returns {string} The stored value or the default.
+ */
+function getStorage(key, defaultValue) {
+  return localStorage[key] || defaultValue;
+}
+
+/**
+ * Copies the provided text to the system clipboard and displays an alert modal.
+ * @param {string} text - The text to copy. Leading/trailing whitespace is trimmed before copying.
+ * @returns {Promise<void>}
+ */
+async function copyTextToClipboard(text) {
+  text = text.trim();
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    console.log(err);
+  }
+
+  await alert("Copied to clipboard!");
+}
+
+/**
+ * Hook that syncs React state with the URL hash fragment.
+ * Listens for browser back/forward navigation via the hashchange event.
+ * @param {string} fallback - The default route when no hash is present.
+ * @returns {[string, function(string): void]} A tuple of [currentRoute, setRoute].
+ */
+function useHashRoute(fallback) {
+  const getHash = () => window.location.hash.slice(1) || fallback;
+  const [route, setRouteState] = useState(getHash);
+
+  useEffect(() => {
+    const onHashChange = () => setRouteState(getHash());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  const setRoute = (hash) => {
+    window.location.hash = hash;
+  };
+  return [route, setRoute];
+}
+
+// create contexts
+const MainAppContext = React.createContext();
+const ThemeContext = React.createContext();
+const EditorCollapseContext = React.createContext({
+  collapseAll: false,
+  tick: 0,
+});
+
+/**
+ * Form section for managing the list of scripts to run.
+ * Provides inputs for selecting scripts from a datalist, adding/clearing scripts,
+ * choosing between live and local runner modes, and specifying a debug write-to-file path.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The script name input form section.
+ */
+function ScriptNameInputSection() {
+  const { appData, setAppData, onInputChange } = useContext(MainAppContext);
+  const formValue = appData.formValue;
+
+  const _onScriptChange = () => {
+    onInputChange("scriptsToUse", formValue.scriptsToUse, formValue.scriptsToUse.join("\n"));
+  };
+
+  const onChangeTestScript = (idx, newValue) => {
+    formValue.scriptsToUse[idx] = newValue.trim();
+    if (formValue?.scriptsToUse.length === 0) {
+      formValue.scriptsToUse.push("software/");
+    }
+    _onScriptChange();
+  };
+
+  const onAddTestScript = () => {
+    formValue.scriptsToUse.push("software/");
+    _onScriptChange();
+  };
+
+  const onClearTestScripts = () => {
+    setStorage(`scriptsToUse.${Date.now()}`, formValue.scriptsToUse.join("\n"));
+    formValue.scriptsToUse = ["software/"];
+    _onScriptChange();
+  };
+
+  return (
+    <>
+      <div className="form-row" name="formValue.scriptsToUse">
+        <div className="form-label">Scripts To Run</div>
+        <div className="form-input">
+          {formValue.scriptsToUse.map((scriptToUse, idx) => (
+            <input
+              key={idx}
+              style={{ width: "100%" }}
+              list="scriptToRunOptions"
+              type="text"
+              placeholder="Script To Run"
+              autoFocus
+              required
+              onBlur={(e) => {
+                e.target.value = e.target.value.trim();
+                onChangeTestScript(idx, e.target.value);
+              }}
+              defaultValue={scriptToUse}
+            />
+          ))}
+          <button onClick={onAddTestScript} type="button">
+            Add Script
+          </button>
+          <button onClick={onClearTestScripts} type="button">
+            Clear All
+          </button>
+        </div>
+      </div>
+      <datalist id="scriptToRunOptions">
+        {appData.scriptToRunOptions.map((option, index) => (
+          <option key={index}>{option}</option>
+        ))}
+      </datalist>
+    </>
+  );
+}
+
+/**
+ * Recursive accordion node rendering a single preset and (depth-first) its referenced
+ * sub-presets. Uses the native `<details>` element so per-section open/close state is
+ * free and survives without React state. Each node's summary shows the preset name +
+ * an expanded file-count badge so the user can see scope at a glance before expanding.
+ * Cycle guard: `visited` carries the names currently on the resolution stack — a
+ * malformed `presets.jsonc` with a self-reference or A → B → A loop renders an inline
+ * warning instead of recursing forever.
+ * @param {Object} props
+ * @param {string} props.name - Preset name to render at this node
+ * @param {Record<string, { description?: string, files?: string[], presets?: string[] }>} props.presetMap - Full preset map
+ * @param {number} [props.level] - Nesting depth (root = 0); used to set the default-open behavior
+ * @param {Set<string>} [props.visited] - Names currently on the resolution stack (cycle guard)
+ * @returns {React.ReactElement|null} A `<details>` node, or null when the preset is unknown
+ */
+function PresetTreeNode({ name, presetMap, level = 0, visited = new Set() }) {
+  if (visited.has(name)) {
+    return (
+      <div className="preset-tree-cycle">
+        Cycle detected — <code>{name}</code> already on the resolution path. Check <code>software/metadata/presets.jsonc</code>.
+      </div>
+    );
+  }
+  const preset = presetMap[name];
+  if (!preset || typeof preset !== "object") {
+    return (
+      <div className="preset-tree-unknown">
+        Unknown preset reference: <code>{name}</code>
+      </div>
+    );
+  }
+  const ownFiles = Array.isArray(preset.files) ? preset.files : [];
+  const refs = Array.isArray(preset.presets) ? preset.presets : [];
+  const totalCount = useMemo(() => expandPresetFiles(name, presetMap).length, [name, presetMap]);
+  const childVisited = new Set(visited);
+  childVisited.add(name);
+
+  return (
+    <details className={`preset-tree-node preset-tree-node--level-${level}`} open={level === 0}>
+      <summary>
+        <code className="preset-tree-name">{name}</code>
+        <span className="preset-tree-count">
+          {totalCount} {totalCount === 1 ? "file" : "files"}
+        </span>
+      </summary>
+      <div className="preset-tree-body">
+        {preset.description ? <div className="preset-tree-description">{preset.description}</div> : null}
+        {refs.map((ref) => (
+          <PresetTreeNode key={ref} name={ref} presetMap={presetMap} level={level + 1} visited={childVisited} />
+        ))}
+        {ownFiles.length > 0 ? (
+          <ul className="preset-tree-files">
+            {ownFiles.map((f) => (
+              <li key={f}>
+                <code>{f}</code>
+              </li>
+            ))}
+          </ul>
+        ) : refs.length === 0 ? (
+          <div className="preset-tree-empty">(no files in this preset)</div>
+        ) : null}
+      </div>
+    </details>
+  );
+}
+
+/**
+ * Form section for selecting a named preset (`--preset=<name>`) and previewing its
+ * recursively-expanded contents as a nested accordion tree. The picker lets the user
+ * search by substring via a datalist; the contents tree (rendered by `PresetTreeNode`)
+ * groups files under the preset they belong to, so for composites like `heavyweight` the
+ * user can see at a glance which `_editors` / `_apps` / etc. sub-preset contributes
+ * which scripts. Internally only the preset name is written to formValue
+ * (`presetToUse`); the tree is purely informational so the generated command stays terse.
+ * Consumes MainAppContext for form state, preset map, and input change handling.
+ * @returns {React.ReactElement} The preset picker form section.
+ */
+function ScriptPresetInputSection() {
+  const { appData, onInputChange } = useContext(MainAppContext);
+  const formValue = appData.formValue;
+  const presetMap = appData.presetMap || {};
+  const presetNames = appData.presetNames || [];
+  const currentPreset = formValue.presetToUse || "";
+  const preset = presetMap[currentPreset];
+
+  return (
+    <>
+      <div className="form-row" name="formValue.presetToUse">
+        <div className="form-label">Preset To Run</div>
+        <div className="form-input">
+          <input
+            style={{ width: "100%" }}
+            list="presetToRunOptions"
+            type="text"
+            placeholder="Preset name (e.g. lightweight, heavyweight, llm)"
+            autoFocus
+            required
+            onBlur={(e) => {
+              const value = e.target.value.trim();
+              onInputChange("presetToUse", value);
+            }}
+            defaultValue={currentPreset}
+          />
+        </div>
+      </div>
+      <datalist id="presetToRunOptions">
+        {presetNames.map((name) => (
+          <option key={name} value={name}>
+            {presetMap[name]?.description || name}
+          </option>
+        ))}
+      </datalist>
+      {preset ? (
+        <div className="form-row form-row--top-aligned" name="formValue.presetToUse.expanded">
+          <div className="form-label">Preset Contents</div>
+          <div className="form-input form-input--block">
+            <PresetTreeNode name={currentPreset} presetMap={presetMap} />
+          </div>
+        </div>
+      ) : currentPreset ? (
+        <div className="form-row">
+          <div className="form-label" />
+          <div className="form-input" style={{ color: "var(--colorTextError, #b00)" }}>
+            Unknown preset: <code>{currentPreset}</code>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * Combined form section for the "Test Custom Run" tab. Lets the user pick between two
+ * input modes — `files` (free-form list of script paths) and `preset` (named bundle from
+ * `software/metadata/presets.jsonc`) — via a radio toggle. Renders the matching input
+ * section + OS selector + the appropriate generated `bash run.sh` command line (using
+ * `--files="""..."""` or `--preset=<name>` depending on mode). Mode is persisted in
+ * formValue.scriptMode so the choice survives reloads.
+ * @returns {React.ReactElement} The custom-run tab body.
+ */
+function CustomRunSection() {
+  const { appData, onInputChange } = useContext(MainAppContext);
+  const mode = appData.formValue.scriptMode === "preset" ? "preset" : "files";
+  const scriptTemplate =
+    mode === "preset"
+      ? `curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset="{{SELECT_PRESET}}"`
+      : `curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --files="""\n{{SELECT_SCRIPTS}}\n"""`;
+
+  return (
+    <>
+      <div className="form-row" name="formValue.scriptMode">
+        <div className="form-label">Run Mode</div>
+        <div className="form-input">
+          <div className="nav-radio-group">
+            <button className={mode === "files" ? "selected" : ""} onClick={() => onInputChange("scriptMode", "files")} type="button">
+              Script Files
+            </button>
+            <button className={mode === "preset" ? "selected" : ""} onClick={() => onInputChange("scriptMode", "preset")} type="button">
+              Script Preset
+            </button>
+          </div>
+        </div>
+      </div>
+      {mode === "preset" ? <ScriptPresetInputSection /> : <ScriptNameInputSection />}
+      <OsSelectionInputSection />
+      <ScriptOutputSection script={scriptTemplate} />
+    </>
+  );
+}
+
+/**
+ * Dropdown section for selecting the target operating system type.
+ * Renders a select element with OS options (Windows WSL, Ming_64, Mac, Chrome OS, Ubuntu,
+ * Arch Linux/Steam Deck, Android Termux) and displays an OS mismatch warning below it.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The OS selection dropdown section.
+ */
+function OsSelectionInputSection() {
+  const { onInputChange } = useContext(MainAppContext);
+  const formValue = useContext(MainAppContext).appData.formValue;
+
+  return (
+    <>
+      <div className="form-row" name="formValue.osToRun">
+        <div className="form-label">OS Type</div>
+        <div className="form-input">
+          <select
+            name="osToRun"
+            onChange={(e) => {
+              onInputChange(e.target.name, e.target.value);
+            }}
+            defaultValue={formValue.osToRun}
+          >
+            {OS_NOTES_LIST.map((entry) => (
+              <option key={entry.key} value={entry.key}>
+                {entry.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <TargetSystemOSWarningDom targetDomString={formValue.osToRun} />
+    </>
+  );
+}
+
+/**
+ * Radio button toggle section for enabling or disabling setup dependencies.
+ * Allows the user to choose whether dependency installation scripts should be included
+ * in the generated output.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The setup dependencies toggle section.
+ */
+function SetupDependenciesSection() {
+  const { onInputChange } = useContext(MainAppContext);
+  const formValue = useContext(MainAppContext).appData.formValue;
+
+  return (
+    <div className="form-row" name="formValue.setupDependencies">
+      <div className="form-label">Setup Dependencies</div>
+      <div className="form-input">
+        <div className="nav-radio-group">
+          <button
+            className={formValue.setupDependencies === "yes" ? "selected" : ""}
+            onClick={() => onInputChange("setupDependencies", "yes")}
+          >
+            Yes
+          </button>
+          <button
+            className={formValue.setupDependencies !== "yes" ? "selected" : ""}
+            onClick={() => onInputChange("setupDependencies", "no")}
+          >
+            No
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Textarea section for entering environment variable paths.
+ * Displays an enhanced text area pre-populated with consolidated env vars (optionally
+ * merged with OS-specific defaults), and a checkbox to toggle default env inclusion.
+ * Consumes MainAppContext for form state and input change handling.
+ * @returns {React.ReactElement} The environment variable paths input section.
+ */
+/**
+ * Renders the generated shell script output by interpolating mustache-style template
+ * variables (e.g., OS flags, selected scripts, env vars) from the current form state
+ * into the provided script template string.
+ * @param {Object} props
+ * @param {string} props.script - The script template string containing {{KEY}} placeholders.
+ * @returns {React.ReactElement} An EnhancedTextArea displaying the rendered script output.
+ */
+function ScriptOutputSection({ script }) {
+  const { appData } = useContext(MainAppContext);
+  const formValue = appData.formValue;
+
+  const formValueOutput = useMemo(() => {
+    const osFlag = formValue.osToRun;
+    const osFlags = {
+      is_os_mac: osFlag === "is_os_mac",
+      is_os_windows: osFlag === "is_os_windows",
+      is_os_wsl: osFlag === "is_os_windows" || osFlag === "is_os_wsl",
+      is_os_ubuntu: osFlag === "is_os_ubuntu" || osFlag === "is_os_windows" || osFlag === "is_os_chromeos",
+      is_os_chromeos: osFlag === "is_os_chromeos",
+      is_os_mingw64: osFlag === "is_os_mingw64",
+      is_os_android_termux: osFlag === "is_os_android_termux",
+      is_os_arch_linux: osFlag === "is_os_arch_linux",
+      is_os_steamos: osFlag === "is_os_steamos",
+      is_os_redhat: osFlag === "is_os_redhat",
+    };
+    const osKeys = Object.keys(osFlags);
+
+    // Build the template variables
+    const templateVars = {
+      REPO_PATH_IDENTIFIER: REPO_PATH_IDENTIFIER,
+      REPO_BRANCH_NAME: REPO_BRANCH_NAME,
+      REPO_URL: REPO_URL,
+      BASH_PROFILE_CODE_REPO_RAW_URL: BASH_PROFILE_CODE_REPO_RAW_URL,
+      SELECT_SCRIPTS: formValue.scriptsToUse.join("\n"),
+      SELECT_PRESET: formValue.presetToUse || "",
+      SETUP_DEPS: formValue.setupDependencies === "yes" ? (appData.setupDepsScript || "") + "\n" : "",
+      SETUP_HOSTS_SCRIPT: appData.setupHostsScript || "",
+      IP_ADDRESS_MAPPING_CONFIGS: appData.ipAddressMappingConfigs || "",
+    };
+
+    // Mustache-style template rendering: replaces all {{KEY}} with corresponding values
+    const rendered = script.replace(/\{\{(\w+)\}\}/g, (_, key) => templateVars[key] || "");
+
+    return rendered
+      .split("\\")
+      .filter((s) => s.trim())
+      .join("\\")
+      .trim();
+  }, [formValue, script]);
+
+  return <EnhancedTextArea placeholder="Output" readOnly value={formValueOutput} />;
+}
+
+/**
+ * Main content area that renders the body of the currently selected configuration tab.
+ * Provides collapse/expand controls for all editor sections and wraps the content
+ * in an EditorCollapseContext provider for coordinated collapse state.
+ * @returns {React.ReactElement} The main body container with collapse controls and selected config body.
+ */
+function MainBodyContainer() {
+  const { appData, route } = useContext(MainAppContext);
+  const selectedConfig = appData.configs.find((config) => config.idx === route) || appData.configs[0];
+
+  return <div id="mainBodyContainer">{selectedConfig.renderBody()}</div>;
+}
+
+/**
+ * Top tab bar navigation that renders a button for each available configuration.
+ * Highlights the currently selected tab and updates the hash route on click.
+ * Consumes MainAppContext for the configs list and route handling.
+ * @returns {React.ReactElement} The top navigation tab bar.
+ */
+function TopNavigationContainer() {
+  const { appData, route, setRoute } = useContext(MainAppContext);
+
+  return (
+    <div id="topNavigationContainer" data-testid="tab-navigation">
+      <div className="nav-radio-group">
+        {appData.configs.map((config) => (
+          <button
+            key={config.idx}
+            data-nav-idx={config.idx}
+            className={route === config.idx ? "selected" : ""}
+            onClick={() => setRoute(config.idx)}
+          >
+            {config.text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Footer section containing links to the GitHub repository, pre-compiled configs,
+ * and the bashrc code browser.
+ * @returns {React.ReactElement} The bottom footer container with repository links.
+ */
+function BottomContainer() {
+  return (
+    <div id="bottomContainer">
+      <hr />
+      <div className="link-group">
+        <LinkButton href={REPO_URL}>Repo</LinkButton>
+        <LinkButton href={`${BASH_PROFILE_CODE_REPO_VIEW_URL}/.build`}>Pre-compiled Configs</LinkButton>
+        <LinkButton href={`${REPO_URL}/find/${REPO_BRANCH_NAME}`}>Bashrc Code</LinkButton>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * An anchor element styled as a button that opens links in a new tab.
+ * Optionally wraps the anchor in a div for block-level display.
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The button label content.
+ * @param {boolean} [props.block=false] - If true, wraps the anchor in a div for block-level layout.
+ * @param {string} props.href - The URL to link to.
+ * @returns {React.ReactElement} An anchor element with role="button" and target="_blank".
+ */
+function LinkButton(props) {
+  const { children, block, ...restProps } = props;
+
+  if (block) {
+    return (
+      <div>
+        <a {...restProps} role="button" target="_blank">
+          {children}
+        </a>
+      </div>
+    );
+  }
+  return (
+    <a {...restProps} role="button" target="_blank">
+      {children}
+    </a>
+  );
+}
+
+/**
+ * An anchor element rendered as a plain text link that opens in a new tab.
+ * Optionally wraps the anchor in a div for block-level display.
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The link text content.
+ * @param {boolean} [props.block=false] - If true, wraps the anchor in a div for block-level layout.
+ * @param {string} props.href - The URL to link to.
+ * @returns {React.ReactElement} An anchor element with target="_blank".
+ */
+function LinkText(props) {
+  const { children, block, copyOnClick, ...restProps } = props;
+
+  const linkProps = { ...restProps, target: "_blank" };
+
+  if (copyOnClick) {
+    linkProps.onClick = (e) => {
+      e.preventDefault();
+      const text = (e.currentTarget.innerText || "").trim();
+      copyTextToClipboard(text);
+    };
+    linkProps.onDoubleClick = (e) => {
+      e.preventDefault();
+      window.open(restProps.href, "_blank");
+    };
+    linkProps.title = "Click to copy, double-click to open";
+    linkProps.style = { ...linkProps.style, cursor: "copy" };
+  }
+
+  if (block) {
+    return (
+      <div>
+        <a {...linkProps}>{children}</a>
+      </div>
+    );
+  }
+  return <a {...linkProps}>{children}</a>;
+}
+
+/**
+ * A simple button element that passes through all props to the underlying HTML button.
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - The button label content.
+ * @param {Function} [props.onClick] - Click handler for the button.
+ * @returns {React.ReactElement} A button element.
+ */
+function ActionButton(props) {
+  const { children, ...restProps } = props;
+
+  return <button {...restProps}>{children}</button>;
+}
+
+/**
+ * Fetches text content from a remote URL and displays it in an EnhancedTextArea.
+ * If a relative path is provided, it is resolved against the BASH_PROFILE_CODE_REPO_RAW_URL base.
+ * @param {Object} props
+ * @param {string} [props.path] - Relative path to the file within the bashrc repository.
+ * @param {string} [props.url] - Full URL to fetch content from. Overrides path if provided.
+ * @param {string} [props.height] - CSS height for the text area.
+ * @returns {React.ReactElement} A read-only EnhancedTextArea with the fetched content.
+ */
+function DynamicTextArea(props) {
+  // Default to collapsed so code blocks render a short preview on load and
+  // the user opts in to the full content. Callers can opt back in to
+  // expanded-on-load by passing `collapsed={false}`.
+  let { path, url, height, collapsed = true } = props;
+  const [text, setText] = useState("");
+  const [success, setSuccess] = useState(true);
+
+  url = url || getGitHubRawUrl(path);
+
+  useEffect(() => {
+    async function _load() {
+      setText("");
+      setText(
+        await fetch(url)
+          .then((r) => {
+            setSuccess(r.ok);
+            return r;
+          })
+          .then((r) => r.text())
+          .then((r) => r.trim())
+          .catch((r) => setSuccess(false)),
+      );
+    }
+
+    _load();
+  }, [url]);
+
+  return <EnhancedTextArea height={height} url={url} value={text} error={!success} readOnly defaultCollapsed={collapsed} />;
+}
+
+/**
+ * Fetches text content from multiple remote URLs, concatenates them with comment headers,
+ * and displays the combined result in an EnhancedTextArea.
+ * @param {Object} props
+ * @param {string[]} props.urls - Array of URLs to fetch content from.
+ * @param {string} [props.height] - CSS height for the text area.
+ * @param {string} props.commentString - The comment prefix to use before each URL header (e.g., '#').
+ * @param {string} [props.label] - Optional label for the text area. Defaults to the joined URLs.
+ * @returns {React.ReactElement} A read-only EnhancedTextArea with the combined fetched content.
+ */
+function MultipleUrlDynamicTextArea(props) {
+  const { urls, height, commentString } = props;
+  const [text, setText] = useState("");
+  const [label, setLabel] = useState("");
+
+  useEffect(() => {
+    async function _load() {
+      setText("");
+      setLabel(props.label || urls.join(", "));
+
+      let resp = [];
+      for (const url of urls) {
+        const newInput = await fetch(url)
+          .then((r) => r.text())
+          .then((r) => r.trim());
+
+        resp.push(`${commentString} ${url}\n${newInput}`);
+      }
+
+      setText(resp.join("\n\n"));
+    }
+
+    _load();
+  }, []);
+
+  return <EnhancedTextArea height={height} label={label} value={text} readOnly />;
+}
+
+/**
+ * Detects a programming language identifier from a file URL based on its extension.
+ * Maps common file extensions (e.g., .sh, .py, .js, .md) to Monaco Editor language identifiers.
+ * @param {string} url - The file URL to extract the extension from.
+ * @returns {string|null} The detected language identifier, or null if the extension is not recognized.
+ */
+function detectLanguageFromUrl(url) {
+  if (!url) return null;
+
+  const extension = url.split(".").pop().toLowerCase();
+  const extensionMap = {
+    sh: "bash",
+    bash: "bash",
+    md: "markdown",
+    ps1: "powershell",
+    js: "javascript",
+    jsx: "javascript",
+    ts: "typescript",
+    tsx: "typescript",
+    json: "json",
+    yml: "yaml",
+    yaml: "yaml",
+    py: "python",
+    rb: "ruby",
+    go: "go",
+    java: "java",
+    c: "c",
+    cpp: "cpp",
+    cs: "csharp",
+    php: "php",
+    html: "markup",
+    css: "css",
+    xml: "markup",
+    sql: "sql",
+  };
+
+  return extensionMap[extension] || null;
+}
+
+/**
+ * Detects a programming language identifier from a label string based on its file extension.
+ * Extracts the extension from the label and delegates to detectLanguageFromUrl.
+ * @param {string} label - The label or filename to extract the extension from.
+ * @returns {string|null} The detected language identifier, or null if the extension is not recognized.
+ */
+function detectLanguageFromLabel(label) {
+  if (!label) return null;
+
+  const extension = label.split(".").pop().toLowerCase();
+  return detectLanguageFromUrl(extension);
+}
+
+/**
+ * Heuristically detects a programming language from the content of a file.
+ * Checks for shebangs, markdown headers, PowerShell cmdlets, common shell patterns,
+ * and valid JSON. Defaults to 'shell' if no specific language is detected.
+ * @param {string} content - The text content to analyze.
+ * @returns {string} The detected language identifier (e.g., 'shell', 'python', 'markdown', 'json').
+ */
+function detectLanguageFromContent(content) {
+  if (!content || typeof content !== "string") return "bash";
+
+  const trimmedContent = content.trim();
+
+  // Check for shebang
+  if (trimmedContent.startsWith("#!")) {
+    if (trimmedContent.includes("/bash") || trimmedContent.includes("/sh")) return "bash";
+    if (trimmedContent.includes("/python")) return "python";
+    if (trimmedContent.includes("/node")) return "javascript";
+  }
+
+  // Check for markdown headers
+  if (/^#+\s/.test(trimmedContent) || /^-{3,}$|^\*{3,}$/m.test(trimmedContent)) {
+    return "markdown";
+  }
+
+  // Check for PowerShell cmdlets
+  if (/\b(Get-|Set-|New-|Remove-|Invoke-|Test-|Write-Host|param\()/i.test(trimmedContent)) {
+    return "powershell";
+  }
+
+  // Check for common shell patterns
+  if (/^(export|alias|function|sudo|apt-get|yum|brew|echo|cd|ls|mkdir)\s/m.test(trimmedContent)) {
+    return "bash";
+  }
+
+  // Check for JSON
+  if (/^\s*[\{\[]/.test(trimmedContent) && /[\}\]]\s*$/.test(trimmedContent)) {
+    try {
+      JSON.parse(trimmedContent);
+      return "json";
+    } catch (e) {}
+  }
+
+  // Default to bash for most bash scripts
+  return "bash";
+}
+
+/**
+ * Full-screen overlay modal component with a semi-transparent dark background.
+ * Renders a title bar with a close button and a content area. Clicking the backdrop
+ * closes the modal.
+ * @param {Object} props
+ * @param {boolean} props.isOpen - Whether the modal is currently visible.
+ * @param {Function} props.onClose - Callback invoked when the modal should be closed.
+ * @param {string} [props.title] - Optional title displayed in the modal header.
+ * @param {React.ReactNode} props.children - The content to render inside the modal body.
+ * @returns {React.ReactElement|null} The modal overlay, or null if not open.
+ */
+function Modal(props) {
+  const { isOpen, onClose, title, titleUrl, onCopy, children } = props;
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="modal" onClick={onClose}>
+      <div className="modalContent fullscreenCodeViewer" data-testid="fullscreen-dialog" onClick={(e) => e.stopPropagation()}>
+        <div className="modalBody">
+          <div className="codeBlockBanner">
+            {title &&
+              (titleUrl ? (
+                <a className="codeBlockTitle" href={titleUrl} target="_blank">
+                  {title}
+                </a>
+              ) : (
+                <span className="codeBlockTitle">{title}</span>
+              ))}
+            <div className="codeBlockActions">
+              {onCopy && (
+                <button data-action="modal-copy" data-testid="fullscreen-copy" onClick={onCopy}>
+                  Copy
+                </button>
+              )}
+              <button data-action="modal-close" data-testid="fullscreen-close" onClick={onClose}>
+                Close
+              </button>
+            </div>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/**
+ * A button that opens a full-screen read-only code viewer modal to view text content.
+ * Supports ESC key to close the modal. Auto-detects the language from the label or content.
+ * @param {Object} props
+ * @param {string} props.value - The text content to display in the full-screen viewer.
+ * @param {string} [props.label] - Optional label used as the modal title and for language detection.
+ * @returns {React.ReactElement} A button and a modal containing a read-only code viewer.
+ */
+function FullScreenTextViewer(props) {
+  const { value, label, url } = props;
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isOpen]);
+
+  const language = detectLanguageFromLabel(label) || detectLanguageFromContent(value);
+
+  return (
+    <>
+      <ActionButton data-action="fullscreen" data-testid="fullscreen-button" onClick={() => setIsOpen(true)}>
+        Fullscreen
+      </ActionButton>
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title={label} titleUrl={url} onCopy={() => copyTextToClipboard(value)}>
+        <CodeEditor content={value || ""} syntax={language} readOnly />
+      </Modal>
+    </>
+  );
+}
+
+/**
+ * A dropdown menu component that uses the first child as the trigger button and
+ * renders remaining children as dropdown items. Supports click-outside and ESC key
+ * dismissal, and auto-closes after an item is clicked.
+ * @param {Object} props
+ * @param {string} [props.type=''] - Optional CSS class suffix for the dropdown content container.
+ * @param {React.ReactNode} props.children - The first child is used as the trigger button; subsequent children are dropdown items.
+ * @returns {React.ReactElement} The dropdown container with trigger and conditional dropdown content.
+ */
+function DropdownButtons(props) {
+  const { type = "", children } = props;
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const [triggerButton, ...buttonsElems] = children;
+
+  const toggleDropdown = useCallback(() => {
+    setIsOpen((prev) => !prev);
+  }, []);
+
+  const closeDropdown = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useLayoutEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        closeDropdown();
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape" && isOpen) {
+        closeDropdown();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleEscape);
+      };
+    }
+  }, [isOpen, closeDropdown]);
+
+  // Clone trigger button to add onClick handler
+  const enhancedTrigger = React.cloneElement(triggerButton, {
+    onClick: (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleDropdown();
+      if (triggerButton.props.onClick) {
+        triggerButton.props.onClick(e);
+      }
+    },
+    "aria-expanded": isOpen,
+    "aria-haspopup": "true",
+  });
+
+  // Wrap buttons to close dropdown on click
+  const enhancedButtons = React.Children.map(buttonsElems, (child) => {
+    if (!child) return null;
+    return React.cloneElement(child, {
+      onClick: (e) => {
+        if (child.props.onClick) {
+          child.props.onClick(e);
+        }
+        // Close dropdown after action
+        setTimeout(closeDropdown, 100);
+      },
+    });
+  });
+
+  return (
+    <div className="dropdown" ref={dropdownRef}>
+      {enhancedTrigger}
+      {isOpen && <div className={`dropdown-content ${type}`.trim()}>{enhancedButtons}</div>}
+    </div>
+  );
+}
+
+/**
+ * A button that toggles between dark and light themes.
+ * Consumes ThemeContext to read the current theme and trigger the toggle.
+ * @returns {React.ReactElement} A button displaying "Light Mode" or "Dark Mode" based on the current theme.
+ */
+function ThemeToggle() {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
+  return (
+    <button data-action="theme-toggle" data-testid="theme-toggle" onClick={toggleTheme}>
+      {theme === "dark" ? "Light Mode" : "Dark Mode"}
+    </button>
+  );
+}
+
+/**
+ * Settings dropdown menu containing the ThemeToggle button.
+ * Renders a DropdownButtons component with "Settings" as the trigger label.
+ * @returns {React.ReactElement} A dropdown with settings options.
+ */
+function Settings() {
+  return (
+    <DropdownButtons>
+      <button className="dropdown-trigger" data-action="settings-toggle" data-testid="settings-toggle">
+        Settings
+      </button>
+      <ThemeToggle />
+    </DropdownButtons>
+  );
+}
+
+/**
+ * A Monaco Editor-based text display component with action buttons for copy, edit, view raw,
+ * fullscreen, and collapse/expand. Auto-detects the language from the URL or content,
+ * computes editor height from line count, and respects the global collapse context.
+ * @param {Object} props
+ * @param {string} [props.url] - Optional URL of the source file, used for language detection and edit/view links.
+ * @param {string} [props.label] - Optional label displayed as the editor header. Falls back to placeholder or derived URL.
+ * @param {string} [props.height] - Optional CSS height override. If omitted, height is computed from content line count.
+ * @param {string} [props.placeholder] - Fallback label text if no label or URL is provided.
+ * @param {string} [props.value] - The text content to display in the editor.
+ * @param {string} [props.defaultValue] - Fallback text content if value is not provided.
+ * @param {boolean} [props.readOnly] - Whether the editor should be read-only.
+ * @returns {React.ReactElement} The enhanced text area section with header actions and Monaco Editor.
+ */
+/**
+ * A reusable PrismJS-based code viewer component.
+ * @param {Object} props
+ * @param {string} props.content - The text content to display.
+ * @param {string} [props.syntax] - The language/syntax to use. If not provided, auto-detected from content.
+ * @param {boolean} [props.readOnly] - Whether the editor is read-only (kept for API compatibility).
+ * @returns {React.ReactElement} A syntax-highlighted code block.
+ */
+function CodeEditor({ content = "", syntax, readOnly = false }) {
+  const language = syntax || detectLanguageFromContent(content);
+  const grammar = Prism.languages[language];
+  const highlighted = grammar ? Prism.highlight(content, grammar, language) : _escapeHtml(content);
+
+  return (
+    <pre className="prism-code-block">
+      <code className={`language-${language}`} dangerouslySetInnerHTML={{ __html: highlighted }} />
+    </pre>
+  );
+}
+
+/**
+ * Escapes HTML special characters in a string for safe insertion into innerHTML.
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+function _escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/** Number of leading content lines shown when a code block is collapsed. */
+const COLLAPSED_PREVIEW_LINES = 10;
+
+function EnhancedTextArea(props) {
+  let { url, label, height, error, defaultCollapsed = true, ...restProps } = props;
+  label = label || props.placeholder;
+
+  const content = restProps.value || restProps.defaultValue || "";
+  const { collapseAll, tick } = useContext(EditorCollapseContext);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+
+  useEffect(() => {
+    setCollapsed(collapseAll);
+  }, [collapseAll, tick]);
+
+  // Detect language: first try from URL, then from content
+  const languageFromUrl = detectLanguageFromUrl(url);
+  const syntax = languageFromUrl || undefined;
+
+  let editUrl = "";
+  let formattedUrl = "";
+
+  if (url) {
+    const shortUrl = url
+      .replace(`${GITHUB_RAW_FETCH_URL}/`, "")
+      .replace(`${BASH_PROFILE_CODE_REPO_RAW_URL}/`, "")
+      .replace(/\?raw=1$/, "")
+      .replace(/^(\.\/|\/)+/, "");
+    label = label || shortUrl;
+
+    editUrl = `${BASH_PROFILE_CODE_REPO_EDIT_URL}/${shortUrl}`;
+    formattedUrl = `${BASH_PROFILE_CODE_REPO_VIEW_URL}/${shortUrl}`;
+  }
+
+  // When collapsed, render only the first COLLAPSED_PREVIEW_LINES so users can glance
+  // at the start of the block. The "Show More" link below expands to full content.
+  const lines = content.split("\n");
+  const isTruncatable = lines.length > COLLAPSED_PREVIEW_LINES;
+  const displayedContent = collapsed && isTruncatable ? lines.slice(0, COLLAPSED_PREVIEW_LINES).join("\n") : content;
+  const hiddenLineCount = isTruncatable ? lines.length - COLLAPSED_PREVIEW_LINES : 0;
+
+  return (
+    <div
+      className={collapsed ? "codeBlockWrapper collapsed" : "codeBlockWrapper"}
+      data-testid="code-block"
+      data-collapsed={collapsed ? "true" : "false"}
+    >
+      <div className="codeBlockBanner">
+        <div>
+          {formattedUrl ? (
+            <LinkText href={formattedUrl} copyOnClick>
+              {label}
+            </LinkText>
+          ) : (
+            <span>{label}</span>
+          )}
+        </div>
+        <ActionButton data-action="copy" data-testid="copy-button" onClick={() => copyTextToClipboard(content)}>
+          Copy
+        </ActionButton>
+        {editUrl && <LinkButton href={editUrl}>Edit</LinkButton>}
+        {url && <LinkButton href={url}>View Raw</LinkButton>}
+        <FullScreenTextViewer value={content} label={label} url={formattedUrl} />
+      </div>
+      {error ? (
+        <div className="text-error">Content Error: {content}</div>
+      ) : (
+        <>
+          <CodeEditor content={displayedContent} syntax={syntax} height={height} readOnly={restProps.readOnly || false} />
+          {collapsed && isTruncatable && (
+            <a
+              className="codeBlockShowMore"
+              data-testid="show-more-toggle"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setCollapsed(false);
+              }}
+            >
+              Show More ({hiddenLineCount} more {hiddenLineCount === 1 ? "line" : "lines"})
+            </a>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Common applciations links DOM
+ */
+const CommonOtherAppDom = (
+  <>
+    <LinkButton block href={`${BASH_PROFILE_CODE_REPO_VIEW_URL}/fonts`}>
+      Custom Fonts
+    </LinkButton>
+    <LinkButton block href="font-preview.html">
+      Font Preview
+    </LinkButton>
+    <LinkButton block href="https://www.sublimetext.com/download">
+      Sublime Text
+    </LinkButton>
+    <LinkButton block href="https://www.sublimemerge.com/download">
+      Sublime Merge
+    </LinkButton>
+    <LinkButton block href="https://www.charlesproxy.com/download/latest-release/">
+      Charles Proxy
+    </LinkButton>
+    <LinkButton block href="https://ultimaker.com/software/ultimaker-cura/#links">
+      Ultimaker Cura
+    </LinkButton>
+    <LinkButton block href="https://design.cricut.com/#/">
+      Cricut Design Space
+    </LinkButton>
+    <LinkButton block href="https://download.battle.net/en-us/?product=bnetdesk">
+      Battle Net
+    </LinkButton>
+  </>
+);
+
+/**
+ * Displays a warning or confirmation message when the selected target OS does not
+ * match (or matches) the user's current system. Renders nothing if the target is
+ * not in the known OS map.
+ * @param {Object} props
+ * @param {string} [props.targetDomString] - The target OS flag (e.g., 'is_os_mac', 'is_os_windows', 'is_os_android_termux').
+ * @returns {React.ReactElement|null} A styled warning heading if the target doesn't match, or null.
+ */
+function TargetSystemOSWarningDom({ targetDomString }) {
+  const checkedFlags = ["is_os_mac", "is_os_windows", "is_os_android_termux"];
+  if (!checkedFlags.includes(targetDomString)) return null;
+  if (currentSystemFlag === targetDomString) return null;
+
+  const entry = OS_KEY_TO_NOTES_MAP[targetDomString];
+  const name = entry ? entry.label : targetDomString;
+
+  return <h3 className="text-error">This is meant for {name}. Your system is detected as a different OS.</h3>;
+}
+
+/**
+ * Map of OS flag keys that have pre-compiled profile files in .build/.
+ * Only OSes with CI builds produce these files.
+ * @type {Object<string, string>}
+ */
+const PRE_COMPILED_PROFILE_MAP = {
+  is_os_arch_linux: "arch_linux",
+  is_os_mac: "mac",
+  is_os_redhat: "redhat",
+  is_os_ubuntu: "ubuntu",
+};
+
+/**
+ * Renders a pre-compiled bash profile for the given OS flag, if available.
+ *
+ * The profile is fetched same-origin from `./profile_bashrc_<osKey>.sh` —
+ * the publish job (see `.github/workflows/build-main.yml`) copies the per-OS
+ * profile_bashrc_<os>.sh files produced by each build job into `dist/` before
+ * the GitHub Pages deploy, so the deployed site serves them next to
+ * `index.html`. The files are NOT checked into the repo; the source of truth
+ * is the binary-cache release on synle/bashrc (asset name
+ * `bashrc-profile__profile_bashrc_<os>.sh`).
+ *
+ * Locally (vite dev server) the file is absent unless a previous
+ * `make setup_local_full` left one in `.build/`. DynamicTextArea handles the
+ * 404 gracefully — it just renders an empty error state.
+ *
+ * @param {Object} props
+ * @param {string} props.osFlag - The OS flag (e.g., 'is_os_mac', 'is_os_ubuntu').
+ * @returns {React.ReactElement|null} A DynamicTextArea with the profile content, or null if unavailable.
+ */
+function PreCompiledProfileDom({ osFlag }) {
+  const osKey = PRE_COMPILED_PROFILE_MAP[osFlag];
+  if (!osKey) return null;
+  return <DynamicTextArea url={`./profile_bashrc_${osKey}.sh`} />;
+}
+
+/**
+ * Generic OS setup notes component. Resolves the OS flag to the appropriate
+ * NotesDom component (modeled after AndroidNotesDom pattern).
+ * @param {Object} props
+ * @param {string} props.osFlag - The OS flag (e.g., 'is_os_mac', 'is_os_windows').
+ * @returns {React.ReactElement} The resolved NotesDom for the given OS flag.
+ */
+function GenericNotesDom({ osFlag }) {
+  const entry = OS_KEY_TO_NOTES_MAP[osFlag];
+  if (!entry) return null;
+  const { Component } = entry;
+  return <Component osFlag={osFlag} />;
+}
+
+/**
+ * macOS setup notes page. Renders the bootstrap script, README, font/git/SSH/inputrc/vim configs,
+ * SponsorBlock settings, common editor setup for macOS, and links to other useful applications.
+ * @returns {React.ReactElement} The macOS setup notes section.
+ */
+function MacNotesDom() {
+  return (
+    <>
+      <TargetSystemOSWarningDom targetDomString="is_os_mac" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/docs/mac/README.md" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
+      <DynamicTextArea path="/.build/gitconfig" />
+      <DynamicTextArea path="/.build/ssh-config" />
+      <DynamicTextArea path="/.build/inputrc" />
+      <DynamicTextArea path="/.build/vimrc" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <PreCompiledProfileDom osFlag="is_os_mac" />
+      <CommonEditorSetupDom />
+
+      {/* Mac */}
+      <div className="form-label">Other Applications</div>
+      <div className="link-group">{CommonOtherAppDom}</div>
+    </>
+  );
+}
+
+/**
+ * Linux setup notes page. Renders the bootstrap script, Linux Mint config, README,
+ * font/git/gitignore/SSH/inputrc/vim configs, SponsorBlock settings, common editor setup,
+ * and links to other useful applications.
+ * @returns {React.ReactElement} The Linux setup notes section.
+ */
+function LinuxNotesDom({ osFlag }) {
+  return (
+    <>
+      <TargetSystemOSWarningDom targetDomString="is_os_ubuntu" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/docs/linux/README.md" />
+      <DynamicTextArea path="/docs/linux/linux-mint-config.sh" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
+      <DynamicTextArea path="/.build/gitconfig" />
+      <DynamicTextArea path="/.build/gitignore_global" />
+      <DynamicTextArea path="/.build/ssh-config" />
+      <DynamicTextArea path="/.build/inputrc" />
+      <DynamicTextArea path="/.build/vimrc" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/game-streaming-moonlight-steamlink.md" />
+      <PreCompiledProfileDom osFlag={osFlag} />
+      <CommonEditorSetupDom />
+      {/* Linux */}
+      <div className="form-label">Other Applications</div>
+      <div className="link-group">{CommonOtherAppDom}</div>
+    </>
+  );
+}
+
+/**
+ * SteamOS / Steam Deck setup notes page. Renders the standard Linux setup content
+ * plus the Steam Deck-specific `steamos-setup.md` helper that downloads Decky Loader,
+ * Decky Lossless Scaling (lsfg-vk), and EmuDeck installers to ~/Desktop/.
+ * @returns {React.ReactElement} The SteamOS setup notes section.
+ */
+function SteamOSNotesDom() {
+  return (
+    <>
+      <TargetSystemOSWarningDom targetDomString="is_os_steamos" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/docs/steamos-setup.md" />
+      <DynamicTextArea path="/docs/linux/README.md" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
+      <DynamicTextArea path="/.build/gitconfig" />
+      <DynamicTextArea path="/.build/gitignore_global" />
+      <DynamicTextArea path="/.build/ssh-config" />
+      <DynamicTextArea path="/.build/inputrc" />
+      <DynamicTextArea path="/.build/vimrc" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/game-streaming-moonlight-steamlink.md" />
+      <PreCompiledProfileDom osFlag="is_os_steamos" />
+      <CommonEditorSetupDom />
+      {/* SteamOS */}
+      <div className="form-label">Other Applications</div>
+      <div className="link-group">{CommonOtherAppDom}</div>
+    </>
+  );
+}
+
+/**
+ * Lightweight setup notes page. Renders the bootstrap setup script, SponsorBlock settings,
+ * and common built configs (gitconfig, ssh-config, inputrc, vimrc).
+ * @returns {React.ReactElement} The lightweight setup notes section.
+ */
+function GenericLightWeightNotesDom() {
+  return (
+    <>
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`} />
+      <DynamicTextArea path="/.build/gitconfig" />
+      <DynamicTextArea path="/.build/ssh-config" />
+      <DynamicTextArea path="/.build/inputrc" />
+      <DynamicTextArea path="/.build/vimrc" />
+    </>
+  );
+}
+
+/**
+ * Android/Termux setup notes page. Renders debloat/restore shell scripts, the main Android
+ * shell script, SponsorBlock settings, ReVanced Extended patch configs for YouTube and
+ * YouTube Music, links to Android applications (MicroG, YouTube, YouTube Music,
+ * Google News, Nova Companion), and a curated reference list of Android emulators
+ * (high-end + low-to-mid range) with download links and hardware notes.
+ * @returns {React.ReactElement} The Android setup notes section.
+ */
+function AndroidNotesDom() {
+  return (
+    <>
+      <TargetSystemOSWarningDom targetDomString="is_os_android_termux" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/docs/android/android.debloat.sh" />
+      <DynamicTextArea path="/docs/android/android.restore.sh" />
+      <DynamicTextArea path="/docs/android/android.sh" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/android/rvx-yt.txt" />
+      <DynamicTextArea path="/docs/android/rvx-yt-music.txt" />
+
+      {/* Android */}
+      <div className="form-label">Android Applications</div>
+      <div className="link-group">
+        <LinkButton block href="https://vanced.to/gmscore-microg">
+          MicroG
+        </LinkButton>
+        <LinkButton block href="https://vanced.to/revanced-google-photos">
+          Google photo
+        </LinkButton>
+        <LinkButton block href="https://vanced.to/revanced-youtube-extended">
+          Youtube
+        </LinkButton>
+        <LinkButton block href="https://vanced.to/revanced-youtube-music-extended">
+          Youtube Music
+        </LinkButton>
+        <LinkButton block href="https://vanced.to/revanced-google-news">
+          Google News
+        </LinkButton>
+        <LinkButton
+          block
+          href="https://teslacoilapps.com/tesladirect/download.pl?packageName=com.teslacoilsw.launcherclientproxy&betaType=public"
+        >
+          Nova Companion
+        </LinkButton>
+      </div>
+
+      {/* Android Emulators */}
+      <div className="form-label">Android Emulators — High-End</div>
+      <div className="emulator-list">
+        <div>
+          <strong>Nintendo Switch - Eden Emulator / Sudachi</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://git.eden-emu.dev/eden-emu/eden/" target="_blank" rel="noreferrer">
+                Eden Project Git Releases
+              </a>{" "}
+              or{" "}
+              <a href="https://github.com/sudachi-emu/sudachi" target="_blank" rel="noreferrer">
+                Sudachi GitHub Source
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 845 / 6GB RAM</li>
+            <li>Recommended: Snapdragon 8 Gen 1 or higher / 8GB to 12GB+ RAM</li>
+            <li>Equivalent S-Series Devices: Galaxy S23, S24, S25 variants with Snapdragon (e.g. S23 Ultra 8 Gen 2, S24 Ultra 8 Gen 3)</li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Windows PC (x86) - Winlator</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/brunodev85/winlator/releases" target="_blank" rel="noreferrer">
+                Winlator GitHub Releases (brunodev85)
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 700 series / 6GB RAM (older 2D games)</li>
+            <li>Recommended: Snapdragon 8 Gen 2 or newer / 12GB+ RAM (critical for translation layers and 3D titles)</li>
+            <li>
+              Equivalent S-Series Devices: Galaxy S23 Ultra, S24 Ultra, S26 series. Snapdragon 8 Gen 2 (S23 series / Fold 5) currently
+              offers the most stable custom Turnip driver compatibility.
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>PlayStation 2 - NetherSX2 (Turnip Edition)</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/nckstwrt/NetherSX2-Turnip/releases" target="_blank" rel="noreferrer">
+                NetherSX2-Turnip GitHub Releases
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 665 / 4GB RAM</li>
+            <li>Recommended: Snapdragon 865 or higher / 6GB to 8GB+ RAM</li>
+            <li>Equivalent S-Series Devices: Galaxy S20 Ultra (Snapdragon 865) and any subsequent flagship.</li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo Wii U - Cemu for Android</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/cemu-project/cemu/releases" target="_blank" rel="noreferrer">
+                Cemu Project GitHub Releases
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 855 / 6GB RAM</li>
+            <li>Recommended: Snapdragon 8 Gen 1 or newer / 8GB RAM</li>
+            <li>Equivalent S-Series Devices: Galaxy S22 Ultra, S23 Ultra, and newer.</li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo 3DS - Azahar / Lime3DS</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Download:{" "}
+              <a href="https://github.com/azahar-emu/azahar/releases" target="_blank" rel="noreferrer">
+                Azahar GitHub Releases
+              </a>{" "}
+              or{" "}
+              <a href="https://github.com/Lime3DS/Lime3DS/releases" target="_blank" rel="noreferrer">
+                Lime3DS GitHub Releases
+              </a>
+            </li>
+            <li>Minimum: Snapdragon 600 or 700 series / 4GB RAM</li>
+            <li>Recommended: Snapdragon 855 or higher / 6GB RAM (allows 3x-4x upscaling)</li>
+            <li>Equivalent S-Series Devices: Galaxy S10 series (Snapdragon 855) and up.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="form-label">Android Emulators — Low-to-Mid Range</div>
+      <div className="emulator-list">
+        <div>
+          <strong>Nintendo GameCube &amp; Wii - Dolphin</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.dolphinemu.dolphinemu" target="_blank" rel="noreferrer">
+                Dolphin Emulator
+              </a>
+            </li>
+            <li>
+              Cutting-edge dev APKs:{" "}
+              <a href="https://dolphin-emu.org/download/" target="_blank" rel="noreferrer">
+                Dolphin Official Downloads
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo DS - DraStic DS Emulator</strong>
+          <ul>
+            <li>Cost: Free (formerly paid)</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=com.dsemu.drastic" target="_blank" rel="noreferrer">
+                DraStic DS Emulator
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>PlayStation Portable - PPSSPP</strong>
+          <ul>
+            <li>Cost: Free base / optional $4.99 Gold (donation, feature-identical)</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.ppsspp.ppsspp" target="_blank" rel="noreferrer">
+                PPSSPP Standard
+              </a>{" "}
+              or{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.ppsspp.ppssppgold" target="_blank" rel="noreferrer">
+                PPSSPP Gold
+              </a>
+            </li>
+            <li>
+              GitHub Releases:{" "}
+              <a href="https://github.com/hrydgard/ppsspp/releases" target="_blank" rel="noreferrer">
+                PPSSPP Project Releases
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>PlayStation 1 - DuckStation</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=org.duckstation.android" target="_blank" rel="noreferrer">
+                DuckStation
+              </a>
+            </li>
+            <li>
+              GitHub Releases:{" "}
+              <a href="https://github.com/stenzek/duckstation/releases" target="_blank" rel="noreferrer">
+                DuckStation Releases
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Nintendo 64 - Mupen64Plus FZ</strong>
+          <ul>
+            <li>Cost: Free base / optional $3.99 Pro (netplay + cloud saves)</li>
+            <li>
+              Project:{" "}
+              <a href="https://github.com/mupen64plus-ae/mupen64plus-ae" target="_blank" rel="noreferrer">
+                Mupen64Plus AE GitHub
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <strong>Retro Cartridges (NES, SNES, Sega Genesis, GBA) - Lemuroid</strong>
+          <ul>
+            <li>Cost: Free</li>
+            <li>
+              Google Play Store:{" "}
+              <a href="https://play.google.com/store/apps/details?id=com.swordfish.lemuroid" target="_blank" rel="noreferrer">
+                Lemuroid
+              </a>
+            </li>
+            <li>
+              GitHub Releases:{" "}
+              <a href="https://github.com/Swordfish90/Lemuroid/releases" target="_blank" rel="noreferrer">
+                Lemuroid Releases
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/**
+ * Windows setup notes page. Renders the bootstrap script, README, PowerShell dependencies,
+ * font config, PowerShell profile, Windows Terminal settings, SponsorBlock settings,
+ * common editor setup for Windows, and links to WSL, SFTP mount tools, Visual C++
+ * redistributable, .NET runtime, Ninite, prebuilt applications, and Windows extensions.
+ * @returns {React.ReactElement} The Windows setup notes section.
+ */
+function WindowsNotesDom() {
+  return (
+    <>
+      <TargetSystemOSWarningDom targetDomString="is_os_windows" />
+      <DynamicTextArea path="/software/bootstrap/setup.sh" />
+      <DynamicTextArea path="/docs/windows/README.md" />
+      <DynamicTextArea path="/software/scripts/windows/_full-setup-bootstrap.ps1.bash" />
+      <DynamicTextArea path="/software/scripts/windows/_full-setup.ps1.bash" />
+      <DynamicTextArea path="/assets/fonts/install.sh" />
+      <DynamicTextArea path="/.build/windows-terminal" />
+      <DynamicTextArea path="/docs/android/sponsorblock.json" />
+      <DynamicTextArea path="/docs/game-streaming-moonlight-steamlink.md" />
+      <CommonEditorSetupDom />
+
+      {/* other links */}
+      <div className="form-label">Windows Related</div>
+      <div className="link-group">
+        <LinkButton block href="https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi">
+          WSL Kernel
+        </LinkButton>
+        <LinkButton block href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170">
+          Microsoft Visual C++ Redistributable
+        </LinkButton>
+        <LinkButton
+          block
+          href="https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-7.0.14-windows-x64-installer?cid=getdotnetcore"
+        >
+          Microsoft .NET 7.0 Desktop Runtime (v7.0.14)
+        </LinkButton>
+      </div>
+
+      <div className="form-label">SFTP Mount Applications</div>
+      <div>
+        <div>
+          <strong>Using username and password</strong>
+        </div>
+        <code>\\sshfs\syle@127.0.0.1</code>
+      </div>
+      <div>
+        <div>
+          <strong>Using id_rsa keys</strong>
+        </div>
+        <code>\\sshfs.k\syle@127.0.0.1</code>
+      </div>
+      <div className="link-group">
+        <LinkButton block href="https://github.com/winfsp/winfsp/releases/latest">
+          WinFSP {/* https://github.com/winfsp/sshfs-win */}
+        </LinkButton>
+        <LinkButton block href="https://github.com/winfsp/sshfs-win/releases/latest">
+          SSHFS
+        </LinkButton>
+      </div>
+
+      <div className="form-label">Other Applications</div>
+      <div className="link-group">
+        <LinkButton block href={getGitHubRawUrl(".build/Applications.zip")}>
+          Prebuilt Windows Applications
+        </LinkButton>
+        <LinkButton block href="https://ninite.com/">
+          Ninite
+        </LinkButton>
+        {CommonOtherAppDom}
+      </div>
+
+      {/* extensions */}
+      <div className="form-label">Extensions</div>
+      <div className="link-group">
+        <LinkButton block href="https://apps.microsoft.com/detail/9P9TQF7MRM4R">
+          Windows Subsystem for Linux (Windows 11)
+        </LinkButton>
+        <LinkButton
+          block
+          href="https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=runfile_local"
+        >
+          CUDA Toolkit Driver for WSL
+        </LinkButton>
+        <LinkButton block href="https://apps.microsoft.com/store/detail/raw-image-extension/9nctdw2w1bh8">
+          Raw Image Extension
+        </LinkButton>
+        <LinkButton block href="https://apps.microsoft.com/store/detail/heif-image-extensions/9pmmsr1cgpwg">
+          Heif Image Extension
+        </LinkButton>
+        <LinkButton href="https://apps.microsoft.com/store/detail/hevc-video-extensions-from-device-manufacturer/9n4wgh0z6vhq">
+          Hevc Video Extension (Device Manager)
+        </LinkButton>
+        <LinkButton block href="https://apps.microsoft.com/store/detail/mpeg2-video-extension/9n95q1zzpmh4">
+          MPEG-2 Video Extension
+        </LinkButton>
+        <LinkButton block href="https://apps.microsoft.com/store/detail/av1-video-extension/9mvzqvxjbq9v">
+          AV1 Video Extension
+        </LinkButton>
+      </div>
+    </>
+  );
+}
+
+/**
+ * Shared editor setup section that renders the Sublime Text setup and extension list.
+ * VS Code setup/extension artifacts (.build/vs-code-setup, .build/vs-code-ext-*) are not
+ * generated by any script in this repo, so referencing them produces 404s on the published
+ * webapp — they are omitted here until a generator exists.
+ * @returns {React.ReactElement} The Sublime Text setup script and extension list.
+ */
+function CommonEditorSetupDom() {
+  return (
+    <>
+      <DynamicTextArea path="/.build/sublime-text-setup" />
+      <DynamicTextArea path="/.build/sublime-text-ext" />
+    </>
+  );
+}
+
+/**
+ * Root application component. Initializes app state by fetching remote configuration data
+ * (setup scripts, script options, hosts config, IP mappings), manages theme state via
+ * ThemeContext, provides form state and input handling via MainAppContext, and renders
+ * the full application layout (header, navigation tabs, main body, footer).
+ * Falls back by clearing localStorage if data loading fails.
+ * @returns {React.ReactElement|null} The full application wrapped in context providers, or null while loading.
+ */
+function App() {
+  const [appData, setAppData] = useState();
+  const [route, setRoute] = useHashRoute(
+    currentSystemFlag === "is_os_mac"
+      ? "command-option-setup-mac"
+      : currentSystemFlag === "is_os_windows"
+        ? "command-option-setup-windows"
+        : currentSystemFlag === "is_os_android_termux"
+          ? "command-option-setup-android"
+          : "command-option-setup-ubuntu",
+  );
+  const [theme, setTheme] = useState(() => {
+    return getStorage("theme", "light");
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    setStorage("theme", newTheme);
+  };
+
+  useEffect(() => {
+    async function _loadData() {
+      try {
+        const configsByKey = {};
+
+        const [setupDepsScript, scriptToRunOptions, setupHostsScript, ipAddressMappingConfigs, presetMap] = await Promise.all([
+          fetch(getGitHubRawUrl("software/bootstrap/setup.sh"))
+            .then((res) => res.text())
+            .then((res) => res.trim()),
+          fetch(getGitHubRawUrl("software/metadata/script-list.config"))
+            .then((res) => res.text())
+            .then((res) =>
+              res
+                .split("\n")
+                .map((s) => s.replace("./", "").trim())
+                .filter((s) => !!s && (s.includes(".js") || s.includes(".sh")))
+                .sort(),
+            ),
+          fetch(getGitHubRawUrl("package.json"))
+            .then((res) => res.json())
+            .then((pkg) => pkg.scripts["setup:hosts"] || ""),
+          fetch(getGitHubRawUrl("software/metadata/ip-address.config"))
+            .then((res) => res.text())
+            .then((s) =>
+              s
+                .trim()
+                .split("\n")
+                .map((s) => "# " + s.trim())
+                .join("\n"),
+            ),
+          fetch(getGitHubRawUrl("software/metadata/presets.jsonc"))
+            .then((res) => res.text())
+            .then((raw) => {
+              try {
+                const parsed = JSON.parse(stripJsoncComments(raw));
+                return parsed && typeof parsed === "object" ? parsed : {};
+              } catch {
+                return {};
+              }
+            }),
+        ]);
+
+        const osConfigs = OS_FLAGS.map((flag) => {
+          const entry = OS_KEY_TO_NOTES_MAP[flag];
+          if (!entry) return null;
+          return {
+            text: `Setup ${entry.label}`,
+            renderBody: () => <GenericNotesDom osFlag={flag} />,
+          };
+        }).filter(Boolean);
+
+        const configs = [
+          ...osConfigs,
+          {
+            text: "Setup Lightweight Profile",
+            renderBody: () => (
+              <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash -s -- --preset=lightweight`} />
+            ),
+          },
+          {
+            text: "Setup Etc Hosts",
+            renderBody: () => (
+              <ScriptOutputSection
+                script={`{{SETUP_HOSTS_SCRIPT}}\n\n# Windows\n# c:\\Windows\\System32\\Drivers\\etc\\hosts\n\n# Linux\n# /etc/hosts\n\n{{IP_ADDRESS_MAPPING_CONFIGS}}`}
+              />
+            ),
+          },
+          {
+            text: "Test Full Run live",
+            renderBody: () => (
+              <>
+                <OsSelectionInputSection />
+                <ScriptOutputSection script={`curl -s {{BASH_PROFILE_CODE_REPO_RAW_URL}}/run.sh?raw=1 | bash`} />
+              </>
+            ),
+          },
+          {
+            text: "Test Custom Run",
+            renderBody: () => <CustomRunSection />,
+          },
+        ].map((config) => ({
+          idx: `command-option-${config.text.toLowerCase().replace(/[ -]/g, "-")}`,
+          ...config,
+        }));
+
+        for (const config of configs) {
+          configsByKey[config.idx] = config;
+        }
+
+        // back it up
+        const presetNames = Object.keys(presetMap || {}).sort();
+        const storedPreset = getStorage("presetToUse") || "";
+        // Prefer a remembered preset; otherwise fall back to the first public (non-underscore)
+        // preset so the picker isn't blank on first load.
+        const defaultPreset = presetNames.includes(storedPreset)
+          ? storedPreset
+          : presetNames.find((n) => !n.startsWith("_")) || presetNames[0] || "";
+        const newAppData = {
+          configs,
+          configsByKey,
+          setupDepsScript,
+          scriptToRunOptions,
+          setupHostsScript,
+          ipAddressMappingConfigs,
+          presetMap: presetMap || {},
+          presetNames,
+          formValue: {
+            osToRun: getStorage("osToRun") || "is_os_windows",
+            setupDependencies: getStorage("setupDependencies") || "yes",
+            scriptsToUse: (getStorage("scriptsToUse") || "").split("\n").filter((s) => s.trim()),
+            scriptMode: getStorage("scriptMode") === "preset" ? "preset" : "files",
+            presetToUse: defaultPreset,
+          },
+        };
+
+        if (newAppData?.formValue?.scriptsToUse.length === 0) {
+          newAppData.formValue.scriptsToUse.push("software/");
+        }
+
+        setAppData(newAppData);
+      } catch (err) {
+        // if there's an error, let's fall back and clear storage
+        localStorage.clear();
+      }
+    }
+
+    _loadData();
+  }, []);
+
+  // Start with collapseAll=true so code blocks render collapsed on first paint.
+  // EnhancedTextArea's useEffect mirrors this signal into each block's local
+  // state — if the signal started false, every block would snap to expanded
+  // immediately after mount and override the per-block `defaultCollapsed` prop.
+  const [collapseSignal, setCollapseSignal] = useState({
+    collapseAll: true,
+    tick: 0,
+  });
+
+  // Keyboard shortcut for toggling collapse-all on every code block:
+  // cmd+\ on macOS, alt+\ everywhere else. Mirrors the global-collapse button
+  // in the header so a single chord folds/unfolds the whole page.
+  useEffect(() => {
+    const isMac = /mac/i.test(navigator.platform);
+    const handleKeyDown = (e) => {
+      const isHotkey = e.key === "\\" && (isMac ? e.metaKey && !e.altKey && !e.ctrlKey : e.altKey && !e.metaKey && !e.ctrlKey);
+      if (!isHotkey) return;
+      e.preventDefault();
+      setCollapseSignal((prev) => ({
+        collapseAll: !prev.collapseAll,
+        tick: prev.tick + 1,
+      }));
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  if (!appData) {
+    return null;
+  }
+
+  const onSetAppData = (newAppData) => {
+    setAppData({
+      ...newAppData,
+    });
+  };
+
+  const onInputChange = (key, value, valueAsString) => {
+    if (valueAsString === undefined) {
+      valueAsString = value;
+    }
+
+    appData.formValue = {
+      ...appData.formValue,
+      [key]: value,
+    };
+    onSetAppData(appData);
+    setStorage(key, valueAsString);
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+      <MainAppContext.Provider
+        value={{
+          appData,
+          setAppData: onSetAppData,
+          onInputChange,
+          route,
+          setRoute,
+        }}
+      >
+        <EditorCollapseContext.Provider
+          value={{
+            collapseAll: collapseSignal.collapseAll,
+            tick: collapseSignal.tick,
+          }}
+        >
+          <div id="container" data-testid="app-container">
+            <div className="app-header">
+              <h1 style={{ textTransform: "uppercase" }}>
+                <LinkText href={REPO_URL}>{window.document.title}</LinkText>
+                <a href={`${REPO_URL}/actions/workflows/build-main.yml`} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={`${REPO_URL}/actions/workflows/build-main.yml/badge.svg`}
+                    alt="build"
+                    style={{
+                      height: "1rem",
+                      verticalAlign: "middle",
+                      marginLeft: "0.5rem",
+                    }}
+                  />
+                </a>
+              </h1>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--spaceSize2)",
+                  alignItems: "center",
+                }}
+              >
+                <Settings />
+                <ActionButton
+                  data-action="global-collapse"
+                  data-testid="global-collapse"
+                  onClick={() =>
+                    setCollapseSignal((prev) => ({
+                      collapseAll: !prev.collapseAll,
+                      tick: prev.tick + 1,
+                    }))
+                  }
+                >
+                  {collapseSignal.collapseAll ? "▶" : "▼"}
+                </ActionButton>
+              </div>
+            </div>
+            <div className="app-clone-command">
+              <code>git clone git@github.com:synle/bashrc.git</code>
+              <code>git clone https://github.com/synle/bashrc.git</code>
+              <code>
+                rm -rf bashrc && curl -fsSL https://github.com/synle/bashrc/archive/refs/heads/main.zip -o /tmp/bashrc.zip && unzip -q -o
+                /tmp/bashrc.zip -d /tmp && mv /tmp/bashrc-main bashrc
+              </code>
+            </div>
+            <TopNavigationContainer />
+            <MainBodyContainer />
+            <BottomContainer />
+          </div>
+          <div className="fixed-nav-buttons fixed-nav-left">
+            <button
+              onClick={() => {
+                const sections = [...document.querySelectorAll(".codeBlockWrapper")];
+                const scrollY = window.scrollY;
+                for (let i = sections.length - 1; i >= 0; i--) {
+                  const top = sections[i].getBoundingClientRect().top + scrollY;
+                  if (top < scrollY - 5) {
+                    sections[i].scrollIntoView({ behavior: "smooth" });
+                    return;
+                  }
+                }
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
+              ▲ Prev
+            </button>
+            <button
+              onClick={() => {
+                const sections = [...document.querySelectorAll(".codeBlockWrapper")];
+                const scrollY = window.scrollY;
+                for (let i = 0; i < sections.length; i++) {
+                  const top = sections[i].getBoundingClientRect().top + scrollY;
+                  if (top > scrollY + 5) {
+                    sections[i].scrollIntoView({ behavior: "smooth" });
+                    return;
+                  }
+                }
+              }}
+            >
+              ▼ Next
+            </button>
+          </div>
+          <button className="fixed-nav-buttons fixed-nav-right" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            Top
+          </button>
+        </EditorCollapseContext.Provider>
+      </MainAppContext.Provider>
+    </ThemeContext.Provider>
+  );
+}
+
+const root = createRoot(document.getElementById("root"));
+root.render(<App />);
+
+// ---- Old Monaco Editor Code (commented out) ----
+// // "@monaco-editor/react": "^4.7.0"
+// import Editor from "@monaco-editor/react";
+//
+// function CodeEditor({ content = "", syntax, height, readOnly = false, options: extraOptions, ...restProps }) {
+//   const { theme } = useContext(ThemeContext);
+//   const editorTheme = theme === "dark" ? "vs-dark" : "light";
+//   const language = syntax || detectLanguageFromContent(content);
+//   const [editorHeight, setEditorHeight] = useState(height || "100px");
+//
+//   const onMount = useCallback((editor) => {
+//     const updateHeight = () => {
+//       const contentHeight = editor.getContentHeight();
+//       setEditorHeight(`${Math.max(100, contentHeight)}px`);
+//     };
+//     updateHeight();
+//     editor.onDidContentSizeChange(updateHeight);
+//   }, []);
+//
+//   return (
+//     <Editor
+//       height={editorHeight}
+//       onMount={onMount}
+//       language={language}
+//       value={content}
+//       theme={editorTheme}
+//       options={{
+//         readOnly,
+//         domReadOnly: readOnly,
+//         minimap: { enabled: false },
+//         scrollBeyondLastLine: false,
+//         scrollbar: { vertical: "hidden", horizontal: "hidden", handleMouseWheel: false },
+//         fontSize: 13,
+//         lineNumbers: "on",
+//         wordWrap: "on",
+//         automaticLayout: true,
+//         ...extraOptions,
+//       }}
+//       {...restProps}
+//     />
+//   );
+// }
+//
+// // FullScreenTextViewer Monaco usage:
+// // <Editor
+// //   height="100%"
+// //   language={language}
+// //   value={value || ""}
+// //   theme={editorTheme}
+// //   options={{
+// //     readOnly: true, domReadOnly: true,
+// //     minimap: { enabled: false }, scrollBeyondLastLine: false,
+// //     scrollbar: { vertical: "hidden", horizontal: "hidden" },
+// //     fontSize: 14, lineNumbers: "on", wordWrap: "on", automaticLayout: true,
+// //   }}
+// // />

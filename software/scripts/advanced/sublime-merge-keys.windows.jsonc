@@ -1,0 +1,90 @@
+// Sublime Merge keybindings for Windows/Linux only.
+// Uses alt as OS_KEY to match Sublime Text Windows keybinding conventions.
+[
+  // --- Command Palette & Navigation ---
+  {
+    "key": "alt+shift+p",
+    "command": "show_command_palette",
+  },
+  {
+    "key": "alt+p",
+    "command": "quick_switch_repository",
+  },
+  // --- Clipboard ---
+  {
+    "key": "alt+c",
+    "command": "copy",
+  },
+  {
+    "key": "alt+x",
+    "command": "cut",
+  },
+  {
+    "key": "alt+v",
+    "command": "paste",
+  },
+  {
+    "key": "alt+a",
+    "command": "select_all",
+  },
+  // --- Editing ---
+  {
+    "key": "alt+backspace",
+    "command": "chain",
+    "args": {
+      "commands": [["move_to", { "to": "bol", "extend": true }], ["left_delete"]],
+    },
+  },
+  // --- Font Size ---
+  {
+    "key": "alt+=",
+    "command": "increase_font_size",
+  },
+  {
+    "key": "alt+keypad_plus",
+    "command": "increase_font_size",
+  },
+  {
+    "key": "alt+-",
+    "command": "decrease_font_size",
+  },
+  {
+    "key": "alt+keypad_minus",
+    "command": "decrease_font_size",
+  },
+  // --- Window Management ---
+  {
+    "key": "alt+q",
+    "command": "exit",
+  },
+  {
+    "key": "alt+w",
+    "command": "close_window",
+  },
+  {
+    "key": "alt+shift+n",
+    "command": "new_window",
+  },
+  // --- Tab Navigation ---
+  {
+    "key": "alt+shift+]",
+    "command": "next_tab",
+  },
+  {
+    "key": "alt+shift+[",
+    "command": "prev_tab",
+  },
+  // --- Undo/Redo ---
+  {
+    "key": "alt+z",
+    "command": "undo",
+  },
+  {
+    "key": "alt+y",
+    "command": "redo",
+  },
+  {
+    "key": "shift+alt+z",
+    "command": "redo",
+  },
+]

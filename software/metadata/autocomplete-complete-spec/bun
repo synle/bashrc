@@ -1,0 +1,14 @@
+add|--dev,-d,--optional,--peer,--exact,-E,--global,-g,--verbose,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress
+build|--outdir,--outfile,--target,--format,--splitting,--minify,--sourcemap,--entry-naming,--chunk-naming,--asset-naming,--external,--loader,--define,--jsx-factory,--jsx-fragment,--tsconfig-override,--public-path,--root,--compile
+create|--force,-f,--no-install,--no-git,--open,--template,-t
+init|-y,--yes,--force,-f,--open
+install|--frozen-lockfile,--no-save,--dry-run,--force,-f,--cache-dir,--no-cache,--silent,--no-progress,--verbose,--production,-p,--global,-g,--ignore-scripts,--trust
+link|--save,--no-save,--global,-g,--force,-f
+outdated|--global,-g
+pm|cache,ls,hash,hash-print,hash-string,migrate,trust,untrust,default-trusted
+remove|--global,-g,--save,--verbose,--no-save
+run|--watch,--hot,--smol,--if-present,--silent,--bun,--shell,--filter,--inspect,--inspect-brk,--inspect-wait,--env-file,--cwd,--config,-c,--preload,--print,--eval,-e,__npm_scripts__
+test|--watch,--bail,-b,--timeout,-t,--rerun-each,--only,--todo,--preload,--coverage,--update-snapshots,-u,--env-file,--cwd
+update|--global,-g,--force,-f,--latest,--save,--no-save,--dry-run,--verbose
+upgrade|--canary,--stable,--force,-f,--version
+x|--bun,--silent,--verbose,--install,--no-install,--trust,--packages,-p

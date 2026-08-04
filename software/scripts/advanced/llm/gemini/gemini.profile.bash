@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+
+################################################################################
+# --- Aliases: Gemini ---
+#
+# Wrapper around the `gemini` binary from the official Google Gemini CLI
+# (installed via software/scripts/advanced/llm/gemini/install.sh).
+#
+# Adds `--yolo` for autonomous mode: auto-approves all tool calls (edits,
+# shell, network) without prompting per-action. This is gemini's documented
+# umbrella flag (equivalent to `--approval-mode yolo` per `gemini --help`) and
+# matches the autonomy posture of the claude (bypass permissions) and copilot
+# (`--autopilot --allow-all`) wrappers in this repo.
+#
+# Two layers of repo-managed config flow into Gemini:
+#   1. Per-repo (handled below): the `gemini` function auto-symlinks
+#      `GEMINI.md` → `CLAUDE.md` so per-project Claude rules become per-project
+#      Gemini rules without a separately-maintained instructions file.
+#   2. User-level (handled by software/scripts/advanced/llm/gemini/setup.js):
+#      seeds ~/.gemini/settings.json defaults, ~/.gemini/keybindings.json from
+#      gemini-keys.common.jsonc, and ~/.gemini/GEMINI.md from the shared
+#      engineering rules (managed block keyed by source path). Source of truth:
+#      software/scripts/advanced/llm/_common/instructions.md.
+################################################################################
+
+# gemini: wrapper around the `gemini` binary; auto-yolo, auto-symlinks GEMINI.md → CLAUDE.md, echoes resolved invocation to stderr
+function gemini() {
+  # `type -P` resolves only PATH binaries, so it ignores this very function and we don't recurse.
+  if ! type -P gemini > /dev/null 2>&1; then
+    echo "gemini is not installed" >&2
+    return 1
+  fi
+  # Auto-link GEMINI.md → CLAUDE.md at the repo root so Gemini CLI picks up
+  # the same repo guidance as Claude Code without a separately maintained
+  # instructions file. Only acts when CLAUDE.md exists and GEMINI.md (file or
+  # symlink) does not yet; otherwise stays silent.
+  if [ -f "CLAUDE.md" ] && [ ! -e "GEMINI.md" ] && [ ! -L "GEMINI.md" ]; then
+    command ln -s CLAUDE.md GEMINI.md
+    echo ">> Linked GEMINI.md → CLAUDE.md" >&2
+  fi
+  # Echo the resolved invocation to stderr so the user can see all flags being
+  # passed through (stderr keeps it out of any `gemini ... | jq` style pipelines).
+  echo "command gemini --yolo $*" >&2
+  # `command gemini` bypasses this function so the call hits the real binary, not us.
+  command gemini --yolo "$@"
+}
+
+alias gem="gemini"
+
+# gemini_edit_config: open the ~/.gemini/ config dir (settings, keybindings, GEMINI.md) in the editor
+function gemini_edit_config() {
+  if is_help_arg "${1:-}"; then
+    echo "gemini_edit_config: open ~/.gemini/ in the editor via view_file
+  Usage: gemini_edit_config
+
+Opens the whole ~/.gemini/ config dir so settings.json, keybindings.json, and
+GEMINI.md are all reachable in the same session.
+
+Files inside ~/.gemini/ worth knowing about:
+  ~/.gemini/settings.json    - every user-tunable Gemini CLI setting
+                               (selectedAuthType, gcpProjectId, theme, model
+                               overrides, mcpServers, hideBanner, hideTips,
+                               etc.). Managed defaults are seeded by
+                               gemini/setup.js; layer your own overrides on top.
+  ~/.gemini/keybindings.json - generated from
+                               software/scripts/advanced/llm/gemini/gemini-keys.common.jsonc.
+  ~/.gemini/GEMINI.md        - user-level engineering rules (sourced from
+                               software/scripts/advanced/llm/_common/instructions.md)."
+    return 0
+  fi
+  view_file "$HOME/.gemini"
+}
+
+# _gemini_list_prompts_ts: raw `<ISO-ts>\t<content>` NUL stream from Gemini CLI's session JSONs
+#
+# Internal helper consumed by `gemini_list_prompts` and `llm_list_prompts`.
+# NOT deduped, NOT capped.
+#
+# Source: ~/.gemini/tmp/<project>/chats/session-*.json. Each session has a
+# `messages` array; user prompts have type=user (or role=user) and a STRING
+# `content`. Filenames are ISO-timestamped; reverse filename sort is a good
+# coarse newest-first ordering before the dedupe-cap stage.
+function _gemini_list_prompts_ts() {
+  local dir="$HOME/.gemini/tmp"
+  [ -d "$dir" ] || return 0
+  type -P jq > /dev/null 2>&1 || return 0
+  command find "$dir" -path '*/chats/session-*.json' -type f 2> /dev/null \
+    | command sort -r \
+    | command xargs command cat 2> /dev/null \
+    | jq -c '(.messages // [])[] | select(((.type // .role) == "user") and ((.content // "") | type == "string")) | {ts: (.timestamp // ""), c: .content}' 2> /dev/null \
+    | command sort -r \
+    | command head -n $((_LLM_PROMPTS_LIMIT * 4)) \
+    | jq -j '.ts, "\t", .c, "\u0000"' 2> /dev/null
+}
+
+# gemini_list_prompts: stream past user prompts (newest first, deduped, capped) — cache-backed
+function gemini_list_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "gemini_list_prompts: stream past Gemini CLI user prompts as NUL records
+  Usage: gemini_list_prompts             # NUL-delimited stream, newest first
+
+Cache-backed: reads from \$_LLM_PROMPTS_CACHE_DB. Cold cache triggers a
+one-shot foreground refresh from ~/.gemini/tmp/<project>/chats/session-*.json.
+Records are deduplicated and capped at \$_LLM_PROMPTS_LIMIT (currently ${_LLM_PROMPTS_LIMIT:-500})."
+    return 0
+  fi
+  _llm_list_prompts_cached gemini
+}
+
+# gemini_search_prompts: fuzzy-pick a past Gemini CLI prompt and copy it to the clipboard
+function gemini_search_prompts() {
+  if is_help_arg "${1:-}"; then
+    echo "gemini_search_prompts: fzf picker over past Gemini CLI prompts
+  Usage: gemini_search_prompts
+
+Pipes gemini_list_prompts into a shared fzf picker. The preview pane shows
+a '# prompted in <vendor> on <local timestamp>' header followed by the full
+prompt; Enter copies the selected prompt (header excluded) to the system
+clipboard (via the universal copy helper). Paste it back into gemini.
+
+Gemini sessions do not always carry a timestamp — when it is missing the
+header degrades to '# prompted in Gemini CLI' with no date."
+    return 0
+  fi
+  _llm_search_prompts gemini
+}

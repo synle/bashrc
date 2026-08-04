@@ -1,0 +1,5 @@
+|__npm_scripts__
+add|--dev,-D,--peer,-P,--optional,-O,--exact,-E,--tilde,-T
+remove|--all,-A
+install|--frozen-lockfile,--force,--production,--ignore-scripts,--check-files
+run|__npm_scripts__

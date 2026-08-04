@@ -1,0 +1,7 @@
+prettier|--write,--check,--config,--ignore-path,--single-quote,--trailing-comma,--tab-width,--print-width
+ts-node|--project,-P,--transpile-only,-T,--compiler,--skip-project,--skip-ignore
+tsx|--tsconfig
+tsc|--init,--project,-p,--watch,-w,--build,-b,--noEmit,--declaration,-d,--outDir,--target,-t,--module,-m
+eslint|--fix,--config,-c,--ignore-path,--ext,--format,-f,--quiet,--max-warnings,--cache,--no-eslintrc
+vitest|run,watch,bench,--config,-c,--reporter,-r,--coverage,--ui,--run
+jest|--watch,--watchAll,--coverage,--verbose,--config,-c,--testPathPattern,-t

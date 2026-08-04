@@ -1,0 +1,158 @@
+{
+  // High Contrast Dark - modeled after VS Code Default High Contrast
+  "variables": {
+    // Surfaces
+    "bg": "#0a0a0a", // {{dark.background}}
+    "surface": "#161616", // {{dark.surface}}
+    "fg": "#e8e8e8", // {{dark.foreground}}
+    "fg_dim": "#8f8f8f", // {{dark.textDisabled}}
+    "caret": "#5ca0d7", // {{dark.cursorColor}}
+    "accent": "#5ca0d7", // {{dark.blue}}
+
+    // Fills
+    "selection": "#1b3c5e", // {{dark.selection}}
+    "line_highlight": "#1f2a38", // {{dark.activeLine}}
+    "word_highlight": "#2b2b2b", // {{dark.gray}}
+    "match": "#5c4300", // {{dark.matchHighlight}}
+
+    // Strokes
+    "guide": "#464646", // {{dark.guide}}
+    "guide_active": "#6e6e6e", // {{dark.brightGray}}
+    "border": "#6e6e6e", // {{dark.brightGray}}
+    "gutter_fg": "#8f8f8f", // {{dark.textDisabled}}
+
+    // Syntax
+    "comment": "#76a762", // {{dark.green}}
+    "string": "#ce9178", // {{dark.orange}}
+    "escape": "#d7ba7d", // {{dark.gold}}
+    "number": "#b5cea8", // {{dark.lightGreen}}
+    "keyword": "#5ca0d7", // {{dark.blue}}
+    "flow": "#c586c0", // {{dark.purple}}
+    "function": "#dcdcaa", // {{dark.yellow}}
+    "type": "#4ec9b0", // {{dark.cyan}}
+    "variable": "#9cdcfe", // {{dark.lightBlue}}
+    "constant": "#4fc1ff", // {{dark.brightBlue}}
+    "tag": "#5ca0d7", // {{dark.blue}}
+    "property": "#9cdcfe", // {{dark.lightBlue}}
+    "regexp": "#d98282", // {{dark.darkRed}}
+    "link": "#ce9178", // {{dark.orange}}
+    "added": "#76a762", // {{dark.green}}
+    "modified": "#dcdcaa", // {{dark.yellow}}
+    "deleted": "#f67070", // {{dark.red}}
+    "invalid": "#f67070", // {{dark.red}}
+  },
+  "globals": {
+    // Editor chrome
+    "background": "var(bg)",
+    "foreground": "var(fg)",
+    "caret": "var(caret)",
+    "block_caret": "var(caret)",
+    "invisibles": "var(guide)",
+    "gutter": "var(bg)",
+    "gutter_foreground": "var(gutter_fg)",
+    "gutter_foreground_highlight": "var(fg)",
+    "accent": "var(accent)",
+    "minimap_border": "var(accent)",
+    "misspelling": "var(deleted)",
+
+    // Selection & highlight
+    "selection": "var(selection)",
+    "selection_foreground": "var(fg)",
+    "selection_border": "var(accent)",
+    "selection_border_width": "1",
+    "selection_corner_style": "round",
+    "inactive_selection": "var(word_highlight)",
+    "inactive_selection_foreground": "var(fg)",
+    "line_highlight": "var(line_highlight)",
+    "highlight": "var(word_highlight)",
+    "find_highlight": "var(match)",
+    "find_highlight_foreground": "#0a0a0a", // {{dark.background}}
+    "scroll_highlight": "var(match)",
+    "scroll_selected_highlight": "var(accent)",
+
+    // Guides
+    "guide": "var(guide)",
+    "stack_guide": "var(guide)",
+    "active_guide": "var(guide_active)",
+    "rulers": "var(guide)",
+
+    // Brackets & tags
+    "brackets_foreground": "var(function)",
+    "brackets_options": "underline",
+    "bracket_contents_foreground": "var(function)",
+    "bracket_contents_options": "underline",
+    "tags_foreground": "var(tag)",
+    "tags_options": "underline",
+
+    // Git diff
+    "line_diff_width": "3",
+    "line_diff_added": "var(added)",
+    "line_diff_modified": "var(modified)",
+    "line_diff_deleted": "var(deleted)",
+
+    // Fold markers & shadow
+    "fold_marker": "var(accent)",
+    "shadow": "#00000066", // {{dark.black_alpha40}}
+    "shadow_width": "6",
+
+    // Padding
+    "block_caret_border": "0",
+    "line_padding_top": "1",
+    "line_padding_bottom": "1",
+
+    "popup_css": "html { background-color: #161616; color: #e8e8e8; border: 1px solid #6e6e6e; } a { color: #5ca0d7; }",
+  },
+  "rules": [
+    // Syntax
+    { "scope": "comment, punctuation.definition.comment", "foreground": "var(comment)" },
+    { "scope": "string, string.quoted", "foreground": "var(string)" },
+    { "scope": "constant.character.escape", "foreground": "var(escape)" },
+    { "scope": "constant.numeric", "foreground": "var(number)" },
+    { "scope": "constant.language", "foreground": "var(keyword)" },
+    { "scope": "keyword, keyword.control, keyword.operator.word", "foreground": "var(keyword)" },
+    { "scope": "keyword.operator, punctuation.accessor", "foreground": "var(fg)" },
+    { "scope": "storage, storage.type, storage.modifier", "foreground": "var(keyword)" },
+    { "scope": "keyword.control.import, keyword.control.export, keyword.control.flow", "foreground": "var(flow)" },
+
+    // Identifiers
+    { "scope": "entity.name.function, meta.function-call, variable.function", "foreground": "var(function)" },
+    { "scope": "support.function", "foreground": "var(function)" },
+    {
+      "scope": "entity.name.class, entity.name.type, entity.other.inherited-class, support.class, support.type",
+      "foreground": "var(type)",
+    },
+    { "scope": "variable, variable.other, variable.parameter", "foreground": "var(variable)" },
+    { "scope": "variable.other.constant, support.constant", "foreground": "var(constant)" },
+
+    // HTML / XML
+    { "scope": "entity.name.tag", "foreground": "var(tag)" },
+    { "scope": "entity.other.attribute-name", "foreground": "var(property)" },
+
+    // CSS
+    { "scope": "support.type.property-name", "foreground": "var(property)" },
+    { "scope": "support.constant.property-value, constant.other.color", "foreground": "var(string)" },
+    { "scope": "entity.other.attribute-name.class, entity.other.attribute-name.id, entity.name.tag.css", "foreground": "var(escape)" },
+
+    // Regex
+    { "scope": "string.regexp", "foreground": "var(regexp)" },
+
+    // Markdown
+    { "scope": "markup.heading, punctuation.definition.heading", "foreground": "var(keyword)", "font_style": "bold" },
+    { "scope": "markup.bold", "font_style": "bold" },
+    { "scope": "markup.italic", "font_style": "italic" },
+    { "scope": "markup.underline.link", "foreground": "var(link)" },
+    { "scope": "markup.raw, markup.raw.inline", "foreground": "var(link)" },
+
+    // Diff
+    { "scope": "markup.inserted", "foreground": "var(number)" },
+    { "scope": "markup.deleted", "foreground": "var(deleted)" },
+    { "scope": "markup.changed", "foreground": "var(modified)" },
+
+    // Data formats
+    { "scope": "meta.mapping.key string, support.type.property-name.json", "foreground": "var(variable)" },
+    { "scope": "entity.name.tag.yaml", "foreground": "var(variable)" },
+
+    // Invalid
+    { "scope": "invalid, invalid.deprecated", "foreground": "var(invalid)" },
+  ],
+}
