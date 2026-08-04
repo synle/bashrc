@@ -1,0 +1,1 @@
+../../.claude/skills/remove-package/SKILL.md

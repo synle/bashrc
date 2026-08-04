@@ -1,0 +1,47 @@
+{
+  // Source-of-truth MCP server registry for all four LLM CLIs (Claude Code,
+  // GitHub Copilot CLI, Google Gemini CLI, OpenCode). Each named entry below
+  // is deployed to every CLI's native MCP config location on the next setup
+  // run via `bash run.sh --preset=llm` (or any per-CLI `<cli>/setup.js`).
+  //
+  // Format: the standard `mcpServers` shape that Claude / Copilot / Gemini
+  // already consume verbatim. Each entry uses ONE of:
+  //
+  //   Local stdio server:
+  //     "<name>": { "command": "...", "args": ["..."], "env": { "K": "V" } }
+  //
+  //   Remote SSE / streamable-HTTP server:
+  //     "<name>": { "url": "https://...", "headers": { "Authorization": "..." } }
+  //
+  // OpenCode's native shape (`mcp` key, `type: "local" | "remote"`,
+  // `command` as a single array, `environment` instead of `env`) is auto-
+  // translated by `opencode/setup.js` from the standard shape above — keep
+  // entries authored in the standard shape and let the deploy do the rest.
+  //
+  // Deploy targets (additive merge — user entries with names NOT listed here
+  // are preserved untouched; entries WITH a matching name get our value):
+  //   Claude   → ~/.claude/settings.json   → mcpServers
+  //   Copilot  → ~/.copilot/mcp-config.json → mcpServers
+  //   Gemini   → ~/.gemini/settings.json   → mcpServers
+  //   OpenCode → ~/.config/opencode/opencode.json → mcp (translated shape)
+  //
+  // Removal: dropping a name from this file does NOT auto-remove it from
+  // the deployed configs (additive overlay only). Delete by hand if needed.
+  //
+  // Cross-cutting concerns to keep in mind when adding a server:
+  //   - Secrets in `env` / `headers` leak to all four config files on disk.
+  //     For anything sensitive, prefer `${VAR_NAME}` env var references that
+  //     the CLI expands at launch rather than literal values here.
+  //   - Local stdio servers must be installed everywhere setup.js runs
+  //     (mac, linux, wsl). Verify the `command` resolves on every target OS
+  //     before adding.
+  //   - Remote servers must be reachable from every machine that runs setup —
+  //     a corp-VPN-only endpoint will break setup on a laptop without VPN.
+  "mcpServers": {
+    // Example (commented; uncomment + edit to enable everywhere):
+    // "context7": {
+    //   "command": "npx",
+    //   "args": ["-y", "@upstash/context7-mcp"]
+    // }
+  },
+}

@@ -1,0 +1,43 @@
+// Claude Code custom keybindings shared across all platforms.
+// OS_KEY = CMD (meta) key on macOS, ALT key on Windows/Linux.
+[
+  {
+    "context": "Global",
+    "bindings": {
+      // toggle task list
+      "ctrl+t": "app:toggleTodos",
+    },
+  },
+  {
+    "context": "Chat",
+    "bindings": {
+      // newline insertion
+      "shift+enter": "chat:newline",
+      "ctrl+enter": "chat:newline",
+      // undo (OS_KEY+z, matching cmd+z on Mac, alt+z on Windows/Linux)
+      "OS_KEY+z": "chat:undo",
+      // clear input (OS_KEY+l, matching cmd+l on Mac, alt+l on Windows/Linux)
+      "OS_KEY+l": "chat:clearInput",
+      // clear input via bash-readline ctrl+l (in addition to OS_KEY+l above)
+      "ctrl+l": "chat:clearInput",
+      // EXPLICIT HOME/END PARITY:
+      //   ctrl+a → BOL  (unbound here so terminal readline handles it)
+      //   ctrl+e → EOL  (unbound here so terminal readline handles it)
+      //   home   → BOL  (unbound here so terminal readline handles it)
+      //   end    → EOL  (unbound here so terminal readline handles it)
+      // Claude has no chat:cursorHome/cursorEnd action; nulling these four
+      // entries is what makes HOME-key and Ctrl+A behave identically (both
+      // jump to beginning of line via the terminal's readline layer). Listed
+      // explicitly so a future upstream binding for any of them can't
+      // silently take HOME/EOL away.
+      "ctrl+a": null,
+      "ctrl+e": null,
+      "home": null,
+      "end": null,
+      // open $EDITOR (vim)
+      "ctrl+x": "chat:externalEditor",
+      // paste image
+      "ctrl+v": "chat:imagePaste",
+    },
+  },
+]

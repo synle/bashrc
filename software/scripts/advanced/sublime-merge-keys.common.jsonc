@@ -1,0 +1,34 @@
+// Common Sublime Merge keybindings shared across all platforms.
+// OS_KEY = COMMAND key on macOS, ALT key on Windows/Linux.
+[
+  // --- Search ---
+  {
+    "key": "OS_KEY+f",
+    "command": "show_search",
+  },
+  // --- Sidebar ---
+  {
+    "key": "OS_KEY+\\",
+    "command": "toggle_side_bar",
+  },
+  // --- Font Size ---
+  {
+    "key": "OS_KEY+0",
+    "command": "reset_font_size",
+  },
+  // --- Tab Navigation ---
+  { "key": "OS_KEY+1", "command": "select_tab", "args": { "index": 0 } },
+  { "key": "OS_KEY+2", "command": "select_tab", "args": { "index": 1 } },
+  { "key": "OS_KEY+3", "command": "select_tab", "args": { "index": 2 } },
+  { "key": "OS_KEY+4", "command": "select_tab", "args": { "index": 3 } },
+  { "key": "OS_KEY+5", "command": "select_tab", "args": { "index": 4 } },
+  { "key": "OS_KEY+6", "command": "select_tab", "args": { "index": 5 } },
+  { "key": "OS_KEY+7", "command": "select_tab", "args": { "index": 6 } },
+  { "key": "OS_KEY+8", "command": "select_tab", "args": { "index": 7 } },
+  { "key": "OS_KEY+9", "command": "select_tab", "args": { "index": 8 } },
+  // --- Refresh ---
+  {
+    "key": "f5",
+    "command": "refresh",
+  },
+]

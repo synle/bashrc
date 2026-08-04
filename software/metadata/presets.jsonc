@@ -1,0 +1,92 @@
+// Named --preset=<name> bundles. Source of truth for `bash run.sh --preset=...`
+// and bare-arg preset lookup (`bash run.sh <name>` / `bash run.sh @<name>`).
+// Format: JSONC — supports `//` line comments, `/* */` block comments, and trailing
+// commas. Parsed by loadPresets() in software/index.js (strips comments before
+// JSON.parse). Run.sh reads this file verbatim into PRESETS_JSON.
+//
+// Each entry can declare:
+//   - "description" — human-readable summary printed by printRunInfo.
+//   - "files"       — direct list of scripts to run.
+//   - "presets"     — list of OTHER preset names to compose recursively. Resolved
+//                     by expandPresetFiles() with cycle detection (presets.spec.js
+//                     guards against self-references and transitive loops).
+//
+// CLI resolution:
+//   --files=<name>   → strict script lookup (no preset fallback).
+//   --preset=<name>  → strict preset lookup (fuzzy substring match on miss).
+//   --preset=@<name> → same as --preset=<name> (leading @ stripped for symmetry).
+//   <bare-arg>       → script lookup first; if no script matches, preset fallback.
+//   @<bare-arg>      → strict preset lookup (skip script search entirely).
+{
+  "lightweight": {
+    "description": "Minimal config-only setup: git, vim, inputrc. Only the listed files run — no advanced/heavy installs.",
+    "files": ["git.js", "vim-config.js", "vim-plug.sh", "bash-inputrc.js"],
+  },
+
+  // --- Building blocks ---
+
+  "editors": {
+    "description": "Building block: editors only — Vim, Sublime Text, Sublime Merge, VS Code, Zed + shell editor launchers.",
+    "files": [
+      "vim-config.js",
+      "vim-plug.sh",
+      "zed.js",
+      "advanced/sublime-text.js",
+      "advanced/sublime-merge.js",
+      "advanced/vs-code.js",
+      "advanced/vs-code-ext.sh",
+      "advanced/editor-launchers.js",
+    ],
+  },
+  "emulators": {
+    "description": "Building block: terminal emulators only — Ghostty on mac/linux, Windows Terminal on Windows. OS-specific scripts self-skip on the wrong platform.",
+    "files": ["advanced/ghostty.js", "windows-terminal.js"],
+  },
+  "apps": {
+    "description": "Building block: self-built GUI apps — sqlui-native, skiff-files, proxie, display-dj. Each script downloads the release binary from binary-cache and installs it.",
+    "files": ["advanced/sqlui-native.js", "advanced/skiff-files.js", "advanced/proxie.js", "advanced/display-dj.js"],
+  },
+  "terminal": {
+    "description": "Building block: bash and shell tooling — readline (inputrc), fzf, autocomplete complete-spec.",
+    "files": ["bash-inputrc.js", "fzf.js", "advanced/bash-autocomplete-complete-spec.js"],
+  },
+  "prompt": {
+    "description": "Building block: shell prompt + navigation — Starship prompt install/config and zoxide (smarter cd).",
+    "files": ["advanced/starship.sh", "advanced/starship-config.js", "zoxide.js"],
+  },
+  "llm": {
+    "description": "Building block: AI CLI clients — install + configure Claude Code, GitHub Copilot, Google Gemini, and OpenCode (settings, keybindings, shared instructions, slash commands). Claude is the base — all four CLIs read the same `_common/instructions.md`, and OpenCode symlinks Claude's `/sy-*` commands.",
+    "files": [
+      "advanced/llm/ollama.sh",
+      "advanced/llm/claude/install.sh",
+      "advanced/llm/claude/setup.js",
+      "advanced/llm/copilot/install.sh",
+      "advanced/llm/copilot/setup.js",
+      "advanced/llm/gemini/install.sh",
+      "advanced/llm/gemini/setup.js",
+      "advanced/llm/opencode/install.sh",
+      "advanced/llm/opencode/setup.js",
+    ],
+  },
+  "llm-prompts": {
+    "description": "Building block subset of `llm`: re-sync prompts, slash commands, keybindings, and settings only — runs each CLI's setup.js without the install.sh / npm-install steps. Fast refresh after editing `_common/instructions.md` or `_common/commands/*.md`.",
+    "files": [
+      "advanced/llm/claude/setup.js",
+      "advanced/llm/copilot/setup.js",
+      "advanced/llm/gemini/setup.js",
+      "advanced/llm/opencode/setup.js",
+    ],
+  },
+
+  "browsers": {
+    "description": "Building block: browser tweaks (DOM/CSS hacks via Stylus + per-browser config) plus CLI launchers for Brave, Chrome, Edge, Vivaldi, Opera, Arc, Chromium.",
+    "files": ["advanced/browser-config.js", "advanced/browser-launchers.js"],
+  },
+
+  // --- End-user-facing composites ---
+
+  "heavyweight": {
+    "description": "Composite (preferred end-user preset, symmetric counterpart to `lightweight`): editors + terminal emulators + GUI apps + browsers + shell terminal tooling + shell prompt + LLM clients. Composed via `presets:` from every building block. OS-specific scripts self-skip on the wrong platform.",
+    "presets": ["editors", "emulators", "apps", "browsers", "terminal", "prompt", "llm", "llm-prompts"],
+  },
+}

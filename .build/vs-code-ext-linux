@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-04]
+set -u
+deprecated_extensions=(
+  "visualstudioexptteam.vscodeintellicode"
+  "visualstudioexptteam.intellicode-api-usage-examples"
+)
+extensions=(
+  "dracula-theme.theme-dracula"
+  "PKief.material-icon-theme"
+  "oderwat.indent-rainbow"
+  "aaron-bond.better-comments"
+  "esbenp.prettier-vscode"
+  "dbaeumer.vscode-eslint"
+  "streetsidesoftware.code-spell-checker"
+  "wmaurer.change-case"
+  "nicoespeon.abracadabra"
+  "formulahendry.code-runner"
+  "dakara.transformer"
+  "redhat.vscode-yaml"
+  "wholroyd.jinja"
+  "clinyong.vscode-css-modules"
+  "andrejunges.handlebars"
+  "GitHub.copilot"
+  "GitHub.copilot-chat"
+  "ms-pyright.pyright"
+  "rust-lang.rust-analyzer"
+  "golang.go"
+  "redhat.java"
+  "mads-hartmann.bash-ide-vscode"
+  "bradlc.vscode-tailwindcss"
+  "ms-azuretools.vscode-docker"
+  "Vue.volar"
+  "GraphQL.vscode-graphql"
+  "Prisma.prisma"
+  "tamasfe.even-better-toml"
+)
+if ! type -P code > /dev/null 2>&1; then
+  echo ">>> Skipped : 'code' binary not on PATH"
+  exit 0
+fi
+for ext in "${deprecated_extensions[@]}"; do
+  if code --list-extensions 2>/dev/null | grep -qix "$ext"; then
+    echo ">> Uninstalling deprecated VS Code extension: $ext"
+    code --uninstall-extension "$ext" || true
+  fi
+done
+for ext in "${extensions[@]}"; do
+  echo ">> Installing VS Code extension: $ext"
+  code --install-extension "$ext" --force || true
+done

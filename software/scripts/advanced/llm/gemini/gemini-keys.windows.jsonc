@@ -1,0 +1,14 @@
+// Gemini CLI Windows/Linux-only keybindings.
+// Mirrors software/scripts/advanced/llm/claude/claude-keys.windows.jsonc —
+// removes the default alt+v paste so ctrl+v is the only explicit paste
+// chord (set in gemini-keys.common.jsonc). On Windows/Linux, OS_KEY
+// resolves to alt, so leaving alt+v bound to input.paste would conflict
+// with the OS_KEY+v convention used elsewhere in this repo.
+//
+// Schema: `-` prefix on the command name REMOVES the matching (command, key)
+// pair from Gemini's defaultKeyBindingConfig. Discovered in Gemini bundle
+// chunk-MODIYMRW.js (function `loadCustomKeybindings`, ~ line 64732).
+[
+  // remove default alt+v paste — ctrl+v is used instead (set in common)
+  { "command": "-input.paste", "key": "alt+v" },
+]
