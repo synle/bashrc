@@ -4150,12 +4150,17 @@ async function listRepoDir(source = "remote_api", fallthrough = false) {
 /**
  * Get all available scripts used for searching and matching against partially matched scripts.
  * Includes .js and .sh files under software/scripts/ and software/metadata/ (excludes tools, common, etc.).
+ *
+ * In local-repo mode the local tree is authoritative — `listRepoDir("local", true)` would
+ * fall through to the GitHub tree API first, which only knows about pushed commits, so an
+ * uncommitted script is discovered by getSoftwareScriptFiles (local `find .`) and then
+ * rejected here as "File not found". Remote lookup stays for the bootstrap case, where
+ * there is no local checkout to read.
  * @returns {Promise<string[]>} Array of all script file paths sorted by depth then alphabetically
  */
 async function getAllRepoSoftwareFiles() {
-  return filterRepoScripts(await listRepoDir("local", true)).filter(
-    (f) => f.includes("software/scripts/") || f.includes("software/metadata/"),
-  );
+  const files = IS_LOCAL_REPO ? await listRepoDir("local") : await listRepoDir("local", true);
+  return filterRepoScripts(files).filter((f) => f.includes("software/scripts/") || f.includes("software/metadata/"));
 }
 
 /**
