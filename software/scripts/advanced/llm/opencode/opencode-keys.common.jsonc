@@ -27,7 +27,7 @@
 //   chat:newline                input_newline               shift+enter, ctrl+enter
 //   chat:undo                   input_undo                  OS_KEY+z
 //   chat:clearInput             input_clear                 OS_KEY+l
-//   chat:externalEditor         editor_open                 ctrl+x
+//   chat:externalEditor         editor_open                 ctrl+g, ctrl+x
 //   chat:imagePaste             input_paste                 ctrl+v
 //   (readline HOME, ctrl+a null) input_line_home            ctrl+a, home
 //   (readline END, ctrl+e null)  input_line_end             ctrl+e, end
@@ -58,12 +58,22 @@
 //                                            history_previous is the nearest
 //                                            analog. ctrl+r is free because
 //                                            session_rename moved to f6.
+//   messages_first    ctrl+alt+shift+g,home
+//                                          — moved off the upstream default
+//                                            "ctrl+g,home" so ctrl+g is free
+//                                            for editor_open (the chord that
+//                                            Claude, Copilot CLI, and Gemini
+//                                            CLI all ship as their
+//                                            external-editor default). Chord
+//                                            shape mirrors the upstream
+//                                            messages_last ("ctrl+alt+g,end").
 //
 // Leader move:
-//   The default leader is ctrl+x — which collides with Claude's editor-open
-//   chord (chat:externalEditor → ctrl+x → opens vim). We move the leader to
-//   ctrl+o (free in both opencode and bash readline; no tmux / XON-XOFF /
-//   terminal-level conflict) so ctrl+x can be repurposed for editor_open.
+//   The default leader is ctrl+x — which collides with the bash-readline
+//   editor-open chord we keep as editor_open's secondary alias. We move the
+//   leader to ctrl+o (free in both opencode and bash readline; no tmux /
+//   XON-XOFF / terminal-level conflict) so ctrl+x stays available for
+//   editor_open alongside the primary ctrl+g.
 //   All ~30 <leader>X chords keep working — they're just typed as
 //   ctrl+o <key> now instead of ctrl+x <key>.
 //
@@ -84,9 +94,17 @@
     // free for terminal/system-level bindings.
     "session_rename": "f6",
     "leader": "ctrl+o",
-    // Open $EDITOR (typically vim) to compose input. Mirrors Claude's
-    // ctrl+x → chat:externalEditor.
-    "editor_open": "ctrl+x",
+    // Open $EDITOR (typically vim) to compose input. ctrl+g is the canonical
+    // cross-CLI chord (Claude / Copilot / Gemini all default to it); ctrl+x is
+    // the secondary alias for bash-readline muscle memory and is why the
+    // leader stays moved to ctrl+o (see header). opencode's own default for
+    // editor_open is <leader>e, which keeps working as ctrl+o e.
+    "editor_open": "ctrl+g,ctrl+x",
+    // Free ctrl+g for editor_open: opencode's upstream default binds
+    // messages_first to "ctrl+g,home". We keep the physical HOME chord and
+    // move the ctrl chord to ctrl+alt+shift+g, mirroring the shape of the
+    // upstream messages_last chord ("ctrl+alt+g,end").
+    "messages_first": "ctrl+alt+shift+g,home",
     // Newline in input. Claude binds shift+enter / ctrl+enter. We list
     // every chord explicitly (no reliance on opencode default) plus
     // alt+return / ctrl+j which opencode upstream historically shipped.

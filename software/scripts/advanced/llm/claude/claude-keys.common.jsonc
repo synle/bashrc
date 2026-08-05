@@ -34,7 +34,14 @@
       "ctrl+e": null,
       "home": null,
       "end": null,
-      // open $EDITOR (vim)
+      // open $EDITOR (vim). ctrl+g is the canonical cross-CLI chord — it is
+      // Claude's own upstream default AND the chord printed in Claude's
+      // in-TUI hint ("ctrl+g edit in $EDITOR"), and it matches Copilot CLI's
+      // and Gemini CLI's defaults. Bound explicitly (explicit-match policy)
+      // so an upstream default flip can't take it away. ctrl+x is kept as a
+      // second alias for bash-readline muscle memory (readline's "open in
+      // $EDITOR" chord) and for opencode parity.
+      "ctrl+g": "chat:externalEditor",
       "ctrl+x": "chat:externalEditor",
       // paste image
       "ctrl+v": "chat:imagePaste",

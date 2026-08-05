@@ -63,9 +63,14 @@
       "ctrl+e": null,
       "home": null,
       "end": null,
-      // open $EDITOR (vim) — Copilot's current default is ctrl+g and ctrl+x
-      // is a two-step prefix (ctrl+x → b / o). Pulling editor-open onto
-      // ctrl+x matches Claude + opencode + bash readline.
+      // open $EDITOR (vim). ctrl+g is Copilot's own default and is now the
+      // canonical cross-CLI chord (Claude and Gemini default to it too), so
+      // it is listed first and explicitly. ctrl+x is kept as a second alias
+      // for bash-readline muscle memory and opencode parity — note ctrl+x is
+      // also Copilot's two-step prefix (ctrl+x → b / o), so this alias only
+      // becomes real if/when Copilot ships a keymap surface and the prefix
+      // is re-homed.
+      "ctrl+g": "chat:externalEditor",
       "ctrl+x": "chat:externalEditor",
       // paste image — contingent on Copilot adding multimodal input
       "ctrl+v": "chat:imagePaste",

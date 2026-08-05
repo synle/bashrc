@@ -26,6 +26,7 @@
         "ctrl+e": null,
         "home": null,
         "end": null,
+        "ctrl+g": "chat:externalEditor",
         "ctrl+x": "chat:externalEditor",
         "ctrl+v": "chat:imagePaste"
       }

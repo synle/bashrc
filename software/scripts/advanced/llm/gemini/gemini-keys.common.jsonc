@@ -30,7 +30,7 @@
 //   chat:newline                input.newline               shift+enter, ctrl+enter
 //   chat:undo                   edit.undo                   OS_KEY+z
 //   chat:clearInput             edit.clear                  OS_KEY+l
-//   chat:externalEditor         input.openExternalEditor    ctrl+x
+//   chat:externalEditor         input.openExternalEditor    ctrl+g, ctrl+x
 //   chat:imagePaste             input.paste                 ctrl+v
 //   (readline HOME, ctrl+a null) cursor.home                ctrl+a, home
 //   (readline END, ctrl+e null)  cursor.end                 ctrl+e, end
@@ -64,7 +64,11 @@
   { "command": "edit.clear", "key": "ctrl+l" },
   { "command": "edit.clear", "key": "OS_KEY+l" },
 
-  // chat:externalEditor
+  // chat:externalEditor — ctrl+g is Gemini's own upstream default (bundle
+  // docs/reference/keyboard-shortcuts.md lists `Ctrl+G` / `Ctrl+Shift+G` for
+  // input.openExternalEditor) and is the canonical cross-CLI chord. ctrl+x is
+  // the secondary alias (bash-readline muscle memory + opencode parity).
+  { "command": "input.openExternalEditor", "key": "ctrl+g" },
   { "command": "input.openExternalEditor", "key": "ctrl+x" },
 
   // chat:imagePaste (Claude's chord; Gemini's command is input.paste)
