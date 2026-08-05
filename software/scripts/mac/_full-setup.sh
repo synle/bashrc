@@ -375,11 +375,17 @@ installBrewPackage ansible
 #      gets re-invoked on every single run.
 #   3. Swap to opentofu (in homebrew-core, no tap or trust needed). Rejected: not a
 #      drop-in for everything terraform, and this is a tooling fix, not a migration.
-if ! brew tap 2> /dev/null | grep -qx hashicorp/tap; then
-  echo '>> Tapping hashicorp/tap (terraform source)'
-  brew tap hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
+#
+# Both the tap probe and `brew trust` only matter when terraform still has to be installed,
+# so the whole block is skipped once terraform is in the cached formulae list. `brew trust`
+# alone costs ~0.5s of brew startup, paid on every run for a grant that is already on disk.
+if ! _brewPackageInstalled "$_BREW_INSTALLED_FORMULAE" terraform; then
+  if ! brew tap 2> /dev/null | grep -qx hashicorp/tap; then
+    echo '>> Tapping hashicorp/tap (terraform source)'
+    brew tap hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
+  fi
+  brew trust hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 fi
-brew trust hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 installBrewPackageInBackground terraform
 installBrewPackageInBackground tflint
 
@@ -449,9 +455,13 @@ installBrewPackageInBackground xz
 installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
 
 # TODO: remove me — iTerm2 uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-brew uninstall --cask --force iterm2 < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
-rm -f "$HOME/.iterm2_shell_integration.bash"
-defaults delete com.googlecode.iterm2 > /dev/null 2>&1 || true
+# Gated on the cached cask list: the bare `brew uninstall` costs ~1.1s of brew startup on
+# every run, and on a host that rolled through long ago there is nothing left to uninstall.
+if _brewPackageInstalled "$_BREW_INSTALLED_CASKS" iterm2; then
+  brew uninstall --cask --force iterm2 < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
+  rm -f "$HOME/.iterm2_shell_integration.bash"
+  defaults delete com.googlecode.iterm2 > /dev/null 2>&1 || true
+fi
 installBrewPackageInBackground --cask --app="Postman.app" postman
 installBrewPackageInBackground --cask --app="Sublime Text.app" sublime-text
 installBrewPackageInBackground --cask --app="Sublime Merge.app" sublime-merge

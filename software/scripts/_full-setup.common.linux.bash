@@ -272,6 +272,11 @@ function _waitForBackgroundPackages() {
   local _elapsed=0
   local _all_done=0
   local _pid
+  # Poll every second, not every 5. On a re-run every queued package is already installed,
+  # so the buckets exit almost immediately — a 5s poll interval charged the *whole* interval
+  # for work that took milliseconds, which was the single largest remaining cost of a warm
+  # `--setup` run. `sleep 1` is portable everywhere (fractional sleep is not); 1000 polls
+  # over the 16-minute ceiling is free.
   while [ "$_elapsed" -lt "$_max_wait" ]; do
     _all_done=1
     for _pid in "${_pids[@]}"; do
@@ -281,8 +286,8 @@ function _waitForBackgroundPackages() {
       fi
     done
     ((_all_done)) && break
-    sleep 5
-    _elapsed=$((_elapsed + 5))
+    sleep 1
+    _elapsed=$((_elapsed + 1))
   done
   local _timed_out=0
   if ! ((_all_done)); then
