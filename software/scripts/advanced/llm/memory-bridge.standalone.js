@@ -32,14 +32,14 @@ const MEMORY_BRIDGE_MARKER = "synle/bashrc | software/scripts/advanced/llm/memor
 /**
  * Best-effort decoder for Claude's project-folder encoding. Claude replaces
  * every `/` in an absolute cwd with `-`, which is LOSSY when path segments
- * already contain `-` (e.g. `display-dj` becomes `-display-dj` and round-trips
- * to `/display/dj`). To preserve real-folder names when possible, this helper
+ * already contain `-` (e.g. `widget-store` becomes `-widget-store` and round-trips
+ * to `/widget/store`). To preserve real-folder names when possible, this helper
  * tries the longest segment-suffix joins against `$HOME/git/<name>` and
  * returns the actual matching directory if one is found; otherwise falls back
  * to the naive decode (caller should treat the result as display-only).
  *
- * @param {string} encoded - Folder name under `~/.claude/projects/` (e.g. `-Users-syle-git-display-dj`).
- * @returns {string} Display path (e.g. `~/git/display-dj` or the naive `/Users/.../display/dj` fallback).
+ * @param {string} encoded - Folder name under `~/.claude/projects/` (e.g. `-Users-me-git-widget-store`).
+ * @returns {string} Display path (e.g. `~/git/widget-store` or the naive `/Users/.../widget/store` fallback).
  */
 function _decodeProjectPath(encoded) {
   /** @type {string} Naive decode — works only when no segment contains a `-`. */
@@ -47,7 +47,7 @@ function _decodeProjectPath(encoded) {
 
   // Heuristic: if the path starts with `$HOME/git/`, ask the filesystem which
   // tail-join matches. Walk from longest joined tail backwards so multi-`-`
-  // repo names (display-dj, skiff-files) win over the over-eager naive split.
+  // repo names (widget-store, file-explorer) win over the over-eager naive split.
   const home = BASE_HOMEDIR_LINUX || "";
   const gitRoot = path.join(home, "git");
   /** @type {string[]} Encoded segments without the leading empty + the standard prefix `Users/<u>/git/`. */

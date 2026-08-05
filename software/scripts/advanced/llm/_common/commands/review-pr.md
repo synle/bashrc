@@ -43,10 +43,24 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
    - **Any CI check is failing.** Walk `statusCheckRollup[]` for entries with `conclusion == "FAILURE"` or `status == "FAILURE"`. For each failing check, capture: the check name, its run URL (`detailsUrl` / `targetUrl`), and a short failure reason. Pinpoint with `gh run view <run-id> --log-failed | tail -50` (or pull the failed job's step output from `gh api repos/<owner>/<repo>/actions/runs/<run-id>/jobs`). Comment: `"CI check(s) failing: <names>. <one-line reason per check>. See <run-url>. Please address before this can merge."`. **Verdict consequence:** failing CI caps the review at COMMENT — do NOT APPROVE while CI is red.
    - **Database migration checks** (if the diff touches migrations — see migration-path detection below). See the **Migration checks** section.
 
-6. **Read existing comments to avoid duplicates.** Before writing any review or PR comment:
+6. **Read every existing comment — including its reactions — then decide net-new vs. react vs. augment.** Before writing any review or PR comment:
    `gh api repos/<owner>/<repo>/pulls/<number>/comments`
    `gh api repos/<owner>/<repo>/issues/<number>/comments`
-   - Build a set of points already raised. Include comments from **every author** — other humans, AI bots (CodeRabbit, Copilot review, SonarCloud, etc.), AND your own prior reviews / comments on this PR (filter by `gh api user --jq .login`). Match on substance, not exact wording. If a point is already covered, do NOT restate it — even partially. Your own past comments count: don't repeat yourself, don't flip-flop (see the consistency rule below).
+   `gh api repos/<owner>/<repo>/pulls/<number>/reviews`
+   - Read the **body AND the reactions** of every comment. Reactions come back on each comment object (`reactions.+1`, `reactions.-1`, `reactions.total_count`); pull the per-user detail when the counts matter:
+     `gh api repos/<owner>/<repo>/pulls/comments/<comment-id>/reactions`
+     `gh api repos/<owner>/<repo>/issues/comments/<comment-id>/reactions`
+   - Include comments from **every author** — other humans, AI bots (CodeRabbit, Copilot review, SonarCloud, etc.), AND your own prior reviews / comments on this PR (`gh api user --jq .login`). Match on substance, not exact wording.
+   - Treat reactions as signal. A comment already carrying 👍 from the author or a maintainer is accepted — never restate it. A comment carrying 👎 was rejected — do not resurrect the same point without a concrete new reason, and say what the new reason is when you do.
+   - **Route every finding through this decision, in order:**
+     1. **Finding is fully covered by an existing comment** → post nothing. React 👍 on that comment instead:
+        `gh api -X POST repos/<owner>/<repo>/pulls/comments/<comment-id>/reactions -f content='+1'` (review/line comments) or
+        `gh api -X POST repos/<owner>/<repo>/issues/comments/<comment-id>/reactions -f content='+1'` (issue-level comments).
+        Skip the call if you already reacted — reactions are idempotent server-side, but re-posting is noise in the audit trail.
+     2. **Finding overlaps an existing comment but that comment misses a case** (different call site, an edge case, a second file with the same bug, a wrong-but-close fix suggestion) → do NOT open a new top-level thread. **Reply in that comment's thread** with only the delta — the missed case and why it matters. Lead with the fact you're extending, not restating: `"Adding to the above — same issue also hits <X> because <reason>."` React 👍 on the original in the same pass.
+        Reply via `gh api -X POST repos/<owner>/<repo>/pulls/<number>/comments -f body='...' -F in_reply_to=<comment-id>` (line comments) or `gh pr comment` quoting the original for issue-level threads.
+     3. **Finding is genuinely new** → post it as a normal new comment / line comment.
+   - **If every finding lands in bucket 1, post no review body and no comments at all.** See the stop-early rule in Step 9.
 
 7. **Read the diff and review.**
    - `gh pr diff <number> --repo <owner/repo>` → full diff.
@@ -89,12 +103,14 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
      - Another reviewer has an open `REQUEST_CHANGES` that has not been resolved (dismissed by the same reviewer with a later APPROVED, or newer commits land that address their block). Until they clear it, do NOT approve over their block — leave a COMMENT-level review noting we're holding for their resolution.
      - Any CI check is currently failing (`statusCheckRollup[]` entries with `conclusion == "FAILURE"` / `status == "FAILURE"`). The pre-flight CI flag goes out in Step 5; the verdict here drops to COMMENT until the author fixes CI.
 
-9. **Post the review.** Single call:
-   `gh pr review <number> --repo <owner/repo> {--approve | --comment | --request-changes} --body "<summary>"`
+9. **Post the review — or post nothing.**
+   - **Stop-early gate (re-reviews).** If this is not your first review on this PR and Step 6 produced no bucket-2 and no bucket-3 findings, **post nothing**: no review verdict, no comment, no "still looks good", no re-approval. The 👍 reactions from Step 6 are the entire output. Report `"Re-review: nothing new — no comment posted"` to the user and stop. Exception: a verdict cap flipped since your last review (a previously-approved PR now has failing CI or an open `REQUEST_CHANGES` from someone else) — post the Step 5 flag for exactly that change and nothing else.
+   - Otherwise, single call:
+     `gh pr review <number> --repo <owner/repo> {--approve | --comment | --request-changes} --body "<summary>"`
    - The body summarizes your overall take in 1–3 sentences. Per-line concerns go in line comments (use `gh api repos/<owner>/<repo>/pulls/<number>/reviews` with a `comments[]` array, or `gh pr review --body-file` for multi-comment reviews).
    - For stale-approval re-reviews: explicitly note that this is a re-review of new commits since `<sha>`.
 
-10. **Final report:** Verdict + key points raised + any author-flags posted as PR comments + skip reason (if any).
+10. **Final report:** Verdict + key points raised + reactions left (👍 count and on whose comments) + threads you replied to + any author-flags posted as PR comments + skip reason (if any). When nothing was posted, say so explicitly.
 
 ## Migration checks
 
@@ -133,7 +149,8 @@ Run these only when the diff includes new database migration files. Detect by pa
 - **Already-approved-by-me + clean (green CI, no conflict, no new commits) → SKIP.** Don't re-comment to say "still good". For approved + conflict, post the rebase flag; for approved + CI failure, post the CI-failure flag with the specific failing check + link to the failed run. See Step 3 triage.
 - **Cannot APPROVE while another reviewer's `REQUEST_CHANGES` is open or while CI is failing.** Max verdict in those states is COMMENT. The author-flag goes out as a PR comment; the review verdict separately drops to COMMENT.
 - **Load repo rules before reviewing.** Check `CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules` (Step 4). Repo-specific guardrails (architectural rules, naming) override generic review heuristics.
-- **No duplicate comments.** Read every existing review thread and issue comment (human AND bot — CodeRabbit, Copilot, SonarCloud, Coderabbitai, etc.) before posting. Match on substance, not wording.
+- **Every comment you post must be net new. Duplicates get a 👍, near-misses get a threaded reply.** Read every existing review thread and issue comment (human AND bot — CodeRabbit, Copilot, SonarCloud, etc.) **and their reactions** before posting. Match on substance, not wording. Already fully covered → react `+1` on the original, post nothing. Covered but missing a case → reply in that thread with only the delta, plus a 👍 on the original. Only a genuinely new point earns a new top-level comment. A 👎 on an existing comment means that point was rejected — don't resurrect it without a concrete new reason, stated out loud.
+- **Re-review with nothing new posts nothing.** No verdict, no "still looks good", no re-approval, no restated summary. Reactions are the whole output; report the no-op to the user instead of the PR. Only exception: a verdict cap flipped since last time (CI went red, another reviewer blocked) — post that one flag and nothing else. Comment volume is a cost paid by every human who opens the PR.
 - **Stay consistent across follow-up reviews — no flip-flopping.** Your prior reviews on this PR are the baseline. Before posting a new review or comment:
   1. **Read every comment and review you previously authored on this PR** (filter `gh api repos/<owner>/<repo>/pulls/<number>/comments` and `.../issues/<number>/comments` and `gh pr view --json reviews` by your own login).
   2. **Honor every prior recommendation.** If you previously suggested "go with Option 1 (approach A) over Option 2 (approach B)" and the author followed Option 1, do NOT now ask them to switch to Option 2. If you raised concern X in an earlier review and the author addressed it, do NOT raise a contradictory concern Y on the same code.

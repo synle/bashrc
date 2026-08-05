@@ -389,6 +389,12 @@ Profile registration is buffered: `registerProfileBlock` /
 - In `software/scripts/advanced/llm/_common/instructions.md`, **rules are named, not
   numbered** — bullets only, cross-reference by name. Never hand-edit the generated
   global `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`; edit `_common/instructions.md`.
+- **Never name a real repo, org, or service in instructional prose** —
+  `_common/instructions.md`, `_common/commands/*.md`, `.claude/skills/*/SKILL.md`, and
+  any doc whose job is to tell an agent what to do. Use mock names (`acme/widget-store`,
+  `acme/api`, `myapp-frontend`). Incident notes keep the behavior and drop the name. This
+  file may name `synle/bashrc` — a repo's own rules file can't be wrong about its own
+  remote. Everything under `assets/` / §3 is a factual inventory, not an example.
 
 ---
 

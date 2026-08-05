@@ -27,10 +27,10 @@ Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). D
    - Skip drafts / WIP / DO NOT MERGE / already-reviewed-no-new-commits / blocked-by-other-reviewer.
    - Load repo rules and culture context (`CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules`).
    - Pre-flight author flags (diff-vs-description mismatch, merge conflict with base, failing CI with run-URL pinpoint, migration coordination) as PR comments.
-   - De-dup against existing review threads (human + bot + own past comments).
+   - De-dup against existing review threads and their reactions (human + bot + own past comments) — 👍 what's already covered, reply in-thread with the delta when a comment misses a case, new top-level comment only for genuinely new findings.
    - Read the diff (or just the new commits for stale-approval re-reviews).
    - Pick verdict — APPROVE / COMMENT (default bias) / REQUEST_CHANGES (show-stoppers only). Cap at COMMENT when another reviewer's `REQUEST_CHANGES` is open or CI is failing.
-   - Post the review.
+   - Post the review — or post nothing at all when a re-review turns up nothing new.
 
    Review is read-only — it works off `gh pr diff` / `gh api` and needs no checkout, so parallel jobs never collide. **If a review genuinely needs the code on disk** (building the branch, running a tool over the tree, reproducing a failure), that job checks out into a worktree at the canonical path — **`$HOME/.worktrees/<owner>/<repo>/pr-<number>`** (see One rigid worktree path) — reusing a linked worktree already on that branch if one exists, else creating it there, else `gh repo clone`-ing into that same path. Same path babysit uses, so the two commands share one worktree per PR instead of each making its own. Never `git checkout` / `git switch` / `gh pr checkout` in the user's primary checkout (see Never do PR-branch work in the primary checkout). Remove only worktrees the job created.
 
@@ -46,5 +46,6 @@ Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). D
 - **Show the author on every row when the set is mixed** (see Show PR authors). This command defaults to ALL authors in the current repo, so mixed sets are the norm, not the exception — the final report (Step 6) carries the author alongside each verdict too.
 - **Honor `/sy-review-pr`'s skip rules** — never pre-filter drafts / WIP / already-reviewed PRs in this wrapper. Let the per-PR skill decide and report `SKIPPED + reason` so the audit trail is complete.
 - **Default bias inherits from `/sy-review-pr`**: APPROVE or COMMENT — REQUEST_CHANGES is reserved for show-stoppers only.
+- **Silent jobs are a success, not a failure.** A job that posts nothing because the re-review turned up nothing new reports `NO-OP` in the final summary. Don't retry it and don't nudge it into commenting to prove it ran.
 - **Multi-repo workspaces** (e.g. a bundle like `myapp-frontend`, `myapp-backend` or `myapp-lib`): pass each repo as a `<owner>/<repo>` token. The cross-PR migration check (Step 4) runs across the full union **before** any job is dispatched, so coordination flags surface before any verdict is posted.
 - **Always resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name (see Repo Identification).**
