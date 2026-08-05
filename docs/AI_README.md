@@ -47,9 +47,13 @@ curl $OLLAMA_HOST/api/version
 
 ### Model Recommendations by Machine
 
-#### Desktop with RTX 5090 (24GB VRAM)
+#### Desktop with RTX 5090 (32GB VRAM)
 
-A 5090 has 24GB VRAM and can run large models entirely on the GPU for fast inference.
+A 5090 has 32GB VRAM and can run large models entirely on the GPU for fast inference.
+
+> The table below is historical. For current, tag-verified picks for `sy-omen45l`
+> — including the Blackwell-specific `-nvfp4` guidance — see
+> [local-llm-runtimes.md § sy-omen45l](./local-llm-runtimes.md#sy-omen45l--rtx-5090-32-gb-verified-picks).
 
 | Model               | Size  | VRAM Usage    | Notes                                                        |
 | ------------------- | ----- | ------------- | ------------------------------------------------------------ |
@@ -66,7 +70,7 @@ ollama run deepseek-r1:32b
 ollama run deepseek-r1:70b
 ```
 
-The 32b model fits entirely in VRAM and runs at full GPU speed. The 70b model exceeds 24GB VRAM so it partially offloads to system RAM, which slows inference but still gives the best output quality.
+The 32b model fits entirely in VRAM and runs at full GPU speed. The 70b model exceeds 32GB VRAM so it partially offloads to system RAM, which slows inference but still gives the best output quality.
 
 #### MacBook Pro M1 with 32GB Unified Memory
 
@@ -101,7 +105,7 @@ Other alternatives:
 - `minicpm-v` - lightweight vision model, good for OCR and document reading
 - `llama3.2-vision` - Meta's multimodal model, strong general image understanding
 
-#### Desktop with RTX 5090 (24GB VRAM)
+#### Desktop with RTX 5090 (32GB VRAM)
 
 | Model                 | Size  | VRAM Usage | Notes                                                    |
 | --------------------- | ----- | ---------- | -------------------------------------------------------- |

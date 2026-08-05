@@ -141,7 +141,98 @@ pluggable: detect which backend is up by probing both `/api/tags` and
 `/v1/models`, then format accordingly. That keeps `opencode.json` writes
 correct regardless of which engine you happen to be running.
 
+## sy-omen45l — RTX 5090 (32 GB), verified picks
+
+> Everything in this section was verified against <https://ollama.com/library> on
+> **2026-08-04** (tag existence + on-disk size), and against the live daemon at
+> `$SY_OMEN45L_IP:11434` (`/api/tags`). Every other model section below this one
+> is older and contains pattern-guessed tags — trust this section first.
+>
+> Re-verify before pulling:
+> `curl -fsSL https://ollama.com/library/<model>/tags | grep -o '<model>:[a-z0-9._-]*'`
+
+### Sizing rules for 32 GB
+
+- Budget **~26 GB for weights**, leaving ~6 GB for KV cache and desktop
+  compositor. The profile already sets `OLLAMA_KV_CACHE_TYPE=q8_0` and
+  `OLLAMA_FLASH_ATTENTION=1` (`software/scripts/advanced/llm/ollama.profile.bash`),
+  which roughly halves KV cost versus fp16.
+- `OLLAMA_MAX_LOADED_MODELS=2` on desktop means **two** models are resident at
+  once. A 24 GB coder plus the 2 GB autocomplete model fits; a 24 GB coder plus a
+  second 18 GB general model does not — the second one spills to system RAM.
+- **Blackwell (SM 120) has native FP4 tensor cores.** On a 5090 the `-nvfp4`
+  tags are the right default, not `-q4_K_M`: same-or-smaller footprint, hardware
+  dequant, and no quality loss versus Q4_K_M. This is a 5090-specific win — do
+  not copy `-nvfp4` picks onto a 3090/4090, where it falls back to software.
+- `-mxfp8` sits between: ~1.7x the size of NVFP4, near-BF16 quality. Fits on 32 GB
+  only for 27B-class dense models, and only with short context.
+- `-mtp-` tags carry multi-token-prediction heads — extra throughput at ~1 GB
+  extra weight. `-coding-` tags are coding-post-trained variants of the same base.
+- `-mlx-` tags are Apple-only. Never pull them on the Omen.
+
+### Picks
+
+| Role | Tag | Size | Why |
+| --- | --- | --- | --- |
+| **Coding daily driver** | `qwen3.6:35b-a3b-coding-nvfp4` | 22 GB | MoE, 3B active → dense-35B smarts at ~3B speed. Coding post-train, FP4 native on Blackwell. Best coding-per-VRAM on this card. |
+| Coding, portable quant | `qwen3-coder:30b-a3b-q4_K_M` | 19 GB | Same MoE trick, plain Q4_K_M. Use when you want the identical tag to work on a non-Blackwell box. |
+| Reasoning / long docs | `qwen3.6:27b-nvfp4` | 20 GB | Dense 27B. Slower per token than the MoE but stronger on single-shot reasoning. 256K context. |
+| Reasoning, max quality | `qwen3.6:27b-mxfp8` | 31 GB | Near-BF16. Fits weights only — keep context ≤8K or it spills. Batch use, not interactive. |
+| General / vision / tools | `gemma4:26b-nvfp4` | 18 GB | 26B-A4B MoE, `tools` + `thinking` capability. Same weights as the current default, 0 GB cheaper, FP4-native. |
+| Speed-first chat | `gemma4:12b-nvfp4` | 7.7 GB | Leaves 24 GB free — the one to co-load beside a big coder. |
+| Inline autocomplete | `qwen2.5-coder:3b` | 1.9 GB | Already installed. Latency-bound, not quality-bound; do not upsize. |
+| **Skip** | `qwen3-coder:480b-a35b-q4_K_M` | 290 GB | 9x the card. |
+| **Skip** | `nemotron3:33b-q4_K_M` | 28 GB | Dense 33B — fits weights, starves KV cache, slower than the 35B MoE it loses to. |
+| **Skip** | anything `-bf16` | 52-72 GB | 2x+ the card. |
+
+### Current state of sy-omen45l
+
+Resident models as of the last probe:
+
+| Installed | Size | Verdict |
+| --- | --- | --- |
+| `gemma4:26b` (= `26b-a4b-it-q4_K_M`) | 18 GB | Fine general model, **wrong default for a 32 GB card** — see below. |
+| `qwen2.5-coder:3b` | 1.9 GB | Correct. Autocomplete only. |
+
+`gemma4:26b` is not a bad model — 26B-A4B MoE, 4B active, `tools` + `thinking`.
+The problems are fit, not quality:
+
+1. **Leaves ~12 GB of the card idle.** 18 GB of weights on a 32 GB card is a
+   4090-sized choice. `qwen3.6:35b-a3b-coding-nvfp4` (22 GB) is strictly more
+   model in the same power envelope.
+2. **General-purpose, used as the coding default.** It is the fallback in
+   `SY_OMEN45L_OLLAMA_DEFAULT_MODEL`, which feeds opencode, Zed, VS Code Copilot
+   Chat, and `claude.profile.bash`. Those are all coding surfaces; a
+   coding-post-trained model belongs there.
+3. **Q4_K_M on Blackwell.** `gemma4:26b-nvfp4` is the same size with hardware FP4
+   dequant. Even keeping Gemma, the `-nvfp4` tag is the better pull.
+
+Recommended change — one line in
+`software/scripts/advanced/llm/ollama.profile.bash`:
+
+```bash
+export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="qwen3.6:35b-a3b-coding-nvfp4"
+```
+
+Keep `gemma4:12b-nvfp4` (7.7 GB) as the co-loaded second slot for
+vision/general work — 22 + 7.7 GB fits the two-model budget, 22 + 18 GB does not.
+
+Pull with:
+
+```bash
+ollama pull qwen3.6:35b-a3b-coding-nvfp4
+ollama pull gemma4:12b-nvfp4
+```
+
+Note: the default model string is duplicated as a literal fallback in four places
+(`ollama.profile.bash` x2, `claude/claude.profile.bash`, and the model-limit map in
+`opencode/setup.js`). Change all four together or the fallback paths disagree.
+
 ## Best coding models per hardware
+
+> **Stale.** Written against Jan-2025 / mid-2026 knowledge; several tags below were
+> pattern-guessed and never verified. For the 5090 use the verified section above.
+> The per-card sizing reasoning here is still sound; the specific tags are not.
 
 Recommendations are anchored to the **Qwen2.5-Coder** family (7B / 14B / 32B
 Instruct), which held the top open-weights coding benchmark slot as of early 2025. Cross-check current LiveCodeBench / EvalPlus / Aider leaderboards before
