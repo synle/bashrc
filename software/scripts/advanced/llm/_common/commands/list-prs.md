@@ -6,7 +6,7 @@
 
 - **Format keyword** (one of, case-insensitive): `short`, `long`, `table`. Defaults to `short` if absent.
 - **Scope** — pick exactly one (first match wins):
-  - **PWD** (default, no scope token present) — scan the current working directory up to 2 child levels below cwd (find -maxdepth 3 on .git; depth chosen because PRs often live in nested repo folders) for git repos and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
+  - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
   - **PWD keyword** — one of the PWD keyword set (see below, case-insensitive). Same as default PWD scope above.
   - **Explicit PR refs** — one or more PR refs: full URL (`https://github.com/<owner>/<repo>/pull/<n>`), shorthand `<owner>/<repo>#<n>`, `#<n>`, or bare digits `<n>`. Bare `#<n>` / digits require cwd to be a git repo (resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name — see Repo Identification). Explicit-refs scope is author-agnostic (you asked for those PRs).
@@ -49,11 +49,21 @@ Examples:
 1. **Fetch the open PR list — branch on scope:**
 
    a. **Scope = pwd** (default):
-   - Discover git repo roots under cwd up to 2 child levels below cwd (find -maxdepth 3 on .git):
-     `find . -maxdepth 3 -type d -name .git -not -path '*/node_modules/*' -not -path '*/.build/*' -not -path '*/vendor/*'`
-     Each match's parent dir is a repo root. Include cwd itself if `./.git` exists.
-   - For each root, resolve `<owner>/<repo>` via `git -C <root> remote get-url origin` (never from the folder name — see Repo Identification). Skip roots with no `origin` or a non-GitHub remote.
-   - De-duplicate `<owner>/<repo>` list. If empty, print `No git repos found within 2 levels of $(pwd).` and stop.
+   - Discover git repo roots two levels deep (see Repo discovery) — each output line is already a repo root, no `dirname` step:
+
+     ```bash
+     for d in . */ */*/; do git -C "$d" rev-parse --show-toplevel; done 2>/dev/null | sort -u
+     ```
+
+   - For each root, resolve `<owner>/<repo>` (see Repo Identification — never from the folder name):
+
+     ```bash
+     git -C "<root>" remote get-url origin | sed -E 's#(git@|https://)github.com[:/]##; s#\.git$##'
+     ```
+
+     Skip roots with no `origin` or a non-GitHub remote.
+
+   - De-duplicate the `<owner>/<repo>` list. If empty, print `No git repos found within 2 levels of $(pwd).` and stop.
    - Query in one call:
      `gh search prs --author=@me --state=open --repo <o1>/<r1> --repo <o2>/<r2> ... --json number,title,repository,isDraft,url,headRefName,createdAt,author`
 

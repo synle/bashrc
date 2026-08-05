@@ -2,9 +2,11 @@
 
 **Recommended order.** Run `/sy-review-prs` first (verdict pass), then `/sy-babysit-prs` (this command). Reversing wastes babysit cycles on PRs that would be requested-changes anyway.
 
+**This is the command for "sync all my PRs with main, babysit them, address comments — all at once, in the background, with worktrees."** Every part of that ask is already in scope: base-branch merge is `/sy-babysit-pr` Step 5, comment remediation is Steps 6–7, background + worktree + all-at-once is Step 4 below. Route any plain-English phrasing of that request here — do not hand-roll a loop, and do not call `/sy-sync-pr-branch` first (babysit syncs as part of its own loop).
+
 Argument: $ARGUMENTS (optional — selects scope; the first token decides the mode, no mixing).
 
-- **Empty** — babysit every open PR authored by `@me` for repos up to 2 child levels below cwd (find -maxdepth 3 on .git). (Default behavior.)
+- **Empty** — babysit every open PR authored by `@me` for git repos at or below cwd, two levels deep (see Repo discovery). (Default behavior.)
 - **PWD keyword** — first token (case-insensitive, trimmed) is one of the PWD keyword set defined in `/sy-list-prs`. Scan repos up to 2 child levels below cwd and babysit `@me` open PRs in those repos only.
 - **Explicit PR refs** — one or more whitespace-separated PR refs. Each ref is one of:
   - full URL: `https://github.com/<owner>/<repo>/pull/<n>`
@@ -32,9 +34,18 @@ Argument: $ARGUMENTS (optional — selects scope; the first token decides the mo
 3. **Render the resolved PR set as a table** so the user sees exactly what is about to be babysat. Delegate to `/sy-list-prs table <same-scope-token>` — `/sy-list-prs` accepts the same scope vocabulary as this command (empty / PWD keyword / explicit refs), so pass the same scope `$ARGUMENTS` (prefixed with `table`) and let it render. Single source of truth for the table layout lives in `/sy-list-prs`.
 
 4. **Fan out to `/sy-babysit-pr <PR-URL>` for EVERY resolved PR at once — in parallel, as background jobs.** Do NOT walk the list sequentially.
+
+   **Dispatch mechanics — this is the step agents get wrong.** "In parallel" is a hard requirement, not a hint:
+   - **Emit every job in ONE assistant message with N tool calls in that same message.** One sub-agent / Task / background-shell invocation per PR, all in a single block. A second message per PR is a sequential loop wearing a parallel costume — that is the failure mode this section exists to prevent.
+   - **Never** `for pr in ...; do ...; done`, never "start job 1, wait, start job 2", never a single job that iterates the PR list internally.
+   - **One job = one PR = one worktree = one independent context.** Jobs share nothing: no cwd, no branch, no state file, no conversation. A job must never read another job's result or wait on it.
+   - **Each job's prompt is self-contained.** Pass, explicitly: the full PR URL, the resolved `<owner>/<repo>` (from `git remote get-url origin`, never the folder name), the PR number, the canonical worktree path `$HOME/.worktrees/<owner>/<repo>/pr-<number>`, and the instruction to run the complete `/sy-babysit-pr` loop for that PR and report back its Step 13 final report. Sub-agents start with a fresh context — anything you don't pass, they don't have.
+   - **Do not pre-create worktrees from the dispatcher.** Each job owns its own worktree lifecycle (`/sy-babysit-pr` Step 5a create/reuse, Step 5a cleanup after the last pass). The dispatcher never runs `git worktree add`, never `cd`s anywhere, and never touches the user's primary checkout.
+   - **Report the fan-out the moment it's launched** — list every PR with its job and worktree path — so the user can see N jobs running, not one job N times.
+
    - Launch one background job per PR, all in the same dispatch. Each job runs the complete `/sy-babysit-pr` loop for its own PR URL and owns its own state.
    - **Parallelism is safe because every job gets its own git worktree** at a rigid, collision-free path — **`$HOME/.worktrees/<owner>/<repo>/pr-<number>`** (see One rigid worktree path). The PR number makes each job's path unique, so no two jobs share a working tree, and none of them touch your primary checkout or move its branch. Never let a job `git checkout` in the main repo.
-   - **Cap concurrency at 8** to stay under GitHub API rate limits. More than 8 PRs → launch in waves of 8, starting the next wave as slots free up.
+   - **Cap concurrency at 8** to stay under GitHub API rate limits. More than 8 PRs → launch in waves of 8, starting the next wave as slots free up. A wave is still one message with 8 tool calls; only the _next_ wave waits.
    - Expect long runtimes: each job does **at least 3 passes 30 minutes apart** (`/sy-babysit-pr` Step 12), so a wave takes 1h+ by design. That is the point — do not shorten it, and do not poll the jobs in a busy loop. Collect each result when its job reports back.
    - If one job fails or escalates, the others keep running. Record the failure and carry on; never abort the whole fan-out for a single PR.
    - The per-PR command owns the full loop. This wrapper does not describe or duplicate per-PR behavior — if the per-PR flow needs to change, edit `/sy-babysit-pr`.
@@ -44,6 +55,8 @@ Argument: $ARGUMENTS (optional — selects scope; the first token decides the mo
 ## Rules
 
 - This command is a dispatcher. The per-PR loop lives in `/sy-babysit-pr` — do not re-implement it here.
+- **Base-branch sync is already included — never bolt it on.** `/sy-babysit-pr` Step 5 merges the default branch (and the parent PR, on stacked waves) into every PR branch before it does anything else. Do not run `/sy-sync-pr-branch` ahead of the fan-out, do not `git merge origin/main` from the dispatcher, and do not add a "sync pass" — that would double-merge and race the jobs' own worktrees.
+- **Parallel means one message, N tool calls (Step 4 Dispatch mechanics).** If the transcript shows the jobs starting one message at a time, the fan-out was sequential and must be relaunched. One job per PR, self-contained prompt, no shared state.
 - **Babysit all resolved PRs at once, in parallel background jobs — never a sequential for-loop** (see Fan out multi-PR work in parallel). One worktree per PR at `$HOME/.worktrees/<owner>/<repo>/pr-<number>` (`/sy-babysit-pr` Step 5a) is what makes this safe: the PR number keys the path, so jobs can't collide, nothing is shared, and the user's primary checkout is never touched. Cap at 8 concurrent jobs and queue the rest.
 - **A fan-out run is long by design.** Every job does ≥3 passes 30 minutes apart, so budget an hour-plus per wave. Don't truncate jobs, don't busy-poll them, and don't declare the fan-out done until every job has reported.
 - **Table output is owned by `/sy-list-prs`.** Both the pre-flight render (Step 3) and the final report (Step 5) reuse its `table` format. Pass the same scope `$ARGUMENTS` to `/sy-list-prs table` so the rendered set matches the resolved PR set exactly. Do not hand-roll a different table layout.

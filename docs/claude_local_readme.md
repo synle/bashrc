@@ -638,10 +638,10 @@ the wire format, only the destination.
 
 Neither local runtime serves that route:
 
-| Runtime | Routes it serves | `/v1/messages`? |
-| --- | --- | --- |
-| Ollama | `/api/generate`, `/api/chat`, `/api/tags`, `/api/ps`, plus OpenAI-compatible `/v1/chat/completions` | **No** |
-| vLLM | OpenAI-compatible `/v1/chat/completions`, `/v1/completions`, `/v1/models` | **No** |
+| Runtime | Routes it serves                                                                                    | `/v1/messages`? |
+| ------- | --------------------------------------------------------------------------------------------------- | --------------- |
+| Ollama  | `/api/generate`, `/api/chat`, `/api/tags`, `/api/ps`, plus OpenAI-compatible `/v1/chat/completions` | **No**          |
+| vLLM    | OpenAI-compatible `/v1/chat/completions`, `/v1/completions`, `/v1/models`                           | **No**          |
 
 So pointing `ANTHROPIC_BASE_URL` straight at `:11434` or `:8000` cannot work —
 every request 404s on the first turn. You need one of the two options below.
@@ -675,12 +675,12 @@ opaque API error mid-session. `SY_CLAUDE_LOCAL_FORCE=1` bypasses the probe.
 
 It also sets the env that a local model needs:
 
-| Variable | Why |
-| --- | --- |
-| `ANTHROPIC_AUTH_TOKEN` | **Not** `ANTHROPIC_API_KEY` — this is what stops Claude Code reusing your saved claude.ai subscription credential once a base URL is set. A self-hosted gateway ignores the value, but the variable must be present. |
-| `ANTHROPIC_SMALL_FAST_MODEL` / `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Pinned to the same local model, otherwise background/summarization calls ask the gateway for a Haiku it does not have. |
-| `API_TIMEOUT_MS` | Raised to 20 min. A local model can spend minutes on prompt eval plus generation, and the client giving up first is indistinguishable from a hang. |
-| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Keeps background calls off a single-slot local daemon so they cannot queue ahead of the turn you are waiting on. |
+| Variable                                                       | Why                                                                                                                                                                                                                  |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_AUTH_TOKEN`                                         | **Not** `ANTHROPIC_API_KEY` — this is what stops Claude Code reusing your saved claude.ai subscription credential once a base URL is set. A self-hosted gateway ignores the value, but the variable must be present. |
+| `ANTHROPIC_SMALL_FAST_MODEL` / `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Pinned to the same local model, otherwise background/summarization calls ask the gateway for a Haiku it does not have.                                                                                               |
+| `API_TIMEOUT_MS`                                               | Raised to 20 min. A local model can spend minutes on prompt eval plus generation, and the client giving up first is indistinguishable from a hang.                                                                   |
+| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`                     | Keeps background calls off a single-slot local daemon so they cannot queue ahead of the turn you are waiting on.                                                                                                     |
 
 > Gateway software is third-party and is deliberately **not** auto-installed by
 > this repo. Review and install it yourself.
@@ -702,13 +702,13 @@ is wedged" from "the client gave up".
 This is the most common local-model failure, and it is almost never a wedged
 process. Work down this table in order.
 
-| Symptom | Likely cause | Fix |
-| --- | --- | --- |
-| Answers start fine, then truncate or go incoherent partway through a long turn | **Context too small.** `OLLAMA_CONTEXT_LENGTH` defaults to `0` = auto, which lands on a ~4k tier on modest VRAM. An agentic CLI's system prompt + tool schemas alone exceed that, so the tail of the request is silently dropped. | `ollama_apply_daemon_env` then `ollama_restart` |
-| Everything is several times slower than it was; long turns look like a hang | **Model spilled to CPU.** `ollama_ps` shows `vram` smaller than `size`. | Smaller model or quant, or lower `OLLAMA_NUM_PARALLEL` / `OLLAMA_CONTEXT_LENGTH` |
-| First prompt after a pause takes minutes | **Model was evicted.** `OLLAMA_KEEP_ALIVE` defaults to 5m, and reloading multiple GB reads as a hang. | Raise `OLLAMA_KEEP_ALIVE`; `ollama_warmup` before a session |
-| Context shrank even though you set it larger | **`OLLAMA_NUM_PARALLEL` multiplies KV VRAM.** Total server context is `context_length x num_parallel` (`server/sched.go: effectiveLlamaServerContext`), so a high value trips the loader's OOM fallback, which silently reduces context. | Keep `NUM_PARALLEL` at 1-2 for single-user agent work |
-| Daemon answers `/api/tags` but never completes a generation | **Daemon wedged.** | `ollama_unload`, then `ollama_restart` |
+| Symptom                                                                        | Likely cause                                                                                                                                                                                                                             | Fix                                                                              |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Answers start fine, then truncate or go incoherent partway through a long turn | **Context too small.** `OLLAMA_CONTEXT_LENGTH` defaults to `0` = auto, which lands on a ~4k tier on modest VRAM. An agentic CLI's system prompt + tool schemas alone exceed that, so the tail of the request is silently dropped.        | `ollama_apply_daemon_env` then `ollama_restart`                                  |
+| Everything is several times slower than it was; long turns look like a hang    | **Model spilled to CPU.** `ollama_ps` shows `vram` smaller than `size`.                                                                                                                                                                  | Smaller model or quant, or lower `OLLAMA_NUM_PARALLEL` / `OLLAMA_CONTEXT_LENGTH` |
+| First prompt after a pause takes minutes                                       | **Model was evicted.** `OLLAMA_KEEP_ALIVE` defaults to 5m, and reloading multiple GB reads as a hang.                                                                                                                                    | Raise `OLLAMA_KEEP_ALIVE`; `ollama_warmup` before a session                      |
+| Context shrank even though you set it larger                                   | **`OLLAMA_NUM_PARALLEL` multiplies KV VRAM.** Total server context is `context_length x num_parallel` (`server/sched.go: effectiveLlamaServerContext`), so a high value trips the loader's OOM fallback, which silently reduces context. | Keep `NUM_PARALLEL` at 1-2 for single-user agent work                            |
+| Daemon answers `/api/tags` but never completes a generation                    | **Daemon wedged.**                                                                                                                                                                                                                       | `ollama_unload`, then `ollama_restart`                                           |
 
 ### Why the tuning has to be applied twice
 
@@ -719,11 +719,11 @@ environment and silently falls back to upstream defaults.
 
 `ollama_apply_daemon_env` is what closes that gap:
 
-| Platform | Where it writes |
-| --- | --- |
-| Linux | `/etc/systemd/system/ollama.service.d/sy-bashrc.conf` (needs sudo; restarts the daemon for you) |
-| macOS | `launchctl setenv`, one call per var — run `ollama_restart` afterwards |
-| Windows | `software/scripts/windows/_full-setup.ps1` persists them at User scope |
+| Platform | Where it writes                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------------- |
+| Linux    | `/etc/systemd/system/ollama.service.d/sy-bashrc.conf` (needs sudo; restarts the daemon for you) |
+| macOS    | `launchctl setenv`, one call per var — run `ollama_restart` afterwards                          |
+| Windows  | `software/scripts/windows/_full-setup.ps1` persists them at User scope                          |
 
 Add `--lan` to also bind the daemon to `0.0.0.0` so other machines on the home
 network can reach it. Off by default — only enable it on the box meant to serve
@@ -731,15 +731,15 @@ models to the rest of the house.
 
 ### Helper reference
 
-| Helper | Purpose |
-| --- | --- |
-| `ollama_doctor [host]` | Full diagnosis incl. a live generation probe |
-| `ollama_ps [host]` | Resident models: size, VRAM, context, expiry |
-| `ollama_unload [model] [host]` | Evict without restarting — first thing to try on a stall |
-| `ollama_warmup [model] [host]` | Preload so turn 1 is not charged the load time |
-| `ollama_restart` | Restart via systemd / brew services / Ollama.app |
-| `ollama_apply_daemon_env [--lan]` | Persist the tuning where the daemon reads it |
-| `list_ollama_models [host]` | List a host's models |
+| Helper                            | Purpose                                                  |
+| --------------------------------- | -------------------------------------------------------- |
+| `ollama_doctor [host]`            | Full diagnosis incl. a live generation probe             |
+| `ollama_ps [host]`                | Resident models: size, VRAM, context, expiry             |
+| `ollama_unload [model] [host]`    | Evict without restarting — first thing to try on a stall |
+| `ollama_warmup [model] [host]`    | Preload so turn 1 is not charged the load time           |
+| `ollama_restart`                  | Restart via systemd / brew services / Ollama.app         |
+| `ollama_apply_daemon_env [--lan]` | Persist the tuning where the daemon reads it             |
+| `list_ollama_models [host]`       | List a host's models                                     |
 
 All are defined in `software/scripts/advanced/llm/ollama.profile.bash` and carry
 inline `--help`.

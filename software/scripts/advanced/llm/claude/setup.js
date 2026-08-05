@@ -299,6 +299,7 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
   // 2026-05-13; see CLAUDE_COMMAND_RETIRED_NAMES below).
   "sy-release.md": "release",
   "sy-plan-grill-me.md": "plan-grill-me",
+  "sy-maintenance-day.md": "maintenance-day",
 };
 
 /**

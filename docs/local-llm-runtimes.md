@@ -150,7 +150,7 @@ correct regardless of which engine you happen to be running.
 > tags — trust this section first.
 >
 > **Verify against the daemon, not the website.** A tag being listed on
-> ollama.com/library does *not* mean the registry will serve it to this box — see
+> ollama.com/library does _not_ mean the registry will serve it to this box — see
 > the NVFP4 trap below. The real check is a pull attempt:
 >
 > ```bash
@@ -163,7 +163,7 @@ correct regardless of which engine you happen to be running.
 ### The NVFP4 trap
 
 Blackwell (SM 120, the 5090's die) has native FP4 tensor cores, so `-nvfp4` tags
-*look* like the obvious right answer on this card. They are not usable:
+_look_ like the obvious right answer on this card. They are not usable:
 
 ```
 $ curl -fsS "http://$SY_OMEN45L_IP:11434/api/pull" -d '{"model":"qwen3.6:35b-a3b-coding-nvfp4"}'
@@ -201,29 +201,29 @@ and any doc or config claiming otherwise is wrong.
 
 All tags below were confirmed pullable by the daemon.
 
-| Role | Tag | Size | Why |
-| --- | --- | --- | --- |
-| **Coding daily driver** | `qwen3.6:35b-a3b-mtp-q4_K_M` | 23 GB | MoE, 3B active → dense-35B smarts at ~3B speed, plus MTP decode heads. Best coding-per-VRAM that this box can actually pull. |
-| Coding, no MTP | `qwen3.6:35b-a3b-q4_K_M` | 24 GB | Same model without the MTP heads. Fall back here if MTP misbehaves. |
-| Coding, portable tag | `qwen3-coder:30b-a3b-q4_K_M` | 19 GB | Same MoE trick, dedicated coder line. Use when the identical tag must also work on a smaller box. |
-| Reasoning / long docs | `qwen3.6:27b-q4_K_M` | 17 GB | Dense 27B. Slower per token than the MoE, stronger on single-shot reasoning. 256K context. |
-| Reasoning, max quality | `qwen3.6:27b-mxfp8` | 31 GB | Near-BF16. Weights-only fit — keep context ≤8K or it spills. Batch, not interactive. |
-| General / vision / tools | `gemma4:26b` | 18 GB | 26B-A4B MoE, `tools` + `thinking`. Already resident. Keep for general work. |
-| Speed-first chat | `gemma4:12b-it-q4_K_M` | 7.6 GB | Leaves ~24 GB free — the one to co-load beside a big coder. |
-| Inline autocomplete | `qwen2.5-coder:3b-base` | 1.9 GB | FIM tokens. Latency-bound, not quality-bound; do not upsize. |
-| **Skip** | any `-nvfp4` | — | 412, macOS-gated. See above. |
-| **Skip** | `qwen3-coder:480b-a35b-q4_K_M` | 290 GB | 9x the card. |
-| **Skip** | `nemotron3:33b-q4_K_M` | 28 GB | Dense 33B — fits weights, starves KV cache, loses to the 35B MoE anyway. |
-| **Skip** | anything `-bf16` | 52-72 GB | 2x+ the card. |
+| Role                     | Tag                            | Size     | Why                                                                                                                          |
+| ------------------------ | ------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Coding daily driver**  | `qwen3.6:35b-a3b-mtp-q4_K_M`   | 23 GB    | MoE, 3B active → dense-35B smarts at ~3B speed, plus MTP decode heads. Best coding-per-VRAM that this box can actually pull. |
+| Coding, no MTP           | `qwen3.6:35b-a3b-q4_K_M`       | 24 GB    | Same model without the MTP heads. Fall back here if MTP misbehaves.                                                          |
+| Coding, portable tag     | `qwen3-coder:30b-a3b-q4_K_M`   | 19 GB    | Same MoE trick, dedicated coder line. Use when the identical tag must also work on a smaller box.                            |
+| Reasoning / long docs    | `qwen3.6:27b-q4_K_M`           | 17 GB    | Dense 27B. Slower per token than the MoE, stronger on single-shot reasoning. 256K context.                                   |
+| Reasoning, max quality   | `qwen3.6:27b-mxfp8`            | 31 GB    | Near-BF16. Weights-only fit — keep context ≤8K or it spills. Batch, not interactive.                                         |
+| General / vision / tools | `gemma4:26b`                   | 18 GB    | 26B-A4B MoE, `tools` + `thinking`. Already resident. Keep for general work.                                                  |
+| Speed-first chat         | `gemma4:12b-it-q4_K_M`         | 7.6 GB   | Leaves ~24 GB free — the one to co-load beside a big coder.                                                                  |
+| Inline autocomplete      | `qwen2.5-coder:3b-base`        | 1.9 GB   | FIM tokens. Latency-bound, not quality-bound; do not upsize.                                                                 |
+| **Skip**                 | any `-nvfp4`                   | —        | 412, macOS-gated. See above.                                                                                                 |
+| **Skip**                 | `qwen3-coder:480b-a35b-q4_K_M` | 290 GB   | 9x the card.                                                                                                                 |
+| **Skip**                 | `nemotron3:33b-q4_K_M`         | 28 GB    | Dense 33B — fits weights, starves KV cache, loses to the 35B MoE anyway.                                                     |
+| **Skip**                 | anything `-bf16`               | 52-72 GB | 2x+ the card.                                                                                                                |
 
 ### Current state of sy-omen45l
 
 Resident before this pass:
 
-| Installed | Size | Verdict |
-| --- | --- | --- |
-| `gemma4:26b` (= `26b-a4b-it-q4_K_M`) | 18 GB | Fine general model, **wrong default for a 32 GB card**. |
-| `qwen2.5-coder:3b` | 1.9 GB | Wrong tag — the non-`-base` checkpoint has no FIM tokens, so Zed `edit_predictions` found nothing on this host. |
+| Installed                            | Size   | Verdict                                                                                                         |
+| ------------------------------------ | ------ | --------------------------------------------------------------------------------------------------------------- |
+| `gemma4:26b` (= `26b-a4b-it-q4_K_M`) | 18 GB  | Fine general model, **wrong default for a 32 GB card**.                                                         |
+| `qwen2.5-coder:3b`                   | 1.9 GB | Wrong tag — the non-`-base` checkpoint has no FIM tokens, so Zed `edit_predictions` found nothing on this host. |
 
 `gemma4:26b` is not a bad model — 26B-A4B MoE, 4B active, `tools` + `thinking`.
 The problems were fit, not quality:
@@ -256,7 +256,7 @@ Override per machine by exporting the variable before the profile loads:
 export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="qwen3.6:27b-q4_K_M"
 ```
 
-The model-limit map in `opencode/setup.js` is a *separate* concern — it is a
+The model-limit map in `opencode/setup.js` is a _separate_ concern — it is a
 lookup table of per-tag context/output limits, not a default. It needs an entry
 only when a tag's limits differ from `OLLAMA_DEFAULT_CONFIG`; unknown tags fall
 through harmlessly, which is why a bogus key (`gemma4:2arm`, which is not a real
@@ -459,15 +459,15 @@ at User scope.
 
 ### The settings that matter, and why
 
-| Variable | Repo value (desktop / laptop) | Why it matters |
-| --- | --- | --- |
-| `OLLAMA_CONTEXT_LENGTH` | 32768 / 16384 | Upstream default is `0` = auto, which lands on a **~4k tier** on modest VRAM. An agentic CLI's system prompt + tool schemas exceed that on their own, so the request is truncated and the model appears to stall or answer nonsense mid-turn. Set it explicitly. |
-| `OLLAMA_NUM_PARALLEL` | 2 / 1 | Total server context is `context_length x num_parallel` (`server/sched.go: effectiveLlamaServerContext`), so this **multiplies KV-cache VRAM**. Set too high it trips the loader's OOM fallback, which silently shrinks your context back down. Single-user agent work wants 1-2, never 4. |
-| `OLLAMA_KEEP_ALIVE` | 30m / 15m | Default 5m. A multi-GB model evicted between turns costs a full reload on the next prompt, which reads as a hang. |
-| `OLLAMA_KV_CACHE_TYPE` | `q8_0` | Roughly halves KV memory at very small precision loss. `q4_0` saves more but **degrades code output noticeably** — not worth it on either form factor. |
-| `OLLAMA_FLASH_ATTENTION` | 1 | Prerequisite for the quantized KV cache above. |
-| `OLLAMA_LOAD_TIMEOUT` | 10m | Stall detector during load; the 5m default is tight for a large model on a cold page cache. |
-| `OLLAMA_MAX_LOADED_MODELS` | 2 / 1 | Two resident models means both share the card. Only useful when the second one is small (e.g. the 2 GB autocomplete model). |
+| Variable                   | Repo value (desktop / laptop) | Why it matters                                                                                                                                                                                                                                                                             |
+| -------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `OLLAMA_CONTEXT_LENGTH`    | 32768 / 16384                 | Upstream default is `0` = auto, which lands on a **~4k tier** on modest VRAM. An agentic CLI's system prompt + tool schemas exceed that on their own, so the request is truncated and the model appears to stall or answer nonsense mid-turn. Set it explicitly.                           |
+| `OLLAMA_NUM_PARALLEL`      | 2 / 1                         | Total server context is `context_length x num_parallel` (`server/sched.go: effectiveLlamaServerContext`), so this **multiplies KV-cache VRAM**. Set too high it trips the loader's OOM fallback, which silently shrinks your context back down. Single-user agent work wants 1-2, never 4. |
+| `OLLAMA_KEEP_ALIVE`        | 30m / 15m                     | Default 5m. A multi-GB model evicted between turns costs a full reload on the next prompt, which reads as a hang.                                                                                                                                                                          |
+| `OLLAMA_KV_CACHE_TYPE`     | `q8_0`                        | Roughly halves KV memory at very small precision loss. `q4_0` saves more but **degrades code output noticeably** — not worth it on either form factor.                                                                                                                                     |
+| `OLLAMA_FLASH_ATTENTION`   | 1                             | Prerequisite for the quantized KV cache above.                                                                                                                                                                                                                                             |
+| `OLLAMA_LOAD_TIMEOUT`      | 10m                           | Stall detector during load; the 5m default is tight for a large model on a cold page cache.                                                                                                                                                                                                |
+| `OLLAMA_MAX_LOADED_MODELS` | 2 / 1                         | Two resident models means both share the card. Only useful when the second one is small (e.g. the 2 GB autocomplete model).                                                                                                                                                                |
 
 ### Then, in rough order of payoff
 

@@ -105,22 +105,22 @@ docs/                         long-form topic docs (incl. editor-keybindings.md)
 
 ### Key files
 
-| Path | Purpose |
-|---|---|
-| `run.sh` | Bash pre-scan, OS detect, JSON-encodes args into `BASHRC_RAW_ARGS`, calls `run_files()` |
-| `software/index.js` | `parseRawArgs`, helper library, script discovery + runner, run info |
-| `software/common.js` | `replaceBlock` + marker constants; inlined into index.js |
-| `software/bootstrap/common-env.sh` | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); inlined into `run.sh` via BEGIN/END |
-| `software/bootstrap/common-functions.bash` | Shared shell helpers; pulled into `.sh` scripts via SOURCE |
-| `software/metadata/presets.jsonc` | Named `--preset=` bundles; read by `run.sh` into `PRESETS_JSON` |
-| `software/metadata/ci-binaries.json` | Single source for CI binary verification (`required` + `warn`) |
-| `software/metadata/autocomplete.common.js` | Spec-based autocomplete mappings, `DYNAMIC_TOKENS`, `expandSpecMacros` |
-| `software/metadata/script-list.js` / `.config` | Canonical sorted script list consumed at build time |
-| `software/tools/build-include.js` | BEGIN/END substitution engine + inline `{{map.key}}` marker processor |
-| `software/tools/generate-ci-binary-list.js` | Renders the `ci-binary-checks` block in `action.yml` |
-| `software/tools/build-installer.js` | Builds `.build/install-bashrc.sh` self-extracting installer |
-| `vitest.config.js` | Unit config + istanbul coverage thresholds (authoritative numbers) |
-| `$BASHRC_TEMP_DIR/run_timing.json` | Per-run timing/status, read by CI |
+| Path                                           | Purpose                                                                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `run.sh`                                       | Bash pre-scan, OS detect, JSON-encodes args into `BASHRC_RAW_ARGS`, calls `run_files()`        |
+| `software/index.js`                            | `parseRawArgs`, helper library, script discovery + runner, run info                            |
+| `software/common.js`                           | `replaceBlock` + marker constants; inlined into index.js                                       |
+| `software/bootstrap/common-env.sh`             | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); inlined into `run.sh` via BEGIN/END |
+| `software/bootstrap/common-functions.bash`     | Shared shell helpers; pulled into `.sh` scripts via SOURCE                                     |
+| `software/metadata/presets.jsonc`              | Named `--preset=` bundles; read by `run.sh` into `PRESETS_JSON`                                |
+| `software/metadata/ci-binaries.json`           | Single source for CI binary verification (`required` + `warn`)                                 |
+| `software/metadata/autocomplete.common.js`     | Spec-based autocomplete mappings, `DYNAMIC_TOKENS`, `expandSpecMacros`                         |
+| `software/metadata/script-list.js` / `.config` | Canonical sorted script list consumed at build time                                            |
+| `software/tools/build-include.js`              | BEGIN/END substitution engine + inline `{{map.key}}` marker processor                          |
+| `software/tools/generate-ci-binary-list.js`    | Renders the `ci-binary-checks` block in `action.yml`                                           |
+| `software/tools/build-installer.js`            | Builds `.build/install-bashrc.sh` self-extracting installer                                    |
+| `vitest.config.js`                             | Unit config + istanbul coverage thresholds (authoritative numbers)                             |
+| `$BASHRC_TEMP_DIR/run_timing.json`             | Per-run timing/status, read by CI                                                              |
 
 ---
 
@@ -200,20 +200,20 @@ right.
 
 ### Naming suffixes — these change behavior, not just style
 
-| Suffix / path | Meaning |
-|---|---|
-| `.js` | Node script with `doWork()`; consecutive siblings bundle into one `node` heredoc |
-| `.sh` | bash script; own heredoc; **skipped entirely under `--dryrun`** |
-| `.su.js` | runs under `sudo -E node`; **all** `.su.js` collapse into one sudo prompt; self-contained, no state from other scripts |
-| `.su.sh`, `.sh.js`, `.su.sh.js` | never bundled |
-| `.common.js` / `.common.bash` / `.common.jsonc` | shared helper; excluded from discovery; pull in via `SOURCE` |
-| `.standalone.js` | on-demand only; excluded from discovery |
-| `.profile.bash` | profile partial inlined into `~/.bash_syle` by a `# SOURCE` marker; not standalone |
-| `_init.js` | root one pinned first; per-OS ones run early |
-| `_full-setup.sh` | dependency installs; only with `--setup` |
-| `~name` | post-script; runs last, never bundled |
-| `<os>/` | gated on `is_os_<os>` |
-| `advanced/` | only when `IS_ADVANCED_PROFILE_ENABLED` (skipped on limited-support OSes) |
+| Suffix / path                                   | Meaning                                                                                                                |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `.js`                                           | Node script with `doWork()`; consecutive siblings bundle into one `node` heredoc                                       |
+| `.sh`                                           | bash script; own heredoc; **skipped entirely under `--dryrun`**                                                        |
+| `.su.js`                                        | runs under `sudo -E node`; **all** `.su.js` collapse into one sudo prompt; self-contained, no state from other scripts |
+| `.su.sh`, `.sh.js`, `.su.sh.js`                 | never bundled                                                                                                          |
+| `.common.js` / `.common.bash` / `.common.jsonc` | shared helper; excluded from discovery; pull in via `SOURCE`                                                           |
+| `.standalone.js`                                | on-demand only; excluded from discovery                                                                                |
+| `.profile.bash`                                 | profile partial inlined into `~/.bash_syle` by a `# SOURCE` marker; not standalone                                     |
+| `_init.js`                                      | root one pinned first; per-OS ones run early                                                                           |
+| `_full-setup.sh`                                | dependency installs; only with `--setup`                                                                               |
+| `~name`                                         | post-script; runs last, never bundled                                                                                  |
+| `<os>/`                                         | gated on `is_os_<os>`                                                                                                  |
+| `advanced/`                                     | only when `IS_ADVANCED_PROFILE_ENABLED` (skipped on limited-support OSes)                                              |
 
 Discovery order: `_init` → OS `_init` → `_full-setup` → alphabetical (with `/advanced/`
 stripped from the sort key) → `~` post-scripts → pinned `lastFiles`. Every `--files` run
@@ -504,17 +504,17 @@ The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 
 One vitest config per suite:
 
-| Config | Suite |
-|---|---|
-| `vitest.config.js` | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
-| `vitest.profile.config.js` | `profileSyntax.spec.js` |
-| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js` |
-| `vitest.smoke.config.js` | webapp + raw-URL smokes against the live site |
-| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer) |
+| Config                         | Suite                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `vitest.config.js`             | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
+| `vitest.profile.config.js`     | `profileSyntax.spec.js`                                                               |
+| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js`                                                            |
+| `vitest.smoke.config.js`       | webapp + raw-URL smokes against the live site                                         |
+| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer)                                           |
 
 ```bash
 npx vitest run --config vitest.config.js software/tests/parseRawArgs.spec.js
-npx vitest run --config vitest.config.js -t "parses --files flag"
+npx vitest run --config vitest.config.js -t "should return defaults when BASHRC_RAW_ARGS is empty"
 ```
 
 `software/tests/setup.js` loads index.js in a VM sandbox — reach in with
@@ -534,23 +534,23 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 
 ### Enforced conventions — one spec each
 
-| Spec | Rule |
-|---|---|
-| `sectionMarkerStyle` | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`. |
-| `pathArrayValidation` | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`. |
-| `mirroredFunctionParity` | `is_help_arg`, `has_a_gui`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both. |
-| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8). |
-| `fzfTerminalSafety` | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm. |
-| `curlWrapperFormat` | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`. |
-| `editorKeybindings` | No duplicate keybinding within a context across VS Code / Sublime / Zed sources. |
-| `editorThemes` | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical. |
-| `autocompleteSpecValidation` | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`. |
-| `generateCiBinaryList` | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`). |
-| `presets` | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles. |
-| `profileSyntax` | Generated profiles pass `bash -n`, meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. |
-| `filterFilesByOsGuard` | Explicit `--files=` entries in an inactive OS folder are dropped, not run. |
-| `osDetection` | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags. |
-| `smokeTestRawUrls` | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form. |
+| Spec                              | Rule                                                                                                                                                                                                        |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sectionMarkerStyle`              | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.                                                                                |
+| `pathArrayValidation`             | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`.                  |
+| `mirroredFunctionParity`          | `is_help_arg`, `has_a_gui`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both. |
+| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8).                                                                                                                                      |
+| `fzfTerminalSafety`               | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.                                                    |
+| `curlWrapperFormat`               | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.                                                                             |
+| `editorKeybindings`               | No duplicate keybinding within a context across VS Code / Sublime / Zed sources.                                                                                                                            |
+| `editorThemes`                    | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical.                                                                           |
+| `autocompleteSpecValidation`      | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`.                                                                               |
+| `generateCiBinaryList`            | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`).                                                                                                          |
+| `presets`                         | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.                                                                               |
+| `profileSyntax`                   | Generated profiles pass `bash -n`, meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact.   |
+| `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                  |
+| `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                          |
+| `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                            |
 
 ---
 
@@ -576,7 +576,7 @@ Because publish amends and force-pushes, the SHA on `main` changes after CI —
 
 **Adding/removing a CLI tool: edit `software/metadata/ci-binaries.json`**, then
 `make format_ci_binaries`. Only non-GUI command-line binaries belong there.
-`check_binary_required` fails the build — reserve it for binaries present on *every*
+`check_binary_required` fails the build — reserve it for binaries present on _every_
 platform, and install those in the foreground on mac (`installBrewPackage`), since mac's
 background queue is skipped in CI. `check_binary_warn` never fails — use it for
 GitHub-release fallbacks, AUR-only packages, and anything backgrounded on mac.
@@ -595,14 +595,14 @@ Load these instead of improvising the workflow. Each is
 OpenCode, and Copilot CLI. `.opencode/commands/<name>.md` symlinks make them `/name`
 slash commands too.
 
-| Skill | Use when |
-|---|---|
-| `/add-package` | Adding a CLI tool / package across platforms |
-| `/remove-package` | Dropping a tool |
-| `/add-os` | Onboarding a new distro / platform |
-| `/remove-os` | Dropping OS support |
-| `/run` | Resolving a script name to its `bash run.sh --files=…` command and running it |
-| `/check` | Verifying session changes survived a merge/rebase/hook |
+| Skill              | Use when                                                                                    |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| `/add-package`     | Adding a CLI tool / package across platforms                                                |
+| `/remove-package`  | Dropping a tool                                                                             |
+| `/add-os`          | Onboarding a new distro / platform                                                          |
+| `/remove-os`       | Dropping OS support                                                                         |
+| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it               |
+| `/check`           | Verifying session changes survived a merge/rebase/hook                                      |
 | `/plan-and-commit` | Multi-file change worth recording — writes `~/sy_llm_ai_plans/bashrc/plan-<slug>.{md,diff}` |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
@@ -630,6 +630,54 @@ ln -sfn ../../.claude/skills/<name>/SKILL.md .opencode/commands/<name>.md
 6. Update this file when you change `software/index.js`, `run.sh`, `common-env.sh`, or
    `.github/actions/ci-build/action.yml`; update `docs/editor-keybindings.md` on any
    keybinding change.
+
+### 14.1 Validation cadence — batch it, don't run `make validate` per edit
+
+`make validate` is `format` + `test_unit` + `test_buildconfig` + `build_webapp` +
+`test_smoke_local` + `test_dryrun` + `ci_test_shellcheck`. It is a **pre-commit gate, not
+a save hook.** Running it after every edit to the same file is the single easiest way to
+turn a 2-minute task into a 20-minute one, and every intermediate run is meaningless
+because the change set is still half-applied.
+
+**Finish all edits first, then validate once.** Escalate through the cheapest rung that
+can answer your question:
+
+| Rung | Command                                                                 | Cost    | When                                   |
+| ---- | ----------------------------------------------------------------------- | ------- | -------------------------------------- |
+| 1    | `bash -n <file>.sh` / `node --check <file>.js`                          | instant | Right after editing one file           |
+| 2    | `npx vitest run --config vitest.config.js software/tests/<one>.spec.js` | ~1s     | After one file or one concern          |
+| 3    | `make test_unit`                                                        | ~25s    | After the last file in a related group |
+| 4    | `make validate`                                                         | minutes | **Once**, before commit / hand-off     |
+
+Rung 2 accepts several specs and a name filter, so one call covers a related group:
+
+```bash
+npx vitest run --config vitest.config.js software/tests/{presets,osDetection}.spec.js
+npx vitest run --config vitest.config.js -t "should return defaults when BASHRC_RAW_ARGS is empty"
+```
+
+Targeted escalations that beat a full `make validate` when you know what you touched:
+
+| Touched                                               | Run instead of `make validate`                                            |
+| ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| A `software/scripts/` script                          | `bash run.sh --files="<script>"` (twice, for idempotency)                 |
+| `software/index.js`, `run.sh`, `bootstrap/`           | `make test_unit && make test_profile`                                     |
+| A `.sh` / `.bash` / profile partial                   | `make test_profile`                                                       |
+| BEGIN/END markers, `ci-binaries.json`, script indexes | `make format && make test_buildconfig`                                    |
+| `presets.jsonc`                                       | `npx vitest run --config vitest.config.js software/tests/presets.spec.js` |
+| Only `.md` / docs / skills                            | nothing — docs aren't linted or built                                     |
+
+**Rules:**
+
+- **Never** re-run `make validate` on work you haven't changed since it last went green.
+- A `make validate` failure sends you **back down** the ladder: read the first failure,
+  reproduce it at rung 2 on that one spec, fix, confirm at rung 2, then rerun rung 4.
+  Re-running the full gate to watch the same failure scroll past is not debugging.
+- Announce the batching so it doesn't read as skipping:
+  `"Editing <N> files, then running make validate once at the end."`
+- Mid-task full runs are legitimate only when a step's **output feeds the next edit** —
+  `make format` regenerating a BEGIN/END block, a codegen pass, a dependency bump.
+  Say so when you do it.
 
 **Do not:**
 

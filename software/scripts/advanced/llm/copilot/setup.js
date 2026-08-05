@@ -459,6 +459,7 @@ const COPILOT_SKILL_DEPLOY_LIST = [
   "create-pr",
   "draft-pr",
   "list-prs",
+  "maintenance-day",
   "plan-grill-me",
   "release",
   "review-pr",

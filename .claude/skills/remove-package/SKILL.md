@@ -10,11 +10,13 @@ Remove a CLI tool or package from this dotfiles repo. The package to remove is `
 
 ### 1. Search for all references
 
-Search the entire repo for the package name to find every reference:
+Find every reference to the package, including the generated artifacts that will need regenerating:
 
+```bash
+rg -n --hidden -g '!node_modules' -g '!.git' -g '!.build' '<package-name>' .
 ```
-grep -r "<package-name>" --include="*.js" --include="*.sh" --include="*.md" --include="*.config"
-```
+
+Run it once more for a binary-name variant if the tool ships under a different name on some distro (`fd` / `fd-find`, `bat` / `batcat`).
 
 ### 2. Remove install entries from `_full-setup.sh` files
 
@@ -56,19 +58,53 @@ If the package had autocomplete:
 
 ### 7. Remove CI binary verification
 
-Remove the `check_binary` call for the tool from the "Binary verification" step in `.github/actions/ci-build/action.yml`.
+**Edit `software/metadata/ci-binaries.json`, never `.github/actions/ci-build/action.yml`** — the `# BEGIN ci-binary-checks` block there is generated and would be regenerated right back.
 
-### 8. Remove tests
+Delete the tool's entry from the `required` and/or `warn` array, then regenerate and verify:
 
-Delete or update any tests in `software/tests/` that reference the removed script.
+```bash
+make format_ci_binaries
+git --no-pager diff .github/actions/ci-build/action.yml
+npx vitest run --config vitest.config.js software/tests/generateCiBinaryList.spec.js
+```
 
-### 9. Remove asset file (if exists)
+### 8. Remove preset membership
+
+Drop the script filename from any `files[]` in `software/metadata/presets.jsonc`. A preset whose `files[]` goes empty must be removed entirely — `presets.spec.js` fails on empty presets:
+
+```bash
+rg -n '<name>' software/metadata/presets.jsonc
+npx vitest run --config vitest.config.js software/tests/presets.spec.js
+```
+
+### 9. Remove tests
+
+Delete or update any tests in `software/tests/` that reference the removed script, including its entry in the `profileSyntax.spec.js` file list if it was a `.sh` / `.bash` file:
+
+```bash
+rg -n '<name>' software/tests/
+```
+
+### 10. Remove asset file (if exists)
 
 Delete `assets/<name>.md` if one exists.
 
-### 10. Validate
+### 11. Uninstall locally, then validate
 
-Run `make validate` after all changes. Confirm all tests pass -- the script-list config and build artifacts will be regenerated automatically.
+If the script had an `undoWork()`, run the removal path against your own machine before deleting the file (do this **before** step 3, or from a stash):
+
+```bash
+bash run.sh --remove --files="<name>.js"
+```
+
+Then the full gate:
+
+```bash
+make format
+make validate
+```
+
+Confirm all tests pass — the script-list config and build artifacts regenerate automatically.
 
 ## Notes
 

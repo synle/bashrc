@@ -10,20 +10,39 @@ Remove an operating system from this dotfiles repo. The OS to remove is `$ARGUME
 
 ### 1. Search for all references
 
-Search the entire repo for the OS name and its flag:
+Find every reference to the OS flag and its folder:
 
+```bash
+rg -n --hidden -g '!node_modules' -g '!.git' -g '!.build' 'is_os_<name>' .
+rg -n '<name>' software/scripts/ software/tests/ .github/
 ```
-grep -r "is_os_<name>" --include="*.js" --include="*.sh" --include="*.yml" --include="*.config"
-grep -r "<name>" software/scripts/ --include="*.js" --include="*.sh"
+
+### 2. Remove the OS detection flag from `run.sh`
+
+**Detection lives in `run.sh`, not `common-env.sh`.** Delete the `is_os_<name>=0 && _detect_os ... && is_os_<name>=1` line from the `# --- OS Detection ---` section (around lines 310-330).
+
+If the removed flag appeared in the `is_os_ubuntu` catch-all guard, drop it from that condition too:
+
+```bash
+grep -n 'is_os_<name>' run.sh    # must return nothing when you're done
 ```
 
-### 2. Remove OS detection flag from `software/bootstrap/common-env.sh`
+### 3. Remove the flag from `ALL_OS_FLAGS`
 
-Delete the `is_os_<name>=0 && ... && is_os_<name>=1` line from the OS detection section.
+Drop `is_os_<name>` from the `ALL_OS_FLAGS` CSV in `software/bootstrap/common-env.sh` (line ~11), then mirror it into `run.sh`'s BEGIN/END block:
 
-### 3. Delete the OS script folder
+```bash
+make format_build_include
+grep -n ALL_OS_FLAGS run.sh software/bootstrap/common-env.sh   # both lines must match
+```
 
-Remove the entire `software/scripts/<name>/` directory, which includes:
+### 4. Delete the OS script folder
+
+```bash
+git rm -r software/scripts/<name>/
+```
+
+That folder holds:
 
 - `_init.js` — platform init
 - `_only.js` — platform tweaks
@@ -31,15 +50,20 @@ Remove the entire `software/scripts/<name>/` directory, which includes:
 - `_full-setup.sh` — package dependencies (if exists)
 - Any other OS-specific scripts in the folder
 
-### 4. Remove platform tweaks marker from `software/bootstrap/profile-advanced.sh`
+### 5. Remove platform tweaks marker from `software/bootstrap/profile-advanced.sh`
 
 Delete the `# BEGIN/END - <Platform Name> OS-specific Tweaks` marker line.
 
-### 5. Remove from `LIMITED_SUPPORT_OSES` (if applicable)
+### 6. Remove from `LIMITED_SUPPORT_OSES` (if applicable)
 
-If the OS was listed in `LIMITED_SUPPORT_OSES` in `software/index.js`, remove it.
+`LIMITED_SUPPORT_OSES` is a CSV env var in **`software/bootstrap/common-env.sh`** (line ~10), not `software/index.js` — `index.js` only reads it from `process.env`, so editing `index.js` does nothing. Drop the flag from the CSV, then:
 
-### 6. Remove CI build from `.github/workflows/build-main.yml`
+```bash
+make format_build_include
+grep -n LIMITED_SUPPORT_OSES run.sh software/bootstrap/common-env.sh   # both lines must match
+```
+
+### 7. Remove CI build from `.github/workflows/build-main.yml`
 
 Remove all references to the OS build job across all phases:
 
@@ -48,25 +72,41 @@ Remove all references to the OS build job across all phases:
 - **Phase 5 (test):** Remove artifact download, remove snapshot copy commands
 - **Summary job:** Remove from `needs` list, remove duration/status reporting
 
-### 7. Remove guard clause references in other scripts
+### 8. Remove guard clause references in other scripts
 
-Search for `exitIfUnsupportedOs("is_os_<name>")` or `exitIfNotTargetOs(..."is_os_<name>"...)` in scripts across `software/scripts/` and remove or update those guards.
+```bash
+rg -n 'exitIfUnsupportedOs|exitIfNotTargetOs|is_os_<name>' software/scripts/
+```
 
-### 8. Remove from `install.sh` and `.devcontainer/` (if applicable)
+Remove or update every guard that names the dropped flag.
+
+### 9. Remove from `install.sh` and `.devcontainer/` (if applicable)
 
 If the OS had special handling in the codespace/devcontainer setup, remove those references.
 
-### 9. Remove tests
+### 10. Remove tests
 
 Update or remove any test references in `software/tests/` that check for the OS flag or its scripts:
 
+- `software/tests/osDetection.spec.js` — drop `"is_os_<name>"` from the `ALL_FLAGS` array **and** delete its `it(...)` case
 - `software/tests/filterRepoScripts.spec.js` — OS folder filtering
 - `software/tests/runtimeAndConstants.spec.js` — OS constants
+- `software/tests/setup.js` — the sandbox env mirrors `LIMITED_SUPPORT_OSES`; update if step 6 changed it
 - Any integration tests for OS-specific scripts
 
-### 10. Validate
+```bash
+rg -n 'is_os_<name>|<name>' software/tests/
+npx vitest run --config vitest.config.js software/tests/osDetection.spec.js software/tests/runtimeAndConstants.spec.js
+```
 
-Run `make validate` after all changes. Confirm all tests pass.
+### 11. Validate
+
+```bash
+make format
+make validate
+```
+
+Confirm all tests pass.
 
 ## Notes
 

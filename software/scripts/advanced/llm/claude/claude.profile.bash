@@ -20,8 +20,8 @@ function _claude_endpoint_speaks_anthropic() {
     -H 'anthropic-version: 2023-06-01' \
     -d '{}' 2> /dev/null)"
   case "$code" in
-    000 | 404 | 405) return 1 ;;
-    *) return 0 ;;
+  000 | 404 | 405) return 1 ;;
+  *) return 0 ;;
   esac
 }
 

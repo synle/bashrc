@@ -23,7 +23,17 @@ Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). D
 
 4. **Concurrent-migration cross-check (only when scope is multi-repo or covers a workspace bundle).** Run this BEFORE dispatching any review job — once the fan-out is in flight the jobs run concurrently and can't be handed shared context. Scan ALL open PRs in scope for ones that add a database migration file (same detection paths as `/sy-review-pr`'s Migration checks). If two or more PRs each add a migration: note the migration-conflict pairs upfront in the announcement, and pass the pairing to each affected job so it can flag its author symmetrically.
 
-5. **Fan out to `/sy-review-pr <PR-URL>` for EVERY resolved PR at once — in parallel, as background jobs.** Do NOT walk the list sequentially. Launch one background job per PR in a single dispatch, **capped at 8 concurrent** (GitHub API rate limits); more than 8 → run in waves of 8. If one job fails, the others keep going — record it and move on. The per-PR skill owns the full behavior:
+5. **Fan out to `/sy-review-pr <PR-URL>` for EVERY resolved PR at once — in parallel, as background jobs.** Do NOT walk the list sequentially. Launch one background job per PR in a single dispatch, **capped at 8 concurrent** (GitHub API rate limits); more than 8 → run in waves of 8. If one job fails, the others keep going — record it and move on.
+
+   **Dispatch mechanics — this is the step agents get wrong.** "In parallel" is a hard requirement, not a hint:
+   - **Emit every job in ONE assistant message with N tool calls in that same message.** One sub-agent / Task / background-shell invocation per PR, all in a single block. A second message per PR is a sequential loop wearing a parallel costume — that is the failure mode this section exists to prevent.
+   - **Never** `for pr in ...; do ...; done`, never "start job 1, wait, start job 2", never a single job that iterates the PR list internally.
+   - **One job = one PR = one independent context.** Jobs share nothing: no cwd, no state file, no conversation. A job must never read another job's result or wait on it.
+   - **Each job's prompt is self-contained.** Pass, explicitly: the full PR URL, the resolved `<owner>/<repo>` (from `git remote get-url origin`, never the folder name), the PR number, any migration-conflict pairing from Step 4, and the instruction to run the complete `/sy-review-pr` flow and report back its verdict. Sub-agents start with a fresh context — anything you don't pass, they don't have.
+   - **Waves.** More than 8 PRs → run in waves of 8. A wave is still one message with 8 tool calls; only the _next_ wave waits.
+   - **Report the fan-out the moment it's launched** — list every PR with its job — so the user can see N jobs running, not one job N times.
+
+   The per-PR skill owns the full behavior:
    - Skip drafts / WIP / DO NOT MERGE / already-reviewed-no-new-commits / blocked-by-other-reviewer.
    - Load repo rules and culture context (`CLAUDE.md` / `AGENTS.md` / `CONTRIBUTING.md` / `.cursorrules`).
    - Pre-flight author flags (diff-vs-description mismatch, merge conflict with base, failing CI with run-URL pinpoint, migration coordination) as PR comments.
@@ -41,6 +51,7 @@ Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). D
 ## Rules
 
 - **This command is a dispatcher. The per-PR logic lives in `/sy-review-pr` — do not re-implement it here.**
+- **Parallel means one message, N tool calls (Step 5 Dispatch mechanics).** If the transcript shows jobs starting one message at a time, the fan-out was sequential and must be relaunched.
 - **Review all resolved PRs at once, in parallel background jobs — never a sequential for-loop** (see Fan out multi-PR work in parallel). Cap at 8 concurrent to stay under GitHub API rate limits; queue the rest. Collect verdicts as jobs finish and report once at the end.
 - **Any job that needs the code on disk uses a worktree at the canonical path** — `$HOME/.worktrees/<owner>/<repo>/pr-<number>` (see One rigid worktree path) — never the user's primary checkout (see Never do PR-branch work in the primary checkout). Reviews are normally checkout-free; treat a checkout as the exception, not the default.
 - **Show the author on every row when the set is mixed** (see Show PR authors). This command defaults to ALL authors in the current repo, so mixed sets are the norm, not the exception — the final report (Step 6) carries the author alongside each verdict too.

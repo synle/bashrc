@@ -299,7 +299,6 @@ describe.concurrent("pack_text format", () => {
 });
 
 describe.concurrent("pack_text + unpack_text round-trip (byte-exact)", () => {
-
   it.concurrent("should preserve text file bytes through raw round-trip", async () => {
     const { TMP_DIR, srcDir, destDir } = newCase();
     const packedFile = path.join(TMP_DIR, "packed.txt");
@@ -410,7 +409,6 @@ describe.concurrent("pack_text + unpack_text round-trip (byte-exact)", () => {
 });
 
 describe.concurrent("unpack_text", () => {
-
   it.concurrent("should show help with --help", async () => {
     const output = await runBash("unpack_text --help");
     expect(output).toContain("unpack_text:");
@@ -467,7 +465,6 @@ describe.concurrent("unpack_text", () => {
 });
 
 describe.concurrent("view_pack_text", () => {
-
   it.concurrent("should show help with --help", async () => {
     const output = await runBash("view_pack_text --help");
     expect(output).toContain("view_pack_text:");
@@ -533,7 +530,6 @@ describe.concurrent("view_pack_text", () => {
  * the banner as noise; view_pack_text preserves it (so view output is still a
  * valid, re-feedable pack with provenance intact). */
 describe.concurrent("META_DATA banner + hostname-in-filename", () => {
-
   it.concurrent("should emit a single META_DATA line at the top of the pack with host/packed_utc/source/file_count", async () => {
     const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "meta.pack.txt");
@@ -646,7 +642,6 @@ describe.concurrent("META_DATA banner + hostname-in-filename", () => {
  * encodings. Tests below verify defaults, explicit selection, validation,
  * round-trip for both, mixed packs, and the level knob. */
 describe.concurrent("encoding selection (gzip / brotli) and --encode-level", () => {
-
   it.concurrent("default encoding is brotli (META_DATA + every PACK_BEGIN token)", async () => {
     const { TMP_DIR, srcDir } = newCase();
     const out = path.join(TMP_DIR, "default.pack.txt");
@@ -782,7 +777,6 @@ describe.concurrent("encoding selection (gzip / brotli) and --encode-level", () 
  * informational only (no portable Linux syscall to set birthtime). Missing
  * keys (legacy packs) -> file gets the current time at extract, by design. */
 describe.concurrent("mtime / btime preservation", () => {
-
   it.concurrent("PACK_BEGIN bracket records mtime= as ISO-8601 UTC", async () => {
     const { TMP_DIR, srcDir } = newCase();
     // Set a known mtime (one year before "now") and verify the marker carries it.
@@ -1011,7 +1005,6 @@ describe.concurrent("forgiving metadata parser (malformed / missing fields)", ()
  * after a successful pack, and round-trip still byte-exact (so streaming
  * doesn't introduce drift). */
 describe.concurrent("--verbose flag + streaming writer hygiene", () => {
-
   it.concurrent("--verbose prints per-file PACK lines with raw->encoded byte counts", async () => {
     const { TMP_DIR, srcDir } = newCase();
     // runBash redirects stderr to /dev/null by default — for this assertion

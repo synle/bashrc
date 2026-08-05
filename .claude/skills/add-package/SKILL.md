@@ -19,7 +19,16 @@ Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS`
    - `software/scripts/chromeos/_full-setup.sh` -> `installAptPackage <name>`
    - `software/scripts/windows/_winget-install.sh` -> add the winget ID to the `winget_packages=( ... )` array under the matching `# ---- Category ----` comment. Look up the correct winget ID with `winget search <name>`. (Single canonical list — `_full-setup.ps1.bash` no longer carries a duplicate; it only handles WSL bootstrap and msstore-only items.)
    - Place the new line alphabetically within the existing package group under the appropriate `# ---- Category ----` sub-section header.
-   - Check if the package name differs per distro (e.g. `fd` vs `fd-find`, winget: `sharkdp.fd`) and use the correct name for each.
+   - **Resolve the real package name per ecosystem before writing the line** — names drift (`fd` vs `fd-find`, `ripgrep` vs `rg`):
+
+     ```bash
+     brew search --formula <name>                  # mac
+     apt-cache search --names-only '^<name>'       # ubuntu / chromeos
+     dnf search <name>                             # redhat
+     pacman -Ss '^<name>$'                         # arch / steamos
+     winget search <name>                          # windows (copy the exact ID column)
+     ```
+
    - **All platforms must stay in sync.** If a tool has a winget equivalent, it must be added to Windows too.
 
 2. **curl/bash installer** (fallback) -- create a `.sh` script in `software/scripts/advanced/` following the pattern in `uv.sh` or `starship.sh`. Use `curl -fsSL <url> | bash`. Install any documented required dependencies first.
@@ -74,14 +83,65 @@ For static flag lists that you want to reuse across multiple subcommands in the 
 
 ### 6. CI binary verification
 
-Add a `check_binary` call for the new tool in the "Binary verification" step of `.github/actions/ci-build/action.yml`. Place it in the appropriate category comment section, following the existing pattern:
+**Edit `software/metadata/ci-binaries.json`, never `.github/actions/ci-build/action.yml`.** The `# BEGIN ci-binary-checks` block in `action.yml` is generated from that JSON by `software/tools/build-include.js` — hand-editing it gets overwritten on the next `make format`.
 
-```yaml
-check_binary <binary-name> "<binary-name> --version"
+Add the binary to the `required` array (build fails if missing) or the `warn` array (warning only). Plain string when `<name> --version` works; object form when the version probe differs:
+
+```jsonc
+// software/metadata/ci-binaries.json
+"required": [
+  "ripgrep",                                             // → check_binary_required ripgrep
+  { "name": "kubectl", "version_cmd": "kubectl version --client" }
+]
 ```
 
-Only add non-GUI command-line binaries. Skip GUI apps and tools that require complex runtime setup.
+Then regenerate and verify the block:
 
-### 7. Validate
+```bash
+make format_ci_binaries
+git --no-pager diff .github/actions/ci-build/action.yml
+npx vitest run --config vitest.config.js software/tests/generateCiBinaryList.spec.js
+```
 
-Run `make validate` after all changes. If you created or modified files in `software/scripts/`, write or update unit tests in `software/tests/`.
+Placement rules:
+
+- **`required`** only for non-GUI binaries present on _every_ platform. On mac they must install in the **foreground** (`installBrewPackage`), never `installBrewPackageInBackground` — mac's background queue is skipped in CI, and `requiredBinariesNotInBackground.spec.js` fails the build otherwise.
+- **`warn`** for GitHub-release fallbacks, AUR-only packages, and anything mac installs in the background.
+- Skip GUI apps and anything needing complex runtime setup entirely.
+
+### 7. Preset membership (optional)
+
+If the tool belongs to a named bundle (`editors`, `terminal`, `llm`, …), add its script filename to that preset's `files[]` in `software/metadata/presets.jsonc`, then confirm:
+
+```bash
+npx vitest run --config vitest.config.js software/tests/presets.spec.js
+bash run.sh --preset=<preset> --dryrun
+```
+
+### 8. Register a new `.sh` script in the profile-syntax spec
+
+If step 1 or 2 created a new `.sh` / `.bash` file, add it to the file list in `software/tests/profileSyntax.spec.js` — unregistered shell files are never `bash -n`'d.
+
+### 9. Run it, then validate
+
+Run the script you actually touched — twice, to prove idempotency (AGENTS.md §14):
+
+```bash
+bash run.sh --files="<name>.js"        # or "mac/<name>.sh", etc.
+bash run.sh --files="<name>.js"        # second run must be a clean no-op
+```
+
+Package-manager-only changes (no new script) are exercised by the dry run instead:
+
+```bash
+bash run.sh --dryrun --setup
+```
+
+Then the full gate:
+
+```bash
+make format          # required if you touched BEGIN/END markers, ci-binaries.json, or JSDoc
+make validate
+```
+
+If you created or modified files in `software/scripts/`, write or update unit tests in `software/tests/`.

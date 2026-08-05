@@ -390,7 +390,6 @@ unwip|__git_log_flags__
 where-is|__git_branches__,__git_branch_flags__
 wip|__git_files__,__git_add_flags__
 worktree|add,list,lock,move,prune,remove,unlock
-
 >__git_add_flags__|--all,-A,--patch,-p,--update,-u,--force,-f,--intent-to-add,-N,--dry-run,-n,--verbose,-v,--edit,-e
 >__git_branch_flags__|--all,-a,--delete,-d,-D,--force,-f,--move,-m,-M,--copy,-c,--list,-l,--remotes,-r,--verbose,-v,--set-upstream-to,-u,--unset-upstream,--sort,--contains,--no-contains,--merged,--no-merged,--show-current,--track,-t,--no-track
 >__git_commit_flags__|--all,-a,--message,-m,--amend,--no-edit,--allow-empty,--no-verify,--fixup,--squash,--signoff,-s,--verbose,-v,--dry-run,--patch,-p,--author,--date

@@ -2,18 +2,15 @@
 
 ## Steps
 
-1. **Discover repos to process** — exactly one level, no recursion into subdirectories of repos (grooming is per-checkout; submodules and nested checkouts are owned by their parent repo's lifecycle):
-   - If `$PWD` itself is a git repo (`git rev-parse --show-toplevel` succeeds), include it.
-   - For each immediate child directory of `$PWD`, include it if it has a `.git/` directory (or a `.git` file pointing at a worktree).
-   - **Do NOT recurse.** Submodules and nested checkouts inside a repo are deliberately ignored — they're owned by their parent repo's lifecycle.
-
-   Reference shell discovery (for clarity, not literal copy-paste):
+1. **Discover repos to process** — exactly one level, no recursion into subdirectories of repos (grooming is per-checkout; submodules and nested checkouts are owned by their parent repo's lifecycle). Ask git rather than hunting for `.git` (see Repo discovery):
 
    ```bash
-   repos=()
-   [ -e ".git" ] && repos+=("$PWD")
-   for d in */; do [ -e "$d/.git" ] && repos+=("$PWD/${d%/}"); done
+   for d in . */; do git -C "$d" rev-parse --show-toplevel; done 2>/dev/null | sort -u
    ```
+
+   Each line is an absolute repo root, ready to hand to Step 3. `sort -u` already collapses a subfolder onto its owning repo, so no exclusion list is needed and `$PWD` is included automatically when it is itself a repo.
+
+   **Do NOT deepen the glob.** `*/*/` would pull in submodules and nested checkouts, which are deliberately ignored — they're owned by their parent repo's lifecycle.
 
 2. **Announce:** Tell the user how many repos were found and list them (basename + branch + dirty/clean indicator). Use `git -C <path> branch --show-current` and `git -C <path> status --porcelain` for the per-repo summary line.
 

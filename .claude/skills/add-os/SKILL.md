@@ -8,24 +8,60 @@ Onboard a new operating system to this dotfiles repo. The OS name is `$ARGUMENTS
 
 ## Steps
 
-### 1. Add OS detection flag in `software/bootstrap/common-env.sh`
+### 1. Add the OS detection flag in `run.sh`
 
-Add a new `is_os_<name>` flag following the existing one-liner pattern. Place it alphabetically among the other OS flags (around lines 35-54).
+**Detection lives in `run.sh`, not `common-env.sh`** — `common-env.sh` only carries the flag _list_. Add the flag to the `# --- OS Detection ---` section of `run.sh` (around lines 310-330), using the `_detect_os` helper. Never hand-roll a `command grep /etc/os-release` — `_detect_os` already does that, plus `$OSTYPE`, `/proc/version`, path, binary, and env probes.
 
 ```bash
-is_os_<name>=0 && <detection logic> && is_os_<name>=1
+is_os_<name>=0 && _detect_os --name "<distro-id>, <id_like>" --bin "<pkg-manager>" --path "/marker/path" && is_os_<name>=1
 ```
 
-**Detection conventions:**
+`_detect_os` signature — all flags take CSV, returns 0 on first hit, checked in this order:
 
-- Use `command grep` (not plain `grep`) to bypass aliases
-- Check `/etc/os-release` for Linux distros: `command grep -Eiq "ID(_LIKE)?=(<distro>)" /etc/os-release 2> /dev/null`
-- Use `||` to combine multiple detection methods for reliability
-- The flag name determines the script folder name (`is_os_foo` -> `software/scripts/foo/`)
+| Flag     | Checks                                                                    |
+| -------- | ------------------------------------------------------------------------- |
+| `--name` | `ID`/`ID_LIKE` in `/etc/os-release`, then `$OSTYPE`, then `/proc/version` |
+| `--path` | file or folder exists                                                     |
+| `--bin`  | `type -P <bin>` succeeds                                                  |
+| `--env`  | env var is non-empty                                                      |
 
-### 2. Create the OS script folder
+**Ordering is load-bearing (see AGENTS.md §8):**
 
-Create `software/scripts/<name>/` with these files:
+- New Linux distro flags go **above** the `is_os_ubuntu` block. `is_os_ubuntu` is the Debian-family catch-all and must stay last, inside the `if ! ((is_os_mac || is_os_chromeos || ...))` guard — add your new flag to that guard's condition too, or containerized runners will leak `is_os_ubuntu=1` onto your distro and run two `_full-setup.sh` files on one machine.
+- `is_os_windows` / `is_os_wsl` stay **below** — they're independent overlays.
+- The flag name determines the script folder name (`is_os_foo` → `software/scripts/foo/`).
+
+### 2. Register the flag in `software/bootstrap/common-env.sh`
+
+Append `is_os_<name>` to the `ALL_OS_FLAGS` CSV (line ~11). That constant is inlined into `run.sh` by a BEGIN/END block, so regenerate afterwards and confirm both copies agree:
+
+```bash
+make format_build_include
+git --no-pager diff run.sh software/bootstrap/common-env.sh
+grep -n ALL_OS_FLAGS run.sh software/bootstrap/common-env.sh   # both lines must match
+```
+
+### 3. Add an OS-detection test case
+
+`software/tests/osDetection.spec.js` replays `run.sh`'s detection block against a fake `/etc/os-release` + `/proc/version` and asserts no other distro flag leaks. AGENTS.md requires a case whenever OS flags change:
+
+1. Add `"is_os_<name>"` to the `ALL_FLAGS` array at the top.
+2. Add an `it(...)` modeled on the existing `"Arch container on Ubuntu host kernel (regression)"` case, asserting your flag is `1` and every other distro flag — especially `is_os_ubuntu` — is `0`.
+
+```bash
+npx vitest run --config vitest.config.js software/tests/osDetection.spec.js
+```
+
+### 4. Create the OS script folder
+
+Scaffold with the Makefile target rather than hand-writing boilerplate:
+
+```bash
+make new-script name=_init os=<name> type=js
+make new-script name=_only os=<name> type=js
+```
+
+Then fill in `software/scripts/<name>/`:
 
 #### `_init.js` (required)
 
@@ -143,7 +179,7 @@ install<Manager>Package openssh-client
 
 Raw bash commands for OS-level system settings (e.g. macOS `defaults write`). Only needed if the OS has system-level tweaks that aren't shell aliases.
 
-### 3. Add platform tweaks marker in `software/bootstrap/profile-advanced.sh`
+### 5. Add platform tweaks marker in `software/bootstrap/profile-advanced.sh`
 
 Add a `# BEGIN/END` marker in the OS-specific tweaks section (alphabetically among existing OS markers):
 
@@ -151,7 +187,7 @@ Add a `# BEGIN/END` marker in the OS-specific tweaks section (alphabetically amo
 # BEGIN/END - <Platform Name> OS-specific Tweaks
 ```
 
-### 4. Add CI build (optional but recommended)
+### 6. Add CI build (optional but recommended)
 
 Add a new parallel build job in `.github/workflows/build-main.yml` Phase 2. Follow the existing pattern:
 
@@ -180,13 +216,33 @@ build-<name>:
 
 Also wire the new build into Phase 3 (publish -- merge artifacts), Phase 5 (test -- download artifacts + copy snapshots), and the summary job.
 
-### 5. Update `LIMITED_SUPPORT_OSES` if applicable
+### 7. Update `LIMITED_SUPPORT_OSES` if applicable
 
-In `software/index.js`, if the new OS has limited support for advanced features (like Android Termux or MinGW64), add its flag to `LIMITED_SUPPORT_OSES`.
+`LIMITED_SUPPORT_OSES` is a CSV env var in **`software/bootstrap/common-env.sh`** (line ~10), not in `software/index.js` — `index.js` only reads it back out of `process.env`, so editing `index.js` is a no-op.
 
-### 6. Validate
+If the new OS has limited support for advanced features (like Android Termux or MinGW64 — no `advanced/` scripts run there), append its flag to that CSV, then mirror it into `run.sh`:
 
-Run `make validate` after all changes.
+```bash
+make format_build_include
+grep -n LIMITED_SUPPORT_OSES run.sh software/bootstrap/common-env.sh   # both lines must match
+```
+
+### 8. Run it, then validate
+
+Prove the new folder actually executes before running the full gate:
+
+```bash
+bash run.sh --dryrun --setup              # confirms the new folder is discovered and guarded
+bash run.sh --files="<name>/_init.js"     # run on real hardware for the platform
+bash run.sh --files="<name>/_init.js"     # second run must be a clean no-op (idempotency)
+```
+
+Then:
+
+```bash
+make format
+make validate
+```
 
 ## Reference: Existing package manager patterns
 
