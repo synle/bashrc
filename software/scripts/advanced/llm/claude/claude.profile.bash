@@ -1,6 +1,31 @@
 #!/usr/bin/env bash
 
-# claude_with_ip_address: run `claude` against an Ollama-compatible host + model
+# _claude_endpoint_speaks_anthropic: probe whether a base URL implements the Anthropic Messages API
+#
+# Claude Code only speaks the Anthropic Messages API (`POST /v1/messages`). Ollama
+# serves its own `/api/*` routes plus an OpenAI-compatible `/v1/chat/completions`,
+# and has no `/v1/messages` — pointing ANTHROPIC_BASE_URL straight at port 11434
+# fails on the first turn. Probing here turns that into one clear message instead
+# of an opaque API error inside the TUI.
+#
+# Returns 0 when the endpoint answers /v1/messages with anything other than a
+# routing miss (400/401/422 all mean "route exists, request was rejected"), 1 when
+# the route is absent (404/405) or the host never answered.
+function _claude_endpoint_speaks_anthropic() {
+  local host="$1"
+  local code
+  code="$(command curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+    -X POST "$host/v1/messages" \
+    -H 'content-type: application/json' \
+    -H 'anthropic-version: 2023-06-01' \
+    -d '{}' 2> /dev/null)"
+  case "$code" in
+    000 | 404 | 405) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+# claude_with_ip_address: run `claude` against a self-hosted Anthropic-compatible endpoint
 #
 # Host and model both default to the sy-omen45l workstation values exported by
 # ollama.profile.bash ($SY_OMEN45L_IP / $SY_OMEN45L_OLLAMA_PORT /
@@ -10,7 +35,7 @@
 # Supports an `ls` subcommand that lists a host's Ollama models via list_ollama_models.
 function claude_with_ip_address() {
   if is_help_arg "${1:-}"; then
-    echo "claude_with_ip_address: run \`claude\` against an Ollama-compatible endpoint
+    echo "claude_with_ip_address: run \`claude\` against a self-hosted Anthropic-compatible endpoint
   Usage: claude_with_ip_address [host[:port]] [model]
          claude_with_ip_address ls [host[:port]]
 
@@ -20,42 +45,65 @@ vars are exported by ollama.profile.bash, which resolves the IP from
 software/metadata/ip-address.config — edit that file to change the address.
 
 A bare hostname/IP is normalized to http://<host>:<port>; an explicit scheme
-or port is preserved as given. The resolved command is echoed before it runs."
+or port is preserved as given. The resolved command is echoed before it runs.
+
+IMPORTANT: the endpoint must implement the Anthropic Messages API
+(POST /v1/messages). A bare Ollama daemon does NOT — it serves /api/* and an
+OpenAI-compatible /v1/chat/completions, so it is rejected here with
+instructions rather than failing mid-session. To drive local models with
+Claude Code, put a translating gateway in front of Ollama and point this at
+the gateway's port; opencode (\`op\`) talks to Ollama natively and needs no
+gateway at all.
+
+Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
     return 0
   fi
 
-  # Construct the host, port, and default model from environment variables with safe fallbacks
-  local env_ip="${SY_OMEN45L_IP:-127.0.0.1}"
-  local env_port="${SY_OMEN45L_OLLAMA_PORT:-11434}"
-  local default_host="${env_ip}:${env_port}"
   local default_model="${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-gemma4:26b}"
 
   # Handle 'ls' or list command
   if [[ "$1" == "ls" ]]; then
-    local target_host="${2:-$default_host}"
-    list_ollama_models "$target_host"
+    list_ollama_models "${2:-}"
     return 0
   fi
 
-  local host="${1:-$default_host}"
+  # _ollama_url (ollama.profile.bash) owns host normalization for every local-LLM
+  # consumer, so the scheme/port rules stay declared in exactly one place.
+  local host
+  host="$(_ollama_url "${1:-}")"
   local model="${2:-$default_model}"
 
-  # Normalize the host into a full URL: keep an explicit scheme, add the default port
-  # when the caller omitted one, and assume http:// for a bare host.
-  if [[ "$host" =~ ^https?:// ]]; then
-    if [[ "$host" =~ ^[a-zA-Z]+://[^:/]+$ ]]; then
-      host="${host}:${env_port}"
+  if [ "${SY_CLAUDE_LOCAL_FORCE:-0}" != "1" ] && ! _claude_endpoint_speaks_anthropic "$host"; then
+    echo "claude_with_ip_address: $host does not serve the Anthropic Messages API (POST /v1/messages)." >&2
+    if command curl -fsS --max-time 5 "$host/api/tags" > /dev/null 2>&1; then
+      echo "  That host is a plain Ollama daemon. Claude Code cannot talk to it directly." >&2
+      echo "  Options:" >&2
+      echo "    1. opencode  — already configured against this host: run 'op'" >&2
+      echo "    2. gateway   — run an Anthropic-format gateway in front of Ollama, then" >&2
+      echo "                   claude_with_ip_address <gateway-host>:<port> <model>" >&2
+      echo "  See docs/claude_local_readme.md for the gateway setup." >&2
+    else
+      echo "  Host did not answer. Check it with: ollama_doctor $host" >&2
     fi
-  else
-    if [[ "$host" != *:* ]]; then
-      host="${host}:${env_port}"
-    fi
-    host="http://$host"
+    echo "  Set SY_CLAUDE_LOCAL_FORCE=1 to bypass this check." >&2
+    return 1
   fi
 
-  # Echo the resolved invocation, then run it against the chosen endpoint.
-  echo -e ANTHROPIC_BASE_URL="$host" claude --permission-mode auto --model "$model\n\n"
-  ANTHROPIC_BASE_URL="$host" claude --permission-mode auto --model "$model"
+  # ANTHROPIC_AUTH_TOKEN (not ANTHROPIC_API_KEY) is what makes Claude Code stop using
+  # the saved claude.ai subscription credential for this session; a self-hosted gateway
+  # ignores the value but the variable has to be present. API_TIMEOUT_MS is raised well
+  # past the 60s-class default because a local model can spend minutes on prompt eval
+  # plus generation, and the client giving up first is indistinguishable from a hang.
+  # CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC keeps background calls off a single-slot
+  # local daemon so they can't queue ahead of the turn you are waiting on.
+  echo -e ANTHROPIC_BASE_URL="$host" claude --model "$model\n\n"
+  ANTHROPIC_BASE_URL="$host" \
+    ANTHROPIC_AUTH_TOKEN="${ANTHROPIC_AUTH_TOKEN:-local}" \
+    ANTHROPIC_SMALL_FAST_MODEL="${ANTHROPIC_SMALL_FAST_MODEL:-$model}" \
+    ANTHROPIC_DEFAULT_HAIKU_MODEL="${ANTHROPIC_DEFAULT_HAIKU_MODEL:-$model}" \
+    API_TIMEOUT_MS="${API_TIMEOUT_MS:-1200000}" \
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
+    claude --model "$model"
 }
 
 ################################################################################
