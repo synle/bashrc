@@ -332,35 +332,89 @@ function godownload() {
   cd "$target"
 }
 
-git_apply_patch() {
+# git_apply_patch: apply a patch file, or the clipboard when given no argument
+function git_apply_patch() {
+  if is_help_arg "${1:-}"; then
+    echo "git_apply_patch: apply a patch file, or the clipboard when given no argument
+  Usage: git_apply_patch [patch_file]
+  Examples:
+    git_apply_patch                     apply clipboard, saved under \${BASHRC_TEMP_ROOT_DIR}/patches
+    git_apply_patch /tmp/fix.patch      apply an existing patch file"
+    return 1
+  fi
+
   local patch_file="$1"
 
   if [ -z "$patch_file" ]; then
-    local timestamp
-    timestamp=$(date +%Y%m%d_%H%M%S)
-    patch_file="/tmp/patch_${timestamp}.patch"
-
-    paste > "$patch_file"
-
-    echo "Saved and applied $patch_file"
-    git apply "$patch_file"
-  else
-    if [ -f "$patch_file" ]; then
-      echo "Apply patch $patch_file?"
-      git apply "$patch_file"
-    else
-      echo "Error: Patch file '$patch_file' not found." >&2
+    local patch_folder="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}/patches"
+    if ! command mkdir -p "$patch_folder" 2> /dev/null; then
+      echo "git_apply_patch: could not create '$patch_folder'." >&2
       return 1
     fi
+    patch_file="$patch_folder/clipboard-$(date +%Y_%m_%d_%H_%M_%S).patch"
+
+    # `paste` with no args is raw by design — do NOT add --unwrap here, it
+    # would trim the single-space blank context lines a unified diff needs.
+    paste > "$patch_file"
+    echo ">>> patch file created $patch_file"
+  elif [ ! -f "$patch_file" ]; then
+    echo "git_apply_patch: patch file '$patch_file' not found." >&2
+    return 1
   fi
+
+  # Dry-run first so a corrupt or already-applied patch fails before it can
+  # leave the working tree half-patched.
+  if ! git apply --check "$patch_file"; then
+    echo "git_apply_patch: '$patch_file' did not pass git apply --check — nothing applied." >&2
+    return 1
+  fi
+
+  git apply "$patch_file" || return 1
+  echo ">>> patch applied $patch_file"
 }
 
-git_view_patch_latest_commit() {
-  git patch-view | copy
-  echo """
-====================================
-Latest Diff copied to clipboard
-====================================
-  """
-  git patch-view
+# git_view_patch_latest_commit: print the last commit as a patch, copy it, and save it to a file
+function git_view_patch_latest_commit() {
+  if is_help_arg "${1:-}"; then
+    echo "git_view_patch_latest_commit: print the last commit as a patch, copy it, and save it to a file
+  Usage: git_view_patch_latest_commit
+  Saves to \${BASHRC_TEMP_ROOT_DIR}/patches/<repo>-<timestamp>.patch and prints the path.
+  Note: copies with 'copy --raw' — unwrap would corrupt the diff."
+    return 1
+  fi
+
+  local repo_root
+  if ! repo_root=$(git rev-parse --show-toplevel 2> /dev/null); then
+    echo "git_view_patch_latest_commit: not a git repository." >&2
+    return 1
+  fi
+
+  local patch_folder="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}/patches"
+  if ! command mkdir -p "$patch_folder" 2> /dev/null; then
+    echo "git_view_patch_latest_commit: could not create '$patch_folder'." >&2
+    return 1
+  fi
+
+  local patch_file
+  patch_file="$patch_folder/$(basename "$repo_root")-$(date +%Y_%m_%d_%H_%M_%S).patch"
+
+  # Generate once into the file, then serve the clipboard and stdout from it —
+  # a second `git patch-view` run would re-render and could disagree with what
+  # was copied.
+  if ! git patch-view > "$patch_file" || [ ! -s "$patch_file" ]; then
+    echo "git_view_patch_latest_commit: could not generate a patch." >&2
+    command rm -f "$patch_file"
+    return 1
+  fi
+
+  # --raw is required: copy() otherwise pipes through unwrap(), which trims
+  # blank context lines and joins wrapped-looking body lines, producing a
+  # patch that git rejects with "corrupt patch at line N".
+  copy --raw "$patch_file"
+
+  command cat "$patch_file"
+
+  echo ">>> patch copied to clipboard"
+  echo ">>> patch file created $patch_file"
+  print_action_summary "$patch_file" git_apply_patch
 }

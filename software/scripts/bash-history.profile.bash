@@ -69,8 +69,11 @@ function history_cleanup() {
   # to deduped on stdout.
   local deduped
   deduped=$(mktemp)
-  node -e "$(
-    command cat << 'JS_EOF'
+  # Heredoc read into a variable rather than nested in `$( ... )` — bash 3.2
+  # tracks quotes through a nested heredoc body and an odd apostrophe count
+  # there would break the parse of the whole profile.
+  local dedup_js
+  IFS= read -r -d '' dedup_js << 'JS_EOF' || true
 const fs = require('fs');
 const lines = fs.readFileSync(0, 'utf8').split('\n');
 // Phase 1 emits "${ts:-}\n${cmd}\n" pairs — every cmd is preceded by a ts
@@ -91,7 +94,7 @@ for (let i = lines.length - 1; i >= 1; i -= 2) {
 }
 process.stdout.write(out.join(''));
 JS_EOF
-  )" < "$tmp" > "$deduped"
+  node -e "$dedup_js" < "$tmp" > "$deduped"
 
   if ! cmp -s "$histfile" "$deduped" 2> /dev/null; then
     command cat "$deduped" > "$histfile"

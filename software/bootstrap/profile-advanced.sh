@@ -1969,7 +1969,8 @@ function open() {
 #     (wrapped paragraphs always end with a partial line)
 # Everything else is preserved as-is — so unevenly-shaped lists, code,
 # tables, ASCII art, and short paragraphs all keep their original line
-# breaks. ``` fenced blocks are always preserved verbatim.
+# breaks. ``` fenced blocks are always preserved verbatim, and input that
+# looks like a unified diff is passed through untouched (see isPatch).
 #
 # Falls back to passthrough (`cat`) when node is unavailable, so callers
 # (notably `copy()`) keep working on minimal systems.
@@ -1989,8 +1990,12 @@ function unwrap() {
     command cat
     return 0
   fi
-  node -e "$(
-    command cat << 'JS_EOF'
+  # bash 3.2 keeps tracking quotes inside a heredoc body when that heredoc is
+  # nested in `$( ... )`, so an odd apostrophe count in the JS below silently
+  # breaks the parse of the whole profile. Reading into a variable keeps the
+  # heredoc at the top level, where every bash treats the body as literal text.
+  local unwrap_js
+  IFS= read -r -d '' unwrap_js << 'JS_EOF' || true
 const text = require('fs').readFileSync(0, 'utf8');
 const FENCE = '\x60\x60\x60';
 const HEAD_TOLERANCE = 5;   // head-line widths must agree within this many chars
@@ -1998,48 +2003,66 @@ const MIN_HEAD_WIDTH = 50;  // ignore short blocks (bullet lists, labels)
 const LAST_GAP = 10;        // last line must be this much shorter than the head
 
 const lines = text.split('\n');
-const out = [];
-let block = [];
-let inFence = false;
 
-const flushBlock = () => {
-  if (block.length === 0) return;
-  if (block.length < 2) { out.push(block[0]); block = []; return; }
-  const lens = block.map((l) => l.length);
-  const headLens = lens.slice(0, -1);
-  const lastLen = lens[lens.length - 1];
-  const headMax = Math.max.apply(null, headLens);
-  const headMin = Math.min.apply(null, headLens);
-  const isWrapped =
-    headMax - headMin <= HEAD_TOLERANCE &&
-    headMax >= MIN_HEAD_WIDTH &&
-    headMax - lastLen >= LAST_GAP;
-  if (isWrapped) {
-    out.push(block.map((l) => l.trim()).join(' '));
-  } else {
-    for (const l of block) out.push(l);
-  }
-  block = [];
-};
+// A unified diff is whitespace-significant: a blank context line is a single
+// space, and every body line's leading '+', '-' or ' ' is load-bearing.
+// Trimming a context line or joining wrapped-looking body lines makes
+// 'git apply' report "corrupt patch". Detect and pass through untouched.
+// Matched on 'diff --git' and real hunk headers only — both unambiguous.
+// A bare '--- ' is not enough (Markdown front matter and rules look the same).
+const HUNK_RE = /^@@ -[0-9]+(,[0-9]+)? \+[0-9]+(,[0-9]+)? @@/;
+const isPatch = lines.some(
+  (l) => l.slice(0, 11) === 'diff --git ' || HUNK_RE.test(l)
+);
 
-for (const line of lines) {
-  const trimmed = line.trim();
-  if (trimmed.slice(0, 3) === FENCE) {
-    flushBlock();
-    out.push(line);
-    inFence = !inFence;
-    continue;
+if (isPatch) {
+  process.stdout.write(text);
+} else {
+  const out = [];
+  let block = [];
+  let inFence = false;
+
+  const flushBlock = () => {
+    if (block.length === 0) return;
+    if (block.length < 2) { out.push(block[0]); block = []; return; }
+    const lens = block.map((l) => l.length);
+    const headLens = lens.slice(0, -1);
+    const lastLen = lens[lens.length - 1];
+    const headMax = Math.max.apply(null, headLens);
+    const headMin = Math.min.apply(null, headLens);
+    const isWrapped =
+      headMax - headMin <= HEAD_TOLERANCE &&
+      headMax >= MIN_HEAD_WIDTH &&
+      headMax - lastLen >= LAST_GAP;
+    if (isWrapped) {
+      out.push(block.map((l) => l.trim()).join(' '));
+    } else {
+      for (const l of block) out.push(l);
+    }
+    block = [];
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.slice(0, 3) === FENCE) {
+      flushBlock();
+      out.push(line);
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) { out.push(line); continue; }
+    // Push the original line, not '' — a whitespace-only line may carry
+    // meaning (diff context, Markdown hard break) and is not ours to discard.
+    if (trimmed === '') { flushBlock(); out.push(line); continue; }
+    block.push(line);
   }
-  if (inFence) { out.push(line); continue; }
-  if (trimmed === '') { flushBlock(); out.push(''); continue; }
-  block.push(line);
+  flushBlock();
+  let result = out.join('\n');
+  if (text.endsWith('\n') && !result.endsWith('\n')) result += '\n';
+  process.stdout.write(result);
 }
-flushBlock();
-let result = out.join('\n');
-if (text.endsWith('\n') && !result.endsWith('\n')) result += '\n';
-process.stdout.write(result);
 JS_EOF
-  )"
+  node -e "$unwrap_js"
 }
 alias u=unwrap
 

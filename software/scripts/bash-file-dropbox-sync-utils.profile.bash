@@ -45,9 +45,11 @@ function _patch_download_and_apply() {
   mkdir -p "$archive_folder"
 
   # find most recently modified .patch file with content (cross-platform via node)
-  local latest_patch
-  latest_patch=$(
-    _PATCH_ARG="$dropbox_folder" node << '_PATCH_FIND_EOF_'
+  # Heredoc read into a variable rather than nested in `$( ... )` — bash 3.2
+  # tracks quotes through a nested heredoc body and an odd apostrophe count
+  # there would break the parse of the whole profile.
+  local find_patch_js latest_patch
+  IFS= read -r -d '' find_patch_js << '_PATCH_FIND_EOF_' || true
     const fs=require('fs'),path=require('path'),dir=process.env._PATCH_ARG;
     const patches=fs.readdirSync(dir)
       .filter(f=>{
@@ -59,7 +61,7 @@ function _patch_download_and_apply() {
       .sort((a,b)=>b.m-a.m);
     if(patches.length)console.log(patches[0].p);
 _PATCH_FIND_EOF_
-  )
+  latest_patch=$(_PATCH_ARG="$dropbox_folder" node -e "$find_patch_js")
 
   echo "latest_patch: $latest_patch"
 
@@ -117,9 +119,10 @@ _PATCH_UPLOAD_EOF_
 }
 
 # copy the last commit's patch to clipboard
+# --raw is required — unwrap() would trim the diff's blank context lines.
 function _patch_view_copy() {
   clear
-  git patch-view | copy
+  git patch-view | copy --raw
 }
 
 # patch_cleanup: archive loose .patch files, keep only the N newest in archived_patch

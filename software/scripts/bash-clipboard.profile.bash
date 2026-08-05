@@ -44,16 +44,22 @@ fi
 
 # save stdin to clipboard history folder + native clipboard (if available)
 # prunes entries beyond _CLIPBOARD_MAX
+# pass --raw to bypass unwrap and preserve stdin byte-for-byte
 function _clipboard_save() {
   local clip_file="$_CLIPBOARD_DIR/$(date +%Y-%m-%d_%H-%M-%S)"
   [ -f "$clip_file" ] && clip_file="${clip_file}_${RANDOM}"
   # unwrap rejoins terminal-wrapped paragraphs before anything reaches the
   # OS clipboard or the history file — the user's intent is to copy logical
   # lines, not the visual wrap that happened to fit the terminal width.
+  # --raw skips it entirely: unwrap trims trailing whitespace and joins lines,
+  # which silently corrupts anything whitespace-significant (unified diffs,
+  # Markdown hard breaks, YAML, TSV). Never guess for those.
+  local filter="unwrap"
+  [ "${1:-}" = "--raw" ] && filter="command cat"
   if [ -n "$_COPY_CMD" ]; then
-    unwrap | tee "$clip_file" | eval "$_COPY_CMD"
+    $filter | tee "$clip_file" | eval "$_COPY_CMD"
   else
-    unwrap > "$clip_file"
+    $filter > "$clip_file"
   fi
   ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | tail -n +$((_CLIPBOARD_MAX + 1)) | while read -r f; do
     rm -f "$_CLIPBOARD_DIR/$f"
@@ -78,11 +84,29 @@ function copy() {
       copy: stdin or files/strings into clipboard + history
         copy                   rewrap the existing clipboard in place (no pipe, no args)
         echo foo | copy        pipe stdin into clipboard
+        git diff | copy --raw  pipe stdin verbatim (no unwrap) — use for patches/diffs
         copy file.txt          copy file contents into clipboard
         copy a.txt b.txt       copy multiple files (concatenated) into clipboard
         copy \"hello world\"     copy a string into clipboard
         copy help              show this help
     "
+  elif [ "$1" = "--raw" ]; then
+    # verbatim passthrough — no unwrap. Required for whitespace-significant
+    # input: a unified diff's blank context lines are a single space, and
+    # unwrap trims them, which makes `git apply` report a corrupt patch.
+    shift
+    if [ $# -eq 0 ]; then
+      _clipboard_save --raw
+    else
+      local raw_arg
+      for raw_arg in "$@"; do
+        if [ -f "$raw_arg" ]; then
+          command cat "$raw_arg"
+        else
+          echo "$raw_arg"
+        fi
+      done | _clipboard_save --raw
+    fi
   else
     local arg
     for arg in "$@"; do
