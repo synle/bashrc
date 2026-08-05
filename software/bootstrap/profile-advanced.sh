@@ -1204,14 +1204,17 @@ alias amend="git amend"
 # --- sy-* slash command dispatchers (shared) ---
 # SOURCE | software/scripts/advanced/llm/_common/sy-commands.profile.bash
 
+# --- Ollama Performance ---
+# Sourced ahead of the per-CLI partials below: it is the single place that defines
+# SY_OMEN45L_OLLAMA_PORT / SY_OMEN45L_OLLAMA_DEFAULT_MODEL, and those partials read
+# both without re-declaring a fallback literal.
+# SOURCE | software/scripts/advanced/llm/ollama.profile.bash
+
 # --- Aliases: Claude ---
 # SOURCE | software/scripts/advanced/llm/claude/claude.profile.bash
 
 # --- Aliases: OpenCode ---
 # SOURCE | software/scripts/advanced/llm/opencode/opencode.profile.bash
-
-# --- Ollama Performance ---
-# SOURCE | software/scripts/advanced/llm/ollama.profile.bash
 
 # --- Aliases: Copilot ---
 # SOURCE | software/scripts/advanced/llm/copilot/copilot.profile.bash

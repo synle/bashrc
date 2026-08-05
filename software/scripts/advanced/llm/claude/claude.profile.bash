@@ -59,7 +59,10 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
     return 0
   fi
 
-  local default_model="${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-gemma4:26b}"
+  # No `:-<model>` literal here on purpose. ollama.profile.bash owns the default and is
+  # sourced first (see profile-advanced.sh); duplicating a fallback tag is how this
+  # surface drifts away from opencode/Zed/VS Code.
+  local default_model="$SY_OMEN45L_OLLAMA_DEFAULT_MODEL"
 
   # Handle 'ls' or list command
   if [[ "$1" == "ls" ]]; then

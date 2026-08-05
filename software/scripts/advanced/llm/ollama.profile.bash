@@ -57,7 +57,24 @@ export SY_OLLAMA_MANAGED_ENV_VARS="OLLAMA_FLASH_ATTENTION OLLAMA_KV_CACHE_TYPE O
 # Resolves to an empty string when the hostname is not listed there; consumers fall back
 # to 127.0.0.1 in that case.
 export SY_OMEN45L_OLLAMA_PORT="11434"
-export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="gemma4:26b"
+
+# SY_OMEN45L_OLLAMA_DEFAULT_MODEL is the SINGLE source of truth for the default model.
+# Every consumer — ollama_warmup below, claude.profile.bash's claude_local, and the
+# opencode/Zed/VS Code provider wiring — reads this variable and must NOT re-declare a
+# `:-<model>` literal fallback. A second literal is exactly how these surfaces silently
+# drift apart. This partial is sourced ahead of the per-CLI partials in
+# profile-advanced.sh so the value is always set by the time any of them run.
+#
+# The `${VAR:-...}` form means an export placed earlier in the environment (a per-machine
+# override in ~/.bash_custom_tweaks, or `SY_OMEN45L_OLLAMA_DEFAULT_MODEL=x claude_local`)
+# wins over the repo default rather than being clobbered by it.
+#
+# Default rationale (RTX 5090 / 32 GB — see docs/local-llm-runtimes.md): 35B MoE with 3B
+# active params, coding post-trained, NVFP4 for Blackwell's native FP4 tensor cores.
+# 22 GB of weights, leaving room for KV cache plus the co-loaded autocomplete model under
+# OLLAMA_MAX_LOADED_MODELS=2. Re-verify any replacement tag actually exists first:
+#   curl -fsSL https://ollama.com/library/<model>/tags
+export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-qwen3.6:35b-a3b-coding-nvfp4}"
 
 # --- Endpoint helpers ---
 
@@ -216,7 +233,9 @@ first turn is not sitting on a multi-GB load."
     return 0
   fi
 
-  local model="${1:-${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-gemma4:26b}}"
+  # No `:-<model>` literal here on purpose — this partial's own export above is the
+  # single source of truth for the default tag.
+  local model="${1:-$SY_OMEN45L_OLLAMA_DEFAULT_MODEL}"
   local host
   host="$(_ollama_local_url "${2:-}")"
 

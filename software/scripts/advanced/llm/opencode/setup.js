@@ -47,16 +47,38 @@ const LIMIT_SMALL = { context: 16384, output: 4096 };
 
 // --- Known Ollama model configs ---
 /**
- * Per-model configs for known Ollama models. Keyed by full model tag as returned by `/api/tgs`.
+ * Per-model configs for known Ollama models. Keyed by full model tag exactly as returned
+ * by `/api/tags`. A tag not listed here falls through to `OLLAMA_DEFAULT_CONFIG`, so this
+ * map only needs entries whose limits differ from that default.
+ *
+ * Keys MUST be real Ollama tags — verify before adding one:
+ *   curl -fsSL https://ollama.com/library/<model>/tags
+ * A typo'd key is silently inert (it just never matches), which is why a bogus entry can
+ * sit here indefinitely looking like configuration.
+ *
+ * The `-base` autocomplete tags mirror `AUTOCOMPLETE_MODELS` in `llm-common.js`; the
+ * `-instruct`/chat tags are the agent-side models. See docs/local-llm-runtimes.md for
+ * which of these are the current sy-omen45l picks.
  * @type {Record<string, { limit: { context: number, output: number } }>}
  */
 const OLLAMA_MODEL_CONFIGS = {
-  "qwen2.5-coder:3b": { limit: LIMIT_MEDIUM },
+  // Editor autocomplete (FIM `-base` checkpoints — keep in sync with AUTOCOMPLETE_MODELS).
+  "qwen2.5-coder:1.5b-base": { limit: LIMIT_SMALL },
+  "qwen2.5-coder:3b-base": { limit: LIMIT_SMALL },
+  "qwen2.5-coder:7b-base": { limit: LIMIT_SMALL },
+
+  // Coding / agent models.
   "qwen2.5-coder:14b": { limit: LIMIT_MEDIUM },
   "qwen3-coder:30b": { limit: LIMIT_MEDIUM },
-  "qwen3.6:latest": { limit: LIMIT_SMALL },
-  "gemma4:2arm": { limit: LIMIT_LARGE },
+  "qwen3-coder:30b-a3b-q4_K_M": { limit: LIMIT_LARGE },
+  "qwen3.6:latest": { limit: LIMIT_LARGE },
+  "qwen3.6:27b-nvfp4": { limit: LIMIT_LARGE },
+  "qwen3.6:35b-a3b-coding-nvfp4": { limit: LIMIT_LARGE },
+
+  // General / vision.
+  "gemma4:12b-nvfp4": { limit: LIMIT_LARGE },
   "gemma4:26b": { limit: LIMIT_LARGE },
+  "gemma4:26b-nvfp4": { limit: LIMIT_LARGE },
 };
 
 /**
