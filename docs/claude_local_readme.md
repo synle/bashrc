@@ -11,6 +11,7 @@ Guide for running local LLM inference with [Ollama](https://ollama.com/) and [vL
 - [Linux Installation](#linux-installation)
 - [Docker](#docker)
 - [Connecting Claude Code to Local Models](#connecting-claude-code-to-local-models)
+- [Troubleshooting: the model stops mid-answer](#troubleshooting-the-model-stops-mid-answer)
 
 ## Overview
 
@@ -629,34 +630,133 @@ docker run --gpus all -it --rm \
 
 ## Connecting Claude Code to Local Models
 
-### With Ollama
+### The constraint that governs everything here
+
+Claude Code speaks **only** the Anthropic Messages API — `POST /v1/messages`.
+It is not an OpenAI-compatible client, and `ANTHROPIC_BASE_URL` does not change
+the wire format, only the destination.
+
+Neither local runtime serves that route:
+
+| Runtime | Routes it serves | `/v1/messages`? |
+| --- | --- | --- |
+| Ollama | `/api/generate`, `/api/chat`, `/api/tags`, `/api/ps`, plus OpenAI-compatible `/v1/chat/completions` | **No** |
+| vLLM | OpenAI-compatible `/v1/chat/completions`, `/v1/completions`, `/v1/models` | **No** |
+
+So pointing `ANTHROPIC_BASE_URL` straight at `:11434` or `:8000` cannot work —
+every request 404s on the first turn. You need one of the two options below.
+
+### Option 1 (recommended) — use a client that speaks Ollama natively
+
+opencode talks to Ollama directly, no translation layer, and this repo already
+configures it against the workstation host
+(`software/scripts/advanced/llm/opencode/setup.js`). Just run:
+
+```bash
+op
+```
+
+Zed inline completions are wired the same way and also need no gateway.
+
+### Option 2 — put a translating gateway in front
+
+If you specifically want the Claude Code TUI driving a local model, run a proxy
+that accepts `/v1/messages` and re-emits OpenAI-format calls to Ollama/vLLM,
+then point Claude Code at the **gateway** port:
+
+```bash
+claude_with_ip_address <gateway-host>:<gateway-port> <model>
+```
+
+`claude_with_ip_address` (`software/scripts/advanced/llm/claude/claude.profile.bash`)
+probes `POST /v1/messages` before launching and refuses with instructions if the
+target is a bare Ollama daemon, so you get one clear message instead of an
+opaque API error mid-session. `SY_CLAUDE_LOCAL_FORCE=1` bypasses the probe.
+
+It also sets the env that a local model needs:
+
+| Variable | Why |
+| --- | --- |
+| `ANTHROPIC_AUTH_TOKEN` | **Not** `ANTHROPIC_API_KEY` — this is what stops Claude Code reusing your saved claude.ai subscription credential once a base URL is set. A self-hosted gateway ignores the value, but the variable must be present. |
+| `ANTHROPIC_SMALL_FAST_MODEL` / `ANTHROPIC_DEFAULT_HAIKU_MODEL` | Pinned to the same local model, otherwise background/summarization calls ask the gateway for a Haiku it does not have. |
+| `API_TIMEOUT_MS` | Raised to 20 min. A local model can spend minutes on prompt eval plus generation, and the client giving up first is indistinguishable from a hang. |
+| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | Keeps background calls off a single-slot local daemon so they cannot queue ahead of the turn you are waiting on. |
+
+> Gateway software is third-party and is deliberately **not** auto-installed by
+> this repo. Review and install it yourself.
+
+### Verify the endpoint before blaming the client
+
+```bash
+ollama_doctor                      # local daemon
+ollama_doctor <host>               # remote workstation
+curl -fsS http://127.0.0.1:8000/health   # vLLM
+```
+
+`ollama_doctor` checks reachability, installed models, VRAM residency, this
+shell's tuning, and runs a live one-token generation — which separates "daemon
+is wedged" from "the client gave up".
+
+## Troubleshooting: the model stops mid-answer
+
+This is the most common local-model failure, and it is almost never a wedged
+process. Work down this table in order.
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| Answers start fine, then truncate or go incoherent partway through a long turn | **Context too small.** `OLLAMA_CONTEXT_LENGTH` defaults to `0` = auto, which lands on a ~4k tier on modest VRAM. An agentic CLI's system prompt + tool schemas alone exceed that, so the tail of the request is silently dropped. | `ollama_apply_daemon_env` then `ollama_restart` |
+| Everything is several times slower than it was; long turns look like a hang | **Model spilled to CPU.** `ollama_ps` shows `vram` smaller than `size`. | Smaller model or quant, or lower `OLLAMA_NUM_PARALLEL` / `OLLAMA_CONTEXT_LENGTH` |
+| First prompt after a pause takes minutes | **Model was evicted.** `OLLAMA_KEEP_ALIVE` defaults to 5m, and reloading multiple GB reads as a hang. | Raise `OLLAMA_KEEP_ALIVE`; `ollama_warmup` before a session |
+| Context shrank even though you set it larger | **`OLLAMA_NUM_PARALLEL` multiplies KV VRAM.** Total server context is `context_length x num_parallel` (`server/sched.go: effectiveLlamaServerContext`), so a high value trips the loader's OOM fallback, which silently reduces context. | Keep `NUM_PARALLEL` at 1-2 for single-user agent work |
+| Daemon answers `/api/tags` but never completes a generation | **Daemon wedged.** | `ollama_unload`, then `ollama_restart` |
+
+### Why the tuning has to be applied twice
+
+The `OLLAMA_*` exports in `ollama.profile.bash` only reach an `ollama serve` you
+start **from a shell that sourced the profile**. A daemon owned by systemd,
+`brew services`, Ollama.app, or the Windows service/tray starts with a clean
+environment and silently falls back to upstream defaults.
+
+`ollama_apply_daemon_env` is what closes that gap:
+
+| Platform | Where it writes |
+| --- | --- |
+| Linux | `/etc/systemd/system/ollama.service.d/sy-bashrc.conf` (needs sudo; restarts the daemon for you) |
+| macOS | `launchctl setenv`, one call per var — run `ollama_restart` afterwards |
+| Windows | `software/scripts/windows/_full-setup.ps1` persists them at User scope |
+
+Add `--lan` to also bind the daemon to `0.0.0.0` so other machines on the home
+network can reach it. Off by default — only enable it on the box meant to serve
+models to the rest of the house.
+
+### Helper reference
+
+| Helper | Purpose |
+| --- | --- |
+| `ollama_doctor [host]` | Full diagnosis incl. a live generation probe |
+| `ollama_ps [host]` | Resident models: size, VRAM, context, expiry |
+| `ollama_unload [model] [host]` | Evict without restarting — first thing to try on a stall |
+| `ollama_warmup [model] [host]` | Preload so turn 1 is not charged the load time |
+| `ollama_restart` | Restart via systemd / brew services / Ollama.app |
+| `ollama_apply_daemon_env [--lan]` | Persist the tuning where the daemon reads it |
+| `list_ollama_models [host]` | List a host's models |
+
+All are defined in `software/scripts/advanced/llm/ollama.profile.bash` and carry
+inline `--help`.
+
+### Ollama quick start
 
 1. Start Ollama: `ollama serve` (or use the desktop app)
 2. Pull a model: `ollama pull qwen2.5-coder:32b`
-3. Verify: `curl http://127.0.0.1:11434/api/tags`
+3. Verify: `ollama_doctor`
 
-The Ollama API is available at `http://127.0.0.1:11434`.
+### vLLM quick start
 
-### With vLLM
-
-vLLM exposes an OpenAI-compatible API. Point Claude Code to it:
-
-```bash
-# local machine
-export ANTHROPIC_BASE_URL="http://127.0.0.1:8000/v1"
-export ANTHROPIC_API_KEY="local-vllm"
-claude --model Qwen/Qwen2.5-Coder-32B-Instruct-AWQ
-```
-
-```bash
-# from another machine on the network (e.g., Mac connecting to Windows)
-export ANTHROPIC_BASE_URL="http://<WINDOWS_IP>:8000/v1"
-export ANTHROPIC_API_KEY="local-vllm"
-claude --model Qwen/Qwen2.5-Coder-32B-Instruct-AWQ
-```
-
-### Verify vLLM Health
+vLLM exposes an OpenAI-compatible API on `:8000`. It works directly with
+opencode and any OpenAI-format client; for Claude Code it needs the same
+gateway as Ollama (see Option 2 above).
 
 ```bash
 curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/v1/models
 ```

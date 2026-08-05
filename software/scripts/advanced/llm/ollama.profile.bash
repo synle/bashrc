@@ -70,11 +70,17 @@ export SY_OMEN45L_OLLAMA_PORT="11434"
 # wins over the repo default rather than being clobbered by it.
 #
 # Default rationale (RTX 5090 / 32 GB — see docs/local-llm-runtimes.md): 35B MoE with 3B
-# active params, coding post-trained, NVFP4 for Blackwell's native FP4 tensor cores.
-# 22 GB of weights, leaving room for KV cache plus the co-loaded autocomplete model under
-# OLLAMA_MAX_LOADED_MODELS=2. Re-verify any replacement tag actually exists first:
-#   curl -fsSL https://ollama.com/library/<model>/tags
-export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-qwen3.6:35b-a3b-coding-nvfp4}"
+# active params, plus multi-token-prediction heads for extra throughput. 23 GB of weights,
+# leaving room for KV cache alongside the co-loaded autocomplete model under
+# OLLAMA_MAX_LOADED_MODELS=2.
+#
+# NOT `-nvfp4`, despite Blackwell having native FP4 tensor cores: Ollama's registry gates
+# every `-nvfp4` tag to macOS and answers a pull from this box with
+# `412: this model requires macOS`. The tag being listed on ollama.com/library does not
+# mean it is pullable here. Re-verify any replacement tag against the DAEMON, not the
+# website — the website lists tags the registry will still refuse:
+#   curl -fsS "http://$SY_OMEN45L_IP:$SY_OMEN45L_OLLAMA_PORT/api/pull" -d '{"model":"<tag>"}'
+export SY_OMEN45L_OLLAMA_DEFAULT_MODEL="${SY_OMEN45L_OLLAMA_DEFAULT_MODEL:-qwen3.6:35b-a3b-mtp-q4_K_M}"
 
 # --- Endpoint helpers ---
 

@@ -401,14 +401,59 @@ if you fully migrate.
 ## What to actually do
 
 For the workflow this repo is set up for — single-user opencode + Ctrl+R style
-agent use — there is no win in switching. The energy is better spent on:
+agent use — there is no win in switching runtimes. The energy is better spent on
+tuning the daemon you already have.
 
-- Picking the right quantization (Q4_K_M vs Q5_K_M vs Q8_0) for your VRAM.
-- Setting `OLLAMA_FLASH_ATTENTION=1` and `OLLAMA_KV_CACHE_TYPE=q8_0` env vars
-  before `ollama serve` to roughly halve KV cache memory at minimal quality
-  cost.
-- Using a 7B-class model for fast turn-around and a 30B-class model only for
-  hard tasks; switch in opencode rather than running both daemons.
+### Apply the tuning where the daemon can actually see it
 
-Revisit this decision if your workflow shifts to multi-agent fan-out — that is
-the one regime where vLLM genuinely outperforms.
+This is the single highest-value step, and the one most people miss. The
+`OLLAMA_*` exports in `software/scripts/advanced/llm/ollama.profile.bash` only
+reach an `ollama serve` started **from a shell that sourced the profile**. A
+daemon owned by systemd, `brew services`, Ollama.app, or the Windows
+service/tray starts with a clean environment and silently uses upstream
+defaults.
+
+```bash
+ollama_apply_daemon_env      # persist into systemd / launchd
+ollama_restart               # macOS needs this; Linux does it for you
+ollama_doctor                # confirm
+```
+
+Add `--lan` to also bind `0.0.0.0` on the box that serves the rest of the house.
+On Windows, `software/scripts/windows/_full-setup.ps1` persists the same values
+at User scope.
+
+### The settings that matter, and why
+
+| Variable | Repo value (desktop / laptop) | Why it matters |
+| --- | --- | --- |
+| `OLLAMA_CONTEXT_LENGTH` | 32768 / 16384 | Upstream default is `0` = auto, which lands on a **~4k tier** on modest VRAM. An agentic CLI's system prompt + tool schemas exceed that on their own, so the request is truncated and the model appears to stall or answer nonsense mid-turn. Set it explicitly. |
+| `OLLAMA_NUM_PARALLEL` | 2 / 1 | Total server context is `context_length x num_parallel` (`server/sched.go: effectiveLlamaServerContext`), so this **multiplies KV-cache VRAM**. Set too high it trips the loader's OOM fallback, which silently shrinks your context back down. Single-user agent work wants 1-2, never 4. |
+| `OLLAMA_KEEP_ALIVE` | 30m / 15m | Default 5m. A multi-GB model evicted between turns costs a full reload on the next prompt, which reads as a hang. |
+| `OLLAMA_KV_CACHE_TYPE` | `q8_0` | Roughly halves KV memory at very small precision loss. `q4_0` saves more but **degrades code output noticeably** — not worth it on either form factor. |
+| `OLLAMA_FLASH_ATTENTION` | 1 | Prerequisite for the quantized KV cache above. |
+| `OLLAMA_LOAD_TIMEOUT` | 10m | Stall detector during load; the 5m default is tight for a large model on a cold page cache. |
+| `OLLAMA_MAX_LOADED_MODELS` | 2 / 1 | Two resident models means both share the card. Only useful when the second one is small (e.g. the 2 GB autocomplete model). |
+
+### Then, in rough order of payoff
+
+- Pick the right quantization for your VRAM, and confirm it actually fit:
+  `ollama_ps` reports `size` and `vram` separately, and **`vram < size` means
+  the model spilled to CPU** — several times slower, and long turns start to
+  look like a hang.
+- `ollama_warmup` before a session so turn 1 is not charged the multi-GB load.
+- Use a 7B-class model for fast turn-around and a 30B-class model only for hard
+  tasks; switch in opencode rather than running both daemons.
+
+### When it stalls anyway
+
+```bash
+ollama_doctor                # reachability, residency, tuning, live probe
+ollama_unload                # evict without restarting — try this first
+ollama_restart               # only if unloading did not clear it
+```
+
+`docs/claude_local_readme.md` has the full symptom-to-cause table.
+
+Revisit the runtime decision if your workflow shifts to multi-agent fan-out —
+that is the one regime where vLLM genuinely outperforms.
