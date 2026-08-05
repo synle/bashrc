@@ -568,6 +568,53 @@ if [ -f /etc/pam.d/sudo_local.template ] && ! grep -q '^auth' /etc/pam.d/sudo_lo
   sudo sed -i '' 's/^#auth/auth/' /etc/pam.d/sudo_local
 fi
 
+# Extend how long an authentication stays valid.
+#
+# Symptom this fixes: Touch ID for sudo "stops working" and re-prompts constantly, even
+# though pam_tid.so is correctly enabled in /etc/pam.d/sudo_local. Touch ID is NOT broken
+# in that state — it fires and authenticates fine; the credential just expires almost
+# immediately. macOS ships sudo with a 5-minute timestamp_timeout and tty_tickets on, so
+# every new terminal tab/pane re-authenticates and every 5-minute gap re-authenticates.
+# A ticket file at /var/db/sudo/ts/<uid> that has grown to dozens of 56-byte records is the
+# tell: authentication is fragmenting per-tty instead of being reused.
+#
+# Root cause of the regression: macOS updates overwrite /etc/sudoers wholesale AND recreate
+# /etc/sudoers.d empty (a 26.6 update did exactly this), silently dropping whatever tuning
+# was there. /etc/pam.d/sudo_local survives updates by design, which is why the PAM half
+# keeps working and only the caching half reverts — and why this looks like a Touch ID bug.
+#
+# Options considered:
+#   1. Defaults timestamp_timeout=60 only, tty_tickets left on   <-- CHOSEN
+#      One touch per terminal, then quiet for an hour. Keeps sudo's per-tty isolation, so a
+#      background process in another pane cannot ride on a ticket approved interactively.
+#   2. timestamp_timeout=60 + Defaults !tty_tickets
+#      Fewest prompts (one touch unlocks every tab/pane), but drops that isolation.
+#      Rejected: the extra convenience is not worth widening the blast radius of one touch.
+#   3. Defaults !tty_tickets only
+#      Shared across terminals but still expires on Apple's stock 5 minutes. Rejected:
+#      takes the security cost of option 2 while barely reducing the prompt count.
+#   4. Edit /etc/sudoers directly. Rejected: that is the file macOS updates replace, so the
+#      setting would be lost again on the next update. A drop-in re-applied by this script
+#      survives both the update and the emptied /etc/sudoers.d.
+#
+# SAFETY: the file is written to a temp path and validated with `visudo -c` first. A syntax
+# error in a sudoers file locks the account out of sudo entirely, so the install only runs
+# on a clean parse, and the file is installed 0440 root:wheel as sudo requires.
+_SUDOERS_DROPIN=/etc/sudoers.d/bashrc-sudo
+_SUDOERS_TIMEOUT_MINUTES=60
+if ! sudo grep -qs "timestamp_timeout=$_SUDOERS_TIMEOUT_MINUTES" "$_SUDOERS_DROPIN"; then
+  echo -n ">> sudo timestamp_timeout=$_SUDOERS_TIMEOUT_MINUTES minutes >> "
+  _sudoers_tmp="$BASHRC_TEMP_DIR/bashrc-sudo.sudoers"
+  echo "Defaults timestamp_timeout=$_SUDOERS_TIMEOUT_MINUTES" > "$_sudoers_tmp"
+  if sudo visudo -c -f "$_sudoers_tmp" &>> $BASHRC_TEMP_DIR/fullsetup.log \
+    && sudo install -m 0440 -o root -g wheel "$_sudoers_tmp" "$_SUDOERS_DROPIN"; then
+    echo "Done"
+  else
+    echo "Error (see $BASHRC_TEMP_DIR/fullsetup.log)"
+  fi
+  rm -f "$_sudoers_tmp"
+fi
+
 ################################################################################
 # --- Background Install and Upgrade ---
 ################################################################################
