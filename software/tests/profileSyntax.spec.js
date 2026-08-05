@@ -1,7 +1,7 @@
 /** Syntax and size check for shell scripts. */
 import { describe, it, expect } from "vitest";
 import { execSync } from "child_process";
-import { existsSync, readdirSync, readFileSync } from "fs";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -65,13 +65,45 @@ const MIN_CHARS_BOOTSTRAP = 2200;
 const BOOTSTRAP_SIZE_OVERRIDES = { "setup.sh": 400, "common-env.sh": 400, "common-functions.bash": 2000 };
 const MIN_CHARS_ROOT_SCRIPTS = 1100;
 
+/**
+ * The oldest bash available locally, checked in addition to the bash on PATH.
+ *
+ * AGENTS.md pins bash 3.2 as the portability floor because that is what macOS
+ * ships at `/bin/bash` (3.2.57) and what `safe_source`'s `bash -n` can end up
+ * invoking. PATH bash is frequently 5.x (Homebrew), and 5.x happily parses
+ * constructs 3.2 rejects — notably a heredoc nested inside `$( ... )`, where 3.2
+ * keeps tracking quotes through the heredoc body, so an odd apostrophe count in
+ * the body breaks the parse of the entire file. Checking only PATH bash let
+ * exactly that ship and broke `source ~/.bash_syle` for 3.2 users.
+ *
+ * Null when `/bin/bash` is absent (MinGW, Termux) or resolves to the same binary
+ * already on PATH (most Linux), which keeps this a no-op rather than a failure.
+ * @type {string | null}
+ */
+const LEGACY_BASH = (() => {
+  const candidate = "/bin/bash";
+  if (!existsSync(candidate)) return null;
+  try {
+    const pathBash = execSync("command -v bash", { encoding: "utf-8" }).trim();
+    if (pathBash && realpathSync(pathBash) === realpathSync(candidate)) return null;
+  } catch {
+    // No bash on PATH to compare against — still worth checking /bin/bash.
+  }
+  return candidate;
+})();
+
+/** Every bash the syntax checks must satisfy: the one on PATH plus the oldest local one. */
+const SYNTAX_CHECK_SHELLS = ["bash", LEGACY_BASH].filter(Boolean);
+
 /** @param {string} filePath */
 function assertNoSyntaxErrors(filePath) {
   const fileName = path.basename(filePath);
-  try {
-    execSync(`bash -n "${filePath}"`, { encoding: "utf-8", stdio: "pipe" });
-  } catch (err) {
-    expect.fail(`Syntax error in ${fileName}:\n${err.stderr}`);
+  for (const shell of SYNTAX_CHECK_SHELLS) {
+    try {
+      execSync(`${shell} -n "${filePath}"`, { encoding: "utf-8", stdio: "pipe" });
+    } catch (err) {
+      expect.fail(`Syntax error in ${fileName} (${shell}):\n${err.stderr}`);
+    }
   }
 }
 
@@ -251,10 +283,14 @@ describe.skipIf(profileFiles.length === 0)("profile block-level syntax check", (
         const tmpFile = `/tmp/_bashrc_syntax_check_${process.pid}.sh`;
         try {
           require("fs").writeFileSync(tmpFile, body, "utf-8");
-          execSync(`bash -n "${tmpFile}"`, { encoding: "utf-8", stdio: "pipe" });
-        } catch (err) {
-          const stderr = (err.stderr || err.message || "unknown error").trim();
-          expect.fail(`Syntax error in ${fileName} block "${key}" (line ${lineNumber}):\n${stderr}`);
+          for (const shell of SYNTAX_CHECK_SHELLS) {
+            try {
+              execSync(`${shell} -n "${tmpFile}"`, { encoding: "utf-8", stdio: "pipe" });
+            } catch (err) {
+              const stderr = (err.stderr || err.message || "unknown error").trim();
+              expect.fail(`Syntax error in ${fileName} block "${key}" (line ${lineNumber}) under ${shell}:\n${stderr}`);
+            }
+          }
         } finally {
           try {
             require("fs").unlinkSync(tmpFile);
