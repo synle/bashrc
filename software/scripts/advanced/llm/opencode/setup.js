@@ -51,14 +51,16 @@ const LIMIT_SMALL = { context: 16384, output: 4096 };
  * by `/api/tags`. A tag not listed here falls through to `OLLAMA_DEFAULT_CONFIG`, so this
  * map only needs entries whose limits differ from that default.
  *
- * Keys MUST be real Ollama tags — verify before adding one:
- *   curl -fsSL https://ollama.com/library/<model>/tags
- * A typo'd key is silently inert (it just never matches), which is why a bogus entry can
- * sit here indefinitely looking like configuration.
+ * Keys MUST be tags the daemon can actually pull — verify against the DAEMON, not the
+ * website. `ollama.com/library` lists `-nvfp4` tags that the registry then refuses with
+ * `412: this model requires macOS`, so a website listing is not proof:
+ *   curl -fsS "http://<host>:11434/api/pull" -d '{"model":"<tag>"}'
+ * A typo'd or unpullable key is silently inert (it just never matches), which is why a
+ * bogus entry can sit here indefinitely looking like configuration.
  *
  * The `-base` autocomplete tags mirror `AUTOCOMPLETE_MODELS` in `llm-common.js`; the
- * `-instruct`/chat tags are the agent-side models. See docs/local-llm-runtimes.md for
- * which of these are the current sy-omen45l picks.
+ * chat/instruct tags are the agent-side models. See docs/local-llm-runtimes.md for which
+ * of these are the current sy-omen45l picks.
  * @type {Record<string, { limit: { context: number, output: number } }>}
  */
 const OLLAMA_MODEL_CONFIGS = {
@@ -72,13 +74,13 @@ const OLLAMA_MODEL_CONFIGS = {
   "qwen3-coder:30b": { limit: LIMIT_MEDIUM },
   "qwen3-coder:30b-a3b-q4_K_M": { limit: LIMIT_LARGE },
   "qwen3.6:latest": { limit: LIMIT_LARGE },
-  "qwen3.6:27b-nvfp4": { limit: LIMIT_LARGE },
-  "qwen3.6:35b-a3b-coding-nvfp4": { limit: LIMIT_LARGE },
+  "qwen3.6:27b-q4_K_M": { limit: LIMIT_LARGE },
+  "qwen3.6:35b-a3b-q4_K_M": { limit: LIMIT_LARGE },
+  "qwen3.6:35b-a3b-mtp-q4_K_M": { limit: LIMIT_LARGE },
 
   // General / vision.
-  "gemma4:12b-nvfp4": { limit: LIMIT_LARGE },
+  "gemma4:12b-it-q4_K_M": { limit: LIMIT_LARGE },
   "gemma4:26b": { limit: LIMIT_LARGE },
-  "gemma4:26b-nvfp4": { limit: LIMIT_LARGE },
 };
 
 /**
