@@ -37,13 +37,17 @@
 //                    a config knob, the only edit needed is to uncomment the
 //                    writeJson() block at the bottom of _doCopilotKeysWork().
 //
-//   ❌ User-level slash commands — Copilot has no `~/.copilot/commands/*.md`
-//                    fallthrough the way Claude does. Its equivalent is
-//                    plugins/skills installed via `copilot plugin install`,
-//                    which require a manifest (plugin.json + skills/<name>/
-//                    SKILL.md). Mirroring Claude's `~/.claude/commands/sy-*.md`
-//                    files as a Copilot plugin would mean generating that
-//                    manifest scaffolding — out of scope for this script.
+//   ✅ Skills — ~/.copilot/skills/sy-<name>/SKILL.md, generated from the
+//                    shared _common/commands/*.md sources (the same files
+//                    claude/setup.js deploys as /sy-* slash commands). Copilot
+//                    has no `~/.copilot/commands/*.md` fallthrough the way
+//                    Claude does, and it does NOT read `~/.claude/commands/`
+//                    or `~/.claude/skills/` (verified v1.0.78 — a probe in
+//                    either never appears in `copilot skill list`). Its
+//                    personal-skill path IS read, though, so the commands are
+//                    deployed there in folder form with generated YAML
+//                    frontmatter — one playbook, three CLIs. See
+//                    _doCopilotSkillsWork() below.
 //                    Per-repo `.github/copilot-instructions.md` is already
 //                    handled at the wrapper layer in copilot.profile.bash.
 //
@@ -428,11 +432,136 @@ async function _doCopilotInstructionsWork(targetDir) {
   safeSymlink("copilot-instructions.md", agentsLink);
 }
 
+// --- Skills (Copilot's equivalent of Claude slash commands) ---
+
+/**
+ * Source filenames (bare, no `.md`) under
+ * software/scripts/advanced/llm/_common/commands/ that get deployed as
+ * personal Copilot CLI skills. Mirrors CLAUDE_COMMAND_DEPLOY_MAP in
+ * claude/setup.js — same content, different surface.
+ *
+ * Each entry lands at `~/.copilot/skills/sy-<name>/SKILL.md`, which is what
+ * makes `/sy-<name>` invocable in Copilot AND model-triggerable via its
+ * `description`. Copilot does NOT read `~/.claude/commands/` or
+ * `~/.claude/skills/` (verified v1.0.78 — a probe in either never shows up in
+ * `copilot skill list`), so without this deploy every `/sy-*` workflow is
+ * simply absent from Copilot while Claude Code and OpenCode both have it.
+ *
+ * Adding a command: add the bare source name here as well as to
+ * CLAUDE_COMMAND_DEPLOY_MAP, so all three CLIs stay at parity.
+ *
+ * @type {string[]}
+ */
+const COPILOT_SKILL_DEPLOY_LIST = [
+  "babysit-pr",
+  "babysit-prs",
+  "close-stale-prs",
+  "create-pr",
+  "draft-pr",
+  "list-prs",
+  "plan-grill-me",
+  "release",
+  "review-pr",
+  "review-prs",
+  "slack-prs",
+  "sync-and-groom-repo",
+  "sync-and-groom-repos",
+  "sync-pr-branch",
+];
+
+/** @type {string} First-line prefix every Sy-managed command source carries — also how we spot our own orphans on disk. */
+const COPILOT_SKILL_MARKER = "[Sy] ";
+
+/** @type {number} Max description length written into skill frontmatter. Copilot matches on this string, so keep it a summary, not the body. */
+const COPILOT_SKILL_DESCRIPTION_MAX = 400;
+
+/**
+ * Derives a Copilot skill `description` from a command source's first line.
+ *
+ * The first line of every `_common/commands/*.md` is a one-line `[Sy] <what
+ * this does>` summary, which is exactly the shape Copilot wants. Deriving it
+ * instead of maintaining a parallel description map means the trigger text can
+ * never rot away from the command body it describes.
+ *
+ * @param {string} content - Full markdown source of the command file.
+ * @returns {string} Single-line, YAML-safe description (double-quote escaped, length-capped).
+ */
+function _buildCopilotSkillDescription(content) {
+  /** @type {string} First line with the `[Sy] ` marker stripped and whitespace collapsed. */
+  let description = (content.split("\n", 1)[0] || "").replace(COPILOT_SKILL_MARKER, "").replace(/\s+/g, " ").trim();
+  if (description.length > COPILOT_SKILL_DESCRIPTION_MAX) {
+    description = `${description.slice(0, COPILOT_SKILL_DESCRIPTION_MAX - 1).trimEnd()}…`;
+  }
+  // YAML double-quoted scalar: only backslash and double quote need escaping.
+  return description.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/**
+ * Deploys every COPILOT_SKILL_DEPLOY_LIST entry to
+ * `~/.copilot/skills/sy-<name>/SKILL.md` as a folder-form agent skill.
+ *
+ * Copilot requires the folder layout (`skills/<name>/SKILL.md`) plus YAML
+ * frontmatter carrying `name` + `description` — a flat `.md` or a
+ * frontmatter-less file is invisible to its loader. The body is the shared
+ * command source verbatim, so Claude Code, OpenCode, and Copilot all run the
+ * identical playbook; only the wrapper differs.
+ *
+ * Files are written, not symlinked: the frontmatter is generated here and does
+ * not exist in the repo source (adding it there would break Claude's
+ * first-line `[Sy] ` orphan detection). No backupConfigFile() call — the whole
+ * file is generated from repo source on every run, so a `.bak` would only ever
+ * snapshot our own previous output.
+ *
+ * Orphan cleanup removes any `~/.copilot/skills/<dir>` whose SKILL.md body
+ * still carries the `[Sy] ` marker but is no longer in the deploy list.
+ * User-authored and plugin-installed skills match neither and are untouched.
+ *
+ * @param {string} targetDir - Path to the ~/.copilot directory.
+ */
+async function _doCopilotSkillsWork(targetDir) {
+  /** @type {string} Personal skills root Copilot reads at startup. */
+  const skillsDir = path.join(targetDir, "skills");
+
+  log(">> GitHub Copilot CLI Skills:", skillsDir);
+
+  fs.mkdirSync(skillsDir, { recursive: true });
+
+  /** @type {Set<string>} Folder names this run owns — everything else is a candidate orphan. */
+  const deployedFolders = new Set(COPILOT_SKILL_DEPLOY_LIST.map((name) => `sy-${name}`));
+
+  for (const sourceName of COPILOT_SKILL_DEPLOY_LIST) {
+    /** @type {string} Verbatim markdown body of the shared command source. */
+    const body = (await readText`software/scripts/advanced/llm/_common/commands/${sourceName}.md`).trimEnd();
+    /** @type {string} Skill (and folder) name — `sy-` prefixed so ours cluster and never collide. */
+    const skillName = `sy-${sourceName}`;
+    /** @type {string} Destination folder; Copilot only loads the folder form. */
+    const skillFolder = path.join(skillsDir, skillName);
+
+    fs.mkdirSync(skillFolder, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillFolder, "SKILL.md"),
+      `---\nname: ${skillName}\ndescription: "${_buildCopilotSkillDescription(body)}"\n---\n\n${body}\n`,
+    );
+    log("   Deployed:", `${skillName}/SKILL.md`);
+  }
+
+  // Drop Sy-managed skills that fell out of the deploy list (renamed or retired).
+  for (const entry of fs.readdirSync(skillsDir)) {
+    if (deployedFolders.has(entry)) continue;
+    /** @type {string} Candidate orphan's SKILL.md — absent means it isn't a skill folder at all. */
+    const skillFile = path.join(skillsDir, entry, "SKILL.md");
+    if (!fs.existsSync(skillFile)) continue;
+    if (!fs.readFileSync(skillFile, "utf-8").includes(COPILOT_SKILL_MARKER)) continue;
+    fs.rmSync(path.join(skillsDir, entry), { recursive: true, force: true });
+    log("   Removed prior Sy skill:", entry);
+  }
+}
+
 /**
  * Orchestrates GitHub Copilot CLI user-level setup: settings defaults +
- * shared engineering-principles instructions block. Skips entirely when the
- * `copilot` binary is not installed (treat as a no-op rather than an error
- * so partial setups don't fail this script).
+ * shared engineering-principles instructions block + `/sy-*` skills. Skips
+ * entirely when the `copilot` binary is not installed (treat as a no-op rather
+ * than an error so partial setups don't fail this script).
  */
 async function doWork() {
   if (!(await isBinaryFound("copilot"))) {
@@ -454,4 +583,5 @@ async function doWork() {
   await _doMcpWork(targetDir);
   await _doCopilotKeysWork(targetDir);
   await _doCopilotInstructionsWork(targetDir);
+  await _doCopilotSkillsWork(targetDir);
 }
