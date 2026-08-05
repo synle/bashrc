@@ -657,41 +657,43 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 
 ################################################################################
 # --- Ollama Daemon Tuning ---
-# The Windows host is where the Ollama daemon actually runs for WSL users
-# (installed via winget Ollama.Ollama in software/scripts/windows/_winget-install.sh),
-# so the tuning has to be persisted here — a service or tray process starts with a
-# clean environment and never sees a shell profile.
+# The Windows host is where the Ollama daemon actually runs for WSL users (installed
+# via winget Ollama.Ollama in software/scripts/windows/_winget-install.sh). The daemon
+# is a service or tray process, so it starts with a clean environment and never sees a
+# shell profile -- these have to be persisted at User scope to reach it.
 #
-# Mirrors software/scripts/advanced/llm/ollama.profile.bash and the Ollama section
-# of software/scripts/windows/powershell-profile.ps1.bash. Defaults per
+# Mirrors the tuning in software/scripts/advanced/llm/ollama.profile.bash. Defaults per
 # ollama/envconfig/config.go:
-#   OLLAMA_CONTEXT_LENGTH  auto, which lands near 4k on modest VRAM — smaller than
-#                          an agentic CLI's system prompt + tool schemas, so the
-#                          request gets truncated and the model stalls mid-turn.
-#   OLLAMA_NUM_PARALLEL    total server context = context_length x num_parallel, so
-#                          a high value multiplies KV VRAM and trips the loader's
-#                          OOM fallback, which silently shrinks context back down.
-#   OLLAMA_KEEP_ALIVE      5m — a model evicted between turns costs a full reload.
-#   OLLAMA_HOST            loopback — WSL and other LAN clients cannot reach that.
-#                          Port 11434 is already allowed inbound on private
-#                          networks by the firewall section earlier in this script.
+#   OLLAMA_CONTEXT_LENGTH  auto, which lands near 4k on modest VRAM -- smaller than an
+#                          agentic CLI's system prompt + tool schemas, so the request
+#                          gets truncated and the model stalls mid-turn.
+#   OLLAMA_NUM_PARALLEL    total server context = context_length x num_parallel, so a
+#                          high value multiplies KV VRAM and trips the loader's OOM
+#                          fallback, which silently shrinks the context back down.
+#   OLLAMA_KEEP_ALIVE      5m -- a model evicted between turns costs a full reload.
+#   OLLAMA_HOST            loopback -- WSL and other LAN clients cannot reach that.
+#                          Port 11434 is already allowed inbound on private networks
+#                          by the firewall section earlier in this script.
 ################################################################################
 
-Write-Host "`n=== Configuring Ollama daemon ===" -ForegroundColor Cyan
+Write-Host "`nConfiguring Ollama daemon environment..." -ForegroundColor Cyan
 
-$isLaptop = $null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)
 $ollamaEnv = @{
     OLLAMA_FLASH_ATTENTION = "1"
     OLLAMA_KV_CACHE_TYPE   = "q8_0"
     OLLAMA_LOAD_TIMEOUT    = "10m"
     OLLAMA_HOST            = "0.0.0.0:11434"
 }
-if ($isLaptop) {
+# A physical battery means laptop; anything else is treated as a desktop (matches the
+# is_system_laptop / is_system_desktop split in software/bootstrap/common-env.sh).
+if ($null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)) {
+    # Laptop -- conserve VRAM: single slot, smaller context, shorter residency.
     $ollamaEnv["OLLAMA_NUM_PARALLEL"] = "1"
     $ollamaEnv["OLLAMA_CONTEXT_LENGTH"] = "16384"
     $ollamaEnv["OLLAMA_KEEP_ALIVE"] = "15m"
     $ollamaEnv["OLLAMA_MAX_LOADED_MODELS"] = "1"
 } else {
+    # Desktop -- more VRAM headroom: bigger context, one spare slot for a second agent.
     $ollamaEnv["OLLAMA_NUM_PARALLEL"] = "2"
     $ollamaEnv["OLLAMA_CONTEXT_LENGTH"] = "32768"
     $ollamaEnv["OLLAMA_KEEP_ALIVE"] = "30m"
@@ -707,22 +709,7 @@ foreach ($name in ($ollamaEnv.Keys | Sort-Object)) {
         Write-Host "  Set: $name=$value" -ForegroundColor Green
     }
 }
-
-# Restart so the daemon picks the new environment up. Recent Windows builds ship a
-# per-user "ollama app.exe" tray process rather than a service, so handle both.
-if (Get-Service -Name "Ollama" -ErrorAction SilentlyContinue) {
-    try { Restart-Service -Name "Ollama" -Force -ErrorAction Stop; Write-Host "  Restarted the Ollama service" -ForegroundColor Green }
-    catch { Write-Host "  Could not restart the Ollama service: $_" -ForegroundColor Red }
-} elseif (Get-Process -Name "ollama app" -ErrorAction SilentlyContinue) {
-    Get-Process -Name "ollama app", "ollama" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 2
-    $ollamaAppPath = Join-Path $env:LOCALAPPDATA "Programs\Ollama\ollama app.exe"
-    if (Test-Path $ollamaAppPath) { Start-Process $ollamaAppPath; Write-Host "  Restarted the Ollama tray app" -ForegroundColor Green }
-} else {
-    Write-Host "  Ollama not running — the settings apply the next time it starts" -ForegroundColor Yellow
-}
-
-
+Write-Host "  Restart Ollama (or log off) for these to take effect." -ForegroundColor Yellow
 
 Write-Host "`nTo enable Windows Store on LTSC, run the following manually:" -ForegroundColor Yellow
 Write-Host "  wsreset.exe -i" -ForegroundColor White

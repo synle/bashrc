@@ -147,243 +147,44 @@ function cl()  { claude --dangerously-skip-permissions $args }
 function cm()  { cl --model claude-opus-4-7[1m] $args }
 
 # --- Ollama Performance ---
-# Mirrors software/scripts/advanced/llm/ollama.profile.bash. Windows is where the
-# daemon actually runs for WSL users (winget Ollama.Ollama), so the tuning and the
-# recovery helpers have to exist on this side too.
+# Mirrors the tuning in software/scripts/advanced/llm/ollama.profile.bash. Windows is
+# where the Ollama daemon actually runs for WSL users (winget Ollama.Ollama), so the
+# same values have to be set on this side too.
 #
-# Why each var matters (defaults per ollama/envconfig/config.go):
-#   OLLAMA_CONTEXT_LENGTH  default auto, which lands near 4k on modest VRAM. That
-#                          is smaller than an agentic CLI's system prompt + tool
-#                          schemas, so the request is truncated and the model
-#                          stalls or answers nonsense mid-turn.
-#   OLLAMA_NUM_PARALLEL    total server context = context_length x num_parallel, so
-#                          a high value multiplies KV VRAM, trips the loader's OOM
-#                          fallback, and silently shrinks context back down.
+# Why each one matters (defaults per ollama/envconfig/config.go):
+#   OLLAMA_CONTEXT_LENGTH  default auto, which lands near 4k on modest VRAM. That is
+#                          smaller than an agentic CLI's system prompt + tool schemas,
+#                          so the request is truncated and the model stalls or answers
+#                          nonsense mid-turn.
+#   OLLAMA_NUM_PARALLEL    total server context = context_length x num_parallel, so a
+#                          high value multiplies KV VRAM, trips the loader's OOM
+#                          fallback, and silently shrinks the context back down.
 #   OLLAMA_KEEP_ALIVE      default 5m; a model evicted between turns costs a full
 #                          reload on the next prompt, which reads as a hang.
 #   OLLAMA_KV_CACHE_TYPE   q8_0 halves KV memory at very small precision loss.
-#   OLLAMA_LOAD_TIMEOUT    stall detector during load; 5m is tight when cold.
+#   OLLAMA_LOAD_TIMEOUT    stall detector during load; 5m is tight on a cold start.
 #
-# Session-scope only. Use Set-OllamaDaemonEnv (ollama_apply_daemon_env) to persist
-# them for the background daemon, which starts with a clean environment.
+# Session scope only -- a daemon started by the Ollama service or tray app never sees
+# these. software/scripts/windows/_full-setup.ps1 persists the same values at User
+# scope, which is what the daemon actually reads.
 $env:OLLAMA_FLASH_ATTENTION = "1"
 $env:OLLAMA_KV_CACHE_TYPE = "q8_0"
 $env:OLLAMA_LOAD_TIMEOUT = "10m"
-# A physical battery means laptop; anything else is treated as a desktop (matches
-# the is_system_laptop / is_system_desktop split in software/bootstrap/common-env.sh).
-$script:_syIsLaptop = $null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)
-if ($script:_syIsLaptop) {
+# A physical battery means laptop; anything else is treated as a desktop (matches the
+# is_system_laptop / is_system_desktop split in software/bootstrap/common-env.sh).
+if ($null -ne (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue)) {
+  # Laptop -- conserve VRAM: single slot, smaller context, shorter residency.
   $env:OLLAMA_NUM_PARALLEL = "1"
   $env:OLLAMA_CONTEXT_LENGTH = "16384"
   $env:OLLAMA_KEEP_ALIVE = "15m"
   $env:OLLAMA_MAX_LOADED_MODELS = "1"
 } else {
+  # Desktop -- more VRAM headroom: bigger context, one spare slot for a second agent.
   $env:OLLAMA_NUM_PARALLEL = "2"
   $env:OLLAMA_CONTEXT_LENGTH = "32768"
   $env:OLLAMA_KEEP_ALIVE = "30m"
   $env:OLLAMA_MAX_LOADED_MODELS = "2"
 }
-
-# The OLLAMA_* names this profile manages — Set-OllamaDaemonEnv persists exactly this
-# list, so adding a var above is enough for it to be picked up there too.
-$script:_syOllamaManagedEnvVars = @(
-  "OLLAMA_FLASH_ATTENTION",
-  "OLLAMA_KV_CACHE_TYPE",
-  "OLLAMA_LOAD_TIMEOUT",
-  "OLLAMA_NUM_PARALLEL",
-  "OLLAMA_CONTEXT_LENGTH",
-  "OLLAMA_KEEP_ALIVE",
-  "OLLAMA_MAX_LOADED_MODELS"
-)
-$script:_syOllamaPort = if ($env:SY_OMEN45L_OLLAMA_PORT) { $env:SY_OMEN45L_OLLAMA_PORT } else { "11434" }
-
-# Normalize a bare host / host:port / full URL into a full Ollama base URL.
-# Empty resolves to $env:SY_OMEN45L_IP when set, else loopback. No address is
-# hardcoded — software/metadata/ip-address.config stays the single source of truth.
-function _Get-OllamaUrl {
-  param([string]$OllamaHost = "")
-  $port = $script:_syOllamaPort
-  if (-not $OllamaHost) {
-    $OllamaHost = if ($env:SY_OMEN45L_IP) { "$($env:SY_OMEN45L_IP):$port" } else { "127.0.0.1:$port" }
-  }
-  if ($OllamaHost -match '^https?://') {
-    if ($OllamaHost -match '^[a-zA-Z]+://[^:/]+$') { $OllamaHost = "$($OllamaHost):$port" }
-    return $OllamaHost
-  }
-  if ($OllamaHost -notmatch ':') { $OllamaHost = "$($OllamaHost):$port" }
-  return "http://$OllamaHost"
-}
-
-# List the models an Ollama endpoint exposes via GET /api/tags.
-function Get-OllamaModels {
-  param([string]$OllamaHost = "")
-  $url = _Get-OllamaUrl $OllamaHost
-  Write-Host "Fetching models from $url..." -ForegroundColor DarkGray
-  try {
-    (Invoke-RestMethod -Uri "$url/api/tags" -TimeoutSec 5).models | ForEach-Object { $_.name }
-  } catch {
-    Write-Host "Get-OllamaModels: no response from $url" -ForegroundColor Red
-  }
-}
-
-# Show resident models: total size, how much sits in VRAM, and keep-alive expiry.
-# A VRAM figure below the total size means the model spilled to CPU — inference
-# drops several times slower and long turns start to look like a hang.
-function Get-OllamaPs {
-  param([string]$OllamaHost = "")
-  $url = _Get-OllamaUrl $OllamaHost
-  try {
-    $models = (Invoke-RestMethod -Uri "$url/api/ps" -TimeoutSec 5).models
-  } catch {
-    Write-Host "Get-OllamaPs: no response from $url/api/ps" -ForegroundColor Red
-    return
-  }
-  if (-not $models -or $models.Count -eq 0) { Write-Host "no models loaded"; return }
-  $models | ForEach-Object {
-    [PSCustomObject]@{
-      Name    = $_.name
-      SizeGB  = [math]::Round($_.size / 1GB, 1)
-      VramGB  = [math]::Round($_.size_vram / 1GB, 1)
-      Context = $_.context_length
-      Expires = $_.expires_at
-    }
-  } | Format-Table -AutoSize
-}
-
-# Evict loaded models so a wedged or oversized load can be retried clean. Try this
-# first when a local model stops responding mid-turn; escalate to Restart-Ollama only
-# when unloading does not clear the stall.
-function Remove-OllamaLoadedModel {
-  param([string]$Model = "", [string]$OllamaHost = "")
-  $url = _Get-OllamaUrl $OllamaHost
-  if (-not $Model) {
-    try { $loaded = (Invoke-RestMethod -Uri "$url/api/ps" -TimeoutSec 5).models } catch { $loaded = @() }
-    if (-not $loaded -or $loaded.Count -eq 0) { Write-Host "nothing loaded on $url"; return }
-    $loaded | ForEach-Object { Remove-OllamaLoadedModel -Model $_.name -OllamaHost $OllamaHost }
-    return
-  }
-  Write-Host ">> unloading $Model from $url"
-  $body = @{ model = $Model; messages = @(); keep_alive = 0 } | ConvertTo-Json -Depth 3
-  try {
-    Invoke-RestMethod -Uri "$url/api/chat" -Method Post -ContentType "application/json" -Body $body -TimeoutSec 10 | Out-Null
-  } catch {
-    Write-Host "unload failed: $($_.Exception.Message)" -ForegroundColor Red
-  }
-}
-
-# Preload a model so the first real prompt is not charged the multi-GB load time.
-function Start-OllamaWarmup {
-  param([string]$Model = "", [string]$OllamaHost = "")
-  $url = _Get-OllamaUrl $OllamaHost
-  if (-not $Model) {
-    $Model = if ($env:SY_OMEN45L_OLLAMA_DEFAULT_MODEL) { $env:SY_OMEN45L_OLLAMA_DEFAULT_MODEL } else { (Get-OllamaModels $OllamaHost | Select-Object -First 1) }
-  }
-  if (-not $Model) { Write-Host "Start-OllamaWarmup: no model available on $url" -ForegroundColor Red; return }
-  Write-Host ">> warming up $Model on $url (loads the weights; can take a minute)"
-  $body = @{ model = $Model; messages = @() } | ConvertTo-Json -Depth 3
-  try {
-    Invoke-RestMethod -Uri "$url/api/chat" -Method Post -ContentType "application/json" -Body $body -TimeoutSec 600 | Out-Null
-    Write-Host ">> $Model is resident" -ForegroundColor Green
-  } catch {
-    Write-Host "warmup failed: $($_.Exception.Message)" -ForegroundColor Red
-  }
-}
-
-# Restart the local Ollama daemon. Recent Windows builds ship a per-user
-# "ollama app.exe" tray process rather than a service, so both are handled.
-function Restart-Ollama {
-  $svc = Get-Service -Name "Ollama" -ErrorAction SilentlyContinue
-  if ($svc) {
-    Write-Host ">> Restart-Service Ollama"
-    try { Restart-Service -Name "Ollama" -Force -ErrorAction Stop; return } catch {
-      Write-Host "Restart-Service failed (needs an elevated shell): $($_.Exception.Message)" -ForegroundColor Red
-      return
-    }
-  }
-  Write-Host ">> restarting the Ollama tray app"
-  Get-Process -Name "ollama app", "ollama" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-  Start-Sleep -Seconds 2
-  $appPath = Join-Path $env:LOCALAPPDATA "Programs\Ollama\ollama app.exe"
-  if (Test-Path $appPath) { Start-Process $appPath }
-  else { Write-Host "Ollama app not found at $appPath — start it from the Start menu" -ForegroundColor Yellow }
-}
-
-# Persist the managed OLLAMA_* vars for the background daemon. The session-scope
-# assignments above never reach a service or tray process, which starts with a clean
-# environment and silently falls back to a ~4k auto context. -Lan additionally binds
-# the daemon to every interface so WSL and other machines on the home network can
-# reach it (that also needs an inbound firewall rule for the port).
-function Set-OllamaDaemonEnv {
-  param([switch]$Lan)
-  foreach ($name in $script:_syOllamaManagedEnvVars) {
-    $value = [Environment]::GetEnvironmentVariable($name, "Process")
-    if (-not $value) { continue }
-    [Environment]::SetEnvironmentVariable($name, $value, "User")
-    Write-Host "   $name=$value"
-  }
-  if ($Lan) {
-    $bind = "0.0.0.0:$($script:_syOllamaPort)"
-    [Environment]::SetEnvironmentVariable("OLLAMA_HOST", $bind, "User")
-    Write-Host "   OLLAMA_HOST=$bind"
-    Write-Host "   port $($script:_syOllamaPort) is already allowed inbound on private networks by _full-setup.ps1; open it manually only if that never ran" -ForegroundColor Yellow
-  }
-  Write-Host ">> user environment updated. Run Restart-Ollama for it to take effect." -ForegroundColor Green
-}
-
-# One-shot diagnosis for an endpoint that hangs or stops mid-answer. Checks
-# reachability, installed models, residency/VRAM spill, the tuning this session
-# exports, and a live one-token generation to separate a wedged daemon from a
-# client that gave up.
-function Test-OllamaHealth {
-  param([string]$OllamaHost = "")
-  $url = _Get-OllamaUrl $OllamaHost
-  Write-Host "== ollama_doctor: $url =="
-  try {
-    $version = (Invoke-RestMethod -Uri "$url/api/version" -TimeoutSec 5).version
-    Write-Host "[ok]   reachable - $version" -ForegroundColor Green
-  } catch {
-    Write-Host "[FAIL] unreachable - daemon down, wrong port, or firewalled" -ForegroundColor Red
-    Write-Host "       Try: Restart-Ollama"
-    return
-  }
-
-  $models = @(Get-OllamaModels $OllamaHost)
-  Write-Host "[ok]   $($models.Count) model(s) installed" -ForegroundColor Green
-
-  Write-Host "-- resident models --"
-  Get-OllamaPs $OllamaHost
-
-  Write-Host "-- this session's tuning (the daemon may differ - see Set-OllamaDaemonEnv) --"
-  foreach ($name in $script:_syOllamaManagedEnvVars) {
-    $value = [Environment]::GetEnvironmentVariable($name, "Process")
-    if (-not $value) { $value = "<unset>" }
-    Write-Host "   $name=$value"
-  }
-
-  if ($models.Count -eq 0) {
-    Write-Host "[warn] no models installed - pull one, e.g. ollama pull qwen2.5-coder:7b" -ForegroundColor Yellow
-    return
-  }
-
-  Write-Host "-- live generation probe ($($models[0])) --"
-  $body = @{ model = $models[0]; prompt = "say ok"; stream = $false; options = @{ num_predict = 1 } } | ConvertTo-Json -Depth 3
-  try {
-    Invoke-RestMethod -Uri "$url/api/generate" -Method Post -ContentType "application/json" -Body $body -TimeoutSec 120 | Out-Null
-    Write-Host "[ok]   generation succeeded - the daemon is healthy" -ForegroundColor Green
-  } catch {
-    Write-Host "[FAIL] generation timed out or errored" -ForegroundColor Red
-    Write-Host "       Try, in order: Remove-OllamaLoadedModel / Restart-Ollama / a smaller model"
-  }
-}
-
-# bash-compatible names so the same muscle memory works in either shell
-Set-Alias list_ollama_models Get-OllamaModels
-Set-Alias ollama_ps Get-OllamaPs
-Set-Alias ollama_unload Remove-OllamaLoadedModel
-Set-Alias ollama_warmup Start-OllamaWarmup
-Set-Alias ollama_restart Restart-Ollama
-Set-Alias ollama_apply_daemon_env Set-OllamaDaemonEnv
-Set-Alias ollama_doctor Test-OllamaHealth
 
 # clear - preserve scrollback buffer (match iTerm2 behavior)
 function Clear-Host { [System.Console]::Write("$([char]0x1B)[H$([char]0x1B)[2J") }
