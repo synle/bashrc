@@ -491,6 +491,11 @@ Profile registration is buffered: `registerProfileBlock` /
   `binary-cache` release), `downloadAndInstallBinary`, `installMacDmg`,
   `clearMacQuarantine`, `installWindowsSetupExe`, `installLinuxUniversalAppImage`,
   `installBrowserExtension`, `gitClone`, `fetchGitHubReleaseVersion`, `getGitHubRawUrl`.
+- **Install version stamps:** `getInstalledVersionStampPath` (sibling `<folder>.installed.json`,
+  never inside the folder — Chrome rejects an unpacked extension containing a dot-entry),
+  `readInstalledVersionStamp`, `writeInstalledVersionStamp`. Use these so a re-run skips the
+  delete + re-download when the recorded version already matches upstream; `--refresh` is
+  the force override.
 - **Blocks/profile:** `replaceBlock(s)`, `removeBlock`, `appendTextBlock`,
   `prependTextBlock`, `moveTextBlockToEnd/Start`, `registerProfileBlock`,
   `registerWithBashSyleProfile`, `registerWithPowershellProfile`,

@@ -395,8 +395,8 @@ installBrewPackageInBackground kubectx # provides kubectx + kubens
 installBrewPackageInBackground stern
 
 # --- Cloud CLIs ---
-installBrewPackageInBackground awscli                  # `aws` — AWS CLI v2
-installBrewPackageInBackground azure-cli               # `az` — Microsoft Azure CLI
+installBrewPackageInBackground awscli    # `aws` — AWS CLI v2
+installBrewPackageInBackground azure-cli # `az` — Microsoft Azure CLI
 # Upstream renamed this cask to `gcloud-cli`; `brew install --cask google-cloud-sdk` still
 # resolves through brew's rename map, but the *installed* name is gcloud-cli — which is why
 # _brewPackageInstalled carries the alias. Without it this reinstalls on every run.
