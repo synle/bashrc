@@ -66,13 +66,31 @@ defaults write com.apple.dashboard mcx-disabled -bool true                      
 # --- Accessibility > Display (WindowServer CPU reduction) ---
 ################################################################################
 echo '>> Applying accessibility display tweaks'
-defaults write com.apple.universalaccess reduceTransparency -bool true # Disables window/menu bar transparency effects, reducing GPU compositing overhead
-defaults write com.apple.universalaccess reduceMotion -bool true       # Enables prefers-reduced-motion media query so Electron/web apps skip CSS animations and transitions
+# com.apple.universalaccess and Safari's sandboxed container are TCC-protected: `defaults
+# write` fails with "Could not write domain ...; exiting" unless the running terminal has
+# Full Disk Access. The keys still apply once FDA is granted, so this is a per-host
+# permission gap rather than a bug to code around.
+#
+# Options considered:
+#   1. Wrap the protected writes and print one actionable skip line   <-- CHOSEN
+#      Keeps the raw macOS error out of the run log while still telling the user exactly
+#      which permission to grant to make the tweak stick.
+#   2. `2>/dev/null` on each write. Rejected: silently drops the tweak with no trace, so a
+#      host that never got FDA looks identical to one where it worked.
+#   3. Re-run the writes under sudo. Rejected: it would write root's preference domain,
+#      not the user's — the setting would not take effect at all.
+function _defaults_write_protected() {
+  if ! defaults write "$@" 2> /dev/null; then
+    echo ">> defaults write $1 $2 >> Skipped (needs Full Disk Access: System Settings > Privacy & Security > Full Disk Access)"
+  fi
+}
+_defaults_write_protected com.apple.universalaccess reduceTransparency -bool true # Disables window/menu bar transparency effects, reducing GPU compositing overhead
+_defaults_write_protected com.apple.universalaccess reduceMotion -bool true       # Enables prefers-reduced-motion media query so Electron/web apps skip CSS animations and transitions
 
 ################################################################################
 # --- Safari & Web ---
 ################################################################################
-defaults write com.apple.Safari WebKitInitialTimedLayoutDelay -float 0.1 # Reduces Safari's initial page render delay (default 0.25s) for faster first paint
+_defaults_write_protected com.apple.Safari WebKitInitialTimedLayoutDelay -float 0.1 # Reduces Safari's initial page render delay (default 0.25s) for faster first paint
 
 ################################################################################
 # --- System & Finder Behaviors ---

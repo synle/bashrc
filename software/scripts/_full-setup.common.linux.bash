@@ -188,7 +188,17 @@ function _installFnmAndNode() {
   if type -P fnm &> /dev/null || [ -x "$FNM_DIR/fnm" ]; then
     export PATH="$FNM_DIR:$PATH"
     eval "$(fnm env)" 2> /dev/null
-    if ! fnm ls "$NODE_JS_VERSION" > /dev/null 2>&1; then
+    # `fnm ls` takes no positional argument — passing the version made it exit 2 every run,
+    # so node was needlessly re-downloaded and reinstalled on every setup. Match the version
+    # against the installed list instead. Three patterns cover a major-only pin (24 → v24.x)
+    # and a fully pinned version at end of line or followed by the ` default` marker, while
+    # the trailing anchors keep 24 from matching v240.x.
+    #
+    # Options considered: parse `fnm ls` (chosen — one call, no extra dependency), or test
+    # for the version folder under $FNM_DIR/node-versions (rejected: couples the check to
+    # fnm's on-disk layout and misses a major-only pin), or drop the guard and let
+    # `fnm install` no-op (rejected: it re-downloads the tarball every run).
+    if ! fnm ls 2> /dev/null | grep -q -e "v${NODE_JS_VERSION}\." -e "v${NODE_JS_VERSION}$" -e "v${NODE_JS_VERSION} "; then
       echo -n ">> Node $NODE_JS_VERSION >> Installing with fnm >> "
       if fnm install "$NODE_JS_VERSION" > /dev/null 2>&1; then
         echo "Success"

@@ -86,4 +86,13 @@ echo ">> wrote $_coc_settings"
 echo '>> Recommended: open vim and run:'
 echo '>>   :CocInstall coc-tsserver coc-pyright coc-html coc-css coc-json coc-eslint coc-volar coc-prisma coc-markdownlint'
 
-print_action_summary "$_coc_settings"
+# NOTE: no print_action_summary call here. That helper lives in profile-core.sh, i.e. it
+# only exists inside an interactive ~/.bash_syle shell — setup scripts source
+# common-functions.bash instead, so calling it here failed with
+# "print_action_summary: command not found" on every run.
+#
+# Options considered:
+#   1. Drop the call; the `>> wrote $_coc_settings` line above already shows the path  <-- CHOSEN
+#   2. Mirror print_action_summary into common-functions.bash. Rejected: ~60 lines
+#      duplicated byte-for-byte across two files (plus a new parity-spec entry to keep them
+#      in sync) to prettify one echo in one script.

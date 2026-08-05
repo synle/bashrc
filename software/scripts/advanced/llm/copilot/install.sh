@@ -29,6 +29,21 @@ if ! ((IS_CI)) && has_persistent_binary copilot > /dev/null; then
   if copilot update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo 'Success'
   else
-    echo 'Error (non-fatal)'
+    # Most common failure is a broken install ("GitHub Copilot CLI: no platform package
+    # found") — npm skipped the platform-specific optional dependency, so the launcher has
+    # no binary to update and stays broken until someone notices.
+    #
+    # Options considered:
+    #   1. Delete the launcher, then reinstall via npm   <-- CHOSEN
+    #      Exactly what the error message instructs, and self-heals without user action.
+    #      The delete is required: npm_install_global's freshness gate would otherwise skip
+    #      the reinstall, since the (broken) binary is still recent on disk.
+    #   2. Keep the original `echo 'Error (non-fatal)'`. Rejected: it reported a permanently
+    #      broken CLI as a transient blip, and every later run repeated the same message.
+    #   3. Call the private _npm_install_global with always_latest=false. Rejected: it hits
+    #      the same freshness gate, so it would no-op without the delete anyway.
+    echo 'Error — reinstalling from npm'
+    rm -rf "$HOME/.local/bin/copilot" "$HOME/.local/share/copilot"
+    npm_install_global @github/copilot copilot
   fi
 fi

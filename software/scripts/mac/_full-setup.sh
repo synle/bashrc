@@ -63,7 +63,21 @@ cat << EOF > "$HOME/Library/LaunchAgents/com.user.chrome.headless.plist"
 </dict>
 </plist>
 EOF
-launchctl load "$HOME/Library/LaunchAgents/com.user.chrome.headless.plist"
+# `launchctl load` is deprecated and returns "Load failed: 5: Input/output error" once the
+# agent is already registered — i.e. on every run after the first.
+#
+# Options considered:
+#   1. Guard on `launchctl print`, then `bootstrap gui/<uid>`, falling back to `load`  <-- CHOSEN
+#      Uses the modern API, stays correct on hosts old enough to lack `bootstrap`, and only
+#      reports when registration genuinely failed.
+#   2. `launchctl load ... 2>/dev/null || true`. Rejected: hides a real failure on a first
+#      install just as effectively as it hides the harmless already-loaded case.
+_chrome_headless_plist="$HOME/Library/LaunchAgents/com.user.chrome.headless.plist"
+if ! launchctl print "gui/$(id -u)/com.user.chrome.headless" &> /dev/null; then
+  launchctl bootstrap "gui/$(id -u)" "$_chrome_headless_plist" &> /dev/null \
+    || launchctl load "$_chrome_headless_plist" &> /dev/null \
+    || echo '>> Headless Chrome LaunchAgent >> Skipped (could not register)'
+fi
 
 ################################################################################
 # --- Homebrew ---
@@ -288,8 +302,26 @@ installBrewPackageInBackground cmake
 installBrewPackageInBackground gradle
 installBrewPackageInBackground rust
 installBrewPackageInBackground go
-installBrewPackageInBackground --cask dotnet-sdk
-installBrewPackageInBackground --cask powershell
+# .NET SDK comes from the `dotnet` formula, not the `dotnet-sdk` cask. The cask drops a
+# /opt/homebrew/bin/dotnet symlink pointing at /usr/local/share/dotnet, which then blocks
+# `brew link dotnet` — and the powershell formula depends on `dotnet`, so the cask made
+# every powershell install exit non-zero ("The `brew link` step did not complete
+# successfully") even though the bottle poured fine.
+#
+# Options considered for the leftover cask on existing hosts:
+#   1. Leave the cask installed, force-link the formula over it after the background
+#      installs finish (see `brew link --overwrite dotnet` at the bottom)   <-- CHOSEN
+#      Non-interactive and safe to repeat. Costs some disk (both copies on disk) until the
+#      user removes the cask by hand.
+#   2. `brew uninstall --cask --force dotnet-sdk` first. Rejected: verified to hang
+#      indefinitely even with stdin closed (it wants an interactive sudo prompt), which
+#      would deadlock the whole setup run.
+#   3. Keep the cask as the SDK source and drop the powershell formula. Rejected: powershell
+#      pulls `dotnet` as a hard dependency regardless, so the link conflict comes back.
+installBrewPackageInBackground dotnet
+# powershell moved from a cask to a core formula — `brew install --cask powershell`
+# now fails with "No Cask with this name exists" (only powershell@preview remains a cask).
+installBrewPackageInBackground powershell
 
 # --- Local LLM ---
 installBrewPackageInBackground ollama
@@ -306,6 +338,27 @@ installBrewPackageInBackground procs  # modern ps replacement
 # --- Infrastructure-as-Code ---
 # ansible foreground for the same reason — universally packaged, required-tier.
 installBrewPackage ansible
+# terraform was removed from homebrew-core when HashiCorp relicensed it under the BUSL —
+# `brew install terraform` fails with "No available formula with the name terraform".
+# It now lives in the official hashicorp/tap, and newer brew additionally refuses to load
+# formulae from an untrusted tap ("Refusing to load formula ... from untrusted tap").
+# Both tap and trust are no-ops when already done; `|| true` keeps older brew (which has
+# no `trust` subcommand) from failing the run.
+#
+# Options considered:
+#   1. tap + trust hashicorp/tap, install by short name   <-- CHOSEN
+#      Short name still resolves once the tap is present, so the installed-formulae skip
+#      cache (which lists `terraform`, not the fully qualified name) keeps working.
+#   2. Install as hashicorp/tap/terraform. Rejected: the cache compares against
+#      `brew list --formula` output, so the fully qualified name never matches and brew
+#      gets re-invoked on every single run.
+#   3. Swap to opentofu (in homebrew-core, no tap or trust needed). Rejected: not a
+#      drop-in for everything terraform, and this is a tooling fix, not a migration.
+if ! brew tap 2> /dev/null | grep -qx hashicorp/tap; then
+  echo '>> Tapping hashicorp/tap (terraform source)'
+  brew tap hashicorp/tap < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || true
+fi
+brew trust hashicorp/tap < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || true
 installBrewPackageInBackground terraform
 installBrewPackageInBackground tflint
 
@@ -357,32 +410,12 @@ fi
 installBrewPackageInBackground duti
 installBrewPackageInBackground xz
 
-# --- Node.js (fnm) ---
-echo -n ">> fnm >> Installing with curl >> "
-if has_persistent_binary fnm &> /dev/null; then
-  echo "Skipped"
-else
-  if curl_bash_install https://fnm.vercel.app/install --skip-shell; then
-    echo "Success"
-  else
-    echo "Error"
-  fi
-fi
-if type -P fnm &> /dev/null || [ -x "$FNM_DIR/fnm" ]; then
-  export PATH="$FNM_DIR:$PATH"
-  eval "$(fnm env)" 2> /dev/null
-  if ! fnm ls "$NODE_JS_VERSION" > /dev/null 2>&1; then
-    echo -n ">> Node $NODE_JS_VERSION >> Installing with fnm >> "
-    if fnm install "$NODE_JS_VERSION" > /dev/null 2>&1; then
-      echo "Success"
-    else
-      echo "Error"
-    fi
-  fi
-  fnm default "$NODE_JS_VERSION" > /dev/null 2>&1
-  fnm use "$NODE_JS_VERSION" > /dev/null 2>&1
-  export FNM_DEFAULT_NODE_PATH="$FNM_DIR/node-versions/$(node -v 2> /dev/null)/installation"
-fi
+# NOTE: fnm + node are installed once, earlier in this file, via _installFnmAndNode.
+# Do not re-add an inline fnm block here — a verbatim copy of that logic used to live at
+# this spot, which installed fnm/node twice and printed the fnm + "Node <v>" lines twice on
+# every single run. Options were dedupe to the shared helper (chosen) or keep the inline
+# copy and delete the _installFnmAndNode call; the helper wins because Linux uses it too,
+# so a fix there now applies to every platform instead of just this file.
 
 # --- GUI apps (only if a display server is available) ---
 installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
@@ -540,4 +573,13 @@ fi
 ################################################################################
 _installBackgroundPackages
 _waitForBackgroundPackages
+
+# Force-link the dotnet formula over any leftover /opt/homebrew/bin/dotnet symlink from the
+# legacy dotnet-sdk cask. Without this, every powershell install (dotnet is a dependency)
+# exits non-zero on the failed link step. No-op once the link already points at the keg.
+if [ -L /opt/homebrew/bin/dotnet ] && [[ "$(readlink /opt/homebrew/bin/dotnet)" != *"/Cellar/dotnet/"* ]]; then
+  echo '>> dotnet >> Relinking over stale dotnet-sdk cask symlink'
+  brew link --overwrite dotnet < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || true
+fi
+
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi
