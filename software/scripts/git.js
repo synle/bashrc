@@ -1,5 +1,23 @@
 /**
+ * Base aliases each numbered alias delegates to, as `[generatedPrefix, targetAlias]` pairs.
+ * Every target MUST be an alias defined in `software/scripts/git.gitconfig`; `git.spec.js`
+ * fails the build when one is missing (a typo here yields
+ * `git: 'foo' is not a git command` at runtime, not at install time).
+ * @type {Array<[string, string]>}
+ */
+const GIT_NUMBERED_ALIAS_TARGETS = [
+  ["r", "rn"],
+  ["r{N}-code", "rn-code"],
+  ["r{N}-subl", "rn-subl"],
+  ["patch-get", "patch-get"],
+  ["patch-view", "patch-view"],
+  ["patch-download", "patch-download"],
+];
+
+/**
  * Generates numbered git alias snippets for interactive rebase and patch operations.
+ * Each entry expands the `{N}` placeholder (or appends N when absent) and delegates to the
+ * matching base alias with N as its single argument.
  * @returns {string} Git config alias entries for r{N}, r{N}-code, r{N}-subl, patch-get{N}, patch-view{N}, and patch-download{N}.
  */
 function _getNumberedAliasSnippet() {
@@ -8,16 +26,11 @@ function _getNumberedAliasSnippet() {
   for (let i = 10; i <= 100; i += 5) items.push(i);
   for (let i = 150; i <= 1000; i += 50) items.push(i);
   return [...new Set(items)]
-    .map(
-      (n) =>
-        code`
-          r${n} = "!git rn ${n}"
-          r${n}-code = "!git rn-code ${n}"
-          r${n}-subl = "!git rn-subl ${n}"
-          patch-get${n} = "!git patch-getn ${n}"
-          patch-view${n} = "!git patch-viewn ${n}"
-          patch-download${n} = "!git patch-downloadn ${n}"
-        `,
+    .map((n) =>
+      GIT_NUMBERED_ALIAS_TARGETS.map(([prefix, target]) => {
+        const name = prefix.includes("{N}") ? prefix.replace("{N}", String(n)) : `${prefix}${n}`;
+        return `${name} = "!git ${target} ${n}"`;
+      }).join("\n"),
     )
     .join("\n");
 }
