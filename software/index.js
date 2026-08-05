@@ -4008,10 +4008,13 @@ async function downloadAssetWithFallback(repoId, url, destination) {
  * On Windows, uses the WSL binary directory. On Linux/Mac, uses the custom tweaks directory (~/_extra).
  * Fetches the repo file list, filters to matching assets, and downloads them in parallel.
  *
- * Short-circuits when the target folder already holds a downloaded file and is not stale
- * (2 weeks, per isPathStale). These payloads are static repo assets — re-listing the GitHub
- * contents API and re-fetching an unchanged jar on every run costs ~1s and changes nothing.
- * `--refresh="<script>"` (IS_REFRESH_MODE) forces the re-download.
+ * Short-circuits when the target folder already holds a file and was refreshed within the
+ * staleness window (2 weeks). These payloads are static repo assets, so re-listing the
+ * GitHub contents API and re-fetching an unchanged jar on every run costs ~0.5-1s and
+ * changes nothing. The folder mtime is bumped after each check so the clock tracks "last
+ * verified", not "last modified" — without the bump an asset that never changes stays
+ * permanently stale and re-downloads forever. `--refresh="<script>"` (IS_REFRESH_MODE)
+ * forces the re-download.
  * @param {string} applicationName - The application name
  * @param {string|function(string): boolean} findFilter - Substring to match or filter function to select which asset files to download
  * @returns {Promise<string>} The target directory path where the app was downloaded
@@ -4030,7 +4033,23 @@ async function downloadApp(applicationName, findFilter) {
   const filterFn = typeof findFilter === "string" ? (f) => f.includes(findFilter) : findFilter;
   const filesToDownload = files.filter((s) => s.includes("assets/") && !s.toLowerCase().includes(".md")).filter(filterFn);
   await downloadAssets(filesToDownload, targetPath);
+  _touchFolderMtime(targetPath);
   return targetPath;
+}
+
+/**
+ * Bumps a folder's mtime to now, ignoring any failure (missing path, read-only mount).
+ * Used to restart a staleness window after a check that produced no file writes.
+ * @param {string} targetPath - Folder whose mtime should be reset to now
+ * @returns {void}
+ */
+function _touchFolderMtime(targetPath) {
+  try {
+    const now = new Date();
+    fs.utimesSync(targetPath, now, now);
+  } catch (err) {
+    log(`>> Could not bump mtime for ${targetPath}: ${err.message}`);
+  }
 }
 
 /**
