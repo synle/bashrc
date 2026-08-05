@@ -24,7 +24,16 @@ npm_install_global @github/copilot copilot
 # auto-update under CI anyway. `< /dev/null` keeps it from consuming the bundling
 # heredoc's stdin; the if/else swallows the exit code so a network or registry hiccup
 # can't fail the surrounding bundled install script.
-if ! ((IS_CI)) && has_persistent_binary copilot > /dev/null; then
+# Node floor: copilot's npm-loader.js resolves its platform binary with
+# `import.meta.resolve`, which only exists from Node 20.6 (and copilot targets 22+). Under
+# an older node the resolve throws, the loader is caught by its own try/catch, and it prints
+# the misleading "no platform package found" — the platform package IS installed. Setup runs
+# under the bootstrap node (which can be an old Volta/system node, e.g. v16), so without
+# this guard every single run reported a broken install and did a pointless rm -rf +
+# npm reinstall that could never fix anything.
+_copilot_node_major="$(node -v 2> /dev/null | tr -d 'v' | cut -d. -f1)"
+if ! ((IS_CI)) && has_persistent_binary copilot > /dev/null \
+  && [ -n "$_copilot_node_major" ] && [ "$_copilot_node_major" -ge 22 ]; then
   echo -n '>> copilot >> Updating to latest stable >> '
   if copilot update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo 'Success'
@@ -46,4 +55,6 @@ if ! ((IS_CI)) && has_persistent_binary copilot > /dev/null; then
     rm -rf "$HOME/.local/bin/copilot" "$HOME/.local/share/copilot"
     npm_install_global @github/copilot copilot
   fi
+elif ! ((IS_CI)) && has_persistent_binary copilot > /dev/null; then
+  echo ">> copilot >> Updating to latest stable >> Skipped (node ${_copilot_node_major:-unknown} < 22)"
 fi
