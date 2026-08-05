@@ -1116,6 +1116,35 @@ Object.keys(process.env)
 /** @type {boolean} Windows (WSL /mnt/c detected) */ const is_os_windows = !!global.is_os_windows;
 /** @type {boolean} Windows Subsystem for Linux */ const is_os_wsl = !!global.is_os_wsl;
 
+// --- GUI / Display Flags ---
+/**
+ * Display-surface flags, the JS half of the single detection source.
+ *
+ * `_detect_gui_flags()` in software/bootstrap/common-env.sh is the ONLY place that
+ * inspects $DISPLAY / $WAYLAND_DISPLAY / $SSH_CONNECTION / $SSH_CLIENT. It runs from
+ * ~/.bash_syle_common on every shell start and exports these three 0/1 env vars, so
+ * bash (`((is_gui))`) and node (the consts below) always agree on the same verdict.
+ *
+ * Flag           | True when
+ * ---------------|--------------------------------------------------------------
+ * is_gui         | Any GUI surface exists — mac/windows always, elsewhere X11 or
+ *                | Wayland. Zero inside an ssh session. Gate GUI app installs on this.
+ * is_gui_x11     | An X11 server is reachable (also XWayland, WSLg, Termux:X11).
+ * is_gui_wayland | A Wayland compositor is reachable.
+ *
+ * Read through getRuntimeOption so a run can be forced either way for testing:
+ * `bash run.sh --setup --is_gui=0` rehearses a headless install on a GUI box.
+ */
+/** @type {boolean} A GUI display surface is available (mac/windows always; elsewhere needs X11 or Wayland; never over ssh) */
+const is_gui = getRuntimeOption("is_gui", parseBoolean);
+/** @type {boolean} An X11 server is reachable ($DISPLAY set) — also true for XWayland, WSLg and Termux:X11 */
+const is_gui_x11 = getRuntimeOption("is_gui_x11", parseBoolean);
+/** @type {boolean} A Wayland compositor is reachable ($WAYLAND_DISPLAY set) */
+const is_gui_wayland = getRuntimeOption("is_gui_wayland", parseBoolean);
+global.is_gui = is_gui;
+global.is_gui_x11 = is_gui_x11;
+global.is_gui_wayland = is_gui_wayland;
+
 /**
  * List of OS flags considered limited-support platforms. Scripts calling
  * `exitIfLimitedSupportOs()` will exit early when running on any of these.
@@ -3161,6 +3190,29 @@ function exitIfNotSudo() {
   if (IS_DRY_RUN) return;
   if (typeof process.getuid === "function" && process.getuid() !== 0) {
     throw new ScriptSkipError("Requires sudo/root privileges");
+  }
+}
+
+/**
+ * Guard clause: exits the process if no GUI display surface is available.
+ * Use at the top of any script that installs or configures a GUI-only app — on a
+ * headless box (server, container, CI, ssh session) that work is pure waste.
+ *
+ * Reads the is_gui / is_gui_x11 / is_gui_wayland flags exported by
+ * `_detect_gui_flags()` in software/bootstrap/common-env.sh — the single source of
+ * truth shared with bash's `((is_gui))` checks.
+ *
+ * @param {"any"|"x11"|"wayland"} [mode="any"] - Which display surface is required.
+ *   "any" for GUI apps, "x11"/"wayland" when the script needs a server-specific tool.
+ */
+function exitIfNoGui(mode = "any") {
+  const flags = { any: is_gui, x11: is_gui_x11, wayland: is_gui_wayland };
+  if (!(mode in flags)) {
+    throw new Error(`exitIfNoGui: unknown mode '${mode}' (expected: any, x11, wayland)`);
+  }
+  if (!flags[mode]) {
+    const label = mode === "any" ? "No GUI display available" : `No ${mode} display server available`;
+    throw new ScriptSkipError(`${label} (headless host or ssh session)`);
   }
 }
 
@@ -5348,6 +5400,7 @@ function printRunInfo() {
     `presets             = ${_parsedArgs.presets.length ? _parsedArgs.presets.join(",") : "[none]"}`,
     `setup               = ${_parsedArgs.setup}`,
     `os_flags            = ${activeOsFlags || "[none]"}`,
+    `gui_flags           = ${[is_gui && "is_gui", is_gui_x11 && "is_gui_x11", is_gui_wayland && "is_gui_wayland"].filter(Boolean).join(",") || "[headless]"}`,
   ];
 
   log(LINE_BREAK_HASH);

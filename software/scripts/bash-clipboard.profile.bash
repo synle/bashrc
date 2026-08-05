@@ -31,10 +31,10 @@ elif ((is_os_wsl)) && type -P clip.exe &> /dev/null && type -P powershell.exe &>
 elif ((is_os_android_termux)) && type -P timeout &> /dev/null && type -P termux-clipboard-set &> /dev/null; then
   _COPY_CMD="timeout 5 termux-clipboard-set"
   _PASTE_CMD="timeout 5 termux-clipboard-get"
-elif has_a_gui wayland && type -P wl-copy &> /dev/null && type -P wl-paste &> /dev/null; then
+elif ((is_gui_wayland)) && type -P wl-copy &> /dev/null && type -P wl-paste &> /dev/null; then
   _COPY_CMD="wl-copy"
   _PASTE_CMD="wl-paste"
-elif has_a_gui x11 && type -P xclip &> /dev/null; then
+elif ((is_gui_x11)) && type -P xclip &> /dev/null; then
   _COPY_CMD="xclip -selection clipboard"
   _PASTE_CMD="xclip -selection clipboard -o"
 else

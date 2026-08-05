@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | a880a24efff4adb3a7bd9eae63eb5089 | 3.6 KB
+# software/bootstrap/common-env.sh | d75fa3505eaf138da6d4f5d779a13744 | 5.7 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -95,6 +95,49 @@ else
   export is_system_laptop=0
   export is_system_desktop=1
 fi
+
+# --- Display / GUI Detection ---
+# _detect_gui_flags - Single source of truth for "does this host have a display?".
+# Sets and exports three 0/1 flags, mirroring the is_os_* / is_system_* convention:
+#
+#   is_gui_x11      1 iff $DISPLAY is set — an X11 (or XWayland / WSLg / Termux:X11)
+#                   server is reachable. Picks x11-only tools (xclip, wmctrl, xrandr).
+#   is_gui_wayland  1 iff $WAYLAND_DISPLAY is set — a Wayland compositor is reachable.
+#                   Picks wayland-only tools (wl-copy/wl-paste, wlr-randr, swaymsg).
+#   is_gui          1 iff a GUI surface exists at all. Use this for "should we
+#                   install/run GUI apps?". mac and Windows always have a desktop
+#                   session, so they are 1 unconditionally; every other platform
+#                   needs an X11 or Wayland server.
+#
+# SSH sessions force is_gui=0: the remote box may well have a physical monitor, but
+# nothing we launch there is visible to the person on the other end of the pipe, so
+# GUI installs and window-manager calls are wasted work. is_gui_x11 deliberately
+# stays 1 under `ssh -X` — X11 forwarding really does give xclip a working server.
+#
+# Cheap and side-effect free (pure env reads, no subprocess), so it is safe to call
+# on every shell start. Re-callable: run `_detect_gui_flags` by hand after changing
+# $DISPLAY in a live shell to refresh the flags.
+#
+# Consumers:
+#   bash     ((is_gui)) / ((is_gui_x11)) / ((is_gui_wayland))
+#   node     is_gui / is_gui_x11 / is_gui_wayland globals + exitIfNoGui() (software/index.js)
+#
+# Read by run.sh via $BASH_SYLE_COMMON_PATH (which invokes this after the is_os_*
+# exports), so node inherits the flags as environment variables. Override for a
+# single run with `bash run.sh --is_gui=0` to rehearse a headless install.
+function _detect_gui_flags() {
+  is_gui_x11=0 && [ -n "${DISPLAY:-}" ] && is_gui_x11=1
+  is_gui_wayland=0 && [ -n "${WAYLAND_DISPLAY:-}" ] && is_gui_wayland=1
+
+  is_gui=0
+  if [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_CLIENT:-}" ]; then
+    is_gui=0
+  elif ((${is_os_mac:-0} || ${is_os_windows:-0} || is_gui_x11 || is_gui_wayland)); then
+    is_gui=1
+  fi
+
+  export is_gui is_gui_x11 is_gui_wayland
+}
 
 # checks if a value is truthy (1, true, y, yes — case-insensitive)
 function is_truthy() {
@@ -513,9 +556,16 @@ $LINE_BREAK_HASH
 declare -f mktemp >> "$BASH_SYLE_COMMON_PATH"
 declare -f get_home_ip_address >> "$BASH_SYLE_COMMON_PATH"
 declare -f is_truthy >> "$BASH_SYLE_COMMON_PATH"
+declare -f _detect_gui_flags >> "$BASH_SYLE_COMMON_PATH"
 
 echo """
 $os_flags
+
+# GUI/display flags are recomputed on every shell start rather than baked in:
+# unlike is_os_*, \$DISPLAY / \$WAYLAND_DISPLAY / \$SSH_CONNECTION are per-session,
+# so the same machine is headless over ssh and GUI on the console. Runs after the
+# is_os_* exports above because is_gui consults is_os_mac / is_os_windows.
+_detect_gui_flags
 
 export SY_OMEN45L_IP="$(get_home_ip_address "sy-omen45l")"
 

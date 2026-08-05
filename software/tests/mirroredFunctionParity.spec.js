@@ -7,7 +7,6 @@
  * interactive shell) while common-functions.bash is the source of truth
  * for scripts:
  *   is_help_arg:   profile-core.sh ←→ common-functions.bash
- *   has_a_gui:     profile-core.sh ←→ common-functions.bash
  *   prompt_yes_no: profile-advanced.sh ←→ common-functions.bash
  *   get_native_arch:    profile-core.sh ←→ common-functions.bash
  *   is_arch_translated: profile-core.sh ←→ common-functions.bash
@@ -47,7 +46,6 @@ function extractFunction(file, name) {
 /** @type {[string, string, string, string][]} */
 const PAIRS = [
   ["is_help_arg", "profile-core.sh", PROFILE_CORE, "common-functions.bash", COMMON_FUNCTIONS],
-  ["has_a_gui", "profile-core.sh", PROFILE_CORE, "common-functions.bash", COMMON_FUNCTIONS],
   ["prompt_yes_no", "profile-advanced.sh", PROFILE_ADVANCED, "common-functions.bash", COMMON_FUNCTIONS],
   ["get_native_arch", "profile-core.sh", PROFILE_CORE, "common-functions.bash", COMMON_FUNCTIONS],
   ["is_arch_translated", "profile-core.sh", PROFILE_CORE, "common-functions.bash", COMMON_FUNCTIONS],

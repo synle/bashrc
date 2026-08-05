@@ -212,12 +212,12 @@ installDnfPackageInBackground xz
 _installFnmAndNode
 
 # --- GUI apps (only if a display server is available) ---
-if has_a_gui; then
+if ((is_gui)); then
   echo '>> Installing GUI apps'
 
   # ---- Clipboard (install only for the active display server) ----
-  if has_a_gui x11; then installDnfPackageInBackground xclip; fi
-  if has_a_gui wayland; then installDnfPackageInBackground wl-clipboard; fi
+  if ((is_gui_x11)); then installDnfPackageInBackground xclip; fi
+  if ((is_gui_wayland)); then installDnfPackageInBackground wl-clipboard; fi
   installDnfPackageInBackground libreoffice
   installDnfPackageInBackground nautilus
   installDnfPackageInBackground remmina

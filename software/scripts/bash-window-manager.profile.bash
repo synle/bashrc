@@ -30,9 +30,9 @@ function maximize_and_focus_window() {
     _mac_activate_and_tile "$app_name" "$process_name" 2> /dev/null
   elif ((is_os_wsl)); then
     _wsl_activate_and_maximize "$app_name" 2> /dev/null
-  elif has_a_gui wayland; then
+  elif ((is_gui_wayland)); then
     _wayland_activate_and_maximize "$app_name" 2> /dev/null
-  elif has_a_gui x11; then
+  elif ((is_gui_x11)); then
     _x11_activate_and_maximize "$app_name" 2> /dev/null
   fi
   # Best-effort: never signal failure to the caller. An app that is not running,

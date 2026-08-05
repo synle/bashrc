@@ -209,12 +209,12 @@ installAptPackageInBackground xz-utils
 _installFnmAndNode
 
 # --- GUI apps (only if a display server is available) ---
-if has_a_gui; then
+if ((is_gui)); then
   echo '>> Installing GUI apps'
 
   # ---- Clipboard (install only for the active display server) ----
-  if has_a_gui x11; then installAptPackageInBackground xclip; fi
-  if has_a_gui wayland; then installAptPackageInBackground wl-clipboard; fi
+  if ((is_gui_x11)); then installAptPackageInBackground xclip; fi
+  if ((is_gui_wayland)); then installAptPackageInBackground wl-clipboard; fi
 
   # ---- display-dj dependencies (DDC monitor control) ----
   installAptPackageInBackground ddcutil

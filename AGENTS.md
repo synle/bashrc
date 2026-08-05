@@ -404,6 +404,37 @@ Profile registration is buffered: `registerProfileBlock` /
   file may name `synle/bashrc` — a repo's own rules file can't be wrong about its own
   remote. Everything under `assets/` / §3 is a factual inventory, not an example.
 
+### 7.5 GUI / display detection
+
+**One detector, three flags, no wrapper function.** `_detect_gui_flags()` in
+`software/bootstrap/common-env.sh` is the only place in the repo allowed to read
+`$DISPLAY`, `$WAYLAND_DISPLAY`, `$SSH_CONNECTION`, or `$SSH_CLIENT`. It exports three
+`0`/`1` flags that both bash and node consume:
+
+| Flag             | True when                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ |
+| `is_gui`         | Any GUI surface exists. mac/windows always; elsewhere needs X11 or Wayland. Always `0` inside an ssh session |
+| `is_gui_x11`     | An X11 server is reachable — also covers XWayland, WSLg, and Termux:X11                                      |
+| `is_gui_wayland` | A Wayland compositor is reachable                                                                            |
+
+- **Bash:** `if ((is_gui)); then …`, `((is_gui_x11))`, `((is_gui_wayland))` — same
+  `((flag))` style as `is_os_*`. There is no `has_a_gui` function; it was removed
+  because a wrapper around a flag is a no-op wrapper (§ YAGNI).
+- **JS:** the `is_gui` / `is_gui_x11` / `is_gui_wayland` globals, or the
+  `exitIfNoGui("any"|"x11"|"wayland")` guard at the top of a GUI-only script.
+- **Recomputed per shell, never baked in.** Unlike `is_os_*`, display presence is a
+  property of the _session_ — the same box is headless over ssh and GUI on the
+  console. `run.sh` writes `_detect_gui_flags` into `~/.bash_syle_common` and calls it
+  there (after the `is_os_*` exports, since `is_gui` consults `is_os_mac` /
+  `is_os_windows`), so every shell start re-derives it and node inherits the result as
+  env vars. Never add these to the `os_flags` snapshot loop.
+- **Override for testing:** `bash run.sh --setup --is_gui=0` rehearses a headless
+  install on a GUI box. Re-run `_detect_gui_flags` by hand after changing `$DISPLAY`
+  in a live shell.
+- Use `is_gui` to decide _whether_ to install a GUI app, and `is_gui_x11` /
+  `is_gui_wayland` to pick _which_ server-specific tool (xclip vs wl-copy, wmctrl vs
+  swaymsg). Never gate a GUI app on `is_gui_x11` alone — that skips Wayland desktops.
+
 ---
 
 ## 8. Portability constraints — these fail CI
@@ -503,7 +534,9 @@ Profile registration is buffered: `registerProfileBlock` /
   `removeFromBashSyleProfile`, `flushProfileBlocks`.
 - **Guards:** `ScriptSkipError`, `exitIfNotTargetOs`, `exitIfUnsupportedOs`,
   `exitIfLimitedSupportOs`, `exitIfPathFound/NotFound`, `exitIfNotSudo`,
-  `exitIfNoChromiumBrowser`.
+  `exitIfNoChromiumBrowser`, `exitIfNoGui(mode)` (`"any"` / `"x11"` / `"wayland"`).
+- **GUI/display flags:** `is_gui`, `is_gui_x11`, `is_gui_wayland` — read from the env,
+  see §7.5.
 - **Staleness:** `isPathStale`, `isForceRefreshStale`, `isBashSyleStale`.
 - **Exec/output:** `execBash` (async, 30s cap), `execBashSync`, `hasBinary`, `emitBash`,
   `log`, `echo`, `color*`, `printSectionBlock`, `printRunInfo`.
@@ -511,7 +544,7 @@ Profile registration is buffered: `registerProfileBlock` /
   `parseString` / `parseInteger` (supports clamping) / `parseBoolean`.
 
 Bash-side equivalents in `software/bootstrap/common-functions.bash`: `is_help_arg`,
-`has_a_gui`, `safe_source`, `curl_bash_install`, `npm_install_global`,
+`safe_source`, `curl_bash_install`, `npm_install_global`,
 `has_persistent_binary`, `find_path`, `prompt_yes_no`, `ensure_binary_alias`,
 `exit_if_not_sudo`, `safe_touch`/`safe_mkdir`/`safe_chown`/`safe_chmod`,
 `get_native_arch` / `run_native`, plus a logging `sudo` wrapper.
@@ -591,7 +624,8 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sectionMarkerStyle`              | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.                                                                                                                                                                                                                                                                               |
 | `pathArrayValidation`             | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`.                                                                                                                                                                                                                 |
-| `mirroredFunctionParity`          | `is_help_arg`, `has_a_gui`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both.                                                                                                                                                                                                |
+| `mirroredFunctionParity`          | `is_help_arg`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both.                                                                                                                                                                                                             |
+| `guiDetection`                    | `_detect_gui_flags` in `common-env.sh` is replayed against fake env: `is_gui` / `is_gui_x11` / `is_gui_wayland` are always `0`/`1`, ssh forces `is_gui=0`, mac/windows are always GUI, and no other flag leaks. Add a case whenever you touch display detection.                                                                                                                                           |
 | `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8).                                                                                                                                                                                                                                                                                                                                     |
 | `fzfTerminalSafety`               | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.                                                                                                                                                                                                                                                   |
 | `curlWrapperFormat`               | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.                                                                                                                                                                                                                                                                            |
