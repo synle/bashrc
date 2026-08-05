@@ -401,3 +401,90 @@ describe("root scripts syntax check", () => {
     });
   });
 });
+
+/**
+ * Every shell file the repo ships, for the bash 3.2 portability lints below.
+ * @type {string[]}
+ */
+const allShellFiles = [
+  ...walkFiles(path.join(ROOT_DIR, "software/scripts"), (n) => /\.(sh|bash)$/.test(n) && !n.endsWith(".ps1.bash")),
+  ...walkFiles(path.join(ROOT_DIR, "software/bootstrap"), (n) => /\.(sh|bash)$/.test(n) && !n.endsWith(".ps1.bash")),
+  ...rootScriptFiles,
+];
+
+/**
+ * Finds heredocs opened while inside a `$( ... )` command substitution.
+ *
+ * bash 3.2 does not stop tracking quotes when it enters a heredoc body nested in
+ * a command substitution: it keeps scanning for the matching `)` and counts every
+ * `'` in the body as shell quoting. A body with an odd number of apostrophes —
+ * one English possessive in a JS comment is enough — leaves the parser stuck
+ * "inside" a quote and corrupts the parse of everything that follows, usually
+ * surfacing as a syntax error hundreds of lines later in an unrelated function.
+ * bash 4+ parses it correctly, so the bug is invisible on any modern bash.
+ *
+ * The repo's portable idiom is to read the body into a variable first, which
+ * keeps the heredoc at the top level: `IFS= read -r -d '' var << 'EOF'`.
+ *
+ * @param {string} source - Full shell file contents
+ * @returns {{ line: number, text: string }[]} One entry per offending heredoc
+ */
+function findHeredocsInCommandSubstitution(source) {
+  const lines = source.split("\n");
+  const offenders = [];
+  let depth = 0;
+  let heredocTag = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (heredocTag !== null) {
+      if (line.trim() === heredocTag) heredocTag = null;
+      continue;
+    }
+    const stripped = line.replace(/#.*$/, "");
+    // `$(` opens a substitution; a bare `)` at the end of a line closes one. This
+    // deliberately only tracks the multi-line form, which is the only shape that
+    // can wrap a heredoc.
+    const opens = (stripped.match(/\$\(\s*$/g) || []).length;
+    const heredoc = stripped.match(/<<-?\s*'([A-Za-z_][A-Za-z0-9_]*)'/);
+    if (heredoc && depth > 0) offenders.push({ line: i + 1, text: line.trim() });
+    if (heredoc) heredocTag = heredoc[1];
+    depth += opens;
+    if (depth > 0 && /^\s*\)/.test(stripped)) depth = Math.max(0, depth - 1);
+  }
+  return offenders;
+}
+
+describe("bash 3.2 portability", () => {
+  it("should have shell files to lint", () => {
+    expect(allShellFiles.length).toBeGreaterThan(0);
+  });
+
+  allShellFiles.forEach((filePath) => {
+    const relative = path.relative(ROOT_DIR, filePath);
+
+    it(`${relative} - no heredoc nested inside $( ... )`, () => {
+      const offenders = findHeredocsInCommandSubstitution(readFileSync(filePath, "utf-8"));
+      expect(
+        offenders,
+        `${relative} opens a heredoc inside a command substitution at ${offenders
+          .map((o) => `line ${o.line} (${o.text})`)
+          .join(", ")}. bash 3.2 tracks quotes through the heredoc body and an odd ` +
+          `apostrophe count silently breaks the parse of the whole file. Read it into a ` +
+          `variable instead: IFS= read -r -d '' var << 'EOF'`,
+      ).toEqual([]);
+    });
+
+    it(`${relative} - no &>> redirect (bash 4.0+)`, () => {
+      const offenders = readFileSync(filePath, "utf-8")
+        .split("\n")
+        .map((line, index) => ({ line: index + 1, text: line }))
+        .filter(({ text }) => text.replace(/#.*$/, "").includes("&>>"));
+      expect(
+        offenders,
+        `${relative} uses \`&>>\` at ${offenders.map((o) => `line ${o.line}`).join(", ")}. ` +
+          `That operator is bash 4.0+ and is a hard syntax error on the bash 3.2 floor. ` +
+          `Use \`>> "$log" 2>&1\` instead.`,
+      ).toEqual([]);
+    });
+  });
+});

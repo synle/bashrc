@@ -159,7 +159,7 @@ function installBrewPackage() {
     fi
   fi
   local _t0=$SECONDS
-  if run_native brew install $install_flags "$pkg_name" < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  if run_native brew install $install_flags "$pkg_name" < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo "Success ($((SECONDS - _t0))s)"
   else
     echo "Error ($((SECONDS - _t0))s) (see $BASHRC_TEMP_DIR/fullsetup.log)"
@@ -226,7 +226,7 @@ function _installBackgroundPackages() {
 # refresh the brew formula/cask index so installs resolve the latest versions
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
-  if brew update < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  if brew update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo "Done"
   else
     echo "Error"
@@ -356,9 +356,9 @@ installBrewPackage ansible
 #      drop-in for everything terraform, and this is a tooling fix, not a migration.
 if ! brew tap 2> /dev/null | grep -qx hashicorp/tap; then
   echo '>> Tapping hashicorp/tap (terraform source)'
-  brew tap hashicorp/tap < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || true
+  brew tap hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 fi
-brew trust hashicorp/tap < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || true
+brew trust hashicorp/tap < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 installBrewPackageInBackground terraform
 installBrewPackageInBackground tflint
 
@@ -421,7 +421,7 @@ installBrewPackageInBackground xz
 installBrewPackageInBackground --cask --app="Ghostty.app" ghostty
 
 # TODO: remove me — iTerm2 uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-brew uninstall --cask --force iterm2 < /dev/null &>> "$BASHRC_TEMP_DIR/fullsetup.log" || true
+brew uninstall --cask --force iterm2 < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 rm -f "$HOME/.iterm2_shell_integration.bash"
 defaults delete com.googlecode.iterm2 > /dev/null 2>&1 || true
 installBrewPackageInBackground --cask --app="Postman.app" postman
@@ -576,7 +576,7 @@ _waitForBackgroundPackages
 # exits non-zero on the failed link step. No-op once the link already points at the keg.
 if [ -L /opt/homebrew/bin/dotnet ] && [[ "$(readlink /opt/homebrew/bin/dotnet)" != *"/Cellar/dotnet/"* ]]; then
   echo '>> dotnet >> Relinking over stale dotnet-sdk cask symlink'
-  brew link --overwrite dotnet < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || true
+  brew link --overwrite dotnet < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 fi
 
 if is_bash_syle_stale; then upgradeAndCleanPackages; else echo ">> Upgrading and cleaning packages >> Skipped (not stale)"; fi

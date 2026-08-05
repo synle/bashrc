@@ -296,7 +296,10 @@ ci_test_coverage:
 # bash -n (profileSyntax.spec.js) catches parse errors ([[ -v VAR ]], ${var,,},
 # declare -A, coproc, ${var@Q}) — these already fail in test_profile.
 # mapfile/readarray (bash 4.0+) and wait -n (bash 4.3+) parse fine on bash 3.2
-# but fail at runtime, so we catch them separately here.
+# but fail at runtime, so we catch them separately here. `&>>` (bash 4.0+) is a
+# hard PARSE error on 3.2 — it is listed here rather than left to bash -n because
+# CI Linux runners have no bash 3.2 to check against, so the textual ban is the
+# only guard that actually runs everywhere. Use `>> "$log" 2>&1` instead.
 # Comments are stripped before matching so that prose mentioning `mapfile`
 # (e.g. "portable equivalent of mapfile") is not flagged.
 #
@@ -316,7 +319,7 @@ ci_test_shellcheck:
 	fi
 	violations=""; \
 	for f in $$(find software/bootstrap/ software/scripts/ \( -name '*.sh' -o -name '*.bash' \)); do \
-	  if sed 's/#.*//' "$$f" | command grep -qE '(^|[^A-Za-z0-9_.`-])(mapfile|readarray)([^A-Za-z0-9_-]|$$)|wait[[:space:]]+-n([^A-Za-z0-9_-]|$$)'; then \
+	  if sed 's/#.*//' "$$f" | command grep -qE '(^|[^A-Za-z0-9_.`-])(mapfile|readarray)([^A-Za-z0-9_-]|$$)|wait[[:space:]]+-n([^A-Za-z0-9_-]|$$)|&>>'; then \
 	    violations="$$violations$$f\n"; \
 	  fi; \
 	done; \

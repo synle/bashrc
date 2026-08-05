@@ -68,7 +68,7 @@ if [ "$(sudo cat "$_SUDOERS_DROPIN" 2> /dev/null)" != "$_SUDOERS_CONTENT" ]; the
   echo -n ">> sudo timestamp_timeout=$_SUDOERS_TIMEOUT_MINUTES minutes, shared across ttys >> "
   _sudoers_tmp="$BASHRC_TEMP_DIR/bashrc-sudo.sudoers"
   echo "$_SUDOERS_CONTENT" > "$_sudoers_tmp"
-  if sudo visudo -c -f "$_sudoers_tmp" &>> $BASHRC_TEMP_DIR/fullsetup.log \
+  if sudo visudo -c -f "$_sudoers_tmp" >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 \
     && sudo install -m 0440 -o root -g wheel "$_sudoers_tmp" "$_SUDOERS_DROPIN"; then
     echo "Done"
   else

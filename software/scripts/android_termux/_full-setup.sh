@@ -50,7 +50,7 @@ function installPkgPackage() {
     echo "Skipped"
   else
     local _t0=$SECONDS
-    if pkg install -y $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+    if pkg install -y $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
       echo "Success ($((SECONDS - _t0))s)"
     else
       echo "Error ($((SECONDS - _t0))s)"
@@ -92,7 +92,7 @@ function _installBackgroundPackages() {
 # refresh the pkg package index so installs resolve the latest versions
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
-  if pkg update -y < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  if pkg update -y < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo "Done"
   else
     echo "Error"

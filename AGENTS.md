@@ -301,10 +301,18 @@ Profile registration is buffered: `registerProfileBlock` /
   `"funcname: short description"`, with a matching `#` comment above the function.
   Inline help is the source of truth.
 - **`_full-setup.sh` package-manager calls end with
-  `< /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log`.** `< /dev/null` stops the subprocess
-  eating the heredoc's stdin; `&>>` captures both streams for the CI log dump.
+  `< /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1`.** `< /dev/null` stops the
+  subprocess eating the heredoc's stdin; `>> … 2>&1` captures both streams for the CI
+  log dump. **Never `&>>`** — that operator is bash 4.0+, so it is a hard syntax error
+  on the bash 3.2 floor (§8), and a fresh Mac runs `_full-setup.sh` under `/bin/bash`
+  3.2 before Homebrew's bash exists. Quote the path: `$BASHRC_TEMP_ROOT_DIR` falls back
+  to `$HOME/tmp`, which contains spaces on MinGW.
 - **`> /dev/null` (not `&>`) for standalone install commands** so stderr stays visible.
   `&> /dev/null` is fine inside conditionals and checks.
+- **Never nest a heredoc inside `$( ... )`** — bash 3.2 tracks quotes through the
+  heredoc body and an odd apostrophe count silently breaks the parse of the whole file
+  (§8). Read it into a variable first: `IFS= read -r -d '' js << 'JS_EOF' || true`,
+  then `node -e "$js"`. Enforced by `profileSyntax.spec.js`.
 - **Prefer one-liner `&&` guards** for `eval`/`init`/`source`:
   `type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"`.
 - **grep patterns must work under both `grep` and `rg`** — `grep` may be aliased. Avoid
@@ -401,11 +409,51 @@ Profile registration is buffered: `registerProfileBlock` /
 ## 8. Portability constraints — these fail CI
 
 - **bash 3.2 is the floor** (macOS `/bin/bash` 3.2.57, which is what `safe_source`'s
-  `bash -n` runs). `make ci_test_shellcheck` hard-fails on `mapfile`, `readarray`, or
-  `wait -n` anywhere in `software/bootstrap/` or `software/scripts/`. Also avoid
-  `[[ -v VAR ]]` (use `[ -n "${VAR+x}" ]`), `${var,,}` / `${var^^}` (use `tr`),
+  `bash -n` runs). `make ci_test_shellcheck` hard-fails on `mapfile`, `readarray`,
+  `wait -n`, or `&>>` anywhere in `software/bootstrap/` or `software/scripts/`. Also
+  avoid `[[ -v VAR ]]` (use `[ -n "${VAR+x}" ]`), `${var,,}` / `${var^^}` (use `tr`),
   `declare -A`, `coproc`, `${var@Q}`. Replace `mapfile` with
   `while IFS= read -r line; do arr+=("$line"); done`.
+- **Verify with `/bin/bash -n`, never a bare `bash -n`.** On macOS, PATH `bash` is
+  usually Homebrew 5.x while `/bin/bash` is the 3.2.57 floor, and 5.x happily parses
+  things 3.2 rejects. A bare `bash -n` that passes proves nothing about the floor —
+  that gap is exactly how a broken `~/.bash_syle` once shipped. `profileSyntax.spec.js`
+  now runs both, but it can only check the oldest bash that exists on the box, so on
+  Linux CI (bash 5 everywhere) the textual lints below are the only real guard.
+- **Never `&>>` — it is bash 4.0+ and a hard parse error on 3.2.** Write
+  `>> "$log" 2>&1`. This bites hardest in `_full-setup.sh`, which a fresh Mac runs
+  under `/bin/bash` 3.2 before Homebrew's bash exists. `&>` and `&> /dev/null` are
+  fine — only the appending `&>>` form is bash 4.
+- **Never open a heredoc inside a `$( ... )` command substitution.** bash 3.2 does not
+  stop tracking quotes when it enters a nested heredoc body: it keeps scanning for the
+  matching `)` and counts every `'` in the body as shell quoting. One English
+  possessive in a JS comment — an odd apostrophe count — leaves the parser stuck inside
+  a quote and corrupts everything after it, surfacing as a syntax error hundreds of
+  lines later in an unrelated function. bash 4+ parses it correctly, so the bug is
+  invisible on any modern bash and the reported line number is always a decoy. Read the
+  body into a variable first, which keeps the heredoc at the top level:
+
+  ```bash
+  # WRONG — breaks bash 3.2 the moment the body has an odd number of apostrophes
+  node -e "$(
+    command cat << 'JS_EOF'
+  // every body line's leading '+' matters
+  JS_EOF
+  )"
+
+  # RIGHT — top-level heredoc, body is literal on every bash
+  local js
+  IFS= read -r -d '' js << 'JS_EOF' || true
+  // every body line's leading '+' matters
+  JS_EOF
+  node -e "$js"
+  ```
+
+  `read -d ''` returns non-zero at EOF, hence the `|| true`. `IFS=` keeps the body
+  byte-exact. The same rule covers `osascript -l JavaScript`, `python -c`, `sqlite3`,
+  and any other "script embedded in a heredoc" — if the heredoc feeds stdin rather than
+  an argument, pipe the variable in: `printf '%s\n' "$js" | osascript -l JavaScript`.
+
 - **No GNU-only flags.** BSD `sed`/`find`/`stat` differ. Prefer node or POSIX forms.
 - **Guard every OS-specific path** with the matching `is_os_*` flag or an `exitIf*`
   guard — scripts outside an `<os>/` folder must guard themselves.
@@ -534,24 +582,24 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 
 ### Enforced conventions — one spec each
 
-| Spec                              | Rule                                                                                                                                                                                                        |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sectionMarkerStyle`              | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.                                                                                |
-| `pathArrayValidation`             | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`.                  |
-| `mirroredFunctionParity`          | `is_help_arg`, `has_a_gui`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both. |
-| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8).                                                                                                                                      |
-| `fzfTerminalSafety`               | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.                                                    |
-| `curlWrapperFormat`               | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.                                                                             |
-| `editorKeybindings`               | No duplicate keybinding within a context across VS Code / Sublime / Zed sources.                                                                                                                            |
-| `editorThemes`                    | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical.                                                                           |
-| `autocompleteSpecValidation`      | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`.                                                                               |
-| `generateCiBinaryList`            | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`).                                                                                                          |
-| `gitAliasResolution`              | Every `git.gitconfig` alias (incl. the generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` format placeholder. |
-| `presets`                         | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.                                                                               |
-| `profileSyntax`                   | Generated profiles pass `bash -n`, meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact.   |
-| `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                  |
-| `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                          |
-| `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                            |
+| Spec                              | Rule                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sectionMarkerStyle`              | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.                                                                                                                                                                                                                                                                               |
+| `pathArrayValidation`             | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`.                                                                                                                                                                                                                 |
+| `mirroredFunctionParity`          | `is_help_arg`, `has_a_gui`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both.                                                                                                                                                                                                |
+| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8).                                                                                                                                                                                                                                                                                                                                     |
+| `fzfTerminalSafety`               | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.                                                                                                                                                                                                                                                   |
+| `curlWrapperFormat`               | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.                                                                                                                                                                                                                                                                            |
+| `editorKeybindings`               | No duplicate keybinding within a context across VS Code / Sublime / Zed sources.                                                                                                                                                                                                                                                                                                                           |
+| `editorThemes`                    | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical.                                                                                                                                                                                                                                                                          |
+| `autocompleteSpecValidation`      | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`.                                                                                                                                                                                                                                                                              |
+| `generateCiBinaryList`            | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`).                                                                                                                                                                                                                                                                                                         |
+| `gitAliasResolution`              | Every `git.gitconfig` alias (incl. the generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` format placeholder.                                                                                                                                                                                                |
+| `presets`                         | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.                                                                                                                                                                                                                                                                              |
+| `profileSyntax`                   | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the two bash-3.2 parse traps: no heredoc nested inside `$( ... )`, no `&>>` (§8). |
+| `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                                                                                                                                                                                                                 |
+| `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                                                                                                                                                                                                                         |
+| `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                                                                                                                                                                                                                           |
 
 ---
 
@@ -684,7 +732,9 @@ Targeted escalations that beat a full `make validate` when you know what you tou
 
 - Edit generated output instead of the generator.
 - Add a dependency, wrapper, or abstraction without a concrete caller (YAGNI).
-- Introduce bash 4+ syntax.
+- Introduce bash 4+ syntax — including `&>>` and any heredoc nested inside `$( ... )`.
+  Confirm with `/bin/bash -n <file>`; a bare `bash -n` is Homebrew 5.x on macOS and
+  will not catch it (§8).
 - `console.log` in a JS script.
 - Commit `.build/`, `dist/`, `coverage/`, or `software/types/` churn as hand-written work.
 

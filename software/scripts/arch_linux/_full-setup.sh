@@ -37,7 +37,7 @@ function installPacmanPackage() {
     echo "Skipped"
   else
     local _t0=$SECONDS
-    if sudo pacman -S --noconfirm --needed $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+    if sudo pacman -S --noconfirm --needed $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
       echo "Success ($((SECONDS - _t0))s)"
     else
       echo "Error ($((SECONDS - _t0))s)"
@@ -88,7 +88,7 @@ function _installBackgroundPackages() {
 # sync the pacman package database so installs resolve the latest versions
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
-  if sudo pacman -Sy --noconfirm < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  if sudo pacman -Sy --noconfirm < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo "Done"
   else
     echo "Error"
@@ -223,7 +223,7 @@ if has_a_gui; then
   installPacmanPackageInBackground ghostty
 
   # TODO: remove me — terminator uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-  sudo pacman -Rns --noconfirm terminator < /dev/null &>> "$BASHRC_TEMP_DIR/fullsetup.log" || true
+  sudo pacman -Rns --noconfirm terminator < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
   installPacmanPackageInBackground vlc
 
   # ---- display-dj dependencies (DDC monitor control) ----

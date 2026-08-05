@@ -103,9 +103,11 @@ function _mac_activate_and_tile() {
   [[ -z "$app_name" ]] && return 0
 
   # Resolve visible frame (AppleScript coords: top-left origin) of the display containing the mouse cursor
-  local _disp _mx _my _mw _mh
-  _disp=$(
-    osascript -l JavaScript << 'JXA' 2> /dev/null
+  # The JXA body is read into a variable rather than heredoc'd straight into
+  # `$( ... )` — bash 3.2 keeps tracking quotes through a nested heredoc body, so
+  # an odd apostrophe count in the JS would break the parse of the whole profile.
+  local _disp _jxa _mx _my _mw _mh
+  IFS= read -r -d '' _jxa << 'JXA' || true
 ObjC.import('AppKit');
 const m = $.NSEvent.mouseLocation;
 const ss = $.NSScreen.screens;
@@ -122,7 +124,7 @@ const vf = t.visibleFrame;
 const ph = ss.objectAtIndex(0).frame.size.height;
 [Math.round(vf.origin.x), Math.round(ph - (vf.origin.y + vf.size.height)), Math.round(vf.size.width), Math.round(vf.size.height)].join(' ');
 JXA
-  )
+  _disp=$(printf '%s\n' "$_jxa" | osascript -l JavaScript 2> /dev/null)
   read -r _mx _my _mw _mh <<< "$_disp"
   # Fallback to primary desktop bounds if JXA failed
   if [[ -z "$_mw" || -z "$_mh" ]]; then

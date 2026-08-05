@@ -31,7 +31,7 @@ function installDnfPackage() {
     echo "Skipped"
   else
     local _t0=$SECONDS
-    if sudo dnf install -y --setopt=install_weak_deps=False $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || sudo yum install -y $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+    if sudo dnf install -y --setopt=install_weak_deps=False $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || sudo yum install -y $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
       echo "Success ($((SECONDS - _t0))s)"
     else
       echo "Error ($((SECONDS - _t0))s)"
@@ -97,7 +97,7 @@ function _installBackgroundPackages() {
 # refresh the dnf/yum metadata cache so installs resolve the latest versions
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
-  if sudo dnf makecache < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log || sudo yum makecache < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  if sudo dnf makecache < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || sudo yum makecache < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo "Done"
   else
     echo "Error"
@@ -225,7 +225,7 @@ if has_a_gui; then
   installDnfPackageInBackground vlc
 
   # TODO: remove me — terminator uninstall (we migrated to ghostty); drop this block once every host has rolled through.
-  sudo dnf remove -y terminator < /dev/null &>> "$BASHRC_TEMP_DIR/fullsetup.log" || true
+  sudo dnf remove -y terminator < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1 || true
 
   # ---- display-dj dependencies (DDC monitor control) ----
   installDnfPackageInBackground ddcutil

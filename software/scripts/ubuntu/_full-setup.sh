@@ -29,7 +29,7 @@ function installAptPackage() {
     echo "Skipped"
   else
     local _t0=$SECONDS
-    if sudo apt-get install -y --fix-missing -o Dpkg::Options::="--force-confold" $@ < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+    if sudo apt-get install -y --fix-missing -o Dpkg::Options::="--force-confold" $@ < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
       echo "Success ($((SECONDS - _t0))s)"
     else
       echo "Error ($((SECONDS - _t0))s)"
@@ -95,7 +95,7 @@ function _installBackgroundPackages() {
 # refresh the apt package index so installs resolve the latest versions
 function updatePackageIndex() {
   echo -n ">> Updating package index >> "
-  if sudo apt-get update < /dev/null &>> $BASHRC_TEMP_DIR/fullsetup.log; then
+  if sudo apt-get update < /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1; then
     echo "Done"
   else
     echo "Error"
