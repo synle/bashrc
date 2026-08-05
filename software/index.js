@@ -4007,12 +4007,23 @@ async function downloadAssetWithFallback(repoId, url, destination) {
  * Downloads application binaries from the main repo into the appropriate OS-specific applications directory.
  * On Windows, uses the WSL binary directory. On Linux/Mac, uses the custom tweaks directory (~/_extra).
  * Fetches the repo file list, filters to matching assets, and downloads them in parallel.
+ *
+ * Short-circuits when the target folder already holds a downloaded file and is not stale
+ * (2 weeks, per isPathStale). These payloads are static repo assets — re-listing the GitHub
+ * contents API and re-fetching an unchanged jar on every run costs ~1s and changes nothing.
+ * `--refresh="<script>"` (IS_REFRESH_MODE) forces the re-download.
  * @param {string} applicationName - The application name
  * @param {string|function(string): boolean} findFilter - Substring to match or filter function to select which asset files to download
  * @returns {Promise<string>} The target directory path where the app was downloaded
  */
 async function downloadApp(applicationName, findFilter) {
   const targetPath = is_os_windows ? await getWindowsApplicationBinaryDir(applicationName) : await getCustomTweaksPath(applicationName);
+
+  if (!IS_REFRESH_MODE && findPath(targetPath, /./, { type: "file" }) && !isPathStale(targetPath)) {
+    log(`>> ${applicationName} already downloaded — skipping (pass --refresh="${applicationName}" to force):`, targetPath);
+    return targetPath;
+  }
+
   log(`>> Downloading App:`, colorRed(applicationName), targetPath);
   await mkdir(targetPath);
   const files = await listRepoDir("remote_api", true);
