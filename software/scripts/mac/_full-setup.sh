@@ -109,6 +109,27 @@ function _appArchMismatch() {
   binary_arch_mismatch "$app/Contents/MacOS/$exe"
 }
 
+# _brewPackageInstalled <list> <pkg> - Returns 0 when <pkg> is present in a cached
+# `brew list` output. Three match modes, cheapest first:
+#   1. exact name              — the common case
+#   2. versioned formula       — `python` is installed as `python@3.13`
+#   3. known alias / rename    — `java` is the alias for `openjdk`, and casks get renamed
+#                                upstream (`google-cloud-sdk` -> `gcloud-cli`)
+# Without 2 and 3 those packages miss the cache every run and pay a full `brew install`
+# round-trip (1-3s each) just to be told they are already installed.
+function _brewPackageInstalled() {
+  local list="$1" pkg="$2"
+  echo "$list" | grep -qxF "$pkg" && return 0
+  echo "$list" | grep -q "^${pkg}@" && return 0
+  local _alias=""
+  case "$pkg" in
+  java) _alias="openjdk" ;;
+  google-cloud-sdk) _alias="gcloud-cli" ;;
+  esac
+  [ -n "$_alias" ] && echo "$list" | grep -qxF "$_alias" && return 0
+  return 1
+}
+
 # install a package via brew (skip if already installed, --app checks /Applications)
 # NOTE: < /dev/null prevents brew from reading the heredoc's stdin (brew subprocesses inherit
 # stdin, consuming remaining script commands and causing the heredoc bash to exit prematurely).
@@ -147,12 +168,12 @@ function installBrewPackage() {
   # fast path: check against cached installed list (no brew call needed)
   if ! ((_arch_reinstall)); then
     if [ -n "$is_cask" ]; then
-      if echo "$_BREW_INSTALLED_CASKS" | grep -qxF "$pkg_name"; then
+      if _brewPackageInstalled "$_BREW_INSTALLED_CASKS" "$pkg_name"; then
         echo "Skipped"
         return
       fi
     else
-      if echo "$_BREW_INSTALLED_FORMULAE" | grep -qxF "$pkg_name"; then
+      if _brewPackageInstalled "$_BREW_INSTALLED_FORMULAE" "$pkg_name"; then
         echo "Skipped"
         return
       fi
@@ -376,6 +397,9 @@ installBrewPackageInBackground stern
 # --- Cloud CLIs ---
 installBrewPackageInBackground awscli                  # `aws` — AWS CLI v2
 installBrewPackageInBackground azure-cli               # `az` — Microsoft Azure CLI
+# Upstream renamed this cask to `gcloud-cli`; `brew install --cask google-cloud-sdk` still
+# resolves through brew's rename map, but the *installed* name is gcloud-cli — which is why
+# _brewPackageInstalled carries the alias. Without it this reinstalls on every run.
 installBrewPackageInBackground --cask google-cloud-sdk # `gcloud` — Google Cloud CLI
 
 # --- HTTP / RPC clients ---
@@ -394,7 +418,11 @@ installBrewPackageInBackground redis
 installBrewPackageInBackground sqlite
 
 # --- OS-specific ---
-installBrewPackageInBackground --force android-platform-tools
+# --cask is required here, not optional: android-platform-tools is a cask, and without the
+# flag the skip check consults the *formula* list, misses every time, and re-runs
+# `brew install --force android-platform-tools` on every setup run. `--cask` already
+# implies `--force` inside installBrewPackage, so it is not repeated.
+installBrewPackageInBackground --cask android-platform-tools
 installBrewPackageInBackground --cask font-jetbrains-mono-nerd-font
 installBrewPackageInBackground java
 # Register brew's openjdk with macOS java_home registry so /usr/bin/java (the Apple

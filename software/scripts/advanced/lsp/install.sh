@@ -23,8 +23,12 @@ echo '> Installing language servers'
 # installs to $HOME/.local, and on WSL also mirrors to the Windows host.
 # vscode-langservers-extracted ships four binaries (html/css/json/eslint); we
 # probe the html one — if present, all four are.
+# typescript's launcher is `tsc`, not `typescript`; pass it explicitly so the
+# freshness gate has a real binary to check instead of falling back to the
+# node_modules marker. vscode-markdown-languageserver ships no bin at all —
+# editors load it as a module — so only the node_modules marker gates it.
 echo '>> npm-based servers'
-npm_install_global typescript
+npm_install_global typescript tsc
 npm_install_global typescript-language-server
 npm_install_global vscode-langservers-extracted vscode-html-language-server
 npm_install_global pyright pyright-langserver

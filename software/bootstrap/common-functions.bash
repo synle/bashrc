@@ -244,10 +244,12 @@ function _ensure_npm_binary() {
 #           the npm "latest" dist-tag on refresh runs (the leading `@` of scoped
 #           packages is excluded from the suffix check).
 #   binary: binary name to check (defaults to last segment of pkg, e.g. gemini-cli from @google/gemini-cli)
-# Returns early (no removal, no npm call) when $HOME/.local/bin/<binary> and/or
-# $HOME/.local/share/<binary> exist and none of the present paths is stale per
-# is_path_stale() (2 weeks, or always under IS_REFRESH_MODE) — reinstalling every CLI on
-# every run is slow and pointless. An arch mismatch still forces the reinstall.
+# Returns early (no removal, no npm call) when $HOME/.local/bin/<binary>,
+# $HOME/.local/share/<binary>, and/or $HOME/.local/lib/node_modules/<pkg> exist and none of
+# the present paths is stale per is_path_stale() (2 weeks, or always under IS_REFRESH_MODE) —
+# reinstalling every CLI on every run is slow and pointless. The node_modules path is the
+# only marker for packages whose launcher is renamed (typescript -> tsc) or that ship no bin
+# at all (vscode-markdown-languageserver). An arch mismatch still forces the reinstall.
 # Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
 # via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 # On macOS the install runs through a natively built node (find_native_node) and run_native,
@@ -268,22 +270,31 @@ function _npm_install_global() {
   [[ "$_check_pkg" != *@* ]] && pkg="${pkg}@latest"
 
   # Freshness gate — bail out *before* the destructive removals below when the existing
-  # install is still fresh. Both paths matter: npm drops the launcher in ~/.local/bin,
-  # while self-updating CLIs (opencode, claude) keep their payload in ~/.local/share.
+  # install is still fresh. Three paths matter: npm drops the launcher in ~/.local/bin,
+  # self-updating CLIs (opencode, claude) keep their payload in ~/.local/share, and the
+  # package tree itself always lands in ~/.local/lib/node_modules/<pkg>.
+  # The node_modules path is what makes the gate work for packages whose launcher is not
+  # named after the package (typescript ships `tsc`) and for packages that ship no bin at
+  # all (vscode-markdown-languageserver is loaded as a module by editors). Without it those
+  # reinstall on every single run — a permanent ~4s tax with no upside.
   # is_path_stale() treats a missing path as stale, so only paths that actually exist are
   # considered; if every present path is fresh we skip the whole reinstall. An arch
   # mismatch (Rosetta-installed x64 slice on Apple Silicon) always overrides the gate.
   local _bin_path="$HOME/.local/bin/$bin"
   local _share_path="$HOME/.local/share/$bin"
-  local _present=0 _stale=0 _p
-  for _p in "$_bin_path" "$_share_path"; do
+  # Strip the trailing @version we just appended; keeps the leading @ of scoped packages
+  # (@vue/language-server@latest -> @vue/language-server).
+  local _lib_path="$HOME/.local/lib/node_modules/${pkg%@*}"
+  local _present=0 _stale=0 _p _fresh_path=""
+  for _p in "$_bin_path" "$_share_path" "$_lib_path"; do
     if [ -e "$_p" ] || [ -L "$_p" ]; then
       _present=1
+      [ -z "$_fresh_path" ] && _fresh_path="$_p"
       is_path_stale "$_p" && _stale=1
     fi
   done
   if ((_present)) && ! ((_stale)) && ! binary_arch_mismatch "$_bin_path"; then
-    echo ">> $pkg >> Installing with npm global >> Skipped (not stale: $_bin_path)"
+    echo ">> $pkg >> Installing with npm global >> Skipped (not stale: $_fresh_path)"
     return 0
   fi
 

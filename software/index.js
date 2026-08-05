@@ -4023,14 +4023,78 @@ async function downloadApp(applicationName, findFilter) {
 }
 
 /**
+ * Suffix appended to an install folder path to build its version stamp file path.
+ * e.g. `~/_extra/url-porter` → `~/_extra/url-porter.installed.json`.
+ * @type {string}
+ */
+const INSTALLED_VERSION_STAMP_SUFFIX = ".installed.json";
+
+/**
+ * Reads the recorded upstream version from a version stamp file.
+ * Returns an empty string when the stamp is missing or unreadable (never installed, or
+ * installed by an older build that predates stamping), which always forces a reinstall.
+ * @param {string} stampPath - Full path to the version stamp JSON file
+ * @returns {string} The recorded version, or "" when there is no readable stamp
+ */
+function readInstalledVersionStamp(stampPath) {
+  try {
+    return JSON.parse(fs.readFileSync(stampPath, "utf8")).version || "";
+  } catch (err) {
+    return "";
+  }
+}
+
+/**
+ * Writes a version stamp file. Called after a successful install so the next run can
+ * compare against the upstream release version and skip the whole download pipeline.
+ * @param {string} stampPath - Full path to the version stamp JSON file
+ * @param {string} version - Upstream release version that was just installed
+ * @param {string} repo - GitHub repo identifier the payload came from
+ * @returns {Promise<void>}
+ */
+async function writeInstalledVersionStamp(stampPath, version, repo) {
+  await writeJson(stampPath, {
+    repo,
+    version,
+    installedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Returns the version stamp path for a payload installed at `targetPath`.
+ * The stamp deliberately lives *beside* the payload folder, never inside it: browser
+ * extension folders are loaded by Chrome as unpacked extensions, and Chrome refuses to
+ * load a folder that contains a dot-prefixed entry ("Cannot load extension with file or
+ * directory name .x"). A sibling file also survives the deleteFolder() that precedes a
+ * reinstall, so it can be rewritten only after the install actually succeeds.
+ * @param {string} targetPath - Install folder the stamp describes
+ * @returns {string} Full path to the sibling stamp file
+ */
+function getInstalledVersionStampPath(targetPath) {
+  return `${targetPath}${INSTALLED_VERSION_STAMP_SUFFIX}`;
+}
+
+/**
  * Downloads and installs a browser extension from a GitHub release zip.
  * Fetches the latest release version, deletes any previous install, downloads the zip, extracts, and cleans up.
+ *
+ * Short-circuits when the version stamp left by the previous install already matches the
+ * upstream release — the extension folder is a pure download target, so re-fetching an
+ * identical zip on every run buys nothing. `--refresh="<script>"` (IS_REFRESH_MODE) forces
+ * the reinstall, matching downloadAndInstallBinary's override.
  * @param {string} repo - GitHub repo identifier (e.g. "synle/url-porter")
  */
 async function installBrowserExtension(repo) {
   const version = await fetchGitHubReleaseVersion(repo);
   const extensionName = repo.split("/").pop();
   const targetPath = await getCustomTweaksPath(extensionName);
+  const stampPath = getInstalledVersionStampPath(targetPath);
+
+  if (!IS_REFRESH_MODE && pathExists(targetPath, undefined, "folder") && readInstalledVersionStamp(stampPath) === version) {
+    log(`>> ${extensionName} ${version} already installed — skipping (pass --refresh="${extensionName}" to force)`);
+    return;
+  }
+
   const zipUrl = `https://github.com/${repo}/releases/download/${version}/${extensionName}.zip`;
   const tmpZip = `${BASHRC_TEMP_DIR}/${extensionName}.zip`;
   log(`>> Installing ${extensionName} ${version} extension to:`, targetPath);
@@ -4039,6 +4103,7 @@ async function installBrowserExtension(repo) {
   const ok = await downloadAssetWithFallback(repo, zipUrl, tmpZip);
   if (ok) {
     await unzip(tmpZip, targetPath);
+    await writeInstalledVersionStamp(stampPath, version, repo);
   }
   await deleteFile(tmpZip);
 }

@@ -56,6 +56,15 @@ async function _installSqluiPortal() {
   const binDir = path.join(BASE_HOMEDIR_LINUX, ".local", "bin");
   const binWrapper = path.join(binDir, SQLUI_PORTAL_BIN);
   const realLauncher = path.join(payloadDir, SQLUI_PORTAL_BIN);
+  const stampPath = getInstalledVersionStampPath(payloadDir);
+
+  // The desktop app half already version-gates itself inside downloadAndInstallBinary; the
+  // portal half had no gate at all and re-downloaded a ~20 MB tarball on every run. Same
+  // contract: skip when the recorded version matches upstream, --refresh forces.
+  if (!IS_REFRESH_MODE && pathExists(realLauncher, undefined, "file") && readInstalledVersionStamp(stampPath) === version) {
+    log(`>> ${SQLUI_PORTAL_BIN} ${version} already installed — skipping (pass --refresh="sqlui-native" to force)`);
+    return;
+  }
 
   log(`>> Installing ${SQLUI_PORTAL_BIN} ${version} to:`, payloadDir);
   log(`>> Wrapper:`, binWrapper);
@@ -86,4 +95,5 @@ async function _installSqluiPortal() {
   `;
   await writeText(binWrapper, wrapperContent);
   await execBash(`chmod +x "${binWrapper}"`);
+  await writeInstalledVersionStamp(stampPath, version, SQLUI_NATIVE_REPO);
 }
