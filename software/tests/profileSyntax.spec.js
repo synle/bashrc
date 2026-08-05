@@ -50,7 +50,7 @@ const profileFiles = listFiles(
 );
 const bootstrapFiles = listFiles(path.join(ROOT_DIR, "software/bootstrap"), (n) => /\.(sh|bash)$/.test(n));
 const rootScriptFiles = listFiles(ROOT_DIR, (n) => n.endsWith(".sh"));
-const fullSetupFiles = walkFiles(path.join(ROOT_DIR, "software/scripts"), (n) => /^_full-setup(\.common\.linux)?\.(sh|bash)$/.test(n));
+const fullSetupFiles = walkFiles(path.join(ROOT_DIR, "software/scripts"), (n) => /^_full-setup(\.common\.linux|\.touchid)?\.(sh|bash)$/.test(n));
 const profilePartialFiles = listFiles(path.join(ROOT_DIR, "software/scripts"), (n) => n.endsWith(".profile.bash"));
 
 /** Minimum char count per profile file (95% of current size as of 2026-04-24). */

@@ -560,13 +560,10 @@ if is_force_refresh_stale && [ ! -f "$BASH_SYLE_COMMON_PATH" ]; then
 fi
 
 ################################################################################
-# --- Terminal Setup (TouchID for sudo — works across every terminal incl. Ghostty) ---
+# --- Terminal Setup (TouchID for sudo) ---
 ################################################################################
-if [ -f /etc/pam.d/sudo_local.template ] && ! grep -q '^auth' /etc/pam.d/sudo_local 2> /dev/null; then
-  echo '>> TouchID sudo'
-  sudo cp /etc/pam.d/sudo_local.template /etc/pam.d/sudo_local
-  sudo sed -i '' 's/^#auth/auth/' /etc/pam.d/sudo_local
-fi
+# Moved to mac/_full-setup.touchid.sh — both the pam_tid enablement and the
+# /etc/sudoers.d drop-in live there. Do not re-add a Touch ID block here.
 
 ################################################################################
 # --- Background Install and Upgrade ---
