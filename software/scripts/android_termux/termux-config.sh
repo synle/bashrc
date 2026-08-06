@@ -9,7 +9,6 @@ echo '>> Setup termux config'
 safe_mkdir "$HOME/.termux"
 
 _TERMUX_PROPERTIES="$HOME/.termux/termux.properties"
-_TERMUX_COLORS="$HOME/.termux/colors.properties"
 
 ################################################################################
 # --- Termux Properties ---
@@ -58,37 +57,14 @@ font-size = 14
 EOF
 
 ################################################################################
-# --- Termux Dracula Theme ---
+# --- Color Theme ---
 ################################################################################
-backup_config_file "$_TERMUX_COLORS"
-command cat > "$_TERMUX_COLORS" << 'EOF'
-background:     #282a36
-foreground:     #f8f8f2
-
-color0:         #000000
-color8:         #4d4d4d
-
-color1:         #ff5555
-color9:         #ff6e67
-
-color2:         #50fa7b
-color10:        #5af78e
-
-color3:         #f1fa8c
-color11:        #f4f99d
-
-color4:         #bd93f9
-color12:        #caa9fa
-
-color5:         #ff79c6
-color13:        #ff92d0
-
-color6:         #8be9fd
-color14:        #9aedfe
-
-color7:         #bfbfbf
-color15:        #e6e6e6
-EOF
+# Colors are NOT written here. ~/.termux/colors.properties is owned by
+# software/scripts/android_termux/termux-colors.js, which renders it from
+# termux-color-dark.jsonc — the only file format that can carry a COLOR_MAP
+# inline marker. This block used to hold a hardcoded Dracula palette that had
+# drifted off every other surface on the machine (worst hue 4.53:1, and color0
+# at 1.47:1 against its own background).
 
 ################################################################################
 # --- Shared Storage ---

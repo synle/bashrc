@@ -1,0 +1,42 @@
+{
+  // Sy Dark — Termux palette source. Rendered to ~/.termux/colors.properties by
+  // software/scripts/android_termux/termux-colors.js as `key: value` lines.
+  //
+  // Every literal here is stamped from COLOR_MAP in software/tools/build-include.js
+  // by `make format_build_include`. Edit COLOR_MAP, never these values.
+  //
+  // Dark-only on purpose: Termux sets `night-mode = true` in termux.properties and
+  // Android gives no per-app light/dark terminal switch, so there is no light variant
+  // to keep in sync. This replaced a hardcoded Dracula palette whose worst hue was
+  // 4.53:1 and whose color0 sat at 1.47:1 against its own background — invisible.
+
+  // --- Surfaces ---
+  "background": "#0a0a0a", // {{dark.background}}
+  "foreground": "#e8e8e8", // {{dark.foreground}}
+
+  // --- Cursor ---
+  "cursor": "#5ca0d7", // {{dark.cursorColor}}
+
+  // --- ANSI ramp ---
+  // Index order is fixed by terminal convention: 0-7 normal, 8-15 bright.
+  // `black` and `brightWhite` are the ramp anchors and are exempt from the 7:1
+  // floor; every other index is tuned against `background`.
+  "palette": [
+    "#000000", // {{dark.black}}
+    "#f67070", // {{dark.red}}
+    "#76a762", // {{dark.green}}
+    "#dcdcaa", // {{dark.yellow}}
+    "#5ca0d7", // {{dark.blue}}
+    "#c586c0", // {{dark.purple}}
+    "#4ec9b0", // {{dark.cyan}}
+    "#cccccc", // {{dark.white}}
+    "#a0a0a0", // {{dark.brightBlack}}
+    "#ff6e6e", // {{dark.brightRed}}
+    "#69ff94", // {{dark.brightGreen}}
+    "#ffffa5", // {{dark.brightYellow}}
+    "#4fc1ff", // {{dark.brightBlue}}
+    "#ff92df", // {{dark.brightPurple}}
+    "#a4ffff", // {{dark.brightCyan}}
+    "#ffffff", // {{dark.brightWhite}}
+  ],
+}
