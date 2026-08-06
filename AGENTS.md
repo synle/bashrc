@@ -279,6 +279,11 @@ Profile registration is buffered: `registerProfileBlock` /
 - **`npm_install_global <pkg> [binary]`** for npm globals — handles skip-if-installed,
   installs under `$HOME/.local`, and on WSL also mirrors to Windows via `cmd.exe`. Pass
   the binary name when it differs (`npm_install_global @google/gemini-cli gemini`).
+  **Never `rm` the launcher first to force a reinstall** — the freshness gate already
+  treats a missing `~/.local/bin/<binary>` as a broken install and reinstalls, and the
+  manual wipe only re-downloads the package on every run. Use `--refresh` / `--force-refresh`
+  to force. (Deleting it _and_ relying on the gate to notice is what left `claude` off PATH
+  with a fully installed package tree on disk.)
 - **Prefer `curl -fsSL <url> | bash` installers over package managers** for CLI tools;
   fall back to `npm_install_global` only when no official installer exists. **Exception:
   the LLM CLIs (`claude`, `copilot`, `gemini`, `opencode`) use `npm_install_global`

@@ -199,6 +199,22 @@ function _ensure_npm_binary() {
   return 0
 }
 
+# _npm_global_declares_bin <lib_path> - Returns 0 (true) when the installed package tree at
+# <lib_path> declares one or more `bin` launchers in its package.json, i.e. a healthy install
+# is expected to have left something behind in $HOME/.local/bin.
+# Returns 1 (false) only for packages that genuinely ship no bin at all — the single case in
+# this repo is vscode-markdown-languageserver, which editors load as a module — or when the
+# package tree is absent. When node is unavailable we cannot tell, so we answer "true" (the
+# conservative direction: force the reinstall rather than silently skip a broken install).
+# Used by the freshness gate in _npm_install_global to distinguish "install is fresh" from
+# "install is broken — the launcher was deleted but the package tree survived".
+function _npm_global_declares_bin() {
+  local pkg_json="$1/package.json"
+  [ -f "$pkg_json" ] || return 1
+  type -P node > /dev/null 2>&1 || return 0
+  node -e 'const b = require(process.argv[1]).bin; process.exit(b && (typeof b === "string" || Object.keys(b).length > 0) ? 0 : 1)' "$pkg_json" 2> /dev/null
+}
+
 # npm_install_global <pkg> [binary] - Installs an npm package globally. Skips if already installed.
 #   pkg:    npm package name (e.g. @google/gemini-cli, yarn). If no `@<version>`
 #           suffix is present, `@latest` is auto-appended so we always re-fetch
@@ -210,7 +226,8 @@ function _ensure_npm_binary() {
 # the present paths is stale per is_path_stale() (2 weeks, or always under IS_REFRESH_MODE) —
 # reinstalling every CLI on every run is slow and pointless. The node_modules path is the
 # only marker for packages whose launcher is renamed (typescript -> tsc) or that ship no bin
-# at all (vscode-markdown-languageserver). An arch mismatch still forces the reinstall.
+# at all (vscode-markdown-languageserver). An arch mismatch, or a missing launcher for a
+# package that declares one, still forces the reinstall.
 # Installs to $HOME/.local on the current system. On WSL, also installs to the Windows host
 # via cmd.exe. Logs status (Skipped/Success/Error) for each target.
 # On macOS the install runs through a natively built node (find_native_node) and run_native,
@@ -254,7 +271,19 @@ function _npm_install_global() {
       is_path_stale "$_p" && _stale=1
     fi
   done
-  if ((_present)) && ! ((_stale)) && ! binary_arch_mismatch "$_bin_path"; then
+  # A surviving package tree is not proof of a working install. Callers that force a clean
+  # reinstall (claude/install.sh, copilot/install.sh's self-heal) delete ~/.local/bin/<bin>
+  # and ~/.local/share/<bin> but leave ~/.local/lib/node_modules/<pkg> untouched, and npm's
+  # launcher symlink only ever comes back from a real `npm install -g`. Counting the fresh
+  # package tree alone made the gate skip, so the launcher stayed deleted on every
+  # subsequent run and the CLI was permanently off PATH ("claude: command not found").
+  # Only packages that actually declare a bin are held to this — vscode-markdown-languageserver
+  # ships none, and must keep skipping on the node_modules marker alone.
+  local _launcher_missing=0
+  if [ ! -e "$_bin_path" ] && [ ! -L "$_bin_path" ] && _npm_global_declares_bin "$_lib_path"; then
+    _launcher_missing=1
+  fi
+  if ((_present)) && ! ((_stale)) && ! ((_launcher_missing)) && ! binary_arch_mismatch "$_bin_path"; then
     echo ">> $pkg >> Installing with npm global >> Skipped (not stale: $_fresh_path)"
     return 0
   fi

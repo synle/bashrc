@@ -380,10 +380,12 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-close-stale-prs": "close-stale-prs",
   "sy-create-pr": "create-pr",
   "sy-debug": "debug",
+  "sy-dep-bump": "dep-bump",
   "sy-draft-pr": "draft-pr",
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
   "sy-maintenance-day": "maintenance-day",
+  "sy-onboard-repo": "onboard-repo",
   "sy-plan-grill-me": "plan-grill-me",
   // Single release entry-point. The command body checks $ARGUMENTS to decide
   // official vs beta — no per-channel alias files anymore (the old
@@ -393,9 +395,12 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-review-pr": "review-pr",
   "sy-review-prs": "review-prs",
   "sy-slack-prs": "slack-prs",
+  "sy-standup": "standup",
   "sy-sync-and-groom-repo": "sync-and-groom-repo",
   "sy-sync-and-groom-repos": "sync-and-groom-repos",
   "sy-sync-pr-branch": "sync-pr-branch",
+  "sy-test-gap": "test-gap",
+  "sy-triage-ci": "triage-ci",
 };
 
 /**
