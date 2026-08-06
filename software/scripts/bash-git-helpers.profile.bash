@@ -577,5 +577,15 @@ function git_patch_apply() {
   _git_patch_apply_from_dropbox
 }
 
+# Two verbs, both spellings — `<noun>_<verb>` and `<verb>_<noun>` land on the same
+# function, so muscle memory never has to pick. `patch_get` is the producing side
+# under git's own vocabulary (`git patch-get` renders the patch out of the repo),
+# and bare `patch` is its shortcut. That shadows /usr/bin/patch in interactive
+# shells only — reach the binary with `command patch`.
 alias patch_create='git_patch_create'
+alias create_patch='git_patch_create'
+alias patch_get='git_patch_create'
+alias get_patch='git_patch_create'
 alias patch_apply='git_patch_apply'
+alias apply_patch='git_patch_apply'
+alias patch='patch_get'
