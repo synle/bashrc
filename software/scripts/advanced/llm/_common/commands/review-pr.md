@@ -2,6 +2,8 @@
 
 **Scope.** Verdict pass only — produces a review (APPROVE / COMMENT / REQUEST_CHANGES) plus optional author-facing flags. Does NOT apply fixes, address comment threads with code changes, or sync the branch. For fix-and-green-CI work, use `/sy-babysit-pr` after the review verdict lands.
 
+**Output surface — this command writes to GitHub.** Findings land on the PR itself: the verdict via `gh pr review`, pre-flight author flags via `gh pr comment`, line comments via the reviews API, 👍 reactions on already-covered comments, and threaded replies. There is **no report-only / dry-run mode**, and no sibling "critique" command to route findings to the user instead — that command does not exist; do not invent one. Step 11's final report is a *summary of what was posted*, never a substitute for posting it. The only path to posting no review body is Step 9's stop-early gate (a re-review with genuinely nothing new), and even then the Step 6 reactions still land on GitHub.
+
 Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR.)
 
 ## Steps
@@ -152,6 +154,7 @@ Run these only when the diff includes new database migration files. Detect by pa
 
 ## Rules
 
+- **This command writes to GitHub — there is no report-only mode.** Verdicts, author flags, line comments, threaded replies, and 👍 reactions all land on the PR (see Output surface). Never quietly downgrade a run to "summarize back to the user instead of posting", never ask the user to choose between posting and reporting, and never reach for a sibling `/sy-critique-*` command — no such command exists. Step 9's stop-early gate is the only sanctioned way to post no review body, and it still leaves reactions on the PR. If a genuinely report-only review surface is ever wanted, that is a new command in `LLM_COMMAND_DEPLOY_MAP`, not a flag bolted onto this one.
 - **Default bias: APPROVE or COMMENT.** REQUEST_CHANGES is a hard block reserved for show-stoppers — security holes, data loss, broken core invariants, production-breaking regressions. Anything less (open questions, missing tests, partial fixes, style drift) → COMMENT instead.
 - **Minimum 3 full passes, 30 minutes apart (Step 10).** A single pass is never "done" — it is one snapshot of a PR that authors, bots, CI, and other reviewers are all still changing. Sleep 30 minutes between passes so that activity settles into batches instead of triggering a comment per incremental delta. `/sy-review-pr` and `/sy-babysit-pr` share this cadence deliberately: asking for either gets 3 rounds, 30 minutes apart. The only terminal early exits are `MERGED` / `CLOSED` and a stop-and-ask needing human judgment.
 - **Skip drafts, WIP titles, DO NOT MERGE titles, and PRs you already reviewed with no new commits since — but a skip ends the PASS, not the review.** Report it, take no action, and fall through to the Step 10 loop gate; a later pass catches the un-drafted, un-WIP'd, or newly-pushed version. Only `MERGED` / `CLOSED` stops the whole review. Stale-approval PRs (new commits after your prior approve) are NOT skipped — re-review the new diff and either re-approve or downgrade to COMMENT.
