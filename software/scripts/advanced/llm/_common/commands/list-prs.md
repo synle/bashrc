@@ -411,7 +411,7 @@ Pulse (2 moved, 2 steady, 1 new):
   - `<N>m total` on `✅ COMPLETED` is the whole job, first dispatch to final pass end, across every loop.
   - A clock field with no data prints nothing rather than `0m` or `--`; drop the field and its `·` separator. Never invent a start time to fill the slot.
 
-  The loop counter is `(loop N/M)` only when the per-PR command loops — `/sy-babysit-pr` runs ≥3 passes 30 min apart, so `M = 3`. `/sy-review-pr` is a single pass: drop the counter entirely (`🔄 IN PROGRESS — started 17:12 · running 6m`).
+  The loop counter is `(loop N/M)` whenever the per-PR command loops. Both looping commands run ≥3 passes 30 min apart, so `M = 3` for `/sy-babysit-pr` and for `/sy-review-pr` alike. Drop the counter entirely only for a genuinely single-pass per-PR command (`🔄 IN PROGRESS — started 17:12 · running 6m`).
 
   **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the loop number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next <HH:MM>`. A row whose only difference is the clock ticking is `▫️`.
 

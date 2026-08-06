@@ -1,4 +1,4 @@
-[Sy] Review a single pull request. Repo-, language-, and framework-agnostic. Default bias is APPROVE or COMMENT — REQUEST_CHANGES is reserved for show-stoppers only.
+[Sy] Review a single pull request. Repo-, language-, and framework-agnostic. The full review loop runs **at least 3 passes, 30 minutes apart** (same cadence as `/sy-babysit-pr`). Default bias is APPROVE or COMMENT — REQUEST_CHANGES is reserved for show-stoppers only.
 
 **Scope.** Verdict pass only — produces a review (APPROVE / COMMENT / REQUEST_CHANGES) plus optional author-facing flags. Does NOT apply fixes, address comment threads with code changes, or sync the branch. For fix-and-green-CI work, use `/sy-babysit-pr` after the review verdict lands.
 
@@ -18,9 +18,11 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
 
 3. **Scope skip checks.** Fetch state:
    `gh pr view <number> --repo <owner/repo> --json number,title,headRefName,isDraft,state,reviews,statusCheckRollup,mergeable,baseRefName,author,commits,body`
-   - **Skip if `isDraft == true`.** Report `"PR is a draft — skipping"` and stop.
-   - **Skip if title or `headRefName` contains `WIP` / `DRAFT` / `DO NOT MERGE`** (case-insensitive). Report and stop.
-   - **Skip if `state == "MERGED"` or `state == "CLOSED"`.** Nothing to review.
+
+   **A skip ends the PASS, not the review.** Every skip below except `MERGED` / `CLOSED` is a snapshot judgement — a draft gets marked ready, a `WIP` prefix gets dropped, new commits land, another reviewer's block gets dismissed. Report the skip, take no action, then fall through to the **Step 10 loop gate** (sleep 30 min, re-enter at Step 3) instead of exiting the review. `state == "MERGED"` / `state == "CLOSED"` is the one terminal skip — the PR is gone, so stop entirely and skip the remaining passes.
+   - **Skip if `isDraft == true`.** Report `"PR is a draft — skipping this pass"` and end the pass.
+   - **Skip if title or `headRefName` contains `WIP` / `DRAFT` / `DO NOT MERGE`** (case-insensitive). Report and end the pass.
+   - **Stop entirely if `state == "MERGED"` or `state == "CLOSED"`.** Nothing to review, and no later pass can change that — terminal.
    - **Skip if I already reviewed this PR and no new commits have landed since my last review.** Resolve "me" via `gh api user --jq .login`. Walk `reviews[]` for entries authored by me; take the latest `submittedAt`. Compare against the latest commit's `committedDate`. If the latest commit is at or before my last review timestamp, skip. Report `"Already reviewed at <ts>, no new commits since — skipping"`.
    - **Skip if another reviewer has an open `REQUEST_CHANGES` and no new commits have landed since their block.** Walk `reviews[]` for non-me logins with `state == "CHANGES_REQUESTED"`. If the latest such review is still standing (no later `APPROVED` from the same reviewer dismissing it, no new commits after their block) → SKIP. Report `"Blocked by <login> — skipping, won't pile on"`. One flag at a time; don't re-raise concerns they've already raised.
    - **Already-approved-by-me triage** (I previously approved this PR — route by current state):
@@ -104,13 +106,20 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
      - Any CI check is currently failing (`statusCheckRollup[]` entries with `conclusion == "FAILURE"` / `status == "FAILURE"`). The pre-flight CI flag goes out in Step 5; the verdict here drops to COMMENT until the author fixes CI.
 
 9. **Post the review — or post nothing.**
-   - **Stop-early gate (re-reviews).** If this is not your first review on this PR and Step 6 produced no bucket-2 and no bucket-3 findings, **post nothing**: no review verdict, no comment, no "still looks good", no re-approval. The 👍 reactions from Step 6 are the entire output. Report `"Re-review: nothing new — no comment posted"` to the user and stop. Exception: a verdict cap flipped since your last review (a previously-approved PR now has failing CI or an open `REQUEST_CHANGES` from someone else) — post the Step 5 flag for exactly that change and nothing else.
+   - **Stop-early gate (re-reviews).** If this is not your first review on this PR and Step 6 produced no bucket-2 and no bucket-3 findings, **post nothing**: no review verdict, no comment, no "still looks good", no re-approval. The 👍 reactions from Step 6 are the entire output. Report `"Re-review: nothing new — no comment posted"` to the user and **end the pass** (fall through to the Step 10 loop gate). Exception: a verdict cap flipped since your last review (a previously-approved PR now has failing CI or an open `REQUEST_CHANGES` from someone else) — post the Step 5 flag for exactly that change and nothing else.
    - Otherwise, single call:
      `gh pr review <number> --repo <owner/repo> {--approve | --comment | --request-changes} --body "<summary>"`
    - The body summarizes your overall take in 1–3 sentences. Per-line concerns go in line comments (use `gh api repos/<owner>/<repo>/pulls/<number>/reviews` with a `comments[]` array, or `gh pr review --body-file` for multi-comment reviews).
    - For stale-approval re-reviews: explicitly note that this is a re-review of new commits since `<sha>`.
 
-10. **Final report:** Verdict + key points raised + reactions left (👍 count and on whose comments) + threads you replied to + any author-flags posted as PR comments + skip reason (if any). When nothing was posted, say so explicitly.
+10. **Loop gate — run the FULL review at least 3 times, 30 minutes apart.** One pass only ever sees the PR as it was at that instant; authors push, bots post, CI reruns, and other reviewers rule asynchronously. Three spaced passes let all of that land in batches instead of you re-reading the same diff on every incremental delta. Same cadence as `/sy-babysit-pr` Step 12 — when the user says "review this", they get 3 rounds, not one.
+    - Track `loop_count` (starts at 1 on the first pass). When a pass finishes for ANY reason — verdict posted, nothing new so nothing posted, draft / WIP skip, blocked-by-another-reviewer skip, approved-and-clean skip — that ends the **pass**, not the review.
+    - If `loop_count < 3`: report `"pass <N>/3 done — sleeping 30 minutes before pass <N+1>"`, **sleep 30 minutes**, then go back to **Step 3** and run the whole flow again (skip checks → repo rules → author flags → existing-comment de-dup → diff → verdict → post). Re-read the comments and reactions every pass — Step 6's de-dup is what keeps a second and third pass from restating the first.
+    - After pass 3, stop and report. More passes are fine if the user asked for them; 3 is the floor, not the cap.
+    - **Terminate early (skip the remaining passes) ONLY on:** `state == "MERGED"` or `state == "CLOSED"` (Step 3 terminal skip), or a stop-and-ask where the review needs human judgment before it can be posted. Everything else loops.
+    - **A later pass is a re-review, so Step 9's stop-early gate governs it.** Passes 2 and 3 post nothing unless something genuinely changed since the pass before — new commits, a new comment worth a delta reply, or a flipped verdict cap. A three-pass review that posts once and then goes quiet twice is the expected shape, not a failure.
+
+11. **Final report:** Verdict + passes run (`<N>/3`) + key points raised + reactions left (👍 count and on whose comments) + threads you replied to + any author-flags posted as PR comments + skip reason (if any, per pass). When nothing was posted, say so explicitly.
 
 ## Migration checks
 
@@ -144,7 +153,8 @@ Run these only when the diff includes new database migration files. Detect by pa
 ## Rules
 
 - **Default bias: APPROVE or COMMENT.** REQUEST_CHANGES is a hard block reserved for show-stoppers — security holes, data loss, broken core invariants, production-breaking regressions. Anything less (open questions, missing tests, partial fixes, style drift) → COMMENT instead.
-- **Skip drafts, WIP titles, DO NOT MERGE titles, and PRs you already reviewed with no new commits since.** Stale-approval PRs (new commits after your prior approve) are NOT skipped — re-review the new diff and either re-approve or downgrade to COMMENT.
+- **Minimum 3 full passes, 30 minutes apart (Step 10).** A single pass is never "done" — it is one snapshot of a PR that authors, bots, CI, and other reviewers are all still changing. Sleep 30 minutes between passes so that activity settles into batches instead of triggering a comment per incremental delta. `/sy-review-pr` and `/sy-babysit-pr` share this cadence deliberately: asking for either gets 3 rounds, 30 minutes apart. The only terminal early exits are `MERGED` / `CLOSED` and a stop-and-ask needing human judgment.
+- **Skip drafts, WIP titles, DO NOT MERGE titles, and PRs you already reviewed with no new commits since — but a skip ends the PASS, not the review.** Report it, take no action, and fall through to the Step 10 loop gate; a later pass catches the un-drafted, un-WIP'd, or newly-pushed version. Only `MERGED` / `CLOSED` stops the whole review. Stale-approval PRs (new commits after your prior approve) are NOT skipped — re-review the new diff and either re-approve or downgrade to COMMENT.
 - **Skip PRs already blocked by another reviewer's open `REQUEST_CHANGES` when there are no new commits since their block.** One flag at a time — don't pile on. Don't re-raise concerns they've already raised.
 - **Already-approved-by-me + clean (green CI, no conflict, no new commits) → SKIP.** Don't re-comment to say "still good". For approved + conflict, post the rebase flag; for approved + CI failure, post the CI-failure flag with the specific failing check + link to the failed run. See Step 3 triage.
 - **Cannot APPROVE while another reviewer's `REQUEST_CHANGES` is open or while CI is failing.** Max verdict in those states is COMMENT. The author-flag goes out as a PR comment; the review verdict separately drops to COMMENT.
