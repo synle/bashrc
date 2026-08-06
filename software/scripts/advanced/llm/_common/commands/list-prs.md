@@ -238,11 +238,11 @@ Pulse (2 moved, 2 steady, 1 new):
 
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3)<br>Loop 1 started 17:12<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED<br>Loop 2 stopped 17:01 — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/51<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED<br>Queued — wave 2<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
-| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3)<br>Loop 2 ended 16:58 — next loop 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/42<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED<br>Loop 3 ended 17:05<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (loop 2/3) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/51<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — queued, wave 2<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3) — ended 16:58 · ran 26m · next 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/42<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (loop 3/3) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Header block:**
@@ -323,21 +323,32 @@ Pulse (2 moved, 2 steady, 1 new):
 
   Nothing else goes in this cell. No open-thread counts (Agent cell), no timestamps (Agent cell), no free-form reason clause.
 
-- **Agent** — what the dispatched job is doing. Line 1 is the state token (with loop counter when the per-PR command loops); line 2 is the timing detail; line 3 is the counters line. No delta here — that lives under the TLDR in the PR cell.
+- **Agent** — what the dispatched job is doing. **Two lines, not three:** line 1 is the state token plus its clock, line 2 is the counters line. The timing used to sit on its own line; it is folded into line 1 because "which state, since when, for how long" is one thought and reads worse split across two rows. No delta here — that lives under the TLDR in the PR cell.
 
-  | Token                       | When                                               | Line 2 example                            |
-  | --------------------------- | -------------------------------------------------- | ----------------------------------------- |
-  | `⚪ NOT STARTED`            | Resolved but not dispatched (queued behind a wave) | `Queued — wave 2`                         |
-  | `🔄 IN PROGRESS (loop N/M)` | Job actively working this pass                     | `Loop 1 started 17:12`                    |
-  | `⏸️ WAITING (loop N/M)`     | Pass done, sleeping until the next one             | `Loop 2 ended 16:58 — next loop 17:28`    |
-  | `✅ COMPLETED`              | Job finished all passes, or the PR merged          | `Loop 3 ended 17:05`                      |
-  | `⏭️ SKIPPED`                | Per-PR skill skipped it (draft / already reviewed) | `Skipped 17:02 — draft`                   |
-  | `⚠️ ESCALATED`              | Job stopped and needs human judgment               | `Loop 2 stopped 17:01 — needs human`      |
-  | `❌ FAILED`                 | Job errored out                                    | `Loop 1 failed 16:44 — worktree conflict` |
+  **Line 1 — `<state token>[ (loop N/M)] — <clock>`.**
 
-  The loop counter is `N/M` only when the per-PR command loops — `/sy-babysit-pr` runs ≥3 passes 30 min apart, so `M = 3`. `/sy-review-pr` is a single pass: drop the counter entirely (`🔄 IN PROGRESS`, `✅ COMPLETED`).
+  | Token             | When                                               | Clock                                        |
+  | ----------------- | -------------------------------------------------- | -------------------------------------------- |
+  | `⚪ NOT STARTED`  | Resolved but not dispatched (queued behind a wave) | `queued, wave 2` (no clock; nothing started) |
+  | `🔄 IN PROGRESS`  | Job actively working this pass                     | `started 17:12 · running 22m`                |
+  | `⏸️ WAITING`      | Pass done, sleeping until the next one             | `ended 16:58 · ran 19m · next 17:28`         |
+  | `✅ COMPLETED`    | Job finished all passes, or the PR merged          | `ended 17:05 · 48m total`                    |
+  | `⏭️ SKIPPED`      | Per-PR skill skipped it (draft / already reviewed) | `17:02 — draft`                              |
+  | `⚠️ ESCALATED`    | Job stopped and needs human judgment               | `stopped 17:01 · ran 19m — needs human`      |
+  | `❌ FAILED`       | Job errored out                                    | `failed 16:44 · ran 4m — worktree conflict`  |
 
-  **Line 3 — counters line.** One line, always printed, always all three fields, always this order, `·`-separated:
+  **Clock grammar.** Times are local `HH:MM`, 24-hour, no date (the header block already carries the date). Durations are `<N>m` under an hour, `<N>h <N>m` over it, always whole minutes — a pulse is a 10-minute heartbeat, so seconds are noise.
+
+  - `running <N>m` on `🔄 IN PROGRESS` is **elapsed since the current loop started**, recomputed at render time (`now − loop start`), not the total across loops. That is the number a human actually wants: "has this pass been stuck for 45 minutes?"
+  - `ran <N>m` on a finished-pass state is that pass's own wall time (`pass end − pass start`).
+  - `<N>m total` on `✅ COMPLETED` is the whole job, first dispatch to final pass end, across every loop.
+  - A clock field with no data prints nothing rather than `0m` or `--`; drop the field and its `·` separator. Never invent a start time to fill the slot.
+
+  The loop counter is `(loop N/M)` only when the per-PR command loops — `/sy-babysit-pr` runs ≥3 passes 30 min apart, so `M = 3`. `/sy-review-pr` is a single pass: drop the counter entirely (`🔄 IN PROGRESS — started 17:12 · running 6m`).
+
+  **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the loop number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next <HH:MM>`. A row whose only difference is the clock ticking is `▫️`.
+
+  **Line 2 — counters line.** One line, always printed, always all three fields, always this order, `·`-separated:
 
   `💬 <n> open · ✔ <n> resolved · ⚠️ <n> need attention`
 
@@ -351,7 +362,7 @@ Pulse (2 moved, 2 steady, 1 new):
 
   Counts come from the caller's ledger where the agent tracked them; standalone with no ledger, fill `💬` / `✔` from `reviewThreads` and print `⚠️ 0 need attention` (nothing has judged them). On a failed fetch, print `?` in the affected field rather than guessing `0`.
 
-**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, last pass start/end, next pass ETA, and the open / resolved / need-attention thread counts) alongside the scope. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED<br>no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board.
+**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, last pass start/end, next pass ETA, and the open / resolved / need-attention thread counts) alongside the scope. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED — no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board.
 
 **The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, component lines, and counters line. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 3 of the PR cell.
 
