@@ -119,6 +119,74 @@ function _ollama_local_url() {
   _ollama_url "${1:-127.0.0.1:${env_port}}"
 }
 
+# _ollama_model_context_length: print the context window (in tokens) a daemon will serve for a model
+#
+#   _ollama_model_context_length <host[:port]|url> <model>
+#
+# Asks the daemon rather than carrying a model->window table in this repo. A hardcoded
+# table is wrong the moment a tag is re-quantized, the daemon's OLLAMA_CONTEXT_LENGTH
+# changes, or a new model is pulled, and nothing would fail loudly when it drifts.
+#
+# Two sources, in order of authority:
+#   1. GET /api/ps      - the window the model is ACTUALLY loaded with right now. This
+#                         already reflects the daemon's own OLLAMA_CONTEXT_LENGTH and any
+#                         shrink the loader applied when KV cache did not fit, so it is
+#                         the only value that describes the session you are about to get.
+#   2. POST /api/show   - the model's native maximum, used when it is not resident yet.
+#                         Ollama clamps down from here, never up, so this is an upper
+#                         bound rather than a guess.
+# The key under model_info is family-qualified (`qwen35moe.context_length`,
+# `gemma4.context_length`), hence the endswith match instead of a fixed key name.
+#
+# Prints one integer on stdout and returns 0 on success; prints nothing and returns 1
+# when the host is unreachable, the model is unknown, or neither route exposed a window.
+function _ollama_model_context_length() {
+  local host model body
+  host="$(_ollama_url "${1:-}")"
+  model="${2:-}"
+  [ -n "$model" ] || return 1
+
+  local has_jq=0
+  type -P jq > /dev/null 2>&1 && has_jq=1
+
+  # 1. Resident window, if the model is already loaded.
+  body="$(command curl -fsS --max-time 5 "$host/api/ps" 2> /dev/null)"
+  if [ -n "$body" ] && ((has_jq)); then
+    local resident
+    resident="$(echo "$body" | jq -r --arg m "$model" '
+      [ .models[]? | select(.name == $m or .model == $m) | .context_length // empty ] | first // empty' 2> /dev/null)"
+    if [ -n "$resident" ] && [ "$resident" != "null" ]; then
+      echo "$resident"
+      return 0
+    fi
+  fi
+
+  # 2. Native maximum from the model card.
+  body="$(command curl -fsS --max-time 5 -X POST "$host/api/show" \
+    -H 'content-type: application/json' \
+    -d "{\"model\":\"$model\"}" 2> /dev/null)"
+  [ -n "$body" ] || return 1
+
+  local native=""
+  if ((has_jq)); then
+    native="$(echo "$body" | jq -r '
+      [ (.model_info // {} | to_entries[] | select(.key | endswith(".context_length")) | .value),
+        (.details.context_length // empty) ]
+      | map(select(type == "number")) | first // empty' 2> /dev/null)"
+  else
+    # Basic-regex only: the profile aliases grep to rg, and -E / + are not portable
+    # across both. `[0-9][0-9]*` is the POSIX spelling of `[0-9]+`.
+    native="$(echo "$body" | grep -o '"[^"]*context_length": *[0-9][0-9]*' \
+      | grep -o '[0-9][0-9]*$' | command head -n 1)"
+  fi
+
+  if [ -n "$native" ] && [ "$native" != "null" ]; then
+    echo "$native"
+    return 0
+  fi
+  return 1
+}
+
 # list_ollama_models: list the models an Ollama endpoint exposes via its /api/tags route
 #
 # Host defaults to $SY_OMEN45L_IP:$SY_OMEN45L_OLLAMA_PORT (see above; falls back to

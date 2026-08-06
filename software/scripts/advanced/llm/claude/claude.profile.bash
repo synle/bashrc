@@ -2,11 +2,13 @@
 
 # _claude_endpoint_speaks_anthropic: probe whether a base URL implements the Anthropic Messages API
 #
-# Claude Code only speaks the Anthropic Messages API (`POST /v1/messages`). Ollama
-# serves its own `/api/*` routes plus an OpenAI-compatible `/v1/chat/completions`,
-# and has no `/v1/messages` — pointing ANTHROPIC_BASE_URL straight at port 11434
-# fails on the first turn. Probing here turns that into one clear message instead
-# of an opaque API error inside the TUI.
+# Claude Code only speaks the Anthropic Messages API (`POST /v1/messages`). Whether a
+# given Ollama daemon serves that route is a version question, not a fixed fact: older
+# builds expose only `/api/*` plus an OpenAI-compatible `/v1/chat/completions`, so
+# pointing ANTHROPIC_BASE_URL straight at port 11434 fails on the first turn; current
+# builds answer `/v1/messages` natively and need no gateway at all. Probing decides that
+# at runtime instead of baking in an assumption that expires, and turns the old-daemon
+# case into one clear message rather than an opaque API error inside the TUI.
 #
 # Returns 0 when the endpoint answers /v1/messages with anything other than a
 # routing miss (400/401/422 all mean "route exists, request was rejected"), 1 when
@@ -23,6 +25,55 @@ function _claude_endpoint_speaks_anthropic() {
   000 | 404 | 405) return 1 ;;
   *) return 0 ;;
   esac
+}
+
+# _claude_local_context_tokens: resolve the real context window for a self-hosted --model
+#
+#   _claude_local_context_tokens "$@"    # the argv about to be handed to `claude`
+#
+# Claude Code only knows the context windows of the models it shipped with. Given a local
+# tag it warns "<tag> is not a model this version of Claude Code recognizes, so
+# auto-compact will keep this session within 200k tokens (the context window it assumes)"
+# and then runs auto-compact against that invented 200k. That number is wrong in both
+# directions: the default qwen3.6 tag on sy-omen45l serves 262144, so a quarter of the
+# window is thrown away, and a daemon pinned to OLLAMA_CONTEXT_LENGTH=16384 gets requests
+# an order of magnitude past what it can hold, which the server truncates mid-turn.
+#
+# The same warning offers a `modelOverrides` map. This repo deliberately does NOT keep
+# one: a tag -> window table here is stale the moment a tag is re-quantized or the daemon
+# is re-tuned, and nothing fails loudly when it drifts. Ask the daemon for the number
+# instead (_ollama_model_context_length, ollama.profile.bash) and hand it over through
+# CLAUDE_CODE_MAX_CONTEXT_TOKENS, the escape hatch that same message documents.
+#
+# Prints the token count on stdout, or nothing at all when: the caller already exported
+# CLAUDE_CODE_MAX_CONTEXT_TOKENS (their value wins), no --model was passed, or the
+# endpoint could not tell us. Every one of those is a silent no-op — a context lookup
+# must never be the reason `claude` refuses to start.
+#
+# The (host, model) pair is cached in the shell so only the first launch pays the probe.
+function _claude_local_context_tokens() {
+  [ -z "${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-}" ] || return 0
+  type -t _ollama_model_context_length > /dev/null 2>&1 || return 0
+
+  local model="" prev="" arg
+  for arg in "$@"; do
+    case "$arg" in
+    --model=*) model="${arg#--model=}" ;;
+    esac
+    if [ "$prev" = "--model" ]; then
+      model="$arg"
+    fi
+    prev="$arg"
+  done
+  [ -n "$model" ] || return 0
+
+  local key="${ANTHROPIC_BASE_URL:-}|$model"
+  if [ "${_CLAUDE_LOCAL_CTX_KEY:-}" != "$key" ]; then
+    _CLAUDE_LOCAL_CTX_KEY="$key"
+    _CLAUDE_LOCAL_CTX_TOKENS="$(_ollama_model_context_length "$ANTHROPIC_BASE_URL" "$model" 2> /dev/null)"
+  fi
+  [ -n "${_CLAUDE_LOCAL_CTX_TOKENS:-}" ] || return 0
+  echo "$_CLAUDE_LOCAL_CTX_TOKENS"
 }
 
 # claude_with_ip_address: run `claude` against a self-hosted Anthropic-compatible endpoint
@@ -48,12 +99,15 @@ A bare hostname/IP is normalized to http://<host>:<port>; an explicit scheme
 or port is preserved as given. The resolved command is echoed before it runs.
 
 IMPORTANT: the endpoint must implement the Anthropic Messages API
-(POST /v1/messages). A bare Ollama daemon does NOT — it serves /api/* and an
-OpenAI-compatible /v1/chat/completions, so it is rejected here with
-instructions rather than failing mid-session. To drive local models with
-Claude Code, put a translating gateway in front of Ollama and point this at
-the gateway's port; opencode (\`op\`) talks to Ollama natively and needs no
-gateway at all.
+(POST /v1/messages). Current Ollama builds do, and are used directly. Older ones
+serve only /api/* and an OpenAI-compatible /v1/chat/completions; those are
+rejected here with instructions rather than failing mid-session. To drive local
+models through such a daemon, put a translating gateway in front of Ollama and
+point this at the gateway's port; opencode (\`op\`) talks to Ollama natively.
+
+The model's real context window is read from the daemon and passed through
+CLAUDE_CODE_MAX_CONTEXT_TOKENS, so Claude Code stops assuming 200k for a tag it
+does not recognize. Export that variable yourself to override.
 
 Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
     return 0
@@ -139,8 +193,10 @@ function claude() {
   fi
 
   # properly clean up and hook up for the ollama
+  local _cl_ctx=""
   if [[ "${ANTHROPIC_BASE_URL:-}" == http* ]]; then
     unset ANTHROPIC_API_KEY
+    _cl_ctx="$(_claude_local_context_tokens "$@")"
   fi
 
   # Both `--permission-mode auto` and `--effort max`/`xhigh` landed around claude 2.1.100;
@@ -178,8 +234,15 @@ function claude() {
   fi
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of `claude --print ... | jq` pipelines).
-  echo "${_cl_cmd[@]}" "$@" >&2
-  "${_cl_cmd[@]}" "$@"
+  # The context override, when one was resolved, is echoed as the env prefix it
+  # actually is so the printed line stays copy-pasteable.
+  if [ -n "$_cl_ctx" ]; then
+    echo "CLAUDE_CODE_MAX_CONTEXT_TOKENS=$_cl_ctx" "${_cl_cmd[@]}" "$@" >&2
+    CLAUDE_CODE_MAX_CONTEXT_TOKENS="$_cl_ctx" "${_cl_cmd[@]}" "$@"
+  else
+    echo "${_cl_cmd[@]}" "$@" >&2
+    "${_cl_cmd[@]}" "$@"
+  fi
 }
 
 # `cl` runs claude against the sy-omen45l Ollama box. Both the host and the model come
