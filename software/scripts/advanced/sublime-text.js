@@ -3,8 +3,6 @@
 
 ////// Config / Settings //////
 
-const USE_CUSTOM_HIGH_CONTRAST_THEME = true;
-
 let mySublimeTextBaseConfigs = {};
 
 /**
@@ -52,10 +50,12 @@ function _getConfigs({ is_prebuilt_config = false, is_os_mac = false }) {
     rulers: [EDITOR_CONFIGS.maxLineSize], // Show a vertical ruler at the max line length
 
     // --- Misc ---
+    // A prebuilt config ships to machines that may not have our generated schemes, so it
+    // always names the built-in fallback.
     dark_color_scheme:
-      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME ? SUBLIME_DARK_COLOR_SCHEME : SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME,
+      is_prebuilt_config || !shouldInstallCustomTheme() ? SUBLIME_DARK_COLOR_SCHEME : SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME,
     light_color_scheme:
-      is_prebuilt_config || !USE_CUSTOM_HIGH_CONTRAST_THEME ? SUBLIME_LIGHT_COLOR_SCHEME : SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME,
+      is_prebuilt_config || !shouldInstallCustomTheme() ? SUBLIME_LIGHT_COLOR_SCHEME : SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME,
 
     // --- Ignored Files ---
     file_exclude_patterns: _convertIgnoredFilesAndFoldersForSublimeText(EDITOR_CONFIGS.ignoredFiles), // Files hidden from sidebar and Goto Anything
@@ -83,8 +83,8 @@ async function _doConfigWork(targetPath, artifacts) {
   if (targetPath) {
     log(">>> For my own system", targetPath);
 
-    // deploy custom color schemes (only when high contrast theme is enabled)
-    if (USE_CUSTOM_HIGH_CONTRAST_THEME) {
+    // deploy custom color schemes (only when custom theming is enabled)
+    if (shouldInstallCustomTheme()) {
       const colorSchemes = [
         {
           src: "software/scripts/advanced/sublime-text-color-dark.jsonc",

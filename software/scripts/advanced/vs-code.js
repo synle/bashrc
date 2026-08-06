@@ -156,14 +156,21 @@ function _getSettings(baseConfig, darkColors, lightColors, keybindings, { is_pre
     "workbench.preferredLightColorTheme": VS_CODE_LIGHT_THEME,
 
     // --- Per-theme color customizations (scoped under [Theme Name] keys) ---
-    [`[${VS_CODE_DARK_THEME}]`]: {
-      "workbench.colorCustomizations": darkColors["workbench.colorCustomizations"] || {},
-      "editor.tokenColorCustomizations": darkColors["editor.tokenColorCustomizations"] || {},
-    },
-    [`[${VS_CODE_LIGHT_THEME}]`]: {
-      "workbench.colorCustomizations": lightColors["workbench.colorCustomizations"] || {},
-      "editor.tokenColorCustomizations": lightColors["editor.tokenColorCustomizations"] || {},
-    },
+    // Dropped when custom theming is off, leaving VS Code's stock high-contrast themes
+    // applied unmodified — the no-install fallback. Prebuilt artifacts always keep the
+    // customizations, since they ship next to the vs-code-color-{dark,light} artifacts.
+    ...(is_prebuilt_config || shouldInstallCustomTheme()
+      ? {
+          [`[${VS_CODE_DARK_THEME}]`]: {
+            "workbench.colorCustomizations": darkColors["workbench.colorCustomizations"] || {},
+            "editor.tokenColorCustomizations": darkColors["editor.tokenColorCustomizations"] || {},
+          },
+          [`[${VS_CODE_LIGHT_THEME}]`]: {
+            "workbench.colorCustomizations": lightColors["workbench.colorCustomizations"] || {},
+            "editor.tokenColorCustomizations": lightColors["editor.tokenColorCustomizations"] || {},
+          },
+        }
+      : {}),
 
     // --- File hiding (sidebar + search) ---
     "files.exclude": Object.fromEntries(EDITOR_CONFIGS.ignoredFiles.concat(EDITOR_CONFIGS.ignoredFolders).map((p) => [p, true])),

@@ -1,6 +1,12 @@
 /** Generates vimrc configuration with vim-plug plugins, syntax highlighting, and keybindings for Linux, Mac, and Windows. */
+// SOURCE software/scripts/advanced/editor.common.js
+
 async function doWork() {
   let targetPath;
+
+  // vim's no-install fallback scheme, sourced from the shared registry so the name is not
+  // duplicated here. Used below when the vim-code-dark plugin is missing.
+  const vimBuiltinColorScheme = getTheme("vim").dark;
 
   const contentOnlyFullVimrc = code`
     " ~/.vimrc
@@ -55,7 +61,7 @@ async function doWork() {
         echohl WarningMsg
         echom "codedark colorscheme not found — run: bash run.sh --files=vim-plug.sh"
         echohl None
-        colorscheme industry      " Fallback (vim built-in, high contrast) if vim-code-dark is not installed
+        colorscheme ${vimBuiltinColorScheme}      " Fallback (vim built-in, high contrast) if vim-code-dark is not installed
     endtry
 
     """""""""""""""""""""""""""""""""""""""""""""""""

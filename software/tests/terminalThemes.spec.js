@@ -198,7 +198,9 @@ describe("ghostty theme", () => {
     const source = fs.readFileSync("software/scripts/advanced/ghostty.js", "utf-8");
     expect(source).toMatch(/const GHOSTTY_DARK_THEME_NAME = "Sy Dark";/);
     expect(source).toMatch(/const GHOSTTY_LIGHT_THEME_NAME = "Sy Light";/);
-    expect(source).toContain("theme = light:${GHOSTTY_LIGHT_THEME_NAME},dark:${GHOSTTY_DARK_THEME_NAME}");
+    expect(source).toContain("theme = light:${lightThemeName},dark:${darkThemeName}");
+    // The custom branch must resolve to the same constants used as themes/ filenames.
+    expect(source).toContain("{ dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME }");
   });
 
   // Ghostty has no light:/dark: variant for split-divider-color, so one value has to clear the
@@ -268,11 +270,16 @@ describe("terminal palettes", () => {
   });
 
   // The whole point of the consolidation: no terminal config may name a third-party theme or
-  // carry a raw hex the palette does not own.
+  // carry a raw hex the palette does not own. The theme line is interpolated rather than
+  // literal, so the check is that it names no theme directly and that the only non-COLOR_MAP
+  // source it can resolve to is the shared fallback registry (used when theming is disabled).
   it("should not name a bundled third-party theme in the ghostty config", () => {
     const source = fs.readFileSync("software/scripts/advanced/ghostty.js", "utf-8");
     const themeLine = source.split("\n").find((line) => /^\s*theme = /.test(line));
-    expect(themeLine).toContain("GHOSTTY_LIGHT_THEME_NAME");
-    expect(themeLine).not.toMatch(/GitHub|Modus|Nvim|Dracula/);
+    expect(themeLine).toContain("${lightThemeName}");
+    expect(themeLine).toContain("${darkThemeName}");
+    expect(themeLine).not.toMatch(/GitHub|Modus|Nvim|Dracula|Ayu|One Half/);
+    // Every value those two names can take comes from either our constants or getTheme().
+    expect(source).toContain('shouldInstallCustomTheme() ? { dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME } : getTheme("ghostty")');
   });
 });

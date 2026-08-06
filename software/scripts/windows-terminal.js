@@ -1,4 +1,5 @@
 /** Configures Windows Terminal settings with color schemes, keybindings, and profile defaults. */
+// SOURCE software/scripts/advanced/editor.common.js
 /**
  * Configures Windows Terminal settings - deploys high contrast dark/light color schemes, keybindings, and profile defaults.
  *
@@ -21,6 +22,13 @@ async function doWork() {
   }
 
   log(">> Setting up Microsoft Windows Terminal");
+
+  // Windows Terminal embeds its schemes in the same settings.json it reads them from, so
+  // the gate decides both whether `schemes` is emitted and which names `colorScheme` points
+  // at. Forced on under CI because the prebuilt artifact is generated on Linux runners
+  // where `is_gui` is 0 — the shipped artifact must always carry the full custom schemes.
+  const useCustomTheme = IS_CI || shouldInstallCustomTheme();
+  const { dark: fallbackDarkScheme, light: fallbackLightScheme } = getTheme("windows-terminal");
 
   // ----------------------------------------------------------
   // High contrast dark/light color schemes (matches VS Code "Default High Contrast" / Sublime "High Contrast Dark/Light")
@@ -93,8 +101,8 @@ async function doWork() {
     intenseTextStyle: "bright",
     adjustIndistinguishableColors: "indexed",
     colorScheme: {
-      dark: syDarkScheme.name,
-      light: syLightScheme.name,
+      dark: useCustomTheme ? syDarkScheme.name : fallbackDarkScheme,
+      light: useCustomTheme ? syLightScheme.name : fallbackLightScheme,
     },
   };
 
@@ -154,7 +162,9 @@ async function doWork() {
     altGrAliasing: true,
 
     // color schemes
-    schemes: [syDarkScheme, syLightScheme],
+    // Omitted when custom theming is off, leaving Windows Terminal's built-in schemes
+    // (which `colorScheme` above then names) as the only ones defined.
+    schemes: useCustomTheme ? [syDarkScheme, syLightScheme] : [],
 
     // keybindings
     keybindings: [...(oldSettings.actions || []), ...keybindings],

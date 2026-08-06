@@ -14,16 +14,130 @@
  * All editor scripts consume these via `EDITOR_CONFIGS.<key>` — do not
  * hard-code the values here.
  */
-/** Color theme constants */
-const SUBLIME_DARK_COLOR_SCHEME = "Monokai.sublime-color-scheme";
-const SUBLIME_LIGHT_COLOR_SCHEME = "Breakers.sublime-color-scheme";
+// --- Custom theme gate ---
+
+/**
+ * Runtime opt-out for the generated `Sy Dark` / `Sy Light` themes, read as a boolean
+ * (`true`/`1` both count) from either `--IS_CUSTOM_THEME_DISABLED=1` or the environment.
+ *
+ * Read lazily inside {@link shouldInstallCustomTheme} rather than captured at module
+ * scope for two reasons: a module-scope `getRuntimeOption` call would run on every
+ * `// SOURCE editor.common.js` import (including inside the `vm` sandbox the unit tests
+ * build, which does not define it), and capturing it once would freeze the value at
+ * import time instead of reflecting the flag actually passed to this run.
+ */
+const IS_CUSTOM_THEME_DISABLED_KEY = "IS_CUSTOM_THEME_DISABLED";
+
+/**
+ * Whether to build and install the custom `Sy Dark` / `Sy Light` themes.
+ *
+ * True only when this machine has a GUI *and* the caller has not opted out. A headless
+ * box has no editor or terminal UI to theme, so generating theme files there is pure
+ * churn; the opt-out exists so a run can be rehearsed against the stock themes without
+ * editing any script.
+ *
+ * When false, callers must fall back to {@link getTheme}, which names only themes that
+ * ship with each app — so the fallback path never depends on an extension or package
+ * being installed first.
+ *
+ * @returns {boolean} True when custom themes should be generated and installed.
+ */
+function shouldInstallCustomTheme() {
+  return !!is_gui && !getRuntimeOption(IS_CUSTOM_THEME_DISABLED_KEY, parseBoolean);
+}
+
+// --- Fallback themes ---
+
+/**
+ * App name → `[darkTheme, lightTheme]`, naming **only themes that ship with the app**.
+ * This is the fallback used whenever {@link shouldInstallCustomTheme} is false, so every
+ * entry here must work with a stock install — no extension, no Package Control, no
+ * marketplace download.
+ *
+ * Two things to know before editing:
+ *
+ * 1. **Order is `[dark, light]`.** Read entries through {@link getTheme}, which returns a
+ *    named `{ dark, light }` pair so a call site can never silently swap them.
+ * 2. **Values are each app's own name for the theme, and those names disagree.** Ghostty
+ *    calls its dark variant `Ayu` while Zed calls the same thing `Ayu Dark`; Sublime wants
+ *    a filename with an extension. Copy the name from the app, never from a sibling entry.
+ *
+ * Ayu is the preferred family (measured worst-case ANSI hue 6.34:1 dark — the strongest of
+ * the families bundled by more than one of these apps), but it only ships with Ghostty and
+ * Zed. VS Code, Sublime, Windows Terminal and vim have no bundled Ayu, so each falls back
+ * to its own highest-contrast built-in instead of pulling in a download.
+ */
+const APP_TO_THEMES_MAP = {
+  // Bundled with Ghostty. Note the dark variant is plain "Ayu", not "Ayu Dark".
+  ghostty: ["Ayu", "Ayu Light"],
+
+  // Built into Zed. Swap to ["One Dark", "One Light"] to switch families — also built in,
+  // but measured lower contrast (worst hue 4.38:1 dark vs Ayu's 6.34:1).
+  zed: ["Ayu Dark", "Ayu Light"],
+
+  // VS Code bundles no Ayu. These are theme *ids*, not the labels shown in the picker
+  // ("Dark High Contrast" / "Light High Contrast") — the id is what settings.json stores.
+  // They are VS Code's dedicated accessibility themes at 21:1 UI contrast.
+  vscode: ["Default High Contrast", "Default High Contrast Light"],
+
+  // Sublime bundles no Ayu and ships only five schemes. Mariana and Breakers are the
+  // highest-contrast dark and light of those five (worst token 3.62:1 and 1.84:1) —
+  // weak, but they are the ceiling without installing a package.
+  sublime: ["Mariana.sublime-color-scheme", "Breakers.sublime-color-scheme"],
+
+  // Windows Terminal bundles no Ayu; One Half is its only built-in dark/light pair.
+  "windows-terminal": ["One Half Dark", "One Half Light"],
+
+  // Single-entry form: vim ships no high-contrast light scheme worth pairing here, so the
+  // one value is reused for both modes by getTheme() rather than being padded with a
+  // second, worse pick. `industry` is a vim built-in.
+  vim: ["industry"],
+};
+
+/**
+ * Look up an app's fallback themes, normalizing the single-entry form.
+ *
+ * An entry may list one theme instead of two (see `vim` above); that single value is
+ * reused for both modes so every call site can destructure `{ dark, light }` without
+ * having to length-check the array first.
+ *
+ * @param {string} appName - Key into {@link APP_TO_THEMES_MAP}, e.g. `"zed"`.
+ * @returns {{dark: string, light: string}} The app's dark and light theme names.
+ * @throws {Error} If `appName` is unknown or its entry is empty, since silently returning
+ *   an undefined theme name would write a broken value into a real user config.
+ */
+function getTheme(appName) {
+  const themes = APP_TO_THEMES_MAP[appName];
+
+  if (!Array.isArray(themes) || themes.length === 0) {
+    throw new Error(`No fallback theme registered for "${appName}". Known apps: ${Object.keys(APP_TO_THEMES_MAP).join(", ")}`);
+  }
+
+  const [dark, light = dark] = themes;
+  return { dark, light };
+}
+
+// --- Color theme constants ---
+
+/** @type {string} Sublime fallback dark scheme. Built in; see APP_TO_THEMES_MAP. */
+const SUBLIME_DARK_COLOR_SCHEME = getTheme("sublime").dark;
+/** @type {string} Sublime fallback light scheme. Built in; see APP_TO_THEMES_MAP. */
+const SUBLIME_LIGHT_COLOR_SCHEME = getTheme("sublime").light;
+/** @type {string} Sublime custom dark scheme, generated from COLOR_MAP. */
 const SUBLIME_DARK_HIGH_CONTRAST_COLOR_SCHEME = "Sy Dark.sublime-color-scheme";
+/** @type {string} Sublime custom light scheme, generated from COLOR_MAP. */
 const SUBLIME_LIGHT_HIGH_CONTRAST_COLOR_SCHEME = "Sy Light.sublime-color-scheme";
-const VSCODE_DARK_COLOR_THEME = "Default High Contrast";
-const VSCODE_LIGHT_COLOR_THEME = "Default High Contrast Light";
-const ZED_DARK_COLOR_SCHEME = "One Dark";
-const ZED_LIGHT_COLOR_SCHEME = "One Light";
+/** @type {string} VS Code dark theme id. Built in; VS Code has no custom Sy theme — it layers tokenColorCustomizations over this. */
+const VSCODE_DARK_COLOR_THEME = getTheme("vscode").dark;
+/** @type {string} VS Code light theme id. Built in; see VSCODE_DARK_COLOR_THEME. */
+const VSCODE_LIGHT_COLOR_THEME = getTheme("vscode").light;
+/** @type {string} Zed fallback dark scheme. Built in; see APP_TO_THEMES_MAP. */
+const ZED_DARK_COLOR_SCHEME = getTheme("zed").dark;
+/** @type {string} Zed fallback light scheme. Built in; see APP_TO_THEMES_MAP. */
+const ZED_LIGHT_COLOR_SCHEME = getTheme("zed").light;
+/** @type {string} Zed custom dark scheme, generated from COLOR_MAP. */
 const ZED_DARK_HIGH_CONTRAST_COLOR_SCHEME = "Sy Dark";
+/** @type {string} Zed custom light scheme, generated from COLOR_MAP. */
 const ZED_LIGHT_HIGH_CONTRAST_COLOR_SCHEME = "Sy Light";
 
 /** Glob patterns for locating the Zed editor binary across platforms */

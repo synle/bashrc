@@ -211,8 +211,13 @@ function _getZedSettings(
       max_scroll_history_lines: EDITOR_CONFIGS.terminalScrollback,
     },
 
-    // --- Theme: light/dark variants point to our custom themes ---
-    theme: { mode: "system", light: "Sy Light", dark: "Sy Dark" },
+    // --- Theme: light/dark variants point to our custom themes, or to Zed built-ins
+    // when custom theming is off. Prebuilt artifacts always name the custom pair, since
+    // they ship next to the zed-color-{dark,light} artifacts that define them.
+    theme:
+      is_prebuilt_config || shouldInstallCustomTheme()
+        ? { mode: "system", light: ZED_LIGHT_HIGH_CONTRAST_COLOR_SCHEME, dark: ZED_DARK_HIGH_CONTRAST_COLOR_SCHEME }
+        : { mode: "system", light: ZED_LIGHT_COLOR_SCHEME, dark: ZED_DARK_COLOR_SCHEME },
 
     // --- File hiding ---
     file_scan_exclusions: EDITOR_CONFIGS.ignoredFolders.concat(EDITOR_CONFIGS.ignoredFiles),
@@ -443,13 +448,17 @@ async function doWork() {
       }),
     );
 
-    const darkThemePath = path.join(targetPath, "themes", ZED_DARK_THEME_FILE);
-    await backupConfigFile(darkThemePath);
-    await writeJson(darkThemePath, darkTheme);
+    // Theme files are only written when custom theming is on; otherwise settings.json
+    // names a Zed built-in and there is nothing to drop into themes/.
+    if (shouldInstallCustomTheme()) {
+      const darkThemePath = path.join(targetPath, "themes", ZED_DARK_THEME_FILE);
+      await backupConfigFile(darkThemePath);
+      await writeJson(darkThemePath, darkTheme);
 
-    const lightThemePath = path.join(targetPath, "themes", ZED_LIGHT_THEME_FILE);
-    await backupConfigFile(lightThemePath);
-    await writeJson(lightThemePath, lightTheme);
+      const lightThemePath = path.join(targetPath, "themes", ZED_LIGHT_THEME_FILE);
+      await backupConfigFile(lightThemePath);
+      await writeJson(lightThemePath, lightTheme);
+    }
 
     const keymapPath = path.join(targetPath, "keymap.json");
     await backupConfigFile(keymapPath);

@@ -117,9 +117,18 @@ function _renderKeybindLines(bindings) {
  * Builds the full Ghostty config text: base settings (font, theme, scrollback, etc.)
  * followed by the resolved keybind lines for the target platform.
  * @param {boolean} isOsMac - Render the macOS variant (cmd) when true, Linux (alt) when false.
+ * @param {object} [options] - Build options.
+ * @param {boolean} [options.is_prebuilt_config] - When true, always name the custom `Sy Dark` /
+ *   `Sy Light` themes. Prebuilt artifacts ship alongside `ghostty-theme-{dark,light}`, so the
+ *   config they carry must reference those files regardless of this machine's own gate.
  * @returns {Promise<string>} Full text of `~/.config/ghostty/config`.
  */
-async function _buildConfigContent(isOsMac) {
+async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {}) {
+  // The custom names resolve to files this script writes into themes/; the fallback names
+  // themes Ghostty already bundles, so the config stays valid when nothing is written there.
+  const { dark: darkThemeName, light: lightThemeName } =
+    is_prebuilt_config || shouldInstallCustomTheme() ? { dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME } : getTheme("ghostty");
+
   const fontFamily = EDITOR_CONFIGS.fontFamily;
   const fontSize = EDITOR_CONFIGS.fontSize;
   const bindings = await _getKeyBindings(isOsMac);
@@ -174,7 +183,10 @@ async function _buildConfigContent(isOsMac) {
     # and the light half was the weakest palette we shipped: an 18.91:1 foreground
     # but colored text bottoming out at 3.61:1, so ANSI output (git diff, ls, fzf,
     # starship) failed AAA even though plain text looked fine.
-    theme = light:${GHOSTTY_LIGHT_THEME_NAME},dark:${GHOSTTY_DARK_THEME_NAME}
+    #
+    # With custom theming disabled this names Ghostty's bundled Ayu pair instead,
+    # so the config never points at a themes/ file that was not written.
+    theme = light:${lightThemeName},dark:${darkThemeName}
 
     # ---- Shell integration ----
     # Auto-detect bash/zsh/fish; enable sudo askpass integration only.
@@ -253,8 +265,8 @@ async function _buildConfigContent(isOsMac) {
  */
 async function doWork() {
   // ---- Prebuilt artifacts (used by setup scripts and webapp downloads) ----
-  const macContent = await _buildConfigContent(true);
-  const linuxContent = await _buildConfigContent(false);
+  const macContent = await _buildConfigContent(true, { is_prebuilt_config: true });
+  const linuxContent = await _buildConfigContent(false, { is_prebuilt_config: true });
   const darkTheme = await _buildThemeContent("dark");
   const lightTheme = await _buildThemeContent("light");
 
@@ -295,11 +307,14 @@ async function doWork() {
   // Written before the config so the `theme = light:...,dark:...` line never points at a
   // file that does not exist yet. These are generated files, not user configs, so they are
   // overwritten wholesale without a backup — the same treatment Zed's themes/ folder gets.
-  const themeFolder = _getGhosttyThemeFolder();
-  await mkdir(themeFolder);
-  await writeText(path.join(themeFolder, GHOSTTY_DARK_THEME_NAME), darkTheme);
-  await writeText(path.join(themeFolder, GHOSTTY_LIGHT_THEME_NAME), lightTheme);
-  log(">>> Ghostty themes written:", themeFolder);
+  // Skipped when custom theming is off; the config then names a bundled Ghostty theme.
+  if (shouldInstallCustomTheme()) {
+    const themeFolder = _getGhosttyThemeFolder();
+    await mkdir(themeFolder);
+    await writeText(path.join(themeFolder, GHOSTTY_DARK_THEME_NAME), darkTheme);
+    await writeText(path.join(themeFolder, GHOSTTY_LIGHT_THEME_NAME), lightTheme);
+    log(">>> Ghostty themes written:", themeFolder);
+  }
 
   // ---- Deploy to local install ----
   const targetPath = _getGhosttyConfigPath();
@@ -307,5 +322,7 @@ async function doWork() {
 
   await mkdir(path.dirname(targetPath));
   await backupConfigFile(targetPath);
-  await writeText(targetPath, is_os_mac ? macContent : linuxContent);
+  // Rebuilt without `is_prebuilt_config` so the local config honors this machine's theme
+  // gate, unlike the artifacts above which always ship the custom pair.
+  await writeText(targetPath, await _buildConfigContent(is_os_mac));
 }
