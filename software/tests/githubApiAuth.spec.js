@@ -126,6 +126,12 @@ describe("fetchGitHubReleaseVersion", () => {
     fetchResponses[RELEASE_URL] = JSON.stringify({});
     setSandboxGlobal("_githubApiRateLimited", true);
 
-    await expect(getIndexFunction("fetchGitHubReleaseVersion")("synle/url-porter")).rejects.toBeInstanceOf(getIndexConstant("ScriptSkipError"));
+    // Asserted on `name` rather than `toBeInstanceOf`: ScriptSkipError is declared with
+    // `class`, which is lexically scoped inside the vm script and never becomes a sandbox
+    // property, so a constructor-identity check here would silently compare against
+    // undefined and pass for any thrown value at all.
+    await expect(getIndexFunction("fetchGitHubReleaseVersion")("synle/url-porter")).rejects.toMatchObject({
+      name: "ScriptSkipError",
+    });
   });
 });
