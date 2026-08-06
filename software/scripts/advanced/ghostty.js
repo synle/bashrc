@@ -127,7 +127,9 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
   // The custom names resolve to files this script writes into themes/; the fallback names
   // themes Ghostty already bundles, so the config stays valid when nothing is written there.
   const { dark: darkThemeName, light: lightThemeName } =
-    is_prebuilt_config || shouldInstallCustomTheme() ? { dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME } : getTheme("ghostty");
+    is_prebuilt_config || shouldInstallCustomTheme()
+      ? { dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME }
+      : getTheme("ghostty");
 
   const fontFamily = EDITOR_CONFIGS.fontFamily;
   const fontSize = EDITOR_CONFIGS.fontSize;

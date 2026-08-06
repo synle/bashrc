@@ -200,7 +200,8 @@ describe("ghostty theme", () => {
     expect(source).toMatch(/const GHOSTTY_LIGHT_THEME_NAME = "Sy Light";/);
     expect(source).toContain("theme = light:${lightThemeName},dark:${darkThemeName}");
     // The custom branch must resolve to the same constants used as themes/ filenames.
-    expect(source).toContain("{ dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME }");
+    // Whitespace-normalized so `make format` is free to rewrap the ternary.
+    expect(source.replace(/\s+/g, " ")).toContain("{ dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME }");
   });
 
   // Ghostty has no light:/dark: variant for split-divider-color, so one value has to clear the
@@ -280,6 +281,9 @@ describe("terminal palettes", () => {
     expect(themeLine).toContain("${darkThemeName}");
     expect(themeLine).not.toMatch(/GitHub|Modus|Nvim|Dracula|Ayu|One Half/);
     // Every value those two names can take comes from either our constants or getTheme().
-    expect(source).toContain('shouldInstallCustomTheme() ? { dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME } : getTheme("ghostty")');
+    // Whitespace-normalized so `make format` is free to rewrap the ternary.
+    expect(source.replace(/\s+/g, " ")).toContain(
+      'shouldInstallCustomTheme() ? { dark: GHOSTTY_DARK_THEME_NAME, light: GHOSTTY_LIGHT_THEME_NAME } : getTheme("ghostty")',
+    );
   });
 });

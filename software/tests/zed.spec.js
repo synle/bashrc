@@ -27,6 +27,11 @@ function loadZed(overrides = {}) {
     is_os_redhat: false,
     is_os_steamos: false,
     is_os_chromeos: false,
+    // Defaults to the custom-theme path (GUI present, no opt-out) so settings assertions
+    // below see `Sy Dark` / `Sy Light`. Override is_gui to exercise the fallback.
+    is_gui: 1,
+    parseBoolean: (v) => String(v ?? "").toLowerCase() === "true" || Number.parseInt(v, 10) === 1,
+    getRuntimeOption: (_key, parser) => (parser ? parser("") : ""),
     clone,
     process: { env: { HOME: "/mock/home" } },
     fs: { existsSync: () => false },
@@ -441,40 +446,29 @@ describe("_getZedSettings > agent_servers merge", () => {
 // `/advanced/` segment is stripped from the sort key, so `lsp/zed.js` < `zed.js`), so every
 // full run used to end with zed.js erasing the LSP binary overrides entirely.
 
-describe("_getZedSettings > lsp carry-through", () => {
-  const lspBlock = {
-    "rust-analyzer": { binary: { path: "rust-analyzer", arguments: [] } },
-    pyright: { binary: { path: "pyright-langserver", arguments: ["--stdio"] } },
-  };
-
-  it("should carry an existing lsp block through the rebuild", () => {
-    const zed = loadZed();
-    const result = zed._getZedSettings({}, { is_prebuilt_config: false, lsp: lspBlock });
-    expect(result.lsp).toEqual(lspBlock);
+describe("_getZedSettings > theme gate", () => {
+  it("should name the custom themes when custom theming is on", () => {
+    const zed = loadZed({ is_gui: 1 });
+    const { theme } = zed._getZedSettings({}, { is_prebuilt_config: false });
+    expect(theme).toEqual({ mode: "system", light: "Sy Light", dark: "Sy Dark" });
   });
 
-  it("should not invent an lsp key when there is nothing to preserve", () => {
-    const zed = loadZed();
-    expect(zed._getZedSettings({}, { is_prebuilt_config: false }).lsp).toBeUndefined();
-    expect(zed._getZedSettings({}, { is_prebuilt_config: false, lsp: {} }).lsp).toBeUndefined();
+  // Without a GUI nothing writes themes/, so settings.json must not point at a file that
+  // does not exist — it names a Zed built-in instead.
+  it("should fall back to Zed built-ins when custom theming is off", () => {
+    const zed = loadZed({ is_gui: 0 });
+    const { theme } = zed._getZedSettings({}, { is_prebuilt_config: false });
+    expect(theme).toEqual({ mode: "system", light: "Ayu Light", dark: "Ayu Dark" });
   });
 
-  it("should keep the lsp block alongside the keys zed-config.jsonc owns", () => {
-    const zed = loadZed();
-    const baseConfig = { vim_mode: false, languages: { Rust: { formatter: "language_server" } } };
-    const result = zed._getZedSettings(baseConfig, { is_prebuilt_config: false, lsp: lspBlock });
-    expect(result.lsp).toEqual(lspBlock);
-    expect(result.languages).toEqual({ Rust: { formatter: "language_server" } });
-    expect(result.vim_mode).toBe(false);
+  // The prebuilt artifact ships next to zed-color-{dark,light}, so it always names them
+  // regardless of whether the machine generating it has a display.
+  it("should keep the custom themes in the prebuilt artifact even with no GUI", () => {
+    const zed = loadZed({ is_gui: 0 });
+    const { theme } = zed._getZedSettings({}, { is_prebuilt_config: true });
+    expect(theme).toEqual({ mode: "system", light: "Sy Light", dark: "Sy Dark" });
   });
 });
-
-// ---- lsp block carry-through ----
-// Regression guard for a real data-loss bug: settings.json is rebuilt from
-// zed-config.jsonc, which carries no `lsp` key, while the `lsp` block itself is written by
-// software/scripts/advanced/lsp/zed.js. Discovery order runs lsp/zed.js first (the
-// `/advanced/` segment is stripped from the sort key, so `lsp/zed.js` < `zed.js`), so every
-// full run used to end with zed.js erasing the LSP binary overrides entirely.
 
 describe("_getZedSettings > lsp carry-through", () => {
   const lspBlock = {

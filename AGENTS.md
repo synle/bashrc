@@ -119,6 +119,7 @@ bash run.sh --preset=editors,terminal   # presets union their file lists
 bash run.sh --dryrun --setup            # no writes; .sh scripts skipped entirely
 bash run.sh --remove --files="fzf.js"   # call undoWork() instead of doWork()
 bash run.sh --debug --verbose           # keep temp files / bash tracing (set -x)
+IS_CUSTOM_THEME_DISABLED=1 bash run.sh  # stock built-in themes instead of Sy Dark/Sy Light
 ```
 
 Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
@@ -350,6 +351,17 @@ Profile registration is buffered: `registerProfileBlock` /
 - **`await backupConfigFile(path)` before writing any real user config** (Sublime, VS
   Code, Brave, Git, Vim) — creates `.bak_original` (never overwritten) and `.bak_latest`.
   Not needed for `writeBuildArtifact` or `BASH_SYLE_PATH`.
+- **Theming goes through `shouldInstallCustomTheme()` and `getTheme()`** in
+  `software/scripts/advanced/editor.common.js` — never a per-script `USE_CUSTOM_*` const.
+  `shouldInstallCustomTheme()` is `is_gui && !IS_CUSTOM_THEME_DISABLED`, read lazily so the
+  file stays importable where `getRuntimeOption` is undefined (the unit-test `vm` sandbox).
+  When it is false, a consumer must name a theme from `APP_TO_THEMES_MAP` via
+  `getTheme(app)` → `{ dark, light }`, which returns **only themes the app already ships**,
+  so the fallback never depends on an extension or package being installed. That map is the
+  single registry for those names — do not re-declare a fallback theme name in a script.
+  A one-element entry (vim) is normalized to the same value for both modes. Prebuilt
+  artifacts stay on the custom path regardless (`is_prebuilt_config || shouldInstall…`),
+  since they ship next to the generated color files that define those themes.
 
 ### 7.4 Misc
 

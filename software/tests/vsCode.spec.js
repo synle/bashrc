@@ -22,6 +22,11 @@ function loadVsCode(overrides = {}) {
   const sandbox = {
     is_os_mac: false,
     is_os_windows: false,
+    // Defaults to the custom-theme path (GUI present, no opt-out) so settings assertions
+    // below see the per-theme customizations. Override is_gui to exercise the fallback.
+    is_gui: 1,
+    parseBoolean: (v) => String(v ?? "").toLowerCase() === "true" || Number.parseInt(v, 10) === 1,
+    getRuntimeOption: (_key, parser) => (parser ? parser("") : ""),
     clone,
     process: { env: { HOME: "/mock/home" } },
     fs: { existsSync: () => false },
@@ -163,6 +168,38 @@ describe("_getSettings -> terminal.integrated.commandsToSkipShell", () => {
 });
 
 // ---- _getSettings: per-OS editor.multiCursorModifier (controls terminal link-click modifier) ----
+
+describe("_getSettings -> theme gate", () => {
+  const darkColors = { "workbench.colorCustomizations": { "editor.background": "#0a0a0a" } };
+  const lightColors = { "workbench.colorCustomizations": { "editor.background": "#ffffff" } };
+
+  it("should scope our customizations under the theme names when custom theming is on", () => {
+    const vs = loadVsCode({ is_gui: 1 });
+    const settings = vs._getSettings({}, darkColors, lightColors, []);
+    expect(settings["[Default High Contrast]"]["workbench.colorCustomizations"]).toEqual(darkColors["workbench.colorCustomizations"]);
+    expect(settings["[Default High Contrast Light]"]["workbench.colorCustomizations"]).toEqual(
+      lightColors["workbench.colorCustomizations"],
+    );
+  });
+
+  // VS Code has no custom theme of ours to install — the customizations *are* the custom
+  // theme, so turning the gate off must leave the stock high-contrast themes untouched.
+  it("should drop the customizations but keep the built-in theme names when off", () => {
+    const vs = loadVsCode({ is_gui: 0 });
+    const settings = vs._getSettings({}, darkColors, lightColors, []);
+    expect(settings["[Default High Contrast]"]).toBeUndefined();
+    expect(settings["[Default High Contrast Light]"]).toBeUndefined();
+    expect(settings["workbench.colorTheme"]).toBe("Default High Contrast");
+    expect(settings["workbench.preferredLightColorTheme"]).toBe("Default High Contrast Light");
+  });
+
+  it("should keep the customizations in the prebuilt artifact even with no GUI", () => {
+    const vs = loadVsCode({ is_gui: 0 });
+    const settings = vs._getSettings({}, darkColors, lightColors, [], { is_prebuilt_config: true });
+    expect(settings["[Default High Contrast]"]).toBeTruthy();
+    expect(settings["[Default High Contrast Light]"]).toBeTruthy();
+  });
+});
 
 describe("_getSettings -> editor.multiCursorModifier (per-OS)", () => {
   it("should set 'alt' on macOS so Cmd+click opens terminal links", () => {
