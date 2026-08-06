@@ -708,6 +708,55 @@ commit.
 ln -sfn ../../.claude/skills/<name>/SKILL.md .opencode/commands/<name>.md
 ```
 
+### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
+
+The repo-local skills above are separate from the **global** `/sy-*` command corpus
+this repo installs onto the machine (`/sy-review-pr`, `/sy-babysit-prs`, …). That
+corpus has exactly **two** files you ever touch:
+
+| To do this                          | Edit exactly this                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------- |
+| Change what a command does          | `software/scripts/advanced/llm/_common/commands/<name>.md`                            |
+| Add / rename / retire a command     | `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js`          |
+
+That map is the **single registry** every CLI's `setup.js` reads via
+`// SOURCE software/scripts/advanced/llm/llm-common.js`. Keys are extension-less
+(`sy-list-prs`), which is what lets one map serve a file-based CLI and a folder-based
+one at once:
+
+| CLI        | Where the same map lands it                                          |
+| ---------- | -------------------------------------------------------------------- |
+| `claude`   | `~/.claude/commands/<key>.md`                                         |
+| `copilot`  | `~/.copilot/skills/<key>/SKILL.md` (no `commands/` slot exists)       |
+| `opencode` | symlinks whatever Claude deployed — consumes the map indirectly       |
+| `gemini`   | no command surface; sources the file, deploys nothing                 |
+| shell      | `sy-<name>` bash wrapper, auto-registered from `~/.claude/commands/`  |
+
+**Never add a second list.** If you find yourself adding a command name to a
+per-CLI array, map, or `if` in `claude/setup.js`, `copilot/setup.js`,
+`gemini/setup.js`, `opencode/setup.js`, or a profile partial — stop: that is
+exactly the drift this consolidation removed (the old
+`CLAUDE_COMMAND_DEPLOY_MAP` + `COPILOT_SKILL_DEPLOY_LIST` pair silently diverged,
+so commands existed in one CLI and not the other). Same rule for the shared
+constants beside it: `LLM_COMMAND_SOURCE_FOLDER`, `LLM_SKILL_MARKER(S)`, and
+`readLLMCommandSource()` are read, never re-declared per CLI.
+
+A per-CLI file may only hold the **shape** difference — how that CLI wants the
+artifact on disk (filename vs folder, frontmatter vs none) — never *which*
+commands exist. If a new CLI needs the corpus, it SOURCEs `llm-common.js` and
+iterates the map; it does not get a list.
+
+Deploy + verify after any change to the corpus:
+
+```bash
+bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"
+```
+
+Run it twice. All surfaces must report the same count, and the second run must
+print no `Removed prior Sy skill` lines. Renaming or deleting a command **must**
+add the old name to `LLM_COMMAND_RETIRED_NAMES` in the same commit — that list is
+the only thing that cleans up dev machines still holding the old file.
+
 ---
 
 ## 14. Working agreement

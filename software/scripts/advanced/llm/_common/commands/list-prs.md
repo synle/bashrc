@@ -83,6 +83,7 @@ Examples:
    - CI/build status: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` → passing / failing / pending
    - Reviews: `gh pr view <number> --repo <owner/repo> --json reviews,reviewDecision` → approved (count) / changes requested / pending review
    - Unresolved review comments: `gh pr view <number> --repo <owner/repo> --json reviewThreads --jq '[.reviewThreads[] | select(.isResolved == false)] | length'` → count of open threads
+   - Resolved review comments (`pingpong` only, for the counters strip): same call with `select(.isResolved == true)` → count of resolved threads
    - Mergeability / conflicts: `gh pr view <number> --repo <owner/repo> --json mergeable,mergeStateStatus`
 
 ## Classification — 5 groups
@@ -230,11 +231,11 @@ PRs Scanned (5):
 
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401 | ⛔ BLOCK<br>CI failing — `unit-tests` red | 🔄 IN PROGRESS (loop 1/3)<br>Loop 1 started 17:12 |
-| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag | 💬 COMMENT<br>2 open threads, awaiting review | ⏸️ WAITING (loop 2/3)<br>Loop 2 ended 16:58 — next loop 17:28 |
-| github.com/acme/api/pull/42<br>@me — Bump deps to latest | ✅ APPROVE<br>green + approved, 0 open threads | ✅ COMPLETED<br>Loop 3 ended 17:05 |
-| github.com/acme/api/pull/51<br>@bob — Add signup flow | ⏳ PENDING<br>CI still running (3 checks) | ⚪ NOT STARTED<br>Queued — wave 2 |
-| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware | ⛔ BLOCK<br>merge conflict with main | ⚠️ ESCALATED<br>Loop 2 stopped 17:01 — needs human |
+| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | 🔴\* ⛔ BLOCK<br>CI failing — `unit-tests` red<br>💬 3 open · ✔ 5 resolved · ⚠️ 2 need attention · ✅ 0 approvals · 🧪 4/5 checks | 🔄 IN PROGRESS (loop 1/3)<br>Loop 1 started 17:12 |
+| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 💬 COMMENT<br>2 open threads, awaiting review<br>💬 2 open · ✔ 0 resolved · ⚠️ 0 need attention · ✅ 0 approvals · 🧪 5/5 checks | ⏸️ WAITING (loop 2/3)<br>Loop 2 ended 16:58 — next loop 17:28 |
+| github.com/acme/api/pull/42<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval · 🧪 5/6→6/6 | 🔴\* ✅ APPROVE<br>green + approved, 0 open threads<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention · ✅ 2 approvals · 🧪 6/6 checks | ✅ COMPLETED<br>Loop 3 ended 17:05 |
+| github.com/acme/api/pull/51<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 ⏳ PENDING<br>CI still running (3 checks)<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention · ✅ 0 approvals · 🧪 2/5 checks | ⚪ NOT STARTED<br>Queued — wave 2 |
+| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ ⛔ BLOCK<br>merge conflict with main<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention · ✅ 1 approval · 🧪 5/5 checks | ⚠️ ESCALATED<br>Loop 2 stopped 17:01 — needs human |
 ```
 
 **Header block:**
@@ -247,7 +248,27 @@ PRs Scanned (5):
 **Columns — exactly three, in this order.** Cells are multi-line; use `<br>` for the line break so the markdown table survives rendering.
 
 - **PR** — line 1 is the full clickable path, `github.com/<owner>/<repo>/pull/<number>` (scheme optional, nothing else dropped — see Render every PR / issue reference as a full clickable path). Line 2 is `@<author> — <TLDR>`: a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Prepend `[WIP]` / `[Draft]` tags to the TLDR when they apply.
-- **Status** — the PR's own state, independent of any agent. Line 1 is one verdict token with its icon; line 2 is a short high-level reason (what is blocked / what was commented on). Never a comment dump — one clause.
+
+  **Line 3 — the delta, always present.** It sits directly under the TLDR because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
+
+  | Marker row | Line 3                                                              |
+  | ---------- | ------------------------------------------------------------------- |
+  | `🔴*`      | `Δ <fragment> · <fragment> · …` — what actually moved               |
+  | `▫️`       | `▫️ No change since last ping-pong`                                 |
+  | `🆕`       | `🆕 First ping-pong — no prior snapshot`                            |
+
+  Each changed signal is one ` · `-separated fragment: old→new form where a value flipped, signed form where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval · 🧪 5/6→6/6`. Cap at the three most significant fragments and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. Never leave line 3 blank — an unchanged row says so out loud, because a silent cell is indistinguishable from a pulse that failed to diff.
+- **Status** — the PR's own state, independent of any agent. Three lines: a change marker plus one verdict token, a short high-level reason, then a fixed counters strip. Never a comment dump — one clause on line 2.
+
+  **Line 1 — `<change marker> <verdict token>`.** The change marker leads, so a scan down the column answers "what moved since the last pulse?" before anything else.
+
+  | Marker  | When                                                                     |
+  | ------- | ------------------------------------------------------------------------ |
+  | `🔴*`   | Anything on lines 1-3 differs from this PR's previous pulse — it moved   |
+  | `▫️`    | Byte-identical to the previous pulse — nothing moved                     |
+  | `🆕`    | First pulse for this PR — no prior snapshot to compare against           |
+
+  A "change" is any difference in the verdict token, the reason clause, or **any** counter in the strip — a resolved thread, a new approval, one more green check all count. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
 
   | Token         | When                                                    |
   | ------------- | ------------------------------------------------------- |
@@ -257,7 +278,21 @@ PRs Scanned (5):
   | `⏳ PENDING`  | CI still running, or no review yet                      |
   | `❓ UNKNOWN`  | Status fetch failed — say which call failed             |
 
-- **Agent** — what the dispatched job is doing. Line 1 is the state token (with loop counter when the per-PR command loops); line 2 is the timing detail.
+  **Line 3 — counters strip.** Always printed, always all five fields, always this order, ` · `-separated. Zeros are printed, never omitted — a fixed-width strip is what makes two pulses diffable at a glance, and a missing field reads as "not measured" rather than "none".
+
+  `💬 <n> open · ✔ <n> resolved · ⚠️ <n> need attention · ✅ <n> approvals · 🧪 <p>/<t> checks`
+
+  | Field                | Source                                                                                                              |
+  | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+  | `💬 <n> open`        | Unresolved review threads (`reviewThreads` where `isResolved == false`)                                             |
+  | `✔ <n> resolved`     | Review threads already resolved                                                                                     |
+  | `⚠️ <n> need attention` | Count of actionable blockers: each failing required check + each `CHANGES_REQUESTED` review + `1` for a merge conflict |
+  | `✅ <n> approvals`   | Approving reviews                                                                                                   |
+  | `🧪 <p>/<t> checks`  | Passing / total checks in `statusCheckRollup`; `0/0` when no CI is configured                                        |
+
+  On `❓ UNKNOWN`, print the strip with `?` in every field that failed to fetch (`💬 ? open · …`) rather than guessing `0`.
+
+- **Agent** — what the dispatched job is doing. Line 1 is the state token (with loop counter when the per-PR command loops); line 2 is the timing detail. No third line — the delta lives under the TLDR in the PR cell.
 
   | Token                        | When                                                 | Line 2 example                              |
   | ---------------------------- | ---------------------------------------------------- | ------------------------------------------- |
@@ -273,7 +308,9 @@ PRs Scanned (5):
 
 **Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, last pass start/end, next pass ETA) alongside the scope. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED<br>no agent dispatched` — the pulse still works as a read-only board.
 
-**Sort:** `⛔ BLOCK` first, then `⏳ PENDING`, `💬 COMMENT`, `✅ APPROVE`, `❓ UNKNOWN`; ties broken by repo name then PR number. Blocked work reads first because that is the row a human has to act on.
+**The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered verdict token, reason clause, and counters strip. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 3 of the PR cell.
+
+**Sort:** `⛔ BLOCK` first, then `⏳ PENDING`, `💬 COMMENT`, `✅ APPROVE`, `❓ UNKNOWN`; within one verdict token, `🔴*` rows come before `🆕` before `▫️`; ties broken by repo name then PR number. Blocked work reads first because that is the row a human has to act on, and moved work reads before parked work because that is the row that changed since they last looked.
 
 **Never** decorate the PR path line with extra prefixes or suffixes, and never split the pulse into per-group tables — the flat board is the format.
 
@@ -285,6 +322,8 @@ PRs Scanned (5):
 - **Scope = explicit refs**, a bare `#<n>` / digits token and cwd is not a git repo → error out, name the unresolvable token, ask the user to use a fully-qualified ref. Unparseable token (not a URL, shorthand, `#<n>`, or digits) → error out, name the bad token, do NOT silently skip.
 - PWD keyword + explicit refs in the same call → error (no mixing).
 - **Format = `pingpong`, zero PRs resolved** → still print the header block (counts of `0`, repo list intact) and skip the table. A pulse that prints nothing is indistinguishable from a dead agent, which defeats the purpose.
+- **Format = `pingpong`, no prior snapshot** (standalone call, or the run's opening pulse) → every row is `🆕`, never `▫️`. `▫️` is a positive claim that nothing moved; only render it when you actually have a previous pulse to compare against.
+- **Format = `pingpong`, a PR dropped out of the set** (merged, closed, or no longer matches the scope) → keep it for one final pulse with its last known Status, `✅ COMPLETED` in the Agent cell, and a `Δ merged` / `Δ closed` line, then drop it. A row that silently vanishes reads as a lost job.
 - If a single PR's status fetch fails, include it under NEEDS ATTENTION with the reason `status fetch failed` rather than dropping it silently.
 - If `reviewDecision` is `null` (no reviews requested yet), treat as `NEED APPROVAL` (not READY).
 - **Scope = explicit refs** is author-agnostic, so it's the scope most likely to come back mixed — always run the mixed-author check on it. PWD scope forces `--author=@me` and can never be mixed; `all` scope with an explicit author token is single-author but that author may not be you, in which case say whose PRs these are rather than repeating one handle on every row.
