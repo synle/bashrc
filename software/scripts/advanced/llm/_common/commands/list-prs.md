@@ -80,8 +80,8 @@ Examples:
    - De-duplicate by URL. Order preserves the user's input order; classification + sort still happen below.
 
 2. **For each PR, fetch detailed status:**
-   - CI/build status: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` → passing / failing / pending
-   - Reviews: `gh pr view <number> --repo <owner/repo> --json reviews,reviewDecision` → approved (count) / changes requested / pending review
+   - CI/build status: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` → `CI PASSED` / `CI FAILED` (name the first failing check) / `BUILD IN PROGRESS` (count the still-running checks)
+   - Reviews: `gh pr view <number> --repo <owner/repo> --json reviews,reviewDecision` → `APPROVED` (with approval count) / `CHANGES REQUESTED` / `AWAITING REVIEW`
    - Unresolved review comments: `gh pr view <number> --repo <owner/repo> --json reviewThreads --jq '[.reviewThreads[] | select(.isResolved == false)] | length'` → count of open threads
    - Resolved review comments (`pingpong` only, for the counters strip): same call with `select(.isResolved == true)` → count of resolved threads
    - Mergeability / conflicts: `gh pr view <number> --repo <owner/repo> --json mergeable,mergeStateStatus`
@@ -91,15 +91,17 @@ Examples:
 Classify each PR into exactly one group. Evaluate in this priority order (first match wins):
 
 1. **NOT READY / WIP / DRAFT** — `isDraft` is true OR title contains `WIP` or `DO NOT MERGE` (case-insensitive). Tag titles with `[Draft]` and/or `[WIP]` in the output.
-2. **NEEDS ATTENTION** — would otherwise be ready (not draft, no WIP/DNM in title) BUT one or more of:
-   - CI status is `failing` (any required check failed).
+2. **NEEDS ATTENTION** (🔴) — would otherwise be ready (not draft, no WIP/DNM in title) BUT one or more of:
+   - `CI FAILED` (any required check failed).
    - `reviewDecision == "CHANGES_REQUESTED"` (reviewer left blocking comments).
    - `mergeable == "CONFLICTING"` (merge conflicts).
-3. **NEED APPROVAL** — CI is `passing` (or all checks neutral/skipped), no merge conflicts, but `reviewDecision != "APPROVED"` (still awaiting review).
-4. **READY TO MERGE (with comments)** — CI passing, approved, no conflicts, but unresolved review threads > 0.
-5. **READY TO MERGE** — CI passing, approved, no conflicts, zero unresolved review threads. Fully clear to merge.
+3. **NEED APPROVAL** (🟡) — the yellow catch-all: nothing red, but not all-clear. No merge conflicts and no failing check, but either `reviewDecision != "APPROVED"` (still awaiting review) or `BUILD IN PROGRESS` (checks still running, even if already approved).
+4. **READY TO MERGE (with comments)** (🟢) — `CI PASSED`, `APPROVED`, no conflicts, but unresolved review threads > 0.
+5. **READY TO MERGE** (🟢) — `CI PASSED`, `APPROVED`, no conflicts, zero unresolved review threads. Fully clear to merge.
 
-Pending CI (no failures, but some checks still running) bubbles up alongside its other signals — it does not by itself force "NEEDS ATTENTION", but it does prevent the PR from being "READY TO MERGE" (it lands in "NEED APPROVAL" or stays in its current group based on review state).
+The color in parentheses is the same roll-up the `long`, `table`, and `pingpong` formats render, so a group and its color never disagree: groups 4 and 5 are exactly the 🟢 set, group 2 is exactly the 🔴 set, group 3 is 🟡. Group 1 takes whichever color its own signals earn — a draft with failing CI is still 🔴.
+
+Group 3 is deliberately the catch-all rather than a third specific rule: green requires CI passed **and** approved **and** no conflict, so anything that clears group 2 without clearing all three lands here. That closes the hole where an already-approved PR with a still-running build matched no group at all — it is 🟡 `NEED APPROVAL`, waiting on the build rather than on a human, and the `BUILD IN PROGRESS` line in the rendered status says which.
 
 ## Sort within each group
 
@@ -169,18 +171,20 @@ For each PR, print a short description line, then the full URL, then a blank lin
 
 ```
 ## NEEDS ATTENTION (2)
-#123 [owner/repo-a] Add user signup flow — CI failing
+#123 [owner/repo-a] Add user signup flow — 🔴 CI FAILED — unit-tests
 https://github.com/owner/repo-a/pull/123
 
-#456 [owner/repo-b] Refactor auth middleware — changes requested
+#456 [owner/repo-b] Refactor auth middleware — 🔴 CHANGES REQUESTED
 https://github.com/owner/repo-b/pull/456
 
 ## READY TO MERGE (1)
-#789 [owner/repo-c] Bump deps to latest
+#789 [owner/repo-c] Bump deps to latest — 🟢 CI PASSED · APPROVED
 https://github.com/owner/repo-c/pull/789
 ```
 
-The short description line is: `#<number> [<owner/repo>] <title> — <reason / status>`. On a mixed-author list, insert the author after the repo: `#<number> [<owner/repo>] @<author> — <title> — <reason / status>`. Strip a leading `[<repo>] ` prefix from `<title>` when it matches the repo already printed on that line — the repo is its own field, so keeping it in the title prints it twice. For NEEDS ATTENTION, include the specific blocker (`CI failing`, `changes requested`, `merge conflict`). For NOT READY / WIP / DRAFT, prepend tags `[Draft]` / `[WIP]` to the title.
+The short description line is: `#<number> [<owner/repo>] <title> — <color emoji> <status>`. On a mixed-author list, insert the author after the repo: `#<number> [<owner/repo>] @<author> — <title> — <color emoji> <status>`. Strip a leading `[<repo>] ` prefix from `<title>` when it matches the repo already printed on that line — the repo is its own field, so keeping it in the title prints it twice.
+
+`<color emoji>` and `<status>` use the same vocabulary and the same roll-up rule as the `pingpong` Status cell — 🔴 for CI failed / changes requested / merge conflict, 🟡 for build running or awaiting review, 🟢 only when CI passed **and** approved **and** no conflict. `<status>` is the component tokens that justify the color, `·`-separated on one line: `CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`. Print every token that applies, in that fixed order, so a red row says which of the three reds it is. For NOT READY / WIP / DRAFT, prepend tags `[Draft]` / `[WIP]` to the title.
 
 ### Format: `table`
 
@@ -191,10 +195,10 @@ Print one markdown table per group with these columns:
 On a mixed-author list, insert an `Author` column immediately after `Repo`, filled in for **every** row (including your own) so the rows stay comparable.
 
 - **PR**: PR number and branch name on separate lines (e.g. `#123` then `feature-branch` below it).
-- **CI Status**: `passing` / `failing` / `pending` (and which check failed if applicable).
-- **Approvals**: `approved (count)` / `changes requested` / `pending review`.
+- **CI Status**: `CI PASSED` / `CI FAILED — <check>` / `BUILD IN PROGRESS (<n> running)` — same vocabulary as the `pingpong` Status cell, so one reader learns one set of words for the whole command.
+- **Approvals**: `APPROVED (<n>)` / `CHANGES REQUESTED` / `AWAITING REVIEW`.
 - **Comments**: count of unresolved review threads (`0` if none).
-- **Ready to Merge?**: `yes` if group 5 (READY TO MERGE), `yes with N open comments` if group 4, otherwise `no` with the blocker.
+- **Ready to Merge?**: `🟢 yes` if group 5 (READY TO MERGE), `🟢 yes — <n> open comments` if group 4, otherwise `🔴 no — <blocker>` (CI failed / changes requested / merge conflict) or `🟡 no — <what it waits on>` (build running / awaiting review). Same three colors and the same roll-up rule as `pingpong`: green needs CI passed **and** approved **and** no conflict; red wins over yellow.
 - In the NOT READY / WIP / DRAFT table, prepend `[WIP]` and/or `[Draft]` tags to the Title column.
 
 ### Format: `links`
