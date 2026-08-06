@@ -474,29 +474,28 @@ that both bash and node consume:
 
 ## 9. Helper API (globals from `software/index.js`)
 
-- **Templates:** `text`, `code` (dedented), `list`, `set`, `json`, `readText` (async;
-  URL / absolute / repo-relative + SOURCE expansion), `readJson`, `readList`, `readSet`,
+- **Templates:** `text`, `code` (dedented), `list`, `set`, `json`, `readText` (async; URL
+  / absolute / repo-relative + SOURCE expansion), `readJson`, `readList`, `readSet`,
   `requireUrl`.
 - **Write:** `writeText`, `writeJson`, `writeJsonWithMerge`, `writeConfigToFile`,
   `writeBuildArtifact` (→ `.build/`), `safeWriteText` (shrink-ratio guard),
   `writeTextIfSignificantChange`, `appendText`, `replaceTextLineByLine`, `touchFile`,
-  `copyFile`, `safeSymlink`, `mkdir`, `deleteFile`, `deleteFolder` (dangerous-path
-  guarded), `unzip`, `md5Hash*`.
-- **Backup:** `backupConfigFile`, `backupText`, `backupProfileSnapshot`.
+  `copyFile`, `safeSymlink`, `mkdir`, `deleteFile`, `deleteFolder` (guarded), `unzip`,
+  `md5Hash*`. **Backup:** `backupConfigFile`, `backupText`, `backupProfileSnapshot`.
 - **Find:** `findPath`, `findPathList`, `findPathFromList`, `pathExists`, `findDirList`,
-  `findFileRecursive` — all take `{ type: file|folder|exec|any }`.
-- **Platform paths:** `getWindowUserBaseDir`, `getWindowAppDataRoaming/LocalUserPath`,
-  `toWindowsPath`, `getDesktopPath`, `getEtcHostsPath`, `getCustomTweaksPath`,
+  `findFileRecursive` — all take `{ type: file|folder|exec|any }`. **Platform paths:**
+  `getWindowUserBaseDir`, `getWindowAppDataRoaming/LocalUserPath`, `toWindowsPath`,
+  `getDesktopPath`, `getEtcHostsPath`, `getCustomTweaksPath`,
   `getOsxApplicationSupportCodeUserPath`, `resolveOsKey`.
 - **Install/download:** `downloadAsset(s)`, `downloadAssetWithFallback` (GitHub release →
-  `binary-cache` release), `downloadAndInstallBinary`, `installMacDmg`,
-  `clearMacQuarantine`, `installWindowsSetupExe`, `installLinuxUniversalAppImage`,
-  `installBrowserExtension`, `gitClone`, `fetchGitHubReleaseVersion`, `getGitHubRawUrl`.
+  `binary-cache`), `downloadAndInstallBinary`, `installMacDmg`, `clearMacQuarantine`,
+  `installWindowsSetupExe`, `installLinuxUniversalAppImage`, `installBrowserExtension`,
+  `gitClone`, `fetchGitHubReleaseVersion`, `getGitHubRawUrl`.
 - **Install version stamps:** `getInstalledVersionStampPath` (sibling
   `<folder>.installed.json`, never inside the folder — Chrome rejects an unpacked
   extension containing a dot-entry), `readInstalledVersionStamp`,
-  `writeInstalledVersionStamp`. Use these so a re-run skips the delete + re-download when
-  the recorded version matches upstream; `--refresh` forces.
+  `writeInstalledVersionStamp` — a re-run then skips delete + re-download when the
+  recorded version matches upstream; `--refresh` forces.
 - **Blocks/profile:** `replaceBlock(s)`, `removeBlock`, `appendTextBlock`,
   `prependTextBlock`, `moveTextBlockToEnd/Start`, `registerProfileBlock`,
   `registerWithBashSyleProfile`, `registerWithPowershellProfile`,
@@ -504,22 +503,20 @@ that both bash and node consume:
   `removeFromBashSyleProfile`, `flushProfileBlocks`.
 - **Guards:** `ScriptSkipError`, `exitIfNotTargetOs`, `exitIfUnsupportedOs`,
   `exitIfLimitedSupportOs`, `exitIfPathFound/NotFound`, `exitIfNotSudo`,
-  `exitIfNoChromiumBrowser`, `exitIfNoGui(mode)` (`"any"` / `"x11"` / `"wayland"`).
-- **GUI flags:** `is_gui`, `is_gui_x11`, `is_gui_wayland` — from the env, see §7.5.
-- **Staleness:** `isPathStale`, `isForceRefreshStale`, `isBashSyleStale`.
+  `exitIfNoChromiumBrowser`, `exitIfNoGui("any"|"x11"|"wayland")`. **GUI flags:**
+  `is_gui`, `is_gui_x11`, `is_gui_wayland` (§7.5). **Staleness:** `isPathStale`,
+  `isForceRefreshStale`, `isBashSyleStale`.
 - **Exec/output:** `execBash` (async, 30s cap), `execBashSync`, `hasBinary`, `emitBash`,
-  `log`, `echo`, `color*`, `printSectionBlock`, `printRunInfo`.
-- **Options:** `getRuntimeOption("KEY")` reads `--KEY=value` or the env var;
-  `parseString` / `parseInteger` (clamping) / `parseBoolean`.
+  `log`, `echo`, `color*`, `printSectionBlock`, `printRunInfo`. **Options:**
+  `getRuntimeOption("KEY")` reads `--KEY=value` or the env var; `parseString` /
+  `parseInteger` (clamping) / `parseBoolean`.
 
 Bash equivalents in `software/bootstrap/common-functions.bash`: `is_help_arg`,
 `safe_source`, `curl_bash_install`, `npm_install_global`, `has_persistent_binary`,
 `find_path`, `prompt_yes_no`, `ensure_binary_alias`, `exit_if_not_sudo`,
 `safe_touch`/`safe_mkdir`/`safe_chown`/`safe_chmod`, `get_native_arch` / `run_native`,
-plus a logging `sudo` wrapper.
-
-`tsc --declaration --allowJs` emits the full typed API into `software/types/`
-(`make format_jsdocs`) — read that when unsure of a signature.
+plus a logging `sudo` wrapper. `tsc --declaration --allowJs` emits the full typed API
+into `software/types/` (`make format_jsdocs`) — read that when unsure of a signature.
 
 ---
 
@@ -593,7 +590,7 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 | `sectionMarkerStyle` | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`. |
 | `pathArrayValidation` | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`. |
 | `mirroredFunctionParity` | `is_help_arg`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both. |
-| `guiDetection` | `_detect_gui_flags` in `common-env.sh` is replayed against fake env: `is_gui` / `is_gui_x11` / `is_gui_wayland` are always `0`/`1`, ssh forces `is_gui=0`, mac/windows are always GUI, and no other flag leaks. Add a case whenever you touch display detection. |
+| `guiDetection` | `_detect_gui_flags` replayed against fake env: flags always `0`/`1`, ssh forces `is_gui=0`, mac/windows always GUI, no other flag leaks. Add a case whenever you touch display detection. |
 | `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8). |
 | `fzfTerminalSafety` | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm. |
 | `curlWrapperFormat` | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`. |
@@ -601,9 +598,9 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 | `editorThemes` | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical. |
 | `autocompleteSpecValidation` | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`. |
 | `generateCiBinaryList` | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`). |
-| `gitAliasResolution` | Every `git.gitconfig` alias (incl. the generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` format placeholder. |
+| `gitAliasResolution` | Every `git.gitconfig` alias (incl. generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` placeholder. |
 | `presets` | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles. |
-| `profileSyntax` | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the two bash-3.2 parse traps: no heredoc nested inside `$( ... )`, no `&>>` (§8). |
+| `profileSyntax` | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the bash-3.2 traps: no heredoc inside `$( ... )`, no `&>>` (§8). |
 | `filterFilesByOsGuard` | Explicit `--files=` entries in an inactive OS folder are dropped, not run. |
 | `osDetection` | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags. |
 | `smokeTestRawUrls` | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form. |

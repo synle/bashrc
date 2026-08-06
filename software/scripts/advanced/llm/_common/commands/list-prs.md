@@ -280,6 +280,8 @@ Pulse (2 moved, 2 steady, 1 new):
   MERGE CONFLICT           ← only when conflicting
   ```
 
+  Joined with `<br>` in the rendered cell, same as every other column. All applicable component lines print — a PR that is conflicting *and* has changes requested shows both, because the color already collapsed them into one signal and the lines are there to say which.
+
   **Line 1 — `<change marker> <color emoji>`.** The change marker leads, so a scan down the column answers "what moved since the last pulse?" before anything else.
 
   | Marker | When                                                              |
