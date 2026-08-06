@@ -230,19 +230,19 @@ PRs Scanned (5):
 - acme/web: 1
 
 Pulse (2 moved, 2 steady, 1 new):
-- 🔴* github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
+- Δ github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
 - ▫️ github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
 - 🆕 github.com/acme/api/pull/51 — new to the board, CI still running; queued for wave 2.
 - ▫️ github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
-- 🔴* github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
+- Δ github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
 
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | 🔴\* ⛔ BLOCK<br>CI failing — `unit-tests` red | 🔄 IN PROGRESS (loop 1/3)<br>Loop 1 started 17:12<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ ⛔ BLOCK<br>merge conflict with main | ⚠️ ESCALATED<br>Loop 2 stopped 17:01 — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/51<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 ⏳ PENDING<br>CI still running (3 checks) | ⚪ NOT STARTED<br>Queued — wave 2<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
-| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 💬 COMMENT<br>2 open threads, awaiting review | ⏸️ WAITING (loop 2/3)<br>Loop 2 ended 16:58 — next loop 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/42<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | 🔴\* ✅ APPROVE<br>green + approved, 0 open threads | ✅ COMPLETED<br>Loop 3 ended 17:05<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3)<br>Loop 1 started 17:12<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED<br>Loop 2 stopped 17:01 — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/51<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED<br>Queued — wave 2<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3)<br>Loop 2 ended 16:58 — next loop 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/42<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED<br>Loop 3 ended 17:05<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Header block:**
@@ -253,9 +253,9 @@ Pulse (2 moved, 2 steady, 1 new):
 - `PRs Scanned (<count>):` followed by one `- <owner>/<repo>: <n>` line per repo. Repos with zero matching PRs still get a line with `0` — a scanned-but-empty repo is a real answer.
 - `Pulse (<n> moved, <n> steady, <n> new):` followed by **one sentence per PR** — the high-level read, before anyone looks at the table. This is the part a human skims on a phone; the table is where they go when a sentence makes them want detail.
 
-  Each line is `- <change marker> <full PR path> — <one sentence>`. Stay high level and plain English: what moved (or that nothing did) and what the agent is doing about it, in one sentence, ≤20 words, no counters, no `Δ` fragments, no verdict tokens. The counts and the tokens are the table's job; duplicating them here just makes the top of the pulse as dense as the bottom, which is the thing this block exists to avoid.
+  Each line is `- <change marker> <full PR path> — <one sentence>`. Stay high level and plain English: what moved (or that nothing did) and what the agent is doing about it, in one sentence, ≤20 words, no counters, no `Δ` fragments, no status tokens. The counts and the tokens are the table's job; duplicating them here just makes the top of the pulse as dense as the bottom, which is the thing this block exists to avoid.
 
-  Order matches the table (same sort), so the reader can drop from a sentence straight to its row. The `(<n> moved, <n> steady, <n> new)` tally counts `🔴*` / `▫️` / `🆕` rows respectively — a one-glance answer to "did anything happen in the last 10 minutes?".
+  Order matches the table (same sort), so the reader can drop from a sentence straight to its row. The `(<n> moved, <n> steady, <n> new)` tally counts `Δ` / `▫️` / `🆕` rows respectively — a one-glance answer to "did anything happen in the last 10 minutes?".
 
 **Columns — exactly three, in this order.** Cells are multi-line; use `<br>` for the line break so the markdown table survives rendering.
 
@@ -265,31 +265,63 @@ Pulse (2 moved, 2 steady, 1 new):
 
   | Marker row | Line 3                                                |
   | ---------- | ----------------------------------------------------- |
-  | `🔴*`      | `Δ <fragment> · <fragment> · …` — what actually moved |
+  | `Δ`        | `Δ <fragment> · <fragment> · …` — what actually moved |
   | `▫️`       | `▫️ No change since last ping-pong`                   |
   | `🆕`       | `🆕 First ping-pong — no prior snapshot`              |
 
   Each changed signal is one `·`-separated fragment: old→new form where a value flipped, signed form where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval · CI failing→green`. Cap at the three most significant fragments and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. Never leave line 3 blank — an unchanged row says so out loud, because a silent cell is indistinguishable from a pulse that failed to diff.
 
-- **Status** — the PR's own state, independent of any agent. Two lines: a change marker plus one verdict token, then a short high-level reason. Never a comment dump — one clause on line 2. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
+- **Status** — the PR's own state, independent of any agent. **One color emoji, then up to three plain-text component lines, in a fixed order.** Never a comment dump, never a prose reason, never the word "GREEN" / "RED" / "YELLOW" spelled out — the emoji _is_ the roll-up and the component lines are the evidence. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
 
-  **Line 1 — `<change marker> <verdict token>`.** The change marker leads, so a scan down the column answers "what moved since the last pulse?" before anything else.
+  ```
+  <change marker> <color emoji>
+  <CI line>
+  <review line>            ← only when there is something to say
+  MERGE CONFLICT           ← only when conflicting
+  ```
+
+  **Line 1 — `<change marker> <color emoji>`.** The change marker leads, so a scan down the column answers "what moved since the last pulse?" before anything else.
 
   | Marker | When                                                              |
   | ------ | ----------------------------------------------------------------- |
-  | `🔴*`  | Anything about this PR differs from its previous pulse — it moved |
+  | `Δ`    | Anything about this PR differs from its previous pulse — it moved |
   | `▫️`   | Identical to the previous pulse — nothing moved                   |
   | `🆕`   | First pulse for this PR — no prior snapshot to compare against    |
 
-  A "change" is any difference in the verdict token, the reason clause, **or any counter in the Agent cell's counters line** — a resolved thread, a new approval, one more green check all count. The marker lives in the Status column but diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
+  A "change" is any difference in the color emoji, any component line, **or any counter in the Agent cell's counters line** — a resolved thread, a new approval, one more green check all count. The marker lives in the Status column but diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
 
-  | Token        | When                                                |
-  | ------------ | --------------------------------------------------- |
-  | `✅ APPROVE` | Approved, CI green, no conflicts (ready to merge)   |
-  | `⛔ BLOCK`   | CI failing, `CHANGES_REQUESTED`, or merge conflict  |
-  | `💬 COMMENT` | Open review threads or a non-blocking review posted |
-  | `⏳ PENDING` | CI still running, or no review yet                  |
-  | `❓ UNKNOWN` | Status fetch failed — say which call failed         |
+  **The color emoji** is the whole verdict, rolled up from the component lines below. Evaluate top-down, first match wins:
+
+  | Emoji | When                                                                                          |
+  | ----- | --------------------------------------------------------------------------------------------- |
+  | `🔴`  | **Any** of: CI failed, reviewer requested changes, merge conflict                              |
+  | `🟡`  | Nothing red, but not yet all-clear: build still running, or nobody has reviewed it yet         |
+  | `🟢`  | CI passed **and** approved **and** no merge conflict — the only combination that earns green  |
+  | `❓`  | Status fetch failed — cannot roll up. Component lines say which call failed (see Edge cases)  |
+
+  Red is checked before yellow so a failing check on a still-running build reads red, not yellow. Green is a conjunction of all three conditions — a PR that is CI-green and unreviewed is `🟡`, never `🟢`.
+
+  **Line 2 — CI, always printed.** Exactly one of:
+
+  | Line                            | When                                                          |
+  | ------------------------------- | ------------------------------------------------------------- |
+  | `CI PASSED`                     | Every required check succeeded (neutral / skipped count as ok) |
+  | `CI FAILED — <check>`           | Any required check failed. Name the first failing check        |
+  | `BUILD IN PROGRESS (<n> running)` | Checks still queued or running, none failed yet              |
+
+  **Line 3 — review, printed whenever the review state is known.** Exactly one of:
+
+  | Line                | When                                                                  |
+  | ------------------- | --------------------------------------------------------------------- |
+  | `APPROVED`          | `reviewDecision == "APPROVED"`                                        |
+  | `CHANGES REQUESTED` | `reviewDecision == "CHANGES_REQUESTED"`                               |
+  | `AWAITING REVIEW`   | `reviewDecision` is null or `REVIEW_REQUIRED` — nobody has ruled yet |
+
+  `AWAITING REVIEW` is printed rather than omitted because "waiting on a reviewer" is one of the two things `🟡` can mean, and a yellow row showing only `CI PASSED` leaves the reader guessing which. Omit line 3 entirely only when the review state could not be fetched.
+
+  **Line 4 — `MERGE CONFLICT`, printed only when `mergeable == "CONFLICTING"`.** Absent means no conflict; there is no "no conflict" line, because a clean merge is the default and printing it on every row is noise.
+
+  Nothing else goes in this cell. No open-thread counts (Agent cell), no timestamps (Agent cell), no free-form reason clause.
 
 - **Agent** — what the dispatched job is doing. Line 1 is the state token (with loop counter when the per-PR command loops); line 2 is the timing detail; line 3 is the counters line. No delta here — that lives under the TLDR in the PR cell.
 
@@ -315,15 +347,15 @@ Pulse (2 moved, 2 steady, 1 new):
   | `✔ <n> resolved`        | Review threads resolved — what the agent (or the author) has already worked through                                                                                             |
   | `⚠️ <n> need attention` | Threads the agent read but **cannot** act on alone: no good option is obvious, the fix is a product/design call, the reviewer and the code disagree, or it needs human judgment |
 
-  Zeros are printed, never omitted — a fixed three-field line is what makes two pulses diffable at a glance, and a missing field reads as "not measured" rather than "none". `⚠️ need attention` is a strict subset of `💬 open` (a thread the agent is stuck on is by definition still open), so `need attention ≤ open` always; a pulse where it exceeds `open` is a bookkeeping bug, not a render choice. It counts **comment threads**, not CI failures or conflicts — those are already the Status verdict. A non-zero `⚠️` is the signal a human has to read this PR themselves; pair it with `⚠️ ESCALATED` on line 1 when the job stopped over it.
+  Zeros are printed, never omitted — a fixed three-field line is what makes two pulses diffable at a glance, and a missing field reads as "not measured" rather than "none". `⚠️ need attention` is a strict subset of `💬 open` (a thread the agent is stuck on is by definition still open), so `need attention ≤ open` always; a pulse where it exceeds `open` is a bookkeeping bug, not a render choice. It counts **comment threads**, not CI failures or conflicts — those are already the Status color. A non-zero `⚠️` is the signal a human has to read this PR themselves; pair it with `⚠️ ESCALATED` on line 1 when the job stopped over it.
 
   Counts come from the caller's ledger where the agent tracked them; standalone with no ledger, fill `💬` / `✔` from `reviewThreads` and print `⚠️ 0 need attention` (nothing has judged them). On a failed fetch, print `?` in the affected field rather than guessing `0`.
 
 **Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, last pass start/end, next pass ETA, and the open / resolved / need-attention thread counts) alongside the scope. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED<br>no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board.
 
-**The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered verdict token, reason clause, and counters line. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 3 of the PR cell.
+**The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, component lines, and counters line. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 3 of the PR cell.
 
-**Sort:** `⛔ BLOCK` first, then `⏳ PENDING`, `💬 COMMENT`, `✅ APPROVE`, `❓ UNKNOWN`; within one verdict token, `🔴*` rows come before `🆕` before `▫️`; ties broken by repo name then PR number. Blocked work reads first because that is the row a human has to act on, and moved work reads before parked work because that is the row that changed since they last looked.
+**Sort:** `🔴` first, then `🟡`, then `🟢`, then `❓`; within one color, `Δ` rows come before `🆕` before `▫️`; ties broken by repo name then PR number. Red work reads first because that is the row a human has to act on, and moved work reads before parked work because that is the row that changed since they last looked.
 
 **Never** decorate the PR path line with extra prefixes or suffixes, and never split the pulse into per-group tables — the flat board is the format.
 

@@ -78,12 +78,8 @@ install.sh                    single source for GitHub Codespaces setup
 software/
   index.js                    engine + global helper API (~5k lines)
   common.js                   marker/block primitives; inlined into index.js
-  bootstrap/
-    common-env.sh             env constants, inlined into run.sh via BEGIN/END
-    common-functions.bash     bash helpers for .sh scripts
-    profile-core.sh           always-on profile body
-    profile-advanced.sh       advanced-only profile body
-    setup.sh                  remote one-liner bootstrap
+  bootstrap/                  common-env.sh, common-functions.bash, profile-core.sh,
+                              profile-advanced.sh, setup.sh (remote one-liner)
   scripts/
     _init.js                  pinned FIRST; assembles ~/.bash_syle, ~/.bashrc, ~/.bash_profile
     _full-setup.sh            dependency installs (setup mode only)
@@ -97,7 +93,7 @@ software/
                               autocomplete specs, script-list, ip-address
   tools/                      build-include.js, build-installer.js, generate-ci-binary-list.js,
                               format-*.js, doctor.sh, new-script.sh, preview-themes.js
-  tests/                      vitest specs — also the convention linters (§10)
+  tests/                      vitest specs — also the convention linters (§11)
 webapp/, src/, dist/          the vite webapp published to GitHub Pages
 docs/                         long-form topic docs (incl. editor-keybindings.md)
 .claude/skills/               agent skills (symlinked into .opencode/commands/)
@@ -105,22 +101,23 @@ docs/                         long-form topic docs (incl. editor-keybindings.md)
 
 ### Key files
 
-| Path                                           | Purpose                                                                                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `run.sh`                                       | Bash pre-scan, OS detect, JSON-encodes args into `BASHRC_RAW_ARGS`, calls `run_files()`        |
-| `software/index.js`                            | `parseRawArgs`, helper library, script discovery + runner, run info                            |
-| `software/common.js`                           | `replaceBlock` + marker constants; inlined into index.js                                       |
-| `software/bootstrap/common-env.sh`             | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); inlined into `run.sh` via BEGIN/END |
-| `software/bootstrap/common-functions.bash`     | Shared shell helpers; pulled into `.sh` scripts via SOURCE                                     |
-| `software/metadata/presets.jsonc`              | Named `--preset=` bundles; read by `run.sh` into `PRESETS_JSON`                                |
-| `software/metadata/ci-binaries.json`           | Single source for CI binary verification (`required` + `warn`)                                 |
-| `software/metadata/autocomplete.common.js`     | Spec-based autocomplete mappings, `DYNAMIC_TOKENS`, `expandSpecMacros`                         |
-| `software/metadata/script-list.js` / `.config` | Canonical sorted script list consumed at build time                                            |
-| `software/tools/build-include.js`              | BEGIN/END substitution engine + inline `{{map.key}}` marker processor                          |
-| `software/tools/generate-ci-binary-list.js`    | Renders the `ci-binary-checks` block in `action.yml`                                           |
-| `software/tools/build-installer.js`            | Builds `.build/install-bashrc.sh` self-extracting installer                                    |
-| `vitest.config.js`                             | Unit config + istanbul coverage thresholds (authoritative numbers)                             |
-| `$BASHRC_TEMP_DIR/run_timing.json`             | Per-run timing/status, read by CI                                                              |
+| Path | Purpose |
+| --- | --- |
+| `run.sh` | Bash pre-scan, OS detect, JSON-encodes args into `BASHRC_RAW_ARGS`, calls `run_files()` |
+| `software/index.js` | `parseRawArgs`, helper library, script discovery + runner, run info |
+| `software/common.js` | `replaceBlock` + marker constants; inlined into index.js |
+| `bootstrap/common-env.sh` | Shared constants (`LIMITED_SUPPORT_OSES`, `ALL_OS_FLAGS`); inlined into `run.sh` via BEGIN/END |
+| `bootstrap/common-functions.bash` | Shared shell helpers; pulled into `.sh` scripts via SOURCE |
+| `bootstrap/profile-core.sh` / `profile-advanced.sh` | Always-on / advanced-only profile bodies |
+| `metadata/presets.jsonc` | Named `--preset=` bundles; read by `run.sh` into `PRESETS_JSON` |
+| `metadata/ci-binaries.json` | Single source for CI binary verification (`required` + `warn`) |
+| `metadata/autocomplete.common.js` | Spec-based autocomplete mappings, `DYNAMIC_TOKENS`, `expandSpecMacros` |
+| `metadata/script-list.js` / `.config` | Canonical sorted script list consumed at build time |
+| `tools/build-include.js` | BEGIN/END substitution engine + inline `{{map.key}}` marker processor |
+| `tools/generate-ci-binary-list.js` | Renders the `ci-binary-checks` block in `action.yml` |
+| `tools/build-installer.js` | Builds `.build/install-bashrc.sh` self-extracting installer |
+| `vitest.config.js` | Unit config + istanbul coverage thresholds (authoritative numbers) |
+| `$BASHRC_TEMP_DIR/run_timing.json` | Per-run timing/status, read by CI |
 
 ---
 
@@ -147,12 +144,11 @@ Flags take one or two dashes. Presets: `lightweight`, `heavyweight`, `editors`,
 **CLI resolution.** `--files=<x>` is strict script — a typo fails loudly, on purpose.
 `--preset=<x>` is strict preset with case-insensitive substring fallback. Bare `<x>` is
 **script-first**, falling back to a preset on a miss (`_resolveBareArgPresetFallback`,
-driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips the script search entirely. Script
-matching (`_resolveScriptFile`) has three tiers: exact path → case-insensitive basename
-sans extension → regex partial on basename. One hit auto-resolves; two or more print
-copy-pasteable suggestions in the matching CLI form; zero is a not-found error. Script
-always wins a collision — `bash run.sh llm` hits `llm-common.js`, not the `llm` preset;
-use `@llm` to force the preset.
+driven by `BASHRC_BARE_ARGS`). Bare `@<x>` skips the script search. Script matching
+(`_resolveScriptFile`) has three tiers: exact path → case-insensitive basename sans
+extension → regex partial on basename. One hit auto-resolves; two or more print
+copy-pasteable suggestions; zero is a not-found error. Script always wins a collision —
+`bash run.sh llm` hits `llm-common.js`, not the `llm` preset; use `@llm` to force it.
 
 **When sharing a command, offer both forms when both apply** — narrow
 `--files=bash-keys` and broad `--preset=terminal`.
@@ -200,20 +196,20 @@ right.
 
 ### Naming suffixes — these change behavior, not just style
 
-| Suffix / path                                   | Meaning                                                                                                                |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `.js`                                           | Node script with `doWork()`; consecutive siblings bundle into one `node` heredoc                                       |
-| `.sh`                                           | bash script; own heredoc; **skipped entirely under `--dryrun`**                                                        |
-| `.su.js`                                        | runs under `sudo -E node`; **all** `.su.js` collapse into one sudo prompt; self-contained, no state from other scripts |
-| `.su.sh`, `.sh.js`, `.su.sh.js`                 | never bundled                                                                                                          |
-| `.common.js` / `.common.bash` / `.common.jsonc` | shared helper; excluded from discovery; pull in via `SOURCE`                                                           |
-| `.standalone.js`                                | on-demand only; excluded from discovery                                                                                |
-| `.profile.bash`                                 | profile partial inlined into `~/.bash_syle` by a `# SOURCE` marker; not standalone                                     |
-| `_init.js`                                      | root one pinned first; per-OS ones run early                                                                           |
-| `_full-setup.sh`                                | dependency installs; only with `--setup`                                                                               |
-| `~name`                                         | post-script; runs last, never bundled                                                                                  |
-| `<os>/`                                         | gated on `is_os_<os>`                                                                                                  |
-| `advanced/`                                     | only when `IS_ADVANCED_PROFILE_ENABLED` (skipped on limited-support OSes)                                              |
+| Suffix / path | Meaning |
+| --- | --- |
+| `.js` | Node script with `doWork()`; consecutive siblings bundle into one `node` heredoc |
+| `.sh` | bash script; own heredoc; **skipped entirely under `--dryrun`** |
+| `.su.js` | runs under `sudo -E node`; **all** `.su.js` collapse into one sudo prompt; self-contained, no state from other scripts |
+| `.su.sh`, `.sh.js`, `.su.sh.js` | never bundled |
+| `.common.js` / `.common.bash` / `.common.jsonc` | shared helper; excluded from discovery; pull in via `SOURCE` |
+| `.standalone.js` | on-demand only; excluded from discovery |
+| `.profile.bash` | profile partial inlined into `~/.bash_syle` by a `# SOURCE` marker; not standalone |
+| `_init.js` | root one pinned first; per-OS ones run early |
+| `_full-setup.sh` | dependency installs; only with `--setup` |
+| `~name` | post-script; runs last, never bundled |
+| `<os>/` | gated on `is_os_<os>` |
+| `advanced/` | only when `IS_ADVANCED_PROFILE_ENABLED` (skipped on limited-support OSes) |
 
 Discovery order: `_init` → OS `_init` → `_full-setup` → alphabetical (with `/advanced/`
 stripped from the sort key) → `~` post-scripts → pinned `lastFiles`. Every `--files` run
@@ -246,78 +242,69 @@ Profile registration is buffered: `registerProfileBlock` /
 ### 7.1 Shell
 
 - New `.sh`/`.bash` in `software/scripts/` start with `#!/usr/bin/env bash` and
-  `# SOURCE software/bootstrap/common-functions.bash`. Omit the SOURCE line only when no
-  shared helper is used. `.profile.bash` partials need neither.
-- **Bash functions use the `function` keyword** — `function foo() {`, never `foo() {`.
-  Bash 3.2 can fail to parse the bare form inside `if … then … fi`. Applies to scripts,
+  `# SOURCE software/bootstrap/common-functions.bash` (omit SOURCE only when no shared
+  helper is used). `.profile.bash` partials need neither.
+- **Bash functions use the `function` keyword** — `function foo() {`, never `foo() {`;
+  bash 3.2 can fail to parse the bare form inside `if … then … fi`. Applies to scripts,
   partials, and bash emitted from JS `` code`…` ``.
 - **`"$HOME/"`, never `~/`** — `~` is not quote-safe.
 - **`safe_touch` / `safe_mkdir`** for paths inside `$HOME` (fixes root ownership left by
-  earlier `sudo`); `safe_mkdir` implies `-p`. Plain `touch`/`mkdir` are fine elsewhere.
+  earlier `sudo`); `safe_mkdir` implies `-p`. Plain `touch`/`mkdir` fine elsewhere.
 - **`safe_chown` / `safe_chmod`** instead of the raw commands — they skip missing and
-  already-correct paths. One path per call; `safe_chown [-R] [user] <path>` defaults to
-  `$USER`.
+  already-correct paths. One path per call; `safe_chown [-R] [user] <path>` defaults to `$USER`.
 - **`safe_source`, never `source` / `.`** — it runs `bash -n` first. Don't append
-  `> /dev/null 2>&1`. Exception: the common-env section of `run.sh`, where `safe_source`
-  doesn't exist yet.
+  `> /dev/null 2>&1`. Exception: the common-env section of `run.sh`, before it exists.
 - **`has_persistent_binary` (scripts) / `type -P` (shell)** for binary detection — never
   `which` or `command -v`. `has_persistent_binary` excludes `/tmp/` hits so the
   bootstrap node fallback can't short-circuit a real install. Plain `type -P` only in
   `profile-*.sh`, `common-functions.bash`, `run.sh`, `common-env.sh`.
 - **`command <tool>`** to bypass shell aliases. **Always `command cat`** — a raw `cat`
-  can be aliased to `bat` and mangle the byte stream. Only exception: the user-facing
-  alias `c="command cat"`.
+  can be aliased to `bat` and mangle the byte stream. Only exception: the alias
+  `c="command cat"`.
 - **`((var))` for boolean flags.** Every flag (`is_os_*`, `IS_CI`, `IS_FORCE_REFRESH`)
-  is `0`/`1`. Use `IS_CI`, not `$CI`. For user-supplied strings use `is_truthy` (matches
-  `1`, `true`, `y`, `yes`, case-insensitive).
+  is `0`/`1`. Use `IS_CI`, not `$CI`. For user strings use `is_truthy` (`1`, `true`, `y`,
+  `yes`, case-insensitive).
 - **Never put a literal `(` or `)` in a bash path/glob string** — bash 3.2 parses `*(`,
   `+(`, `?(`, `@(`, `!(` as extglob even inside double quotes. Write
   `"/mnt/c/Program*Files*86*/..."`. Enforced by `pathArrayValidation.spec.js`.
 - **`find_path` / `find_path_list`** to resolve a candidate list (modes `--file`,
-  `--folder`, `--exec`, `--any`; wildcards OK; pass as an array). JS equivalents
-  `findPath` / `findPathList`. `find_existing` is a deprecated wrapper.
-- **`npm_install_global <pkg> [binary]`** for npm globals — handles skip-if-installed,
-  installs under `$HOME/.local`, and on WSL also mirrors to Windows via `cmd.exe`. Pass
-  the binary name when it differs (`npm_install_global @google/gemini-cli gemini`).
-  **Never `rm` the launcher first to force a reinstall** — the freshness gate already
-  treats a missing `~/.local/bin/<binary>` as a broken install and reinstalls, and the
-  manual wipe only re-downloads the package on every run. Use `--refresh` / `--force-refresh`
-  to force. (Deleting it _and_ relying on the gate to notice is what left `claude` off PATH
-  with a fully installed package tree on disk.)
+  `--folder`, `--exec`, `--any`; wildcards OK; pass an array). JS: `findPath` /
+  `findPathList`. `find_existing` is deprecated.
+- **`npm_install_global <pkg> [binary]`** for npm globals — skip-if-installed, installs
+  under `$HOME/.local`, and on WSL mirrors to Windows via `cmd.exe`. Pass the binary name
+  when it differs (`npm_install_global @google/gemini-cli gemini`). **Never `rm` the
+  launcher first to force a reinstall** — the freshness gate already treats a missing
+  `~/.local/bin/<binary>` as broken and reinstalls; the manual wipe only re-downloads the
+  package every run (that is what once left `claude` off PATH with the package tree fully
+  installed). Force with `--refresh` / `--force-refresh`.
 - **Prefer `curl -fsSL <url> | bash` installers over package managers** for CLI tools;
   fall back to `npm_install_global` only when no official installer exists. **Exception:
   the LLM CLIs (`claude`, `copilot`, `gemini`, `opencode`) use `npm_install_global`
-  anyway** — it gives side-by-side Linux+Windows installs on WSL from one call, worth
-  losing vendor self-update.
-- **`curl -fsSL`** is the only accepted flag combo.
+  anyway** — side-by-side Linux+Windows installs on WSL from one call, worth losing
+  vendor self-update. `curl -fsSL` is the only accepted flag combo.
 - **`ensure_binary_alias <canonical>`** when a package installs under a non-canonical
-  name (apt's `batcat`, `fdfind`). Extend the inline `case` and call it from the
-  relevant Linux `_full-setup.sh`.
-- **`exit_if_not_sudo`** as the first line of root-required shell scripts (JS analog:
-  `exitIfNotSudo()`).
-- **`prompt_yes_no <prompt> [default]`** for interactive prompts —
-  `prompt_yes_no 'Continue?' && do_thing`.
+  name (apt's `batcat`, `fdfind`) — extend the inline `case`, call from the relevant
+  Linux `_full-setup.sh`.
+- **`exit_if_not_sudo`** as the first line of root-required shell scripts (JS analog
+  `exitIfNotSudo()`). **`prompt_yes_no <prompt> [default]`** for interactive prompts.
 - **`print_action_summary <target> [<binary> [<args>...]]`** whenever acting on a single
-  file/folder (cd, view, edit, cat). Prints a copy-paste-runnable `PWD:` / `cd` /
-  `<binary>` block (plus the WSL Windows path) before the side effect. Never hand-roll
-  the echo block. Use the sibling `to_windows_path`, not `wslpath -m` directly.
+  file/folder (cd, view, edit, cat) — prints a copy-paste-runnable `PWD:` / `cd` /
+  `<binary>` block (plus the WSL Windows path) before the side effect. Never hand-roll it;
+  use the sibling `to_windows_path`, not `wslpath -m`.
 - **User-facing bash functions need inline `--help` via `is_help_arg`** —
-  `if is_help_arg "${1:-}"; then …`, help printed as one multi-line `echo`, first line
-  `"funcname: short description"`, with a matching `#` comment above the function.
-  Inline help is the source of truth.
+  `if is_help_arg "${1:-}"; then …`, help as one multi-line `echo`, first line
+  `"funcname: short description"`, matching `#` comment above the function. Inline help
+  is the source of truth.
 - **`_full-setup.sh` package-manager calls end with
   `< /dev/null >> "$BASHRC_TEMP_DIR/fullsetup.log" 2>&1`.** `< /dev/null` stops the
   subprocess eating the heredoc's stdin; `>> … 2>&1` captures both streams for the CI
-  log dump. **Never `&>>`** — that operator is bash 4.0+, so it is a hard syntax error
-  on the bash 3.2 floor (§8), and a fresh Mac runs `_full-setup.sh` under `/bin/bash`
-  3.2 before Homebrew's bash exists. Quote the path: `$BASHRC_TEMP_ROOT_DIR` falls back
-  to `$HOME/tmp`, which contains spaces on MinGW.
+  log dump. **Never `&>>`** — bash 4.0+, a hard syntax error on the 3.2 floor (§8). Quote
+  the path: `$BASHRC_TEMP_ROOT_DIR` falls back to `$HOME/tmp`, spaces on MinGW.
 - **`> /dev/null` (not `&>`) for standalone install commands** so stderr stays visible.
   `&> /dev/null` is fine inside conditionals and checks.
-- **Never nest a heredoc inside `$( ... )`** — bash 3.2 tracks quotes through the
-  heredoc body and an odd apostrophe count silently breaks the parse of the whole file
-  (§8). Read it into a variable first: `IFS= read -r -d '' js << 'JS_EOF' || true`,
-  then `node -e "$js"`. Enforced by `profileSyntax.spec.js`.
+- **Never nest a heredoc inside `$( ... )`** — see §8; read it into a variable first
+  (`IFS= read -r -d '' js << 'JS_EOF' || true`, then `node -e "$js"`). Enforced by
+  `profileSyntax.spec.js`.
 - **Prefer one-liner `&&` guards** for `eval`/`init`/`source`:
   `type -P zoxide &>/dev/null && eval "$(zoxide init bash --cmd cd)"`.
 - **grep patterns must work under both `grep` and `rg`** — `grep` may be aliased. Avoid
@@ -329,12 +316,11 @@ Profile registration is buffered: `registerProfileBlock` /
 - **POSIX only when the shebang says so.** If it's `#!/bin/sh` or `#!/system/bin/sh`:
   no arrays, no `function`, no `[[ ]]`, no `${var,,}`, no `(( ))`.
 - **Never trust `uname -m`.** Under Rosetta 2 an Intel-launched process reports
-  `x86_64` and every child inherits it (Homebrew bottles, npm optional deps, GUI
-  slices). Use `get_native_arch` / `is_arch_translated` / `run_native <binary>`; gate
-  "already installed" skips with `binary_arch_mismatch <path>`; route `npm install -g`
-  through `find_native_node`. `run_native` execs a real binary — pass `brew` / `npm` /
-  `bash`, never a shell function. `run.sh` re-execs itself once via `arch -arm64` when
-  it starts translated. Tests: `software/tests/nativeArch.spec.js`.
+  `x86_64` and every child inherits it. Use `get_native_arch` / `is_arch_translated` /
+  `run_native <binary>`; gate "already installed" skips with `binary_arch_mismatch
+  <path>`; route `npm install -g` through `find_native_node`. `run_native` execs a real
+  binary — pass `brew` / `npm` / `bash`, never a shell function. `run.sh` re-execs itself
+  once via `arch -arm64` when translated. Tests: `software/tests/nativeArch.spec.js`.
 
 ### 7.2 JS
 
@@ -416,11 +402,11 @@ Profile registration is buffered: `registerProfileBlock` /
 `$DISPLAY`, `$WAYLAND_DISPLAY`, `$SSH_CONNECTION`, or `$SSH_CLIENT`. It exports three
 `0`/`1` flags that both bash and node consume:
 
-| Flag             | True when                                                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| `is_gui`         | Any GUI surface exists. mac/windows always; elsewhere needs X11 or Wayland. Always `0` inside an ssh session |
-| `is_gui_x11`     | An X11 server is reachable — also covers XWayland, WSLg, and Termux:X11                                      |
-| `is_gui_wayland` | A Wayland compositor is reachable                                                                            |
+| Flag | True when |
+| --- | --- |
+| `is_gui` | Any GUI surface exists. mac/windows always; elsewhere needs X11 or Wayland. Always `0` inside an ssh session |
+| `is_gui_x11` | An X11 server is reachable — also covers XWayland, WSLg, and Termux:X11 |
+| `is_gui_wayland` | A Wayland compositor is reachable |
 
 - **Bash:** `if ((is_gui)); then …`, `((is_gui_x11))`, `((is_gui_wayland))` — same
   `((flag))` style as `is_os_*`. There is no `has_a_gui` function; it was removed
@@ -428,20 +414,19 @@ Profile registration is buffered: `registerProfileBlock` /
 - **JS:** the `is_gui` / `is_gui_x11` / `is_gui_wayland` globals, or the
   `exitIfNoGui("any"|"x11"|"wayland")` guard at the top of a GUI-only script.
 - **Recomputed per shell, never baked in.** Unlike `is_os_*`, display presence is a
-  property of the _session_ — the same box is headless over ssh and GUI on the
-  console. `run.sh` writes `_detect_gui_flags` into `~/.bash_syle_common` and calls it
-  there (after the `is_os_*` exports, since `is_gui` consults `is_os_mac` /
-  `is_os_windows`), so every shell start re-derives it and node inherits the result as
-  env vars. Never add these to the `os_flags` snapshot loop.
-- **Override for testing:** `bash run.sh --setup --is_gui=0` rehearses a headless
-  install on a GUI box (`--is_gui_x11=` / `--is_gui_wayland=` likewise). `run.sh`'s
-  pre-scan maps these to `BASHRC_FORCE_IS_GUI*` env vars and `_detect_gui_flags`
-  applies them **last, inside itself**. Do not "fix" this by exporting `is_gui`
-  directly over the detected value: `$BASH_ENV` points every non-interactive bash at
-  `~/.bash_syle_common`, so the emitted install script and every node heredoc it
-  spawns re-run `_detect_gui_flags` and would silently recompute the override away.
-  Only `0` and `1` are honored; anything else is ignored rather than coerced. Re-run
-  `_detect_gui_flags` by hand after changing `$DISPLAY` in a live shell.
+  property of the _session_ — the same box is headless over ssh and GUI on the console.
+  `run.sh` writes `_detect_gui_flags` into `~/.bash_syle_common` and calls it there
+  (after the `is_os_*` exports, since `is_gui` consults `is_os_mac` / `is_os_windows`),
+  so every shell start re-derives it and node inherits the result as env vars. Never add
+  these to the `os_flags` snapshot loop.
+- **Override for testing:** `bash run.sh --setup --is_gui=0` rehearses a headless install
+  on a GUI box (`--is_gui_x11=` / `--is_gui_wayland=` likewise). `run.sh`'s pre-scan maps
+  these to `BASHRC_FORCE_IS_GUI*` env vars and `_detect_gui_flags` applies them **last,
+  inside itself**. Do not "fix" this by exporting `is_gui` over the detected value:
+  `$BASH_ENV` points every non-interactive bash at `~/.bash_syle_common`, so the emitted
+  install script and every node heredoc re-run `_detect_gui_flags` and would recompute the
+  override away. Only `0` and `1` are honored. Re-run `_detect_gui_flags` by hand after
+  changing `$DISPLAY` in a live shell.
 - Use `is_gui` to decide _whether_ to install a GUI app, and `is_gui_x11` /
   `is_gui_wayland` to pick _which_ server-specific tool (xclip vs wl-copy, wmctrl vs
   swaymsg). Never gate a GUI app on `is_gui_x11` alone — that skips Wayland desktops.
@@ -450,30 +435,27 @@ Profile registration is buffered: `registerProfileBlock` /
 
 ## 8. Portability constraints — these fail CI
 
-- **bash 3.2 is the floor** (macOS `/bin/bash` 3.2.57, which is what `safe_source`'s
-  `bash -n` runs). `make ci_test_shellcheck` hard-fails on `mapfile`, `readarray`,
-  `wait -n`, or `&>>` anywhere in `software/bootstrap/` or `software/scripts/`. Also
-  avoid `[[ -v VAR ]]` (use `[ -n "${VAR+x}" ]`), `${var,,}` / `${var^^}` (use `tr`),
+- **bash 3.2 is the floor** (macOS `/bin/bash` 3.2.57, what `safe_source`'s `bash -n`
+  runs). `make ci_test_shellcheck` hard-fails on `mapfile`, `readarray`, `wait -n`, or
+  `&>>` anywhere in `software/bootstrap/` or `software/scripts/`. Also avoid
+  `[[ -v VAR ]]` (use `[ -n "${VAR+x}" ]`), `${var,,}` / `${var^^}` (use `tr`),
   `declare -A`, `coproc`, `${var@Q}`. Replace `mapfile` with
   `while IFS= read -r line; do arr+=("$line"); done`.
 - **Verify with `/bin/bash -n`, never a bare `bash -n`.** On macOS, PATH `bash` is
-  usually Homebrew 5.x while `/bin/bash` is the 3.2.57 floor, and 5.x happily parses
-  things 3.2 rejects. A bare `bash -n` that passes proves nothing about the floor —
-  that gap is exactly how a broken `~/.bash_syle` once shipped. `profileSyntax.spec.js`
-  now runs both, but it can only check the oldest bash that exists on the box, so on
-  Linux CI (bash 5 everywhere) the textual lints below are the only real guard.
-- **Never `&>>` — it is bash 4.0+ and a hard parse error on 3.2.** Write
-  `>> "$log" 2>&1`. This bites hardest in `_full-setup.sh`, which a fresh Mac runs
-  under `/bin/bash` 3.2 before Homebrew's bash exists. `&>` and `&> /dev/null` are
-  fine — only the appending `&>>` form is bash 4.
+  Homebrew 5.x while `/bin/bash` is the 3.2.57 floor, and 5.x parses things 3.2 rejects —
+  that gap is how a broken `~/.bash_syle` once shipped. `profileSyntax.spec.js` runs both,
+  but only checks the oldest bash on the box, so on Linux CI (bash 5 everywhere) the
+  textual lints below are the only guard.
+- **Never `&>>` — bash 4.0+, a hard parse error on 3.2.** Write `>> "$log" 2>&1`. Bites
+  hardest in `_full-setup.sh`, which a fresh Mac runs under `/bin/bash` 3.2 before
+  Homebrew's bash exists. `&>` and `&> /dev/null` are fine — only appending `&>>` is bash 4.
 - **Never open a heredoc inside a `$( ... )` command substitution.** bash 3.2 does not
-  stop tracking quotes when it enters a nested heredoc body: it keeps scanning for the
-  matching `)` and counts every `'` in the body as shell quoting. One English
-  possessive in a JS comment — an odd apostrophe count — leaves the parser stuck inside
-  a quote and corrupts everything after it, surfacing as a syntax error hundreds of
-  lines later in an unrelated function. bash 4+ parses it correctly, so the bug is
-  invisible on any modern bash and the reported line number is always a decoy. Read the
-  body into a variable first, which keeps the heredoc at the top level:
+  stop tracking quotes inside a nested heredoc body: it keeps scanning for the matching
+  `)` and counts every `'` in the body as shell quoting. One English possessive in a JS
+  comment — an odd apostrophe count — leaves the parser stuck inside a quote and corrupts
+  everything after it, surfacing as a syntax error hundreds of lines later. bash 4+ parses
+  it correctly, so the bug is invisible on modern bash and the reported line number is a
+  decoy. Read the body into a variable first, keeping the heredoc at top level:
 
   ```bash
   # WRONG — breaks bash 3.2 the moment the body has an odd number of apostrophes
@@ -601,13 +583,13 @@ The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 
 One vitest config per suite:
 
-| Config                         | Suite                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------- |
-| `vitest.config.js`             | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
-| `vitest.profile.config.js`     | `profileSyntax.spec.js`                                                               |
-| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js`                                                            |
-| `vitest.smoke.config.js`       | webapp + raw-URL smokes against the live site                                         |
-| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer)                                           |
+| Config | Suite |
+| --- | --- |
+| `vitest.config.js` | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
+| `vitest.profile.config.js` | `profileSyntax.spec.js` |
+| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js` |
+| `vitest.smoke.config.js` | webapp + raw-URL smokes against the live site |
+| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer) |
 
 ```bash
 npx vitest run --config vitest.config.js software/tests/parseRawArgs.spec.js
@@ -631,25 +613,25 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 
 ### Enforced conventions — one spec each
 
-| Spec                              | Rule                                                                                                                                                                                                                                                                                                                                                                                                       |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sectionMarkerStyle`              | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`.                                                                                                                                                                                                                                                                               |
-| `pathArrayValidation`             | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`.                                                                                                                                                                                                                 |
-| `mirroredFunctionParity`          | `is_help_arg`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both.                                                                                                                                                                                                             |
-| `guiDetection`                    | `_detect_gui_flags` in `common-env.sh` is replayed against fake env: `is_gui` / `is_gui_x11` / `is_gui_wayland` are always `0`/`1`, ssh forces `is_gui=0`, mac/windows are always GUI, and no other flag leaks. Add a case whenever you touch display detection.                                                                                                                                           |
-| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8).                                                                                                                                                                                                                                                                                                                                     |
-| `fzfTerminalSafety`               | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm.                                                                                                                                                                                                                                                   |
-| `curlWrapperFormat`               | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`.                                                                                                                                                                                                                                                                            |
-| `editorKeybindings`               | No duplicate keybinding within a context across VS Code / Sublime / Zed sources.                                                                                                                                                                                                                                                                                                                           |
-| `editorThemes`                    | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical.                                                                                                                                                                                                                                                                          |
-| `autocompleteSpecValidation`      | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`.                                                                                                                                                                                                                                                                              |
-| `generateCiBinaryList`            | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`).                                                                                                                                                                                                                                                                                                         |
-| `gitAliasResolution`              | Every `git.gitconfig` alias (incl. the generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` format placeholder.                                                                                                                                                                                                |
-| `presets`                         | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles.                                                                                                                                                                                                                                                                              |
-| `profileSyntax`                   | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the two bash-3.2 parse traps: no heredoc nested inside `$( ... )`, no `&>>` (§8). |
-| `filterFilesByOsGuard`            | Explicit `--files=` entries in an inactive OS folder are dropped, not run.                                                                                                                                                                                                                                                                                                                                 |
-| `osDetection`                     | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags.                                                                                                                                                                                                                                                         |
-| `smokeTestRawUrls`                | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form.                                                                                                                                                                                                                                                                                                           |
+| Spec | Rule |
+| --- | --- |
+| `sectionMarkerStyle` | No line that is solely 3+ `/` in js/ts/jsonc; no `# ---- Title ----` in sh/bash. Use `// --- Title ---` / `# --- Title ---`. |
+| `pathArrayValidation` | `_X_PATHS` consts in `advanced/*.common.js`: non-empty string arrays; each entry starts `/`, `~`, or a drive letter; no extglob prefix, NUL, CR, LF, TAB; rendered array passes `bash -n`. |
+| `mirroredFunctionParity` | `is_help_arg`, `get_native_arch`, `is_arch_translated`, `run_native`, `prompt_yes_no` must be **byte-identical** between `profile-*.sh` and `common-functions.bash`. Change one → change both. |
+| `guiDetection` | `_detect_gui_flags` in `common-env.sh` is replayed against fake env: `is_gui` / `is_gui_x11` / `is_gui_wayland` are always `0`/`1`, ssh forces `is_gui=0`, mac/windows are always GUI, and no other flag leaks. Add a case whenever you touch display detection. |
+| `requiredBinariesNotInBackground` | No `required` binary installed via `install*PackageInBackground` (§8). |
+| `fzfTerminalSafety` | `_fuzzy_list_all`'s node call needs `< /dev/null` and `2> /dev/null`; `_fzf_info_line` must be `export -f`'d; every `--prompt=` has a matching case arm. |
+| `curlWrapperFormat` | `profile-advanced.sh` `curl()` wrapper: formatter dispatch + per-day HAR capture into `$BASHRC_CURL_HAR_FOLDER/mm-dd-yyyy.har`. |
+| `editorKeybindings` | No duplicate keybinding within a context across VS Code / Sublime / Zed sources. |
+| `editorThemes` | Color markers bound to `COLOR_MAP`, all `var()` resolve, contrast floors, ANSI ramp monotonic, dark/light structurally identical. |
+| `autocompleteSpecValidation` | Every `specFile` exists, every spec file is referenced, commands sorted alphabetically, dynamic tokens from `DYNAMIC_TOKENS`. |
+| `generateCiBinaryList` | `ci-binaries.json` invariants + the `action.yml` block is regenerated (`make format_ci_binaries`). |
+| `gitAliasResolution` | Every `git.gitconfig` alias (incl. the generated numbered ones) resolves to a real alias or git command; no unquoted `$(...)` argument, `awk`-split worktree path, or unquoted `%(...)` format placeholder. |
+| `presets` | `presets.jsonc` parses, `lightweight` exists, every preset has non-empty `files[]` or `presets[]`, no self/transitive cycles. |
+| `profileSyntax` | Generated profiles pass `bash -n` under **both** PATH bash and the oldest local bash (`/bin/bash`, 3.2 on macOS), meet size floors, no duplicate BEGIN/END keys, each block parses standalone, sources cleanly (also with `CLAUDECODE=1`), PATH deduped with `/usr/bin` + `/bin` intact. Also lints every shell file for the two bash-3.2 parse traps: no heredoc nested inside `$( ... )`, no `&>>` (§8). |
+| `filterFilesByOsGuard` | Explicit `--files=` entries in an inactive OS folder are dropped, not run. |
+| `osDetection` | Replays `_detect_os` against fake `/etc/os-release` + `/proc/version`; asserts no other distro flag leaks. Add a case whenever you touch OS flags. |
+| `smokeTestRawUrls` | Every `getGitHubRawUrl` / `get_github_raw_url` URL resolves; webapp uses the CORS-safe raw form. |
 
 ---
 
@@ -663,9 +645,9 @@ parallel → publish → test**.
   artifact, and mirrors `install-bashrc.sh` to the `binary-cache` release.
 - **build-\*** run `make ci_build` (`CI=true bash run.sh --setup --force --verbose`) in
   a distro container/runner, upload `.build/` + profile + logs, then emit collapsible
-  summaries in order: OS flags, profile syntax, binary verification, download-asset
-  verification, script results (from `run_timing.json`), build summary. `arch` and
-  `debian` are `continue-on-error`.
+  summaries: OS flags, profile syntax, binary verification, download-asset verification,
+  script results (`run_timing.json`), build summary. `arch` / `debian` are
+  `continue-on-error`.
 - **publish** merges every `.build/` artifact, amends HEAD with a CI trailer,
   force-with-lease pushes, and deploys Pages.
 - **test** runs `ci_test_unit|profile|shellcheck|smoke|buildconfig|coverage`.
@@ -676,7 +658,7 @@ Because publish amends and force-pushes, the SHA on `main` changes after CI —
 **Adding/removing a CLI tool: edit `software/metadata/ci-binaries.json`**, then
 `make format_ci_binaries`. Only non-GUI command-line binaries belong there.
 `check_binary_required` fails the build — reserve it for binaries present on _every_
-platform, and install those in the foreground on mac (`installBrewPackage`), since mac's
+platform, installed in the foreground on mac (`installBrewPackage`), since mac's
 background queue is skipped in CI. `check_binary_warn` never fails — use it for
 GitHub-release fallbacks, AUR-only packages, and anything backgrounded on mac.
 
@@ -694,14 +676,14 @@ Load these instead of improvising the workflow. Each is
 OpenCode, and Copilot CLI. `.opencode/commands/<name>.md` symlinks make them `/name`
 slash commands too.
 
-| Skill              | Use when                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| `/add-package`     | Adding a CLI tool / package across platforms                                                |
-| `/remove-package`  | Dropping a tool                                                                             |
-| `/add-os`          | Onboarding a new distro / platform                                                          |
-| `/remove-os`       | Dropping OS support                                                                         |
-| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it               |
-| `/check`           | Verifying session changes survived a merge/rebase/hook                                      |
+| Skill | Use when |
+| --- | --- |
+| `/add-package` | Adding a CLI tool / package across platforms |
+| `/remove-package` | Dropping a tool |
+| `/add-os` | Onboarding a new distro / platform |
+| `/remove-os` | Dropping OS support |
+| `/run` | Resolving a script name to its `bash run.sh --files=…` command and running it |
+| `/check` | Verifying session changes survived a merge/rebase/hook |
 | `/plan-and-commit` | Multi-file change worth recording — writes `~/sy_llm_ai_plans/bashrc/plan-<slug>.{md,diff}` |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
@@ -719,9 +701,9 @@ The repo-local skills above are separate from the **global** `/sy-*` command cor
 this repo installs onto the machine (`/sy-review-pr`, `/sy-babysit-prs`, …). That
 corpus has exactly **two** files you ever touch:
 
-| To do this                      | Edit exactly this                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------- |
-| Change what a command does      | `software/scripts/advanced/llm/_common/commands/<name>.md`                   |
+| To do this | Edit exactly this |
+| --- | --- |
+| Change what a command does | `software/scripts/advanced/llm/_common/commands/<name>.md` |
 | Add / rename / retire a command | `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` |
 
 That map is the **single registry** every CLI's `setup.js` reads via
@@ -729,27 +711,22 @@ That map is the **single registry** every CLI's `setup.js` reads via
 (`sy-list-prs`), which is what lets one map serve a file-based CLI and a folder-based
 one at once:
 
-| CLI        | Where the same map lands it                                          |
-| ---------- | -------------------------------------------------------------------- |
-| `claude`   | `~/.claude/commands/<key>.md`                                        |
-| `copilot`  | `~/.copilot/skills/<key>/SKILL.md` (no `commands/` slot exists)      |
-| `opencode` | symlinks whatever Claude deployed — consumes the map indirectly      |
-| `gemini`   | no command surface; sources the file, deploys nothing                |
-| shell      | `sy-<name>` bash wrapper, auto-registered from `~/.claude/commands/` |
+| CLI | Where the same map lands it |
+| --- | --- |
+| `claude` | `~/.claude/commands/<key>.md` |
+| `copilot` | `~/.copilot/skills/<key>/SKILL.md` (no `commands/` slot exists) |
+| `opencode` | symlinks whatever Claude deployed — consumes the map indirectly |
+| `gemini` | no command surface; sources the file, deploys nothing |
+| shell | `sy-<name>` bash wrapper, auto-registered from `~/.claude/commands/` |
 
-**Never add a second list.** If you find yourself adding a command name to a
-per-CLI array, map, or `if` in `claude/setup.js`, `copilot/setup.js`,
-`gemini/setup.js`, `opencode/setup.js`, or a profile partial — stop: that is
-exactly the drift this consolidation removed (the old
-`CLAUDE_COMMAND_DEPLOY_MAP` + `COPILOT_SKILL_DEPLOY_LIST` pair silently diverged,
-so commands existed in one CLI and not the other). Same rule for the shared
-constants beside it: `LLM_COMMAND_SOURCE_FOLDER`, `LLM_SKILL_MARKER(S)`, and
-`readLLMCommandSource()` are read, never re-declared per CLI.
-
-A per-CLI file may only hold the **shape** difference — how that CLI wants the
-artifact on disk (filename vs folder, frontmatter vs none) — never _which_
-commands exist. If a new CLI needs the corpus, it SOURCEs `llm-common.js` and
-iterates the map; it does not get a list.
+**Never add a second list.** Adding a command name to a per-CLI array, map, or `if` in
+`claude/setup.js`, `copilot/setup.js`, `gemini/setup.js`, `opencode/setup.js`, or a
+profile partial is exactly the drift this consolidation removed (the old
+`CLAUDE_COMMAND_DEPLOY_MAP` + `COPILOT_SKILL_DEPLOY_LIST` pair silently diverged). Same
+for the shared constants beside it: `LLM_COMMAND_SOURCE_FOLDER`, `LLM_SKILL_MARKER(S)`,
+and `readLLMCommandSource()` are read, never re-declared per CLI. A per-CLI file may only
+hold the **shape** difference (filename vs folder, frontmatter vs none) — never _which_
+commands exist. A new CLI SOURCEs `llm-common.js` and iterates the map.
 
 Deploy + verify after any change to the corpus:
 
@@ -757,10 +734,10 @@ Deploy + verify after any change to the corpus:
 bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scripts/advanced/llm/copilot/setup.js,software/scripts/advanced/llm/gemini/setup.js,software/scripts/advanced/llm/opencode/setup.js"
 ```
 
-Run it twice. All surfaces must report the same count, and the second run must
-print no `Removed prior Sy skill` lines. Renaming or deleting a command **must**
-add the old name to `LLM_COMMAND_RETIRED_NAMES` in the same commit — that list is
-the only thing that cleans up dev machines still holding the old file.
+Run it twice. All surfaces must report the same count, and the second run must print no
+`Removed prior Sy skill` lines. Renaming or deleting a command **must** add the old name
+to `LLM_COMMAND_RETIRED_NAMES` in the same commit — that list is the only thing that
+cleans up dev machines still holding the old file.
 
 ---
 
@@ -782,20 +759,15 @@ the only thing that cleans up dev machines still holding the old file.
 ### 14.1 Validation cadence — batch it, don't run `make validate` per edit
 
 `make validate` is `format` + `test_unit` + `test_buildconfig` + `build_webapp` +
-`test_smoke_local` + `test_dryrun` + `ci_test_shellcheck`. It is a **pre-commit gate, not
-a save hook.** Running it after every edit to the same file is the single easiest way to
-turn a 2-minute task into a 20-minute one, and every intermediate run is meaningless
-because the change set is still half-applied.
+`test_smoke_local` + `test_dryrun` + `ci_test_shellcheck` — a **pre-commit gate, not a
+save hook.** Finish all edits first, then validate once. Rungs:
 
-**Finish all edits first, then validate once.** Escalate through the cheapest rung that
-can answer your question:
-
-| Rung | Command                                                                 | Cost    | When                                   |
-| ---- | ----------------------------------------------------------------------- | ------- | -------------------------------------- |
-| 1    | `bash -n <file>.sh` / `node --check <file>.js`                          | instant | Right after editing one file           |
-| 2    | `npx vitest run --config vitest.config.js software/tests/<one>.spec.js` | ~1s     | After one file or one concern          |
-| 3    | `make test_unit`                                                        | ~25s    | After the last file in a related group |
-| 4    | `make validate`                                                         | minutes | **Once**, before commit / hand-off     |
+| Rung | Command | Cost | When |
+| --- | --- | --- | --- |
+| 1 | `bash -n <file>.sh` / `node --check <file>.js` | instant | Right after editing one file |
+| 2 | `npx vitest run --config vitest.config.js software/tests/<one>.spec.js` | ~1s | After one file or one concern |
+| 3 | `make test_unit` | ~25s | After the last file in a related group |
+| 4 | `make validate` | minutes | **Once**, before commit / hand-off |
 
 Rung 2 accepts several specs and a name filter, so one call covers a related group:
 
@@ -806,26 +778,20 @@ npx vitest run --config vitest.config.js -t "should return defaults when BASHRC_
 
 Targeted escalations that beat a full `make validate` when you know what you touched:
 
-| Touched                                               | Run instead of `make validate`                                            |
-| ----------------------------------------------------- | ------------------------------------------------------------------------- |
-| A `software/scripts/` script                          | `bash run.sh --files="<script>"` (twice, for idempotency)                 |
-| `software/index.js`, `run.sh`, `bootstrap/`           | `make test_unit && make test_profile`                                     |
-| A `.sh` / `.bash` / profile partial                   | `make test_profile`                                                       |
-| BEGIN/END markers, `ci-binaries.json`, script indexes | `make format && make test_buildconfig`                                    |
-| `presets.jsonc`                                       | `npx vitest run --config vitest.config.js software/tests/presets.spec.js` |
-| Only `.md` / docs / skills                            | nothing — docs aren't linted or built                                     |
+| Touched | Run instead of `make validate` |
+| --- | --- |
+| A `software/scripts/` script | `bash run.sh --files="<script>"` (twice, for idempotency) |
+| `software/index.js`, `run.sh`, `bootstrap/` | `make test_unit && make test_profile` |
+| A `.sh` / `.bash` / profile partial | `make test_profile` |
+| BEGIN/END markers, `ci-binaries.json`, script indexes | `make format && make test_buildconfig` |
+| `presets.jsonc` | `npx vitest run --config vitest.config.js software/tests/presets.spec.js` |
+| Only `.md` / docs / skills | nothing — docs aren't linted or built |
 
-**Rules:**
-
-- **Never** re-run `make validate` on work you haven't changed since it last went green.
-- A `make validate` failure sends you **back down** the ladder: read the first failure,
-  reproduce it at rung 2 on that one spec, fix, confirm at rung 2, then rerun rung 4.
-  Re-running the full gate to watch the same failure scroll past is not debugging.
-- Announce the batching so it doesn't read as skipping:
-  `"Editing <N> files, then running make validate once at the end."`
-- Mid-task full runs are legitimate only when a step's **output feeds the next edit** —
-  `make format` regenerating a BEGIN/END block, a codegen pass, a dependency bump.
-  Say so when you do it.
+Never re-run `make validate` on work unchanged since it last went green. A failure sends
+you **back down** the ladder: reproduce at rung 2 on that one spec, fix, confirm, then
+rerun rung 4. Announce the batching so it doesn't read as skipping. Mid-task full runs
+are legitimate only when a step's **output feeds the next edit** (`make format`
+regenerating a BEGIN/END block, a codegen pass, a dependency bump) — say so when you do.
 
 **Do not:**
 
