@@ -133,25 +133,41 @@ describe("raw clipboard path", () => {
     expect(clipboardSource).toMatch(/\[ "\$\{1:-\}" = "--raw" \] && filter="command cat"/);
   });
 
-  it("git_view_patch_latest_commit copies raw", () => {
+  it("git_patch_create copies raw", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     // The patch is rendered to a file once, then both the clipboard and stdout are
     // served from that file — but the clipboard hop is still the raw one.
-    expect(source).toContain('git patch-view > "$patch_file"');
+    expect(source).toMatch(/git patch-view "\$\{2:-1\}" > "\$patch_file"/);
     expect(source).toContain('copy --raw "$patch_file"');
     expect(source).not.toMatch(/^\s*copy "\$patch_file"\s*$/m);
     expect(source).not.toMatch(/git patch-view \| copy$/m);
   });
 
-  it("_patch_view_copy copies raw", () => {
+  it("keeps patch transfer out of the dropbox profile entirely", () => {
+    // The dropbox profile used to carry a second create/apply pair
+    // (_patch_create_and_upload / _patch_view_copy / _patch_download_and_apply)
+    // that rendered and applied patches its own way. Two generators is how the
+    // clipboard corruption survived a fix in only one of them.
     const source = fs.readFileSync(DROPBOX_PROFILE, "utf-8");
-    expect(source).toContain("git patch-view | copy --raw");
-    expect(source).not.toMatch(/git patch-view \| copy$/m);
+    expect(source).not.toContain("git patch-view");
+    expect(source).not.toContain("git apply");
+    expect(source).not.toMatch(/_patch_(create_and_upload|view_copy|download_and_apply)/);
   });
 
-  it("git_apply_patch dry-runs before touching the working tree", () => {
+  it("git_patch_apply dry-runs before touching the working tree", () => {
     const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
     expect(source).toContain('git apply --check "$patch_file"');
+  });
+
+  it("routes every apply through the one forgiving applier", () => {
+    const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
+    // A rejected hunk must still land the rest, otherwise a patch cut against a
+    // slightly older tree is unusable on the receiving machine.
+    expect(source).toContain('git apply --reject --whitespace=fix "$patch_file"');
+    // Exactly one applier and one generator: every caller goes through them.
+    expect(source.match(/^function _git_patch_apply_file\(\)/gm) || []).toHaveLength(1);
+    expect(source.match(/^function _git_patch_write\(\)/gm) || []).toHaveLength(1);
+    expect(source.match(/^\s*git patch-view /gm) || []).toHaveLength(1);
   });
 });
 
@@ -164,8 +180,9 @@ describe("saved patch files", () => {
     // mktemp polyfill falls back to ~/tmp there.
     const mktempFolders = source.match(/patch_folder=\$\(mktemp -d "\/tmp\/patch-XXXXXX" 2> \/dev\/null \|\| mktemp -d\)/g) || [];
 
-    // one for git_view_patch_latest_commit, one for git_apply_patch's clipboard capture
-    expect(mktempFolders.length).toBe(2);
+    // Exactly one: both git_patch_create and git_patch_apply's clipboard capture
+    // go through _git_patch_temp_file.
+    expect(mktempFolders.length).toBe(1);
 
     // No hand-rolled destination folder, and no timestamped file name — the
     // random mktemp folder is the only uniqueness mechanism.
@@ -179,12 +196,12 @@ describe("saved patch files", () => {
   it("should announce every patch file it creates with the >>> marker", () => {
     const created = source.match(/echo ">>> patch file created \$patch_file"/g) || [];
 
-    // one for git_view_patch_latest_commit, one for git_apply_patch's clipboard capture
+    // one for git_patch_create, one for git_patch_apply's clipboard capture
     expect(created.length).toBe(2);
   });
 
   it("should print a copy-paste-runnable action summary for the saved patch", () => {
-    expect(source).toContain('print_action_summary "$patch_file" git_apply_patch');
+    expect(source).toContain('print_action_summary "$patch_file" git_patch_apply');
   });
 
   it("should quote every path expansion so temp roots with spaces survive", () => {
@@ -204,7 +221,7 @@ describe("saved patch files", () => {
   });
 
   it("should not leave an empty patch file behind when format-patch produces nothing", () => {
-    expect(source).toContain('[ ! -s "$patch_file" ]');
+    expect(source).toContain('[ -s "$patch_file" ]');
     expect(source).toContain('command rm -f "$patch_file"');
   });
 });

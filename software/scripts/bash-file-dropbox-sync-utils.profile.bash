@@ -7,12 +7,10 @@
 # bash-shared-folder.profile.bash) lives here.
 #
 # --- Git Patch Helpers ---
-# _patch_create_and_upload   — export last commit as .patch, prefix with
-#                              repo-date, move it into the dropbox folder
-# _patch_download_and_apply  — apply the newest .patch from dropbox, commit,
-#                              archive the file
-# _patch_view_copy           — copy the last commit's patch to the clipboard
-# patch_cleanup              — archive loose .patch files, keep newest N
+# patch_cleanup              — archive loose .patch files, keep newest N.
+#                              Creating and applying patches lives in
+#                              bash-git-helpers.profile.bash (git_patch_create /
+#                              git_patch_apply); only housekeeping is here.
 #
 # --- Notes ---
 # note                       — open a shared notes file from the dropbox folder
@@ -25,105 +23,11 @@
 ################################################################################
 
 ################################################################################
-# --- Git Patch Helpers (Dropbox) ---
-# Transfers git patches between machines via a shared Dropbox folder.
-# _patch_create_and_upload: exports the last commit as a .patch, renames with
-#   a repo-date prefix, and moves it to Dropbox.
-# _patch_download_and_apply: finds the most recent .patch in Dropbox, applies
-#   it, commits, and archives the file.
+# --- Git Patch Housekeeping (Dropbox) ---
+# The transfer itself lives in bash-git-helpers.profile.bash as git_patch_create
+# / git_patch_apply — both reach into this same dropbox folder. What stays here
+# is the folder's own housekeeping.
 ################################################################################
-
-# download and apply a patch from the dropbox folder, then archive it
-function _patch_download_and_apply() {
-  local dropbox_folder
-  dropbox_folder=$(_dropbox_folder) || {
-    echo "No dropbox folder found"
-    return 1
-  }
-  local archive_folder="${dropbox_folder}/archived_patch"
-
-  mkdir -p "$archive_folder"
-
-  # find most recently modified .patch file with content (cross-platform via node)
-  # Heredoc read into a variable rather than nested in `$( ... )` — bash 3.2
-  # tracks quotes through a nested heredoc body and an odd apostrophe count
-  # there would break the parse of the whole profile.
-  local find_patch_js latest_patch
-  IFS= read -r -d '' find_patch_js << '_PATCH_FIND_EOF_' || true
-    const fs=require('fs'),path=require('path'),dir=process.env._PATCH_ARG;
-    const patches=fs.readdirSync(dir)
-      .filter(f=>{
-        if(!f.endsWith('.patch')||f.startsWith('._'))return false;
-        const fp=path.join(dir,f),st=fs.statSync(fp);
-        return st.isFile()&&st.size>0;
-      })
-      .map(f=>({p:path.join(dir,f),m:fs.statSync(path.join(dir,f)).mtimeMs}))
-      .sort((a,b)=>b.m-a.m);
-    if(patches.length)console.log(patches[0].p);
-_PATCH_FIND_EOF_
-  latest_patch=$(_PATCH_ARG="$dropbox_folder" node -e "$find_patch_js")
-
-  echo "latest_patch: $latest_patch"
-
-  if [ -z "$latest_patch" ]; then
-    echo "No .patch files found in $dropbox_folder"
-    return 1
-  fi
-
-  # extract decoded commit subject from the patch (handles MIME/RFC-2047 encoded headers)
-  local commit_msg
-  commit_msg=$(git mailinfo /dev/null /dev/null < "$latest_patch" | command grep "^Subject: " | sed 's/^Subject: //')
-  commit_msg="${commit_msg:-applied patch}"
-
-  echo "Applying: $latest_patch"
-  echo "Message: $commit_msg"
-
-  if git apply --reject --whitespace=fix "$latest_patch" && git add -A && git commit --allow-empty --no-verify -m "$commit_msg"; then
-    git commit --amend --reset-author --no-verify
-    mv "$latest_patch" "$archive_folder"
-    echo "Successfully applied and archived."
-  else
-    echo "Error occurred during patching/committing. Patch was NOT moved to archive."
-    return 1
-  fi
-}
-
-# create a patch from the last commit, rename with repo-date prefix, and upload to dropbox
-function _patch_create_and_upload() {
-  local dropbox_folder
-  dropbox_folder=$(_dropbox_folder) || {
-    echo "No dropbox folder found"
-    return 1
-  }
-  git patch-get
-
-  # rename with mtime prefix and move to dest (cross-platform via node)
-  # uses heredoc (single-quoted delimiter) to avoid bash expanding ! and $ inside the script
-  _PATCH_ARG="$dropbox_folder" node << '_PATCH_UPLOAD_EOF_' || return 1
-    const fs=require('fs'),path=require('path');
-    const dest=process.env._PATCH_ARG,proj=path.basename(process.cwd());
-    const patches=fs.readdirSync('.').filter(f=>f.endsWith('.patch')&&fs.statSync(f).isFile());
-    if(!patches.length){console.log('No .patch files generated');process.exit(1);}
-    for(const f of patches){
-      const mtime=fs.statSync(f).mtime;
-      const ts=mtime.getFullYear()+'_'+String(mtime.getMonth()+1).padStart(2,'0')+'_'+String(mtime.getDate()).padStart(2,'0')+'_'+String(mtime.getHours()).padStart(2,'0')+'_'+String(mtime.getMinutes()).padStart(2,'0');
-      const newName=proj+'-'+ts+'-'+f;
-      const target=path.join(dest,newName);try{fs.copyFileSync(f,target);}catch{fs.writeFileSync(target,fs.readFileSync(f));}fs.unlinkSync(f);
-      console.log('Moved: '+newName);
-    }
-_PATCH_UPLOAD_EOF_
-
-  type -P dot_clean &> /dev/null && dot_clean "${dropbox_folder}" &> /dev/null &
-  open "${dropbox_folder}" &> /dev/null &
-  echo "${dropbox_folder}"
-}
-
-# copy the last commit's patch to clipboard
-# --raw is required — unwrap() would trim the diff's blank context lines.
-function _patch_view_copy() {
-  clear
-  git patch-view | copy --raw
-}
 
 # patch_cleanup: archive loose .patch files, keep only the N newest in archived_patch
 function patch_cleanup() {
@@ -169,12 +73,6 @@ function patch_cleanup() {
 
   echo "Kept $keep newest, removed $removed old .patch file(s)"
 }
-
-alias patch0='_patch_create_and_upload'
-alias patch1='_patch_view_copy'
-alias patch2='_patch_download_and_apply'
-alias patch_apply='_patch_download_and_apply'
-alias dpatch='_patch_download_and_apply'
 
 ################################################################################
 # --- Notes (Dropbox) ---

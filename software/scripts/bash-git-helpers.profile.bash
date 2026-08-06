@@ -332,83 +332,185 @@ function godownload() {
   cd "$target"
 }
 
-# git_apply_patch: apply a patch file, or the clipboard when given no argument
-function git_apply_patch() {
-  if is_help_arg "${1:-}"; then
-    echo "git_apply_patch: apply a patch file, or the clipboard when given no argument
-  Usage: git_apply_patch [patch_file]
-  Examples:
-    git_apply_patch                     apply clipboard, saved to a fresh mktemp folder
-    git_apply_patch /tmp/fix.patch      apply an existing patch file"
-    return 1
-  fi
+################################################################################
+# --- Git Patch Transfer ---
+# Moving a commit between machines, in exactly two verbs:
+#   git_patch_create  — last commit -> stdout + clipboard + temp file + shared folder
+#   git_patch_apply   — patch file arg -> clipboard -> newest shared-folder patch
+#
+# Both sides funnel through one generator (_git_patch_write) and one applier
+# (_git_patch_apply_file), so whatever `create` emitted is exactly what `apply`
+# consumes no matter which transport carried it. The shared folder is optional
+# everywhere: create says so and moves on, apply says so and gives up.
+################################################################################
 
-  local patch_file="$1"
-
-  if [ -z "$patch_file" ]; then
-    # A throwaway mktemp folder gives uniqueness for free — no timestamp, no
-    # nested bookkeeping path, and the plain `mktemp -d` retry covers hosts
-    # where /tmp is not writable (Termux) via the mktemp polyfill.
-    local patch_folder
-    if ! patch_folder=$(mktemp -d "/tmp/patch-XXXXXX" 2> /dev/null || mktemp -d); then
-      echo "git_apply_patch: could not create a temp folder." >&2
-      return 1
-    fi
-    patch_file="$patch_folder/clipboard.patch"
-
-    # `paste` with no args is raw by design — do NOT add --unwrap here, it
-    # would trim the single-space blank context lines a unified diff needs.
-    paste > "$patch_file"
-    echo ">>> patch file created $patch_file"
-  elif [ ! -f "$patch_file" ]; then
-    echo "git_apply_patch: patch file '$patch_file' not found." >&2
-    return 1
-  fi
-
-  # Dry-run first so a corrupt or already-applied patch fails before it can
-  # leave the working tree half-patched.
-  if ! git apply --check "$patch_file"; then
-    echo "git_apply_patch: '$patch_file' did not pass git apply --check — nothing applied." >&2
-    return 1
-  fi
-
-  git apply "$patch_file" || return 1
-  echo ">>> patch applied $patch_file"
+# _git_patch_temp_file: echo a patch path inside a fresh throwaway folder
+function _git_patch_temp_file() {
+  # A throwaway mktemp folder gives uniqueness for free — no timestamp, no
+  # nested bookkeeping path, and the plain `mktemp -d` retry covers hosts
+  # where /tmp is not writable (Termux) via the mktemp polyfill.
+  local patch_folder
+  patch_folder=$(mktemp -d "/tmp/patch-XXXXXX" 2> /dev/null || mktemp -d) || return 1
+  echo "$patch_folder/${1:-patch.patch}"
 }
 
-# git_view_patch_latest_commit: print the last commit as a patch, copy it, and save it to a file
-function git_view_patch_latest_commit() {
+# _git_patch_write: render the last N commits into a patch file (the only generator)
+function _git_patch_write() {
+  local patch_file="$1"
+  # Rendered once into a file, then served to stdout / clipboard / upload from
+  # there — a second `git patch-view` run could disagree with what was copied.
+  git patch-view "${2:-1}" > "$patch_file" 2> /dev/null && [ -s "$patch_file" ]
+}
+
+# _git_patch_looks_like_patch: true when a file's head reads like a unified diff
+function _git_patch_looks_like_patch() {
+  local patch_file="$1"
+  [ -s "$patch_file" ] || return 1
+  # Repeated -e instead of an alternation: BRE `\|` is a GNU extension the BSD
+  # grep on macOS does not owe us, and -E is off the table under an rg alias.
+  command head -n 40 "$patch_file" | command grep -q -e "^diff --git " -e "^--- " -e "^From [0-9a-f]"
+}
+
+# _git_patch_apply_file: the only applier — clean when it can, --reject when it must
+function _git_patch_apply_file() {
+  local patch_file="$1"
+
+  # Dry-run first so a corrupt or already-applied patch is named as such before
+  # anything touches the working tree.
+  if git apply --check "$patch_file" 2> /dev/null; then
+    git apply --whitespace=fix "$patch_file" || return 1
+    echo ">>> patch applied cleanly $patch_file"
+    return 0
+  fi
+
+  echo ">>> $patch_file does not apply cleanly — retrying with --reject" >&2
+  git apply --reject --whitespace=fix "$patch_file" && {
+    echo ">>> patch applied $patch_file"
+    return 0
+  }
+
+  # --reject exits non-zero when any hunk was rejected, having still applied the
+  # rest. Say that out loud: the tree is half-patched and .rej files are waiting.
+  echo ">>> patch partially applied — resolve the .rej files, nothing was committed" >&2
+  return 1
+}
+
+# _git_patch_upload: copy a patch into the shared dropbox folder when it is reachable
+function _git_patch_upload() {
+  local patch_file="$1"
+  local repo_name="$2"
+
+  local dropbox_folder
+  if ! dropbox_folder=$(_dropbox_folder 2> /dev/null); then
+    echo ">>> shared dropbox folder not reachable — skipped upload"
+    return 0
+  fi
+
+  # Same repo-date prefix `git patch-rename` uses, plus the sha so two patches
+  # cut in the same minute cannot collide.
+  local target
+  target="${dropbox_folder}/${repo_name}-$(command date +%Y_%m_%d_%H_%M)-$(git rev-parse --short HEAD 2> /dev/null).patch"
+  if command cp "$patch_file" "$target" 2> /dev/null; then
+    echo ">>> patch uploaded $target"
+    # macOS writes ._ sidecars onto network shares; the reader skips them, but
+    # they still clutter the folder for whoever opens it next.
+    (type -P dot_clean &> /dev/null && dot_clean "$dropbox_folder" &> /dev/null) &
+  else
+    echo ">>> could not write $target — skipped upload" >&2
+  fi
+}
+
+# _git_patch_apply_from_dropbox: apply the newest shared patch, then commit and archive it
+function _git_patch_apply_from_dropbox() {
+  local dropbox_folder
+  if ! dropbox_folder=$(_dropbox_folder 2> /dev/null); then
+    echo "git_patch_apply: shared dropbox folder not reachable — nothing to apply." >&2
+    return 1
+  fi
+  local archive_folder="${dropbox_folder}/archived_patch"
+  mkdir -p "$archive_folder"
+
+  # Find the most recently modified non-empty .patch (cross-platform via node).
+  # Heredoc read into a variable rather than nested in `$( ... )` — bash 3.2
+  # tracks quotes through a nested heredoc body and an odd apostrophe count
+  # there would break the parse of the whole profile.
+  local find_patch_js latest_patch
+  IFS= read -r -d '' find_patch_js << '_PATCH_FIND_EOF_' || true
+    const fs=require('fs'),path=require('path'),dir=process.env._PATCH_ARG;
+    const patches=fs.readdirSync(dir)
+      .filter(f=>{
+        if(!f.endsWith('.patch')||f.startsWith('._'))return false;
+        const fp=path.join(dir,f),st=fs.statSync(fp);
+        return st.isFile()&&st.size>0;
+      })
+      .map(f=>({p:path.join(dir,f),m:fs.statSync(path.join(dir,f)).mtimeMs}))
+      .sort((a,b)=>b.m-a.m);
+    if(patches.length)console.log(patches[0].p);
+_PATCH_FIND_EOF_
+  latest_patch=$(_PATCH_ARG="$dropbox_folder" node -e "$find_patch_js")
+
+  if [ -z "$latest_patch" ]; then
+    echo "git_patch_apply: no .patch files found in $dropbox_folder" >&2
+    return 1
+  fi
+
+  # Decoded commit subject from the patch itself (handles RFC-2047 headers), so
+  # the commit lands on this machine under the message it was authored with.
+  local commit_msg
+  commit_msg=$(git mailinfo /dev/null /dev/null < "$latest_patch" | command grep "^Subject: " | sed 's/^Subject: //')
+  commit_msg="${commit_msg:-applied patch}"
+
+  echo ">>> applying shared patch $latest_patch"
+  echo ">>> commit message: $commit_msg"
+
+  _git_patch_apply_file "$latest_patch" || return 1
+
+  if ! (git add -A && git commit --allow-empty --no-verify -m "$commit_msg"); then
+    echo "git_patch_apply: commit failed — patch was NOT archived." >&2
+    return 1
+  fi
+  # --reset-author so the commit carries this machine's identity rather than the
+  # sending machine's; --no-edit keeps it from stalling on an editor.
+  git commit --amend --reset-author --no-edit --no-verify > /dev/null \
+    || echo ">>> could not reset the commit author — commit kept as authored" >&2
+  mv "$latest_patch" "$archive_folder"
+  echo ">>> committed and archived to $archive_folder"
+}
+
+# git_patch_create: export the last commit as a patch — print, copy, save, upload
+function git_patch_create() {
   if is_help_arg "${1:-}"; then
-    echo "git_view_patch_latest_commit: print the last commit as a patch, copy it, and save it to a file
-  Usage: git_view_patch_latest_commit
-  Saves to a fresh mktemp folder as /tmp/patch-<rand>/<repo>.patch and prints the path.
-  Note: copies with 'copy --raw' — unwrap would corrupt the diff."
+    echo "git_patch_create: export the last commit as a patch and hand it to every transport
+  Usage: git_patch_create [count=1]
+  Does all four, in order:
+    1. prints the patch
+    2. copies it to the clipboard ('copy --raw' — unwrap would corrupt the diff)
+    3. saves it to a fresh /tmp/patch-<rand>/<repo>.patch
+    4. uploads it to the shared dropbox folder, or says why it could not
+  Examples:
+    git_patch_create        last commit
+    git_patch_create 3      last 3 commits
+  Apply it on the other machine with: git_patch_apply"
     return 1
   fi
 
   local repo_root
   if ! repo_root=$(git rev-parse --show-toplevel 2> /dev/null); then
-    echo "git_view_patch_latest_commit: not a git repository." >&2
+    echo "git_patch_create: not a git repository." >&2
     return 1
   fi
 
-  # A throwaway mktemp folder gives uniqueness for free — no timestamp, no
-  # nested bookkeeping path, and the plain `mktemp -d` retry covers hosts
-  # where /tmp is not writable (Termux) via the mktemp polyfill.
-  local patch_folder
-  if ! patch_folder=$(mktemp -d "/tmp/patch-XXXXXX" 2> /dev/null || mktemp -d); then
-    echo "git_view_patch_latest_commit: could not create a temp folder." >&2
-    return 1
-  fi
+  local repo_name
+  repo_name="$(basename "$repo_root")"
 
   local patch_file
-  patch_file="$patch_folder/$(basename "$repo_root").patch"
+  if ! patch_file=$(_git_patch_temp_file "${repo_name}.patch"); then
+    echo "git_patch_create: could not create a temp folder." >&2
+    return 1
+  fi
 
-  # Generate once into the file, then serve the clipboard and stdout from it —
-  # a second `git patch-view` run would re-render and could disagree with what
-  # was copied.
-  if ! git patch-view > "$patch_file" || [ ! -s "$patch_file" ]; then
-    echo "git_view_patch_latest_commit: could not generate a patch." >&2
+  if ! _git_patch_write "$patch_file" "${1:-1}"; then
+    echo "git_patch_create: could not generate a patch." >&2
     command rm -f "$patch_file"
     return 1
   fi
@@ -422,5 +524,58 @@ function git_view_patch_latest_commit() {
 
   echo ">>> patch copied to clipboard"
   echo ">>> patch file created $patch_file"
-  print_action_summary "$patch_file" git_apply_patch
+  _git_patch_upload "$patch_file" "$repo_name"
+  print_action_summary "$patch_file" git_patch_apply
 }
+
+# git_patch_apply: apply a patch from a file, the clipboard, or the shared folder
+function git_patch_apply() {
+  if is_help_arg "${1:-}"; then
+    echo "git_patch_apply: apply a patch from a file, the clipboard, or the shared dropbox folder
+  Usage: git_patch_apply [patch_file]
+  Resolution order:
+    1. <patch_file>, when given
+    2. the clipboard, when it holds something that reads like a patch
+    3. the newest .patch in the shared dropbox folder — that source is also
+       committed with the original message and archived once it applies
+  Examples:
+    git_patch_apply                  clipboard, else the newest shared patch
+    git_patch_apply /tmp/fix.patch   apply an existing patch file
+  Applies with --whitespace=fix, retrying with --reject when it will not apply cleanly."
+    return 1
+  fi
+
+  local patch_file="${1:-}"
+
+  if [ -n "$patch_file" ]; then
+    if [ ! -f "$patch_file" ]; then
+      echo "git_patch_apply: patch file '$patch_file' not found." >&2
+      return 1
+    fi
+    _git_patch_apply_file "$patch_file"
+    return $?
+  fi
+
+  if ! patch_file=$(_git_patch_temp_file "clipboard.patch"); then
+    echo "git_patch_apply: could not create a temp folder." >&2
+    return 1
+  fi
+
+  # `paste` with no args is raw by design — do NOT add --unwrap here, it
+  # would trim the single-space blank context lines a unified diff needs.
+  paste > "$patch_file" 2> /dev/null
+
+  if _git_patch_looks_like_patch "$patch_file"; then
+    echo ">>> patch file created $patch_file"
+    echo ">>> applying patch from clipboard"
+    _git_patch_apply_file "$patch_file"
+    return $?
+  fi
+
+  command rm -f "$patch_file"
+  echo ">>> clipboard holds no patch — falling back to the shared dropbox folder"
+  _git_patch_apply_from_dropbox
+}
+
+alias patch_create='git_patch_create'
+alias patch_apply='git_patch_apply'
