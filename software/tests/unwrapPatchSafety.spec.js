@@ -158,10 +158,19 @@ describe("raw clipboard path", () => {
 describe("saved patch files", () => {
   const source = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
 
-  it("should write patches under the run temp root, never a hardcoded /tmp path", () => {
-    // `$BASHRC_TEMP_ROOT_DIR` falls back to `$HOME/tmp` on hosts where /tmp is not
-    // writable (Termux), so a hardcoded /tmp destination breaks the function there.
-    expect(source).toContain('patch_folder="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}/patches"');
+  it("should carve patch destinations out of mktemp, never a hand-built nested path", () => {
+    // `mktemp -d` gives uniqueness for free. The bare `mktemp -d` retry is what
+    // keeps this working on hosts where /tmp is not writable (Termux), since the
+    // mktemp polyfill falls back to ~/tmp there.
+    const mktempFolders = source.match(/patch_folder=\$\(mktemp -d "\/tmp\/patch-XXXXXX" 2> \/dev\/null \|\| mktemp -d\)/g) || [];
+
+    // one for git_view_patch_latest_commit, one for git_apply_patch's clipboard capture
+    expect(mktempFolders.length).toBe(2);
+
+    // No hand-rolled destination folder, and no timestamped file name — the
+    // random mktemp folder is the only uniqueness mechanism.
+    expect(source).not.toMatch(/patch_folder="\$\{BASHRC_TEMP_ROOT_DIR/);
+    expect(source).not.toMatch(/patch_file=.*\$\(date /);
 
     const hardcoded = source.split("\n").filter((line) => /^\s*patch_file=.*"\/tmp\//.test(line));
     expect(hardcoded, `hardcoded /tmp patch destination:\n${hardcoded.join("\n")}`).toEqual([]);
@@ -179,8 +188,8 @@ describe("saved patch files", () => {
   });
 
   it("should quote every path expansion so temp roots with spaces survive", () => {
-    // $HOME on Windows/macOS routinely contains a space, and BASHRC_TEMP_ROOT_DIR falls
-    // back to $HOME/tmp, so a bare `$patch_file` in argument position word-splits. Strip
+    // $HOME on Windows/macOS routinely contains a space, and the mktemp fallback lands
+    // under $HOME/tmp, so a bare `$patch_file` in argument position word-splits. Strip
     // command substitutions and then quoted spans; anything still referencing the vars is
     // genuinely unquoted (uses inside `echo "..."` messages are removed by the strip).
     const unquoted = source.split("\n").filter((line) => {

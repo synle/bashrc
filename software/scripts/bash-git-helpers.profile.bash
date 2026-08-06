@@ -338,7 +338,7 @@ function git_apply_patch() {
     echo "git_apply_patch: apply a patch file, or the clipboard when given no argument
   Usage: git_apply_patch [patch_file]
   Examples:
-    git_apply_patch                     apply clipboard, saved under \${BASHRC_TEMP_ROOT_DIR}/patches
+    git_apply_patch                     apply clipboard, saved to a fresh mktemp folder
     git_apply_patch /tmp/fix.patch      apply an existing patch file"
     return 1
   fi
@@ -346,12 +346,15 @@ function git_apply_patch() {
   local patch_file="$1"
 
   if [ -z "$patch_file" ]; then
-    local patch_folder="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}/patches"
-    if ! command mkdir -p "$patch_folder" 2> /dev/null; then
-      echo "git_apply_patch: could not create '$patch_folder'." >&2
+    # A throwaway mktemp folder gives uniqueness for free — no timestamp, no
+    # nested bookkeeping path, and the plain `mktemp -d` retry covers hosts
+    # where /tmp is not writable (Termux) via the mktemp polyfill.
+    local patch_folder
+    if ! patch_folder=$(mktemp -d "/tmp/patch-XXXXXX" 2> /dev/null || mktemp -d); then
+      echo "git_apply_patch: could not create a temp folder." >&2
       return 1
     fi
-    patch_file="$patch_folder/clipboard-$(date +%Y_%m_%d_%H_%M_%S).patch"
+    patch_file="$patch_folder/clipboard.patch"
 
     # `paste` with no args is raw by design — do NOT add --unwrap here, it
     # would trim the single-space blank context lines a unified diff needs.
@@ -378,7 +381,7 @@ function git_view_patch_latest_commit() {
   if is_help_arg "${1:-}"; then
     echo "git_view_patch_latest_commit: print the last commit as a patch, copy it, and save it to a file
   Usage: git_view_patch_latest_commit
-  Saves to \${BASHRC_TEMP_ROOT_DIR}/patches/<repo>-<timestamp>.patch and prints the path.
+  Saves to a fresh mktemp folder as /tmp/patch-<rand>/<repo>.patch and prints the path.
   Note: copies with 'copy --raw' — unwrap would corrupt the diff."
     return 1
   fi
@@ -389,14 +392,17 @@ function git_view_patch_latest_commit() {
     return 1
   fi
 
-  local patch_folder="${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}/patches"
-  if ! command mkdir -p "$patch_folder" 2> /dev/null; then
-    echo "git_view_patch_latest_commit: could not create '$patch_folder'." >&2
+  # A throwaway mktemp folder gives uniqueness for free — no timestamp, no
+  # nested bookkeeping path, and the plain `mktemp -d` retry covers hosts
+  # where /tmp is not writable (Termux) via the mktemp polyfill.
+  local patch_folder
+  if ! patch_folder=$(mktemp -d "/tmp/patch-XXXXXX" 2> /dev/null || mktemp -d); then
+    echo "git_view_patch_latest_commit: could not create a temp folder." >&2
     return 1
   fi
 
   local patch_file
-  patch_file="$patch_folder/$(basename "$repo_root")-$(date +%Y_%m_%d_%H_%M_%S).patch"
+  patch_file="$patch_folder/$(basename "$repo_root").patch"
 
   # Generate once into the file, then serve the clipboard and stdout from it —
   # a second `git patch-view` run would re-render and could disagree with what
