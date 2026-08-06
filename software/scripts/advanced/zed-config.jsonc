@@ -92,8 +92,31 @@
   },
 
   // --- Extensions ---
+  // NOTE: THIS IS THE ONE PLACE ZED EXTENSIONS GET REGISTERED AND AUTO-INSTALLED.
+  // Add an extension id below and Zed downloads + enables it on next launch — no manual
+  // trip through the extension browser, and every machine this repo provisions ends up
+  // with the same set. Find ids at https://zed.dev/extensions (the id is the url slug,
+  // not the display name). Removing a line here does NOT uninstall an already-installed
+  // extension; do that from Zed's extension panel.
+  //
+  // Zed bundles only: bash, c, cpp, css, diff, go, gomod, gowork, json, jsonc, markdown,
+  // python, rust, tsx, typescript, javascript, jsdoc, regex, yaml, gitcommit
+  // (crates/languages/src/lib.rs `built_in_languages`). Everything below is a real gap for
+  // this repo's file mix — each entry maps to files actually tracked here. Note `css` is
+  // bundled but `scss` is NOT, and `html` is an extension despite shipping in the Zed repo.
+  // Any language added here MUST also get a `languages` formatter pin below, otherwise
+  // `format_on_save` routes it to prettier and fails with UndefinedParserError.
   "auto_install_extensions": {
     "material-icon-theme": true, // Auto-install Material Icon Theme extension. Values: true, false
+    "html": true, // webapp/ + *.html — grammar plus vscode-html-language-server
+    "git-firefly": true, // git.gitconfig, .gitignore, .gitattributes, rebase todo (grammar only)
+    "make": true, // Makefile — every dev verb lives there (grammar only)
+    "toml": true, // advanced/starship-config.toml (grammar only)
+    "dockerfile": true, // .devcontainer/Dockerfile — grammar plus dockerfile-language-server
+    "scss": true, // webapp *.scss — grammar plus vscode-css-language-server
+    "xml": true, // windows/classic_start.config.xml (grammar only)
+    "ini": true, // metadata *.config files read as ini/conf (grammar only)
+    "log": true, // $BASHRC_TEMP_DIR run.log / fullsetup.log debugging (grammar only)
   },
   "icon_theme": "Material Icon Theme", // File icon theme for sidebar. Values: any installed icon theme name
 
@@ -105,22 +128,28 @@
   // support them). Symmetric: every Prettier-supported language gets `formatter: "prettier"`;
   // every native-LSP language gets `formatter: "language_server"`.
   //
-  // Only languages that ship with Zed (or are reliably present via bundled grammars) are
-  // listed. Extension-only languages (GraphQL, Vue.js, Java, TOML) used to be here but were
-  // dropped — Zed emits `No language with this name is installed.` on machines without the
-  // matching extension, so the config can't reference them unconditionally. Add them back
-  // alongside the relevant extension install when an extension is added to the setup.
+  // Only languages that ship with Zed, or that `auto_install_extensions` above guarantees,
+  // are listed. An entry for a language with no installed grammar makes Zed emit
+  // `No language with this name is installed.`, so the two blocks move together: adding a
+  // language here requires its extension above, and vice versa. Extension-only languages
+  // with no formatter (TOML, XML, Make, ini, LOG, the Git Config family) are pinned to
+  // `language_server` — none ship one, and the pin degrades to a no-op instead of handing
+  // the file to prettier. Same trick already used for Shell Script.
   "prettier": { "allowed": true }, // Permit Zed to run the prettier CLI on PATH. Values: { allowed: true|false, command?: string }
   "languages": {
     // Prettier-handled
     "JavaScript": { "formatter": "prettier" },
     "TypeScript": { "formatter": "prettier" },
     "TSX": { "formatter": "prettier" },
-    "JSX": { "formatter": "prettier" },
+    // No "JSX" entry: Zed has no such language. `.jsx` is claimed by the JavaScript
+    // grammar itself (crates/grammars/src/javascript/config.toml declares
+    // `path_suffixes = ["js", "jsx", "mjs", "cjs"]`), so the JavaScript pin above already
+    // covers it and a "JSX" key only earns `No language with this name is installed.`
     "JSON": { "formatter": "prettier" },
     "JSONC": { "formatter": "prettier" },
     "HTML": { "formatter": "prettier" },
     "CSS": { "formatter": "prettier" },
+    "SCSS": { "formatter": "prettier" }, // via the scss extension — prettier parses scss natively
     "Markdown": { "formatter": "prettier" },
     "YAML": { "formatter": "prettier" },
     // Native LSP-handled — explicit pin prevents prettier fallback (UndefinedParserError)
@@ -130,5 +159,16 @@
     "Shell Script": { "formatter": "language_server" }, // bash-language-server (no format) — falls back gracefully
     "C": { "formatter": "language_server" },
     "C++": { "formatter": "language_server" },
+    "Dockerfile": { "formatter": "language_server" }, // dockerfile-language-server (no format) — pin keeps prettier away
+    // Grammar-only extensions — no language server exists, pin is a deliberate no-op
+    "TOML": { "formatter": "language_server" },
+    "XML": { "formatter": "language_server" },
+    "Make": { "formatter": "language_server" },
+    "ini": { "formatter": "language_server" }, // lowercase — matches the ini extension's declared name
+    "LOG": { "formatter": "language_server" },
+    "Git Config": { "formatter": "language_server" },
+    "Git Ignore": { "formatter": "language_server" },
+    "Git Attributes": { "formatter": "language_server" },
+    "Git Rebase": { "formatter": "language_server" },
   },
 }

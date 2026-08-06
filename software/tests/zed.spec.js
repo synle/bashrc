@@ -434,6 +434,76 @@ describe("_getZedSettings > agent_servers merge", () => {
   });
 });
 
+// ---- lsp block carry-through ----
+// Regression guard for a real data-loss bug: settings.json is rebuilt from
+// zed-config.jsonc, which carries no `lsp` key, while the `lsp` block itself is written by
+// software/scripts/advanced/lsp/zed.js. Discovery order runs lsp/zed.js first (the
+// `/advanced/` segment is stripped from the sort key, so `lsp/zed.js` < `zed.js`), so every
+// full run used to end with zed.js erasing the LSP binary overrides entirely.
+
+describe("_getZedSettings > lsp carry-through", () => {
+  const lspBlock = {
+    "rust-analyzer": { binary: { path: "rust-analyzer", arguments: [] } },
+    pyright: { binary: { path: "pyright-langserver", arguments: ["--stdio"] } },
+  };
+
+  it("should carry an existing lsp block through the rebuild", () => {
+    const zed = loadZed();
+    const result = zed._getZedSettings({}, { is_prebuilt_config: false, lsp: lspBlock });
+    expect(result.lsp).toEqual(lspBlock);
+  });
+
+  it("should not invent an lsp key when there is nothing to preserve", () => {
+    const zed = loadZed();
+    expect(zed._getZedSettings({}, { is_prebuilt_config: false }).lsp).toBeUndefined();
+    expect(zed._getZedSettings({}, { is_prebuilt_config: false, lsp: {} }).lsp).toBeUndefined();
+  });
+
+  it("should keep the lsp block alongside the keys zed-config.jsonc owns", () => {
+    const zed = loadZed();
+    const baseConfig = { vim_mode: false, languages: { Rust: { formatter: "language_server" } } };
+    const result = zed._getZedSettings(baseConfig, { is_prebuilt_config: false, lsp: lspBlock });
+    expect(result.lsp).toEqual(lspBlock);
+    expect(result.languages).toEqual({ Rust: { formatter: "language_server" } });
+    expect(result.vim_mode).toBe(false);
+  });
+});
+
+// ---- lsp block carry-through ----
+// Regression guard for a real data-loss bug: settings.json is rebuilt from
+// zed-config.jsonc, which carries no `lsp` key, while the `lsp` block itself is written by
+// software/scripts/advanced/lsp/zed.js. Discovery order runs lsp/zed.js first (the
+// `/advanced/` segment is stripped from the sort key, so `lsp/zed.js` < `zed.js`), so every
+// full run used to end with zed.js erasing the LSP binary overrides entirely.
+
+describe("_getZedSettings > lsp carry-through", () => {
+  const lspBlock = {
+    "rust-analyzer": { binary: { path: "rust-analyzer", arguments: [] } },
+    pyright: { binary: { path: "pyright-langserver", arguments: ["--stdio"] } },
+  };
+
+  it("should carry an existing lsp block through the rebuild", () => {
+    const zed = loadZed();
+    const result = zed._getZedSettings({}, { is_prebuilt_config: false, lsp: lspBlock });
+    expect(result.lsp).toEqual(lspBlock);
+  });
+
+  it("should not invent an lsp key when there is nothing to preserve", () => {
+    const zed = loadZed();
+    expect(zed._getZedSettings({}, { is_prebuilt_config: false }).lsp).toBeUndefined();
+    expect(zed._getZedSettings({}, { is_prebuilt_config: false, lsp: {} }).lsp).toBeUndefined();
+  });
+
+  it("should keep the lsp block alongside the keys zed-config.jsonc owns", () => {
+    const zed = loadZed();
+    const baseConfig = { vim_mode: false, languages: { Rust: { formatter: "language_server" } } };
+    const result = zed._getZedSettings(baseConfig, { is_prebuilt_config: false, lsp: lspBlock });
+    expect(result.lsp).toEqual(lspBlock);
+    expect(result.languages).toEqual({ Rust: { formatter: "language_server" } });
+    expect(result.vim_mode).toBe(false);
+  });
+});
+
 // ---- getAcpAgentInputs: binary discovery (llm-common.js, inlined via SOURCE) ----
 
 describe("getAcpAgentInputs > binary resolution", () => {

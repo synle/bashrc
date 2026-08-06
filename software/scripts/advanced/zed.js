@@ -182,11 +182,12 @@ async function _getPathZed() {
  * @param {({provider:string, model:string})|null} [options.defaultModel] - `agent.default_model` entry to merge in.
  * @param {object|null} [options.editPredictions] - `edit_predictions` block (Ollama inline autocomplete) to merge in. Omit / null to keep whatever `baseConfig.edit_predictions` holds — in practice zed-config.jsonc's catch-all `disabled_globs` entry, i.e. inline AI stays fully off rather than falling through to Zed's cloud Zeta.
  * @param {object|null} [options.agentServers] - `agent_servers` block from `_buildZedAgentServersBlock` to merge in. Omit / null to leave the key unset (prebuilt artifacts, which must stay machine-generic).
+ * @param {object|null} [options.lsp] - Existing `lsp` block read back off disk, carried through untouched. Owned by `software/scripts/advanced/lsp/zed.js`, not by zed-config.jsonc — see `_readExistingZedLspBlock` for why it has to survive this write.
  * @returns {object} The fully resolved settings.json content.
  */
 function _getZedSettings(
   baseConfig,
-  { is_prebuilt_config = false, languageModels = null, defaultModel = null, editPredictions = null, agentServers = null } = {},
+  { is_prebuilt_config = false, languageModels = null, defaultModel = null, editPredictions = null, agentServers = null, lsp = null } = {},
 ) {
   const fontFamily = is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily;
   const fontSize = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
@@ -248,6 +249,17 @@ function _getZedSettings(
   // built-in agents rather than listing an agent that can't launch.
   if (agentServers) {
     settings.agent_servers = agentServers;
+  }
+
+  // LSP binary overrides. This key is written by software/scripts/advanced/lsp/zed.js, which
+  // merges it into whatever settings.json already holds. zed.js rebuilds settings.json from
+  // zed-config.jsonc — a file that deliberately carries no `lsp` key — so without carrying
+  // the block across, every run of this script silently deletes it. Discovery order sorts
+  // `lsp/zed.js` before `zed.js` (the `/advanced/` segment is stripped, leaving `lsp/…` < `zed…`),
+  // so lsp/zed.js always wrote first and zed.js always erased it: on a full run the LSP
+  // overrides never survived to disk at all.
+  if (lsp && Object.keys(lsp).length > 0) {
+    settings.lsp = lsp;
   }
 
   return settings;
@@ -321,6 +333,29 @@ function _getZedKeymap(keymap, isOsMac) {
 }
 
 /**
+ * Reads the `lsp` block back off an existing settings.json so `_getZedSettings` can carry it
+ * across the rewrite. That block is owned by `software/scripts/advanced/lsp/zed.js` (built from
+ * `LSP_SERVERS` in lsp/lsp-common.js) and has no representation in zed-config.jsonc, so a
+ * rebuild-from-source write drops it unless it is read back first.
+ *
+ * Returns `null` when the file is missing or unparseable — a fresh machine simply has no block
+ * to preserve, and a corrupt file should not abort the deploy (this script is what repairs it).
+ *
+ * @param {string} settingsPath - Absolute path to Zed's settings.json.
+ * @returns {Promise<object|null>} The existing `lsp` block, or null when there isn't a usable one.
+ */
+async function _readExistingZedLspBlock(settingsPath) {
+  if (!pathExists(settingsPath)) return null;
+  try {
+    const existing = (await readJson`${settingsPath}`) || {};
+    return existing.lsp && Object.keys(existing.lsp).length > 0 ? existing.lsp : null;
+  } catch (e) {
+    log(">>> zed: existing settings.json unreadable — cannot preserve the lsp block:", e.message);
+    return null;
+  }
+}
+
+/**
  * Main entry: writes Zed settings + themes to the local install (if found) and queues
  * prebuilt build artifacts. Build artifacts are batched into one writeBuildArtifact call
  * because in CI it throws ScriptSkipError after the first invocation.
@@ -388,6 +423,13 @@ async function doWork() {
     }
 
     const settingsPath = path.join(targetPath, "settings.json");
+
+    // Carry the LSP binary overrides across the rewrite — see _readExistingZedLspBlock.
+    const existingLsp = await _readExistingZedLspBlock(settingsPath);
+    if (!existingLsp) {
+      log(">>> zed: no existing lsp block to preserve — run advanced/lsp/zed.js to write one");
+    }
+
     await backupConfigFile(settingsPath);
     await writeJson(
       settingsPath,
@@ -397,6 +439,7 @@ async function doWork() {
         defaultModel,
         editPredictions,
         agentServers,
+        lsp: existingLsp,
       }),
     );
 
