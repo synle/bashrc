@@ -286,8 +286,10 @@ const AUTOCOMPLETE_MODELS = ["qwen2.5-coder:1.5b-base", "qwen2.5-coder:3b-base",
  *
  * Returns `null` when no host has any preferred model. Callers MUST then omit the
  * autocomplete config block entirely — leaving a stale endpoint configured would make the
- * editor hammer a dead host on every keystroke. With the block absent, editors fall back
- * to their own defaults (Zeta in Zed, no inline completion in vanilla VSCode).
+ * editor hammer a dead host on every keystroke. With the block absent, each editor keeps
+ * whatever its own base config declares: Zed keeps zed-config.jsonc's catch-all
+ * `edit_predictions.disabled_globs` entry, so inline AI stays fully off rather than
+ * falling through to Zed's cloud Zeta; vanilla VSCode has no inline completion at all.
  *
  * Network reachability is bounded by `_URL_FETCH_TIMEOUT_MS` (3s) in `_readTextFromURL`
  * via the existing `AbortSignal.timeout` in `readJson`, so a totally-offline omen45l can't
@@ -319,6 +321,79 @@ async function getAutocompleteProvider(preferred = AUTOCOMPLETE_MODELS) {
     log(`>> autocomplete: ${host} reachable but no preferred model present (saw: ${tags.join(", ")})`);
   }
   return null;
+}
+
+// --- ACP (Agent Client Protocol) Agent Discovery ---
+
+/**
+ * How each LLM CLI this repo installs enters ACP server mode — the single registry of
+ * that knowledge, consumed by editor integrations (currently `zed.js`, which translates
+ * these generic entries into Zed's `agent_servers` settings shape). Adding a new
+ * ACP-capable CLI means one row here, never a per-editor list.
+ *
+ * Two shapes, distinguished by which key is set:
+ *
+ *   - `args` — the CLI speaks ACP itself. The editor spawns `<binary> <args...>` and
+ *     talks the protocol over the child's stdio. Verified against the installed CLIs:
+ *     `opencode acp` (subcommand, `opencode --help`) and `copilot --acp` (flag,
+ *     `copilot --help`).
+ *   - `executableEnvKey` — the CLI does NOT speak ACP (Claude Code has no `--acp` flag).
+ *     The editor supplies its own vendored ACP adapter, and this env var points that
+ *     adapter at our locally-installed CLI instead of the copy it bundles, so the agent
+ *     inherits this repo's config, skills, and auth.
+ *
+ * Gemini CLI is deliberately absent: it does support ACP (`gemini --acp`), but Zed ships
+ * `gemini` as a built-in registry agent that manages its own install, and a same-named
+ * custom entry would shadow it for no gain.
+ *
+ * @type {Array<{id: string, displayName: string, binary: string, args?: string[], executableEnvKey?: string}>}
+ */
+const LLM_ACP_AGENTS = [
+  { id: "claude", displayName: "Claude Code", binary: "claude", executableEnvKey: "CLAUDE_CODE_EXECUTABLE" },
+  { id: "opencode", displayName: "OpenCode", binary: "opencode", args: ["acp"] },
+  { id: "copilot", displayName: "Copilot CLI", binary: "copilot", args: ["--acp"] },
+];
+
+/**
+ * Resolves a binary name to its absolute path. JS analog of the bash
+ * `has_persistent_binary` helper: `/tmp/` hits are rejected so a throwaway bootstrap copy
+ * can never get baked into a config file that outlives the run.
+ *
+ * @param {string} binary - Binary name to resolve (e.g. "opencode").
+ * @returns {Promise<string|null>} Absolute path, or null when not installed persistently.
+ */
+async function _resolveAcpBinaryPath(binary) {
+  // `|| true` keeps a missing binary from throwing — `type -P` exits 1 when nothing matches.
+  const resolved = (await execBash(`type -P ${binary} 2>/dev/null || true`)).trim();
+  if (!resolved || resolved.startsWith("/tmp/")) return null;
+  return resolved;
+}
+
+/**
+ * Discovers which ACP-capable LLM CLIs are actually installed on this machine and returns
+ * them with absolute paths resolved, shaped for downstream editor config builders.
+ *
+ * Absolute paths (not bare names) on purpose: editors spawn agents from a GUI process
+ * whose PATH may not include `$HOME/.local/bin`, where `npm_install_global` puts these
+ * CLIs. Missing CLIs are dropped entirely so the caller never writes a dead entry that
+ * fails only when the user clicks it.
+ *
+ * @returns {Promise<Array<{id: string, displayName: string, binaryPath: string, args?: string[], executableEnvKey?: string}>>}
+ *   Empty array when none of the CLIs are installed.
+ */
+async function getAcpAgentInputs() {
+  /** @type {Array<{id: string, displayName: string, binaryPath: string, args?: string[], executableEnvKey?: string}>} */
+  const agents = [];
+  for (const agent of LLM_ACP_AGENTS) {
+    const binaryPath = await _resolveAcpBinaryPath(agent.binary);
+    if (!binaryPath) {
+      log(`>> acp: dropping ${agent.id} — \`${agent.binary}\` not installed`);
+      continue;
+    }
+    log(`>> acp: discovered ${agent.id} at ${binaryPath}`);
+    agents.push({ ...agent, binaryPath });
+  }
+  return agents;
 }
 
 /**

@@ -313,12 +313,33 @@ describe("_getZedSettings > agent merge", () => {
   });
 
   // Symmetric pair: edit_predictions mirrors the language_models behavior above —
-  // omitted when discovery returns null (so Zed keeps its Zeta default), present
-  // verbatim when getAutocompleteProvider() resolved a host+model.
+  // omitted when discovery returns null, present verbatim when getAutocompleteProvider()
+  // resolved a host+model. Note the null path does NOT hand Zed back to its cloud Zeta
+  // default: zed-config.jsonc's `disabled_globs: ["**/*"]` survives from baseConfig
+  // (asserted by the third case below).
   it("should not include edit_predictions when editPredictions option is omitted", () => {
     const zed = loadZed();
     const result = zed._getZedSettings({}, { is_prebuilt_config: false });
     expect(result.edit_predictions).toBeUndefined();
+  });
+
+  it("should preserve the baseConfig disabled_globs fallback when editPredictions is null", () => {
+    const zed = loadZed();
+    const baseConfig = { edit_predictions: { disabled_globs: ["**/*"] } };
+    const result = zed._getZedSettings(baseConfig, { is_prebuilt_config: false, editPredictions: null });
+    expect(result.edit_predictions).toEqual({ disabled_globs: ["**/*"] });
+  });
+
+  it("should replace the baseConfig disabled_globs fallback when editPredictions is provided", () => {
+    const zed = loadZed();
+    const baseConfig = { edit_predictions: { disabled_globs: ["**/*"] } };
+    const editPredictions = {
+      provider: "ollama",
+      ollama: { api_url: "http://127.0.0.1:11434", model: "qwen2.5-coder:1.5b-base" },
+    };
+    const result = zed._getZedSettings(baseConfig, { is_prebuilt_config: false, editPredictions });
+    expect(result.edit_predictions).toEqual(editPredictions);
+    expect(result.edit_predictions.disabled_globs).toBeUndefined();
   });
 
   it("should include edit_predictions when editPredictions option is provided", () => {
@@ -329,6 +350,133 @@ describe("_getZedSettings > agent merge", () => {
     };
     const result = zed._getZedSettings({}, { is_prebuilt_config: false, editPredictions });
     expect(result.edit_predictions).toEqual(editPredictions);
+  });
+});
+
+// ---- _buildZedAgentServersBlock: external ACP agents ----
+//
+// Zed's `CustomAgentServerSettings` is an internally-tagged enum (`#[serde(tag = "type")]`),
+// so every entry MUST carry an explicit snake_case `type`. Agents that speak ACP natively
+// (`opencode acp`, `copilot --acp`) map to `custom`; Claude Code has no ACP mode of its own,
+// so it maps to Zed's built-in `claude-acp` registry id with a `CLAUDE_CODE_EXECUTABLE`
+// override pointing at our install instead of the copy Zed vendors.
+
+describe("_buildZedAgentServersBlock > custom agents", () => {
+  it("maps an agent with launch args to a `custom` entry keyed by its display name", () => {
+    const zed = loadZed();
+    const result = zed._buildZedAgentServersBlock([
+      { id: "opencode", displayName: "OpenCode", binaryPath: "/mock/home/.local/bin/opencode", args: ["acp"] },
+    ]);
+    expect(result).toEqual({
+      OpenCode: { type: "custom", command: "/mock/home/.local/bin/opencode", args: ["acp"] },
+    });
+  });
+
+  it("uses the absolute binary path, never the bare binary name", () => {
+    const zed = loadZed();
+    const result = zed._buildZedAgentServersBlock([
+      { id: "copilot", displayName: "Copilot CLI", binaryPath: "/mock/home/.local/bin/copilot", args: ["--acp"] },
+    ]);
+    expect(result["Copilot CLI"].command).toBe("/mock/home/.local/bin/copilot");
+  });
+
+  it("omits `env` for custom entries rather than writing an empty object", () => {
+    const zed = loadZed();
+    const result = zed._buildZedAgentServersBlock([
+      { id: "opencode", displayName: "OpenCode", binaryPath: "/mock/bin/opencode", args: ["acp"] },
+    ]);
+    expect(result.OpenCode.env).toBeUndefined();
+  });
+});
+
+describe("_buildZedAgentServersBlock > claude registry override", () => {
+  it("maps Claude Code to the built-in `claude-acp` registry id with the executable env override", () => {
+    const zed = loadZed();
+    const result = zed._buildZedAgentServersBlock([
+      {
+        id: "claude",
+        displayName: "Claude Code",
+        binaryPath: "/mock/home/.local/bin/claude",
+        executableEnvKey: "CLAUDE_CODE_EXECUTABLE",
+      },
+    ]);
+    expect(result).toEqual({
+      "claude-acp": { type: "registry", env: { CLAUDE_CODE_EXECUTABLE: "/mock/home/.local/bin/claude" } },
+    });
+    // Claude has no ACP mode of its own — a `command` here would spawn a TUI, not an agent.
+    expect(result["claude-acp"].command).toBeUndefined();
+  });
+
+  it("drops an agent that has neither launch args nor a registry mapping", () => {
+    const zed = loadZed();
+    const result = zed._buildZedAgentServersBlock([{ id: "mystery-cli", displayName: "Mystery", binaryPath: "/mock/bin/mystery" }]);
+    expect(result).toEqual({});
+  });
+
+  it("returns an empty block when no ACP-capable CLI was discovered", () => {
+    const zed = loadZed();
+    expect(zed._buildZedAgentServersBlock([])).toEqual({});
+  });
+});
+
+describe("_getZedSettings > agent_servers merge", () => {
+  it("should not include agent_servers when the option is omitted (CI prebuilt artifacts)", () => {
+    const zed = loadZed();
+    const result = zed._getZedSettings({}, { is_prebuilt_config: true });
+    expect(result.agent_servers).toBeUndefined();
+  });
+
+  it("should include agent_servers when the option is provided (local install)", () => {
+    const zed = loadZed();
+    const agentServers = { OpenCode: { type: "custom", command: "/mock/bin/opencode", args: ["acp"] } };
+    const result = zed._getZedSettings({}, { is_prebuilt_config: false, agentServers });
+    expect(result.agent_servers).toEqual(agentServers);
+  });
+});
+
+// ---- getAcpAgentInputs: binary discovery (llm-common.js, inlined via SOURCE) ----
+
+describe("getAcpAgentInputs > binary resolution", () => {
+  /**
+   * Loads zed.js with a `type -P` stub so ACP discovery is deterministic.
+   * @param {Record<string, string>} resolved - Map of binary name -> path `type -P` should report. Missing keys resolve to "".
+   * @returns {object} The loaded sandbox.
+   */
+  function loadZedWithBinaries(resolved) {
+    return loadZed({
+      execBash: async (cmd) => {
+        const match = cmd.match(/type -P (\S+)/);
+        return (match && resolved[match[1]]) || "";
+      },
+    });
+  }
+
+  it("returns every installed agent with its absolute path attached", async () => {
+    const zed = loadZedWithBinaries({
+      claude: "/mock/home/.local/bin/claude",
+      opencode: "/mock/home/.local/bin/opencode",
+      copilot: "/mock/home/.local/bin/copilot",
+    });
+    const agents = await zed.getAcpAgentInputs();
+    expect(agents.map((a) => a.id)).toEqual(["claude", "opencode", "copilot"]);
+    expect(agents.find((a) => a.id === "opencode").binaryPath).toBe("/mock/home/.local/bin/opencode");
+  });
+
+  it("drops agents whose CLI is not installed", async () => {
+    const zed = loadZedWithBinaries({ opencode: "/mock/home/.local/bin/opencode" });
+    const agents = await zed.getAcpAgentInputs();
+    expect(agents.map((a) => a.id)).toEqual(["opencode"]);
+  });
+
+  it("rejects a /tmp/ hit so a bootstrap copy never gets baked into settings.json", async () => {
+    const zed = loadZedWithBinaries({ claude: "/tmp/bootstrap/bin/claude" });
+    const agents = await zed.getAcpAgentInputs();
+    expect(agents).toEqual([]);
+  });
+
+  it("returns an empty array when nothing is installed", async () => {
+    const zed = loadZedWithBinaries({});
+    expect(await zed.getAcpAgentInputs()).toEqual([]);
   });
 });
 

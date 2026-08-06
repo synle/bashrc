@@ -14,7 +14,7 @@
   "remove_trailing_whitespace_on_save": true, // Strip trailing whitespace on save. Values: true, false
   "format_on_save": "on", // Auto-format code on save. Values: "on", "off"
   "vim_mode": false, // Enable vim keybindings. Values: true, false
-  "edit_predictions": { "disabled_globs": ["**/*"] }, // Disable inline AI completions (Zed's analog of VS Code's editor.lightbulb.enabled=off and copilot disable). Renamed from `inline_completions` in Zed v0.169+. Values: array of glob patterns where completions are disabled
+  "edit_predictions": { "disabled_globs": ["**/*"] }, // Fallback only — disables inline AI completions everywhere (Zed's analog of VS Code's editor.lightbulb.enabled=off and copilot disable), so a machine with no reachable Ollama never talks to Zed's cloud Zeta. zed.js REPLACES this whole key with an `{provider: "ollama", ...}` block when getAutocompleteProvider() finds a FIM-capable host. Renamed from `inline_completions` in Zed v0.169+. Values: array of glob patterns where completions are disabled
   "show_completions_on_input": true, // Auto-trigger completions on typing. Values: true, false
 
   // --- Search ---
@@ -60,8 +60,20 @@
   // Agent panel ON: zed.js auto-registers `language_models.ollama` (local 127.0.0.1
   // with auto_discover) and `language_models.openai_compatible["Ollama (sy-omen45l)"]`
   // (remote, models enumerated from /api/tags) when those hosts are reachable, then
-  // pins `agent.default_model` to the best provider. Edit predictions remain off
-  // (`edit_predictions.disabled_globs: ["**/*"]` near the top of this file).
+  // pins `agent.default_model` to the best provider. Inline edit predictions are wired
+  // to Ollama too — zed.js overwrites the `edit_predictions` key near the top of this
+  // file with an Ollama FIM provider when one is reachable, and leaves the
+  // `disabled_globs: ["**/*"]` fallback in place (inline AI fully off, never Zeta) when
+  // none is.
+  //
+  // External agents: zed.js also injects `agent_servers` from whichever ACP-capable LLM
+  // CLIs are installed, so the agent panel's `+` menu lists our own configured installs
+  // rather than copies Zed downloads for itself. `opencode acp` and `copilot --acp` speak
+  // ACP natively and become `"type": "custom"` entries pointing at absolute binary paths;
+  // Claude Code has no ACP mode, so it becomes a `"type": "registry"` entry on Zed's
+  // built-in `claude-acp` id carrying `CLAUDE_CODE_EXECUTABLE`. That key is deliberately
+  // absent here — the paths are machine-specific, so it is written on local deploys only
+  // and never baked into the prebuilt artifacts.
   "disable_ai": false, // Enable Zed agent / AI features so Ollama providers populate the agent panel. Values: true, false
 
   // --- Performance & Telemetry ---

@@ -30,6 +30,58 @@ const ZED_LIGHT_THEME_FILE = "Sy Light.json";
 const ZED_OLLAMA_REMOTE_KEY = "Ollama (sy-omen45l)";
 
 /**
+ * Zed's built-in ACP registry id for Claude Agent. Zed bundles its own
+ * `@zed-industries/claude-agent-acp` adapter (which vendors a copy of Claude Code) and
+ * always prefers it over a globally-installed CLI — the documented way to redirect it at
+ * our install is a `"type": "registry"` entry under this id carrying
+ * `CLAUDE_CODE_EXECUTABLE`. Verified against the docs shipped with the installed Zed
+ * (`docs/src/ai/external-agents.md` at tag v0.231.2) and the `claude-acp` id embedded in
+ * the Zed binary itself.
+ * @type {string}
+ */
+const ZED_CLAUDE_REGISTRY_KEY = "claude-acp";
+
+/**
+ * Builds Zed's `agent_servers` block from the generic ACP agent inputs produced by
+ * `getAcpAgentInputs()` in llm-common.js, so the Agent Panel's `+` menu lists our locally
+ * installed LLM CLIs instead of only Zed's built-ins.
+ *
+ * Zed's `CustomAgentServerSettings` is an internally-tagged enum (`#[serde(tag = "type",
+ * rename_all = "snake_case")]` in `crates/settings_content/src/agent.rs`), so every entry
+ * carries an explicit `type`. Two translations:
+ *
+ *   - Agents that speak ACP natively become `{ type: "custom", command, args }`. The map
+ *     key is the label shown in the agent picker.
+ *   - Claude Code (no `--acp` flag of its own) becomes
+ *     `{ type: "registry", env: { CLAUDE_CODE_EXECUTABLE } }` under Zed's built-in
+ *     `claude-acp` id — Zed keeps managing the adapter, the adapter drives our binary.
+ *
+ * `env` is omitted for custom agents rather than written as `{}`: it is `#[serde(default)]`
+ * upstream, and an empty map is noise in a hand-readable settings file.
+ *
+ * @param {Array<{id: string, displayName: string, binaryPath: string, args?: string[], executableEnvKey?: string}>} agents - From getAcpAgentInputs().
+ * @returns {object} `agent_servers` map, empty when no ACP-capable CLI is installed.
+ */
+function _buildZedAgentServersBlock(agents) {
+  /** @type {Record<string, object>} */
+  const agentServers = {};
+
+  for (const { id, displayName, binaryPath, args, executableEnvKey } of agents) {
+    if (Array.isArray(args) && args.length > 0) {
+      agentServers[displayName] = { type: "custom", command: binaryPath, args };
+      continue;
+    }
+    if (executableEnvKey && id === "claude") {
+      agentServers[ZED_CLAUDE_REGISTRY_KEY] = { type: "registry", env: { [executableEnvKey]: binaryPath } };
+      continue;
+    }
+    log(`>>> zed: skipping ACP agent ${id} — no launch args and no Zed registry mapping`);
+  }
+
+  return agentServers;
+}
+
+/**
  * Builds the `language_models` block + `agent.default_model` entry for Zed's settings.json
  * from the generic provider-input array produced by `getOllamaProviderInputs()` in
  * llm-common.js. Translation rules:
@@ -128,12 +180,13 @@ async function _getPathZed() {
  * @param {boolean} [options.is_prebuilt_config] - When true, use safe fallback fonts/sizes for shipped artifacts.
  * @param {object|null} [options.languageModels] - `language_models` block from `_buildZedLanguageModelsBlock` to merge in.
  * @param {({provider:string, model:string})|null} [options.defaultModel] - `agent.default_model` entry to merge in.
- * @param {object|null} [options.editPredictions] - `edit_predictions` block (Ollama inline autocomplete) to merge in. Omit / null to keep Zed on its default (Zeta).
+ * @param {object|null} [options.editPredictions] - `edit_predictions` block (Ollama inline autocomplete) to merge in. Omit / null to keep whatever `baseConfig.edit_predictions` holds — in practice zed-config.jsonc's catch-all `disabled_globs` entry, i.e. inline AI stays fully off rather than falling through to Zed's cloud Zeta.
+ * @param {object|null} [options.agentServers] - `agent_servers` block from `_buildZedAgentServersBlock` to merge in. Omit / null to leave the key unset (prebuilt artifacts, which must stay machine-generic).
  * @returns {object} The fully resolved settings.json content.
  */
 function _getZedSettings(
   baseConfig,
-  { is_prebuilt_config = false, languageModels = null, defaultModel = null, editPredictions = null } = {},
+  { is_prebuilt_config = false, languageModels = null, defaultModel = null, editPredictions = null, agentServers = null } = {},
 ) {
   const fontFamily = is_prebuilt_config ? EDITOR_CONFIGS.fontFamilyDefaultFallback : EDITOR_CONFIGS.fontFamily;
   const fontSize = is_prebuilt_config ? EDITOR_CONFIGS.fontSizeDefaultFallback : EDITOR_CONFIGS.fontSize;
@@ -179,11 +232,22 @@ function _getZedSettings(
 
   // Inline edit prediction (per-keystroke ghost text) wired to an Ollama host. Only present
   // when `getAutocompleteProvider()` actually found a reachable host with a FIM-capable model.
-  // When omitted, Zed falls back to its default edit-prediction provider (Zeta) — exactly the
-  // behavior we want if no local/LAN Ollama is up: never leave a stale endpoint configured
-  // because Zed would then hammer a dead host on every keystroke.
+  // This REPLACES baseConfig's `edit_predictions` wholesale (zed-config.jsonc ships a
+  // catch-all `disabled_globs` entry), which is why inline AI is on exactly when an Ollama
+  // FIM host answered. When omitted, that fallback survives and inline predictions stay
+  // fully off — deliberately NOT Zed's cloud Zeta, and never a stale endpoint the editor
+  // would hammer on every keystroke.
   if (editPredictions) {
     settings.edit_predictions = editPredictions;
+  }
+
+  // External ACP agents (Claude Code / OpenCode / Copilot CLI) for the Agent Panel's `+`
+  // menu. Local-deploy only: the entries carry absolute binary paths resolved on THIS
+  // machine, so writing them into a prebuilt artifact would ship a dead path to everyone
+  // else. Left unset when no ACP-capable CLI is installed, which keeps Zed on its
+  // built-in agents rather than listing an agent that can't launch.
+  if (agentServers) {
+    settings.agent_servers = agentServers;
   }
 
   return settings;
@@ -289,8 +353,9 @@ async function doWork() {
     // shared discovery in llm-common.js but with INVERSE host priority vs the agent panel:
     // 127.0.0.1 is preferred over sy-omen45l because inline completion fires per keystroke
     // and localhost latency beats LAN. See `getAutocompleteProvider` JSDoc for the full rationale.
-    // When no host+model match (null return), we leave `edit_predictions` unset so Zed keeps
-    // its default provider (Zeta) instead of hammering a dead endpoint on every keystroke.
+    // When no host+model match (null return), we leave `edit_predictions` unset so the
+    // catch-all `disabled_globs` fallback from zed-config.jsonc survives — inline AI stays
+    // fully off (never Zed's cloud Zeta) instead of hammering a dead endpoint per keystroke.
     const autocomplete = await getAutocompleteProvider();
     const editPredictions = autocomplete
       ? {
@@ -302,14 +367,37 @@ async function doWork() {
         }
       : null;
     if (!editPredictions) {
-      log(">>> zed: no Ollama autocomplete model reachable — leaving edit_predictions unset (Zed will use Zeta default)");
+      log(
+        ">>> zed: no Ollama autocomplete model reachable — leaving edit_predictions unset (zed-config.jsonc's disabled_globs fallback keeps inline AI off)",
+      );
+    }
+
+    // Register the locally-installed ACP CLIs as external agents so they show up in the
+    // Agent Panel's `+` menu. Discovery lives in llm-common.js (`getAcpAgentInputs`) so
+    // "how does each CLI enter ACP mode" is stated once; this file only translates the
+    // result into Zed's `agent_servers` shape. Local-deploy only, same as language_models.
+    const acpAgents = await getAcpAgentInputs();
+    const agentServersBlock = _buildZedAgentServersBlock(acpAgents);
+    // Only write the key when discovery found something — an empty object would clobber
+    // any agent the user added by hand or installed from Zed's ACP registry.
+    const agentServers = Object.keys(agentServersBlock).length > 0 ? agentServersBlock : null;
+    if (!agentServers) {
+      log(">>> zed: no ACP-capable LLM CLI installed — leaving agent_servers unset");
+    } else {
+      log(`>>> zed: registering external agents: ${Object.keys(agentServersBlock).join(", ")}`);
     }
 
     const settingsPath = path.join(targetPath, "settings.json");
     await backupConfigFile(settingsPath);
     await writeJson(
       settingsPath,
-      _getZedSettings(baseConfig, { is_prebuilt_config: false, languageModels: lmToWrite, defaultModel, editPredictions }),
+      _getZedSettings(baseConfig, {
+        is_prebuilt_config: false,
+        languageModels: lmToWrite,
+        defaultModel,
+        editPredictions,
+        agentServers,
+      }),
     );
 
     const darkThemePath = path.join(targetPath, "themes", ZED_DARK_THEME_FILE);
