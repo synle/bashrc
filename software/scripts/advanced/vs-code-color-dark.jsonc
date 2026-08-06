@@ -363,8 +363,14 @@
       // identical in the light theme so the two stay structurally in sync.
       { "scope": ["meta.diff.header", "meta.diff.header.from-file", "meta.diff.header.to-file"], "settings": { "foreground": "#5ca0d7" } }, // {{dark.blue}}
       { "scope": ["constant.character", "variable.language.this"], "settings": { "foreground": "#5ca0d7" } }, // {{dark.blue}}
-      { "scope": ["keyword.operator.new", "keyword.operator.expression", "keyword.operator.cast"], "settings": { "foreground": "#5ca0d7" } }, // {{dark.blue}}
-      { "scope": ["source.cpp keyword.operator.new", "source.cpp keyword.operator.delete", "keyword.other.using"], "settings": { "foreground": "#5ca0d7" } }, // {{dark.blue}}
+      {
+        "scope": ["keyword.operator.new", "keyword.operator.expression", "keyword.operator.cast"],
+        "settings": { "foreground": "#5ca0d7" },
+      }, // {{dark.blue}}
+      {
+        "scope": ["source.cpp keyword.operator.new", "source.cpp keyword.operator.delete", "keyword.other.using"],
+        "settings": { "foreground": "#5ca0d7" },
+      }, // {{dark.blue}}
       { "scope": "token.info-token", "settings": { "foreground": "#5ca0d7" } }, // {{dark.blue}}
       { "scope": "meta.preprocessor", "settings": { "foreground": "#c586c0" } }, // {{dark.purple}}
       { "scope": "punctuation.definition.tag", "settings": { "foreground": "#e8e8e8" } }, // {{dark.foreground}}

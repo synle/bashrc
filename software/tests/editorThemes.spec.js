@@ -393,7 +393,11 @@ describe("inline marker binding safety", () => {
     .map((f) => `software/scripts/advanced/${f}`);
 
   it("covers every generated color theme file", () => {
-    expect(MARKER_FILES.length).toBe(6);
+    // 8 = VS Code, Sublime and Zed (2 each) plus the Ghostty terminal palettes, which
+    // joined COLOR_MAP when Ghostty stopped naming a bundled third-party theme.
+    // Termux's palette lives in software/scripts/android_termux/ and is covered by
+    // software/tests/terminalThemes.spec.js instead.
+    expect(MARKER_FILES.length).toBe(8);
   });
 
   for (const file of MARKER_FILES) {

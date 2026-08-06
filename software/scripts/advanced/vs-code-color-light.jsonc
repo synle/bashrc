@@ -352,6 +352,65 @@
 
       // --- Invalid ---
       { "scope": ["invalid", "invalid.deprecated"], "settings": { "foreground": "#840000" } }, // {{light.red}}
+
+      // --- Base theme overrides ---
+      // These rules exist only to stop the underlying VS Code "Default High Contrast Light"
+      // theme from leaking through. tokenColorCustomizations is a *merge*, not a
+      // replacement: any scope not named here keeps the base theme's color while sitting
+      // on our `editor.background`, which the base theme was never tuned against. Sixteen
+      // scopes measured under 7:1 in that state, the worst being `token.warn-token` at
+      // 2.45:1. The scope list is kept identical to the dark theme so the two stay in sync.
+      { "scope": ["meta.diff.header", "meta.diff.header.from-file", "meta.diff.header.to-file"], "settings": { "foreground": "#0033b3" } }, // {{light.blue}}
+      { "scope": ["constant.character", "variable.language.this"], "settings": { "foreground": "#0033b3" } }, // {{light.blue}}
+      {
+        "scope": ["keyword.operator.new", "keyword.operator.expression", "keyword.operator.cast"],
+        "settings": { "foreground": "#0033b3" },
+      }, // {{light.blue}}
+      {
+        "scope": ["source.cpp keyword.operator.new", "source.cpp keyword.operator.delete", "keyword.other.using"],
+        "settings": { "foreground": "#0033b3" },
+      }, // {{light.blue}}
+      { "scope": "token.info-token", "settings": { "foreground": "#0033b3" } }, // {{light.blue}}
+      { "scope": "meta.preprocessor", "settings": { "foreground": "#6c0099" } }, // {{light.purple}}
+      { "scope": "punctuation.definition.tag", "settings": { "foreground": "#1e1e1e" } }, // {{light.foreground}}
+      {
+        "scope": [
+          "punctuation.definition.template-expression.begin",
+          "punctuation.definition.template-expression.end",
+          "punctuation.section.embedded",
+        ],
+        "settings": { "foreground": "#734e06" },
+      }, // {{light.gold}}
+      { "scope": "token.warn-token", "settings": { "foreground": "#775502" } }, // {{light.yellow}}
+      { "scope": "token.error-token", "settings": { "foreground": "#840000" } }, // {{light.red}}
+      { "scope": "constant.regexp", "settings": { "foreground": "#9b2c2c" } }, // {{light.darkRed}}
+      {
+        "scope": [
+          "punctuation.definition.group.regexp",
+          "punctuation.definition.group.assertion.regexp",
+          "punctuation.definition.character-class.regexp",
+          "keyword.operator.or.regexp",
+          "keyword.control.anchor.regexp",
+        ],
+        "settings": { "foreground": "#9b2c2c" },
+      }, // {{light.darkRed}}
+      {
+        "scope": ["variable.other.enummember", "keyword.operator.plus.exponent", "keyword.operator.minus.exponent"],
+        "settings": { "foreground": "#03623a" },
+      }, // {{light.darkGreen}}
+      { "scope": ["constant.sha.git-rebase", "keyword.other.unit", "meta.preprocessor.numeric"], "settings": { "foreground": "#03623a" } }, // {{light.darkGreen}}
+      { "scope": "meta.preprocessor.string", "settings": { "foreground": "#a12626" } }, // {{light.brightRed}}
+      {
+        "scope": [
+          "entity.name.namespace",
+          "entity.other.attribute",
+          "entity.name.scope-resolution",
+          "meta.type.cast.expr",
+          "meta.type.new.expr",
+          "support.constant.math",
+        ],
+        "settings": { "foreground": "#145e5e" },
+      }, // {{light.brightCyan}}
     ],
   },
 }
