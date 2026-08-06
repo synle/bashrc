@@ -91,9 +91,114 @@ npx vitest run --config vitest.config.js software/tests/parseRawArgs.spec.js
 npx vitest run --config vitest.config.js -t "parses --files flag"
 ```
 
+### Vitest configs
+
+One config per suite:
+
+| Config | Suite |
+| --- | --- |
+| `vitest.config.js` | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
+| `vitest.profile.config.js` | `profileSyntax.spec.js` |
+| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js` |
+| `vitest.smoke.config.js` | webapp + raw-URL smokes against the live site |
+| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer) |
+
+`software/tests/setup.js` loads `index.js` in a VM sandbox — reach in with
+`getIndexFunction(name)` / `getIndexConstant(name)`; `fileSystem` and `fetchResponses`
+give in-memory mocks, auto-reset in `beforeEach`.
+
+When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touch
+`software/index.js` or `software/tools/build-include.js`, add or update unit tests.
+The convention-linter specs (one rule each) are listed in AGENTS.md §11.
+
+**VS Code debugging:** `.vscode/launch.json` has configs for the current script (via
+`software/.debug-runner.js`) and for Vitest.
+
 ### Coverage
 
 The unit suite uses the istanbul provider via `@vitest/coverage-istanbul`. **Thresholds, included / excluded globs, and the rationale for the current floor all live in `vitest.config.js` — that file is the source of truth.** Don't duplicate the numbers in other docs; if a threshold changes, edit `vitest.config.js` and let downstream readers chase the link. There is no Rust / `cargo-llvm-cov` in this repo; if a future Rust sibling project lands, document its coverage config path next to the vitest entry instead of hardcoding a percentage.
+
+## Make Targets
+
+```bash
+make init                  # npm ci + mkdir .build
+make setup                 # = setup_local_full → bash run.sh --setup --force
+make setup_local_profile   # profile refresh only, no dep install
+make setup_prod            # bootstrap from GitHub
+make format                # build_include → ci_binaries → script_indexes → jsdocs
+                           #   → spec_cleanup → shell (shfmt) → oxfmt
+make format_build_include  # process BEGIN/END markers
+make format_ci_binaries    # regenerate the ci-binary-checks block
+make build_all             # configs, hosts, webapp, postbuild
+make build_installer       # .build/install-bashrc.sh self-extracting installer
+make test_unit             # vitest, vitest.config.js
+make test_coverage         # + istanbul; thresholds live in vitest.config.js
+make test_profile          # bash -n / profile invariants
+make test_buildconfig      # inline-snapshot shape (…_update to refresh)
+make test_smoke[_local]    # puppeteer webapp (live / local dist)
+make test_dryrun           # run.sh --dryrun --setup; fails past DRYRUN_MAX_ERRORS (3)
+make test_all              # unit, profile, smoke, buildconfig, dryrun, shellcheck
+make validate              # format + unit + buildconfig + webapp + smoke_local
+                           #   + dryrun + shellcheck   ← run this before pushing
+make new-script name= os= type=
+make doctor                # environment diagnosis
+make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, node_modules …
+```
+
+The formatter is **oxfmt** (`npm run format`), not prettier, despite the
+`format_prettier` target name. Shell formatting is `shfmt -w -i 2 -bn -sr`.
+
+
+## Helper API Reference
+
+Every function below is a **global** inside `software/scripts/*.js` — no `require`, no
+import. Reuse these instead of hand-rolling file IO, path lookup, download, or install
+logic (see AGENTS.md §2, Golden rules).
+
+- **Templates:** `text`, `code` (dedented), `list`, `set`, `json`, `readText` (async; URL
+  / absolute / repo-relative + SOURCE expansion), `readJson`, `readList`, `readSet`,
+  `requireUrl`.
+- **Write:** `writeText`, `writeJson`, `writeJsonWithMerge`, `writeConfigToFile`,
+  `writeBuildArtifact` (→ `.build/`), `safeWriteText` (shrink-ratio guard),
+  `writeTextIfSignificantChange`, `appendText`, `replaceTextLineByLine`, `touchFile`,
+  `copyFile`, `safeSymlink`, `mkdir`, `deleteFile`, `deleteFolder` (guarded), `unzip`,
+  `md5Hash*`. **Backup:** `backupConfigFile`, `backupText`, `backupProfileSnapshot`.
+- **Find:** `findPath`, `findPathList`, `findPathFromList`, `pathExists`, `findDirList`,
+  `findFileRecursive` — all take `{ type: file|folder|exec|any }`. **Platform paths:**
+  `getWindowUserBaseDir`, `getWindowAppDataRoaming/LocalUserPath`, `toWindowsPath`,
+  `getDesktopPath`, `getEtcHostsPath`, `getCustomTweaksPath`,
+  `getOsxApplicationSupportCodeUserPath`, `resolveOsKey`.
+- **Install/download:** `downloadAsset(s)`, `downloadAssetWithFallback` (GitHub release →
+  `binary-cache`), `downloadAndInstallBinary`, `installMacDmg`, `clearMacQuarantine`,
+  `installWindowsSetupExe`, `installLinuxUniversalAppImage`, `installBrowserExtension`,
+  `gitClone`, `fetchGitHubReleaseVersion`, `getGitHubRawUrl`.
+- **Install version stamps:** `getInstalledVersionStampPath` (sibling
+  `<folder>.installed.json`, never inside the folder — Chrome rejects an unpacked
+  extension containing a dot-entry), `readInstalledVersionStamp`,
+  `writeInstalledVersionStamp` — a re-run then skips delete + re-download when the
+  recorded version matches upstream; `--refresh` forces.
+- **Blocks/profile:** `replaceBlock(s)`, `removeBlock`, `appendTextBlock`,
+  `prependTextBlock`, `moveTextBlockToEnd/Start`, `registerProfileBlock`,
+  `registerWithBashSyleProfile`, `registerWithPowershellProfile`,
+  `registerWithBashSyleAutocompleteWithRawContent`, `registerPlatformTweaks`,
+  `removeFromBashSyleProfile`, `flushProfileBlocks`.
+- **Guards:** `ScriptSkipError`, `exitIfNotTargetOs`, `exitIfUnsupportedOs`,
+  `exitIfLimitedSupportOs`, `exitIfPathFound/NotFound`, `exitIfNotSudo`,
+  `exitIfNoChromiumBrowser`, `exitIfNoGui("any"|"x11"|"wayland")`. **GUI flags:**
+  `is_gui`, `is_gui_x11`, `is_gui_wayland` (§7.5). **Staleness:** `isPathStale`,
+  `isForceRefreshStale`, `isBashSyleStale`.
+- **Exec/output:** `execBash` (async, 30s cap), `execBashSync`, `hasBinary`, `emitBash`,
+  `log`, `echo`, `color*`, `printSectionBlock`, `printRunInfo`. **Options:**
+  `getRuntimeOption("KEY")` reads `--KEY=value` or the env var; `parseString` /
+  `parseInteger` (clamping) / `parseBoolean`.
+
+Bash equivalents in `software/bootstrap/common-functions.bash`: `is_help_arg`,
+`safe_source`, `curl_bash_install`, `npm_install_global`, `has_persistent_binary`,
+`find_path`, `prompt_yes_no`, `ensure_binary_alias`, `exit_if_not_sudo`,
+`safe_touch`/`safe_mkdir`/`safe_chown`/`safe_chmod`, `get_native_arch` / `run_native`,
+plus a logging `sudo` wrapper. `tsc --declaration --allowJs` emits the full typed API
+into `software/types/` (`make format_jsdocs`) — read that when unsure of a signature.
+
 
 ## Where to Go Next
 

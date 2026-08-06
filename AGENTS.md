@@ -24,9 +24,9 @@ on stdout**. Each script under `software/scripts/` is either a JS module exporti
 `doWork()` or a plain bash script. The product is `~/.bash_syle` (the shell profile) plus
 installed tools and written config files.
 
-OS flags set by `run.sh` (detection order matters, see §8): `is_os_mac`,
-`is_os_chromeos`, `is_os_mingw64`, `is_os_android_termux`, `is_os_arch_linux`,
-`is_os_steamos`, `is_os_redhat`, `is_os_ubuntu`, `is_os_windows`, `is_os_wsl`.
+OS flags set by `run.sh` (detection order matters, §8): `is_os_mac`, `is_os_chromeos`,
+`is_os_mingw64`, `is_os_android_termux`, `is_os_arch_linux`, `is_os_steamos`,
+`is_os_redhat`, `is_os_ubuntu`, `is_os_windows`, `is_os_wsl`.
 
 ---
 
@@ -50,7 +50,7 @@ OS flags set by `run.sh` (detection order matters, see §8): `is_os_mac`,
 
 - **`.build/`** — generated artifacts; a PreToolUse hook hard-blocks writes there.
   `.build/profile_bashrc_*.sh` is gitignored (per-OS CI profile, mirrored to the
-  `binary-cache` release). Never commit `dist/`, `coverage/`, `software/types/` either.
+  `binary-cache` release). Never commit `dist/`, `coverage/`, or `software/types/`.
 - **Owner/CI-managed `software/metadata/` files** — `autocomplete-complete-spec/*`
   (e.g. `git`, `docker`), `hosts-*.consolidated.config`, `hosts-blocked-ads.config`.
 - **`assets/`** — owner-managed. Release backups for `display-dj`, `sqlui-native`,
@@ -472,116 +472,42 @@ that both bash and node consume:
 
 ---
 
-## 9. Helper API (globals from `software/index.js`)
+## 9. Helper API
 
-- **Templates:** `text`, `code` (dedented), `list`, `set`, `json`, `readText` (async; URL
-  / absolute / repo-relative + SOURCE expansion), `readJson`, `readList`, `readSet`,
-  `requireUrl`.
-- **Write:** `writeText`, `writeJson`, `writeJsonWithMerge`, `writeConfigToFile`,
-  `writeBuildArtifact` (→ `.build/`), `safeWriteText` (shrink-ratio guard),
-  `writeTextIfSignificantChange`, `appendText`, `replaceTextLineByLine`, `touchFile`,
-  `copyFile`, `safeSymlink`, `mkdir`, `deleteFile`, `deleteFolder` (guarded), `unzip`,
-  `md5Hash*`. **Backup:** `backupConfigFile`, `backupText`, `backupProfileSnapshot`.
-- **Find:** `findPath`, `findPathList`, `findPathFromList`, `pathExists`, `findDirList`,
-  `findFileRecursive` — all take `{ type: file|folder|exec|any }`. **Platform paths:**
-  `getWindowUserBaseDir`, `getWindowAppDataRoaming/LocalUserPath`, `toWindowsPath`,
-  `getDesktopPath`, `getEtcHostsPath`, `getCustomTweaksPath`,
-  `getOsxApplicationSupportCodeUserPath`, `resolveOsKey`.
-- **Install/download:** `downloadAsset(s)`, `downloadAssetWithFallback` (GitHub release →
-  `binary-cache`), `downloadAndInstallBinary`, `installMacDmg`, `clearMacQuarantine`,
-  `installWindowsSetupExe`, `installLinuxUniversalAppImage`, `installBrowserExtension`,
-  `gitClone`, `fetchGitHubReleaseVersion`, `getGitHubRawUrl`.
-- **Install version stamps:** `getInstalledVersionStampPath` (sibling
-  `<folder>.installed.json`, never inside the folder — Chrome rejects an unpacked
-  extension containing a dot-entry), `readInstalledVersionStamp`,
-  `writeInstalledVersionStamp` — a re-run then skips delete + re-download when the
-  recorded version matches upstream; `--refresh` forces.
-- **Blocks/profile:** `replaceBlock(s)`, `removeBlock`, `appendTextBlock`,
-  `prependTextBlock`, `moveTextBlockToEnd/Start`, `registerProfileBlock`,
-  `registerWithBashSyleProfile`, `registerWithPowershellProfile`,
-  `registerWithBashSyleAutocompleteWithRawContent`, `registerPlatformTweaks`,
-  `removeFromBashSyleProfile`, `flushProfileBlocks`.
-- **Guards:** `ScriptSkipError`, `exitIfNotTargetOs`, `exitIfUnsupportedOs`,
-  `exitIfLimitedSupportOs`, `exitIfPathFound/NotFound`, `exitIfNotSudo`,
-  `exitIfNoChromiumBrowser`, `exitIfNoGui("any"|"x11"|"wayland")`. **GUI flags:**
-  `is_gui`, `is_gui_x11`, `is_gui_wayland` (§7.5). **Staleness:** `isPathStale`,
-  `isForceRefreshStale`, `isBashSyleStale`.
-- **Exec/output:** `execBash` (async, 30s cap), `execBashSync`, `hasBinary`, `emitBash`,
-  `log`, `echo`, `color*`, `printSectionBlock`, `printRunInfo`. **Options:**
-  `getRuntimeOption("KEY")` reads `--KEY=value` or the env var; `parseString` /
-  `parseInteger` (clamping) / `parseBoolean`.
+Full index — templates, write/backup, find, platform paths, install/download, version
+stamps, block/profile registration, guards, staleness, exec/output, options — lives in
+**`DEV.md` → Helper API Reference**, plus the bash equivalents in
+`software/bootstrap/common-functions.bash`. Read it before hand-rolling anything (§2,
+golden rule 3). The names you reach for daily: `readText` / `code` / `json`,
+`writeText` / `writeConfigToFile` / `writeBuildArtifact`, `backupConfigFile`, `findPath`,
+`downloadAsset`, `registerWithBashSyleProfile`, `registerPlatformTweaks`,
+`exitIfNotTargetOs` / `exitIfNoGui`, `isForceRefreshStale`, `execBash`, `hasBinary`,
+`log`, `emitBash`, `getRuntimeOption`.
 
-Bash equivalents in `software/bootstrap/common-functions.bash`: `is_help_arg`,
-`safe_source`, `curl_bash_install`, `npm_install_global`, `has_persistent_binary`,
-`find_path`, `prompt_yes_no`, `ensure_binary_alias`, `exit_if_not_sudo`,
-`safe_touch`/`safe_mkdir`/`safe_chown`/`safe_chmod`, `get_native_arch` / `run_native`,
-plus a logging `sudo` wrapper. `tsc --declaration --allowJs` emits the full typed API
-into `software/types/` (`make format_jsdocs`) — read that when unsure of a signature.
+`tsc --declaration --allowJs` emits the full typed API into `software/types/`
+(`make format_jsdocs`) — read that when unsure of a signature.
 
 ---
 
 ## 10. Make targets
 
-```bash
-make init                  # npm ci + mkdir .build
-make setup                 # = setup_local_full → bash run.sh --setup --force
-make setup_local_profile   # profile refresh only, no dep install
-make setup_prod            # bootstrap from GitHub
-make format                # build_include → ci_binaries → script_indexes → jsdocs
-                           #   → spec_cleanup → shell (shfmt) → oxfmt
-make format_build_include  # process BEGIN/END markers
-make format_ci_binaries    # regenerate the ci-binary-checks block
-make build_all             # configs, hosts, webapp, postbuild
-make build_installer       # .build/install-bashrc.sh self-extracting installer
-make test_unit             # vitest, vitest.config.js
-make test_coverage         # + istanbul; thresholds live in vitest.config.js
-make test_profile          # bash -n / profile invariants
-make test_buildconfig      # inline-snapshot shape (…_update to refresh)
-make test_smoke[_local]    # puppeteer webapp (live / local dist)
-make test_dryrun           # run.sh --dryrun --setup; fails past DRYRUN_MAX_ERRORS (3)
-make test_all              # unit, profile, smoke, buildconfig, dryrun, shellcheck
-make validate              # format + unit + buildconfig + webapp + smoke_local
-                           #   + dryrun + shellcheck   ← run this before pushing
-make new-script name= os= type=
-make doctor                # environment diagnosis
-make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, node_modules …
-```
-
-The formatter is **oxfmt** (`npm run format`), not prettier, despite the
-`format_prettier` target name. Shell formatting is `shfmt -w -i 2 -bn -sr`.
+Full annotated list in **`DEV.md` → Make Targets**. The agent-relevant ones:
+`make format` (after touching BEGIN/END markers, the CI binary list, script indexes, or
+JSDoc), `make test_unit`, `make test_profile`, `make test_buildconfig`, `make test_dryrun`,
+`make new-script name= os= type=`, `make doctor`, and `make validate` — the pre-push gate
+(§14.1). The formatter is **oxfmt** (`npm run format`), not prettier, despite the
+`format_prettier` target name; shell formatting is `shfmt -w -i 2 -bn -sr`. The Makefile
+uses `.ONESHELL`; escape shell `$` as `$$`.
 
 ---
 
 ## 11. Testing
 
-One vitest config per suite:
-
-| Config | Suite |
-| --- | --- |
-| `vitest.config.js` | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
-| `vitest.profile.config.js` | `profileSyntax.spec.js` |
-| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js` |
-| `vitest.smoke.config.js` | webapp + raw-URL smokes against the live site |
-| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer) |
-
-```bash
-npx vitest run --config vitest.config.js software/tests/parseRawArgs.spec.js
-npx vitest run --config vitest.config.js -t "should return defaults when BASHRC_RAW_ARGS is empty"
-```
-
-`software/tests/setup.js` loads index.js in a VM sandbox — reach in with
-`getIndexFunction(name)` / `getIndexConstant(name)`; `fileSystem` and `fetchResponses`
-give in-memory mocks, auto-reset in `beforeEach`.
-
-**Coverage** is istanbul, scoped to `software/index.js`, `tools/build-include.js`, and
-`tools/generate-ci-binary-list.js`. Thresholds live in `vitest.config.js`, authoritative —
-don't duplicate the numbers here.
-
-When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touch
-`software/index.js` or `software/tools/build-include.js`, add or update unit tests.
-
-**VS Code debugging:** `.vscode/launch.json` has configs for the current script (via
-`software/.debug-runner.js`) and for Vitest.
+Suites, vitest configs, the VM-sandbox helpers (`getIndexFunction` / `getIndexConstant`,
+`fileSystem`, `fetchResponses`), coverage, and VS Code debug configs: **`DEV.md` →
+Testing / Vitest configs / Coverage**. Two rules that live here: register every new `.sh`
+file in `profileSyntax.spec.js`, and add or update unit tests whenever you touch
+`software/index.js` or `software/tools/build-include.js`.
 
 ### Enforced conventions — one spec each
 
@@ -609,35 +535,22 @@ When you add a `.sh` file, register it in `profileSyntax.spec.js`. When you touc
 
 ## 12. CI/CD
 
-`.github/workflows/build-main.yml`: **prep → build-{ubuntu,rhel,arch,debian,mac} in
-parallel → publish → test**.
+Phases, artifacts, and the publish/deploy flow: **`ARCHITECTURE.md` → Build & Release
+Flow** (`.github/workflows/build-main.yml` = prep → build-{ubuntu,rhel,arch,debian,mac}
+→ publish → test; `arch` / `debian` are `continue-on-error`). What matters here:
 
-- **prep** runs `make ci_prep` (clean, format, build autocomplete specs + webapp, local
-  smoke, dryrun, build installer, download release binaries), publishes a `prep-patch`
-  artifact, mirrors `install-bashrc.sh` to the `binary-cache` release.
-- **build-\*** run `make ci_build` (`CI=true bash run.sh --setup --force --verbose`) in
-  a distro container/runner, upload `.build/` + profile + logs, then emit collapsible
-  summaries: OS flags, profile syntax, binary verification, download-asset verification,
-  script results (`run_timing.json`), build summary. `arch` / `debian` are
-  `continue-on-error`.
-- **publish** merges every `.build/` artifact, amends HEAD with a CI trailer,
-  force-with-lease pushes, and deploys Pages.
-- **test** runs `ci_test_unit|profile|shellcheck|smoke|buildconfig|coverage`.
-
-Because publish amends and force-pushes, the SHA on `main` changes after CI —
-`git pull --rebase` before pushing again.
-
-**Adding/removing a CLI tool: edit `software/metadata/ci-binaries.json`**, then
-`make format_ci_binaries`. Only non-GUI command-line binaries belong there.
-`check_binary_required` fails the build — reserve it for binaries present on _every_
-platform, installed in the foreground on mac (`installBrewPackage`), since mac's
-background queue is skipped in CI. `check_binary_warn` never fails — use it for
-GitHub-release fallbacks, AUR-only packages, and anything backgrounded on mac.
-
-**Agent hooks** (`.claude/settings.json`): PreToolUse blocks any `Write`/`Edit` under
-`/.build/`; PostToolUse prints a `bash run.sh --files="…"` reminder after editing a
-`software/scripts/` `.js`/`.sh` (excluding `.common.js`, `index.js`, `build-include.js`,
-`bootstrap/*`, and `_`-prefixed basenames).
+- Publish amends HEAD and force-pushes, so the SHA on `main` changes after CI —
+  `git pull --rebase` before pushing again.
+- **Adding/removing a CLI tool: edit `software/metadata/ci-binaries.json`**, then
+  `make format_ci_binaries`. Only non-GUI command-line binaries belong there.
+  `check_binary_required` fails the build — reserve it for binaries present on _every_
+  platform, installed in the foreground on mac (`installBrewPackage`), since mac's
+  background queue is skipped in CI. `check_binary_warn` never fails — use it for
+  GitHub-release fallbacks, AUR-only packages, and anything backgrounded on mac.
+- **Agent hooks** (`.claude/settings.json`): PreToolUse blocks any `Write`/`Edit` under
+  `/.build/`; PostToolUse prints a `bash run.sh --files="…"` reminder after editing a
+  `software/scripts/` `.js`/`.sh` (excluding `.common.js`, `index.js`, `build-include.js`,
+  `bootstrap/*`, and `_`-prefixed basenames).
 
 ---
 
@@ -645,8 +558,8 @@ GitHub-release fallbacks, AUR-only packages, and anything backgrounded on mac.
 
 Load these instead of improvising the workflow. Each is
 `.claude/skills/<name>/SKILL.md` — the single source read natively by Claude Code,
-OpenCode, and Copilot CLI. `.opencode/commands/<name>.md` symlinks make them `/name`
-slash commands too.
+OpenCode, and Copilot CLI; `.opencode/commands/<name>.md` symlinks make them `/name`
+slash commands.
 
 | Skill | Use when |
 | --- | --- |
@@ -679,8 +592,8 @@ corpus has exactly **two** files you ever touch:
 
 That map is the **single registry** every CLI's `setup.js` reads via
 `// SOURCE software/scripts/advanced/llm/llm-common.js`. Keys are extension-less
-(`sy-list-prs`), which is what lets one map serve a file-based CLI and a folder-based
-one at once:
+(`sy-list-prs`), which lets one map serve a file-based CLI and a folder-based one at
+once:
 
 | CLI | Where the same map lands it |
 | --- | --- |
@@ -707,25 +620,21 @@ bash run.sh --files="software/scripts/advanced/llm/claude/setup.js,software/scri
 
 Run it twice. All surfaces must report the same count, and the second run must print no
 `Removed prior Sy skill` lines. Renaming or deleting a command **must** add the old name
-to `LLM_COMMAND_RETIRED_NAMES` in the same commit — that list is the only thing that
-cleans up dev machines still holding the old file.
+to `LLM_COMMAND_RETIRED_NAMES` in the same commit — the only thing that cleans up dev
+machines still holding the old file.
 
 ---
 
 ## 14. Working agreement
 
-**Before you finish, in order:**
-
-1. JSDoc on everything you touched.
-2. `bash run.sh --files="<the script you changed>"` — it must actually run.
-3. `make format` if you touched BEGIN/END markers, the CI binary list, script indexes,
-   or JSDoc.
-4. `make test_unit`, and `make validate` for anything touching `index.js`, `run.sh`,
-   `bootstrap/`, or markers.
-5. Run it twice — confirm idempotency.
-6. Update this file when you change `software/index.js`, `run.sh`, `common-env.sh`, or
-   `.github/actions/ci-build/action.yml`; update `docs/editor-keybindings.md` on any
-   keybinding change.
+**Before you finish, in order:** (1) JSDoc on everything you touched; (2)
+`bash run.sh --files="<the script you changed>"` — it must actually run; (3) `make format`
+if you touched BEGIN/END markers, the CI binary list, script indexes, or JSDoc; (4)
+`make test_unit`, and `make validate` for anything touching `index.js`, `run.sh`,
+`bootstrap/`, or markers; (5) run it twice — confirm idempotency; (6) update this file
+when you change `software/index.js`, `run.sh`, `common-env.sh`, or
+`.github/actions/ci-build/action.yml`, and `docs/editor-keybindings.md` on any keybinding
+change.
 
 ### 14.1 Validation cadence — batch it, don't run `make validate` per edit
 
