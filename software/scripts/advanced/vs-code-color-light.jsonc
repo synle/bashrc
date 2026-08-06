@@ -357,9 +357,13 @@
       // These rules exist only to stop the underlying VS Code "Default High Contrast Light"
       // theme from leaking through. tokenColorCustomizations is a *merge*, not a
       // replacement: any scope not named here keeps the base theme's color while sitting
-      // on our `editor.background`, which the base theme was never tuned against. Sixteen
-      // scopes measured under 7:1 in that state, the worst being `token.warn-token` at
-      // 2.45:1. The scope list is kept identical to the dark theme so the two stay in sync.
+      // on our `editor.background`, which the base theme was never tuned against. The
+      // worst offender was `punctuation.character.set.begin.regexp` at #D16969 on
+      // #f8f8f8 — 3.33:1, under even AA. Every scope below was measured under 7:1 in
+      // that state; the list is kept identical to the dark theme so the two stay
+      // structurally in sync, and `editorThemes.spec.js` re-measures the base theme on
+      // every run so a VS Code upgrade that adds a new low-contrast scope fails the
+      // suite instead of shipping.
       { "scope": ["meta.diff.header", "meta.diff.header.from-file", "meta.diff.header.to-file"], "settings": { "foreground": "#0033b3" } }, // {{light.blue}}
       { "scope": ["constant.character", "variable.language.this"], "settings": { "foreground": "#0033b3" } }, // {{light.blue}}
       {
@@ -391,6 +395,10 @@
           "punctuation.definition.character-class.regexp",
           "keyword.operator.or.regexp",
           "keyword.control.anchor.regexp",
+          "punctuation.character.set.begin.regexp",
+          "punctuation.character.set.end.regexp",
+          "keyword.operator.negation.regexp",
+          "support.other.parenthesis.regexp",
         ],
         "settings": { "foreground": "#9b2c2c" },
       }, // {{light.darkRed}}
@@ -411,6 +419,51 @@
         ],
         "settings": { "foreground": "#145e5e" },
       }, // {{light.brightCyan}}
+
+      // TextMate resolves the *most specific* selector, so the base theme's four-segment
+      // `storage.type.primitive.java` outranks our two-segment `storage.type` and the
+      // language-specific variants below all have to be named explicitly to be reclaimed.
+      {
+        "scope": [
+          "storage.type.numeric.go",
+          "storage.type.byte.go",
+          "storage.type.boolean.go",
+          "storage.type.string.go",
+          "storage.type.uintptr.go",
+          "storage.type.error.go",
+          "storage.type.rune.go",
+          "storage.type.cs",
+          "storage.type.generic.cs",
+          "storage.type.modifier.cs",
+          "storage.type.variable.cs",
+          "storage.type.annotation.java",
+          "storage.type.generic.java",
+          "storage.type.java",
+          "storage.type.object.array.java",
+          "storage.type.primitive.array.java",
+          "storage.type.primitive.java",
+          "storage.type.token.java",
+          "storage.type.groovy",
+          "storage.type.annotation.groovy",
+          "storage.type.parameters.groovy",
+          "storage.type.generic.groovy",
+          "storage.type.object.array.groovy",
+          "storage.type.primitive.array.groovy",
+          "storage.type.primitive.groovy",
+        ],
+        "settings": { "foreground": "#0033b3" },
+      }, // {{light.blue}}
+      { "scope": ["keyword.other.directive.using", "keyword.other.operator"], "settings": { "foreground": "#0033b3" } }, // {{light.blue}}
+      { "scope": ["support.constant.dom", "support.constant.json"], "settings": { "foreground": "#00416f" } }, // {{light.cyan}}
+      {
+        "scope": [
+          "punctuation.separator.namespace.ruby",
+          "entity.name.operator",
+          "keyword.operator.sizeof",
+          "keyword.operator.logical.python",
+        ],
+        "settings": { "foreground": "#1e1e1e" },
+      }, // {{light.foreground}}
     ],
   },
 }

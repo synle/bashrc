@@ -320,6 +320,50 @@ describe("vs code theme", () => {
     };
     expect(shape("dark")).toEqual(shape("light"));
   });
+
+  /**
+   * `editor.tokenColorCustomizations` is a MERGE onto the base theme, not a replacement.
+   * Any TextMate scope we do not name keeps the base theme's foreground while rendering on
+   * our `editor.background` — a pairing the base theme was never tuned against. That is how
+   * `meta.diff.header` ended up at 1.24:1 (`#000080` on `#0a0a0a`) and the regexp character
+   * class at 3.33:1 on light.
+   *
+   * This re-derives the leak set from the *installed* VS Code every run, so a future VS Code
+   * release that introduces a new low-contrast scope fails here instead of silently shipping.
+   * Skipped when VS Code is not installed (CI, headless boxes) — the "structurally identical"
+   * test above still holds the two override lists in sync.
+   */
+  const VS_CODE_BASE_THEMES = "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/theme-defaults/themes";
+
+  for (const [theme, baseFile] of [
+    ["dark", "hc_black.json"],
+    ["light", "hc_light.json"],
+  ]) {
+    const basePath = `${VS_CODE_BASE_THEMES}/${baseFile}`;
+
+    it.skipIf(!fs.existsSync(basePath))(`should leave no ${theme} base-theme scope under 7:1 on our background`, () => {
+      const parsed = parseJsonc(`software/scripts/advanced/vs-code-color-${theme}.jsonc`);
+      const background = parsed["workbench.colorCustomizations"]["editor.background"];
+
+      const owned = new Set();
+      for (const rule of parsed["editor.tokenColorCustomizations"].textMateRules) {
+        for (const scope of [].concat(rule.scope)) owned.add(scope);
+      }
+
+      const leaks = [];
+      for (const tokenColor of parseJsonc(basePath).tokenColors || []) {
+        const foreground = tokenColor.settings && tokenColor.settings.foreground;
+        if (!foreground || !/^#[0-9a-f]{6}$/i.test(foreground)) continue;
+        for (const scope of [].concat(tokenColor.scope || [])) {
+          if (owned.has(scope)) continue;
+          const ratio = contrast(foreground.toLowerCase(), background.toLowerCase());
+          if (ratio < 7) leaks.push(`${scope} (${foreground}) is ${ratio.toFixed(2)}:1`);
+        }
+      }
+
+      expect(leaks, `base theme scopes leaking through onto ${background}`).toEqual([]);
+    });
+  }
 });
 
 // ---- Windows Terminal & webapp ----
