@@ -178,9 +178,17 @@ async function doWork() {
   }
 
   // ---- Install Ghostty AppImage on Linux ----
+  // Gated on is_gui, not just the OS: Ghostty is a terminal *emulator*, so an
+  // AppImage on a headless box is ~50 MB that can never be launched. The config
+  // write below is deliberately NOT gated — it costs nothing and is already in
+  // place the day the machine gains a display.
   if (!is_os_mac && !is_os_windows && !is_os_mingw64 && !is_os_android_termux) {
-    const GHOSTTY_APPIMAGE_REPO = "pkgforge-dev/ghostty-appimage";
-    await downloadAndInstallBinary(GHOSTTY_APPIMAGE_REPO, (ver, isArm64) => `Ghostty-${ver}-${isArm64 ? "aarch64" : "x86_64"}.AppImage`);
+    if (is_gui) {
+      const GHOSTTY_APPIMAGE_REPO = "pkgforge-dev/ghostty-appimage";
+      await downloadAndInstallBinary(GHOSTTY_APPIMAGE_REPO, (ver, isArm64) => `Ghostty-${ver}-${isArm64 ? "aarch64" : "x86_64"}.AppImage`);
+    } else {
+      log(">>> Skipped Ghostty AppImage : No GUI display available (config still written)");
+    }
   }
 
   // ---- Deploy to local install ----

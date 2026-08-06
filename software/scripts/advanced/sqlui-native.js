@@ -15,20 +15,29 @@ const SQLUI_PORTAL_TARBALL = "sqlui-portal.tar.gz";
  *      downloadAndInstallBinary. Mac routes the .dmg through BASHRC_TEMP_DIR;
  *      Windows stages the .exe in ~/_extra/sqlui-native/ for NSIS, runs the
  *      silent install, and cleans up the folder once NSIS exits — neither
- *      leaves a copy behind.
+ *      leaves a copy behind. Skipped on a headless host — nothing can render it.
  *   2. sqlui-portal — Node-based CLI tarball shipped alongside the desktop
  *      app in the same synle/sqlui-native release, extracted to
  *      ~/.local/share/sqlui-portal/ with an exec-wrapper at
- *      ~/.local/bin/sqlui-portal.
+ *      ~/.local/bin/sqlui-portal. Installed unconditionally: it is a terminal
+ *      CLI, and a headless box is exactly where it earns its keep.
+ *
+ * The GUI check is an inline `if` rather than an exitIfNoGui() guard at the top
+ * because only the first half is display-dependent — a top-level guard would
+ * take the CLI down with it.
  */
 async function doWork() {
-  await downloadAndInstallBinary(SQLUI_NATIVE_REPO, (ver, isArm64) => {
-    return is_os_mac
-      ? `sqlui-native_${ver}_${isArm64 ? "aarch64" : "x64"}.dmg`
-      : is_os_windows
-        ? `sqlui-native_${ver}_x64-setup.exe`
-        : `sqlui-native_${ver}_amd64.AppImage`;
-  });
+  if (is_gui) {
+    await downloadAndInstallBinary(SQLUI_NATIVE_REPO, (ver, isArm64) => {
+      return is_os_mac
+        ? `sqlui-native_${ver}_${isArm64 ? "aarch64" : "x64"}.dmg`
+        : is_os_windows
+          ? `sqlui-native_${ver}_x64-setup.exe`
+          : `sqlui-native_${ver}_amd64.AppImage`;
+    });
+  } else {
+    log(">> Skipped sqlui-native desktop app : No GUI display available (installing sqlui-portal CLI only)");
+  }
 
   await _installSqluiPortal();
 }

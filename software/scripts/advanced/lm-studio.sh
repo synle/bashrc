@@ -22,6 +22,14 @@ LM_STUDIO_VERSION="0.3.5-2"
   exit 0
 }
 
+# Same reasoning as the CI skip, generalized: LM Studio is a GUI app and the
+# AppImage is ~700 MB, so downloading it onto a headless box (server, container,
+# ssh session) burns bandwidth and disk on something that can never be launched.
+((is_gui)) || {
+  echo ">>> Skipped lm-studio: no GUI display available"
+  exit 0
+}
+
 if ((is_os_mac)); then
   echo ">>> Skipped lm-studio: macOS uses Homebrew cask (mac/_full-setup.sh)"
   exit 0

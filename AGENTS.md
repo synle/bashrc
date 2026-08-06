@@ -429,8 +429,14 @@ Profile registration is buffered: `registerProfileBlock` /
   `is_os_windows`), so every shell start re-derives it and node inherits the result as
   env vars. Never add these to the `os_flags` snapshot loop.
 - **Override for testing:** `bash run.sh --setup --is_gui=0` rehearses a headless
-  install on a GUI box. Re-run `_detect_gui_flags` by hand after changing `$DISPLAY`
-  in a live shell.
+  install on a GUI box (`--is_gui_x11=` / `--is_gui_wayland=` likewise). `run.sh`'s
+  pre-scan maps these to `BASHRC_FORCE_IS_GUI*` env vars and `_detect_gui_flags`
+  applies them **last, inside itself**. Do not "fix" this by exporting `is_gui`
+  directly over the detected value: `$BASH_ENV` points every non-interactive bash at
+  `~/.bash_syle_common`, so the emitted install script and every node heredoc it
+  spawns re-run `_detect_gui_flags` and would silently recompute the override away.
+  Only `0` and `1` are honored; anything else is ignored rather than coerced. Re-run
+  `_detect_gui_flags` by hand after changing `$DISPLAY` in a live shell.
 - Use `is_gui` to decide _whether_ to install a GUI app, and `is_gui_x11` /
   `is_gui_wayland` to pick _which_ server-specific tool (xclip vs wl-copy, wmctrl vs
   swaymsg). Never gate a GUI app on `is_gui_x11` alone — that skips Wayland desktops.

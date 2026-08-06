@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | d75fa3505eaf138da6d4f5d779a13744 | 5.7 KB
+# software/bootstrap/common-env.sh | 82e99a50a8e8c40854fc4e67dc7a4f98 | 6.9 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -118,6 +118,13 @@ fi
 # on every shell start. Re-callable: run `_detect_gui_flags` by hand after changing
 # $DISPLAY in a live shell to refresh the flags.
 #
+# Overrides: $BASHRC_FORCE_IS_GUI / _X11 / _WAYLAND (set by run.sh from
+# `--is_gui=0` and friends) win over detection. The override lives INSIDE this
+# function rather than being exported over it afterwards because $BASH_ENV points
+# every non-interactive bash at ~/.bash_syle_common, so the emitted install script
+# — and every node heredoc it spawns — re-runs this function and would otherwise
+# silently recompute the detected value back on top of the override.
+#
 # Consumers:
 #   bash     ((is_gui)) / ((is_gui_x11)) / ((is_gui_wayland))
 #   node     is_gui / is_gui_x11 / is_gui_wayland globals + exitIfNoGui() (software/index.js)
@@ -135,6 +142,15 @@ function _detect_gui_flags() {
   elif ((${is_os_mac:-0} || ${is_os_windows:-0} || is_gui_x11 || is_gui_wayland)); then
     is_gui=1
   fi
+
+  # Explicit overrides win, and are applied last so they survive a re-detect.
+  # Compared against a literal 0/1 rather than run through is_truthy so this
+  # function stays dependency-free — it is declared into ~/.bash_syle_common and
+  # runs in contexts where the other helpers may not be defined yet. run.sh
+  # normalizes the user-supplied value to exactly "0" or "1" before exporting.
+  case "${BASHRC_FORCE_IS_GUI:-}" in 0 | 1) is_gui="$BASHRC_FORCE_IS_GUI" ;; esac
+  case "${BASHRC_FORCE_IS_GUI_X11:-}" in 0 | 1) is_gui_x11="$BASHRC_FORCE_IS_GUI_X11" ;; esac
+  case "${BASHRC_FORCE_IS_GUI_WAYLAND:-}" in 0 | 1) is_gui_wayland="$BASHRC_FORCE_IS_GUI_WAYLAND" ;; esac
 
   export is_gui is_gui_x11 is_gui_wayland
 }
@@ -590,14 +606,34 @@ unset os_flags
 ################################################################################
 # --- Pre-scan for flags that must take effect before node runs ---
 # All other flags are parsed by parseRawArgs in index.js.
-# Only --verbose (set -x) and --no-color must apply before node starts.
+# Only --verbose (set -x), --no-color, and the is_gui_* overrides must apply
+# before node starts.
+#
+# The is_gui overrides are handled here rather than in index.js because they must
+# reach BOTH consumers: node reads them from the environment, and the emitted
+# _full-setup.sh bash reads the same exported vars via `((is_gui))`. Overriding
+# in JS alone would let the two disagree mid-run.
+#
+# They are exported as BASHRC_FORCE_IS_GUI* rather than as is_gui* directly
+# because $BASH_ENV points every non-interactive bash at ~/.bash_syle_common,
+# which re-runs _detect_gui_flags — the emitted install script and every node
+# heredoc it spawns would silently recompute the detected value back on top of a
+# plain is_gui export. _detect_gui_flags applies these overrides itself, last, so
+# they survive any number of re-detects.
+#   bash run.sh --setup --is_gui=0   # rehearse a headless install on a GUI box
 ################################################################################
 for arg in "$@"; do
   case "$arg" in
   --verbose | -verbose | -V) set -x ;;
   --no-color | -no-color) export NO_COLOR=1 ;;
+  --is_gui=* | -is_gui=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI=1 || export BASHRC_FORCE_IS_GUI=0 ;;
+  --is_gui_x11=* | -is_gui_x11=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI_X11=1 || export BASHRC_FORCE_IS_GUI_X11=0 ;;
+  --is_gui_wayland=* | -is_gui_wayland=*) is_truthy "${arg#*=}" && export BASHRC_FORCE_IS_GUI_WAYLAND=1 || export BASHRC_FORCE_IS_GUI_WAYLAND=0 ;;
   esac
 done
+
+# Re-detect so the override applies to this shell too (node inherits from here).
+_detect_gui_flags
 
 ################################################################################
 # --- Load PRESETS_JSON (named --preset bundles) ---

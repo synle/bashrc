@@ -14,6 +14,7 @@ import { execFileSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getIndexFunction, getIndexConstant } from "./setup.js";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const COMMON_ENV = path.join(ROOT_DIR, "software/bootstrap/common-env.sh");
@@ -49,6 +50,7 @@ function detectGuiFlags(env = {}) {
     DETECTOR,
     // Clear every input so the host's real session can't leak into the assertions.
     "unset DISPLAY WAYLAND_DISPLAY SSH_CONNECTION SSH_CLIENT is_os_mac is_os_windows",
+    "unset BASHRC_FORCE_IS_GUI BASHRC_FORCE_IS_GUI_X11 BASHRC_FORCE_IS_GUI_WAYLAND",
     ...Object.entries(env).map(([k, v]) => `export ${k}=${JSON.stringify(v)}`),
     "_detect_gui_flags",
     ...GUI_FLAGS.map((f) => `echo ${f}=\${${f}:-MISSING}`),
@@ -133,5 +135,89 @@ describe("_detect_gui_flags", () => {
 
   it("parses under the bash 3.2 floor (/bin/bash)", () => {
     expect(() => execFileSync("/bin/bash", ["-n", COMMON_ENV], { encoding: "utf-8" })).not.toThrow();
+  });
+});
+
+describe("_detect_gui_flags overrides", () => {
+  // run.sh maps --is_gui=0 to BASHRC_FORCE_IS_GUI=0. The override has to be applied
+  // INSIDE the detector: $BASH_ENV points every non-interactive bash at
+  // ~/.bash_syle_common, so the emitted install script and its node heredocs re-run
+  // _detect_gui_flags and would otherwise recompute the detected value back on top.
+
+  it("BASHRC_FORCE_IS_GUI=0 forces headless even with a display attached", () => {
+    expect(detectGuiFlags({ DISPLAY: ":0", BASHRC_FORCE_IS_GUI: "0" }).is_gui).toBe(0);
+  });
+
+  it("BASHRC_FORCE_IS_GUI=1 forces a GUI even on a headless ssh session", () => {
+    expect(detectGuiFlags({ SSH_CONNECTION: "1.2.3.4 22 5.6.7.8 22", BASHRC_FORCE_IS_GUI: "1" }).is_gui).toBe(1);
+  });
+
+  it("overrides each flag independently", () => {
+    const flags = detectGuiFlags({ BASHRC_FORCE_IS_GUI_X11: "1", BASHRC_FORCE_IS_GUI_WAYLAND: "1" });
+    expect(flags.is_gui_x11).toBe(1);
+    expect(flags.is_gui_wayland).toBe(1);
+    // is_gui is computed before the overrides land, so it stays detected.
+    expect(flags.is_gui).toBe(0);
+  });
+
+  it("ignores a non 0/1 override rather than coercing it", () => {
+    // run.sh normalizes user input to exactly "0" or "1"; anything else is a bug
+    // upstream and must not corrupt the flag into a non-integer.
+    for (const value of ["", "yes", "true", "2"]) {
+      expect(detectGuiFlags({ DISPLAY: ":0", BASHRC_FORCE_IS_GUI: value }).is_gui, `value=${value}`).toBe(1);
+    }
+  });
+
+  it("survives a re-detect, which is what BASH_ENV triggers on every subshell", () => {
+    const script = [
+      DETECTOR,
+      "unset DISPLAY WAYLAND_DISPLAY SSH_CONNECTION SSH_CLIENT is_os_windows",
+      "export is_os_mac=1 BASHRC_FORCE_IS_GUI=0",
+      "_detect_gui_flags",
+      "_detect_gui_flags",
+      "_detect_gui_flags",
+      "echo is_gui=$is_gui",
+    ].join("\n");
+    expect(execFileSync("bash", ["-c", script], { encoding: "utf-8" }).trim()).toBe("is_gui=0");
+  });
+});
+
+describe("exitIfNoGui", () => {
+  // The sandbox loads index.js with no is_gui env var set, so all three flags are
+  // false — i.e. the headless case, which is the one the guard exists to catch.
+  const exitIfNoGui = getIndexFunction("exitIfNoGui");
+
+  it("all three flags default to false when the env vars are absent", () => {
+    expect(getIndexConstant("is_gui")).toBe(false);
+    expect(getIndexConstant("is_gui_x11")).toBe(false);
+    expect(getIndexConstant("is_gui_wayland")).toBe(false);
+  });
+
+  it("throws ScriptSkipError on a headless host so the runner skips the script", () => {
+    expect(() => exitIfNoGui()).toThrow(/No GUI display available/);
+    try {
+      exitIfNoGui();
+    } catch (e) {
+      // ScriptSkipError is caught by the per-script try/catch as a clean skip;
+      // any other error name would fail the whole run instead.
+      expect(e.name).toBe("ScriptSkipError");
+    }
+  });
+
+  it("names the specific display server in x11 / wayland mode", () => {
+    expect(() => exitIfNoGui("x11")).toThrow(/No x11 display server available/);
+    expect(() => exitIfNoGui("wayland")).toThrow(/No wayland display server available/);
+  });
+
+  it("rejects an unknown mode with a hard error, not a silent skip", () => {
+    let caught;
+    try {
+      exitIfNoGui("xorg");
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeDefined();
+    expect(caught.name).not.toBe("ScriptSkipError");
+    expect(caught.message).toMatch(/unknown mode 'xorg'/);
   });
 });

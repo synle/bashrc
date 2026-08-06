@@ -13,8 +13,13 @@ const DISPLAY_DJ_BUNDLE_ID = "com.synle.display-dj";
  * so no-op skip runs (installed version already matches upstream) don't make
  * the user re-grant Accessibility every time. The user re-grants access in
  * System Settings > Privacy & Security > Accessibility after this runs.
+ *
+ * Skipped on a headless host: display-dj controls monitor brightness over DDC,
+ * so with no display attached there is nothing for it to talk to.
  */
 async function doWork() {
+  exitIfNoGui();
+
   const installed = await downloadAndInstallBinary(DISPLAY_DJ_REPO, (ver, isArm64) => {
     return is_os_mac
       ? `Display.DJ_${ver}_${isArm64 ? "aarch64" : "x64"}.dmg`

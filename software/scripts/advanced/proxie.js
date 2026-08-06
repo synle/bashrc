@@ -9,8 +9,12 @@ const PROXIE_REPO = "synle/proxie";
  * sqlui-native / skiff-files (e.g. `Proxie_0.2.0_x64.dmg`). No post-install
  * permission reset is needed — proxie does not require macOS Accessibility
  * or other privileged grants.
+ *
+ * Skipped on a headless host — a desktop app nothing can render is dead weight.
  */
 async function doWork() {
+  exitIfNoGui();
+
   await downloadAndInstallBinary(PROXIE_REPO, (ver, isArm64) => {
     return is_os_mac
       ? `Proxie_${ver}_${isArm64 ? "aarch64" : "x64"}.dmg`

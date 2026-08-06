@@ -74,6 +74,13 @@ fi
 # on every shell start. Re-callable: run `_detect_gui_flags` by hand after changing
 # $DISPLAY in a live shell to refresh the flags.
 #
+# Overrides: $BASHRC_FORCE_IS_GUI / _X11 / _WAYLAND (set by run.sh from
+# `--is_gui=0` and friends) win over detection. The override lives INSIDE this
+# function rather than being exported over it afterwards because $BASH_ENV points
+# every non-interactive bash at ~/.bash_syle_common, so the emitted install script
+# — and every node heredoc it spawns — re-runs this function and would otherwise
+# silently recompute the detected value back on top of the override.
+#
 # Consumers:
 #   bash     ((is_gui)) / ((is_gui_x11)) / ((is_gui_wayland))
 #   node     is_gui / is_gui_x11 / is_gui_wayland globals + exitIfNoGui() (software/index.js)
@@ -91,6 +98,15 @@ function _detect_gui_flags() {
   elif ((${is_os_mac:-0} || ${is_os_windows:-0} || is_gui_x11 || is_gui_wayland)); then
     is_gui=1
   fi
+
+  # Explicit overrides win, and are applied last so they survive a re-detect.
+  # Compared against a literal 0/1 rather than run through is_truthy so this
+  # function stays dependency-free — it is declared into ~/.bash_syle_common and
+  # runs in contexts where the other helpers may not be defined yet. run.sh
+  # normalizes the user-supplied value to exactly "0" or "1" before exporting.
+  case "${BASHRC_FORCE_IS_GUI:-}" in 0 | 1) is_gui="$BASHRC_FORCE_IS_GUI" ;; esac
+  case "${BASHRC_FORCE_IS_GUI_X11:-}" in 0 | 1) is_gui_x11="$BASHRC_FORCE_IS_GUI_X11" ;; esac
+  case "${BASHRC_FORCE_IS_GUI_WAYLAND:-}" in 0 | 1) is_gui_wayland="$BASHRC_FORCE_IS_GUI_WAYLAND" ;; esac
 
   export is_gui is_gui_x11 is_gui_wayland
 }
