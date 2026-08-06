@@ -3642,9 +3642,73 @@ function _writeUrlCache(url, content) {
 }
 
 /**
+ * Prefix that a URL must start with, exactly, to be considered a GitHub API call
+ * eligible for an Authorization header. Compared with startsWith against the full URL
+ * (trailing slash included) so a lookalike host like `https://api.github.com.evil.test/`
+ * can never match and receive the token.
+ * @type {string}
+ */
+const _GITHUB_API_URL_PREFIX = "https://api.github.com/";
+
+/**
+ * Memoized GitHub API token. `undefined` = not resolved yet, `""` = resolved and none
+ * available. Cached per process so the `gh` subprocess is paid at most once — index.js is
+ * inlined into every bundled node heredoc, so an eager or unmemoized lookup would run
+ * `gh auth token` dozens of times per run.
+ * @type {string|undefined}
+ */
+let _githubApiTokenCache;
+
+/**
+ * Resolves a GitHub API token, or "" when none is available.
+ *
+ * Anonymous api.github.com allows 60 requests/hour *per IP*, shared with every other tool
+ * on the machine. A single setup run spends several on release lookups, so the budget is
+ * routinely exhausted — and an exhausted budget is not a loud failure: the 403 body has no
+ * `tag_name`, so fetchGitHubReleaseVersion used to report "No official release found" and
+ * silently skip the install. An authenticated token raises the ceiling to 5000/hour, which
+ * makes the failure mode unreachable in practice.
+ *
+ * Resolution order is env first (CI sets GH_TOKEN/GITHUB_TOKEN, and an explicit env var
+ * should always win) then `gh auth token`, reusing the login the repo's tooling already
+ * requires rather than introducing a new credential to configure. Never returns or logs
+ * the token itself.
+ * @returns {string} A GitHub token, or "" when unauthenticated
+ */
+function _getGitHubApiToken() {
+  if (_githubApiTokenCache !== undefined) return _githubApiTokenCache;
+  _githubApiTokenCache = "";
+  const envToken = (process.env.GH_TOKEN || process.env.GITHUB_TOKEN || "").trim();
+  if (envToken) {
+    _githubApiTokenCache = envToken;
+    return _githubApiTokenCache;
+  }
+  try {
+    if (hasBinary("gh")) _githubApiTokenCache = execBashSync("gh auth token 2> /dev/null", { timeout: 5000 });
+  } catch (err) {
+    // Not logged in, gh missing, or the call timed out — stay anonymous rather than fail.
+    _githubApiTokenCache = "";
+  }
+  return _githubApiTokenCache;
+}
+
+/**
+ * Tracks whether the last GitHub API response was refused for rate limiting, so callers
+ * can tell "this repo genuinely has no release" apart from "we ran out of API budget".
+ * @type {boolean}
+ */
+let _githubApiRateLimited = false;
+
+/**
  * Fetches text content from a URL. Uses the built-in `fetch` when available
  * (Node 18+), otherwise falls back to `curl` via execBash for older runtimes
  * (e.g. the bootstrap node fetched by run.sh on a fresh machine).
+ *
+ * Requests to api.github.com carry an Authorization header when a token is available
+ * (see {@link _getGitHubApiToken}). The token is attached ONLY for that exact host prefix
+ * — never for arbitrary URLs, which would leak the credential to third-party hosts — and
+ * on the curl fallback it is passed through the child environment rather than argv, so it
+ * does not show up in the process list.
  *
  * Transport is selected ONCE up front so an AbortSignal timeout on the fetch
  * branch is NOT misinterpreted as "fetch unavailable, try curl" — that
@@ -3670,19 +3734,41 @@ async function _readTextFromURL(url) {
   if (!url.startsWith("http")) throw new Error(`Invalid URL: ${url}`);
   const cached = _readUrlCache(url);
   if (cached !== null) return cached.trim();
+  const isGitHubApi = url.startsWith(_GITHUB_API_URL_PREFIX);
+  const authToken = isGitHubApi ? _getGitHubApiToken() : "";
   let result = "";
   try {
     if (typeof fetch === "function") {
       const res = await fetch(url, {
         signal: AbortSignal.timeout(_URL_FETCH_TIMEOUT_MS),
+        ...(authToken ? { headers: { Authorization: `Bearer ${authToken}` } } : {}),
       });
       if (!res.ok) {
+        // A GitHub refusal with no remaining budget is a rate limit, not a missing
+        // resource. Flag it so callers stop reporting it as "no release found", and say
+        // so in the log with the concrete remedy.
+        if (isGitHubApi && (res.status === 403 || res.status === 429) && res.headers.get("x-ratelimit-remaining") === "0") {
+          _githubApiRateLimited = true;
+          const resetAt = Number(res.headers.get("x-ratelimit-reset") || 0) * 1000;
+          const waitSeconds = resetAt ? Math.max(0, Math.round((resetAt - Date.now()) / 1000)) : 0;
+          log(
+            `[Warning] GitHub API rate limit exhausted (${authToken ? "authenticated" : "anonymous, 60/hr"})` +
+              `${waitSeconds ? `, resets in ${waitSeconds}s` : ""}` +
+              `${authToken ? "" : ` — run \`gh auth login\` to raise the limit to 5000/hr`}`,
+          );
+          return "";
+        }
         log(`[Warning] readTextFromURL ${url} failed: HTTP ${res.status} ${String(res.statusText || "").slice(0, 100)}`);
         return "";
       }
       result = await res.text();
     } else {
-      result = await execBash(`curl -fsSL --max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`);
+      // Token goes through the environment, never the command line, so it cannot be read
+      // out of the process list by another user on the machine.
+      const authHeaderArg = authToken ? `-H "Authorization: Bearer $BASHRC_GH_API_TOKEN" ` : "";
+      result = await execBash(`curl -fsSL ${authHeaderArg}--max-time ${_URL_FETCH_TIMEOUT_MS / 1000} ${url}`, {
+        ...(authToken ? { env: { ...process.env, BASHRC_GH_API_TOKEN: authToken } } : {}),
+      });
     }
   } catch (err) {
     // Normalize the failure reason to one of: timeout | <node errno> | <error name>.
@@ -3952,13 +4038,25 @@ function getRepoNameFromId(repoId) {
 
 /**
  * Fetches the latest release version tag from a GitHub repo.
+ *
+ * Distinguishes an exhausted API budget from a repo that genuinely has no release. Both
+ * produce a response without a `tag_name`, and conflating them was actively misleading:
+ * a rate-limited run reported "No official release found for synle/url-porter" for six
+ * repos that all have releases, and skipped every one of those installs as though that
+ * were the correct outcome. Both cases still raise ScriptSkipError — a skip is the right
+ * behavior when the version cannot be resolved — but the message now names the real cause.
  * @param {string} repoId - Repository identifier ("owner/repo" or "owner/repo/version")
  * @returns {Promise<string>} The tag_name from the release (e.g. "v1.2.0" or "1.2.0")
  */
 async function fetchGitHubReleaseVersion(repoId) {
   const releaseData = await readJson`${getGitHubReleaseApiUrl(repoId)}`;
   const version = releaseData.tag_name || "";
-  if (!version) throw new ScriptSkipError(`No official release found for ${repoId}`);
+  if (!version) {
+    if (_githubApiRateLimited) {
+      throw new ScriptSkipError(`GitHub API rate limit exhausted — could not resolve release for ${repoId}`);
+    }
+    throw new ScriptSkipError(`No official release found for ${repoId}`);
+  }
   return version;
 }
 
