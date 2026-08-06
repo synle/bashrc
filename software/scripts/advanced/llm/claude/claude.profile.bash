@@ -76,6 +76,51 @@ function _claude_local_context_tokens() {
   echo "$_CLAUDE_LOCAL_CTX_TOKENS"
 }
 
+# _claude_is_third_party_endpoint: true when ANTHROPIC_BASE_URL points somewhere that is not Anthropic
+#
+# `http*` alone is not the test: ANTHROPIC_BASE_URL is legitimately set to
+# https://api.anthropic.com by proxy/cert setups, and scrubbing credentials there would
+# break ordinary first-party use. Only a non-anthropic.com host counts as self-hosted.
+function _claude_is_third_party_endpoint() {
+  case "${ANTHROPIC_BASE_URL:-}" in
+  *anthropic.com*) return 1 ;;
+  http*) return 0 ;;
+  *) return 1 ;;
+  esac
+}
+
+# _claude_scrub_anthropic_credentials: strip first-party credentials before talking to a local endpoint
+#
+# MUST be called inside the subshell that execs claude — every line here mutates the
+# environment, and none of it should survive into the caller's shell.
+#
+# Two separate problems, both measured against claude 2.1.223 on a managed machine:
+#
+#   1. A managed-settings login pin (`forceLoginMethod`) refuses to start at all when ANY
+#      Anthropic credential env var is set:
+#        "This machine's managed settings require a first-party login, but an
+#         Anthropic-issued credential (ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, or
+#         apiKeyHelper) is configured."
+#      Confirmed for BOTH ANTHROPIC_AUTH_TOKEN and ANTHROPIC_API_KEY, so neither can be
+#      used to mark the session as self-hosted. Hence: unset, never set.
+#
+#   2. With those unset, Claude Code falls back to the API key in the macOS Keychain
+#      (service "Claude Code") and sends it as `x-api-key` to whatever ANTHROPIC_BASE_URL
+#      names — verified by proxying a run and reading the headers: a real `sk-ant-api03-`
+#      key was shipped to the local box. Clearing the env fixes the pin and creates a
+#      credential leak.
+#
+# ANTHROPIC_CUSTOM_HEADERS resolves both: it is not a credential var (the pin ignores it)
+# but it overrides the outgoing header, so the placeholder goes out and the Keychain key
+# stays home. Verified through the same proxy — `x-api-key: local` on the wire, no
+# `sk-ant-` anywhere, session answers normally. A caller-supplied value wins, which is the
+# hook for a gateway that wants real credentials.
+function _claude_scrub_anthropic_credentials() {
+  unset ANTHROPIC_API_KEY
+  unset ANTHROPIC_AUTH_TOKEN
+  export ANTHROPIC_CUSTOM_HEADERS="${ANTHROPIC_CUSTOM_HEADERS:-x-api-key: local}"
+}
+
 # claude_with_ip_address: run `claude` against a self-hosted Anthropic-compatible endpoint
 #
 # Host and model both default to the sy-omen45l workstation values exported by
@@ -108,6 +153,12 @@ point this at the gateway's port; opencode (\`op\`) talks to Ollama natively.
 The model's real context window is read from the daemon and passed through
 CLAUDE_CODE_MAX_CONTEXT_TOKENS, so Claude Code stops assuming 200k for a tag it
 does not recognize. Export that variable yourself to override.
+
+First-party credentials are stripped for the session: ANTHROPIC_API_KEY and
+ANTHROPIC_AUTH_TOKEN are unset (a managed-settings login pin refuses to start
+when either is set), and ANTHROPIC_CUSTOM_HEADERS sends a placeholder x-api-key
+so the Keychain-stored Anthropic key is never shipped to a third-party host.
+Export ANTHROPIC_CUSTOM_HEADERS yourself when a gateway needs real credentials.
 
 Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
     return 0
@@ -146,16 +197,16 @@ Set SY_CLAUDE_LOCAL_FORCE=1 to skip the probe and launch anyway."
     return 1
   fi
 
-  # ANTHROPIC_AUTH_TOKEN (not ANTHROPIC_API_KEY) is what makes Claude Code stop using
-  # the saved claude.ai subscription credential for this session; a self-hosted gateway
-  # ignores the value but the variable has to be present. API_TIMEOUT_MS is raised well
-  # past the 60s-class default because a local model can spend minutes on prompt eval
-  # plus generation, and the client giving up first is indistinguishable from a hang.
+  # Credential scrubbing for the self-hosted case is owned by the `claude` wrapper
+  # (_claude_scrub_anthropic_credentials) — nothing is set here, because setting
+  # ANTHROPIC_AUTH_TOKEN is exactly what a managed-settings org pin refuses. See that
+  # function for the measurements behind it. API_TIMEOUT_MS is raised well past the
+  # 60s-class default because a local model can spend minutes on prompt eval plus
+  # generation, and the client giving up first is indistinguishable from a hang.
   # CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC keeps background calls off a single-slot
   # local daemon so they can't queue ahead of the turn you are waiting on.
   echo -e ANTHROPIC_BASE_URL="$host" claude --model "$model\n\n"
   ANTHROPIC_BASE_URL="$host" \
-    ANTHROPIC_AUTH_TOKEN="${ANTHROPIC_AUTH_TOKEN:-local}" \
     ANTHROPIC_SMALL_FAST_MODEL="${ANTHROPIC_SMALL_FAST_MODEL:-$model}" \
     ANTHROPIC_DEFAULT_HAIKU_MODEL="${ANTHROPIC_DEFAULT_HAIKU_MODEL:-$model}" \
     API_TIMEOUT_MS="${API_TIMEOUT_MS:-1200000}" \
@@ -193,9 +244,9 @@ function claude() {
   fi
 
   # properly clean up and hook up for the ollama
-  local _cl_ctx=""
-  if [[ "${ANTHROPIC_BASE_URL:-}" == http* ]]; then
-    unset ANTHROPIC_API_KEY
+  local _cl_local=0 _cl_ctx=""
+  if _claude_is_third_party_endpoint; then
+    _cl_local=1
     _cl_ctx="$(_claude_local_context_tokens "$@")"
   fi
 
@@ -234,15 +285,26 @@ function claude() {
   fi
   # Echo the resolved invocation to stderr so the user can see all flags being
   # passed through (stderr keeps it out of `claude --print ... | jq` pipelines).
-  # The context override, when one was resolved, is echoed as the env prefix it
-  # actually is so the printed line stays copy-pasteable.
-  if [ -n "$_cl_ctx" ]; then
-    echo "CLAUDE_CODE_MAX_CONTEXT_TOKENS=$_cl_ctx" "${_cl_cmd[@]}" "$@" >&2
-    CLAUDE_CODE_MAX_CONTEXT_TOKENS="$_cl_ctx" "${_cl_cmd[@]}" "$@"
-  else
-    echo "${_cl_cmd[@]}" "$@" >&2
-    "${_cl_cmd[@]}" "$@"
+  if ((_cl_local)); then
+    echo "[self-hosted endpoint ${ANTHROPIC_BASE_URL}] cleared ANTHROPIC_API_KEY + ANTHROPIC_AUTH_TOKEN${_cl_ctx:+, context=$_cl_ctx}" >&2
   fi
+  echo "${_cl_cmd[@]}" "$@" >&2
+
+  # Self-hosted endpoint: run in a subshell so the credential scrub and the context
+  # override apply to this invocation only and never linger in the caller's shell —
+  # a stale CLAUDE_CODE_MAX_CONTEXT_TOKENS would silently mis-size the next model.
+  if ((_cl_local)); then
+    (
+      _claude_scrub_anthropic_credentials
+      if [ -n "$_cl_ctx" ]; then
+        export CLAUDE_CODE_MAX_CONTEXT_TOKENS="$_cl_ctx"
+      fi
+      "${_cl_cmd[@]}" "$@"
+    )
+    return $?
+  fi
+
+  "${_cl_cmd[@]}" "$@"
 }
 
 # `cl` runs claude against the sy-omen45l Ollama box. Both the host and the model come
