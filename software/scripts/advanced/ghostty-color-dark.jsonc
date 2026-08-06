@@ -1,0 +1,46 @@
+{
+  // Sy Dark — Ghostty theme source. Rendered to ~/.config/ghostty/themes/Sy Dark
+  // by software/scripts/advanced/ghostty.js as `key = value` lines.
+  //
+  // Every literal here is stamped from COLOR_MAP in software/tools/build-include.js
+  // by `make format_build_include`. Edit COLOR_MAP, never these values.
+  // software/tests/terminalThemes.spec.js fails if a literal drifts off its marker.
+
+  // --- ANSI ramp ---
+  // Index order is fixed by terminal convention: 0-7 normal, 8-15 bright.
+  // `black` and `brightWhite` are the ramp anchors and are intentionally exempt
+  // from the 7:1 floor — every other index is tuned against `background`.
+  "palette": [
+    "#000000", // {{dark.black}}
+    "#f67070", // {{dark.red}}
+    "#76a762", // {{dark.green}}
+    "#dcdcaa", // {{dark.yellow}}
+    "#5ca0d7", // {{dark.blue}}
+    "#c586c0", // {{dark.purple}}
+    "#4ec9b0", // {{dark.cyan}}
+    "#cccccc", // {{dark.white}}
+    "#a0a0a0", // {{dark.brightBlack}}
+    "#ff6e6e", // {{dark.brightRed}}
+    "#69ff94", // {{dark.brightGreen}}
+    "#ffffa5", // {{dark.brightYellow}}
+    "#4fc1ff", // {{dark.brightBlue}}
+    "#ff92df", // {{dark.brightPurple}}
+    "#a4ffff", // {{dark.brightCyan}}
+    "#ffffff", // {{dark.brightWhite}}
+  ],
+
+  // --- Surfaces ---
+  "background": "#0a0a0a", // {{dark.background}}
+  "foreground": "#e8e8e8", // {{dark.foreground}}
+
+  // --- Cursor ---
+  // cursor-text is the background so the glyph under a block cursor inverts cleanly.
+  "cursor-color": "#5ca0d7", // {{dark.cursorColor}}
+  "cursor-text": "#0a0a0a", // {{dark.background}}
+
+  // --- Selection ---
+  // Explicit foreground: without it Ghostty keeps the cell's own color, which can
+  // land a dim ANSI hue on the selection fill.
+  "selection-background": "#1b3c5e", // {{dark.selection}}
+  "selection-foreground": "#e8e8e8", // {{dark.foreground}}
+}
