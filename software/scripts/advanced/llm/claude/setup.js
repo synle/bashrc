@@ -290,6 +290,7 @@ const CLAUDE_COMMAND_DEPLOY_MAP = {
   "sy-create-pr.md": "create-pr",
   "sy-draft-pr.md": "draft-pr",
   "sy-list-prs.md": "list-prs",
+  "sy-list-prs-pending.md": "list-prs-pending",
   "sy-review-pr.md": "review-pr",
   "sy-review-prs.md": "review-prs",
   "sy-slack-prs.md": "slack-prs",

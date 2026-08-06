@@ -4,7 +4,7 @@
 
 `$ARGUMENTS` is a free-form string that may carry three independent dimensions: a **format keyword**, a **scope**, and an **author**.
 
-- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`. Defaults to `short` if absent.
+- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`.
 - **Scope** — pick exactly one (first match wins):
   - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
@@ -28,11 +28,15 @@ Examples:
 - `/sy-list-prs table here` → table format, `@me` PRs in repos under cwd
 - `/sy-list-prs long https://github.com/synle/bashrc/pull/42 synle/foo#7` → long format, those two PRs only
 - `/sy-list-prs #42` → short format, PR #42 in cwd's repo (cwd must be a git repo)
+- `/sy-list-prs pingpong` → ping-pong pulse render, `@me` PRs in repos under cwd
+- `/sy-list-prs pingpong pwd` → same, explicit PWD scope (what `/sy-babysit-prs` passes on every pulse)
+- `/sy-list-prs links` → bullet list of PR URLs (`- <url>` per line) — `@me` PRs in repos under cwd
+- `/sy-list-prs links all` → bullet list of every `@me` PR URL across all repos
 
 ## Parsing $ARGUMENTS
 
 1. Tokenize `$ARGUMENTS` on whitespace. (Quoted multi-word author names — e.g. `"Alice Doe"` — preserve as one token.)
-2. **Extract the format keyword** — pick the first token (case-insensitive) that matches `short`, `long`, or `table`. Remove it from the token list. If no match, format = `short`.
+2. **Extract the format keyword** — pick the first token (case-insensitive) that matches `short`, `long`, `table`, `links` / `link` (both normalize to `links`), or `pingpong` / `ping-pong` / `pulse` (all three normalize to `pingpong`). Remove it from the token list. If no match, format = `short`.
 3. **Determine scope from remaining tokens** (first match wins):
    - **Explicit PR refs** — every remaining token is a PR ref (URL, `<owner>/<repo>#<n>`, `#<n>`, or pure digits) → scope = explicit. Normalize each to a full URL per the `/sy-babysit-prs` rules (bare `#<n>` / digits require cwd is a git repo with GitHub `origin`; resolve `<owner>/<repo>` via `git remote get-url origin` — never from the folder name; bad tokens error out — do NOT silently skip).
    - **PWD keyword** — first remaining token (case-insensitive) is one of the PWD keyword set → scope = pwd. Any extra tokens after the keyword are an error (PWD mode takes no author or refs).
@@ -117,11 +121,13 @@ Before rendering, resolve your own handle once (`gh api user --jq .login`) and c
 
 Where the author goes, per format:
 
-| Format  | Placement                                                                                      |
-| ------- | ---------------------------------------------------------------------------------------------- |
-| `short` | Group heading only — `## NEEDS ATTENTION (2 — @me 1, @alice 1)`. **URL lines stay bare.**      |
-| `long`  | In the description line, right after the repo: `#123 [owner/repo] @alice — <title> — <status>` |
-| `table` | A dedicated `Author` column, inserted after `Repo`                                             |
+| Format     | Placement                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| `short`    | Group heading only — `## NEEDS ATTENTION (2 — @me 1, @alice 1)`. **URL lines stay bare.**      |
+| `long`     | In the description line, right after the repo: `#123 [owner/repo] @alice — <title> — <status>` |
+| `table`    | A dedicated `Author` column, inserted after `Repo`                                             |
+| `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line        |
+| `pingpong` | Second line of the `PR` cell — the author is always shown, mixed or not                        |
 
 **`short` URL lines are machine input — never decorate them.** `/sy-babysit-prs` consumes `/sy-list-prs short` line-by-line as full PR URLs. Adding a handle, prefix, or suffix to those lines breaks it. Group headings and the leading summary line are already skipped by that parser, so that's where mixed-author information belongs.
 
@@ -190,12 +196,95 @@ On a mixed-author list, insert an `Author` column immediately after `Repo`, fill
 - **Ready to Merge?**: `yes` if group 5 (READY TO MERGE), `yes with N open comments` if group 4, otherwise `no` with the blocker.
 - In the NOT READY / WIP / DRAFT table, prepend `[WIP]` and/or `[Draft]` tags to the Title column.
 
+### Format: `links`
+
+A bare bullet list of PR URLs — one `- <url>` per line. **Nothing else** — no group headings, no counts, no blank lines between groups, no `Mixed authors:` line, no titles, no status. The whole output is a clean link list you can paste into Slack, a PR body, or notes, and that another command can read line-by-line after stripping the `- ` prefix.
+
+```
+- https://github.com/owner/repo-a/pull/123
+- https://github.com/owner/repo-b/pull/456
+- https://github.com/owner/repo-c/pull/789
+```
+
+- Every line is exactly `- ` followed by the URL. No numbering, no nesting, no indentation, no trailing punctuation.
+- Classification still runs — it only drives the **order**. Emit the groups in the same display order as every other format (NEEDS ATTENTION → READY TO MERGE → READY TO MERGE (with comments) → NEED APPROVAL → NOT READY / WIP / DRAFT), with the same within-group sort, then flatten to one bullet per line.
+- Print the full `https://github.com/<owner>/<repo>/pull/<number>` form here — `links` output is meant to be consumed by other commands, and the scheme keeps every consumer happy.
+- Zero PRs → print nothing at all (empty output). No "no PRs found" line: an empty list is the correct machine answer, and a prose line would be parsed as a link by whatever is reading.
+- `links` is the strictest machine-input format in this file. The `- ` prefix is the only decoration — never add a handle, title, status, annotation, or code fence.
+
+### Format: `pingpong`
+
+The heartbeat / pulse render. One flat board — no per-group tables — answering "what is going on right now, and what are the agents doing about it". `/sy-babysit-prs` and `/sy-review-prs` emit this on a fixed cadence so a long async fan-out is never a black box.
+
+Structure: a header block, then one table. Keep every cell terse — fragments, not sentences. This is a status board, not prose.
+
+```
+🏓 Agent Status Ping-Pong — 2026-08-05 17:34 PDT
+Next ping-pong: 2026-08-05 17:44 PDT (in 10 min)
+
+Repos Scanned (3): acme/widget-store, acme/api, acme/web
+PRs Scanned (5):
+- acme/widget-store: 2
+- acme/api: 2
+- acme/web: 1
+
+| PR | Status | Agent |
+| --- | --- | --- |
+| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401 | ⛔ BLOCK<br>CI failing — `unit-tests` red | 🔄 IN PROGRESS (loop 1/3)<br>Loop 1 started 17:12 |
+| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag | 💬 COMMENT<br>2 open threads, awaiting review | ⏸️ WAITING (loop 2/3)<br>Loop 2 ended 16:58 — next loop 17:28 |
+| github.com/acme/api/pull/42<br>@me — Bump deps to latest | ✅ APPROVE<br>green + approved, 0 open threads | ✅ COMPLETED<br>Loop 3 ended 17:05 |
+| github.com/acme/api/pull/51<br>@bob — Add signup flow | ⏳ PENDING<br>CI still running (3 checks) | ⚪ NOT STARTED<br>Queued — wave 2 |
+| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware | ⛔ BLOCK<br>merge conflict with main | ⚠️ ESCALATED<br>Loop 2 stopped 17:01 — needs human |
+```
+
+**Header block:**
+
+- Line 1: `🏓 Agent Status Ping-Pong — <current timestamp>` (local time, with zone).
+- Line 2: `Next ping-pong: <timestamp> (in <N> min)`. On the final pulse of a run, write `Next ping-pong: — (final)` instead.
+- `Repos Scanned (<count>): <owner/repo>, <owner/repo>, …` — the resolved scope, comma-separated.
+- `PRs Scanned (<count>):` followed by one `- <owner>/<repo>: <n>` line per repo. Repos with zero matching PRs still get a line with `0` — a scanned-but-empty repo is a real answer.
+
+**Columns — exactly three, in this order.** Cells are multi-line; use `<br>` for the line break so the markdown table survives rendering.
+
+- **PR** — line 1 is the full clickable path, `github.com/<owner>/<repo>/pull/<number>` (scheme optional, nothing else dropped — see Render every PR / issue reference as a full clickable path). Line 2 is `@<author> — <TLDR>`: a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Prepend `[WIP]` / `[Draft]` tags to the TLDR when they apply.
+- **Status** — the PR's own state, independent of any agent. Line 1 is one verdict token with its icon; line 2 is a short high-level reason (what is blocked / what was commented on). Never a comment dump — one clause.
+
+  | Token         | When                                                    |
+  | ------------- | ------------------------------------------------------- |
+  | `✅ APPROVE`  | Approved, CI green, no conflicts (ready to merge)       |
+  | `⛔ BLOCK`    | CI failing, `CHANGES_REQUESTED`, or merge conflict      |
+  | `💬 COMMENT`  | Open review threads or a non-blocking review posted     |
+  | `⏳ PENDING`  | CI still running, or no review yet                      |
+  | `❓ UNKNOWN`  | Status fetch failed — say which call failed             |
+
+- **Agent** — what the dispatched job is doing. Line 1 is the state token (with loop counter when the per-PR command loops); line 2 is the timing detail.
+
+  | Token                        | When                                                 | Line 2 example                              |
+  | ---------------------------- | ---------------------------------------------------- | ------------------------------------------- |
+  | `⚪ NOT STARTED`             | Resolved but not dispatched (queued behind a wave)   | `Queued — wave 2`                           |
+  | `🔄 IN PROGRESS (loop N/M)`  | Job actively working this pass                       | `Loop 1 started 17:12`                      |
+  | `⏸️ WAITING (loop N/M)`      | Pass done, sleeping until the next one               | `Loop 2 ended 16:58 — next loop 17:28`      |
+  | `✅ COMPLETED`               | Job finished all passes, or the PR merged            | `Loop 3 ended 17:05`                        |
+  | `⏭️ SKIPPED`                 | Per-PR skill skipped it (draft / already reviewed)   | `Skipped 17:02 — draft`                     |
+  | `⚠️ ESCALATED`               | Job stopped and needs human judgment                 | `Loop 2 stopped 17:01 — needs human`        |
+  | `❌ FAILED`                  | Job errored out                                      | `Loop 1 failed 16:44 — worktree conflict`   |
+
+  The loop counter is `N/M` only when the per-PR command loops — `/sy-babysit-pr` runs ≥3 passes 30 min apart, so `M = 3`. `/sy-review-pr` is a single pass: drop the counter entirely (`🔄 IN PROGRESS`, `✅ COMPLETED`).
+
+**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, last pass start/end, next pass ETA) alongside the scope. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED<br>no agent dispatched` — the pulse still works as a read-only board.
+
+**Sort:** `⛔ BLOCK` first, then `⏳ PENDING`, `💬 COMMENT`, `✅ APPROVE`, `❓ UNKNOWN`; ties broken by repo name then PR number. Blocked work reads first because that is the row a human has to act on.
+
+**Never** decorate the PR path line with extra prefixes or suffixes, and never split the pulse into per-group tables — the flat board is the format.
+
 ## Edge cases
 
 - **Scope = all**, author has zero open PRs → print `No open PRs found for <author>.` and stop.
 - **Scope = pwd**, zero git repos under cwd → print `No git repos found within 2 levels of $(pwd).` and stop. If repos resolved but zero matching PRs → print `No open PRs found for @me in <N> repos under $(pwd).` and stop.
+- **Format = `links`, any zero-result case** → print nothing and stop. The "no PRs found" / "no git repos found" prose above is suppressed in `links` mode; a consumer reading the output line-by-line would treat that sentence as a link.
 - **Scope = explicit refs**, a bare `#<n>` / digits token and cwd is not a git repo → error out, name the unresolvable token, ask the user to use a fully-qualified ref. Unparseable token (not a URL, shorthand, `#<n>`, or digits) → error out, name the bad token, do NOT silently skip.
 - PWD keyword + explicit refs in the same call → error (no mixing).
+- **Format = `pingpong`, zero PRs resolved** → still print the header block (counts of `0`, repo list intact) and skip the table. A pulse that prints nothing is indistinguishable from a dead agent, which defeats the purpose.
 - If a single PR's status fetch fails, include it under NEEDS ATTENTION with the reason `status fetch failed` rather than dropping it silently.
 - If `reviewDecision` is `null` (no reviews requested yet), treat as `NEED APPROVAL` (not READY).
 - **Scope = explicit refs** is author-agnostic, so it's the scope most likely to come back mixed — always run the mixed-author check on it. PWD scope forces `--author=@me` and can never be mixed; `all` scope with an explicit author token is single-author but that author may not be you, in which case say whose PRs these are rather than repeating one handle on every row.

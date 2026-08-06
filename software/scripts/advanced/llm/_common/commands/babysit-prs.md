@@ -33,6 +33,10 @@ Argument: $ARGUMENTS (optional — selects scope; the first token decides the mo
 
 3. **Render the resolved PR set as a table** so the user sees exactly what is about to be babysat. Delegate to `/sy-list-prs table <same-scope-token>` — `/sy-list-prs` accepts the same scope vocabulary as this command (empty / PWD keyword / explicit refs), so pass the same scope `$ARGUMENTS` (prefixed with `table`) and let it render. Single source of truth for the table layout lives in `/sy-list-prs`.
 
+3a. **Open the ping-pong pulse — emit the FIRST one before dispatching anything.** Render `/sy-list-prs pingpong <same-scope-token>` with every Agent cell at `⚪ NOT STARTED`. This is the baseline the user compares every later pulse against; a fan-out that goes quiet for an hour before its first status line is the exact failure this exists to prevent. Layout lives in `/sy-list-prs` — do not hand-roll it.
+
+   Start the **agent ledger** here: one row per resolved PR holding job state, loop number, last pass start / end, next pass ETA, and last known Status verdict. The ledger is this command's bookkeeping; `/sy-list-prs` only renders it.
+
 4. **Fan out to `/sy-babysit-pr <PR-URL>` for EVERY resolved PR at once — in parallel, as background jobs.** Do NOT walk the list sequentially.
 
    **Dispatch mechanics — this is the step agents get wrong.** "In parallel" is a hard requirement, not a hint:
@@ -50,7 +54,16 @@ Argument: $ARGUMENTS (optional — selects scope; the first token decides the mo
    - If one job fails or escalates, the others keep running. Record the failure and carry on; never abort the whole fan-out for a single PR.
    - The per-PR command owns the full loop. This wrapper does not describe or duplicate per-PR behavior — if the per-PR flow needs to change, edit `/sy-babysit-pr`.
 
-5. **Final report:** one last `/sy-list-prs table <same-scope-token>` render plus a short summary of which PRs were skipped (already green), which were processed, and which need human attention. Include each job's pass count (`<N>/3`) and worktree path (reused vs created), and note any worktrees left behind because they pre-existed.
+4a. **Ping-pong every 10 minutes until every job reports.** The fan-out runs an hour-plus by design (≥3 passes, 30 min apart), so the dispatcher's job while it waits is to keep a pulse on the wall — not to sit silent, and not to busy-poll the jobs.
+
+   - **Cadence: one pulse every 10 minutes**, from dispatch until the last job reports. Three pulses per babysit pass, so a sleeping job still shows a live heartbeat with its next-loop ETA.
+   - **Render with `/sy-list-prs pingpong <same-scope-token>`, passing the current agent ledger.** Same scope token as Steps 3 and 3a, so every pulse covers exactly the dispatched set. Never hand-roll the board.
+   - **Refresh the Status column from GitHub, not from the jobs.** Re-run the cheap `gh pr view` status calls `/sy-list-prs` already uses. **Never `write_agent` / message / interrupt a running job to ask how it's doing** — that wakes a sleeping pass and corrupts its 30-minute cadence (see the busy-poll rule in Step 4). Read job state only from results the jobs have already reported.
+   - **Update the ledger from reports as they land** — a job finishing pass N moves that row to `⏸️ WAITING (loop N/3)` with `next loop <ETA>`; a job's final report moves it to `✅ COMPLETED` / `⚠️ ESCALATED` / `❌ FAILED`. Between reports, derive `IN PROGRESS` vs `WAITING` and the next-loop ETA from the known cadence (pass end + 30 min) rather than leaving the cell blank.
+   - **A pulse is display-only.** It never dispatches, retries, cancels, merges, or comments. If a pulse shows a job wedged, say so in that row and let the human decide.
+   - Stop pulsing when every row is terminal (`✅ COMPLETED` / `⏭️ SKIPPED` / `⚠️ ESCALATED` / `❌ FAILED`), then go to Step 5.
+
+5. **Final report:** emit the **closing ping-pong** — one last `/sy-list-prs pingpong <same-scope-token>` with the final ledger and `Next ping-pong: — (final)` — followed by one `/sy-list-prs table <same-scope-token>` render and a short summary of which PRs were skipped (already green), which were processed, and which need human attention. Include each job's pass count (`<N>/3`) and worktree path (reused vs created), and note any worktrees left behind because they pre-existed. The run therefore always brackets itself: pulse at the start (Step 3a), pulse every 10 min (Step 4a), pulse at the end.
 
 ## Rules
 
@@ -59,6 +72,8 @@ Argument: $ARGUMENTS (optional — selects scope; the first token decides the mo
 - **Parallel means one message, N tool calls (Step 4 Dispatch mechanics).** If the transcript shows the jobs starting one message at a time, the fan-out was sequential and must be relaunched. One job per PR, self-contained prompt, no shared state.
 - **Babysit all resolved PRs at once, in parallel background jobs — never a sequential for-loop** (see Fan out multi-PR work in parallel). One worktree per PR at `$HOME/.worktrees/<owner>/<repo>/pr-<number>` (`/sy-babysit-pr` Step 5a) is what makes this safe: the PR number keys the path, so jobs can't collide, nothing is shared, and the user's primary checkout is never touched. Cap at 8 concurrent jobs and queue the rest.
 - **A fan-out run is long by design.** Every job does ≥3 passes 30 minutes apart, so budget an hour-plus per wave. Don't truncate jobs, don't busy-poll them, and don't declare the fan-out done until every job has reported.
+- **Ping-pong is mandatory, not optional (Steps 3a / 4a / 5).** Every run pulses before dispatch, every 10 minutes while jobs run, and once at the end. A long async fan-out with no heartbeat is indistinguishable from a hung one. The pulse is read-only — it refreshes PR status from `gh` and reads already-reported job results; it never messages, wakes, or interrupts a running job, and it never acts on what it finds.
+- **Ping-pong layout is owned by `/sy-list-prs pingpong`.** This command owns the agent ledger (job state, loop number, pass timestamps, next-loop ETA) and passes it in; `/sy-list-prs` owns the three columns, the icons, and the sort. Do not hand-roll a different board.
 - **Table output is owned by `/sy-list-prs`.** Both the pre-flight render (Step 3) and the final report (Step 5) reuse its `table` format. Pass the same scope `$ARGUMENTS` to `/sy-list-prs table` so the rendered set matches the resolved PR set exactly. Do not hand-roll a different table layout.
 - **First token of `$ARGUMENTS` decides the mode — no mixing.** PWD-keyword + explicit refs in the same call is an error; pick one. Empty and PWD-keyword modes both scan cwd + nested repos; explicit-list mode does not filter by author (you asked for those specific PRs).
 - **Surface authors when the resolved set isn't all yours** (see Show PR authors). Explicit-ref mode is author-agnostic, so it can silently pull in someone else's PR — name the author on every row and in the summary whenever the set is mixed. The `/sy-list-prs table` renders (Steps 3 and 5) already add an `Author` column in that case.
