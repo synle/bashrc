@@ -95,13 +95,13 @@ npx vitest run --config vitest.config.js -t "parses --files flag"
 
 One config per suite:
 
-| Config | Suite |
-| --- | --- |
-| `vitest.config.js` | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
-| `vitest.profile.config.js` | `profileSyntax.spec.js` |
-| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js` |
-| `vitest.smoke.config.js` | webapp + raw-URL smokes against the live site |
-| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer) |
+| Config                         | Suite                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `vitest.config.js`             | unit (everything except the four below); setup `software/tests/setup.js`; 30s timeout |
+| `vitest.profile.config.js`     | `profileSyntax.spec.js`                                                               |
+| `vitest.buildconfig.config.js` | `buildConfigShape.spec.js`                                                            |
+| `vitest.smoke.config.js`       | webapp + raw-URL smokes against the live site                                         |
+| `vitest.smoke.local.config.js` | webapp smoke against local dist (puppeteer)                                           |
 
 `software/tests/setup.js` loads `index.js` in a VM sandbox — reach in with
 `getIndexFunction(name)` / `getIndexConstant(name)`; `fileSystem` and `fetchResponses`
@@ -147,7 +147,6 @@ make clean / make nuke     # clean generated output / wipe ~/.bash_syle*, fnm, n
 
 The formatter is **oxfmt** (`npm run format`), not prettier, despite the
 `format_prettier` target name. Shell formatting is `shfmt -w -i 2 -bn -sr`.
-
 
 ## Helper API Reference
 
@@ -198,7 +197,6 @@ Bash equivalents in `software/bootstrap/common-functions.bash`: `is_help_arg`,
 `safe_touch`/`safe_mkdir`/`safe_chown`/`safe_chmod`, `get_native_arch` / `run_native`,
 plus a logging `sudo` wrapper. `tsc --declaration --allowJs` emits the full typed API
 into `software/types/` (`make format_jsdocs`) — read that when unsure of a signature.
-
 
 ## Where to Go Next
 

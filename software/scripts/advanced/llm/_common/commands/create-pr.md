@@ -20,7 +20,11 @@
 7. Push the branch if needed: `git push -u origin <branch>`
 8. Create the PR: `gh pr create --title "[<repo>] ..." --body "..."`
 9. Return the PR URL.
-10. **Classify diff against automerge categories** (trivial / tests-only / dependency-only / docs-only). If it fits one of the four, ask the user once: `"This PR looks like <category>. Want me to enable automerge (gh pr merge --squash --auto)? (yes/no, default no)"`. On explicit "yes": run `gh pr merge <number> --squash --auto`. On anything else (or outside the four categories): do not pass `--auto`, do not ask.
+10. **Automerge decision — classify the diff, then act without asking on prose-only.** Run `git diff <base>...HEAD` (already fetched in Step 5) and bucket it:
+    - **Prose-only** (every changed line is docs-file content, a comment, a docstring, or whitespace — see the Automerge is opt-in rule for the exact definition): run `gh pr merge <number> --squash --auto` immediately, then report `"Prose-only diff (<n> files, docs/comments only) — automerge enabled; CI and any required approval still gate it."` Do not ask. Skip entirely if the title carries `WIP` / `DO NOT MERGE` or the PR is a draft.
+    - **Other trivial categories** (tests-only / dependency-only / otherwise trivial): ask once — `"This PR looks like <category>. Want me to enable automerge (gh pr merge --squash --auto)? (yes/no, default no)"`. Run `gh pr merge <number> --squash --auto` only on an explicit "yes".
+    - **Anything else**: do not pass `--auto`, do not ask.
+    - If `gh` rejects `--auto` (repo has auto-merge disabled, or squash is not an allowed method), report the exact error once and move on — never fall back to an immediate `gh pr merge` without `--auto`, and never retry.
 11. Ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
 - If yes: run `/sy-babysit-pr` with the new PR URL.
@@ -29,7 +33,7 @@
 ## Rules
 
 - **Squash merge only.** Every PR merges via `gh pr merge --squash`. Never use `--merge` (regular merge commit) or `--rebase`. One PR = one commit on the default branch.
-- **Automerge is opt-in only.** Never pass `--auto` by default. Surface the prompt proactively only for trivial / tests-only / dependency-only / docs-only diffs (Step 10). Outside those four: do not ask, do not enable.
+- **Automerge is opt-in except on a prose-only diff** (docs files / comments / docstrings / whitespace and nothing else — see the Automerge is opt-in rule). Prose-only: enable `--auto` yourself right after creating the PR, no question asked (Step 10). Tests-only / dependency-only / otherwise trivial: offer once, enable only on explicit "yes". Everything else: don't ask, don't enable. Never on a WIP / `DO NOT MERGE` / draft PR regardless of the diff.
 - **Skip PR creation entirely on solo+bots repos** — push direct to default unless the user explicitly asks for a PR.
 - If `gh` reports the repo's allowed merge methods don't include squash, stop and surface the misconfiguration — do not fall back to a merge commit.
 - **Post-merge release is automatic.** When the babysit flow runs against this PR (or the user runs `/sy-babysit-pr` later), it will invoke `/sy-release` immediately after the PR transitions to `MERGED`. Repos without a release workflow no-op cleanly. No separate user action needed.

@@ -4,7 +4,7 @@
 
 `$ARGUMENTS` is a free-form string that may carry three independent dimensions: a **format keyword**, a **scope**, and an **author**.
 
-- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`.
+- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `clusters`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `clusters` (aliases `cluster`, `grouped`, `feature`) prints the same URLs bucketed by **feature cluster** — one feature that spans several repos reads as one block — with a running `pr<N>` handle on every line; it is what `/sy-list-prs-pending` renders. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`.
 - **Scope** — pick exactly one (first match wins):
   - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
@@ -32,11 +32,13 @@ Examples:
 - `/sy-list-prs pingpong pwd` → same, explicit PWD scope (what `/sy-babysit-prs` passes on every pulse)
 - `/sy-list-prs links` → bullet list of PR URLs (`- <url>` per line) — `@me` PRs in repos under cwd
 - `/sy-list-prs links all` → bullet list of every `@me` PR URL across all repos
+- `/sy-list-prs clusters` → `@me` PRs under cwd, bucketed by feature cluster, numbered `pr1`, `pr2`, …
+- `/sy-list-prs clusters all` → same clustering across every repo
 
 ## Parsing $ARGUMENTS
 
 1. Tokenize `$ARGUMENTS` on whitespace. (Quoted multi-word author names — e.g. `"Alice Doe"` — preserve as one token.)
-2. **Extract the format keyword** — pick the first token (case-insensitive) that matches `short`, `long`, `table`, `links` / `link` (both normalize to `links`), or `pingpong` / `ping-pong` / `pulse` (all three normalize to `pingpong`). Remove it from the token list. If no match, format = `short`.
+2. **Extract the format keyword** — pick the first token (case-insensitive) that matches `short`, `long`, `table`, `links` / `link` (both normalize to `links`), `clusters` / `cluster` / `grouped` / `feature` (all four normalize to `clusters`), or `pingpong` / `ping-pong` / `pulse` (all three normalize to `pingpong`). Remove it from the token list. If no match, format = `short`.
 3. **Determine scope from remaining tokens** (first match wins):
    - **Explicit PR refs** — every remaining token is a PR ref (URL, `<owner>/<repo>#<n>`, `#<n>`, or pure digits) → scope = explicit. Normalize each to a full URL per the `/sy-babysit-prs` rules (bare `#<n>` / digits require cwd is a git repo with GitHub `origin`; resolve `<owner>/<repo>` via `git remote get-url origin` — never from the folder name; bad tokens error out — do NOT silently skip).
    - **PWD keyword** — first remaining token (case-insensitive) is one of the PWD keyword set → scope = pwd. Any extra tokens after the keyword are an error (PWD mode takes no author or refs).
@@ -111,6 +113,36 @@ a. Repo name (alphabetical).
 b. Dependency order — if PR A must merge before PR B (e.g. B's branch is based on A's branch, or B's description references A's PR number), put A first.
 c. `createdAt` ascending — oldest PR first, newest last.
 
+## Feature clustering
+
+One feature routinely needs a PR in several repos — the API change, the client change, the docs change — and those PRs are one unit of work even though nothing in GitHub says so. Clustering recovers that grouping so the set reads side by side instead of scattered across five repo-sorted rows. It is computed for **every** scope and format but only _rendered_ by `clusters` (and by `/sy-list-prs-pending`, which delegates here); `short`, `long`, `table`, `links`, and `pingpong` keep their existing repo-then-date sort untouched, because `/sy-babysit-prs` parses those line-by-line.
+
+**Cluster key — take the first signal that fires, strongest first.** Signals 1–3 are declarations by the author and are trusted alone; 4–5 are inference and need the whole normalized phrase to match, not one shared word.
+
+1. **Branch group slug** — branch is `<username>/<group-slug>/<feature-name>` (three segments, see Branch naming). The middle segment is the key. This is the author saying "these belong together", so it wins outright.
+2. **Plan slug** — the PR body references the same `plan-<slug>.md` / `plan-<slug>.diff` artifact (see Plans & Wrap-Ups). Key is `<slug>`.
+3. **Shared ticket or cross-reference** — both PRs name the same issue / ticket key (`ABC-1234`, `github.com/<owner>/<repo>/issues/<n>`), or one PR's body or title references the other's full PR path. Key is the ticket / issue reference.
+4. **Matching feature branch name** — identical final branch segment across repos (`syle/retry-token-refresh` in three repos). Key is that segment.
+5. **Matching normalized title** — strip the leading `[<repo>] ` prefix, lowercase, drop punctuation and stop words, then require the remaining significant terms to match. Key is the normalized phrase.
+
+**Rules that keep clusters honest:**
+
+- **Clustering is transitive.** If A clusters with B and B clusters with C, all three are one cluster, even when A and C share no signal directly.
+- **Never cluster on a generic word.** `fix`, `update`, `bump`, `cleanup`, `docs`, `deps`, `dependabot`, a bare repo name, or a lone version number are not features. When only signal 5 fires and the shared phrase is one such word, the PRs stay separate.
+- **A cluster of one is not a cluster.** Anything with no partner is a standalone PR and renders in the trailing `Standalone` block.
+- **Label** = the cluster key, kebab-cased, ≤5 words — `oauth-migration`, `ABC-1234`, `retry-token-refresh`. Never invent a prettier name than the signal produced.
+- **Say which signal fired** whenever the cluster came from inference (signals 4–5) and the repos differ, so a wrong guess is visible and correctable rather than silently authoritative.
+
+**Cluster ordering** (the "prioritize" half of the job) — apply in order:
+
+a. Readiness of the cluster's **most urgent** member — a cluster containing a NEEDS ATTENTION PR outranks one whose best member is NEED APPROVAL, using the same group priority as the display order below. One red PR blocks the whole feature, so the whole feature sorts red.
+b. Cluster size descending — the widest fan-out first; that is the one where a missed repo costs the most.
+c. Earliest member `createdAt` ascending.
+
+Standalone PRs always come last, ordered by the normal group display order and within-group sort.
+
+**Within a cluster:** dependency order first (a PR whose branch or body says it must land before a sibling goes above it — the same signal as within-group sort rule b), then group priority, then repo name, then `createdAt`.
+
 ## Output format
 
 Print groups in this fixed display order. Skip empty groups (don't print the heading if `N == 0`). Each group heading is `## <Group Name> (N)`.
@@ -124,13 +156,14 @@ Before rendering, resolve your own handle once (`gh api user --jq .login`) and c
 
 Where the author goes, per format:
 
-| Format     | Placement                                                                                      |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| `short`    | Group heading only — `## NEEDS ATTENTION (2 — @me 1, @alice 1)`. **URL lines stay bare.**      |
-| `long`     | In the description line, right after the repo: `#123 [owner/repo] @alice — <title> — <status>` |
-| `table`    | A dedicated `Author` column, inserted after `Repo`                                             |
-| `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line        |
-| `pingpong` | Second line of the `PR` cell — the author is always shown, mixed or not                        |
+| Format     | Placement                                                                                                        |
+| ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `short`    | Group heading only — `## NEEDS ATTENTION (2 — @me 1, @alice 1)`. **URL lines stay bare.**                        |
+| `long`     | In the description line, right after the repo: `#123 [owner/repo] @alice — <title> — <status>`                   |
+| `table`    | A dedicated `Author` column, inserted after `Repo`                                                               |
+| `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line                          |
+| `clusters` | Cluster heading only — `### oauth-migration (3 — @me 2, @alice 1) — acme/api, acme/web`. **PR lines stay bare.** |
+| `pingpong` | Second line of the `PR` cell — the author is always shown, mixed or not                                          |
 
 **`short` URL lines are machine input — never decorate them.** `/sy-babysit-prs` consumes `/sy-list-prs short` line-by-line as full PR URLs. Adding a handle, prefix, or suffix to those lines breaks it. Group headings and the leading summary line are already skipped by that parser, so that's where mixed-author information belongs.
 
@@ -217,6 +250,34 @@ A bare bullet list of PR URLs — one `- <url>` per line. **Nothing else** — n
 - Zero PRs → print nothing at all (empty output). No "no PRs found" line: an empty list is the correct machine answer, and a prose line would be parsed as a link by whatever is reading.
 - `links` is the strictest machine-input format in this file. The `- ` prefix is the only decoration — never add a handle, title, status, annotation, or code fence.
 
+### Format: `clusters`
+
+The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see Feature clustering) so one feature that needed a PR in four repos reads as one block, and every line carries a running `pr<N>` handle you can point at in the next sentence ("babysit pr2 and pr3 first").
+
+```
+### oauth-migration (3) — acme/api, acme/web, acme/widget-store
+- pr1 https://github.com/acme/api/pull/51 — 🔴 CI FAILED — unit-tests
+- pr2 https://github.com/acme/web/pull/7 — 🟡 AWAITING REVIEW
+- pr3 https://github.com/acme/widget-store/pull/109 — 🟢 CI PASSED · APPROVED
+
+### ABC-1234 (2) — acme/api, acme/web
+- pr4 https://github.com/acme/api/pull/60 — 🟡 BUILD IN PROGRESS (2 running)
+- pr5 https://github.com/acme/web/pull/18 — 🟡 AWAITING REVIEW
+
+### Standalone (2)
+- pr6 https://github.com/acme/widget-store/pull/113 — 🔴 MERGE CONFLICT
+- pr7 https://github.com/acme/api/pull/42 — 🟢 CI PASSED · APPROVED
+```
+
+- **Cluster heading**: `### <label> (<n>) — <repo>, <repo>, …`, repos comma-separated in the order their PRs appear. The repo list is the whole point of the heading: it answers "which repos does this feature still need" without reading a single URL. Single-repo clusters (two PRs in the same repo) still print the repo once.
+- **Standalone block**: everything with no partner, under a literal `### Standalone (<n>)` heading, always last, no repo list. Print it even when it holds every PR — an all-standalone list is a real answer, not an error.
+- **PR line**: `- pr<N> <full URL> — <color emoji> <status>`. `<color emoji>` and `<status>` use the exact vocabulary and roll-up rule as `long` (`CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`, `·`-separated). Prepend `[Draft]` / `[WIP]` before the emoji when they apply.
+- **Numbering is global, continuous, and display-ordered** — `pr1` through `pr<N>` across the whole render, never restarting per cluster. The handle is stable only within one render; it is a pointer for the next message, not an identifier to store.
+- **Consumers read the `https://` token from each line.** That token is always the full `https://github.com/<owner>/<repo>/pull/<number>` form and always the third whitespace-separated field. Heading lines carry no `https://` token, so a URL-extracting parser skips them for free — the same property that lets `/sy-babysit-prs` read `short` past its `##` headings.
+- **Ordering is Feature clustering's, not this section's** — cluster rank by most-urgent member, then size, then age; within a cluster, dependency order first. Do not re-sort here.
+- When a cluster came from inference (Feature clustering signals 4–5), append ` — grouped by <signal>` to its heading, e.g. `### retry-token-refresh (2) — acme/api, acme/web — grouped by matching branch name`. A guess says it's a guess.
+- Zero PRs → print nothing at all, same as `links`.
+
 ### Format: `pingpong`
 
 The heartbeat / pulse render. One flat board — no per-group tables — answering "what is going on right now, and what are the agents doing about it". `/sy-babysit-prs` and `/sy-review-prs` emit this on a fixed cadence so a long async fan-out is never a black box.
@@ -284,7 +345,7 @@ Pulse (2 moved, 2 steady, 1 new):
   MERGE CONFLICT           ← only when conflicting
   ```
 
-  Joined with `<br>` in the rendered cell, same as every other column. All applicable component lines print — a PR that is conflicting *and* has changes requested shows both, because the color already collapsed them into one signal and the lines are there to say which.
+  Joined with `<br>` in the rendered cell, same as every other column. All applicable component lines print — a PR that is conflicting _and_ has changes requested shows both, because the color already collapsed them into one signal and the lines are there to say which.
 
   **Line 1 — `<change marker> <color emoji>`.** The change marker leads, so a scan down the column answers "what moved since the last pulse?" before anything else.
 
@@ -298,29 +359,29 @@ Pulse (2 moved, 2 steady, 1 new):
 
   **The color emoji** is the whole verdict, rolled up from the component lines below. Evaluate top-down, first match wins:
 
-  | Emoji | When                                                                                          |
-  | ----- | --------------------------------------------------------------------------------------------- |
-  | `🔴`  | **Any** of: CI failed, reviewer requested changes, merge conflict                              |
-  | `🟡`  | Nothing red, but not yet all-clear: build still running, or nobody has reviewed it yet         |
-  | `🟢`  | CI passed **and** approved **and** no merge conflict — the only combination that earns green  |
-  | `❓`  | Status fetch failed — cannot roll up. Component lines say which call failed (see Edge cases)  |
+  | Emoji | When                                                                                         |
+  | ----- | -------------------------------------------------------------------------------------------- |
+  | `🔴`  | **Any** of: CI failed, reviewer requested changes, merge conflict                            |
+  | `🟡`  | Nothing red, but not yet all-clear: build still running, or nobody has reviewed it yet       |
+  | `🟢`  | CI passed **and** approved **and** no merge conflict — the only combination that earns green |
+  | `❓`  | Status fetch failed — cannot roll up. Component lines say which call failed (see Edge cases) |
 
   Red is checked before yellow so a failing check on a still-running build reads red, not yellow. Green is a conjunction of all three conditions — a PR that is CI-green and unreviewed is `🟡`, never `🟢`.
 
   **Line 2 — CI, always printed.** Exactly one of:
 
-  | Line                            | When                                                          |
-  | ------------------------------- | ------------------------------------------------------------- |
-  | `CI PASSED`                     | Every required check succeeded (neutral / skipped count as ok) |
-  | `CI FAILED — <check>`           | Any required check failed. Name the first failing check        |
-  | `BUILD IN PROGRESS (<n> running)` | Checks still queued or running, none failed yet              |
+  | Line                              | When                                                           |
+  | --------------------------------- | -------------------------------------------------------------- |
+  | `CI PASSED`                       | Every required check succeeded (neutral / skipped count as ok) |
+  | `CI FAILED — <check>`             | Any required check failed. Name the first failing check        |
+  | `BUILD IN PROGRESS (<n> running)` | Checks still queued or running, none failed yet                |
 
   **Line 3 — review, printed whenever the review state is known.** Exactly one of:
 
-  | Line                | When                                                                  |
-  | ------------------- | --------------------------------------------------------------------- |
-  | `APPROVED`          | `reviewDecision == "APPROVED"`                                        |
-  | `CHANGES REQUESTED` | `reviewDecision == "CHANGES_REQUESTED"`                               |
+  | Line                | When                                                                 |
+  | ------------------- | -------------------------------------------------------------------- |
+  | `APPROVED`          | `reviewDecision == "APPROVED"`                                       |
+  | `CHANGES REQUESTED` | `reviewDecision == "CHANGES_REQUESTED"`                              |
   | `AWAITING REVIEW`   | `reviewDecision` is null or `REVIEW_REQUIRED` — nobody has ruled yet |
 
   `AWAITING REVIEW` is printed rather than omitted because "waiting on a reviewer" is one of the two things `🟡` can mean, and a yellow row showing only `CI PASSED` leaves the reader guessing which. Omit line 3 entirely only when the review state could not be fetched.
@@ -333,15 +394,15 @@ Pulse (2 moved, 2 steady, 1 new):
 
   **Line 1 — `<state token>[ (loop N/M)] — <clock>`.**
 
-  | Token             | When                                               | Clock                                        |
-  | ----------------- | -------------------------------------------------- | -------------------------------------------- |
-  | `⚪ NOT STARTED`  | Resolved but not dispatched (queued behind a wave) | `queued, wave 2` (no clock; nothing started) |
-  | `🔄 IN PROGRESS`  | Job actively working this pass                     | `started 17:12 · running 22m`                |
-  | `⏸️ WAITING`      | Pass done, sleeping until the next one             | `ended 16:58 · ran 19m · next 17:28`         |
-  | `✅ COMPLETED`    | Job finished all passes, or the PR merged          | `ended 17:05 · 48m total`                    |
-  | `⏭️ SKIPPED`      | Per-PR skill skipped it (draft / already reviewed) | `17:02 — draft`                              |
-  | `⚠️ ESCALATED`    | Job stopped and needs human judgment               | `stopped 17:01 · ran 19m — needs human`      |
-  | `❌ FAILED`       | Job errored out                                    | `failed 16:44 · ran 4m — worktree conflict`  |
+  | Token            | When                                               | Clock                                        |
+  | ---------------- | -------------------------------------------------- | -------------------------------------------- |
+  | `⚪ NOT STARTED` | Resolved but not dispatched (queued behind a wave) | `queued, wave 2` (no clock; nothing started) |
+  | `🔄 IN PROGRESS` | Job actively working this pass                     | `started 17:12 · running 22m`                |
+  | `⏸️ WAITING`     | Pass done, sleeping until the next one             | `ended 16:58 · ran 19m · next 17:28`         |
+  | `✅ COMPLETED`   | Job finished all passes, or the PR merged          | `ended 17:05 · 48m total`                    |
+  | `⏭️ SKIPPED`     | Per-PR skill skipped it (draft / already reviewed) | `17:02 — draft`                              |
+  | `⚠️ ESCALATED`   | Job stopped and needs human judgment               | `stopped 17:01 · ran 19m — needs human`      |
+  | `❌ FAILED`      | Job errored out                                    | `failed 16:44 · ran 4m — worktree conflict`  |
 
   **Clock grammar.** Times are local `HH:MM`, 24-hour, no date (the header block already carries the date). Durations are `<N>m` under an hour, `<N>h <N>m` over it, always whole minutes — a pulse is a 10-minute heartbeat, so seconds are noise.
 
@@ -380,7 +441,9 @@ Pulse (2 moved, 2 steady, 1 new):
 
 - **Scope = all**, author has zero open PRs → print `No open PRs found for <author>.` and stop.
 - **Scope = pwd**, zero git repos under cwd → print `No git repos found within 2 levels of $(pwd).` and stop. If repos resolved but zero matching PRs → print `No open PRs found for @me in <N> repos under $(pwd).` and stop.
-- **Format = `links`, any zero-result case** → print nothing and stop. The "no PRs found" / "no git repos found" prose above is suppressed in `links` mode; a consumer reading the output line-by-line would treat that sentence as a link.
+- **Format = `links` or `clusters`, any zero-result case** → print nothing and stop. The "no PRs found" / "no git repos found" prose above is suppressed in both, because a consumer reading the output line-by-line would treat that sentence as a link.
+- **Format = `clusters`, nothing clusters** → every PR is standalone; print only the `### Standalone (<n>)` block, numbering unchanged. Never fabricate a cluster to avoid an all-standalone render, and never drop the heading.
+- **Format = `clusters`, a PR matches two cluster keys** → clustering is transitive, so the two clusters are one; label it with the strongest signal that fired (lowest signal number) and say so in the heading when that signal was inference.
 - **Scope = explicit refs**, a bare `#<n>` / digits token and cwd is not a git repo → error out, name the unresolvable token, ask the user to use a fully-qualified ref. Unparseable token (not a URL, shorthand, `#<n>`, or digits) → error out, name the bad token, do NOT silently skip.
 - PWD keyword + explicit refs in the same call → error (no mixing).
 - **Format = `pingpong`, zero PRs resolved** → still print the header block (counts of `0`, an empty `Pulse (0 moved, 0 steady, 0 new):` line, repo list intact) and skip the table. A pulse that prints nothing is indistinguishable from a dead agent, which defeats the purpose.

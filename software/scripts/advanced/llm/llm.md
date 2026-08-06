@@ -460,8 +460,10 @@ Two different discoverers, two different priorities — by design.
 
 When a host doesn't have a matching model, the discoverer falls through to the next
 host. When no host has any matching model, the caller omits the relevant config block
-entirely so the editor falls back to its own default (Zeta for Zed) instead of
-hammering a dead endpoint on every keystroke.
+entirely so the editor keeps whatever its own base config declares, instead of
+hammering a dead endpoint on every keystroke. For Zed that means
+`zed-config.jsonc`'s `edit_predictions.disabled_globs: ["**/*"]` survives and inline
+predictions stay fully off — deliberately not Zed's cloud Zeta.
 
 `sy-omen45l` resolves via `getSyHPOmenHomeIpAddress()` in
 [`software/index.js`](../../../index.js), which reads the address from

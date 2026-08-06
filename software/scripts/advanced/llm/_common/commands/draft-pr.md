@@ -28,5 +28,5 @@
 
 - Always create as a **regular PR** (never `--draft`) so CI runs immediately.
 - Always use the title prefix `WIP: DO NOT MERGE —` followed by `[<repo>] ` and a concise description.
-- **Never enable automerge on a WIP PR** — automerge is opt-in only, never set `--auto` unless the user explicitly requests it. The `DO NOT MERGE` title is the human signal; `--auto` would defeat it.
+- **Never enable automerge on a WIP PR** — the `DO NOT MERGE` title is the human stop signal and `--auto` would defeat it. This outranks every automerge carve-out: a prose-only WIP diff still gets no `--auto` (see the Automerge is opt-in rule). Set it only if the user explicitly asks, and only after the WIP prefix is gone.
 - **Skip PR creation entirely on solo+bots repos** — push direct to default unless the user explicitly asks for a PR.
