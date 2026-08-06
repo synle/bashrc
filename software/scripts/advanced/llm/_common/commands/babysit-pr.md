@@ -97,7 +97,7 @@ Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the curr
      - If conflicts occur during wave sync: resolve them the same way as Step 5e — read both sides, produce correct merged result, `git add`, `git commit --no-edit`.
      - Skip only if the branch is already up to date (`git merge` reports "Already up to date").
        h. **Run the Pre-push gate** (commit-author check + secret scan; see Rules section). Block on failure.
-       i. Push the updated branch from the worktree: `git push` when the workspace is on the branch, or `git push origin HEAD:"$BR"` when it is detached (Step 5a case 2). Never force-push.
+       i. Push the updated branch from the worktree: `git push` when the workspace is on the branch, or `git push origin HEAD:"$BR"` when it is detached (Step 5a case 2). Never force-push. If the push changed what the PR does, re-check the PR body against the new diff and update it — see the _PR body tracks the branch_ rule.
        j. Note: this creates a regular merge commit on the PR branch. The eventual PR-level merge into main must still be a **squash merge** per repo policy.
 
 6. **Address reviewer comments from human (NON-BOT) users:**

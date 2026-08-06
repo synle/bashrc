@@ -263,55 +263,56 @@ Pulse (2 moved, 2 steady, 1 new):
 
   **Line 3 — the delta, always present.** It sits directly under the TLDR because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
 
-  | Marker row | Line 3                                                              |
-  | ---------- | ------------------------------------------------------------------- |
-  | `🔴*`      | `Δ <fragment> · <fragment> · …` — what actually moved               |
-  | `▫️`       | `▫️ No change since last ping-pong`                                 |
-  | `🆕`       | `🆕 First ping-pong — no prior snapshot`                            |
+  | Marker row | Line 3                                                |
+  | ---------- | ----------------------------------------------------- |
+  | `🔴*`      | `Δ <fragment> · <fragment> · …` — what actually moved |
+  | `▫️`       | `▫️ No change since last ping-pong`                   |
+  | `🆕`       | `🆕 First ping-pong — no prior snapshot`              |
 
-  Each changed signal is one ` · `-separated fragment: old→new form where a value flipped, signed form where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval · CI failing→green`. Cap at the three most significant fragments and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. Never leave line 3 blank — an unchanged row says so out loud, because a silent cell is indistinguishable from a pulse that failed to diff.
+  Each changed signal is one `·`-separated fragment: old→new form where a value flipped, signed form where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval · CI failing→green`. Cap at the three most significant fragments and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. Never leave line 3 blank — an unchanged row says so out loud, because a silent cell is indistinguishable from a pulse that failed to diff.
+
 - **Status** — the PR's own state, independent of any agent. Two lines: a change marker plus one verdict token, then a short high-level reason. Never a comment dump — one clause on line 2. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
 
   **Line 1 — `<change marker> <verdict token>`.** The change marker leads, so a scan down the column answers "what moved since the last pulse?" before anything else.
 
-  | Marker  | When                                                                    |
-  | ------- | ----------------------------------------------------------------------- |
-  | `🔴*`   | Anything about this PR differs from its previous pulse — it moved       |
-  | `▫️`    | Identical to the previous pulse — nothing moved                         |
-  | `🆕`    | First pulse for this PR — no prior snapshot to compare against          |
+  | Marker | When                                                              |
+  | ------ | ----------------------------------------------------------------- |
+  | `🔴*`  | Anything about this PR differs from its previous pulse — it moved |
+  | `▫️`   | Identical to the previous pulse — nothing moved                   |
+  | `🆕`   | First pulse for this PR — no prior snapshot to compare against    |
 
   A "change" is any difference in the verdict token, the reason clause, **or any counter in the Agent cell's counters line** — a resolved thread, a new approval, one more green check all count. The marker lives in the Status column but diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
 
-  | Token         | When                                                    |
-  | ------------- | ------------------------------------------------------- |
-  | `✅ APPROVE`  | Approved, CI green, no conflicts (ready to merge)       |
-  | `⛔ BLOCK`    | CI failing, `CHANGES_REQUESTED`, or merge conflict      |
-  | `💬 COMMENT`  | Open review threads or a non-blocking review posted     |
-  | `⏳ PENDING`  | CI still running, or no review yet                      |
-  | `❓ UNKNOWN`  | Status fetch failed — say which call failed             |
+  | Token        | When                                                |
+  | ------------ | --------------------------------------------------- |
+  | `✅ APPROVE` | Approved, CI green, no conflicts (ready to merge)   |
+  | `⛔ BLOCK`   | CI failing, `CHANGES_REQUESTED`, or merge conflict  |
+  | `💬 COMMENT` | Open review threads or a non-blocking review posted |
+  | `⏳ PENDING` | CI still running, or no review yet                  |
+  | `❓ UNKNOWN` | Status fetch failed — say which call failed         |
 
 - **Agent** — what the dispatched job is doing. Line 1 is the state token (with loop counter when the per-PR command loops); line 2 is the timing detail; line 3 is the counters line. No delta here — that lives under the TLDR in the PR cell.
 
-  | Token                        | When                                                 | Line 2 example                              |
-  | ---------------------------- | ---------------------------------------------------- | ------------------------------------------- |
-  | `⚪ NOT STARTED`             | Resolved but not dispatched (queued behind a wave)   | `Queued — wave 2`                           |
-  | `🔄 IN PROGRESS (loop N/M)`  | Job actively working this pass                       | `Loop 1 started 17:12`                      |
-  | `⏸️ WAITING (loop N/M)`      | Pass done, sleeping until the next one               | `Loop 2 ended 16:58 — next loop 17:28`      |
-  | `✅ COMPLETED`               | Job finished all passes, or the PR merged            | `Loop 3 ended 17:05`                        |
-  | `⏭️ SKIPPED`                 | Per-PR skill skipped it (draft / already reviewed)   | `Skipped 17:02 — draft`                     |
-  | `⚠️ ESCALATED`               | Job stopped and needs human judgment                 | `Loop 2 stopped 17:01 — needs human`        |
-  | `❌ FAILED`                  | Job errored out                                      | `Loop 1 failed 16:44 — worktree conflict`   |
+  | Token                       | When                                               | Line 2 example                            |
+  | --------------------------- | -------------------------------------------------- | ----------------------------------------- |
+  | `⚪ NOT STARTED`            | Resolved but not dispatched (queued behind a wave) | `Queued — wave 2`                         |
+  | `🔄 IN PROGRESS (loop N/M)` | Job actively working this pass                     | `Loop 1 started 17:12`                    |
+  | `⏸️ WAITING (loop N/M)`     | Pass done, sleeping until the next one             | `Loop 2 ended 16:58 — next loop 17:28`    |
+  | `✅ COMPLETED`              | Job finished all passes, or the PR merged          | `Loop 3 ended 17:05`                      |
+  | `⏭️ SKIPPED`                | Per-PR skill skipped it (draft / already reviewed) | `Skipped 17:02 — draft`                   |
+  | `⚠️ ESCALATED`              | Job stopped and needs human judgment               | `Loop 2 stopped 17:01 — needs human`      |
+  | `❌ FAILED`                 | Job errored out                                    | `Loop 1 failed 16:44 — worktree conflict` |
 
   The loop counter is `N/M` only when the per-PR command loops — `/sy-babysit-pr` runs ≥3 passes 30 min apart, so `M = 3`. `/sy-review-pr` is a single pass: drop the counter entirely (`🔄 IN PROGRESS`, `✅ COMPLETED`).
 
-  **Line 3 — counters line.** One line, always printed, always all three fields, always this order, ` · `-separated:
+  **Line 3 — counters line.** One line, always printed, always all three fields, always this order, `·`-separated:
 
   `💬 <n> open · ✔ <n> resolved · ⚠️ <n> need attention`
 
-  | Field                   | Meaning                                                                                                                                                              |
-  | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `💬 <n> open`           | Unresolved review threads still on the PR — the agent's remaining queue                                                                                              |
-  | `✔ <n> resolved`        | Review threads resolved — what the agent (or the author) has already worked through                                                                                  |
+  | Field                   | Meaning                                                                                                                                                                         |
+  | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `💬 <n> open`           | Unresolved review threads still on the PR — the agent's remaining queue                                                                                                         |
+  | `✔ <n> resolved`        | Review threads resolved — what the agent (or the author) has already worked through                                                                                             |
   | `⚠️ <n> need attention` | Threads the agent read but **cannot** act on alone: no good option is obvious, the fix is a product/design call, the reviewer and the code disagree, or it needs human judgment |
 
   Zeros are printed, never omitted — a fixed three-field line is what makes two pulses diffable at a glance, and a missing field reads as "not measured" rather than "none". `⚠️ need attention` is a strict subset of `💬 open` (a thread the agent is stuck on is by definition still open), so `need attention ≤ open` always; a pulse where it exceeds `open` is a bookkeeping bug, not a render choice. It counts **comment threads**, not CI failures or conflicts — those are already the Status verdict. A non-zero `⚠️` is the signal a human has to read this PR themselves; pair it with `⚠️ ESCALATED` on line 1 when the job stopped over it.

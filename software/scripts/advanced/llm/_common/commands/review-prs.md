@@ -25,7 +25,7 @@ Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). D
 
 4a. **Open the ping-pong pulse — emit the FIRST one before dispatching anything.** Render `/sy-list-prs pingpong <same-scope-token>` with every Agent cell at `⚪ NOT STARTED`. Reviews are faster than babysits but still async and still fan out in waves, so the same rule holds: never let the user stare at a silent terminal wondering whether anything is running. Layout lives in `/sy-list-prs` — do not hand-roll it.
 
-   Start the **agent ledger** here: one row per resolved PR holding job state, dispatch time, finish time, and the **last rendered pulse snapshot** (Status verdict token, reason clause, counters strip) that `/sy-list-prs pingpong` diffs to pick its change marker and `Δ` line — overwrite it after every pulse. `/sy-review-pr` is a **single pass**, so Agent cells carry no loop counter — `🔄 IN PROGRESS`, `✅ COMPLETED`, `⏭️ SKIPPED`, `❌ FAILED`.
+Start the **agent ledger** here: one row per resolved PR holding job state, dispatch time, finish time, and the **last rendered pulse snapshot** (Status verdict token, reason clause, counters strip) that `/sy-list-prs pingpong` diffs to pick its change marker and `Δ` line — overwrite it after every pulse. `/sy-review-pr` is a **single pass**, so Agent cells carry no loop counter — `🔄 IN PROGRESS`, `✅ COMPLETED`, `⏭️ SKIPPED`, `❌ FAILED`.
 
 5. **Fan out to `/sy-review-pr <PR-URL>` for EVERY resolved PR at once — in parallel, as background jobs.** Do NOT walk the list sequentially. Launch one background job per PR in a single dispatch, **capped at 8 concurrent** (GitHub API rate limits); more than 8 → run in waves of 8. If one job fails, the others keep going — record it and move on.
 
@@ -52,11 +52,11 @@ Argument: $ARGUMENTS (optional — scope filter; see "Resolving scope" below). D
 
 5a. **Ping-pong every 10 minutes until every job reports.**
 
-   - **Cadence: one pulse every 10 minutes**, from dispatch until the last verdict lands. A wave of 8 reviews plus a queued second wave routinely outlives a single pulse — keep pulsing until the board is fully terminal.
-   - **Render with `/sy-list-prs pingpong <same-scope-token>`, passing the current agent ledger.** Same scope token as Step 4a so every pulse covers exactly the dispatched set.
-   - **Refresh the Status column from GitHub, not from the jobs.** Re-run the cheap `gh pr view` status calls `/sy-list-prs` already uses. **Never message or interrupt a running job to ask its progress** — read job state only from verdicts already reported. Queued PRs waiting on the next wave stay `⚪ NOT STARTED<br>Queued — wave <N>`.
-   - **A pulse is display-only.** It never dispatches, retries, posts a review, or changes a verdict.
-   - Stop pulsing when every row is terminal (`✅ COMPLETED` / `⏭️ SKIPPED` / `❌ FAILED`), then go to Step 6.
+- **Cadence: one pulse every 10 minutes**, from dispatch until the last verdict lands. A wave of 8 reviews plus a queued second wave routinely outlives a single pulse — keep pulsing until the board is fully terminal.
+- **Render with `/sy-list-prs pingpong <same-scope-token>`, passing the current agent ledger.** Same scope token as Step 4a so every pulse covers exactly the dispatched set.
+- **Refresh the Status column from GitHub, not from the jobs.** Re-run the cheap `gh pr view` status calls `/sy-list-prs` already uses. **Never message or interrupt a running job to ask its progress** — read job state only from verdicts already reported. Queued PRs waiting on the next wave stay `⚪ NOT STARTED<br>Queued — wave <N>`.
+- **A pulse is display-only.** It never dispatches, retries, posts a review, or changes a verdict.
+- Stop pulsing when every row is terminal (`✅ COMPLETED` / `⏭️ SKIPPED` / `❌ FAILED`), then go to Step 6.
 
 6. **Final report:** emit the **closing ping-pong** — one last `/sy-list-prs pingpong <same-scope-token>` with the final ledger and `Next ping-pong: — (final)` — then summarize per PR: author (when the set is mixed), verdict (APPROVE / COMMENT / REQUEST_CHANGES / SKIPPED + reason), author flags posted, and any cross-PR migration coordination notes. The run therefore always brackets itself: pulse at the start (Step 4a), pulse every 10 min (Step 5a), pulse at the end.
 

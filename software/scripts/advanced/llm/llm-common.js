@@ -379,6 +379,7 @@ const LLM_COMMAND_DEPLOY_MAP = {
   "sy-babysit-prs": "babysit-prs",
   "sy-close-stale-prs": "close-stale-prs",
   "sy-create-pr": "create-pr",
+  "sy-debug": "debug",
   "sy-draft-pr": "draft-pr",
   "sy-list-prs": "list-prs",
   "sy-list-prs-pending": "list-prs-pending",
