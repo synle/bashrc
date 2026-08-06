@@ -6,9 +6,9 @@ Argument: none. Scope is always PWD, author is always `@me`, format is always `l
 
 ## Steps
 
-1. **Resolve the PR set exactly the way `/sy-babysit-prs` does** — run `/sy-list-prs links pwd`. That is the identical delegation `/sy-babysit-prs` makes in its Step 1a, so both commands always see the same PRs: repos discovered two levels deep, each resolved to `<owner>/<repo>` via `git remote get-url origin` (never the folder name — see Repo Identification), then one `gh search prs --author=@me --state=open` across them.
+1. **Resolve the PR set exactly the way `/sy-babysit-prs` does** — run `/sy-list-prs links pwd`. `/sy-babysit-prs` Step 1a delegates to `/sy-list-prs short pwd`: same scope, same author, so the **same PR set** — only the render format differs (`links` here, `short` there). Scope resolution therefore stays identical: repos discovered two levels deep, each resolved to `<owner>/<repo>` via `git remote get-url origin` (never the folder name — see Repo Identification), then one `gh search prs --author=@me --state=open` across them.
 
-2. **Drop the READY TO MERGE group.** Keep NEEDS ATTENTION, READY TO MERGE (with comments), NEED APPROVAL, and NOT READY / WIP / DRAFT.
+2. **Drop group 5, `READY TO MERGE`** — the fully-clear one (CI passing + approved + no conflicts + zero unresolved threads). Keep the other four groups, including the separate `READY TO MERGE (with comments)` group, which still has threads to resolve and so is still pending.
 
 3. **Print the `links` render and nothing else** — one `- <full PR URL>` per line, in `/sy-list-prs` display order:
 

@@ -11,7 +11,7 @@
 4. Determine the base branch (usually `master` or `main`).
 5. Run `git diff <base>...HEAD` to understand all changes included in the PR.
 6. Generate a PR title and body based on the changes:
-   - Title: `[<repo>] <concise description of the changes>` — bare repo name, org / owner dropped (`[bashrc] ...`, never `[synle/bashrc] ...`). Repo comes from Step 1's resolved `owner/repo`, keeping only the part after the `/`.
+   - Title: `[<repo>] <concise description of the changes>` — bare repo name, org / owner dropped (`[widget-store] ...`, never `[acme/widget-store] ...`). Repo comes from Step 1's resolved `owner/repo`, keeping only the part after the `/`.
    - Body should include a `## Summary` section with bullet points and a `## Test plan` section.
 7. Push the branch if needed: `git push -u origin <branch>`
 8. Create the PR: `gh pr create --title "[<repo>] ..." --body "..."`

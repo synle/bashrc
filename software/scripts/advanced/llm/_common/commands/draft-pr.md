@@ -10,7 +10,7 @@
 4. Determine the base branch (usually `master` or `main`).
 5. Run `git diff <base>...HEAD` to understand all changes included in the PR.
 6. Generate a PR title and body based on the changes:
-   - Title format: `WIP: DO NOT MERGE — [<repo>] <concise description of changes>` — bare repo name, org / owner dropped (`[bashrc] ...`, never `[synle/bashrc] ...`). The WIP prefix stays outermost so the stop signal reads first.
+   - Title format: `WIP: DO NOT MERGE — [<repo>] <concise description of changes>` — bare repo name, org / owner dropped (`[widget-store] ...`, never `[acme/widget-store] ...`). The WIP prefix stays outermost so the stop signal reads first.
    - Body should include a `## Summary` section with bullet points and a `## Test plan` section.
 7. Push the branch if needed: `git push -u origin <branch>`
 8. Create the PR (regular, NOT draft): `gh pr create --title "WIP: DO NOT MERGE — [<repo>] ..." --body "..."`

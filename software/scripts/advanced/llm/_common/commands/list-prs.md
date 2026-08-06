@@ -26,7 +26,7 @@ Examples:
 - `/sy-list-prs alice table` → table format, author `alice`
 - `/sy-list-prs pwd` → short format, `@me` PRs in repos under cwd (2 levels)
 - `/sy-list-prs table here` → table format, `@me` PRs in repos under cwd
-- `/sy-list-prs long https://github.com/synle/bashrc/pull/42 synle/foo#7` → long format, those two PRs only
+- `/sy-list-prs long https://github.com/acme/widget-store/pull/42 acme/api#7` → long format, those two PRs only
 - `/sy-list-prs #42` → short format, PR #42 in cwd's repo (cwd must be a git repo)
 - `/sy-list-prs pingpong` → ping-pong pulse render, `@me` PRs in repos under cwd
 - `/sy-list-prs pingpong pwd` → same, explicit PWD scope (what `/sy-babysit-prs` passes on every pulse)

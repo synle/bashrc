@@ -490,7 +490,11 @@ function _readCopilotSkillBodyFirstLine(content) {
   /** @type {number} Index to start scanning from — past the closing `---` when frontmatter exists. */
   let start = 0;
   if (lines[0]?.trim() === "---") {
-    /** @type {number} Offset of the closing fence, searched from line 2 onward. */
+    // No closing fence (corrupt or hand-edited file) leaves start at 0, so the
+    // opening `---` itself becomes the "first line" and matches no marker —
+    // the skill is left on disk. That is deliberate: this feeds a destructive
+    // rmSync, so an unparseable file must fail closed. Our own writer always
+    // emits both fences, so this only ever affects foreign files.
     const close = lines.indexOf("---", 1);
     if (close !== -1) start = close + 1;
   }
