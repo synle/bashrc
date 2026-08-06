@@ -20,7 +20,8 @@
 # Prompt bodies live in `~/.claude/commands/sy-<name>.md` — deployed there by
 # `claude/setup.js` from the shared `_common/commands/<name>.md` source, so the
 # command corpus stays single-sourced. Adding a new command:
-#   1. Drop `_common/commands/<name>.md` + register in `CLAUDE_COMMAND_DEPLOY_MAP`.
+#   1. Drop `_common/commands/<name>.md` + register in `LLM_COMMAND_DEPLOY_MAP`
+#      (`software/scripts/advanced/llm/llm-common.js`) — one map, every CLI.
 #   2. Re-run `bash run.sh --files=claude/setup.js` to deploy the body.
 #   3. Open a new shell. The dispatcher loop below auto-registers `sy-<name>`
 #      from anything matching `~/.claude/commands/sy-*.md`, so no edit here is

@@ -435,44 +435,20 @@ async function _doCopilotInstructionsWork(targetDir) {
 // --- Skills (Copilot's equivalent of Claude slash commands) ---
 
 /**
- * Source filenames (bare, no `.md`) under
- * software/scripts/advanced/llm/_common/commands/ that get deployed as
- * personal Copilot CLI skills. Mirrors CLAUDE_COMMAND_DEPLOY_MAP in
- * claude/setup.js — same content, different surface.
+ * Copilot has no registry of its own — the command set, the `[Sy] ` markers, and
+ * the retired-name list all live in `llm-common.js` as `LLM_COMMAND_DEPLOY_MAP`,
+ * `LLM_SKILL_MARKERS`, and `LLM_COMMAND_RETIRED_NAMES` so claude, copilot,
+ * gemini, and opencode share exactly one source of truth.
  *
- * Each entry lands at `~/.copilot/skills/sy-<name>/SKILL.md`, which is what
- * makes `/sy-<name>` invocable in Copilot AND model-triggerable via its
- * `description`. Copilot does NOT read `~/.claude/commands/` or
- * `~/.claude/skills/` (verified v1.0.78 — a probe in either never shows up in
- * `copilot skill list`), so without this deploy every `/sy-*` workflow is
- * simply absent from Copilot while Claude Code and OpenCode both have it.
- *
- * Adding a command: add the bare source name here as well as to
- * CLAUDE_COMMAND_DEPLOY_MAP, so all three CLIs stay at parity.
- *
- * @type {string[]}
+ * Map keys are extension-less command names, which this CLI uses verbatim as
+ * skill folder names: each entry lands at `~/.copilot/skills/<name>/SKILL.md`.
+ * That folder form is what makes `/<name>` invocable in Copilot AND
+ * model-triggerable via its `description`. Copilot does NOT read
+ * `~/.claude/commands/` or `~/.claude/skills/` (verified v1.0.78 — a probe in
+ * either never shows up in `copilot skill list`), so without this deploy every
+ * `/sy-*` workflow would simply be absent from Copilot while Claude Code and
+ * OpenCode both have it.
  */
-const COPILOT_SKILL_DEPLOY_LIST = [
-  "babysit-pr",
-  "babysit-prs",
-  "close-stale-prs",
-  "create-pr",
-  "draft-pr",
-  "list-prs",
-  "list-prs-pending",
-  "maintenance-day",
-  "plan-grill-me",
-  "release",
-  "review-pr",
-  "review-prs",
-  "slack-prs",
-  "sync-and-groom-repo",
-  "sync-and-groom-repos",
-  "sync-pr-branch",
-];
-
-/** @type {string} First-line prefix every Sy-managed command source carries — also how we spot our own orphans on disk. */
-const COPILOT_SKILL_MARKER = "[Sy] ";
 
 /** @type {number} Max description length written into skill frontmatter. Copilot matches on this string, so keep it a summary, not the body. */
 const COPILOT_SKILL_DESCRIPTION_MAX = 400;
@@ -480,17 +456,17 @@ const COPILOT_SKILL_DESCRIPTION_MAX = 400;
 /**
  * Derives a Copilot skill `description` from a command source's first line.
  *
- * The first line of every `_common/commands/*.md` is a one-line `[Sy] <what
- * this does>` summary, which is exactly the shape Copilot wants. Deriving it
- * instead of maintaining a parallel description map means the trigger text can
- * never rot away from the command body it describes.
+ * The first line of every command source is a one-line `[Sy] <what this does>`
+ * summary, which is exactly the shape Copilot wants. Deriving it instead of
+ * maintaining a parallel description map means the trigger text can never rot
+ * away from the command body it describes.
  *
  * @param {string} content - Full markdown source of the command file.
  * @returns {string} Single-line, YAML-safe description (double-quote escaped, length-capped).
  */
 function _buildCopilotSkillDescription(content) {
   /** @type {string} First line with the `[Sy] ` marker stripped and whitespace collapsed. */
-  let description = (content.split("\n", 1)[0] || "").replace(COPILOT_SKILL_MARKER, "").replace(/\s+/g, " ").trim();
+  let description = (content.split("\n", 1)[0] || "").replace(LLM_SKILL_MARKER, "").replace(/\s+/g, " ").trim();
   if (description.length > COPILOT_SKILL_DESCRIPTION_MAX) {
     description = `${description.slice(0, COPILOT_SKILL_DESCRIPTION_MAX - 1).trimEnd()}…`;
   }
@@ -499,8 +475,34 @@ function _buildCopilotSkillDescription(content) {
 }
 
 /**
- * Deploys every COPILOT_SKILL_DEPLOY_LIST entry to
- * `~/.copilot/skills/sy-<name>/SKILL.md` as a folder-form agent skill.
+ * Extracts the first body line of a deployed SKILL.md, skipping the generated
+ * YAML frontmatter block. Used for orphan detection: matching the `[Sy] ` marker
+ * against this one line (rather than the whole file, as an earlier version did)
+ * means a user- or plugin-authored skill that merely *mentions* the marker is
+ * never mistaken for one of ours and deleted.
+ *
+ * @param {string} content - Full SKILL.md contents.
+ * @returns {string} First non-empty line after the frontmatter, or "" when there is none.
+ */
+function _readCopilotSkillBodyFirstLine(content) {
+  /** @type {string[]} All lines; frontmatter is fenced by a leading `---` pair. */
+  const lines = content.split("\n");
+  /** @type {number} Index to start scanning from — past the closing `---` when frontmatter exists. */
+  let start = 0;
+  if (lines[0]?.trim() === "---") {
+    /** @type {number} Offset of the closing fence, searched from line 2 onward. */
+    const close = lines.indexOf("---", 1);
+    if (close !== -1) start = close + 1;
+  }
+  for (let i = start; i < lines.length; i++) {
+    if (lines[i].trim()) return lines[i];
+  }
+  return "";
+}
+
+/**
+ * Deploys every LLM_COMMAND_DEPLOY_MAP entry to
+ * `~/.copilot/skills/<name>/SKILL.md` as a folder-form agent skill.
  *
  * Copilot requires the folder layout (`skills/<name>/SKILL.md`) plus YAML
  * frontmatter carrying `name` + `description` — a flat `.md` or a
@@ -514,8 +516,9 @@ function _buildCopilotSkillDescription(content) {
  * file is generated from repo source on every run, so a `.bak` would only ever
  * snapshot our own previous output.
  *
- * Orphan cleanup removes any `~/.copilot/skills/<dir>` whose SKILL.md body
- * still carries the `[Sy] ` marker but is no longer in the deploy list.
+ * Orphan cleanup removes any `~/.copilot/skills/<dir>` that is either listed in
+ * LLM_COMMAND_RETIRED_NAMES or whose SKILL.md body still carries a
+ * LLM_SKILL_MARKERS prefix while no longer being in the deploy map.
  * User-authored and plugin-installed skills match neither and are untouched.
  *
  * @param {string} targetDir - Path to the ~/.copilot directory.
@@ -529,13 +532,16 @@ async function _doCopilotSkillsWork(targetDir) {
   fs.mkdirSync(skillsDir, { recursive: true });
 
   /** @type {Set<string>} Folder names this run owns — everything else is a candidate orphan. */
-  const deployedFolders = new Set(COPILOT_SKILL_DEPLOY_LIST.map((name) => `sy-${name}`));
+  const deployedFolders = new Set(Object.keys(LLM_COMMAND_DEPLOY_MAP));
+  /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
+  const sourceCache = {};
 
-  for (const sourceName of COPILOT_SKILL_DEPLOY_LIST) {
+  for (const [skillName, sourceName] of Object.entries(LLM_COMMAND_DEPLOY_MAP)) {
+    if (!(sourceName in sourceCache)) {
+      sourceCache[sourceName] = await readLLMCommandSource(sourceName);
+    }
     /** @type {string} Verbatim markdown body of the shared command source. */
-    const body = (await readText`software/scripts/advanced/llm/_common/commands/${sourceName}.md`).trimEnd();
-    /** @type {string} Skill (and folder) name — `sy-` prefixed so ours cluster and never collide. */
-    const skillName = `sy-${sourceName}`;
+    const body = sourceCache[sourceName];
     /** @type {string} Destination folder; Copilot only loads the folder form. */
     const skillFolder = path.join(skillsDir, skillName);
 
@@ -547,15 +553,28 @@ async function _doCopilotSkillsWork(targetDir) {
     log("   Deployed:", `${skillName}/SKILL.md`);
   }
 
-  // Drop Sy-managed skills that fell out of the deploy list (renamed or retired).
+  // Drop Sy-managed skills that fell out of the deploy map (renamed or retired).
   for (const entry of fs.readdirSync(skillsDir)) {
     if (deployedFolders.has(entry)) continue;
     /** @type {string} Candidate orphan's SKILL.md — absent means it isn't a skill folder at all. */
     const skillFile = path.join(skillsDir, entry, "SKILL.md");
     if (!fs.existsSync(skillFile)) continue;
-    if (!fs.readFileSync(skillFile, "utf-8").includes(COPILOT_SKILL_MARKER)) continue;
+    /** @type {string} Reason label printed in the log line — only set when we decide to remove. */
+    let reason = "";
+    // Retired-name matching is restricted to `sy-` prefixed entries: Copilot skills
+    // only ever shipped under that prefix, while the bare retired names (`release`,
+    // `list-prs`, ...) are Claude-era filenames. Without this guard a user- or
+    // plugin-authored `~/.copilot/skills/release/` would be deleted on sight.
+    if (entry.startsWith("sy-") && LLM_COMMAND_RETIRED_NAMES.includes(entry)) {
+      reason = "retired";
+    } else {
+      /** @type {string} First body line, checked against every LLM_SKILL_MARKERS entry. */
+      const firstLine = _readCopilotSkillBodyFirstLine(fs.readFileSync(skillFile, "utf-8"));
+      if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
+    }
+    if (!reason) continue;
     fs.rmSync(path.join(skillsDir, entry), { recursive: true, force: true });
-    log("   Removed prior Sy skill:", entry);
+    log(`   Removed prior Sy skill (${reason}):`, entry);
   }
 }
 

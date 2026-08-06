@@ -99,7 +99,7 @@ key and update this table in the same edit.
 ### Editing rules
 
 - **Instructions / rules**: edit `_common/instructions.md`, then re-run all four setup scripts (or `bash run.sh --preset=llm`).
-- **Slash commands**: edit a file under `_common/commands/<name>.md` — every deploy (Claude direct + OpenCode symlink) picks it up on the next setup run.
+- **Slash commands**: edit a file under `_common/commands/<name>.md` — every deploy (Claude direct + Copilot skills + OpenCode symlink) picks it up on the next setup run. **Adding / renaming / retiring** one is a single edit to `LLM_COMMAND_DEPLOY_MAP` (or `LLM_COMMAND_RETIRED_NAMES`) in `llm-common.js` — that one map is the registry every CLI setup reads, so there is no per-CLI list to keep in sync.
 - **Keybindings**: edit `<cli>/<cli>-keys.common.jsonc` for cross-platform chords, `<cli>/<cli>-keys.windows.jsonc` for Windows/Linux overrides. `OS_KEY` is substituted per-platform.
 - **Settings**: extend the `<CLI>_MANAGED_SETTINGS` map in the matching `setup.js` AND update the intent table above so drift is visible at review time.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.

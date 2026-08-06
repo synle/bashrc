@@ -258,139 +258,28 @@ async function _doInstructionsWork(targetDir) {
 // --- Commands (Custom Slash Commands) ---
 
 /**
- * Deploy map for user-level Claude Code slash commands.
+ * Claude Code has no registry of its own — the command set, the `[Sy] ` markers,
+ * and the retired-name list all live in `llm-common.js` as
+ * `LLM_COMMAND_DEPLOY_MAP`, `LLM_SKILL_MARKERS`, and `LLM_COMMAND_RETIRED_NAMES`
+ * so claude, copilot, gemini, and opencode share exactly one source of truth.
  *
- * Each key is the destination filename in ~/.claude/commands/ (becomes a
- * /<name> command). Each value is the source filename (without .md) under
- * software/scripts/advanced/llm/_common/commands/. Multiple keys may point at the
- * same source so aliases stay byte-exact across destinations.
+ * Map keys are extension-less command names; this CLI is file-based, so it
+ * appends `.md` to reach `~/.claude/commands/<name>.md`.
  *
- * Naming convention: every destination filename is prefixed with `sy-` so all
- * Sy-managed slash commands cluster under `/sy-*` and never collide with
- * user-authored or plugin-shipped commands. Source filenames stay bare
- * (`babysit-pr.md`, `release.md`, etc.) — the `sy-` prefix is purely a
- * deploy-time decoration so editing skill content doesn't require typing the
- * prefix every time.
- *
- * Editing a command: edit the .md file under
- *   software/scripts/advanced/llm/_common/commands/<name>.md
- * Adding a command: drop a new .md file there + add a `sy-<name>.md` deploy
- *   entry whose value is the bare source name.
- * Aliasing: add a deploy-map entry whose value points at an existing source.
- *
- * @type {Record<string, string>}
+ * @param {string} name - Deployed command name from LLM_COMMAND_DEPLOY_MAP.
+ * @returns {string} Destination filename inside ~/.claude/commands/.
  */
-const CLAUDE_COMMAND_DEPLOY_MAP = {
-  "sy-babysit-pr.md": "babysit-pr",
-  "sy-babysit-prs.md": "babysit-prs",
-  "sy-close-stale-prs.md": "close-stale-prs",
-  "sy-sync-and-groom-repo.md": "sync-and-groom-repo",
-  "sy-sync-and-groom-repos.md": "sync-and-groom-repos",
-  "sy-sync-pr-branch.md": "sync-pr-branch",
-  "sy-create-pr.md": "create-pr",
-  "sy-draft-pr.md": "draft-pr",
-  "sy-list-prs.md": "list-prs",
-  "sy-list-prs-pending.md": "list-prs-pending",
-  "sy-review-pr.md": "review-pr",
-  "sy-review-prs.md": "review-prs",
-  "sy-slack-prs.md": "slack-prs",
-  // Single release entry-point. The skill body checks $ARGUMENTS to decide
-  // official vs beta — no per-channel alias files anymore (the old
-  // /sy-release-{main,master,stable,official,beta} aliases were retired
-  // 2026-05-13; see CLAUDE_COMMAND_RETIRED_NAMES below).
-  "sy-release.md": "release",
-  "sy-plan-grill-me.md": "plan-grill-me",
-  "sy-maintenance-day.md": "maintenance-day",
-};
+function _toClaudeCommandFile(name) {
+  return `${name}.md`;
+}
 
 /**
- * Markers that a Sy-managed slash command body may start with. Used by
- * _doCommandsWork() to identify our own previously-deployed commands in
- * ~/.claude/commands/ and wipe them before redeploying the current set.
- *
- * Each marker is anchored to the start of the file so unrelated commands
- * (or markdown that merely mentions `[Sy]` inside a code block) cannot
- * trip the cleanup pass. Trailing spaces are deliberate — `[Sy]` alone
- * would risk matching user-authored files that happen to start with a
- * bracketed tag, and `Sy Skill -` is the legacy prefix kept here so any
- * dev machine that still has pre-`[Sy] `-rename files on disk gets them
- * cleaned up automatically on the next deploy. Add new markers here when
- * the prefix convention changes; remove old ones only after every dev
- * machine has re-run at least once past the prior convention.
- *
- * @type {string[]}
- */
-const SY_SKILL_MARKERS = ["[Sy] ", "Sy Skill - "];
-
-/**
- * Slash-command filenames that we used to deploy but no longer do, and which
- * may not carry any SY_SKILL_MARKERS prefix on disk (e.g. they predate every
- * marker convention, or the marker was edited away by hand).
- *
- * Cleanup of *current* deploy targets is handled implicitly: the deploy loop
- * overwrites them, so nothing extra is needed. Cleanup of *future* renames is
- * handled by the SY_SKILL_MARKERS content scan in _doCommandsWork().
- *
- * MAINTENANCE RULE: **Whenever a slash command is renamed or deleted, its old
- * destination filename MUST be added here.** That's how dev machines that
- * still have the old file on disk get it cleaned up on their next deploy.
- * Forgetting to add it leaves an orphan command in `~/.claude/commands/` that
- * shows up in the slash-command picker with stale content.
- *
- * Entries stay here long enough for every dev machine to have re-run at
- * least once after the rename. Each entry tracks WHEN it was retired so a
- * future maintainer can prune entries that are now safe to drop (rule of
- * thumb: ~3+ months after the retirement commit, AND all known dev machines
- * have re-run). Removing an entry too early orphans files; leaving it too
- * long is harmless but clutters this list — so periodically clean it up.
- *
- * @type {string[]} destination filenames including the `.md` suffix
- */
-const CLAUDE_COMMAND_RETIRED_NAMES = [
-  // TODO(retired-cleanup): drop these once we're confident every dev machine
-  // has re-run `bash run.sh --files=setup.js` at least once after the merge
-  // commit (rule of thumb: 3+ months after the date below). Removing too
-  // early orphans files; periodically prune so this list stays signal-only.
-  "sync-babysit-pr.md", // merged into /sy-babysit-pr in 119cc9d (2026-04-24)
-  "sync-babysit-prs.md", // merged into /sy-babysit-prs in 119cc9d (2026-04-24)
-  // 2026-05-11: every Sy-managed command was renamed to a `sy-` prefix
-  // (e.g. /babysit-pr -> /sy-babysit-pr) so they cluster in the `/` menu and
-  // never collide with user-authored or plugin-shipped commands. The OLD
-  // non-prefixed filenames below are retired — re-running setup.js on any
-  // dev machine that still has these on disk will unlink them.
-  "babysit-pr.md", // renamed to sy-babysit-pr.md (2026-05-11)
-  "babysit-prs.md", // renamed to sy-babysit-prs.md (2026-05-11)
-  "create-pr.md", // renamed to sy-create-pr.md (2026-05-11)
-  "draft-pr.md", // renamed to sy-draft-pr.md (2026-05-11)
-  "list-prs.md", // renamed to sy-list-prs.md (2026-05-11)
-  "slack-prs.md", // renamed to sy-slack-prs.md (2026-05-11)
-  "sync-and-groom-repo.md", // renamed to sy-sync-and-groom-repo.md (2026-05-11)
-  "sync-and-groom-repos.md", // renamed to sy-sync-and-groom-repos.md (2026-05-11)
-  "release.md", // renamed to sy-release.md (2026-05-11)
-  "release-stable.md", // renamed to sy-release-stable.md (2026-05-11)
-  "release-official.md", // renamed to sy-release-official.md (2026-05-11)
-  "release-main.md", // renamed to sy-release-main.md (2026-05-11)
-  "release-master.md", // renamed to sy-release-master.md (2026-05-11)
-  "release-beta.md", // renamed to sy-release-beta.md (2026-05-11)
-  // 2026-05-13: collapsed every release variant down to a single
-  // /sy-release entry-point. The skill body still chooses official vs
-  // beta from $ARGUMENTS — the per-channel aliases were just noise in
-  // the slash-command picker. Retire the old destination filenames so
-  // dev machines that still have them on disk clean up on next deploy.
-  "sy-release-stable.md", // collapsed into sy-release.md (2026-05-13)
-  "sy-release-official.md", // collapsed into sy-release.md (2026-05-13)
-  "sy-release-main.md", // collapsed into sy-release.md (2026-05-13)
-  "sy-release-master.md", // collapsed into sy-release.md (2026-05-13)
-  "sy-release-beta.md", // collapsed into sy-release.md (2026-05-13)
-];
-
-/**
- * Deploys slash command definitions to ~/.claude/commands/. Each entry in
- * CLAUDE_COMMAND_DEPLOY_MAP becomes a /<name> user-level command available
- * across all projects. Source files live under
- * software/scripts/advanced/llm/_common/commands/ and are read verbatim via
- * readText (same pattern as claude-instructions.md). Aliased sources are read
- * once and cached so identical destinations stay byte-exact.
+ * Deploys slash command definitions to ~/.claude/commands/. Each entry in the
+ * shared LLM_COMMAND_DEPLOY_MAP (llm-common.js) becomes a /<name> user-level
+ * command available across all projects. Source files live under
+ * LLM_COMMAND_SOURCE_FOLDER and are read verbatim via readLLMCommandSource
+ * (same pattern as claude-instructions.md). Aliased sources are read once and
+ * cached so identical destinations stay byte-exact.
  * @param {string} targetDir - Path to the ~/.claude directory.
  */
 async function _doCommandsWork(targetDir) {
@@ -400,39 +289,39 @@ async function _doCommandsWork(targetDir) {
   // Hint for users who want to start from a clean slate (e.g. after
   // renaming or retiring a batch of commands). We never run this
   // ourselves — selective unlinking happens further down via the
-  // CLAUDE_COMMAND_RETIRED_NAMES + SY_SKILL_MARKERS cleanup pass.
+  // LLM_COMMAND_RETIRED_NAMES + LLM_SKILL_MARKERS cleanup pass.
   log("   To wipe all deployed commands, run: rm -f ~/.claude/commands/*");
 
   fs.mkdirSync(commandsDir, { recursive: true });
 
   // Diff the on-disk commands directory against the current deploy map and
   // drop any Sy-managed orphans. Files that are currently in
-  // CLAUDE_COMMAND_DEPLOY_MAP are skipped — the deploy loop below will
+  // LLM_COMMAND_DEPLOY_MAP are skipped — the deploy loop below will
   // overwrite them, so deleting + rewriting would be wasted IO.
   //
   // An on-disk file is treated as a Sy orphan (and unlinked) when:
-  //   (a) its name is in CLAUDE_COMMAND_RETIRED_NAMES — explicit retirements
+  //   (a) its name is in LLM_COMMAND_RETIRED_NAMES — explicit retirements
   //       we know about, including legacy files that predate every marker, OR
-  //   (b) its first line starts with any SY_SKILL_MARKERS entry — covers any
+  //   (b) its first line starts with any LLM_SKILL_MARKERS entry — covers any
   //       rename we perform in the future without anyone needing to update a
   //       list, AND catches legacy `Sy Skill - ` prefixed files left over
   //       from before the `[Sy] ` rename.
   //
   // User-authored slash commands that match neither path are left untouched.
   /** @type {Set<string>} Filenames the deploy loop will (re)write — skip cleanup for these. */
-  const deployTargets = new Set(Object.keys(CLAUDE_COMMAND_DEPLOY_MAP));
+  const deployTargets = new Set(Object.keys(LLM_COMMAND_DEPLOY_MAP).map(_toClaudeCommandFile));
   for (const filePath of findPathList(commandsDir, /\.md$/, { type: "file" })) {
     /** @type {string} Just the basename (e.g. "create-pr.md") of the on-disk file. */
     const fileName = path.basename(filePath);
     if (deployTargets.has(fileName)) continue;
     /** @type {string} Reason label printed in the log line — only set when we decide to unlink. */
     let reason = "";
-    if (CLAUDE_COMMAND_RETIRED_NAMES.includes(fileName)) {
+    if (LLM_COMMAND_RETIRED_NAMES.includes(path.basename(fileName, ".md"))) {
       reason = "retired";
     } else {
-      /** @type {string} First line of the file, checked against every SY_SKILL_MARKERS entry. */
+      /** @type {string} First line of the file, checked against every LLM_SKILL_MARKERS entry. */
       const firstLine = fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
-      if (SY_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
+      if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
     }
     if (reason) {
       fs.unlinkSync(filePath);
@@ -443,10 +332,12 @@ async function _doCommandsWork(targetDir) {
   /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
   const sourceCache = {};
 
-  for (const [destFile, sourceName] of Object.entries(CLAUDE_COMMAND_DEPLOY_MAP)) {
+  for (const [commandName, sourceName] of Object.entries(LLM_COMMAND_DEPLOY_MAP)) {
     if (!(sourceName in sourceCache)) {
-      sourceCache[sourceName] = (await readText`software/scripts/advanced/llm/_common/commands/${sourceName}.md`).trimEnd();
+      sourceCache[sourceName] = await readLLMCommandSource(sourceName);
     }
+    /** @type {string} Destination filename — this CLI is file-based, so the name gains `.md`. */
+    const destFile = _toClaudeCommandFile(commandName);
     const dest = path.join(commandsDir, destFile);
     await backupConfigFile(dest);
     fs.writeFileSync(dest, sourceCache[sourceName] + "\n");
