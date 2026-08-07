@@ -82,6 +82,7 @@ Argument: $ARGUMENTS (optional — a path to a git repo. If empty, use the curre
 ## Rules
 
 - **Merge, never rebase.** Branches in this loop may already be pushed; rewriting history would force `--force-with-lease` next push.
+- **This loop grooms LOCAL branches only — a branch with an open PR is `/sy-sync-pr-branch`'s job.** Merging the default branch into every local branch is a housekeeping sweep; it does not resolve an ancestor chain and must not be used as a PR sync. When a branch in the loop has an open PR — especially a stacked one, whose real sync sources are its ancestor branches, not just the default branch — say so and point at `/sy-sync-pr-branch <PR>` rather than treating the local merge as that PR being synced.
 - **Never `--squash` when merging the default into a feature branch.** Squashing here would erase the linkage and break the next groom run's ancestor check.
 - **Never force-push.** This skill never produces `git push --force` or `--force-with-lease`. If a normal push fails, stop and report.
 - **Never delete a worktree directory.** `git worktree prune` only cleans bookkeeping for already-removed dirs. Removing a live worktree is the user's call.
