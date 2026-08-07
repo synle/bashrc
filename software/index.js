@@ -1145,6 +1145,129 @@ global.is_gui = is_gui;
 global.is_gui_x11 = is_gui_x11;
 global.is_gui_wayland = is_gui_wayland;
 
+// --- CPU Arch Detection ---
+/**
+ * Maps a Node `process.arch` value onto the arch spelling used by `uname -m`
+ * and by release asset names. Anything not listed passes through unchanged.
+ * @type {Record<string, string>}
+ */
+const NODE_ARCH_TO_NATIVE_ARCH = {
+  arm64: "arm64",
+  x64: "x86_64",
+  ia32: "i386",
+};
+
+/** @type {string|null} Memoized getNativeArch() result — CPU arch cannot change mid-run. */
+let _nativeArchCache = null;
+
+/**
+ * Pure resolver behind getNativeArch(). Decides the machine's REAL CPU arch from a set of
+ * already-collected probes, so the decision table is unit-testable without any hardware.
+ *
+ * Why it can't just read `process.arch`: on Apple Silicon every process started by an
+ * Intel binary runs translated under Rosetta 2, and a translated process reports x86_64
+ * from `uname -m`, `os.arch()`, and `process.arch` alike. Picking a download that way
+ * hands an arm64 Mac the Intel build (the `Display.DJ_<ver>_x64.dmg` instead of
+ * `Display.DJ_<ver>_aarch64.dmg` bug), which then runs translated forever.
+ *
+ * Mac decision order, most authoritative first:
+ *   1. `hw.optional.arm64` — the kernel's own answer about the silicon. Rosetta does not
+ *      fake it, so "1" is proof of Apple Silicon and "0" is proof of Intel.
+ *   2. An arm64 node build — an arm64 binary cannot run on Intel hardware at all.
+ *   3. `sysctl.proc_translated` = 1 — Rosetta 2 exists only on Apple Silicon, so being
+ *      translated is itself proof of arm64 hardware.
+ *   4. An Intel CPU brand string — only an Intel Mac reports one.
+ *   5. Unknown → arm64. Every Mac Apple still ships is Apple Silicon, and an arm64 asset
+ *      on the (long-discontinued) Intel Mac that somehow blocked every probe above fails
+ *      loudly at install time, whereas the reverse silently installs a translated app.
+ *
+ * Off macOS there is no translation layer to lie about the arch, so `process.arch` wins.
+ *
+ * @param {object} probe - Collected arch probes
+ * @param {boolean} probe.isMac - True when running on macOS
+ * @param {string} [probe.processArch] - `process.arch` of the running node (arm64, x64, ...)
+ * @param {string} [probe.armHardware] - `sysctl -n hw.optional.arm64` output ("1", "0", or "" when unreadable)
+ * @param {string} [probe.translated] - `sysctl -n sysctl.proc_translated` output ("1" under Rosetta 2)
+ * @param {string} [probe.cpuBrand] - `sysctl -n machdep.cpu.brand_string` output
+ * @returns {string} The machine's native arch spelled uname-style ("arm64", "x86_64", ...)
+ */
+function resolveNativeArch({ isMac, processArch, armHardware, translated, cpuBrand }) {
+  /** @type {string} process.arch translated into uname spelling. */
+  const fromProcess = NODE_ARCH_TO_NATIVE_ARCH[processArch] || processArch || "";
+
+  if (!isMac) return fromProcess;
+
+  if (armHardware === "1") return "arm64";
+  if (armHardware === "0") return "x86_64";
+  if (fromProcess === "arm64") return "arm64";
+  if (translated === "1") return "arm64";
+  if (/\bintel\b/i.test(cpuBrand || "")) return "x86_64";
+  return "arm64";
+}
+
+/**
+ * Returns the machine's real CPU arch — the JS mirror of bash `get_native_arch`.
+ * Memoized: the answer is a property of the hardware and cannot change mid-run.
+ *
+ * Use this (never `process.arch` / `os.arch()`) to pick a download for the current
+ * machine. See resolveNativeArch() for the decision table and the Rosetta 2 rationale.
+ * @returns {string} "arm64", "x86_64", or whatever `process.arch` reports off macOS
+ */
+function getNativeArch() {
+  if (_nativeArchCache) return _nativeArchCache;
+
+  /** @type {object} Probes for resolveNativeArch — the sysctl trio is macOS-only. */
+  const probe = { isMac: !!is_os_mac, processArch: process.arch, armHardware: "", translated: "", cpuBrand: "" };
+  if (probe.isMac) {
+    probe.armHardware = _readSysctl("hw.optional.arm64");
+    probe.translated = _readSysctl("sysctl.proc_translated");
+    probe.cpuBrand = _readSysctl("machdep.cpu.brand_string");
+  }
+
+  _nativeArchCache = resolveNativeArch(probe);
+  if (
+    probe.isMac &&
+    probe.armHardware !== "1" &&
+    probe.armHardware !== "0" &&
+    _nativeArchCache !== NODE_ARCH_TO_NATIVE_ARCH[probe.processArch]
+  ) {
+    log(`>> Could not read hw.optional.arm64 — assuming ${_nativeArchCache} (process reports ${probe.processArch})`);
+  }
+  return _nativeArchCache;
+}
+
+/**
+ * Reads a single sysctl value, returning "" when the key does not exist (Intel Macs have
+ * no hw.optional.arm64 oid, and `sysctl` exits non-zero for an unknown key).
+ * @param {string} key - The sysctl key (e.g. "hw.optional.arm64")
+ * @returns {string} The trimmed value, or "" when unreadable
+ */
+function _readSysctl(key) {
+  try {
+    return execBashSync(`sysctl -n ${key} 2> /dev/null`);
+  } catch (e) {
+    return "";
+  }
+}
+
+/**
+ * Decides whether a `file -L <binary>` description describes a Mach-O binary with NO slice
+ * for the given native arch — i.e. an Intel-only build sitting on Apple Silicon. JS mirror
+ * of bash `binary_arch_mismatch`.
+ *
+ * Universal binaries list every slice they contain, so they never mismatch. Anything that
+ * is not Mach-O (a shell/node launcher script, an unreadable path, an ELF binary) is
+ * arch-independent as far as we're concerned and reports no mismatch.
+ * @param {string} fileDescription - Output of `file -L <path>`
+ * @param {string} nativeArch - The machine's native arch from getNativeArch()
+ * @returns {boolean} True when the binary has no slice for nativeArch
+ */
+function isMachOArchMismatch(fileDescription, nativeArch) {
+  if (!fileDescription || !nativeArch) return false;
+  if (fileDescription.indexOf("Mach-O") === -1) return false;
+  return fileDescription.indexOf(nativeArch) === -1;
+}
+
 /**
  * List of OS flags considered limited-support platforms. Scripts calling
  * `exitIfLimitedSupportOs()` will exit early when running on any of these.
@@ -2648,9 +2771,7 @@ async function _forceCloseApp(appLabel) {
 
   if (is_os_mac) {
     try {
-      /** @type {string[]} Matching .app bundles in /Applications/. */
-      const apps = fs.readdirSync("/Applications/").filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
-      for (const app of apps) {
+      for (const app of _findMacAppBundles(appLabel)) {
         const name = app.replace(".app", "");
         log(`>> Force-closing ${name}`);
         await execBash(`osascript -e 'quit app "${name}"'`);
@@ -2665,15 +2786,34 @@ async function _forceCloseApp(appLabel) {
 }
 
 /**
+ * Finds the /Applications/*.app bundles whose name matches an app label.
+ * Shared by _forceCloseApp, getMacInstalledAppVersion, and the arch-mismatch probe so
+ * all three agree on which bundle belongs to a label.
+ *
+ * Matching is dash-tolerant: dashes in the label become regex dots, so "display-dj"
+ * matches both `display-dj.app` and `Display DJ.app`.
+ * @param {string} appLabel - The app label (e.g. "sqlui-native", "display-dj")
+ * @returns {string[]} Matching bundle names (e.g. ["Display DJ.app"]), empty when none or unreadable
+ */
+function _findMacAppBundles(appLabel) {
+  try {
+    /** @type {string} Dash-tolerant regex pattern: dashes match both dashes and spaces. */
+    const pattern = appLabel.replace(/-/g, ".");
+    return fs.readdirSync("/Applications/").filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
  * Reads CFBundleShortVersionString from a /Applications/*.app bundle whose name
  * matches the given app label. Lets downloadAndInstallBinary skip the full
  * download + mount + copy pipeline when the upstream release version equals
  * the version already installed.
  *
- * Discovery mirrors _forceCloseApp: scans /Applications/ for .app bundles
- * matching the dash-tolerant regex (dashes become dots, so "display-dj"
- * matches both `display-dj.app` and `Display DJ.app`). For each match, reads
- * Info.plist via `defaults read`. Returns the first version-shaped string
+ * Discovery is shared with _forceCloseApp via _findMacAppBundles (dash-tolerant, so
+ * "display-dj" matches both `display-dj.app` and `Display DJ.app`). For each match,
+ * reads Info.plist via `defaults read`. Returns the first version-shaped string
  * (semver-ish: digits and dots), or null if no .app is found, the plist read
  * fails (e.g. display-dj's currently-funky Info.plist), or the value doesn't
  * look like a version.
@@ -2684,16 +2824,7 @@ async function _forceCloseApp(appLabel) {
  */
 async function getMacInstalledAppVersion(appLabel) {
   if (!is_os_mac) return null;
-  /** @type {string} Dash-tolerant regex pattern reused from _forceCloseApp. */
-  const pattern = appLabel.replace(/-/g, ".");
-  /** @type {string[]} Matching .app bundles in /Applications/. */
-  let apps = [];
-  try {
-    apps = fs.readdirSync("/Applications/").filter((f) => f.endsWith(".app") && new RegExp(pattern, "i").test(f));
-  } catch (e) {
-    return null;
-  }
-  for (const appName of apps) {
+  for (const appName of _findMacAppBundles(appLabel)) {
     /** @type {string} Path to the bundle's Info plist (without the .plist suffix — `defaults read` adds it). */
     const plistPath = `/Applications/${appName}/Contents/Info`;
     /** @type {string} Trimmed stdout from `defaults read`. Empty on read failure (execBash swallows stderr). */
@@ -2701,6 +2832,61 @@ async function getMacInstalledAppVersion(appLabel) {
     if (/^\d+(\.\d+)+/.test(out)) return out;
   }
   return null;
+}
+
+/**
+ * Resolves the main executable inside a .app bundle: `Contents/MacOS/<name>`.
+ * Prefers the entry named after the bundle (the Tauri/Electron convention) and falls
+ * back to the first entry, so a bundle whose executable is renamed still resolves.
+ *
+ * Reads the folder directly rather than `defaults read ... CFBundleExecutable` because
+ * some of these bundles ship a plist `defaults` refuses to parse — the same funk that
+ * makes getMacInstalledAppVersion return null for display-dj.
+ * @param {string} appName - Bundle name including the .app suffix (e.g. "Display DJ.app")
+ * @returns {string|null} Absolute path to the bundle executable, or null when unreadable
+ */
+function _getMacAppExecutablePath(appName) {
+  /** @type {string} The bundle's executable folder. */
+  const macosFolder = `/Applications/${appName}/Contents/MacOS`;
+  try {
+    /** @type {string[]} Everything shipped in Contents/MacOS. */
+    const entries = fs.readdirSync(macosFolder);
+    if (!entries.length) return null;
+    /** @type {string} Bundle name without the .app suffix — the conventional executable name. */
+    const base = appName.replace(/\.app$/, "");
+    return path.join(macosFolder, entries.find((f) => f.toLowerCase() === base.toLowerCase()) || entries[0]);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Reports whether the installed copy of an app is built for the wrong CPU arch — e.g. the
+ * Intel `_x64.dmg` sitting on an Apple Silicon Mac because an earlier run resolved the arch
+ * from a Rosetta-translated node.
+ *
+ * This is what stops the version check from cementing a wrong-arch install: the Intel build
+ * carries the same CFBundleShortVersionString as the arm64 build, so a version comparison
+ * alone reports "already installed" forever and the user never gets the native app.
+ *
+ * Mac-only. Returns false on every other platform, and false whenever the bundle or its
+ * executable cannot be read — an unreadable bundle is not evidence of a mismatch, and
+ * guessing "mismatch" would re-download on every single run.
+ * @param {string} appLabel - The app label (e.g. "display-dj")
+ * @returns {Promise<boolean>} True when an installed bundle has no slice for the native arch
+ */
+async function isMacInstalledAppArchMismatched(appLabel) {
+  if (!is_os_mac) return false;
+  /** @type {string} The machine's real CPU arch (arm64 on Apple Silicon, even under Rosetta 2). */
+  const nativeArch = getNativeArch();
+  for (const appName of _findMacAppBundles(appLabel)) {
+    const executablePath = _getMacAppExecutablePath(appName);
+    if (!executablePath) continue;
+    /** @type {string} `file -L` description, e.g. "Mach-O 64-bit executable arm64". Empty when unreadable. */
+    const description = await execBash(`file -L "${executablePath}" 2>/dev/null`);
+    if (isMachOArchMismatch(description, nativeArch)) return true;
+  }
+  return false;
 }
 
 /**
@@ -2719,7 +2905,9 @@ async function getMacInstalledAppVersion(appLabel) {
  * On Mac, the entire pipeline is short-circuited when the installed
  * CFBundleShortVersionString already equals the upstream release version —
  * unless IS_REFRESH_MODE is set (i.e. `--refresh="<script>"`), which forces
- * the reinstall. Saves the ~30-300 MB download + dmg mount + cp on every run.
+ * the reinstall, or the installed bundle turns out to be built for the wrong
+ * CPU arch (an Intel build on Apple Silicon), which no version comparison can
+ * see. Saves the ~30-300 MB download + dmg mount + cp on every run.
  *
  * Returns a boolean so callers can gate post-install side effects (e.g.
  * display-dj's `tccutil reset Accessibility`, which forces the user to
@@ -2732,7 +2920,9 @@ async function downloadAndInstallBinary(repo, getFileName) {
   const isUrl = repo.includes("://");
   const appLabel = isUrl ? path.basename(repo).replace(/\.[^.]+$/, "") : repo.split("/")[1];
   const version = isUrl ? "" : await fetchGitHubReleaseVersion(repo);
-  const isArm64 = os.arch() === "arm64";
+  // getNativeArch(), never process.arch/os.arch(): on Apple Silicon a Rosetta-translated
+  // node reports x64 and would pick the Intel asset (Display.DJ_<ver>_x64.dmg) forever.
+  const isArm64 = getNativeArch() === "arm64";
   const ver = version.replace(/^v/, "");
   const fileName = isUrl ? path.basename(repo) : getFileName(ver, isArm64);
   const url = isUrl ? repo : `https://github.com/${repo}/releases/download/${version}/${fileName}`;
@@ -2742,10 +2932,17 @@ async function downloadAndInstallBinary(repo, getFileName) {
   if (is_os_mac && !IS_REFRESH_MODE && version) {
     const installed = await getMacInstalledAppVersion(appLabel);
     if (installed === ver) {
-      log(`>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`);
-      return false;
+      // Same version can still be the wrong build: an earlier run resolving the arch from
+      // a translated node installed the Intel slice, and versions match forever after.
+      if (await isMacInstalledAppArchMismatched(appLabel)) {
+        log(`>> ${appLabel} ${ver} is installed but not built for ${getNativeArch()} — reinstalling with ${fileName}`);
+      } else {
+        log(`>> ${appLabel} ${ver} already installed — skipping (pass --refresh="${appLabel}" to force)`);
+        return false;
+      }
+    } else if (installed) {
+      log(`>> ${appLabel}: installed ${installed} → upstream ${ver}, upgrading`);
     }
-    if (installed) log(`>> ${appLabel}: installed ${installed} → upstream ${ver}, upgrading`);
   }
 
   const legacyExtraPath = await getCustomTweaksPath(appLabel);

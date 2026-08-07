@@ -171,6 +171,13 @@ logic (see AGENTS.md §2, Golden rules).
   `binary-cache`), `downloadAndInstallBinary`, `installMacDmg`, `clearMacQuarantine`,
   `installWindowsSetupExe`, `installLinuxUniversalAppImage`, `installBrowserExtension`,
   `gitClone`, `fetchGitHubReleaseVersion`, `getGitHubRawUrl`.
+- **CPU arch:** `getNativeArch()` (memoized; JS mirror of bash `get_native_arch` — never
+  `os.arch()`/`process.arch`, which report `x64` under Rosetta 2 and pick the Intel
+  asset on Apple Silicon; on a Mac with unreadable probes it answers `arm64`),
+  `resolveNativeArch(probe)` (the pure decision table behind it),
+  `isMachOArchMismatch(fileOutput, arch)` and `isMacInstalledAppArchMismatched(label)`
+  (mirror of `binary_arch_mismatch` — why a same-version wrong-arch app still
+  reinstalls), `getMacInstalledAppVersion`.
 - **Install version stamps:** `getInstalledVersionStampPath` (sibling
   `<folder>.installed.json`, never inside the folder — Chrome rejects an unpacked
   extension containing a dot-entry), `readInstalledVersionStamp`,

@@ -494,6 +494,18 @@ function install_bootstrap_node() {
   local os arch
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   arch=$(uname -m)
+
+  # `uname -m` reports x86_64 for ANY process translated by Rosetta 2, so an
+  # Apple Silicon Mac reached through a translated shell would download an Intel
+  # node here — and every later arch decision inherits it, because node's own
+  # process.arch then reports x64 too. hw.optional.arm64 is the kernel's answer
+  # about the silicon and Rosetta does not fake it, so it wins. The re-exec above
+  # normally makes this moot, but it is skipped for piped runs (curl | bash),
+  # which is exactly where a translated shell sneaks through.
+  if [ "$os" = "darwin" ] && [ "$(sysctl -n hw.optional.arm64 2> /dev/null)" = "1" ]; then
+    arch="arm64"
+  fi
+
   case "$arch" in
   x86_64) arch="x64" ;;
   aarch64 | arm64) arch="arm64" ;;

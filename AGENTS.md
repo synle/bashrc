@@ -301,7 +301,11 @@ Profile registration is buffered: `registerProfileBlock` /
   `run_native <binary>`; gate "already installed" skips with `binary_arch_mismatch
 <path>`; route `npm install -g` through `find_native_node`. `run_native` execs a real
   binary — pass `brew` / `npm` / `bash`, never a shell function. `run.sh` re-execs itself
-  once via `arch -arm64` when translated. Tests: `software/tests/nativeArch.spec.js`.
+  once via `arch -arm64` when translated, and resolves the bootstrap-node download arch
+  from `hw.optional.arm64` rather than `uname -m` (the re-exec is skipped for piped
+  `curl | bash` runs, which is exactly where a translated shell sneaks through — and an
+  x86_64 bootstrap node makes `process.arch` lie for the rest of the run). Tests:
+  `software/tests/nativeArch.spec.js`.
 
 ### 7.2 JS
 
@@ -312,6 +316,18 @@ Profile registration is buffered: `registerProfileBlock` /
   Skip this for files over ~150 lines.
 - **Never `console.log` / `console.error`** — use `log()` (stderr). `emitBash()` is the
   only stdout writer.
+- **Never `os.arch()` / `process.arch` to pick a download — use `getNativeArch()`.** It
+  is the JS mirror of bash `get_native_arch`: on macOS the kernel's `hw.optional.arm64`
+  wins over anything the process reports, because a Rosetta-translated node reports
+  `x64` on Apple Silicon and hands an arm64 Mac the Intel asset
+  (`Display.DJ_<ver>_x64.dmg` instead of `_aarch64.dmg`). **When every probe is
+  unreadable on a Mac, the answer is `arm64`** — an arm64 asset on a rare Intel holdout
+  fails loudly, the reverse installs a translated app silently. A version comparison
+  alone can never catch that (both builds ship the same
+  `CFBundleShortVersionString`), so `downloadAndInstallBinary` also runs
+  `isMacInstalledAppArchMismatched()` before honoring an "already installed" skip.
+  Decision table + `isMachOArchMismatch` (JS mirror of `binary_arch_mismatch`) are
+  unit-tested in `software/tests/nativeArchJs.spec.js`.
 - **Never bare `fs.copyFileSync`** — its `FICLONE`/`copy_file_range` path fails `EPERM`
   on cross-device and SMB mounts. Wrap in try/catch falling back to
   `writeFileSync(dest, readFileSync(src))`, or use `safeCopyFile`.
