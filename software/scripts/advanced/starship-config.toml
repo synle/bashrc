@@ -19,8 +19,12 @@ ${env_var.BASH_VER}[>](bold white) """
 # disabled: python/node path:version info
 # re-enable by adding ${env_var.PYTHON_INFO} and ${env_var.NODE_INFO} to the format string above
 
-# increase git command timeout from default 500ms to 2000ms
-command_timeout = 2000
+# git command budget per prompt. The perceived "prompt hang" IS this timeout: on a slow
+# repo starship blocks the whole render until the git call is killed, so a bigger number
+# means a longer stall, not more info. Keep it short so the prompt degrades fast (git
+# segment silently drops) instead of freezing the terminal. Real speed comes from
+# core.fsmonitor + core.untrackedCache in software/scripts/git.gitconfig.
+command_timeout = 1000
 
 # increase directory scan timeout from default 30ms to 100ms
 scan_timeout = 100
@@ -47,6 +51,9 @@ style = "bold cyan"
 format = "[\\[$branch\\]]($style)"
 
 [git_status]
+# the prompt only renders ahead/behind, so never pay for recursing into submodules -
+# a dirty submodule tree is the usual reason `git status` blows past command_timeout
+ignore_submodules = true
 style = "bold cyan"
 format = "[ $ahead_behind]($style)"
 ahead = "+$count"

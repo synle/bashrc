@@ -16,6 +16,12 @@ async function doWork() {
   log(">>> Registering starship with bash profile");
   const starshipProfile = code`
     if type -P starship &> /dev/null; then
+      # a slow repo makes starship kill its git call and print
+      # "Executing command ... timed out" to stderr on every single prompt render.
+      # The timeout is already handled (see command_timeout in starship.toml); the
+      # warning just spams the terminal, so keep only real errors.
+      export STARSHIP_LOG=error
+
       # init starship first so it sets up its own PROMPT_COMMAND
       eval "$(starship init bash --print-full-init)"
 
