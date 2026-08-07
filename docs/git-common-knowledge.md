@@ -591,6 +591,36 @@ Some teams prefer a `.worktrees/` subfolder inside the main worktree:
 
 Both work; pick one and stick with it.
 
+**What this machine actually uses.** One rigid layout, outside every repo, so worktrees never
+show up as untracked junk and `ls ~/.worktrees` is the whole inventory:
+
+```
+$HOME/.worktrees/<owner>/<repo>/<repo>__pr-<number>
+$HOME/.worktrees/<owner>/<repo>/<repo>__branch-<slug>
+```
+
+`<owner>` and `<repo>` come from the `origin` remote — never the folder name, which routinely
+disagrees with it. `<slug>` replaces every character outside `[A-Za-z0-9._-]` with `_`, collapses
+runs, and trims the ends, so `syle/fix~it` becomes `branch-syle_fix_it`. The leaf repeats the repo
+name because everything that shows only a basename — editor title bars, tmux windows, shell
+prompts, build project names — would otherwise just say `pr-409`.
+
+Nothing computes that path by hand. Three git aliases own it, so any shell, script, or agent lands
+on the same folder:
+
+```bash
+git worktree-path syle/my-feature   # print the path, create nothing
+git create-worktree syle/my-feature # reuse-or-create, prints the path on stdout
+git create-worktree syle/my-feature 409   # same, but in the <repo>__pr-409 slot
+git clean-worktree                  # prune records, remove merged/gone worktrees (skips dirty)
+
+git_create_worktree syle/my-feature # interactive wrapper: the above plus a cd
+```
+
+`git create-worktree` never hands back the primary checkout, and never `-B`-resets a branch that
+still holds unpushed commits — it checks `origin/<branch>..<branch>` first and checks the branch
+out as-is instead, so an interrupted run's work survives.
+
 ### When NOT to use worktrees
 
 - For most daily work — branches are lighter. Worktrees are for cases where you genuinely need _both_ states present simultaneously.
