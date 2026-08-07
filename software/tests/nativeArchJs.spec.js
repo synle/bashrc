@@ -86,6 +86,17 @@ describe("resolveNativeArch off macOS", () => {
   it("ignores the mac-only sysctl probes — there is no translation layer to lie", () => {
     expect(resolveNativeArch({ isMac: false, processArch: "x64", armHardware: "1", translated: "1" })).toBe("x86_64");
   });
+
+  it("gives the same isArm64 verdict as the old `os.arch() === 'arm64'` check for every Node arch", () => {
+    // Non-Mac callers (Linux AppImage names — e.g. ghostty's Ghostty-<ver>-<arch>.AppImage)
+    // were switched from os.arch() to getNativeArch(), so their verdict must be unchanged.
+    // Only macOS gets new behavior; nothing off-mac can silently flip.
+    const nodeArches = ["arm", "arm64", "ia32", "loong64", "mips", "mipsel", "ppc", "ppc64", "riscv64", "s390", "s390x", "x64"];
+    for (const processArch of nodeArches) {
+      const wasArm64 = processArch === "arm64";
+      expect(resolveNativeArch({ isMac: false, processArch }) === "arm64").toBe(wasArm64);
+    }
+  });
 });
 
 describe("getNativeArch", () => {
