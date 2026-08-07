@@ -40,6 +40,9 @@ describe("git.js doWork", () => {
     expect(gitignore).toContain("node_modules/");
     expect(gitignore).toContain("__pycache__/");
     expect(gitignore).toContain(".env");
+    expect(gitignore).toContain(".worktrees/");
+    expect(gitignore).toContain(".worktree/");
+    expect(gitignore).toContain(".wt/");
   });
 
   it("should include numbered alias snippets in gitconfig", async () => {

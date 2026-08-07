@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-07]
+# NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-08]
 set -u
 deprecated_extensions=(
   "visualstudioexptteam.vscodeintellicode"

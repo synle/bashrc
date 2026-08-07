@@ -37,3 +37,8 @@ coverage/
 .cache/
 .parcel-cache/
 .prettier-cache
+
+# Worktrees
+.worktrees/
+.worktree/
+.wt/

@@ -82,7 +82,7 @@ Examples:
    - De-duplicate by URL. Order preserves the user's input order; classification + sort still happen below.
 
 2. **For each PR, fetch detailed status:**
-   - CI/build status: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` → `CI PASSED` / `CI FAILED` (name the first failing check) / `BUILD IN PROGRESS` (count the still-running checks)
+   - CI/build status: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` → `CI PASSED` / `CI FAILED` (name the first failing check) / `BUILD IN PROGRESS` (count the still-running checks). **Count only self-resolving checks as "running"** — classify pending entries exactly as `/sy-babysit-pr` Step 3 does; that is the single definition, do not restate or re-derive it here. A human approval gate that an app reports as a check sits `IN_PROGRESS` by design until a person clicks, so it reads `AWAITING REVIEW`, never a running build: keep it out of the `(<n> running)` count, and when it is the only pending entry the PR is not `BUILD IN PROGRESS` at all.
    - Reviews: `gh pr view <number> --repo <owner/repo> --json reviews,reviewDecision` → `APPROVED` (with approval count) / `CHANGES REQUESTED` / `AWAITING REVIEW`
    - Unresolved review comments: `gh pr view <number> --repo <owner/repo> --json reviewThreads --jq '[.reviewThreads[] | select(.isResolved == false)] | length'` → count of open threads
    - Resolved review comments (`pingpong` only, for the counters strip): same call with `select(.isResolved == true)` → count of resolved threads
@@ -416,7 +416,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
   | --------------------------------- | -------------------------------------------------------------- |
   | `CI PASSED`                       | Every required check succeeded (neutral / skipped count as ok) |
   | `CI FAILED — <check>`             | Any required check failed. Name the first failing check        |
-  | `BUILD IN PROGRESS (<n> running)` | Checks still queued or running, none failed yet                |
+  | `BUILD IN PROGRESS (<n> running)` | Self-resolving checks still queued or running, none failed yet (human approval gates excluded — Step 2) |
 
   **Line 3 — review, printed whenever the review state is known.** Exactly one of:
 

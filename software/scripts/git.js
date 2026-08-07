@@ -128,6 +128,11 @@ function _getGlobalGitIgnore() {
     .cache/
     .parcel-cache/
     .prettier-cache
+
+    # Worktrees
+    .worktrees/
+    .worktree/
+    .wt/
   `;
 }
 
