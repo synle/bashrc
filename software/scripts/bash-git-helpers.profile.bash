@@ -333,6 +333,47 @@ function godownload() {
 }
 
 ################################################################################
+# --- Git Worktrees ---
+# Every worktree on this machine lives at exactly one kind of path:
+#   $HOME/.worktrees/<owner>/<repo>/<repo>__<slot>
+# The path is computed by the `git worktree-path` alias in git.gitconfig, and the
+# folder is created by `git create-worktree`. Both are git aliases on purpose: a git
+# alias resolves in ANY shell with no profile sourcing, so scripts, CI, and AI agents
+# running `bash -c` land on the same folder as an interactive shell. This wrapper adds
+# only the human conveniences on top - a copy-pasteable summary and a cd.
+################################################################################
+
+# git_create_worktree <branch> [<slot>] - Create or reuse the canonical worktree for a branch, then cd into it
+function git_create_worktree() {
+  if is_help_arg "${1:-}"; then
+    echo "git_create_worktree: create or reuse the canonical worktree for a branch, then cd into it
+  Usage: git_create_worktree <branch> [<slot>]
+  Layout:
+    \$HOME/.worktrees/<owner>/<repo>/<repo>__<slot>
+  Notes:
+    - <owner> and <repo> come from the origin remote, never from the folder name
+    - <slot> defaults to branch-<branch>; every character outside [A-Za-z0-9._-] becomes '_'
+    - pass a PR number as <slot> to get <repo>__pr-<number> instead
+    - reuses a linked worktree already on <branch>, and never the primary checkout
+    - falls back to a detached worktree when <branch> is checked out in the primary checkout
+    - print the path without creating anything: git worktree-path <branch>
+    - remove merged/gone worktrees later with: git clean-worktree"
+    return 1
+  fi
+
+  if [ -z "${1:-}" ]; then
+    echo "git_create_worktree: a branch name is required (see: git_create_worktree --help)"
+    return 1
+  fi
+
+  local target
+  target=$(git create-worktree "$1" "${2:-}") || return 1
+
+  print_action_summary "$target"
+  cd "$target"
+}
+
+################################################################################
 # --- Git Patch Transfer ---
 # Moving a commit between machines, in exactly two verbs:
 #   git_patch_create  — last commit -> stdout + clipboard + temp file + shared folder
