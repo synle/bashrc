@@ -22,16 +22,20 @@ For full address-comments + drive-CI-green work, use `/sy-babysit-pr` instead. T
    - **Skip if `mergeStateStatus == "CLEAN"` or `mergeStateStatus == "HAS_HOOKS"`.** Already up to date.
    - **Warn and confirm if `isDraft == true`.** Draft branches usually don't need sync; proceed only on explicit yes.
 
-3. **Try the GitHub-side update first:**
+2a. **Detect a stack — a stacked PR has more than one branch to sync from.** If `baseRefName` is not the default branch, check whether it is itself the head of an open PR: `gh pr list --repo <owner/repo> --head <baseRefName> --state open --json number,url,baseRefName`. A hit means stacked; keep walking up from that PR's `baseRefName` (cap 10 hops, stop on a repeat) to collect the full `ancestors[]` — immediate parent first, root-most last — and the **floor** the walk stops on (normally the default branch; a long-lived non-default branch with no PR is itself the floor, and the default branch is then NOT merged). Report the chain. When there are no ancestors this is an ordinary PR and Step 3 handles it.
+   - **Stacked → skip Step 3 and go straight to Step 4.** `gh pr update-branch` only merges the PR's immediate base, so on a stack it silently leaves the branch behind the default branch (and behind every ancestor above the parent). The full chain merge is Step 4.
+
+3. **Try the GitHub-side update first (non-stacked PRs only):**
    - Run `gh pr update-branch <number> --repo <owner/repo>` (uses merge strategy by default; never `--rebase`).
    - If it succeeds, skip to step 5.
    - If it fails with merge conflicts (`mergeable == "CONFLICTING"`), proceed to step 4.
 
-4. **Manual merge fallback (only on conflict) — in a dedicated worktree, never the primary checkout:**
+4. **Manual merge fallback (on conflict, or whenever Step 2a found a stack) — in a dedicated worktree, never the primary checkout:**
    - Resolve the worktree at the canonical path (see One rigid worktree path): `WT="$HOME/.worktrees/<owner>/<repo>/pr-<number>"; mkdir -p "$(dirname "$WT")"`. Run `git worktree prune` first — a folder deleted by an earlier run leaves an orphan record that makes `git worktree add` fail with `already registered`. Then reuse a linked worktree already on `<headRefName>` (`git worktree list --porcelain`) if one exists; else `git fetch origin <headRefName> && git worktree add "$WT" -B <headRefName> origin/<headRefName>` — **but only when `git rev-list --count origin/<headRefName>..<headRefName>` is `0` or the local branch doesn't exist**, since `-B` hard-resets and would destroy unpushed commits left by an interrupted run; with local-only commits use `git worktree add "$WT" <headRefName>` (no reset) and reconcile via `git merge origin/<headRefName> --no-edit`. Else — if `<headRefName>` is checked out in the MAIN worktree — `git worktree add --detach "$WT" origin/<headRefName>`. When cwd is not the target repo, `gh repo clone <owner/repo> "$WT"` and `gh pr checkout <number>` there. `cd "$WT"` and run everything below from there.
    - **Resume, don't discard, whatever a prior interrupted run left in a reused worktree.** Finish an in-progress merge (`MERGE_HEAD` present → resolve, `git commit --no-edit`) before starting a new one; commit uncommitted work at the canonical path; push unpushed local commits with the rest. At a non-canonical path the dirt is the user's — stop and ask. Never `stash`, `reset`, or `checkout --` to force a clean tree.
    - `git fetch origin <baseRefName>`.
-   - `git merge origin/<baseRefName>` and resolve conflicts. Never rebase.
+   - **Merge every source the branch sits on, floor first, then each ancestor from root-most down to the immediate parent** (Step 2a's list; a non-stacked PR has exactly one source, its base). One `git merge origin/<source>` per source, resolving conflicts before starting the next — never an octopus merge, never rebase. `Already up to date` on the upper entries is normal; log it and continue.
+   - **Merges flow downhill only.** Ancestor → this branch, never the reverse. Never push an ancestor branch, never merge this branch into its parent — those branches belong to other PRs.
    - Commit the merge (`git commit` — the editor will pre-fill the merge message; accept it).
    - Author-check the merge commit — compare commit author to local `.gitconfig`; reset author if mismatch.
    - Push: `git push`, or `git push origin HEAD:<headRefName>` when the worktree is detached.
@@ -39,6 +43,7 @@ For full address-comments + drive-CI-green work, use `/sy-babysit-pr` instead. T
 
 5. **Report:**
    - PR number + URL.
+   - Stack shape — `not stacked — merged <base>`, or `stacked <n> deep: this PR ← <parent link> ← <floor>` with one line per merge source (merged / already up to date / conflicts resolved).
    - New `mergeStateStatus` from a fresh `gh pr view`.
    - Whether the sync was server-side (step 3) or manual (step 4).
    - If CI re-triggered: the run URL from `gh run list --branch <headRefName> --limit 1`.
@@ -46,7 +51,8 @@ For full address-comments + drive-CI-green work, use `/sy-babysit-pr` instead. T
 ## Rules
 
 - **Merge, never rebase.** `git pull --rebase`, `gh pr update-branch --rebase`, or interactive rebase on a PR branch are all forbidden — rebasing rewrites pushed history and forces `--force-with-lease` on next push. Always merge.
-- **The manual fallback (Step 4) runs in a dedicated worktree at `$HOME/.worktrees/<owner>/<repo>/pr-<number>` — never the user's primary checkout** (see Never do PR-branch work in the primary checkout / One rigid worktree path). Step 3's server-side `gh pr update-branch` needs no checkout at all, which is why it's tried first.
+- **A stacked PR syncs from its whole ancestor chain, floor first, immediate parent last (Steps 2a / 4).** `gh pr update-branch` merges only the immediate base, so it is skipped entirely on a stack — it would leave the branch behind the default branch and behind every ancestor above the parent. Merges flow downhill only: never push an ancestor branch, never merge this branch into its parent.
+- **The manual fallback (Step 4) runs in a dedicated worktree at `$HOME/.worktrees/<owner>/<repo>/pr-<number>` — never the user's primary checkout** (see Never do PR-branch work in the primary checkout / One rigid worktree path). Step 3's server-side `gh pr update-branch` needs no checkout at all, which is why it's tried first on a non-stacked PR.
 - **Don't touch the comment threads or CI.** That's babysit's job. This skill exits after the sync push, regardless of CI state.
 - **One PR per invocation.** For fan-out across all open PRs, use `/sy-babysit-prs` (which includes per-PR sync as step 1) instead of looping this skill.
 - **Resolve `<owner>/<repo>` via `git remote get-url origin`, never from the folder name (see Repo Identification).**

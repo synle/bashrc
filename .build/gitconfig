@@ -1,4 +1,4 @@
-# NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-06]
+# NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-07]
 # ################################################################################
 
 #!/bin/sh
@@ -95,6 +95,12 @@ strategy = incremental
 navigate = true
 side-by-side = true
 line-numbers = true
+# Use the terminal's own ANSI palette for syntax highlighting instead of delta's
+# bundled default. Every other pager and picker on the machine already inherits it
+# (`bat --theme=ansi`, fzf sets no --color, starship and the [color "diff"] block
+# above use named colors), so without this delta was the only tool rendering a
+# palette nothing else shared.
+syntax-theme = ansi
 
 [alias]
 # ---- Status & Staging ----

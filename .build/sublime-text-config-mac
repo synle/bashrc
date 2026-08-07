@@ -1,4 +1,4 @@
-// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-06]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-07]
 // 
 // Preferences Settings
 // ################################################################################
@@ -76,7 +76,7 @@
   "rulers": [
     140
   ],
-  "dark_color_scheme": "Monokai.sublime-color-scheme",
+  "dark_color_scheme": "Mariana.sublime-color-scheme",
   "light_color_scheme": "Breakers.sublime-color-scheme",
   "file_exclude_patterns": [
     "._*",

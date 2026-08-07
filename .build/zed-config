@@ -1,4 +1,4 @@
-// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-06]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-07]
 // 
 // Zed settings.json
 // ################################################################################
@@ -81,7 +81,16 @@
     "git_gutter": "hide"
   },
   "auto_install_extensions": {
-    "material-icon-theme": true
+    "material-icon-theme": true,
+    "html": true,
+    "git-firefly": true,
+    "make": true,
+    "toml": true,
+    "dockerfile": true,
+    "scss": true,
+    "xml": true,
+    "ini": true,
+    "log": true
   },
   "icon_theme": "Material Icon Theme",
   "prettier": {
@@ -97,9 +106,6 @@
     "TSX": {
       "formatter": "prettier"
     },
-    "JSX": {
-      "formatter": "prettier"
-    },
     "JSON": {
       "formatter": "prettier"
     },
@@ -110,6 +116,9 @@
       "formatter": "prettier"
     },
     "CSS": {
+      "formatter": "prettier"
+    },
+    "SCSS": {
       "formatter": "prettier"
     },
     "Markdown": {
@@ -139,6 +148,36 @@
       "formatter": "language_server"
     },
     "C++": {
+      "formatter": "language_server"
+    },
+    "Dockerfile": {
+      "formatter": "language_server"
+    },
+    "TOML": {
+      "formatter": "language_server"
+    },
+    "XML": {
+      "formatter": "language_server"
+    },
+    "Make": {
+      "formatter": "language_server"
+    },
+    "ini": {
+      "formatter": "language_server"
+    },
+    "LOG": {
+      "formatter": "language_server"
+    },
+    "Git Config": {
+      "formatter": "language_server"
+    },
+    "Git Ignore": {
+      "formatter": "language_server"
+    },
+    "Git Attributes": {
+      "formatter": "language_server"
+    },
+    "Git Rebase": {
       "formatter": "language_server"
     }
   },

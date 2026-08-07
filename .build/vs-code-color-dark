@@ -1,4 +1,4 @@
-// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-06]
+// NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-07]
 // 
 // VS Code dark color customizations
 // ################################################################################
@@ -510,6 +510,207 @@
         ],
         "settings": {
           "foreground": "#f67070"
+        }
+      },
+      {
+        "scope": [
+          "meta.diff.header",
+          "meta.diff.header.from-file",
+          "meta.diff.header.to-file"
+        ],
+        "settings": {
+          "foreground": "#5ca0d7"
+        }
+      },
+      {
+        "scope": [
+          "constant.character",
+          "variable.language.this"
+        ],
+        "settings": {
+          "foreground": "#5ca0d7"
+        }
+      },
+      {
+        "scope": [
+          "keyword.operator.new",
+          "keyword.operator.expression",
+          "keyword.operator.cast"
+        ],
+        "settings": {
+          "foreground": "#5ca0d7"
+        }
+      },
+      {
+        "scope": [
+          "source.cpp keyword.operator.new",
+          "source.cpp keyword.operator.delete",
+          "keyword.other.using"
+        ],
+        "settings": {
+          "foreground": "#5ca0d7"
+        }
+      },
+      {
+        "scope": "token.info-token",
+        "settings": {
+          "foreground": "#5ca0d7"
+        }
+      },
+      {
+        "scope": "meta.preprocessor",
+        "settings": {
+          "foreground": "#c586c0"
+        }
+      },
+      {
+        "scope": "punctuation.definition.tag",
+        "settings": {
+          "foreground": "#e8e8e8"
+        }
+      },
+      {
+        "scope": [
+          "punctuation.definition.template-expression.begin",
+          "punctuation.definition.template-expression.end",
+          "punctuation.section.embedded"
+        ],
+        "settings": {
+          "foreground": "#d7ba7d"
+        }
+      },
+      {
+        "scope": "token.warn-token",
+        "settings": {
+          "foreground": "#dcdcaa"
+        }
+      },
+      {
+        "scope": "token.error-token",
+        "settings": {
+          "foreground": "#f67070"
+        }
+      },
+      {
+        "scope": "constant.regexp",
+        "settings": {
+          "foreground": "#d98282"
+        }
+      },
+      {
+        "scope": [
+          "punctuation.definition.group.regexp",
+          "punctuation.definition.group.assertion.regexp",
+          "punctuation.definition.character-class.regexp",
+          "keyword.operator.or.regexp",
+          "keyword.control.anchor.regexp",
+          "punctuation.character.set.begin.regexp",
+          "punctuation.character.set.end.regexp",
+          "keyword.operator.negation.regexp",
+          "support.other.parenthesis.regexp"
+        ],
+        "settings": {
+          "foreground": "#d98282"
+        }
+      },
+      {
+        "scope": [
+          "variable.other.enummember",
+          "keyword.operator.plus.exponent",
+          "keyword.operator.minus.exponent"
+        ],
+        "settings": {
+          "foreground": "#b5cea8"
+        }
+      },
+      {
+        "scope": [
+          "constant.sha.git-rebase",
+          "keyword.other.unit",
+          "meta.preprocessor.numeric"
+        ],
+        "settings": {
+          "foreground": "#b5cea8"
+        }
+      },
+      {
+        "scope": "meta.preprocessor.string",
+        "settings": {
+          "foreground": "#ce9178"
+        }
+      },
+      {
+        "scope": [
+          "entity.name.namespace",
+          "entity.other.attribute",
+          "entity.name.scope-resolution",
+          "meta.type.cast.expr",
+          "meta.type.new.expr",
+          "support.constant.math"
+        ],
+        "settings": {
+          "foreground": "#4ec9b0"
+        }
+      },
+      {
+        "scope": [
+          "storage.type.numeric.go",
+          "storage.type.byte.go",
+          "storage.type.boolean.go",
+          "storage.type.string.go",
+          "storage.type.uintptr.go",
+          "storage.type.error.go",
+          "storage.type.rune.go",
+          "storage.type.cs",
+          "storage.type.generic.cs",
+          "storage.type.modifier.cs",
+          "storage.type.variable.cs",
+          "storage.type.annotation.java",
+          "storage.type.generic.java",
+          "storage.type.java",
+          "storage.type.object.array.java",
+          "storage.type.primitive.array.java",
+          "storage.type.primitive.java",
+          "storage.type.token.java",
+          "storage.type.groovy",
+          "storage.type.annotation.groovy",
+          "storage.type.parameters.groovy",
+          "storage.type.generic.groovy",
+          "storage.type.object.array.groovy",
+          "storage.type.primitive.array.groovy",
+          "storage.type.primitive.groovy"
+        ],
+        "settings": {
+          "foreground": "#5ca0d7"
+        }
+      },
+      {
+        "scope": [
+          "keyword.other.directive.using",
+          "keyword.other.operator"
+        ],
+        "settings": {
+          "foreground": "#5ca0d7"
+        }
+      },
+      {
+        "scope": [
+          "support.constant.dom",
+          "support.constant.json"
+        ],
+        "settings": {
+          "foreground": "#4fc1ff"
+        }
+      },
+      {
+        "scope": [
+          "punctuation.separator.namespace.ruby",
+          "entity.name.operator",
+          "keyword.operator.sizeof",
+          "keyword.operator.logical.python"
+        ],
+        "settings": {
+          "foreground": "#e8e8e8"
         }
       }
     ]
