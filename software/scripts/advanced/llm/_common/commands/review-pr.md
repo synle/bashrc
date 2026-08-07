@@ -2,7 +2,7 @@
 
 **Scope.** Verdict pass only — produces a review (APPROVE / COMMENT / REQUEST_CHANGES) plus optional author-facing flags. Does NOT apply fixes, address comment threads with code changes, or sync the branch. For fix-and-green-CI work, use `/sy-babysit-pr` after the review verdict lands.
 
-**Output surface — this command writes to GitHub.** Findings land on the PR itself: the verdict via `gh pr review`, pre-flight author flags via `gh pr comment`, line comments via the reviews API, 👍 reactions on already-covered comments, and threaded replies. There is **no report-only / dry-run mode**, and no sibling "critique" command to route findings to the user instead — that command does not exist; do not invent one. Step 11's final report is a *summary of what was posted*, never a substitute for posting it. The only path to posting no review body is Step 9's stop-early gate (a re-review with genuinely nothing new), and even then the Step 6 reactions still land on GitHub.
+**Output surface — this command writes to GitHub.** Findings land on the PR itself: the verdict via `gh pr review`, pre-flight author flags via `gh pr comment`, line comments via the reviews API, 👍 reactions on already-covered comments, and threaded replies. There is **no report-only / dry-run mode**, and no sibling "critique" command to route findings to the user instead — that command does not exist; do not invent one. Step 11's final report is a _summary of what was posted_, never a substitute for posting it. The only path to posting no review body is Step 9's stop-early gate (a re-review with genuinely nothing new), and even then the Step 6 reactions still land on GitHub.
 
 Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR.)
 
