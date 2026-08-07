@@ -4,7 +4,7 @@
 
 `$ARGUMENTS` is a free-form string that may carry three independent dimensions: a **format keyword**, a **scope**, and an **author**.
 
-- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `clusters`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `clusters` (aliases `cluster`, `grouped`, `feature`) prints the same URLs bucketed by **feature cluster** — one feature that spans several repos reads as one block — with a running `pr<N>` handle on every line; it is what `/sy-list-prs-pending` renders. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`.
+- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `clusters`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `clusters` (aliases `cluster`, `grouped`, `feature`) prints the same URLs bucketed by **feature cluster** — one feature that spans several repos reads as one block — with a running `pr<N>` handle on every line; it is what `/sy-list-prs-pending` renders. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`, grouped by feature set / dispatch wave so a cross-repo feature reads as one block.
 - **Scope** — pick exactly one (first match wins):
   - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
@@ -115,7 +115,7 @@ c. `createdAt` ascending — oldest PR first, newest last.
 
 ## Feature clustering
 
-One feature routinely needs a PR in several repos — the API change, the client change, the docs change — and those PRs are one unit of work even though nothing in GitHub says so. Clustering recovers that grouping so the set reads side by side instead of scattered across five repo-sorted rows. It is computed for **every** scope and format but only _rendered_ by `clusters` (and by `/sy-list-prs-pending`, which delegates here); `short`, `long`, `table`, `links`, and `pingpong` keep their existing repo-then-date sort untouched, because `/sy-babysit-prs` parses those line-by-line.
+One feature routinely needs a PR in several repos — the API change, the client change, the docs change — and those PRs are one unit of work even though nothing in GitHub says so. Clustering recovers that grouping so the set reads side by side instead of scattered across five repo-sorted rows. It is computed for **every** scope and format, and _rendered_ by two: `clusters` (and by `/sy-list-prs-pending`, which delegates here) and `pingpong`, which groups both its pulse lines and its table by cluster. `short`, `long`, `table`, and `links` keep their existing repo-then-date sort untouched, because `/sy-babysit-prs` parses those line-by-line.
 
 **Cluster key — take the first signal that fires, strongest first.** Signals 1–3 are declarations by the author and are trusted alone; 4–5 are inference and need the whole normalized phrase to match, not one shared word.
 
@@ -163,7 +163,7 @@ Where the author goes, per format:
 | `table`    | A dedicated `Author` column, inserted after `Repo`                                                               |
 | `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line                          |
 | `clusters` | Cluster heading only — `### oauth-migration (3 — @me 2, @alice 1) — acme/api, acme/web`. **PR lines stay bare.** |
-| `pingpong` | Second line of the `PR` cell — the author is always shown, mixed or not                                          |
+| `pingpong` | Third line of the `PR` cell (under the path and the group line) — the author is always shown, mixed or not |
 
 **`short` URL lines are machine input — never decorate them.** `/sy-babysit-prs` consumes `/sy-list-prs short` line-by-line as full PR URLs. Adding a handle, prefix, or suffix to those lines breaks it. Group headings and the leading summary line are already skipped by that parser, so that's where mixed-author information belongs.
 
@@ -280,9 +280,9 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 
 ### Format: `pingpong`
 
-The heartbeat / pulse render. One flat board — no per-group tables — answering "what is going on right now, and what are the agents doing about it". `/sy-babysit-prs` and `/sy-review-prs` emit this on a fixed cadence so a long async fan-out is never a black box.
+The heartbeat / pulse render. One board per **feature set** — no per-readiness-group tables — answering "what is going on right now, and what are the agents doing about it". `/sy-babysit-prs` and `/sy-review-prs` emit this on a fixed cadence so a long async fan-out is never a black box.
 
-Structure: a header block (scope counts, then a one-sentence-per-PR pulse), then one table. The pulse lines are the only prose in this render — keep every table cell terse, fragments not sentences. This is a status board.
+Structure: a header block (scope counts, then a pulse grouped by feature set), then one table per feature set. The pulse lines are the only prose in this render — keep every table cell terse, fragments not sentences. This is a status board.
 
 ```
 🏓 Agent Status Ping-Pong — 2026-08-05 17:34 PDT
@@ -295,20 +295,56 @@ PRs Scanned (5):
 - acme/web: 1
 
 Pulse (2 moved, 2 steady, 1 new):
+
+**oauth-migration** — waves 1–2 · 3 PRs · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 - Δ github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
 - ▫️ github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
 - 🆕 github.com/acme/api/pull/51 — new to the board, CI still running; queued for wave 2.
+
+**Standalone** — 2 PRs · acme/widget-store, acme/api
 - ▫️ github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
 - Δ github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
 
+### 🌊 oauth-migration (3) — waves 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
+
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/109<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| github.com/acme/web/pull/7<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (loop 2/3) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/51<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — queued, wave 2<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
-| github.com/acme/widget-store/pull/113<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3) — ended 16:58 · ran 26m · next 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/42<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (loop 3/3) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/109<br>🌊 wave 1 · oauth-migration — new OAuth token refresh<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| github.com/acme/web/pull/7<br>🌊 wave 1 · oauth-migration — new OAuth token refresh<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (loop 2/3) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/51<br>🌊 wave 2 · oauth-migration — new OAuth token refresh<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — queued, wave 2<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+
+### 🌊 Standalone (2) — acme/widget-store, acme/api
+
+| PR | Status | Agent |
+| --- | --- | --- |
+| github.com/acme/widget-store/pull/113<br>🌊 wave 1 · standalone<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3) — ended 16:58 · ran 26m · next 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/42<br>🌊 wave 1 · standalone<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (loop 3/3) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
+
+**Grouping — one feature set is one block, top to bottom.**
+
+A fan-out is dispatched by feature, not by repo, so the pulse is read by feature too. Both halves of the render — the pulse sentences _and_ the tables — use the **same** groups in the **same** order, so a sentence and its row are never on opposite ends of the output. A four-repo feature reads as one block instead of four rows scattered by color.
+
+**Group key — first signal that fires:**
+
+1. **Feature cluster** (see Feature clustering) — the PR is in a cluster of two or more. Group = that cluster, label = the cluster label.
+2. **Dispatch wave** — no cluster, but the ledger gives the PR a wave number. Group = `Wave <N>`, for PRs that share nothing but the batch that launched them.
+3. **`Standalone`** — neither. One trailing group, always last.
+
+**Group ordering** is Feature clustering's Cluster ordering unchanged — most urgent member first (a group holding a 🔴 outranks one whose worst is 🟡), then group size descending, then earliest member `createdAt` — with one pingpong-only tiebreaker appended: **lowest wave number first**, so an in-flight wave always reads above a queued one. `Standalone` is always last regardless of what it holds.
+
+**Group heading**: `### 🌊 <label> (<n>) — wave <N> · <repo>, <repo>, … — <≤10-word description of the feature set>`.
+
+- `wave <N>` is dropped when the ledger has no wave for the group, and becomes `waves <N>–<M>` when a cluster's members were dispatched across different waves (a cross-repo feature routinely straddles a wave boundary — the per-row wave in the PR cell says which is which).
+- The `<description>` is one plain-English clause for what the whole feature set does, written from the members' titles and bodies. Omit it on `Standalone` and on `Wave <N>` groups, which have no shared feature to describe.
+- Repos are comma-separated in the order their PRs appear, same as the `clusters` heading.
+- When the group came from clustering inference (Feature clustering signals 4–5), append ` — grouped by <signal>`. A guess says it's a guess.
+
+**Pulse block grouping**: one bold group line — `**<label>** — wave <N> · <n> PRs · <repo>, <repo>, … — <description>` — then that group's sentences beneath it, then a blank line before the next group. Same fields, same order as the table heading, minus the `###` and the 🌊.
+
+**One table per group**, in group order, each under its heading, each repeating the three-column header row. Never merge two groups into one table and never split a group across two. Within a group, rows keep the normal pingpong sort (below).
+
+**Sort within a group:** `🔴` first, then `🟡`, then `🟢`, then `❓`; within one color, `Δ` rows come before `🆕` before `▫️`; ties broken by repo name then PR number. Red work reads first because that is the row a human has to act on, and moved work reads before parked work because that is the row that changed since they last looked. Sorting is **within** a group only — a red PR never jumps out of its feature set to the top of the board, because Group ordering already leads with the group holding the most urgent member.
 
 **Header block:**
 
@@ -316,25 +352,29 @@ Pulse (2 moved, 2 steady, 1 new):
 - Line 2: `Next ping-pong: <timestamp> (in <N> min)`. On the final pulse of a run, write `Next ping-pong: — (final)` instead.
 - `Repos Scanned (<count>): <owner/repo>, <owner/repo>, …` — the resolved scope, comma-separated.
 - `PRs Scanned (<count>):` followed by one `- <owner>/<repo>: <n>` line per repo. Repos with zero matching PRs still get a line with `0` — a scanned-but-empty repo is a real answer.
-- `Pulse (<n> moved, <n> steady, <n> new):` followed by **one sentence per PR** — the high-level read, before anyone looks at the table. This is the part a human skims on a phone; the table is where they go when a sentence makes them want detail.
+- `Pulse (<n> moved, <n> steady, <n> new):` followed by **one sentence per PR**, bucketed under its feature-set group line (see Grouping) — the high-level read, before anyone looks at the tables. This is the part a human skims on a phone; the tables are where they go when a sentence makes them want detail.
 
-  Each line is `- <change marker> <full PR path> — <one sentence>`. Stay high level and plain English: what moved (or that nothing did) and what the agent is doing about it, in one sentence, ≤20 words, no counters, no `Δ` fragments, no status tokens. The counts and the tokens are the table's job; duplicating them here just makes the top of the pulse as dense as the bottom, which is the thing this block exists to avoid.
+  Each line is `- <change marker> <full PR path> — <one sentence>`. Stay high level and plain English: what moved (or that nothing did) and what the agent is doing about it, in one sentence, ≤20 words, no counters, no `Δ` fragments, no status tokens. The counts and the tokens are the tables' job; duplicating them here just makes the top of the pulse as dense as the bottom, which is the thing this block exists to avoid.
 
-  Order matches the table (same sort), so the reader can drop from a sentence straight to its row. The `(<n> moved, <n> steady, <n> new)` tally counts `Δ` / `▫️` / `🆕` rows respectively — a one-glance answer to "did anything happen in the last 10 minutes?".
+  Group order and within-group order match the tables exactly, so the reader can drop from a sentence straight to its row. The `(<n> moved, <n> steady, <n> new)` tally is across the **whole** board, not per group — a one-glance answer to "did anything happen in the last 10 minutes?".
 
 **Columns — exactly three, in this order.** Cells are multi-line; use `<br>` for the line break so the markdown table survives rendering.
 
-- **PR** — line 1 is the full clickable path, `github.com/<owner>/<repo>/pull/<number>` (scheme optional, nothing else dropped — see Render every PR / issue reference as a full clickable path). Line 2 is `@<author> — <TLDR>`: a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Prepend `[WIP]` / `[Draft]` tags to the TLDR when they apply.
+- **PR** — **four lines.** Line 1 is the full clickable path, `github.com/<owner>/<repo>/pull/<number>` (scheme optional, nothing else dropped — see Render every PR / issue reference as a full clickable path).
 
-  **Line 3 — the delta, always present.** It sits directly under the TLDR because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
+  **Line 2 — the group line, always present.** `🌊 wave <N> · <group label> — <≤8-word feature-set description>`. It repeats, per row, the heading the row already sits under, because a row copied into Slack or a ticket loses its heading and then nobody can tell which feature it belonged to. Same wave number the dispatcher assigned that PR — **per row, not per group**, so a cluster split across a wave boundary shows `wave 1` and `wave 2` on the rows that actually differ. Drop the `wave <N> · ` prefix when the ledger has no wave (standalone invocation, no dispatcher). On a `Standalone` row the label is the literal `standalone` and the description is omitted; on a `Wave <N>` group the label is the wave itself, so print `🌊 wave <N>` alone rather than repeating it twice.
 
-  | Marker row | Line 3                                                |
+  **Line 3 — `@<author> — <TLDR>`:** a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Prepend `[WIP]` / `[Draft]` tags to the TLDR when they apply.
+
+  **Line 4 — the delta, always present.** It sits directly under the TLDR because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
+
+  | Marker row | Line 4                                                |
   | ---------- | ----------------------------------------------------- |
   | `Δ`        | `Δ <fragment> · <fragment> · …` — what actually moved |
   | `▫️`       | `▫️ No change since last ping-pong`                   |
   | `🆕`       | `🆕 First ping-pong — no prior snapshot`              |
 
-  Each changed signal is one `·`-separated fragment: old→new form where a value flipped, signed form where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval · CI failing→green`. Cap at the three most significant fragments and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. Never leave line 3 blank — an unchanged row says so out loud, because a silent cell is indistinguishable from a pulse that failed to diff.
+  Each changed signal is one `·`-separated fragment: old→new form where a value flipped, signed form where a counter moved — `Δ CI green→failing · +2 open threads`, `Δ 4 threads resolved · +1 approval · CI failing→green`. Cap at the three most significant fragments and append ` · +N more` rather than letting the cell sprawl. When the PR moved but no agent touched it (someone else pushed, a reviewer commented), prefix the fragments `Δ (external)`. Never leave line 4 blank — an unchanged row says so out loud, because a silent cell is indistinguishable from a pulse that failed to diff.
 
 - **Status** — the PR's own state, independent of any agent. **One color emoji, then up to three plain-text component lines, in a fixed order.** Never a comment dump, never a prose reason, never the word "GREEN" / "RED" / "YELLOW" spelled out — the emoji _is_ the roll-up and the component lines are the evidence. The per-thread counts live in the Agent cell, because acting on them is the agent's job.
 
@@ -356,6 +396,8 @@ Pulse (2 moved, 2 steady, 1 new):
   | `🆕`   | First pulse for this PR — no prior snapshot to compare against    |
 
   A "change" is any difference in the color emoji, any component line, **or any counter in the Agent cell's counters line** — a resolved thread, a new approval, one more green check all count. The marker lives in the Status column but diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
+
+  **The group line is excluded from the diff.** Clustering is derived from titles, branches, and bodies, so it re-resolves on every pulse and a re-labelled group is bookkeeping, not PR movement — same reason the clock is excluded. One exception: a PR whose **wave number actually changed** (queued behind a wave, then dispatched) is `Δ`, and the fragment is `Δ wave 2→dispatched`.
 
   **The color emoji** is the whole verdict, rolled up from the component lines below. Evaluate top-down, first match wins:
 
@@ -429,13 +471,11 @@ Pulse (2 moved, 2 steady, 1 new):
 
   Counts come from the caller's ledger where the agent tracked them; standalone with no ledger, fill `💬` / `✔` from `reviewThreads` and print `⚠️ 0 need attention` (nothing has judged them). On a failed fetch, print `?` in the affected field rather than guessing `0`.
 
-**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, first dispatch time, last pass start / end, next pass ETA, and the open / resolved / need-attention thread counts) alongside the scope. Every clock field on the Agent line is read from that ledger — `/sy-list-prs` computes only the elapsed subtraction (`now − loop start`), never the timestamps themselves. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED — no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board.
+**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, **dispatch wave number**, first dispatch time, last pass start / end, next pass ETA, and the open / resolved / need-attention thread counts) alongside the scope. Every clock field on the Agent line is read from that ledger — `/sy-list-prs` computes only the elapsed subtraction (`now − loop start`), never the timestamps themselves. The wave number is read from the ledger too and never invented; with no wave for a PR, the group line drops its `wave <N> · ` prefix rather than guessing one. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED — no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board, grouped by feature cluster alone.
 
-**The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, component lines, and counters line. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 3 of the PR cell.
+**The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, component lines, and counters line. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 4 of the PR cell.
 
-**Sort:** `🔴` first, then `🟡`, then `🟢`, then `❓`; within one color, `Δ` rows come before `🆕` before `▫️`; ties broken by repo name then PR number. Red work reads first because that is the row a human has to act on, and moved work reads before parked work because that is the row that changed since they last looked.
-
-**Never** decorate the PR path line with extra prefixes or suffixes, and never split the pulse into per-group tables — the flat board is the format.
+**Never** decorate the PR path line with extra prefixes or suffixes, and never split the board by readiness group — one table per **feature set**, ordered by Grouping above, is the format. Readiness lives in the Status column and in the group order; it never gets its own table.
 
 ## Edge cases
 
@@ -446,9 +486,12 @@ Pulse (2 moved, 2 steady, 1 new):
 - **Format = `clusters`, a PR matches two cluster keys** → clustering is transitive, so the two clusters are one; label it with the strongest signal that fired (lowest signal number) and say so in the heading when that signal was inference.
 - **Scope = explicit refs**, a bare `#<n>` / digits token and cwd is not a git repo → error out, name the unresolvable token, ask the user to use a fully-qualified ref. Unparseable token (not a URL, shorthand, `#<n>`, or digits) → error out, name the bad token, do NOT silently skip.
 - PWD keyword + explicit refs in the same call → error (no mixing).
-- **Format = `pingpong`, zero PRs resolved** → still print the header block (counts of `0`, an empty `Pulse (0 moved, 0 steady, 0 new):` line, repo list intact) and skip the table. A pulse that prints nothing is indistinguishable from a dead agent, which defeats the purpose.
+- **Format = `pingpong`, zero PRs resolved** → still print the header block (counts of `0`, an empty `Pulse (0 moved, 0 steady, 0 new):` line, repo list intact) and skip the tables. A pulse that prints nothing is indistinguishable from a dead agent, which defeats the purpose.
+- **Format = `pingpong`, nothing clusters and the ledger has no waves** → the whole board is one `### 🌊 Standalone (<n>)` group with one table. Never fabricate a feature set to avoid a single-group render, and never fall back to the old ungrouped board — the heading is what tells the reader the grouping ran and found nothing.
+- **Format = `pingpong`, a cluster spans two waves** → it stays **one** group (the feature is the unit of work, not the dispatch batch). The heading reads `waves <N>–<M>` and each row's group line carries its own wave.
+- **Format = `pingpong`, a PR's cluster changed between pulses** (a sibling PR appeared, or a body edit revealed a shared ticket) → re-group silently and say so once in that PR's pulse sentence. The row is not `Δ` for the regrouping alone — see the diff exclusion above.
 - **Format = `pingpong`, no prior snapshot** (standalone call, or the run's opening pulse) → every row is `🆕`, never `▫️`. `▫️` is a positive claim that nothing moved; only render it when you actually have a previous pulse to compare against.
-- **Format = `pingpong`, a PR dropped out of the set** (merged, closed, or no longer matches the scope) → keep it for one final pulse with its last known Status, `✅ COMPLETED` in the Agent cell, and a `Δ merged` / `Δ closed` line, then drop it. A row that silently vanishes reads as a lost job.
+- **Format = `pingpong`, a PR dropped out of the set** (merged, closed, or no longer matches the scope) → keep it for one final pulse **in its own feature-set group** with its last known Status, `✅ COMPLETED` in the Agent cell, and a `Δ merged` / `Δ closed` line, then drop it. A row that silently vanishes reads as a lost job, and moving it to a "done" bucket breaks the one-feature-one-block rule.
 - **Format = `pingpong`, a status fetch failed** → the row renders `❓` as its color emoji and names the call that failed in place of the component lines (`STATUS FETCH FAILED — statusCheckRollup`). Never guess a color from partial data, and never drop the row: a missing row reads as "merged", which is the opposite of "we don't know".
 - **Format = `pingpong`, the ledger has no clock for a state that normally carries one** (dispatcher lost the timestamp, or the job predates the ledger) → print the state token with no clock at all. Do not backfill `0m`, `--`, or the pulse's own timestamp; an absent clock is honest, an invented one sends someone chasing a job that never ran that long.
 - If a single PR's status fetch fails, include it under NEEDS ATTENTION with the reason `status fetch failed` rather than dropping it silently.
