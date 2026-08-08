@@ -4,7 +4,7 @@
 
 `$ARGUMENTS` is a free-form string that may carry three independent dimensions: a **format keyword**, a **scope**, and an **author**.
 
-- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `clusters`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `clusters` (aliases `cluster`, `grouped`, `feature`) prints the same URLs bucketed by **feature cluster** — one feature that spans several repos reads as one block — with a running `pr<N>` handle on every line; it is what `/sy-list-prs-pending` renders. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`, grouped by feature set / dispatch wave so a cross-repo feature reads as one block.
+- **Format keyword** (one of, case-insensitive): `short`, `long`, `table`, `links`, `clusters`, `pingpong`. Defaults to `short` if absent. `links` (alias `link`) prints bare PR URLs with no headings at all. `clusters` (aliases `cluster`, `grouped`, `feature`) prints the same URLs bucketed by **feature cluster** — one feature that spans several repos reads as one block — with a running `pr<N>` handle on every line; it is what `/sy-list-prs-pending` renders. `pingpong` (aliases `ping-pong`, `pulse`) is the agent-status heartbeat render used by `/sy-babysit-prs` and `/sy-review-prs`, grouped by feature set / dispatch slot so a cross-repo feature reads as one block.
 - **Scope** — pick exactly one (first match wins):
   - **PWD** (default, no scope token present) — scan for git repos at or below cwd, two levels deep (depth chosen because PRs often live in nested repo folders), and list `@me` open PRs in those repos only. PWD scope forces author = `@me` (ignores any author token).
   - **All** — one of: `all`, `every`, `global` (case-insensitive). Every open PR for the resolved author across all repos.
@@ -71,21 +71,40 @@ Examples:
 
    - De-duplicate the `<owner>/<repo>` list. If empty, print `No git repos found within 2 levels of $(pwd).` and stop.
    - Query in one call:
-     `gh search prs --author=@me --state=open --repo <o1>/<r1> --repo <o2>/<r2> ... --json number,title,repository,isDraft,url,headRefName,createdAt,author`
+     `gh search prs --author=@me --state=open --limit 1000 --repo <o1>/<r1> --repo <o2>/<r2> ... --json number,title,repository,isDraft,url,createdAt,updatedAt,author`
 
    b. **Scope = all**:
-   `gh search prs --author=<resolved> --state=open --json number,title,repository,isDraft,url,headRefName,createdAt,author`
+   `gh search prs --author=<resolved> --state=open --limit 1000 --json number,title,repository,isDraft,url,createdAt,updatedAt,author`
 
    c. **Scope = explicit refs**:
    - For each normalized PR URL, fetch metadata:
-     `gh pr view <url> --json number,title,headRefName,baseRefName,isDraft,url,repository,createdAt,author`
+     `gh pr view <url> --json number,title,headRefName,baseRefName,isDraft,url,createdAt,updatedAt,author`
    - De-duplicate by URL. Order preserves the user's input order; classification + sort still happen below.
+
+   **Two `gh` field traps, both verified against `gh` 2.88 — get these wrong and discovery aborts before anything else runs:**
+   - **`gh search prs` and `gh pr view` do not take the same `--json` fields.** `gh search prs` accepts only: `assignees author authorAssociation body closedAt commentsCount createdAt id isDraft isLocked isPullRequest labels number repository state title updatedAt url`. It has **no** `headRefName` / `baseRefName` — asking for either exits 1 with `Unknown JSON field`. `gh pr view` is the mirror image: it *has* `headRefName` / `baseRefName` but has **no** `repository` (it offers `headRepository` / `headRepositoryOwner` instead). So branch names come from a per-PR `gh pr view`, never from the search; the owning repo comes from the search's `repository.nameWithOwner`, never from `gh pr view`.
+   - **`gh search prs` silently returns only 30 results by default.** No warning, no truncation notice — the tail simply is not there, and a fan-out then reports full coverage of a set it never saw. Always pass `--limit` explicitly. **`--limit` accepts 1–1000** (`--limit 1001` is rejected with `` `--limit` must be between 1 and 1000 ``), and 1000 is also where GitHub's search API itself stops, so it is both the flag ceiling and the real one. If the result count comes back exactly at the limit, say so and treat the set as **possibly truncated** rather than complete — then exhaust the scope by partitioning it (one search per repo, or by `created:<range>` windows) and unioning the results on PR URL. A scope that cannot be exhausted is reported as partial; it is never silently trimmed.
+   - **Branch names are fetched only when something needs them.** Stack detection and worktree paths need `headRefName` / `baseRefName`, so a caller that does stack detection (`/sy-babysit-prs`, `/sy-review-prs`) follows the search with one `gh pr view <url> --json headRefName,baseRefName` per PR. Plain `short` / `links` renders skip that call entirely.
 
 2. **For each PR, fetch detailed status:**
    - CI/build status: `gh pr view <number> --repo <owner/repo> --json statusCheckRollup` → `CI PASSED` / `CI FAILED` (name the first failing check) / `BUILD IN PROGRESS` (count the still-running checks). **Count only self-resolving checks as "running"** — classify pending entries exactly as `/sy-babysit-pr` Step 3 does; that is the single definition, do not restate or re-derive it here. A human approval gate that an app reports as a check sits `IN_PROGRESS` by design until a person clicks, so it reads `AWAITING REVIEW`, never a running build: keep it out of the `(<n> running)` count, and when it is the only pending entry the PR is not `BUILD IN PROGRESS` at all.
    - Reviews: `gh pr view <number> --repo <owner/repo> --json reviews,reviewDecision` → `APPROVED` (with approval count) / `CHANGES REQUESTED` / `AWAITING REVIEW`
-   - Unresolved review comments: `gh pr view <number> --repo <owner/repo> --json reviewThreads --jq '[.reviewThreads[] | select(.isResolved == false)] | length'` → count of open threads
-   - Resolved review comments (`pingpong` only, for the counters strip): same call with `select(.isResolved == true)` → count of resolved threads
+   - Review threads: **`reviewThreads` is not a `gh pr view --json` field** (`gh` 2.88 rejects it — it exists on the GraphQL `PullRequest` type only), so fetch it over GraphQL and reuse the one result for every thread-derived number:
+
+     ```bash
+     gh api graphql -f owner=<owner> -f repo=<repo> -F number=<number> -f query='
+     query($owner:String!,$repo:String!,$number:Int!){
+       repository(owner:$owner,name:$repo){
+         pullRequest(number:$number){
+           reviewThreads(first:100){ nodes{ isResolved comments(first:1){ nodes{ author{ login __typename } } } } }
+         }
+       }
+     }'
+     ```
+
+     - Unresolved count (`💬 open`): nodes with `isResolved == false`.
+     - Resolved count (`pingpong` only, for the counters strip): nodes with `isResolved == true`.
+     - **Human vs bot** — a thread is a bot thread when its first comment's `author.__typename == "Bot"`. Use the typename, not a `[bot]` login suffix: GitHub's own review bots post under plain-looking logins, so a suffix match misses them and reads a bot nit as a human blocker. This split is what separates P1 from P4 in the Work-owed ranking.
    - Mergeability / conflicts: `gh pr view <number> --repo <owner/repo> --json mergeable,mergeStateStatus`
 
 ## Classification — 5 groups
@@ -112,6 +131,43 @@ Apply in order; each tiebreaker applies only when the previous is equal:
 a. Repo name (alphabetical).
 b. Dependency order — if PR A must merge before PR B (e.g. B's branch is based on A's branch, or B's description references A's PR number), put A first.
 c. `createdAt` ascending — oldest PR first, newest last.
+
+## Work-owed ranking
+
+The five groups above answer _"what state is this PR in?"_. This ranking answers a different question — **"who is this PR waiting on, and how badly does it need me?"** — and it is what a fan-out dispatcher (`/sy-babysit-prs`, `/sy-review-prs`) uses to decide which PRs get serviced first when there are more PRs than concurrent job slots. Rendering never reorders on it; it is a scheduling order, not a display order.
+
+Score each PR into exactly one tier, highest first (first match wins). The name of the tier is the answer to _who is owed work_:
+
+| Tier   | Name                       | Matches when                                                                                                                                                                                          | Why it ranks here                                                                                                            |
+| ------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **P0** | Unshipped work             | The PR's canonical worktree exists and holds work GitHub has never seen: unpushed commits (`git log @{upstream}..HEAD`), a dirty tree (`git status --porcelain`), or an interrupted merge (`MERGE_HEAD`) | Only tier whose failure mode is **data loss**. Also the cheapest to detect — a local `git` call, no API, via `git worktree-path <pr>` |
+| **P1** | Someone waiting on a reply | `reviewDecision == "CHANGES_REQUESTED"`, or an unresolved review thread whose first comment's `author.__typename == "User"`                                                                            | A human is blocked on you. Latency here is measured in reviewer patience                                                     |
+| **P2** | Broken and ours to fix     | A check that has **finished failing** — a `CheckRun` with `conclusion` in `FAILURE` / `TIMED_OUT` / `STARTUP_FAILURE`, or a legacy `StatusContext` with `state` in `FAILURE` / `ERROR` — or `mergeable == "CONFLICTING"`  | Actionable right now, fully within our control, and it rots — a conflict widens with every push to the base                  |
+| **P3** | Stale against base         | `mergeStateStatus == "BEHIND"`, or (on a stack) behind any ancestor, with no other flag. `BEHIND` is only reported where the repo requires branches to be up to date — elsewhere compare the head against the base directly       | A sync fixes it, and it turns into P2 if left                                                                                |
+| **P4** | Bot nits only              | Unresolved threads, every one of them opened by a `Bot` (`author.__typename`), no human blocker                                                                                                       | Real work, low stakes, no human waiting                                                                                      |
+| **P5** | Waiting on someone else    | Green and approved awaiting merge, awaiting first review, any check still unfinished (running, queued, or stalled), or held by a non-blocking human approval gate (`/sy-babysit-pr` Step 3)          | Nothing to do until another party moves; a pass here mostly re-reads                                                         |
+| **P6** | Nothing owed               | Draft, `WIP` / `DO NOT MERGE` title — every pass is a documented skip                                                                                                                                 | Cheapest possible pass; safe to service last                                                                                 |
+
+**Ties break on oldest `updatedAt`** — within a tier, the PR that has gone longest without anyone touching it goes first. That is the one most at risk of being forgotten, which is the failure this ranking exists to prevent.
+
+**A completed failure needs no blocking/non-blocking classification, and a running check is not a failure.** `/sy-babysit-pr` Step 3's classification answers "will this pending check ever resolve on its own?", which is only a question about checks still running. Two consequences, and the second is the one that gets mis-scored:
+- A check that already **completed** with a failing conclusion has resolved — it failed, it is ours, and it is P2 regardless of how the same check would have been classified while pending. Both check systems count: modern `CheckRun` entries carry `conclusion` (`FAILURE` / `TIMED_OUT` / `STARTUP_FAILURE`), while legacy `StatusContext` entries carry `state` (`FAILURE` / `ERROR`) and have no `conclusion` at all — reading only one field silently misses every PR whose CI posts commit statuses.
+- **A check that has not finished is never P2**, whether Step 3 calls it blocking or not. "Blocking" there means *the merge waits on it*, not *it is broken* — a build that started two minutes ago is doing exactly what it should, and nothing about it is ours to fix. A **stalled** pending check is not P2 either: Step 3 explicitly classifies stalled entries as non-blocking and steps over them, so scoring them as "broken and ours to fix" would contradict the very step this tier cites. Every unfinished check — running, queued, stalled, or held by a human gate — is P5, waiting on something other than us. Scoring healthy in-flight builds as P2 would put every freshly-pushed PR at the front of the queue, which is precisely backwards: it just pushed, so it is the one PR guaranteed not to need attention yet.
+
+### Two lenses over the same tiers
+
+"Who is owed work" has two answers depending on which side of the PR you are standing, so the tiers above are read through one of two lenses. **The tier definitions never change** — a PR's `matches when` is objective — only the *order* the tiers are serviced in. One table, two documented readings; never a second table.
+
+- **Author lens (the default, used by `/sy-babysit-prs`)** — the order exactly as listed, P0 → P6. It ranks by what *I* must do to move my own PR forward, which is why "awaiting first review" sits at P5: I have shipped, and nothing I do speeds up a reviewer.
+- **Reviewer lens (used by `/sy-review-prs`)** — same tiers, but two *sub-buckets* are lifted out and re-placed. They are sub-buckets, not whole tiers: P5 and P1 each hold several kinds of PR, and only one kind from each moves, so the rest of both tiers stay exactly where they are.
+  - **`awaiting first review` (a member of P5) is lifted out and placed above P1**, becoming the top tier for this lens. It is the most actionable work on a reviewer's board and the only case where *nobody* has looked at the PR at all; leaving it at P5 makes the review fan-out service its whole reason for existing dead last. The rest of P5 — green-and-approved awaiting merge, held by a human approval gate — does **not** move.
+  - **`reviewDecision == "CHANGES_REQUESTED"` (a member of P1) is lifted out and placed just above P6.** Another reviewer already has an open block, so `/sy-review-pr` Step 3 skips it rather than piling on — servicing it early spends a round on a documented no-op. It stays *in* the set, since a block can be dismissed between rounds and the later rounds exist to catch that. The rest of P1 — an unresolved thread whose first comment is from a human — stays at P1, because those are threads waiting on a reply that a reviewer may well be the one to give.
+
+  So the reviewer order is: awaiting-first-review → P0 → P1 (minus `CHANGES_REQUESTED`) → P2 → P3 → P4 → P5 (minus awaiting-first-review) → `CHANGES_REQUESTED` → P6. Everything else keeps its author-lens position, and ties still break on oldest `updatedAt`. A dispatcher states which lens it used when it reports the slot map, so a surprising order is self-explaining rather than looking like a bug.
+
+**P0 is checked locally and costs nothing.** `git worktree-path <pr-number>` prints the canonical path without creating anything, so the dispatcher can probe every PR's worktree before dispatching, without an API call and without touching the user's checkout. A path that does not exist is simply not P0.
+
+**Ranking never drops a PR.** It decides _order_, never _membership_ — a P6 draft is still dispatched, still gets its passes, and still appears in every render. Anything that uses this ranking to skip a PR is misusing it.
 
 ## Feature clustering
 
@@ -296,29 +352,29 @@ PRs Scanned (5):
 
 Pulse (2 moved, 2 steady, 1 new):
 
-**oauth-migration** — waves 1–2 · 3 PRs · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
+**oauth-migration** — slots 1–2 · 3 PRs · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 - Δ github.com/acme/widget-store/pull/109 — CI just went red on unit-tests; agent is mid loop 1.
 - ▫️ github.com/acme/web/pull/7 — still conflicting with main; agent gave up and wants a human.
-- 🆕 github.com/acme/api/pull/51 — new to the board, CI still running; queued for wave 2.
+- 🆕 github.com/acme/api/pull/51 — new to the board, CI still running; second in slot 2, first pass not yet run.
 
 **Standalone** — 2 PRs · acme/widget-store, acme/api
 - ▫️ github.com/acme/widget-store/pull/113 — still 2 open threads and no review; agent sleeps until 17:28.
 - Δ github.com/acme/api/pull/42 — cleared its last 4 threads and picked up an approval; ready to merge.
 
-### 🌊 oauth-migration (3) — waves 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
+### 🌊 oauth-migration (3) — slots 1–2 · acme/widget-store, acme/web, acme/api — move token refresh onto the new OAuth flow
 
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/109<br>🌊 wave 1 · oauth-migration — new OAuth token refresh<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
-| github.com/acme/web/pull/7<br>🌊 wave 1 · oauth-migration — new OAuth token refresh<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (loop 2/3) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/51<br>🌊 wave 2 · oauth-migration — new OAuth token refresh<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — queued, wave 2<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/109<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@alice — Retry token refresh on 401<br>Δ CI green→failing · +2 open threads | Δ 🔴<br>CI FAILED — `unit-tests`<br>AWAITING REVIEW | 🔄 IN PROGRESS (loop 1/3) — started 17:12 · running 22m<br>💬 3 open · ✔ 5 resolved · ⚠️ 0 need attention |
+| github.com/acme/web/pull/7<br>🌊 slot 1 · oauth-migration — new OAuth token refresh<br>@me — [WIP] Split auth middleware<br>▫️ No change since last ping-pong | ▫️ 🔴<br>CI PASSED<br>CHANGES REQUESTED<br>MERGE CONFLICT | ⚠️ ESCALATED (loop 2/3) — stopped 17:01 · ran 19m — needs human<br>💬 1 open · ✔ 3 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/51<br>🌊 slot 2 · oauth-migration — new OAuth token refresh<br>@bob — Add signup flow<br>🆕 First ping-pong — no prior snapshot | 🆕 🟡<br>BUILD IN PROGRESS (3 running)<br>AWAITING REVIEW | ⚪ NOT STARTED — slot 2, position 2 of 2 — behind github.com/acme/web/pull/7<br>💬 0 open · ✔ 0 resolved · ⚠️ 0 need attention |
 
 ### 🌊 Standalone (2) — acme/widget-store, acme/api
 
 | PR | Status | Agent |
 | --- | --- | --- |
-| github.com/acme/widget-store/pull/113<br>🌊 wave 1 · standalone<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3) — ended 16:58 · ran 26m · next 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
-| github.com/acme/api/pull/42<br>🌊 wave 1 · standalone<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (loop 3/3) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
+| github.com/acme/widget-store/pull/113<br>🌊 slot 1 · standalone<br>@me — Drop dead feature flag<br>▫️ No change since last ping-pong | ▫️ 🟡<br>CI PASSED<br>AWAITING REVIEW | ⏸️ WAITING (loop 2/3) — ended 16:58 · ran 26m · next 17:28<br>💬 2 open · ✔ 0 resolved · ⚠️ 1 need attention |
+| github.com/acme/api/pull/42<br>🌊 slot 1 · standalone<br>@me — Bump deps to latest<br>Δ 4 threads resolved · +1 approval | Δ 🟢<br>CI PASSED<br>APPROVED | ✅ COMPLETED (loop 3/3) — ended 17:05 · 48m total<br>💬 0 open · ✔ 4 resolved · ⚠️ 0 need attention |
 ```
 
 **Grouping — one feature set is one block, top to bottom.**
@@ -328,19 +384,19 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 **Group key — first signal that fires:**
 
 1. **Feature cluster** (see Feature clustering) — the PR is in a cluster of two or more. Group = that cluster, label = the cluster label.
-2. **Dispatch wave** — no cluster, but the ledger gives the PR a wave number. Group = `Wave <N>`, for PRs that share nothing but the batch that launched them.
+2. **Dispatch slot** — no cluster, but the ledger gives the PR a slot number. Group = `Slot <N>`, for PRs that share nothing but the job lane servicing them.
 3. **`Standalone`** — neither. One trailing group, always last.
 
-**Group ordering** is Feature clustering's Cluster ordering unchanged — most urgent member first (a group holding a 🔴 outranks one whose worst is 🟡), then group size descending, then earliest member `createdAt` — with one pingpong-only tiebreaker appended: **lowest wave number first**, so an in-flight wave always reads above a queued one. `Standalone` is always last regardless of what it holds.
+**Group ordering** is Feature clustering's Cluster ordering unchanged — most urgent member first (a group holding a 🔴 outranks one whose worst is 🟡), then group size descending, then earliest member `createdAt` — with one pingpong-only tiebreaker appended: **lowest slot number first**, so the busiest lane reads above the quieter ones. `Standalone` is always last regardless of what it holds.
 
-**Group heading**: `### 🌊 <label> (<n>) — wave <N> · <repo>, <repo>, … — <≤10-word description of the feature set>`.
+**Group heading**: `### 🌊 <label> (<n>) — slot <N> · <repo>, <repo>, … — <≤10-word description of the feature set>`.
 
-- `wave <N>` is dropped when the ledger has no wave for the group, and becomes `waves <N>–<M>` when a cluster's members were dispatched across different waves (a cross-repo feature routinely straddles a wave boundary — the per-row wave in the PR cell says which is which).
-- The `<description>` is one plain-English clause for what the whole feature set does, written from the members' titles and bodies. Omit it on `Standalone` and on `Wave <N>` groups, which have no shared feature to describe.
+- `slot <N>` is dropped when the ledger has no slot for the group, and becomes `slots <N>–<M>` when a cluster's members were dealt into different slots (round-robin dealing routinely splits a cross-repo feature across lanes — the per-row slot in the PR cell says which is which).
+- The `<description>` is one plain-English clause for what the whole feature set does, written from the members' titles and bodies. Omit it on `Standalone` and on `Slot <N>` groups, which have no shared feature to describe.
 - Repos are comma-separated in the order their PRs appear, same as the `clusters` heading.
 - When the group came from clustering inference (Feature clustering signals 4–5), append ` — grouped by <signal>`. A guess says it's a guess.
 
-**Pulse block grouping**: one bold group line — `**<label>** — wave <N> · <n> PRs · <repo>, <repo>, … — <description>` — then that group's sentences beneath it, then a blank line before the next group. Same fields, same order as the table heading, minus the `###` and the 🌊.
+**Pulse block grouping**: one bold group line — `**<label>** — slot <N> · <n> PRs · <repo>, <repo>, … — <description>` — then that group's sentences beneath it, then a blank line before the next group. Same fields, same order as the table heading, minus the `###` and the 🌊.
 
 **One table per group**, in group order, each under its heading, each repeating the three-column header row. Never merge two groups into one table and never split a group across two. Within a group, rows keep the normal pingpong sort (below).
 
@@ -362,7 +418,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
 - **PR** — **four lines.** Line 1 is the full clickable path, `github.com/<owner>/<repo>/pull/<number>` (scheme optional, nothing else dropped — see Render every PR / issue reference as a full clickable path).
 
-  **Line 2 — the group line, always present.** `🌊 wave <N> · <group label> — <≤8-word feature-set description>`. It repeats, per row, the heading the row already sits under, because a row copied into Slack or a ticket loses its heading and then nobody can tell which feature it belonged to. Same wave number the dispatcher assigned that PR — **per row, not per group**, so a cluster split across a wave boundary shows `wave 1` and `wave 2` on the rows that actually differ. Drop the `wave <N> · ` prefix when the ledger has no wave (standalone invocation, no dispatcher). On a `Standalone` row the label is the literal `standalone` and the description is omitted; on a `Wave <N>` group the label is the wave itself, so print `🌊 wave <N>` alone rather than repeating it twice.
+  **Line 2 — the group line, always present.** `🌊 slot <N> · <group label> — <≤8-word feature-set description>`. It repeats, per row, the heading the row already sits under, because a row copied into Slack or a ticket loses its heading and then nobody can tell which feature it belonged to. Same slot number the dispatcher assigned that PR — **per row, not per group**, so a cluster dealt across two lanes shows `slot 1` and `slot 2` on the rows that actually differ. Drop the `slot <N> · ` prefix when the ledger has no slot (standalone invocation, no dispatcher). On a `Standalone` row the label is the literal `standalone` and the description is omitted; on a `Slot <N>` group the label is the slot itself, so print `🌊 slot <N>` alone rather than repeating it twice.
 
   **Line 3 — `@<author> — <TLDR>`:** a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Prepend `[WIP]` / `[Draft]` tags to the TLDR when they apply.
 
@@ -397,7 +453,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   A "change" is any difference in the color emoji, any component line, **or any counter in the Agent cell's counters line** — a resolved thread, a new approval, one more green check all count. The marker lives in the Status column but diffs the whole row. Never render `▫️` on a PR you have no prior snapshot for; that is `🆕`.
 
-  **The group line is excluded from the diff.** Clustering is derived from titles, branches, and bodies, so it re-resolves on every pulse and a re-labelled group is bookkeeping, not PR movement — same reason the clock is excluded. One exception: a PR whose **wave number actually changed** (queued behind a wave, then dispatched) is `Δ`, and the fragment is `Δ wave 2→dispatched`.
+  **The group line is excluded from the diff.** Clustering is derived from titles, branches, and bodies, so it re-resolves on every pulse and a re-labelled group is bookkeeping, not PR movement — same reason the clock is excluded. One exception: a PR whose **slot position actually advanced** (its lane finished the PR ahead of it and started this one) is `Δ`, and the fragment is `Δ slot 2 position 2→now running`.
 
   **The color emoji** is the whole verdict, rolled up from the component lines below. Evaluate top-down, first match wins:
 
@@ -438,13 +494,18 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   | Token            | When                                               | Clock                                        |
   | ---------------- | -------------------------------------------------- | -------------------------------------------- |
-  | `⚪ NOT STARTED` | Resolved but not dispatched (queued behind a wave) | `queued, wave 2` (no clock; nothing started) |
+  | `⚪ NOT STARTED` | Assigned to a slot, first pass not yet run          | `slot 2, position 2 of 2 — behind <link>` (no clock; nothing started) |
   | `🔄 IN PROGRESS` | Job actively working this pass                     | `started 17:12 · running 22m`                |
   | `⏸️ WAITING`     | Pass done, sleeping until the next one             | `ended 16:58 · ran 19m · next 17:28`         |
   | `✅ COMPLETED`   | Job finished all passes, or the PR merged          | `ended 17:05 · 48m total`                    |
-  | `⏭️ SKIPPED`     | Per-PR skill skipped it (draft / already reviewed) | `17:02 — draft`                              |
+  | `⏭️ SKIPPED`     | **Terminal** — every pass was skipped and no pass remains | `17:02 — draft, all 3 passes`                |
+  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, later passes still to run | `17:02 — draft · next 17:32`          |
   | `⚠️ ESCALATED`   | Job stopped and needs human judgment               | `stopped 17:01 · ran 19m — needs human`      |
   | `❌ FAILED`      | Job errored out                                    | `failed 16:44 · ran 4m — worktree conflict`  |
+
+  **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip on pass 1 of 3 is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-pass ETA. Only when the passes are exhausted does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal *and* loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
+
+  **A merged or closed PR is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
 
   **Clock grammar.** Times are local `HH:MM`, 24-hour, no date (the header block already carries the date). Durations are `<N>m` under an hour, `<N>h <N>m` over it, always whole minutes — a pulse is a 10-minute heartbeat, so seconds are noise.
 
@@ -471,7 +532,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   Counts come from the caller's ledger where the agent tracked them; standalone with no ledger, fill `💬` / `✔` from `reviewThreads` and print `⚠️ 0 need attention` (nothing has judged them). On a failed fetch, print `?` in the affected field rather than guessing `0`.
 
-**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, **dispatch wave number**, first dispatch time, last pass start / end, next pass ETA, and the open / resolved / need-attention thread counts) alongside the scope. Every clock field on the Agent line is read from that ledger — `/sy-list-prs` computes only the elapsed subtraction (`now − loop start`), never the timestamps themselves. The wave number is read from the ledger too and never invented; with no wave for a PR, the group line drops its `wave <N> · ` prefix rather than guessing one. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED — no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board, grouped by feature cluster alone.
+**Agent state comes from the caller.** `/sy-list-prs` owns the layout, not the job bookkeeping. The dispatcher passes its agent ledger (per PR: job state, loop number, **dispatch slot number and position within that slot**, first dispatch time, last pass start / end, next pass ETA, and the open / resolved / need-attention thread counts) alongside the scope. Every clock field on the Agent line is read from that ledger — `/sy-list-prs` computes only the elapsed subtraction (`now − loop start`), never the timestamps themselves. The slot number is read from the ledger too and never invented; with no slot for a PR, the group line drops its `slot <N> · ` prefix rather than guessing one. Invoked standalone with no ledger, every Agent cell renders `⚪ NOT STARTED — no agent dispatched` plus a counters line derived straight from `reviewThreads` — the pulse still works as a read-only board, grouped by feature cluster alone.
 
 **The previous snapshot comes from the caller too.** The change marker is a diff, so it needs the prior pulse to diff against: the ledger carries, per PR, the last rendered color emoji, component lines, and counters line. After rendering, the dispatcher overwrites that snapshot with what was just printed, so the next pulse compares against the immediately preceding one — not against the run's opening state. With no prior snapshot (standalone invocation, first pulse of a run, or a PR that entered the set mid-run), the row is `🆕` with `🆕 First ping-pong — no prior snapshot` on line 4 of the PR cell.
 
@@ -487,8 +548,8 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 - **Scope = explicit refs**, a bare `#<n>` / digits token and cwd is not a git repo → error out, name the unresolvable token, ask the user to use a fully-qualified ref. Unparseable token (not a URL, shorthand, `#<n>`, or digits) → error out, name the bad token, do NOT silently skip.
 - PWD keyword + explicit refs in the same call → error (no mixing).
 - **Format = `pingpong`, zero PRs resolved** → still print the header block (counts of `0`, an empty `Pulse (0 moved, 0 steady, 0 new):` line, repo list intact) and skip the tables. A pulse that prints nothing is indistinguishable from a dead agent, which defeats the purpose.
-- **Format = `pingpong`, nothing clusters and the ledger has no waves** → the whole board is one `### 🌊 Standalone (<n>)` group with one table. Never fabricate a feature set to avoid a single-group render, and never fall back to the old ungrouped board — the heading is what tells the reader the grouping ran and found nothing.
-- **Format = `pingpong`, a cluster spans two waves** → it stays **one** group (the feature is the unit of work, not the dispatch batch). The heading reads `waves <N>–<M>` and each row's group line carries its own wave.
+- **Format = `pingpong`, nothing clusters and the ledger has no slots** → the whole board is one `### 🌊 Standalone (<n>)` group with one table. Never fabricate a feature set to avoid a single-group render, and never fall back to the old ungrouped board — the heading is what tells the reader the grouping ran and found nothing.
+- **Format = `pingpong`, a cluster spans two slots** → it stays **one** group (the feature is the unit of work, not the job lane). The heading reads `slots <N>–<M>` and each row's group line carries its own slot.
 - **Format = `pingpong`, a PR's cluster changed between pulses** (a sibling PR appeared, or a body edit revealed a shared ticket) → re-group silently and say so once in that PR's pulse sentence. The row is not `Δ` for the regrouping alone — see the diff exclusion above.
 - **Format = `pingpong`, no prior snapshot** (standalone call, or the run's opening pulse) → every row is `🆕`, never `▫️`. `▫️` is a positive claim that nothing moved; only render it when you actually have a previous pulse to compare against.
 - **Format = `pingpong`, a PR dropped out of the set** (merged, closed, or no longer matches the scope) → keep it for one final pulse **in its own feature-set group** with its last known Status, `✅ COMPLETED` in the Agent cell, and a `Δ merged` / `Δ closed` line, then drop it. A row that silently vanishes reads as a lost job, and moving it to a "done" bucket breaks the one-feature-one-block rule.

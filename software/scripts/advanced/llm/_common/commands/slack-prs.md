@@ -14,7 +14,10 @@ Argument: $ARGUMENTS (optional — the PR author to filter by: a GitHub username
 ## Steps
 
 1. Fetch open PRs for the resolved author:
-   `gh search prs --author=<resolved> --state=open --json number,title,repository,isDraft,url,headRefName,createdAt,author`
+   `gh search prs --author=<resolved> --state=open --limit 1000 --json number,title,repository,isDraft,url,createdAt,updatedAt,author`
+   - **`gh search prs` has no `headRefName`, `baseRefName`, or `body`** — asking for any of them exits 1 with `Unknown JSON field` (see the `gh` field traps in `/sy-list-prs`). All three come from `gh pr view`, and this command needs all three for **every** PR, not conditionally: each rendered row is `<repo> — <branch> — <title> — <url>`, and the dependency tiebreaker in step 3b compares one PR's `baseRefName` against another's `headRefName` and scans the body for references. So follow the search with one call per PR, before sorting:
+     `gh pr view <url> --json headRefName,baseRefName,body`
+   - Pass `--limit` explicitly or the search silently returns just 30, so the message under-reports the queue. At exactly the limit, treat the set as possibly truncated and say so.
 
 2. **Classify each PR into one of two groups:**
 

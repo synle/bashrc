@@ -19,7 +19,11 @@ For a single PR you want to abandon, just use `gh pr close <n> --comment "..."` 
    - **Reason override** — quoted string (`"reason text"`) becomes the close-comment body; otherwise use the template below.
 
 2. **Fetch candidates:**
-   `gh search prs --state=open --author=<author> [--repo <r>...] --json number,title,url,repository,updatedAt,author,isDraft,headRefName,labels,reviews,statusCheckRollup,baseRefName,createdAt`
+   `gh search prs --state=open --author=<author> [--repo <r>...] --limit 1000 --json number,title,url,repository,updatedAt,author,isDraft,labels,createdAt`
+   - **`gh search prs` does not accept the same `--json` fields as `gh pr view`** — it has no `headRefName`, `baseRefName`, `reviews`, `statusCheckRollup`, `commits`, or `mergeStateStatus`, and asking for any of them exits 1 with `Unknown JSON field`, killing the run before a single candidate is listed (the full accepted list is in the `gh` field traps in `/sy-list-prs`). Those all live on `gh pr view`, so fetch them per PR — and only for the PRs that survive the `staleDays` filter below, which is what keeps a wide scope from turning into hundreds of calls:
+     `gh pr view <url> --json headRefName,baseRefName,reviews,statusCheckRollup,commits,mergeStateStatus`
+     Step 3 renders the last commit author and Step 4 shows the last commit subject and current `mergeStateStatus`, so `commits` and `mergeStateStatus` are required, not optional.
+   - Pass `--limit` explicitly or the search silently stops at 30, quietly under-reporting how much is stale. If the count comes back exactly at the limit, treat the set as possibly truncated and say so.
    - Compute `staleDays = (now - updatedAt) / 86400`. Keep only PRs with `staleDays >= <threshold>`.
    - **Always skip** PRs with: an open `APPROVED` review whose state still holds (they're ready to merge — close requires a different decision), title containing `BLOCKED` / `KEEP-OPEN` / `pinned`, or label `do-not-close` / `pinned` / `keep-open`.
 
