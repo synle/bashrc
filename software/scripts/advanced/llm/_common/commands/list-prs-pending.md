@@ -10,18 +10,18 @@ Argument: none. Scope is always PWD, author is always `@me`, format is always `c
 
 2. **Drop group 5, `READY TO MERGE`** — the fully-clear one (CI passing + approved + no conflicts + zero unresolved threads). Keep the other four groups, including the separate `READY TO MERGE (with comments)` group, which still has threads to resolve and so is still pending. Drop it **before** clustering, so a cluster's rank and repo list describe only the work that is actually left; a cluster whose every member was green disappears with them.
 
-3. **Print the `clusters` render and nothing else** — feature clusters first (most urgent cluster on top), each with its repo list, then the standalone block, numbered `pr1`…`pr<N>` straight through:
+3. **Print the `clusters` render and nothing else** — feature clusters first (most urgent cluster on top), each with its repo list, then the standalone block, numbered `pr1`…`pr<N>` straight through. Every line carries the same four fields in the same order: URL, handle, what the PR does, status.
 
    ```
    ### oauth-migration (2) — owner/repo-a, owner/repo-b
-   - pr1 https://github.com/owner/repo-a/pull/123 — 🔴 CI FAILED — unit-tests
-   - pr2 https://github.com/owner/repo-b/pull/456 — 🟡 AWAITING REVIEW
+   - https://github.com/owner/repo-a/pull/123 — pr1 — issue refresh tokens on the token endpoint — 🔴 CI FAILED — unit-tests
+   - https://github.com/owner/repo-b/pull/456 — pr2 — swap the login form to the new flow — 🟡 AWAITING REVIEW
 
    ### Standalone (1)
-   - pr3 https://github.com/owner/repo-c/pull/789 — 🟡 BUILD IN PROGRESS (2 running)
+   - https://github.com/owner/repo-c/pull/789 — pr3 — cache the org lookup in the sync job — 🟡 BUILD IN PROGRESS (2 running)
    ```
 
-   No summary line, no counts beyond the heading's, no titles, no code fence. Zero pending PRs → print nothing.
+   No summary line, no counts beyond the heading's, no code fence. `<description>` is ≤8 words of what the PR does — never the PR title pasted in, and inside a cluster it is what that PR contributes rather than a repeat of the heading. Zero pending PRs → print nothing.
 
 ## Rules
 
@@ -29,4 +29,4 @@ Argument: none. Scope is always PWD, author is always `@me`, format is always `c
 - **Never re-implement repo discovery here.** Matching `/sy-babysit-prs` is the entire point: this answers "what would babysit pick up right now?", and the output pastes straight into `/sy-babysit-prs` or `/sy-review-prs` as an explicit PR list — those read the `https://` token off each line and skip the `###` headings.
 - **Grouping is the value; ranking is the order.** The same feature landing in three repos is three PRs one merge order applies to, so they print together with their repo list, and the cluster carrying the most urgent PR prints first. Never re-sort by repo after clustering.
 - **`pr<N>` handles are per-render pointers, not identifiers.** They exist so the next message can say "babysit pr2 and pr4"; they change on every run and are never stored, quoted back later, or written into a PR body.
-- **Output stays paste-clean** — `###` headings, `- pr<N> `, and the ` — <status>` tail are the only decoration, and every PR line keeps the full URL as its third field.
+- **Output stays paste-clean** — `###` headings and the ` — ` annotation tail are the only decoration, and every PR line leads with the full URL as its first field after `- `, so a line stays clickable and greppable wherever it lands.

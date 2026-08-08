@@ -312,24 +312,27 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 
 ```
 ### oauth-migration (3) — acme/api, acme/web, acme/widget-store
-- pr1 https://github.com/acme/api/pull/51 — 🔴 CI FAILED — unit-tests
-- pr2 https://github.com/acme/web/pull/7 — 🟡 AWAITING REVIEW
-- pr3 https://github.com/acme/widget-store/pull/109 — 🟢 CI PASSED · APPROVED
+- https://github.com/acme/api/pull/51 — pr1 — issue refresh tokens on the token endpoint — 🔴 CI FAILED — unit-tests
+- https://github.com/acme/web/pull/7 — pr2 — swap the login form to the new flow — 🟡 AWAITING REVIEW
+- https://github.com/acme/widget-store/pull/109 — pr3 — drop the old session cookie reader — 🟢 CI PASSED · APPROVED
 
 ### ABC-1234 (2) — acme/api, acme/web
-- pr4 https://github.com/acme/api/pull/60 — 🟡 BUILD IN PROGRESS (2 running)
-- pr5 https://github.com/acme/web/pull/18 — 🟡 AWAITING REVIEW
+- https://github.com/acme/api/pull/60 — pr4 — add the org-fields column to the sync payload — 🟡 BUILD IN PROGRESS (2 running)
+- https://github.com/acme/web/pull/18 — pr5 — render org fields on the profile card — 🟡 AWAITING REVIEW
 
 ### Standalone (2)
-- pr6 https://github.com/acme/widget-store/pull/113 — 🔴 MERGE CONFLICT
-- pr7 https://github.com/acme/api/pull/42 — 🟢 CI PASSED · APPROVED
+- https://github.com/acme/widget-store/pull/113 — pr6 — retry token refresh on 401 — 🔴 MERGE CONFLICT
+- https://github.com/acme/api/pull/42 — pr7 — drop the legacy /v1 search endpoint — 🟢 CI PASSED · APPROVED
 ```
 
 - **Cluster heading**: `### <label> (<n>) — <repo>, <repo>, …`, repos comma-separated in the order their PRs appear. The repo list is the whole point of the heading: it answers "which repos does this feature still need" without reading a single URL. Single-repo clusters (two PRs in the same repo) still print the repo once.
 - **Standalone block**: everything with no partner, under a literal `### Standalone (<n>)` heading, always last, no repo list. Print it even when it holds every PR — an all-standalone list is a real answer, not an error.
-- **PR line**: `- pr<N> <full URL> — <color emoji> <status>`. `<color emoji>` and `<status>` use the exact vocabulary and roll-up rule as `long` (`CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`, `·`-separated). Prepend `[Draft]` / `[WIP]` before the emoji when they apply.
+- **PR line**: `- <full URL> — pr<N> — <description> — <color emoji> <status>`. Same four fields in the same order on every line in the render, clustered and standalone alike — no per-block variant to remember, and a line means the same thing wherever it is pasted. `<color emoji>` and `<status>` use the exact vocabulary and roll-up rule as `long` (`CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`, `·`-separated). Prepend `[Draft]` / `[WIP]` before the emoji when they apply.
+- **The URL leads every PR line — always the first field after `- `.** Everything else is a trailing annotation, so a line stays clickable, greppable, and copy-pasteable no matter how many annotations get appended later. Never put the `pr<N>` handle, a status, or a description ahead of the URL.
+- **Every line says what its PR does** — `<description>` is ≤8 words of plain English written from that PR's title and body, never the title pasted verbatim, never the branch name, never a restatement of the status. Without it a reader gets a bare number and a color and has to open every link to triage. Cannot tell from title and body what it does → say the narrowest true thing (`config change in the ingest job`), never invent a purpose.
+- **Inside a cluster, `<description>` is what that PR contributes, not what the feature is** — the `###` heading already said the feature, so repeating it on all three lines burns the one field that could tell them apart. Write the differentiator: `issue refresh tokens on the token endpoint`, not `oauth migration`.
 - **Numbering is global, continuous, and display-ordered** — `pr1` through `pr<N>` across the whole render, never restarting per cluster. The handle is stable only within one render; it is a pointer for the next message, not an identifier to store.
-- **Consumers read the `https://` token from each line.** That token is always the full `https://github.com/<owner>/<repo>/pull/<number>` form and always the third whitespace-separated field. Heading lines carry no `https://` token, so a URL-extracting parser skips them for free — the same property that lets `/sy-babysit-prs` read `short` past its `##` headings.
+- **Consumers read the `https://` token from each line.** That token is always the full `https://github.com/<owner>/<repo>/pull/<number>` form and always the second whitespace-separated field, immediately after the `- `. Heading lines carry no `https://` token, so a URL-extracting parser skips them for free — the same property that lets `/sy-babysit-prs` read `short` past its `##` headings.
 - **Ordering is Feature clustering's, not this section's** — cluster rank by most-urgent member, then size, then age; within a cluster, dependency order first. Do not re-sort here.
 - When a cluster came from inference (Feature clustering signals 4–5), append ` — grouped by <signal>` to its heading, e.g. `### retry-token-refresh (2) — acme/api, acme/web — grouped by matching branch name`. A guess says it's a guess.
 - Zero PRs → print nothing at all, same as `links`.
