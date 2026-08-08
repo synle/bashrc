@@ -412,6 +412,42 @@ function _git_patch_looks_like_patch() {
   command head -n 40 "$patch_file" | command grep -q -e "^diff --git " -e "^--- " -e "^From [0-9a-f]"
 }
 
+# _git_patch_clipboard_file: capture the clipboard into a temp patch file when it holds a diff
+# Sets _GIT_PATCH_CLIPBOARD_FILE to the captured path on success. Returns non-zero and
+# leaves nothing behind when the clipboard is empty, unreadable, or not a unified diff.
+function _git_patch_clipboard_file() {
+  _GIT_PATCH_CLIPBOARD_FILE=""
+
+  local patch_file
+  if ! patch_file=$(_git_patch_temp_file "clipboard.patch"); then
+    echo ">>> could not create a temp folder for the clipboard patch" >&2
+    return 1
+  fi
+
+  # `paste` with no args is raw by design — do NOT add --unwrap here, it
+  # would trim the single-space blank context lines a unified diff needs.
+  paste > "$patch_file" 2> /dev/null
+
+  if ! _git_patch_looks_like_patch "$patch_file"; then
+    command rm -f "$patch_file"
+    return 1
+  fi
+
+  echo ">>> patch file created $patch_file"
+  _GIT_PATCH_CLIPBOARD_FILE="$patch_file"
+}
+
+# _git_patch_apply_clipboard: apply the clipboard when it holds a diff
+# Exit codes: 0 applied, 1 the patch failed to apply, 2 the clipboard holds no patch.
+# The 2 is what lets each caller pick its own fallback — dropbox for git_patch_apply,
+# cutting a fresh patch for `patch`.
+function _git_patch_apply_clipboard() {
+  _git_patch_clipboard_file || return 2
+
+  echo ">>> applying patch from clipboard"
+  _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
+}
+
 # _git_patch_apply_file: the only applier — clean when it can, --reject when it must
 function _git_patch_apply_file() {
   local patch_file="$1"
@@ -597,36 +633,57 @@ function git_patch_apply() {
     return $?
   fi
 
-  if ! patch_file=$(_git_patch_temp_file "clipboard.patch"); then
-    echo "git_patch_apply: could not create a temp folder." >&2
-    return 1
+  local clipboard_status
+  _git_patch_apply_clipboard
+  clipboard_status=$?
+  if [ "$clipboard_status" -ne 2 ]; then
+    return "$clipboard_status"
   fi
 
-  # `paste` with no args is raw by design — do NOT add --unwrap here, it
-  # would trim the single-space blank context lines a unified diff needs.
-  paste > "$patch_file" 2> /dev/null
-
-  if _git_patch_looks_like_patch "$patch_file"; then
-    echo ">>> patch file created $patch_file"
-    echo ">>> applying patch from clipboard"
-    _git_patch_apply_file "$patch_file"
-    return $?
-  fi
-
-  command rm -f "$patch_file"
   echo ">>> clipboard holds no patch — falling back to the shared dropbox folder"
   _git_patch_apply_from_dropbox
 }
 
 # Two verbs, both spellings — `<noun>_<verb>` and `<verb>_<noun>` land on the same
 # function, so muscle memory never has to pick. `patch_get` is the producing side
-# under git's own vocabulary (`git patch-get` renders the patch out of the repo),
-# and bare `patch` is its shortcut. That shadows /usr/bin/patch in interactive
-# shells only — reach the binary with `command patch`.
+# under git's own vocabulary (`git patch-get` renders the patch out of the repo).
 alias patch_create='git_patch_create'
 alias create_patch='git_patch_create'
 alias patch_get='git_patch_create'
 alias get_patch='git_patch_create'
 alias patch_apply='git_patch_apply'
 alias apply_patch='git_patch_apply'
-alias patch='patch_get'
+
+# patch: one word for the whole transfer pair — apply when there is something to
+# apply, otherwise cut a fresh patch. This shadows /usr/bin/patch in shells that
+# load the profile; reach the binary with `command patch`.
+function patch() {
+  if is_help_arg "${1:-}"; then
+    echo "patch: apply a patch when one is at hand, otherwise cut a new one
+  Usage: patch [patch_file]
+  Resolution order:
+    1. <patch_file>, when given       -> git_patch_apply <patch_file>
+    2. clipboard reads like a diff    -> apply the clipboard
+    3. clipboard empty or not a diff  -> git_patch_create (export the last commit)
+  Examples:
+    patch                  apply the clipboard diff, else export the last commit
+    patch /tmp/fix.patch   apply an existing patch file
+  Shadows /usr/bin/patch — reach the binary with 'command patch'."
+    return 1
+  fi
+
+  if [ -n "${1:-}" ]; then
+    git_patch_apply "$@"
+    return $?
+  fi
+
+  local clipboard_status
+  _git_patch_apply_clipboard
+  clipboard_status=$?
+  if [ "$clipboard_status" -ne 2 ]; then
+    return "$clipboard_status"
+  fi
+
+  echo ">>> clipboard holds no patch — creating one from the last commit instead"
+  git_patch_create
+}
