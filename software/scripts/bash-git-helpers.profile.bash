@@ -687,3 +687,418 @@ function patch() {
   echo ">>> clipboard holds no patch — creating one from the last commit instead"
   git_patch_create
 }
+
+################################################################################
+# --- Pull Request Inventory ---
+# One command for "what are my open PRs still waiting on", so an agent (or a
+# human) does not fan six shell round-trips out by hand:
+#   list_pending_prs           — text render, oldest PR first
+#   list_pending_prs --json    — the same rows enriched, for a consumer to format
+#
+# Everything a PR needs comes back in ONE GraphQL call per PR — status checks,
+# review decision, mergeability and review threads together — because the
+# equivalent `gh pr view --json` + `gh api graphql` pair doubles the round trips
+# for data GitHub hands over in a single query anyway.
+################################################################################
+
+# _list_pending_prs_repos: echo one owner/repo per line, from specs or discovery
+function _list_pending_prs_repos() {
+  local spec root
+  {
+    if [ "$#" -gt 0 ]; then
+      for spec in "$@"; do
+        # A local folder resolves through its remote; anything else is already a slug.
+        # The folder name is never the repo name — ~/git/file-explorer can be acme/storage-ui.
+        if [ -d "$spec" ]; then
+          git -C "$spec" remote get-url origin 2> /dev/null
+        else
+          echo "$spec"
+        fi
+      done
+    else
+      # Ask git for the repo root rather than hunting for .git — that recognizes
+      # worktrees and submodules whose .git is a file, never walks .git internals,
+      # and `sort -u` collapses nested folders onto their owning repo.
+      for spec in . */ */*/; do
+        root=$(git -C "$spec" rev-parse --show-toplevel 2> /dev/null) || continue
+        echo "$root"
+      done | sort -u | while IFS= read -r root; do
+        git -C "$root" remote get-url origin 2> /dev/null
+      done
+    fi
+  } | sed -e 's#^ssh://[^/]*@github\.com/##' -e 's#^[^/]*@github\.com:##' \
+    -e 's#^https://[^/]*github\.com/##' -e 's#\.git$##' \
+    | command grep '^[^/][^/]*/[^/][^/]*$' | sort -u
+}
+
+# list_pending_prs: open PRs that still need something, oldest first
+function list_pending_prs() {
+  if is_help_arg "${1:-}"; then
+    echo "list_pending_prs: list open PRs that still need something, oldest first
+  Usage: list_pending_prs [--json] [--all] [--author=<handle>] [--limit=<n>] [repo ...]
+  <repo> is 'owner/repo' or a local folder (resolved through its origin remote).
+  With no repo argument, every git repo at or below the current folder — two
+  levels deep — is discovered and used.
+  Pending means open and NOT fully green; a PR drops off the list only once CI
+  passes AND it is approved AND it has no conflict AND no open review threads.
+  Options:
+    --json             emit the enriched rows as JSON instead of the text render
+    --all              keep the fully-green PRs too
+    --author=<handle>  whose PRs to list (default: @me)
+    --limit=<n>        search cap, 1-1000 (default: 1000)
+  Examples:
+    list_pending_prs
+    list_pending_prs --json
+    list_pending_prs acme/api acme/web
+    list_pending_prs --all --author=alice
+  A check whose name reads like a human approval gate counts as review, not CI —
+  override the pattern with BASHRC_PR_GATE_CHECK_PATTERN."
+    return 1
+  fi
+
+  if ! type -P gh &> /dev/null; then
+    echo "list_pending_prs: gh is not installed." >&2
+    return 1
+  fi
+  if ! type -P node &> /dev/null; then
+    echo "list_pending_prs: node is not installed." >&2
+    return 1
+  fi
+
+  local as_json=0 keep_ready=0 author="@me" limit=1000 arg
+  local repo_specs
+  repo_specs=()
+  for arg in "$@"; do
+    case "$arg" in
+    --json) as_json=1 ;;
+    --all) keep_ready=1 ;;
+    --author=*) author="${arg#--author=}" ;;
+    --limit=*) limit="${arg#--limit=}" ;;
+    -*)
+      echo "list_pending_prs: unknown option '$arg' — see list_pending_prs --help" >&2
+      return 1
+      ;;
+    *) repo_specs+=("$arg") ;;
+    esac
+  done
+
+  local repos
+  if [ "${#repo_specs[@]}" -gt 0 ]; then
+    repos=$(_list_pending_prs_repos "${repo_specs[@]}")
+  else
+    repos=$(_list_pending_prs_repos)
+  fi
+
+  if [ -z "$repos" ]; then
+    echo "list_pending_prs: no GitHub repos resolved — pass 'owner/repo' arguments or run inside a checkout." >&2
+    return 1
+  fi
+
+  local repo_flags line repo_count=0
+  repo_flags=()
+  while IFS= read -r line; do
+    if [ -n "$line" ]; then
+      repo_flags+=(--repo "$line")
+      repo_count=$((repo_count + 1))
+    fi
+  done << REPO_LIST_EOF
+$repos
+REPO_LIST_EOF
+
+  local work
+  work=$(mktemp -d "/tmp/pending-prs-XXXXXX" 2> /dev/null || mktemp -d) || return 1
+
+  echo ">>> scanning $repo_count repo(s) for open $author PRs" >&2
+  if ! gh search prs --author="$author" --state=open --limit "$limit" "${repo_flags[@]}" \
+    --json number,repository,url > "$work/search.json" 2> "$work/search.err"; then
+    command cat "$work/search.err" >&2
+    command rm -rf "$work"
+    return 1
+  fi
+
+  # Heredocs read into variables and kept at top level — bash 3.2 keeps counting
+  # quotes through a heredoc nested inside $( ... ), so one apostrophe in a JS
+  # comment there would corrupt the parse of everything after it.
+  local pair_js
+  IFS= read -r -d '' pair_js << 'PAIR_JS_EOF' || true
+let raw = "";
+process.stdin.on("data", function (d) { raw += d; });
+process.stdin.on("end", function () {
+  JSON.parse(raw).forEach(function (pr) {
+    process.stdout.write(pr.repository.nameWithOwner + " " + pr.number + "\n");
+  });
+});
+PAIR_JS_EOF
+
+  node -e "$pair_js" < "$work/search.json" > "$work/pairs.txt" || {
+    echo "list_pending_prs: could not read the search results." >&2
+    command rm -rf "$work"
+    return 1
+  }
+
+  local pr_count
+  pr_count=$(command grep -c . "$work/pairs.txt" 2> /dev/null || true)
+  pr_count=${pr_count:-0}
+  if [ "$pr_count" -eq 0 ]; then
+    echo ">>> no open $author PRs in those $repo_count repo(s)" >&2
+    [ "$as_json" -eq 1 ] && echo "[]"
+    command rm -rf "$work"
+    return 0
+  fi
+  if [ "$pr_count" -ge "$limit" ]; then
+    echo ">>> WARNING: hit the --limit of $limit — the result set is possibly truncated" >&2
+  fi
+
+  # mergeStateStatus, statusCheckRollup and reviewThreads in one query: gh pr view
+  # cannot return reviewThreads at all, and gh search prs cannot return branch names,
+  # so the three-call version is fetching one PR's state from three places.
+  local query
+  IFS= read -r -d '' query << 'GQL_EOF' || true
+query($owner:String!,$repo:String!,$number:Int!){
+  repository(owner:$owner,name:$repo){
+    pullRequest(number:$number){
+      url number title isDraft createdAt updatedAt mergeable mergeStateStatus
+      headRefName baseRefName
+      author{ login }
+      repository{ nameWithOwner }
+      reviewDecision
+      reviewThreads(first:100){ nodes{ isResolved comments(first:1){ nodes{ author{ login __typename } } } } }
+      commits(last:1){ nodes{ commit{ statusCheckRollup{ state contexts(first:100){ nodes{
+        __typename
+        ... on CheckRun{ name status conclusion }
+        ... on StatusContext{ context state }
+      } } } } } }
+    }
+  }
+}
+GQL_EOF
+
+  echo ">>> enriching $pr_count PR(s)" >&2
+  # Subshell so an interactive shell does not print a job notification per fetch.
+  (
+    idx=0
+    inflight=0
+    while read -r slug number; do
+      idx=$((idx + 1))
+      gh api graphql -f owner="${slug%%/*}" -f repo="${slug##*/}" -F number="$number" \
+        -f query="$query" > "$work/pr-$idx.json" 2> /dev/null &
+      inflight=$((inflight + 1))
+      if [ "$inflight" -ge 8 ]; then
+        wait
+        inflight=0
+      fi
+    done < "$work/pairs.txt"
+    wait
+  )
+
+  local render_js
+  IFS= read -r -d '' render_js << 'RENDER_JS_EOF' || true
+const fs = require("fs");
+const path = require("path");
+
+const work = process.env._PENDING_PRS_WORK;
+const asJson = process.env._PENDING_PRS_JSON === "1";
+const keepReady = process.env._PENDING_PRS_ALL === "1";
+
+// A human approval gate is reported as a check but never resolves on a timer, and
+// a changes-resolution gate reports FAILURE while threads are open. Neither is a
+// broken build, so both are read as review signal rather than CI.
+const gateRe = new RegExp(
+  process.env._PENDING_PRS_GATE_PATTERN
+    || "approval|approve|reviewer|review required|sign-?off|codeowner|changes ?resolution|\\bcla\\b",
+  "i",
+);
+const FAILED = ["FAILURE", "ERROR", "TIMED_OUT", "STARTUP_FAILURE"];
+const UNFINISHED = ["QUEUED", "IN_PROGRESS", "WAITING", "PENDING", "REQUESTED", "EXPECTED"];
+
+/**
+ * Whole days since an ISO timestamp.
+ * @param {string} iso ISO-8601 timestamp.
+ * @returns {number} Age in whole days.
+ */
+function ageInDays(iso) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
+/**
+ * Flatten one GraphQL pull request into a scored, renderable row.
+ * @param {object} pr The pullRequest node.
+ * @returns {object} The enriched row.
+ */
+function shape(pr) {
+  const commit = ((pr.commits || {}).nodes || [])[0] || {};
+  const rollup = (commit.commit || {}).statusCheckRollup || {};
+  const contexts = (rollup.contexts || {}).nodes || [];
+
+  let failedCheck = "";
+  let running = 0;
+  let gates = 0;
+
+  contexts.forEach(function (check) {
+    const name = check.name || check.context || "check";
+    const verdict = check.conclusion || check.state || "";
+    const unfinished = UNFINISHED.indexOf(check.status || "") !== -1 || UNFINISHED.indexOf(verdict) !== -1;
+
+    if (gateRe.test(name)) {
+      if (unfinished || FAILED.indexOf(verdict) !== -1) gates += 1;
+      return;
+    }
+    if (unfinished) {
+      running += 1;
+      return;
+    }
+    if (FAILED.indexOf(verdict) !== -1 && failedCheck === "") failedCheck = name;
+  });
+
+  let openHuman = 0;
+  let openBot = 0;
+  let resolved = 0;
+  ((pr.reviewThreads || {}).nodes || []).forEach(function (thread) {
+    if (thread.isResolved) {
+      resolved += 1;
+      return;
+    }
+    // Bot-ness comes from __typename, not a [bot] login suffix — review bots post
+    // under plain-looking logins, so a suffix match reads a bot nit as a human blocker.
+    const first = ((thread.comments || {}).nodes || [])[0] || {};
+    if ((first.author || {}).__typename === "Bot") openBot += 1;
+    else openHuman += 1;
+  });
+  const openThreads = openHuman + openBot;
+
+  const decision = pr.reviewDecision || "";
+  const conflicted = pr.mergeable === "CONFLICTING";
+  const rawTitle = pr.title || "";
+  const wip = /(^|[^a-z])(wip|do not merge)([^a-z]|$)/i.test(rawTitle);
+  const draft = pr.isDraft === true;
+
+  // Drop the [<repo>] title prefix — the URL on the same line already names the
+  // repo, so keeping it prints the repo twice and buys nothing.
+  const slug = (pr.repository || {}).nameWithOwner || "";
+  const title = rawTitle.replace(/\[([^\]]+)\]\s*/g, function (match, inner) {
+    return inner === slug.split("/").pop() ? "" : match;
+  });
+
+  const red = failedCheck !== "" || decision === "CHANGES_REQUESTED" || conflicted;
+  const green = failedCheck === "" && running === 0 && decision === "APPROVED" && !conflicted;
+
+  let group = "NEED APPROVAL";
+  if (draft || wip) group = "NOT READY / WIP / DRAFT";
+  else if (red) group = "NEEDS ATTENTION";
+  else if (green) group = openThreads > 0 ? "READY TO MERGE (with comments)" : "READY TO MERGE";
+
+  const ci = failedCheck !== ""
+    ? "CI FAILED — " + failedCheck
+    : running > 0
+      ? "BUILD IN PROGRESS (" + running + " running)"
+      : "CI PASSED";
+  const review = decision === "APPROVED"
+    ? "APPROVED"
+    : decision === "CHANGES_REQUESTED"
+      ? "CHANGES REQUESTED"
+      : "AWAITING REVIEW";
+
+  const status = [ci, review];
+  if (conflicted) status.push("MERGE CONFLICT");
+  if (openThreads > 0) {
+    status.push(
+      "\u{1F4AC} " + openThreads + " open"
+        + (openBot > 0 ? " (" + openHuman + " human, " + openBot + " bot)" : ""),
+    );
+  }
+  if (gates > 0) status.push("\u{23F3} " + gates + " approval gate" + (gates > 1 ? "s" : ""));
+  if (pr.mergeStateStatus === "BEHIND") status.push("BEHIND " + (pr.baseRefName || "base"));
+
+  return {
+    url: pr.url,
+    repo: (pr.repository || {}).nameWithOwner || "",
+    number: pr.number,
+    title: title,
+    author: (pr.author || {}).login || "",
+    createdAt: pr.createdAt,
+    updatedAt: pr.updatedAt,
+    ageDays: ageInDays(pr.createdAt),
+    headRefName: pr.headRefName || "",
+    baseRefName: pr.baseRefName || "",
+    isDraft: draft,
+    isWip: wip,
+    group: group,
+    color: red ? "\u{1F534}" : green ? "\u{1F7E2}" : "\u{1F7E1}",
+    ci: ci,
+    review: review,
+    failedCheck: failedCheck,
+    runningChecks: running,
+    approvalGates: gates,
+    mergeable: pr.mergeable || "",
+    mergeStateStatus: pr.mergeStateStatus || "",
+    openThreads: openThreads,
+    openHumanThreads: openHuman,
+    openBotThreads: openBot,
+    resolvedThreads: resolved,
+    status: status.join(" \u{00B7} "),
+  };
+}
+
+let unreadable = 0;
+let rows = fs
+  .readdirSync(work)
+  .filter(function (name) { return name.indexOf("pr-") === 0 && /\.json$/.test(name); })
+  .map(function (name) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(path.join(work, name), "utf-8"));
+      return ((raw.data || {}).repository || {}).pullRequest || null;
+    } catch (err) {
+      return null;
+    }
+  })
+  .filter(function (pr) {
+    if (pr) return true;
+    unreadable += 1;
+    return false;
+  })
+  .map(shape);
+
+const scanned = rows.length;
+if (!keepReady) rows = rows.filter(function (row) { return row.group !== "READY TO MERGE"; });
+// Oldest first: the PR nobody has touched longest is the one about to be forgotten.
+rows.sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0; });
+
+if (asJson) {
+  process.stdout.write(JSON.stringify(rows, null, 2) + "\n");
+} else {
+  rows.forEach(function (row) {
+    // No [WIP] tag: `wip` is only ever detected FROM the title, so printing it back
+    // is pure duplication. [Draft] stays — draft state has no textual marker.
+    const tags = row.isDraft ? "[Draft] " : "";
+    process.stdout.write(
+      [
+        row.url,
+        row.createdAt.replace("T", " ").replace("Z", "").slice(0, 16) + " (" + row.ageDays + "d)",
+        row.color + " " + row.status,
+        tags + row.title,
+      ].join(" \u{00B7} ") + "\n",
+    );
+  });
+}
+
+process.stderr.write(
+  ">>> " + scanned + " open \u{00B7} " + rows.length + (keepReady ? " listed" : " pending")
+    + " \u{00B7} oldest first"
+    + (unreadable > 0 ? " \u{00B7} " + unreadable + " PR(s) could not be fetched" : "")
+    + "\n",
+);
+RENDER_JS_EOF
+
+  _PENDING_PRS_WORK="$work" \
+    _PENDING_PRS_JSON="$as_json" \
+    _PENDING_PRS_ALL="$keep_ready" \
+    _PENDING_PRS_GATE_PATTERN="${BASHRC_PR_GATE_CHECK_PATTERN:-}" \
+    node -e "$render_js"
+  local render_status=$?
+
+  command rm -rf "$work"
+  return $render_status
+}
+
+alias pending_prs='list_pending_prs'
+alias prs_pending='list_pending_prs'
