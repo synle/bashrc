@@ -20,6 +20,23 @@
     - **On a hit, stop and report** rather than opening a stacked PR: `"This branch was cut from <sibling> — <n> of its commits are in the diff, so opening a PR now would stack this on <sibling's PR>. Options: (a) re-cut from <default> and re-apply only this branch's work, or (b) fold both into one PR. Which?"`
     - **Never resolve it by pointing `--base` at the sibling.** That makes the diff read cleanly and creates exactly the stack this check exists to prevent.
 
+4b. **Sibling-overlap pre-flight — the last moment de-overlapping is still free.** A stack is not the only way sibling PRs collide; two independent PRs editing the same file collide too, and the second one to merge pays for it. List this branch's files and compare against your other open PRs in this repo:
+
+    ```bash
+    git diff --name-only "origin/$DEF...HEAD" | sort > /tmp/pr-files-mine
+    gh pr list --repo <owner>/<repo> --author @me --state open --json number,url,headRefName --limit 100
+    # then per sibling PR <n>:
+    gh api "repos/<owner>/<repo>/pulls/<n>/files" --paginate --jq '.[].filename' | sort
+    ```
+
+    Empty intersection is the goal and needs no report. On a hit, classify before alarming anyone:
+
+    - **Regenerable** (lockfile, snapshot, generated artifact) → not a real overlap. Note it and move on; the sync resolver regenerates these rather than merging them.
+    - **Append-only** (barrel, registry, config list, enum block) → low risk. Say which file, and confirm this branch appended at the **end** rather than in sorted position — a sorted insert puts both siblings on adjacent lines and turns a trivial merge into a conflict.
+    - **Same source or test file, substantive** → report it now, while it is still cheap: `"<file> is also changed by <sibling PR link> — whoever merges second hits a conflict."` Offer the fix from the _Make slices disjoint with new files_ rule; for tests that is almost always "move this branch's tests into their own spec file rather than appending to the shared one".
+
+    **This is advisory, not a gate.** Shipping both and resolving once is sometimes the right call — the point is that the decision gets made now, deliberately, instead of being discovered by whoever merges second.
+
 5. Run `git diff "origin/$DEF...HEAD"` to understand all changes included in the PR.
 
 5a. **Check for the repo's PR template** — `git ls-files | grep -i pull_request_template`. See the _PR body follows the repo's template_ rule for precedence order and fill rules. No hit → default body in Step 6.
@@ -45,6 +62,7 @@
 ## Rules
 
 - **Never open a stacked PR.** `--base` is always the repo's default branch, passed explicitly, never another feature branch or another open PR's head. A branch whose diff carries a sibling's commits is a stack in the making — stop and re-cut it (Step 4a); never retarget `--base` to make the diff look right. If the work cannot be split into pieces that each stand alone against the default branch, ship it as **one** PR: one larger standalone PR always beats two stacked ones. See the "Every PR branches off the default branch" and "Split by slice, never by layer" rules.
+- **Sibling PRs collide on files, not just on bases (Step 4b).** The no-stack pre-flight only catches a shared *ancestor*; two perfectly independent PRs editing the same file still conflict, and nothing about `--base` prevents it. Check the file lists against your other open PRs before pushing and design the overlap out — see the "Make slices disjoint with new files, not with discipline" rule for the techniques, of which the highest-yield is one new spec file per slice instead of every slice appending to a shared one. Advisory, never a blocker.
 - **Squash merge only.** Every PR merges via `gh pr merge --squash`. Never use `--merge` (regular merge commit) or `--rebase`. One PR = one commit on the default branch.
 - **Automerge is opt-in except on a standalone prose-only diff** (docs files / comments / docstrings / whitespace and nothing else, with no companion PR still open — see the Automerge is opt-in rule). Standalone prose-only: enable `--auto` yourself right after creating the PR, no question asked (Step 10). Prose-only but part of a set (shared branch group slug, an explicit reference to another open PR, or a stacked base): leave `--auto` off and say why — `/sy-babysit-pr` enables it once the companions land, so docs never merge ahead of the code. Tests-only / dependency-only / otherwise trivial: offer once, enable only on explicit "yes". Everything else: don't ask, don't enable. Never on a WIP / `DO NOT MERGE` / draft PR regardless of the diff.
 - **Skip PR creation entirely on solo+bots repos** — push direct to default unless the user explicitly asks for a PR.
