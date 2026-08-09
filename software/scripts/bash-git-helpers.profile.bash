@@ -708,6 +708,7 @@ function patch() {
 ################################################################################
 
 # list_prs_needs_attention: only the open PRs that still owe someone work
+alias pr_list_needs_attention='list_prs_needs_attention'
 function list_prs_needs_attention() {
   if is_help_arg "${1:-}"; then
     echo "list_prs_needs_attention: list open PRs that still need something, oldest first
@@ -735,6 +736,7 @@ function list_prs_needs_attention() {
 }
 
 # list_prs_all_open: every open PR, ready-to-merge ones included
+alias pr_list_all_open='list_prs_all_open'
 function list_prs_all_open() {
   if is_help_arg "${1:-}"; then
     echo "list_prs_all_open: list every open PR, ready-to-merge included, oldest first
@@ -763,16 +765,69 @@ function list_prs_all_open() {
 
 # github - set pr to automerge
 alias pr_merge='github_merge_auto'
-function github_merge_auto() {
-  local url="$1"
-  [[ "$url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]] || { echo "Invalid URL" >&2; return 1; }
+function pr_merge() {
+  if [ $# -eq 0 ]; then
+    echo "Usage: pr_merge <url1> [url2 ...]" >&2
+    return 1
+  fi
 
-  local repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}" pr="${BASH_REMATCH[3]}"
-  local state=$(gh pr view "$pr" -R "$repo" --json state --jq '.state' 2>/dev/null)
+  local valid_prs=()
+  local invalid_count=0
 
-  [[ -z "$state" ]] && { echo "PR #$pr does not exist" >&2; return 1; }
-  [[ "$state" == "MERGED" ]] && { echo "PR #$pr is already merged"; return 0; }
-  [[ "$state" == "CLOSED" ]] && { echo "PR #$pr is closed"; return 0; }
+  echo "=== Scanning Pull Requests ==="
+  for url in "$@"; do
+    [[ "$url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]] || {
+      echo "[INVALID URL] $url"
+      ((invalid_count++))
+      continue
+    }
 
-  gh pr merge "$pr" --auto --merge -R "$repo"
+    local repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}" pr="${BASH_REMATCH[3]}"
+    local state
+    state=$(gh pr view "$pr" -R "$repo" --json state --jq '.state' 2>/dev/null)
+
+    if [[ -z "$state" ]]; then
+      echo "[NOT FOUND] PR #$pr in $repo does not exist"
+      ((invalid_count++))
+    elif [[ "$state" == "MERGED" ]]; then
+      echo "[ALREADY MERGED] PR #$pr in $repo"
+      ((invalid_count++))
+    elif [[ "$state" == "CLOSED" ]]; then
+      echo "[CLOSED] PR #$pr in $repo"
+      ((invalid_count++))
+    else
+      local strategy
+      strategy=$(gh repo view "$repo" --json squashMergeAllowed,rebaseMergeAllowed,mergeCommitAllowed --jq '
+        if .squashMergeAllowed then "--squash"
+        elif .rebaseMergeAllowed then "--rebase"
+        elif .mergeCommitAllowed then "--merge"
+        else empty end
+      ' 2>/dev/null)
+
+      if [[ -z "$strategy" ]]; then
+        echo "[ERROR] No allowed merge strategy found for $repo (PR #$pr)"
+        ((invalid_count++))
+      else
+        echo "[READY] PR #$pr in $repo (Strategy: $strategy)"
+        valid_prs+=("$pr|$repo|$strategy|$url")
+      fi
+    fi
+  done
+
+  if [ ${#valid_prs[@]} -eq 0 ]; then
+    echo -e "\nNo valid PRs ready to merge."
+    return 0
+  fi
+
+  echo -e "\nFound ${#valid_prs[@]} ready PR(s) and $invalid_count skipped/invalid item(s)."
+  read -p "Do you want to continue with setting auto-merge for the ready PRs? [y/N]: " -n 1 -r
+  echo
+  [[ ! $REPLY =~ ^[Yy]$ ]] && { echo "Aborted."; return 0; }
+
+  echo "=== Applying Auto-Merge ==="
+  for item in "${valid_prs[@]}"; do
+    IFS='|' read -r pr repo strategy url <<< "$item"
+    echo "Processing PR #$pr ($repo) using $strategy..."
+    gh pr merge "$pr" --auto "$strategy" -R "$repo"
+  done
 }
