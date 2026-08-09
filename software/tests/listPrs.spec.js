@@ -547,4 +547,12 @@ describe("list_prs — shell wrappers", () => {
     expect(PROFILE_SOURCE).toContain('add_bookmark "pr_list_all_open"');
     expect(PROFILE_SOURCE).toContain('add_bookmark "pr_merge"');
   });
+
+  it("checks unresolved review threads before auto-merge", () => {
+    expect(PROFILE_SOURCE).toContain("local unresolved_prs=()");
+    expect(PROFILE_SOURCE).toContain("reviewThreads(first:100)");
+    expect(PROFILE_SOURCE).toContain("has $unresolved_count unresolved comment(s)");
+    expect(PROFILE_SOURCE).toContain('Set auto-merge for PRs with unresolved comments?');
+    expect(PROFILE_SOURCE).toContain('valid_prs+=("${unresolved_prs[@]}")');
+  });
 });

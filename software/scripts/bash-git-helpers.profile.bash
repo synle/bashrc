@@ -759,6 +759,7 @@ function pr_merge() {
   fi
 
   local valid_prs=()
+  local unresolved_prs=()
   local invalid_count=0
   local failed_count=0
 
@@ -771,8 +772,18 @@ function pr_merge() {
     }
 
     local repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}" pr="${BASH_REMATCH[3]}"
-    local state
-    state=$(gh pr view "$pr" -R "$repo" --json state --jq '.state' 2>/dev/null)
+    local owner="${BASH_REMATCH[1]}" name="${BASH_REMATCH[2]}"
+    local pr_data
+    pr_data=$(gh api graphql \
+      -F owner="$owner" \
+      -F name="$name" \
+      -F number="$pr" \
+      -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){state reviewThreads(first:100){nodes{isResolved}}}}}' \
+      --jq '.data.repository.pullRequest | [.state, ([.reviewThreads.nodes[]? | select(.isResolved == false)] | length)] | @tsv' \
+      2> /dev/null)
+
+    local state unresolved_count
+    IFS="$(printf '\t')" read -r state unresolved_count <<< "$pr_data"
 
     if [[ -z "$state" ]]; then
       echo "⚠️ PR #$pr in $repo not found"
@@ -782,6 +793,9 @@ function pr_merge() {
       ((invalid_count++))
     elif [[ "$state" == "CLOSED" ]]; then
       echo "🚫 PR #$pr in $repo closed"
+      ((invalid_count++))
+    elif [[ -z "$unresolved_count" ]]; then
+      echo "❌ Could not inspect review threads for PR #$pr in $repo"
       ((invalid_count++))
     else
       local strategy
@@ -795,12 +809,27 @@ function pr_merge() {
       if [[ -z "$strategy" ]]; then
         echo "❌ No allowed merge strategy for $repo (PR #$pr)"
         ((invalid_count++))
+      elif [ "$unresolved_count" -gt 0 ]; then
+        echo "💬 PR #$pr in $repo has $unresolved_count unresolved comment(s)"
+        unresolved_prs+=("$pr|$repo|$strategy|$url")
       else
         echo "🚀 PR #$pr in $repo ready ($strategy)"
         valid_prs+=("$pr|$repo|$strategy|$url")
       fi
     fi
   done
+
+  if [ ${#unresolved_prs[@]} -gt 0 ]; then
+    echo -e "\n⚠️ Found ${#unresolved_prs[@]} PR(s) with unresolved comments:"
+    for item in "${unresolved_prs[@]}"; do
+      IFS='|' read -r pr repo strategy url <<< "$item"
+      echo "  - PR #$pr in $repo ($url)"
+    done
+
+    if prompt_yes_no "Set auto-merge for PRs with unresolved comments?"; then
+      valid_prs+=("${unresolved_prs[@]}")
+    fi
+  fi
 
   if [ ${#valid_prs[@]} -eq 0 ]; then
     echo -e "\nℹ️ No pull requests ready to merge."
