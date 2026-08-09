@@ -692,11 +692,14 @@ function patch() {
 # --- Pull Request Inventory ---
 # One command for "what are my open PRs still waiting on", so an agent (or a
 # human) does not fan six shell round-trips out by hand. One implementation,
-# `list_prs`, with the ready-to-merge filter as its first argument, plus two
-# named entry points so neither reading is the one you have to remember:
-#   list_prs 0   /  list_pending_prs   — only the PRs that still need something
-#   list_prs 1   /  list_open_prs      — every open PR, ready-to-merge included
-#   list_prs … --json                  — the same rows enriched, for a consumer
+# `list_prs`, driven entirely by --flags, plus two named entry points so neither
+# reading of the ready-to-merge filter is the one you have to remember:
+#   list_prs           / list_prs_needs_attention — only the PRs still owed work
+#   list_prs --all     / list_prs_all_open        — every open PR, ready included
+#   list_prs … --cwd    — scope to the git repos at/below the current folder
+#                         (default is a global search of every repo you have a PR in)
+#   list_prs … --verbose — add the created-at / CI / review metadata line
+#   list_prs … --json    — the same rows enriched, for a consumer
 #
 # Everything a PR needs comes back in ONE GraphQL call per PR — status checks,
 # review decision, mergeability and review threads together — because the
@@ -734,31 +737,36 @@ function _list_prs_repos() {
     | command grep '^[^/][^/]*/[^/][^/]*$' | sort -u
 }
 
-# list_prs: open PRs across repos, oldest first — pending only, or every one
+# list_prs: open PRs, oldest first — needs-attention only, or every one
 function list_prs() {
   if is_help_arg "${1:-}"; then
-    echo "list_prs: list open PRs across repos, oldest first
-  Usage: list_prs [<include_ready>] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
-  <include_ready> is an optional leading boolean (0/1, true/false, y/n, yes/no):
-    0 (default) hides the fully-green PRs — same as list_pending_prs
-    1           keeps them too         — same as list_open_prs
-  <repo> is 'owner/repo' or a local folder (resolved through its origin remote).
-  With no repo argument, every git repo at or below the current folder — two
-  levels deep — is discovered and used.
+    echo "list_prs: list open PRs, oldest first
+  Usage: list_prs [--all] [--cwd] [--verbose] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
+  By default only the PRs that still need something are listed (the fully-green,
+  approved, comment-free ones are hidden) — same as list_prs_needs_attention.
+    --all              keep the ready-to-merge PRs too — same as list_prs_all_open
+  Repo scope:
+    (default)          search every repo you have an open PR in (a global search)
+    --cwd              scope to the git repos at or below the current folder,
+                       discovered two levels deep
+    <repo>...          one or more explicit 'owner/repo' slugs or local folders
+                       (a folder is resolved through its origin remote)
   A PR counts as ready to merge only once CI passes AND it is approved AND it
   has no conflict AND no open review threads.
-  Options:
-    --all              keep the fully-green PRs (same as passing 1)
-    --pending          hide them (same as passing 0, the default)
+  Output:
+    (default)          two lines per PR — title, then its URL
+    --verbose          add a third line: created-at, age, CI and review status
     --json             emit the enriched rows as JSON instead of the text render
+  Other options:
     --author=<handle>  whose PRs to list (default: @me)
     --limit=<n>        search cap, 1-1000 (default: 1000)
   Examples:
-    list_prs 0
-    list_prs 1
-    list_prs 1 --json
-    list_prs 0 acme/api acme/web
-    list_prs 1 --author=alice
+    list_prs
+    list_prs --all
+    list_prs --cwd
+    list_prs --all --verbose
+    list_prs --json acme/api acme/web
+    list_prs --all --author=alice
   A check whose name reads like a human approval gate counts as review, not CI —
   override the pattern with BASHRC_PR_GATE_CHECK_PATTERN."
     return 1
@@ -773,34 +781,15 @@ function list_prs() {
     return 1
   fi
 
-  local as_json=0 keep_ready=0 author="@me" limit=1000 arg
-  # The leading boolean is consumed only when it reads as one — an option or a
-  # repo slug in that slot leaves the default alone, so `list_prs --json` still
-  # means what it looks like.
-  case "$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')" in
-  0 | 1 | true | false | y | n | yes | no)
-    # is_truthy ships in ~/.bash_syle_common, which ~/.bashrc sources ahead of
-    # ~/.bash_syle. A shell that loaded only the latter would read every toggle
-    # as falsy and quietly hide the ready-to-merge PRs it was asked for, so say
-    # so rather than guess — and keep one truth table, not a second copy here.
-    if ! type -t is_truthy > /dev/null 2>&1; then
-      echo "list_prs: is_truthy is not defined — source ~/.bash_syle_common before ~/.bash_syle." >&2
-      return 1
-    fi
-    if is_truthy "$1"; then
-      keep_ready=1
-    fi
-    shift
-    ;;
-  esac
-
+  local as_json=0 keep_ready=0 verbose=0 use_cwd=0 author="@me" limit=1000 arg
   local repo_specs
   repo_specs=()
   for arg in "$@"; do
     case "$arg" in
     --json) as_json=1 ;;
     --all) keep_ready=1 ;;
-    --pending) keep_ready=0 ;;
+    --cwd) use_cwd=1 ;;
+    --verbose) verbose=1 ;;
     --author=*) author="${arg#--author=}" ;;
     --limit=*) limit="${arg#--limit=}" ;;
     -*)
@@ -811,16 +800,21 @@ function list_prs() {
     esac
   done
 
-  local repos
+  # Repo scope, three ways: explicit slugs win; else --cwd discovers the local
+  # tree; else the repo list stays empty and gh searches every repo globally.
+  local repos=""
   if [ "${#repo_specs[@]}" -gt 0 ]; then
     repos=$(_list_prs_repos "${repo_specs[@]}")
-  else
+    if [ -z "$repos" ]; then
+      echo "list_prs: no GitHub repos resolved from the arguments given." >&2
+      return 1
+    fi
+  elif [ "$use_cwd" -eq 1 ]; then
     repos=$(_list_prs_repos)
-  fi
-
-  if [ -z "$repos" ]; then
-    echo "list_prs: no GitHub repos resolved — pass 'owner/repo' arguments or run inside a checkout." >&2
-    return 1
+    if [ -z "$repos" ]; then
+      echo "list_prs: no GitHub repos in the current folder — drop --cwd to search all your repos." >&2
+      return 1
+    fi
   fi
 
   local repo_flags line repo_count=0
@@ -837,7 +831,11 @@ REPO_LIST_EOF
   local work
   work=$(mktemp -d "/tmp/list-prs-XXXXXX" 2> /dev/null || mktemp -d) || return 1
 
-  echo ">>> scanning $repo_count repo(s) for open $author PRs" >&2
+  if [ "$repo_count" -gt 0 ]; then
+    echo ">>> scanning $repo_count repo(s) for open $author PRs" >&2
+  else
+    echo ">>> scanning every repo for open $author PRs" >&2
+  fi
   if ! gh search prs --author="$author" --state=open --limit "$limit" "${repo_flags[@]}" \
     --json number,repository,url > "$work/search.json" 2> "$work/search.err"; then
     command cat "$work/search.err" >&2
@@ -869,7 +867,13 @@ PAIR_JS_EOF
   pr_count=$(command grep -c . "$work/pairs.txt" 2> /dev/null || true)
   pr_count=${pr_count:-0}
   if [ "$pr_count" -eq 0 ]; then
-    echo ">>> no open $author PRs in those $repo_count repo(s)" >&2
+    if [ "$use_cwd" -eq 1 ]; then
+      echo ">>> no open $author PRs in the current folder — drop --cwd to search all your repos" >&2
+    elif [ "$repo_count" -gt 0 ]; then
+      echo ">>> no open $author PRs in those $repo_count repo(s)" >&2
+    else
+      echo ">>> no open $author PRs found" >&2
+    fi
     [ "$as_json" -eq 1 ] && echo "[]"
     command rm -rf "$work"
     return 0
@@ -928,6 +932,7 @@ const path = require("path");
 const work = process.env._LIST_PRS_WORK;
 const asJson = process.env._LIST_PRS_JSON === "1";
 const keepReady = process.env._LIST_PRS_ALL === "1";
+const verbose = process.env._LIST_PRS_VERBOSE === "1";
 
 // A human approval gate is reported as a check but never resolves on a timer, and
 // a changes-resolution gate reports FAILURE while threads are open. Neither is a
@@ -1095,19 +1100,28 @@ rows.sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : a.createdAt 
 if (asJson) {
   process.stdout.write(JSON.stringify(rows, null, 2) + "\n");
 } else {
+  // Colorize only for a terminal — piped or redirected output (an agent reading the
+  // text render, a file) stays plain so nothing downstream has to strip escapes.
+  const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
+  const paint = function (code, text) {
+    return color ? "\u001b[" + code + "m" + text + "\u001b[0m" : text;
+  };
   rows.forEach(function (row) {
-    // Two lines per PR, bullet first: the URL owns its own line so it stays
-    // click-and-copy clean in any terminal, and the title leads the detail line
-    // instead of trailing a status string nobody reads to the end of.
-    // No [WIP] tag: `wip` is only ever detected FROM the title, so printing it back
-    // is pure duplication. [Draft] stays — draft state has no textual marker.
+    // Three lines per PR — title, then the URL on its own click-and-copy line, then
+    // the metadata line only under --verbose. Title is red for a PR that needs
+    // attention, green for a ready one, yellow otherwise; the URL is blue; the
+    // metadata keeps the default color. No [WIP] tag: `wip` is only ever detected
+    // FROM the title, so printing it back is duplication. [Draft] stays — draft
+    // state has no textual marker.
+    const titleColor = row.color === "\u{1F534}" ? "31" : row.color === "\u{1F7E2}" ? "32" : "33";
     const tags = row.isDraft ? "[Draft] " : "";
-    const detail = [
-      tags + row.title,
-      row.createdAt.replace("T", " ").replace("Z", "").slice(0, 16) + " (" + row.ageDays + "d)",
-      row.color + " " + row.status,
-    ].join(" \u{00B7} ");
-    process.stdout.write("- " + row.url + "\n  " + detail + "\n");
+    process.stdout.write(paint(titleColor, tags + row.title) + "\n");
+    process.stdout.write(paint("34", row.url) + "\n");
+    if (verbose) {
+      const meta = row.createdAt.replace("T", " ").replace("Z", "").slice(0, 16)
+        + " (" + row.ageDays + "d) \u{00B7} " + row.color + " " + row.status;
+      process.stdout.write(meta + "\n");
+    }
   });
 }
 
@@ -1122,6 +1136,7 @@ RENDER_JS_EOF
   _LIST_PRS_WORK="$work" \
     _LIST_PRS_JSON="$as_json" \
     _LIST_PRS_ALL="$keep_ready" \
+    _LIST_PRS_VERBOSE="$verbose" \
     _LIST_PRS_GATE_PATTERN="${BASHRC_PR_GATE_CHECK_PATTERN:-}" \
     node -e "$render_js"
   local render_status=$?
@@ -1130,42 +1145,37 @@ RENDER_JS_EOF
   return $render_status
 }
 
-# list_pending_prs: only the open PRs that still owe someone work
-function list_pending_prs() {
+# list_prs_needs_attention: only the open PRs that still owe someone work
+function list_prs_needs_attention() {
   if is_help_arg "${1:-}"; then
-    echo "list_pending_prs: list open PRs that still need something, oldest first
-  Usage: list_pending_prs [--json] [--author=<handle>] [--limit=<n>] [repo ...]
-  Same as 'list_prs 0' — the fully-green, approved, comment-free PRs are hidden.
-  Every option is list_prs's; see list_prs --help.
+    echo "list_prs_needs_attention: list open PRs that still need something, oldest first
+  Usage: list_prs_needs_attention [--cwd] [--verbose] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
+  The default reading of list_prs — the fully-green, approved, comment-free PRs
+  are hidden. Every option is list_prs's; see list_prs --help.
   Examples:
-    list_pending_prs
-    list_pending_prs --json
-    list_pending_prs acme/api acme/web"
+    list_prs_needs_attention
+    list_prs_needs_attention --cwd
+    list_prs_needs_attention --json acme/api acme/web"
     return 1
   fi
 
-  list_prs 0 "$@"
+  list_prs "$@"
 }
 
-# list_open_prs: every open PR, ready-to-merge ones included
-function list_open_prs() {
+# list_prs_all_open: every open PR, ready-to-merge ones included
+function list_prs_all_open() {
   if is_help_arg "${1:-}"; then
-    echo "list_open_prs: list every open PR, ready-to-merge included, oldest first
-  Usage: list_open_prs [--json] [--author=<handle>] [--limit=<n>] [repo ...]
-  Same as 'list_prs 1' — nothing is filtered out, so the green 'merge it now'
+    echo "list_prs_all_open: list every open PR, ready-to-merge included, oldest first
+  Usage: list_prs_all_open [--cwd] [--verbose] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
+  Same as 'list_prs --all' — nothing is filtered out, so the green 'merge it now'
   PRs show up alongside the ones still waiting on CI or a review.
   Every option is list_prs's; see list_prs --help.
   Examples:
-    list_open_prs
-    list_open_prs --json
-    list_open_prs --author=alice"
+    list_prs_all_open
+    list_prs_all_open --cwd --verbose
+    list_prs_all_open --json --author=alice"
     return 1
   fi
 
-  list_prs 1 "$@"
+  list_prs --all "$@"
 }
-
-alias pending_prs='list_pending_prs'
-alias prs_pending='list_pending_prs'
-alias open_prs='list_open_prs'
-alias prs_open='list_open_prs'

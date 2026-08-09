@@ -1,6 +1,6 @@
 /**
- * Tests for `list_prs` (and its `list_pending_prs` / `list_open_prs` entry points)
- * in bash-git-helpers.profile.bash.
+ * Tests for `list_prs` (and its `list_prs_needs_attention` / `list_prs_all_open`
+ * entry points) in bash-git-helpers.profile.bash.
  *
  * Two layers, because the function has two halves that fail differently:
  *
@@ -11,11 +11,11 @@
  *      a blocked PR as green, which is the one failure mode nobody notices. It is
  *      extracted from the profile and replayed against synthetic GraphQL payloads.
  *
- *   2. The bash half is plumbing — resolve repos, decide whether the leading
- *      argument was a boolean, fan `gh` calls out. That is driven end to end by
- *      sourcing the real profile with a fake `gh` on PATH, so "does `list_prs 1`
- *      actually keep the ready-to-merge PRs, and does `list_prs acme/api` avoid
- *      eating the repo slug as a toggle" are answered by the shipped code.
+ *   2. The bash half is plumbing — resolve repo scope from --flags, apply the
+ *      ready-to-merge filter, fan `gh` calls out. That is driven end to end by
+ *      sourcing the real profile with a fake `gh` on PATH, so "does `list_prs --all`
+ *      actually keep the ready-to-merge PRs, and does `list_prs acme/api` reach gh
+ *      as a --repo flag" are answered by the shipped code.
  */
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "child_process";
@@ -27,7 +27,6 @@ import { fileURLToPath } from "url";
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const GIT_HELPERS_PROFILE = path.join(ROOT_DIR, "software/scripts/bash-git-helpers.profile.bash");
 const COMMON_FUNCTIONS = path.join(ROOT_DIR, "software/bootstrap/common-functions.bash");
-const COMMON_ENV = path.join(ROOT_DIR, "software/bootstrap/common-env.sh");
 const SOURCE = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
 
 // /bin/bash is the 3.2 floor on macOS, so the runtime half of these tests runs on
@@ -48,7 +47,7 @@ const RENDERER = getRenderer();
 
 /**
  * Lift one `function <name>() { ... }` definition out of a bash source file.
- * Used so the shell harness gets the real `is_truthy`, without sourcing
+ * Used so the shell harness gets the real `is_help_arg`, without sourcing
  * common-env.sh (whose top-level battery probe can spawn powershell.exe).
  * @param {string} file Absolute path to the bash file.
  * @param {string} name The function name to extract.
@@ -61,7 +60,6 @@ function extractBashFunction(file, name) {
   return match[0];
 }
 
-const IS_TRUTHY = extractBashFunction(COMMON_ENV, "is_truthy");
 const IS_HELP_ARG = extractBashFunction(COMMON_FUNCTIONS, "is_help_arg");
 
 /**
@@ -167,14 +165,11 @@ esac
 
 /**
  * Source the real profile with a fake `gh` on PATH and run one shell command.
- * @param {string} command The shell command to run (e.g. `list_prs 1 acme/api`).
+ * @param {string} command The shell command to run (e.g. `list_prs --all acme/api`).
  * @param {object[]} prs GraphQL envelopes the fake `gh api graphql` should return.
- * @param {{ withIsTruthy?: boolean }} options Harness knobs — drop `is_truthy` to
- *   rehearse a shell that loaded ~/.bash_syle without ~/.bash_syle_common.
  * @returns {{ status: number, stdout: string, stderr: string, ghArgs: string[] }} the run
  */
-function runShell(command, prs = [], options = {}) {
-  const { withIsTruthy = true } = options;
+function runShell(command, prs = []) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-shell-"));
   try {
     const bin = path.join(work, "bin");
@@ -195,7 +190,7 @@ function runShell(command, prs = [], options = {}) {
     // `type -P node` has to resolve even when vitest was launched through a shim.
     fs.symlinkSync(process.execPath, path.join(bin, "node"));
 
-    const script = [IS_HELP_ARG, withIsTruthy ? IS_TRUTHY : "", `source ${JSON.stringify(GIT_HELPERS_PROFILE)}`, command].join("\n");
+    const script = [IS_HELP_ARG, `source ${JSON.stringify(GIT_HELPERS_PROFILE)}`, command].join("\n");
 
     const result = execFileSync(BASH, ["-c", script], {
       encoding: "utf-8",
@@ -228,8 +223,8 @@ function runShell(command, prs = [], options = {}) {
   }
 }
 
-describe("list_prs — ready-to-merge toggle", () => {
-  it("hides the fully green PR by default and keeps it when the leading argument is truthy", () => {
+describe("list_prs — ready-to-merge filter", () => {
+  it("hides the fully green PR by default and keeps it when --all is set", () => {
     const green = { checks: [PASSING_CHECK], reviewDecision: "APPROVED" };
 
     expect(render([pullRequest(green)]).rows).toHaveLength(0);
@@ -433,7 +428,7 @@ describe("list_prs — rendering", () => {
     expect(row.title).toBe("[merge 1/4] Publish the proto");
   });
 
-  it("gives each PR a bullet line of its own URL, then the title-led detail line", () => {
+  it("prints title on its own line, then the URL, and no metadata without --verbose", () => {
     const work = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-spec-"));
     try {
       fs.writeFileSync(
@@ -446,18 +441,61 @@ describe("list_prs — rendering", () => {
         stdio: ["ignore", "pipe", "ignore"],
       });
 
-      const [first, second] = stdout.split("\n");
-      // The URL owns its line so it stays click-and-copy clean, and the bullet keeps
-      // a two-line entry readable as one item.
-      expect(first).toBe("- https://github.com/acme/api/pull/1");
-      expect(second.startsWith("  Retry token refresh on 401 · 2026-01-01 00:00 (")).toBe(true);
-      expect(second).toContain("· 🟡 CI PASSED · AWAITING REVIEW");
+      const lines = stdout.split("\n");
+      // Three-line entry: title, then the URL on its own click-and-copy line. Piped
+      // output (not a TTY) carries no ANSI escapes, so the strings compare cleanly.
+      expect(lines[0]).toBe("Retry token refresh on 401");
+      expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
+      // No leading indent, and no metadata line unless --verbose is set.
+      expect(lines[2]).toBe("");
+      expect(stdout).not.toContain("CI PASSED");
     } finally {
       fs.rmSync(work, { recursive: true, force: true });
     }
   });
 
-  it("keeps the [Draft] tag on the detail line, ahead of the title", () => {
+  it("adds the metadata line only under --verbose", () => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-spec-"));
+    try {
+      fs.writeFileSync(
+        path.join(work, "pr-1.json"),
+        JSON.stringify(pullRequest({ ...AWAITING_REVIEW, title: "Retry token refresh on 401" })),
+      );
+      const stdout = execFileSync(process.execPath, ["-e", RENDERER], {
+        encoding: "utf-8",
+        env: { ...process.env, _LIST_PRS_WORK: work, _LIST_PRS_JSON: "0", _LIST_PRS_VERBOSE: "1" },
+        stdio: ["ignore", "pipe", "ignore"],
+      });
+
+      const lines = stdout.split("\n");
+      expect(lines[0]).toBe("Retry token refresh on 401");
+      expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
+      expect(lines[2].startsWith("2026-01-01 00:00 (")).toBe(true);
+      expect(lines[2]).toContain("· 🟡 CI PASSED · AWAITING REVIEW");
+    } finally {
+      fs.rmSync(work, { recursive: true, force: true });
+    }
+  });
+
+  it("colorizes title and URL only when stdout is a TTY", () => {
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-spec-"));
+    try {
+      fs.writeFileSync(path.join(work, "pr-1.json"), JSON.stringify(pullRequest(AWAITING_REVIEW)));
+      const stdout = execFileSync(process.execPath, ["-e", RENDERER], {
+        encoding: "utf-8",
+        env: { ...process.env, _LIST_PRS_WORK: work, _LIST_PRS_JSON: "0" },
+        stdio: ["ignore", "pipe", "ignore"],
+      });
+
+      // Piped (non-TTY) output must stay escape-free so an agent or file never has to
+      // strip ANSI. The TTY path is exercised by the renderer's isTTY branch directly.
+      expect(stdout).not.toContain("\u001b[");
+    } finally {
+      fs.rmSync(work, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps the [Draft] tag ahead of the title on the title line", () => {
     const work = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-spec-"));
     try {
       fs.writeFileSync(path.join(work, "pr-1.json"), JSON.stringify(pullRequest({ ...AWAITING_REVIEW, isDraft: true })));
@@ -467,7 +505,7 @@ describe("list_prs — rendering", () => {
         stdio: ["ignore", "pipe", "ignore"],
       });
 
-      expect(stdout.split("\n")[1].startsWith("  [Draft] Retry token refresh on 401 · ")).toBe(true);
+      expect(stdout.split("\n")[0]).toBe("[Draft] Retry token refresh on 401");
     } finally {
       fs.rmSync(work, { recursive: true, force: true });
     }
@@ -497,60 +535,65 @@ describe("list_prs — shell behavior", () => {
     pullRequest({ ...AWAITING_REVIEW, number: 2, url: "https://github.com/acme/api/pull/2", title: "Still waiting" }),
   ];
 
-  it("hides the ready-to-merge PR with a falsy leading argument", () => {
-    const run = runShell("list_prs 0 acme/api", prs);
+  it("hides the ready-to-merge PR by default", () => {
+    const run = runShell("list_prs acme/api", prs);
 
     expect(run.status).toBe(0);
     expect(run.stdout).toContain("https://github.com/acme/api/pull/2");
     expect(run.stdout).not.toContain("https://github.com/acme/api/pull/1");
   });
 
-  it("keeps the ready-to-merge PR with a truthy leading argument", () => {
-    const run = runShell("list_prs 1 acme/api", prs);
+  it("keeps the ready-to-merge PR with --all", () => {
+    const run = runShell("list_prs --all acme/api", prs);
 
     expect(run.status).toBe(0);
     expect(run.stdout).toContain("https://github.com/acme/api/pull/1");
     expect(run.stdout).toContain("https://github.com/acme/api/pull/2");
   });
 
-  it("accepts every is_truthy spelling of the toggle, not just 0 and 1", () => {
-    expect(runShell("list_prs yes acme/api", prs).stdout).toContain("/pull/1");
-    expect(runShell("list_prs TRUE acme/api", prs).stdout).toContain("/pull/1");
-    expect(runShell("list_prs no acme/api", prs).stdout).not.toContain("/pull/1");
-    expect(runShell("list_prs false acme/api", prs).stdout).not.toContain("/pull/1");
-  });
-
-  it("never eats a repo slug or an option as the toggle", () => {
-    // `list_prs acme/api` must still mean "that repo", not "a truthy first argument",
-    // and the repo must reach gh as a --repo flag rather than being swallowed.
+  it("passes an explicit repo slug to gh as a --repo flag", () => {
     const run = runShell("list_prs acme/api", prs);
 
     expect(run.status).toBe(0);
     expect(run.ghArgs[0]).toContain("--repo acme/api");
-    expect(run.stdout).not.toContain("/pull/1");
 
     const json = runShell("list_prs --json acme/api", prs);
     expect(json.status).toBe(0);
     expect(JSON.parse(json.stdout).map((row) => row.number)).toEqual([2]);
   });
 
-  it("still honors the --all and --pending options after a toggle", () => {
-    expect(runShell("list_prs 0 --all acme/api", prs).stdout).toContain("/pull/1");
-    expect(runShell("list_prs 1 --pending acme/api", prs).stdout).not.toContain("/pull/1");
+  it("searches every repo globally when neither a repo nor --cwd is given", () => {
+    // Default scope is global — no repo argument reaches gh, so the search spans
+    // every repo the author has a PR in rather than the current folder.
+    const run = runShell("list_prs --all", prs);
+
+    expect(run.status).toBe(0);
+    expect(run.ghArgs[0]).not.toContain("--repo");
+    expect(run.stdout).toContain("/pull/1");
+    expect(run.stdout).toContain("/pull/2");
   });
 
-  it("list_pending_prs is list_prs 0 and list_open_prs is list_prs 1", () => {
-    const pending = runShell("list_pending_prs acme/api", prs);
-    const open = runShell("list_open_prs acme/api", prs);
+  it("adds the metadata line only when --verbose is passed", () => {
+    const plain = runShell("list_prs --all acme/api", prs);
+    expect(plain.stdout).not.toContain("CI PASSED");
+    expect(plain.stdout).not.toContain("AWAITING REVIEW");
 
-    expect(pending.stdout).not.toContain("/pull/1");
-    expect(pending.stdout).toContain("/pull/2");
-    expect(open.stdout).toContain("/pull/1");
-    expect(open.stdout).toContain("/pull/2");
+    const verbose = runShell("list_prs --all --verbose acme/api", prs);
+    expect(verbose.stdout).toContain("AWAITING REVIEW");
+  });
+
+  it("list_prs_needs_attention hides the ready PR and list_prs_all_open keeps it", () => {
+    const attention = runShell("list_prs_needs_attention acme/api", prs);
+    const all = runShell("list_prs_all_open acme/api", prs);
+
+    expect(attention.stdout).not.toContain("/pull/1");
+    expect(attention.stdout).toContain("/pull/2");
+    expect(all.stdout).toContain("/pull/1");
+    expect(all.stdout).toContain("/pull/2");
   });
 
   it("passes options through the wrappers untouched", () => {
-    const run = runShell("list_open_prs --json --author=alice acme/api", prs);
+    const run = runShell("list_prs_all_open --json --author=alice acme/api", prs);
 
     expect(run.status).toBe(0);
     expect(
@@ -562,34 +605,14 @@ describe("list_prs — shell behavior", () => {
   });
 
   it("rejects an unknown option instead of treating it as a repo", () => {
-    const run = runShell("list_prs 1 --nope acme/api", prs);
+    const run = runShell("list_prs --nope acme/api", prs);
 
     expect(run.status).toBe(1);
     expect(run.stderr).toContain("unknown option '--nope'");
   });
 
-  it("refuses the toggle rather than reading it as falsy when is_truthy is missing", () => {
-    // is_truthy lives in ~/.bash_syle_common. A shell that sourced only ~/.bash_syle
-    // used to run the toggle through a command that does not exist, so `list_prs 1`
-    // came back quietly filtered — the ready-to-merge PRs the caller asked for, gone.
-    const run = runShell("list_prs 1 acme/api", prs, { withIsTruthy: false });
-
-    expect(run.status).toBe(1);
-    expect(run.stderr).toContain("is_truthy is not defined");
-    expect(run.stdout).not.toContain("/pull/");
-  });
-
-  it("still works without is_truthy when no toggle is passed", () => {
-    // No toggle means no is_truthy call, so the old entry point keeps working in a
-    // shell that never loaded ~/.bash_syle_common.
-    const run = runShell("list_prs acme/api", prs, { withIsTruthy: false });
-
-    expect(run.status).toBe(0);
-    expect(run.stdout).toContain("/pull/2");
-  });
-
   it("prints inline help for every entry point", () => {
-    ["list_prs", "list_pending_prs", "list_open_prs"].forEach((name) => {
+    ["list_prs", "list_prs_needs_attention", "list_prs_all_open"].forEach((name) => {
       const run = runShell(`${name} --help`, prs);
 
       // Inline help is the source of truth, and returns 1 like every other helper here.
@@ -601,32 +624,35 @@ describe("list_prs — shell behavior", () => {
 
 describe("list_prs — shell wiring", () => {
   it("defines each entry point and the repo resolver exactly once", () => {
-    ["list_prs", "list_pending_prs", "list_open_prs", "_list_prs_repos"].forEach((name) => {
+    ["list_prs", "list_prs_needs_attention", "list_prs_all_open", "_list_prs_repos"].forEach((name) => {
       expect(SOURCE.match(new RegExp(`^function ${name}\\(\\)`, "gm")) || [], name).toHaveLength(1);
     });
   });
 
   it("keeps the wrappers as functions, not aliases, so non-interactive shells can call them", () => {
     // Aliases are not expanded in a non-interactive bash, and the agent commands call
-    // `list_pending_prs --json` from exactly that kind of shell.
-    expect(SOURCE).not.toMatch(/^alias list_(pending|open)_prs=/m);
-    expect(SOURCE).toMatch(/^ {2}list_prs 0 "\$@"$/m);
-    expect(SOURCE).toMatch(/^ {2}list_prs 1 "\$@"$/m);
+    // `list_prs_all_open --json` from exactly that kind of shell.
+    expect(SOURCE).not.toMatch(/^alias list_prs/m);
+    // The old positional/alias entry points are gone — every reading is a --flag now.
+    expect(SOURCE).not.toMatch(/\blist_pending_prs\b/);
+    expect(SOURCE).not.toMatch(/\blist_open_prs\b/);
+    expect(SOURCE).toMatch(/^ {2}list_prs "\$@"$/m);
+    expect(SOURCE).toMatch(/^ {2}list_prs --all "\$@"$/m);
   });
 
   it("offers inline help through is_help_arg on every entry point", () => {
-    ["list_prs", "list_pending_prs", "list_open_prs"].forEach((name) => {
+    ["list_prs", "list_prs_needs_attention", "list_prs_all_open"].forEach((name) => {
       expect(SOURCE).toMatch(new RegExp(`function ${name}\\(\\) \\{\\n {2}if is_help_arg "\\$\\{1:-\\}"; then`));
     });
   });
 
-  it("reads the toggle through is_truthy rather than a hand-rolled comparison", () => {
-    expect(SOURCE).toMatch(
-      /case "\$\(printf '%s' "\$\{1:-\}" \| tr '\[:upper:\]' '\[:lower:\]'\)" in\n {2}0 \| 1 \| true \| false \| y \| n \| yes \| no\)/,
-    );
-    expect(SOURCE).toContain('if is_truthy "$1"; then');
-    // One truth table: the missing-helper path errors out instead of inlining a copy.
-    expect(SOURCE).toContain("is_truthy is not defined");
+  it("drives every reading off --flags, with no positional toggle left", () => {
+    // The ready-to-merge filter and repo scope are both --flags now; nothing reads a
+    // leading 0/1 or runs it through is_truthy.
+    expect(SOURCE).toMatch(/--all\) keep_ready=1 ;;/);
+    expect(SOURCE).toMatch(/--cwd\) use_cwd=1 ;;/);
+    expect(SOURCE).toMatch(/--verbose\) verbose=1 ;;/);
+    expect(SOURCE).not.toContain("is_truthy");
   });
 
   it("keeps every heredoc at top level, never nested inside a command substitution", () => {
