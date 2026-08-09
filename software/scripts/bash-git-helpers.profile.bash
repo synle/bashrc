@@ -691,8 +691,8 @@ function patch() {
 ################################################################################
 # --- Pull Request Inventory ---
 # `list_prs` is a standalone Node CLI installed at ~/.local/bin/list_prs by
-# software/scripts/git.prs.list.js (the source lives in
-# software/scripts/git.prs.list.javascript). It lists your open PRs grouped by
+# software/scripts/git-functions.js (the source lives in
+# software/scripts/git_pr_list.mjs). It lists your open PRs grouped by
 # how much work each still needs. Run `list_prs --help`… actually it has no
 # --help; the flags are:
 #   --all       include the fully-clear READY TO MERGE group (hidden by default)
@@ -722,7 +722,7 @@ function pr_list_needs_attention() {
   fi
 
   if ! type -P list_prs > /dev/null 2>&1; then
-    echo "pr_list_needs_attention: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
+    echo "pr_list_needs_attention: list_prs is not installed — run: bash run.sh --files=git-functions.js" >&2
     return 1
   fi
 
@@ -744,7 +744,7 @@ function pr_list_all_open() {
   fi
 
   if ! type -P list_prs > /dev/null 2>&1; then
-    echo "pr_list_all_open: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
+    echo "pr_list_all_open: list_prs is not installed — run: bash run.sh --files=git-functions.js" >&2
     return 1
   fi
 
@@ -804,7 +804,7 @@ function pr_merge() {
         elif .rebaseMergeAllowed then "--rebase"
         elif .mergeCommitAllowed then "--merge"
         else empty end
-      ' 2>/dev/null)
+      ' 2> /dev/null)
 
       if [[ -z "$strategy" ]]; then
         echo "❌ No allowed merge strategy for $repo (PR #$pr)"

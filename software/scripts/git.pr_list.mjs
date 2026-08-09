@@ -5,9 +5,9 @@
  * ===========================================================================
  *
  * This file is a SELF-CONTAINED Node CLI. It is NOT one of the repo's
- * doWork()/undoWork() scripts — the `.javascript` extension keeps it out of
+ * doWork()/undoWork() scripts — the `.mjs` extension keeps it out of
  * script discovery (only `.js` / `.sh` are discovered). The installer
- * `git.prs.list.js` copies THIS file verbatim to `~/.local/bin/list_prs` and
+ * `git-functions.js` copies THIS file verbatim to `~/.local/bin/list_prs` and
  * marks it executable, so it runs as a plain `list_prs` on your PATH.
  *
  * WHAT IT DOES
@@ -60,9 +60,9 @@
  *                                   human approval gates (vs real CI).
  */
 
-const { execSync, spawnSync } = require(`child_process`);
-const fs = require(`fs`);
-const path = require(`path`);
+import { execSync, spawnSync } from "child_process";
+import fs from "fs";
+import path from "path";
 
 // ---------------------------------------------------------------------------
 // Small logging helpers. STDOUT is reserved for PR data (so it can be piped);

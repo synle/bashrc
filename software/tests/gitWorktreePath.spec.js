@@ -212,11 +212,10 @@ describe("git worktree layout", () => {
       const context = makeRepo(name, "git@github.com:acme/widget-store.git");
       fs.writeFileSync(path.join(context.cwd, "README.md"), "probe\n");
       execFileSync("git", ["add", "README.md"], { cwd: context.cwd, stdio: "ignore" });
-      execFileSync(
-        "git",
-        ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "--quiet", "--message", "init"],
-        { cwd: context.cwd, stdio: "ignore" },
-      );
+      execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "--quiet", "--message", "init"], {
+        cwd: context.cwd,
+        stdio: "ignore",
+      });
       return context;
     }
 
@@ -268,7 +267,8 @@ describe("git worktree layout", () => {
       execFileSync("git", ["init", "--bare", "--quiet", "--initial-branch=main", origin], { stdio: "ignore" });
 
       const context = makeCommittedRepo("create-keeps-unpushed");
-      const git = (...args) => execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", ...args], { cwd: context.cwd, stdio: "ignore" });
+      const git = (...args) =>
+        execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.com", ...args], { cwd: context.cwd, stdio: "ignore" });
 
       git("remote", "set-url", "origin", origin);
       git("push", "--quiet", "origin", "main");

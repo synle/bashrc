@@ -21,14 +21,14 @@ For address-comments + drive-CI-green work, use `/sy-babysit-pr`. This command s
 
 **Options** (any order, `key=value`, all optional — defaults are what a human invoking this directly wants):
 
-| Option                      | Default   | Meaning                                                                                                                                            |
-| --------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Option                      | Default   | Meaning                                                                                                                                             |
+| --------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `workspace=<path>`          | _unset_   | Run in this already-resolved worktree. Skips workspace resolution **and cleanup** — the caller owns its lifecycle. Unset → resolve and own one here |
 | `push=now\|defer`           | `now`     | `defer` leaves the merge commits local for the caller to push after its own work                                                                    |
 | `server-side=auto\|never`   | `auto`    | `auto` may use `gh pr update-branch` on the fast path. Callers that need local commits pass `never`                                                 |
-| `migrations=check\|skip`    | `check`   | Run the migration-head check after the chain merges                                                                                                |
-| `on-conflict=resolve\|stop` | `resolve` | `stop` reports the conflicted files and exits without resolving                                                                                    |
-| `report=prose\|structured`  | `prose`   | `structured` emits only the machine-readable result block (Step 8)                                                                                 |
+| `migrations=check\|skip`    | `check`   | Run the migration-head check after the chain merges                                                                                                 |
+| `on-conflict=resolve\|stop` | `resolve` | `stop` reports the conflicted files and exits without resolving                                                                                     |
+| `report=prose\|structured`  | `prose`   | `structured` emits only the machine-readable result block (Step 8)                                                                                  |
 
 **Delegated invocation** — how another command calls this, e.g. from `/sy-babysit-pr` Step 5:
 `/sy-sync-pr-branch <PR-URL> workspace=$HOME/.worktrees/<owner>/<repo>/<repo>__pr-<number> server-side=never report=structured`

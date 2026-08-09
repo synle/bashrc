@@ -1,6 +1,6 @@
 /**
- * Tests for the `list_prs` CLI (software/scripts/git.prs.list.javascript), its
- * installer (software/scripts/git.prs.list.js), and the two shell entry points
+ * Tests for the `list_prs` CLI (software/scripts/git_pr_list.mjs), its shared
+ * installer (software/scripts/git-functions.js), and the two shell entry points
  * (`pr_list_needs_attention` / `pr_list_all_open`) in
  * bash-git-helpers.profile.bash.
  *
@@ -31,8 +31,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.prs.list.javascript");
-const INSTALLER_PATH = path.join(ROOT_DIR, "software/scripts/git.prs.list.js");
+const CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.pr_list.mjs");
+const INSTALLER_PATH = path.join(ROOT_DIR, "software/scripts/git-functions.js");
 const GIT_HELPERS_PROFILE = path.join(ROOT_DIR, "software/scripts/bash-git-helpers.profile.bash");
 const COMMON_FUNCTIONS = path.join(ROOT_DIR, "software/bootstrap/common-functions.bash");
 
@@ -433,8 +433,8 @@ describe("list_prs — CLI hygiene", () => {
 });
 
 describe("list_prs — installer", () => {
-  it("installs to ~/.local/bin/list_prs from the .javascript payload", () => {
-    expect(INSTALLER_SOURCE).toContain("software/scripts/git.prs.list.javascript");
+  it("installs to ~/.local/bin/list_prs from the .mjs payload", () => {
+    expect(INSTALLER_SOURCE).toContain("software/scripts/git.pr_list.mjs");
     expect(INSTALLER_SOURCE).toMatch(/\.local`?,?\s*`?bin/);
     expect(INSTALLER_SOURCE).toContain("list_prs");
     expect(INSTALLER_SOURCE).toContain("chmodSync");
@@ -552,7 +552,7 @@ describe("list_prs — shell wrappers", () => {
     expect(PROFILE_SOURCE).toContain("local unresolved_prs=()");
     expect(PROFILE_SOURCE).toContain("reviewThreads(first:100)");
     expect(PROFILE_SOURCE).toContain("has $unresolved_count unresolved comment(s)");
-    expect(PROFILE_SOURCE).toContain('Set auto-merge for PRs with unresolved comments?');
+    expect(PROFILE_SOURCE).toContain("Set auto-merge for PRs with unresolved comments?");
     expect(PROFILE_SOURCE).toContain('valid_prs+=("${unresolved_prs[@]}")');
   });
 });
