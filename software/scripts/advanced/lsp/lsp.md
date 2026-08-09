@@ -34,7 +34,7 @@ Shared LSP server binaries on `$PATH` so vim, Sublime Text, Zed, and VS Code all
 - **Zed**: `settings.json` `lsp.*.binary.path` overrides point at the installed binaries by absolute path.
 - **VS Code**: extension IDs live in `vs-code.js` — the matching extensions discover the binaries on `$PATH`.
 - **Sublime**: `LSP` package + per-language `LSP-*` packages (e.g. `LSP-pyright`, `LSP-typescript`) installed via Package Control; configured to use the shared binaries.
-- **Vim**: `coc.nvim` with `coc-settings.json` pointing each language to the shared server binary.
+- **Vim**: not wired. coc.nvim was removed (recurring `ReferenceError: crypto is not defined` startup crashes under the bundled Node); vim keeps syntax highlighting, airline, gitgutter, and fzf only.
 
 ## Adding a New Server
 
@@ -43,7 +43,7 @@ Shared LSP server binaries on `$PATH` so vim, Sublime Text, Zed, and VS Code all
    - GitHub release standalone binary → add a curl + gunzip/tar block in section 2 with OS+arch detection, skip-if-present, and `safe_chmod +x`.
    - Go-toolchain-only (`go install`) → mirror the gopls block in section 3.
 2. Add a row to the Server Table above.
-3. Wire each editor: add the binary path to Zed `settings.json`, an extension to `vs-code.js`, the corresponding `LSP-*` package to Sublime, and a `languageserver` entry to `coc-settings.json` for Vim.
+3. Wire each editor: add the binary path to Zed `settings.json`, an extension to `vs-code.js`, and the corresponding `LSP-*` package to Sublime. (Vim is no longer wired — coc.nvim was removed.)
 
 ## Formatter Setup
 
@@ -54,7 +54,6 @@ Goal: one Prettier config (`.prettierrc` at repo root) drive all four editors un
 | VS Code      | `esbenp.prettier-vscode` extension                       | Per-language LSP extension             | `editor.formatOnSave: true`                             | `editor.action.formatDocument` → honors `editor.defaultFormatter` / `[lang]`              |
 | Zed          | Built-in prettier integration (`prettier.allowed: true`) | Built-in LSP formatter                 | `format_on_save: "on"` + `languages.<X>.formatter`      | `editor::Format` → honors `formatter` setting                                             |
 | Sublime Text | `JsPrettier` package (runs `prettier` CLI)               | `LSP` package + per-language `LSP-*`   | JsPrettier `auto_format_on_save` + `lsp_format_on_save` | Context-bound chord — `js_prettier` for prettier syntaxes, `lsp_format_document` fallback |
-| Vim          | (deferred) `coc-prettier`                                | `coc.nvim` with `coc-settings.json`    | `autocmd BufWritePre` (manual)                          | `<Plug>(coc-format)` / `:CocAction format`                                                |
 
 Repo source files:
 
@@ -161,21 +160,14 @@ Where to inspect at runtime:
 - `Cmd+Shift+P` → `editor: open lsp logs` — per-server JSON-RPC trace.
 - Status bar bottom-right — language mode (click to change for current buffer).
 
-### Vim plugins (coc.nvim)
+### Vim plugins
 
-| Plugin                                 | Role                                                                                                                                                                                 | On-disk settings path                           | Repo source for config                                                                                           |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `neoclide/coc.nvim` (vim-plug)         | LSP client + completion engine + extension host                                                                                                                                      | `~/.vim/coc-settings.json` + `~/.config/coc/`   | Plugin entry in `software/scripts/vim-config.js`; settings written by `software/scripts/advanced/lsp/vim-coc.sh` |
-| coc extensions (`coc-tsserver` etc.)   | Per-language wrappers — auto-install via `:CocInstall coc-tsserver coc-pyright coc-html coc-css coc-json coc-eslint coc-volar coc-prisma coc-markdownlint` after first install       | `~/.config/coc/extensions/`                     | `vim-coc.sh` echoes the `:CocInstall` command for the user to run once                                           |
-| LSP servers via `languageserver` block | rust-analyzer / gopls / jdtls / bash-language-server / yaml-language-server / docker-langserver / graphql-lsp / tailwindcss-language-server / taplo — pointed at the shared binaries | `~/.vim/coc-settings.json` `languageserver.<X>` | `vim-coc.sh` writes the JSON                                                                                     |
+Vim is **not** wired for LSP. coc.nvim was removed after recurring startup crashes
+(`ReferenceError: crypto is not defined` from coc's `SyncConfigurationFeature.initialize`
+under the bundled Node). Vim keeps only syntax highlighting, airline, gitgutter, and fzf
+(see `software/scripts/vim-config.js`). Use Zed / VS Code / Sublime for LSP editing.
 
 Where to inspect at runtime:
-
-- `:CocList services` — what's attached to the current buffer.
-- `:CocInfo` — health check (versions, paths, missing extensions).
-- `:CocOpenLog` — full coc.nvim log.
-- `:set filetype?` — Vim's detected filetype (essential for LSP attach).
-- `:messages` — recent errors.
 
 ## Troubleshooting & Gotchas
 

@@ -38,11 +38,6 @@ async function doWork() {
     " --- Git ---
     Plug 'airblade/vim-gitgutter'                                     " Show git diff markers (+/-/~) in the gutter
 
-    " --- LSP / Autocomplete ---
-    " vim-plug honors { 'branch': 'release' } natively — coc.nvim only ships prebuilt
-    " build/index.js on the release branch, so we pin here directly (no post-clone hack).
-    Plug 'neoclide/coc.nvim', { 'branch': 'release' }                  " LSP client with built-in autocomplete (replaces AutoComplPop); needs coc-settings.json (written by software/scripts/advanced/lsp/vim-coc.sh) and :CocInstall coc-tsserver coc-pyright ... for non-LSP-binary servers
-
     " --- Search ---
     Plug 'junegunn/fzf'                                               " Fuzzy finder core (binary integration)
     Plug 'junegunn/fzf.vim'                                           " Fuzzy finder vim commands (:Files, :Rg, :Buffers, etc.)
@@ -63,30 +58,6 @@ async function doWork() {
         echohl None
         colorscheme ${vimBuiltinColorScheme}      " Fallback (vim built-in, high contrast) if vim-code-dark is not installed
     endtry
-
-    """""""""""""""""""""""""""""""""""""""""""""""""
-    " coc.nvim — LSP keymaps
-    """""""""""""""""""""""""""""""""""""""""""""""""
-    " Use tab to trigger completion and navigate suggestions
-    inoremap <silent><expr> <Tab>
-          \\ coc#pum#visible() ? coc#pum#next(1) :
-          \\ "\\<Tab>"
-    inoremap <expr><S-Tab> coc#pum#visible() ? coc#pum#prev(1) : "\\<C-h>"
-    " <CR> to confirm completion
-    inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\\<CR>"
-    " Navigation
-    nmap <silent> gd <Plug>(coc-definition)
-    nmap <silent> gy <Plug>(coc-type-definition)
-    nmap <silent> gi <Plug>(coc-implementation)
-    nmap <silent> gr <Plug>(coc-references)
-    " Hover documentation
-    nnoremap <silent> K :call CocActionAsync('doHover')<CR>
-    " Rename
-    nmap <leader>rn <Plug>(coc-rename)
-    " Code action
-    nmap <leader>ca <Plug>(coc-codeaction)
-    " Format selection
-    xmap <leader>f  <Plug>(coc-format-selected)
   `;
   const contentVimrc = (await readText`software/scripts/vim-config-settings.vim`).trim();
 

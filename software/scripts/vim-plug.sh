@@ -4,9 +4,7 @@
 # vim-plug.sh — Installs the vim-plug plugin manager and runs :PlugInstall headless.
 #
 # vim-plug is a single autoload script at ~/.vim/autoload/plug.vim. Plugins declared in
-# ~/.vimrc via Plug 'owner/repo' clone into ~/.vim/plugged/. The native `branch:` option
-# means coc.nvim is fetched on its prebuilt `release` branch directly — no post-clone
-# checkout hack needed.
+# ~/.vimrc via Plug 'owner/repo' clone into ~/.vim/plugged/.
 
 PLUG_URL="https://raw.githubusercontent.com/junegunn/vim-plug/HEAD/plug.vim"
 PLUG_DEST="$HOME/.vim/autoload/plug.vim"
