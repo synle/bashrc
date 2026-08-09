@@ -760,3 +760,19 @@ function list_prs_all_open() {
 
   list_prs --all "$@"
 }
+
+# github - set pr to automerge
+alias pr_merge='github_merge_auto'
+function github_merge_auto() {
+  local url="$1"
+  [[ "$url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]] || { echo "Invalid URL" >&2; return 1; }
+
+  local repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}" pr="${BASH_REMATCH[3]}"
+  local state=$(gh pr view "$pr" -R "$repo" --json state --jq '.state' 2>/dev/null)
+
+  [[ -z "$state" ]] && { echo "PR #$pr does not exist" >&2; return 1; }
+  [[ "$state" == "MERGED" ]] && { echo "PR #$pr is already merged"; return 0; }
+  [[ "$state" == "CLOSED" ]] && { echo "PR #$pr is closed"; return 0; }
+
+  gh pr merge "$pr" --auto --merge -R "$repo"
+}
