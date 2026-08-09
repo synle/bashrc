@@ -242,6 +242,7 @@ function clean() {
 
   _clean_log_step "Cleaning worktrees (prune + remove merged/gone worktrees)..."
   git clean-worktree
+  worktree_clean
 
   echo "# ---- Reset to origin/$default_branch (100% done) ----"
   git lastd
