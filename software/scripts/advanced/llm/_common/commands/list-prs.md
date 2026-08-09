@@ -52,26 +52,26 @@ Examples:
 
 ## Fetch PR data
 
-**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with two shell wrappers (`list_prs_all_open` / `list_prs_needs_attention`). Check for it first:
+**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with two shell wrappers (`pr_list_all_open` / `pr_list_needs_attention`). Check for it first:
 
 ```bash
-type list_prs_all_open
+type pr_list_all_open
 ```
 
 When it exists, one call returns the whole set as JSON and every field below is already in it — no `gh search prs`, no per-PR `gh pr view`, no per-PR GraphQL:
 
 ```bash
-list_prs_all_open --json                                  # scope = all  (every repo you have a PR in)
-list_prs_all_open --json --cwd                            # scope = pwd  (git repos discovered at/below cwd)
-list_prs_all_open --json <owner>/<repo> <owner>/<repo>    # explicit repo list
-list_prs_all_open --json --author=<handle>                # same scopes, someone else's PRs
+pr_list_all_open --json                                  # scope = all  (every repo you have a PR in)
+pr_list_all_open --json --cwd                            # scope = pwd  (git repos discovered at/below cwd)
+pr_list_all_open --json <owner>/<repo> <owner>/<repo>    # explicit repo list
+pr_list_all_open --json --author=<handle>                # same scopes, someone else's PRs
 ```
 
-`list_prs_all_open` is `list_prs --all` — every open PR, ready-to-merge ones included. Use it here: the sibling `list_prs_needs_attention` (plain `list_prs`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `list_prs_needs_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` the search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
+`pr_list_all_open` is `list_prs --all` — every open PR, ready-to-merge ones included. Use it here: the sibling `pr_list_needs_attention` (plain `list_prs`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `pr_list_needs_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` the search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
 
 Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
 
-**The fast path covers all three repo scopes, not explicit PR refs.** Plain `list_prs_all_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` changes only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
+**The fast path covers all three repo scopes, not explicit PR refs.** Plain `pr_list_all_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` changes only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
 
 1. **Fetch the open PR list — branch on scope:**
 

@@ -707,64 +707,51 @@ function patch() {
 # ready-to-merge filter is the one you have to remember.
 ################################################################################
 
-# list_prs_needs_attention: only the open PRs that still owe someone work
-alias pr_list_needs_attention='list_prs_needs_attention'
-function list_prs_needs_attention() {
+# pr_list_needs_attention: only the open PRs that still owe someone work
+function pr_list_needs_attention() {
   if is_help_arg "${1:-}"; then
-    echo "list_prs_needs_attention: list open PRs that still need something, oldest first
-  Usage: list_prs_needs_attention [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
+    echo "pr_list_needs_attention: list open PRs that still need something, oldest first
+  Usage: pr_list_needs_attention [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
   The default reading of list_prs — the fully-green, approved, comment-free PRs
   are hidden. Default scope is global; pass --cwd to scope to the current folder.
   Examples:
-    list_prs_needs_attention
-    list_prs_needs_attention --cwd
-    list_prs_needs_attention --json acme/api acme/web"
+    pr_list_needs_attention
+    pr_list_needs_attention --cwd
+    pr_list_needs_attention --json acme/api acme/web"
     return 1
   fi
 
   if ! type -P list_prs > /dev/null 2>&1; then
-    echo "list_prs_needs_attention: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
-    return 1
-  fi
-
-  if ! type -P list_prs > /dev/null 2>&1; then
-    echo "list_prs_needs_attention: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
+    echo "pr_list_needs_attention: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
     return 1
   fi
 
   list_prs "$@"
 }
 
-# list_prs_all_open: every open PR, ready-to-merge ones included
-alias pr_list_all_open='list_prs_all_open'
-function list_prs_all_open() {
+# pr_list_all_open: every open PR, ready-to-merge ones included
+function pr_list_all_open() {
   if is_help_arg "${1:-}"; then
-    echo "list_prs_all_open: list every open PR, ready-to-merge included, oldest first
-  Usage: list_prs_all_open [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
+    echo "pr_list_all_open: list every open PR, ready-to-merge included, oldest first
+  Usage: pr_list_all_open [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
   Same as 'list_prs --all' — nothing is filtered out, so the green 'merge it now'
   PRs show up alongside the ones still waiting on CI or a review.
   Examples:
-    list_prs_all_open
-    list_prs_all_open --cwd --verbose
-    list_prs_all_open --json --author=alice"
+    pr_list_all_open
+    pr_list_all_open --cwd --verbose
+    pr_list_all_open --json --author=alice"
     return 1
   fi
 
   if ! type -P list_prs > /dev/null 2>&1; then
-    echo "list_prs_all_open: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
-    return 1
-  fi
-
-  if ! type -P list_prs > /dev/null 2>&1; then
-    echo "list_prs_all_open: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
+    echo "pr_list_all_open: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
     return 1
   fi
 
   list_prs --all "$@"
 }
 
-# github - set pr to automerge
-alias pr_merge='github_merge_auto'
+# pr_merge: set eligible pull requests to auto-merge
 function pr_merge() {
   if [ $# -eq 0 ]; then
     echo "Usage: pr_merge <url1> [url2 ...]" >&2
@@ -773,11 +760,12 @@ function pr_merge() {
 
   local valid_prs=()
   local invalid_count=0
+  local failed_count=0
 
-  echo "=== Scanning Pull Requests ==="
+  echo "🔎 Scanning pull requests..."
   for url in "$@"; do
     [[ "$url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]] || {
-      echo "[INVALID URL] $url"
+      echo "❌ Invalid URL: $url"
       ((invalid_count++))
       continue
     }
@@ -787,13 +775,13 @@ function pr_merge() {
     state=$(gh pr view "$pr" -R "$repo" --json state --jq '.state' 2>/dev/null)
 
     if [[ -z "$state" ]]; then
-      echo "[NOT FOUND] PR #$pr in $repo does not exist"
+      echo "⚠️ PR #$pr in $repo not found"
       ((invalid_count++))
     elif [[ "$state" == "MERGED" ]]; then
-      echo "[ALREADY MERGED] PR #$pr in $repo"
+      echo "✅ PR #$pr in $repo already merged"
       ((invalid_count++))
     elif [[ "$state" == "CLOSED" ]]; then
-      echo "[CLOSED] PR #$pr in $repo"
+      echo "🚫 PR #$pr in $repo closed"
       ((invalid_count++))
     else
       local strategy
@@ -805,29 +793,46 @@ function pr_merge() {
       ' 2>/dev/null)
 
       if [[ -z "$strategy" ]]; then
-        echo "[ERROR] No allowed merge strategy found for $repo (PR #$pr)"
+        echo "❌ No allowed merge strategy for $repo (PR #$pr)"
         ((invalid_count++))
       else
-        echo "[READY] PR #$pr in $repo (Strategy: $strategy)"
+        echo "🚀 PR #$pr in $repo ready ($strategy)"
         valid_prs+=("$pr|$repo|$strategy|$url")
       fi
     fi
   done
 
   if [ ${#valid_prs[@]} -eq 0 ]; then
-    echo -e "\nNo valid PRs ready to merge."
+    echo -e "\nℹ️ No pull requests ready to merge."
     return 0
   fi
 
   echo -e "\nFound ${#valid_prs[@]} ready PR(s) and $invalid_count skipped/invalid item(s)."
-  read -p "Do you want to continue with setting auto-merge for the ready PRs? [y/N]: " -n 1 -r
-  echo
-  [[ ! $REPLY =~ ^[Yy]$ ]] && { echo "Aborted."; return 0; }
+  if ! prompt_yes_no "Set auto-merge for the ready PRs?"; then
+    echo "⏭️ Aborted."
+    return 0
+  fi
 
-  echo "=== Applying Auto-Merge ==="
+  echo "🚀 Applying auto-merge..."
   for item in "${valid_prs[@]}"; do
     IFS='|' read -r pr repo strategy url <<< "$item"
-    echo "Processing PR #$pr ($repo) using $strategy..."
-    gh pr merge "$pr" --auto "$strategy" -R "$repo"
+    echo "➡️ PR #$pr in $repo ($strategy)"
+    if gh pr merge "$pr" --auto "$strategy" -R "$repo"; then
+      echo "✅ Auto-merge enabled for PR #$pr in $repo"
+    else
+      echo "❌ Failed to enable auto-merge for PR #$pr in $repo" >&2
+      ((failed_count++))
+    fi
   done
+
+  if [ "$failed_count" -gt 0 ]; then
+    echo "⚠️ Completed with $failed_count failed item(s)." >&2
+    return 1
+  fi
+  echo "✅ Auto-merge enabled for all ready pull requests."
 }
+
+if type -t add_bookmark > /dev/null 2>&1; then
+  add_bookmark "pr_list_all_open"
+  add_bookmark "pr_merge"
+fi

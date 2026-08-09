@@ -1,7 +1,7 @@
 /**
  * Tests for the `list_prs` CLI (software/scripts/git.prs.list.javascript), its
  * installer (software/scripts/git.prs.list.js), and the two shell entry points
- * (`list_prs_needs_attention` / `list_prs_all_open`) in
+ * (`pr_list_needs_attention` / `pr_list_all_open`) in
  * bash-git-helpers.profile.bash.
  *
  * Three layers, because they fail differently:
@@ -19,7 +19,7 @@
  *      executable. Checked at the source level (right destination, right source)
  *      plus a `node --check` of the payload so a broken CLI never ships.
  *
- *   3. The shell wrappers are thin delegators — `list_prs_all_open` must add
+ *   3. The shell wrappers are thin delegators — `pr_list_all_open` must add
  *      `--all`, both must forward the rest, and the old aliases must be gone.
  *      Driven by sourcing the real profile with a fake `list_prs` on PATH.
  */
@@ -468,7 +468,7 @@ const IS_HELP_ARG = extractBashFunction(COMMON_FUNCTIONS, "is_help_arg");
 /**
  * Source the real profile with a fake `list_prs` on PATH and run one wrapper.
  * The fake `list_prs` just logs its argv, so we can assert what the wrapper forwarded.
- * @param {string} command The shell command (e.g. `list_prs_all_open --cwd`).
+ * @param {string} command The shell command (e.g. `pr_list_all_open --cwd`).
  * @returns {{ status: number, stdout: string, stderr: string, forwarded: string[] }}
  */
 function runWrapper(command) {
@@ -505,22 +505,22 @@ function runWrapper(command) {
 }
 
 describe("list_prs — shell wrappers", () => {
-  it("list_prs_needs_attention forwards args to list_prs verbatim", () => {
-    const { forwarded } = runWrapper("list_prs_needs_attention --cwd --verbose");
+  it("pr_list_needs_attention forwards args to list_prs verbatim", () => {
+    const { forwarded } = runWrapper("pr_list_needs_attention --cwd --verbose");
     expect(forwarded).toEqual(["--cwd --verbose"]);
   });
 
-  it("list_prs_all_open prepends --all", () => {
-    const { forwarded } = runWrapper("list_prs_all_open --cwd");
+  it("pr_list_all_open prepends --all", () => {
+    const { forwarded } = runWrapper("pr_list_all_open --cwd");
     expect(forwarded).toEqual(["--all --cwd"]);
   });
 
   it("both wrappers answer --help without calling list_prs", () => {
-    const needs = runWrapper("list_prs_needs_attention --help");
-    expect(needs.stdout).toContain("list_prs_needs_attention:");
+    const needs = runWrapper("pr_list_needs_attention --help");
+    expect(needs.stdout).toContain("pr_list_needs_attention:");
     expect(needs.forwarded).toEqual([]);
-    const all = runWrapper("list_prs_all_open --help");
-    expect(all.stdout).toContain("list_prs_all_open:");
+    const all = runWrapper("pr_list_all_open --help");
+    expect(all.stdout).toContain("pr_list_all_open:");
     expect(all.forwarded).toEqual([]);
   });
 
@@ -536,7 +536,15 @@ describe("list_prs — shell wrappers", () => {
 
   it("keeps no bash list_prs implementation, only the two wrappers", () => {
     expect(PROFILE_SOURCE).not.toMatch(/^function list_prs\(\)/m);
-    expect(PROFILE_SOURCE).toMatch(/^function list_prs_needs_attention\(\)/m);
-    expect(PROFILE_SOURCE).toMatch(/^function list_prs_all_open\(\)/m);
+    expect(PROFILE_SOURCE).toMatch(/^function pr_list_needs_attention\(\)/m);
+    expect(PROFILE_SOURCE).toMatch(/^function pr_list_all_open\(\)/m);
+    expect(PROFILE_SOURCE).not.toMatch(/^function list_prs_(needs_attention|all_open)\(\)/m);
+  });
+
+  it("uses shared confirmation and seeds the requested bookmarks", () => {
+    expect(PROFILE_SOURCE).toContain('if ! prompt_yes_no "Set auto-merge for the ready PRs?"; then');
+    expect(PROFILE_SOURCE).not.toContain("read -p");
+    expect(PROFILE_SOURCE).toContain('add_bookmark "pr_list_all_open"');
+    expect(PROFILE_SOURCE).toContain('add_bookmark "pr_merge"');
   });
 });
