@@ -52,21 +52,21 @@ Examples:
 
 ## Fetch PR data
 
-**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a single shell function, `list_pending_prs`. Check for it first:
+**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a single shell function, `list_prs`. Check for it first:
 
 ```bash
-type -t list_pending_prs
+type -t list_prs
 ```
 
 When it exists, one call returns the whole set as JSON and every field below is already in it — no `gh search prs`, no per-PR `gh pr view`, no per-PR GraphQL:
 
 ```bash
-list_pending_prs --json --all                                  # scope = pwd  (repos discovered two levels down)
-list_pending_prs --json --all <owner>/<repo> <owner>/<repo>    # explicit repo list
-list_pending_prs --json --all --author=<handle>                # same scopes, someone else's PRs
+list_open_prs --json                                  # scope = pwd  (repos discovered two levels down)
+list_open_prs --json <owner>/<repo> <owner>/<repo>    # explicit repo list
+list_open_prs --json --author=<handle>                # same scopes, someone else's PRs
 ```
 
-`--all` is required here: without it the function applies its own pending filter and drops the fully-green PRs that `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may drop `--all` and skip its own Step 2 instead.
+`list_open_prs` is `list_prs 1` — every open PR, ready-to-merge ones included. Use it here: the sibling `list_pending_prs` (`list_prs 0`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `list_pending_prs` instead and skip its own Step 2.
 
 Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group color ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification and `color` its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
 
