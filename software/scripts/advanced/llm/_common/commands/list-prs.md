@@ -52,26 +52,26 @@ Examples:
 
 ## Fetch PR data
 
-**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a single shell function, `list_prs`. Check for it first:
+**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with two shell wrappers (`list_prs_all_open` / `list_prs_needs_attention`). Check for it first:
 
 ```bash
-type -t list_prs
+type list_prs_all_open
 ```
 
 When it exists, one call returns the whole set as JSON and every field below is already in it — no `gh search prs`, no per-PR `gh pr view`, no per-PR GraphQL:
 
 ```bash
 list_prs_all_open --json                                  # scope = all  (every repo you have a PR in)
-list_prs_all_open --json --cwd                            # scope = pwd  (repos discovered two levels down)
+list_prs_all_open --json --cwd                            # scope = pwd  (git repos discovered at/below cwd)
 list_prs_all_open --json <owner>/<repo> <owner>/<repo>    # explicit repo list
 list_prs_all_open --json --author=<handle>                # same scopes, someone else's PRs
 ```
 
-`list_prs_all_open` is `list_prs --all` — every open PR, ready-to-merge ones included. Use it here: the sibling `list_prs_needs_attention` (plain `list_prs`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `list_prs_needs_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` the search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. `--json` output is always plain (no ANSI); the text render colorizes only for a terminal.
+`list_prs_all_open` is `list_prs --all` — every open PR, ready-to-merge ones included. Use it here: the sibling `list_prs_needs_attention` (plain `list_prs`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `list_prs_needs_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` the search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
 
-Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group color ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification and `color` its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
+Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
 
-**The fast path covers all three repo scopes, not explicit PR refs.** Plain `list_prs_all_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` changes only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the function is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
+**The fast path covers all three repo scopes, not explicit PR refs.** Plain `list_prs_all_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` changes only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
 
 1. **Fetch the open PR list — branch on scope:**
 
@@ -103,7 +103,7 @@ Each JSON row carries `url repo number title author createdAt updatedAt ageDays 
    - De-duplicate by URL. Order preserves the user's input order; classification + sort still happen below.
 
    **Two `gh` field traps, both verified against `gh` 2.88 — get these wrong and discovery aborts before anything else runs:**
-   - **`gh search prs` and `gh pr view` do not take the same `--json` fields.** `gh search prs` accepts only: `assignees author authorAssociation body closedAt commentsCount createdAt id isDraft isLocked isPullRequest labels number repository state title updatedAt url`. It has **no** `headRefName` / `baseRefName` — asking for either exits 1 with `Unknown JSON field`. `gh pr view` is the mirror image: it *has* `headRefName` / `baseRefName` but has **no** `repository` (it offers `headRepository` / `headRepositoryOwner` instead). So branch names come from a per-PR `gh pr view`, never from the search; the owning repo comes from the search's `repository.nameWithOwner`, never from `gh pr view`.
+   - **`gh search prs` and `gh pr view` do not take the same `--json` fields.** `gh search prs` accepts only: `assignees author authorAssociation body closedAt commentsCount createdAt id isDraft isLocked isPullRequest labels number repository state title updatedAt url`. It has **no** `headRefName` / `baseRefName` — asking for either exits 1 with `Unknown JSON field`. `gh pr view` is the mirror image: it _has_ `headRefName` / `baseRefName` but has **no** `repository` (it offers `headRepository` / `headRepositoryOwner` instead). So branch names come from a per-PR `gh pr view`, never from the search; the owning repo comes from the search's `repository.nameWithOwner`, never from `gh pr view`.
    - **`gh search prs` silently returns only 30 results by default.** No warning, no truncation notice — the tail simply is not there, and a fan-out then reports full coverage of a set it never saw. Always pass `--limit` explicitly. **`--limit` accepts 1–1000** (`--limit 1001` is rejected with `` `--limit` must be between 1 and 1000 ``), and 1000 is also where GitHub's search API itself stops, so it is both the flag ceiling and the real one. If the result count comes back exactly at the limit, say so and treat the set as **possibly truncated** rather than complete — then exhaust the scope by partitioning it (one search per repo, or by `created:<range>` windows) and unioning the results on PR URL. A scope that cannot be exhausted is reported as partial; it is never silently trimmed.
    - **Branch names are fetched only when something needs them.** Stack detection and worktree paths need `headRefName` / `baseRefName`, so a caller that does stack detection (`/sy-babysit-prs`, `/sy-review-prs`) follows the search with one `gh pr view <url> --json headRefName,baseRefName` per PR. Plain `short` / `links` renders skip that call entirely.
 
@@ -126,6 +126,7 @@ Each JSON row carries `url repo number title author createdAt updatedAt ageDays 
      - Unresolved count (`💬 open`): nodes with `isResolved == false`.
      - Resolved count (`pingpong` only, for the counters strip): nodes with `isResolved == true`.
      - **Human vs bot** — a thread is a bot thread when its first comment's `author.__typename == "Bot"`. Use the typename, not a `[bot]` login suffix: GitHub's own review bots post under plain-looking logins, so a suffix match misses them and reads a bot nit as a human blocker. This split is what separates P1 from P4 in the Work-owed ranking.
+
    - Mergeability / conflicts: `gh pr view <number> --repo <owner/repo> --json mergeable,mergeStateStatus`
 
 ## Classification — 5 groups
@@ -159,30 +160,31 @@ The five groups above answer _"what state is this PR in?"_. This ranking answers
 
 Score each PR into exactly one tier, highest first (first match wins). The name of the tier is the answer to _who is owed work_:
 
-| Tier   | Name                       | Matches when                                                                                                                                                                                          | Why it ranks here                                                                                                            |
-| ------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **P0** | Unshipped work             | The PR's canonical worktree exists and holds work GitHub has never seen: unpushed commits (`git log @{upstream}..HEAD`), a dirty tree (`git status --porcelain`), or an interrupted merge (`MERGE_HEAD`) | Only tier whose failure mode is **data loss**. Also the cheapest to detect — a local `git` call, no API, via `git worktree-path <pr>` |
-| **P1** | Someone waiting on a reply | `reviewDecision == "CHANGES_REQUESTED"`, or an unresolved review thread whose first comment's `author.__typename == "User"`                                                                            | A human is blocked on you. Latency here is measured in reviewer patience                                                     |
-| **P2** | Broken and ours to fix     | A check that has **finished failing** — a `CheckRun` with `conclusion` in `FAILURE` / `TIMED_OUT` / `STARTUP_FAILURE`, or a legacy `StatusContext` with `state` in `FAILURE` / `ERROR` — or `mergeable == "CONFLICTING"`  | Actionable right now, fully within our control, and it rots — a conflict widens with every push to the base                  |
-| **P3** | Stale against base         | `mergeStateStatus == "BEHIND"`, or (on a stack) behind any ancestor, with no other flag. `BEHIND` is only reported where the repo requires branches to be up to date — elsewhere compare the head against the base directly       | A sync fixes it, and it turns into P2 if left                                                                                |
-| **P4** | Bot nits only              | Unresolved threads, every one of them opened by a `Bot` (`author.__typename`), no human blocker                                                                                                       | Real work, low stakes, no human waiting                                                                                      |
-| **P5** | Waiting on someone else    | Green and approved awaiting merge, awaiting first review, any check still unfinished (running, queued, or stalled), or held by a non-blocking human approval gate (`/sy-babysit-pr` Step 3)          | Nothing to do until another party moves; a pass here mostly re-reads                                                         |
-| **P6** | Nothing owed               | Draft, `WIP` / `DO NOT MERGE` title — every pass is a documented skip                                                                                                                                 | Cheapest possible pass; safe to service last                                                                                 |
+| Tier   | Name                       | Matches when                                                                                                                                                                                                                | Why it ranks here                                                                                                                     |
+| ------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0** | Unshipped work             | The PR's canonical worktree exists and holds work GitHub has never seen: unpushed commits (`git log @{upstream}..HEAD`), a dirty tree (`git status --porcelain`), or an interrupted merge (`MERGE_HEAD`)                    | Only tier whose failure mode is **data loss**. Also the cheapest to detect — a local `git` call, no API, via `git worktree-path <pr>` |
+| **P1** | Someone waiting on a reply | `reviewDecision == "CHANGES_REQUESTED"`, or an unresolved review thread whose first comment's `author.__typename == "User"`                                                                                                 | A human is blocked on you. Latency here is measured in reviewer patience                                                              |
+| **P2** | Broken and ours to fix     | A check that has **finished failing** — a `CheckRun` with `conclusion` in `FAILURE` / `TIMED_OUT` / `STARTUP_FAILURE`, or a legacy `StatusContext` with `state` in `FAILURE` / `ERROR` — or `mergeable == "CONFLICTING"`    | Actionable right now, fully within our control, and it rots — a conflict widens with every push to the base                           |
+| **P3** | Stale against base         | `mergeStateStatus == "BEHIND"`, or (on a stack) behind any ancestor, with no other flag. `BEHIND` is only reported where the repo requires branches to be up to date — elsewhere compare the head against the base directly | A sync fixes it, and it turns into P2 if left                                                                                         |
+| **P4** | Bot nits only              | Unresolved threads, every one of them opened by a `Bot` (`author.__typename`), no human blocker                                                                                                                             | Real work, low stakes, no human waiting                                                                                               |
+| **P5** | Waiting on someone else    | Green and approved awaiting merge, awaiting first review, any check still unfinished (running, queued, or stalled), or held by a non-blocking human approval gate (`/sy-babysit-pr` Step 3)                                 | Nothing to do until another party moves; a pass here mostly re-reads                                                                  |
+| **P6** | Nothing owed               | Draft, `WIP` / `DO NOT MERGE` title — every pass is a documented skip                                                                                                                                                       | Cheapest possible pass; safe to service last                                                                                          |
 
 **Ties break on oldest `updatedAt`** — within a tier, the PR that has gone longest without anyone touching it goes first. That is the one most at risk of being forgotten, which is the failure this ranking exists to prevent.
 
 **A completed failure needs no blocking/non-blocking classification, and a running check is not a failure.** `/sy-babysit-pr` Step 3's classification answers "will this pending check ever resolve on its own?", which is only a question about checks still running. Two consequences, and the second is the one that gets mis-scored:
+
 - A check that already **completed** with a failing conclusion has resolved — it failed, it is ours, and it is P2 regardless of how the same check would have been classified while pending. Both check systems count: modern `CheckRun` entries carry `conclusion` (`FAILURE` / `TIMED_OUT` / `STARTUP_FAILURE`), while legacy `StatusContext` entries carry `state` (`FAILURE` / `ERROR`) and have no `conclusion` at all — reading only one field silently misses every PR whose CI posts commit statuses.
-- **A check that has not finished is never P2**, whether Step 3 calls it blocking or not. "Blocking" there means *the merge waits on it*, not *it is broken* — a build that started two minutes ago is doing exactly what it should, and nothing about it is ours to fix. A **stalled** pending check is not P2 either: Step 3 explicitly classifies stalled entries as non-blocking and steps over them, so scoring them as "broken and ours to fix" would contradict the very step this tier cites. Every unfinished check — running, queued, stalled, or held by a human gate — is P5, waiting on something other than us. Scoring healthy in-flight builds as P2 would put every freshly-pushed PR at the front of the queue, which is precisely backwards: it just pushed, so it is the one PR guaranteed not to need attention yet.
+- **A check that has not finished is never P2**, whether Step 3 calls it blocking or not. "Blocking" there means _the merge waits on it_, not _it is broken_ — a build that started two minutes ago is doing exactly what it should, and nothing about it is ours to fix. A **stalled** pending check is not P2 either: Step 3 explicitly classifies stalled entries as non-blocking and steps over them, so scoring them as "broken and ours to fix" would contradict the very step this tier cites. Every unfinished check — running, queued, stalled, or held by a human gate — is P5, waiting on something other than us. Scoring healthy in-flight builds as P2 would put every freshly-pushed PR at the front of the queue, which is precisely backwards: it just pushed, so it is the one PR guaranteed not to need attention yet.
 
 ### Two lenses over the same tiers
 
-"Who is owed work" has two answers depending on which side of the PR you are standing, so the tiers above are read through one of two lenses. **The tier definitions never change** — a PR's `matches when` is objective — only the *order* the tiers are serviced in. One table, two documented readings; never a second table.
+"Who is owed work" has two answers depending on which side of the PR you are standing, so the tiers above are read through one of two lenses. **The tier definitions never change** — a PR's `matches when` is objective — only the _order_ the tiers are serviced in. One table, two documented readings; never a second table.
 
-- **Author lens (the default, used by `/sy-babysit-prs`)** — the order exactly as listed, P0 → P6. It ranks by what *I* must do to move my own PR forward, which is why "awaiting first review" sits at P5: I have shipped, and nothing I do speeds up a reviewer.
-- **Reviewer lens (used by `/sy-review-prs`)** — same tiers, but two *sub-buckets* are lifted out and re-placed. They are sub-buckets, not whole tiers: P5 and P1 each hold several kinds of PR, and only one kind from each moves, so the rest of both tiers stay exactly where they are.
-  - **`awaiting first review` (a member of P5) is lifted out and placed above P1**, becoming the top tier for this lens. It is the most actionable work on a reviewer's board and the only case where *nobody* has looked at the PR at all; leaving it at P5 makes the review fan-out service its whole reason for existing dead last. The rest of P5 — green-and-approved awaiting merge, held by a human approval gate — does **not** move.
-  - **`reviewDecision == "CHANGES_REQUESTED"` (a member of P1) is lifted out and placed just above P6.** Another reviewer already has an open block, so `/sy-review-pr` Step 3 skips it rather than piling on — servicing it early spends a round on a documented no-op. It stays *in* the set, since a block can be dismissed between rounds and the later rounds exist to catch that. The rest of P1 — an unresolved thread whose first comment is from a human — stays at P1, because those are threads waiting on a reply that a reviewer may well be the one to give.
+- **Author lens (the default, used by `/sy-babysit-prs`)** — the order exactly as listed, P0 → P6. It ranks by what _I_ must do to move my own PR forward, which is why "awaiting first review" sits at P5: I have shipped, and nothing I do speeds up a reviewer.
+- **Reviewer lens (used by `/sy-review-prs`)** — same tiers, but two _sub-buckets_ are lifted out and re-placed. They are sub-buckets, not whole tiers: P5 and P1 each hold several kinds of PR, and only one kind from each moves, so the rest of both tiers stay exactly where they are.
+  - **`awaiting first review` (a member of P5) is lifted out and placed above P1**, becoming the top tier for this lens. It is the most actionable work on a reviewer's board and the only case where _nobody_ has looked at the PR at all; leaving it at P5 makes the review fan-out service its whole reason for existing dead last. The rest of P5 — green-and-approved awaiting merge, held by a human approval gate — does **not** move.
+  - **`reviewDecision == "CHANGES_REQUESTED"` (a member of P1) is lifted out and placed just above P6.** Another reviewer already has an open block, so `/sy-review-pr` Step 3 skips it rather than piling on — servicing it early spends a round on a documented no-op. It stays _in_ the set, since a block can be dismissed between rounds and the later rounds exist to catch that. The rest of P1 — an unresolved thread whose first comment is from a human — stays at P1, because those are threads waiting on a reply that a reviewer may well be the one to give.
 
   So the reviewer order is: awaiting-first-review → P0 → P1 (minus `CHANGES_REQUESTED`) → P2 → P3 → P4 → P5 (minus awaiting-first-review) → `CHANGES_REQUESTED` → P6. Everything else keeps its author-lens position, and ties still break on oldest `updatedAt`. A dispatcher states which lens it used when it reports the slot map, so a surprising order is self-explaining rather than looking like a bug.
 
@@ -240,7 +242,7 @@ Where the author goes, per format:
 | `table`    | A dedicated `Author` column, inserted after `Repo`                                                               |
 | `links`    | Nowhere — `links` is pure machine input and carries no author, heading, or summary line                          |
 | `clusters` | Cluster heading only — `### oauth-migration (3 — @me 2, @alice 1) — acme/api, acme/web`. **PR lines stay bare.** |
-| `pingpong` | Third line of the `PR` cell (under the path and the group line) — the author is always shown, mixed or not |
+| `pingpong` | Third line of the `PR` cell (under the path and the group line) — the author is always shown, mixed or not       |
 
 **`short` URL lines are machine input — never decorate them.** `/sy-babysit-prs` consumes `/sy-list-prs short` line-by-line as full PR URLs. Adding a handle, prefix, or suffix to those lines breaks it. Group headings and the leading summary line are already skipped by that parser, so that's where mixed-author information belongs.
 
@@ -492,10 +494,10 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **Line 2 — CI, always printed.** Exactly one of:
 
-  | Line                              | When                                                           |
-  | --------------------------------- | -------------------------------------------------------------- |
-  | `CI PASSED`                       | Every required check succeeded (neutral / skipped count as ok) |
-  | `CI FAILED — <check>`             | Any required check failed. Name the first failing check        |
+  | Line                              | When                                                                                                    |
+  | --------------------------------- | ------------------------------------------------------------------------------------------------------- |
+  | `CI PASSED`                       | Every required check succeeded (neutral / skipped count as ok)                                          |
+  | `CI FAILED — <check>`             | Any required check failed. Name the first failing check                                                 |
   | `BUILD IN PROGRESS (<n> running)` | Self-resolving checks still queued or running, none failed yet (human approval gates excluded — Step 2) |
 
   **Line 3 — review, printed whenever the review state is known.** Exactly one of:
@@ -516,18 +518,18 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **Line 1 — `<state token>[ (loop N/M)] — <clock>`.**
 
-  | Token            | When                                               | Clock                                        |
-  | ---------------- | -------------------------------------------------- | -------------------------------------------- |
-  | `⚪ NOT STARTED` | Assigned to a slot, first pass not yet run          | `slot 2, position 2 of 2 — behind <link>` (no clock; nothing started) |
-  | `🔄 IN PROGRESS` | Job actively working this pass                     | `started 17:12 · running 22m`                |
-  | `⏸️ WAITING`     | Pass done, sleeping until the next one             | `ended 16:58 · ran 19m · next 17:28`         |
-  | `✅ COMPLETED`   | Job finished all passes, or the PR merged          | `ended 17:05 · 48m total`                    |
-  | `⏭️ SKIPPED`     | **Terminal** — every pass was skipped and no pass remains | `17:02 — draft, all 3 passes`                |
-  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, later passes still to run | `17:02 — draft · next 17:32`          |
-  | `⚠️ ESCALATED`   | Job stopped and needs human judgment               | `stopped 17:01 · ran 19m — needs human`      |
-  | `❌ FAILED`      | Job errored out                                    | `failed 16:44 · ran 4m — worktree conflict`  |
+  | Token                   | When                                                            | Clock                                                                 |
+  | ----------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------- |
+  | `⚪ NOT STARTED`        | Assigned to a slot, first pass not yet run                      | `slot 2, position 2 of 2 — behind <link>` (no clock; nothing started) |
+  | `🔄 IN PROGRESS`        | Job actively working this pass                                  | `started 17:12 · running 22m`                                         |
+  | `⏸️ WAITING`            | Pass done, sleeping until the next one                          | `ended 16:58 · ran 19m · next 17:28`                                  |
+  | `✅ COMPLETED`          | Job finished all passes, or the PR merged                       | `ended 17:05 · 48m total`                                             |
+  | `⏭️ SKIPPED`            | **Terminal** — every pass was skipped and no pass remains       | `17:02 — draft, all 3 passes`                                         |
+  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, later passes still to run | `17:02 — draft · next 17:32`                                          |
+  | `⚠️ ESCALATED`          | Job stopped and needs human judgment                            | `stopped 17:01 · ran 19m — needs human`                               |
+  | `❌ FAILED`             | Job errored out                                                 | `failed 16:44 · ran 4m — worktree conflict`                           |
 
-  **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip on pass 1 of 3 is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-pass ETA. Only when the passes are exhausted does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal *and* loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
+  **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip on pass 1 of 3 is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-pass ETA. Only when the passes are exhausted does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
 
   **A merged or closed PR is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
 

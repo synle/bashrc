@@ -690,472 +690,44 @@ function patch() {
 
 ################################################################################
 # --- Pull Request Inventory ---
-# One command for "what are my open PRs still waiting on", so an agent (or a
-# human) does not fan six shell round-trips out by hand. One implementation,
-# `list_prs`, driven entirely by --flags, plus two named entry points so neither
-# reading of the ready-to-merge filter is the one you have to remember:
-#   list_prs           / list_prs_needs_attention — only the PRs still owed work
-#   list_prs --all     / list_prs_all_open        — every open PR, ready included
-#   list_prs … --cwd    — scope to the git repos at/below the current folder
-#                         (default is a global search of every repo you have a PR in)
-#   list_prs … --verbose — add the created-at / CI / review metadata line
-#   list_prs … --json    — the same rows enriched, for a consumer
+# `list_prs` is a standalone Node CLI installed at ~/.local/bin/list_prs by
+# software/scripts/git.prs.list.js (the source lives in
+# software/scripts/git.prs.list.javascript). It lists your open PRs grouped by
+# how much work each still needs. Run `list_prs --help`… actually it has no
+# --help; the flags are:
+#   --all       include the fully-clear READY TO MERGE group (hidden by default)
+#   --cwd       scope to git repos at/below the current folder
+#               (default is a GLOBAL search of every repo you have a PR in)
+#   --verbose   add the created-at / CI / review metadata line
+#   --links     print only the URLs, one per line (paste-clean)
+#   --json      the enriched rows as JSON
+#   --author=<handle> / --limit=<n> / owner/repo …
 #
-# Everything a PR needs comes back in ONE GraphQL call per PR — status checks,
-# review decision, mergeability and review threads together — because the
-# equivalent `gh pr view --json` + `gh api graphql` pair doubles the round trips
-# for data GitHub hands over in a single query anyway.
+# The two wrappers below are the named entry points so neither reading of the
+# ready-to-merge filter is the one you have to remember.
 ################################################################################
-
-# _list_prs_repos: echo one owner/repo per line, from specs or discovery
-function _list_prs_repos() {
-  local spec root
-  {
-    if [ "$#" -gt 0 ]; then
-      for spec in "$@"; do
-        # A local folder resolves through its remote; anything else is already a slug.
-        # The folder name is never the repo name — ~/git/file-explorer can be acme/storage-ui.
-        if [ -d "$spec" ]; then
-          git -C "$spec" remote get-url origin 2> /dev/null
-        else
-          echo "$spec"
-        fi
-      done
-    else
-      # Ask git for the repo root rather than hunting for .git — that recognizes
-      # worktrees and submodules whose .git is a file, never walks .git internals,
-      # and `sort -u` collapses nested folders onto their owning repo.
-      for spec in . */ */*/; do
-        root=$(git -C "$spec" rev-parse --show-toplevel 2> /dev/null) || continue
-        echo "$root"
-      done | sort -u | while IFS= read -r root; do
-        git -C "$root" remote get-url origin 2> /dev/null
-      done
-    fi
-  } | sed -e 's#^ssh://[^/]*@github\.com/##' -e 's#^[^/]*@github\.com:##' \
-    -e 's#^https://[^/]*github\.com/##' -e 's#\.git$##' \
-    | command grep '^[^/][^/]*/[^/][^/]*$' | sort -u
-}
-
-# list_prs: open PRs, oldest first — needs-attention only, or every one
-function list_prs() {
-  if is_help_arg "${1:-}"; then
-    echo "list_prs: list open PRs, oldest first
-  Usage: list_prs [--all] [--cwd] [--verbose] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
-  By default only the PRs that still need something are listed (the fully-green,
-  approved, comment-free ones are hidden) — same as list_prs_needs_attention.
-    --all              keep the ready-to-merge PRs too — same as list_prs_all_open
-  Repo scope:
-    (default)          search every repo you have an open PR in (a global search)
-    --cwd              scope to the git repos at or below the current folder,
-                       discovered two levels deep
-    <repo>...          one or more explicit 'owner/repo' slugs or local folders
-                       (a folder is resolved through its origin remote)
-  A PR counts as ready to merge only once CI passes AND it is approved AND it
-  has no conflict AND no open review threads.
-  Output:
-    (default)          two lines per PR — title, then its URL
-    --verbose          add a third line: created-at, age, CI and review status
-    --json             emit the enriched rows as JSON instead of the text render
-  Other options:
-    --author=<handle>  whose PRs to list (default: @me)
-    --limit=<n>        search cap, 1-1000 (default: 1000)
-  Examples:
-    list_prs
-    list_prs --all
-    list_prs --cwd
-    list_prs --all --verbose
-    list_prs --json acme/api acme/web
-    list_prs --all --author=alice
-  A check whose name reads like a human approval gate counts as review, not CI —
-  override the pattern with BASHRC_PR_GATE_CHECK_PATTERN."
-    return 1
-  fi
-
-  if ! type -P gh &> /dev/null; then
-    echo "list_prs: gh is not installed." >&2
-    return 1
-  fi
-  if ! type -P node &> /dev/null; then
-    echo "list_prs: node is not installed." >&2
-    return 1
-  fi
-
-  local as_json=0 keep_ready=0 verbose=0 use_cwd=0 author="@me" limit=1000 arg
-  local repo_specs
-  repo_specs=()
-  for arg in "$@"; do
-    case "$arg" in
-    --json) as_json=1 ;;
-    --all) keep_ready=1 ;;
-    --cwd) use_cwd=1 ;;
-    --verbose) verbose=1 ;;
-    --author=*) author="${arg#--author=}" ;;
-    --limit=*) limit="${arg#--limit=}" ;;
-    -*)
-      echo "list_prs: unknown option '$arg' — see list_prs --help" >&2
-      return 1
-      ;;
-    *) repo_specs+=("$arg") ;;
-    esac
-  done
-
-  # Repo scope, three ways: explicit slugs win; else --cwd discovers the local
-  # tree; else the repo list stays empty and gh searches every repo globally.
-  local repos=""
-  if [ "${#repo_specs[@]}" -gt 0 ]; then
-    repos=$(_list_prs_repos "${repo_specs[@]}")
-    if [ -z "$repos" ]; then
-      echo "list_prs: no GitHub repos resolved from the arguments given." >&2
-      return 1
-    fi
-  elif [ "$use_cwd" -eq 1 ]; then
-    repos=$(_list_prs_repos)
-    if [ -z "$repos" ]; then
-      echo "list_prs: no GitHub repos in the current folder — drop --cwd to search all your repos." >&2
-      return 1
-    fi
-  fi
-
-  local repo_flags line repo_count=0
-  repo_flags=()
-  while IFS= read -r line; do
-    if [ -n "$line" ]; then
-      repo_flags+=(--repo "$line")
-      repo_count=$((repo_count + 1))
-    fi
-  done << REPO_LIST_EOF
-$repos
-REPO_LIST_EOF
-
-  local work
-  work=$(mktemp -d "/tmp/list-prs-XXXXXX" 2> /dev/null || mktemp -d) || return 1
-
-  if [ "$repo_count" -gt 0 ]; then
-    echo ">>> scanning $repo_count repo(s) for open $author PRs" >&2
-  else
-    echo ">>> scanning every repo for open $author PRs" >&2
-  fi
-  if ! gh search prs --author="$author" --state=open --limit "$limit" "${repo_flags[@]}" \
-    --json number,repository,url > "$work/search.json" 2> "$work/search.err"; then
-    command cat "$work/search.err" >&2
-    command rm -rf "$work"
-    return 1
-  fi
-
-  # Heredocs read into variables and kept at top level — bash 3.2 keeps counting
-  # quotes through a heredoc nested inside $( ... ), so one apostrophe in a JS
-  # comment there would corrupt the parse of everything after it.
-  local pair_js
-  IFS= read -r -d '' pair_js << 'PAIR_JS_EOF' || true
-let raw = "";
-process.stdin.on("data", function (d) { raw += d; });
-process.stdin.on("end", function () {
-  JSON.parse(raw).forEach(function (pr) {
-    process.stdout.write(pr.repository.nameWithOwner + " " + pr.number + "\n");
-  });
-});
-PAIR_JS_EOF
-
-  node -e "$pair_js" < "$work/search.json" > "$work/pairs.txt" || {
-    echo "list_prs: could not read the search results." >&2
-    command rm -rf "$work"
-    return 1
-  }
-
-  local pr_count
-  pr_count=$(command grep -c . "$work/pairs.txt" 2> /dev/null || true)
-  pr_count=${pr_count:-0}
-  if [ "$pr_count" -eq 0 ]; then
-    if [ "$use_cwd" -eq 1 ]; then
-      echo ">>> no open $author PRs in the current folder — drop --cwd to search all your repos" >&2
-    elif [ "$repo_count" -gt 0 ]; then
-      echo ">>> no open $author PRs in those $repo_count repo(s)" >&2
-    else
-      echo ">>> no open $author PRs found" >&2
-    fi
-    [ "$as_json" -eq 1 ] && echo "[]"
-    command rm -rf "$work"
-    return 0
-  fi
-  if [ "$pr_count" -ge "$limit" ]; then
-    echo ">>> WARNING: hit the --limit of $limit — the result set is possibly truncated" >&2
-  fi
-
-  # mergeStateStatus, statusCheckRollup and reviewThreads in one query: gh pr view
-  # cannot return reviewThreads at all, and gh search prs cannot return branch names,
-  # so the three-call version is fetching one PR's state from three places.
-  local query
-  IFS= read -r -d '' query << 'GQL_EOF' || true
-query($owner:String!,$repo:String!,$number:Int!){
-  repository(owner:$owner,name:$repo){
-    pullRequest(number:$number){
-      url number title isDraft createdAt updatedAt mergeable mergeStateStatus
-      headRefName baseRefName
-      author{ login }
-      repository{ nameWithOwner }
-      reviewDecision
-      reviewThreads(first:100){ nodes{ isResolved comments(first:1){ nodes{ author{ login __typename } } } } }
-      commits(last:1){ nodes{ commit{ statusCheckRollup{ state contexts(first:100){ nodes{
-        __typename
-        ... on CheckRun{ name status conclusion }
-        ... on StatusContext{ context state }
-      } } } } } }
-    }
-  }
-}
-GQL_EOF
-
-  echo ">>> enriching $pr_count PR(s)" >&2
-  # Subshell so an interactive shell does not print a job notification per fetch.
-  (
-    idx=0
-    inflight=0
-    while read -r slug number; do
-      idx=$((idx + 1))
-      gh api graphql -f owner="${slug%%/*}" -f repo="${slug##*/}" -F number="$number" \
-        -f query="$query" > "$work/pr-$idx.json" 2> /dev/null &
-      inflight=$((inflight + 1))
-      if [ "$inflight" -ge 8 ]; then
-        wait
-        inflight=0
-      fi
-    done < "$work/pairs.txt"
-    wait
-  )
-
-  local render_js
-  IFS= read -r -d '' render_js << 'RENDER_JS_EOF' || true
-const fs = require("fs");
-const path = require("path");
-
-const work = process.env._LIST_PRS_WORK;
-const asJson = process.env._LIST_PRS_JSON === "1";
-const keepReady = process.env._LIST_PRS_ALL === "1";
-const verbose = process.env._LIST_PRS_VERBOSE === "1";
-
-// A human approval gate is reported as a check but never resolves on a timer, and
-// a changes-resolution gate reports FAILURE while threads are open. Neither is a
-// broken build, so both are read as review signal rather than CI.
-const gateRe = new RegExp(
-  process.env._LIST_PRS_GATE_PATTERN
-    || "approval|approve|reviewer|review required|sign-?off|codeowner|changes ?resolution|\\bcla\\b",
-  "i",
-);
-const FAILED = ["FAILURE", "ERROR", "TIMED_OUT", "STARTUP_FAILURE"];
-const UNFINISHED = ["QUEUED", "IN_PROGRESS", "WAITING", "PENDING", "REQUESTED", "EXPECTED"];
-
-/**
- * Whole days since an ISO timestamp.
- * @param {string} iso ISO-8601 timestamp.
- * @returns {number} Age in whole days.
- */
-function ageInDays(iso) {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-}
-
-/**
- * Flatten one GraphQL pull request into a scored, renderable row.
- * @param {object} pr The pullRequest node.
- * @returns {object} The enriched row.
- */
-function shape(pr) {
-  const commit = ((pr.commits || {}).nodes || [])[0] || {};
-  const rollup = (commit.commit || {}).statusCheckRollup || {};
-  const contexts = (rollup.contexts || {}).nodes || [];
-
-  let failedCheck = "";
-  let running = 0;
-  let gates = 0;
-
-  contexts.forEach(function (check) {
-    const name = check.name || check.context || "check";
-    const verdict = check.conclusion || check.state || "";
-    const unfinished = UNFINISHED.indexOf(check.status || "") !== -1 || UNFINISHED.indexOf(verdict) !== -1;
-
-    if (gateRe.test(name)) {
-      if (unfinished || FAILED.indexOf(verdict) !== -1) gates += 1;
-      return;
-    }
-    if (unfinished) {
-      running += 1;
-      return;
-    }
-    if (FAILED.indexOf(verdict) !== -1 && failedCheck === "") failedCheck = name;
-  });
-
-  let openHuman = 0;
-  let openBot = 0;
-  let resolved = 0;
-  ((pr.reviewThreads || {}).nodes || []).forEach(function (thread) {
-    if (thread.isResolved) {
-      resolved += 1;
-      return;
-    }
-    // Bot-ness comes from __typename, not a [bot] login suffix — review bots post
-    // under plain-looking logins, so a suffix match reads a bot nit as a human blocker.
-    const first = ((thread.comments || {}).nodes || [])[0] || {};
-    if ((first.author || {}).__typename === "Bot") openBot += 1;
-    else openHuman += 1;
-  });
-  const openThreads = openHuman + openBot;
-
-  const decision = pr.reviewDecision || "";
-  const conflicted = pr.mergeable === "CONFLICTING";
-  const rawTitle = pr.title || "";
-  const wip = /(^|[^a-z])(wip|do not merge)([^a-z]|$)/i.test(rawTitle);
-  const draft = pr.isDraft === true;
-
-  // Drop the [<repo>] title prefix — the URL on the same line already names the
-  // repo, so keeping it prints the repo twice and buys nothing.
-  const slug = (pr.repository || {}).nameWithOwner || "";
-  const title = rawTitle.replace(/\[([^\]]+)\]\s*/g, function (match, inner) {
-    return inner === slug.split("/").pop() ? "" : match;
-  });
-
-  const red = failedCheck !== "" || decision === "CHANGES_REQUESTED" || conflicted;
-  const green = failedCheck === "" && running === 0 && decision === "APPROVED" && !conflicted;
-
-  let group = "NEED APPROVAL";
-  if (draft || wip) group = "NOT READY / WIP / DRAFT";
-  else if (red) group = "NEEDS ATTENTION";
-  else if (green) group = openThreads > 0 ? "READY TO MERGE (with comments)" : "READY TO MERGE";
-
-  const ci = failedCheck !== ""
-    ? "CI FAILED — " + failedCheck
-    : running > 0
-      ? "BUILD IN PROGRESS (" + running + " running)"
-      : "CI PASSED";
-  const review = decision === "APPROVED"
-    ? "APPROVED"
-    : decision === "CHANGES_REQUESTED"
-      ? "CHANGES REQUESTED"
-      : "AWAITING REVIEW";
-
-  const status = [ci, review];
-  if (conflicted) status.push("MERGE CONFLICT");
-  if (openThreads > 0) {
-    status.push(
-      "\u{1F4AC} " + openThreads + " open"
-        + (openBot > 0 ? " (" + openHuman + " human, " + openBot + " bot)" : ""),
-    );
-  }
-  if (gates > 0) status.push("\u{23F3} " + gates + " approval gate" + (gates > 1 ? "s" : ""));
-  if (pr.mergeStateStatus === "BEHIND") status.push("BEHIND " + (pr.baseRefName || "base"));
-
-  return {
-    url: pr.url,
-    repo: (pr.repository || {}).nameWithOwner || "",
-    number: pr.number,
-    title: title,
-    author: (pr.author || {}).login || "",
-    createdAt: pr.createdAt,
-    updatedAt: pr.updatedAt,
-    ageDays: ageInDays(pr.createdAt),
-    headRefName: pr.headRefName || "",
-    baseRefName: pr.baseRefName || "",
-    isDraft: draft,
-    isWip: wip,
-    group: group,
-    color: red ? "\u{1F534}" : green ? "\u{1F7E2}" : "\u{1F7E1}",
-    ci: ci,
-    review: review,
-    failedCheck: failedCheck,
-    runningChecks: running,
-    approvalGates: gates,
-    mergeable: pr.mergeable || "",
-    mergeStateStatus: pr.mergeStateStatus || "",
-    openThreads: openThreads,
-    openHumanThreads: openHuman,
-    openBotThreads: openBot,
-    resolvedThreads: resolved,
-    status: status.join(" \u{00B7} "),
-  };
-}
-
-let unreadable = 0;
-let rows = fs
-  .readdirSync(work)
-  .filter(function (name) { return name.indexOf("pr-") === 0 && /\.json$/.test(name); })
-  .map(function (name) {
-    try {
-      const raw = JSON.parse(fs.readFileSync(path.join(work, name), "utf-8"));
-      return ((raw.data || {}).repository || {}).pullRequest || null;
-    } catch (err) {
-      return null;
-    }
-  })
-  .filter(function (pr) {
-    if (pr) return true;
-    unreadable += 1;
-    return false;
-  })
-  .map(shape);
-
-const scanned = rows.length;
-if (!keepReady) rows = rows.filter(function (row) { return row.group !== "READY TO MERGE"; });
-// Oldest first: the PR nobody has touched longest is the one about to be forgotten.
-rows.sort(function (a, b) { return a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0; });
-
-if (asJson) {
-  process.stdout.write(JSON.stringify(rows, null, 2) + "\n");
-} else {
-  // Colorize only for a terminal — piped or redirected output (an agent reading the
-  // text render, a file) stays plain so nothing downstream has to strip escapes.
-  const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
-  const paint = function (code, text) {
-    return color ? "\u001b[" + code + "m" + text + "\u001b[0m" : text;
-  };
-  rows.forEach(function (row) {
-    // Three lines per PR — title, then the URL on its own click-and-copy line, then
-    // the metadata line only under --verbose. Title is red for a PR that needs
-    // attention, green for a ready one, yellow otherwise; the URL is blue; the
-    // metadata keeps the default color. No [WIP] tag: `wip` is only ever detected
-    // FROM the title, so printing it back is duplication. [Draft] stays — draft
-    // state has no textual marker.
-    const titleColor = row.color === "\u{1F534}" ? "31" : row.color === "\u{1F7E2}" ? "32" : "33";
-    const tags = row.isDraft ? "[Draft] " : "";
-    process.stdout.write(paint(titleColor, tags + row.title) + "\n");
-    process.stdout.write(paint("34", row.url) + "\n");
-    if (verbose) {
-      const meta = row.createdAt.replace("T", " ").replace("Z", "").slice(0, 16)
-        + " (" + row.ageDays + "d) \u{00B7} " + row.color + " " + row.status;
-      process.stdout.write(meta + "\n");
-    }
-  });
-}
-
-process.stderr.write(
-  ">>> " + scanned + " open \u{00B7} " + rows.length + (keepReady ? " listed" : " pending")
-    + " \u{00B7} oldest first"
-    + (unreadable > 0 ? " \u{00B7} " + unreadable + " PR(s) could not be fetched" : "")
-    + "\n",
-);
-RENDER_JS_EOF
-
-  _LIST_PRS_WORK="$work" \
-    _LIST_PRS_JSON="$as_json" \
-    _LIST_PRS_ALL="$keep_ready" \
-    _LIST_PRS_VERBOSE="$verbose" \
-    _LIST_PRS_GATE_PATTERN="${BASHRC_PR_GATE_CHECK_PATTERN:-}" \
-    node -e "$render_js"
-  local render_status=$?
-
-  command rm -rf "$work"
-  return $render_status
-}
 
 # list_prs_needs_attention: only the open PRs that still owe someone work
 function list_prs_needs_attention() {
   if is_help_arg "${1:-}"; then
     echo "list_prs_needs_attention: list open PRs that still need something, oldest first
-  Usage: list_prs_needs_attention [--cwd] [--verbose] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
+  Usage: list_prs_needs_attention [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
   The default reading of list_prs — the fully-green, approved, comment-free PRs
-  are hidden. Every option is list_prs's; see list_prs --help.
+  are hidden. Default scope is global; pass --cwd to scope to the current folder.
   Examples:
     list_prs_needs_attention
     list_prs_needs_attention --cwd
     list_prs_needs_attention --json acme/api acme/web"
+    return 1
+  fi
+
+  if ! type -P list_prs > /dev/null 2>&1; then
+    echo "list_prs_needs_attention: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
+    return 1
+  fi
+
+  if ! type -P list_prs > /dev/null 2>&1; then
+    echo "list_prs_needs_attention: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
     return 1
   fi
 
@@ -1166,14 +738,23 @@ function list_prs_needs_attention() {
 function list_prs_all_open() {
   if is_help_arg "${1:-}"; then
     echo "list_prs_all_open: list every open PR, ready-to-merge included, oldest first
-  Usage: list_prs_all_open [--cwd] [--verbose] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
+  Usage: list_prs_all_open [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
   Same as 'list_prs --all' — nothing is filtered out, so the green 'merge it now'
   PRs show up alongside the ones still waiting on CI or a review.
-  Every option is list_prs's; see list_prs --help.
   Examples:
     list_prs_all_open
     list_prs_all_open --cwd --verbose
     list_prs_all_open --json --author=alice"
+    return 1
+  fi
+
+  if ! type -P list_prs > /dev/null 2>&1; then
+    echo "list_prs_all_open: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
+    return 1
+  fi
+
+  if ! type -P list_prs > /dev/null 2>&1; then
+    echo "list_prs_all_open: list_prs is not installed — run: bash run.sh --files=git.prs.list.js" >&2
     return 1
   fi
 
