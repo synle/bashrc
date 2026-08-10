@@ -49,6 +49,23 @@ const BASH = fs.existsSync("/bin/bash") ? "/bin/bash" : "bash";
 /** A `gh` stand-in: answers `--version`, then replays canned search / GraphQL payloads. */
 const GH_STUB = `#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$FAKE_GH_LOG"
+_track_start() {
+  while ! mkdir "$FAKE_GH_CONCURRENCY_STATE.lock" 2>/dev/null; do sleep 0.001; done
+  _active=0
+  [ -f "$FAKE_GH_CONCURRENCY_STATE" ] && _active=\$(command cat "$FAKE_GH_CONCURRENCY_STATE")
+  _active=$((_active + 1))
+  printf '%s\\n' "$_active" > "$FAKE_GH_CONCURRENCY_STATE"
+  _max=0
+  [ -f "$FAKE_GH_MAX_CONCURRENCY" ] && _max=\$(command cat "$FAKE_GH_MAX_CONCURRENCY")
+  [ "$_active" -gt "$_max" ] && printf '%s\\n' "$_active" > "$FAKE_GH_MAX_CONCURRENCY"
+  rmdir "$FAKE_GH_CONCURRENCY_STATE.lock"
+}
+_track_end() {
+  while ! mkdir "$FAKE_GH_CONCURRENCY_STATE.lock" 2>/dev/null; do sleep 0.001; done
+  _active=\$(command cat "$FAKE_GH_CONCURRENCY_STATE")
+  printf '%s\\n' "$((_active - 1))" > "$FAKE_GH_CONCURRENCY_STATE"
+  rmdir "$FAKE_GH_CONCURRENCY_STATE.lock"
+}
 case "\${1:-}" in
 --version) echo "gh version 2.0.0 (stub)"; exit 0 ;;
 search) command cat "$FAKE_GH_SEARCH_JSON" ;;
@@ -59,7 +76,12 @@ api)
     number=*) _number="\${_arg#number=}" ;;
     esac
   done
+  _track_start
+  [ -n "\${FAKE_GH_DELAY:-}" ] && sleep "$FAKE_GH_DELAY"
   command cat "$FAKE_GH_PR_DIR/$_number.json"
+  _status=$?
+  _track_end
+  exit $_status
   ;;
 esac
 `;
@@ -116,7 +138,7 @@ const AWAITING_REVIEW = { checks: [PASSING_CHECK], reviewDecision: "REVIEW_REQUI
  * @param {object} [opts]
  * @param {string} [opts.cwd] Working directory to run in (defaults to the temp work dir).
  * @param {object} [opts.env] Extra environment variables for the CLI.
- * @returns {{ status: number, stdout: string, stderr: string, ghArgs: string[] }}
+ * @returns {{ status: number, stdout: string, stderr: string, ghArgs: string[], ghMaxConcurrency: number }}
  */
 function runCli(argv = [], prs = [], opts = {}) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-cli-"));
@@ -133,9 +155,13 @@ function runCli(argv = [], prs = [], opts = {}) {
     });
     const searchFile = path.join(work, "search.json");
     const ghLog = path.join(work, "gh.log");
+    const ghConcurrencyState = path.join(work, "gh.active");
+    const ghMaxConcurrency = path.join(work, "gh.max");
     const stderrFile = path.join(work, "stderr.log");
     fs.writeFileSync(searchFile, JSON.stringify(search));
     fs.writeFileSync(ghLog, "");
+    fs.writeFileSync(ghConcurrencyState, "0");
+    fs.writeFileSync(ghMaxConcurrency, "0");
     fs.writeFileSync(path.join(bin, "gh"), GH_STUB, { mode: 0o755 });
 
     // execFileSync only returns stdout; capture stderr to a file so it survives a
@@ -154,6 +180,8 @@ function runCli(argv = [], prs = [], opts = {}) {
           FAKE_GH_LOG: ghLog,
           FAKE_GH_SEARCH_JSON: searchFile,
           FAKE_GH_PR_DIR: prFolder,
+          FAKE_GH_CONCURRENCY_STATE: ghConcurrencyState,
+          FAKE_GH_MAX_CONCURRENCY: ghMaxConcurrency,
           ...(opts.env || {}),
         },
         stdio: ["ignore", "pipe", stderrFd],
@@ -170,6 +198,7 @@ function runCli(argv = [], prs = [], opts = {}) {
       stdout,
       stderr: fs.readFileSync(stderrFile, "utf-8"),
       ghArgs: fs.readFileSync(ghLog, "utf-8").split("\n").filter(Boolean),
+      ghMaxConcurrency: Number(fs.readFileSync(ghMaxConcurrency, "utf-8").trim()),
     };
   } finally {
     fs.rmSync(work, { recursive: true, force: true });
@@ -278,6 +307,18 @@ describe("list_prs — classification", () => {
     expect(rowFor({ title: "WIP: refactor auth", checks: [PASSING_CHECK] }).group).toBe("NOT READY / WIP / DRAFT");
   });
 
+  it("detects DNM and normalizes leading WIP markers to one prefix", () => {
+    const row = rowFor({
+      title: "WIP: DO NOT MERGE — Repoint -default LCD pipeline to stage-only (Phase 2: cutover)",
+      reviewDecision: "REVIEW_REQUIRED",
+    });
+    expect(row.isWip).toBe(true);
+    expect(row.title).toBe("WIP: Repoint -default LCD pipeline to stage-only (Phase 2: cutover)");
+
+    const dnm = rowFor({ title: "DNM Add production-only LCD pipeline", reviewDecision: "REVIEW_REQUIRED" });
+    expect(dnm.title).toBe("WIP: Add production-only LCD pipeline");
+  });
+
   it("strips a leading [repo] tag that just repeats the PR's own repo", () => {
     expect(rowFor({ title: "[api] Retry token refresh", reviewDecision: "REVIEW_REQUIRED" }).title).toBe("Retry token refresh");
     expect(rowFor({ title: "[infra] Retry token refresh", reviewDecision: "REVIEW_REQUIRED" }).title).toBe("[infra] Retry token refresh");
@@ -370,6 +411,28 @@ describe("list_prs — output shape", () => {
     const newer = pullRequest({ ...AWAITING_REVIEW, number: 2, createdAt: "2026-02-01T00:00:00Z" });
     const rows = rowsFor([newer, older]);
     expect(rows.map((r) => r.number)).toEqual([1, 2]);
+  });
+
+  it("places WIP entries after non-WIP entries regardless of age", () => {
+    const ready = pullRequest({ ...AWAITING_REVIEW, number: 1, createdAt: "2026-02-01T00:00:00Z" });
+    const wip = pullRequest({
+      ...AWAITING_REVIEW,
+      number: 2,
+      title: "DO NOT MERGE — older migration",
+      createdAt: "2026-01-01T00:00:00Z",
+    });
+    expect(rowsFor([wip, ready]).map((row) => row.number)).toEqual([1, 2]);
+  });
+
+  it("enriches at most three PRs at once", () => {
+    const prs = Array.from({ length: 7 }, (_, index) =>
+      pullRequest({
+        ...AWAITING_REVIEW,
+        number: index + 1,
+      }),
+    );
+    const result = runCli(["--json"], prs, { env: { FAKE_GH_DELAY: "0.05" } });
+    expect(result.ghMaxConcurrency).toBe(3);
   });
 
   it("emits the full documented JSON contract per row", () => {

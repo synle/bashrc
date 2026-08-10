@@ -52,7 +52,7 @@ Examples:
 
 ## Fetch PR data
 
-**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with two shell wrappers (`pr_list_all_open` / `pr_list_needs_attention`). Check for it first:
+**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with two shell wrappers (`pr_list_all_open` / `pr_list_needs_attention`). It enriches up to three PRs concurrently, keeps successful rows in search order before display sorting, normalizes leading WIP / DO NOT MERGE / DNM markers to one `WIP: ` prefix, and places WIP rows after non-WIP rows. Check for it first:
 
 ```bash
 type pr_list_all_open
@@ -133,8 +133,8 @@ Each JSON row carries `url repo number title author createdAt updatedAt ageDays 
 
 Classify each PR into exactly one group. Evaluate in this priority order (first match wins):
 
-1. **NOT READY / WIP / DRAFT** — `isDraft` is true OR title contains `WIP` or `DO NOT MERGE` (case-insensitive). Tag titles with `[Draft]` and/or `[WIP]` in the output.
-2. **NEEDS ATTENTION** (🔴) — would otherwise be ready (not draft, no WIP/DNM in title) BUT one or more of:
+1. **NOT READY / WIP / DRAFT** — `isDraft` is true OR title contains `WIP`, `DO NOT MERGE`, or `DNM` (case-insensitive). Display titles normalize leading markers to one `WIP: ` prefix; tag drafts with `[Draft]`.
+2. **NEEDS ATTENTION** (🔴) — would otherwise be ready (not draft, no WIP / DO NOT MERGE / DNM marker in title) BUT one or more of:
    - `CI FAILED` (any required check failed).
    - `reviewDecision == "CHANGES_REQUESTED"` (reviewer left blocking comments).
    - `mergeable == "CONFLICTING"` (merge conflicts).
@@ -154,6 +154,8 @@ a. Repo name (alphabetical).
 b. Dependency order — if PR A must merge before PR B (e.g. B's branch is based on A's branch, or B's description references A's PR number), put A first.
 c. `createdAt` ascending — oldest PR first, newest last.
 
+For the standalone `list_prs` CLI, flattening preserves this oldest-first order for non-WIP rows, then places every WIP / DO NOT MERGE / DNM row last. WIP display titles use one `WIP: ` prefix; meaningful title text stays intact.
+
 ## Work-owed ranking
 
 The five groups above answer _"what state is this PR in?"_. This ranking answers a different question — **"who is this PR waiting on, and how badly does it need me?"** — and it is what a fan-out dispatcher (`/sy-babysit-prs`, `/sy-review-prs`) uses to decide which PRs get serviced first when there are more PRs than concurrent job slots. Rendering never reorders on it; it is a scheduling order, not a display order.
@@ -168,7 +170,7 @@ Score each PR into exactly one tier, highest first (first match wins). The name 
 | **P3** | Stale against base         | `mergeStateStatus == "BEHIND"`, or (on a stack) behind any ancestor, with no other flag. `BEHIND` is only reported where the repo requires branches to be up to date — elsewhere compare the head against the base directly | A sync fixes it, and it turns into P2 if left                                                                                                 |
 | **P4** | Bot nits only              | Unresolved threads, every one of them opened by a `Bot` (`author.__typename`), no human blocker                                                                                                                             | Real work, low stakes, no human waiting                                                                                                       |
 | **P5** | Waiting on someone else    | Green and approved awaiting merge, awaiting first review, any check still unfinished (running, queued, or stalled), or held by a non-blocking human approval gate (`/sy-babysit-pr` Step 3)                                 | Nothing to do until another party moves; a pass here mostly re-reads                                                                          |
-| **P6** | Nothing owed               | Draft, `WIP` / `DO NOT MERGE` title — every pass is a documented skip                                                                                                                                                       | Cheapest possible pass; safe to service last                                                                                                  |
+| **P6** | Nothing owed               | Draft, `WIP` / `DO NOT MERGE` / `DNM` title — every pass is a documented skip                                                                                                                                               | Cheapest possible pass; safe to service last                                                                                                  |
 
 **Ties break on oldest `updatedAt`** — within a tier, the PR that has gone longest without anyone touching it goes first. That is the one most at risk of being forgotten, which is the failure this ranking exists to prevent.
 
@@ -296,7 +298,7 @@ https://github.com/owner/repo-c/pull/789
 
 The short description line is: `#<number> [<owner/repo>] <title> — <color emoji> <status>`. On a mixed-author list, insert the author after the repo: `#<number> [<owner/repo>] @<author> — <title> — <color emoji> <status>`. Strip a leading `[<repo>] ` prefix from `<title>` when it matches the repo already printed on that line — the repo is its own field, so keeping it in the title prints it twice.
 
-`<color emoji>` and `<status>` use the same vocabulary and the same roll-up rule as the `pingpong` Status cell — 🔴 for CI failed / changes requested / merge conflict, 🟡 for build running or awaiting review, 🟢 only when CI passed **and** approved **and** no conflict. `<status>` is the component tokens that justify the color, `·`-separated on one line: `CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`. Print every token that applies, in that fixed order, so a red row says which of the three reds it is. For NOT READY / WIP / DRAFT, prepend tags `[Draft]` / `[WIP]` to the title.
+`<color emoji>` and `<status>` use the same vocabulary and the same roll-up rule as the `pingpong` Status cell — 🔴 for CI failed / changes requested / merge conflict, 🟡 for build running or awaiting review, 🟢 only when CI passed **and** approved **and** no conflict. `<status>` is the component tokens that justify the color, `·`-separated on one line: `CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`. Print every token that applies, in that fixed order, so a red row says which of the three reds it is. For NOT READY / WIP / DRAFT, display the normalized `WIP: ` title and prepend `[Draft]` when the PR is a draft.
 
 ### Format: `table`
 
@@ -311,7 +313,7 @@ On a mixed-author list, insert an `Author` column immediately after `Repo`, fill
 - **Approvals**: `APPROVED (<n>)` / `CHANGES REQUESTED` / `AWAITING REVIEW`.
 - **Comments**: count of unresolved review threads (`0` if none).
 - **Ready to Merge?**: `🟢 yes` if group 5 (READY TO MERGE), `🟢 yes — <n> open comments` if group 4, otherwise `🔴 no — <blocker>` (CI failed / changes requested / merge conflict) or `🟡 no — <what it waits on>` (build running / awaiting review). Same three colors and the same roll-up rule as `pingpong`: green needs CI passed **and** approved **and** no conflict; red wins over yellow.
-- In the NOT READY / WIP / DRAFT table, prepend `[WIP]` and/or `[Draft]` tags to the Title column.
+- In the NOT READY / WIP / DRAFT table, display the normalized `WIP: ` title and prepend `[Draft]` when the PR is a draft.
 
 ### Format: `links`
 
@@ -350,7 +352,7 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 
 - **Cluster heading**: `### <label> (<n>) — <repo>, <repo>, …`, repos comma-separated in the order their PRs appear. The repo list is the whole point of the heading: it answers "which repos does this feature still need" without reading a single URL. Single-repo clusters (two PRs in the same repo) still print the repo once.
 - **Standalone block**: everything with no partner, under a literal `### Standalone (<n>)` heading, always last, no repo list. Print it even when it holds every PR — an all-standalone list is a real answer, not an error.
-- **PR line**: `- <full URL> — pr<N> — <description> — <color emoji> <status>`. Same four fields in the same order on every line in the render, clustered and standalone alike — no per-block variant to remember, and a line means the same thing wherever it is pasted. `<color emoji>` and `<status>` use the exact vocabulary and roll-up rule as `long` (`CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`, `·`-separated). Prepend `[Draft]` / `[WIP]` before the emoji when they apply.
+- **PR line**: `- <full URL> — pr<N> — <description> — <color emoji> <status>`. Same four fields in the same order on every line in the render, clustered and standalone alike — no per-block variant to remember, and a line means the same thing wherever it is pasted. `<color emoji>` and `<status>` use the exact vocabulary and roll-up rule as `long` (`CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`, `·`-separated). Use the normalized `WIP: ` title and prepend `[Draft]` when they apply.
 - **The URL leads every PR line — always the first field after `- `.** Everything else is a trailing annotation, so a line stays clickable, greppable, and copy-pasteable no matter how many annotations get appended later. Never put the `pr<N>` handle, a status, or a description ahead of the URL.
 - **Every line says what its PR does** — `<description>` is ≤8 words of plain English written from that PR's title and body, never the title pasted verbatim, never the branch name, never a restatement of the status. Without it a reader gets a bare number and a color and has to open every link to triage. Cannot tell from title and body what it does → say the narrowest true thing (`config change in the ingest job`), never invent a purpose.
 - **Inside a cluster, `<description>` is what that PR contributes, not what the feature is** — the `###` heading already said the feature, so repeating it on all three lines burns the one field that could tell them apart. Write the differentiator: `issue refresh tokens on the token endpoint`, not `oauth migration`.
@@ -446,7 +448,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **Line 2 — the group line, always present.** `🌊 slot <N> · <group label> — <≤8-word feature-set description>`. It repeats, per row, the heading the row already sits under, because a row copied into Slack or a ticket loses its heading and then nobody can tell which feature it belonged to. Same slot number the dispatcher assigned that PR — **per row, not per group**, so a cluster dealt across two lanes shows `slot 1` and `slot 2` on the rows that actually differ. Drop the `slot <N> · ` prefix when the ledger has no slot (standalone invocation, no dispatcher). On a `Standalone` row the label is the literal `standalone` and the description is omitted; on a `Slot <N>` group the label is the slot itself, so print `🌊 slot <N>` alone rather than repeating it twice.
 
-  **Line 3 — `@<author> — <TLDR>`:** a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Prepend `[WIP]` / `[Draft]` tags to the TLDR when they apply.
+  **Line 3 — `@<author> — <TLDR>`:** a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Use the normalized `WIP: ` title and prepend `[Draft]` when they apply.
 
   **Line 4 — the delta, always present.** It sits directly under the TLDR because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
 

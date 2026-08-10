@@ -45,7 +45,7 @@ function git(args, options = {}) {
  * @returns {string}
  */
 function sanitizeBranch(branch) {
-  return branch.replace(/[^A-Za-z0-9]+/g, `_`).replace(/^_+|_+$/g, ``);
+  return branch.replace(/[^A-Za-z0-9._-]+/g, `_`).replace(/^[-._]+|[-._]+$/g, ``);
 }
 
 /**

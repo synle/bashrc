@@ -13,9 +13,9 @@
  * WHAT IT DOES
  *   1. Resolves which repos to look at (see SCOPE below).
  *   2. `gh search prs --author=<me> --state=open` to find open PRs.
- *   3. One GraphQL query per PR to enrich it (CI, reviews, threads, conflicts).
+ *   3. One GraphQL query per PR to enrich it (three at a time).
  *   4. Classifies each PR into a group + a 🔴/🟡/🟢 signal.
- *   5. Prints them oldest-first, optionally filtered and colored.
+ *   5. Prints them oldest-first with WIP entries last, optionally filtered and colored.
  *
  * SCOPE (mutually exclusive, in priority order)
  *   - Explicit `owner/repo` or local-path arguments  → exactly those repos.
@@ -60,7 +60,7 @@
  *                                   human approval gates (vs real CI).
  */
 
-const { execSync, spawnSync } = require("child_process");
+const { execSync, spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
@@ -277,6 +277,8 @@ function resolveRepos(opts) {
 const FAILED = [`FAILURE`, `ERROR`, `TIMED_OUT`, `STARTUP_FAILURE`];
 /** Check statuses/states that mean a check is still running. */
 const UNFINISHED = [`QUEUED`, `IN_PROGRESS`, `WAITING`, `PENDING`, `REQUESTED`, `EXPECTED`];
+/** Maximum number of GitHub enrichment processes allowed at once. */
+const MAX_ENRICH_CONCURRENCY = 3;
 
 /** GraphQL: everything needed to classify one PR. */
 const PR_QUERY = `
@@ -401,12 +403,13 @@ function classify(raw) {
   const decision = pr.reviewDecision || ``;
   const conflicted = pr.mergeable === `CONFLICTING`;
   const rawTitle = pr.title || ``;
-  const wip = /(^|[^a-z])(wip|do not merge)([^a-z]|$)/i.test(rawTitle);
   const draft = pr.isDraft === true;
 
   const slug = (pr.repository || {}).nameWithOwner || ``;
   // Strip a leading `[repo]` tag that just repeats this PR's own repo name.
-  const title = rawTitle.replace(/\[([^\]]+)\]\s*/g, (match, inner) => (inner === slug.split(`/`).pop() ? `` : match));
+  let title = rawTitle.replace(/\[([^\]]+)\]\s*/g, (match, inner) => (inner === slug.split(`/`).pop() ? `` : match));
+  const wip = isWipTitle(title);
+  if (wip) title = normalizeWipTitle(title);
 
   const red = failedCheck !== `` || decision === `CHANGES_REQUESTED` || conflicted;
   const green = failedCheck === `` && running === 0 && decision === `APPROVED` && !conflicted;
@@ -463,6 +466,25 @@ function classify(raw) {
   };
 }
 
+/**
+ * Detect WIP markers that make a PR not ready.
+ * @param {string} title
+ * @returns {boolean}
+ */
+function isWipTitle(title) {
+  return /(^|[^a-z])(wip|do not merge|dnm)([^a-z]|$)/i.test(title);
+}
+
+/**
+ * Normalize leading WIP markers without dropping the title's meaningful text.
+ * @param {string} title
+ * @returns {string}
+ */
+function normalizeWipTitle(title) {
+  const body = title.replace(/^(?:\s*(?:\[\s*(?:wip|do not merge|dnm)\s*\]|wip|do not merge|dnm)\s*:?\s*(?:[—–-]\s*)?)+/i, ``).trim();
+  return `WIP: ${body}`;
+}
+
 // ---------------------------------------------------------------------------
 // gh calls.
 // ---------------------------------------------------------------------------
@@ -491,43 +513,63 @@ function searchPrs(author, limit, repos) {
 }
 
 /**
- * Enrich each search hit with a per-PR GraphQL query.
- *
- * NOTE: calls are sequential. `spawnSync` blocks, so true parallelism would
- * mean rewriting this in async `spawn` + a bounded pool — deliberately not done
- * (YAGNI): correctness and readability over speed until a large PR count proves
- * it matters. A progress line keeps long runs from looking hung.
- * @param {Array<{number:number, repository:{nameWithOwner:string}}>} hits
- * @returns {{rows: Row[], unreadable: number}}
+ * Enrich one search hit with a per-PR GraphQL query.
+ * @param {{number:number, repository:{nameWithOwner:string}}} pr
+ * @returns {Promise<string|null>} Raw JSON, or null when GitHub rejects the request.
  */
-function enrich(hits) {
-  const rows = [];
-  let unreadable = 0;
-
-  hits.forEach((pr, idx) => {
-    const [owner, repo] = pr.repository.nameWithOwner.split(`/`);
-    process.stderr.write(`\r>>> enriching ${idx + 1}/${hits.length}`);
-    const res = spawnSync(
+function queryPr(pr) {
+  const [owner, repo] = pr.repository.nameWithOwner.split(`/`);
+  return new Promise((resolve) => {
+    const child = spawn(
       `gh`,
       [`api`, `graphql`, `-f`, `owner=${owner}`, `-f`, `repo=${repo}`, `-F`, `number=${pr.number}`, `-f`, `query=${PR_QUERY}`],
-      { encoding: `utf-8` },
+      { stdio: [`ignore`, `pipe`, `ignore`] },
     );
-    if (res.status !== 0) {
-      unreadable += 1;
-      return;
-    }
-    let row = null;
-    try {
-      row = classify(JSON.parse(res.stdout));
-    } catch {
-      row = null;
-    }
-    if (row) rows.push(row);
-    else unreadable += 1;
+    let stdout = ``;
+    child.stdout.on(`data`, (chunk) => {
+      stdout += chunk;
+    });
+    child.on(`error`, () => resolve(null));
+    child.on(`close`, (status) => resolve(status === 0 ? stdout : null));
   });
+}
+
+/**
+ * Enrich search hits with a bounded pool of per-PR GraphQL queries.
+ * @param {Array<{number:number, repository:{nameWithOwner:string}}>} hits
+ * @returns {Promise<{rows: Row[], unreadable: number}>}
+ */
+async function enrich(hits) {
+  const rows = new Array(hits.length);
+  let unreadable = 0;
+  let nextIndex = 0;
+  let completed = 0;
+
+  const worker = async () => {
+    while (nextIndex < hits.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      const raw = await queryPr(hits[index]);
+      let row = null;
+      if (raw !== null) {
+        try {
+          row = classify(JSON.parse(raw));
+        } catch {
+          row = null;
+        }
+      }
+      if (row) rows[index] = row;
+      else unreadable += 1;
+      completed += 1;
+      process.stderr.write(`\r>>> enriching ${completed}/${hits.length}`);
+    }
+  };
+
+  const workerCount = Math.min(MAX_ENRICH_CONCURRENCY, hits.length);
+  await Promise.all(Array.from({ length: workerCount }, worker));
 
   if (hits.length > 0) process.stderr.write(`\r\x1b[K`); // clear the progress line
-  return { rows, unreadable };
+  return { rows: rows.filter(Boolean), unreadable };
 }
 
 // ---------------------------------------------------------------------------
@@ -570,7 +612,7 @@ function render(rows, opts, color) {
 // Main.
 // ---------------------------------------------------------------------------
 
-function main() {
+async function main() {
   const opts = parseArgs(process.argv.slice(2));
 
   try {
@@ -601,17 +643,17 @@ function main() {
   }
   if (hits.length >= opts.limit) info(`>>> WARNING: hit --limit=${opts.limit}; results may be truncated.`);
 
-  const { rows, unreadable } = enrich(hits);
+  const { rows, unreadable } = await enrich(hits);
 
   // Default view hides the fully-clear group; --all keeps it.
   const filtered = opts.keepReady ? rows : rows.filter((r) => r.group !== `READY TO MERGE`);
-  filtered.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  filtered.sort((a, b) => Number(a.isWip) - Number(b.isWip) || a.createdAt.localeCompare(b.createdAt));
 
   const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && !opts.asJson && !opts.linksOnly;
   render(filtered, opts, color);
 
   info(
-    `>>> ${rows.length} open · ${filtered.length} listed · oldest first${unreadable > 0 ? ` · ${unreadable} PR(s) could not be fetched` : ``}`,
+    `>>> ${rows.length} open · ${filtered.length} listed · oldest first, WIP last${unreadable > 0 ? ` · ${unreadable} PR(s) could not be fetched` : ``}`,
   );
 }
 

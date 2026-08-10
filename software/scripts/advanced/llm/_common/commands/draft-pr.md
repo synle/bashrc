@@ -33,6 +33,7 @@
 7. Push the branch if needed: `git push -u origin <branch>`
 8. Create the PR (regular, NOT draft) with the file-backed body: `gh pr create --base "$DEF" --title "WIP: DO NOT MERGE — [<repo>] ..." --body-file /tmp/pr-body.md`. **`--base` is always passed explicitly and is always the default branch** — never another feature branch or another open PR's head. Never use `--body` or interpolate body contents into this command.
 9. Return the PR URL.
+9a. **Create the durable PR journal.** Resolve the head branch from the created PR, call `worktree_create --path-only <head-branch>`, and use that exact canonical path to create or append the sibling file `pr<number>-<sanitized-branch>.md` under `$HOME/.worktrees/<owner>/<repo>/`. Record the PR URL, branch, WIP request summary, body-file result, and creation timestamp. This journal persists across runs; it is not the temporary body file.
 10. Ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
 - If yes: run `/sy-babysit-pr` with the new PR URL.
@@ -41,7 +42,7 @@
 ## Rules
 
 - Always create as a **regular PR** (never `--draft`) so CI runs immediately.
-- **PR body always comes from a reviewed file.** Use the file-editing tool to create the body file, pass it with `--body-file`, and clean it only after successful PR creation. Never use inline `--body`, shell interpolation, or shell heredocs for Markdown bodies.
+- **PR body always comes from a reviewed file.** Use the file-editing tool to create the body file, pass it with `--body-file`, capture the result, and delete it immediately after the request whether creation succeeds or fails. Never use inline `--body`, shell interpolation, or shell heredocs for Markdown bodies. Follow the shared temporary-file rule for every later comment, reply, review, or API payload.
 - **Never open a stacked PR.** `--base` is always the repo's default branch, passed explicitly, never another feature branch or another open PR's head. A branch whose diff carries a sibling's commits is a stack in the making — stop and re-cut it (Step 4a); never retarget `--base` to make the diff look right. If the work cannot be split into pieces that each stand alone against the default branch, ship it as **one** PR. See the "Every PR branches off the default branch" and "Split by slice, never by layer" rules.
 - Always use the title prefix `WIP: DO NOT MERGE —` followed by `[<repo>] ` and a concise description.
 - **Sibling PRs collide on files, not just on bases (Step 4b).** The no-stack pre-flight only catches a shared _ancestor_; two perfectly independent PRs editing the same file still conflict. A WIP is the cheapest possible moment to fix that, since nothing has been reviewed yet and reshaping costs nothing — check the file lists against your other open PRs and design the overlap out per the "Make slices disjoint with new files, not with discipline" rule. Advisory, never a blocker.

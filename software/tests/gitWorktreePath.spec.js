@@ -144,27 +144,27 @@ describe("git worktree layout", () => {
 
     it.each([
       ["main", "main"],
-      ["syle/sw-cache-assets", "syle_sw_cache_assets"],
-      ["release/v1.0", "release_v1_0"],
-      ["feature/JIRA-123_fix~weird chars!", "feature_JIRA_123_fix_weird_chars"],
+      ["syle/sw-cache-assets", "syle_sw-cache-assets"],
+      ["release/v1.0", "release_v1.0"],
+      ["feature/JIRA-123_fix~weird chars!", "feature_JIRA-123_fix_weird_chars"],
       // runs of replaced characters collapse instead of stacking up underscores
       ["a///b", "a_b"],
       ["spaced   out", "spaced_out"],
       // leading and trailing separators are trimmed so the folder never starts with a dot
       [".hidden.", "hidden"],
       ["_lead_trail_", "lead_trail"],
-      ["unicode-caf\u00e9-\u00fc", "unicode_caf"],
+      ["unicode-caf\u00e9-\u00fc", "unicode-caf"],
       ["409", "409"],
-      ["pr-409", "pr_409"],
+      ["pr-409", "pr-409"],
     ])("should encode %s as %s", (name, slot) => {
       const context = makeRepo(`slot-${slot}`, "git@github.com:acme/widget-store.git");
       expect(worktreePath(context, name)).toBe(path.join(context.home, ".worktrees", "acme", "widget-store", slot));
     });
 
-    it("should keep a branch literally named pr-409 from colliding with PR 409", () => {
+    it("should preserve safe hyphens in branch leaves", () => {
       const context = makeRepo("collision", "git@github.com:acme/widget-store.git");
-      expect(worktreePath(context, "pr-409")).toContain(path.join(".worktrees", "acme", "widget-store", "pr_409"));
-      expect(worktreePath(context, "feature/pr-409")).toContain(path.join(".worktrees", "acme", "widget-store", "feature_pr_409"));
+      expect(worktreePath(context, "pr-409")).toContain(path.join(".worktrees", "acme", "widget-store", "pr-409"));
+      expect(worktreePath(context, "feature/pr-409")).toContain(path.join(".worktrees", "acme", "widget-store", "feature_pr-409"));
     });
 
     it("should keep the repo name out of the leaf folder", () => {
@@ -261,7 +261,7 @@ describe("git worktree layout", () => {
       const result = runGit(["create-worktree", "pr-409"], context);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(path.basename(result.stdout)).toBe("pr_409");
+      expect(path.basename(result.stdout)).toBe("pr-409");
     });
 
     it("should not hard-reset a branch that still holds unpushed commits", () => {
