@@ -7,9 +7,9 @@
  * stay untouched.
  */
 
-import { spawnSync } from "child_process";
-import fs from "fs";
-import path from "path";
+const { spawnSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
 /** @type {number} Maximum directory depth below the current working folder. */
 const MAX_DEPTH = 3;

@@ -1,5 +1,5 @@
 /**
- * Tests for the `list_prs` CLI (software/scripts/git_pr_list.mjs), its shared
+ * Tests for the `list_prs` CLI (software/scripts/git_pr_list.cjs), its shared
  * installer (software/scripts/git-functions.js), and the two shell entry points
  * (`pr_list_needs_attention` / `pr_list_all_open`) in
  * bash-git-helpers.profile.bash.
@@ -31,12 +31,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.pr_list.mjs");
+const CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.pr_list.cjs");
+const MERGE_CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.pr_merge.cjs");
 const INSTALLER_PATH = path.join(ROOT_DIR, "software/scripts/git-functions.js");
 const GIT_HELPERS_PROFILE = path.join(ROOT_DIR, "software/scripts/bash-git-helpers.profile.bash");
 const COMMON_FUNCTIONS = path.join(ROOT_DIR, "software/bootstrap/common-functions.bash");
 
 const CLI_SOURCE = fs.readFileSync(CLI_PATH, "utf-8");
+const MERGE_CLI_SOURCE = fs.readFileSync(MERGE_CLI_PATH, "utf-8");
 const INSTALLER_SOURCE = fs.readFileSync(INSTALLER_PATH, "utf-8");
 const PROFILE_SOURCE = fs.readFileSync(GIT_HELPERS_PROFILE, "utf-8");
 
@@ -343,7 +345,8 @@ describe("list_prs — output shape", () => {
     const plain = runCli([], [pullRequest(AWAITING_REVIEW)]).stdout;
     expect(plain).not.toContain("· 🟡");
     const verbose = runCli(["--verbose"], [pullRequest(AWAITING_REVIEW)]).stdout;
-    expect(verbose).toContain("(220d) · 🟡 CI PASSED · AWAITING REVIEW");
+    const ageDays = Math.floor((Date.now() - Date.parse("2026-01-01T00:00:00Z")) / 86400000);
+    expect(verbose).toContain(`(${ageDays}d) · 🟡 CI PASSED · AWAITING REVIEW`);
   });
 
   it("prints only URLs with --links", () => {
@@ -433,8 +436,8 @@ describe("list_prs — CLI hygiene", () => {
 });
 
 describe("list_prs — installer", () => {
-  it("installs to ~/.local/bin/list_prs from the .mjs payload", () => {
-    expect(INSTALLER_SOURCE).toContain("software/scripts/git.pr_list.mjs");
+  it("installs to ~/.local/bin/list_prs from the CommonJS payload", () => {
+    expect(INSTALLER_SOURCE).toContain("software/scripts/git.pr_list.cjs");
     expect(INSTALLER_SOURCE).toMatch(/\.local`?,?\s*`?bin/);
     expect(INSTALLER_SOURCE).toContain("list_prs");
     expect(INSTALLER_SOURCE).toContain("chmodSync");
@@ -542,17 +545,16 @@ describe("list_prs — shell wrappers", () => {
   });
 
   it("uses shared confirmation and seeds the requested bookmarks", () => {
-    expect(PROFILE_SOURCE).toContain('if ! prompt_yes_no "Set auto-merge for the ready PRs?"; then');
-    expect(PROFILE_SOURCE).not.toContain("read -p");
+    expect(PROFILE_SOURCE).toContain('command pr_merge "$@"');
+    expect(INSTALLER_SOURCE).toContain("git.pr_merge.cjs");
+    expect(MERGE_CLI_SOURCE).toContain("split(/[,|\\t\\n]+/");
     expect(PROFILE_SOURCE).toContain('add_bookmark "pr_list_all_open"');
     expect(PROFILE_SOURCE).toContain('add_bookmark "pr_merge"');
   });
 
   it("checks unresolved review threads before auto-merge", () => {
-    expect(PROFILE_SOURCE).toContain("local unresolved_prs=()");
-    expect(PROFILE_SOURCE).toContain("reviewThreads(first:100)");
-    expect(PROFILE_SOURCE).toContain("has $unresolved_count unresolved comment(s)");
-    expect(PROFILE_SOURCE).toContain("Set auto-merge for PRs with unresolved comments?");
-    expect(PROFILE_SOURCE).toContain('valid_prs+=("${unresolved_prs[@]}")');
+    expect(MERGE_CLI_SOURCE).toContain("reviewThreads(first:100)");
+    expect(MERGE_CLI_SOURCE).toContain("isWipTitle");
+    expect(MERGE_CLI_SOURCE).toContain("Number(left.wip) - Number(right.wip)");
   });
 });

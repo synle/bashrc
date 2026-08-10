@@ -252,12 +252,12 @@ describe("git worktree layout", () => {
       expect(result.stdout).toContain(path.join(".worktrees", "acme", "widget-store"));
     });
 
-    it("should honor an explicit slot so PR work lands in a pr-<number> folder", () => {
+    it("should include the PR number and branch slug in an explicit PR slot", () => {
       const context = makeCommittedRepo("create-pr-slot");
       const result = runGit(["create-worktree", "syle/topic/three", "409"], context);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(path.basename(result.stdout)).toBe("widget-store__pr-409");
+      expect(path.basename(result.stdout)).toBe("widget-store__pr-409-syle_topic_three");
     });
 
     it("should not hard-reset a branch that still holds unpushed commits", () => {

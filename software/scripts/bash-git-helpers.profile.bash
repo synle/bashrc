@@ -41,14 +41,86 @@ function repo() {
   open "$remote_url"
 }
 
-# Opens the PR for the current branch in the browser (alternative: gh pr view --web)
+# Resolve a PR reference to its canonical GitHub pull URL.
+function _normalize_pr_url() {
+  local input="${1:-}" repo_folder="${2:-}" pr_ref="" remote_url="" repo_slug="" number="" result=""
+
+  case "$input" in
+  https://github.com/*/pull/[0-9]*)
+    printf '%s\n' "$input"
+    return 0
+    ;;
+  */pull/[0-9]*)
+    printf 'https://github.com/%s\n' "$input"
+    return 0
+    ;;
+  esac
+
+  if [ -d "$input" ]; then
+    repo_folder="$input"
+    pr_ref="${2:-}"
+  elif [ -n "$repo_folder" ] && [ -d "$repo_folder" ]; then
+    pr_ref="$input"
+  elif [[ "$input" =~ ^([^/]+/[^/]+)/pull/([0-9]+)$ ]]; then
+    printf 'https://github.com/%s\n' "$input"
+    return 0
+  elif [[ "$input" =~ ^([^/]+/[^/]+)#([0-9]+)$ ]]; then
+    repo_slug="${BASH_REMATCH[1]}"
+    number="${BASH_REMATCH[2]}"
+    result=$(gh pr view "$number" --repo "$repo_slug" --json url --jq .url 2> /dev/null) || return 1
+    printf '%s\n' "$result"
+    return 0
+  elif [[ "$input" =~ ^([^#]+)#([0-9]+)$ ]]; then
+    repo_slug="${BASH_REMATCH[1]}"
+    number="${BASH_REMATCH[2]}"
+    result=$(gh api -X GET search/issues -f q="is:pr repo:$repo_slug number:$number" --jq '.items[0].html_url' 2> /dev/null) || return 1
+    [ -n "$result" ] || return 1
+    printf '%s\n' "$result"
+    return 0
+  else
+    echo "pr: invalid reference '$input'" >&2
+    return 1
+  fi
+
+  remote_url=$(git -C "$repo_folder" remote get-url origin 2> /dev/null) || return 1
+  repo_slug=$(echo "$remote_url" | sed 's|ssh://[^@]*@github.com/||;s|git@github.com:|https://github.com/|;s|https://github.com/||;s|\.git$||')
+  repo_slug=$(echo "$repo_slug" | sed 's|.*/\([^/]*\)/\([^/]*\)$|\1/\2|')
+  case "$repo_slug" in
+  */*) ;;
+  *)
+    echo "pr: could not resolve GitHub owner/repo from '$remote_url'" >&2
+    return 1
+    ;;
+  esac
+
+  [ -n "$pr_ref" ] || pr_ref=$(git -C "$repo_folder" branch --show-current 2> /dev/null)
+  [ -n "$pr_ref" ] || {
+    echo "pr: repository has no current branch" >&2
+    return 1
+  }
+  gh pr view "$pr_ref" --repo "$repo_slug" --json url --jq .url 2> /dev/null
+}
+
+# Open the current branch PR, or normalize an explicit PR reference.
 function pr() {
   if is_help_arg "${1:-}"; then
-    echo "pr: open the pull request for the current branch
-  Usage: pr
+    echo "pr: open or normalize a pull request reference
+  Usage: pr [url|owner/repo/pull/N|owner/repo#N|repo#N|repo-folder [N]]
   Examples:
-    pr"
+    pr
+    pr https://github.com/acme/api/pull/123
+    pr acme/api#123
+    pr api#123
+    pr /work/api 123"
     return 1
+  fi
+
+  if [ -n "${1:-}" ]; then
+    _normalize_pr_url "$@" || {
+      echo "pr: could not resolve '$1' to a pull request" >&2
+      return 1
+    }
+    return 0
   fi
 
   if type -P gh &> /dev/null; then
@@ -354,10 +426,10 @@ function git_create_worktree() {
   Notes:
     - <owner> and <repo> come from the origin remote, never from the folder name
     - <slot> defaults to branch-<branch>; every character outside [A-Za-z0-9._-] becomes '_'
-    - pass a PR number as <slot> to get <repo>__pr-<number> instead
+    - pass a PR number as <slot> to get <repo>__pr-<number>-<branch-slug>
     - reuses a linked worktree already on <branch>, and never the primary checkout
     - falls back to a detached worktree when <branch> is checked out in the primary checkout
-    - print the path without creating anything: git worktree-path <branch>
+    - print the path without creating anything: git worktree-path <branch> [<pr-number>]
     - remove merged/gone worktrees later with: git clean-worktree"
     return 1
   fi
@@ -752,114 +824,23 @@ function pr_list_all_open() {
   list_prs --all "$@"
 }
 
-# pr_merge: set eligible pull requests to auto-merge
+# pr_merge: validate pull-request URLs, sort WIP last, and enable auto-merge
 function pr_merge() {
-  if [ $# -eq 0 ]; then
-    echo "Usage: pr_merge <url1> [url2 ...]" >&2
+  if is_help_arg "${1:-}"; then
+    echo "pr_merge: validate pull-request URLs, sort WIP last, and enable auto-merge
+  Usage: pr_merge <url1[,url2...]> [url2 ...]
+  Separators: comma, tab, pipe, newline
+  Examples:
+    pr_merge github.com/acme/api/pull/123, github.com/acme/api/pull/124
+    pr_merge 'github.com/acme/api/pull/123
+github.com/acme/api/pull/124'"
     return 1
   fi
-
-  local valid_prs=()
-  local unresolved_prs=()
-  local invalid_count=0
-  local failed_count=0
-
-  echo "🔎 Scanning pull requests..."
-  for url in "$@"; do
-    [[ "$url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]] || {
-      echo "❌ Invalid URL: $url"
-      ((invalid_count++))
-      continue
-    }
-
-    local repo="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}" pr="${BASH_REMATCH[3]}"
-    local owner="${BASH_REMATCH[1]}" name="${BASH_REMATCH[2]}"
-    local pr_data
-    pr_data=$(gh api graphql \
-      -F owner="$owner" \
-      -F name="$name" \
-      -F number="$pr" \
-      -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){state reviewThreads(first:100){nodes{isResolved}}}}}' \
-      --jq '.data.repository.pullRequest | [.state, ([.reviewThreads.nodes[]? | select(.isResolved == false)] | length)] | @tsv' \
-      2> /dev/null)
-
-    local state unresolved_count
-    IFS="$(printf '\t')" read -r state unresolved_count <<< "$pr_data"
-
-    if [[ -z "$state" ]]; then
-      echo "⚠️ PR #$pr in $repo not found"
-      ((invalid_count++))
-    elif [[ "$state" == "MERGED" ]]; then
-      echo "✅ PR #$pr in $repo already merged"
-      ((invalid_count++))
-    elif [[ "$state" == "CLOSED" ]]; then
-      echo "🚫 PR #$pr in $repo closed"
-      ((invalid_count++))
-    elif [[ -z "$unresolved_count" ]]; then
-      echo "❌ Could not inspect review threads for PR #$pr in $repo"
-      ((invalid_count++))
-    else
-      local strategy
-      strategy=$(gh repo view "$repo" --json squashMergeAllowed,rebaseMergeAllowed,mergeCommitAllowed --jq '
-        if .squashMergeAllowed then "--squash"
-        elif .rebaseMergeAllowed then "--rebase"
-        elif .mergeCommitAllowed then "--merge"
-        else empty end
-      ' 2> /dev/null)
-
-      if [[ -z "$strategy" ]]; then
-        echo "❌ No allowed merge strategy for $repo (PR #$pr)"
-        ((invalid_count++))
-      elif [ "$unresolved_count" -gt 0 ]; then
-        echo "💬 PR #$pr in $repo has $unresolved_count unresolved comment(s)"
-        unresolved_prs+=("$pr|$repo|$strategy|$url")
-      else
-        echo "🚀 PR #$pr in $repo ready ($strategy)"
-        valid_prs+=("$pr|$repo|$strategy|$url")
-      fi
-    fi
-  done
-
-  if [ ${#unresolved_prs[@]} -gt 0 ]; then
-    echo -e "\n⚠️ Found ${#unresolved_prs[@]} PR(s) with unresolved comments:"
-    for item in "${unresolved_prs[@]}"; do
-      IFS='|' read -r pr repo strategy url <<< "$item"
-      echo "  - PR #$pr in $repo ($url)"
-    done
-
-    if prompt_yes_no "Set auto-merge for PRs with unresolved comments?"; then
-      valid_prs+=("${unresolved_prs[@]}")
-    fi
-  fi
-
-  if [ ${#valid_prs[@]} -eq 0 ]; then
-    echo -e "\nℹ️ No pull requests ready to merge."
-    return 0
-  fi
-
-  echo -e "\nFound ${#valid_prs[@]} ready PR(s) and $invalid_count skipped/invalid item(s)."
-  if ! prompt_yes_no "Set auto-merge for the ready PRs?"; then
-    echo "⏭️ Aborted."
-    return 0
-  fi
-
-  echo "🚀 Applying auto-merge..."
-  for item in "${valid_prs[@]}"; do
-    IFS='|' read -r pr repo strategy url <<< "$item"
-    echo "➡️ PR #$pr in $repo ($strategy)"
-    if gh pr merge "$pr" --auto "$strategy" -R "$repo"; then
-      echo "✅ Auto-merge enabled for PR #$pr in $repo"
-    else
-      echo "❌ Failed to enable auto-merge for PR #$pr in $repo" >&2
-      ((failed_count++))
-    fi
-  done
-
-  if [ "$failed_count" -gt 0 ]; then
-    echo "⚠️ Completed with $failed_count failed item(s)." >&2
+  if ! type -P pr_merge > /dev/null 2>&1; then
+    echo "pr_merge: command is not installed — run: bash run.sh --files=git-functions.js" >&2
     return 1
   fi
-  echo "✅ Auto-merge enabled for all ready pull requests."
+  command pr_merge "$@"
 }
 
 if type -t add_bookmark > /dev/null 2>&1; then

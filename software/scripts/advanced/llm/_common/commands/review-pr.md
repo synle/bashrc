@@ -6,6 +6,10 @@
 
 Argument: $ARGUMENTS (optional — a PR URL or PR number. If empty, use the current branch's PR. A slot driver holding several PRs may pass `pass=single` — see the Step 10 loop gate.)
 
+## Execution mode
+
+Background agent is default. Dispatch one self-contained background agent with the resolved PR URL and return its handle immediately; the agent owns all 3+ passes, the 30-minute cadence, GitHub writes, and final report. Explicit foreground signals are `foreground`, `fg`, `inline`, `blocking`, `synchronous`, `sync`, or `wait`; strip that token, then run this same flow inline. Mode changes only execution placement — keep PR resolution, skip rules, review de-duplication, verdict bias, worktree reuse, and pass order unchanged.
+
 ## Steps
 
 1. **Determine which PR to review:**

@@ -60,9 +60,9 @@
  *                                   human approval gates (vs real CI).
  */
 
-import { execSync, spawnSync } from "child_process";
-import fs from "fs";
-import path from "path";
+const { execSync, spawnSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
 // ---------------------------------------------------------------------------
 // Small logging helpers. STDOUT is reserved for PR data (so it can be piped);

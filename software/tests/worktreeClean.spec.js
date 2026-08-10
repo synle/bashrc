@@ -10,7 +10,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.worktree_clean.mjs");
+const CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.worktree_clean.cjs");
 const INSTALLER_PATH = path.join(ROOT_DIR, "software/scripts/git-functions.js");
 const CLI_SOURCE = fs.readFileSync(CLI_PATH, "utf-8");
 const INSTALLER_SOURCE = fs.readFileSync(INSTALLER_PATH, "utf-8");
@@ -166,8 +166,8 @@ describe("worktree_clean", () => {
   it("keeps executable payload and installer syntax valid", () => {
     expect(CLI_SOURCE.startsWith("#!/usr/bin/env node")).toBe(true);
     execFileSync(process.execPath, ["--check", CLI_PATH], { stdio: "ignore" });
-    expect(INSTALLER_SOURCE).toContain(`software/scripts/git.pr_list.mjs`);
-    expect(INSTALLER_SOURCE).toContain(`software/scripts/git.worktree_clean.mjs`);
+    expect(INSTALLER_SOURCE).toContain(`software/scripts/git.pr_list.cjs`);
+    expect(INSTALLER_SOURCE).toContain(`software/scripts/git.worktree_clean.cjs`);
     expect(INSTALLER_SOURCE).toContain(`list_prs`);
     expect(INSTALLER_SOURCE).toContain(`worktree_clean`);
     expect(INSTALLER_SOURCE).toMatch(/async function doWork\(\)/);

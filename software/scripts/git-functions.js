@@ -1,15 +1,17 @@
 /**
  * Installs the standalone Git command-line functions.
  *
- * Payloads use `.mjs` so script discovery does not execute them as setup scripts.
+ * Payloads use `.cjs` so script discovery does not execute them as setup scripts
+ * and older Node runtimes can execute their CommonJS `require` calls.
  * This installer copies each payload to `~/.local/bin`, where it becomes an
  * executable command on PATH.
  */
 
 /** @type {Array<{source: string, command: string}>} Git CLI payloads to install. */
 const GIT_FUNCTION_PAYLOADS = [
-  { source: `software/scripts/git.pr_list.mjs`, command: `list_prs` },
-  { source: `software/scripts/git.worktree_clean.mjs`, command: `worktree_clean` },
+  { source: `software/scripts/git.pr_list.cjs`, command: `list_prs` },
+  { source: `software/scripts/git.worktree_clean.cjs`, command: `worktree_clean` },
+  { source: `software/scripts/git.pr_merge.cjs`, command: `pr_merge` },
 ];
 
 /**

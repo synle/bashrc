@@ -1347,14 +1347,86 @@ function repo() {
   open "$remote_url"
 }
 
-# Opens the PR for the current branch in the browser (alternative: gh pr view --web)
+# Resolve a PR reference to its canonical GitHub pull URL.
+function _normalize_pr_url() {
+  local input="${1:-}" repo_folder="${2:-}" pr_ref="" remote_url="" repo_slug="" number="" result=""
+
+  case "$input" in
+  https://github.com/*/pull/[0-9]*)
+    printf '%s\n' "$input"
+    return 0
+    ;;
+  */pull/[0-9]*)
+    printf 'https://github.com/%s\n' "$input"
+    return 0
+    ;;
+  esac
+
+  if [ -d "$input" ]; then
+    repo_folder="$input"
+    pr_ref="${2:-}"
+  elif [ -n "$repo_folder" ] && [ -d "$repo_folder" ]; then
+    pr_ref="$input"
+  elif [[ "$input" =~ ^([^/]+/[^/]+)/pull/([0-9]+)$ ]]; then
+    printf 'https://github.com/%s\n' "$input"
+    return 0
+  elif [[ "$input" =~ ^([^/]+/[^/]+)#([0-9]+)$ ]]; then
+    repo_slug="${BASH_REMATCH[1]}"
+    number="${BASH_REMATCH[2]}"
+    result=$(gh pr view "$number" --repo "$repo_slug" --json url --jq .url 2> /dev/null) || return 1
+    printf '%s\n' "$result"
+    return 0
+  elif [[ "$input" =~ ^([^#]+)#([0-9]+)$ ]]; then
+    repo_slug="${BASH_REMATCH[1]}"
+    number="${BASH_REMATCH[2]}"
+    result=$(gh api -X GET search/issues -f q="is:pr repo:$repo_slug number:$number" --jq '.items[0].html_url' 2> /dev/null) || return 1
+    [ -n "$result" ] || return 1
+    printf '%s\n' "$result"
+    return 0
+  else
+    echo "pr: invalid reference '$input'" >&2
+    return 1
+  fi
+
+  remote_url=$(git -C "$repo_folder" remote get-url origin 2> /dev/null) || return 1
+  repo_slug=$(echo "$remote_url" | sed 's|ssh://[^@]*@github.com/||;s|git@github.com:|https://github.com/|;s|https://github.com/||;s|\.git$||')
+  repo_slug=$(echo "$repo_slug" | sed 's|.*/\([^/]*\)/\([^/]*\)$|\1/\2|')
+  case "$repo_slug" in
+  */*) ;;
+  *)
+    echo "pr: could not resolve GitHub owner/repo from '$remote_url'" >&2
+    return 1
+    ;;
+  esac
+
+  [ -n "$pr_ref" ] || pr_ref=$(git -C "$repo_folder" branch --show-current 2> /dev/null)
+  [ -n "$pr_ref" ] || {
+    echo "pr: repository has no current branch" >&2
+    return 1
+  }
+  gh pr view "$pr_ref" --repo "$repo_slug" --json url --jq .url 2> /dev/null
+}
+
+# Open the current branch PR, or normalize an explicit PR reference.
 function pr() {
   if is_help_arg "${1:-}"; then
-    echo "pr: open the pull request for the current branch
-  Usage: pr
+    echo "pr: open or normalize a pull request reference
+  Usage: pr [url|owner/repo/pull/N|owner/repo#N|repo#N|repo-folder [N]]
   Examples:
-    pr"
+    pr
+    pr https://github.com/acme/api/pull/123
+    pr acme/api#123
+    pr api#123
+    pr /work/api 123"
     return 1
+  fi
+
+  if [ -n "${1:-}" ]; then
+    _normalize_pr_url "$@" || {
+      echo "pr: could not resolve '$1' to a pull request" >&2
+      return 1
+    }
+    return 0
   fi
 
   if type -P gh &> /dev/null; then
