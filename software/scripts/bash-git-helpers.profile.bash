@@ -407,29 +407,25 @@ function godownload() {
 
 ################################################################################
 # --- Git Worktrees ---
-# Every worktree on this machine lives at exactly one kind of path:
-#   $HOME/.worktrees/<owner>/<repo>/<repo>__<slot>
-# The path is computed by the `git worktree-path` alias in git.gitconfig, and the
-# folder is created by `git create-worktree`. Both are git aliases on purpose: a git
-# alias resolves in ANY shell with no profile sourcing, so scripts, CI, and AI agents
-# running `bash -c` land on the same folder as an interactive shell. This wrapper adds
-# only the human conveniences on top - a copy-pasteable summary and a cd.
+# Every worktree on this machine lives at:
+#   $HOME/.worktrees/<owner>/<repo>/<sanitized-branch>
+# The standalone `worktree_create` command owns path derivation, sanitization,
+# reuse, and recovery. This wrapper adds only human conveniences.
 ################################################################################
 
-# git_create_worktree <branch> [<slot>] - Create or reuse the canonical worktree for a branch, then cd into it
+# git_create_worktree <branch> - Create or reuse the canonical worktree, then cd into it
 function git_create_worktree() {
   if is_help_arg "${1:-}"; then
     echo "git_create_worktree: create or reuse the canonical worktree for a branch, then cd into it
-  Usage: git_create_worktree <branch> [<slot>]
+  Usage: git_create_worktree <branch>
   Layout:
-    \$HOME/.worktrees/<owner>/<repo>/<repo>__<slot>
+    \$HOME/.worktrees/<owner>/<repo>/<sanitized-branch>
   Notes:
     - <owner> and <repo> come from the origin remote, never from the folder name
-    - <slot> defaults to branch-<branch>; every character outside [A-Za-z0-9._-] becomes '_'
-    - pass a PR number as <slot> to get <repo>__pr-<number>-<branch-slug>
+    - every non-alphanumeric branch character becomes '_'
     - reuses a linked worktree already on <branch>, and never the primary checkout
     - falls back to a detached worktree when <branch> is checked out in the primary checkout
-    - print the path without creating anything: git worktree-path <branch> [<pr-number>]
+    - print the path without creating anything: worktree_create --path-only <branch>
     - remove merged/gone worktrees later with: git clean-worktree"
     return 1
   fi
@@ -439,8 +435,13 @@ function git_create_worktree() {
     return 1
   fi
 
+  if ! type -P worktree_create > /dev/null 2>&1; then
+    echo "git_create_worktree: worktree_create is not installed — run: bash run.sh --files=git-functions.js" >&2
+    return 1
+  fi
+
   local target
-  target=$(git create-worktree "$1" "${2:-}") || return 1
+  target=$(command worktree_create "$1") || return 1
 
   print_action_summary "$target"
   cd "$target"

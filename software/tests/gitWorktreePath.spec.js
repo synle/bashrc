@@ -1,11 +1,11 @@
 /**
- * Guards the canonical git worktree layout produced by the `worktree-path` and
- * `create-worktree` aliases in `software/scripts/git.gitconfig`.
+ * Guards the canonical git worktree layout produced by `worktree_create` and
+ * its compatibility aliases in `software/scripts/git.gitconfig`.
  *
  * Worktree paths used to be spelled out by hand in every agent command doc, which is how
  * `~/.worktrees/<owner>/<repo-pr409-stale-clone>` and a full clone dumped straight into the
- * container folder both ended up on a real machine. The aliases are now the single
- * implementation, so this spec runs them for real — a temp repo, a fake origin, a fake
+ * container folder both ended up on a real machine. The CLI is now the single
+ * implementation, so this spec runs it for real — a temp repo, a fake origin, a fake
  * `$HOME` — rather than pattern-matching the config text. Anything that changes the layout,
  * the branch-name encoding, or the primary-checkout guard fails here.
  */
@@ -18,10 +18,12 @@ import { fileURLToPath } from "url";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const GIT_CONFIG_TEMPLATE = path.join(ROOT_DIR, "software/scripts/git.gitconfig");
+const WORKTREE_CREATE_CLI = path.join(ROOT_DIR, "software/scripts/git.worktree_create.cjs");
 const ALIAS_NAMES = ["worktree-path", "create-worktree"];
 
 let sandboxDir = "";
 let aliasConfigPath = "";
+let cliBin = "";
 let repoCounter = 0;
 
 /**
@@ -56,6 +58,7 @@ function runGit(args, { cwd, home }) {
     env: {
       ...process.env,
       HOME: home,
+      PATH: `${cliBin}:${process.env.PATH}`,
       GIT_CONFIG_GLOBAL: aliasConfigPath,
       GIT_CONFIG_SYSTEM: "/dev/null",
       GIT_TERMINAL_PROMPT: "0",
@@ -106,6 +109,10 @@ function worktreePath(context, name) {
 describe("git worktree layout", () => {
   beforeAll(() => {
     sandboxDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "bashrc-worktree-")));
+    cliBin = path.join(sandboxDir, "bin");
+    fs.mkdirSync(cliBin);
+    fs.copyFileSync(WORKTREE_CREATE_CLI, path.join(cliBin, "worktree_create"));
+    fs.chmodSync(path.join(cliBin, "worktree_create"), 0o755);
     aliasConfigPath = writeAliasConfig();
   });
 
@@ -126,53 +133,50 @@ describe("git worktree layout", () => {
       ["https://github.com/acme/widget-store.git/", "acme", "widget-store"],
     ])("should derive owner and repo from the origin remote %s", (remoteUrl, owner, repo) => {
       const context = makeRepo(`remote-${owner}-${repo}`, remoteUrl);
-      expect(worktreePath(context, "topic")).toBe(path.join(context.home, ".worktrees", owner, repo, `${repo}__branch-topic`));
+      expect(worktreePath(context, "topic")).toBe(path.join(context.home, ".worktrees", owner, repo, "topic"));
     });
 
     it("should never take the owner or repo from the folder name", () => {
       // the exact drift the layout exists to prevent: a checkout folder that disagrees with its remote
       const context = makeRepo("misleading-folder-name", "git@github.com:acme/storage-ui.git");
-      expect(worktreePath(context, "topic")).toContain(path.join(".worktrees", "acme", "storage-ui", "storage-ui__"));
+      expect(worktreePath(context, "topic")).toContain(path.join(".worktrees", "acme", "storage-ui"));
     });
 
     it.each([
-      ["main", "branch-main"],
-      ["syle/sw-cache-assets", "branch-syle_sw-cache-assets"],
-      ["release/v1.0", "branch-release_v1.0"],
-      ["feature/JIRA-123_fix~weird chars!", "branch-feature_JIRA-123_fix_weird_chars"],
+      ["main", "main"],
+      ["syle/sw-cache-assets", "syle_sw_cache_assets"],
+      ["release/v1.0", "release_v1_0"],
+      ["feature/JIRA-123_fix~weird chars!", "feature_JIRA_123_fix_weird_chars"],
       // runs of replaced characters collapse instead of stacking up underscores
-      ["a///b", "branch-a_b"],
-      ["spaced   out", "branch-spaced_out"],
+      ["a///b", "a_b"],
+      ["spaced   out", "spaced_out"],
       // leading and trailing separators are trimmed so the folder never starts with a dot
-      [".hidden.", "branch-hidden"],
-      ["_lead_trail_", "branch-lead_trail"],
-      ["unicode-caf\u00e9-\u00fc", "branch-unicode-caf_-"],
-      // a number, with or without the prefix, is a PR slot
-      ["409", "pr-409"],
-      ["pr-409", "pr-409"],
-    ])("should encode %s as the %s slot", (name, slot) => {
+      [".hidden.", "hidden"],
+      ["_lead_trail_", "lead_trail"],
+      ["unicode-caf\u00e9-\u00fc", "unicode_caf"],
+      ["409", "409"],
+      ["pr-409", "pr_409"],
+    ])("should encode %s as %s", (name, slot) => {
       const context = makeRepo(`slot-${slot}`, "git@github.com:acme/widget-store.git");
-      expect(worktreePath(context, name)).toBe(path.join(context.home, ".worktrees", "acme", "widget-store", `widget-store__${slot}`));
+      expect(worktreePath(context, name)).toBe(path.join(context.home, ".worktrees", "acme", "widget-store", slot));
     });
 
     it("should keep a branch literally named pr-409 from colliding with PR 409", () => {
       const context = makeRepo("collision", "git@github.com:acme/widget-store.git");
-      // `pr-409` as a *slot* is the PR; the same text as a *branch* still has to be reachable,
-      // which is what the explicit second argument on create-worktree is for.
-      expect(worktreePath(context, "pr-409")).toContain("widget-store__pr-409");
-      expect(worktreePath(context, "feature/pr-409")).toContain("widget-store__branch-feature_pr-409");
+      expect(worktreePath(context, "pr-409")).toContain(path.join(".worktrees", "acme", "widget-store", "pr_409"));
+      expect(worktreePath(context, "feature/pr-409")).toContain(path.join(".worktrees", "acme", "widget-store", "feature_pr_409"));
     });
 
-    it("should prefix every leaf folder with the repo name", () => {
+    it("should keep the repo name out of the leaf folder", () => {
       const context = makeRepo("leaf-prefix", "git@github.com:acme/widget-store.git");
       for (const name of ["main", "409", "syle/topic"]) {
-        expect(path.basename(worktreePath(context, name)).startsWith("widget-store__")).toBe(true);
+        expect(path.basename(worktreePath(context, name)).startsWith("widget-store")).toBe(false);
       }
     });
 
-    it("should fall back to the current branch when no name is given", () => {
+    it("should resolve the current branch explicitly", () => {
       const context = makeRepo("default-head", "git@github.com:acme/widget-store.git");
-      expect(worktreePath(context)).toContain("widget-store__branch-main");
+      expect(worktreePath(context, "main")).toContain(path.join(".worktrees", "acme", "widget-store", "main"));
     });
 
     it("should never emit a path segment that can escape the container folder", () => {
@@ -224,9 +228,9 @@ describe("git worktree layout", () => {
       const result = runGit(["create-worktree", "syle/topic/one"], context);
 
       expect(result.status, result.stderr).toBe(0);
-      // stdout carries the path and nothing else, so `cd "$(git create-worktree x)"` works
+      // stdout carries the path and nothing else, so `cd "$(worktree_create x)"` works
       expect(result.stdout.split("\n")).toHaveLength(1);
-      expect(result.stdout).toBe(path.join(context.home, ".worktrees", "acme", "widget-store", "widget-store__branch-syle_topic_one"));
+      expect(result.stdout).toBe(path.join(context.home, ".worktrees", "acme", "widget-store", "syle_topic_one"));
       expect(fs.existsSync(result.stdout)).toBe(true);
     });
 
@@ -252,12 +256,12 @@ describe("git worktree layout", () => {
       expect(result.stdout).toContain(path.join(".worktrees", "acme", "widget-store"));
     });
 
-    it("should include the PR number and branch slug in an explicit PR slot", () => {
+    it("should ignore PR semantics and use only the sanitized branch name", () => {
       const context = makeCommittedRepo("create-pr-slot");
-      const result = runGit(["create-worktree", "syle/topic/three", "409"], context);
+      const result = runGit(["create-worktree", "pr-409"], context);
 
       expect(result.status, result.stderr).toBe(0);
-      expect(path.basename(result.stdout)).toBe("widget-store__pr-409-syle_topic_three");
+      expect(path.basename(result.stdout)).toBe("pr_409");
     });
 
     it("should not hard-reset a branch that still holds unpushed commits", () => {
@@ -295,7 +299,7 @@ describe("git worktree layout", () => {
       const result = runGit(["create-worktree"], context);
 
       expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain("usage");
+      expect(result.stderr.toLowerCase()).toContain("usage");
     });
   });
 });

@@ -168,6 +168,7 @@ describe("worktree_clean", () => {
     execFileSync(process.execPath, ["--check", CLI_PATH], { stdio: "ignore" });
     expect(INSTALLER_SOURCE).toContain(`software/scripts/git.pr_list.cjs`);
     expect(INSTALLER_SOURCE).toContain(`software/scripts/git.worktree_clean.cjs`);
+    expect(INSTALLER_SOURCE).toContain(`software/scripts/git.worktree_create.cjs`);
     expect(INSTALLER_SOURCE).toContain(`list_prs`);
     expect(INSTALLER_SOURCE).toContain(`worktree_clean`);
     expect(INSTALLER_SOURCE).toMatch(/async function doWork\(\)/);

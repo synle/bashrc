@@ -70,13 +70,12 @@ git --no-pager log --oneline <last-green-sha>..<first-red-sha>
 In a dedicated worktree, never the primary checkout (see the worktree rules):
 
 ```bash
-WT="$(git worktree-path ci-triage)"   # $HOME/.worktrees/<owner>/<repo>/<repo>__branch-ci-triage
-mkdir -p "$(dirname "$WT")"
-git worktree prune
-git fetch origin && git worktree add --detach "$WT" <first-red-sha>
+WT="$(worktree_create ci-triage)"   # $HOME/.worktrees/<owner>/<repo>/ci_triage
+git fetch origin
+git -C "$WT" reset --hard <first-red-sha>
 ```
 
-A specific SHA is the one case `git create-worktree` does not cover — it takes a branch, not a commit — so compute the path with `git worktree-path` and detach onto the SHA yourself. The layout stays identical either way.
+A specific SHA is the one case `worktree_create` does not cover — it takes a branch, not a commit — so create the branch worktree first, then reset inside that worktree. The layout stays identical either way.
 
 Run the same command the failing CI step ran, matching its environment as closely as the local machine allows (same runtime version, same env vars, `CI=true` — many suites change behavior under it).
 
