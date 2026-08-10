@@ -29,8 +29,9 @@
    - **Template found → the body is that template, filled in** (see the rule named above). This is a WIP, so unfinished sections say `TODO — still wiring up X` rather than being deleted or fabricated, and most checklist boxes correctly stay unticked.
    - **No template → default body:** a `## Summary` section with bullet points and a `## Test plan` section.
    - **Blocked on an earlier wave (Step 4c) → add a `## Blocked on` section**, template or not, listing every PR this one waits for as a full `github.com/<owner>/<repo>/pull/<n>` path with a half-line saying what it provides (`— adds the nullable \`org_id\` column`). Close it with one line stating the consequence: `"CI stays red until these land; this branch does not contain them."` That section is doing three jobs at once — it tells a human why a red WIP is fine, it is the reference that marks this PR non-standalone so automerge stays deferred, and it is what a later pass re-reads to decide the PR can be promoted.
+6a. Write the complete WIP body to an explicit temporary Markdown file with the file-editing tool (for example, `/tmp/pr-body.md`) and review that file. Do not create it with a shell heredoc, shell variable, `echo`, `printf`, or command substitution; do not put body text in the shell command.
 7. Push the branch if needed: `git push -u origin <branch>`
-8. Create the PR (regular, NOT draft): `gh pr create --base "$DEF" --title "WIP: DO NOT MERGE — [<repo>] ..." --body "..."`. **`--base` is always passed explicitly and is always the default branch** — never another feature branch or another open PR's head.
+8. Create the PR (regular, NOT draft) with the file-backed body: `gh pr create --base "$DEF" --title "WIP: DO NOT MERGE — [<repo>] ..." --body-file /tmp/pr-body.md`. **`--base` is always passed explicitly and is always the default branch** — never another feature branch or another open PR's head. Never use `--body` or interpolate body contents into this command.
 9. Return the PR URL.
 10. Ask the user: "Do you want me to babysit this PR until CI passes? (yes/no)"
 
@@ -40,6 +41,7 @@
 ## Rules
 
 - Always create as a **regular PR** (never `--draft`) so CI runs immediately.
+- **PR body always comes from a reviewed file.** Use the file-editing tool to create the body file, pass it with `--body-file`, and clean it only after successful PR creation. Never use inline `--body`, shell interpolation, or shell heredocs for Markdown bodies.
 - **Never open a stacked PR.** `--base` is always the repo's default branch, passed explicitly, never another feature branch or another open PR's head. A branch whose diff carries a sibling's commits is a stack in the making — stop and re-cut it (Step 4a); never retarget `--base` to make the diff look right. If the work cannot be split into pieces that each stand alone against the default branch, ship it as **one** PR. See the "Every PR branches off the default branch" and "Split by slice, never by layer" rules.
 - Always use the title prefix `WIP: DO NOT MERGE —` followed by `[<repo>] ` and a concise description.
 - **Sibling PRs collide on files, not just on bases (Step 4b).** The no-stack pre-flight only catches a shared _ancestor_; two perfectly independent PRs editing the same file still conflict. A WIP is the cheapest possible moment to fix that, since nothing has been reviewed yet and reshaping costs nothing — check the file lists against your other open PRs and design the overlap out per the "Make slices disjoint with new files, not with discipline" rule. Advisory, never a blocker.
