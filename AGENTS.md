@@ -599,7 +599,7 @@ slash commands.
 | `/remove-os`       | Dropping OS support                                                                         |
 | `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it               |
 | `/check`           | Verifying session changes survived a merge/rebase/hook                                      |
-| `/plan-and-commit` | Multi-file change worth recording — writes `~/sy_llm_ai_plans/bashrc/plan-<slug>.{md,diff}` |
+| `/plan-and-commit` | Multi-file change worth recording — writes `~/sy_llm_ai_plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter

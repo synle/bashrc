@@ -201,7 +201,7 @@ One feature routinely needs a PR in several repos — the API change, the client
 **Cluster key — take the first signal that fires, strongest first.** Signals 1–3 are declarations by the author and are trusted alone; 4–5 are inference and need the whole normalized phrase to match, not one shared word.
 
 1. **Branch group slug** — branch is `<username>/<group-slug>/<feature-name>` (three segments, see Branch naming). The middle segment is the key. This is the author saying "these belong together", so it wins outright.
-2. **Plan slug** — the PR body references the same `plan-<slug>.md` / `plan-<slug>.diff` artifact (see Plans & Wrap-Ups). Key is `<slug>`.
+2. **Plan slug** — the PR body references the same `plan-YYYY-MM-DD-<slug>.md` / `plan-YYYY-MM-DD-<slug>.diff` artifact (see Plans & Wrap-Ups). Key is `<slug>` (the feature part, not the date).
 3. **Shared ticket or cross-reference** — both PRs name the same issue / ticket key (`ABC-1234`, `github.com/<owner>/<repo>/issues/<n>`), or one PR's body or title references the other's full PR path. Key is the ticket / issue reference.
 4. **Matching feature branch name** — identical final branch segment across repos (`syle/retry-token-refresh` in three repos). Key is that segment.
 5. **Matching normalized title** — strip the leading `[<repo>] ` prefix, lowercase, drop punctuation and stop words, then require the remaining significant terms to match. Key is the normalized phrase.
