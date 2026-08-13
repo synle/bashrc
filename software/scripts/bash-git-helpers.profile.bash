@@ -728,6 +728,16 @@ alias get_patch='git_patch_create'
 alias patch_apply='git_patch_apply'
 alias apply_patch='git_patch_apply'
 
+# _git_patch_outcome_line: the single closing line `patch` prints, colored so the
+# two outcomes never read alike — green means a patch left this machine, red
+# means one landed on it.
+function _git_patch_outcome_line() {
+  case "${1:-}" in
+    copied) printf '\033[0;32m📋 Latest Patch copied to clipboard\033[0m\n' ;;
+    applied) printf '\033[0;31m🩹 Patch Applied\033[0m\n' ;;
+  esac
+}
+
 # patch: one word for the whole transfer pair — apply when there is something to
 # apply, otherwise cut a fresh patch. This shadows /usr/bin/patch in shells that
 # load the profile; reach the binary with `command patch`.
@@ -746,20 +756,28 @@ function patch() {
     return 1
   fi
 
+  local status
+
   if [ -n "${1:-}" ]; then
     git_patch_apply "$@"
-    return $?
+    status=$?
+    [ "$status" -eq 0 ] && _git_patch_outcome_line applied
+    return "$status"
   fi
 
   local clipboard_status
   _git_patch_apply_clipboard
   clipboard_status=$?
   if [ "$clipboard_status" -ne 2 ]; then
+    [ "$clipboard_status" -eq 0 ] && _git_patch_outcome_line applied
     return "$clipboard_status"
   fi
 
   echo ">>> clipboard holds no patch — creating one from the last commit instead"
   git_patch_create
+  status=$?
+  [ "$status" -eq 0 ] && _git_patch_outcome_line copied
+  return "$status"
 }
 
 ################################################################################
