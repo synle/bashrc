@@ -85,15 +85,38 @@ const OLLAMA_MODEL_CONFIGS = {
 
 /**
  * Per-model configs for known GitHub Copilot models. Keyed by model ID.
- * @type {Record<string, { limit: { context: number, output: number } }>}
+ *
+ * NO `limit` overrides here, deliberately. `limit.context` is not a token budget —
+ * opencode uses it to decide when to compact, so capping a 1M-window model at 64k
+ * fires compaction ~16x more often than needed, and each compaction is a silent LLM
+ * call that reads as a hang. opencode already knows the real windows from its own
+ * model registry (`~/.cache/opencode/models.json`), so these entries carry only the
+ * friendly TUI label (filled in by the auto-name loop below).
+ * @type {Record<string, object>}
  */
 const COPILOT_MODEL_CONFIGS = {
-  "claude-opus-4.7": { limit: LIMIT_LARGE },
-  "claude-opus-4.8": { limit: LIMIT_LARGE },
-  "gpt-5.5": { limit: LIMIT_LARGE },
-  "gpt-5.6-sol": { limit: LIMIT_LARGE },
-  "gpt-5.6-terra": { limit: LIMIT_LARGE },
+  "claude-opus-4.7": {},
+  "claude-opus-4.8": {},
+  "gpt-5.5": {},
+  "gpt-5.6-sol": {},
+  "gpt-5.6-terra": {},
 };
+
+/**
+ * Stream timeouts, in milliseconds, applied to every provider's `options`. Without
+ * these a dead SSE stream waits forever, which is indistinguishable from a hang;
+ * with them the request aborts and `opencode-auto-continue` can retry. 3 minutes is
+ * loose enough for a cold Ollama model load over LAN.
+ * @type {{ chunkTimeout: number, headerTimeout: number }}
+ */
+const PROVIDER_STREAM_TIMEOUTS = { chunkTimeout: 180000, headerTimeout: 60000 };
+
+/**
+ * Model used for cheap side tasks (session titles, summaries, compaction). Keeping
+ * these off the primary model avoids paying Opus latency for bookkeeping calls.
+ * @type {string}
+ */
+const OPENCODE_SMALL_MODEL = "github-copilot/gpt-5.5";
 
 /**
  * Default config for any Ollama model not listed in `OLLAMA_MODEL_CONFIGS`.
@@ -124,16 +147,17 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
       name: item.name,
       options: {
         baseURL: item.baseURL,
+        ...PROVIDER_STREAM_TIMEOUTS,
       },
       models: modelsObject,
     };
   }
 
-  // GitHub Copilot provider: large context/output limits for high-capacity models
-  // (claude-opus-4.6/4.7/4.8, gpt-5.3-codex, gpt-5.5). LIMIT_LARGE overrides the
-  // models.dev registry defaults; the auto-name loop below fills in friendly
-  // TUI labels ("github-copilot / <model>").
+  // GitHub Copilot provider: friendly TUI labels only ("github-copilot / <model>"),
+  // filled in by the auto-name loop below. Context/output limits are deliberately
+  // left to opencode's own model registry — see COPILOT_MODEL_CONFIGS.
   providers["github-copilot"] = {
+    options: { ...PROVIDER_STREAM_TIMEOUTS },
     models: COPILOT_MODEL_CONFIGS,
   };
 
@@ -157,23 +181,29 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     autoupdate: false,
     // Allow all tools, paths, and URLs without prompting — matches the
     // `--allow-dangerously-skip-permissions` (Claude) / `--allow-all` (Copilot)
-    // convention used across the other AI CLI configs in this repo.
-    permission: {
-      "*": "allow",
-    },
-    // Keep more recent conversation turns verbatim during compaction (default: 2)
-    // so the agent has more context about what was just discussed before it gets
-    // summarized. tradeoff: higher token usage per compaction cycle. risk: low
+    // convention used across the other AI CLI configs in this repo. The bare
+    // string is the documented "allow everything" form; the object shape keys on
+    // real tool names (read, edit, bash, …), so `{"*": "allow"}` was a no-op that
+    // silently left the defaults in place.
+    permission: "allow",
+    // Compaction stays on with opencode's default tail_turns. An explicit low
+    // value (we used to pin 4) throws away almost everything on each compaction,
+    // so the model re-reads the same files, refills the window, and compacts
+    // again — a death spiral that reads as a mid-task freeze.
     compaction: {
       auto: true,
-      tail_turns: 4,
     },
     // Allow more tool output lines before truncation (default: 2000) so the
     // agent sees fuller command output before falling back to the saved-to-disk
-    // preview. tradeoff: more tokens consumed by verbose tools. risk: low
+    // preview. `max_bytes` is the real guard: 3000 lines of minified JS is
+    // multi-MB of context. tradeoff: more tokens consumed by verbose tools.
     tool_output: {
       max_lines: 3000,
+      max_bytes: 262144,
     },
+    // Cheap side tasks (titles, summaries, compaction) run here instead of on the
+    // primary model, where compaction latency shows up as an unexplained pause.
+    small_model: OPENCODE_SMALL_MODEL,
     // Enable opencode's experimental batch tool so the agent can fan out
     // parallel tool calls within a single turn (read three files at once,
     // run two greps concurrently, etc.) instead of serializing them. Matches
