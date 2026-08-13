@@ -1,4 +1,4 @@
-# NOTE: DO NOT EDIT THIS SECTION MANUALLY - generated [2026-08-12]
+# AUTO-GENERATED - DO NOT EDIT [2026-08-13]
 # 
 # File Associations for macOS
 # Requires duti: brew install duti
