@@ -747,10 +747,10 @@ function patch() {
   Usage: patch [patch_file]
   Resolution order:
     1. <patch_file>, when given       -> git_patch_apply <patch_file>
-    2. clipboard reads like a diff    -> apply the clipboard
-    3. clipboard empty or not a diff  -> git_patch_create (export the last commit)
+    2. clipboard reads like a diff    -> asks first, then applies it
+    3. declined, empty, or not a diff -> git_patch_create (export the last commit)
   Examples:
-    patch                  apply the clipboard diff, else export the last commit
+    patch                  offer to apply the clipboard diff, else export the last commit
     patch /tmp/fix.patch   apply an existing patch file
   Shadows /usr/bin/patch — reach the binary with 'command patch'."
     return 1
@@ -765,15 +765,21 @@ function patch() {
     return "$status"
   fi
 
-  local clipboard_status
-  _git_patch_apply_clipboard
-  clipboard_status=$?
-  if [ "$clipboard_status" -ne 2 ]; then
-    [ "$clipboard_status" -eq 0 ] && _git_patch_outcome_line applied
-    return "$clipboard_status"
+  # Ask before applying: a clipboard diff is often something you just cut and
+  # want to send, not something to land here. Declining falls through to cutting
+  # a fresh patch, same as an empty clipboard.
+  if _git_patch_clipboard_file; then
+    if prompt_yes_no "Clipboard holds a patch that has not been applied here — apply it now?" Y; then
+      _git_patch_apply_file "$_GIT_PATCH_CLIPBOARD_FILE"
+      status=$?
+      [ "$status" -eq 0 ] && _git_patch_outcome_line applied
+      return "$status"
+    fi
+    echo ">>> leaving the clipboard patch alone — creating one from the last commit instead"
+  else
+    echo ">>> clipboard holds no patch — creating one from the last commit instead"
   fi
 
-  echo ">>> clipboard holds no patch — creating one from the last commit instead"
   git_patch_create
   status=$?
   [ "$status" -eq 0 ] && _git_patch_outcome_line copied
