@@ -1,6 +1,6 @@
 ---
 name: plan-and-commit
-description: Write a plan, execute it, commit the result, and leave behind plan-YYYY-MM-DD-<slug>.md plus plan-YYYY-MM-DD-<slug>.diff in ~/sy_llm_ai_plans/<repo>/. Use for any multi-file or multi-step change where the reasoning is worth recording alongside the code.
+description: Write a plan, execute it, commit the result, and leave behind plan-YYYY-MM-DD-<slug>.md plus plan-YYYY-MM-DD-<slug>.diff in ~/sy_llm_ai/plans/<repo>/. Use for any multi-file or multi-step change where the reasoning is worth recording alongside the code.
 argument-hint: <what you want changed>
 ---
 
@@ -12,14 +12,14 @@ Use this when the change spans multiple files or steps and the reasoning is wort
 
 ## Artifacts
 
-| File                                        | Contents                                                                            |
-| ------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `~/sy_llm_ai_plans/<repo>/plan-YYYY-MM-DD-<slug>.md`   | The plan — TLDR, goal, decisions, per-file change table, risks, validation, wrap-up |
-| `~/sy_llm_ai_plans/<repo>/plan-YYYY-MM-DD-<slug>.diff` | Unified diff of exactly what the commit(s) changed                                  |
+| File                                                   | Contents                                                                            |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `~/sy_llm_ai/plans/<repo>/plan-YYYY-MM-DD-<slug>.md`   | The plan — TLDR, goal, decisions, per-file change table, risks, validation, wrap-up |
+| `~/sy_llm_ai/plans/<repo>/plan-YYYY-MM-DD-<slug>.diff` | Unified diff of exactly what the commit(s) changed                                  |
 
-`<repo>` is the repo name from `git remote get-url origin`, never the folder name (see Repo Identification). `YYYY-MM-DD` is the creation date (`date +%Y-%m-%d`), fixed at first write and never re-dated on later edits, so `ls ~/sy_llm_ai_plans/<repo>/` reads as a date-ordered inventory. `<slug>` is kebab-case, derived from the task's feature name (`plan-2026-08-12-llm-instructions.md`, `plan-2026-08-12-fix-auth-retry.md`); reuse the `<slug>` alone — not the date — as the branch `<group-slug>` if the work spans several branches. An RFC written for the same work uses the parallel name `rfc-YYYY-MM-DD-<slug>.md`, so plan and RFC sort together by date and share the feature slug.
+`<repo>` is the repo name from `git remote get-url origin`, never the folder name (see Repo Identification). `YYYY-MM-DD` is the creation date (`date +%Y-%m-%d`), fixed at first write and never re-dated on later edits, so `ls ~/sy_llm_ai/plans/<repo>/` reads as a date-ordered inventory. `<slug>` is kebab-case, derived from the task's feature name (`plan-2026-08-12-llm-instructions.md`, `plan-2026-08-12-fix-auth-retry.md`); reuse the `<slug>` alone — not the date — as the branch `<group-slug>` if the work spans several branches. An RFC written for the same work uses the parallel name `rfc-YYYY-MM-DD-<slug>.md`, so plan and RFC sort together by date and share the feature slug.
 
-**Artifacts live outside every repo** — `mkdir -p "$HOME/sy_llm_ai_plans/<repo>"` before the first write. Nothing lands in the working tree, so there is no `.gitignore` entry to maintain, nothing to accidentally commit, and no untracked noise in `git status`. Full rationale in the rules file (see Plans & Wrap-Ups). If the user explicitly wants a plan tracked in the repo, copy it in and `git add` it in a clearly-labeled follow-up commit — never silently.
+**Artifacts live outside every repo** — `mkdir -p "$HOME/sy_llm_ai/plans/<repo>"` before the first write. Nothing lands in the working tree, so there is no `.gitignore` entry to maintain, nothing to accidentally commit, and no untracked noise in `git status`. Full rationale in the rules file (see Plans & Wrap-Ups). If the user explicitly wants a plan tracked in the repo, copy it in and `git add` it in a clearly-labeled follow-up commit — never silently.
 
 ## Steps
 
@@ -72,7 +72,7 @@ Work through the plan. If reality diverges — a file isn't where you expected, 
 
 Write `## Wrap-Up` at the bottom of `plan-YYYY-MM-DD-<slug>.md` (see Plans & Wrap-Ups): every file touched (path → one-line what changed), what was added / removed / renamed, every deviation from the plan and why, the validation command and its result, plus follow-ups or known gaps. A reader who never saw the diff should be able to review the change from this section alone.
 
-Then emit the diff — `$PLANS` is `$HOME/sy_llm_ai_plans/<repo>`:
+Then emit the diff — `$PLANS` is `$HOME/sy_llm_ai/plans/<repo>`:
 
 ```bash
 git diff <base-sha>..HEAD > "$PLANS/plan-YYYY-MM-DD-<slug>.diff"
@@ -89,6 +89,6 @@ State: the commit SHA(s), the two artifact paths, the validation command and its
 - **Stop at the commit.** Never `git push`, never `gh pr create`, never merge. Landing the work is a separate, explicit decision — hand off to `/sy-create-pr` if the user wants a PR.
 - **The plan is written before the code, not after.** A plan reverse-engineered from a finished diff is a changelog, not a plan, and skips the review moment in Step 3 that makes this skill worth running.
 - **Plan and diff must agree.** If you deviated during execution, the plan gets updated and the Wrap-Up says so. Verify before reporting.
-- **One task, one slug.** Don't overwrite an existing `~/sy_llm_ai_plans/<repo>/plan-YYYY-MM-DD-<slug>.*` pair from earlier work — pick a distinct slug or ask.
+- **One task, one slug.** Don't overwrite an existing `~/sy_llm_ai/plans/<repo>/plan-YYYY-MM-DD-<slug>.*` pair from earlier work — pick a distinct slug or ask.
 - **Artifacts are prose, not code.** Persona overlays (e.g. Caveman Speak) never apply to `plan-YYYY-MM-DD-<slug>.md` or to commit messages — both are read by humans other than the requester.
 - **Never commit secrets** surfaced while planning. If the diff would contain a credential, stop and report instead.

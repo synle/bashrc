@@ -31,6 +31,8 @@ function loadLlmCommon() {
   /** @type {Record<string, any>} */
   const sandbox = {
     path,
+    // llm-common.js builds ~/sy_llm_ai/* paths from this at top level.
+    BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
     log: () => {},
     is_os_mac: 0,
     readJson: () => ({}),

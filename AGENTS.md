@@ -591,15 +591,15 @@ Load these instead of improvising the workflow. Each is
 OpenCode, and Copilot CLI; `.opencode/commands/<name>.md` symlinks make them `/name`
 slash commands.
 
-| Skill              | Use when                                                                                    |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| `/add-package`     | Adding a CLI tool / package across platforms                                                |
-| `/remove-package`  | Dropping a tool                                                                             |
-| `/add-os`          | Onboarding a new distro / platform                                                          |
-| `/remove-os`       | Dropping OS support                                                                         |
-| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it               |
-| `/check`           | Verifying session changes survived a merge/rebase/hook                                      |
-| `/plan-and-commit` | Multi-file change worth recording — writes `~/sy_llm_ai_plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
+| Skill              | Use when                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `/add-package`     | Adding a CLI tool / package across platforms                                                           |
+| `/remove-package`  | Dropping a tool                                                                                        |
+| `/add-os`          | Onboarding a new distro / platform                                                                     |
+| `/remove-os`       | Dropping OS support                                                                                    |
+| `/run`             | Resolving a script name to its `bash run.sh --files=…` command and running it                          |
+| `/check`           | Verifying session changes survived a merge/rebase/hook                                                 |
+| `/plan-and-commit` | Multi-file change worth recording — writes `~/sy_llm_ai/plans/bashrc/plan-YYYY-MM-DD-<slug>.{md,diff}` |
 
 **One skill = one folder = one `SKILL.md`.** A flat `.claude/skills/<name>.md` is
 invisible to every loader. Folder name is kebab-case and must equal the frontmatter
@@ -641,6 +641,38 @@ for the shared constants beside it: `LLM_COMMAND_SOURCE_FOLDER`, `LLM_SKILL_MARK
 and `readLLMCommandSource()` are read, never re-declared per CLI. A per-CLI file may only
 hold the **shape** difference (filename vs folder, frontmatter vs none) — never _which_
 commands exist. A new CLI SOURCEs `llm-common.js` and iterates the map.
+
+### 13.2 The shared LLM home folder — `~/sy_llm_ai/`
+
+Everything the LLM tooling owns outside a repo checkout lives under one root, created and
+maintained by `deploySharedLLMInstructions()` in `llm-common.js`, which **all four**
+setup scripts call:
+
+| Path                        | Holds                                                                     |
+| --------------------------- | ------------------------------------------------------------------------- |
+| `~/sy_llm_ai/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
+| `~/sy_llm_ai/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
+
+`~/sy_llm_ai_plans/` was the pre-consolidation plans folder. `migrateLegacyLLMPlansFolder()`
+moves it in once and deletes it; `retargetLegacyPlanSymlinks()` then repoints any
+cross-repo plan symlink that still names the old path. Both are idempotent and both run on
+every deploy — delete them only once every machine has migrated.
+
+**The always-loaded block has a hard size budget.** `instructions.md` is deployed verbatim
+into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
+`CLAUDE.md` over **40k chars**. That is why the PR workflow rules live in
+`_common/instructions-pr-workflow.md`, deployed to `~/sy_llm_ai/instructions/pr-workflow.md`
+and referenced from `instructions.md` by a pointer.
+
+- **Reference split files as a backticked path, never as `@path`.** Per Claude Code's
+  memory docs, an `@path` import "is expanded and loaded into context at launch" — it would
+  re-inflate the budget the split exists to protect while still rendering correctly.
+  `software/tests/llmInstructionsSplit.spec.js` fails the build on a bare `@`-import.
+- **Adding a split file is one entry in `LLM_SHARED_INSTRUCTION_FILES` plus a pointer** in
+  `instructions.md`. Same "one registry, never a per-CLI list" rule as the command map —
+  never a per-CLI edit.
+- Keep `instructions.md` under 35k chars (the spec's budget, 5k below the hard limit). When
+  it creeps up, split a section out rather than trimming rules away.
 
 Deploy + verify after any change to the corpus:
 

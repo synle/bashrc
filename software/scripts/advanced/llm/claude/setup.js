@@ -362,5 +362,8 @@ async function doWork() {
   await _doMcpWork(targetDir);
   await _doKeysWork(targetDir);
   await _doCommandsWork(targetDir);
+  // Shared on-demand instruction files must exist before the always-loaded block
+  // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
+  await deploySharedLLMInstructions();
   await _doInstructionsWork(targetDir);
 }

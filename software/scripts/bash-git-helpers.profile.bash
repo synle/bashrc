@@ -733,8 +733,8 @@ alias apply_patch='git_patch_apply'
 # means one landed on it.
 function _git_patch_outcome_line() {
   case "${1:-}" in
-    copied) printf '\033[0;32m📋 Latest Patch copied to clipboard\033[0m\n' ;;
-    applied) printf '\033[0;31m🩹 Patch Applied\033[0m\n' ;;
+  copied) printf '\033[0;32m📋 Latest Patch copied to clipboard\033[0m\n' ;;
+  applied) printf '\033[0;31m🩹 Patch Applied\033[0m\n' ;;
   esac
 }
 

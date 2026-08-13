@@ -396,6 +396,224 @@ async function getAcpAgentInputs() {
   return agents;
 }
 
+// --- Shared LLM Home Folder (one copy of the on-demand instructions, all CLIs) ---
+
+/**
+ * Root for every Sy-managed LLM artifact that lives outside a repo checkout.
+ *
+ * One root with subfolders (instead of a sibling `sy_llm_ai_*` per concern) so a
+ * single `ls ~/sy_llm_ai/` shows everything the LLM tooling owns in the home
+ * directory, and so a new artifact class is a new subfolder rather than a new
+ * top-level name to remember.
+ *
+ * Uses BASE_HOMEDIR_LINUX rather than `os.homedir()` because the latter reads
+ * /etc/passwd and returns `/root` under `sudo -E` on RHEL/Fedora.
+ * @type {string}
+ */
+const LLM_SHARED_ROOT_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy_llm_ai");
+
+/**
+ * On-demand instruction files, referenced by plain (backticked) path from the
+ * always-loaded block rather than imported into it.
+ *
+ * Deliberately NOT a Claude `@path` import: per Claude Code's memory docs,
+ * "imported files are expanded and loaded into context at launch", so an import
+ * would re-inflate the very context budget this split exists to protect. A
+ * backticked path stays literal and is read only when the agent needs it.
+ * @type {string}
+ */
+const LLM_SHARED_INSTRUCTIONS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "instructions");
+
+/**
+ * Plan and RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`), kept
+ * out of repo working trees so they need no `.gitignore` entry and can't be
+ * committed by accident.
+ * @type {string}
+ */
+const LLM_SHARED_PLANS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "plans");
+
+/**
+ * Pre-consolidation plans folder. Migrated into {@link LLM_SHARED_PLANS_FOLDER}
+ * once, then removed. Kept as a named constant so the migration can be deleted
+ * in one place after every machine has run it.
+ * @type {string}
+ */
+const LLM_LEGACY_PLANS_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy_llm_ai_plans");
+
+/**
+ * The single registry of instruction files split out of the always-loaded block.
+ *
+ * Same "one registry, never a per-CLI list" rule as LLM_COMMAND_DEPLOY_MAP: every
+ * CLI's setup.js calls deploySharedLLMInstructions(), which iterates this. Adding
+ * a split file is one entry here plus a pointer in instructions.md — never a
+ * per-CLI edit.
+ *
+ * Key   = target basename under LLM_SHARED_INSTRUCTIONS_FOLDER.
+ * Value = repo-relative source path.
+ * @type {Record<string, string>}
+ */
+const LLM_SHARED_INSTRUCTION_FILES = {
+  "pr-workflow.md": "software/scripts/advanced/llm/_common/instructions-pr-workflow.md",
+};
+
+/**
+ * Moves a pre-consolidation `~/sy_llm_ai_plans/` into `~/sy_llm_ai/plans/` and removes
+ * the old folder. Idempotent and non-destructive: an entry already present at the
+ * destination is left alone and its source kept, so nothing is ever overwritten and
+ * the old folder survives whenever anything was skipped.
+ *
+ * No-ops when the legacy folder is absent, which is the steady state after the first
+ * run on a machine and the only state on a fresh one.
+ *
+ * @returns {Promise<number>} Count of entries moved (0 when there was nothing to do).
+ */
+async function migrateLegacyLLMPlansFolder() {
+  if (!fs.existsSync(LLM_LEGACY_PLANS_FOLDER)) return 0;
+
+  fs.mkdirSync(LLM_SHARED_PLANS_FOLDER, { recursive: true });
+
+  /** @type {string[]} Everything in the legacy folder, dotfiles included. */
+  const entries = fs.readdirSync(LLM_LEGACY_PLANS_FOLDER);
+  /** @type {number} Entries actually relocated. */
+  let moved = 0;
+  /** @type {string[]} Entries left behind because the destination already had them. */
+  const skipped = [];
+
+  for (const entry of entries) {
+    const from = path.join(LLM_LEGACY_PLANS_FOLDER, entry);
+    const to = path.join(LLM_SHARED_PLANS_FOLDER, entry);
+
+    if (fs.existsSync(to)) {
+      skipped.push(entry);
+      continue;
+    }
+
+    try {
+      fs.renameSync(from, to);
+      moved++;
+    } catch (e) {
+      // EXDEV: legacy folder on a different filesystem — copy, then drop the original.
+      try {
+        fs.cpSync(from, to, { recursive: true });
+        fs.rmSync(from, { recursive: true, force: true });
+        moved++;
+      } catch (copyError) {
+        skipped.push(entry);
+        log(`>> plans migration: could not move ${entry}: ${copyError.message}`);
+      }
+    }
+  }
+
+  if (skipped.length === 0) {
+    fs.rmSync(LLM_LEGACY_PLANS_FOLDER, { recursive: true, force: true });
+    log(`>> plans migration: moved ${moved} entries, removed ${LLM_LEGACY_PLANS_FOLDER}`);
+  } else {
+    log(
+      `>> plans migration: moved ${moved}, kept ${LLM_LEGACY_PLANS_FOLDER} (${skipped.length} already at destination: ${skipped.join(", ")})`,
+    );
+  }
+
+  return moved;
+}
+
+/**
+ * Repoints symlinks that still target the pre-consolidation plans folder.
+ *
+ * A plan file symlinked across repos (`tde-tool-ui/plan-x.md` ->
+ * `~/sy_llm_ai_plans/tde-tool-backend/plan-x.md`) keeps its literal target when the
+ * folder is moved, so removing the old folder leaves a dangling link that reads as a
+ * missing plan rather than as a migration bug. Rewrites each absolute legacy target
+ * to the same relative position under the new folder.
+ *
+ * Runs on every deploy rather than only during migration: the machine that already
+ * migrated has no legacy folder left to trigger a migration, but may still be holding
+ * links this pass has to repair. Skips a link whose retargeted destination doesn't
+ * exist, so a genuinely missing file is left visible instead of being silently
+ * repointed at nothing.
+ *
+ * @param {string} [plansFolder] - Folder to scan. Defaults to the shared plans folder.
+ * @param {string} [legacyFolder] - Old folder prefix to rewrite. Defaults to the legacy plans folder.
+ * @returns {number} Count of symlinks retargeted.
+ */
+function retargetLegacyPlanSymlinks(plansFolder = LLM_SHARED_PLANS_FOLDER, legacyFolder = LLM_LEGACY_PLANS_FOLDER) {
+  if (!fs.existsSync(plansFolder)) return 0;
+
+  /** @type {number} Links successfully repointed. */
+  let repaired = 0;
+
+  /** @param {string} folder - Folder to walk, depth-first. */
+  const walk = (folder) => {
+    for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+      const full = path.join(folder, entry.name);
+
+      if (entry.isSymbolicLink()) {
+        /** @type {string} The link's literal target, which may be absolute or relative. */
+        const target = fs.readlinkSync(full);
+        if (!target.startsWith(legacyFolder)) continue;
+
+        /** @type {string} Same position, rebased onto the new plans folder. */
+        const retargeted = path.join(plansFolder, path.relative(legacyFolder, target));
+        if (!fs.existsSync(retargeted)) {
+          log(`>> plans migration: left dangling link ${full} (target missing: ${retargeted})`);
+          continue;
+        }
+
+        fs.unlinkSync(full);
+        fs.symlinkSync(retargeted, full);
+        repaired++;
+      } else if (entry.isDirectory()) {
+        walk(full);
+      }
+    }
+  };
+
+  walk(plansFolder);
+
+  if (repaired > 0) log(`>> plans migration: retargeted ${repaired} symlink(s) onto ${plansFolder}`);
+
+  return repaired;
+}
+
+/**
+ * Creates the shared LLM home folders, migrates any legacy plans folder, and writes
+ * every file in LLM_SHARED_INSTRUCTION_FILES into `~/sy_llm_ai/instructions/`.
+ *
+ * Called by all four setup scripts. Writing the same bytes from each is intentional
+ * and safe — writeText skips when content is unchanged, so whichever CLI runs first
+ * does the work and the rest are no-ops. That keeps every CLI independently able to
+ * repair the shared folder without one of them being a required prerequisite.
+ *
+ * @returns {Promise<void>}
+ */
+async function deploySharedLLMInstructions() {
+  fs.mkdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER, { recursive: true });
+  fs.mkdirSync(LLM_SHARED_PLANS_FOLDER, { recursive: true });
+
+  await migrateLegacyLLMPlansFolder();
+  retargetLegacyPlanSymlinks();
+
+  for (const [targetName, sourcePath] of Object.entries(LLM_SHARED_INSTRUCTION_FILES)) {
+    /** @type {string} Raw split-instruction content from the repo source of truth. */
+    const content = (await readText`${sourcePath}`).trim();
+
+    if (!content) {
+      log(`>> shared instructions: SKIPPED ${targetName} — empty source ${sourcePath}`);
+      continue;
+    }
+
+    /** @type {string} Same begin/end auto-generated wrapper the in-profile block uses. */
+    const wrapped = [
+      `<!-- ${getAutoGeneratedText(content.length).trim()} -->`,
+      content,
+      `<!-- ${getAutoGeneratedEndText(content.length).trim()} -->`,
+    ].join("\n");
+
+    await writeText(path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, targetName), wrapped);
+  }
+
+  log(`>> shared instructions: ${LLM_SHARED_INSTRUCTIONS_FOLDER}`);
+}
+
 /**
  * Returns the shared LLM custom instructions content with an auto-generated
  * warning prepended. Uses the existing `getAutoGeneratedText()` from index.js

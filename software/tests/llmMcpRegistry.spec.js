@@ -40,6 +40,8 @@ function loadLlmCommon(registryPayload, opts = {}) {
   const sandbox = {
     is_os_mac: false,
     path,
+    // llm-common.js builds ~/sy_llm_ai/* paths from this at top level.
+    BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
     log: () => {},
     probedHosts,
     readJson: async (strings, ...values) => {
