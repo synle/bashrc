@@ -28,10 +28,16 @@
 // --- Limit buckets ---
 
 /**
- * Large context/output limit.
+ * Large context/output limit — for Ollama models whose train context is 262144
+ * (verified per model via `/api/show` → `*.context_length`, and per load via
+ * `/api/ps` → `context_length`; ollama 0.32 hands out the train context when the
+ * Modelfile sets no `num_ctx`). Pinned at half of that: `limit.context` is what
+ * opencode uses to decide when to compact, so under-claiming causes needless
+ * compaction cycles, while the full 262144 of KV cache is more VRAM than the box
+ * has to spare. Re-measure before raising.
  * @type {{ context: number, output: number }}
  */
-const LIMIT_LARGE = { context: 65536, output: 8192 };
+const LIMIT_LARGE = { context: 131072, output: 8192 };
 
 /**
  * Medium context/output limit — default for most local code models.
@@ -119,6 +125,33 @@ const PROVIDER_STREAM_TIMEOUTS = { chunkTimeout: 180000, headerTimeout: 60000 };
 const OPENCODE_SMALL_MODEL = "github-copilot/gpt-5.5";
 
 /**
+ * Folder names to keep the opencode file watcher out of, on top of
+ * `EDITOR_CONFIGS.ignoredFolders` (the repo-wide canonical list, which already
+ * covers node_modules, dist, build, coverage, .git, and every language cache).
+ * Only names that list deliberately omits belong here.
+ * @type {string[]}
+ */
+const OPENCODE_EXTRA_IGNORED_FOLDERS = [
+  ".build", // this repo's generated artifacts — rewritten on every run
+  ".pnp", // Yarn Plug'n'Play runtime
+  "log", // Rails-style log folder
+  "logs", // generic log folder
+  "out", // common alternate build output (tsc, Next.js export)
+  "Pods", // CocoaPods vendored iOS dependencies
+];
+
+/**
+ * Builds the `watcher.ignore` glob list from the repo's canonical ignored-folder
+ * list plus the extras above. Each name becomes a nested-safe glob so it matches
+ * at any depth, not just the project root.
+ * @returns {string[]} Sorted, de-duplicated glob patterns.
+ */
+function _buildOpencodeWatcherIgnore() {
+  const folders = [...EDITOR_CONFIGS.ignoredFolders, ...OPENCODE_EXTRA_IGNORED_FOLDERS];
+  return [...new Set(folders)].sort().map((folder) => `**/${folder}/**`);
+}
+
+/**
  * Default config for any Ollama model not listed in `OLLAMA_MODEL_CONFIGS`.
  * @type {{ limit: { context: number, output: number } }}
  */
@@ -189,9 +222,12 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     // Compaction stays on with opencode's default tail_turns. An explicit low
     // value (we used to pin 4) throws away almost everything on each compaction,
     // so the model re-reads the same files, refills the window, and compacts
-    // again — a death spiral that reads as a mid-task freeze.
+    // again — a death spiral that reads as a mid-task freeze. `prune` is the
+    // surgical version of that: drop stale tool output, keep the conversation,
+    // which matters given the raised `tool_output.max_lines` below.
     compaction: {
       auto: true,
+      prune: true,
     },
     // Allow more tool output lines before truncation (default: 2000) so the
     // agent sees fuller command output before falling back to the saved-to-disk
@@ -204,6 +240,14 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     // Cheap side tasks (titles, summaries, compaction) run here instead of on the
     // primary model, where compaction latency shows up as an unexplained pause.
     small_model: OPENCODE_SMALL_MODEL,
+    // Never expose a session URL. Work happens in private repos; the default
+    // ("manual") leaves a one-keystroke publish path we have no use for.
+    share: "disabled",
+    // Keep the file watcher out of dependency trees, build output, and tool
+    // caches. Glob syntax per https://opencode.ai/docs/config/#watcher.
+    watcher: {
+      ignore: _buildOpencodeWatcherIgnore(),
+    },
     // Enable opencode's experimental batch tool so the agent can fan out
     // parallel tool calls within a single turn (read three files at once,
     // run two greps concurrently, etc.) instead of serializing them. Matches
