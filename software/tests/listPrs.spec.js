@@ -375,7 +375,7 @@ describe("list_prs — output shape", () => {
   it("prints title then URL, two lines, and keeps STDOUT free of progress noise", () => {
     const { stdout, stderr } = runCli([], [pullRequest(AWAITING_REVIEW)]);
     const lines = stdout.split("\n").filter(Boolean);
-    expect(lines[0]).toBe("👀 Retry token refresh on 401");
+    expect(lines[0]).toBe("⏳ Retry token refresh on 401");
     expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
     expect(lines).toHaveLength(2);
     expect(stdout).not.toContain(">>>");
@@ -395,9 +395,9 @@ describe("list_prs — output shape", () => {
     expect(stdout.split("\n").filter(Boolean)).toEqual(["https://github.com/acme/api/pull/1", "https://github.com/acme/api/pull/2"]);
   });
 
-  it("prints a [Draft] tag on the title line", () => {
+  it("prints a [draft] tag on the title line", () => {
     const { stdout } = runCli([], [pullRequest({ isDraft: true, checks: [PASSING_CHECK] })]);
-    expect(stdout).toContain("[Draft] Retry token refresh on 401");
+    expect(stdout).toContain("🛑 [draft] Retry token refresh on 401");
   });
 
   it("emits no ANSI escapes when NO_COLOR / piped", () => {
@@ -486,11 +486,11 @@ describe("list_prs — reason icons and auto-merge", () => {
     ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
     ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
     ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
-    ["🏗️", "build running", { checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }],
-    ["👀", "awaiting review", AWAITING_REVIEW],
-    ["🐌", "behind base", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
+    ["🔨", "build running", { checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }],
+    ["⏳", "awaiting review", AWAITING_REVIEW],
+    ["🔄", "behind base", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
     ["🚀", "ready to merge", READY_TO_MERGE],
-    ["🚧", "draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
+    ["🛑", "draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
   ];
 
   for (const [icon, label, overrides] of CASES) {
@@ -519,7 +519,7 @@ describe("list_prs — reason icons and auto-merge", () => {
     const armed = rowFor({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } });
     expect(armed.autoMerge).toBe(true);
     expect(armed.autoMergeMethod).toBe("SQUASH");
-    expect(armed.status).toContain("🪄 AUTO-MERGE (squash)");
+    expect(armed.status).toContain("AUTO-MERGE (squash)");
 
     const plain = rowFor(AWAITING_REVIEW);
     expect(plain.autoMerge).toBe(false);
@@ -533,15 +533,71 @@ describe("list_prs — reason icons and auto-merge", () => {
     expect(rowFor({ ...AWAITING_REVIEW, autoMergeRequest: null }).autoMerge).toBe(false);
   });
 
-  it("prefixes the title line with the reason icon, then the auto-merge icon", () => {
+  it("prefixes the title line with the reason icon and the auto-merge tag", () => {
+    // runCli pipes stdout, so there is no TTY and no ANSI. The tag is plain text
+    // rather than styling precisely so it survives this render intact.
     const { stdout } = runCli(
       [],
       [pullRequest({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } })],
     );
     const lines = stdout.split("\n").filter(Boolean);
-    expect(lines[0]).toBe("👀 🪄 Retry token refresh on 401");
+    expect(lines[0]).toBe("⏳ [auto-merge] Retry token refresh on 401");
   });
 
+  it("leaves the auto-merge tag off a disarmed PR", () => {
+    const lines = runCli([], [pullRequest(AWAITING_REVIEW)])
+      .stdout.split("\n")
+      .filter(Boolean);
+    expect(lines[0]).toBe("⏳ Retry token refresh on 401");
+    expect(lines[0]).not.toContain("auto-merge");
+  });
+
+  it("spends no reason-column glyph on auto-merge", () => {
+    // The regression this guards: auto-merge used to render as a 🪄 competing with the
+    // reason icon, so two unrelated facts fought for the same glance. It is a word now.
+    const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
+    const firstLine = runCli([], [pullRequest(armed)])
+      .stdout.split("\n")
+      .filter(Boolean)[0];
+    expect(firstLine).not.toContain("🪄");
+    expect(rowFor(armed).status).not.toContain("🪄");
+  });
+
+  it("suffixes a running build with … and nothing else with it", () => {
+    // A build is the only state that resolves itself while you read the output, so it
+    // is the only one that earns the "still moving" marker.
+    const running = runCli(["--all"], [pullRequest({ checks: [RUNNING_CHECK], reviewDecision: "APPROVED" })])
+      .stdout.split("\n")
+      .filter(Boolean)[0];
+    expect(running).toBe("🔨 Retry token refresh on 401…");
+
+    const settled = runCli(["--all"], [pullRequest(READY_TO_MERGE)])
+      .stdout.split("\n")
+      .filter(Boolean)[0];
+    expect(settled).toBe("🚀 Retry token refresh on 401");
+    expect(settled).not.toContain("…");
+  });
+
+  it("keeps the … out of the machine-readable fields", () => {
+    // The suffix is a render flourish. A JSON consumer diffing titles or matching a PR
+    // by name must never see it, and runningChecks already carries the same fact.
+    const row = rowFor({ checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }, ["--all"]);
+    expect(row.title).toBe("Retry token refresh on 401");
+    expect(row.title).not.toContain("…");
+    expect(row.runningChecks).toBeGreaterThan(0);
+  });
+
+  it("renders both markers together on one row", () => {
+    const both = {
+      checks: [RUNNING_CHECK],
+      reviewDecision: "APPROVED",
+      autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" },
+    };
+    const line = runCli(["--all"], [pullRequest(both)])
+      .stdout.split("\n")
+      .filter(Boolean)[0];
+    expect(line).toBe("🔨 [auto-merge] Retry token refresh on 401…");
+  });
   it("never decorates the URL line — callers parse it", () => {
     const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
     expect(
@@ -553,77 +609,148 @@ describe("list_prs — reason icons and auto-merge", () => {
   });
 });
 
-describe("list_prs — reason icons and auto-merge", () => {
-  // The roll-up signal says how bad; the reason icon says WHY. Three different
-  // problems all render 🔴, so without these a wall of red needs a click each.
-  const CASES = [
-    ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
-    ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
-    ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
-    ["🏗️", "build running", { checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }],
-    ["👀", "awaiting review", AWAITING_REVIEW],
-    ["🐌", "behind base", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
-    ["🚀", "ready to merge", READY_TO_MERGE],
-    ["🚧", "draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
+describe("list_prs — reason tags", () => {
+  // The icon is a glance; the tag is a word you can grep, paste, or read on a terminal
+  // that renders the glyph as tofu. Only five states carry one.
+  const TAGGED = [
+    ["[rejected]", "🗣️", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
+    ["[conflict]", "⚔️", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
+    ["[ci-failed]", "💥", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
+    ["[behind]", "🔄", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
+    ["[draft]", "🛑", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
   ];
 
-  for (const [icon, label, overrides] of CASES) {
-    it(`uses ${icon} for ${label}`, () => {
-      expect(rowFor(overrides, ["--all"]).reasonIcon).toBe(icon);
+  for (const [tag, icon, overrides] of TAGGED) {
+    it(`pairs ${icon} with ${tag}`, () => {
+      const row = rowFor(overrides, ["--all"]);
+      expect(row.reasonTag).toBe(tag);
+      expect(row.reasonIcon).toBe(icon);
+      const line = runCli(["--all"], [pullRequest(overrides)])
+        .stdout.split("\n")
+        .filter(Boolean)[0];
+      expect(line.startsWith(`${icon} ${tag} `)).toBe(true);
     });
   }
 
-  it("uses 💬 for a green PR that still has open threads", () => {
-    const threads = [{ isResolved: false, comments: { nodes: [{ author: { login: "carol", __typename: "User" } }] } }];
-    expect(rowFor({ ...READY_TO_MERGE, threads }).reasonIcon).toBe("💬");
-  });
+  const UNTAGGED = [
+    ["awaiting review", AWAITING_REVIEW],
+    ["build running", { checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }],
+    ["ready to merge", READY_TO_MERGE],
+  ];
 
-  it("ranks a blocked human above broken machinery when both apply", () => {
-    // Work-owed ranking order: P1 (someone waiting on a reply) outranks P2
-    // (broken and ours to fix), so 🗣️ wins over ⚔️ and 💥 on the same PR.
+  for (const [label, overrides] of UNTAGGED) {
+    it(`leaves ${label} untagged — the icon already says it`, () => {
+      const row = rowFor(overrides, ["--all"]);
+      expect(row.reasonTag).toBe("");
+      const line = runCli(["--all"], [pullRequest(overrides)])
+        .stdout.split("\n")
+        .filter(Boolean)[0];
+      expect(line).not.toMatch(/\[(rejected|conflict|ci-failed|behind|draft)\]/);
+    });
+  }
+
+  it("never shows two reason tags at once", () => {
+    // "Blocked" is one answer, not a checklist — the key is picked once, so a PR that
+    // is conflicting AND rejected AND red says only the highest-ranked of the three.
     const row = rowFor({ checks: [FAILING_CHECK], reviewDecision: "CHANGES_REQUESTED", mergeable: "CONFLICTING" }, ["--all"]);
-    expect(row.reasonIcon).toBe("🗣️");
-    // …and the status string still names every component, so nothing is lost.
+    expect(row.reasonTag).toBe("[rejected]");
+
+    const line = runCli(
+      ["--all"],
+      [pullRequest({ checks: [FAILING_CHECK], reviewDecision: "CHANGES_REQUESTED", mergeable: "CONFLICTING" })],
+    )
+      .stdout.split("\n")
+      .filter(Boolean)[0];
+    expect(line.match(/\[[a-z-]+\]/g)).toEqual(["[rejected]"]);
+    // …while status still carries every component, so nothing is lost by picking one.
     expect(row.status).toContain("CI FAILED");
-    expect(row.status).toContain("CHANGES REQUESTED");
     expect(row.status).toContain("MERGE CONFLICT");
   });
 
-  it("flags an armed auto-merge with its method, and leaves it off otherwise", () => {
-    const armed = rowFor({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } });
-    expect(armed.autoMerge).toBe(true);
-    expect(armed.autoMergeMethod).toBe("SQUASH");
-    expect(armed.status).toContain("🪄 AUTO-MERGE (squash)");
-
-    const plain = rowFor(AWAITING_REVIEW);
-    expect(plain.autoMerge).toBe(false);
-    expect(plain.autoMergeMethod).toBe("");
-    expect(plain.status).not.toContain("AUTO-MERGE");
+  it("keeps the tag and the icon in lockstep for every state", () => {
+    // Both come from one key, so a rename can never leave a row showing an icon and a
+    // word that disagree — the failure the two-map version invited.
+    const iconTable = CLI_SOURCE.slice(CLI_SOURCE.indexOf("const REASON_ICONS"), CLI_SOURCE.indexOf("const REASON_TAGS"));
+    const tagTable = CLI_SOURCE.slice(CLI_SOURCE.indexOf("const REASON_TAGS"), CLI_SOURCE.indexOf("const RUNNING_SUFFIX"));
+    const keysOf = (src) => [...src.matchAll(/^\s*([A-Z_]+):\s*`/gm)].map((m) => m[1]);
+    expect(keysOf(tagTable).every((k) => keysOf(iconTable).includes(k))).toBe(true);
+    expect(CLI_SOURCE).toContain("function reasonKeyFor");
+    expect(CLI_SOURCE).not.toContain("function reasonIconFor");
   });
 
-  it("treats a null autoMergeRequest as disarmed", () => {
-    // GitHub returns the field as null rather than omitting it — a truthiness check
-    // on the object alone would be fine, but enabledAt is the actual arming signal.
-    expect(rowFor({ ...AWAITING_REVIEW, autoMergeRequest: null }).autoMerge).toBe(false);
-  });
-
-  it("prefixes the title line with the reason icon, then the auto-merge icon", () => {
-    const { stdout } = runCli(
-      [],
-      [pullRequest({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } })],
+  it("styles a blocking tag bold-red and a non-blocking one dim", () => {
+    // A blocked PR's title is already red, so a plain-red tag would vanish into it.
+    const blocked = CLI_SOURCE.slice(CLI_SOURCE.indexOf("const BLOCKED_REASON_KEYS"));
+    expect(blocked).toContain("CHANGES_REQUESTED");
+    expect(blocked).toContain("MERGE_CONFLICT");
+    expect(blocked).toContain("CI_FAILED");
+    // [behind] and [draft] are deliberately NOT blocking — nothing is wrong with them.
+    expect(CLI_SOURCE.slice(CLI_SOURCE.indexOf("const BLOCKED_REASON_KEYS"), CLI_SOURCE.indexOf("BLOCKED_TAGS"))).not.toContain(
+      "BEHIND_BASE",
     );
-    const lines = stdout.split("\n").filter(Boolean);
-    expect(lines[0]).toBe("👀 🪄 Retry token refresh on 401");
+    // Bold + bright, not plain red — weight is what survives red-on-red.
+    expect(CLI_SOURCE).toContain("blockedTag: `\\x1b[1;91m`");
+    expect(CLI_SOURCE).toContain("dim: `\\x1b[2m`");
+  });
+});
+
+describe("list_prs — reason icon encoding hygiene", () => {
+  // These glyphs are scanned in a column, so encoding is not cosmetic. A U+FE0F
+  // variation selector renders narrow in several terminals and knocks every title
+  // out of alignment; a recent codepoint is tofu on an older font. Both rules are
+  // checkable here, and both were the reason for the 🏗️→🚧 / 🚧→🛑 swap.
+  const codepoints = (glyph) => [...glyph].map((c) => c.codePointAt(0));
+
+  it("uses no variation selector for build-in-progress or draft", () => {
+    for (const [glyph, slot] of [
+      ["🔨", "build in progress"],
+      ["🛑", "draft"],
+      ["⏳", "awaiting review"],
+      ["🔄", "behind base"],
+    ]) {
+      expect(codepoints(glyph), `${slot} must stay VS16-free`).not.toContain(0xfe0f);
+      expect(codepoints(glyph).length, `${slot} must be a single codepoint`).toBe(1);
+    }
   });
 
-  it("never decorates the URL line — callers parse it", () => {
-    const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
-    expect(
-      runCli([], [pullRequest(armed)])
-        .stdout.split("\n")
-        .filter(Boolean)[1],
-    ).toBe("https://github.com/acme/api/pull/1");
-    expect(runCli(["--links"], [pullRequest(armed)]).stdout.trim()).toBe("https://github.com/acme/api/pull/1");
+  it("pins each replaced glyph to the codepoint it was chosen for", () => {
+    // Named against Unicode's own list: U+1F528 "hammer" (E0.6), U+1F6D1 "stop sign"
+    // (E3.0), U+23F3 "hourglass not done" (E0.6), U+1F504 "counterclockwise arrows"
+    // (E1.0). There is no traffic-cone emoji to prefer over any of them.
+    expect(codepoints("🔨")[0]).toBe(0x1f528);
+    expect(codepoints("🛑")[0]).toBe(0x1f6d1);
+    expect(codepoints("⏳")[0]).toBe(0x23f3);
+    expect(codepoints("🔄")[0]).toBe(0x1f504);
+  });
+
+  it("retired the two glyphs that read as the wrong instruction", () => {
+    // 👀 said "look at me" on the one row that wants nothing from you (the REVIEWER is
+    // the one being waited on), and 🐌 editorialized about a branch that is merely out
+    // of date. Both survive only in the comment explaining why they went.
+    const iconTable = CLI_SOURCE.slice(CLI_SOURCE.indexOf("const REASON_ICONS"), CLI_SOURCE.indexOf("const REASON_TAGS"));
+    expect(iconTable).not.toContain("👀");
+    expect(iconTable).not.toContain("🐌");
+  });
+
+  it("no longer ships the VS16 building glyph or the E13.0 magic wand as icons", () => {
+    // 🏗️ survives only inside the comment explaining why it was rejected, so assert
+    // on the icon table itself rather than the whole file.
+    const iconTable = CLI_SOURCE.slice(CLI_SOURCE.indexOf("const REASON_ICONS"), CLI_SOURCE.indexOf("UNKNOWN:"));
+    expect(iconTable).not.toContain("🏗");
+    expect(iconTable).not.toContain("🪄");
+    expect(CLI_SOURCE).not.toContain("AUTO_MERGE_ICON");
+  });
+
+  it("keeps every reason icon distinct", () => {
+    // The swap moved 🚧 from draft to build-in-progress; leaving it in both slots
+    // would silently collapse two different states onto one glyph.
+    const table = CLI_SOURCE.slice(
+      CLI_SOURCE.indexOf("const REASON_ICONS"),
+      CLI_SOURCE.indexOf("};", CLI_SOURCE.indexOf("const REASON_ICONS")),
+    );
+    const glyphs = [...table.matchAll(/^\s*[A-Z_]+:\s*`(.+?)`,/gm)].map((m) => m[1]);
+    expect(glyphs.length).toBeGreaterThanOrEqual(9);
+    expect(new Set(glyphs).size).toBe(glyphs.length);
   });
 });
 

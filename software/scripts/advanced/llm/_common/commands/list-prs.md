@@ -69,25 +69,39 @@ pr_list_all_open --json --author=<handle>                # same scopes, someone 
 
 `pr_list_all_open` is `list_prs --all` — every open PR, ready-to-merge ones included. Use it here: the sibling `pr_list_needs_attention` (plain `list_prs`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `pr_list_needs_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` the search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
 
-Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color reasonIcon autoMerge autoMergeMethod ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
+Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color reasonIcon reasonTag autoMerge autoMergeMethod ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
 
 **`reasonIcon` names the cause; `signal` only names the severity.** Three different problems all roll up to 🔴, so a red row still needs a click to find out which — the reason icon answers that in one glyph. First match wins, in Work-owed ranking order (a blocked human outranks broken machinery outranks a stale branch), so a PR that is conflicting _and_ has changes requested reads 🗣️ while `status` still lists every component:
 
-| Icon | Means               | Fires when                                        |
-| ---- | ------------------- | ------------------------------------------------- |
-| 🚧   | Draft / WIP         | `isDraft` or a WIP / DNM title — checked first    |
-| 🗣️   | Changes requested   | `reviewDecision == "CHANGES_REQUESTED"`           |
-| ⚔️   | Merge conflict      | `mergeable == "CONFLICTING"`                      |
-| 💥   | CI failed           | A check finished with a failing conclusion        |
-| 🏗️   | Build in progress   | Self-resolving checks still running               |
-| 👀   | Awaiting review     | Not yet approved, nothing else pending            |
-| 🐌   | Behind base         | `mergeStateStatus == "BEHIND"`, nothing else open |
-| 💬   | Ready, threads open | Green and approved, unresolved threads remain     |
-| 🚀   | Ready to merge      | Green, approved, no conflict, no open threads     |
+| Icon | Tag           | Means               | Fires when                                        |
+| ---- | ------------- | ------------------- | ------------------------------------------------- |
+| 🛑   | `[draft]`     | Draft / WIP         | `isDraft` or a WIP / DNM title — checked first    |
+| 🗣️   | `[rejected]`  | Changes requested   | `reviewDecision == "CHANGES_REQUESTED"`           |
+| ⚔️   | `[conflict]`  | Merge conflict      | `mergeable == "CONFLICTING"`                      |
+| 💥   | `[ci-failed]` | CI failed           | A check finished with a failing conclusion        |
+| 🔨   | —             | Build in progress   | Self-resolving checks still running               |
+| ⏳   | —             | Awaiting review     | Not yet approved, nothing else pending            |
+| 🔄   | `[behind]`    | Behind base         | `mergeStateStatus == "BEHIND"`, nothing else open |
+| 💬   | —             | Ready, threads open | Green and approved, unresolved threads remain     |
+| 🚀   | —             | Ready to merge      | Green, approved, no conflict, no open threads     |
 
-**`autoMerge` says whether GitHub will merge it without you.** True when `autoMergeRequest.enabledAt` is set; `autoMergeMethod` carries `SQUASH` / `MERGE` / `REBASE`. It changes what a human should do with a row — an armed 🟡 needs no babysitting, the same row unarmed is waiting on someone to come back and click. The CLI renders it as 🪄, both as a title-line prefix after the reason icon and as a `🪄 AUTO-MERGE (<method>)` token in `status`.
+**The icon and the tag come from one key, so they can never disagree.** `reasonKeyFor` picks a single state, and both `reasonIcon` and `reasonTag` are looked up from it — one precedence list, not two that happen to agree today. `reasonTag` is on every JSON row (`""` where the state carries no tag).
 
-**Icons go on the title line only — never on a URL line.** The two-line human render is `<reasonIcon> [🪄] <title>` then the bare URL, and `--links` is unchanged. Same rule as `short` below: consumers read URL lines, so decorating them breaks every caller.
+**Three tags mean BLOCKED, and only ever one of them shows.** `[rejected]` (a reviewer said no), `[conflict]` (the branches disagree), `[ci-failed]` (the build broke) — these are exactly the three states that roll up to 🔴. "Blocked" is a single answer, not a checklist: a PR that is conflicting _and_ rejected _and_ red prints `[rejected]` alone, while `status` still lists every component. They render **bold red**; a blocked PR's title is already red, so weight rather than hue is what keeps them readable. `[behind]` and `[draft]` are dim, because neither is a failure — a behind branch just needs a sync, and a draft is not finished being written.
+
+**Four states carry no tag at all.** Awaiting review, building, ready, and ready-with-threads say everything in the icon; tagging all nine would put a bracket on every row and mean nothing.
+
+**Two encoding rules pick the glyphs, and a replacement has to satisfy both.** Prefer no `U+FE0F` variation selector — a VS16 pair renders narrow in several terminals and knocks the scanned column out of alignment — and prefer the oldest emoji version that still says the right thing, since a recent codepoint is tofu on an older font. That is why build-in-progress is 🔨 `U+1F528` ("hammer", E0.6, no VS16) and not 🏗️ `U+1F3D7 U+FE0F` ("building construction", E0.7, VS16). Unicode has no traffic-cone emoji to prefer over either.
+
+**A glyph also has to survive being read out of context**, which is what retired the two cutest ones. 👀 for awaiting-review read as "look at this" — an attention grab on the one row that wants nothing from you, since it is the _reviewer_ being waited on; ⏳ says "waiting on a person" and matches the ⏳ the status line already uses for a pending approval gate. 🐌 for behind-base editorialized ("slow", "neglected") about a branch that is merely out of date; 🔄 names the actual remedy, which is a sync. **Every state keeps an icon**, even the untagged ones — these are read as a column, so dropping one glyph starts that title a character earlier than the other eight and re-ragged the edge the column exists to remove.
+
+**A running build also gets a trailing `…`, in magenta.** It is the one state on the list that resolves itself while you read the output — every other one waits on a person — so it earns a "still moving, come back" marker in punctuation every reader already knows. Magenta because red / yellow / green are all spoken for by the roll-up signal and blue is the URL line, so the marker would otherwise read as a severity it does not have. The suffix is render-only: `title` in JSON stays clean and `runningChecks` already carries the same fact, so nothing matching a PR by name ever sees it.
+
+**`autoMerge` says whether GitHub will merge it without you.** True when `autoMergeRequest.enabledAt` is set; `autoMergeMethod` carries `SQUASH` / `MERGE` / `REBASE`. It changes what a human should do with a row — an armed 🟡 needs no babysitting, the same row unarmed is waiting on someone to come back and click. The CLI renders it as a **dim `[auto-merge]` tag after the reason tag, never an icon**: GitHub landing the PR itself is a property of the row, not a tenth reason it is stuck, so it must not compete with the reason column for the same glance. `status` carries an `AUTO-MERGE (<method>)` token either way.
+
+**Every text marker survives losing color; only the tone is conditional.** `[rejected]`, `[behind]`, `[auto-merge]`, and the `…` all print under `--links`, a pipe, `NO_COLOR`, and a redirect. Those renders lose bold / dim / magenta but never a fact — which is the whole reason these are words and punctuation rather than styling.
+
+**Icons go on the title line only — never on a URL line.** The two-line human render is `<reasonIcon> [<reasonTag>] [auto-merge] <title>[…]` then the bare URL, and `--links` is unchanged. Same rule as `short` below: consumers read URL lines, so decorating them breaks every caller.
 
 **The fast path covers all three repo scopes, not explicit PR refs.** Plain `pr_list_all_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` changes only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
 
@@ -151,7 +165,7 @@ Each JSON row carries `url repo number title author createdAt updatedAt ageDays 
 
 Classify each PR into exactly one group. Evaluate in this priority order (first match wins):
 
-1. **NOT READY / WIP / DRAFT** — `isDraft` is true OR title contains `WIP`, `DO NOT MERGE`, or `DNM` (case-insensitive). Display titles normalize leading markers to one `WIP: ` prefix; tag drafts with `[Draft]`.
+1. **NOT READY / WIP / DRAFT** — `isDraft` is true OR title contains `WIP`, `DO NOT MERGE`, or `DNM` (case-insensitive). Display titles normalize leading markers to one `WIP: ` prefix; tag drafts with `[draft]`.
 2. **NEEDS ATTENTION** (🔴) — would otherwise be ready (not draft, no WIP / DO NOT MERGE / DNM marker in title) BUT one or more of:
    - `CI FAILED` (any required check failed).
    - `reviewDecision == "CHANGES_REQUESTED"` (reviewer left blocking comments).
@@ -335,7 +349,7 @@ https://github.com/owner/repo-c/pull/789
 
 The short description line is: `#<number> [<owner/repo>] <title> — <color emoji> <status>`. On a mixed-author list, insert the author after the repo: `#<number> [<owner/repo>] @<author> — <title> — <color emoji> <status>`. Strip a leading `[<repo>] ` prefix from `<title>` when it matches the repo already printed on that line — the repo is its own field, so keeping it in the title prints it twice.
 
-`<color emoji>` and `<status>` use the same vocabulary and the same roll-up rule as the `pingpong` Status cell — 🔴 for CI failed / changes requested / merge conflict, 🟡 for build running or awaiting review, 🟢 only when CI passed **and** approved **and** no conflict. `<status>` is the component tokens that justify the color, `·`-separated on one line: `CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`. Print every token that applies, in that fixed order, so a red row says which of the three reds it is. For NOT READY / WIP / DRAFT, display the normalized `WIP: ` title and prepend `[Draft]` when the PR is a draft.
+`<color emoji>` and `<status>` use the same vocabulary and the same roll-up rule as the `pingpong` Status cell — 🔴 for CI failed / changes requested / merge conflict, 🟡 for build running or awaiting review, 🟢 only when CI passed **and** approved **and** no conflict. `<status>` is the component tokens that justify the color, `·`-separated on one line: `CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`. Print every token that applies, in that fixed order, so a red row says which of the three reds it is. For NOT READY / WIP / DRAFT, display the normalized `WIP: ` title and prepend `[draft]` when the PR is a draft.
 
 ### Format: `table`
 
@@ -350,7 +364,7 @@ On a mixed-author list, insert an `Author` column immediately after `Repo`, fill
 - **Approvals**: `APPROVED (<n>)` / `CHANGES REQUESTED` / `AWAITING REVIEW`.
 - **Comments**: count of unresolved review threads (`0` if none).
 - **Ready to Merge?**: `🟢 yes` if group 5 (READY TO MERGE), `🟢 yes — <n> open comments` if group 4, otherwise `🔴 no — <blocker>` (CI failed / changes requested / merge conflict) or `🟡 no — <what it waits on>` (build running / awaiting review). Same three colors and the same roll-up rule as `pingpong`: green needs CI passed **and** approved **and** no conflict; red wins over yellow.
-- In the NOT READY / WIP / DRAFT table, display the normalized `WIP: ` title and prepend `[Draft]` when the PR is a draft.
+- In the NOT READY / WIP / DRAFT table, display the normalized `WIP: ` title and prepend `[draft]` when the PR is a draft.
 
 ### Format: `links`
 
@@ -389,7 +403,7 @@ The cross-repo view. Same URLs as `links`, bucketed by **feature cluster** (see 
 
 - **Cluster heading**: `### <label> (<n>) — <repo>, <repo>, …`, repos comma-separated in the order their PRs appear. The repo list is the whole point of the heading: it answers "which repos does this feature still need" without reading a single URL. Single-repo clusters (two PRs in the same repo) still print the repo once.
 - **Standalone block**: everything with no partner, under a literal `### Standalone (<n>)` heading, always last, no repo list. Print it even when it holds every PR — an all-standalone list is a real answer, not an error.
-- **PR line**: `- <full URL> — pr<N> — <description> — <color emoji> <status>`. Same four fields in the same order on every line in the render, clustered and standalone alike — no per-block variant to remember, and a line means the same thing wherever it is pasted. `<color emoji>` and `<status>` use the exact vocabulary and roll-up rule as `long` (`CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`, `·`-separated). Use the normalized `WIP: ` title and prepend `[Draft]` when they apply.
+- **PR line**: `- <full URL> — pr<N> — <description> — <color emoji> <status>`. Same four fields in the same order on every line in the render, clustered and standalone alike — no per-block variant to remember, and a line means the same thing wherever it is pasted. `<color emoji>` and `<status>` use the exact vocabulary and roll-up rule as `long` (`CI FAILED — <check>`, `CHANGES REQUESTED`, `MERGE CONFLICT`, `BUILD IN PROGRESS (<n> running)`, `AWAITING REVIEW`, `CI PASSED`, `APPROVED`, `·`-separated). Use the normalized `WIP: ` title and prepend `[draft]` when they apply.
 - **The URL leads every PR line — always the first field after `- `.** Everything else is a trailing annotation, so a line stays clickable, greppable, and copy-pasteable no matter how many annotations get appended later. Never put the `pr<N>` handle, a status, or a description ahead of the URL.
 - **Every line says what its PR does** — `<description>` is ≤8 words of plain English written from that PR's title and body, never the title pasted verbatim, never the branch name, never a restatement of the status. Without it a reader gets a bare number and a color and has to open every link to triage. Cannot tell from title and body what it does → say the narrowest true thing (`config change in the ingest job`), never invent a purpose.
 - **Inside a cluster, `<description>` is what that PR contributes, not what the feature is** — the `###` heading already said the feature, so repeating it on all three lines burns the one field that could tell them apart. Write the differentiator: `issue refresh tokens on the token endpoint`, not `oauth migration`.
@@ -485,7 +499,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
 
   **Line 2 — the group line, always present.** `🌊 slot <N> · <group label> — <≤8-word feature-set description>`. It repeats, per row, the heading the row already sits under, because a row copied into Slack or a ticket loses its heading and then nobody can tell which feature it belonged to. Same slot number the dispatcher assigned that PR — **per row, not per group**, so a cluster dealt across two lanes shows `slot 1` and `slot 2` on the rows that actually differ. Drop the `slot <N> · ` prefix when the ledger has no slot (standalone invocation, no dispatcher). On a `Standalone` row the label is the literal `standalone` and the description is omitted; on a `Slot <N>` group the label is the slot itself, so print `🌊 slot <N>` alone rather than repeating it twice.
 
-  **Line 3 — `@<author> — <TLDR>`:** a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Use the normalized `WIP: ` title and prepend `[Draft]` when they apply.
+  **Line 3 — `@<author> — <TLDR>`:** a ≤10-word plain-English summary of what the PR does, written from the title and body, not a copy of the title when the title is uninformative. Author is always shown here, mixed-author list or not — the whole point of the pulse is knowing whose work is moving. Use the normalized `WIP: ` title and prepend `[draft]` when they apply.
 
   **Line 4 — the delta, always present.** It sits directly under the TLDR because "what does this PR do" and "what happened to it since you last looked" are the same question one beat apart; the reader gets both without crossing columns. One of three forms, matching the Status change marker:
 

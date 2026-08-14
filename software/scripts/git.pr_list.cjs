@@ -37,10 +37,17 @@
  * OUTPUT
  *   Human (default): two lines per PR — colored title, then the URL. The title
  *   line leads with a reason icon naming WHY the PR sits where it does
- *   (🗣️ changes requested, ⚔️ conflict, 💥 CI failed, 🏗️ build running,
- *   👀 awaiting review, 🐌 behind base, 💬 ready but threads open, 🚀 ready,
- *   🚧 draft/WIP), plus 🪄 when auto-merge is armed. The URL line stays bare —
- *   callers parse it.
+ *   (🗣️ changes requested, ⚔️ conflict, 💥 CI failed, 🔨 build running,
+ *   ⏳ awaiting review, 🔄 behind base, 💬 ready but threads open, 🚀 ready,
+ *   🛑 draft/WIP). Five of those states add a greppable word form after the
+ *   icon: the three that BLOCK a merge print `[rejected]` / `[conflict]` /
+ *   `[ci-failed]` in bold red, and the administrative two print `[behind]` /
+ *   `[draft]` dim. Only ever ONE of them — "blocked" is a single answer, and
+ *   `status` still lists every component. A running build also gets a magenta
+ *   trailing … (the one state that resolves itself while you read), and an
+ *   armed auto-merge a dim `[auto-merge]` rather than a tenth glyph. Every
+ *   text marker prints without color too, so a pipe loses tone, never a fact.
+ *   The URL line stays bare — callers parse it.
  *   `--verbose`    : adds a third metadata line (timestamp · signal · status).
  *   `--links`      : just the URLs, one per line — paste-clean for other tools.
  *   `--json`       : the full enriched rows as JSON.
@@ -168,6 +175,16 @@ const ANSI = {
   green: `\x1b[32m`,
   yellow: `\x1b[33m`,
   blue: `\x1b[34m`,
+  // Bright magenta is the one noticeable color left: red/yellow/green are spoken for
+  // by the roll-up signal and blue by the URL line, so an in-progress marker in any of
+  // those would read as a status it is not.
+  magenta: `\x1b[95m`,
+  // Bold bright red for a blocked tag. Plain red would be red-on-red — the title of a
+  // blocked PR is already red — so the weight, not the hue, is what makes it readable.
+  blockedTag: `\x1b[1;91m`,
+  // Dim is the opposite job — a non-blocking tag is context, not a finding, and must
+  // sit quieter than the title it prefixes.
+  dim: `\x1b[2m`,
   underline: `\x1b[4m`,
 };
 
@@ -336,6 +353,28 @@ function ageInDays(iso) {
  *
  * Deliberately distinct silhouettes rather than a themed set — these are scanned in a
  * column, so 💥 vs ⚔️ vs 🗣️ has to be readable at a glance and in a small terminal font.
+ *
+ * Two encoding rules, both learned the hard way and both checkable against the official
+ * Unicode `emoji-test.txt`: prefer a glyph with NO `U+FE0F` variation selector (a VS16
+ * pair renders narrow in several terminals and knocks the whole column out of
+ * alignment), and prefer the oldest emoji version that says the right thing (a recent
+ * codepoint is tofu on an older font). That is why build-in-progress is 🔨 `U+1F528`
+ * ("hammer", E0.6, no VS16) rather than 🏗️ `U+1F3D7 U+FE0F` ("building construction",
+ * E0.7, VS16). Unicode has no traffic-cone emoji to prefer over either.
+ *
+ * A glyph also has to survive being read out of context, which is what retired the two
+ * cutest ones. 👀 for awaiting-review read as "look at this" — an attention grab on the
+ * one row that wants nothing from you, since it is the REVIEWER who is being waited on;
+ * ⏳ says "waiting on a person" and matches the ⏳ the status line already uses for a
+ * pending approval gate. 🐌 for behind-base editorialized ("slow", "neglected") about a
+ * branch that is merely out of date; 🔄 says the actual remedy, which is a sync.
+ *
+ * Every state keeps an icon even where the wording alone might do, because these are
+ * read as a column: drop the glyph from one row and its title starts a character
+ * earlier than the other eight, which is exactly the ragged edge the column exists to
+ * avoid. In-progress carries an extra ELLIPSIS suffix on the title (see
+ * {@link RUNNING_SUFFIX}) — the icon says which state, the trailing … says it is still
+ * moving on its own.
  * @type {Record<string, string>}
  */
 const REASON_ICONS = {
@@ -345,33 +384,98 @@ const REASON_ICONS = {
   MERGE_CONFLICT: `⚔️`,
   CI_FAILED: `💥`,
   // Yellow — nothing wrong, not yet clear.
-  BUILD_RUNNING: `🏗️`,
-  AWAITING_REVIEW: `👀`,
-  BEHIND_BASE: `🐌`,
+  BUILD_RUNNING: `🔨`,
+  AWAITING_REVIEW: `⏳`,
+  BEHIND_BASE: `🔄`,
   // Green — clear to merge.
   READY: `🚀`,
   READY_WITH_COMMENTS: `💬`,
-  // Not in play.
-  DRAFT: `🚧`,
+  // Not in play. 🛑 rather than a construction glyph: a draft is not mid-build, it is
+  // explicitly "do not merge this", and that is the one thing a stop sign says.
+  DRAFT: `🛑`,
   UNKNOWN: `❓`,
 };
 
 /**
- * Auto-merge indicator. GitHub will merge this PR itself the moment its gates go
- * green, which changes what a human should do with it — a 🟡 row with this icon
- * needs no babysitting, while the same row without it is waiting on someone to
- * come back and click merge. That distinction was invisible before.
- * @type {string}
+ * The word form of {@link REASON_ICONS} — same keys, same first-match-wins precedence,
+ * so a row can never show an icon and a tag that disagree.
+ *
+ * An icon is a glance; a tag is a word you can grep, paste into Slack, or read on a
+ * terminal that renders the glyph as tofu. Only the states where that precision is
+ * worth a few columns carry one: the three ways a PR is BLOCKED (a reviewer said no,
+ * the branches disagree, the build broke) plus the two administrative states. The
+ * settled and in-flight states (awaiting review, building, ready, ready-with-threads)
+ * stay bare — their icon plus the trailing … already says everything a tag would, and
+ * tagging all nine would put a bracket on every row and mean nothing.
+ *
+ * Exactly one of these can appear on a row, because the key is chosen once by
+ * {@link reasonKeyFor}. That is the point: "blocked" is a single answer, not a
+ * checklist, and the `status` field is where the full component list already lives.
+ * @type {Record<string, string>}
  */
-const AUTO_MERGE_ICON = `🪄`;
+const REASON_TAGS = {
+  // Blocked — one of these three, never two, in the same precedence as the icons.
+  CHANGES_REQUESTED: `[rejected]`,
+  MERGE_CONFLICT: `[conflict]`,
+  CI_FAILED: `[ci-failed]`,
+  // Out of date. Not blocked — nothing is wrong, the branch just needs a sync.
+  BEHIND_BASE: `[behind]`,
+  // Administrative.
+  DRAFT: `[draft]`,
+};
 
 /**
- * Pick the single reason icon for a classified PR — first match wins.
+ * Trailing marker for a PR whose build is still running.
+ *
+ * A build is the only state on this list that resolves itself while you read the
+ * output — everything else waits on a person. The trailing … says "still moving, come
+ * back" in the punctuation every reader already knows, and on a color terminal it is
+ * printed in magenta: red, yellow, and green all already mean a roll-up severity here,
+ * and blue is the URL line, so any of those would read as a status this is not.
+ * @type {string}
+ */
+const RUNNING_SUFFIX = `…`;
+
+/**
+ * Marker for an armed auto-merge.
+ *
+ * Auto-merge is NOT an icon — GitHub landing the PR itself is a property of the row,
+ * not a tenth reason it is stuck, and giving it a glyph made two unrelated facts
+ * compete for the same glance in the reason column. It is a literal word instead, and a
+ * dim one: it qualifies the title rather than announcing a finding, so it must sit
+ * quieter than the text it prefixes. Being plain text it also survives `--links`, a
+ * pipe, `NO_COLOR`, and a redirect, where an escape-based treatment would vanish.
+ * @type {string}
+ */
+const AUTO_MERGE_TAG = `[auto-merge]`;
+
+/**
+ * The three states that BLOCK a merge outright — a reviewer said no, the branches
+ * disagree, or the build broke. Kept as a key list rather than a list of tag strings so
+ * the tag text can be renamed in {@link REASON_TAGS} alone; nothing here restates it.
+ *
+ * These read in bold red rather than the dim of every other tag. The title is already
+ * red for all three (that is exactly the `red` roll-up), so a plain-red tag would be
+ * red-on-red and disappear into it — bold + bright is what survives the collision.
+ * @type {string[]}
+ */
+const BLOCKED_REASON_KEYS = [`CHANGES_REQUESTED`, `MERGE_CONFLICT`, `CI_FAILED`];
+
+/** @type {Set<string>} The rendered tag text of {@link BLOCKED_REASON_KEYS}. */
+const BLOCKED_TAGS = new Set(BLOCKED_REASON_KEYS.map((key) => REASON_TAGS[key]));
+
+/**
+ * Pick the single reason KEY for a classified PR — first match wins.
+ *
+ * Returns the key rather than the glyph so the icon and the word form can never drift:
+ * {@link REASON_ICONS} and {@link REASON_TAGS} are both looked up with this one answer,
+ * so there is exactly one precedence list in the file instead of two that agree today.
  *
  * Order is the Work-owed ranking's, not the status string's: a blocked human (P1)
  * outranks broken machinery (P2), which outranks a stale branch (P3). So a PR that is
- * both conflicting and has changes requested shows 🗣️ — the human is the bigger deal,
- * and the `status` field still lists every component for anyone who needs all of them.
+ * both conflicting and has changes requested reads 🗣️ `[rejected]` — the human is the
+ * bigger deal, and the `status` field still lists every component for anyone who needs
+ * all of them. "Blocked" is one answer, never a checklist.
  *
  * @param {Object} state Classified booleans/counters for one PR.
  * @param {boolean} state.draft Draft or WIP-titled.
@@ -382,18 +486,18 @@ const AUTO_MERGE_ICON = `🪄`;
  * @param {boolean} state.approved `reviewDecision === "APPROVED"`.
  * @param {boolean} state.behind Head branch is behind its base.
  * @param {number} state.openThreads Unresolved review threads.
- * @returns {string} One emoji from {@link REASON_ICONS}.
+ * @returns {string} A key of {@link REASON_ICONS}.
  */
-function reasonIconFor(state) {
-  if (state.draft) return REASON_ICONS.DRAFT;
-  if (state.changesRequested) return REASON_ICONS.CHANGES_REQUESTED;
-  if (state.conflicted) return REASON_ICONS.MERGE_CONFLICT;
-  if (state.ciFailed) return REASON_ICONS.CI_FAILED;
-  if (state.running > 0) return REASON_ICONS.BUILD_RUNNING;
-  if (!state.approved) return REASON_ICONS.AWAITING_REVIEW;
-  if (state.behind) return REASON_ICONS.BEHIND_BASE;
-  if (state.openThreads > 0) return REASON_ICONS.READY_WITH_COMMENTS;
-  return REASON_ICONS.READY;
+function reasonKeyFor(state) {
+  if (state.draft) return `DRAFT`;
+  if (state.changesRequested) return `CHANGES_REQUESTED`;
+  if (state.conflicted) return `MERGE_CONFLICT`;
+  if (state.ciFailed) return `CI_FAILED`;
+  if (state.running > 0) return `BUILD_RUNNING`;
+  if (!state.approved) return `AWAITING_REVIEW`;
+  if (state.behind) return `BEHIND_BASE`;
+  if (state.openThreads > 0) return `READY_WITH_COMMENTS`;
+  return `READY`;
 }
 
 /**
@@ -414,6 +518,8 @@ function reasonIconFor(state) {
  * @property {"🔴"|"🟡"|"🟢"} signal
  * @property {"🔴"|"🟡"|"🟢"} color  Alias of `signal` (roll-up emoji).
  * @property {string} reasonIcon   Single glyph naming WHY (see REASON_ICONS).
+ * @property {string} reasonTag    Greppable word form of the same state, or "" when
+ *                                 that state carries no tag (see REASON_TAGS).
  * @property {boolean} autoMerge   Auto-merge is armed on this PR.
  * @property {string} autoMergeMethod `SQUASH` / `MERGE` / `REBASE`, or "".
  * @property {string} ci           `CI PASSED` / `CI FAILED — <name>` / `BUILD IN PROGRESS (<n> running)`.
@@ -512,10 +618,10 @@ function classify(raw) {
   const autoMerge = Boolean(pr.autoMergeRequest && pr.autoMergeRequest.enabledAt);
   /** @type {string} `SQUASH` / `MERGE` / `REBASE`, or "" when auto-merge is off. */
   const autoMergeMethod = autoMerge ? (pr.autoMergeRequest || {}).mergeMethod || `` : ``;
-  if (autoMerge) status.push(`${AUTO_MERGE_ICON} AUTO-MERGE${autoMergeMethod ? ` (${autoMergeMethod.toLowerCase()})` : ``}`);
+  if (autoMerge) status.push(`AUTO-MERGE${autoMergeMethod ? ` (${autoMergeMethod.toLowerCase()})` : ``}`);
 
-  /** @type {string} Single glyph naming why this PR sits where it does. */
-  const reasonIcon = reasonIconFor({
+  /** @type {string} The one state key naming why this PR sits where it does. */
+  const reasonKey = reasonKeyFor({
     draft: draft || wip,
     conflicted,
     changesRequested: decision === `CHANGES_REQUESTED`,
@@ -525,6 +631,10 @@ function classify(raw) {
     behind: pr.mergeStateStatus === `BEHIND`,
     openThreads,
   });
+  /** @type {string} Single glyph naming that state. */
+  const reasonIcon = REASON_ICONS[reasonKey] || REASON_ICONS.UNKNOWN;
+  /** @type {string} Greppable word form of that state, or "" where a tag adds nothing. */
+  const reasonTag = REASON_TAGS[reasonKey] || ``;
 
   // The row is the machine contract consumed by /sy-list-prs and /sy-babysit-prs.
   // The human renderer uses only url/title/signal/status/ageDays/isDraft; the rest
@@ -548,6 +658,7 @@ function classify(raw) {
     signal,
     color: signal,
     reasonIcon,
+    reasonTag,
     autoMerge,
     autoMergeMethod,
     ci,
@@ -694,13 +805,28 @@ function render(rows, opts, color) {
   }
 
   rows.forEach((row, idx) => {
-    const tag = row.isDraft ? `[Draft] ` : ``;
     // Icons lead the TITLE line only. The URL line stays bare on purpose — callers
     // read it as machine input, and a prefix there breaks every one of them.
-    // `<reason> [<auto-merge>] <title>`: what is wrong, then whether it merges itself.
-    const icons = `${row.reasonIcon}${row.autoMerge ? ` ${AUTO_MERGE_ICON}` : ``} `;
-    const body = `${icons}${tag}${row.title}`;
-    const title = color ? `${titleColorFor(row.signal)}${body}${ANSI.reset}` : body;
+    //
+    // Three independent facts, three treatments, so none competes with another:
+    //   reason icon  — WHICH state, one glyph, always present so the column stays flush
+    //   reason tag   — the same state as a greppable word; BOLD RED when it blocks the
+    //                  merge (a blocked title is already red, so weight is what reads),
+    //                  dim when it is merely administrative like [draft] / [behind]
+    //   [auto-merge] — dim, because it qualifies the row rather than diagnosing it
+    //   trailing …   — magenta, only while a build is actually running
+    // At most ONE reason tag ever appears: the key is chosen once, so "blocked" is a
+    // single answer rather than a checklist. Only styling is conditional on color —
+    // every text part prints either way, so a piped render loses tone, never a fact.
+    const paint = (text, style) => (color ? `${style}${text}${ANSI.reset}${titleColorFor(row.signal)}` : text);
+    const parts = [row.reasonIcon];
+    if (row.reasonTag) parts.push(paint(row.reasonTag, BLOCKED_TAGS.has(row.reasonTag) ? ANSI.blockedTag : ANSI.dim));
+    if (row.autoMerge) parts.push(paint(AUTO_MERGE_TAG, ANSI.dim));
+    parts.push(row.title);
+
+    const running = row.runningChecks > 0 ? (color ? `${ANSI.magenta}${RUNNING_SUFFIX}${ANSI.reset}` : RUNNING_SUFFIX) : ``;
+    const body = parts.join(` `);
+    const title = color ? `${titleColorFor(row.signal)}${body}${ANSI.reset}${running}` : `${body}${running}`;
 
     const lines = [title, formatLink(row.url, color)];
     if (opts.verbose) {
