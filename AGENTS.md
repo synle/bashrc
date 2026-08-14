@@ -671,6 +671,16 @@ and referenced from `instructions.md` by a pointer.
 - **Adding a split file is one entry in `LLM_SHARED_INSTRUCTION_FILES` plus a pointer** in
   `instructions.md`. Same "one registry, never a per-CLI list" rule as the command map —
   never a per-CLI edit.
+- **A CLI that can't read the shared folder by path gets a symlink, never a copy.**
+  `LLM_SHARED_INSTRUCTION_LINK_FOLDERS` in `llm-common.js` is the only place naming those
+  folders; `deploySharedLLMInstructions()` links every shared file into each one, renaming
+  the link to that folder's `suffix` (copilot globs
+  `~/.copilot/instructions/**/*.instructions.md`, so `pr-workflow.md` alone is ignored —
+  the link is `pr-workflow.instructions.md` pointing at the clean shared name). Adding a
+  CLI is one entry here, not an edit to its `setup.js`. Non-symlink entries in a
+  destination folder are never touched, which is what keeps plugin-owned files
+  (`captain.instructions.md`) alive. Claude and Gemini are deliberately absent — their only
+  mechanisms always-load the file and re-inflate the 40k budget the split exists to protect.
 - Keep `instructions.md` under 35k chars (the spec's budget, 5k below the hard limit). When
   it creeps up, split a section out rather than trimming rules away.
 

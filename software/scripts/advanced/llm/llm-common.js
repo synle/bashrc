@@ -457,6 +457,42 @@ const LLM_SHARED_INSTRUCTION_FILES = {
 };
 
 /**
+ * Per-CLI folders that get a symlink to EVERY file in LLM_SHARED_INSTRUCTION_FILES.
+ *
+ * Same "one registry, never a per-CLI list" rule as the command map: this is the only
+ * place that names a CLI's instruction folder, `deploySharedLLMInstructions()` is the
+ * only thing that reads it, and no CLI's setup.js knows the shared folder exists.
+ * Adding a CLI is one entry here; adding a shared instruction file is one entry in
+ * LLM_SHARED_INSTRUCTION_FILES and it lands in every folder listed here automatically.
+ *
+ * `suffix` is the per-CLI SHAPE difference — the only thing a per-CLI entry may encode.
+ * Copilot's loader globs `$HOME/.copilot/instructions/**\/*.instructions.md` (verbatim
+ * from its own `/help` customInstructions list), so a plain `pr-workflow.md` sitting in
+ * that folder is silently ignored. The link is therefore named `<base>.instructions.md`
+ * while the link TARGET keeps the clean shared name — one file, two names, zero copies.
+ *
+ * Symlinks, never copies: a copy is a second source of truth that goes stale the first
+ * time `instructions-pr-workflow.md` changes and nobody re-runs that CLI's setup.
+ *
+ * Deliberately NOT here:
+ * - claude — its only user-level mechanism is an `@path` import in CLAUDE.md, which
+ *   loads at launch and re-inflates the 40k always-loaded budget this split exists to
+ *   protect. `.claude/rules/*.md` is documented as PROJECT scope only; whether the
+ *   global `~/.claude/rules/` is read is unverified, so it is not wired up on a guess.
+ * - gemini — `contextFileName` takes filenames discovered hierarchically, not paths,
+ *   so every session would always-load the file. Same budget problem.
+ * - opencode — already loads the shared file by absolute path via `instructions: [...]`
+ *   in opencode/setup.js, which needs no link.
+ *
+ * Key   = absolute destination folder (created when missing).
+ * Value = `{ suffix }` — extension the destination link must carry.
+ * @type {Record<string, { suffix: string }>}
+ */
+const LLM_SHARED_INSTRUCTION_LINK_FOLDERS = {
+  [path.join(BASE_HOMEDIR_LINUX, ".copilot", "instructions")]: { suffix: ".instructions.md" },
+};
+
+/**
  * Moves a pre-consolidation `~/sy_llm_ai_plans/` into `~/sy_llm_ai/plans/` and removes
  * the old folder. Idempotent and non-destructive: an entry already present at the
  * destination is left alone and its source kept, so nothing is ever overwritten and
@@ -611,7 +647,79 @@ async function deploySharedLLMInstructions() {
     await writeText(path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, targetName), wrapped);
   }
 
+  linkSharedLLMInstructions();
+
   log(`>> shared instructions: ${LLM_SHARED_INSTRUCTIONS_FOLDER}`);
+}
+
+/**
+ * Symlinks every file in LLM_SHARED_INSTRUCTION_FILES into every folder in
+ * LLM_SHARED_INSTRUCTION_LINK_FOLDERS, renaming each link to carry that folder's
+ * required suffix (`pr-workflow.md` -> `pr-workflow.instructions.md`).
+ *
+ * Idempotent in both directions: a link already pointing at the right target is left
+ * alone, and a link pointing at a STALE target (folder moved, file renamed) is replaced.
+ * Anything that is not a symlink — a real file the user or a CLI plugin wrote — is never
+ * touched, which is what keeps `~/.copilot/instructions/captain.instructions.md` (owned
+ * by the context-repo plugin) alive across runs.
+ *
+ * Not a no-op wrapper around safeSymlink: the rename, the stale-target repair, and the
+ * foreign-file guard are the work. Called only from `deploySharedLLMInstructions()`.
+ *
+ * @returns {void}
+ */
+function linkSharedLLMInstructions() {
+  for (const [destFolder, { suffix }] of Object.entries(LLM_SHARED_INSTRUCTION_LINK_FOLDERS)) {
+    /** @type {number} Links created or repaired this run. */
+    let linked = 0;
+    /** @type {number} Destinations skipped because a non-symlink already occupies them. */
+    let skippedForeign = 0;
+
+    for (const targetName of Object.keys(LLM_SHARED_INSTRUCTION_FILES)) {
+      /** @type {string} The shared file this link points at — the single source of truth. */
+      const sourcePath = path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, targetName);
+      if (!fs.existsSync(sourcePath)) continue;
+
+      /** @type {string} Destination basename with the shared extension swapped for the CLI's. */
+      const destName = `${path.basename(targetName, path.extname(targetName))}${suffix}`;
+      /** @type {string} Absolute destination path inside this CLI's instruction folder. */
+      const destPath = path.join(destFolder, destName);
+
+      /** @type {fs.Stats|undefined} Lstat of whatever occupies the destination, if anything. */
+      let stat;
+      try {
+        stat = fs.lstatSync(destPath);
+      } catch {}
+
+      if (stat && !stat.isSymbolicLink()) {
+        skippedForeign++;
+        continue;
+      }
+
+      if (stat) {
+        /** @type {string} Existing link target, resolved to absolute. */
+        let existing = "";
+        try {
+          /** @type {string} Raw link target as stored on disk (may be relative). */
+          const raw = fs.readlinkSync(destPath);
+          existing = path.isAbsolute(raw) ? raw : path.resolve(destFolder, raw);
+        } catch {}
+        if (existing === sourcePath) continue;
+        try {
+          fs.unlinkSync(destPath);
+        } catch {}
+      }
+
+      fs.mkdirSync(destFolder, { recursive: true });
+      safeSymlink(sourcePath, destPath);
+      linked++;
+    }
+
+    log(
+      `>> shared instructions: linked ${linked} file(s) into ${destFolder}` +
+        (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
+    );
+  }
 }
 
 /**
