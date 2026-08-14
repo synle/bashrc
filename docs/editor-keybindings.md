@@ -143,9 +143,9 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 | `OS_KEY+shift+z`   | Redo (alt)             |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
 | `OS_KEY+s`         | Save                   |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
 | `OS_KEY+shift+s`   | Save all               |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
-| `OS_KEY+l`         | Select line            |   ✅    |    ❌     |     ❌     | ❌  | ✅  |
+| `OS_KEY+l`         | Select line            |   ✅    |    ❌     |     ❌     | ✅  | ✅  |
 | `OS_KEY+shift+l`   | Multi-cursor line ends |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
-| `OS_KEY+backspace` | Delete to BOL          |   ✅    |    ✅     |     ✅     | ❌  | ✅  |
+| `OS_KEY+backspace` | Delete to BOL          |   ✅    |    ✅     |     ✅     | ✅  | ✅  |
 
 ### Search
 
@@ -211,10 +211,10 @@ Brave keyboard shortcuts settings: `brave://settings/system/shortcuts`
 
 | Key              | Action                 | VS Code | Subl Text | Subl Merge | Zed | Vim |
 | ---------------- | ---------------------- | :-----: | :-------: | :--------: | :-: | :-: |
-| `ctrl+d`         | Split vertical         |   ✅    |    ✅     |     ❌     | ❌  | ✅  |
-| `ctrl+'`         | Split horizontal       |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
-| `OS_KEY+shift+d` | Split horizontal (alt) |   ✅    |    ❌     |     ❌     | ❌  | ❌  |
-| `ctrl+w`         | Single column / close  |   ✅    |    ✅     |     ❌     | ❌  | ❌  |
+| `ctrl+d`         | Split vertical         |   ✅    |    ✅     |     ❌     | ✅  | ✅  |
+| `ctrl+'`         | Split horizontal       |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
+| `OS_KEY+shift+d` | Split horizontal (alt) |   ✅    |    ❌     |     ❌     | ✅  | ❌  |
+| `ctrl+w`         | Single column / close  |   ✅    |    ✅     |     ❌     | ✅  | ❌  |
 | `ctrl+arrow`     | Navigate splits        |   ❌    |    ❌     |     ❌     | ❌  | ✅  |
 
 ### Debugging (VS Code only)
@@ -237,6 +237,23 @@ Bindings that fire only when the integrated terminal has focus (`when: "terminal
 | `OS_KEY+f`   | Find in terminal output                                           |
 | `ctrl+enter` | Insert a newline in TUI prompts (Claude Code etc.) — sends ESC+CR |
 | `` ctrl+` `` | Toggle terminal panel (also works outside terminal focus)         |
+
+### Integrated Terminal (Zed)
+
+`zed.js` auto-mirrors every `OS_KEY+X` editor binding into `context: "Terminal"` so those
+chords still fire while the terminal panel has focus. The mirror is a no-op for chords
+whose action is editor-only (`editor::*` does nothing in a terminal), and it used to
+clobber Zed's real Terminal defaults. These are therefore declared explicitly in
+`zed-keys.common.jsonc` — the mirror skips any chord already present in that context.
+
+| Key              | Action                                      |
+| ---------------- | ------------------------------------------- |
+| `OS_KEY+left`    | Move to line start (sends `\x01`, readline) |
+| `OS_KEY+right`   | Move to line end (sends `\x05`, readline)   |
+| `OS_KEY+up`      | Scroll page up                              |
+| `OS_KEY+down`    | Scroll page down                            |
+| `OS_KEY+d`       | Split right                                 |
+| `OS_KEY+shift+d` | Split down                                  |
 
 ---
 
@@ -273,8 +290,25 @@ Bindings that fire only when the integrated terminal has focus (`when: "terminal
 | ---------- | ---------- | :--------------: | :--: | :-----: |
 | `OS_KEY+c` | Copy       |        ✅        |  ❌  |   ✅    |
 | `OS_KEY+v` | Paste      |        ✅        |  ❌  |   ✅    |
-| `OS_KEY+f` | Find       |        ✅        |  ✅  |   ❌    |
+| `OS_KEY+f` | Find       |        ✅        |  ✅  |   ✅    |
 | `OS_KEY+a` | Select all |        ✅        |  ❌  |   ✅    |
+
+Ghostty's search chords (`OS_KEY+f` start, `OS_KEY+g` / `OS_KEY+shift+g` next / previous,
+`OS_KEY+e` search selection) come from Ghostty's **own defaults** — search shipped in
+Ghostty 1.3.0 — so they are deliberately absent from `ghostty-keys.common.jsonc`. Binding
+them there would only restate a default we already agree with.
+
+### Scrollback (Ghostty)
+
+Prompt jumping needs shell integration, which `ghostty.js` enables via
+`shell-integration = detect`. Ghostty's own defaults put these on `OS_KEY+arrow`; we
+relocated them because `OS_KEY+arrow` is split navigation here.
+
+| Key                 | Action              | Windows Terminal | tmux | Ghostty |
+| ------------------- | ------------------- | :--------------: | :--: | :-----: |
+| `OS_KEY+ctrl+up`    | Jump to prev prompt |        ❌        |  ❌  |   ✅    |
+| `OS_KEY+ctrl+down`  | Jump to next prompt |        ❌        |  ❌  |   ✅    |
+| `OS_KEY+home`/`end` | Scroll top / bottom |        ❌        |  ❌  |   ✅    |
 
 ### Zoom
 
@@ -291,7 +325,6 @@ Bindings that fire only when the integrated terminal has focus (`when: "terminal
 | tmux `OS_KEY+shift+arrow` resize | Doesn't work reliably; uses `prefix+arrow` instead        |
 | tmux copy/paste                  | Uses its own copy mode; `OS_KEY+c/v` not mapped           |
 | tmux zoom                        | Not applicable; controlled by the outer terminal emulator |
-| Ghostty `OS_KEY+f` find          | Ghostty has no in-terminal search; left unbound           |
 
 ### Termux (Android)
 

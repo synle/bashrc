@@ -14,11 +14,23 @@
   "remove_trailing_whitespace_on_save": true, // Strip trailing whitespace on save. Values: true, false
   "format_on_save": "on", // Auto-format code on save. Values: "on", "off"
   "vim_mode": false, // Enable vim keybindings. Values: true, false
+  // Double-clicking a search/diagnostic result in a multibuffer opens the real file instead
+  // of just selecting the word under the cursor. Values: "select", "open"
+  "double_click_in_multibuffer": "open",
+  // When the LSP reports no definition (common in bash/JSONC where the server is
+  // grammar-only), fall back to a reference search instead of silently doing nothing.
+  // Values: "none", "find_all_references"
+  "go_to_definition_fallback": "find_all_references",
+  // Parameter-name / type hints rendered inline from the language server.
+  "inlay_hints": { "enabled": true }, // Values: { enabled: true|false, ... }
   "edit_predictions": { "disabled_globs": ["**/*"] }, // Fallback only — disables inline AI completions everywhere (Zed's analog of VS Code's editor.lightbulb.enabled=off and copilot disable), so a machine with no reachable Ollama never talks to Zed's cloud Zeta. zed.js REPLACES this whole key with an `{provider: "ollama", ...}` block when getAutocompleteProvider() finds a FIM-capable host. Renamed from `inline_completions` in Zed v0.169+. Values: array of glob patterns where completions are disabled
   "show_completions_on_input": true, // Auto-trigger completions on typing. Values: true, false
 
   // --- Search ---
   "search": { "include_ignored": false }, // Don't search gitignored files. Values: true, false
+  // Lowercase query = case-insensitive, any uppercase char = case-sensitive. Same rule as
+  // vim's `/` and as `smartcase` in the repo's ripgrep/fzf wrappers. Values: true, false
+  "use_smartcase_search": true,
 
   // --- UI ---
   "cursor_blink": false, // Disable cursor blink animation. Values: true, false
@@ -29,6 +41,20 @@
     "folds": false, // Hide fold/collapse icons in the gutter. Values: true, false
   },
   "indent_guides": { "enabled": false }, // Hide vertical indent guide lines. Values: true, false
+  // Keep the enclosing function / class / block header pinned to the top of the viewport
+  // while scrolling through a long body — index.js is ~5k lines, doWork() bodies are long.
+  "sticky_scroll": { "enabled": true }, // Values: { enabled: true|false }
+  // Draw the ruler at `preferred_line_length` (EDITOR_CONFIGS.maxLineSize, injected by
+  // zed.js alongside `wrap_guides` — the column itself is never hardcoded here).
+  "show_wrap_guides": true, // Values: true, false
+  // Dim LSP-flagged dead code (unused imports/vars) instead of only underlining it.
+  // Directly serves the "delete leftovers in the refactor PR" rule. Values: 0.0-1.0
+  "unnecessary_code_fade": 0.4,
+  // Render LSP-reported colors as an inline swatch. The repo edits COLOR_MAP-bound
+  // *-color-{dark,light}.jsonc files constantly. Values: "none", "inlay", "border", "background"
+  "lsp_document_colors": "inlay",
+  // Show the error/warning text at the end of the offending line rather than only on hover.
+  "diagnostics": { "inline": { "enabled": true } }, // Values: { inline: { enabled: true|false } }
   "toolbar": {
     "breadcrumbs": false, // Hide breadcrumb navigation at top of editor. Values: true, false
     "quick_actions": false, // Hide quick action buttons in the toolbar. Values: true, false
@@ -54,6 +80,11 @@
     "max_scroll_history_lines": 200000, // EDITOR_CONFIGS.terminalScrollback
     "shell": { "program": "bash" }, // Default to bash — mirrors VS Code's terminal.integrated.defaultProfile.{linux,osx}=bash. Values: { program } or { with_arguments } or "system"
     "option_as_meta": false, // Send alt-key chords to Zed's keymap instead of the shell as Meta — pairs with the OS_KEY+X auto-mirror in zed.js so chords like alt+\ fire from terminal focus. Values: true, false
+    // Force a minimum APCA contrast between terminal fg and bg, so a program that picks
+    // its own near-background color stays readable. Same intent as Ghostty's
+    // `minimum-contrast` and as the AAA floors enforced by editorThemes.spec.js.
+    // Values: 0-106 (APCA Lc)
+    "minimum_contrast": 45,
   },
 
   // --- AI ---
@@ -84,11 +115,14 @@
   "auto_update": false, // Disable automatic updates. Values: true, false
 
   // --- Git ---
-  // Only `git_gutter` is a valid key under Zed's `git` block. `enabled` and `autoFetch`
-  // were never supported (linter rejects them) — git integration is always on; remotes
-  // are managed by the user.
+  // `enabled` and `autoFetch` were never supported under this block (the linter rejects
+  // them) — git integration is always on and remotes are managed by the user. `git_gutter`
+  // and `inline_blame` ARE both valid keys in Zed v0.231.2.
   "git": {
     "git_gutter": "hide", // Hide git diff indicators in the gutter. Values: "tracked_files", "hide"
+    // Virtual-text blame for the current line only, revealed after a short dwell so it
+    // never flickers while typing. Off by default in Zed. Values: { enabled, delay_ms, ... }
+    "inline_blame": { "enabled": true, "delay_ms": 600 },
   },
 
   // --- Extensions ---
@@ -117,6 +151,17 @@
     "xml": true, // windows/classic_start.config.xml (grammar only)
     "ini": true, // metadata *.config files read as ini/conf (grammar only)
     "log": true, // $BASHRC_TEMP_DIR run.log / fullsetup.log debugging (grammar only)
+    // `basher` is a LANGUAGE SERVER extension, not a grammar one, so it is the single
+    // exception to the "every entry needs a `languages` formatter pin" rule above — it
+    // attaches to the built-in Shell Script language, which is already pinned below.
+    //
+    // Zed bundles the bash GRAMMAR but no bash language server: `bash-language-server`
+    // does not appear anywhere in the Zed binary. Without this extension Zed is the only
+    // editor this repo provisions that gets zero shell diagnostics, even though
+    // lsp/install.sh already installs `bash-language-server` globally and lsp-common.js
+    // wires it into VS Code (mads-hartmann.bash-ide-vscode) and Sublime (LSP-bash).
+    // This repo is majority bash, so that gap was the single largest one in the Zed setup.
+    "basher": true, // Shell Script diagnostics via bash-language-server (+ shellcheck when on PATH)
   },
   "icon_theme": "Material Icon Theme", // File icon theme for sidebar. Values: any installed icon theme name
 

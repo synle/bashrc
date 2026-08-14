@@ -112,7 +112,11 @@
       "OS_KEY-ctrl-shift-f": "editor::Format",
       // find next / previous (after deploy) — matches VS Code's move-selection-to-next/prev-find-match
       "OS_KEY-g": "search::SelectNextMatch",
-      "OS_KEY-shift-g": "search::SelectPrevMatch",
+      // `search::SelectPreviousMatch` — NOT `SelectPrevMatch`. Zed's `actions!(search, [...])`
+      // macro (crates/search/src/search.rs) declares the long spelling only, so the short one
+      // is an unknown action: Zed drops the binding and raises a keymap error notification,
+      // which is exactly what silently broke find-previous here.
+      "OS_KEY-shift-g": "search::SelectPreviousMatch",
       // replace in buffer — matches VS Code `editor.action.startFindReplaceAction`
       "OS_KEY-h": "buffer_search::DeployReplace",
       // find / replace across project — matches VS Code findInFiles / replaceInFiles
@@ -138,12 +142,17 @@
       // page up / down with selection — matches VS Code `cursorPage{Up,Down}Select`
       "OS_KEY-shift-up": "editor::SelectPageUp",
       "OS_KEY-shift-down": "editor::SelectPageDown",
-      // line home / end — matches VS Code `cursor{Home,End}` (alt+left / alt+right)
-      "OS_KEY-left": "editor::MoveToBeginningOfLine",
-      "OS_KEY-right": "editor::MoveToEndOfLine",
+      // line home / end — matches VS Code `cursor{Home,End}` (alt+left / alt+right).
+      // The argument object is REQUIRED, not cosmetic: the bare action form defaults every
+      // flag to `false`, while Zed's own default keymap passes
+      // `{stop_at_soft_wraps: true, stop_at_indent: true}`. `soft_wrap` is `editor_width`
+      // in zed-config.jsonc, so without these the cursor jumps to the start/end of the
+      // whole logical line instead of the visible row.
+      "OS_KEY-left": ["editor::MoveToBeginningOfLine", { "stop_at_soft_wraps": true, "stop_at_indent": true }],
+      "OS_KEY-right": ["editor::MoveToEndOfLine", { "stop_at_soft_wraps": true }],
       // line home / end with selection — matches VS Code `cursor{Home,End}Select`
-      "OS_KEY-shift-left": "editor::SelectToBeginningOfLine",
-      "OS_KEY-shift-right": "editor::SelectToEndOfLine",
+      "OS_KEY-shift-left": ["editor::SelectToBeginningOfLine", { "stop_at_soft_wraps": true, "stop_at_indent": true }],
+      "OS_KEY-shift-right": ["editor::SelectToEndOfLine", { "stop_at_soft_wraps": true }],
       // file top / bottom — matches VS Code `cursor{Top,Bottom}` (alt+ctrl+up/down/left/right)
       "OS_KEY-ctrl-up": "editor::MoveToBeginning",
       "OS_KEY-ctrl-left": "editor::MoveToBeginning",
@@ -197,14 +206,28 @@
     },
   },
   {
-    // Terminal-focus overrides: copy/paste must use terminal::* actions because
-    // editor::Copy / editor::Paste are no-ops in the terminal pane. The auto-mirror
-    // in zed.js detects an explicit Terminal-context binding for a chord and skips
-    // mirroring the editor::* version on top of it.
+    // Terminal-focus overrides. The auto-mirror in zed.js copies every OS-modifier
+    // binding from the block above into `context: "Terminal"`, but `editor::*` actions
+    // are NO-OPS in the terminal pane — so any mirrored chord whose editor action has a
+    // real terminal counterpart has to be re-declared here, or it both does nothing AND
+    // shadows the Zed default that used to do the right thing. The mirror detects an
+    // explicit Terminal-context binding for a chord and skips mirroring over it.
+    //
+    // Each entry below restores a Zed v0.231.2 `context: "Terminal"` default that the
+    // mirror would otherwise clobber, keeping the OS_KEY convention intact:
+    //   OS_KEY+c/v  copy/paste   (editor::Copy / editor::Paste are no-ops here)
+    //   OS_KEY+←/→  BOL / EOL    (readline ctrl-a / ctrl-e, sent as raw \x01 / \x05)
+    //   OS_KEY+↑/↓  page up/down (terminal scrollback, not editor cursor motion)
+    //   OS_KEY+d    split right  (mirrored editor::SelectNext means nothing in a shell)
     "context": "Terminal",
     "bindings": {
       "OS_KEY-c": "terminal::Copy",
       "OS_KEY-v": "terminal::Paste",
+      "OS_KEY-left": ["terminal::SendText", "\u0001"],
+      "OS_KEY-right": ["terminal::SendText", "\u0005"],
+      "OS_KEY-up": "terminal::ScrollPageUp",
+      "OS_KEY-down": "terminal::ScrollPageDown",
+      "OS_KEY-d": "pane::SplitRight",
     },
   },
 ]

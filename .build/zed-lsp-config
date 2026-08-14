@@ -6,7 +6,7 @@
 
 {
   "lsp": {
-    "typescript": {
+    "typescript-language-server": {
       "binary": {
         "path": "typescript-language-server",
         "arguments": [
@@ -34,13 +34,7 @@
         "arguments": []
       }
     },
-    "jdtls": {
-      "binary": {
-        "path": "jdtls",
-        "arguments": []
-      }
-    },
-    "bash": {
+    "bash-language-server": {
       "binary": {
         "path": "bash-language-server",
         "arguments": [
@@ -48,7 +42,7 @@
         ]
       }
     },
-    "yaml": {
+    "yaml-language-server": {
       "binary": {
         "path": "yaml-language-server",
         "arguments": [
@@ -56,15 +50,7 @@
         ]
       }
     },
-    "html": {
-      "binary": {
-        "path": "vscode-html-language-server",
-        "arguments": [
-          "--stdio"
-        ]
-      }
-    },
-    "css": {
+    "vscode-css-language-server": {
       "binary": {
         "path": "vscode-css-language-server",
         "arguments": [
@@ -72,7 +58,7 @@
         ]
       }
     },
-    "json": {
+    "vscode-json-language-server": {
       "binary": {
         "path": "vscode-json-language-server",
         "arguments": [
@@ -88,23 +74,7 @@
         ]
       }
     },
-    "docker": {
-      "binary": {
-        "path": "docker-langserver",
-        "arguments": [
-          "--stdio"
-        ]
-      }
-    },
-    "markdown": {
-      "binary": {
-        "path": "vscode-markdown-language-server",
-        "arguments": [
-          "--stdio"
-        ]
-      }
-    },
-    "vue": {
+    "vue-language-server": {
       "binary": {
         "path": "vue-language-server",
         "arguments": [
@@ -112,42 +82,12 @@
         ]
       }
     },
-    "tailwind": {
+    "tailwindcss-language-server": {
       "binary": {
         "path": "tailwindcss-language-server",
         "arguments": [
           "--stdio"
         ]
-      }
-    },
-    "graphql": {
-      "binary": {
-        "path": "graphql-lsp",
-        "arguments": [
-          "--stdio"
-        ]
-      }
-    },
-    "prisma": {
-      "binary": {
-        "path": "prisma-language-server",
-        "arguments": [
-          "--stdio"
-        ]
-      }
-    },
-    "sql": {
-      "binary": {
-        "path": "sql-language-server",
-        "arguments": [
-          "--stdio"
-        ]
-      }
-    },
-    "taplo": {
-      "binary": {
-        "path": "taplo",
-        "arguments": []
       }
     }
   }

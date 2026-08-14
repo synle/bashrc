@@ -62,8 +62,8 @@ async function doWork() {
     const settingsPath = path.join(targetPath, "settings.json");
     const existing = await _readExistingZedSettings(settingsPath);
 
-    /** @type {object} Merged settings — preserve every existing top-level key, replace `lsp` with our managed block. Replacing (not deep-merging) so removed entries from `LSP_SERVERS` actually disappear. */
-    const merged = { ...existing, lsp: { ...(existing.lsp || {}), ...lspBlock } };
+    /** @type {object} Merged settings — preserve every existing top-level key, and REPLACE `lsp` outright with our managed block. Replacing (not spreading `existing.lsp` first) is what makes a renamed or removed `LSP_SERVERS` entry actually disappear; spreading left dead keys behind forever, which is how the pre-`zedId` internal names (`bash`, `typescript`, …) would survive in settings.json after being corrected. */
+    const merged = { ...existing, lsp: lspBlock };
 
     await backupConfigFile(settingsPath);
     await writeJson(settingsPath, merged);

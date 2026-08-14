@@ -19,6 +19,11 @@
   "remove_trailing_whitespace_on_save": true,
   "format_on_save": "on",
   "vim_mode": false,
+  "double_click_in_multibuffer": "open",
+  "go_to_definition_fallback": "find_all_references",
+  "inlay_hints": {
+    "enabled": true
+  },
   "edit_predictions": {
     "disabled_globs": [
       "**/*"
@@ -28,6 +33,7 @@
   "search": {
     "include_ignored": false
   },
+  "use_smartcase_search": true,
   "cursor_blink": false,
   "minimap": {
     "show": "never"
@@ -41,6 +47,17 @@
   },
   "indent_guides": {
     "enabled": false
+  },
+  "sticky_scroll": {
+    "enabled": true
+  },
+  "show_wrap_guides": true,
+  "unnecessary_code_fade": 0.4,
+  "lsp_document_colors": "inlay",
+  "diagnostics": {
+    "inline": {
+      "enabled": true
+    }
   },
   "toolbar": {
     "breadcrumbs": false,
@@ -69,7 +86,8 @@
     "shell": {
       "program": "bash"
     },
-    "option_as_meta": false
+    "option_as_meta": false,
+    "minimum_contrast": 45
   },
   "disable_ai": false,
   "telemetry": {
@@ -78,7 +96,11 @@
   },
   "auto_update": false,
   "git": {
-    "git_gutter": "hide"
+    "git_gutter": "hide",
+    "inline_blame": {
+      "enabled": true,
+      "delay_ms": 600
+    }
   },
   "auto_install_extensions": {
     "material-icon-theme": true,
@@ -90,7 +112,8 @@
     "scss": true,
     "xml": true,
     "ini": true,
-    "log": true
+    "log": true,
+    "basher": true
   },
   "icon_theme": "Material Icon Theme",
   "prettier": {
@@ -187,6 +210,9 @@
   "ui_font_size": 16,
   "tab_size": 2,
   "preferred_line_length": 140,
+  "wrap_guides": [
+    140
+  ],
   "theme": {
     "mode": "system",
     "light": "Sy Light",

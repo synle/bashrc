@@ -204,6 +204,10 @@ function _getZedSettings(
     // --- Editing ---
     tab_size: EDITOR_CONFIGS.tabSize,
     preferred_line_length: EDITOR_CONFIGS.maxLineSize,
+    // Ruler column(s). `show_wrap_guides` (zed-config.jsonc) turns the ruler on; this is
+    // the column it lands on, taken from the same EDITOR_CONFIGS source as
+    // preferred_line_length so the number is never written twice.
+    wrap_guides: [EDITOR_CONFIGS.maxLineSize],
 
     // --- Terminal ---
     terminal: {

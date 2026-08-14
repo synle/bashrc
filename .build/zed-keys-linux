@@ -77,7 +77,7 @@
       "alt-f": "buffer_search::Deploy",
       "alt-ctrl-shift-f": "editor::Format",
       "alt-g": "search::SelectNextMatch",
-      "alt-shift-g": "search::SelectPrevMatch",
+      "alt-shift-g": "search::SelectPreviousMatch",
       "alt-h": "buffer_search::DeployReplace",
       "alt-shift-f": "workspace::NewSearch",
       "alt-shift-h": "workspace::NewSearch",
@@ -90,10 +90,32 @@
       "alt-down": "editor::MovePageDown",
       "alt-shift-up": "editor::SelectPageUp",
       "alt-shift-down": "editor::SelectPageDown",
-      "alt-left": "editor::MoveToBeginningOfLine",
-      "alt-right": "editor::MoveToEndOfLine",
-      "alt-shift-left": "editor::SelectToBeginningOfLine",
-      "alt-shift-right": "editor::SelectToEndOfLine",
+      "alt-left": [
+        "editor::MoveToBeginningOfLine",
+        {
+          "stop_at_soft_wraps": true,
+          "stop_at_indent": true
+        }
+      ],
+      "alt-right": [
+        "editor::MoveToEndOfLine",
+        {
+          "stop_at_soft_wraps": true
+        }
+      ],
+      "alt-shift-left": [
+        "editor::SelectToBeginningOfLine",
+        {
+          "stop_at_soft_wraps": true,
+          "stop_at_indent": true
+        }
+      ],
+      "alt-shift-right": [
+        "editor::SelectToEndOfLine",
+        {
+          "stop_at_soft_wraps": true
+        }
+      ],
       "alt-ctrl-up": "editor::MoveToBeginning",
       "alt-ctrl-left": "editor::MoveToBeginning",
       "alt-ctrl-down": "editor::MoveToEnd",
@@ -124,7 +146,18 @@
     "context": "Terminal",
     "bindings": {
       "alt-c": "terminal::Copy",
-      "alt-v": "terminal::Paste"
+      "alt-v": "terminal::Paste",
+      "alt-left": [
+        "terminal::SendText",
+        "\u0001"
+      ],
+      "alt-right": [
+        "terminal::SendText",
+        "\u0005"
+      ],
+      "alt-up": "terminal::ScrollPageUp",
+      "alt-down": "terminal::ScrollPageDown",
+      "alt-d": "pane::SplitRight"
     }
   },
   {
@@ -191,12 +224,11 @@
       "alt-/": "editor::ToggleComments",
       "alt-]": "editor::Indent",
       "alt-[": "editor::Outdent",
-      "alt-d": "editor::SelectNext",
       "alt-ctrl-g": "editor::SelectAllMatches",
       "alt-f": "buffer_search::Deploy",
       "alt-ctrl-shift-f": "editor::Format",
       "alt-g": "search::SelectNextMatch",
-      "alt-shift-g": "search::SelectPrevMatch",
+      "alt-shift-g": "search::SelectPreviousMatch",
       "alt-h": "buffer_search::DeployReplace",
       "alt-shift-f": "workspace::NewSearch",
       "alt-shift-h": "workspace::NewSearch",
@@ -204,14 +236,21 @@
       "alt-r": "outline::Toggle",
       "alt-shift-'": "project_symbols::Toggle",
       "alt-enter": "editor::GoToDefinition",
-      "alt-up": "editor::MovePageUp",
-      "alt-down": "editor::MovePageDown",
       "alt-shift-up": "editor::SelectPageUp",
       "alt-shift-down": "editor::SelectPageDown",
-      "alt-left": "editor::MoveToBeginningOfLine",
-      "alt-right": "editor::MoveToEndOfLine",
-      "alt-shift-left": "editor::SelectToBeginningOfLine",
-      "alt-shift-right": "editor::SelectToEndOfLine",
+      "alt-shift-left": [
+        "editor::SelectToBeginningOfLine",
+        {
+          "stop_at_soft_wraps": true,
+          "stop_at_indent": true
+        }
+      ],
+      "alt-shift-right": [
+        "editor::SelectToEndOfLine",
+        {
+          "stop_at_soft_wraps": true
+        }
+      ],
       "alt-ctrl-up": "editor::MoveToBeginning",
       "alt-ctrl-left": "editor::MoveToBeginning",
       "alt-ctrl-down": "editor::MoveToEnd",

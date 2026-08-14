@@ -139,7 +139,7 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
   // tabs-in-titlebar style matches modern Mac apps, and a cmd+grave quick
   // terminal gives a Quake-style drop-down. Skipped on Linux where most of
   // these settings either don't apply or use a different keybind.
-  // background-blur-radius is macOS-only (no Linux compositor equivalent in Ghostty)
+  // background-blur is macOS-only (no Linux compositor equivalent in Ghostty)
   // and pairs with the cross-platform background-opacity below.
   const macOnlyBlock = isOsMac
     ? code`
@@ -147,9 +147,14 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
         # ---- macOS-specific ----
         macos-option-as-alt = true
         macos-titlebar-style = tabs
-        macos-non-native-fullscreen = visible-menu
+        # Renamed key: \`macos-non-native-fullscreen = visible-menu\` is the
+        # pre-1.2 spelling. Still accepted as a compat alias, but \`fullscreen\`
+        # is the current cross-platform key.
+        fullscreen = non-native-visible-menu
         quit-after-last-window-closed = true
-        background-blur-radius = 20
+        # Renamed key: was \`background-blur-radius\`. Still accepted as a compat
+        # alias; \`background-blur\` takes the same radius in px.
+        background-blur = 20
         keybind = global:cmd+grave_accent=toggle_quick_terminal
         quick-terminal-position = top
         quick-terminal-animation-duration = 0.1
@@ -191,17 +196,30 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     theme = light:${lightThemeName},dark:${darkThemeName}
 
     # ---- Shell integration ----
-    # Auto-detect bash/zsh/fish; enable sudo askpass integration only.
-    # Cursor-shape control is intentionally OMITTED so the shell can't
-    # override our \`cursor-style = block\` to a bar/beam in insert mode.
-    # The 'title' feature is also OMITTED: with it on, Ghostty's auto-
-    # injected shell integration overrides the PROMPT_COMMAND-driven OSC 0
-    # title (set in software/bootstrap/profile-advanced.sh), and the tab
-    # title ends up showing the last-run command name (e.g. "clean",
-    # "open .") instead of the current pwd. With it off, the user's
-    # PROMPT_COMMAND wins and tabs show \`shorter_pwd_path\` (e.g. "~/g/bashrc").
+    # Auto-detect bash/zsh/fish.
+    #
+    # This list MERGES with the defaults, it does not replace them. Verified on
+    # Ghostty 1.3.1: a config of just \`shell-integration-features = sudo\` resolves
+    # (via \`ghostty +show-config\`) to \`cursor,sudo,title,no-ssh-env,no-ssh-terminfo,path\`
+    # — i.e. omitting a feature leaves it at its DEFAULT, which for cursor and title
+    # is ON. Disabling requires the explicit \`no-\` prefix. Every feature below is
+    # therefore spelled out.
+    #
+    #   no-cursor    - shell must not override our \`cursor-style = block\` with a
+    #                  bar/beam in vim/zsh insert mode.
+    #   sudo         - askpass integration so GUI sudo prompts work.
+    #   no-title     - with title ON, Ghostty's auto-injected integration overrides
+    #                  the PROMPT_COMMAND-driven OSC 0 title (set in
+    #                  software/bootstrap/profile-advanced.sh) and tabs show the
+    #                  last-run command ("clean", "open .") instead of the pwd. OFF
+    #                  lets PROMPT_COMMAND win, so tabs show \`shorter_pwd_path\`.
+    #   ssh-env      - propagate TERM/COLORTERM over ssh so remote hosts that don't
+    #                  know \`xterm-ghostty\` still get a sane terminal (added 1.2.0).
+    #   ssh-terminfo - install ghostty's terminfo on the remote host on first
+    #                  connect, so full keys/colors work there too (added 1.2.0).
+    #   path         - put ghostty's own bin dir on PATH (default-on; explicit here).
     shell-integration = detect
-    shell-integration-features = sudo
+    shell-integration-features = no-cursor,sudo,no-title,ssh-env,ssh-terminfo,path
     # New tabs/splits/windows open in the same cwd as the active pane.
     working-directory = inherit
 
@@ -214,6 +232,10 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # "effectively unbounded" intent across all terminals.
     scrollback-limit = 104857600
     mouse-hide-while-typing = true
+    # Desktop notification when a long command finishes in a surface that isn't
+    # focused. Requires shell integration (enabled above) to know where a command
+    # starts/ends. Default is \`never\`; added in 1.3.0.
+    notify-on-command-finish = unfocused
     # Hold shift to capture mouse events and send to terminal app (e.g. vim,
     # tmux). Without this, Ghostty consumes shift+click for its own selection.
     mouse-shift-capture = true
@@ -224,9 +246,17 @@ async function _buildConfigContent(isOsMac, { is_prebuilt_config = false } = {})
     # Even padding on both sides of a split, regardless of split orientation.
     window-padding-balance = true
     window-save-state = always
-    # Slightly translucent background. Pairs with macOS background-blur-radius
+    # Slightly translucent background. Pairs with macOS background-blur
     # (set in the mac-only block); on Linux it relies on the compositor.
     background-opacity = 0.9
+    # Apply that opacity to cells that set their OWN background color, not just to
+    # the default background. Without it, any full-screen TUI that paints a bg
+    # (vim, tmux status, fzf, bat, htop) renders as an opaque rectangle and the
+    # translucency above only shows through at an empty prompt. Added in 1.2.0.
+    background-opacity-cells = true
+    # Extend the edge cell's background into the window padding, so a colored TUI
+    # doesn't leave a 6px default-colored border on all four sides.
+    window-padding-color = extend
     # Match the window chrome / titlebar to the OS appearance instead of forcing
     # a single theme variant.
     window-theme = auto

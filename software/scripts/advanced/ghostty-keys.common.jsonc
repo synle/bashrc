@@ -41,13 +41,29 @@
   { "key": "OS_KEY+shift+right", "action": "resize_split:right,10" },
   { "key": "OS_KEY+shift+\\", "action": "toggle_split_zoom" },
 
+  // ---- Scrollback / prompts ----
+  // Jump the viewport to the previous/next shell prompt — the terminal equivalent
+  // of "scroll back to where that build started". Needs shell integration (enabled
+  // in ghostty.js) to know where prompts are.
+  //
+  // Ghostty's own defaults put jump_to_prompt on OS_KEY+up/down, but we relocated
+  // split navigation onto those, so it is re-homed here. OS_KEY+ctrl+arrow is free:
+  // Ghostty's default resize_split lived there, and we moved resize to
+  // OS_KEY+shift+arrow above. Verified unbound via `ghostty +show-config --default`.
+  { "key": "OS_KEY+ctrl+up", "action": "jump_to_prompt:-1" },
+  { "key": "OS_KEY+ctrl+down", "action": "jump_to_prompt:1" },
+
   // ---- Font Zoom ----
   { "key": "OS_KEY+equal", "action": "increase_font_size:1" },
   { "key": "OS_KEY+minus", "action": "decrease_font_size:1" },
   { "key": "OS_KEY+0", "action": "reset_font_size" },
 
   // ---- Edit ----
-  { "key": "OS_KEY+c", "action": "copy_to_clipboard" },
+  // `:mixed` (Ghostty's own default for this chord) puts BOTH plain text and a
+  // styled/HTML flavor on the clipboard, so pasting into a rich-text target keeps
+  // colors while pasting into a plain one is unchanged. Binding the bare
+  // `copy_to_clipboard` here would silently downgrade to plain-text-only.
+  { "key": "OS_KEY+c", "action": "copy_to_clipboard:mixed" },
   { "key": "OS_KEY+v", "action": "paste_from_clipboard" },
   { "key": "OS_KEY+a", "action": "select_all" },
 
