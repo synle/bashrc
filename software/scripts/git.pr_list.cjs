@@ -35,7 +35,12 @@
  *   including `READY TO MERGE (with comments)` (still has threads to resolve).
  *
  * OUTPUT
- *   Human (default): two lines per PR — colored title, then the URL.
+ *   Human (default): two lines per PR — colored title, then the URL. The title
+ *   line leads with a reason icon naming WHY the PR sits where it does
+ *   (🗣️ changes requested, ⚔️ conflict, 💥 CI failed, 🏗️ build running,
+ *   👀 awaiting review, 🐌 behind base, 💬 ready but threads open, 🚀 ready,
+ *   🚧 draft/WIP), plus 🪄 when auto-merge is armed. The URL line stays bare —
+ *   callers parse it.
  *   `--verbose`    : adds a third metadata line (timestamp · signal · status).
  *   `--links`      : just the URLs, one per line — paste-clean for other tools.
  *   `--json`       : the full enriched rows as JSON.
@@ -290,6 +295,7 @@ query($owner:String!,$repo:String!,$number:Int!){
       author{ login }
       repository{ nameWithOwner }
       reviewDecision
+      autoMergeRequest{ enabledAt mergeMethod }
       reviewThreads(first:100){ nodes{ isResolved comments(first:1){ nodes{ author{ login __typename } } } } }
       commits(last:1){ nodes{ commit{ statusCheckRollup{ state contexts(first:100){ nodes{
         __typename
@@ -322,6 +328,75 @@ function ageInDays(iso) {
 }
 
 /**
+ * The reason icon vocabulary — one glyph naming WHY a PR is in the state it is in.
+ *
+ * The 🔴/🟡/🟢 signal answers "how bad is it"; three different problems all render 🔴
+ * and a reader has to open the PR to find out which. These name the cause at a glance,
+ * so a wall of red resolves into "one conflict, two failing builds" without a click.
+ *
+ * Deliberately distinct silhouettes rather than a themed set — these are scanned in a
+ * column, so 💥 vs ⚔️ vs 🗣️ has to be readable at a glance and in a small terminal font.
+ * @type {Record<string, string>}
+ */
+const REASON_ICONS = {
+  // Red — something is wrong, in Work-owed tier order (a blocked human outranks
+  // broken machinery, which outranks a stale branch).
+  CHANGES_REQUESTED: `🗣️`,
+  MERGE_CONFLICT: `⚔️`,
+  CI_FAILED: `💥`,
+  // Yellow — nothing wrong, not yet clear.
+  BUILD_RUNNING: `🏗️`,
+  AWAITING_REVIEW: `👀`,
+  BEHIND_BASE: `🐌`,
+  // Green — clear to merge.
+  READY: `🚀`,
+  READY_WITH_COMMENTS: `💬`,
+  // Not in play.
+  DRAFT: `🚧`,
+  UNKNOWN: `❓`,
+};
+
+/**
+ * Auto-merge indicator. GitHub will merge this PR itself the moment its gates go
+ * green, which changes what a human should do with it — a 🟡 row with this icon
+ * needs no babysitting, while the same row without it is waiting on someone to
+ * come back and click merge. That distinction was invisible before.
+ * @type {string}
+ */
+const AUTO_MERGE_ICON = `🪄`;
+
+/**
+ * Pick the single reason icon for a classified PR — first match wins.
+ *
+ * Order is the Work-owed ranking's, not the status string's: a blocked human (P1)
+ * outranks broken machinery (P2), which outranks a stale branch (P3). So a PR that is
+ * both conflicting and has changes requested shows 🗣️ — the human is the bigger deal,
+ * and the `status` field still lists every component for anyone who needs all of them.
+ *
+ * @param {Object} state Classified booleans/counters for one PR.
+ * @param {boolean} state.draft Draft or WIP-titled.
+ * @param {boolean} state.conflicted `mergeable === "CONFLICTING"`.
+ * @param {boolean} state.changesRequested `reviewDecision === "CHANGES_REQUESTED"`.
+ * @param {boolean} state.ciFailed A check finished with a failing conclusion.
+ * @param {number} state.running Self-resolving checks still in flight.
+ * @param {boolean} state.approved `reviewDecision === "APPROVED"`.
+ * @param {boolean} state.behind Head branch is behind its base.
+ * @param {number} state.openThreads Unresolved review threads.
+ * @returns {string} One emoji from {@link REASON_ICONS}.
+ */
+function reasonIconFor(state) {
+  if (state.draft) return REASON_ICONS.DRAFT;
+  if (state.changesRequested) return REASON_ICONS.CHANGES_REQUESTED;
+  if (state.conflicted) return REASON_ICONS.MERGE_CONFLICT;
+  if (state.ciFailed) return REASON_ICONS.CI_FAILED;
+  if (state.running > 0) return REASON_ICONS.BUILD_RUNNING;
+  if (!state.approved) return REASON_ICONS.AWAITING_REVIEW;
+  if (state.behind) return REASON_ICONS.BEHIND_BASE;
+  if (state.openThreads > 0) return REASON_ICONS.READY_WITH_COMMENTS;
+  return REASON_ICONS.READY;
+}
+
+/**
  * @typedef {Object} Row
  * @property {string} url
  * @property {string} repo
@@ -338,6 +413,9 @@ function ageInDays(iso) {
  * @property {string} group        Classification bucket.
  * @property {"🔴"|"🟡"|"🟢"} signal
  * @property {"🔴"|"🟡"|"🟢"} color  Alias of `signal` (roll-up emoji).
+ * @property {string} reasonIcon   Single glyph naming WHY (see REASON_ICONS).
+ * @property {boolean} autoMerge   Auto-merge is armed on this PR.
+ * @property {string} autoMergeMethod `SQUASH` / `MERGE` / `REBASE`, or "".
  * @property {string} ci           `CI PASSED` / `CI FAILED — <name>` / `BUILD IN PROGRESS (<n> running)`.
  * @property {string} review       `APPROVED` / `CHANGES REQUESTED` / `AWAITING REVIEW`.
  * @property {string} failedCheck  Name of the first failing check, or "".
@@ -430,6 +508,24 @@ function classify(raw) {
 
   const signal = red ? `🔴` : green ? `🟢` : `🟡`;
 
+  /** @type {boolean} GitHub will merge this itself once the gates clear. */
+  const autoMerge = Boolean(pr.autoMergeRequest && pr.autoMergeRequest.enabledAt);
+  /** @type {string} `SQUASH` / `MERGE` / `REBASE`, or "" when auto-merge is off. */
+  const autoMergeMethod = autoMerge ? (pr.autoMergeRequest || {}).mergeMethod || `` : ``;
+  if (autoMerge) status.push(`${AUTO_MERGE_ICON} AUTO-MERGE${autoMergeMethod ? ` (${autoMergeMethod.toLowerCase()})` : ``}`);
+
+  /** @type {string} Single glyph naming why this PR sits where it does. */
+  const reasonIcon = reasonIconFor({
+    draft: draft || wip,
+    conflicted,
+    changesRequested: decision === `CHANGES_REQUESTED`,
+    ciFailed: failedCheck !== ``,
+    running,
+    approved: decision === `APPROVED`,
+    behind: pr.mergeStateStatus === `BEHIND`,
+    openThreads,
+  });
+
   // The row is the machine contract consumed by /sy-list-prs and /sy-babysit-prs.
   // The human renderer uses only url/title/signal/status/ageDays/isDraft; the rest
   // exist so a JSON consumer never has to fall back to a per-PR `gh pr view` —
@@ -451,6 +547,9 @@ function classify(raw) {
     group,
     signal,
     color: signal,
+    reasonIcon,
+    autoMerge,
+    autoMergeMethod,
     ci,
     review,
     failedCheck,
@@ -596,7 +695,12 @@ function render(rows, opts, color) {
 
   rows.forEach((row, idx) => {
     const tag = row.isDraft ? `[Draft] ` : ``;
-    const title = color ? `${titleColorFor(row.signal)}${tag}${row.title}${ANSI.reset}` : `${tag}${row.title}`;
+    // Icons lead the TITLE line only. The URL line stays bare on purpose — callers
+    // read it as machine input, and a prefix there breaks every one of them.
+    // `<reason> [<auto-merge>] <title>`: what is wrong, then whether it merges itself.
+    const icons = `${row.reasonIcon}${row.autoMerge ? ` ${AUTO_MERGE_ICON}` : ``} `;
+    const body = `${icons}${tag}${row.title}`;
+    const title = color ? `${titleColorFor(row.signal)}${body}${ANSI.reset}` : body;
 
     const lines = [title, formatLink(row.url, color)];
     if (opts.verbose) {

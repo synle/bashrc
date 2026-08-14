@@ -375,7 +375,7 @@ describe("list_prs — output shape", () => {
   it("prints title then URL, two lines, and keeps STDOUT free of progress noise", () => {
     const { stdout, stderr } = runCli([], [pullRequest(AWAITING_REVIEW)]);
     const lines = stdout.split("\n").filter(Boolean);
-    expect(lines[0]).toBe("Retry token refresh on 401");
+    expect(lines[0]).toBe("👀 Retry token refresh on 401");
     expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
     expect(lines).toHaveLength(2);
     expect(stdout).not.toContain(">>>");
@@ -454,6 +454,9 @@ describe("list_prs — output shape", () => {
       "group",
       "signal",
       "color",
+      "reasonIcon",
+      "autoMerge",
+      "autoMergeMethod",
       "ci",
       "review",
       "failedCheck",
@@ -473,6 +476,154 @@ describe("list_prs — output shape", () => {
     expect(row.headRefName).toBe("syle/retry-token-refresh");
     expect(row.baseRefName).toBe("main");
     expect(row.color).toBe(row.signal);
+  });
+});
+
+describe("list_prs — reason icons and auto-merge", () => {
+  // The roll-up signal says how bad; the reason icon says WHY. Three different
+  // problems all render 🔴, so without these a wall of red needs a click each.
+  const CASES = [
+    ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
+    ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
+    ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
+    ["🏗️", "build running", { checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }],
+    ["👀", "awaiting review", AWAITING_REVIEW],
+    ["🐌", "behind base", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
+    ["🚀", "ready to merge", READY_TO_MERGE],
+    ["🚧", "draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
+  ];
+
+  for (const [icon, label, overrides] of CASES) {
+    it(`uses ${icon} for ${label}`, () => {
+      expect(rowFor(overrides, ["--all"]).reasonIcon).toBe(icon);
+    });
+  }
+
+  it("uses 💬 for a green PR that still has open threads", () => {
+    const threads = [{ isResolved: false, comments: { nodes: [{ author: { login: "carol", __typename: "User" } }] } }];
+    expect(rowFor({ ...READY_TO_MERGE, threads }).reasonIcon).toBe("💬");
+  });
+
+  it("ranks a blocked human above broken machinery when both apply", () => {
+    // Work-owed ranking order: P1 (someone waiting on a reply) outranks P2
+    // (broken and ours to fix), so 🗣️ wins over ⚔️ and 💥 on the same PR.
+    const row = rowFor({ checks: [FAILING_CHECK], reviewDecision: "CHANGES_REQUESTED", mergeable: "CONFLICTING" }, ["--all"]);
+    expect(row.reasonIcon).toBe("🗣️");
+    // …and the status string still names every component, so nothing is lost.
+    expect(row.status).toContain("CI FAILED");
+    expect(row.status).toContain("CHANGES REQUESTED");
+    expect(row.status).toContain("MERGE CONFLICT");
+  });
+
+  it("flags an armed auto-merge with its method, and leaves it off otherwise", () => {
+    const armed = rowFor({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } });
+    expect(armed.autoMerge).toBe(true);
+    expect(armed.autoMergeMethod).toBe("SQUASH");
+    expect(armed.status).toContain("🪄 AUTO-MERGE (squash)");
+
+    const plain = rowFor(AWAITING_REVIEW);
+    expect(plain.autoMerge).toBe(false);
+    expect(plain.autoMergeMethod).toBe("");
+    expect(plain.status).not.toContain("AUTO-MERGE");
+  });
+
+  it("treats a null autoMergeRequest as disarmed", () => {
+    // GitHub returns the field as null rather than omitting it — a truthiness check
+    // on the object alone would be fine, but enabledAt is the actual arming signal.
+    expect(rowFor({ ...AWAITING_REVIEW, autoMergeRequest: null }).autoMerge).toBe(false);
+  });
+
+  it("prefixes the title line with the reason icon, then the auto-merge icon", () => {
+    const { stdout } = runCli(
+      [],
+      [pullRequest({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } })],
+    );
+    const lines = stdout.split("\n").filter(Boolean);
+    expect(lines[0]).toBe("👀 🪄 Retry token refresh on 401");
+  });
+
+  it("never decorates the URL line — callers parse it", () => {
+    const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
+    expect(
+      runCli([], [pullRequest(armed)])
+        .stdout.split("\n")
+        .filter(Boolean)[1],
+    ).toBe("https://github.com/acme/api/pull/1");
+    expect(runCli(["--links"], [pullRequest(armed)]).stdout.trim()).toBe("https://github.com/acme/api/pull/1");
+  });
+});
+
+describe("list_prs — reason icons and auto-merge", () => {
+  // The roll-up signal says how bad; the reason icon says WHY. Three different
+  // problems all render 🔴, so without these a wall of red needs a click each.
+  const CASES = [
+    ["🗣️", "changes requested", { checks: [PASSING_CHECK], reviewDecision: "CHANGES_REQUESTED" }],
+    ["⚔️", "merge conflict", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeable: "CONFLICTING" }],
+    ["💥", "CI failed", { checks: [FAILING_CHECK], reviewDecision: "APPROVED" }],
+    ["🏗️", "build running", { checks: [RUNNING_CHECK], reviewDecision: "APPROVED" }],
+    ["👀", "awaiting review", AWAITING_REVIEW],
+    ["🐌", "behind base", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", mergeStateStatus: "BEHIND" }],
+    ["🚀", "ready to merge", READY_TO_MERGE],
+    ["🚧", "draft", { checks: [PASSING_CHECK], reviewDecision: "APPROVED", isDraft: true }],
+  ];
+
+  for (const [icon, label, overrides] of CASES) {
+    it(`uses ${icon} for ${label}`, () => {
+      expect(rowFor(overrides, ["--all"]).reasonIcon).toBe(icon);
+    });
+  }
+
+  it("uses 💬 for a green PR that still has open threads", () => {
+    const threads = [{ isResolved: false, comments: { nodes: [{ author: { login: "carol", __typename: "User" } }] } }];
+    expect(rowFor({ ...READY_TO_MERGE, threads }).reasonIcon).toBe("💬");
+  });
+
+  it("ranks a blocked human above broken machinery when both apply", () => {
+    // Work-owed ranking order: P1 (someone waiting on a reply) outranks P2
+    // (broken and ours to fix), so 🗣️ wins over ⚔️ and 💥 on the same PR.
+    const row = rowFor({ checks: [FAILING_CHECK], reviewDecision: "CHANGES_REQUESTED", mergeable: "CONFLICTING" }, ["--all"]);
+    expect(row.reasonIcon).toBe("🗣️");
+    // …and the status string still names every component, so nothing is lost.
+    expect(row.status).toContain("CI FAILED");
+    expect(row.status).toContain("CHANGES REQUESTED");
+    expect(row.status).toContain("MERGE CONFLICT");
+  });
+
+  it("flags an armed auto-merge with its method, and leaves it off otherwise", () => {
+    const armed = rowFor({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } });
+    expect(armed.autoMerge).toBe(true);
+    expect(armed.autoMergeMethod).toBe("SQUASH");
+    expect(armed.status).toContain("🪄 AUTO-MERGE (squash)");
+
+    const plain = rowFor(AWAITING_REVIEW);
+    expect(plain.autoMerge).toBe(false);
+    expect(plain.autoMergeMethod).toBe("");
+    expect(plain.status).not.toContain("AUTO-MERGE");
+  });
+
+  it("treats a null autoMergeRequest as disarmed", () => {
+    // GitHub returns the field as null rather than omitting it — a truthiness check
+    // on the object alone would be fine, but enabledAt is the actual arming signal.
+    expect(rowFor({ ...AWAITING_REVIEW, autoMergeRequest: null }).autoMerge).toBe(false);
+  });
+
+  it("prefixes the title line with the reason icon, then the auto-merge icon", () => {
+    const { stdout } = runCli(
+      [],
+      [pullRequest({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } })],
+    );
+    const lines = stdout.split("\n").filter(Boolean);
+    expect(lines[0]).toBe("👀 🪄 Retry token refresh on 401");
+  });
+
+  it("never decorates the URL line — callers parse it", () => {
+    const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
+    expect(
+      runCli([], [pullRequest(armed)])
+        .stdout.split("\n")
+        .filter(Boolean)[1],
+    ).toBe("https://github.com/acme/api/pull/1");
+    expect(runCli(["--links"], [pullRequest(armed)]).stdout.trim()).toBe("https://github.com/acme/api/pull/1");
   });
 });
 

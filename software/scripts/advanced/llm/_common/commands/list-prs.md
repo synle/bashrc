@@ -69,7 +69,25 @@ pr_list_all_open --json --author=<handle>                # same scopes, someone 
 
 `pr_list_all_open` is `list_prs --all` — every open PR, ready-to-merge ones included. Use it here: the sibling `pr_list_needs_attention` (plain `list_prs`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `pr_list_needs_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` the search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
 
-Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
+Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color reasonIcon autoMerge autoMergeMethod ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
+
+**`reasonIcon` names the cause; `signal` only names the severity.** Three different problems all roll up to 🔴, so a red row still needs a click to find out which — the reason icon answers that in one glyph. First match wins, in Work-owed ranking order (a blocked human outranks broken machinery outranks a stale branch), so a PR that is conflicting _and_ has changes requested reads 🗣️ while `status` still lists every component:
+
+| Icon | Means               | Fires when                                        |
+| ---- | ------------------- | ------------------------------------------------- |
+| 🚧   | Draft / WIP         | `isDraft` or a WIP / DNM title — checked first    |
+| 🗣️   | Changes requested   | `reviewDecision == "CHANGES_REQUESTED"`           |
+| ⚔️   | Merge conflict      | `mergeable == "CONFLICTING"`                      |
+| 💥   | CI failed           | A check finished with a failing conclusion        |
+| 🏗️   | Build in progress   | Self-resolving checks still running               |
+| 👀   | Awaiting review     | Not yet approved, nothing else pending            |
+| 🐌   | Behind base         | `mergeStateStatus == "BEHIND"`, nothing else open |
+| 💬   | Ready, threads open | Green and approved, unresolved threads remain     |
+| 🚀   | Ready to merge      | Green, approved, no conflict, no open threads     |
+
+**`autoMerge` says whether GitHub will merge it without you.** True when `autoMergeRequest.enabledAt` is set; `autoMergeMethod` carries `SQUASH` / `MERGE` / `REBASE`. It changes what a human should do with a row — an armed 🟡 needs no babysitting, the same row unarmed is waiting on someone to come back and click. The CLI renders it as 🪄, both as a title-line prefix after the reason icon and as a `🪄 AUTO-MERGE (<method>)` token in `status`.
+
+**Icons go on the title line only — never on a URL line.** The two-line human render is `<reasonIcon> [🪄] <title>` then the bare URL, and `--links` is unchanged. Same rule as `short` below: consumers read URL lines, so decorating them breaks every caller.
 
 **The fast path covers all three repo scopes, not explicit PR refs.** Plain `pr_list_all_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` changes only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
 
