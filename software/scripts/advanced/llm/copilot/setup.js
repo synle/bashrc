@@ -282,6 +282,25 @@ const COPILOT_MANAGED_SETTINGS = {
   // (`--reset-author`) targets only the author header, not the trailer.
   // tradeoff: none — exception explicitly carved out in rule §2. risk: none.
   includeCoAuthoredBy: true,
+  // Desktop notification when the agent needs attention or finishes a long run.
+  // Upstream default is OFF (the bundled app.js gates it on `notifications === true`),
+  // and `beep: false` above kills the only other cue — so without this a long
+  // `effortLevel: "xhigh"` run finishes silently in a background tab. Restores
+  // parity with opencode's `attention.notifications: true` (opencode/setup.js).
+  // tradeoff: an OS notification per attention event. risk: none.
+  notifications: true,
+  // Print per-tool wall-clock durations in the transcript. Real key (read as
+  // `showToolDurations !== false` in the bundle, so upstream default is already
+  // on) — pinned for explicit intent, and it is what makes a slow shell command
+  // distinguishable from a stalled model at `xhigh` effort. tradeoff: slightly
+  // busier transcript. risk: none.
+  showToolDurations: true,
+  // Log warnings and errors only. `"all"` is a debugging level: it grows
+  // ~/.copilot/logs/ and the session store without bound (observed 51 MB
+  // session-store.db + 55 log folders on a normal dev machine) for output
+  // nobody reads outside an active bug hunt. Raise it back to "all" by hand
+  // for a debugging session. tradeoff: less post-hoc detail. risk: low.
+  logLevel: "warning",
 };
 
 /**

@@ -91,6 +91,15 @@ call out anywhere it can't be expressed.
 | Telemetry / usage-stats opt-out        | n/a                                       | n/a                               | `privacy.usageStatisticsEnabled: false`                      | n/a (consider `share: "disabled"`)                |
 | Preserve Co-Authored-By trailer        | native (system prompt)                    | `includeCoAuthoredBy: true`       | native (no setting)                                          | native (no setting)                               |
 | MCP servers (shared registry)          | `mcpServers` in `settings.json`           | `mcpServers` in `mcp-config.json` | `mcpServers` in `settings.json`                              | `mcp` in `opencode.json` (translated)             |
+| Desktop attention notification         | native (no setting)                       | `notifications: true`             | n/a                                                          | `attention.notifications: true`                   |
+| Per-tool duration in transcript        | n/a                                       | `showToolDurations: true`         | n/a                                                          | n/a                                               |
+| Log verbosity                          | n/a                                       | `logLevel: "warning"`             | n/a                                                          | n/a                                               |
+| Language servers (diagnostics)         | native                                    | native                            | native                                                       | `lsp: true` (omitted = DISABLED)                  |
+| Code formatters on edit                | native (hooks)                            | native                            | native                                                       | `formatter: true` (omitted = DISABLED)            |
+| Load split PR-workflow rules           | native (`@` import budget)                | native                            | native                                                       | `instructions: [~/sy_llm_ai/instructions/…]`      |
+| Terminal cursor style                  | n/a                                       | n/a                               | n/a                                                          | `cursor: { style: "block" }`                      |
+| Leader-chord timeout                   | n/a                                       | n/a                               | n/a                                                          | `leader_timeout: 1500`                            |
+| Prompt textarea height cap             | n/a                                       | n/a                               | n/a                                                          | `prompt.max_height: 20`                           |
 
 **n/a** here means _the CLI does not expose a settings key for that intent
 today_. Don't silently drop an intent if upstream later ships one — add the

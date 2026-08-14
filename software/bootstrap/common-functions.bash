@@ -469,6 +469,34 @@ function safe_chmod() {
   fi
 }
 
+# clean_junk_macosx_files <path> - Recursively deletes macOS Finder junk (.DS_Store and
+# AppleDouble ._* sidecars) under a single folder. No-op on every non-mac OS and on a
+# missing path, so callers do not need their own guard. Always pass one path per call.
+# Never descends into .git (a committed ._* blob is not junk) and never follows symlinks
+# out of the tree.
+# Usage:
+#   clean_junk_macosx_files "$HOME/.claude"
+function clean_junk_macosx_files() {
+  local target="$1"
+  if ! ((is_os_mac)); then
+    echo ">> clean_junk_macosx_files >> $target >> Skipped (not mac)"
+    return 0
+  fi
+  if [ -z "$target" ] || [ ! -d "$target" ]; then
+    echo ">> clean_junk_macosx_files >> $target >> Skipped (not found)"
+    return 0
+  fi
+  local removed=0
+  # POSIX find only: -name tests plus -prune for .git, no GNU-only flags. Counted with a
+  # pipeline into wc rather than a `while read` loop (a piped loop runs in a subshell, so
+  # the count would never escape it) and deleted with `-exec … +` in a second pass.
+  removed=$(find "$target" -name .git -type d -prune -o \( -name .DS_Store -o -name "._*" \) -type f -print 2> /dev/null | wc -l | tr -d ' ')
+  if [ "${removed:-0}" -gt 0 ]; then
+    find "$target" -name .git -type d -prune -o \( -name .DS_Store -o -name "._*" \) -type f -exec rm -f {} + 2> /dev/null
+  fi
+  echo ">> clean_junk_macosx_files >> $target >> Removed ${removed:-0} file(s)"
+}
+
 # get_github_raw_url <path> - Constructs a GitHub raw content URL for a file in this repo.
 # Uses BASH_PROFILE_CODE_REPO_RAW_URL as the base and appends ?raw=1.
 # Usage: curl -fsSL "$(get_github_raw_url software/bootstrap/setup.sh)" | bash

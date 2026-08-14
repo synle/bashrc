@@ -240,6 +240,26 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     // Cheap side tasks (titles, summaries, compaction) run here instead of on the
     // primary model, where compaction latency shows up as an unexplained pause.
     small_model: OPENCODE_SMALL_MODEL,
+    // Enable opencode's built-in LSP servers. NOT a no-op default: per
+    // https://opencode.ai/docs/config/#lsp-servers, omitting the key leaves LSP
+    // DISABLED, so the agent gets zero diagnostics, hovers, or go-to-definition
+    // and has to infer type errors from a build run. `true` keeps every built-in
+    // and adds none of our own overrides. tradeoff: language servers spawn per
+    // project and cost RAM. risk: low.
+    lsp: true,
+    // Enable opencode's built-in formatters. Same omitted-means-disabled rule as
+    // `lsp` above (https://opencode.ai/docs/config/#formatters). Without it every
+    // agent edit lands unformatted and shows up as diff noise on the next
+    // `make format` / pre-commit run. tradeoff: opencode reformats files it
+    // touches. risk: low — built-ins defer to the repo's own config
+    // (.prettierrc, .editorconfig) when present.
+    formatter: true,
+    // Explicitly load the split-out PR workflow rules. The always-loaded
+    // AGENTS.md block only POINTS at this file (it lives outside the 40k
+    // always-loaded budget — see llm-common.js LLM_SHARED_INSTRUCTION_FILES),
+    // and a pointer is only followed if the model chooses to. Listing it here
+    // makes opencode load it as a rules file every session instead.
+    instructions: [path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, "pr-workflow.md")],
     // Never expose a session URL. Work happens in private repos; the default
     // ("manual") leaves a one-keystroke publish path we have no use for.
     share: "disabled",
@@ -310,6 +330,29 @@ async function _writeOpencodeTuiConfig() {
     // tradeoff: less info density on wide screens. risk: none.
     diff_style: "stacked",
     scroll_speed: 3,
+    // Solid, non-blinking block cursor. Default is `"default"` (whatever the
+    // terminal is set to), which across iTerm2 / Ghostty / VS Code's integrated
+    // terminal means the prompt cursor looks different in every one of them.
+    // Blinking off because a blinking cursor next to a streaming response reads
+    // as activity that isn't there. tradeoff: overrides terminal preference.
+    // risk: none.
+    cursor: {
+      style: "block",
+      blinking: false,
+    },
+    // Leader-chord window, in ms. Our keybinds use a `ctrl+o` leader plus
+    // multi-key chords (`ctrl+g,ctrl+x` and friends, see
+    // opencode-keys.common.jsonc), and the stock timeout drops the second key
+    // often enough to feel like a missed keypress. tradeoff: a stray leader
+    // press swallows the next 1.5s of typing. risk: low.
+    leader_timeout: 1500,
+    // Cap the prompt textarea height. Pasting a stack trace or a diff otherwise
+    // grows the input box until it owns the screen and the transcript scrolls
+    // out of view; past 20 lines it scrolls inside the box instead.
+    // tradeoff: long pastes are not visible in full while composing. risk: none.
+    prompt: {
+      max_height: 20,
+    },
     scroll_acceleration: {
       enabled: true,
     },
