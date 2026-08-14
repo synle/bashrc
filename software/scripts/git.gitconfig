@@ -105,6 +105,8 @@ a = add
 aa = add -A # Add all (including untracked)
 ap = add -p # Interactive patch mode
 au = add -u # Add only tracked files
+aac = "!git aa && git c"
+auc = "!git au && git c"
 
 # ---- Commit ----
 c  = commit --no-verify
