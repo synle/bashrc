@@ -361,9 +361,19 @@ async function _doMcpWork(targetDir) {
 
   /** @type {object} Existing config — empty object on missing / invalid file. */
   let existing = {};
-  try {
-    existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
-  } catch (e) {}
+  if (fs.existsSync(targetPath)) {
+    try {
+      existing = JSON.parse(fs.readFileSync(targetPath, "utf-8")) || {};
+    } catch (e) {
+      // Never silent: an unparseable file here means every hand-added server in it is
+      // about to be dropped from the merge and overwritten. A trailing comma is the
+      // common cause (JSON has none) and it also means copilot itself has been failing
+      // to load those servers. Say so loudly; backupConfigFile below keeps .bak_latest
+      // so the original is recoverable.
+      log(`>> copilot: mcp-config.json is not valid JSON (${e.message})`);
+      log(`>> copilot: any hand-added servers in it are NOT loading — repair ${targetPath}`);
+    }
+  }
 
   /** @type {Record<string, any>} */
   const existingServers = existing.mcpServers && typeof existing.mcpServers === "object" ? existing.mcpServers : {};

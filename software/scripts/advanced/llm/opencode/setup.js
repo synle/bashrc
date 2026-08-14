@@ -254,12 +254,17 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     // touches. risk: low — built-ins defer to the repo's own config
     // (.prettierrc, .editorconfig) when present.
     formatter: true,
-    // Explicitly load the split-out PR workflow rules. The always-loaded
-    // AGENTS.md block only POINTS at this file (it lives outside the 40k
-    // always-loaded budget — see llm-common.js LLM_SHARED_INSTRUCTION_FILES),
-    // and a pointer is only followed if the model chooses to. Listing it here
-    // makes opencode load it as a rules file every session instead.
-    instructions: [path.join(LLM_SHARED_INSTRUCTIONS_FOLDER, "pr-workflow.md")],
+    // Explicitly load every shared instruction file. The always-loaded AGENTS.md
+    // block only POINTS at these (they live outside the 40k always-loaded budget —
+    // see llm-common.js LLM_SHARED_INSTRUCTION_FILES), and a pointer is only
+    // followed if the model chooses to. Listing them here makes opencode load them
+    // as rules files every session instead.
+    //
+    // Read from disk rather than hardcoded: getSharedLLMInstructionFilePaths() lists
+    // whatever deploySharedLLMInstructions() just wrote, so a file added to the
+    // registry later needs no edit here, and a hand-authored note dropped into
+    // ~/sy_llm_ai/instructions/ is picked up too.
+    instructions: getSharedLLMInstructionFilePaths(),
     // Never expose a session URL. Work happens in private repos; the default
     // ("manual") leaves a one-keystroke publish path we have no use for.
     share: "disabled",
@@ -754,14 +759,20 @@ async function doWork() {
     log(`>> opencode: deploying ${Object.keys(mcpServersOpencodeShape).length} MCP server(s) from shared registry`);
   }
 
+  // Shared on-demand instruction files must exist before the always-loaded block
+  // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
+  //
+  // Must also run BEFORE the config write below: _buildOpencodeConfig() fills
+  // `instructions` from getSharedLLMInstructionFilePaths(), which reports what is on
+  // disk. Deploy after the write and a fresh machine gets `instructions: []` and only
+  // self-corrects on the second run.
+  await deploySharedLLMInstructions();
+
   await writeJson(targetPath, _buildOpencodeConfig(providerInputs, mcpServersOpencodeShape));
   log(">> opencode config written:", targetPath);
 
   await _writeOpencodeTuiConfig();
 
-  // Shared on-demand instruction files must exist before the always-loaded block
-  // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
-  await deploySharedLLMInstructions();
   await _doOpencodeInstructionsWork();
 
   await _syncOpencodeCommandSymlinks();
