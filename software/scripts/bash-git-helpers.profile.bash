@@ -204,6 +204,12 @@ function purge() {
 
 # Merges origin/main (or origin/master) into the current branch
 function merge_origin_main_branch() {
+  if is_help_arg "${1:-}"; then
+    echo "merge_origin_main_branch: merge origin/<default-branch> into the current branch
+  Usage: merge_origin_main_branch
+  Aborts any in-progress merge/rebase, fetches, then merges. Default branch is auto-detected."
+    return 0
+  fi
   git abort
   git clean-and-fetch
 
@@ -218,6 +224,12 @@ function merge_origin_main_branch() {
 
 # Rebases current branch onto origin/main (or origin/master)
 function rebase_origin_main_branch() {
+  if is_help_arg "${1:-}"; then
+    echo "rebase_origin_main_branch: rebase the current branch onto origin/<default-branch>
+  Usage: rebase_origin_main_branch
+  Aborts any in-progress merge/rebase, fetches, then rebases. Default branch is auto-detected."
+    return 0
+  fi
   git abort
   git clean-and-fetch
 
@@ -238,7 +250,8 @@ function _clean_log_step() {
 
 # Safely resets the current branch to origin's default branch.
 # Stashes ALL changes (staged + unstaged + untracked) first as a safety backup so nothing is lost
-# (recover with `git stash list` / `git stash pop`). Does NOT delete untracked working-tree files.
+# (recover with `git stash list` / `git stash pop`). Deletes untracked *.rej patch rejects; leaves
+# every other untracked working-tree file alone.
 # Also deletes stale local branches (squash-merged PRs), branches fully merged into the default
 # branch, local tags that no longer exist on origin, and prunes and removes merged/gone worktrees.
 function clean() {
@@ -248,12 +261,12 @@ function clean() {
   Notes:
     - Stashes ALL changes (staged + unstaged + untracked) first as a safety backup
     - Recover from stash with: git stash list  |  git stash pop
-    - Does NOT delete untracked working-tree files
+    - Deletes untracked *.rej files (failed 'git apply' hunk rejects); keeps all other untracked files
     - Also deletes stale local branches (squash-merged PRs), merged branches, stale local tags, and prunes and removes merged/gone worktrees"
     return 1
   fi
 
-  local total_steps=13
+  local total_steps=14
   _CLEAN_TOTAL=$total_steps
   _CLEAN_STEP=0
 
@@ -273,6 +286,24 @@ function clean() {
   git rebase --abort 2> /dev/null
   git cherry-pick --abort 2> /dev/null
   git am --abort 2> /dev/null
+
+  # Sweep the *.rej hunk rejects a failed 'git apply' / 'patch' leaves behind. They are untracked
+  # and gitignored, so they survive every reset below and quietly rot next to the file they failed
+  # on. Safe to delete unconditionally: the stash above already captured them.
+  _clean_log_step "Removing *.rej patch rejects (failed 'git apply' hunks)..."
+  local repo_root
+  repo_root=$(git rev-parse --show-toplevel 2> /dev/null) || repo_root="$PWD"
+  local rej_files
+  rej_files=$(command find "$repo_root" \( -name .git -o -name node_modules \) -prune -o -type f -name '*.rej' -print 2> /dev/null)
+  if [ -z "$rej_files" ]; then
+    echo "  -> no *.rej files found"
+  else
+    echo "$rej_files" | while IFS= read -r rej_file; do
+      command rm -f "$rej_file"
+      echo "  -> removed $rej_file"
+    done
+    echo "  -> removed $(echo "$rej_files" | command grep -c .) *.rej file(s)"
+  fi
 
   _clean_log_step "Fetching latest from origin..."
   git clean-and-fetch
@@ -322,6 +353,12 @@ function clean() {
 
 # Creates an empty commit on a new branch and pushes it to trigger a deployment
 function commit_empty_trigger_deploy() {
+  if is_help_arg "${1:-}"; then
+    echo "commit_empty_trigger_deploy: push an empty commit on a throwaway branch to trigger a deploy
+  Usage: commit_empty_trigger_deploy
+  Creates branch 'empty-commit-<epoch>', commits --allow-empty, and pushes it to origin."
+    return 0
+  fi
   local temp_branch_name="empty-commit-$(command date +%s)"
   git checkout -b "$temp_branch_name" > /dev/null 2>&1
   git commit --allow-empty -m "Trigger deployment - EMPTY PR" > /dev/null 2>&1
@@ -385,6 +422,12 @@ function clone() {
 
 # cd to Downloads directory (tries multiple paths in order)
 function godownload() {
+  if is_help_arg "${1:-}"; then
+    echo "godownload: cd to the Downloads folder
+  Usage: godownload
+  Tries \$HOME/Downloads, /mnt/d/Downloads, and on WSL the Windows user Downloads folder."
+    return 0
+  fi
   local candidates=(
     "$HOME/Downloads"
     "/mnt/d/Downloads"

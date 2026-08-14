@@ -188,11 +188,30 @@ Score each PR into exactly one tier, highest first (first match wins). The name 
   - **`awaiting first review` (a member of P5) is lifted out and placed above P1**, becoming the top tier for this lens. It is the most actionable work on a reviewer's board and the only case where _nobody_ has looked at the PR at all; leaving it at P5 makes the review fan-out service its whole reason for existing dead last. The rest of P5 — green-and-approved awaiting merge, held by a human approval gate — does **not** move.
   - **`reviewDecision == "CHANGES_REQUESTED"` (a member of P1) is lifted out and placed just above P6.** Another reviewer already has an open block, so `/sy-review-pr` Step 3 skips it rather than piling on — servicing it early spends a round on a documented no-op. It stays _in_ the set, since a block can be dismissed between rounds and the later rounds exist to catch that. The rest of P1 — an unresolved thread whose first comment is from a human — stays at P1, because those are threads waiting on a reply that a reviewer may well be the one to give.
 
-  So the reviewer order is: awaiting-first-review → P0 → P1 (minus `CHANGES_REQUESTED`) → P2 → P3 → P4 → P5 (minus awaiting-first-review) → `CHANGES_REQUESTED` → P6. Everything else keeps its author-lens position, and ties still break on oldest `updatedAt`. A dispatcher states which lens it used when it reports the slot map, so a surprising order is self-explaining rather than looking like a bug.
+  So the reviewer tier order is: awaiting-first-review → P0 → P1 (minus `CHANGES_REQUESTED`) → P2 → P3 → P4 → P5 (minus awaiting-first-review) → `CHANGES_REQUESTED` → P6. Everything else keeps its author-lens position. A dispatcher states which lens it used when it reports the slot map, so a surprising order is self-explaining rather than looking like a bug.
+
+#### Reviewer-lens attention keys — evaluated before the tiers
+
+The tier order answers _"how much work is owed?"_. On a reviewer's board two things outrank that, because both mean **a human is currently waiting on my eyes specifically**. Score each key, then sort: `R0` first, then `R1`, then the tier order above, then the tiebreakers. Keys are re-scored **at the top of every round**, so a PR opened or a mention posted mid-run jumps the queue on the next round rather than at the end of the run. Both keys are re-ordering only — neither adds, removes, or skips a PR (see "Ranking never drops a PR").
+
+- **`R0` — new since the last round, newest first.** A PR the dispatcher has **not yet run a pass on in this run** and that was not in the previously ranked set: it entered scope while the fan-out was already in flight. Sort these by `createdAt` **descending** — newest first, the inverse of the usual oldest-first tiebreak, because the newest arrival is the one whose author is standing there watching for a first response. Determined from the agent ledger (`/sy-review-prs` Step 4b), not from GitHub: a PR is "seen" once it has a recorded completed pass. **On round 1 this key is empty by definition** — nothing has been seen yet, so "newest unseen" would mean the whole board and would silently replace the tier order with a date sort. Round 1 is ranked by tiers alone.
+- **`R1` — I am named on it.** My handle (`gh api user --jq .login`) appears as an `@`-mention in the PR body, in any issue comment, in any review body or review line comment, or in any reply on a thread I commented in — or I am on `reviewRequests`. That is an explicit, addressed ask, so it outranks every tier including awaiting-first-review, where nobody asked for me by name. Detect per PR, in one call, and match `@<login>` case-insensitively on a word boundary so `@alice-bot` never matches `@alice`:
+
+  ```bash
+  gh pr view <url> --json body,comments,reviews,reviewRequests,latestReviews
+  ```
+
+  A mention of a **team** I belong to (`@<org>/<team>`) scores `R1` too. My own `@`-mention of myself does not. Ignore mentions inside fenced code blocks or quoted (`> `) lines — a quoted mention is history, not a new ask.
+
+**Tiebreakers, applied in order once `R0` / `R1` / tier are equal:**
+
+a. **Someone else's PR before my own.** A teammate is blocked on my review; on my own PR I am both parties and can act any time.
+b. **Smaller diff first** (`additions + deletions` from `gh pr view --json additions,deletions`). Cheap reviews clear the board and unblock their authors soonest; a 4000-line PR behind three 20-line ones costs everyone less than the reverse.
+c. **Oldest `updatedAt`** — the existing tiebreak, and still the last word. Within everything else equal, the PR nobody has touched longest is the one most at risk of being forgotten.
 
 **P0 is checked locally and costs nothing.** `worktree_create --path-only <head-branch>` prints the canonical path without creating anything, so the dispatcher can probe a PR's branch worktree before dispatching, without an API call and without touching the user's checkout. A path that does not exist is simply not P0.
 
-**Ranking never drops a PR.** It decides _order_, never _membership_ — a P6 draft is still dispatched, still gets its passes, and still appears in every render. Anything that uses this ranking to skip a PR is misusing it.
+**Ranking never drops a PR.** It decides _order_, never _membership_ — a P6 draft is still dispatched, still gets its passes, and still appears in every render. Anything that uses this ranking to skip a PR is misusing it. **P6 is dead last under both lenses and no attention key can lift it**: a draft / `WIP` / `DO NOT MERGE` / `DNM` PR is ranked last even when it is the newest arrival (`R0`) or names me directly (`R1`) — an author who marks a PR not-ready has said so more loudly than a mention says otherwise. It is dispatched anyway, and every pass on it is a **documented skip that posts nothing** (`/sy-review-pr` Step 3), purely so a PR marked ready between rounds gets caught in the round after.
 
 ## Feature clustering
 
