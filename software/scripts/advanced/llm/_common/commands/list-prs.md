@@ -543,14 +543,14 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
   | ----------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------- |
   | `⚪ NOT STARTED`        | Assigned to a slot, first pass not yet run                      | `slot 2, position 2 of 2 — behind <link>` (no clock; nothing started) |
   | `🔄 IN PROGRESS`        | Job actively working this pass                                  | `started 17:12 · running 22m`                                         |
-  | `⏸️ WAITING`            | Pass done, sleeping until the next one                          | `ended 16:58 · ran 19m · next 17:28`                                  |
+  | `⏸️ WAITING`            | Pass done, sleeping until the next one                          | `ended 16:58 · ran 19m · next 17:23`                                  |
   | `✅ COMPLETED`          | Job finished all passes, or the PR merged                       | `ended 17:05 · 48m total`                                             |
-  | `⏭️ SKIPPED`            | **Terminal** — every pass was skipped and no pass remains       | `17:02 — draft, all 3 passes`                                         |
-  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, later passes still to run | `17:02 — draft · next 17:32`                                          |
+  | `⏭️ SKIPPED`            | **Terminal** — every pass was skipped and no pass remains       | `17:02 — draft, all 10 passes`                                        |
+  | `⏸️ WAITING_AFTER_SKIP` | **Not terminal** — this pass skipped, later passes still to run | `17:02 — draft · next 17:27`                                          |
   | `⚠️ ESCALATED`          | Job stopped and needs human judgment                            | `stopped 17:01 · ran 19m — needs human`                               |
   | `❌ FAILED`             | Job errored out                                                 | `failed 16:44 · ran 4m — worktree conflict`                           |
 
-  **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip on pass 1 of 3 is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-pass ETA. Only when the passes are exhausted does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
+  **`SKIPPED` vs `WAITING_AFTER_SKIP` — the distinction the pulse depends on.** Every per-PR skip except `MERGED` / `CLOSED` is a snapshot judgement that a later pass can overturn: a draft gets marked ready, a `WIP` prefix is dropped, a blocking reviewer's request is dismissed. So a skip on pass 1 of 10 is `⏸️ WAITING_AFTER_SKIP`, and the row keeps its next-pass ETA. Only when the passes are exhausted does the row settle to `⏭️ SKIPPED`. Collapsing the two makes `⏭️ SKIPPED` terminal _and_ loopable at once, which stops the pulse early and reports a PR as finished while its job is still scheduled to work on it.
 
   **A merged or closed PR is `✅ COMPLETED`, never `⏭️ SKIPPED`** — precedence, because both could otherwise claim it. The PR reached its actual destination, which is the outcome the whole run is for; `⏭️ SKIPPED` is reserved for a PR that is still open and simply had nothing to do on every pass.
 
@@ -561,7 +561,7 @@ A fan-out is dispatched by feature, not by repo, so the pulse is read by feature
   - `<N>m total` on `✅ COMPLETED` is the whole job, first dispatch to final pass end, across every loop.
   - A clock field with no data prints nothing rather than `0m` or `--`; drop the field and its `·` separator. Never invent a start time to fill the slot.
 
-  The loop counter is `(loop N/M)` whenever the per-PR command loops. Both looping commands run ≥3 passes 30 min apart, so `M = 3` for `/sy-babysit-pr` and for `/sy-review-pr` alike. Drop the counter entirely only for a genuinely single-pass per-PR command (`🔄 IN PROGRESS — started 17:12 · running 6m`).
+  The loop counter is `(loop N/M)` whenever the per-PR command loops. Both looping commands run ≥10 passes 25 min apart, so `M = 10` for `/sy-babysit-pr` and for `/sy-review-pr` alike. Drop the counter entirely only for a genuinely single-pass per-PR command (`🔄 IN PROGRESS — started 17:12 · running 6m`).
 
   **The clock is excluded from the change-marker diff.** Elapsed time moves on every pulse by definition, so counting it as a change would render `Δ` on every running row forever and destroy the marker's only job. Diff the state token, the loop number, the Status cell, and the counters line — never `running <N>m`, never a recomputed `next <HH:MM>`. A row whose only difference is the clock ticking is `▫️`.
 
