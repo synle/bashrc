@@ -905,7 +905,7 @@ describe("list_prs — shell wrappers", () => {
   it("uses shared confirmation and seeds the requested bookmarks", () => {
     expect(PROFILE_SOURCE).toContain('command pr_merge "$@"');
     expect(INSTALLER_SOURCE).toContain("git.pr_merge.cjs");
-    expect(MERGE_CLI_SOURCE).toContain("split(/[,|\\t\\n]+/");
+    expect(MERGE_CLI_SOURCE).toContain("split(/[\\s,|]+/");
     expect(PROFILE_SOURCE).toContain('add_bookmark "pr_list_all_open"');
     expect(PROFILE_SOURCE).toContain('add_bookmark "pr_merge"');
   });
@@ -914,5 +914,21 @@ describe("list_prs — shell wrappers", () => {
     expect(MERGE_CLI_SOURCE).toContain("reviewThreads(first:100)");
     expect(MERGE_CLI_SOURCE).toContain("isWipTitle");
     expect(MERGE_CLI_SOURCE).toContain("Number(left.wip) - Number(right.wip)");
+  });
+
+  it("accepts piped stdin and still prompts on the controlling terminal", () => {
+    expect(MERGE_CLI_SOURCE).toContain("function readPipedInput()");
+    expect(MERGE_CLI_SOURCE).toContain("readPipedInput()");
+    expect(MERGE_CLI_SOURCE).toContain('fs.openSync("/dev/tty", "r")');
+    expect(PROFILE_SOURCE).toContain("command cat mypr_list | pr_merge");
+  });
+
+  it("offers am / dm / ig with am as the default and prints the gh commands first", () => {
+    expect(MERGE_CLI_SOURCE).toContain("function parseAction(");
+    expect(MERGE_CLI_SOURCE).toContain('if (!value) return "am"');
+    expect(MERGE_CLI_SOURCE).toContain("[am] enable auto-merge · [dm] disable auto-merge · [ig] ignore (default: am)");
+    expect(MERGE_CLI_SOURCE).toContain("--disable-auto");
+    expect(MERGE_CLI_SOURCE).toContain("Commands to be run:");
+    expect(MERGE_CLI_SOURCE).toContain("function formatCommand(");
   });
 });

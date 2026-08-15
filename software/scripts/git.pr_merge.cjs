@@ -2,12 +2,14 @@
 /*
  * pr_merge - validate pull-request references, then enable GitHub auto-merge.
  *
- * This standalone CommonJS CLI accepts URLs separated by spaces, commas, tabs,
- * or newlines. It keeps WIP / DO NOT MERGE / DNM PRs last while preserving
- * oldest-first ordering inside each group.
+ * This standalone CommonJS CLI accepts URLs from arguments and/or piped stdin,
+ * separated by spaces, commas, pipes, tabs, or newlines. It keeps WIP / DO NOT
+ * MERGE / DNM PRs last while preserving oldest-first ordering inside each group.
+ * The prompt reads from /dev/tty, so piping input still asks am / dm / ig.
  */
 
 const { spawnSync } = require("child_process");
+const fs = require("fs");
 const readline = require("readline");
 
 /**
@@ -56,7 +58,7 @@ function splitReferences(values) {
     ...new Set(
       values
         .join(`\n`)
-        .split(/[,|\t\n]+/)
+        .split(/[\s,|]+/)
         .map((value) => value.trim())
         .filter(Boolean),
     ),
@@ -73,18 +75,74 @@ function isWipTitle(title) {
 }
 
 /**
- * Read one yes/no answer from an interactive terminal.
- * @param {string} prompt
- * @returns {Promise<boolean>}
+ * Resolve a free-form answer to one of the three actions.
+ * Empty input defaults to "am" (enable auto-merge).
+ * @param {string} answer
+ * @returns {"am"|"dm"|"ig"|null}
  */
-function askYesNo(prompt) {
-  const input = readline.createInterface({ input: process.stdin, output: process.stderr });
-  return new Promise((resolve) => {
-    input.question(`${prompt} [y/N] `, (answer) => {
-      input.close();
-      resolve(/^(y|yes)$/i.test(answer.trim()));
+function parseAction(answer) {
+  const value = answer.trim().toLowerCase();
+  if (!value) return "am";
+  if (/^(1|am|a|auto|automerge|auto-merge|y|yes)$/.test(value)) return "am";
+  if (/^(2|dm|d|disable|disable-auto|off)$/.test(value)) return "dm";
+  if (/^(3|ig|i|ignore|skip|n|no|q|quit)$/.test(value)) return "ig";
+  return null;
+}
+
+/**
+ * Read piped stdin, if any. Returns an empty string on a TTY or unreadable stdin.
+ * @returns {string}
+ */
+function readPipedInput() {
+  if (process.stdin.isTTY) return ``;
+  try {
+    return fs.readFileSync(0, "utf8");
+  } catch (error) {
+    return ``;
+  }
+}
+
+/**
+ * Ask which action to take for the listed pull requests.
+ * Reads from the controlling terminal so piped stdin still gets a prompt.
+ * @param {string} prompt
+ * @returns {Promise<"am"|"dm"|"ig">}
+ */
+function askAction(prompt) {
+  let source = process.stdin;
+  let handle = null;
+  if (!process.stdin.isTTY) {
+    try {
+      handle = fs.openSync("/dev/tty", "r");
+      source = fs.createReadStream(``, { fd: handle });
+    } catch (error) {
+      info("No terminal available for the prompt — defaulting to [ig] ignore.");
+      return Promise.resolve("ig");
+    }
+  }
+
+  const input = readline.createInterface({ input: source, output: process.stderr });
+  const ask = () =>
+    new Promise((resolve) => {
+      input.question(`${prompt} [am] enable auto-merge · [dm] disable auto-merge · [ig] ignore (default: am) `, resolve);
     });
-  });
+  return (async () => {
+    for (;;) {
+      const action = parseAction(await ask());
+      if (action) {
+        input.close();
+        if (handle !== null) {
+          try {
+            fs.closeSync(handle);
+          } catch (error) {
+            /* already closed by the stream */
+          }
+        }
+        return action;
+      }
+      info("Enter am, dm, or ig.");
+    }
+  })();
 }
 
 /**
@@ -140,16 +198,35 @@ function inspectPullRequest(reference) {
 }
 
 /**
- * Enable auto-merge for one PR.
+ * Build the gh arguments for one PR and action.
  * @param {{owner: string, repo: string, number: number, strategy: string}} pullRequest
+ * @param {"am"|"dm"} action
+ * @returns {string[]}
+ */
+function buildActionArgs(pullRequest, action) {
+  const target = ["pr", "merge", String(pullRequest.number)];
+  const repo = ["-R", `${pullRequest.owner}/${pullRequest.repo}`];
+  if (action === "dm") return [...target, "--disable-auto", ...repo];
+  return [...target, "--auto", pullRequest.strategy, ...repo];
+}
+
+/**
+ * Render a gh invocation as a copy-pasteable command line.
+ * @param {string[]} args
+ * @returns {string}
+ */
+function formatCommand(args) {
+  return ["gh", ...args].map((arg) => (/^[A-Za-z0-9_./:@=-]+$/.test(arg) ? arg : `'${arg.replace(/'/g, `'\\''`)}'`)).join(" ");
+}
+
+/**
+ * Run one gh action for a PR.
+ * @param {{owner: string, repo: string, number: number, strategy: string}} pullRequest
+ * @param {"am"|"dm"} action
  * @returns {boolean}
  */
-function enableAutoMerge(pullRequest) {
-  const result = spawnSync(
-    "gh",
-    ["pr", "merge", String(pullRequest.number), "--auto", pullRequest.strategy, "-R", `${pullRequest.owner}/${pullRequest.repo}`],
-    { stdio: "inherit" },
-  );
+function runAction(pullRequest, action) {
+  const result = spawnSync("gh", buildActionArgs(pullRequest, action), { stdio: "inherit" });
   return result.status === 0;
 }
 
@@ -158,9 +235,9 @@ function enableAutoMerge(pullRequest) {
  * @returns {Promise<number>}
  */
 async function main() {
-  const references = splitReferences(process.argv.slice(2));
+  const references = splitReferences([...process.argv.slice(2), readPipedInput()]);
   if (references.length === 0) {
-    info("Usage: pr_merge <url1> [url2 ...]");
+    info("Usage: pr_merge <url1> [url2 ...]   (or: command cat urls.txt | pr_merge)");
     return 1;
   }
 
@@ -192,18 +269,34 @@ async function main() {
     info(`  ${label} · ${pullRequest.createdAt.slice(0, 10)} · ${pullRequest.url}${comments}`);
   }
 
-  if (!(await askYesNo("Set auto-merge for these pull requests?"))) return 0;
+  info("");
+  info("Commands to be run:");
+  info("  [am] enable auto-merge:");
+  for (const pullRequest of valid) {
+    info(`    ${formatCommand(buildActionArgs(pullRequest, "am"))}`);
+  }
+  info("  [dm] disable auto-merge:");
+  for (const pullRequest of valid) {
+    info(`    ${formatCommand(buildActionArgs(pullRequest, "dm"))}`);
+  }
+  info("");
+
+  const action = await askAction("Action for these pull requests?");
+  if (action === "ig") {
+    info("Ignored — nothing changed.");
+    return 0;
+  }
 
   let failures = 0;
   for (const pullRequest of valid) {
-    info(`Enabling auto-merge for ${pullRequest.url}`);
-    if (!enableAutoMerge(pullRequest)) failures += 1;
+    info(`+ ${formatCommand(buildActionArgs(pullRequest, action))}`);
+    if (!runAction(pullRequest, action)) failures += 1;
   }
   if (failures) {
     info(`Completed with ${failures} failed pull request(s).`);
     return 1;
   }
-  info("Auto-merge enabled for all validated pull requests.");
+  info(action === "dm" ? "Auto-merge disabled for all validated pull requests." : "Auto-merge enabled for all validated pull requests.");
   return 0;
 }
 

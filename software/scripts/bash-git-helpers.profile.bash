@@ -892,12 +892,14 @@ function pr_list_all_open() {
   list_prs --all "$@"
 }
 
-# pr_merge: validate pull-request URLs, sort WIP last, and enable auto-merge
+# pr_merge: validate pull-request URLs, sort WIP last, then enable/disable auto-merge
 function pr_merge() {
   if is_help_arg "${1:-}"; then
-    echo "pr_merge: validate pull-request URLs, sort WIP last, and enable auto-merge
+    echo "pr_merge: validate pull-request URLs, sort WIP last, then enable/disable auto-merge
   Usage: pr_merge <url1[,url2...]> [url2 ...]
-  Separators: comma, tab, pipe, newline
+  Separators: comma, space, tab, pipe, newline
+  Stdin: command cat mypr_list | pr_merge
+  Prompt: [am] enable auto-merge (default) - [dm] disable auto-merge - [ig] ignore
   Examples:
     pr_merge github.com/acme/api/pull/123, github.com/acme/api/pull/124
     pr_merge 'github.com/acme/api/pull/123
