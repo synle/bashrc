@@ -47,6 +47,9 @@
  *   trailing … (the one state that resolves itself while you read), and an
  *   armed auto-merge a dim `[auto-merge]` rather than a tenth glyph. Every
  *   text marker prints without color too, so a pipe loses tone, never a fact.
+ *   The head branch prefixes the title in cyan, as `<branch> : <title>` — the
+ *   handle every local command takes, and render-only (JSON keeps `title`
+ *   clean and carries `headRefName` on its own).
  *   The URL line stays bare — callers parse it.
  *   `--verbose`    : adds a third metadata line (timestamp · signal · status).
  *   `--links`      : just the URLs, one per line — paste-clean for other tools.
@@ -185,6 +188,11 @@ const ANSI = {
   // Dim is the opposite job — a non-blocking tag is context, not a finding, and must
   // sit quieter than the title it prefixes.
   dim: `\x1b[2m`,
+  // Cyan for the head branch. Every other slot is taken — red/yellow/green by the
+  // roll-up signal, blue by the URL line, magenta by the running marker — and dim was
+  // wrong here: the branch is an address you retype into `git checkout`, not a footnote,
+  // so it needs to be findable at a glance without competing with a severity color.
+  cyan: `\x1b[36m`,
   underline: `\x1b[4m`,
 };
 
@@ -822,6 +830,11 @@ function render(rows, opts, color) {
     const parts = [row.reasonIcon];
     if (row.reasonTag) parts.push(paint(row.reasonTag, BLOCKED_TAGS.has(row.reasonTag) ? ANSI.blockedTag : ANSI.dim));
     if (row.autoMerge) parts.push(paint(AUTO_MERGE_TAG, ANSI.dim));
+    // Branch name sits between the tags and the title: it is the handle every local
+    // command wants (worktree, checkout, log) and it is the only field that says WHERE
+    // the work lives. Cyan + a ` : ` separator so it reads as a prefix on the title
+    // rather than as part of it, and so a title starting with punctuation stays legible.
+    if (row.headRefName) parts.push(`${paint(row.headRefName, ANSI.cyan)} :`);
     parts.push(row.title);
 
     const running = row.runningChecks > 0 ? (color ? `${ANSI.magenta}${RUNNING_SUFFIX}${ANSI.reset}` : RUNNING_SUFFIX) : ``;
