@@ -7,6 +7,7 @@ import { getIndexFunction, getIndexConstant, mockFsExistence, setSandboxGlobal }
 const _getBundleRunnerType = getIndexFunction("_getBundleRunnerType");
 const _resolveScriptFile = getIndexFunction("_resolveScriptFile");
 const _filterByOsFolders = getIndexFunction("_filterByOsFolders");
+const getAllRepoSoftwareFiles = getIndexFunction("getAllRepoSoftwareFiles");
 const _printScriptProcessingResultsDirect = getIndexFunction("_printScriptProcessingResultsDirect");
 const ScriptSkipError = getIndexFunction("ScriptSkipError");
 const exitIfNotSudo = getIndexFunction("exitIfNotSudo");
@@ -145,6 +146,40 @@ describe("_filterByOsFolders", () => {
     // The function checks basePath/<os_name>, so deps/mac/ would be filtered
     // if mac is an inactive OS
     expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("should log accepted and ignored files when IS_DEBUG is enabled", () => {
+    setSandboxGlobal("IS_DEBUG", true);
+    try {
+      // sandbox.echo is stubbed to () => {}; the point is exercising the IS_DEBUG branches
+      // for both the ignored (OS folder) and accepted (outside any OS folder) paths.
+      expect(() => {
+        _filterByOsFolders(["software/scripts/git.js", "software/scripts/mac/iterm.js"], "software/scripts");
+      }).not.toThrow();
+    } finally {
+      setSandboxGlobal("IS_DEBUG", false);
+    }
+  });
+});
+
+// ---- getAllRepoSoftwareFiles ----
+
+describe("getAllRepoSoftwareFiles", () => {
+  it("falls back to the remote tree when IS_LOCAL_REPO is false, passing fallthrough", async () => {
+    setSandboxGlobal("IS_LOCAL_REPO", false);
+    const calls = [];
+    setSandboxGlobal("listRepoDir", async (...args) => {
+      calls.push(args);
+      return ["software/scripts/git.js", "software/metadata/script-list.config", "software/tools/build-include.js"];
+    });
+    try {
+      const result = await getAllRepoSoftwareFiles();
+      expect(calls).toEqual([["local", true]]);
+      expect(result).toEqual(["software/scripts/git.js"]);
+    } finally {
+      setSandboxGlobal("IS_LOCAL_REPO", true);
+      setSandboxGlobal("listRepoDir", undefined);
+    }
   });
 });
 

@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { mockFsExistence, getIndexFunction, getIndexConstant } from "./setup.js";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mockFsExistence, getIndexFunction, getIndexConstant, setSandboxGlobal } from "./setup.js";
 
 const isPathStale = getIndexFunction("isPathStale");
 const isForceRefreshStale = getIndexFunction("isForceRefreshStale");
@@ -44,6 +44,15 @@ describe("isPathStale", () => {
     mockFsExistence["/mock/custom"] = { type: "file", mtimeMs: oneHourAgo };
     expect(isPathStale("/mock/custom", 3600)).toBe(true);
     expect(isPathStale("/mock/custom", 7200)).toBe(false);
+  });
+
+  it("should return true immediately when IS_REFRESH_MODE is enabled", () => {
+    setSandboxGlobal("IS_REFRESH_MODE", true);
+    try {
+      expect(isPathStale("/mock/fresh")).toBe(true);
+    } finally {
+      setSandboxGlobal("IS_REFRESH_MODE", false);
+    }
   });
 });
 

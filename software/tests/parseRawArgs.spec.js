@@ -430,4 +430,29 @@ describe("parseRawArgs", () => {
     expect(result.files).toBe("");
     expect(result.refreshFiles).toBe("");
   });
+
+  it("should append --refresh= values to already-set files and refreshFiles", () => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--refresh=a.js", "--refresh=b.js"]);
+    const result = parseRawArgs();
+    expect(result.files).toBe("a.js,b.js");
+    expect(result.refreshFiles).toBe("a.js,b.js");
+    expect(result.forceRefresh).toBe(true);
+  });
+
+  it("should silently ignore unknown dash-prefixed flags", () => {
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--not-a-real-flag"]);
+    const result = parseRawArgs();
+    expect(result.files).toBe("");
+    expect(result.bareArgs).toEqual([]);
+  });
+
+  it("should skip non-string preset references and empty file entries during expansion", () => {
+    proc.env.PRESETS_JSON = JSON.stringify({
+      a: { presets: [123, "b"] },
+      b: { files: ["", "b.js"] },
+    });
+    proc.env.BASHRC_RAW_ARGS = JSON.stringify(["--preset=a"]);
+    const result = parseRawArgs();
+    expect(result.files).toBe("b.js");
+  });
 });

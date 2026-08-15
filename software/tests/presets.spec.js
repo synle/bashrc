@@ -1,11 +1,37 @@
 /** Shape validation for software/metadata/presets.jsonc — the single source of truth for --preset=<name> bundles. */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
-import { getIndexFunction } from "./setup.js";
+import { getIndexFunction, getSandboxProcess } from "./setup.js";
 
 const PRESETS_PATH = path.resolve("software/metadata/presets.jsonc");
 const stripJsoncComments = getIndexFunction("stripJsoncComments");
+const loadPresets = getIndexFunction("loadPresets");
+
+describe("loadPresets", () => {
+  afterEach(() => {
+    delete getSandboxProcess().env.PRESETS_JSON;
+  });
+
+  it("returns the parsed map for valid object JSONC", () => {
+    getSandboxProcess().env.PRESETS_JSON = '{ "lightweight": { "files": ["git.js"] } }';
+    expect(loadPresets()).toEqual({ lightweight: { files: ["git.js"] } });
+  });
+
+  it("returns {} when the env parses to a non-object", () => {
+    getSandboxProcess().env.PRESETS_JSON = "123";
+    expect(loadPresets()).toEqual({});
+  });
+
+  it("returns {} when the env holds invalid JSON", () => {
+    getSandboxProcess().env.PRESETS_JSON = "{ not json";
+    expect(loadPresets()).toEqual({});
+  });
+
+  it("returns {} when PRESETS_JSON is unset", () => {
+    expect(loadPresets()).toEqual({});
+  });
+});
 
 /**
  * Reads and parses the checked-in presets.jsonc file using the same comment-stripping
