@@ -454,6 +454,7 @@ const LLM_LEGACY_PLANS_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy_llm_ai_plans")
  */
 const LLM_SHARED_INSTRUCTION_FILES = {
   "pr-workflow.md": "software/scripts/advanced/llm/_common/instructions-pr-workflow.md",
+  "debugging.md": "software/scripts/advanced/llm/_common/instructions-debugging.md",
 };
 
 /**

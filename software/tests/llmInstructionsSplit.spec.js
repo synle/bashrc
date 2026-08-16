@@ -1,19 +1,22 @@
 /**
  * Integrity of the split between the always-loaded LLM instructions and the
- * on-demand PR workflow file.
+ * on-demand instruction files deployed beside them.
  *
  * `instructions.md` is deployed verbatim into `~/.claude/CLAUDE.md` and its three
- * siblings, and Claude Code refuses to load a `CLAUDE.md` over 40k chars. The PR
- * rules were moved into `instructions-pr-workflow.md` to stay under that budget,
- * leaving a pointer behind. Three things can silently undo that split, and none of
- * them is caught anywhere else in the suite:
+ * siblings, and Claude Code refuses to load a `CLAUDE.md` over 40k chars. Sections
+ * too big to always-load were moved into their own files, leaving a pointer behind.
+ * Three things can silently undo that split, and none of them is caught anywhere
+ * else in the suite:
  *
  *   1. the always-loaded file creeping back over the budget,
- *   2. the pointer being written as a Claude `@path` import — which per Claude Code's
+ *   2. a pointer being written as a Claude `@path` import — which per Claude Code's
  *      memory docs loads the target at launch, re-inflating the very context the
  *      split exists to protect, while still looking correct in the rendered file,
- *   3. rules going missing in the move, or the pointer naming a path the deploy
+ *   3. rules going missing in the move, or a pointer naming a path the deploy
  *      code never writes.
+ *
+ * Every split file is discovered from `LLM_SHARED_INSTRUCTION_FILES`, never from a
+ * list kept here — a second list is the drift this consolidation exists to prevent.
  */
 import { describe, it, expect } from "vitest";
 import fs from "fs";
@@ -24,8 +27,14 @@ import vm from "vm";
 const ROOT = path.resolve(".");
 const COMMON_FOLDER = "software/scripts/advanced/llm/_common";
 const INSTRUCTIONS_PATH = path.join(ROOT, COMMON_FOLDER, "instructions.md");
-const PR_WORKFLOW_PATH = path.join(ROOT, COMMON_FOLDER, "instructions-pr-workflow.md");
 const LLM_COMMON_PATH = path.join(ROOT, "software/scripts/advanced/llm/llm-common.js");
+
+/**
+ * Fake home the sandbox resolves shared paths against, so the deployed `~/...` form
+ * can be derived rather than hardcoded.
+ * @type {string}
+ */
+const SANDBOX_HOME = "/tmp/sandbox-home";
 
 /**
  * Claude Code's documented hard limit for a `CLAUDE.md`, in characters.
@@ -42,8 +51,37 @@ const CHAR_BUDGET = CLAUDE_MD_CHAR_LIMIT - 5000;
 
 /** @type {string} Always-loaded instructions, as deployed. */
 const instructions = fs.readFileSync(INSTRUCTIONS_PATH, "utf-8");
-/** @type {string} On-demand PR workflow rules. */
-const prWorkflow = fs.readFileSync(PR_WORKFLOW_PATH, "utf-8");
+
+/**
+ * Per-split-file content expectations, keyed by the same target basename the deploy
+ * registry uses. Test data, not a second registry — a key here with no matching
+ * registry entry (or the reverse) fails "every registered file has expectations".
+ * @type {Record<string, {heading: string, sections: string[], leads: string[]}>}
+ */
+const SPLIT_EXPECTATIONS = {
+  "pr-workflow.md": {
+    heading: "# PR & Source Control Workflow",
+    sections: ["## Branches, titles, commits", "## Reviewing and babysitting"],
+    leads: [
+      "Every PR branches off the default branch",
+      "Split by slice, never by layer",
+      "Hard dependencies phase into waves",
+      "Prose-only self-merge requires the PR to be standalone",
+      "A bare `#<number>` is a rendering bug",
+    ],
+  },
+  "debugging.md": {
+    heading: "# Debugging Discipline",
+    sections: ["## Reproduce before you theorize", "## Fix the cause, then prove it"],
+    leads: [
+      "No fix without a reproduction",
+      "One hypothesis, one change, one observation",
+      "Bisect; don't stare",
+      "Prove the fix is load-bearing",
+      "Never round an unexplained remainder up to",
+    ],
+  },
+};
 
 /**
  * Evaluates `llm-common.js` in a sandbox and returns its top-level declarations,
@@ -57,7 +95,7 @@ function loadLlmCommon() {
     path,
     // retargetLegacyPlanSymlinks does real filesystem work against temp fixtures.
     fs,
-    BASE_HOMEDIR_LINUX: "/tmp/sandbox-home",
+    BASE_HOMEDIR_LINUX: SANDBOX_HOME,
     log: () => {},
     is_os_mac: 0,
     readJson: () => ({}),
@@ -72,7 +110,23 @@ function loadLlmCommon() {
 const llm = loadLlmCommon();
 
 /**
- * Counts markdown list items, which is how a "rule" is expressed in both files.
+ * Every on-demand instruction file, discovered from the deploy registry.
+ * @type {Array<{target: string, source: string, text: string}>}
+ */
+const splitFiles = Object.entries(llm.LLM_SHARED_INSTRUCTION_FILES).map(([target, source]) => ({
+  target,
+  source,
+  text: fs.readFileSync(path.join(ROOT, source), "utf-8"),
+}));
+
+/**
+ * The shared instructions folder as it appears in the deployed pointers (`~/...`).
+ * @type {string}
+ */
+const SHARED_FOLDER_TILDE = llm.LLM_SHARED_INSTRUCTIONS_FOLDER.replace(SANDBOX_HOME, "~");
+
+/**
+ * Counts markdown list items, which is how a "rule" is expressed in every file.
  * @param {string} text - File content.
  * @returns {number} Count of top-level and nested bullets.
  */
@@ -92,18 +146,20 @@ describe("always-loaded instructions stay within the CLAUDE.md budget", () => {
   });
 });
 
-describe("PR workflow pointer", () => {
-  it("should keep a Source Control section that points at the split file", () => {
-    expect(instructions).toContain("## Source Control & PRs");
-    expect(instructions).toContain("pr-workflow.md");
+describe("split file pointers", () => {
+  it("should point at every registered file by its deployed path, in backticks", () => {
+    for (const { target } of splitFiles) {
+      // `@~/path/to.md` outside backticks is an import and loads at launch; backticks
+      // keep it literal and on-demand. Assert the backticked form is present...
+      expect(instructions, `pointer for ${target}`).toContain(`\`${SHARED_FOLDER_TILDE}/${target}\``);
+      // ...and that no bare @-import of it exists anywhere in the file.
+      expect(instructions, `@-import of ${target}`).not.toMatch(new RegExp(`@[^\\s\`]*${target.replace(".", "\\.")}`));
+    }
   });
 
-  it("should reference the pointer path in backticks so Claude does not import it", () => {
-    // `@~/path/to.md` outside backticks is an import and loads at launch; backticks
-    // keep it literal and on-demand. Assert the backticked form is present...
-    expect(instructions).toContain("`~/sy_llm_ai/instructions/pr-workflow.md`");
-    // ...and that no bare @-import of it exists anywhere in the file.
-    expect(instructions).not.toMatch(/@[^\s`]*pr-workflow\.md/);
+  it("should keep a Source Control section that points at the PR workflow file", () => {
+    expect(instructions).toContain("## Source Control & PRs");
+    expect(instructions).toContain("pr-workflow.md");
   });
 
   it("should not carry a Claude @path import of any kind", () => {
@@ -116,13 +172,6 @@ describe("PR workflow pointer", () => {
     }
     expect(imports).toEqual([]);
   });
-
-  it("should name a target the deploy registry actually writes", () => {
-    /** @type {Record<string, string>} Target basename -> repo-relative source. */
-    const registry = llm.LLM_SHARED_INSTRUCTION_FILES;
-    expect(Object.keys(registry)).toContain("pr-workflow.md");
-    expect(instructions).toContain(`${path.basename(llm.LLM_SHARED_INSTRUCTIONS_FOLDER)}/pr-workflow.md`);
-  });
 });
 
 describe("shared instruction registry", () => {
@@ -130,6 +179,10 @@ describe("shared instruction registry", () => {
     for (const [target, source] of Object.entries(llm.LLM_SHARED_INSTRUCTION_FILES)) {
       expect(fs.existsSync(path.join(ROOT, source)), `${target} -> ${source}`).toBe(true);
     }
+  });
+
+  it("should have content expectations for every registered file, and no orphans", () => {
+    expect(Object.keys(SPLIT_EXPECTATIONS).sort()).toEqual(Object.keys(llm.LLM_SHARED_INSTRUCTION_FILES).sort());
   });
 
   it("should place instructions and plans under one shared root", () => {
@@ -144,35 +197,38 @@ describe("shared instruction registry", () => {
 });
 
 describe("no rules were lost in the split", () => {
-  it("should hold the PR rules in the split file, not the always-loaded one", () => {
-    for (const lead of [
-      "Every PR branches off the default branch",
-      "Split by slice, never by layer",
-      "Hard dependencies phase into waves",
-      "Prose-only self-merge requires the PR to be standalone",
-      "A bare `#<number>` is a rendering bug",
-    ]) {
-      expect(prWorkflow, `split file should hold: ${lead}`).toContain(lead);
-      expect(instructions, `always-loaded file should not duplicate: ${lead}`).not.toContain(lead);
+  it("should hold each file's rules in the split file, not the always-loaded one", () => {
+    for (const { target, text } of splitFiles) {
+      for (const lead of SPLIT_EXPECTATIONS[target].leads) {
+        expect(text, `${target} should hold: ${lead}`).toContain(lead);
+        expect(instructions, `always-loaded file should not duplicate: ${lead}`).not.toContain(lead);
+      }
     }
   });
 
   it("should keep the combined bullet count at or above the pre-split total", () => {
-    // 158 rules before the split; the pointer stub adds a few, so this can only grow.
-    expect(countBullets(instructions) + countBullets(prWorkflow)).toBeGreaterThanOrEqual(158);
+    // 158 rules before the first split; pointer stubs add a few, so this can only grow.
+    const total = splitFiles.reduce((sum, { text }) => sum + countBullets(text), countBullets(instructions));
+    expect(total).toBeGreaterThanOrEqual(158);
   });
 
-  it("should give the split file its own top-level heading and section structure", () => {
-    expect(prWorkflow.startsWith("# ")).toBe(true);
-    expect(prWorkflow).toContain("## Branches, titles, commits");
-    expect(prWorkflow).toContain("## Reviewing and babysitting");
+  it("should give every split file its own top-level heading and section structure", () => {
+    for (const { target, text } of splitFiles) {
+      expect(text.startsWith("# "), `${target} needs a top-level heading`).toBe(true);
+      expect(text, `${target} heading`).toContain(SPLIT_EXPECTATIONS[target].heading);
+      for (const section of SPLIT_EXPECTATIONS[target].sections) {
+        expect(text, `${target} section`).toContain(section);
+      }
+    }
   });
 });
 
 describe("plans folder references", () => {
   it("should not mention the pre-consolidation plans path anywhere in the instructions", () => {
     expect(instructions).not.toContain("sy_llm_ai_plans");
-    expect(prWorkflow).not.toContain("sy_llm_ai_plans");
+    for (const { target, text } of splitFiles) {
+      expect(text, `${target} should not name the legacy plans folder`).not.toContain("sy_llm_ai_plans");
+    }
   });
 
   it("should point plan artifacts at the consolidated folder", () => {

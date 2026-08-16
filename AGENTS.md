@@ -660,9 +660,10 @@ every deploy — delete them only once every machine has migrated.
 
 **The always-loaded block has a hard size budget.** `instructions.md` is deployed verbatim
 into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
-`CLAUDE.md` over **40k chars**. That is why the PR workflow rules live in
-`_common/instructions-pr-workflow.md`, deployed to `~/sy_llm_ai/instructions/pr-workflow.md`
-and referenced from `instructions.md` by a pointer.
+`CLAUDE.md` over **40k chars**. That is why the PR workflow and debugging rules live in
+`_common/instructions-pr-workflow.md` and `_common/instructions-debugging.md`, deployed to
+`~/sy_llm_ai/instructions/{pr-workflow,debugging}.md` and referenced from `instructions.md`
+by a pointer.
 
 - **Reference split files as a backticked path, never as `@path`.** Per Claude Code's
   memory docs, an `@path` import "is expanded and loaded into context at launch" — it would

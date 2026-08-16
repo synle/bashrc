@@ -96,6 +96,7 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 ## Shell Command Execution
 
 - Use native commands first; fall back to `command <cmd>` only on failure, to bypass aliases or wrappers (`ls` → `command ls`). Sy's dotfiles wrap many builtins (`cat`→`bat`, `grep`→`rg`, `cd`→`zoxide`); wrappers can mangle output, change exit codes, or reject real flags. Applies to invocations the agent runs; repo scripts follow that repo's convention.
+- Every command must terminate on its own. You have no terminal to type into, so anything waiting for a human hangs until the timeout kills it. Three shapes cause it, each with a fix: a **pager** (`git log` / `diff` / `show` — use `git --no-pager`, or `PAGER=cat`); a **prompt** (package installs, credential reads — pass `-y` / `--yes` / `--no-input` or `DEBIAN_FRONTEND=noninteractive`, never `-i`); a **watcher or server** (`npm run dev`, `vitest` without `run`, `tail -f`, `less`, an editor — run the one-shot form, or background it and poll). A command legitimately running for minutes gets an explicit timeout, named up front.
 
 ## File Editing
 
@@ -124,18 +125,11 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 
 ## Debugging Discipline
 
-Picks up where the feedback ladder drops you. `/sy-debug` runs this as a phased loop.
+**These rules live in a separate file, and you are required to read it.**
 
-- No fix without a reproduction. A guess that turns the symptom green is _worse_ than no fix — it hides the defect and burns the evidence. When it will not reproduce, the deliverable is a reproduction, not a patch: match the failing environment, run from a clean checkout, reproduce inside CI. If none works, say so and stop rather than patching blind. Report the rate (`3/3`, `2/10`); stabilize intermittents (seeds, clocks, ports) before bisecting.
-- Shrink the repro before forming a hypothesis. One test, not a suite; one input, not a fixture; one call, not a request. Done when removing anything else makes the failure vanish.
-- One hypothesis, one change, one observation. State the hypothesis **and what would disprove it** first, change exactly one thing, observe, revert if it did not prove out. Changing five things and seeing green teaches nothing.
-- Bisect; don't stare. Binary-search the cheapest axis — history (`git bisect run <cmd>` with the minimal repro), code path (log the _value_ at the midpoint, not "got here"), input, or one config/dependency toggle from a known-good baseline.
-- Read the **first** failure, not the last. Runners, compilers, and CI logs cascade. Read whole stack traces before theorizing, and quote errors verbatim — an error message is a search key.
-- After three consecutive ruled-out hypotheses, attack the premise instead of forming a fourth. Usual culprits: the code read is not the code run (stale build, cached artifact, shadowed module, wrong branch), the test asserts something other than assumed, the "known good" baseline was never good, or the environment differs.
-- Fix the cause. Symptom-fix smells: a `try/except` around the failing call, a null check bolted onto the crash site, a retry around a nondeterministic operation, a `sleep` in a race, a loosened assertion — each turns a loud bug into a silent one. Ask "why did this reach main?" and fix at _that_ level, plus sibling call sites with the same defect.
-- Prove the fix is load-bearing, three checks all required: re-run the **original** failing command (not just the shrunk repro) and show output; revert only the fix, confirm the failure returns, re-apply; run the targeted suite for collateral damage.
-- Ship a regression test, per Test Quality's both-directions check. Name it after the defect's cause, not the ticket. If an existing test should have caught this and didn't, say why.
-- Never round an unexplained remainder up to "fixed". A bug that stopped reproducing without an understood cause is reported as exactly that.
+- **Read `~/sy_llm_ai/instructions/debugging.md` in full before your first fix attempt on anything broken**, and follow it as written. It picks up where the Validation Cadence ladder drops you; `/sy-debug` runs it as a phased loop. A bug you have already started guessing at is exactly the case it exists for.
+- The rules there are binding exactly as if they appeared here. Highest-cost ones, so you know what you are missing until you read it: no fix without a reproduction, one hypothesis per observation, read the **first** failure, fix the cause not the symptom, never round an unexplained remainder up to "fixed".
+- If that file is missing, say so rather than improvising a debugging loop, and re-run `bash run.sh --files="claude/setup.js"` (or any LLM setup script) to redeploy it.
 
 ## Test Quality
 
@@ -173,6 +167,7 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - Fix root causes, not symptoms. Three identical defensive blocks → extract or fix the invariant. (For the hunt, see Debugging Discipline.)
 - Keep comments, titles, and docstrings in sync in the same edit.
 - Delete leftovers in the refactor PR — unused imports, mocks, props, dead helpers. Audit tests too.
+- Never edit generated output — edit the generator and re-run it. Identify one before typing: a header saying so (`DO NOT EDIT`, `@generated`, `AUTO-GENERATED`), a lockfile, a snapshot, a build or vendor folder, or anything a documented command rebuilds. An edit there is erased by the next build, and reviews as real work until it vanishes. On conflicts, take either side and regenerate: a hand-merged lockfile is valid to git and wrong to the tool. When the generator itself is wrong, fix it and regenerate; when you cannot find it, say so rather than patch the artifact.
 - Imports and declarations at the top. Lazy only for circular deps or cold-start, with a comment.
 - Inline-document every method/function/class/exported symbol you touch in language-native style: one-line description, params, return + type, raised errors, side effects. Update on signature/behavior/contract change in the same edit. Undocumented public methods or stale doc next to modified code → review block. Trivial one-liners skip.
 
@@ -250,3 +245,4 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - Rule of three, and no earlier. One copy is code, two is coincidence, three is a pattern — extract only on the third, when the real variation is visible. Extracting at two guesses the shape, and the wrong abstraction costs more than the duplication it removed: every caller bends around a parameter that should not exist. Skip no-op wrappers and passthroughs at any count. Rung 2 asks "reuse it?"; this says when the answer becomes yes.
 - Duplicate knowledge is the defect; duplicate text is not. Two identical bodies that would change for different reasons stay separate — a validator and a formatter that both strip whitespace today. One fact in two places (a version string, a command list, a color, a schema, a platform flag) is deduped on sight, at any count, no rule of three: a single-source problem, and the second copy is already stale.
 - Prefer duplication over the wrong coupling when the two collide — tests, fixtures, and slices of parallel work duplicate freely, cheaper than a shared helper two owners fight over. Say which you chose when it is not obvious.
+- Change only the lines the task needs. Scope governs what you build; this governs what you touch. No reformatting a file you opened, no fixing unrelated lint on the way past, no renaming a variable you merely read, no reordering imports — each buries the real change in a diff nobody can review, and an unreviewable diff gets approved unread. Format only the range you edited, or not at all. A genuine drive-by fix is a separate commit or a noted omission — never a silent hunk in this one.
