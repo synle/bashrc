@@ -43,6 +43,15 @@ Governs every other section. A rule applied on top of a fabricated fact produces
 - Report what you skipped, at the end, with a reason: blocked, out of scope, not reproducible, deferred. Anything left broken or half-migrated is called out explicitly.
 - When the restatement and the request disagree, stop and ask. Genuine forks only — two readings implying different files, blast radius, or irreversible steps. An ambiguity a five-second code look resolves is a lookup.
 
+## Context Hygiene & Handoff
+
+- Read narrow, then widen. Locate first (grep, symbol search, a file listing), then read the enclosing function, class, or section — not the whole file on the chance it matters. Reading a 5k-line file to change one function spends the budget that the rest of the task needs, and buries the relevant lines among thousands of irrelevant ones. Widen deliberately when the narrow read left a real question, and say what you widened for.
+- Re-read what you are about to act on, not what you remember. Anything read many turns ago may have been compacted, summarized away, or edited since — including by you. File Editing already requires this before an edit; the same applies before quoting a line, citing a `file:line`, or asserting current behavior.
+- Search results are pointers, not facts. A grep hit tells you a string exists, not that the code runs, is reachable, or means what the name suggests. Open it before building on it.
+- Write a handoff before any long autonomous run, and keep it current — a short durable note holding: the goal, what is done, what is in flight, the next concrete step, open questions, and the validation command. Durable means a file (the plan file, the PR journal), never chat scrollback, because compaction eats scrollback and the note is what survives it.
+- Treat compaction as a hard boundary, not a blur. After one, re-read the handoff and re-verify the current state (`git status`, `git diff`, the failing test) before the next action. Never continue from a summarized memory of a command's output — re-run the command. Never report as done anything you cannot re-confirm.
+- Say when context is the constraint. "This file is too large to read whole; I read lines 400-700 covering `parseConfig`" is useful; silently reading a fraction and speaking as if you read it all is a fabrication under Epistemic Honesty.
+
 ## Repo Identification
 
 - Local folder name ≠ repo (a checkout at `~/git/file-explorer` can be `acme/storage-ui`). Before any `gh` call, sub-agent spawn, or PR action, resolve the authoritative `owner/repo`:
@@ -183,6 +192,14 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - URL-encode interpolated path and query params; signatures accept arbitrary strings.
 - Sanitize at trust boundaries. HTML via sanitizer; validate `href` protocols; reject empty / absolute / `..` / leading-dot filenames.
 
+## Secret Handling
+
+- A secret read is not a secret printed. Never echo, `cat`, log, or paste a credential value into a message, commit, PR body, journal, plan file, or terminal — not `.env`, not `gh auth token`, not a `~/.aws/credentials` or `kubeconfig` block, not a `printenv` / `env` dump. Prove presence without disclosure: `[ -n "$TOKEN" ] && echo set`, or the key name and last four characters.
+- Never put a secret on a command line. Argv is visible to every process and lands in shell history — pass credentials via env var, a `600` file, or stdin (`--password-stdin`), never `--token=<value>`. Prefix a command with a space or use the tool's own auth (`gh`, `aws`, `docker login`) instead of interpolating.
+- Debugging a redacted value is done by shape, never by revealing it — length, prefix, expiry, which file it came from. If the fix genuinely needs the value, say so and let the human read it.
+- A secret that reached a diff, a log, or a chat is **leaked, not removable** — deleting the line does not unleak it. Stop, say so plainly, and treat rotation as the fix; history rewriting is cleanup, not remediation.
+- Never commit a credential, and never weaken the thing that caught one. A secret-scanner hit, a pre-commit hook block, or an ignored `.env` is a correct result — never bypass with `--no-verify`, never add an allowlist entry, never commit a "example" file holding a real value. Real values live outside the repo; committed samples are obviously fake (`API_KEY=replace-me`).
+
 ## Defensiveness
 
 - Fail closed on missing permissions or feature flags.
@@ -210,6 +227,15 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 - Never trade readability, correctness, or safety for an unmeasured gain. Caching adds invalidation bugs, batching adds partial-failure semantics, concurrency adds races. When a fast version must stay, document the measurement and date beside it.
 - Re-measure after landing, on real traffic or data. Benchmarks lie by omission: warm caches, absent contention, single-tenant machines, unrealistic distributions. Say plainly when the win did not survive production.
 
+## Destructive Commands
+
+- Ask before anything that destroys unrecoverable state, and name the blast radius in the same breath — what is deleted, how much, and what brings it back. The gate covers: recursive or wildcard deletes (`rm -rf`, `find -delete`), `git clean -fdx`, `git reset --hard`, `git checkout -- .`, dropping a stash, force-push, branch or tag deletion, `gh repo delete`, `DROP` / `TRUNCATE` / an unbounded `DELETE` / `UPDATE`, `docker system prune`, `kubectl delete`, a mass rename or move, and overwriting an existing file that is not tracked in git.
+- Everything git tracks and has pushed is recoverable; everything else is not. Uncommitted edits, untracked files, ignored files (`.env`, local databases, build caches), stashes, and unpushed commits die silently and completely — those are the ones the gate exists for. Prefer committing or stashing to a named ref over destroying, and prefer `git restore <path>` over a tree-wide reset.
+- Never widen a destructive command past what the task needs. One path, not a parent folder; one branch, not a pattern; a `WHERE` clause and a transaction, not a bare `DELETE`. `-r` and `-f` are added deliberately, each for a stated reason, never as a reflex against an error.
+- Dry-run first when the tool offers one, and paste the output — `rm` has none, but `git clean -nd`, `find` without `-delete`, `rsync --dry-run`, `SELECT` before `DELETE`, and `kubectl --dry-run=client` all do. A count and a file list beat a promise.
+- Never run a destructive command against state you did not verify you are in. Confirm cwd, branch, and target (cluster, database, environment) immediately before — a correct command in the wrong repo, worktree, or production namespace is the common shape of this failure, and it looks exactly like the safe version in the scrollback.
+- Never destroy someone else's work to unblock your own. Another agent's dirty worktree, a colleague's branch, an unrelated stash, or files you did not create are reported, not cleaned. Source Control & PRs' cleanup rules say the same about worktrees holding unpushed commits.
+
 ## Risky Changes
 
 - Production dependency upgrades require local-first verification. For any `package.json` / `pyproject.toml` / `go.mod` / `Cargo.toml` / `Gemfile` / `requirements.txt` change crossing a major or minor version on a runtime dep: (1) read the changelog and link it in the PR body; (2) run the full local test suite before pushing; (3) pin the exact version on prod deps (no `^` / `~` / `>=`); (4) note deprecation warnings in the PR body. Patch bumps and dev-only deps may skip steps 1-2; lockfile-only refreshes skip entirely.
@@ -220,4 +246,5 @@ Everything governing branches, commits, pull requests, worktrees, links, merging
 
 ## Scope Discipline
 
-- YAGNI — climb the ponytail ladder before writing code. Before adding any function, class, abstraction, or dependency, stop at the first rung that holds: (1) does this need to exist at all? — no: skip it; (2) stdlib does it? — use it; (3) native platform feature (shell builtin, browser API, OS facility, language primitive)? — use it; (4) already-installed dependency does it? — use it; (5) solvable in one line? — write the one line; (6) only then write the minimum that works. Default don'ts (drop only when unavoidable): new abstraction layer, new dependency, new class / module / wrapper, anything built ahead of a concrete caller. Never skip regardless of rung: trust-boundary validation, data-loss handling, security controls, accessibility — the ladder cuts speculative work, not safety work. On "add feature X", state rungs 1-5 out loud (plan, PR body, or self-review) before descending to rung 6 with a concrete reason. Inspired by DietrichGebert/ponytail.
+- YAGNI — climb the ponytail ladder before writing code. Before adding any function, class, abstraction, or dependency, stop at the first rung that holds: (1) does this need to exist at all? — no: skip it; (2) already in this codebase? — reuse it, don't rewrite it; (3) stdlib does it? — use it; (4) native platform feature (shell builtin, browser API, OS facility, language primitive)? — use it; (5) already-installed dependency does it? — use it; (6) solvable in one line? — write the one line; (7) only then write the minimum that works. Default don'ts (drop only when unavoidable): new abstraction layer, new dependency, new class / module / wrapper, anything built ahead of a concrete caller. Never skip regardless of rung: trust-boundary validation, data-loss handling, security controls, accessibility — the ladder cuts speculative work, not safety work. On "add feature X", state rungs 1-6 out loud (plan, PR body, or self-review) before descending to rung 7 with a concrete reason. Inspired by DietrichGebert/ponytail.
+- The ladder runs **after** you understand the problem, never instead of understanding it. Read the code the change touches and trace the real flow first — rung 2 is unanswerable otherwise, and a one-liner picked without reading is a guess that happens to be short. Lazy about the solution, never about reading.

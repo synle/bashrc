@@ -44,7 +44,7 @@ Sections, in order:
 
 `## Wrap-Up` is appended later, in Step 6 — don't write it up front.
 
-Apply Scope Discipline (YAGNI) here, not after: state rungs 1-5 out loud before adding any new file, class, dependency, or abstraction.
+Apply Scope Discipline (YAGNI) here, not after: state rungs 1-6 out loud before adding any new file, class, dependency, or abstraction.
 
 ### 3. Confirm before executing
 
