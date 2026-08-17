@@ -418,10 +418,19 @@ function view_file() {
 # --- Bookmark Fzf Helper Functions ---
 BOOKMARK_PATH="$HOME/.${USER}_bookmark"
 
+# add_bookmark <command> [<command>...] - add one or more commands to the bookmark file
+#
+# Variadic on purpose: the whole body costs one subshell and one rewrite of the
+# file regardless of how many entries are passed, so callers seeding a batch
+# should pass them in a single call rather than looping. A loop of N calls pays
+# N forks, and fork cost scales with the size of the surrounding environment --
+# measured at ~1ms per call in a bare shell but ~7.6ms once a large profile is
+# loaded, which made a 31-entry seeding loop cost ~236ms of shell startup.
 function add_bookmark() {
+  [ $# -eq 0 ] && return 0
   local content
   content=$({
-    echo "$1"
+    printf '%s\n' "$@"
     command cat "$BOOKMARK_PATH" 2> /dev/null
   } | sort -u)
   echo "$content" > "$BOOKMARK_PATH"

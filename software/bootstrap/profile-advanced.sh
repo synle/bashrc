@@ -1949,9 +1949,8 @@ function housekeeping() {
 # --- Bookmarks ---
 ################################################################################
 if type add_bookmark &> /dev/null; then
-  add_bookmark fuzzy_edit
-  add_bookmark fuzzy_recent_files
-  add_bookmark commit_empty_trigger_deploy
+  # one variadic call, not three - each call costs a fork
+  add_bookmark fuzzy_edit fuzzy_recent_files commit_empty_trigger_deploy
 fi
 
 ################################################################################

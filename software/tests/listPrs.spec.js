@@ -1003,8 +1003,13 @@ describe("list_prs — shell wrappers", () => {
     expect(PROFILE_SOURCE).toContain('command pr_merge "$@"');
     expect(INSTALLER_SOURCE).toContain("git.pr_merge.cjs");
     expect(MERGE_CLI_SOURCE).toContain("split(/[\\s,|]+/");
-    expect(PROFILE_SOURCE).toContain('add_bookmark "pr_list_my_open"');
-    expect(PROFILE_SOURCE).toContain('add_bookmark "pr_merge"');
+    // Assert on what the seeding block registers, not on how many calls it uses:
+    // add_bookmark is variadic, so one call with N args and N calls with one arg
+    // are equivalent, and only the former avoids a fork per bookmark.
+    const bookmarkBlock = PROFILE_SOURCE.match(/if type -t add_bookmark[\s\S]*?\nfi/);
+    expect(bookmarkBlock).not.toBeNull();
+    expect(bookmarkBlock[0]).toContain('"pr_list_my_open"');
+    expect(bookmarkBlock[0]).toContain('"pr_merge"');
   });
 
   it("checks unresolved review threads before auto-merge", () => {

@@ -939,6 +939,6 @@ github.com/acme/api/pull/124'"
 }
 
 if type -t add_bookmark > /dev/null 2>&1; then
-  add_bookmark "pr_list_my_open"
-  add_bookmark "pr_merge"
+  # one variadic call, not two - each call costs a fork
+  add_bookmark "pr_list_my_open" "pr_merge"
 fi
