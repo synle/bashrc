@@ -1,8 +1,7 @@
 /**
- * Tests for the `list_prs` CLI (software/scripts/git_pr_list.cjs), its shared
- * installer (software/scripts/git-functions.js), and the two shell entry points
- * (`pr_list_needs_attention` / `pr_list_all_open`) in
- * bash-git-helpers.profile.bash.
+ * Tests for the `list_prs` CLI (software/scripts/git.pr_list.cjs), its shared
+ * installer (software/scripts/git-functions.js), and the four shell entry points
+ * (`pr_list_{my,other}_{open,need_attention}`) in bash-git-helpers.profile.bash.
  *
  * Three layers, because they fail differently:
  *
@@ -19,8 +18,9 @@
  *      executable. Checked at the source level (right destination, right source)
  *      plus a `node --check` of the payload so a broken CLI never ships.
  *
- *   3. The shell wrappers are thin delegators — `pr_list_all_open` must add
- *      `--all`, both must forward the rest, and the old aliases must be gone.
+ *   3. The shell wrappers are thin delegators over one shared body — each must
+ *      pick the right `--me` / `--all` pair, lead with it so a caller can still
+ *      override, forward the rest untouched, and the old names must be gone.
  *      Driven by sourcing the real profile with a fake `list_prs` on PATH.
  */
 import { describe, it, expect } from "vitest";
@@ -36,6 +36,7 @@ const MERGE_CLI_PATH = path.join(ROOT_DIR, "software/scripts/git.pr_merge.cjs");
 const INSTALLER_PATH = path.join(ROOT_DIR, "software/scripts/git-functions.js");
 const GIT_HELPERS_PROFILE = path.join(ROOT_DIR, "software/scripts/bash-git-helpers.profile.bash");
 const COMMON_FUNCTIONS = path.join(ROOT_DIR, "software/bootstrap/common-functions.bash");
+const COMMON_ENV = path.join(ROOT_DIR, "software/bootstrap/common-env.sh");
 
 const CLI_SOURCE = fs.readFileSync(CLI_PATH, "utf-8");
 const MERGE_CLI_SOURCE = fs.readFileSync(MERGE_CLI_PATH, "utf-8");
@@ -68,6 +69,11 @@ _track_end() {
 }
 case "\${1:-}" in
 --version) echo "gh version 2.0.0 (stub)"; exit 0 ;;
+api)
+  if [ "\${2:-}" = "user" ]; then printf '%s\\n' "\${FAKE_GH_LOGIN:-syle}"; exit 0; fi
+  ;;
+esac
+case "\${1:-}" in
 search) command cat "$FAKE_GH_SEARCH_JSON" ;;
 api)
   _number=""
@@ -212,7 +218,7 @@ function runCli(argv = [], prs = [], opts = {}) {
  * @returns {object[]} the parsed rows
  */
 function rowsFor(prs, extraArgs = []) {
-  const { stdout } = runCli(["--json", ...extraArgs], prs);
+  const { stdout } = runCli(["--me=1", "--json", ...extraArgs], prs);
   return JSON.parse(stdout);
 }
 
@@ -272,7 +278,7 @@ describe("list_prs — classification", () => {
 
   it("honors BASHRC_PR_GATE_CHECK_PATTERN for what counts as a gate", () => {
     const custom = { __typename: "StatusContext", context: "waiting-on-legal", state: "PENDING" };
-    const { stdout } = runCli(["--json"], [pullRequest({ checks: [PASSING_CHECK, custom], reviewDecision: "REVIEW_REQUIRED" })], {
+    const { stdout } = runCli(["--me=1", "--json"], [pullRequest({ checks: [PASSING_CHECK, custom], reviewDecision: "REVIEW_REQUIRED" })], {
       env: { BASHRC_PR_GATE_CHECK_PATTERN: "waiting-on-legal" },
     });
     const row = JSON.parse(stdout)[0];
@@ -332,24 +338,24 @@ describe("list_prs — classification", () => {
 
 describe("list_prs — scope resolution", () => {
   it("searches all of GitHub by default (no --repo flags)", () => {
-    const { ghArgs } = runCli([], [pullRequest(AWAITING_REVIEW)]);
+    const { ghArgs } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
     expect(searchLine).toBeTruthy();
     expect(searchLine).not.toContain("--repo");
   });
 
   it("passes explicit repos through as --repo flags", () => {
-    const { ghArgs } = runCli(["acme/api", "acme/web"], [pullRequest(AWAITING_REVIEW)]);
+    const { ghArgs } = runCli(["--me=1", "acme/api", "acme/web"], [pullRequest(AWAITING_REVIEW)]);
     const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
     expect(searchLine).toContain("--repo acme/api");
     expect(searchLine).toContain("--repo acme/web");
   });
 
-  it("prints the drop---cwd hint and never calls search when --cwd finds nothing", () => {
+  it("prints the no-repos hint and never calls search when --cwd finds nothing", () => {
     const empty = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-empty-"));
     try {
-      const { stderr, stdout, ghArgs } = runCli(["--cwd"], [], { cwd: empty });
-      expect(stderr).toContain("drop --cwd");
+      const { stderr, stdout, ghArgs } = runCli(["--me=1", "--cwd"], [], { cwd: empty });
+      expect(stderr).toContain("no git repos found at/below");
       expect(stdout).toBe("");
       expect(ghArgs.some((line) => line.startsWith("search prs"))).toBe(false);
     } finally {
@@ -358,22 +364,92 @@ describe("list_prs — scope resolution", () => {
   });
 
   it("forwards --author and --limit to gh search", () => {
-    const { ghArgs } = runCli(["--author=alice", "--limit=5"], [pullRequest(AWAITING_REVIEW)]);
+    const { ghArgs } = runCli(["--me=1", "--author=alice", "--limit=5"], [pullRequest(AWAITING_REVIEW)]);
     const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
     expect(searchLine).toContain("--author=alice");
     expect(searchLine).toContain("--limit=5");
   });
 
   it("exits non-zero on an unknown flag", () => {
-    const { status, stderr } = runCli(["--nope"], []);
+    const { status, stderr } = runCli(["--me=1", "--nope"], []);
     expect(status).not.toBe(0);
     expect(stderr).toContain("unknown option");
   });
 });
 
+describe("list_prs — audience (--me)", () => {
+  it("--me=1 restricts the search to your own PRs", () => {
+    const { ghArgs } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
+    const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
+    expect(searchLine).toContain("--author=@me");
+  });
+
+  it("accepts every spelling of true that the shell is_truthy accepts", () => {
+    ["1", "true", "TRUE", "y", "Y", "yes", "Yes"].forEach((value) => {
+      const { ghArgs } = runCli([`--me=${value}`], [pullRequest(AWAITING_REVIEW)]);
+      const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
+      expect(searchLine, `--me=${value} should mean mine-only`).toContain("--author=@me");
+    });
+  });
+
+  it("--me=0 drops the author qualifier and filters your own PRs back out", () => {
+    const mine = pullRequest({ ...AWAITING_REVIEW, number: 1, author: { login: "syle" } });
+    const theirs = pullRequest({ ...AWAITING_REVIEW, number: 2, author: { login: "alice", name: "Alice Nguyen" } });
+    const { stdout, ghArgs } = runCli(["--me=0", "--links", "acme/api"], [mine, theirs]);
+    const searchLine = ghArgs.find((line) => line.startsWith("search prs"));
+    expect(searchLine).not.toContain("--author");
+    expect(stdout.trim().split("\n")).toEqual(["https://github.com/acme/api/pull/2"]);
+  });
+
+  it("lists everyone, yourself included, when --me is omitted", () => {
+    const mine = pullRequest({ ...AWAITING_REVIEW, number: 1, author: { login: "syle" } });
+    const theirs = pullRequest({ ...AWAITING_REVIEW, number: 2, author: { login: "alice" } });
+    const { stdout, ghArgs } = runCli(["--links", "acme/api"], [mine, theirs]);
+    expect(ghArgs.find((line) => line.startsWith("search prs"))).not.toContain("--author");
+    expect(stdout.trim().split("\n")).toHaveLength(2);
+  });
+
+  it("an explicit --author wins over --me", () => {
+    const { ghArgs } = runCli(["--me=0", "--author=alice"], [pullRequest(AWAITING_REVIEW)]);
+    expect(ghArgs.find((line) => line.startsWith("search prs"))).toContain("--author=alice");
+  });
+
+  it("implies --cwd rather than searching every open PR on GitHub", () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), "list-prs-global-"));
+    try {
+      const { stderr, ghArgs } = runCli(["--me=0"], [pullRequest(AWAITING_REVIEW)], { cwd: empty });
+      expect(stderr).toContain("scoping to git repos at/below");
+      expect(ghArgs.some((line) => line.startsWith("search prs"))).toBe(false);
+    } finally {
+      fs.rmSync(empty, { recursive: true, force: true });
+    }
+  });
+
+  it("labels mixed-author rows with ME and a first name, and never in a mine-only run", () => {
+    const mine = pullRequest({ ...AWAITING_REVIEW, number: 1, author: { login: "syle" } });
+    const theirs = pullRequest({ ...AWAITING_REVIEW, number: 2, author: { login: "alice", name: "Alice Nguyen" } });
+    const handleOnly = pullRequest({ ...AWAITING_REVIEW, number: 3, author: { login: "bob" } });
+
+    const mixed = runCli(["acme/api"], [mine, theirs, handleOnly]).stdout;
+    expect(mixed).toContain(" ME ");
+    expect(mixed).toContain(" Alice ");
+    expect(mixed).toContain(" @bob ");
+    expect(mixed).not.toContain("Nguyen");
+
+    const mineOnly = runCli(["--me=1"], [mine]).stdout;
+    expect(mineOnly).not.toContain(" ME ");
+  });
+
+  it("names the repos it scanned and the repos it listed from", () => {
+    const { stderr } = runCli(["--me=1", "acme/api", "acme/web"], [pullRequest(AWAITING_REVIEW)]);
+    expect(stderr).toContain("acme/api acme/web");
+    expect(stderr).toContain("listed from 1 repo(s): acme/api");
+  });
+});
+
 describe("list_prs — output shape", () => {
   it("prints title then URL, two lines, and keeps STDOUT free of progress noise", () => {
-    const { stdout, stderr } = runCli([], [pullRequest(AWAITING_REVIEW)]);
+    const { stdout, stderr } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     const lines = stdout.split("\n").filter(Boolean);
     expect(lines[0]).toBe("⏳ syle/retry-token-refresh : Retry token refresh on 401");
     expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
@@ -383,32 +459,32 @@ describe("list_prs — output shape", () => {
   });
 
   it("adds a metadata line only with --verbose", () => {
-    const plain = runCli([], [pullRequest(AWAITING_REVIEW)]).stdout;
+    const plain = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]).stdout;
     expect(plain).not.toContain("· 🟡");
-    const verbose = runCli(["--verbose"], [pullRequest(AWAITING_REVIEW)]).stdout;
+    const verbose = runCli(["--me=1", "--verbose"], [pullRequest(AWAITING_REVIEW)]).stdout;
     const ageDays = Math.floor((Date.now() - Date.parse("2026-01-01T00:00:00Z")) / 86400000);
     expect(verbose).toContain(`(${ageDays}d) · 🟡 CI PASSED · AWAITING REVIEW`);
   });
 
   it("prints only URLs with --links", () => {
-    const { stdout } = runCli(["--links"], [pullRequest(AWAITING_REVIEW), pullRequest({ ...AWAITING_REVIEW, number: 2 })]);
+    const { stdout } = runCli(["--me=1", "--links"], [pullRequest(AWAITING_REVIEW), pullRequest({ ...AWAITING_REVIEW, number: 2 })]);
     expect(stdout.split("\n").filter(Boolean)).toEqual(["https://github.com/acme/api/pull/1", "https://github.com/acme/api/pull/2"]);
   });
 
   it("prints a [draft] tag on the title line", () => {
-    const { stdout } = runCli([], [pullRequest({ isDraft: true, checks: [PASSING_CHECK] })]);
+    const { stdout } = runCli(["--me=1"], [pullRequest({ isDraft: true, checks: [PASSING_CHECK] })]);
     expect(stdout).toContain("🛑 [draft] syle/retry-token-refresh : Retry token refresh on 401");
   });
 
   it("prints the head branch between the tags and the title, and never on the URL line", () => {
     // The branch is the handle every local command wants (worktree, checkout, log), so
     // it leads the title — but the URL line stays machine-readable and bare.
-    const lines = runCli([], [pullRequest(AWAITING_REVIEW)])
+    const lines = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)])
       .stdout.split("\n")
       .filter(Boolean);
     expect(lines[0]).toBe("⏳ syle/retry-token-refresh : Retry token refresh on 401");
     expect(lines[1]).toBe("https://github.com/acme/api/pull/1");
-    expect(runCli(["--links"], [pullRequest(AWAITING_REVIEW)]).stdout).not.toContain("syle/retry-token-refresh");
+    expect(runCli(["--me=1", "--links"], [pullRequest(AWAITING_REVIEW)]).stdout).not.toContain("syle/retry-token-refresh");
   });
 
   it("keeps the branch out of the JSON title field", () => {
@@ -418,7 +494,7 @@ describe("list_prs — output shape", () => {
   });
 
   it("emits no ANSI escapes when NO_COLOR / piped", () => {
-    const { stdout } = runCli([], [pullRequest(AWAITING_REVIEW)]);
+    const { stdout } = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)]);
     // eslint-disable-next-line no-control-regex
     expect(stdout).not.toMatch(/\x1b\[/);
   });
@@ -448,7 +524,7 @@ describe("list_prs — output shape", () => {
         number: index + 1,
       }),
     );
-    const result = runCli(["--json"], prs, { env: { FAKE_GH_DELAY: "0.05" } });
+    const result = runCli(["--me=1", "--json"], prs, { env: { FAKE_GH_DELAY: "0.05" } });
     expect(result.ghMaxConcurrency).toBe(3);
   });
 
@@ -554,7 +630,7 @@ describe("list_prs — reason icons and auto-merge", () => {
     // runCli pipes stdout, so there is no TTY and no ANSI. The tag is plain text
     // rather than styling precisely so it survives this render intact.
     const { stdout } = runCli(
-      [],
+      ["--me=1"],
       [pullRequest({ ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } })],
     );
     const lines = stdout.split("\n").filter(Boolean);
@@ -562,7 +638,7 @@ describe("list_prs — reason icons and auto-merge", () => {
   });
 
   it("leaves the auto-merge tag off a disarmed PR", () => {
-    const lines = runCli([], [pullRequest(AWAITING_REVIEW)])
+    const lines = runCli(["--me=1"], [pullRequest(AWAITING_REVIEW)])
       .stdout.split("\n")
       .filter(Boolean);
     expect(lines[0]).toBe("⏳ syle/retry-token-refresh : Retry token refresh on 401");
@@ -573,7 +649,7 @@ describe("list_prs — reason icons and auto-merge", () => {
     // The regression this guards: auto-merge used to render as a 🪄 competing with the
     // reason icon, so two unrelated facts fought for the same glance. It is a word now.
     const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
-    const firstLine = runCli([], [pullRequest(armed)])
+    const firstLine = runCli(["--me=1"], [pullRequest(armed)])
       .stdout.split("\n")
       .filter(Boolean)[0];
     expect(firstLine).not.toContain("🪄");
@@ -583,12 +659,12 @@ describe("list_prs — reason icons and auto-merge", () => {
   it("suffixes a running build with … and nothing else with it", () => {
     // A build is the only state that resolves itself while you read the output, so it
     // is the only one that earns the "still moving" marker.
-    const running = runCli(["--all"], [pullRequest({ checks: [RUNNING_CHECK], reviewDecision: "APPROVED" })])
+    const running = runCli(["--me=1", "--all"], [pullRequest({ checks: [RUNNING_CHECK], reviewDecision: "APPROVED" })])
       .stdout.split("\n")
       .filter(Boolean)[0];
     expect(running).toBe("🔨 syle/retry-token-refresh : Retry token refresh on 401…");
 
-    const settled = runCli(["--all"], [pullRequest(READY_TO_MERGE)])
+    const settled = runCli(["--me=1", "--all"], [pullRequest(READY_TO_MERGE)])
       .stdout.split("\n")
       .filter(Boolean)[0];
     expect(settled).toBe("🚀 syle/retry-token-refresh : Retry token refresh on 401");
@@ -610,7 +686,7 @@ describe("list_prs — reason icons and auto-merge", () => {
       reviewDecision: "APPROVED",
       autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" },
     };
-    const line = runCli(["--all"], [pullRequest(both)])
+    const line = runCli(["--me=1", "--all"], [pullRequest(both)])
       .stdout.split("\n")
       .filter(Boolean)[0];
     expect(line).toBe("🔨 [auto-merge] syle/retry-token-refresh : Retry token refresh on 401…");
@@ -618,11 +694,11 @@ describe("list_prs — reason icons and auto-merge", () => {
   it("never decorates the URL line — callers parse it", () => {
     const armed = { ...AWAITING_REVIEW, autoMergeRequest: { enabledAt: "2026-01-02T00:00:00Z", mergeMethod: "SQUASH" } };
     expect(
-      runCli([], [pullRequest(armed)])
+      runCli(["--me=1"], [pullRequest(armed)])
         .stdout.split("\n")
         .filter(Boolean)[1],
     ).toBe("https://github.com/acme/api/pull/1");
-    expect(runCli(["--links"], [pullRequest(armed)]).stdout.trim()).toBe("https://github.com/acme/api/pull/1");
+    expect(runCli(["--me=1", "--links"], [pullRequest(armed)]).stdout.trim()).toBe("https://github.com/acme/api/pull/1");
   });
 });
 
@@ -642,7 +718,7 @@ describe("list_prs — reason tags", () => {
       const row = rowFor(overrides, ["--all"]);
       expect(row.reasonTag).toBe(tag);
       expect(row.reasonIcon).toBe(icon);
-      const line = runCli(["--all"], [pullRequest(overrides)])
+      const line = runCli(["--me=1", "--all"], [pullRequest(overrides)])
         .stdout.split("\n")
         .filter(Boolean)[0];
       expect(line.startsWith(`${icon} ${tag} `)).toBe(true);
@@ -659,7 +735,7 @@ describe("list_prs — reason tags", () => {
     it(`leaves ${label} untagged — the icon already says it`, () => {
       const row = rowFor(overrides, ["--all"]);
       expect(row.reasonTag).toBe("");
-      const line = runCli(["--all"], [pullRequest(overrides)])
+      const line = runCli(["--me=1", "--all"], [pullRequest(overrides)])
         .stdout.split("\n")
         .filter(Boolean)[0];
       expect(line).not.toMatch(/\[(rejected|conflict|ci-failed|behind|draft)\]/);
@@ -673,7 +749,7 @@ describe("list_prs — reason tags", () => {
     expect(row.reasonTag).toBe("[rejected]");
 
     const line = runCli(
-      ["--all"],
+      ["--me=1", "--all"],
       [pullRequest({ checks: [FAILING_CHECK], reviewDecision: "CHANGES_REQUESTED", mergeable: "CONFLICTING" })],
     )
       .stdout.split("\n")
@@ -825,11 +901,15 @@ function extractBashFunction(file, name) {
 }
 
 const IS_HELP_ARG = extractBashFunction(COMMON_FUNCTIONS, "is_help_arg");
+// The wrappers branch on is_truthy, so the real one has to be present — a missing
+// function is silently falsy in bash, which would make every assertion below pass
+// for the wrong reason.
+const IS_TRUTHY = extractBashFunction(COMMON_ENV, "is_truthy");
 
 /**
  * Source the real profile with a fake `list_prs` on PATH and run one wrapper.
  * The fake `list_prs` just logs its argv, so we can assert what the wrapper forwarded.
- * @param {string} command The shell command (e.g. `pr_list_all_open --cwd`).
+ * @param {string} command The shell command (e.g. `pr_list_my_open --cwd`).
  * @returns {{ status: number, stdout: string, stderr: string, forwarded: string[] }}
  */
 function runWrapper(command) {
@@ -841,7 +921,8 @@ function runWrapper(command) {
     fs.writeFileSync(log, "");
     fs.writeFileSync(path.join(bin, "list_prs"), `#!/usr/bin/env bash\nprintf '%s\\n' "$*" >> "${log}"\n`, { mode: 0o755 });
 
-    const script = [IS_HELP_ARG, `source ${JSON.stringify(GIT_HELPERS_PROFILE)}`, command].join("\n");
+    // expand_aliases is off in a non-interactive shell, and `pr_list` is an alias.
+    const script = ["shopt -s expand_aliases", IS_HELP_ARG, IS_TRUTHY, `source ${JSON.stringify(GIT_HELPERS_PROFILE)}`, command].join("\n");
 
     let status = 0;
     let stdout = "";
@@ -866,27 +947,41 @@ function runWrapper(command) {
 }
 
 describe("list_prs — shell wrappers", () => {
-  it("pr_list_needs_attention forwards args to list_prs verbatim", () => {
-    const { forwarded } = runWrapper("pr_list_needs_attention --cwd --verbose");
-    expect(forwarded).toEqual(["--cwd --verbose"]);
+  it("pr_list_my_open asks for every open PR of yours", () => {
+    expect(runWrapper("pr_list_my_open --cwd").forwarded).toEqual(["--all --me=1 --cwd"]);
   });
 
-  it("pr_list_all_open prepends --all", () => {
-    const { forwarded } = runWrapper("pr_list_all_open --cwd");
-    expect(forwarded).toEqual(["--all --cwd"]);
+  it("pr_list_my_need_attention drops --all and stays mine-only", () => {
+    expect(runWrapper("pr_list_my_need_attention --cwd --verbose").forwarded).toEqual(["--me=1 --cwd --verbose"]);
   });
 
-  it("both wrappers answer --help without calling list_prs", () => {
-    const needs = runWrapper("pr_list_needs_attention --help");
-    expect(needs.stdout).toContain("pr_list_needs_attention:");
-    expect(needs.forwarded).toEqual([]);
-    const all = runWrapper("pr_list_all_open --help");
-    expect(all.stdout).toContain("pr_list_all_open:");
-    expect(all.forwarded).toEqual([]);
+  it("pr_list_other_open asks for everyone else's open PRs", () => {
+    expect(runWrapper("pr_list_other_open").forwarded).toEqual(["--all --me=0"]);
+  });
+
+  it("pr_list_other_need_attention drops --all and stays everyone-else", () => {
+    expect(runWrapper("pr_list_other_need_attention --json").forwarded).toEqual(["--me=0 --json"]);
+  });
+
+  it("puts --me first so a caller can still override it", () => {
+    // list_prs is last-wins on --me, so the wrapper's default must lead.
+    expect(runWrapper("pr_list_my_open --me=0").forwarded).toEqual(["--all --me=1 --me=0"]);
+  });
+
+  it("pr_list is the bare-name alias for pr_list_my_open", () => {
+    expect(runWrapper("pr_list --cwd").forwarded).toEqual(["--all --me=1 --cwd"]);
+  });
+
+  it("every wrapper answers --help under its own name without calling list_prs", () => {
+    ["pr_list_my_open", "pr_list_my_need_attention", "pr_list_other_open", "pr_list_other_need_attention"].forEach((name) => {
+      const { stdout, forwarded } = runWrapper(`${name} --help`);
+      expect(stdout, `${name} --help should name itself`).toContain(`${name}:`);
+      expect(forwarded).toEqual([]);
+    });
   });
 
   it("dropped every old list_prs alias / internal", () => {
-    ["list_pending_prs", "list_open_prs", "_list_prs_repos"].forEach((name) => {
+    ["list_pending_prs", "list_open_prs", "_list_prs_repos", "pr_list_all_open", "pr_list_needs_attention"].forEach((name) => {
       expect(PROFILE_SOURCE, `${name} should be gone from the profile`).not.toMatch(new RegExp(`\\b${name}\\b`));
     });
     // The full renderer must no longer be embedded in the profile — it lives in the CLI now.
@@ -895,18 +990,20 @@ describe("list_prs — shell wrappers", () => {
     });
   });
 
-  it("keeps no bash list_prs implementation, only the two wrappers", () => {
+  it("keeps no bash list_prs implementation, only the four wrappers over one body", () => {
     expect(PROFILE_SOURCE).not.toMatch(/^function list_prs\(\)/m);
-    expect(PROFILE_SOURCE).toMatch(/^function pr_list_needs_attention\(\)/m);
-    expect(PROFILE_SOURCE).toMatch(/^function pr_list_all_open\(\)/m);
-    expect(PROFILE_SOURCE).not.toMatch(/^function list_prs_(needs_attention|all_open)\(\)/m);
+    expect(PROFILE_SOURCE).toMatch(/^function _pr_list_run\(\)/m);
+    ["pr_list_my_open", "pr_list_my_need_attention", "pr_list_other_open", "pr_list_other_need_attention"].forEach((name) => {
+      expect(PROFILE_SOURCE).toMatch(new RegExp(`^function ${name}\\(\\)`, "m"));
+    });
+    expect(PROFILE_SOURCE).toContain("alias pr_list='pr_list_my_open'");
   });
 
   it("uses shared confirmation and seeds the requested bookmarks", () => {
     expect(PROFILE_SOURCE).toContain('command pr_merge "$@"');
     expect(INSTALLER_SOURCE).toContain("git.pr_merge.cjs");
     expect(MERGE_CLI_SOURCE).toContain("split(/[\\s,|]+/");
-    expect(PROFILE_SOURCE).toContain('add_bookmark "pr_list_all_open"');
+    expect(PROFILE_SOURCE).toContain('add_bookmark "pr_list_my_open"');
     expect(PROFILE_SOURCE).toContain('add_bookmark "pr_merge"');
   });
 

@@ -832,65 +832,90 @@ function patch() {
 ################################################################################
 # --- Pull Request Inventory ---
 # `list_prs` is a standalone Node CLI installed at ~/.local/bin/list_prs by
-# software/scripts/git-functions.js (the source lives in
-# software/scripts/git_pr_list.mjs). It lists your open PRs grouped by
-# how much work each still needs. Run `list_prs --help`… actually it has no
-# --help; the flags are:
+# software/scripts/git-functions.js (source: software/scripts/git.pr_list.cjs).
+# It lists open PRs grouped by how much work each still needs. Flags:
 #   --all       include the fully-clear READY TO MERGE group (hidden by default)
+#   --me=<0|1>  1 = only yours, 0 = everyone but you, omitted = everyone
 #   --cwd       scope to git repos at/below the current folder
-#               (default is a GLOBAL search of every repo you have a PR in)
+#               (--me=1 defaults to a GLOBAL search of every repo you have a PR in;
+#               anything wider than yourself implies --cwd, since an unscoped
+#               search of everyone's PRs is all of GitHub)
 #   --verbose   add the created-at / CI / review metadata line
 #   --links     print only the URLs, one per line (paste-clean)
 #   --json      the enriched rows as JSON
 #   --author=<handle> / --limit=<n> / owner/repo …
 #
-# The two wrappers below are the named entry points so neither reading of the
-# ready-to-merge filter is the one you have to remember.
+# The four wrappers below are the named entry points, one per cell of the two
+# questions you actually ask: whose PRs (my / other) and how complete a list
+# (open = everything, need_attention = only what still owes someone work).
+# They are deliberately one line each on top of _pr_list_run, so the guard, the
+# help text, and the delegation exist exactly once.
 ################################################################################
 
-# pr_list_needs_attention: only the open PRs that still owe someone work
-function pr_list_needs_attention() {
+# shared body for the pr_list_* wrappers: guard, help, then delegate to list_prs
+function _pr_list_run() {
+  local name="$1" me="$2" keep_ready="$3"
+  shift 3
+
+  local who="your own" scope_hint="Default scope is a global search of every repo you have a PR in."
+  if ! is_truthy "$me"; then
+    who="everyone else's"
+    scope_hint="Scope defaults to git repos at/below the current folder — pass owner/repo to widen."
+  fi
+  local completeness="only the PRs that still need something — fully-green, approved, comment-free ones are hidden"
+  if is_truthy "$keep_ready"; then
+    completeness="every open PR, the ready-to-merge ones included"
+  fi
+
   if is_help_arg "${1:-}"; then
-    echo "pr_list_needs_attention: list open PRs that still need something, oldest first
-  Usage: pr_list_needs_attention [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
-  The default reading of list_prs — the fully-green, approved, comment-free PRs
-  are hidden. Default scope is global; pass --cwd to scope to the current folder.
+    echo "$name: list $who open PRs, oldest first
+  Usage: $name [--cwd] [--verbose] [--links] [--json] [--limit=<n>] [repo ...]
+  Lists $completeness.
+  $scope_hint
+  Pass --me=0 or --me=1 to override whose PRs this wrapper asks for.
   Examples:
-    pr_list_needs_attention
-    pr_list_needs_attention --cwd
-    pr_list_needs_attention --json acme/api acme/web"
+    $name
+    $name --cwd --verbose
+    $name --json acme/api acme/web"
     return 1
   fi
 
   if ! type -P list_prs > /dev/null 2>&1; then
-    echo "pr_list_needs_attention: list_prs is not installed — run: bash run.sh --files=git-functions.js" >&2
+    echo "$name: list_prs is not installed — run: bash run.sh --files=git-functions.js" >&2
     return 1
   fi
 
-  list_prs "$@"
+  ## --me / --all go FIRST so a caller-supplied --me=0 still wins: list_prs is
+  ## last-wins on --me, and --all is idempotent.
+  local lead="--me=$me"
+  is_truthy "$keep_ready" && lead="--all $lead"
+
+  ## unquoted on purpose - "lead" is one or two literal flags, never user input
+  list_prs $lead "$@"
 }
 
-# pr_list_all_open: every open PR, ready-to-merge ones included
-function pr_list_all_open() {
-  if is_help_arg "${1:-}"; then
-    echo "pr_list_all_open: list every open PR, ready-to-merge included, oldest first
-  Usage: pr_list_all_open [--cwd] [--verbose] [--links] [--json] [--author=<handle>] [--limit=<n>] [repo ...]
-  Same as 'list_prs --all' — nothing is filtered out, so the green 'merge it now'
-  PRs show up alongside the ones still waiting on CI or a review.
-  Examples:
-    pr_list_all_open
-    pr_list_all_open --cwd --verbose
-    pr_list_all_open --json --author=alice"
-    return 1
-  fi
-
-  if ! type -P list_prs > /dev/null 2>&1; then
-    echo "pr_list_all_open: list_prs is not installed — run: bash run.sh --files=git-functions.js" >&2
-    return 1
-  fi
-
-  list_prs --all "$@"
+# pr_list_my_open: every open PR of yours, ready-to-merge included
+function pr_list_my_open() {
+  _pr_list_run "pr_list_my_open" 1 1 "$@"
 }
+
+# pr_list_my_need_attention: only your open PRs that still owe someone work
+function pr_list_my_need_attention() {
+  _pr_list_run "pr_list_my_need_attention" 1 0 "$@"
+}
+
+# pr_list_other_open: every open PR someone else authored, ready-to-merge included
+function pr_list_other_open() {
+  _pr_list_run "pr_list_other_open" 0 1 "$@"
+}
+
+# pr_list_other_need_attention: other people's open PRs that still owe someone work
+function pr_list_other_need_attention() {
+  _pr_list_run "pr_list_other_need_attention" 0 0 "$@"
+}
+
+## the bare name is the one you reach for most: everything of mine that is open
+alias pr_list='pr_list_my_open'
 
 # pr_merge: validate pull-request URLs, sort WIP last, then enable/disable auto-merge
 function pr_merge() {
@@ -914,6 +939,6 @@ github.com/acme/api/pull/124'"
 }
 
 if type -t add_bookmark > /dev/null 2>&1; then
-  add_bookmark "pr_list_all_open"
+  add_bookmark "pr_list_my_open"
   add_bookmark "pr_merge"
 fi

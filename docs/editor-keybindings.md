@@ -325,15 +325,15 @@ These are the stock **prefix chords** — press `ctrl+b`, release, then the key.
 defaults (plus `c`, which we rebind only to inherit the current pane's path), so they keep
 working in any tmux, including one running a config this repo did not write.
 
-| Chord            | Action                                                            |
-| ---------------- | ----------------------------------------------------------------- |
+| Chord             | Action                                                                         |
+| ----------------- | ------------------------------------------------------------------------------ |
 | `ctrl+b` then `[` | Enter copy mode — vim scroll/search (`g`/`G` top/bottom, `/` search, `q` exit) |
-| `ctrl+b` then `,` | Rename the current window (tab)                                   |
-| `ctrl+b` then `c` | Create a new window (opens in the current pane's folder)          |
-| `ctrl+b` then `w` | Interactive window/session switcher (`choose-tree`)               |
-| `ctrl+b` then `x` | Close / kill the current pane (confirms first)                    |
-| `ctrl+b` then `n` | Next window                                                       |
-| `ctrl+b` then `p` | Previous window                                                   |
+| `ctrl+b` then `,` | Rename the current window (tab)                                                |
+| `ctrl+b` then `c` | Create a new window (opens in the current pane's folder)                       |
+| `ctrl+b` then `w` | Interactive window/session switcher (`choose-tree`)                            |
+| `ctrl+b` then `x` | Close / kill the current pane (confirms first)                                 |
+| `ctrl+b` then `n` | Next window                                                                    |
+| `ctrl+b` then `p` | Previous window                                                                |
 
 Copy mode is pinned to vi keys (`setw -g mode-keys vi`) so `g`/`G`/`/` behave as listed —
 without it tmux picks emacs keys whenever `$EDITOR` is not vim-like.

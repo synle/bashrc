@@ -10,14 +10,14 @@ The workspace functions described below ship for real in
 `software/scripts/bash-tmux-workspace.profile.bash`, sourced into `~/.bash_syle` by a
 `# SOURCE` marker in `software/bootstrap/profile-advanced.sh`:
 
-| Function                | Alias  | Does                                                     |
-| ----------------------- | ------ | -------------------------------------------------------- |
+| Function                | Alias  | Does                                                       |
+| ----------------------- | ------ | ---------------------------------------------------------- |
 | `workspace_create`      | `ws`   | Build a session from a JSON config, or attach if it exists |
-| `workspace_sample_json` | `wsn`  | Write a starter config named `<datetime>.json`           |
-| `workspace_freeze`      | `wsf`  | Snapshot a running session back into a config            |
-| `workspace_list`        | `wsls` | List sessions with window counts                         |
-| `workspace_close`       | `wsx`  | Kill one session by exact name                           |
-| `workspace_close_all`   | `wsxa` | Kill every session, after confirming                     |
+| `workspace_sample_json` | `wsn`  | Write a starter config named `<datetime>.json`             |
+| `workspace_freeze`      | `wsf`  | Snapshot a running session back into a config              |
+| `workspace_list`        | `wsls` | List sessions with window counts                           |
+| `workspace_close`       | `wsx`  | Kill one session by exact name                             |
+| `workspace_close_all`   | `wsxa` | Kill every session, after confirming                       |
 
 The shipped versions use the **simple schema** (one window per entry, no panes) and depend
 only on `tmux` + `jq`. The pane-capable `workspace_tmuxp` and the Node converter further
@@ -99,22 +99,22 @@ Idempotent by construction: run it any number of times and you land in the same 
 
 ### How it works, line by line
 
-| Piece                       | Why                                                                                                                                                    |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tmux has-session -t "$S"`  | Exit status is the whole test — `0` when it exists. `2> /dev/null` hides the "can't find session" noise on the first run.                              |
+| Piece                       | Why                                                                                                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tmux has-session -t "$S"`  | Exit status is the whole test — `0` when it exists. `2> /dev/null` hides the "can't find session" noise on the first run.                                   |
 | `new-session -d`            | Detached. Builds every window before anything is visible, so you never watch panes pop in, and the later windows are created against a session that exists. |
-| `-s "$SESSION"`             | Names the session, which is what makes re-attach and `--force` possible. An unnamed session gets a number and is unfindable.                            |
-| `-n window_one_name`        | Names the window so the status bar reads `1:api 2:web` instead of `1:bash 2:bash`.                                                                     |
-| `-t "$SESSION:"`            | Trailing colon means "this session, next free window index". Without it a bare `-t "$SESSION"` targets the session's _current window_ in some commands. |
-| `bash -ic "…"`              | Interactive (`-i`) so `~/.bashrc` / `~/.bash_syle` is sourced — aliases, `nvm`, PATH tweaks, and shell functions all exist inside the window.           |
-| `; exec bash`               | Keeps the window alive after the command exits or is `ctrl+c`'d. Without it tmux closes the window and you lose the output that explained the crash.    |
-| `exec` (not plain `bash`)   | Replaces the process instead of nesting one, so `ctrl+d` closes the window once, not twice.                                                             |
-| `attach-session` at the end | The only interactive step. Everything above is setup.                                                                                                  |
+| `-s "$SESSION"`             | Names the session, which is what makes re-attach and `--force` possible. An unnamed session gets a number and is unfindable.                                |
+| `-n window_one_name`        | Names the window so the status bar reads `1:api 2:web` instead of `1:bash 2:bash`.                                                                          |
+| `-t "$SESSION:"`            | Trailing colon means "this session, next free window index". Without it a bare `-t "$SESSION"` targets the session's _current window_ in some commands.     |
+| `bash -ic "…"`              | Interactive (`-i`) so `~/.bashrc` / `~/.bash_syle` is sourced — aliases, `nvm`, PATH tweaks, and shell functions all exist inside the window.               |
+| `; exec bash`               | Keeps the window alive after the command exits or is `ctrl+c`'d. Without it tmux closes the window and you lose the output that explained the crash.        |
+| `exec` (not plain `bash`)   | Replaces the process instead of nesting one, so `ctrl+d` closes the window once, not twice.                                                                 |
+| `attach-session` at the end | The only interactive step. Everything above is setup.                                                                                                       |
 
 ### Gotchas
 
 - **Attaching from inside tmux fails.** `attach-session` errors with `sessions should be
-  nested with care` when `$TMUX` is set. Handle both cases:
+nested with care` when `$TMUX` is set. Handle both cases:
 
   ```bash
   if [ -n "${TMUX:-}" ]; then
@@ -180,15 +180,15 @@ says try the existing tool first.
 
 `tmuxp` already does this, natively, in JSON. Verified against its README on 2026-08-17:
 
-| Capability                   | Command / form                                                        |
-| ---------------------------- | --------------------------------------------------------------------- |
-| Load a config                | `tmuxp load ./my_project.json` (JSON **and** YAML both supported)     |
+| Capability                   | Command / form                                                         |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| Load a config                | `tmuxp load ./my_project.json` (JSON **and** YAML both supported)      |
 | Load by folder               | `tmuxp load path/to/project/` — picks up `.tmuxp.json` / `.tmuxp.yaml` |
-| Load by name                 | `tmuxp load mysession` — from `~/.config/tmuxp/mysession.json`        |
-| Override the session name    | `tmuxp load -s other_name ./my_project.json`                          |
-| Load detached                | `tmuxp load -d …`                                                     |
-| Snapshot a live session back | `tmuxp freeze session-name`                                           |
-| Convert between formats      | `tmuxp convert filename`                                              |
+| Load by name                 | `tmuxp load mysession` — from `~/.config/tmuxp/mysession.json`         |
+| Override the session name    | `tmuxp load -s other_name ./my_project.json`                           |
+| Load detached                | `tmuxp load -d …`                                                      |
+| Snapshot a live session back | `tmuxp freeze session-name`                                            |
+| Convert between formats      | `tmuxp convert filename`                                               |
 
 Install: `brew install tmuxp` (formula `tmuxp`, stable 1.74.0 at time of writing) or
 `pip install tmuxp`. `tmuxinator` (Ruby, `gem install tmuxinator`, `brew install tmuxinator`,
@@ -339,13 +339,13 @@ function _workspace_attach() {
 The straightforward `jq`-in-a-`for`-loop draft has five defects worth naming, because each
 one is easy to reintroduce:
 
-| Defect                                                                                                  | Fix                                                                                                                                                                                                                     |
-| ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`}` closing an `if`.** `if …; then … }` is a syntax error — bash closes `if` with `fi`, only functions and command groups take `}`. It hit three blocks at once. | `fi`. Catch it with `bash -n <file>` before sourcing anything.                                                                                                                                                          |
-| **`"bash -ic '$cmd; exec bash'"`.** The command is interpolated inside single quotes inside double quotes. One apostrophe in a command (`echo "it's up"`) ends the quoting early and the window silently runs something else. | `quoted=$(printf '%q' "$cmd; exec bash")`, then `"bash -ic $quoted"`. `printf %q` emits shell-safe quoting for arbitrary input.                                                                                          |
-| **`has-session -t "$session"` prefix-matches.** tmux target names are prefix matches, so a session named `api` finds an existing `api_staging` and attaches to the wrong workspace. | `-t "=$session"` — the `=` forces an exact match. Applies to `has-session`, `kill-session`, `attach-session`, `switch-client`.                                                                                            |
-| **`attach-session` from inside tmux fails** with `sessions should be nested with care`, which is exactly where you run this most.                                | Branch on `$TMUX` and use `switch-client` — the `_workspace_attach` helper.                                                                                                                                             |
-| **One `jq` process per field.** `2N + 2` process spawns for N windows, and no validation that the file is even JSON.                                             | One `jq … \| @tsv` call feeding a `while read` loop, plus `jq -e .` up front so a trailing comma reports itself instead of producing a session named `null`.                                                             |
+| Defect                                                                                                                                                                                                                        | Fix                                                                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`}` closing an `if`.** `if …; then … }` is a syntax error — bash closes `if` with `fi`, only functions and command groups take `}`. It hit three blocks at once.                                                            | `fi`. Catch it with `bash -n <file>` before sourcing anything.                                                                                               |
+| **`"bash -ic '$cmd; exec bash'"`.** The command is interpolated inside single quotes inside double quotes. One apostrophe in a command (`echo "it's up"`) ends the quoting early and the window silently runs something else. | `quoted=$(printf '%q' "$cmd; exec bash")`, then `"bash -ic $quoted"`. `printf %q` emits shell-safe quoting for arbitrary input.                              |
+| **`has-session -t "$session"` prefix-matches.** tmux target names are prefix matches, so a session named `api` finds an existing `api_staging` and attaches to the wrong workspace.                                           | `-t "=$session"` — the `=` forces an exact match. Applies to `has-session`, `kill-session`, `attach-session`, `switch-client`.                               |
+| **`attach-session` from inside tmux fails** with `sessions should be nested with care`, which is exactly where you run this most.                                                                                             | Branch on `$TMUX` and use `switch-client` — the `_workspace_attach` helper.                                                                                  |
+| **One `jq` process per field.** `2N + 2` process spawns for N windows, and no validation that the file is even JSON.                                                                                                          | One `jq … \| @tsv` call feeding a `while read` loop, plus `jq -e .` up front so a trailing comma reports itself instead of producing a session named `null`. |
 
 Two smaller ones: `jq` is not guaranteed present (guard with `type -P`), and a missing
 `.session` key yields the literal string `null` from `jq -r`, which happily becomes a
@@ -623,12 +623,12 @@ you need those; this is the 80% that is one `jq` away.
 
 Beyond the five defects listed above, which all apply again, the pane loop adds four:
 
-| Defect | Fix |
-| ------ | --- |
-| **`split-window -t "$session:$win_name"` targets by name.** tmux matches window names by prefix too, so two windows named `api` and `api_docs` send the split to whichever matches first — and `renumber-windows on` does not save you. | Capture the real target once per window (`display-message -p '#{session_name}:#{window_index}'`) and split against that. |
-| **`select-layout` inside the pane loop** re-tiles after every single split, and runs even for a one-pane window. | Once per window, only when `pane_count > 1`. |
-| **Shorthand panes break the extractor.** tmuxp allows `"panes": ["echo hi"]`; `.panes[$j].shell_command[]` on a string errors out and yields an empty command, so the pane silently starts a bare shell. | One jq expression handling both: `if type == "object" then (.shell_command // []) else . end`, flattened and joined with `; `. |
-| **An empty `shell_command` still gets `bash -ic ''`.** That is a window running an extra nested shell for nothing. | Build the argument only when the command is non-empty and pass it as `${quoted:+"$quoted"}`, so tmux sees no argument at all. |
+| Defect                                                                                                                                                                                                                                  | Fix                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **`split-window -t "$session:$win_name"` targets by name.** tmux matches window names by prefix too, so two windows named `api` and `api_docs` send the split to whichever matches first — and `renumber-windows on` does not save you. | Capture the real target once per window (`display-message -p '#{session_name}:#{window_index}'`) and split against that.       |
+| **`select-layout` inside the pane loop** re-tiles after every single split, and runs even for a one-pane window.                                                                                                                        | Once per window, only when `pane_count > 1`.                                                                                   |
+| **Shorthand panes break the extractor.** tmuxp allows `"panes": ["echo hi"]`; `.panes[$j].shell_command[]` on a string errors out and yields an empty command, so the pane silently starts a bare shell.                                | One jq expression handling both: `if type == "object" then (.shell_command // []) else . end`, flattened and joined with `; `. |
+| **An empty `shell_command` still gets `bash -ic ''`.** That is a window running an extra nested shell for nothing.                                                                                                                      | Build the argument only when the command is non-empty and pass it as `${quoted:+"$quoted"}`, so tmux sees no argument at all.  |
 
 Verified against tmux 3.6a with a three-window config: per-window `start_directory` honored
 (`cd sub` landed in `/private/tmp/sub`), an apostrophe in a command survived, the `tiled`
@@ -815,14 +815,14 @@ rebuilt with `workspace_tmuxp my_project.json` — same window names, same pane 
 
 The obvious implementation — nested loops appending to a JSON string — has six defects:
 
-| Defect | Fix |
-| ------ | --- |
+| Defect                                                                                                                                                                                                          | Fix                                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Hand-built JSON via string concatenation.** A window named `weird "name"` (tmux allows it) emits `"window_name": "weird "name""` — invalid JSON, and the failure surfaces later in whatever tries to read it. | Let `jq` build the document. It escapes quotes, backslashes, and control characters by construction. Verified with a session literally named `freeze test` holding a window named `weird "name"`. |
-| **A stray leading comma.** `first_win` toggles, then the very next line appends `",\n    {"` unconditionally, so the array opens with `[,{`. Every frozen file is invalid, first window included. | No manual separators at all — see above. |
-| **`for win in $windows` word-splits on whitespace.** tmux window and session names may contain spaces (`freeze test`), so one window becomes two loop iterations and the JSON is nonsense. | One `tmux list-panes -s -F` call with tab separators, parsed by `jq -R -s`. |
-| **`-t "$session_name"` prefix-matches**, so freezing `api` can snapshot `api_staging`. | `-t "=$session"`, as everywhere else in this file. |
-| **`echo -e`** is not portable — `sh` and some shells print the `-e` literally, and this is exactly the kind of function that gets copied into a `#!/bin/sh` script. | `printf '%s\n'`. |
-| **`display-message` once per pane** is `1 + W + P` tmux invocations; and the default `workspace.json` silently overwrites an existing snapshot. | One `list-panes -s` for the whole session, and refuse to overwrite unless `--force`. |
+| **A stray leading comma.** `first_win` toggles, then the very next line appends `",\n    {"` unconditionally, so the array opens with `[,{`. Every frozen file is invalid, first window included.               | No manual separators at all — see above.                                                                                                                                                          |
+| **`for win in $windows` word-splits on whitespace.** tmux window and session names may contain spaces (`freeze test`), so one window becomes two loop iterations and the JSON is nonsense.                      | One `tmux list-panes -s -F` call with tab separators, parsed by `jq -R -s`.                                                                                                                       |
+| **`-t "$session_name"` prefix-matches**, so freezing `api` can snapshot `api_staging`.                                                                                                                          | `-t "=$session"`, as everywhere else in this file.                                                                                                                                                |
+| **`echo -e`** is not portable — `sh` and some shells print the `-e` literally, and this is exactly the kind of function that gets copied into a `#!/bin/sh` script.                                             | `printf '%s\n'`.                                                                                                                                                                                  |
+| **`display-message` once per pane** is `1 + W + P` tmux invocations; and the default `workspace.json` silently overwrites an existing snapshot.                                                                 | One `list-panes -s` for the whole session, and refuse to overwrite unless `--force`.                                                                                                              |
 
 Two smaller ones: layout and per-window folder were not captured at all, so a "frozen"
 session reloaded as a stack of single-pane windows in the wrong folders; and keys whose
@@ -893,12 +893,12 @@ function workspace_close_all() {
 
 ### Which one to use
 
-| Situation                                                            | Use            |
-| -------------------------------------------------------------------- | -------------- |
-| Panes, layouts, pre-load hooks, env vars, `freeze` an existing session | `tmuxp`        |
-| Sharing configs with people already on tmuxinator                    | `tmuxinator`   |
-| One window per command, no runtime beyond `bash` + `jq`, own schema  | `workspace`    |
-| tmuxp's schema on a box with no Python                               | `workspace_tmuxp` |
-| Snapshotting a session you built by hand                             | `workspace_freeze`, then fill the command arguments back in |
-| The short schema plus tmuxp's features                               | the Node converter above |
-| A single project you launch daily and nothing else                   | `dev_workspace` — the hardcoded function above is fine, do not build a config format for one caller |
+| Situation                                                              | Use                                                                                                 |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Panes, layouts, pre-load hooks, env vars, `freeze` an existing session | `tmuxp`                                                                                             |
+| Sharing configs with people already on tmuxinator                      | `tmuxinator`                                                                                        |
+| One window per command, no runtime beyond `bash` + `jq`, own schema    | `workspace`                                                                                         |
+| tmuxp's schema on a box with no Python                                 | `workspace_tmuxp`                                                                                   |
+| Snapshotting a session you built by hand                               | `workspace_freeze`, then fill the command arguments back in                                         |
+| The short schema plus tmuxp's features                                 | the Node converter above                                                                            |
+| A single project you launch daily and nothing else                     | `dev_workspace` — the hardcoded function above is fine, do not build a config format for one caller |

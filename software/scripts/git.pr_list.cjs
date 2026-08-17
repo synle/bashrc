@@ -65,7 +65,8 @@
  *   --verbose, -v       add the per-PR metadata line
  *   --links             print only URLs (implies no color)
  *   --json              print the enriched rows as JSON
- *   --author=<login>    whose PRs to list (default: @me)
+ *   --me=<0|1>          1 = only your PRs, 0 = everyone but you, omitted = everyone
+ *   --author=<login>    whose PRs to list (wins over --me)
  *   --limit=<n>         max PRs to fetch (default: 1000)
  *   owner/repo ...      one or more explicit repos (overrides scope)
  *
@@ -108,13 +109,35 @@ function die(msg) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Decide whether a string means "yes".
+ *
+ * JS mirror of the shell `is_truthy` helper in software/bootstrap/common-env.sh,
+ * kept byte-compatible on purpose: `--me=1`, `--me=true`, `--me=Y`, and
+ * `--me=yes` all mean the same thing here as they do in a profile function.
+ * @param {string} value Raw flag value.
+ * @returns {boolean} True for 1 / true / y / yes, case-insensitive.
+ */
+function isTruthy(value) {
+  switch (String(value == null ? `` : value).toLowerCase()) {
+    case `1`:
+    case `true`:
+    case `y`:
+    case `yes`:
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
  * @typedef {Object} Options
  * @property {boolean} keepReady   Include the fully-clear READY TO MERGE group.
  * @property {boolean} useCwd      Scope to repos at/below the current folder.
  * @property {boolean} asJson      Emit JSON instead of the human layout.
  * @property {boolean} linksOnly   Emit only URLs.
  * @property {boolean} verbose     Add the per-PR metadata line.
- * @property {string}  author      Whose PRs to list.
+ * @property {boolean|null} mine   True = only mine, false = everyone but me, null = everyone.
+ * @property {string}  author      Explicit author login, or `` for none.
  * @property {number}  limit       Max PRs to fetch.
  * @property {string[]} repoSpecs  Explicit `owner/repo` or local paths.
  */
@@ -122,6 +145,9 @@ function die(msg) {
 /**
  * Parse `process.argv` into an {@link Options} object. Unknown `--flags` are a
  * hard error so typos fail loudly rather than silently doing the wrong thing.
+ *
+ * `--me` is tri-state and last-wins, which is what lets a shell wrapper prepend
+ * its own default (`list_prs --me=1 "$@"`) and still let the caller override it.
  * @param {string[]} argv Arguments after the node script name.
  * @returns {Options}
  */
@@ -133,7 +159,8 @@ function parseArgs(argv) {
     asJson: false,
     linksOnly: false,
     verbose: false,
-    author: `@me`,
+    mine: null,
+    author: ``,
     limit: 1000,
     repoSpecs: [],
   };
@@ -142,7 +169,11 @@ function parseArgs(argv) {
     const lower = arg.toLowerCase();
 
     if (arg.startsWith(`--author=`)) {
-      opts.author = arg.slice(`--author=`.length) || `@me`;
+      opts.author = arg.slice(`--author=`.length);
+    } else if (arg.startsWith(`--me=`)) {
+      opts.mine = isTruthy(arg.slice(`--me=`.length));
+    } else if (lower === `--me`) {
+      opts.mine = true;
     } else if (arg.startsWith(`--limit=`)) {
       opts.limit = parseInt(arg.slice(`--limit=`.length), 10) || 1000;
     } else if (lower === `--all`) {
@@ -317,7 +348,7 @@ query($owner:String!,$repo:String!,$number:Int!){
     pullRequest(number:$number){
       url number title isDraft createdAt updatedAt mergeable mergeStateStatus
       headRefName baseRefName
-      author{ login }
+      author{ login ... on User{ name } }
       repository{ nameWithOwner }
       reviewDecision
       autoMergeRequest{ enabledAt mergeMethod }
@@ -514,7 +545,8 @@ function reasonKeyFor(state) {
  * @property {string} repo
  * @property {number} number
  * @property {string} title
- * @property {string} author
+ * @property {string} author      Author login.
+ * @property {string} authorName  Author's display name, or "" when GitHub has none.
  * @property {string} createdAt
  * @property {string} updatedAt
  * @property {number} ageDays
@@ -655,6 +687,7 @@ function classify(raw) {
     number: pr.number,
     title,
     author: (pr.author || {}).login || ``,
+    authorName: (pr.author || {}).name || ``,
     createdAt: pr.createdAt,
     updatedAt: pr.updatedAt,
     ageDays: ageInDays(pr.createdAt),
@@ -708,18 +741,50 @@ function normalizeWipTitle(title) {
 // ---------------------------------------------------------------------------
 
 /**
- * Search open PRs for `author` across the given repos (or all of GitHub when
- * `repos` is empty).
- * @param {string} author
+ * Resolve the author qualifier the GitHub search should carry.
+ *
+ * An empty string means "no author restriction" — which only ever reaches
+ * `gh search prs` alongside a repo scope, because an unrestricted search of all
+ * of GitHub is meaningless (see {@link main}).
+ * @param {Options} opts
+ * @returns {string} A login, `@me`, or `` for no restriction.
+ */
+function authorQualifier(opts) {
+  if (opts.author) return opts.author;
+  return opts.mine === true ? `@me` : ``;
+}
+
+/** @type {string|null} Memoized viewer login, so `gh api user` runs at most once. */
+let cachedLogin = null;
+
+/**
+ * Resolve the authenticated user's login.
+ *
+ * Only needed once the listing can contain other people: to drop your own rows
+ * under `--me=0`, and to render `ME` instead of your own handle.
+ * @returns {string} The login, or `` when gh cannot answer.
+ */
+function myLogin() {
+  if (cachedLogin !== null) return cachedLogin;
+  const res = spawnSync(`gh`, [`api`, `user`, `--jq`, `.login`], { encoding: `utf-8` });
+  cachedLogin = res.status === 0 ? String(res.stdout || ``).trim() : ``;
+  if (!cachedLogin) info(`>>> WARNING: could not resolve your GitHub login; your own PRs cannot be told apart.`);
+  return cachedLogin;
+}
+
+/**
+ * Search open PRs across the given repos (or all of GitHub when `repos` is empty).
+ * @param {string} author Author qualifier, or `` for every author.
  * @param {number} limit
  * @param {string[]} repos
  * @returns {Array<{number:number, repository:{nameWithOwner:string}, url:string}>}
  */
 function searchPrs(author, limit, repos) {
   const repoFlags = repos.flatMap((r) => [`--repo`, r]);
+  const authorFlags = author ? [`--author=${author}`] : [];
   const res = spawnSync(
     `gh`,
-    [`search`, `prs`, `--author=${author}`, `--state=open`, `--limit=${limit}`, ...repoFlags, `--json`, `number,repository,url`],
+    [`search`, `prs`, ...authorFlags, `--state=open`, `--limit=${limit}`, ...repoFlags, `--json`, `number,repository,url`],
     { encoding: `utf-8` },
   );
   if (res.status !== 0) die(`GitHub search failed:\n${res.stderr || ``}`);
@@ -795,13 +860,34 @@ async function enrich(hits) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Human label for a PR author.
+ *
+ * Your own PRs read `ME` so they stand out in a mixed list; everyone else gets
+ * their first name when GitHub knows one, and their handle when it does not —
+ * a first name is what a person is called in conversation, a login is not.
+ * @param {Row} row Enriched row.
+ * @param {string} me Viewer login, or `` when unknown.
+ * @returns {string} Display label such as `ME`, `Alice`, or `@alice`.
+ */
+function authorLabel(row, me) {
+  if (me && row.author && row.author === me) return `ME`;
+  const first = String(row.authorName || ``)
+    .trim()
+    .split(/\s+/)[0];
+  if (first) return first;
+  return row.author ? `@${row.author}` : `@unknown`;
+}
+
+/**
  * Print the resolved rows in the requested format.
  * @param {Row[]} rows Already filtered + sorted.
  * @param {Options} opts
  * @param {boolean} color Whether ANSI color is allowed.
+ * @param {boolean} [showAuthors] Label each row with its author (a mixed-author listing).
+ * @param {string} [me] Viewer login, used to render your own rows as `ME`.
  * @returns {void}
  */
-function render(rows, opts, color) {
+function render(rows, opts, color, showAuthors = false, me = ``) {
   if (opts.asJson) {
     process.stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
     return;
@@ -830,6 +916,9 @@ function render(rows, opts, color) {
     const parts = [row.reasonIcon];
     if (row.reasonTag) parts.push(paint(row.reasonTag, BLOCKED_TAGS.has(row.reasonTag) ? ANSI.blockedTag : ANSI.dim));
     if (row.autoMerge) parts.push(paint(AUTO_MERGE_TAG, ANSI.dim));
+    // Who wrote it, but only when the listing can hold more than one person — in a
+    // mine-only run the answer is the same on every row and would be pure noise.
+    if (showAuthors) parts.push(paint(authorLabel(row, me), ANSI.dim));
     // Branch name sits between the tags and the title: it is the handle every local
     // command wants (worktree, checkout, log) and it is the only field that says WHERE
     // the work lives. Cyan + a ` : ` separator so it reads as a prefix on the title
@@ -851,6 +940,32 @@ function render(rows, opts, color) {
   });
 }
 
+/** Maximum repo slugs named in one progress line before the rest are counted. */
+const MAX_NAMED_REPOS = 12;
+
+/**
+ * Render a repo list for a progress line, capped so a 60-repo scan stays readable.
+ * @param {string[]} repos `owner/repo` slugs.
+ * @returns {string} Space-separated slugs, with a `+N more` tail when truncated.
+ */
+function formatRepoList(repos) {
+  const named = repos.slice(0, MAX_NAMED_REPOS).join(` `);
+  const rest = repos.length - MAX_NAMED_REPOS;
+  return rest > 0 ? `${named} +${rest} more` : named;
+}
+
+/**
+ * Describe whose PRs a run is about, for the progress and summary lines.
+ * @param {Options} opts
+ * @param {string} author Resolved author qualifier.
+ * @returns {string} e.g. `@me`, `everyone but yours`, `everyone's`.
+ */
+function describeAudience(opts, author) {
+  if (opts.author) return opts.author;
+  if (author) return `@me`;
+  return opts.mine === false ? `everyone but yours` : `everyone's`;
+}
+
 // ---------------------------------------------------------------------------
 // Main.
 // ---------------------------------------------------------------------------
@@ -864,23 +979,36 @@ async function main() {
     die(`gh is not installed. Install it and run 'gh auth login'.`);
   }
 
+  const author = authorQualifier(opts);
+
+  // No author restriction and no scope would be a literal search of every open PR
+  // on GitHub, so imply --cwd. Narrowing to the repos in front of you is the only
+  // reading of "everyone's PRs" that means anything.
+  if (!author && opts.repoSpecs.length === 0 && !opts.useCwd) {
+    opts.useCwd = true;
+    info(`>>> no author filter given, so scoping to git repos at/below ${process.cwd()}`);
+  }
+
   const repos = resolveRepos(opts);
   const explicitScope = opts.repoSpecs.length > 0 || opts.useCwd;
 
   // --cwd (or explicit paths) that resolved to nothing: nudge toward a global run.
   if (explicitScope && repos.length === 0) {
-    if (opts.useCwd) info(`list_prs: no git repos found at/below this folder — drop --cwd to search all your repos on GitHub.`);
+    if (opts.useCwd)
+      info(`list_prs: no git repos found at/below ${process.cwd()} — pass owner/repo, or --me=1 to search all your repos on GitHub.`);
     else die(`no repos resolved from the given arguments.`);
+    if (opts.asJson) process.stdout.write(`[]\n`);
     return;
   }
 
-  const scopeLabel = repos.length > 0 ? `${repos.length} repo(s)` : `all of GitHub`;
-  info(`>>> scanning ${scopeLabel} for open ${opts.author} PRs`);
+  // Name the repos rather than counting them: "3 repo(s)" cannot tell you that the
+  // one repo you cared about was not among them.
+  const scopeLabel = repos.length > 0 ? `${repos.length} repo(s): ${formatRepoList(repos)}` : `all of GitHub`;
+  info(`>>> scanning ${scopeLabel} for open ${describeAudience(opts, author)} PRs`);
 
-  const hits = searchPrs(opts.author, opts.limit, repos);
+  const hits = searchPrs(author, opts.limit, repos);
   if (hits.length === 0) {
-    if (opts.useCwd) info(`>>> no open ${opts.author} PRs here — drop --cwd to search all your repos on GitHub.`);
-    else info(`>>> no open ${opts.author} PRs found.`);
+    info(`>>> no open ${describeAudience(opts, author)} PRs found in ${scopeLabel}.`);
     if (opts.asJson) process.stdout.write(`[]\n`);
     return;
   }
@@ -888,16 +1016,26 @@ async function main() {
 
   const { rows, unreadable } = await enrich(hits);
 
+  // `--me=0` is "everyone but me": GitHub search has no not-author qualifier, so the
+  // exclusion happens here, against the login gh reports for the current token.
+  const me = opts.mine === true ? `` : myLogin();
+  const mine = opts.mine === false && me ? rows.filter((r) => r.author === me).length : 0;
+  const audience = opts.mine === false && me ? rows.filter((r) => r.author !== me) : rows;
+
   // Default view hides the fully-clear group; --all keeps it.
-  const filtered = opts.keepReady ? rows : rows.filter((r) => r.group !== `READY TO MERGE`);
+  const filtered = opts.keepReady ? audience : audience.filter((r) => r.group !== `READY TO MERGE`);
   filtered.sort((a, b) => Number(a.isWip) - Number(b.isWip) || a.createdAt.localeCompare(b.createdAt));
 
   const color = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && !opts.asJson && !opts.linksOnly;
-  render(filtered, opts, color);
+  render(filtered, opts, color, opts.mine !== true, me);
 
+  const listedRepos = [...new Set(filtered.map((r) => r.repo))];
   info(
-    `>>> ${rows.length} open · ${filtered.length} listed · oldest first, WIP last${unreadable > 0 ? ` · ${unreadable} PR(s) could not be fetched` : ``}`,
+    `>>> ${audience.length} open · ${filtered.length} listed · oldest first, WIP last` +
+      `${mine > 0 ? ` · ${mine} of yours hidden by --me=0` : ``}` +
+      `${unreadable > 0 ? ` · ${unreadable} PR(s) could not be fetched` : ``}`,
   );
+  if (listedRepos.length > 0) info(`>>> listed from ${listedRepos.length} repo(s): ${formatRepoList(listedRepos)}`);
 }
 
 main();

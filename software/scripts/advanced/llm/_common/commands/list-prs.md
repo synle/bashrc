@@ -52,22 +52,23 @@ Examples:
 
 ## Fetch PR data
 
-**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with two shell wrappers (`pr_list_all_open` / `pr_list_needs_attention`). It enriches up to three PRs concurrently, keeps successful rows in search order before display sorting, normalizes leading WIP / DO NOT MERGE / DNM markers to one `WIP: ` prefix, and places WIP rows after non-WIP rows. Check for it first:
+**Fast path — one call instead of one-per-PR.** Everything in this section (repo discovery, the open-PR search, CI rollup, review decision, review threads, mergeability) is already implemented as a standalone command, `list_prs` — a Node CLI installed at `~/.local/bin/list_prs`, with four shell wrappers (`pr_list_my_open` / `pr_list_my_need_attention` / `pr_list_other_open` / `pr_list_other_need_attention`, plus `pr_list` as a bare alias for the first). It enriches up to three PRs concurrently, keeps successful rows in search order before display sorting, normalizes leading WIP / DO NOT MERGE / DNM markers to one `WIP: ` prefix, and places WIP rows after non-WIP rows. Check for it first:
 
 ```bash
-type pr_list_all_open
+type pr_list_my_open
 ```
 
 When it exists, one call returns the whole set as JSON and every field below is already in it — no `gh search prs`, no per-PR `gh pr view`, no per-PR GraphQL:
 
 ```bash
-pr_list_all_open --json                                  # scope = all  (every repo you have a PR in)
-pr_list_all_open --json --cwd                            # scope = pwd  (git repos discovered at/below cwd)
-pr_list_all_open --json <owner>/<repo> <owner>/<repo>    # explicit repo list
-pr_list_all_open --json --author=<handle>                # same scopes, someone else's PRs
+pr_list_my_open --json                                  # scope = all  (every repo you have a PR in)
+pr_list_my_open --json --cwd                            # scope = pwd  (git repos discovered at/below cwd)
+pr_list_my_open --json <owner>/<repo> <owner>/<repo>    # explicit repo list
+pr_list_my_open --json --author=<handle>                # same scopes, one named author
+pr_list_other_open --json --cwd                         # everyone else's PRs in the repos below cwd
 ```
 
-`pr_list_all_open` is `list_prs --all` — every open PR, ready-to-merge ones included. Use it here: the sibling `pr_list_needs_attention` (plain `list_prs`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `pr_list_needs_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` the search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
+`pr_list_my_open` is `list_prs --all --me=1` — every open PR, ready-to-merge ones included. Use it here: the sibling `pr_list_my_need_attention` (`list_prs --me=1`) applies a pending filter that drops the fully-green PRs `short` / `long` / `table` / `links` / `clusters` still have to render. `/sy-list-prs-pending` is the one caller that wants the filter, so it may call `pr_list_my_need_attention` instead and skip its own Step 2. Repo scope is a flag, not a positional: with no repo argument and no `--cwd` a mine-only search is **global** (every repo you have an open PR in); pass `--cwd` to scope it to the git repos at or below the current folder. Audience is `--me=1` (yours) / `--me=0` (everyone but you) / omitted (everyone), and anything wider than yourself implies `--cwd`, since an unscoped search of everyone's PRs is all of GitHub. `--json` output is always plain (no ANSI); the default text render is two lines per PR (colored title, then URL), `--verbose` adds a third metadata line, `--links` prints only the URLs, and color is emitted only for an interactive terminal.
 
 Each JSON row carries `url repo number title author createdAt updatedAt ageDays headRefName baseRefName isDraft isWip group signal color reasonIcon reasonTag autoMerge autoMergeMethod ci review failedCheck runningChecks approvalGates mergeable mergeStateStatus openThreads openHumanThreads openBotThreads resolvedThreads status` — including `headRefName` / `baseRefName` (which `gh search prs` cannot return) and the unresolved / bot-vs-human thread split (which `gh pr view --json` cannot return), so the two field traps below do not apply on this path. `group` is already this file's Classification; `signal` (aliased as `color`) is its roll-up emoji, computed with the same rules; `approvalGates` counts the pending human gates the CI status already excluded.
 
@@ -103,9 +104,9 @@ Each JSON row carries `url repo number title author createdAt updatedAt ageDays 
 
 **Icons go on the title line only — never on a URL line.** The two-line human render is `<reasonIcon> [<reasonTag>] [auto-merge] <headRefName> : <title>[…]` then the bare URL, and `--links` is unchanged. Same rule as `short` below: consumers read URL lines, so decorating them breaks every caller.
 
-**The head branch prefixes the title, in cyan, separated by ` : `.** It is the handle every local command takes (`worktree_create`, `git checkout`, `git log`), and the only field that says _where_ the work lives — a URL alone forces a click to find out. Cyan because every other slot is spoken for (red / yellow / green by the roll-up signal, blue by the URL line, magenta by the running marker) and because a branch is an address you retype, not a footnote — dim would hide the one field you copy out of the render. It goes **after** the tags and **before** the title so the reason column stays flush, and it is render-only: `headRefName` is already its own JSON field and `title` stays clean, so nothing matching a PR by name ever sees it. Omitted when `headRefName` is empty (the explicit-refs fallback path), never replaced by a placeholder.
+**The head branch prefixes the title, in cyan, separated by `:`.** It is the handle every local command takes (`worktree_create`, `git checkout`, `git log`), and the only field that says _where_ the work lives — a URL alone forces a click to find out. Cyan because every other slot is spoken for (red / yellow / green by the roll-up signal, blue by the URL line, magenta by the running marker) and because a branch is an address you retype, not a footnote — dim would hide the one field you copy out of the render. It goes **after** the tags and **before** the title so the reason column stays flush, and it is render-only: `headRefName` is already its own JSON field and `title` stays clean, so nothing matching a PR by name ever sees it. Omitted when `headRefName` is empty (the explicit-refs fallback path), never replaced by a placeholder.
 
-**The fast path covers all three repo scopes, not explicit PR refs.** Plain `pr_list_all_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` changes only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
+**The fast path covers all three repo scopes, not explicit PR refs.** Plain `pr_list_my_open --json` serves **all** scope (global search), `--cwd` serves **pwd** scope, and positional slugs serve an **explicit repo list**; `--author` / `--me` change only whose PRs it looks for. Fall through to the manual `gh search prs` steps whenever the command is absent, exits non-zero, or scope is explicit PR refs (it takes repos, not PR numbers).
 
 1. **Fetch the open PR list — branch on scope:**
 
