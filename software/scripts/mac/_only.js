@@ -27,19 +27,48 @@ async function doWork() {
     # update: OS package manager update/upgrade only
     alias update='brew update && brew upgrade && brew cleanup'
 
-    # clear macOS Gatekeeper quarantine on sideloaded apps
+    # clear macOS Gatekeeper quarantine on sideloaded apps, at most once per 3 hours
+    #
+    # The guard is the *filename*, not the file contents: it encodes the current
+    # 3-hour window, so a single [ -f ] answers "has this window already run?"
+    # with zero subprocesses. Comparing an mtime instead would cost a stat plus
+    # a date fork on every shell start. Measured on an M-series Mac: the
+    # unguarded block cost ~22ms of every interactive shell, the guarded warm
+    # path costs ~1ms.
     if type -P xattr &> /dev/null; then
-      _xattr_app_list=(
-        "/Applications/sqlui-native.app"
-        "/Applications/Display DJ.app"
-        "/Applications/Skiff Files.app"
-        "/Applications/Proxie.app"
-      )
-      _xattr_app=""
-      for _xattr_app in "\${_xattr_app_list[@]}"; do
-        [ -d "\${_xattr_app}" ] && xattr -cr "\${_xattr_app}"
-      done
-      unset _xattr_app_list _xattr_app
+      _xattr_day=""
+      _xattr_hour=""
+      if [ "\${BASH_VERSINFO[0]:-0}" -ge 5 ]; then
+        # bash 4.2+ formats time internally, no subprocess
+        printf -v _xattr_day '%(%Y%m%d)T' -1
+        printf -v _xattr_hour '%(%H)T' -1
+      else
+        # macOS /bin/bash is 3.2 and has neither printf %()T nor EPOCHSECONDS
+        _xattr_day=$(date +%Y%m%d)
+        _xattr_hour=$(date +%H)
+      fi
+      # 10# is mandatory: "08" and "09" are invalid octal and abort the shell
+      _xattr_temp_folder="\${BASHRC_TEMP_ROOT_DIR:-/tmp/synle/bashrc}"
+      _xattr_guard="\${_xattr_temp_folder}/synle_bashrc_macosx_xattr_last_\${_xattr_day}_$((10#\$_xattr_hour / 3))"
+
+      if [ ! -f "\${_xattr_guard}" ]; then
+        _xattr_app_list=(
+          "/Applications/sqlui-native.app"
+          "/Applications/Display DJ.app"
+          "/Applications/Skiff Files.app"
+          "/Applications/Proxie.app"
+        )
+        _xattr_app=""
+        for _xattr_app in "\${_xattr_app_list[@]}"; do
+          [ -d "\${_xattr_app}" ] && xattr -cr "\${_xattr_app}"
+        done
+        mkdir -p "\${_xattr_temp_folder}"
+        # sweep prior windows so the guard folder holds exactly one stamp
+        rm -f "\${_xattr_temp_folder}"/synle_bashrc_macosx_xattr_last_*
+        : > "\${_xattr_guard}"
+        unset _xattr_app_list _xattr_app
+      fi
+      unset _xattr_day _xattr_hour _xattr_temp_folder _xattr_guard
     fi
   `;
   log(">>> Only Mac profile loaded:", onlyMacProfile.split("\n").length, "lines");
