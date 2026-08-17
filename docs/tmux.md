@@ -6,6 +6,24 @@ stock `ctrl+b` prefix chords — are documented in
 [`docs/editor-keybindings.md`](./editor-keybindings.md), the single source of truth for
 keys. This file covers the workflow patterns around them.
 
+The workspace functions described below ship for real in
+`software/scripts/bash-tmux-workspace.profile.bash`, sourced into `~/.bash_syle` by a
+`# SOURCE` marker in `software/bootstrap/profile-advanced.sh`:
+
+| Function                | Alias  | Does                                                     |
+| ----------------------- | ------ | -------------------------------------------------------- |
+| `workspace_create`      | `ws`   | Build a session from a JSON config, or attach if it exists |
+| `workspace_sample_json` | `wsn`  | Write a starter config named `<datetime>.json`           |
+| `workspace_freeze`      | `wsf`  | Snapshot a running session back into a config            |
+| `workspace_list`        | `wsls` | List sessions with window counts                         |
+| `workspace_close`       | `wsx`  | Kill one session by exact name                           |
+| `workspace_close_all`   | `wsxa` | Kill every session, after confirming                     |
+
+The shipped versions use the **simple schema** (one window per entry, no panes) and depend
+only on `tmux` + `jq`. The pane-capable `workspace_tmuxp` and the Node converter further
+down are documented here but deliberately not installed — reach for real `tmuxp` when you
+need panes and layouts.
+
 ---
 
 ## Table of Contents
@@ -20,6 +38,7 @@ keys. This file covers the workflow patterns around them.
   - [The zero-dependency version: a `workspace` function](#the-zero-dependency-version-a-workspace-function)
   - [Review notes — what the first draft got wrong](#review-notes--what-the-first-draft-got-wrong)
   - [Generating a tmuxp config from the simple schema (Node)](#generating-a-tmuxp-config-from-the-simple-schema-node)
+  - [Template: one function per project, config inline](#template-one-function-per-project-config-inline)
   - [`workspace_tmuxp` — parse tmuxp's schema with no tmuxp](#workspace_tmuxp--parse-tmuxps-schema-with-no-tmuxp)
   - [`workspace_sample_json` — a config to start from](#workspace_sample_json--a-config-to-start-from)
   - [`workspace_freeze` — the cheap knockoff of `tmuxp freeze`](#workspace_freeze--the-cheap-knockoff-of-tmuxp-freeze)
@@ -450,6 +469,57 @@ Design notes:
   and tmuxp then rejects with a much worse message.
 - **`toTmuxp` is exported** so it is unit-testable without spawning a process; the CLI half
   sits behind `require.main === module`.
+
+### Template: one function per project, config inline
+
+Once `workspace_create` exists, a per-project launcher is a heredoc and one call. The config
+never has to live on disk as a tracked file — generate it inline, hand it over, done:
+
+```bash
+# my_workspace: build or attach the project workspace
+function my_workspace() {
+  local config="${TMPDIR:-/tmp}/my_workspace.json"
+
+  ## the workspace as data - workspace_create handles attach-vs-create, --force,
+  ## exact-match targeting, and command quoting
+  command cat > "$config" << 'JSON_EOF'
+{
+  "session": "my_project_session",
+  "windows": [
+    { "name": "Build the App", "command": "build_project" },
+    { "name": "Run the Tests", "command": "run_tests --watch" },
+    { "name": "Watch the Logs", "command": "watch_logs" }
+  ]
+}
+JSON_EOF
+
+  workspace_create "$config" "$@"
+}
+```
+
+```console
+$ my_workspace            # build it, or attach if it is already running
+$ my_workspace --force    # rebuild from scratch
+```
+
+Why this beats the hand-rolled `tmux new-session` / `new-window` function it replaces:
+
+- **`"$@"` passes flags straight through**, so `--force` works without the function knowing
+  what the flag means.
+- **Everything hard is in one place.** Attach-vs-create, `=` exact-match targeting,
+  `switch-client` when already inside tmux, `printf %q` quoting, and per-window folders live
+  in `workspace_create` — fix one bug there and every launcher gets it.
+- **The window list is data**, so it can be edited, diffed, and pasted between projects
+  without touching shell syntax. Window names with spaces (`Build the App`) need no quoting
+  care at all.
+- **`command cat`**, not a bare `cat`, since `cat` may be aliased to `bat` and would mangle
+  the JSON.
+- **`${TMPDIR:-/tmp}`** keeps the generated file out of the repo. Point it at
+  `$WORKSPACE_CONFIG_FOLDER/<name>.json` instead when you want `ws <name>` to find it by
+  name later.
+
+Swap the three dummy commands for whatever the project actually needs — a dev server, a log
+tail, a REPL, a spare shell (omit `command` entirely for that one).
 
 ### `workspace_tmuxp` — parse tmuxp's schema with no tmuxp
 
