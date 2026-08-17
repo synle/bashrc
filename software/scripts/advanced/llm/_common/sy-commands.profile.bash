@@ -170,7 +170,11 @@ function _sy_register_dispatchers() {
   local cmd_file base name
   for cmd_file in "$_SY_COMMANDS_DIR"/sy-*.md; do
     [ -f "$cmd_file" ] || continue
-    base=$(basename "$cmd_file")
+    # `${cmd_file##*/}`, not `$(basename)` — this loop runs at every shell start,
+    # and a command substitution forks a subshell plus execs `basename` per file.
+    # At ~23 commands that was ~100ms of startup, for a string operation bash
+    # does natively. The two lines below already use this style.
+    base="${cmd_file##*/}"
     name="${base#sy-}"
     name="${name%.md}"
     eval "function sy-${name}() { _sy_dispatch '${name}' \"\$@\"; }"
