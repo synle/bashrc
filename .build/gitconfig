@@ -129,9 +129,11 @@ undo = reset HEAD~1 --mixed # Undo last commit, keep changes unstaged
 
 # ---- Patch ----
 patch = apply --reject --whitespace=fix # Apply a .patch file
-patch-get = "!f() { git format-patch -${1:-1}; }; f" # Save last N commits as .patch files (default: 1)
-patch-view = "!f() { git --no-pager format-patch -${1:-1} --stdout; }; f" # Print last N commits as patch (default: 1)
-patch-download = "!f() { git format-patch -${1:-1} && git patch-rename; }; f" # Save + rename with repo-date prefix (default: 1)
+patch-clean = "!f() { awk '/^From [0-9a-f][0-9a-f]* /{h=1}; h && /^MIME-Version: 1\\.0$/{next}; h && /^Content-Type: text\\/plain;/{next}; h && /^Content-Transfer-Encoding: 8bit$/{next}; h && /^Subject: \\[PATCH/ && !/=\\?/{i=index($0,\"] \"); if(i){print substr($0,1,i); print \"##########\"; print substr($0,i+2); m=1; next}}; h && /^$/{h=0}; m && /^---$/{print \"##########\"; m=0}; {print}'; }; f" # Filter stdin: drop format-patch MIME headers, move the subject text to its own line, and fence the commit message with ##########
+patch-clean-files = "!f() { for p in \"$@\"; do [ -f \"$p\" ] || continue; git patch-clean < \"$p\" > \"$p.tmp\" && mv \"$p.tmp\" \"$p\"; done; }; f" # Strip MIME headers from .patch files in place
+patch-get = "!f() { git format-patch -${1:-1} | while read -r p; do git patch-clean-files \"$p\"; echo \"$p\"; done; }; f" # Save last N commits as .patch files, MIME headers stripped (default: 1)
+patch-view = "!f() { git --no-pager format-patch -${1:-1} --stdout | git patch-clean; }; f" # Print last N commits as patch, MIME headers stripped (default: 1)
+patch-download = "!f() { git patch-get \"${1:-1}\" && git patch-rename; }; f" # Save + rename with repo-date prefix (default: 1)
 patch-rename = "!f() { r=$(basename \"$(git rev-parse --show-toplevel)\"); d=$(date +%Y_%m_%d_%H_%M); for p in *.patch; do [ -f \"$p\" ] || continue; case \"$p\" in [0-9]*) ;; *) echo \"skip $p\"; continue ;; esac; n=\"${r}-${d}-${p}\"; mv \"$p\" \"$n\"; echo \"$n\"; done; }; f" # Rename .patch files with repo-date prefix (skips already-renamed)
 
 # ---- Branch & Checkout ----
