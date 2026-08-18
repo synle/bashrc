@@ -42,9 +42,23 @@ else
   _PASTE_CMD=""
 fi
 
+# drop the MIME headers `git format-patch` injects when a commit body carries
+# non-ASCII bytes (MIME-Version / Content-Type / Content-Transfer-Encoding).
+# Scoped to the email header block only — the sed range runs from a `From <sha> `
+# line to the first blank line — so diff hunks, whose lines always carry a
+# leading ` `, `+`, or `-`, are never touched, and non-patch input passes through
+# unchanged. Mirrors the `git patch-clean` alias in git.gitconfig, which covers
+# the same strip for patches produced through `git patch-view` / `patch-get`;
+# this copy exists because git aliases run under sh and cannot call a bash
+# function.
+function _strip_patch_mime_headers() {
+  sed '/^From [0-9a-f]\{7,\} /,/^$/{/^MIME-Version: 1\.0$/d;/^Content-Type: text\/plain;/d;/^Content-Transfer-Encoding: 8bit$/d;}'
+}
+
 # save stdin to clipboard history folder + native clipboard (if available)
 # prunes entries beyond _CLIPBOARD_MAX
-# pass --raw to bypass unwrap and preserve stdin byte-for-byte
+# pass --raw to bypass unwrap and preserve stdin byte-for-byte (the format-patch
+# MIME header strip still applies — see _strip_patch_mime_headers)
 function _clipboard_save() {
   local clip_file="$_CLIPBOARD_DIR/$(date +%Y-%m-%d_%H-%M-%S)"
   [ -f "$clip_file" ] && clip_file="${clip_file}_${RANDOM}"
@@ -57,9 +71,9 @@ function _clipboard_save() {
   local filter="unwrap"
   [ "${1:-}" = "--raw" ] && filter="command cat"
   if [ -n "$_COPY_CMD" ]; then
-    $filter | tee "$clip_file" | eval "$_COPY_CMD"
+    $filter | _strip_patch_mime_headers | tee "$clip_file" | eval "$_COPY_CMD"
   else
-    $filter > "$clip_file"
+    $filter | _strip_patch_mime_headers > "$clip_file"
   fi
   ls -1t "$_CLIPBOARD_DIR" 2> /dev/null | tail -n +$((_CLIPBOARD_MAX + 1)) | while read -r f; do
     rm -f "$_CLIPBOARD_DIR/$f"
