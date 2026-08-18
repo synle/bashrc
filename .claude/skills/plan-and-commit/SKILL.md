@@ -85,7 +85,7 @@ State: the commit SHA(s), the two artifact paths, the validation command and its
 
 ## Rules
 
-- **Stop at the commit.** Never `git push`, never `gh pr create`, never merge. Landing the work is a separate, explicit decision — hand off to `/sy-create-pr` if the user wants a PR.
+- **Stop at the commit.** Never `git push`, never `gh pr create`, never merge. Landing the work is a separate, explicit decision — when the user wants a PR, run whatever pull-request workflow the environment provides as its own step.
 - **The plan is written before the code, not after.** A plan reverse-engineered from a finished diff is a changelog, not a plan, and skips the review moment in Step 3 that makes this skill worth running.
 - **Plan and diff must agree.** If you deviated during execution, the plan gets updated and the Wrap-Up says so. Verify before reporting.
 - **One task, one slug.** Don't overwrite an existing `~/sy_llm_ai/plans/<repo>/plan-YYYY-MM-DD-<slug>.*` pair from earlier work — pick a distinct slug or ask.

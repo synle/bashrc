@@ -632,6 +632,15 @@ an optional supporting file beside `SKILL.md`, never in the core file.
   a `delegate` tool, or a `claude --flag` invocation. Say what must happen — "use the
   available shell and repository tools to inspect git state" — and let the harness
   pick the call.
+- **Never instruct an agent to run a slash command.** `Run /sync` means four
+  different things across four CLIs: one resolves it, one resolves a _different_
+  command by that name, one treats it as literal text, one has no such command at
+  all — and the failure is silent in three of those. Name the operation instead
+  ("synchronize the current branch with its ancestry using the workflow below"), or
+  point at the workflow this file already defines. Handing off to another skill is
+  phrased by behavior — "run whatever pull-request workflow the environment
+  provides" — never by its `/name`. A `/name` is fine in the AGENTS.md skill table,
+  which is prose for a human choosing one.
 - **Abstract the mechanism, never the invariants.** Hard rules stay blunt and
   explicit in a `## Non-negotiable rules` list — "merge only, never rebase, never
   force-push, never discard uncommitted user changes, never silently resolve a
