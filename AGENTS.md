@@ -685,14 +685,14 @@ Deploy is **one physical copy plus symlinks**, not a per-CLI write:
 `deploySharedLLMSkills()` writes `~/sy_llm_ai/skills/<key>/SKILL.md` once, then
 per-skill symlinks it into each folder in `LLM_SKILL_LINK_FOLDERS`.
 
-| CLI        | Where the one shared skill is linked                                      |
-| ---------- | ------------------------------------------------------------------------- |
-| `claude`   | `~/.claude/skills/<key>` → `~/sy_llm_ai/skills/<key>`                     |
-| `copilot`  | `~/.copilot/skills/<key>` → same target (its only slot)                   |
-| `opencode` | `~/.config/opencode/skills/<key>` + a `/…/commands/<key>.md` mirror       |
-| `gemini`   | `~/.gemini/skills/<key>` → same target                                    |
-| any CLI    | `~/.agents/skills/<key>` → same target (interoperable path)               |
-| shell      | `sy-<name>` bash wrapper, auto-registered from `~/sy_llm_ai/skills/sy-*/` |
+| CLI        | Where the one shared skill is linked                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------- |
+| `claude`   | `~/.claude/skills/<key>` → `~/sy_llm_ai/skills/<key>`                                             |
+| `copilot`  | `~/.copilot/skills/<key>` → same target (its only slot)                                           |
+| `opencode` | `~/.config/opencode/skills/<key>` + a `/…/commands/<key>.md` mirror                               |
+| `gemini`   | `~/.gemini/skills/<key>` → same target                                                            |
+| any CLI    | `~/.agents/skills/<key>` → same target (interoperable path)                                       |
+| shell      | `sy-<name>` + `<cli>_skill_<name>` bash wrappers, auto-registered from `~/sy_llm_ai/skills/sy-*/` |
 
 **Per-skill links, never a folder symlink.** Pointing `~/.copilot/skills` at the
 shared folder wholesale would hijack the destination — `copilot plugin install`,
@@ -708,6 +708,26 @@ for the shared constants beside it: `LLM_COMMAND_SOURCE_FOLDER`, `LLM_SKILL_MARK
 and `readLLMCommandSource()` are read, never re-declared per CLI. A per-CLI file may only
 hold the **shape** difference (filename vs folder, frontmatter vs none) — never _which_
 commands exist. A new CLI SOURCEs `llm-common.js` and iterates the map.
+
+**The shell dispatchers have their own single registry — `_SY_LLM_SPECS`** in
+`_common/sy-commands.profile.bash`. It is the only place a CLI name appears in that
+file, and each record is `<cli>|<prompt-args>|<native-kind>|<native-args>` — the
+invocation shape lives in the data, so `_sy_exec_prompt` / `_sy_exec_named` name no
+CLI and need no `case`. `_SY_SUPPORTED_LLMS` and `_SY_DEFAULT_LLM` derive from it at
+source time. **Adding a CLI is one record and nothing else**; never a second array,
+never an arm in a dispatch function, never a name hardcoded into a wrapper — a test
+fails the build on any CLI name outside the registry block. Both wrapper families
+(`sy-<name>` and `<cli>_skill_<name>`) come out of one registration loop over
+`~/sy_llm_ai/skills/sy-*/SKILL.md`, so no command name is ever written there either.
+
+**A `native` dispatch kind is a claim about a binary — verify it or leave it empty.**
+`slash` / `command` say the CLI resolves a skill by NAME; an unproven entry silently
+sends `/sy-foo` as literal prose and the skill never loads, with no error anywhere.
+Verified today: `copilot -p "/sy-<name>"` (fires `skill(...)`, v1.0.81) and
+`opencode run --command sy-<name>`. `claude` is `slash` on its own documented
+`--disable-slash-commands` / `--bare` text, not a live run. `gemini` is deliberately
+empty. An empty kind degrades to `inline`, which always works — so leaving it empty is
+the correct move when you cannot test, never a guess.
 
 ### 13.2 The shared LLM home folder — `~/sy_llm_ai/`
 

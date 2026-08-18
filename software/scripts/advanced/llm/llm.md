@@ -117,17 +117,21 @@ key and update this table in the same edit.
 - **MCP servers**: edit `_common/mcp-servers.jsonc` (standard `mcpServers` shape). Each per-CLI `setup.js` deploys it additively — user-added entries with names not in the registry are preserved untouched. Removing a name from the registry does NOT auto-remove it from deployed configs; delete by hand if needed.
 - **Adding a new CLI**: copy the structure of `gemini/` (live keybindings + instructions + settings) or `opencode/` (commands fallthrough via symlinks).
 
-### Shell dispatchers (`sy-*` from the terminal)
+### Shell dispatchers (`sy-*` and `<cli>_skill_*` from the terminal)
 
-Every `_common/commands/<name>.md` slash command also has a matching bash
-function `sy-<name>` so the same workflow can run from the terminal without
-opening a TUI. Source: `_common/sy-commands.profile.bash` (sourced via
-`profile-advanced.sh`). Dispatcher auto-registers one wrapper per
-`~/sy_llm_ai/skills/sy-*/SKILL.md` on shell load — no per-command edits needed
-when you add a new command (any CLI's setup.js creates the body and the next
-shell picks up the wrapper).
+Every `_common/commands/<name>.md` slash command also has matching bash
+functions so the same workflow can run from the terminal without opening a TUI.
+Source: `_common/sy-commands.profile.bash` (sourced via `profile-advanced.sh`).
+Two families are registered per skill, from one loop, on shell load — no
+per-command edits are ever needed (any CLI's setup.js creates the body and the
+next shell picks up both wrappers):
 
-CLI selection mirrors the `EDITOR` convention:
+| Family               | CLI chosen                         | Example                             |
+| -------------------- | ---------------------------------- | ----------------------------------- |
+| `sy-<name>`          | at call time (`EDITOR` convention) | `sy-review-pr opencode <pr-url>`    |
+| `<cli>_skill_<name>` | baked into the function name       | `opencode_skill_review_pr <pr-url>` |
+
+CLI selection for the `sy-<name>` family mirrors the `EDITOR` convention:
 
 ```bash
 sy-review-pr <pr-url>                # uses $LLM (default claude)
@@ -139,6 +143,47 @@ Supported tags: `claude`, `copilot`, `gemini`, `opencode`. Unknown values for
 `$LLM` fall back to the default. Resolved CLI is echoed to stderr so the
 user can see which one fired. `sy-<name> --help` prints inline help without
 invoking any CLI.
+
+The `<cli>_skill_<name>` family pins one CLI, so argv is never scanned for an
+override and `$LLM` is ignored — every arg goes to the prompt. Hyphens in the
+skill name flatten to underscores to match the prefix
+(`sy-review-pr` → `opencode_skill_review_pr`), which also makes
+`opencode_skill_<TAB>` complete every skill that CLI can run.
+
+#### Dispatch modes: `inline` (default) vs `native`
+
+`$SY_SKILL_MODE` picks how the skill reaches the CLI. Unknown values fall back
+to `inline`.
+
+| Mode     | What is sent                                    | Works on                           |
+| -------- | ----------------------------------------------- | ---------------------------------- |
+| `inline` | The whole `SKILL.md` body as an ordinary prompt | every CLI — hence the default      |
+| `native` | Just the skill NAME, resolved by the CLI itself | CLIs with a native surface (below) |
+
+```bash
+SY_SKILL_MODE=native sy-review-pr <pr-url>
+export SY_SKILL_MODE=native          # opt in for the whole shell
+```
+
+Native support is declared once, in `_SY_LLM_SPECS` — the only place in that
+file where a CLI name appears at all. Each record is
+`<cli>|<prompt-args>|<native-kind>|<native-args>`, and everything else derives
+from it: `_SY_SUPPORTED_LLMS`, `_SY_DEFAULT_LLM`, both wrapper families, and the
+argv each dispatch builds. A CLI with no native surface degrades to `inline`, so
+`native` is always safe to export.
+
+| CLI        | Kind      | Sent as                                   | Evidence                                                                                                                                                 |
+| ---------- | --------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `claude`   | `slash`   | `claude "/sy-<name> <args>"`              | documented — `--disable-slash-commands`, and `--bare` states "Skills still resolve via /skill-name". Not runtime-verified (no API key on the test host). |
+| `copilot`  | `slash`   | `copilot -p "/sy-<name> <args>"`          | runtime-verified v1.0.81 — fired `skill(sy-<name>)` and returned the skill's output.                                                                     |
+| `gemini`   | — (none)  | falls back to inline                      | no `--command` flag, no documented slash handling for `-p`; left unset rather than guessed.                                                              |
+| `opencode` | `command` | `opencode run --command sy-<name> <args>` | runtime-verified — returned the skill's output; flag documented in `opencode run --help`.                                                                |
+
+**Adding a CLI is ONE record in `_SY_LLM_SPECS` and nothing else.** No `case`
+arm, no second array, no edit to any dispatch function — `_sy_exec_prompt` and
+`_sy_exec_named` read their argv shape out of the record. The invariant is
+enforced by a test that fails on any CLI name appearing outside the registry
+block (`software/tests/syCommandsDispatcher.spec.js`).
 
 ### Memory promotion bridge (Claude → other CLIs)
 
