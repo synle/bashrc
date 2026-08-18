@@ -48,19 +48,30 @@ fi
 #      is no git flag that suppresses them.
 #   2. move the subject text onto its own line, so `Subject: [PATCH] Fix it`
 #      becomes `Subject: [PATCH]` + `Fix it` and the message can be selected
-#      without dragging the prefix along. `git am` reads the orphan line back
-#      as the subject, so the patch still applies unchanged.
+#      without dragging the prefix along.
+#   3. fence the commit message with a `##########` rule above the subject text
+#      and another below the last body line, so the whole message is one
+#      visually delimited block to select rather than a region whose start and
+#      end have to be eyeballed against the surrounding email headers and
+#      diffstat.
+# The fences sit inside the mail body, which `git mailinfo` reproduces verbatim,
+# so a patch applied with `git am` lands them as the first and last lines of the
+# commit message. That is the deliberate trade for a selectable block: these
+# patches are read and pasted far more often than they are `git am`-ed, and
+# `git apply` (the `git patch` alias) ignores everything above the first
+# `diff --git` line, so it is unaffected either way.
 # An RFC 2047 encoded-word subject (`=?UTF-8?q?...`) is left alone — split off
 # the header line it stops being decoded, and the commit message would land as
-# literal `=?UTF-8?q?...` text.
-# Both rules are scoped to the email header block (from a `From <sha> ` line to
-# the first blank line), so diff hunks — whose lines always carry a leading
-# ` `, `+`, or `-` — are untouched and non-patch input passes through unchanged.
+# literal `=?UTF-8?q?...` text — so those patches get no split and no fences.
+# The header rules are scoped to the email header block (from a `From <sha> `
+# line to the first blank line) and the closing fence to the `---` that ends the
+# message, so diff hunks — whose lines always carry a leading ` `, `+`, or `-` —
+# are untouched and non-patch input passes through unchanged.
 # Mirrors the `git patch-clean` alias in git.gitconfig, which covers patches
 # produced through `git patch-view` / `patch-get`; this copy exists because git
 # aliases run under sh and cannot call a bash function.
 function _normalize_patch_headers() {
-  awk '/^From [0-9a-f][0-9a-f]* /{h=1}; h && /^MIME-Version: 1\.0$/{next}; h && /^Content-Type: text\/plain;/{next}; h && /^Content-Transfer-Encoding: 8bit$/{next}; h && /^Subject: \[PATCH/ && !/=\?/{i=index($0,"] "); if(i){print substr($0,1,i); print substr($0,i+2); next}}; h && /^$/{h=0}; {print}'
+  awk '/^From [0-9a-f][0-9a-f]* /{h=1}; h && /^MIME-Version: 1\.0$/{next}; h && /^Content-Type: text\/plain;/{next}; h && /^Content-Transfer-Encoding: 8bit$/{next}; h && /^Subject: \[PATCH/ && !/=\?/{i=index($0,"] "); if(i){print substr($0,1,i); print "##########"; print substr($0,i+2); m=1; next}}; h && /^$/{h=0}; m && /^---$/{print "##########"; m=0}; {print}'
 }
 
 # save stdin to clipboard history folder + native clipboard (if available)
