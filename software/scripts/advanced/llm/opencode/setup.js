@@ -103,6 +103,7 @@ const OLLAMA_MODEL_CONFIGS = {
 const COPILOT_MODEL_CONFIGS = {
   "claude-opus-4.7": {},
   "claude-opus-4.8": {},
+  "claude-opus-5": {},
   "gpt-5.5": {},
   "gpt-5.6-sol": {},
   "gpt-5.6-terra": {},
@@ -288,6 +289,16 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     plugin: ["opencode-auto-continue"],
     provider: providers,
   };
+
+  // Per-role agents (build / plan / review / local) come from AGENT_TO_MODEL_MAP in
+  // llm-common.js — the single registry shared with every other LLM CLI, keyed by CLI
+  // folder name so opencode reads its own row and nothing else. The `local` agent
+  // resolves against the Ollama providers discovered above and is dropped when no host
+  // serves any of its models, so the key is only written when something resolved.
+  const agents = resolveOpencodeAgentConfig(providersArray);
+  if (Object.keys(agents).length > 0) {
+    out.agent = agents;
+  }
 
   // Only write the `mcp` key when we actually have managed entries — leaving
   // the key absent lets opencode keep whatever the user maintains under `mcp`

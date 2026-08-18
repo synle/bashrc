@@ -396,6 +396,150 @@ async function getAcpAgentInputs() {
   return agents;
 }
 
+// --- Agent → Model Registry (which model drives which task, per CLI) ---
+
+/**
+ * Provider key for GitHub Copilot models, as opencode names it. Model IDs are
+ * qualified `<provider>/<model>` everywhere, so this is the one place the prefix
+ * is spelled out.
+ * @type {string}
+ */
+const LLM_COPILOT_PROVIDER_ID = "github-copilot";
+
+/**
+ * Local (Ollama) agent model tags in priority order — first tag that a reachable
+ * Ollama host actually serves wins. Mirrors the agent-side coding tags in
+ * opencode's `OLLAMA_MODEL_CONFIGS`; the `-base` FIM tags in `AUTOCOMPLETE_MODELS`
+ * are deliberately absent (they are completion checkpoints, not chat agents).
+ *
+ * Never hardcode one tag: a laptop with no local daemon and a workstation with a
+ * 35B MoE must both resolve without an edit here, and an unresolvable list means
+ * the `local` agent is simply omitted rather than pointed at a dead model.
+ * @type {string[]}
+ */
+const LLM_LOCAL_AGENT_MODELS = [
+  "qwen3.6:35b-a3b-mtp-q4_K_M",
+  "qwen3.6:35b-a3b-q4_K_M",
+  "qwen3.6:27b-q4_K_M",
+  "qwen3-coder:30b-a3b-q4_K_M",
+  "qwen3.6:latest",
+  "qwen3-coder:30b",
+  "qwen2.5-coder:14b",
+];
+
+/**
+ * The single registry mapping a TASK ROLE to the model each LLM CLI should run it on.
+ *
+ * Outer keys are roles (`build`, `plan`, `review`, `local`). Inner keys are the CLI
+ * FOLDER NAMES under `software/scripts/advanced/llm/` (`claude`, `copilot`, `gemini`,
+ * `opencode`) so a consumer looks itself up by the folder it lives in and never needs a
+ * name-translation table — that is the whole point of this map existing here rather than
+ * inside one CLI's setup.js.
+ *
+ * A value is **the object that CLI needs, verbatim**, or `null` when that CLI has no
+ * per-agent model surface. Only opencode has one today (`agent` in `opencode.json`,
+ * https://opencode.ai/docs/agents/). Claude Code, Copilot CLI, and Gemini CLI pick their
+ * model globally or interactively, so their entries are `null` — an explicit "known to be
+ * unsupported", not a gap. A consumer MUST treat `null`/missing as "write nothing":
+ * inventing a shape for a CLI that has no such key is how a config file becomes invalid.
+ *
+ * Permissions are deliberately omitted so every agent inherits the top-level
+ * `permission: "allow"`. The one exception is `review`, which is read-only by
+ * construction — a reviewer that can edit turns a review into a rewrite.
+ *
+ * The `local` opencode entry carries `models` (a preference list) instead of `model`,
+ * because the winning tag depends on which Ollama host is reachable at setup time.
+ * `resolveOpencodeAgentConfig()` turns it into a concrete `model` and drops the agent
+ * entirely when nothing local is reachable.
+ *
+ * @type {Record<string, Record<string, object|null>>}
+ */
+const AGENT_TO_MODEL_MAP = {
+  build: {
+    claude: null,
+    copilot: null,
+    gemini: null,
+    opencode: { mode: "primary", model: `${LLM_COPILOT_PROVIDER_ID}/claude-opus-5` },
+  },
+  plan: {
+    claude: null,
+    copilot: null,
+    gemini: null,
+    opencode: { mode: "primary", model: `${LLM_COPILOT_PROVIDER_ID}/gpt-5.5` },
+  },
+  review: {
+    claude: null,
+    copilot: null,
+    gemini: null,
+    opencode: {
+      description: "Review code for correctness, regressions, security issues, and missing tests.",
+      mode: "subagent",
+      model: `${LLM_COPILOT_PROVIDER_ID}/claude-opus-4.8`,
+      permission: { edit: "deny", bash: "allow" },
+    },
+  },
+  local: {
+    claude: null,
+    copilot: null,
+    gemini: null,
+    opencode: {
+      description: "Use the local Ollama models for fast, private, low-cost work.",
+      mode: "subagent",
+      models: LLM_LOCAL_AGENT_MODELS,
+    },
+  },
+};
+
+/**
+ * Resolves `AGENT_TO_MODEL_MAP` into opencode's `agent` config object.
+ *
+ * Two things happen here that a raw map read cannot do:
+ *   1. A `models` preference list (the `local` agent) collapses to the first
+ *      `<providerId>/<tag>` actually served by a discovered provider. No match →
+ *      the agent is dropped, so opencode never offers an agent whose model 404s.
+ *   2. Roles whose opencode value is `null` are skipped.
+ *
+ * Returns `{}` when nothing resolves, letting the caller omit the `agent` key entirely.
+ *
+ * @param {Array<{id: string, models: Array<{name: string}>}>} [providersArray=[]] - Discovered Ollama providers, as returned by `getOllamaProviderInputs()`.
+ * @returns {Record<string, object>} opencode-shaped `agent` map; may be empty.
+ */
+function resolveOpencodeAgentConfig(providersArray = []) {
+  /** @type {Record<string, object>} */
+  const agents = {};
+
+  for (const [role, perCli] of Object.entries(AGENT_TO_MODEL_MAP)) {
+    const entry = perCli && perCli.opencode;
+    if (!entry) continue;
+
+    // Concrete model — copy through untouched.
+    if (entry.model) {
+      agents[role] = { ...entry };
+      continue;
+    }
+
+    // Preference list — resolve against what the discovered hosts actually serve.
+    const preferred = Array.isArray(entry.models) ? entry.models : [];
+    let resolved = null;
+    for (const tag of preferred) {
+      const provider = providersArray.find((p) => (p.models || []).some((m) => m && m.name === tag));
+      if (provider) {
+        resolved = `${provider.id}/${tag}`;
+        break;
+      }
+    }
+    if (!resolved) {
+      log(`>> opencode agent: dropping "${role}" — none of its models are reachable`);
+      continue;
+    }
+    log(`>> opencode agent: "${role}" resolved to ${resolved}`);
+    const { models, ...rest } = entry;
+    agents[role] = { ...rest, model: resolved };
+  }
+
+  return agents;
+}
+
 // --- Shared LLM Home Folder (one copy of the on-demand instructions, all CLIs) ---
 
 /**
