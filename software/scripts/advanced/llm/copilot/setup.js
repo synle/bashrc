@@ -219,8 +219,9 @@ async function _doCopilotKeysWork(targetDir) {
  * order is `{ ...COPILOT_MANAGED_SETTINGS, ...existing }` so any key the user
  * has already set in settings.json wins — these only fill in MISSING keys.
  * Anything plugin-shaped (enabledPlugins, extraKnownMarketplaces) or
- * auth-shaped (allowedUrls, firstLaunchAt) is deliberately omitted so it
- * survives untouched across re-runs.
+ * auth-shaped (firstLaunchAt) is deliberately omitted so it
+ * survives untouched across re-runs. `allowedUrls` is the exception to the
+ * whole-key merge — see COPILOT_MANAGED_ALLOWED_URLS, which is unioned in.
  *
  * Sourced from `copilot help config` (v1.0.48) — only safe-to-default keys
  * land here.
@@ -316,14 +317,49 @@ const COPILOT_MANAGED_SETTINGS = {
   // nobody reads outside an active bug hunt. Raise it back to "all" by hand
   // for a debugging session. tradeoff: less post-hoc detail. risk: low.
   logLevel: "warning",
+  // Adversarial planning agent. `rubberDuck` makes `/rubber-duck` available to
+  // argue against a plan before it is executed — worth having for architecture,
+  // workflow, and migration design, where the expensive mistake is committed
+  // before any code runs. `rubberDuckAutoInvoke` stays OFF deliberately: firing
+  // a critique pass on every plan taxes the trivial ones and trains you to skip
+  // reading it, which costs exactly the attention the agent exists to buy.
+  // Invoke it on purpose instead. tradeoff: must remember to call it. risk: none.
+  builtInAgents: {
+    rubberDuck: true,
+    rubberDuckAutoInvoke: false,
+  },
 };
+
+/**
+ * Hosts pre-approved for fetching without a per-URL prompt, merged INTO whatever
+ * `allowedUrls` the user already has rather than replacing it.
+ *
+ * `allowedUrls` is an allow list, not a restriction: an entry means "fetch this
+ * without asking", and everything absent still prompts. So the cost of a wrong
+ * entry is a silent fetch, and the cost of a missing one is a single prompt —
+ * which is why this list stays SHORT and generic. Only hosts an agent hits
+ * constantly while reading public documentation belong here; anything
+ * org-internal, auth-bearing, or occasional is left to the prompt on purpose.
+ * @type {string[]}
+ */
+const COPILOT_MANAGED_ALLOWED_URLS = [
+  "https://github.com",
+  "https://raw.githubusercontent.com",
+  "https://registry.npmjs.org",
+  "https://www.npmjs.com",
+  "https://stackoverflow.com",
+];
 
 /**
  * Merges managed defaults into ~/.copilot/settings.json, preserving every
  * existing user-set key. Only keys in COPILOT_MANAGED_SETTINGS that are
  * missing from the user's settings.json are filled in — anything already
- * present (model, enabledPlugins, extraKnownMarketplaces, allowedUrls, etc.)
+ * present (model, enabledPlugins, extraKnownMarketplaces, etc.)
  * is left exactly as the user / `copilot plugin install` left it.
+ *
+ * Two keys get richer treatment than the spread: `builtInAgents` merges per
+ * subkey, and `allowedUrls` is unioned with COPILOT_MANAGED_ALLOWED_URLS so a
+ * user-approved host never displaces the managed ones (or vice versa).
  *
  * @param {string} targetDir - Path to the ~/.copilot directory.
  */
@@ -340,6 +376,16 @@ async function _doCopilotSettingsWork(targetDir) {
 
   // merge: managed settings are applied as defaults, existing user overrides are preserved
   const merged = { ...COPILOT_MANAGED_SETTINGS, ...existing };
+
+  // `builtInAgents` is the one nested managed key, and a plain spread would let a
+  // user object holding ONE subkey drop the other. Fill in per subkey instead, so
+  // enabling `rubberDuck` by hand can't silently un-manage `rubberDuckAutoInvoke`.
+  merged.builtInAgents = { ...COPILOT_MANAGED_SETTINGS.builtInAgents, ...(existing.builtInAgents || {}) };
+
+  // `allowedUrls` is additive, not defaulted: the spread above would drop every
+  // managed host the moment the user approves a single URL of their own. Union
+  // instead, existing entries first so the user's order is preserved, de-duped.
+  merged.allowedUrls = [...new Set([...(existing.allowedUrls || []), ...COPILOT_MANAGED_ALLOWED_URLS])];
 
   await backupConfigFile(targetPath);
   await writeJson(targetPath, merged);
