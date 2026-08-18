@@ -38,8 +38,12 @@
 //                    `~/.claude/commands/sy-*.md` as a Gemini extension would
 //                    mean generating that scaffolding — out of scope.
 //
-//   ❌ Skills — Gemini exposes `gemini skills install/link` for agent skills.
-//                    Same reasoning as commands: out of scope (user-owned).
+//   ✅ Skills — ~/.gemini/skills/sy-<name> is a SYMLINK to the one physical
+//                    skill at ~/sy_llm_ai/skills/sy-<name>/SKILL.md, created by
+//                    the shared deploySharedLLMSkills() in llm-common.js. No
+//                    `gemini skills install/link` call is needed — the user
+//                    skills folder is read directly, and skills installed there
+//                    by the user are left untouched (per-skill links only).
 
 // --- Keybindings ---
 
@@ -393,4 +397,6 @@ async function doWork() {
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
   await deploySharedLLMInstructions();
   await _doGeminiInstructionsWork(targetDir);
+  // Skills live once in ~/sy_llm_ai/skills and are symlinked into ~/.gemini/skills.
+  await deploySharedLLMSkills();
 }

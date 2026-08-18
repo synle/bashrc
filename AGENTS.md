@@ -623,8 +623,8 @@ an optional supporting file beside `SKILL.md`, never in the core file.
 - **`description` is the trigger, not documentation.** An agent reads it to decide
   whether the skill applies at all, so it answers **what** and **when** in one
   sentence-pair. `Git synchronization workflow.` is a miss; `Synchronize the current
-  branch with its full ancestry using merge only. Use when updating a branch from its
-  base, syncing stacked branches, or preparing a branch for review.` fires correctly.
+branch with its full ancestry using merge only. Use when updating a branch from its
+base, syncing stacked branches, or preparing a branch for review.` fires correctly.
 - **Never name the agent.** No "ask Claude to…", no "have Copilot review". Describe
   the behavior and let whoever is running decide who does it — "inspect the branch
   state before modifying the repository".
@@ -681,13 +681,24 @@ That map is the **single registry** every CLI's `setup.js` reads via
 (`sy-list-prs`), which lets one map serve a file-based CLI and a folder-based one at
 once:
 
-| CLI        | Where the same map lands it                                          |
-| ---------- | -------------------------------------------------------------------- |
-| `claude`   | `~/.claude/commands/<key>.md`                                        |
-| `copilot`  | `~/.copilot/skills/<key>/SKILL.md` (no `commands/` slot exists)      |
-| `opencode` | symlinks whatever Claude deployed — consumes the map indirectly      |
-| `gemini`   | no command surface; sources the file, deploys nothing                |
-| shell      | `sy-<name>` bash wrapper, auto-registered from `~/.claude/commands/` |
+Deploy is **one physical copy plus symlinks**, not a per-CLI write:
+`deploySharedLLMSkills()` writes `~/sy_llm_ai/skills/<key>/SKILL.md` once, then
+per-skill symlinks it into each folder in `LLM_SKILL_LINK_FOLDERS`.
+
+| CLI        | Where the one shared skill is linked                                      |
+| ---------- | ------------------------------------------------------------------------- |
+| `claude`   | `~/.claude/skills/<key>` → `~/sy_llm_ai/skills/<key>`                     |
+| `copilot`  | `~/.copilot/skills/<key>` → same target (its only slot)                   |
+| `opencode` | `~/.config/opencode/skills/<key>` + a `/…/commands/<key>.md` mirror       |
+| `gemini`   | `~/.gemini/skills/<key>` → same target                                    |
+| any CLI    | `~/.agents/skills/<key>` → same target (interoperable path)               |
+| shell      | `sy-<name>` bash wrapper, auto-registered from `~/sy_llm_ai/skills/sy-*/` |
+
+**Per-skill links, never a folder symlink.** Pointing `~/.copilot/skills` at the
+shared folder wholesale would hijack the destination — `copilot plugin install`,
+`gemini skills install`, and hand-authored skills would land inside the shared
+folder or be destroyed on the next deploy. The link pass reads the shared folder
+dynamically, skips any non-symlink it finds, and prunes only its own stale links.
 
 **Never add a second list.** Adding a command name to a per-CLI array, map, or `if` in
 `claude/setup.js`, `copilot/setup.js`, `gemini/setup.js`, `opencode/setup.js`, or a
@@ -707,6 +718,7 @@ setup scripts call:
 | Path                        | Holds                                                                     |
 | --------------------------- | ------------------------------------------------------------------------- |
 | `~/sy_llm_ai/instructions/` | On-demand instruction files, deployed from `LLM_SHARED_INSTRUCTION_FILES` |
+| `~/sy_llm_ai/skills/`       | The ONE copy of every `/sy-*` skill, symlinked into every CLI (§13.1)     |
 | `~/sy_llm_ai/plans/`        | Plan / RFC artifacts (`plan-YYYY-MM-DD-<slug>.md`, `.diff`, `rfc-*.md`)   |
 
 `~/sy_llm_ai_plans/` was the pre-consolidation plans folder. `migrateLegacyLLMPlansFolder()`

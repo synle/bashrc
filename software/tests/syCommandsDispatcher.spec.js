@@ -12,7 +12,7 @@ let sandbox;
 
 /**
  * Create a fresh sandbox dir with:
- *   - `sandbox/home/.claude/commands/sy-<name>.md` seeded with the supplied body.
+ *   - `sandbox/home/sy_llm_ai/skills/sy-<name>/SKILL.md` seeded with the supplied body.
  *   - PATH-shadowed stubs for `claude`, `copilot`, `gemini`, `opencode` that
  *     echo their name + every argument they were called with to stdout so the
  *     test can assert which CLI fired with which prompt.
@@ -23,7 +23,7 @@ let sandbox;
  */
 beforeEach(() => {
   sandbox = fs.mkdtempSync("/tmp/sycommands-test-");
-  fs.mkdirSync(path.join(sandbox, "home/.claude/commands"), { recursive: true });
+  fs.mkdirSync(path.join(sandbox, "home/sy_llm_ai/skills"), { recursive: true });
   fs.mkdirSync(path.join(sandbox, "bin"), { recursive: true });
   for (const cli of ["claude", "copilot", "gemini", "opencode"]) {
     const stubPath = path.join(sandbox, "bin", cli);
@@ -43,13 +43,16 @@ afterEach(() => {
 });
 
 /**
- * Write a prompt body to `sandbox/home/.claude/commands/sy-<name>.md`.
+ * Write a prompt body to `sandbox/home/sy_llm_ai/skills/sy-<name>/SKILL.md`.
  *
  * @param {string} name - Command name without the `sy-` prefix and `.md` suffix.
  * @param {string} body - Prompt body content.
  */
 function writeCommand(name, body) {
-  fs.writeFileSync(path.join(sandbox, `home/.claude/commands/sy-${name}.md`), body);
+  /** @type {string} Folder-form skill location the dispatcher globs at shell start. */
+  const skillFolder = path.join(sandbox, `home/sy_llm_ai/skills/sy-${name}`);
+  fs.mkdirSync(skillFolder, { recursive: true });
+  fs.writeFileSync(path.join(skillFolder, "SKILL.md"), body);
 }
 
 /**
@@ -70,7 +73,7 @@ function runBash(script) {
 }
 
 describe("sy-commands dispatcher", () => {
-  it("defines sy-<name> for each ~/.claude/commands/sy-<name>.md on disk", () => {
+  it("defines sy-<name> for each ~/sy_llm_ai/skills/sy-<name>/SKILL.md on disk", () => {
     writeCommand("foo", "prompt for foo");
     writeCommand("bar", "prompt for bar");
     // compgen is a bash builtin — no awk/tr/single-quote pitfalls when this

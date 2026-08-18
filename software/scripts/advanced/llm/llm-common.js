@@ -1202,3 +1202,400 @@ const LLM_COMMAND_RETIRED_NAMES = [
 async function readLLMCommandSource(sourceName) {
   return (await readText`${LLM_COMMAND_SOURCE_FOLDER}/${sourceName}.md`).trimEnd();
 }
+
+// --- Shared Skills Folder (one physical skill, symlinked into every CLI) ---
+
+/**
+ * The ONE physical location of every Sy-managed agent skill:
+ * `~/sy_llm_ai/skills/<name>/SKILL.md`.
+ *
+ * Before this existed, the same command body was written three times — a real
+ * file in `~/.claude/commands/<name>.md`, a generated copy in
+ * `~/.copilot/skills/<name>/SKILL.md`, and an opencode symlink to Claude's copy —
+ * so "which CLI has the current body" depended on which setup.js ran last.
+ * Now the body is written once here and every CLI gets a symlink, which makes a
+ * stale copy structurally impossible.
+ *
+ * Sits beside `instructions/` and `plans/` under {@link LLM_SHARED_ROOT_FOLDER}
+ * for the same reason they do: one `ls ~/sy_llm_ai/` shows everything the LLM
+ * tooling owns outside a repo checkout.
+ * @type {string}
+ */
+const LLM_SHARED_SKILLS_FOLDER = path.join(LLM_SHARED_ROOT_FOLDER, "skills");
+
+/**
+ * Every CLI skills folder that receives a symlink to each shared skill.
+ *
+ * PER-SKILL links (`~/.copilot/skills/sy-debug -> ~/sy_llm_ai/skills/sy-debug`),
+ * deliberately NOT a whole-folder symlink (`~/.copilot/skills -> …`). A folder
+ * symlink hijacks the destination: `copilot plugin install`, `gemini skills
+ * install`, and any hand-authored skill would then land inside the shared folder
+ * (or be destroyed the first time this deploy ran). Per-skill links leave every
+ * foreign entry in place — same tradeoff already made by
+ * {@link LLM_SHARED_INSTRUCTION_LINK_FOLDERS}.
+ *
+ * Same "one registry, never a per-CLI list" rule as the command map: this is the
+ * only place a CLI's skills folder is named, and adding a CLI is one entry here
+ * rather than an edit to its setup.js.
+ *
+ * Verified destinations:
+ *   - `~/.claude/skills`         — Claude Code personal skills.
+ *   - `~/.copilot/skills`        — Copilot CLI personal skills (its only slot; it
+ *                                  does not read `~/.claude/*`).
+ *   - `~/.config/opencode/skills`— OpenCode global skills.
+ *   - `~/.gemini/skills`         — Gemini CLI user skills.
+ *   - `~/.agents/skills`         — the cross-vendor interoperable path several
+ *                                  CLIs also scan.
+ * @type {string[]}
+ */
+const LLM_SKILL_LINK_FOLDERS = [
+  path.join(BASE_HOMEDIR_LINUX, ".claude", "skills"),
+  path.join(BASE_HOMEDIR_LINUX, ".copilot", "skills"),
+  path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "skills"),
+  path.join(BASE_HOMEDIR_LINUX, ".gemini", "skills"),
+  path.join(BASE_HOMEDIR_LINUX, ".agents", "skills"),
+];
+
+/**
+ * ONE-TIME MIGRATION FLAG — flip to `false` (and delete
+ * {@link cleanupLegacySySkillArtifacts} plus this constant) once every dev
+ * machine has run a setup at least once after the shared-skills migration.
+ *
+ * While `true`, each setup run first deletes every pre-migration `sy-*` artifact
+ * from the folders in {@link LLM_LEGACY_SY_ARTIFACT_FOLDERS} — the flat Claude
+ * slash-command files, their `.bak_*` siblings, the opencode command symlinks,
+ * and the real (copied) Copilot skill folders — so the link pass below starts
+ * from a clean surface instead of racing whatever an older deploy left there.
+ *
+ * Scope is deliberately narrow: `sy-` prefixed entries only, which are provably
+ * ours and were never a name a user or plugin could own.
+ * @type {boolean}
+ */
+const LLM_ONE_TIME_SY_CLEANUP_ENABLED = true;
+
+/**
+ * Folders swept by the one-time {@link cleanupLegacySySkillArtifacts} pass.
+ * Command folders (flat `sy-<name>.md` + backups) and skills folders
+ * (`sy-<name>/`) both appear — the sweep matches on the `sy-` prefix, so one
+ * list covers both shapes.
+ *
+ * Deleted alongside this constant when {@link LLM_ONE_TIME_SY_CLEANUP_ENABLED}
+ * is retired.
+ * @type {string[]}
+ */
+const LLM_LEGACY_SY_ARTIFACT_FOLDERS = [
+  path.join(BASE_HOMEDIR_LINUX, ".claude", "commands"),
+  path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "commands"),
+  ...LLM_SKILL_LINK_FOLDERS,
+];
+
+/**
+ * Max length of the `description` written into skill frontmatter. Copilot and
+ * OpenCode both match the model's trigger decision on this string, so it stays a
+ * summary rather than the body.
+ * @type {number}
+ */
+const LLM_SKILL_DESCRIPTION_MAX = 400;
+
+/**
+ * ONE-TIME MIGRATION — removes every pre-migration `sy-*` artifact so the shared
+ * skills deploy starts from a clean surface. Delete this function, its flag, and
+ * {@link LLM_LEGACY_SY_ARTIFACT_FOLDERS} once every machine has re-run.
+ *
+ * Removes, in each folder of {@link LLM_LEGACY_SY_ARTIFACT_FOLDERS}, any entry
+ * whose basename starts with `sy-`: the flat `sy-<name>.md` command bodies, their
+ * `sy-<name>.md.bak_original` / `.bak_latest` siblings, the opencode command
+ * symlinks pointing at them, and the copied Copilot skill folders. Symlinks are
+ * unlinked rather than followed, so nothing inside the shared folder is ever
+ * touched through one.
+ *
+ * No-ops when the flag is off or a folder is absent. Idempotent — the second run
+ * finds nothing, which is exactly the "second run removes nothing" check the
+ * deploy verification asks for.
+ *
+ * @returns {number} Count of entries removed (0 in the steady state).
+ */
+function cleanupLegacySySkillArtifacts() {
+  if (!LLM_ONE_TIME_SY_CLEANUP_ENABLED) return 0;
+
+  /** @type {number} Entries removed across every legacy folder. */
+  let removed = 0;
+
+  for (const folder of LLM_LEGACY_SY_ARTIFACT_FOLDERS) {
+    if (!fs.existsSync(folder)) continue;
+
+    for (const entry of fs.readdirSync(folder)) {
+      if (!entry.startsWith("sy-")) continue;
+
+      /** @type {string} Absolute path of the legacy artifact. */
+      const entryPath = path.join(folder, entry);
+      try {
+        // lstat, never stat: a symlink is unlinked as itself so we can never
+        // recurse into the shared folder it points at and delete the source.
+        if (fs.lstatSync(entryPath).isSymbolicLink()) {
+          /** @type {string} Raw target as stored on disk (may be relative). */
+          const raw = fs.readlinkSync(entryPath);
+          /** @type {string} Resolved absolute target. */
+          const target = path.isAbsolute(raw) ? raw : path.resolve(folder, raw);
+          // Ours already: a link into the shared folder was created by a previous
+          // deploy (possibly by the CLI setup that ran seconds ago — all four call
+          // this). Deleting it would make each setup churn the links the last one
+          // made and break the "second run removes nothing" invariant.
+          if (target === LLM_SHARED_SKILLS_FOLDER || target.startsWith(LLM_SHARED_SKILLS_FOLDER + path.sep)) continue;
+          fs.unlinkSync(entryPath);
+        } else {
+          fs.rmSync(entryPath, { recursive: true, force: true });
+        }
+        removed++;
+      } catch (e) {
+        log(`>> shared skills: could not remove legacy ${entryPath} — ${e.message}`);
+      }
+    }
+  }
+
+  if (removed > 0) log(`>> shared skills: one-time cleanup removed ${removed} legacy sy-* artifact(s)`);
+
+  return removed;
+}
+
+/**
+ * Derives a skill `description` from a command source's first line.
+ *
+ * Every command source opens with a one-line `[Sy] <what this does>` summary,
+ * which is exactly the shape a skill loader wants. Deriving it instead of
+ * maintaining a parallel description map means the trigger text can never rot
+ * away from the body it describes.
+ *
+ * @param {string} content - Full markdown source of the command file.
+ * @returns {string} Single-line, YAML-safe description (double-quote escaped, length-capped).
+ */
+function buildLLMSkillDescription(content) {
+  /** @type {string} First line with the `[Sy] ` marker stripped and whitespace collapsed. */
+  let description = (content.split("\n", 1)[0] || "").replace(LLM_SKILL_MARKER, "").replace(/\s+/g, " ").trim();
+  if (description.length > LLM_SKILL_DESCRIPTION_MAX) {
+    description = `${description.slice(0, LLM_SKILL_DESCRIPTION_MAX - 1).trimEnd()}…`;
+  }
+  // YAML double-quoted scalar: only backslash and double quote need escaping.
+  return description.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+/**
+ * Extracts the first body line of a deployed SKILL.md, skipping the generated
+ * YAML frontmatter block. Used for orphan detection: matching the `[Sy] ` marker
+ * against this one line (rather than the whole file) means a user- or
+ * plugin-authored skill that merely *mentions* the marker is never mistaken for
+ * one of ours and deleted.
+ *
+ * @param {string} content - Full SKILL.md contents.
+ * @returns {string} First non-empty line after the frontmatter, or "" when there is none.
+ */
+function _readSkillBodyFirstLine(content) {
+  /** @type {string[]} All lines; frontmatter is fenced by a leading `---` pair. */
+  const lines = content.split("\n");
+  /** @type {number} Index to start scanning from — past the closing `---` when frontmatter exists. */
+  let start = 0;
+  if (lines[0] && lines[0].trim() === "---") {
+    // No closing fence (corrupt or hand-edited file) leaves start at 0, so the
+    // opening `---` itself becomes the "first line" and matches no marker — the
+    // skill is left on disk. Deliberate: this feeds a destructive rmSync, so an
+    // unparseable file must fail closed. Our own writer always emits both fences.
+    const close = lines.indexOf("---", 1);
+    if (close !== -1) start = close + 1;
+  }
+  for (let i = start; i < lines.length; i++) {
+    if (lines[i].trim()) return lines[i];
+  }
+  return "";
+}
+
+/**
+ * Removes shared skills that fell out of {@link LLM_COMMAND_DEPLOY_MAP}.
+ *
+ * A folder is ours to delete when its name is in
+ * {@link LLM_COMMAND_RETIRED_NAMES} (an explicit retirement) or when its
+ * SKILL.md body still carries a {@link LLM_SKILL_MARKERS} prefix (any future
+ * rename, with no list to maintain). A user-authored skill dropped into the
+ * shared folder matches neither and survives.
+ *
+ * @returns {number} Count of skill folders removed.
+ */
+function _pruneStaleSharedSkills() {
+  if (!fs.existsSync(LLM_SHARED_SKILLS_FOLDER)) return 0;
+
+  /** @type {Set<string>} Skill names the registry still declares. */
+  const declared = new Set(Object.keys(LLM_COMMAND_DEPLOY_MAP));
+  /** @type {number} Folders removed this run. */
+  let removed = 0;
+
+  for (const entry of fs.readdirSync(LLM_SHARED_SKILLS_FOLDER)) {
+    if (declared.has(entry)) continue;
+
+    /** @type {string} The candidate orphan's body file — absent means it is not a skill folder. */
+    const skillFile = path.join(LLM_SHARED_SKILLS_FOLDER, entry, "SKILL.md");
+    if (!fs.existsSync(skillFile)) continue;
+
+    /** @type {string} Reason label printed in the log line — only set when we decide to remove. */
+    let reason = "";
+    if (LLM_COMMAND_RETIRED_NAMES.includes(entry)) {
+      reason = "retired";
+    } else {
+      /** @type {string} First body line, checked against every LLM_SKILL_MARKERS entry. */
+      const firstLine = _readSkillBodyFirstLine(fs.readFileSync(skillFile, "utf-8"));
+      if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
+    }
+    if (!reason) continue;
+
+    fs.rmSync(path.join(LLM_SHARED_SKILLS_FOLDER, entry), { recursive: true, force: true });
+    removed++;
+    log(`>> shared skills: removed prior Sy skill (${reason}): ${entry}`);
+  }
+
+  return removed;
+}
+
+/**
+ * Symlinks every skill folder currently in {@link LLM_SHARED_SKILLS_FOLDER} into
+ * every folder in {@link LLM_SKILL_LINK_FOLDERS}.
+ *
+ * Reads the shared folder rather than the registry on purpose — the link pass is
+ * then dynamic, picking up a hand-authored skill dropped into the shared folder
+ * with no code change, and it links what actually exists rather than what was
+ * declared.
+ *
+ * Idempotent in both directions: a link already pointing at the right target is
+ * left alone, and a link pointing at a stale target is replaced. Anything that is
+ * not a symlink — a real folder a plugin installed — is never touched, and our
+ * own links whose shared source has disappeared are unlinked.
+ *
+ * @returns {void}
+ */
+function linkSharedLLMSkills() {
+  if (!fs.existsSync(LLM_SHARED_SKILLS_FOLDER)) return;
+
+  /** @type {string[]} Skill folder names that actually exist in the shared folder. */
+  const skillNames = fs
+    .readdirSync(LLM_SHARED_SKILLS_FOLDER)
+    .filter((entry) => fs.existsSync(path.join(LLM_SHARED_SKILLS_FOLDER, entry, "SKILL.md")))
+    .sort();
+
+  for (const destFolder of LLM_SKILL_LINK_FOLDERS) {
+    fs.mkdirSync(destFolder, { recursive: true });
+
+    /** @type {number} Links created or repaired this run. */
+    let linked = 0;
+    /** @type {number} Destinations skipped because a real folder/file already occupies them. */
+    let skippedForeign = 0;
+
+    for (const skillName of skillNames) {
+      /** @type {string} The shared skill folder this link points at — the single source of truth. */
+      const sourcePath = path.join(LLM_SHARED_SKILLS_FOLDER, skillName);
+      /** @type {string} Absolute destination path inside this CLI's skills folder. */
+      const destPath = path.join(destFolder, skillName);
+
+      /** @type {fs.Stats|undefined} Lstat of whatever occupies the destination, if anything. */
+      let stat;
+      try {
+        stat = fs.lstatSync(destPath);
+      } catch {}
+
+      if (stat && !stat.isSymbolicLink()) {
+        skippedForeign++;
+        continue;
+      }
+
+      if (stat) {
+        /** @type {string} Existing link target, resolved to absolute. */
+        let existing = "";
+        try {
+          /** @type {string} Raw link target as stored on disk (may be relative). */
+          const raw = fs.readlinkSync(destPath);
+          existing = path.isAbsolute(raw) ? raw : path.resolve(destFolder, raw);
+        } catch {}
+        if (existing === sourcePath) continue;
+        try {
+          fs.unlinkSync(destPath);
+        } catch {}
+      }
+
+      safeSymlink(sourcePath, destPath);
+      linked++;
+    }
+
+    // Sweep our own links whose shared source is gone (a retired or renamed skill).
+    /** @type {Set<string>} Names the shared folder still justifies here. */
+    const expected = new Set(skillNames);
+    for (const entry of fs.readdirSync(destFolder)) {
+      if (expected.has(entry)) continue;
+
+      /** @type {string} Absolute path of the candidate stale link. */
+      const entryPath = path.join(destFolder, entry);
+      try {
+        if (!fs.lstatSync(entryPath).isSymbolicLink()) continue;
+        /** @type {string} Raw target as stored on disk (may be relative). */
+        const raw = fs.readlinkSync(entryPath);
+        /** @type {string} Resolved absolute target. */
+        const target = path.isAbsolute(raw) ? raw : path.resolve(destFolder, raw);
+        // Only ours: a link into the shared skills folder. Anything else belongs
+        // to the user or a plugin, including a link to an unrelated location.
+        if (path.dirname(target) !== LLM_SHARED_SKILLS_FOLDER) continue;
+        fs.unlinkSync(entryPath);
+        log(`>> shared skills: removed stale link ${entryPath}`);
+      } catch (e) {
+        log(`>> shared skills: could not inspect ${entryPath} — ${e.message}`);
+      }
+    }
+
+    log(
+      `>> shared skills: linked ${linked} skill(s) into ${destFolder}` +
+        (skippedForeign ? ` (skipped ${skippedForeign} foreign / user-authored entries)` : ""),
+    );
+  }
+}
+
+/**
+ * Writes every {@link LLM_COMMAND_DEPLOY_MAP} entry into
+ * `~/sy_llm_ai/skills/<name>/SKILL.md`, prunes retired ones, then symlinks the
+ * result into every CLI skills folder.
+ *
+ * Called by all four setup scripts. Writing the same bytes from each is
+ * intentional and safe — the content is byte-identical, so whichever CLI runs
+ * first does the work and the rest are no-ops. That keeps every CLI independently
+ * able to repair the shared folder without one of them being a prerequisite.
+ *
+ * Frontmatter (`name` + `description`) is generated here rather than stored in
+ * the repo source: adding it upstream would break the first-line `[Sy] ` marker
+ * that orphan detection relies on.
+ *
+ * @returns {Promise<void>}
+ */
+async function deploySharedLLMSkills() {
+  // ONE-TIME: clear pre-migration sy-* commands/skills before linking. Remove
+  // this call together with LLM_ONE_TIME_SY_CLEANUP_ENABLED.
+  cleanupLegacySySkillArtifacts();
+
+  fs.mkdirSync(LLM_SHARED_SKILLS_FOLDER, { recursive: true });
+
+  log(">> Shared LLM Skills:", LLM_SHARED_SKILLS_FOLDER);
+
+  /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
+  const sourceCache = {};
+
+  for (const [skillName, sourceName] of Object.entries(LLM_COMMAND_DEPLOY_MAP)) {
+    if (!(sourceName in sourceCache)) {
+      sourceCache[sourceName] = await readLLMCommandSource(sourceName);
+    }
+    /** @type {string} Verbatim markdown body of the shared command source. */
+    const body = sourceCache[sourceName];
+    /** @type {string} Destination folder — every loader requires the folder form. */
+    const skillFolder = path.join(LLM_SHARED_SKILLS_FOLDER, skillName);
+
+    fs.mkdirSync(skillFolder, { recursive: true });
+    await writeText(
+      path.join(skillFolder, "SKILL.md"),
+      `---\nname: ${skillName}\ndescription: "${buildLLMSkillDescription(body)}"\n---\n\n${body}\n`,
+    );
+  }
+
+  _pruneStaleSharedSkills();
+  linkSharedLLMSkills();
+}

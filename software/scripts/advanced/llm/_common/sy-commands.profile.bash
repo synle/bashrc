@@ -17,15 +17,16 @@
 #   sy-review-pr opencode <pr-url>       # uses opencode for this call only
 #   LLM=gemini sy-review-pr <pr-url>     # uses gemini via env override
 #
-# Prompt bodies live in `~/.claude/commands/sy-<name>.md` — deployed there by
-# `claude/setup.js` from the shared `_common/commands/<name>.md` source, so the
-# command corpus stays single-sourced. Adding a new command:
+# Prompt bodies live in `~/sy_llm_ai/skills/sy-<name>/SKILL.md` — the ONE
+# physical copy, deployed by `deploySharedLLMSkills()` from the shared
+# `_common/commands/<name>.md` source and symlinked into every CLI's skills
+# folder. Adding a new command:
 #   1. Drop `_common/commands/<name>.md` + register in `LLM_COMMAND_DEPLOY_MAP`
 #      (`software/scripts/advanced/llm/llm-common.js`) — one map, every CLI.
 #   2. Re-run `bash run.sh --files=claude/setup.js` to deploy the body.
 #   3. Open a new shell. The dispatcher loop below auto-registers `sy-<name>`
-#      from anything matching `~/.claude/commands/sy-*.md`, so no edit here is
-#      ever required.
+#      from anything matching `~/sy_llm_ai/skills/sy-*/SKILL.md`, so no edit
+#      here is ever required.
 ################################################################################
 
 # Default CLI when neither the leading positional override nor $LLM is set.
@@ -39,11 +40,10 @@ _SY_DEFAULT_LLM="claude"
 _SY_SUPPORTED_LLMS=(claude copilot gemini opencode)
 
 # Directory where the deployed prompt bodies live. Single canonical location
-# is `~/.claude/commands/sy-*.md` (deployed by claude/setup.js); the
-# `~/.config/opencode/commands/` symlinks pulled in by opencode/setup.js
-# point straight back here, so this stays authoritative regardless of which
-# CLI you ultimately dispatch to.
-_SY_COMMANDS_DIR="$HOME/.claude/commands"
+# is `~/sy_llm_ai/skills/sy-*/SKILL.md`; every CLI skills folder and the
+# `~/.config/opencode/commands/` mirror are symlinks pointing back here, so
+# this stays authoritative regardless of which CLI you ultimately dispatch to.
+_SY_SKILLS_DIR="$HOME/sy_llm_ai/skills"
 
 # _sy_is_supported_llm: return 0 when $1 matches a known CLI name, 1 otherwise.
 # Pure check — does NOT consume the arg.
@@ -79,7 +79,7 @@ function _sy_resolve_llm() {
 # Returns 1 (with stderr message) when the body file is missing.
 function _sy_load_prompt_body() {
   local name="$1"
-  local body_file="$_SY_COMMANDS_DIR/sy-$name.md"
+  local body_file="$_SY_SKILLS_DIR/sy-$name/SKILL.md"
   if [ ! -f "$body_file" ]; then
     echo "sy-$name: prompt body missing at $body_file (run \`bash run.sh --files=claude/setup.js\` first)" >&2
     return 1
@@ -110,7 +110,7 @@ function _sy_apply_arguments() {
 # routing.
 #
 # Args:
-#   $1 = command name (matches `~/.claude/commands/sy-<name>.md`)
+#   $1 = command name (matches `~/sy_llm_ai/skills/sy-<name>/SKILL.md`)
 #   $_SY_LLM (caller-set local) = pre-classified CLI override (or empty)
 #   $2..$N = forwarded prompt arguments
 function _sy_run() {
@@ -149,7 +149,7 @@ function _sy_dispatch() {
   args...    Forwarded to the prompt; substituted into \$ARGUMENTS where the body
              references it, otherwise appended as a trailing \`Arguments: ...\` line.
 
-  Body is loaded from $_SY_COMMANDS_DIR/sy-$name.md (deployed by claude/setup.js).
+  Body is loaded from $_SY_SKILLS_DIR/sy-$name/SKILL.md (deployed by claude/setup.js).
   Re-run \`bash run.sh --files=claude/setup.js\` to refresh if the body is stale."
     return 0
   fi
@@ -161,22 +161,22 @@ function _sy_dispatch() {
   _sy_run "$name" "$@"
 }
 
-# Auto-register a `sy-<name>` function for every `~/.claude/commands/sy-*.md`
-# on disk. Idempotent — re-running the loop redefines the same wrappers
-# (cheap; one `eval` per command). When the commands dir is absent (e.g. on a
-# machine where claude/setup.js has never run), the glob expands to its own
-# pattern and we skip it.
+# Auto-register a `sy-<name>` function for every
+# `~/sy_llm_ai/skills/sy-*/SKILL.md` on disk. Idempotent — re-running the loop
+# redefines the same wrappers (cheap; one `eval` per command). When the skills
+# dir is absent (e.g. on a machine where no setup.js has ever run), the glob
+# expands to its own pattern and we skip it.
 function _sy_register_dispatchers() {
-  local cmd_file base name
-  for cmd_file in "$_SY_COMMANDS_DIR"/sy-*.md; do
-    [ -f "$cmd_file" ] || continue
-    # `${cmd_file##*/}`, not `$(basename)` — this loop runs at every shell start,
-    # and a command substitution forks a subshell plus execs `basename` per file.
-    # At ~23 commands that was ~100ms of startup, for a string operation bash
-    # does natively. The two lines below already use this style.
-    base="${cmd_file##*/}"
+  local skill_file skill_folder base name
+  for skill_file in "$_SY_SKILLS_DIR"/sy-*/SKILL.md; do
+    [ -f "$skill_file" ] || continue
+    # `${var%/*}` / `${var##*/}`, not `$(dirname)` / `$(basename)` — this loop
+    # runs at every shell start, and a command substitution forks a subshell
+    # plus an exec per file. At ~23 commands that was ~100ms of startup, for a
+    # string operation bash does natively.
+    skill_folder="${skill_file%/*}"
+    base="${skill_folder##*/}"
     name="${base#sy-}"
-    name="${name%.md}"
     eval "function sy-${name}() { _sy_dispatch '${name}' \"\$@\"; }"
   done
 }

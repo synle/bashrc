@@ -255,98 +255,8 @@ async function _doInstructionsWork(targetDir) {
   await writeText(targetPath, merged);
 }
 
-// --- Commands (Custom Slash Commands) ---
-
 /**
- * Claude Code has no registry of its own — the command set, the `[Sy] ` markers,
- * and the retired-name list all live in `llm-common.js` as
- * `LLM_COMMAND_DEPLOY_MAP`, `LLM_SKILL_MARKERS`, and `LLM_COMMAND_RETIRED_NAMES`
- * so claude, copilot, gemini, and opencode share exactly one source of truth.
- *
- * Map keys are extension-less command names; this CLI is file-based, so it
- * appends `.md` to reach `~/.claude/commands/<name>.md`.
- *
- * @param {string} name - Deployed command name from LLM_COMMAND_DEPLOY_MAP.
- * @returns {string} Destination filename inside ~/.claude/commands/.
- */
-function _toClaudeCommandFile(name) {
-  return `${name}.md`;
-}
-
-/**
- * Deploys slash command definitions to ~/.claude/commands/. Each entry in the
- * shared LLM_COMMAND_DEPLOY_MAP (llm-common.js) becomes a /<name> user-level
- * command available across all projects. Source files live under
- * LLM_COMMAND_SOURCE_FOLDER and are read verbatim via readLLMCommandSource
- * (same pattern as claude-instructions.md). Aliased sources are read once and
- * cached so identical destinations stay byte-exact.
- * @param {string} targetDir - Path to the ~/.claude directory.
- */
-async function _doCommandsWork(targetDir) {
-  const commandsDir = path.join(targetDir, "commands");
-
-  log(">> Claude Code Commands:", commandsDir);
-  // Hint for users who want to start from a clean slate (e.g. after
-  // renaming or retiring a batch of commands). We never run this
-  // ourselves — selective unlinking happens further down via the
-  // LLM_COMMAND_RETIRED_NAMES + LLM_SKILL_MARKERS cleanup pass.
-  log("   To wipe all deployed commands, run: rm -f ~/.claude/commands/*");
-
-  fs.mkdirSync(commandsDir, { recursive: true });
-
-  // Diff the on-disk commands directory against the current deploy map and
-  // drop any Sy-managed orphans. Files that are currently in
-  // LLM_COMMAND_DEPLOY_MAP are skipped — the deploy loop below will
-  // overwrite them, so deleting + rewriting would be wasted IO.
-  //
-  // An on-disk file is treated as a Sy orphan (and unlinked) when:
-  //   (a) its name is in LLM_COMMAND_RETIRED_NAMES — explicit retirements
-  //       we know about, including legacy files that predate every marker, OR
-  //   (b) its first line starts with any LLM_SKILL_MARKERS entry — covers any
-  //       rename we perform in the future without anyone needing to update a
-  //       list, AND catches legacy `Sy Skill - ` prefixed files left over
-  //       from before the `[Sy] ` rename.
-  //
-  // User-authored slash commands that match neither path are left untouched.
-  /** @type {Set<string>} Filenames the deploy loop will (re)write — skip cleanup for these. */
-  const deployTargets = new Set(Object.keys(LLM_COMMAND_DEPLOY_MAP).map(_toClaudeCommandFile));
-  for (const filePath of findPathList(commandsDir, /\.md$/, { type: "file" })) {
-    /** @type {string} Just the basename (e.g. "create-pr.md") of the on-disk file. */
-    const fileName = path.basename(filePath);
-    if (deployTargets.has(fileName)) continue;
-    /** @type {string} Reason label printed in the log line — only set when we decide to unlink. */
-    let reason = "";
-    if (LLM_COMMAND_RETIRED_NAMES.includes(path.basename(fileName, ".md"))) {
-      reason = "retired";
-    } else {
-      /** @type {string} First line of the file, checked against every LLM_SKILL_MARKERS entry. */
-      const firstLine = fs.readFileSync(filePath, "utf-8").split("\n", 1)[0] || "";
-      if (LLM_SKILL_MARKERS.some((m) => firstLine.startsWith(m))) reason = "marker";
-    }
-    if (reason) {
-      fs.unlinkSync(filePath);
-      log(`   Removed prior Sy skill (${reason}):`, fileName);
-    }
-  }
-
-  /** @type {Record<string, string>} Source-name → file content. Caches re-reads for aliased entries. */
-  const sourceCache = {};
-
-  for (const [commandName, sourceName] of Object.entries(LLM_COMMAND_DEPLOY_MAP)) {
-    if (!(sourceName in sourceCache)) {
-      sourceCache[sourceName] = await readLLMCommandSource(sourceName);
-    }
-    /** @type {string} Destination filename — this CLI is file-based, so the name gains `.md`. */
-    const destFile = _toClaudeCommandFile(commandName);
-    const dest = path.join(commandsDir, destFile);
-    await backupConfigFile(dest);
-    fs.writeFileSync(dest, sourceCache[sourceName] + "\n");
-    log("   Deployed:", destFile);
-  }
-}
-
-/**
- * Orchestrates all Claude Code setup: settings, keybindings, and commands.
+ * Orchestrates all Claude Code setup: settings, keybindings, and skills.
  */
 async function doWork() {
   const targetDir = path.join(BASE_HOMEDIR_LINUX, ".claude");
@@ -361,7 +271,9 @@ async function doWork() {
   await _doSettingsWork(targetDir);
   await _doMcpWork(targetDir);
   await _doKeysWork(targetDir);
-  await _doCommandsWork(targetDir);
+  // Skills are written once to ~/sy_llm_ai/skills and symlinked into
+  // ~/.claude/skills — no CLI-local copy of a command body exists anymore.
+  await deploySharedLLMSkills();
   // Shared on-demand instruction files must exist before the always-loaded block
   // that points at them. Safe to run from every CLI — writeText no-ops when unchanged.
   await deploySharedLLMInstructions();

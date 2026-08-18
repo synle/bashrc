@@ -89,6 +89,37 @@ describe("llm-common.js registry constants", () => {
   });
 });
 
+// ---- Shared skills folder ----
+
+describe("shared skills deploy constants", () => {
+  it("puts the one physical skill copy under ~/sy_llm_ai/skills", () => {
+    expect(llm.LLM_SHARED_SKILLS_FOLDER).toBe("/tmp/sandbox-home/sy_llm_ai/skills");
+  });
+
+  it("links every skill into each CLI's own skills folder, per-skill (never a folder symlink)", () => {
+    expect(llm.LLM_SKILL_LINK_FOLDERS).toEqual([
+      "/tmp/sandbox-home/.claude/skills",
+      "/tmp/sandbox-home/.copilot/skills",
+      "/tmp/sandbox-home/.config/opencode/skills",
+      "/tmp/sandbox-home/.gemini/skills",
+      "/tmp/sandbox-home/.agents/skills",
+    ]);
+  });
+
+  it("derives a YAML-safe, length-capped description from the [Sy] first line", () => {
+    expect(llm.buildLLMSkillDescription('[Sy] Review a PR "carefully".\n\nbody')).toBe('Review a PR \\"carefully\\".');
+    expect(llm.buildLLMSkillDescription(`[Sy] ${"x".repeat(500)}`)).toHaveLength(llm.LLM_SKILL_DESCRIPTION_MAX);
+  });
+
+  it("keeps the one-time legacy sweep flag and its folder list side by side", () => {
+    // When the flag is finally flipped to false, delete cleanupLegacySySkillArtifacts,
+    // LLM_LEGACY_SY_ARTIFACT_FOLDERS, and this test together.
+    expect(llm.LLM_ONE_TIME_SY_CLEANUP_ENABLED).toBeTypeOf("boolean");
+    expect(llm.LLM_LEGACY_SY_ARTIFACT_FOLDERS).toContain("/tmp/sandbox-home/.claude/commands");
+    expect(llm.LLM_LEGACY_SY_ARTIFACT_FOLDERS).toContain("/tmp/sandbox-home/.config/opencode/commands");
+  });
+});
+
 // ---- Every registered command resolves to a real body ----
 
 describe("LLM_COMMAND_DEPLOY_MAP -> source files", () => {

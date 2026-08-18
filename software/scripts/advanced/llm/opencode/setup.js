@@ -10,16 +10,17 @@
  * has the engineering-principles block locally. Precedence per OpenCode docs:
  * `~/.config/opencode/AGENTS.md` wins over `~/.claude/CLAUDE.md` if both exist.
  *
- * Slash commands are symlinked from `~/.claude/commands/` in `_syncOpencodeCommandSymlinks`
- * below — single source of truth in `~/.claude/commands/`, no separate copy.
+ * User-authored slash commands are symlinked from `~/.claude/commands/` in
+ * `_syncOpencodeCommandSymlinks` below — no separate copy.
  *
- * Agent skills need NO deploy step for discovery: OpenCode reads
- * `~/.claude/skills/<name>/SKILL.md` and `<repo>/.claude/skills/<name>/SKILL.md`
- * natively (https://opencode.ai/docs/skills/) and exposes them to the model
- * through the built-in `skill` tool. What it does NOT give you is a user-facing
+ * Sy-managed skills live once at `~/sy_llm_ai/skills/<name>/SKILL.md` and are
+ * symlinked into `~/.config/opencode/skills/` by the shared
+ * `deploySharedLLMSkills()` (llm-common.js), which is what makes them
+ * discoverable (https://opencode.ai/docs/skills/) and model-invocable through the
+ * built-in `skill` tool. What that does NOT give you is a user-facing
  * `/skill-name` slash command — there is no `/skill` picker in the TUI at all.
  * `_syncOpencodeSkillCommandSymlinks` below closes that gap by symlinking each
- * global SKILL.md into the opencode commands slot, so one file serves both
+ * shared SKILL.md into the opencode commands slot, so one file serves both
  * surfaces: model-invoked via `skill({name})` AND user-invoked via `/name`.
  */
 
@@ -542,9 +543,14 @@ async function _syncOpencodeCommandSymlinks() {
 }
 
 /**
- * Exposes every GLOBAL Claude agent skill as a directly-invocable `/skill-name`
- * slash command by symlinking `~/.claude/skills/<name>/SKILL.md` into
+ * Exposes every GLOBAL agent skill as a directly-invocable `/skill-name` slash
+ * command by symlinking `~/sy_llm_ai/skills/<name>/SKILL.md` into
  * `~/.config/opencode/commands/<name>.md`.
+ *
+ * Sources the SHARED folder (LLM_SHARED_SKILLS_FOLDER), not `~/.claude/skills/` —
+ * that folder now holds symlinks into the shared one, so linking from it would
+ * mean two hops to the same bytes and a broken command the moment Claude's link
+ * is pruned.
  *
  * This is purely an ergonomics layer, NOT a discovery fix. OpenCode already reads
  * `~/.claude/skills/<name>/SKILL.md` and `<repo>/.claude/skills/<name>/SKILL.md`
@@ -565,26 +571,26 @@ async function _syncOpencodeCommandSymlinks() {
  * symlink, which is what this repo checks in for its own skills.
  */
 async function _syncOpencodeSkillCommandSymlinks() {
-  /** @type {string} Source of truth for global agent skills. */
-  const claudeSkillsDir = path.join(BASE_HOMEDIR_LINUX, ".claude", "skills");
+  /** @type {string} The one physical home of every Sy-managed skill. */
+  const sharedSkillsDir = LLM_SHARED_SKILLS_FOLDER;
 
-  if (!fs.existsSync(claudeSkillsDir)) {
-    log(">> Skipped opencode skill commands: ~/.claude/skills not found");
+  if (!fs.existsSync(sharedSkillsDir)) {
+    log(`>> Skipped opencode skill commands: ${sharedSkillsDir} not found`);
     return;
   }
 
-  log(">> Opencode Skill Commands (symlinking from Claude skills):", _getOpencodeCommandsDir());
+  log(">> Opencode Skill Commands (symlinking from shared skills):", _getOpencodeCommandsDir());
 
-  /** @type {Array<{ sourcePath: string, destName: string }>} One entry per `<name>/SKILL.md` under ~/.claude/skills/. */
+  /** @type {Array<{ sourcePath: string, destName: string }>} One entry per `<name>/SKILL.md` in the shared folder. */
   const pairs = [];
-  for (const entry of fs.readdirSync(claudeSkillsDir)) {
+  for (const entry of fs.readdirSync(sharedSkillsDir)) {
     /** @type {string} Absolute path to the candidate `<name>/SKILL.md`. */
-    const skillFile = path.join(claudeSkillsDir, entry, "SKILL.md");
+    const skillFile = path.join(sharedSkillsDir, entry, "SKILL.md");
     if (!fs.existsSync(skillFile)) continue;
     pairs.push({ sourcePath: skillFile, destName: `${entry}.md` });
   }
 
-  await _syncOpencodeSymlinkedCommands(claudeSkillsDir, pairs, "~/.claude/skills/");
+  await _syncOpencodeSymlinkedCommands(sharedSkillsDir, pairs, "~/sy_llm_ai/skills/");
 }
 
 // --- Auth persistence ---
@@ -807,5 +813,8 @@ async function doWork() {
 
   await _syncOpencodeCommandSymlinks();
 
+  // Shared skills must exist (and be linked into ~/.config/opencode/skills) before
+  // the /name command mirror below points at them.
+  await deploySharedLLMSkills();
   await _syncOpencodeSkillCommandSymlinks();
 }
