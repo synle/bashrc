@@ -87,13 +87,16 @@ ${LINE_BREAK_HASH}
     function safe_source() { if ! bash -n "$1" 2>/dev/null; then echo "[Warning] source $1 failed (syntax error)" >&2; return 1; fi; . "$1"; }
     safe_source "${bashrcPath}"
   `);
-  textContent = moveTextBlockToEnd(textContent, "Sy bash_syle entry point", bashProfileContent);
+  // appendTextBlock (not moveTextBlockToEnd): refresh the block in place when it already
+  // exists, so user commands deliberately placed after it keep running after it.
+  textContent = appendTextBlock(textContent, "Sy bash_syle entry point", bashProfileContent);
   await writeText(bashProfilePath, textContent);
 
   // bootstrap .bashrc (interactive non-login shells)
   log(">> Updating .bashrc with bash_syle entry point", bashrcPath);
   textContent = await readText`${bashrcPath}`;
-  textContent = moveTextBlockToEnd(textContent, "Sy bash_syle entry point", entryPointContent);
+  // Placement is preserved on re-run; only brand-new files get the block at the bottom.
+  textContent = appendTextBlock(textContent, "Sy bash_syle entry point", entryPointContent);
   await writeText(bashrcPath, textContent);
 
   // snapshot after bootstrap assembled the template (before other scripts fill it in)

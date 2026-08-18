@@ -1503,6 +1503,87 @@ function removeBlock(content, key, commentPrefix, commentSuffix = "") {
   return content.slice(0, beginIdx) + content.slice(cutEnd);
 }
 
+// --- Text Processing Utilities ---
+/**
+ * Collapses runs of 3+ consecutive newlines into double newlines and trims the result.
+ * @param {string} text - The text to clean up
+ * @returns {string} The cleaned text with excess whitespace removed
+ */
+function cleanupExtraWhitespaces(text) {
+  return text.replace(/[\r\n][\r\n][\n]+/g, "\n\n").trim();
+}
+
+// --- Text Block Management ---
+/**
+ * Appends a delimited text block to the end of a text body (or replaces it if it already exists).
+ * @param {string} content - The full text content to modify
+ * @param {string} key - The identifier for the text block
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
+function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
+  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "append"));
+}
+
+/**
+ * Prepends a delimited text block to the beginning of a text body (or replaces it if it already exists).
+ * @param {string} content - The full text content to modify
+ * @param {string} key - The identifier for the text block
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
+function prependTextBlock(content, key, sourceContent, commentPrefix = "#") {
+  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "prepend"));
+}
+
+/**
+ * Strips an existing block (if present), then appends it to the end of the content.
+ * Guarantees the block is always at the bottom of the file regardless of prior position.
+ * @param {string} content - The full text content to modify
+ * @param {string} key - The identifier for the text block
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
+function moveTextBlockToEnd(content, key, sourceContent, commentPrefix = "#") {
+  content = _stripTextBlock(content, key, commentPrefix);
+  return appendTextBlock(content, key, sourceContent, commentPrefix);
+}
+
+/**
+ * Strips an existing block (if present), then prepends it to the start of the content.
+ * Guarantees the block is always at the top of the file regardless of prior position.
+ * @param {string} content - The full text content to modify
+ * @param {string} key - The identifier for the text block
+ * @param {string} sourceContent - The new content for the block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The modified text content
+ */
+function moveTextBlockToStart(content, key, sourceContent, commentPrefix = "#") {
+  content = _stripTextBlock(content, key, commentPrefix);
+  return prependTextBlock(content, key, sourceContent, commentPrefix);
+}
+
+/**
+ * Removes a BEGIN/END block from content, returning the content without the block.
+ * @param {string} content - The full text content
+ * @param {string} key - The identifier for the text block
+ * @param {string} [commentPrefix='#'] - The comment character/prefix
+ * @returns {string} The content with the block removed
+ */
+function _stripTextBlock(content, key, commentPrefix = "#") {
+  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}`;
+  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}`;
+  const beginIdx = content.indexOf(BEGIN);
+  const endIdx = content.indexOf(END);
+  if (beginIdx !== -1 && endIdx !== -1) {
+    content = content.slice(0, beginIdx) + content.slice(endIdx + END.length);
+  }
+  return content;
+}
+
 // Only export when required as a module (e.g. by build-include.js).
 // Skip when this file is inlined into index.js via BEGIN/END markers,
 // where index.js runs as the main module (require.main === module).
@@ -1519,6 +1600,11 @@ if (typeof module !== "undefined" && require.main !== module) {
     replaceBlock,
     replaceBlocks,
     removeBlock,
+    cleanupExtraWhitespaces,
+    appendTextBlock,
+    prependTextBlock,
+    moveTextBlockToEnd,
+    moveTextBlockToStart,
   };
 }
 // END software/common.js
@@ -3028,77 +3114,6 @@ async function downloadAndInstallBinary(repo, getFileName) {
   return true;
 }
 
-// --- Text Block Management ---
-/**
- * Appends a delimited text block to the end of a text body (or replaces it if it already exists).
- * @param {string} content - The full text content to modify
- * @param {string} key - The identifier for the text block
- * @param {string} sourceContent - The new content for the block
- * @param {string} [commentPrefix='#'] - The comment character/prefix
- * @returns {string} The modified text content
- */
-function appendTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "append"));
-}
-
-/**
- * Prepends a delimited text block to the beginning of a text body (or replaces it if it already exists).
- * @param {string} content - The full text content to modify
- * @param {string} key - The identifier for the text block
- * @param {string} sourceContent - The new content for the block
- * @param {string} [commentPrefix='#'] - The comment character/prefix
- * @returns {string} The modified text content
- */
-function prependTextBlock(content, key, sourceContent, commentPrefix = "#") {
-  return cleanupExtraWhitespaces(replaceBlock(content, key, sourceContent, commentPrefix, "", "prepend"));
-}
-
-/**
- * Strips an existing block (if present), then appends it to the end of the content.
- * Guarantees the block is always at the bottom of the file regardless of prior position.
- * @param {string} content - The full text content to modify
- * @param {string} key - The identifier for the text block
- * @param {string} sourceContent - The new content for the block
- * @param {string} [commentPrefix='#'] - The comment character/prefix
- * @returns {string} The modified text content
- */
-function moveTextBlockToEnd(content, key, sourceContent, commentPrefix = "#") {
-  content = _stripTextBlock(content, key, commentPrefix);
-  return appendTextBlock(content, key, sourceContent, commentPrefix);
-}
-
-/**
- * Strips an existing block (if present), then prepends it to the start of the content.
- * Guarantees the block is always at the top of the file regardless of prior position.
- * @param {string} content - The full text content to modify
- * @param {string} key - The identifier for the text block
- * @param {string} sourceContent - The new content for the block
- * @param {string} [commentPrefix='#'] - The comment character/prefix
- * @returns {string} The modified text content
- */
-function moveTextBlockToStart(content, key, sourceContent, commentPrefix = "#") {
-  content = _stripTextBlock(content, key, commentPrefix);
-  return prependTextBlock(content, key, sourceContent, commentPrefix);
-}
-
-/**
- * Removes a BEGIN/END block from content, returning the content without the block.
- * @param {string} content - The full text content
- * @param {string} key - The identifier for the text block
- * @param {string} [commentPrefix='#'] - The comment character/prefix
- * @returns {string} The content with the block removed
- */
-function _stripTextBlock(content, key, commentPrefix = "#") {
-  const BEGIN = `${commentPrefix} ${TEXT_BLOCK_START_MARKER} ${key}`;
-  const END = `${commentPrefix} ${TEXT_BLOCK_END_MARKER} ${key}`;
-  const beginIdx = content.indexOf(BEGIN);
-  const endIdx = content.indexOf(END);
-  if (beginIdx !== -1 && endIdx !== -1) {
-    content = content.slice(0, beginIdx) + content.slice(endIdx + END.length);
-  }
-  return content;
-}
-
 // --- Profile Registration ---
 
 /**
@@ -3475,15 +3490,6 @@ function exitIfCannotInstallChromiumExtension() {
   exitIfNoChromiumBrowser();
 }
 
-// --- Text Processing Utilities ---
-/**
- * Collapses runs of 3+ consecutive newlines into double newlines and trims the result.
- * @param {string} text - The text to clean up
- * @returns {string} The cleaned text with excess whitespace removed
- */
-function cleanupExtraWhitespaces(text) {
-  return text.replace(/[\r\n][\r\n][\n]+/g, "\n\n").trim();
-}
 
 /**
  * Removes empty BEGIN/END marker pairs (where the content between markers is blank after trimming).
