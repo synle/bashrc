@@ -1,10 +1,9 @@
 ---
 name: add-package
 description: Add a new CLI tool or package to this dotfiles repo. Use when installing a new tool across platforms.
-argument-hint: <package-name>
 ---
 
-Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS`.
+Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the package named in the request instead.
 
 ## Steps
 

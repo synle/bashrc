@@ -1,12 +1,11 @@
 ---
 name: run
-description: Resolve a script name in software/scripts/ to its `bash run.sh --files='...'` command and run it. Use when you want to test-run a specific script.
-argument-hint: <script-name-or-keyword> [more scripts...]
+description: Resolve a script name or keyword in software/scripts/ to its `bash run.sh --files='...'` command and execute it. Use when test-running, re-running, or verifying a single script in this repo.
 ---
 
 Resolve a script keyword to the matching `bash run.sh --files='...'` command in `software/scripts/`, then **run it** — this skill executes, it does not just print.
 
-The user's query is: `$ARGUMENTS`
+The user's query is: `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the script name(s) given in the request instead.
 
 ## Rules
 

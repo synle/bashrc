@@ -1,6 +1,6 @@
 ---
 name: check
-description: Verify that all changes from this session are still present after a merge, rebase, or hook. Restores missing changes if needed.
+description: Verify that every change made in the current session is still present, and restore any that went missing. Use after a merge, rebase, force-push, stash, amend, or a formatter/hook run that may have reverted work.
 ---
 
 Verify that all recent changes from this conversation are still present in the codebase. Use this after a merge, rebase, force-push, or when a linter/hook may have reverted work.

@@ -1,10 +1,9 @@
 ---
 name: remove-package
 description: Remove a CLI tool or package from this dotfiles repo. Use when dropping a tool from the setup.
-argument-hint: <package-name>
 ---
 
-Remove a CLI tool or package from this dotfiles repo. The package to remove is `$ARGUMENTS`.
+Remove a CLI tool or package from this dotfiles repo. The package to remove is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the package named in the request instead.
 
 ## Steps
 

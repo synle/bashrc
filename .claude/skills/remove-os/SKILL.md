@@ -1,10 +1,9 @@
 ---
 name: remove-os
 description: Remove an operating system from this dotfiles repo. Use when dropping support for a platform.
-argument-hint: <os-name>
 ---
 
-Remove an operating system from this dotfiles repo. The OS to remove is `$ARGUMENTS`.
+Remove an operating system from this dotfiles repo. The OS to remove is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the OS named in the request instead.
 
 ## Steps
 

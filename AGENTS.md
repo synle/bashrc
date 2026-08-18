@@ -609,6 +609,39 @@ invisible to every loader. Folder name is kebab-case and must equal the frontmat
 ln -sfn ../../.claude/skills/<name>/SKILL.md .opencode/commands/<name>.md
 ```
 
+### 13.0 Portability contract — a `SKILL.md` is tool-agnostic
+
+The same file is read by four different CLIs, so it is written to the open Agent
+Skills lowest common denominator: **YAML frontmatter carrying `name` and
+`description` only, then plain Markdown.** Anything a single vendor invented goes in
+an optional supporting file beside `SKILL.md`, never in the core file.
+
+- **Frontmatter is exactly two keys.** `name` (kebab-case, equal to the folder name)
+  and `description`. Never `model`, `agent`, `tools`, `permissions`, `allowed-tools`,
+  `context`, or `argument-hint` — each is one vendor's concept and is either ignored
+  or an outright parse failure elsewhere.
+- **`description` is the trigger, not documentation.** An agent reads it to decide
+  whether the skill applies at all, so it answers **what** and **when** in one
+  sentence-pair. `Git synchronization workflow.` is a miss; `Synchronize the current
+  branch with its full ancestry using merge only. Use when updating a branch from its
+  base, syncing stacked branches, or preparing a branch for review.` fires correctly.
+- **Never name the agent.** No "ask Claude to…", no "have Copilot review". Describe
+  the behavior and let whoever is running decide who does it — "inspect the branch
+  state before modifying the repository".
+- **No vendor tool syntax.** No `Task(...)`, `mcp__*`, `@github`, `functions.shell`,
+  a `delegate` tool, or a `claude --flag` invocation. Say what must happen — "use the
+  available shell and repository tools to inspect git state" — and let the harness
+  pick the call.
+- **Abstract the mechanism, never the invariants.** Hard rules stay blunt and
+  explicit in a `## Non-negotiable rules` list — "merge only, never rebase, never
+  force-push, never discard uncommitted user changes, never silently resolve a
+  conflict by taking one side". Every agent understands those semantics; vagueness
+  there is how a skill quietly stops protecting anything.
+- **`$ARGUMENTS` degrades, it does not depend.** Where a skill takes an argument,
+  reference `$ARGUMENTS` once and immediately name the fallback — "if that
+  placeholder arrives unexpanded or empty, use the OS named in the request instead" —
+  so the skill still works on a loader that never interpolates it.
+
 ### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
 
 The repo-local skills above are separate from the **global** `/sy-*` command corpus

@@ -1,12 +1,11 @@
 ---
 name: plan-and-commit
 description: Write a plan, execute it, commit the result, and leave behind plan-YYYY-MM-DD-<slug>.md plus plan-YYYY-MM-DD-<slug>.diff in ~/sy_llm_ai/plans/<repo>/. Use for any multi-file or multi-step change where the reasoning is worth recording alongside the code.
-argument-hint: <what you want changed>
 ---
 
 Turn a request into a written plan, execute that plan, commit the result, and leave two artifacts behind: the plan and the diff it produced.
 
-The task is: `$ARGUMENTS`
+The task is: `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the task described in the request instead.
 
 Use this when the change spans multiple files or steps and the reasoning is worth keeping. For a one-line fix, skip it and just make the edit.
 

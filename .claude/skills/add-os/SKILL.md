@@ -1,10 +1,9 @@
 ---
 name: add-os
 description: Onboard a new operating system to this dotfiles repo. Use when adding support for a new Linux distro, macOS variant, or platform.
-argument-hint: <os-name>
 ---
 
-Onboard a new operating system to this dotfiles repo. The OS name is `$ARGUMENTS`.
+Onboard a new operating system to this dotfiles repo. The OS name is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the OS named in the request instead.
 
 ## Steps
 
