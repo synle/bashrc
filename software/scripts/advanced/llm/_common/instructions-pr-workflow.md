@@ -96,6 +96,35 @@ Honesty from the main instructions governs this file too.
   - **Never delete the journal during cleanup** — `pr<number>-<sanitized-branch>.md` is durable provenance. Remove the worktree, keep the journal.
   - A worktree with unpushed commits or a dirty tree is **not** reaped silently — it means work never made it into the merged PR. Report the path and what it holds, leave it for the human.
 
+## Stuck PRs — retrigger a frozen pipeline
+
+- **A PR whose Actions jobs are all green but whose merge is still blocked is usually missing a check, not failing one.** Not every required context is an Actions job: approval, policy, lock-status, description, and custom-validation gates are commonly check runs posted over the API by org-internal apps. When one of those webhooks is dropped for a single PR, the check is never created on the head SHA at all — not red, not pending, simply **absent** — so the branch rule is never satisfied, the combined status sits `pending` forever, and `mergeStateStatus` stays `BLOCKED`. There is nothing to `rerequest`, because a check run that was never created cannot be re-run.
+- **Diagnose before touching the branch — diff the required contexts against what actually posted on the head SHA.** A required context missing from the posted list is a dropped webhook; one that posted and failed is an ordinary red build and a different problem.
+
+  ```bash
+  REPO=<owner>/<repo>; N=<number>
+  DEF=$(gh repo view "$REPO" --json defaultBranchRef -q .defaultBranchRef.name)
+  SHA=$(gh pr view "$N" --repo "$REPO" --json headRefOid --jq .headRefOid)
+  gh api "repos/$REPO/rules/branches/$DEF" \
+    --jq '[.[] | select(.type=="required_status_checks")] | .[].parameters.required_status_checks[].context' \
+    | sort -u > /tmp/required.txt
+  gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" --jq '.check_runs[].name' | sort -u > /tmp/posted.txt
+  comm -23 /tmp/required.txt /tmp/posted.txt   # required but never posted → dropped webhook
+  ```
+
+- **The fix is an empty commit pushed to the PR branch.** A new head SHA is what makes those apps evaluate the PR again, so the retrigger has to move the head — and an empty commit is the cheapest way to move it. "Retrigger the PR build / checks / stats" with no further detail means exactly this. Allow a full pipeline duration (~20 min) before concluding it failed.
+
+  ```bash
+  git commit --allow-empty -m "Retrigger CI checks"
+  git push
+  ```
+
+- **Empty means empty — never fake a change to force a push.** No whitespace tweak, no bumped comment, no touch-and-revert. A dummy edit puts real bytes in the diff, pollutes review and `git blame`, and can trip path-filtered workflows or codeowner rules; `--allow-empty` produces a new SHA whose tree diff is empty, which is the entire point.
+- **Say what it is in the subject** — `Retrigger CI checks`, or similar. Anyone scanning the log must be able to tell at a glance that the commit changes nothing, and a squash merge folds it away.
+- **Confirm the branch before committing.** This runs on the PR's own branch, never on the default branch — an empty commit pushed to default is noise in the shared history that no squash will ever collapse.
+- **A fresh approval is the known price, not a bug to engineer around.** Where `require_last_push_approval: true`, any new commit makes _you_ the most recent pusher and a new approval is required, even though `dismiss_stale_reviews_on_push: false` leaves the existing review attached. Budget for the re-approval ping instead of hunting a zero-cost trick; on an already-green, already-approved PR that is not actually stuck, don't push at all.
+- **A genuinely red Actions job is not this bug** — `gh run rerun <id> --failed` re-runs only the failed jobs and is far cheaper than a push, which restarts the entire pipeline and costs the approval above.
+
 ## Links and references
 
 - Never hand-build a PR or issue URL — emit only what `gh` returned, preferring the `url` field verbatim (`gh pr view <n> --json url --jq .url`). Path is singular `/pull/<n>` for the web UI; `/pulls/<n>` is REST and 404s on github.com. Issues are `/issues/<n>` on both.
