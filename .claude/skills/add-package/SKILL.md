@@ -3,6 +3,8 @@ name: add-package
 description: Add a new CLI tool or package to this dotfiles repo. Use when installing a new tool across platforms.
 ---
 
+## Purpose
+
 Add a new CLI tool or package to this dotfiles repo. The package is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the package named in the request instead.
 
 ## Steps
@@ -144,3 +146,25 @@ make validate
 ```
 
 If you created or modified files in `software/scripts/`, write or update unit tests in `software/tests/`.
+
+## Safety
+
+Never:
+
+- add a binary to the `required` list in `ci-binaries.json` unless it is present on *every* platform and installed in the foreground on macOS — a background-queued binary there fails CI. Use `warn` when unsure.
+- hand-edit the generated `ci-binary-checks` block in `action.yml` — edit the JSON and run `make format_ci_binaries`
+- `rm` an installed launcher to force a reinstall — the freshness gate already treats a missing binary as broken; use `--refresh` / `--force-refresh`
+- introduce bash 4+ syntax in a new script — no `&>>`, no `mapfile`, no heredoc nested inside `$( ... )`
+- register a duplicate `configKey` — pass a `subKey` when one platform needs several blocks
+- edit a protected path per AGENTS.md section 3
+
+If the tool ships under different binary names across distros, resolve that with `ensure_binary_alias` rather than branching at each call site.
+
+## Verification
+
+Before declaring success, confirm and report:
+
+- `bash run.sh --files="<the script>"` run twice, second run idempotent — or `bash run.sh --dryrun --setup` for a package-manager-only change
+- `make format && make validate` run, with its result quoted, not paraphrased
+- a fresh shell starts clean and the binary resolves via `type -P`
+- which platforms actually got the package, and which were deliberately skipped and why

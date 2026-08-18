@@ -3,6 +3,8 @@ name: plan-and-commit
 description: Write a plan, execute it, commit the result, and leave behind plan-YYYY-MM-DD-<slug>.md plus plan-YYYY-MM-DD-<slug>.diff in ~/sy_llm_ai/plans/<repo>/. Use for any multi-file or multi-step change where the reasoning is worth recording alongside the code.
 ---
 
+## Purpose
+
 Turn a request into a written plan, execute that plan, commit the result, and leave two artifacts behind: the plan and the diff it produced.
 
 The task is: `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the task described in the request instead.
@@ -91,3 +93,25 @@ State: the commit SHA(s), the two artifact paths, the validation command and its
 - **One task, one slug.** Don't overwrite an existing `~/sy_llm_ai/plans/<repo>/plan-YYYY-MM-DD-<slug>.*` pair from earlier work — pick a distinct slug or ask.
 - **Artifacts are prose, not code.** Persona overlays (e.g. Caveman Speak) never apply to `plan-YYYY-MM-DD-<slug>.md` or to commit messages — both are read by humans other than the requester.
 - **Never commit secrets** surfaced while planning. If the diff would contain a credential, stop and report instead.
+
+## Safety
+
+Never:
+
+- push, open a pull request, or merge — this skill ends at the commit
+- `git add -A` over files you did not touch; stage only the paths the plan named
+- rebase, force-push, reset, or drop a stash to get a clean starting point — Step 1 stops and asks instead
+- commit while validation is red, or write a Wrap-Up claiming a validation you did not run
+- overwrite an existing plan or diff artifact from earlier work
+
+If the working tree holds unrelated uncommitted changes, or the plan turns out to need a scope the user did not approve in Step 3, stop and ask.
+
+## Verification
+
+Before declaring success, confirm and report:
+
+- the commit SHA(s), and that `git status` is clean afterwards
+- both artifact paths, with the diff regenerated from the actual commit range rather than hand-assembled
+- the validation command and its result, quoted, not paraphrased
+- every deviation from the plan, reflected in both the plan body and the Wrap-Up
+- anything from the plan deliberately skipped, and why

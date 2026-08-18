@@ -3,6 +3,8 @@ name: run
 description: Resolve a script name or keyword in software/scripts/ to its `bash run.sh --files='...'` command and execute it. Use when test-running, re-running, or verifying a single script in this repo.
 ---
 
+## Purpose
+
 Resolve a script keyword to the matching `bash run.sh --files='...'` command in `software/scripts/`, then **run it** — this skill executes, it does not just print.
 
 The user's query is: `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the script name(s) given in the request instead.
@@ -34,3 +36,22 @@ The user's query is: `$ARGUMENTS` — if that placeholder arrives unexpanded or 
 The `--files=` value should use paths relative to `software/scripts/` (e.g. `fzf.js`, `mac/brew.sh`, `git.js`), comma-separated for multiple scripts.
 
 Always run the command after resolving all matches -- don't just print it.
+
+## Safety
+
+Never:
+
+- guess at an ambiguous match — list the candidates and ask
+- invent a `--files=` value for a script that does not exist on disk
+- add `--setup`, `--force`, `--force-refresh`, or `--remove` unless the request asked for it; those install, reinstall, or uninstall software on the machine
+- run an excluded file (`_`-prefixed, `~`-prefixed, or outside `software/scripts/`) — those are not addressable by `--files=` and will fail or misbehave
+- report success on a non-zero exit
+
+## Verification
+
+Before declaring success, confirm and report:
+
+- the exact command that ran
+- its exit status, and the relevant failure lines verbatim if it was non-zero
+- which queries resolved to which script paths
+- any query that matched nothing or matched several

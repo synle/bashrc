@@ -3,6 +3,8 @@ name: remove-package
 description: Remove a CLI tool or package from this dotfiles repo. Use when dropping a tool from the setup.
 ---
 
+## Purpose
+
 Remove a CLI tool or package from this dotfiles repo. The package to remove is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the package named in the request instead.
 
 ## Steps
@@ -104,6 +106,27 @@ make validate
 ```
 
 Confirm all tests pass — the script-list config and build artifacts regenerate automatically.
+
+## Safety
+
+Never:
+
+- delete a file before the reference search in Step 1 has been read in full — a leftover profile block or autocomplete spec entry fails at shell startup, far from this change
+- remove a binary from `ci-binaries.json` by hand-editing the generated `action.yml` block — edit the JSON and run `make format_ci_binaries`
+- uninstall from the local machine before the repo change is complete, so a re-run cannot quietly reinstall it
+- widen a delete past the package being removed — a shared helper, PATH entry, or preset that other tools also use stays
+- edit a protected path per AGENTS.md section 3 (`.build/`, owner-managed `software/metadata/` files, `assets/`)
+
+If a block, PATH entry, or preset is shared with another tool, stop and ask rather than removing it on this package's behalf.
+
+## Verification
+
+Before declaring success, confirm and report:
+
+- the reference search from Step 1 re-run and now empty, or every remaining hit explained
+- `make format && make validate` run, with its result quoted, not paraphrased
+- a fresh shell starts clean — no missing-binary or missing-completion error from the removed tool
+- what was deliberately left behind (generated files awaiting the next build, a shared helper) and why
 
 ## Notes
 

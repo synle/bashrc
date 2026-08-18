@@ -3,6 +3,8 @@ name: remove-os
 description: Remove an operating system from this dotfiles repo. Use when dropping support for a platform.
 ---
 
+## Purpose
+
 Remove an operating system from this dotfiles repo. The OS to remove is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the OS named in the request instead.
 
 ## Steps
@@ -106,6 +108,27 @@ make validate
 ```
 
 Confirm all tests pass.
+
+## Safety
+
+Never:
+
+- delete a folder before the reference search in Step 1 has been read in full — a leftover `is_os_<name>` guard in an unrelated script is a silent breakage, not a test failure
+- remove `is_os_ubuntu`, or move it out of last position in `run.sh` detection — it is the Debian-family catch-all and every other Linux flag depends on it staying last
+- delete a generated artifact by hand instead of letting `make format` regenerate it
+- widen a delete past the OS being removed — one folder, one flag, one CI job, never a parent folder or a glob
+- edit a protected path per AGENTS.md section 3 (`.build/`, owner-managed `software/metadata/` files, `assets/`)
+
+If a reference is ambiguous — a shared detection rule, a guard another OS also reads — stop and ask rather than guessing which side owns it.
+
+## Verification
+
+Before declaring success, confirm and report:
+
+- the reference search from Step 1 re-run and now empty for `is_os_<name>`
+- `make format && make validate` run, with its result quoted, not paraphrased
+- which OSes had detection rules adjusted because they depended on this one
+- what was deliberately left behind (stale release assets, generated files awaiting the next build) and why
 
 ## Notes
 

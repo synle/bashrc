@@ -641,15 +641,29 @@ an optional supporting file beside `SKILL.md`, never in the core file.
   phrased by behavior — "run whatever pull-request workflow the environment
   provides" — never by its `/name`. A `/name` is fine in the AGENTS.md skill table,
   which is prose for a human choosing one.
-- **Abstract the mechanism, never the invariants.** Hard rules stay blunt and
-  explicit in a `## Non-negotiable rules` list — "merge only, never rebase, never
-  force-push, never discard uncommitted user changes, never silently resolve a
-  conflict by taking one side". Every agent understands those semantics; vagueness
-  there is how a skill quietly stops protecting anything.
 - **`$ARGUMENTS` degrades, it does not depend.** Where a skill takes an argument,
   reference `$ARGUMENTS` once and immediately name the fallback — "if that
   placeholder arrives unexpanded or empty, use the OS named in the request instead" —
   so the skill still works on a loader that never interpolates it.
+- **Every skill carries the same four sections, in this order:** `## Purpose` (what
+  it does, one paragraph), `## Steps` (the numbered workflow), `## Safety` (a
+  `Never:` list of invariants, closing with the one condition that means stop and
+  ask), `## Verification` (what to confirm and report before declaring success).
+  Optional `## Rules`, `## Notes`, `## Artifacts`, and `## Reference: …` sections sit
+  wherever they read best, so long as the four required ones keep that relative
+  order. The uniformity is the point — an agent that loaded only half the file still
+  knows where the invariants live, and a skill missing `## Safety` is a skill whose
+  destructive steps are guarded by nothing but tone.
+- **State invariants bluntly; abstract only the mechanism.** `## Safety` says "never
+  rebase, never force-push, never discard uncommitted user changes, never silently
+  resolve a conflict by taking one side" — every agent understands those semantics,
+  and vagueness there is how a skill quietly stops protecting anything.
+  `## Verification` demands the command's real output ("quoted, not paraphrased"),
+  because a summarized result is how an unrun check becomes a reported pass.
+- **Split into `references/` and `scripts/` only when there is something to split.**
+  A supporting file beside `SKILL.md` is the right home for long reference material,
+  vendor-specific behavior, or an executable helper — but a ten-line table read once
+  is not that. Extract on genuine weight or a third reuse, not on principle (YAGNI).
 
 ### 13.1 The global `/sy-*` corpus — one registry, never a per-CLI list
 

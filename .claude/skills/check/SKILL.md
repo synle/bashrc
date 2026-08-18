@@ -3,6 +3,8 @@ name: check
 description: Verify that every change made in the current session is still present, and restore any that went missing. Use after a merge, rebase, force-push, stash, amend, or a formatter/hook run that may have reverted work.
 ---
 
+## Purpose
+
 Verify that all recent changes from this conversation are still present in the codebase. Use this after a merge, rebase, force-push, or when a linter/hook may have reverted work.
 
 ## Steps
@@ -74,3 +76,24 @@ Summarize with a checklist:
 
 - For each file: name, status (intact / restored / conflict resolved)
 - If everything is intact, confirm with a short "all changes verified"
+
+## Safety
+
+Never:
+
+- `git checkout`, `git restore`, or `git reset` a whole file to undo a regression — that reverts legitimate later changes with it. Re-apply the missing hunks individually.
+- discard, stash-drop, or overwrite uncommitted work found in the tree; it may be the user's, not yours
+- resolve a merge conflict by taking one side wholesale
+- force-push, amend a pushed commit, or rewrite history to "restore" something
+- report a file as restored on the strength of the diff alone — re-read it
+
+If it is unclear whether a change is missing or was intentionally reverted by the user, stop and ask.
+
+## Verification
+
+Before declaring success, confirm and report:
+
+- every file from the session, each labelled intact / restored / conflict-resolved
+- `make validate` run after any restore, with its result quoted, not paraphrased
+- any change that could not be recovered, named explicitly rather than omitted
+- anything left in a conflicted or partial state

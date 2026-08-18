@@ -3,6 +3,8 @@ name: add-os
 description: Onboard a new operating system to this dotfiles repo. Use when adding support for a new Linux distro, macOS variant, or platform.
 ---
 
+## Purpose
+
 Onboard a new operating system to this dotfiles repo. The OS name is `$ARGUMENTS` — if that placeholder arrives unexpanded or empty, use the OS named in the request instead.
 
 ## Steps
@@ -242,6 +244,28 @@ Then:
 make format
 make validate
 ```
+
+## Safety
+
+Never:
+
+- add the new flag below `is_os_ubuntu` in `run.sh` detection — the Debian-family catch-all must stay last, or a containerized runner leaks `is_os_ubuntu=1` onto the new platform
+- introduce bash 4+ syntax in the new `_full-setup.sh` — no `&>>`, no `mapfile`, no heredoc nested inside `$( ... )`; bash 3.2 is the floor and a fresh machine runs this before any newer bash exists
+- leave an OS-specific path unguarded by its `is_os_*` flag or an `exitIf*` guard
+- hand-edit a generated artifact — `script-list.config`, the `action.yml` binary block, anything under `.build/` — instead of running `make format`
+- edit a protected path per AGENTS.md section 3
+
+If detection would overlap an existing OS (a derivative distro, a variant sharing an `ID_LIKE`), stop and ask which flag owns the overlap rather than setting both.
+
+## Verification
+
+Before declaring success, confirm and report:
+
+- `bash run.sh --files="<a script in the new folder>"` run twice, second run idempotent
+- `make format && make validate` run, with its result quoted, not paraphrased
+- the new case in `software/tests/osDetection.spec.js` asserts no other distro flag leaks
+- `/bin/bash -n` clean on every new `.sh` file — a bare `bash -n` is Homebrew 5.x on macOS and will not catch a 3.2 break
+- what was deliberately skipped (CI build, `LIMITED_SUPPORT_OSES` entry) and why
 
 ## Reference: Existing package manager patterns
 
