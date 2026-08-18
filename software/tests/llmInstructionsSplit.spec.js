@@ -81,6 +81,30 @@ const SPLIT_EXPECTATIONS = {
       "Never round an unexplained remainder up to",
     ],
   },
+  "testing.md": {
+    heading: "# Test Quality",
+    sections: ["## What a test asserts", "## How a test is shaped"],
+    leads: [
+      "Test behavior, not implementation",
+      "A test that passes before the fix is not a regression test",
+      "Assert values, not the absence of an explosion",
+      "Don't mock what you don't own",
+      "Deterministic or deleted",
+    ],
+  },
+  // The one INLINED split file: persona.md is also pulled back into the top of
+  // instructions.md through a BEGIN/END path block, so unlike its siblings its rules
+  // are SUPPOSED to appear in the always-loaded file too. `inlined` turns the
+  // not-duplicated assertion off for exactly this file rather than weakening it for
+  // all three. Why both copies: claude and gemini read only the always-loaded block,
+  // while opencode loads the standalone file as its own rules document — and position
+  // matters for a persona, the smallest and oldest thing in a long context.
+  "persona.md": {
+    heading: "# Persona — Caveman Speak",
+    sections: [],
+    inlined: true,
+    leads: ["**No self-reference.**", "**Hold persona every turn.**", "**Never caveman-ify:**"],
+  },
 };
 
 /**
@@ -201,6 +225,8 @@ describe("no rules were lost in the split", () => {
     for (const { target, text } of splitFiles) {
       for (const lead of SPLIT_EXPECTATIONS[target].leads) {
         expect(text, `${target} should hold: ${lead}`).toContain(lead);
+        // An inlined file (persona.md) is deliberately present in both places.
+        if (SPLIT_EXPECTATIONS[target].inlined) continue;
         expect(instructions, `always-loaded file should not duplicate: ${lead}`).not.toContain(lead);
       }
     }

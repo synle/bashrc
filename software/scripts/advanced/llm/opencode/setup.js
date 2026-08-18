@@ -126,6 +126,19 @@ const PROVIDER_STREAM_TIMEOUTS = { chunkTimeout: 180000, headerTimeout: 60000 };
 const OPENCODE_SMALL_MODEL = "github-copilot/gpt-5.5";
 
 /**
+ * Tokens held back from the context window so compaction has room to run.
+ *
+ * Compaction is itself an LLM call: it must fit the summarization prompt plus its
+ * output inside whatever is left. With nothing reserved, opencode compacts at the
+ * moment the window is already full, so the summarization request is the thing that
+ * overflows — surfacing as a mid-task failure or a silent truncation right when the
+ * session is most expensive to lose. 12k is sized for the summary of a long agent
+ * session, not a chat turn.
+ * @type {number}
+ */
+const COMPACTION_RESERVED_TOKENS = 12000;
+
+/**
  * Folder names to keep the opencode file watcher out of, on top of
  * `EDITOR_CONFIGS.ignoredFolders` (the repo-wide canonical list, which already
  * covers node_modules, dist, build, coverage, .git, and every language cache).
@@ -168,11 +181,16 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
   const providers = {};
 
   for (const item of providersArray) {
-    // Enrich each model with limit from the known config map.
+    // Enrich each model with limit from the known config map. `capabilities.tools`
+    // is asserted for EVERY Ollama model, including tags with no entry in the map:
+    // the OpenAI-compatible endpoint advertises no capability metadata, so opencode
+    // assumes no tool support and offers the model as chat-only — an agent that can
+    // read nothing and run nothing. Ollama itself rejects a tool call a model cannot
+    // make, so over-claiming fails loudly at call time instead of silently at pick time.
     const modelsObject = Object.fromEntries(
       item.models.map((m) => {
         let cfg = OLLAMA_MODEL_CONFIGS[m.name] || OLLAMA_DEFAULT_CONFIG;
-        return [m.name, { limit: cfg.limit }];
+        return [m.name, { limit: cfg.limit, capabilities: { tools: true } }];
       }),
     );
 
@@ -229,6 +247,7 @@ function _buildOpencodeConfig(providersArray, mcpServersOpencodeShape = {}) {
     compaction: {
       auto: true,
       prune: true,
+      reserved: COMPACTION_RESERVED_TOKENS,
     },
     // Allow more tool output lines before truncation (default: 2000) so the
     // agent sees fuller command output before falling back to the saved-to-disk

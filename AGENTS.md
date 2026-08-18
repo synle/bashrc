@@ -660,10 +660,10 @@ every deploy — delete them only once every machine has migrated.
 
 **The always-loaded block has a hard size budget.** `instructions.md` is deployed verbatim
 into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
-`CLAUDE.md` over **40k chars**. That is why the PR workflow and debugging rules live in
-`_common/instructions-pr-workflow.md` and `_common/instructions-debugging.md`, deployed to
-`~/sy_llm_ai/instructions/{pr-workflow,debugging}.md` and referenced from `instructions.md`
-by a pointer.
+`CLAUDE.md` over **40k chars**. That is why the PR workflow, debugging, and testing rules
+live in `_common/instructions-{pr-workflow,debugging,testing}.md`, deployed to
+`~/sy_llm_ai/instructions/{pr-workflow,debugging,testing}.md` and referenced from
+`instructions.md` by a pointer.
 
 - **Reference split files as a backticked path, never as `@path`.** Per Claude Code's
   memory docs, an `@path` import "is expanded and loaded into context at launch" — it would
@@ -684,6 +684,15 @@ by a pointer.
   mechanisms always-load the file and re-inflate the 40k budget the split exists to protect.
 - Keep `instructions.md` under 35k chars (the spec's budget, 5k below the hard limit). When
   it creeps up, split a section out rather than trimming rules away.
+- **`persona.md` is the one split file that is ALSO inlined back**, through a
+  `<!-- BEGIN software/scripts/advanced/llm/_common/instructions-persona.md -->` block at
+  the top of `instructions.md` (`make format_build_include` fills it). One source, two
+  destinations: claude and gemini read only the always-loaded block, while opencode loads
+  the standalone file as its own `instructions[]` document, where a persona is not ~1% of
+  one 36k blob. `instructions.md` also closes with a short **Persona Check** section — last
+  thing read, because the persona sits first in context and decays first. The split spec
+  knows this via `inlined: true` in `SPLIT_EXPECTATIONS`; every other split file must NOT
+  appear in the always-loaded file.
 
 Deploy + verify after any change to the corpus:
 

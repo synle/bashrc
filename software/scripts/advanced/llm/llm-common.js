@@ -599,6 +599,13 @@ const LLM_LEGACY_PLANS_FOLDER = path.join(BASE_HOMEDIR_LINUX, "sy_llm_ai_plans")
 const LLM_SHARED_INSTRUCTION_FILES = {
   "pr-workflow.md": "software/scripts/advanced/llm/_common/instructions-pr-workflow.md",
   "debugging.md": "software/scripts/advanced/llm/_common/instructions-debugging.md",
+  "testing.md": "software/scripts/advanced/llm/_common/instructions-testing.md",
+  // Unlike its siblings, this one is ALSO inlined back into the top of
+  // instructions.md through a BEGIN/END path block, so the always-loaded copy and
+  // the standalone document can never drift. It is here so opencode loads it as a
+  // separate rules document (instructions[]) rather than as ~1% of one 36k blob —
+  // persona is the oldest, smallest thing in context and the first to decay.
+  "persona.md": "software/scripts/advanced/llm/_common/instructions-persona.md",
 };
 
 /**
