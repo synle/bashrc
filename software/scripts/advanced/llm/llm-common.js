@@ -1257,106 +1257,12 @@ const LLM_SKILL_LINK_FOLDERS = [
 ];
 
 /**
- * ONE-TIME MIGRATION FLAG — flip to `false` (and delete
- * {@link cleanupLegacySySkillArtifacts} plus this constant) once every dev
- * machine has run a setup at least once after the shared-skills migration.
- *
- * While `true`, each setup run first deletes every pre-migration `sy-*` artifact
- * from the folders in {@link LLM_LEGACY_SY_ARTIFACT_FOLDERS} — the flat Claude
- * slash-command files, their `.bak_*` siblings, the opencode command symlinks,
- * and the real (copied) Copilot skill folders — so the link pass below starts
- * from a clean surface instead of racing whatever an older deploy left there.
- *
- * Scope is deliberately narrow: `sy-` prefixed entries only, which are provably
- * ours and were never a name a user or plugin could own.
- * @type {boolean}
- */
-const LLM_ONE_TIME_SY_CLEANUP_ENABLED = true;
-
-/**
- * Folders swept by the one-time {@link cleanupLegacySySkillArtifacts} pass.
- * Command folders (flat `sy-<name>.md` + backups) and skills folders
- * (`sy-<name>/`) both appear — the sweep matches on the `sy-` prefix, so one
- * list covers both shapes.
- *
- * Deleted alongside this constant when {@link LLM_ONE_TIME_SY_CLEANUP_ENABLED}
- * is retired.
- * @type {string[]}
- */
-const LLM_LEGACY_SY_ARTIFACT_FOLDERS = [
-  path.join(BASE_HOMEDIR_LINUX, ".claude", "commands"),
-  path.join(BASE_HOMEDIR_LINUX, ".config", "opencode", "commands"),
-  ...LLM_SKILL_LINK_FOLDERS,
-];
-
-/**
  * Max length of the `description` written into skill frontmatter. Copilot and
  * OpenCode both match the model's trigger decision on this string, so it stays a
  * summary rather than the body.
  * @type {number}
  */
 const LLM_SKILL_DESCRIPTION_MAX = 400;
-
-/**
- * ONE-TIME MIGRATION — removes every pre-migration `sy-*` artifact so the shared
- * skills deploy starts from a clean surface. Delete this function, its flag, and
- * {@link LLM_LEGACY_SY_ARTIFACT_FOLDERS} once every machine has re-run.
- *
- * Removes, in each folder of {@link LLM_LEGACY_SY_ARTIFACT_FOLDERS}, any entry
- * whose basename starts with `sy-`: the flat `sy-<name>.md` command bodies, their
- * `sy-<name>.md.bak_original` / `.bak_latest` siblings, the opencode command
- * symlinks pointing at them, and the copied Copilot skill folders. Symlinks are
- * unlinked rather than followed, so nothing inside the shared folder is ever
- * touched through one.
- *
- * No-ops when the flag is off or a folder is absent. Idempotent — the second run
- * finds nothing, which is exactly the "second run removes nothing" check the
- * deploy verification asks for.
- *
- * @returns {number} Count of entries removed (0 in the steady state).
- */
-function cleanupLegacySySkillArtifacts() {
-  if (!LLM_ONE_TIME_SY_CLEANUP_ENABLED) return 0;
-
-  /** @type {number} Entries removed across every legacy folder. */
-  let removed = 0;
-
-  for (const folder of LLM_LEGACY_SY_ARTIFACT_FOLDERS) {
-    if (!fs.existsSync(folder)) continue;
-
-    for (const entry of fs.readdirSync(folder)) {
-      if (!entry.startsWith("sy-")) continue;
-
-      /** @type {string} Absolute path of the legacy artifact. */
-      const entryPath = path.join(folder, entry);
-      try {
-        // lstat, never stat: a symlink is unlinked as itself so we can never
-        // recurse into the shared folder it points at and delete the source.
-        if (fs.lstatSync(entryPath).isSymbolicLink()) {
-          /** @type {string} Raw target as stored on disk (may be relative). */
-          const raw = fs.readlinkSync(entryPath);
-          /** @type {string} Resolved absolute target. */
-          const target = path.isAbsolute(raw) ? raw : path.resolve(folder, raw);
-          // Ours already: a link into the shared folder was created by a previous
-          // deploy (possibly by the CLI setup that ran seconds ago — all four call
-          // this). Deleting it would make each setup churn the links the last one
-          // made and break the "second run removes nothing" invariant.
-          if (target === LLM_SHARED_SKILLS_FOLDER || target.startsWith(LLM_SHARED_SKILLS_FOLDER + path.sep)) continue;
-          fs.unlinkSync(entryPath);
-        } else {
-          fs.rmSync(entryPath, { recursive: true, force: true });
-        }
-        removed++;
-      } catch (e) {
-        log(`>> shared skills: could not remove legacy ${entryPath} — ${e.message}`);
-      }
-    }
-  }
-
-  if (removed > 0) log(`>> shared skills: one-time cleanup removed ${removed} legacy sy-* artifact(s)`);
-
-  return removed;
-}
 
 /**
  * Derives a skill `description` from a command source's first line.
@@ -1569,10 +1475,6 @@ function linkSharedLLMSkills() {
  * @returns {Promise<void>}
  */
 async function deploySharedLLMSkills() {
-  // ONE-TIME: clear pre-migration sy-* commands/skills before linking. Remove
-  // this call together with LLM_ONE_TIME_SY_CLEANUP_ENABLED.
-  cleanupLegacySySkillArtifacts();
-
   fs.mkdirSync(LLM_SHARED_SKILLS_FOLDER, { recursive: true });
 
   log(">> Shared LLM Skills:", LLM_SHARED_SKILLS_FOLDER);

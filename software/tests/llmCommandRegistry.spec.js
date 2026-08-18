@@ -110,14 +110,6 @@ describe("shared skills deploy constants", () => {
     expect(llm.buildLLMSkillDescription('[Sy] Review a PR "carefully".\n\nbody')).toBe('Review a PR \\"carefully\\".');
     expect(llm.buildLLMSkillDescription(`[Sy] ${"x".repeat(500)}`)).toHaveLength(llm.LLM_SKILL_DESCRIPTION_MAX);
   });
-
-  it("keeps the one-time legacy sweep flag and its folder list side by side", () => {
-    // When the flag is finally flipped to false, delete cleanupLegacySySkillArtifacts,
-    // LLM_LEGACY_SY_ARTIFACT_FOLDERS, and this test together.
-    expect(llm.LLM_ONE_TIME_SY_CLEANUP_ENABLED).toBeTypeOf("boolean");
-    expect(llm.LLM_LEGACY_SY_ARTIFACT_FOLDERS).toContain("/tmp/sandbox-home/.claude/commands");
-    expect(llm.LLM_LEGACY_SY_ARTIFACT_FOLDERS).toContain("/tmp/sandbox-home/.config/opencode/commands");
-  });
 });
 
 // ---- Every registered command resolves to a real body ----
