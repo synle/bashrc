@@ -877,10 +877,6 @@ function isUnderSharedLLMHome(target) {
  * @returns {Promise<void>}
  */
 async function deploySharedLLMInstructions() {
-  // TEMPORARY — a --files= run does not include _init.js, so the personal-root
-  // migration has to be guarded here too: creating <root>/ai_llm first would make
-  // the legacy twin look like a collision and strand it. Delete with SY_LEGACY_ROOT_FOLDER.
-  ensureSyHomeMigrated();
   warnAboutLegacyLLMFolders();
 
   fs.mkdirSync(LLM_SHARED_INSTRUCTIONS_FOLDER, { recursive: true });
@@ -1571,10 +1567,6 @@ function linkSharedLLMSkills() {
  * @returns {Promise<void>}
  */
 async function deploySharedLLMSkills() {
-  // TEMPORARY — a --files= run does not include _init.js, so the personal-root
-  // migration has to be guarded here too: creating <root>/ai_llm first would make
-  // the legacy twin look like a collision and strand it. Delete with SY_LEGACY_ROOT_FOLDER.
-  ensureSyHomeMigrated();
   warnAboutLegacyLLMFolders();
 
   fs.mkdirSync(LLM_SHARED_SKILLS_FOLDER, { recursive: true });
