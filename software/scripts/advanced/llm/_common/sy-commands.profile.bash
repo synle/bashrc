@@ -10,6 +10,18 @@
 #   sy-<name>                    CLI chosen at call time (EDITOR convention)
 #   <cli>_skill_<name>           CLI baked into the function name
 #
+# Plus one reserved pair carrying no skill body at all — the raw-prompt form:
+#
+#   sy-inline [<llm>] <prompt>   CLI chosen at call time
+#   <cli>_skill_inline <prompt>  CLI baked into the function name
+#
+# `<cli>_skill_inline` is the shortest possible spelling of "run this CLI with
+# this prompt" (`opencode_skill_inline "do the thing"` == `opencode --prompt
+# "do the thing"`), and it is also the ONE place that argv shape is executed:
+# every `<cli>_skill_<name>` above finishes by calling its own
+# `<cli>_skill_inline`, so a prompt reaches a CLI through exactly one code path
+# whether it came from a SKILL.md or straight off the command line.
+#
 # The `sy-<name>` family mirrors the `EDITOR` convention used by `view_file` /
 # `run_editor`:
 #
@@ -28,6 +40,8 @@
 #   LLM=gemini sy-review-pr <pr-url>     # uses gemini via env override
 #   opencode_skill_review_pr <pr-url>    # pinned to opencode
 #   claude_skill_review_pr <pr-url>      # pinned to claude
+#   opencode_skill_inline "free text"    # raw prompt, no skill body
+#   sy-inline gemini "free text"         # raw prompt, CLI picked at call time
 #
 # --- Dispatch modes: inline (default) vs native ---
 #
@@ -79,7 +93,14 @@ _SY_DEFAULT_SKILL_MODE="inline"
 #   cli          Binary name, also the `<cli>_skill_<name>` wrapper prefix and
 #                the accepted `$LLM` / positional-override token.
 #   prompt-args  Fixed argv tokens between the binary and the prompt, which is
-#                always passed as the single LAST argument. Empty = none.
+#                always passed as the single LAST argument. Empty = none. This
+#                is the shape `<cli>_skill_inline` executes, so it is chosen to
+#                match how each CLI is actually driven by hand — a TUI seeded
+#                with an initial prompt where the CLI offers that (`claude
+#                "<text>"`, `opencode --prompt "<text>"`), the non-interactive
+#                flag where it does not. It is independent of <native-args>:
+#                opencode is seeded interactively here and headless there, on
+#                purpose.
 #   native-kind  How this CLI can be handed a skill NAME instead of a body:
 #                  slash    resolves a leading `/<skill-name>` in prompt text,
 #                           so it reuses <prompt-args> and needs no extra args.
@@ -102,7 +123,9 @@ _SY_DEFAULT_SKILL_MODE="inline"
 #                      shipping an unproven claim.
 #   opencode  command  runtime-verified: `opencode run --command sy-<name>`
 #                      returned the skill's output. Flag is documented in
-#                      `opencode run --help`.
+#                      `opencode run --help`. Its prompt-args are `--prompt`
+#                      (documented in `opencode --help` as "prompt to use"),
+#                      which seeds the TUI, NOT `run`, which is headless.
 #
 # Adding a CLI is ONE record here and nothing else. Order matters only in that
 # the first record is the default CLI (see _SY_DEFAULT_LLM below).
@@ -110,7 +133,7 @@ _SY_LLM_SPECS=(
   "claude||slash|"
   "copilot|-p|slash|"
   "gemini|-p||"
-  "opencode|run|command|run --command"
+  "opencode|--prompt|command|run --command"
 )
 
 # Directory where the deployed prompt bodies live. Single canonical location
@@ -118,6 +141,12 @@ _SY_LLM_SPECS=(
 # `~/.config/opencode/commands/` mirror are symlinks pointing back here, so
 # this stays authoritative regardless of which CLI you ultimately dispatch to.
 _SY_SKILLS_DIR="$HOME/sy_llm_ai/skills"
+
+# Reserved wrapper name for the raw-prompt family — `sy-inline` and
+# `<cli>_skill_inline`. Not a skill: nothing is read off disk, the arguments
+# ARE the prompt. Named once here because it appears in both wrapper families
+# and in their help text.
+_SY_INLINE_NAME="inline"
 
 # Canonical list of CLI names, derived from _SY_LLM_SPECS so the registry above
 # stays the single source. Built once at source time — a function would fork a
@@ -249,9 +278,10 @@ function _sy_apply_arguments() {
 
 # --- Execution ---
 
-# _sy_exec_prompt: hand a fully-rendered prompt to CLI $1. Covers BOTH the
+# _sy_exec_prompt: hand a fully-rendered prompt to CLI $1. The single argv
+# builder behind EVERY dispatch in this file — `<cli>_skill_inline` (raw text),
 # `inline` mode (prompt = the whole skill body) and the `slash` native kind
-# (prompt = `/<skill> <args>`) — same argv shape, different text.
+# (prompt = `/<skill> <args>`) all land here, same argv shape, different text.
 #
 # Fully generic: the fixed tokens between the binary and the prompt come from
 # the registry, never from a `case` on the CLI name. Those tokens are literal
@@ -303,6 +333,84 @@ function _sy_exec_named() {
   "${argv[@]}" "$@"
 }
 
+# --- Inline (raw prompt) entry points ---
+
+# _sy_help_inline: print inline help for one raw-prompt wrapper. Shared by both
+# families so the text can never drift between them.
+#
+# Args:
+#   $1 = the function name being described
+#   $2 = pinned CLI name, or empty when the CLI is chosen at call time
+function _sy_help_inline() {
+  local fn="$1"
+  local pinned="${2:-}"
+  if [ -n "$pinned" ]; then
+    echo "$fn: send a raw prompt to $pinned
+  Usage: $fn <prompt...>
+
+  prompt...  Joined with spaces and passed as the CLI's initial prompt. No
+             SKILL.md is read — this is the shortest spelling of \"run $pinned
+             with this text\", and the one exec path every ${pinned}_skill_<name>
+             wrapper finishes through.
+
+  CLI is pinned to '$pinned' — use sy-$_SY_INLINE_NAME to pick one at call time."
+  else
+    echo "$fn: send a raw prompt to the chosen LLM CLI
+  Usage: $fn [<llm>] <prompt...>
+         LLM=<llm> $fn <prompt...>
+
+  <llm>      One of: ${_SY_SUPPORTED_LLMS[*]} (default: \$LLM or '$_SY_DEFAULT_LLM').
+  prompt...  Joined with spaces and passed as the CLI's initial prompt. No
+             SKILL.md is read.
+
+  Pinned per-CLI variants exist too: ${_SY_SUPPORTED_LLMS[0]}_skill_$_SY_INLINE_NAME (etc)."
+  fi
+}
+
+# _sy_dispatch_inline: top-level entry per <cli>_skill_inline. The CLI is baked
+# into the function name, so argv is never scanned for an override — every
+# argument is prompt text.
+#
+# Args:
+#   $1 = CLI name
+#   $2..$N = prompt words
+function _sy_dispatch_inline() {
+  local llm="$1"
+  shift
+  if is_help_arg "${1:-}"; then
+    _sy_help_inline "${llm}_skill_${_SY_INLINE_NAME}" "$llm"
+    return 0
+  fi
+  if [ $# -eq 0 ]; then
+    echo "${llm}_skill_${_SY_INLINE_NAME}: no prompt given (see --help)" >&2
+    return 1
+  fi
+  _sy_exec_prompt "$llm" "$*"
+}
+
+# _sy_dispatch_inline_any: top-level entry for sy-inline. Pulls a leading CLI
+# override off argv exactly like _sy_dispatch, then delegates to that CLI's own
+# pinned wrapper so the two families share one exec path.
+function _sy_dispatch_inline_any() {
+  if is_help_arg "${1:-}"; then
+    _sy_help_inline "sy-$_SY_INLINE_NAME" ""
+    return 0
+  fi
+  local override=""
+  if [ $# -gt 0 ] && _sy_is_supported_llm "$1"; then
+    override="$1"
+    shift
+  fi
+  local llm
+  llm=$(_sy_resolve_llm "$override")
+  if [ $# -eq 0 ]; then
+    echo "sy-$_SY_INLINE_NAME: no prompt given (see --help)" >&2
+    return 1
+  fi
+  echo ">> sy-$_SY_INLINE_NAME -> $llm" >&2
+  "${llm}_skill_${_SY_INLINE_NAME}" "$*"
+}
+
 # _sy_run: resolve the CLI and the mode, then dispatch `<name>`. Echoes the
 # routing decision to stderr so the user can verify which CLI fired and whether
 # the skill was inlined or named.
@@ -312,6 +420,10 @@ function _sy_exec_named() {
 #   native + slash    -> hand the CLI `/<skill> <args>` as prompt text
 #   anything else     -> inline the body (also where a CLI with no native
 #                        surface, or an unknown $SY_SKILL_MODE, lands)
+#
+# Both prompt-shaped branches exec through `<cli>_skill_inline` rather than
+# calling `_sy_exec_prompt` directly, so the raw-prompt wrapper a user types by
+# hand and the one a skill dispatch goes through are the same function.
 #
 # Args:
 #   $1 = command name (matches `~/sy_llm_ai/skills/sy-<name>/SKILL.md`)
@@ -340,7 +452,7 @@ function _sy_run() {
     if [ $# -gt 0 ]; then
       slash="$slash $*"
     fi
-    _sy_exec_prompt "$llm" "$slash"
+    "${llm}_skill_${_SY_INLINE_NAME}" "$slash"
     return $?
   fi
   local body
@@ -348,7 +460,7 @@ function _sy_run() {
   local prompt
   prompt=$(_sy_apply_arguments "$body" "$@")
   echo ">> sy-$name -> $llm (inline)" >&2
-  _sy_exec_prompt "$llm" "$prompt"
+  "${llm}_skill_${_SY_INLINE_NAME}" "$prompt"
 }
 
 # --- Entry points ---
@@ -432,12 +544,21 @@ function _sy_dispatch_cli() {
 # --- Registration ---
 
 # Auto-register `sy-<name>` plus one `<cli>_skill_<name>` per CLI for every
-# `~/sy_llm_ai/skills/sy-*/SKILL.md` on disk. Idempotent — re-running the loop
-# redefines the same wrappers. When the skills dir is absent (e.g. on a machine
-# where no setup.js has ever run), the glob expands to its own pattern and we
-# skip it.
+# `~/sy_llm_ai/skills/sy-*/SKILL.md` on disk, plus the skill-less raw-prompt
+# pair (`sy-inline`, `<cli>_skill_inline`) that does not depend on the glob.
+# Idempotent — re-running the loop redefines the same wrappers. When the skills
+# dir is absent (e.g. on a machine where no setup.js has ever run), the glob
+# expands to its own pattern and we skip it; the inline family is still defined.
 function _sy_register_dispatchers() {
   local skill_file skill_folder base name flat llm defs
+  # Raw-prompt family first: no SKILL.md is involved, so these exist even on a
+  # machine where nothing has been deployed yet — and `_sy_run` needs them,
+  # since every skill dispatch execs through `<cli>_skill_inline`.
+  defs="function sy-${_SY_INLINE_NAME}() { _sy_dispatch_inline_any \"\$@\"; };"
+  for llm in "${_SY_SUPPORTED_LLMS[@]}"; do
+    defs="${defs} function ${llm}_skill_${_SY_INLINE_NAME}() { _sy_dispatch_inline '${llm}' \"\$@\"; };"
+  done
+  eval "$defs"
   for skill_file in "$_SY_SKILLS_DIR"/sy-*/SKILL.md; do
     [ -f "$skill_file" ] || continue
     # `${var%/*}` / `${var##*/}`, not `$(dirname)` / `$(basename)` — this loop
@@ -447,6 +568,13 @@ function _sy_register_dispatchers() {
     skill_folder="${skill_file%/*}"
     base="${skill_folder##*/}"
     name="${base#sy-}"
+    # `inline` is reserved by the raw-prompt family above. Letting a skill of
+    # that name redefine `<cli>_skill_inline` would point it back at _sy_run,
+    # which execs through `<cli>_skill_inline` — infinite recursion.
+    if [ "$name" = "$_SY_INLINE_NAME" ]; then
+      echo "sy-commands: skipping reserved skill name 'sy-$_SY_INLINE_NAME' ($skill_file)" >&2
+      continue
+    fi
     # Hyphens can't follow the `<cli>_skill_` prefix without reading as a typo,
     # so the pinned family flattens them: sy-review-pr -> claude_skill_review_pr.
     flat="${name//-/_}"

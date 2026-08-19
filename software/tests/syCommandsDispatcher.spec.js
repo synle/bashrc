@@ -100,7 +100,7 @@ describe("sy-commands dispatcher", () => {
   it("uses the leading positional arg when it names a supported CLI, stripping it from prompt args", () => {
     writeCommand("foo", "body");
     const out = runBash("sy-foo opencode arg1 arg2 2>/dev/null");
-    expect(out).toContain("opencode [run]");
+    expect(out).toContain("opencode [--prompt]");
     expect(out).toContain("body");
     expect(out).toContain("Arguments: arg1 arg2");
   });
@@ -251,7 +251,7 @@ describe("sy-commands pinned <cli>_skill_<name> wrappers", () => {
 describe("sy-commands dispatch modes", () => {
   it("inlines the whole body by default", () => {
     writeCommand("foo", "the body");
-    expect(runBash("opencode_skill_foo 2>/dev/null")).toBe("opencode [run] [the body]");
+    expect(runBash("opencode_skill_foo 2>/dev/null")).toBe("opencode [--prompt] [the body]");
   });
 
   it("names the skill through the CLI flag when the kind is `command`", () => {
@@ -291,7 +291,7 @@ describe("sy-commands dispatch modes", () => {
 
   it("falls back to inline when SY_SKILL_MODE is an unknown value", () => {
     writeCommand("foo", "the body");
-    expect(runBash("SY_SKILL_MODE=bogus opencode_skill_foo 2>/dev/null")).toBe("opencode [run] [the body]");
+    expect(runBash("SY_SKILL_MODE=bogus opencode_skill_foo 2>/dev/null")).toBe("opencode [--prompt] [the body]");
   });
 
   it("still errors on a missing skill in native mode, before invoking any CLI", () => {
@@ -302,12 +302,77 @@ describe("sy-commands dispatch modes", () => {
       err = e.stdout?.toString() + e.stderr?.toString();
     }
     expect(err).toContain("prompt body missing");
-    expect(err).not.toContain("opencode [run]");
+    expect(err).not.toContain("opencode [");
   });
 
   it("tags the routing line with the mode that fired", () => {
     writeCommand("foo", "body");
     expect(runBash("opencode_skill_foo 2>&1 >/dev/null")).toContain(">> sy-foo -> opencode (inline)");
     expect(runBash("SY_SKILL_MODE=native opencode_skill_foo 2>&1 >/dev/null")).toContain(">> sy-foo -> opencode (native/command)");
+  });
+});
+
+describe("sy-commands raw-prompt inline wrappers", () => {
+  it("registers <cli>_skill_inline for every CLI plus the call-time sy-inline", () => {
+    const fns = runBash('compgen -A function | grep -E "_skill_inline\\$|^sy-inline\\$"').split(/\s+/).filter(Boolean);
+    expect(fns.sort()).toEqual([
+      "claude_skill_inline",
+      "copilot_skill_inline",
+      "gemini_skill_inline",
+      "opencode_skill_inline",
+      "sy-inline",
+    ]);
+  });
+
+  it("registers the inline family even when no skill is deployed", () => {
+    // No writeCommand() at all — the glob expands to nothing.
+    expect(runBash('opencode_skill_inline "free text" 2>/dev/null')).toBe("opencode [--prompt] [free text]");
+  });
+
+  it("sends the arguments verbatim as the prompt, joined with spaces", () => {
+    expect(runBash("claude_skill_inline do the thing 2>/dev/null")).toBe("claude [do the thing]");
+    expect(runBash('gemini_skill_inline "one arg" 2>/dev/null')).toBe("gemini [-p] [one arg]");
+  });
+
+  it("is the exec path every pinned skill wrapper finishes through", () => {
+    writeCommand("foo", "the body");
+    // Shadow the pinned inline wrapper: if the skill dispatch still reaches the
+    // CLI, it bypassed <cli>_skill_inline and the indirection is not real.
+    const out = runBash('function opencode_skill_inline() { echo "intercepted [$1]"; }; opencode_skill_foo 2>/dev/null');
+    expect(out).toBe("intercepted [the body]");
+  });
+
+  it("routes the slash native kind through the pinned inline wrapper too", () => {
+    writeCommand("foo", "the body");
+    const out = runBash('function claude_skill_inline() { echo "intercepted [$1]"; }; SY_SKILL_MODE=native claude_skill_foo 2>/dev/null');
+    expect(out).toBe("intercepted [/sy-foo]");
+  });
+
+  it("picks the CLI at call time on sy-inline, stripping the override token", () => {
+    expect(runBash("sy-inline opencode hello world 2>/dev/null")).toBe("opencode [--prompt] [hello world]");
+    expect(runBash("LLM=gemini sy-inline hello 2>/dev/null")).toBe("gemini [-p] [hello]");
+    expect(runBash("sy-inline hello 2>/dev/null")).toBe("claude [hello]");
+  });
+
+  it("errors instead of launching a CLI with an empty prompt", () => {
+    let err = "";
+    try {
+      runBash("opencode_skill_inline 2>&1");
+    } catch (e) {
+      err = e.stdout?.toString() + e.stderr?.toString();
+    }
+    expect(err).toContain("no prompt given");
+    expect(err).not.toContain("opencode [");
+  });
+
+  it("prints help via is_help_arg without invoking any CLI", () => {
+    expect(runBash("opencode_skill_inline --help 2>&1")).toContain("opencode_skill_inline: send a raw prompt to opencode");
+    expect(runBash("sy-inline --help 2>&1")).toContain("sy-inline: send a raw prompt to the chosen LLM CLI");
+  });
+
+  it("skips a deployed skill that would shadow the reserved inline name", () => {
+    writeCommand("inline", "a body that must never be reachable");
+    const out = runBash('opencode_skill_inline "free text" 2>/dev/null');
+    expect(out).toBe("opencode [--prompt] [free text]");
   });
 });

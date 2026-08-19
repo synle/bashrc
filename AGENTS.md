@@ -720,6 +720,17 @@ fails the build on any CLI name outside the registry block. Both wrapper familie
 (`sy-<name>` and `<cli>_skill_<name>`) come out of one registration loop over
 `~/sy_llm_ai/skills/sy-*/SKILL.md`, so no command name is ever written there either.
 
+**`inline` is a reserved wrapper name, and the one exec path.** `<cli>_skill_inline`
+(and its call-time twin `sy-inline`) take raw prompt text with no `SKILL.md` behind
+it — `opencode_skill_inline "<text>"` is exactly `opencode --prompt "<text>"`, the
+argv shape coming from that CLI's `<prompt-args>` record. Every `<cli>_skill_<name>`
+finishes by calling its own `<cli>_skill_inline`, so a prompt reaches a CLI through
+one function whether it came from a skill body or the command line. Never repeat a
+CLI's prompt flag at a call site (a profile alias, a tmux workspace, a script) — call
+`<cli>_skill_inline` so the flag stays in the registry. A deployed skill named
+`sy-inline` is skipped with a warning; letting it define `<cli>_skill_inline` would
+point that wrapper back at `_sy_run`, which execs through it — infinite recursion.
+
 **A `native` dispatch kind is a claim about a binary — verify it or leave it empty.**
 `slash` / `command` say the CLI resolves a skill by NAME; an unproven entry silently
 sends `/sy-foo` as literal prose and the skill never loads, with no error anywhere.
