@@ -759,22 +759,32 @@ into `run.sh` (so node reads it as an env var) and re-exported into `~/.bash_syl
 (so `sy-commands.profile.bash` resolves the same folder without a second literal). Adding
 a shared var to `common-env.sh` alone is **silently insufficient** — the hand-written
 export block in `run.sh` must list it too, or interactive shells never see it. All the
-migration LOGIC stays in `llm-common.js`; only the location lives in `common-env.sh`.
+folder LOGIC stays in `llm-common.js`; only the location lives in `common-env.sh`.
 
 Consumers derive rather than re-spell the folder, so `ai_llm` is never a second literal:
 `${LLM_HOME_FOLDER:-${SY_HOME_FOLDER:-$HOME}/ai_llm}` in bash, and
 `process.env.LLM_HOME_FOLDER || path.join(SY_HOME_FOLDER, "ai_llm")` in node.
 
 **Moving the folder again is two edits: this one line, plus a row in
-`LLM_LEGACY_FOLDER_MIGRATIONS`.** That registry is the single list of one-time moves;
-`migrateLegacyLLMFolders()` walks it in order and `migrateLegacyLLMFolder()` does the
-work, so there is no per-folder move code to duplicate. Registry order is load-bearing —
-the whole legacy root moves before the older standalone plans folder, which lands inside
-the folder the first row just created. A row whose destination already holds a colliding
-entry **keeps** the source rather than destroying it. `retargetLegacyPlanSymlinks()` then
-repoints any cross-repo plan symlink still naming an old path, matching on a path boundary
-so `<home>/sy_llm_ai` does not swallow `<home>/sy_llm_ai_plans`. All idempotent, all run on
-every deploy — delete a row only once every machine has migrated.
+`LLM_LEGACY_FOLDERS`.** Nothing is moved automatically — the one-time migration that
+relocated `~/sy_llm_ai` and `~/sy_llm_ai_plans` has run everywhere and was deleted, since
+a folder-moving engine kept alive for folders that no longer exist is exactly the
+speculative weight YAGNI cuts. What replaced it is a **detector**:
+`warnAboutLegacyLLMFolders()` runs at the top of both deploy entry points, and for every
+row whose folder still exists **and still holds files** it prints a loud one-time warning
+naming the folder, its destination, and the exact `rsync … && rm -rf` to run. It never
+moves, copies, or deletes anything, and never throws — a stale folder must not fail an
+otherwise-fine deploy. An empty leftover is ignored as a false alarm. Each row carries its
+own `destination` because they differ: the legacy root maps to the shared root, but the
+standalone plans folder maps to `<root>/plans`.
+
+The same registry keeps the two symlink-**ownership** helpers legacy-aware —
+`isSharedLLMArtifactTarget()` and `isUnderSharedLLMHome()` answer "is this link ours?"
+against every root we have ever used, matching on a path boundary so `<home>/sy_llm_ai`
+does not swallow `<home>/sy_llm_ai_plans`. That is cleanup, not migration: a cleanup pass
+knowing only the current root leaves a pre-move link dangling forever, and the deploy pass
+then misreads that dangling link as user-authored and refuses to replace it. Retire a row
+only once no machine can still be holding that folder.
 
 **The always-loaded block has a hard size budget.** `instructions.md` is deployed verbatim
 into `~/.claude/CLAUDE.md` and its three siblings, and Claude Code refuses to load a
