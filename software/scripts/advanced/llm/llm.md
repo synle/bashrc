@@ -150,6 +150,31 @@ skill name flatten to underscores to match the prefix
 (`sy-review-pr` → `opencode_skill_review_pr`), which also makes
 `opencode_skill_<TAB>` complete every skill that CLI can run.
 
+#### Raw prompts: `<cli>_skill_inline` and `sy-inline`
+
+`inline` is a reserved name in both families carrying no `SKILL.md` at all —
+the arguments **are** the prompt:
+
+```bash
+opencode_skill_inline "look at the failing migration and fix it"
+sy-inline gemini "summarize this repo"           # CLI picked at call time
+LLM=copilot sy-inline "summarize this repo"      # env-var override
+```
+
+`<cli>_skill_inline` is the shortest spelling of "run this CLI with this
+prompt" — `opencode_skill_inline "<text>"` is exactly `opencode --prompt
+"<text>"`, and `claude_skill_inline "<text>"` is exactly `claude "<text>"`,
+because the argv shape comes from that CLI's `<prompt-args>` record.
+
+It is also the **single exec path**: every `<cli>_skill_<name>` above finishes
+by calling its own `<cli>_skill_inline`, so a prompt reaches a CLI through one
+function whether it came from a `SKILL.md` or straight off the command line.
+That is what makes `opencode_skill_inline` a safe drop-in for a hand-written
+`opencode --prompt "..."` in a personal profile or a tmux workspace — the flag
+lives in the registry instead of being repeated per call site. A deployed skill
+literally named `sy-inline` is skipped (with a warning) rather than allowed to
+shadow the wrapper.
+
 #### Dispatch modes: `inline` (default) vs `native`
 
 `$SY_SKILL_MODE` picks how the skill reaches the CLI. Unknown values fall back
@@ -171,6 +196,19 @@ file where a CLI name appears at all. Each record is
 from it: `_SY_SUPPORTED_LLMS`, `_SY_DEFAULT_LLM`, both wrapper families, and the
 argv each dispatch builds. A CLI with no native surface degrades to `inline`, so
 `native` is always safe to export.
+
+`<prompt-args>` is the shape `<cli>_skill_inline` executes — chosen to match how
+each CLI is actually driven by hand, so it is the seeded-TUI form where the CLI
+offers one. It is independent of `<native-args>`: opencode is seeded
+interactively as a prompt (`--prompt`, documented in `opencode --help`) and
+headless as a named skill (`run --command`), on purpose.
+
+| CLI        | `<cli>_skill_inline "<text>"` runs |
+| ---------- | ---------------------------------- |
+| `claude`   | `claude "<text>"`                  |
+| `copilot`  | `copilot -p "<text>"`              |
+| `gemini`   | `gemini -p "<text>"`               |
+| `opencode` | `opencode --prompt "<text>"`       |
 
 | CLI        | Kind      | Sent as                                   | Evidence                                                                                                                                                 |
 | ---------- | --------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
