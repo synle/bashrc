@@ -43,7 +43,7 @@
 # --- Repo & Path Constants ---
 ################################################################################
 # BEGIN software/bootstrap/common-env.sh
-# software/bootstrap/common-env.sh | d315ee0a7b775bd361e88db37ba72504 | 8.1 KB
+# software/bootstrap/common-env.sh | 6f33f9d2fc1c7da9a25bed3558ea4d02 | 8.2 KB
 # Shared environment constants sourced by run.sh (via BEGIN/END) and vite.config.js.
 export TZ=UTC
 export REPO_PATH_IDENTIFIER="synle/bashrc"
@@ -66,10 +66,10 @@ export SY_HOME_FOLDER="$HOME/sy"
 # because both surfaces need it and only common-env.sh reaches both: node reads
 # it as an env var, and run.sh re-exports it into ~/.bash_syle_common so the
 # shell dispatcher partial resolves the same folder without a second literal.
-# All the LOGIC (migration registry, symlink retargeting) stays in
+# All the LOGIC (the legacy-folder detector, symlink ownership) stays in
 # software/scripts/advanced/llm/llm-common.js — this is only the location.
-# Moving it means editing this line and adding a row to
-# LLM_LEGACY_FOLDER_MIGRATIONS so existing machines migrate themselves.
+# Moving it means editing this line and adding a row to LLM_LEGACY_FOLDERS so a
+# machine left holding the old folder is told about it rather than stranded.
 export LLM_HOME_FOLDER="$SY_HOME_FOLDER/ai_llm"
 export LIMITED_SUPPORT_OSES="is_os_android_termux,is_os_mingw64"
 export ALL_OS_FLAGS="is_os_mac,is_os_ubuntu,is_os_chromeos,is_os_mingw64,is_os_android_termux,is_os_arch_linux,is_os_steamos,is_os_redhat,is_os_windows,is_os_wsl"
